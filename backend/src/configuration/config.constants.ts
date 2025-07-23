@@ -14,3 +14,4 @@ export const ENVIRONMENT_PATH = `environment/${ENVIRONMENT_FILE_NAME}`
 export const STATIC_PATH = path.resolve(path.join(__dirname, IS_TEST_ENV ? '../../../dist/static' : '../../static'))
 export const STATIC_ASSETS_PATH = path.join(STATIC_PATH, 'assets')
 export const APP_LOGS_PATH = path.join(__dirname, '../../logs')
+export const ENV_PREFIX = 'SYNCIN_'
