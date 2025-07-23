@@ -9,6 +9,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { transformAndValidate } from '../../../common/functions'
 import { exportConfiguration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
@@ -16,18 +17,21 @@ import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { FilesConfig } from '../../files/files.config'
 import { FileError } from '../../files/models/file-error'
 import { FilesQueries } from '../../files/services/files-queries.service'
-import { dirName, removeFiles } from '../../files/utils/files'
+import { removeFiles } from '../../files/utils/files'
 import { LinksQueries } from '../../links/services/links-queries.service'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { SharesManager } from '../../shares/services/shares-manager.service'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
+import { MEMBER_TYPE } from '../../users/constants/member'
 import { UserModel } from '../../users/models/user.model'
 import { UsersQueries } from '../../users/services/users-queries.service'
 import { generateUserTest } from '../../users/utils/test'
 import { SPACE_ALIAS, SPACE_ALL_OPERATIONS, SPACE_OPERATION, SPACE_PERMS_SEP, SPACE_REPOSITORY } from '../constants/spaces'
+import { CreateOrUpdateSpaceDto, SpaceMemberDto } from '../dto/create-or-update-space.dto'
+import { SpaceRootFileDto } from '../dto/space-roots.dto'
 import { SpaceEnv } from '../models/space-env.model'
 import { SpaceModel } from '../models/space.model'
-import { validRealPath } from '../utils/paths'
+import { IsRealPathIsDirAndExists } from '../utils/paths'
 import { SpacesManager } from './spaces-manager.service'
 import { SpacesQueries } from './spaces-queries.service'
 
@@ -83,6 +87,23 @@ describe(SpacesManager.name, () => {
     expect(userTest).toBeDefined()
   })
 
+  it('should prevent path traversal', () => {
+    const createOrUpdateSpaceDto = transformAndValidate(CreateOrUpdateSpaceDto, {
+      name: '../../../foo/..bar',
+      alias: '../../bar.',
+      managers: [transformAndValidate(SpaceMemberDto, { id: 0, type: MEMBER_TYPE.USER })]
+    } satisfies CreateOrUpdateSpaceDto)
+    expect(createOrUpdateSpaceDto.name).toEqual('foobar')
+    expect(createOrUpdateSpaceDto.alias).toEqual('bar')
+    const spaceRootFileDto = transformAndValidate(SpaceRootFileDto, { id: 0, path: '../../foo/bar' } satisfies SpaceRootFileDto)
+    expect(spaceRootFileDto.path).toEqual('foo/bar')
+    const spaceRootFileDto2 = transformAndValidate(SpaceRootFileDto, {
+      id: 0,
+      path: `${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}/../../../foo/bar`
+    } satisfies SpaceRootFileDto)
+    expect(spaceRootFileDto2.path).toEqual('foo/bar')
+  })
+
   it('should validate the permissions on personal & shares space', async () => {
     const personalSpace = await spacesManager.spaceEnv(userTest, ['files', SPACE_ALIAS.PERSONAL])
     expect(personalSpace.envPermissions).toBe(
@@ -98,13 +119,13 @@ describe(SpacesManager.name, () => {
     for (const repository of [SPACE_REPOSITORY.FILES, SPACE_REPOSITORY.TRASH]) {
       const spaceEnv = await spacesManager.spaceEnv(userTest, [repository, SPACE_ALIAS.PERSONAL, 'foo', 'bar'])
       expect(spaceEnv.envPermissions).toBe(SPACE_ALL_OPERATIONS)
-      await expect(validRealPath(spaceEnv.realPath, true, true, spaceEnv.realBasePath)).rejects.toThrow()
+      await expect(IsRealPathIsDirAndExists(spaceEnv.realPath)).rejects.toThrow()
       const repoPath = UserModel.getRepositoryPath(userTest.login, spaceEnv.inTrashRepository)
       await fs.mkdir(path.join(repoPath, 'foo', 'bar'), { recursive: true })
-      await expect(validRealPath(spaceEnv.realPath, true, true, spaceEnv.realBasePath)).resolves.toBeUndefined()
+      await expect(IsRealPathIsDirAndExists(spaceEnv.realPath)).resolves.toBeUndefined()
       await removeFiles(path.join(repoPath, 'foo', 'bar'))
       try {
-        await validRealPath(spaceEnv.realPath, true, true, spaceEnv.realBasePath)
+        await IsRealPathIsDirAndExists(spaceEnv.realPath)
       } catch (e) {
         expect(e).toBeInstanceOf(FileError)
       }
@@ -123,10 +144,10 @@ describe(SpacesManager.name, () => {
     spacesQueries.permissions = jest.fn().mockReturnValue(permissions)
     for (const repository of [SPACE_REPOSITORY.FILES, SPACE_REPOSITORY.TRASH]) {
       const spaceEnv = await spacesManager.spaceEnv(userTest, [repository, spaceAlias, 'foo', 'bar'])
-      await expect(validRealPath(spaceEnv.realPath, true, true, spaceEnv.realBasePath)).rejects.toThrow()
+      await expect(IsRealPathIsDirAndExists(spaceEnv.realPath)).rejects.toThrow()
       const repoPath = SpaceModel.getRepositoryPath(spaceAlias, spaceEnv.inTrashRepository)
       await fs.mkdir(path.join(repoPath, spaceEnv.root.alias, ...spaceEnv.paths), { recursive: true })
-      await expect(validRealPath(spaceEnv.realPath, true, true, spaceEnv.realBasePath)).resolves.toBeUndefined()
+      await expect(IsRealPathIsDirAndExists(spaceEnv.realPath)).resolves.toBeUndefined()
       await removeFiles(path.join(repoPath, spaceEnv.root.alias, ...spaceEnv.paths))
     }
   })
@@ -143,9 +164,9 @@ describe(SpacesManager.name, () => {
     const spaceEnv = await spacesManager.spaceEnv(userTest, [SPACE_REPOSITORY.FILES, spaceAlias, 'foo', 'bar'])
     const rootPath = path.join(tmpDir, ...spaceEnv.paths)
     await fs.mkdir(rootPath, { recursive: true })
-    await expect(validRealPath(spaceEnv.realPath, true, true, spaceEnv.realBasePath)).resolves.toBeUndefined()
+    await expect(IsRealPathIsDirAndExists(spaceEnv.realPath)).resolves.toBeUndefined()
     await removeFiles(rootPath)
-    await expect(validRealPath(spaceEnv.realPath, true, true, spaceEnv.realBasePath)).rejects.toThrow()
+    await expect(IsRealPathIsDirAndExists(spaceEnv.realPath)).rejects.toThrow()
   })
 
   it(`should validate (or not) the space : ${spaceAlias} with a root (a file/directory from user)`, async () => {
@@ -166,23 +187,14 @@ describe(SpacesManager.name, () => {
     spacesQueries.permissions = jest.fn().mockReturnValueOnce(permissions)
     const spaceEnv = await spacesManager.spaceEnv(userTest, [SPACE_REPOSITORY.FILES, spaceAlias, 'document', 'bar'])
     await fs.mkdir(path.join(UserModel.getFilesPath(userTest.login), 'foo', 'bar'), { recursive: true })
-    await expect(validRealPath(spaceEnv.realPath, true, true, spaceEnv.realBasePath)).resolves.toBeUndefined()
+    await expect(IsRealPathIsDirAndExists(spaceEnv.realPath)).resolves.toBeUndefined()
     await removeFiles(path.join(UserModel.getFilesPath(userTest.login), 'foo', 'bar'))
-    await expect(validRealPath(spaceEnv.realPath, true, true, spaceEnv.realBasePath)).rejects.toThrow()
+    await expect(IsRealPathIsDirAndExists(spaceEnv.realPath)).rejects.toThrow()
     delete spaceEnv.root.file.path
     try {
-      await validRealPath(spaceEnv.realPath, true, true, spaceEnv.realBasePath)
+      await IsRealPathIsDirAndExists(spaceEnv.realPath)
     } catch (e) {
       expect(e).toBeInstanceOf(FileError)
     }
-  })
-
-  it('should not pass the path validation (validRealPath)', async () => {
-    const testPath = path.join(tmpDir, 'foo', 'bar')
-    await expect(validRealPath(testPath, true, true, '/dev')).rejects.toThrow()
-    await fs.mkdir(dirName(testPath), { recursive: true })
-    await fs.writeFile(path.join(tmpDir, 'foo', 'bar'), '')
-    await expect(validRealPath(testPath, true, true, dirName(testPath))).rejects.toThrow()
-    await removeFiles(dirName(testPath))
   })
 })

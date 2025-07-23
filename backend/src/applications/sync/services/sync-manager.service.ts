@@ -265,7 +265,7 @@ export class SyncManager {
   }
 
   private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv) {
-    this.logger.error(`unable to ${action} ${space.url}${dstSpace ? ` -> ${dstSpace.url}` : ''} : ${e}`)
+    this.logger.error(`unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}`)
     if (e instanceof LockConflict) {
       throw new HttpException('The file is locked', HttpStatus.LOCKED)
     } else if (e instanceof FileError) {

@@ -6,6 +6,7 @@
 
 import { Transform, Type } from 'class-transformer'
 import { IsDefined, IsInt, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator'
+import { sanitizeName, sanitizePath } from '../../files/utils/files'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '../constants/spaces'
 import type { SpaceRootProps } from '../models/space-root-props.model'
 
@@ -19,14 +20,14 @@ class SpaceRootOwnerDto {
   login: string
 }
 
-class SpaceRootFileDto {
+export class SpaceRootFileDto {
   @IsNotEmpty()
   @IsInt()
   id: number
 
   @IsNotEmpty()
   @IsString()
-  @Transform(({ value }) => (value ? value.replace(`${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}/`, '') : ''))
+  @Transform(({ value }) => (value ? sanitizePath(value).replace(`${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}/`, '') : ''))
   path: string
 }
 
@@ -37,10 +38,12 @@ export class SpaceRootDto implements SpaceRootProps {
 
   @IsNotEmpty()
   @IsString()
+  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
   alias: string
 
   @IsNotEmpty()
   @IsString()
+  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
   name: string
 
   @IsDefined()

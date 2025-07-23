@@ -20,7 +20,7 @@ import { UserModel } from '../../users/models/user.model'
 import { LOCK_SCOPE } from '../../webdav/constants/webdav'
 import { SpaceFiles } from '../interfaces/space-files.interface'
 import { SpaceEnv } from '../models/space-env.model'
-import { realPathFromRootFile, validRealPath } from '../utils/paths'
+import { realPathFromRootFile, IsRealPathIsDirAndExists } from '../utils/paths'
 import { SpacesManager } from './spaces-manager.service'
 import { SpacesQueries } from './spaces-queries.service'
 
@@ -119,7 +119,7 @@ export class SpacesBrowser {
     if (space.inSharesList) return []
     const fsFiles: FileProps[] = []
     try {
-      await validRealPath(space.realPath, true, true, space.realBasePath)
+      await IsRealPathIsDirAndExists(space.realPath)
     } catch (e) {
       this.logger.warn(`${this.parseFS.name} - ${space.realPath} : ${e.message}`)
       throw new HttpException(e.message, e.httpCode)

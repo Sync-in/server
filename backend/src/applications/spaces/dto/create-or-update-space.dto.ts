@@ -6,6 +6,7 @@
 
 import { Transform, Type } from 'class-transformer'
 import { ArrayMinSize, IsArray, IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { sanitizeName } from '../../files/utils/files'
 import { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto'
 import { MEMBER_TYPE, MEMBER_TYPE_REVERSE } from '../../users/constants/member'
 import { SPACE_ROLE } from '../constants/spaces'
@@ -23,7 +24,7 @@ export class SpaceMemberDto {
 
   @IsNotEmpty()
   @IsInt()
-  spaceRole?: number
+  spaceRole?: SPACE_ROLE = SPACE_ROLE.IS_MEMBER
 
   @IsOptional()
   @IsString()
@@ -46,12 +47,12 @@ export class CreateOrUpdateSpaceDto {
 
   @IsNotEmpty()
   @IsString()
-  @Transform(({ value }) => (value ? value.trim() : ''))
+  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
   name: string
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => (value ? value.trim() : ''))
+  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
   alias?: string
 
   @IsOptional()

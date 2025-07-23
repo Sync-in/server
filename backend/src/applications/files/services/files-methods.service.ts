@@ -16,7 +16,7 @@ import { FILE_OPERATION } from '../constants/operations'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto } from '../dto/file-operations.dto'
 import { FileError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
-import { dirName, fileName, isPathExists, sanitizePathTraversal } from '../utils/files'
+import { checkFileName, dirName, fileName, isPathExists, sanitizeName } from '../utils/files'
 import { SendFile } from '../utils/send-file'
 import { FilesManager } from './files-manager.service'
 
@@ -96,6 +96,7 @@ export class FilesMethods {
   }
 
   async downloadFromUrl(user: UserModel, space: SpaceEnv, downloadDto: DownloadFileDto): Promise<void> {
+    checkFileName(space.realPath)
     try {
       return await this.filesManager.downloadFromUrl(user, space, downloadDto.url)
     } catch (e) {
@@ -104,19 +105,31 @@ export class FilesMethods {
   }
 
   async compress(user: UserModel, space: SpaceEnv, compressFileDto: CompressFileDto): Promise<void> {
+    compressFileDto.name = checkFileName(space.realPath)
     try {
       for (const f of compressFileDto.files) {
+        // sanitize file name
+        f.name = sanitizeName(f.name)
         // handles the case where the file is an anchored file
+        let baseSpace: SpaceEnv
         if (f.path) {
-          const srcSpace = await this.spacesManager.spaceEnv(user, f.path.split('/'))
-          f.path = srcSpace.realPath
+          baseSpace = await this.spacesManager.spaceEnv(user, f.path.split('/'))
+          f.path = baseSpace.realPath
         } else {
-          f.path = f.rootAlias
-            ? (await this.spacesManager.spaceEnv(user, path.join(dirName(space.url), f.rootAlias).split('/'))).realPath
-            : path.join(dirName(space.realPath), f.name)
+          if (f.rootAlias) {
+            baseSpace = await this.spacesManager.spaceEnv(user, path.join(dirName(space.url), f.rootAlias).split('/'))
+            f.path = baseSpace.realPath
+          } else {
+            baseSpace = space
+            f.path = path.resolve(dirName(space.realPath), f.name)
+          }
+        }
+        // prevent path traversal
+        if (!f.path.startsWith(baseSpace.realBasePath)) {
+          return this.handleError(space, FILE_OPERATION.COMPRESS, new FileError(HttpStatus.FORBIDDEN, `${f.name} not allowed`))
         }
         if (!(await isPathExists(f.path))) {
-          return this.handleError(space, FILE_OPERATION.COMPRESS, new FileError(HttpStatus.NOT_FOUND, `${f.name} does not exists`))
+          return this.handleError(space, FILE_OPERATION.COMPRESS, new FileError(HttpStatus.NOT_FOUND, `${f.name} does not exist`))
         }
       }
       return await this.filesManager.compress(user, space, compressFileDto)
@@ -151,12 +164,10 @@ export class FilesMethods {
     path: string
     name: string
   }> {
-    const dstUrl = path.join(
-      sanitizePathTraversal(copyMoveFileDto.dstDirectory),
-      copyMoveFileDto.dstName ? sanitizePathTraversal(copyMoveFileDto.dstName) : fileName(space.realPath)
-    )
-    const dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
+    const dstUrl = path.join(copyMoveFileDto.dstDirectory, copyMoveFileDto.dstName ? copyMoveFileDto.dstName : fileName(space.realPath))
+    let dstSpace: SpaceEnv
     try {
+      dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
       await this.filesManager.copyMove(user, space, dstSpace, isMove)
     } catch (e) {
       this.handleError(space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, dstSpace)
@@ -165,7 +176,7 @@ export class FilesMethods {
   }
 
   private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv) {
-    this.logger.error(`unable to ${action} ${space.url}${dstSpace ? ` -> ${dstSpace.url}` : ''} : ${e}`)
+    this.logger.error(`unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}`)
     if (e instanceof LockConflict) {
       throw new HttpException('The file is locked', HttpStatus.LOCKED)
     } else if (e instanceof FileError) {

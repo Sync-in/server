@@ -307,7 +307,7 @@ export class AdminUsersQueries {
       this.logger.log(`${this.removeUserFromGroup.name} - user (${userId}) was removed from group (${groupId})`)
       this.usersQueries.clearWhiteListCaches([userId])
     } catch (e) {
-      this.logger.error(`${this.removeUserFromGroup.name} - user (${userId}) or group (${groupId}) does not exists : ${e}`)
+      this.logger.error(`${this.removeUserFromGroup.name} - user (${userId}) or group (${groupId}) does not exist : ${e}`)
       throw new Error('Unable to remove user from group')
     }
   }

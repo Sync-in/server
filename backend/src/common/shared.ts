@@ -4,8 +4,9 @@
  * See the LICENSE file for licensing details
  */
 
-export const regExpInvalidFileName = /^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$|[<>:"/\\|?*]/
-export const regexAvoidPathTraversal = /\.\.\//g
+// eslint-disable-next-line no-control-regex
+export const regExpInvalidFileName = /^(?:CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$|[<>:"/\\|?*\x00-\x1f\x80-\x9f]/
+export const regExpPreventPathTraversal = /^(\.\.(\/|\\|$))+/
 export const regExpNumberSuffix = /-\d+$/
 export const forbiddenChars = '\\ / : * ? " < > |'
 

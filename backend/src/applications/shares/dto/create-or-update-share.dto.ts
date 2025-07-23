@@ -7,6 +7,7 @@
 import { Transform, Type } from 'class-transformer'
 import { IsArray, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator'
 import { FileSpace } from '../../files/interfaces/file-space.interface'
+import { sanitizeName, sanitizePath } from '../../files/utils/files'
 import { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto'
 import { MEMBER_TYPE, MEMBER_TYPE_REVERSE } from '../../users/constants/member'
 import { SHARE_TYPE } from '../constants/shares'
@@ -39,12 +40,12 @@ export class ShareMemberDto {
 export class ShareFileSpaceRootDto {
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => (value ? value.trim() : ''))
+  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
   alias: string
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => (value ? value.trim() : ''))
+  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
   name: string
 }
 
@@ -82,6 +83,7 @@ export class ShareFileDto implements Omit<FileSpace, 'mime' | 'name' | 'inTrash'
 
   @IsNotEmpty()
   @IsString()
+  @Transform(({ value }) => sanitizePath(value))
   path: string
 
   @IsOptional()
@@ -101,12 +103,12 @@ export class CreateOrUpdateShareDto {
 
   @IsNotEmpty()
   @IsString()
-  @Transform(({ value }) => (value ? value.trim() : ''))
+  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
   name: string
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => (value ? value.trim() : ''))
+  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
   alias?: string
 
   @IsOptional()

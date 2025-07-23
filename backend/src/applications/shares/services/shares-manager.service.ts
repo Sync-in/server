@@ -182,7 +182,14 @@ export class SharesManager {
           l.permissions = intersectPermissions(space.envPermissions, l.permissions)
         }
         // check file
-        space.setPaths(user, createOrUpdateShareDto.file.space.root.alias, createOrUpdateShareDto.file.path.split('/').slice(space.root.id ? 1 : 0))
+        try {
+          space.setPaths(user, createOrUpdateShareDto.file.space.root.alias, createOrUpdateShareDto.file.path.split('/').slice(space.root.id ? 1 : 0))
+        } catch (e) {
+          if (e instanceof FileError) {
+            throw new HttpException(e.message, e.httpCode)
+          }
+          throw new HttpException(e.message, HttpStatus.BAD_REQUEST)
+        }
         if (!(await isPathExists(space.realPath))) {
           this.logger.warn(`${this.createShare.name} - space location does not exist : *${space.alias}* (${space.id}) : ${space.realPath}`)
           throw new HttpException('The location does not exist', HttpStatus.NOT_FOUND)
@@ -318,7 +325,14 @@ export class SharesManager {
 
     // create a fake space env -> share env
     const pShareEnv: Partial<ShareEnv> = new SpaceEnv(pShare, null, false)
-    pShareEnv.setPaths(user, null, filePath.split('/'))
+    try {
+      pShareEnv.setPaths(user, null, filePath.split('/'))
+    } catch (e) {
+      if (e instanceof FileError) {
+        throw new HttpException(e.message, e.httpCode)
+      }
+      throw new HttpException(e.message, HttpStatus.BAD_REQUEST)
+    }
     // check file
     if (!(await isPathExists(pShareEnv.realPath))) {
       this.logger.warn(
@@ -1088,7 +1102,6 @@ export class SharesManager {
   }
 
   private async notifyGuestLink(user: UserModel, link: SpaceMemberDto | ShareMemberDto, spaceOrShareName: string, action: ACTION) {
-    console.log(spaceOrShareName, action, link)
     if (!link.linkSettings.email) {
       return
     }

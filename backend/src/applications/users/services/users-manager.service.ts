@@ -349,7 +349,7 @@ export class UsersManager {
     if (await this.usersQueries.deletePersonalGroup(groupId)) {
       this.logger.log(`${this.deletePersonalGroup.name} - group (${groupId}) was deleted`)
     } else {
-      this.logger.warn(`${this.deletePersonalGroup.name} - group (${groupId}) does not exists`)
+      this.logger.warn(`${this.deletePersonalGroup.name} - group (${groupId}) does not exist`)
       throw new HttpException('Unable to delete group', HttpStatus.BAD_REQUEST)
     }
   }

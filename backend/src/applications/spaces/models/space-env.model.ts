@@ -121,6 +121,7 @@ export class SpaceEnv implements Pick<Space, 'id' | 'alias' | 'name' | 'enabled'
   setPaths(user: UserModel, rootAlias: string, paths: string[]) {
     this.paths = this.inSharesRepository && rootAlias ? [rootAlias, ...paths] : paths
     if (!this.inSharesList) {
+      // realPathFromSpace may throw a FileError exception
       ;[this.realBasePath, this.realPath] = realPathFromSpace(user, this, true)
       this.dbFile = dbFileFromSpace(user.id, this)
     }

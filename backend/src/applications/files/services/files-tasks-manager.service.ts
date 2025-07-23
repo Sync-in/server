@@ -39,11 +39,15 @@ export class FilesTasksManager {
     )
   }
 
-  createTask(type: FILE_OPERATION, user: UserModel, space: SpaceEnv, dto: any, method: string): FileTask {
+  static getCacheKey(userId: number, taskId?: string): string {
+    return `${CACHE_TASK_PREFIX}-${userId}-${taskId || '*'}`
+  }
+
+  async createTask(type: FILE_OPERATION, user: UserModel, space: SpaceEnv, dto: any, method: string): Promise<FileTask> {
     const taskId: string = crypto.randomUUID()
     const cacheKey = FilesTasksManager.getCacheKey(user.id, taskId)
     const newTask = new FileTask(taskId, type, dirName(space.url), fileName(space.url))
-    this.storeTask(cacheKey, newTask)
+    await this.storeTask(cacheKey, newTask)
     space.task = { cacheKey: cacheKey, props: {} }
     this.filesMethods[method](user, space, dto)
       .then((data: any) => {
@@ -109,10 +113,14 @@ export class FilesTasksManager {
     return sendFile.stream(req, res)
   }
 
-  private storeTask(cacheKey: string, task: FileTask) {
+  private async storeTask(cacheKey: string, task: FileTask) {
     task.startedAt = currentTimeStamp(null, true)
     task.status = FileTaskStatus.PENDING
-    this.cache.set(cacheKey, task, CACHE_TASK_TTL).catch((e: Error) => this.logger.error(`${this.storeTask.name} - ${e}`))
+    try {
+      await this.cache.set(cacheKey, task, CACHE_TASK_TTL)
+    } catch (e) {
+      this.logger.error(`${this.storeTask.name} - ${e}`)
+    }
   }
 
   private async setTaskDone(cacheKey: string, status: FileTaskStatus, result: any): Promise<void> {
@@ -226,9 +234,5 @@ export class FilesTasksManager {
     if (space.task.props.totalSize) {
       space.task.props.progress = (100 * space.task.props.size) / space.task.props.totalSize
     }
-  }
-
-  static getCacheKey(userId: number, taskId?: string): string {
-    return `${CACHE_TASK_PREFIX}-${userId}-${taskId || '*'}`
   }
 }

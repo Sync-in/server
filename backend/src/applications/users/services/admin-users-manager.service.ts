@@ -272,7 +272,7 @@ export class AdminUsersManager {
     if (await this.adminQueries.deleteGroup(groupId)) {
       this.logger.log(`${this.deleteGroup.name} - group (${groupId}) was deleted`)
     } else {
-      this.logger.warn(`${this.deleteGroup.name} - group (${groupId}) does not exists`)
+      this.logger.warn(`${this.deleteGroup.name} - group (${groupId}) does not exist`)
       throw new HttpException('Unable to delete group', HttpStatus.BAD_REQUEST)
     }
   }
@@ -342,7 +342,7 @@ export class AdminUsersManager {
         await removeFiles(userSpace)
         this.logger.log(`${this.deleteUserSpace.name} - user space *${userLogin}* was deleted`)
       } else {
-        this.logger.warn(`${this.deleteUserSpace.name} - user space *${userLogin}* does not exists : ${userSpace}`)
+        this.logger.warn(`${this.deleteUserSpace.name} - user space *${userLogin}* does not exist : ${userSpace}`)
       }
     } catch (e) {
       this.logger.warn(`${this.deleteUserSpace.name} - user space *${userLogin}* (${userSpace}) was not deleted : ${e}`)
@@ -369,7 +369,7 @@ export class AdminUsersManager {
         }
       }
     } else {
-      this.logger.warn(`${this.renameUserSpace.name} - user space *${oldLogin}* does not exists : ${currentUserSpace}`)
+      this.logger.warn(`${this.renameUserSpace.name} - user space *${oldLogin}* does not exist : ${currentUserSpace}`)
       return false
     }
   }

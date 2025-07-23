@@ -15,13 +15,30 @@ import path from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { formatDateISOString } from '../../../common/functions'
-import { currentTimeStamp, regexAvoidPathTraversal } from '../../../common/shared'
+import { currentTimeStamp, isValidFileName, regExpPreventPathTraversal } from '../../../common/shared'
 import { DEFAULT_HIGH_WATER_MARK, EXTRA_MIMES_TYPE } from '../constants/files'
 import type { FileProps } from '../interfaces/file-props.interface'
 import { FileError } from '../models/file-error'
 
-export function sanitizePathTraversal(fPath: string): string {
-  return fPath.replace(regexAvoidPathTraversal, '')
+export function sanitizePath(fPath: string): string {
+  return path.normalize(fPath).replace(regExpPreventPathTraversal, '')
+}
+
+export function sanitizeName(name: string): string {
+  return name
+    .replace(/^\s+|[. ]+$/g, '') // trimStart + trimEnd + strip trailing dots
+    .replace(/[/\\]/g, '') // remove slashes
+    .replace(/\.\./g, '') // remove '..'
+}
+
+export function checkFileName(fPath: string): string {
+  const fName = fileName(fPath)
+  try {
+    isValidFileName(fName)
+    return fName
+  } catch {
+    throw new FileError(HttpStatus.BAD_REQUEST, 'Forbidden characters')
+  }
 }
 
 export function isPathExists(rPath: string): Promise<boolean> {

@@ -4,8 +4,8 @@
  * See the LICENSE file for licensing details
  */
 
-import { sanitizePathTraversal } from '../../files/utils/files'
+import { sanitizePath } from '../../files/utils/files'
 
 export function PATH_TO_SPACE_SEGMENTS(path: string): string[] {
-  return sanitizePathTraversal(path).split('/').filter(Boolean)
+  return sanitizePath(path).split('/').filter(Boolean)
 }

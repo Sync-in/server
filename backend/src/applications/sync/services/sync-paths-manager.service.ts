@@ -57,7 +57,7 @@ export class SyncPathsManager {
     }
     const syncDBProps: SyncDBProps = await this.getDBProps(req.space)
 
-    // ensures the right remote path is stored
+    // important : ensures the right remote path is used and stored
     syncPathDto.remotePath = req.params['*']
     // add permissions (skip end point protection using getEnvPermission)
     syncPathDto.permissions = getEnvPermissions(req.space, req.space.root)

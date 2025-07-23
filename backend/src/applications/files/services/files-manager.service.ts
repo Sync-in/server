@@ -7,6 +7,7 @@
 import { HttpService } from '@nestjs/axios'
 import { HttpStatus, Injectable, Logger } from '@nestjs/common'
 import archiver, { Archiver, ArchiverError } from 'archiver'
+import { AxiosResponse } from 'axios'
 import { PNGStream } from 'canvas'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -33,6 +34,7 @@ import { FileLock } from '../interfaces/file-lock.interface'
 import { FileError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
 import {
+  checkFileName,
   copyFiles,
   createEmptyFile,
   dirName,
@@ -45,6 +47,7 @@ import {
   makeDir,
   moveFiles,
   removeFiles,
+  sanitizeName,
   touchFile,
   uniqueDatedFilePath,
   uniqueFilePathFromDir,
@@ -53,6 +56,7 @@ import {
 } from '../utils/files'
 import { SendFile } from '../utils/send-file'
 import { extractZip } from '../utils/unzip-file'
+import { regExpPrivateIP } from '../utils/url-file'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesQueries } from './files-queries.service'
 
@@ -193,7 +197,8 @@ export class FilesManager {
     }
 
     for await (const part of req.files()) {
-      const partFileName = part.filename.normalize()
+      // important: sanitize file names
+      const partFileName = sanitizeName(part.filename)
       const dstDir = path.join(realParentPath, dirName(partFileName))
       const dstFile = path.join(dstDir, fileName(partFileName))
       // make dir in space
@@ -225,6 +230,7 @@ export class FilesManager {
   }
 
   async mkFile(user: UserModel, space: SpaceEnv, overwrite = false, checkLocks = true, checkDocument = false): Promise<void> {
+    checkFileName(space.realPath)
     if (!overwrite && (await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.BAD_REQUEST, 'Resource already exists')
     }
@@ -243,6 +249,7 @@ export class FilesManager {
   }
 
   async mkDir(user: UserModel, space: SpaceEnv, recursive = false, dav?: { depth: LOCK_DEPTH; lockTokens: string[] }): Promise<void> {
+    checkFileName(space.realPath)
     if (!recursive) {
       if (await isPathExists(space.realPath)) {
         throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
@@ -412,8 +419,9 @@ export class FilesManager {
   }
 
   async downloadFromUrl(user: UserModel, space: SpaceEnv, url: string): Promise<void> {
-    const rPath = await uniqueFilePathFromDir(space.realPath)
+    this.logger.log(`${this.downloadFromUrl.name} : ${url}`)
     // create lock
+    const rPath = await uniqueFilePathFromDir(space.realPath)
     const dbFile = space.dbFile
     dbFile.path = path.join(dirName(dbFile.path), fileName(space.realPath))
     const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, DEPTH.RESOURCE)
@@ -422,26 +430,51 @@ export class FilesManager {
     }
     // tasking
     if (space.task.cacheKey) {
+      let headRes: AxiosResponse
+
       try {
-        const pr = await this.http.axiosRef({ method: HTTP_METHOD.HEAD, url: url })
-        if ('content-length' in pr.headers) {
-          space.task.props.totalSize = parseInt(pr.headers['content-length'], 10) || null
+        headRes = await this.http.axiosRef({ method: HTTP_METHOD.HEAD, url: url, maxRedirects: 1 })
+      } catch (e) {
+        // release lock
+        await this.filesLockManager.removeLock(fileLock.key)
+        this.logger.error(`${this.downloadFromUrl.name} - ${url} : ${e}`)
+        throw new FileError(HttpStatus.BAD_REQUEST, 'Unable to download file')
+      }
+
+      if (regExpPrivateIP.test(headRes.request.socket.remoteAddress)) {
+        // release lock
+        await this.filesLockManager.removeLock(fileLock.key)
+        // prevent SSRF attack
+        throw new FileError(HttpStatus.FORBIDDEN, 'Access to internal IP addresses is forbidden')
+      }
+
+      // attempt to retrieve the Content-Length header
+      try {
+        if ('content-length' in headRes.headers) {
+          space.task.props.totalSize = parseInt(headRes.headers['content-length'], 10) || null
         }
       } catch (e) {
-        this.logger.warn(`${this.downloadFromUrl.name} - ${e}`)
+        this.logger.debug(`${this.downloadFromUrl.name} - content-length : ${e}`)
       }
       FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DOWNLOAD, rPath)
     }
     // do
     try {
-      const r = await this.http.axiosRef({ method: HTTP_METHOD.GET, url: url, responseType: 'stream' })
-      await writeFromStream(rPath, r.data)
+      const getRes = await this.http.axiosRef({ method: HTTP_METHOD.GET, url: url, responseType: 'stream', maxRedirects: 1 })
+      if (regExpPrivateIP.test(getRes.request.socket.remoteAddress)) {
+        // Prevent SSRF attacks and perform a DNS-rebinding check if a HEAD request has already been made
+        throw new FileError(HttpStatus.FORBIDDEN, 'Access to internal IP addresses is forbidden')
+      }
+      await writeFromStream(rPath, getRes.data)
     } finally {
+      // release lock
       await this.filesLockManager.removeLock(fileLock.key)
     }
   }
 
   async compress(user: UserModel, space: SpaceEnv, dto: CompressFileDto): Promise<void> {
+    // This method is currently used only by files-methods.service, which handles input sanitization.
+    // If it is used in other services in the future, make sure to refactor accordingly to sanitize inputs properly.
     const srcPath = dirName(space.realPath)
     // todo: a guest link tasksPath should be in specific directory (guest link has no home)
     const dstPath = await uniqueFilePathFromDir(path.join(dto.compressInDirectory ? srcPath : user.tasksPath, `${dto.name}.${dto.extension}`))

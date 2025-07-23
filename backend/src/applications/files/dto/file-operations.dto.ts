@@ -6,6 +6,8 @@
 
 import { Transform } from 'class-transformer'
 import { ArrayMinSize, IsArray, IsBoolean, IsDefined, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator'
+import { RejectIfMatch } from '../../../common/decorators'
+import { regExpInvalidFileName } from '../../../common/shared'
 import { tarExtension, tarGzExtension } from '../constants/compress'
 
 export class CopyMoveFileDto {
@@ -15,13 +17,22 @@ export class CopyMoveFileDto {
 
   @IsOptional()
   @IsString()
+  @RejectIfMatch(regExpInvalidFileName, { message: 'Forbidden characters' })
   // renaming use case
   dstName?: string
 }
 
 export class DownloadFileDto {
   @IsNotEmpty()
-  @IsUrl()
+  @IsUrl({
+    // only allow HTTP(S)
+    protocols: ['http', 'https'],
+    require_protocol: true,
+    require_valid_protocol: true,
+    // reject exotic schemes and underscores
+    allow_underscores: false,
+    allow_trailing_dot: false
+  })
   url: string
 }
 
@@ -33,9 +44,10 @@ export class MakeFileDto {
 }
 
 export class CompressFileDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  name: string
+  @RejectIfMatch(regExpInvalidFileName, { message: 'Forbidden characters' })
+  name?: string // only used on frontend
 
   @IsDefined()
   @IsBoolean()

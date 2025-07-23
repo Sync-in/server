@@ -5,26 +5,31 @@
  */
 
 import { HttpStatus } from '@nestjs/common'
+import fs from 'fs/promises'
 import path from 'node:path'
 import { FileDBProps } from '../../files/interfaces/file-db-props.interface'
 import { FileProps } from '../../files/interfaces/file-props.interface'
 import { FileError } from '../../files/models/file-error'
-import { isPathExists, isPathIsDir } from '../../files/utils/files'
 import { UserModel } from '../../users/models/user.model'
 import { CACHE_QUOTA_SPACE_PREFIX, CACHE_QUOTA_USER_PREFIX } from '../constants/cache'
 import { SPACE_REPOSITORY } from '../constants/spaces'
 import { SpaceEnv } from '../models/space-env.model'
 import { SpaceModel } from '../models/space.model'
 
-export async function validRealPath(rPath: string, onlyDir: boolean = true, mustExists: boolean = true, bPath?: string) {
-  if (bPath && !rPath.startsWith(bPath)) {
-    throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
-  }
-  if (mustExists && !(await isPathExists(rPath))) {
-    throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
-  }
-  if (onlyDir && !(await isPathIsDir(rPath))) {
-    throw new FileError(HttpStatus.FORBIDDEN, 'Location is not a directory')
+export async function IsRealPathIsDirAndExists(rPath: string) {
+  try {
+    const stats = await fs.stat(rPath)
+    if (!stats.isDirectory()) {
+      throw new FileError(HttpStatus.BAD_REQUEST, 'Location is not a directory')
+    }
+  } catch (e) {
+    if (e instanceof FileError) {
+      throw new FileError(e.httpCode, e.message)
+    }
+    if (e.code === 'ENOENT') {
+      throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
+    }
+    throw new FileError(HttpStatus.BAD_REQUEST, e.message)
   }
 }
 
@@ -67,7 +72,11 @@ export function realPathFromSpace(user: UserModel, space: SpaceEnv, withBasePath
   } else {
     throw new FileError(HttpStatus.NOT_FOUND, 'Space root not found')
   }
-  const rPath = path.join(bPath, ...fPath)
+  const rPath = path.resolve(bPath, ...fPath)
+  // prevent path traversal
+  if (!rPath.startsWith(bPath)) {
+    throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
+  }
   return withBasePath ? [bPath, rPath] : rPath
 }
 

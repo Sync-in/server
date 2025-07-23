@@ -15,6 +15,7 @@ import { createSlug, regExpNumberSuffix } from '../../../common/shared'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DEFAULT_FILTERS } from '../../files/constants/files'
+import { FileError } from '../../files/models/file-error'
 import { dirListFileNames, dirSize, getProps, isPathExists, moveFiles, removeFiles } from '../../files/utils/files'
 import { LINK_TYPE } from '../../links/constants/links'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
@@ -145,7 +146,7 @@ export class SpacesManager {
       return space
     } catch (e) {
       this.logger.warn(`${this.spaceEnv.name} - *${space.alias}* : ${e}`)
-      throw new HttpException(e.message, e.httpCode)
+      throw new HttpException(e.message, e instanceof FileError ? e.httpCode : HttpStatus.BAD_REQUEST)
     }
   }
 
@@ -724,7 +725,7 @@ export class SpacesManager {
       await removeFiles(spaceLocation)
       this.logger.warn(`${this.deleteSpaceLocation.name} - space *${spaceAlias}* location was deleted`)
     } else {
-      this.logger.warn(`${this.deleteSpaceLocation.name} - space *${spaceAlias}* location does not exists : ${spaceLocation}`)
+      this.logger.warn(`${this.deleteSpaceLocation.name} - space *${spaceAlias}* location does not exist : ${spaceLocation}`)
     }
   }
 
@@ -749,7 +750,7 @@ export class SpacesManager {
         }
       }
     } else {
-      this.logger.warn(`${this.renameSpaceLocation.name} - *${oldSpaceAlias}* space location does not exists : ${currentSpaceLocation}`)
+      this.logger.warn(`${this.renameSpaceLocation.name} - *${oldSpaceAlias}* space location does not exist : ${currentSpaceLocation}`)
       return false
     }
   }
