@@ -32,7 +32,9 @@
           <div class="card-body align-self-center p-0 my-1">
             @switch (f.shortMime) {
               @case ('image') {
-                <img src="{{f.thumbnailUrl}}?size=256" alt="" class="img-fluid" [style.height.px]="cardImageSize">
+                <div class="d-flex align-items-center" [style.height.px]="cardImageSize">
+                  <img src="{{f.thumbnailUrl}}?size=256" alt="" class="img-fluid" [style.max-height.px]="cardImageSize">
+                </div>
               }
               @case ('media') {
                 <app-files-viewer-media [currentHeight]="cardImageSize" [fileUrl]="f.dataUrl"></app-files-viewer-media>

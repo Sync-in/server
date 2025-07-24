@@ -16,8 +16,8 @@
   <div class="modal-body">
     @switch (currentFile.shortMime) {
       @case ('image') {
-        <div class="d-flex justify-content-center bg-black">
-          <img [src]="currentFile.dataUrl" [style.height.px]="currentHeight" alt="" class="img-fluid align-self-center">
+        <div class="d-flex justify-content-center bg-black" [style.height.px]="currentHeight">
+          <img [src]="currentFile.dataUrl" [style.max-height.px]="currentHeight" alt="" class="img-fluid align-self-center">
         </div>
       }
       @case ('pdf') {
