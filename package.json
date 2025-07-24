@@ -32,6 +32,7 @@
     "release:bump": "commit-and-tag-version",
     "release:bump:dry": "npm run release:bump -- --dry-run",
     "lint": "npm run lint -ws",
+    "test": "npm -w backend test",
     "start": "node dist/server/main.js",
     "reset": "rm -Rf frontend/node_modules frontend/.angular backend/node_modules node_modules; npm cache clean --force",
     "docker:build": "docker build -t $npm_package_name .",
