@@ -30,20 +30,9 @@ declare const window: any
 
 @Injectable({ providedIn: 'root' })
 export class LayoutService {
-  // States
-  private readonly screenMediumSize = 767 // px
-  private readonly screenSmallSize = 576 // px
   public currentRightSideBarTab: string | null = null
   // Resize event
   public resizeEvent = new BehaviorSubject<void | null>(null)
-  // Network events
-  private _networkIsOnline = new BehaviorSubject<boolean>(navigator.onLine)
-  public networkIsOnline: Observable<boolean> = this._networkIsOnline
-    .asObservable()
-    .pipe(mergeWith(fromEvent(window, 'online').pipe(map(() => true)), fromEvent(window, 'offline').pipe(map(() => false))))
-  private preferTheme = fromEvent(window.matchMedia('(prefers-color-scheme: dark)'), 'change').pipe(
-    map((e: any) => (e.matches ? themeDark : themeLight))
-  )
   public switchTheme = new BehaviorSubject<string>(sessionStorage.getItem('themeMode') || getTheme())
   // Toggle Left sidebar tabs (1: open / 2: collapse / 3: toggle)
   public toggleLeftSideBar = new BehaviorSubject<number>(this.isSmallerMediumScreen() ? 2 : 1)
@@ -64,10 +53,21 @@ export class LayoutService {
   public breadcrumbNav = new BehaviorSubject<BreadCrumbUrl>({ url: '' })
   // Navigation breadcrumb icon
   public breadcrumbIcon = new BehaviorSubject<IconDefinition>(null)
+  public minimizedWindows = new BehaviorSubject<AppWindow[]>([])
+  // States
+  private readonly screenMediumSize = 767 // px
+  private readonly screenSmallSize = 576 // px
+  // Network events
+  private _networkIsOnline = new BehaviorSubject<boolean>(navigator.onLine)
+  public networkIsOnline: Observable<boolean> = this._networkIsOnline
+    .asObservable()
+    .pipe(mergeWith(fromEvent(window, 'online').pipe(map(() => true)), fromEvent(window, 'offline').pipe(map(() => false))))
+  private preferTheme = fromEvent(window.matchMedia('(prefers-color-scheme: dark)'), 'change').pipe(
+    map((e: any) => (e.matches ? themeDark : themeLight))
+  )
   // Modal section
   private modalIDS: (number | string)[] = []
   private readonly dialogConfig = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
-  public minimizedWindows = new BehaviorSubject<AppWindow[]>([])
 
   constructor(
     private readonly title: Title,
@@ -121,12 +121,6 @@ export class LayoutService {
 
   toggleTheme() {
     this.setTheme(this.switchTheme.getValue() === themeLight ? themeDark : themeLight)
-  }
-
-  private setTheme(theme: string) {
-    this.electron.send(EVENT.MISC.SWITCH_THEME, theme)
-    this.ngZone.run(() => this.switchTheme.next(theme))
-    sessionStorage.setItem('themeMode', theme)
   }
 
   openDialog(dialog: any, size: 'sm' | 'md' | 'lg' | 'xl' | 'full' = 'md', componentStates: any = {}): BsModalRef {
@@ -191,8 +185,10 @@ export class LayoutService {
   }
 
   openContextMenu(event: any, component: ContextMenuComponent<any>) {
-    this.contextMenu.closeAll()
-    setTimeout(() => this.contextMenu.show(component, event.type === 'contextmenu' ? event : event.srcEvent), 0)
+    if (this.contextMenu.hasOpenMenu()) {
+      this.contextMenu.closeAll()
+    }
+    setTimeout(() => this.contextMenu.show(component, event.type === 'contextmenu' ? event : event.srcEvent), 5)
   }
 
   sendNotification(
@@ -266,5 +262,11 @@ export class LayoutService {
   clean() {
     this.toggleRSideBar(false)
     this.closeDialog(null, null, true)
+  }
+
+  private setTheme(theme: string) {
+    this.electron.send(EVENT.MISC.SWITCH_THEME, theme)
+    this.ngZone.run(() => this.switchTheme.next(theme))
+    sessionStorage.setItem('themeMode', theme)
   }
 }
