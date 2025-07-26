@@ -82,6 +82,7 @@ If you find it useful, you can:
 - 💖 Support the project via :
    - [Paypal](https://www.paypal.com/donate/?business=HU3F3CMDDH7YJ&no_recurring=0&item_name=I+rely+on+your+donations+to+grow+the+Sync-in+open+source+project.+Thank+you+for+your+support+%E2%80%94+it+truly+makes+a+difference%21&currency_code=EUR)
    - [Liberapay](https://liberapay.com/sync-in)
+   - [Patreon](https://www.patreon.com/sync_in)
 
 ---
 
