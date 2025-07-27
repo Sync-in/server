@@ -564,7 +564,7 @@ export class SpacesQueries {
           groups: countDistinct(spacesMembers.groupId),
           links: sql`COUNT(DISTINCT(CASE WHEN ${spacesMembers.linkId} IS NOT NULL THEN ${spacesMembers.linkId} END))`,
           roots: countDistinct(files.id),
-          shares: sql`CONCAT('[', GROUP_CONCAT(DISTINCT IF(${shares.id} IS NOT NULL, ${shares.id}, NULL)), ']')`.mapWith(JSON.parse)
+          shares: sql`COUNT(DISTINCT(CASE WHEN ${shares.id} IS NOT NULL THEN ${shares.id} END))`
         }
       }
       this.spacesWithDetailsQuery = this.db
@@ -581,19 +581,7 @@ export class SpacesQueries {
         .prepare()
     }
     const r: MySqlQueryResult = await this.spacesWithDetailsQuery.execute({ userId })
-    return Promise.all(
-      r.map(async (s: Partial<SpaceProps>) => {
-        const shareIds: number[] = popFromObject('shares', s.counts)
-        s.counts.shares = 0
-        if (shareIds !== null) {
-          // get child shares count
-          for (const sid of shareIds) {
-            s.counts.shares = s.counts.shares + ((await this.sharesQueries.childSharesCount(sid)) || 1)
-          }
-        }
-        return new SpaceProps(s)
-      })
-    )
+    return r.length ? r.map((s: Partial<SpaceProps>) => new SpaceProps(s)) : []
   }
 
   @CacheDecorator()

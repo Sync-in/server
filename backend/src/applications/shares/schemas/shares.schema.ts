@@ -36,7 +36,7 @@ import { users } from '../../users/schemas/users.schema'
     - parentId is required
     - spaceId & spaceRootId must have the same value as their parents
     - fileId is required when the file is inside the parent share
-    - fileId is not required when child share is directly link to parent share (with a space root or an external path)
+    - fileId is not required when child share is directly linked to parent share (with a space root or an external path)
     - if the share has an external path : file.shareExternalId must match with the first parent share
 */
 
