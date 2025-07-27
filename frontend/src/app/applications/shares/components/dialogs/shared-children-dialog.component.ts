@@ -162,20 +162,12 @@ export class SharedChildrenDialogComponent implements OnInit {
   private recurseChildrenShares(shares: ShareChildModel[], parent: ShareChildModel) {
     for (const s of shares) {
       if (s.parentId === parent.id) {
-        if (typeof parent.children === 'undefined') {
-          parent.children = [s]
-        } else {
-          parent.children.push(s)
-        }
+        parent.children = parent.children ?? []
+        parent.children.push(s)
         this.recurseChildrenShares(shares, s)
-      } else if (parent.id === 0) {
-        if (!s.parentId) {
-          if (typeof parent.children === 'undefined') {
-            parent.children = [s]
-          } else {
-            parent.children.push(s)
-          }
-        }
+      } else if (parent.id === 0 && !s.parentId) {
+        parent.children = parent.children ?? []
+        parent.children.push(s)
         this.recurseChildrenShares(shares, s)
       }
     }
