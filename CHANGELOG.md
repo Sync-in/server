@@ -31,7 +31,7 @@ Thanks to his expertise, several vulnerabilities were identified and patched in 
 His contribution is truly valuable to us, and we’re grateful to have him as part of the Sync-in community 🎉
 
 Good news never comes alone!  
-We’re thrilled to welcome **Thibault** (@tibs) to the Sync-in organization 🌟 !  
+We’re thrilled to welcome **Tibs** (@7185) to the Sync-in organization 🌟 !  
 A big thank-you to him for stepping in and supporting the community.
 
 ## [1.1.1](https://github.com/Sync-in/server/compare/v1.1.0...v1.1.1) (2025-07-20)
