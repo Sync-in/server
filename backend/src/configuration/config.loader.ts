@@ -85,7 +85,7 @@ function setObjectPropertyFromString(obj: any, property: string, value: any): vo
  * Returns a new object containing only the env-var overrides
  * that match existing keys in `config`, nested and cased properly.
  */
-export function getEnvOverrides(config: Record<string, any>): Record<string, any> {
+function getEnvOverrides(config: Record<string, any>): Record<string, any> {
   const result: Record<string, any> = {}
 
   for (const [envKey, rawValue] of Object.entries(process.env)) {

@@ -12,7 +12,7 @@ server:
   restartOnFailure: true
 logger:
   # level: trace | debug | info | warn | error | fatal
-  level: trace
+  level: info
   # stdout : if false logs are written to the run directory (default: true)
   stdout: true
   # colorize output
