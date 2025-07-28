@@ -110,7 +110,7 @@ export class FilesTasksManager {
     } catch (e) {
       throw new HttpException(e.message, e.httpCode)
     }
-    return sendFile.stream(req, res)
+    return await sendFile.stream(req, res)
   }
 
   private async storeTask(cacheKey: string, task: FileTask) {

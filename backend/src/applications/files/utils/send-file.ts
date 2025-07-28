@@ -44,11 +44,17 @@ export class SendFile {
   async stream(req: FastifyRequest, res: FastifyReply): Promise<StreamableFile> {
     // SendStream manages HEAD (no including body in response) & GET request (with body)
     // Ranges, LastModified, Etag are also handled
-    this.fileName = this.downloadName || fileName(this.filePath)
-    const sendResult: SendResult = await send(req.raw, this.filePath, this.sendOptions)
+    // Send function uses decodeURIComponent, but filePath is already decoded : we need to encode it again before passing it.
+    const encodedFilePath = encodeURIComponent(this.filePath)
+    this.fileName = this.downloadName ? encodeURIComponent(this.downloadName) : fileName(encodedFilePath)
+    const sendResult: SendResult = await send(req.raw, encodedFilePath, this.sendOptions)
+    // Check if the path was correctly validated
+    if (sendResult.metadata['path'] === undefined) {
+      throw new FileError(HttpStatus.BAD_REQUEST, 'Location not found')
+    }
     if (this.asAttachment) {
       const downloadName = this.fileName.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      sendResult.headers['content-disposition'] = `attachment; filename="${downloadName}";filename*=UTF-8''${encodeURIComponent(this.fileName)}`
+      sendResult.headers['content-disposition'] = `attachment; filename="${downloadName}";filename*=UTF-8''${this.fileName}`
     }
     res.headers(sendResult.headers)
     res.status(sendResult.statusCode)

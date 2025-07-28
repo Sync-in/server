@@ -64,7 +64,7 @@ export class LinksManager {
       const sendFile: SendFile = this.filesManager.sendFileFromSpace(spaceEnv, true, spaceLink.share.name)
       try {
         await sendFile.checks()
-        return sendFile.stream(req, res)
+        return await sendFile.stream(req, res)
       } catch (e) {
         this.logger.error(`${this.linkAccess.name} - unable to send file : ${e}`)
         throw new HttpException('Unable to download file', HttpStatus.INTERNAL_SERVER_ERROR)

@@ -33,7 +33,7 @@ export class FilesMethods {
     const sendFile: SendFile = this.filesManager.sendFileFromSpace(req.space)
     try {
       await sendFile.checks()
-      return sendFile.stream(req, res)
+      return await sendFile.stream(req, res)
     } catch (e) {
       this.handleError(req.space, req.method, e)
     }
