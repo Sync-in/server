@@ -1,4 +1,24 @@
 
+## [1.2.0](https://github.com/Sync-in/server/compare/v1.1.1...v1.2.0) (2025-07-28)
+
+
+### Features
+
+* allow SYNCIN_ env vars to override default config ([5907f81](https://github.com/Sync-in/server/commit/5907f81e4001d3c86d49465bad7642ac9516ea76))
+* **config:** allow SYNCIN_ env vars to override default config ([c1fcd61](https://github.com/Sync-in/server/commit/c1fcd6141e4a551dd108cf81e9a0c64b8f20391d))
+* **docker:** add PUID/PGID env variables ([c674b73](https://github.com/Sync-in/server/commit/c674b73b282c1eee4bc5e7fb03ecdb3a8e2ec1ff))
+
+
+### Bug Fixes
+
+* **backend:security:** prevent path traversal & SSRF ([d79d28c](https://github.com/Sync-in/server/commit/d79d28c2d6ccf21b2b81bfd0779978e1a5f3c475))
+* **backend:sendfile:** properly encode file paths with special characters and await call to catch errors ([2bf2284](https://github.com/Sync-in/server/commit/2bf2284bb273ac8b06136803717020c4a8ede5a7))
+* **frontend:files:** detect .mp4 video files properly ([4df92a5](https://github.com/Sync-in/server/commit/4df92a531d6bae049a2ebd6beb036b36d21258ca))
+* **frontend:files:** keep aspect ratio for images with large width ([#4](https://github.com/Sync-in/server/issues/4)) ([8ac398a](https://github.com/Sync-in/server/commit/8ac398a795b05fb4565efd12feedc5b0f9e384c7))
+* **frontend:layout:** increase context menu trigger timeout to ensure full rendering ([3c19bce](https://github.com/Sync-in/server/commit/3c19bceeb5cc3f86e3db68b0ae554a686820ca8b))
+* **frontend:shares:** duplicate children in recurseChildrenShares ([09d7b6d](https://github.com/Sync-in/server/commit/09d7b6d37d006390144b558eaf1a0857e648ec6e))
+* **frontend:styles:** fix right sidebar menu height ([4c871d8](https://github.com/Sync-in/server/commit/4c871d88586932c27ab1da40aa4ee513b9f36252))
+
 ## [1.1.1](https://github.com/Sync-in/server/compare/v1.1.0...v1.1.1) (2025-07-20)
 
 
