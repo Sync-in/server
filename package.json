@@ -1,7 +1,7 @@
 {
   "productName": "Sync-in",
   "name": "sync-in-server",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "The secure, open-source platform for file storage, sharing, collaboration, and sync",
   "author": {
     "name": "Johan Legrand",
@@ -29,7 +29,7 @@
     "build": "npm run build -ws",
     "release:build": "npm run build && node scripts/build/release.mjs",
     "release:clean": "rm -rf $npm_package_name*",
-    "release:bump": "commit-and-tag-version",
+    "release:bump": "commit-and-tag-version  --no-commit",
     "release:bump:dry": "npm run release:bump -- --dry-run",
     "lint": "npm run lint -ws",
     "test": "npm -w backend test",
