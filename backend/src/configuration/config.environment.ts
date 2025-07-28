@@ -10,7 +10,7 @@ import { configLoader } from './config.loader'
 import { Configuration } from './config.validation'
 
 export const configuration: Configuration = loadConfiguration()
-export const exportConfiguration: () => Configuration = () => configuration
+export const exportConfiguration: (reload?: boolean) => Configuration = (reload = false) => (reload ? loadConfiguration() : configuration)
 
 function loadConfiguration(): Configuration {
   const config: Configuration = configLoader()

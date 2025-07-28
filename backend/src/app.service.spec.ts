@@ -6,8 +6,13 @@
 
 import { Logger } from '@nestjs/common'
 import cluster from 'node:cluster'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
+import process from 'node:process'
 import { AppService } from './app.service'
-import { configuration } from './configuration/config.environment'
+import { ENVIRONMENT_PREFIX } from './configuration/config.constants'
+import { configuration, exportConfiguration } from './configuration/config.environment'
 
 describe(AppService.name, () => {
   let appService: AppService
@@ -41,5 +46,30 @@ describe(AppService.name, () => {
     expect(() => AppService.clusterize(callBack)).not.toThrow()
     expect(callBack).toHaveBeenCalledTimes(1)
     spyExit.mockClear()
+  })
+
+  it(`should use ${ENVIRONMENT_PREFIX} environment variables to override the configuration`, () => {
+    let conf = exportConfiguration()
+    expect(conf.applications.files.onlyoffice.secret).toBe(undefined)
+    expect(conf.logger.stdout).toBe(true)
+    expect(conf.logger.colorize).toBe(true)
+    const tmpSecretFile = path.join(os.tmpdir(), 'secret')
+    fs.writeFileSync(tmpSecretFile, 'foobar8888')
+    process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_ONLYOFFICE_SECRET`] = 'foobar'
+    process.env[`${ENVIRONMENT_PREFIX}LOGGER_STDOUT`] = 'false'
+    process.env[`${ENVIRONMENT_PREFIX}LOGGER_COLORIZE`] = '"false"'
+    process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_MAXUPLOADSIZE`] = '8888'
+    // docker compose secret file
+    process.env[`${ENVIRONMENT_PREFIX}AUTH_TOKEN_ACCESS_SECRET_FILE`] = tmpSecretFile
+    conf = exportConfiguration(true)
+    expect(conf.applications.files.onlyoffice.secret).toBe('foobar')
+    expect(conf.logger.stdout).toBe(false)
+    expect(conf.logger.colorize).toBe(false)
+    expect(conf.applications.files.maxUploadSize).toBe(8888)
+    expect(conf.auth.token.access.secret).toBe('foobar8888')
+    // cleanup secret file
+    fs.promises.rm(tmpSecretFile, { force: true }).catch((e) => {
+      console.error(e)
+    })
   })
 })
