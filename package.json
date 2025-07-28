@@ -36,8 +36,8 @@
     "start": "node dist/server/main.js",
     "reset": "rm -Rf frontend/node_modules frontend/.angular backend/node_modules node_modules; npm cache clean --force",
     "docker:build": "docker build -t $npm_package_name .",
-    "docker:buildx": "docker buildx build --platform linux/arm64,linux/amd64 --tag syncin/server:latest --tag syncin/server:${npm_package_version} . --push",
-    "docker:start": "docker run --name sync-in -it --rm -e SKIP_INIT=true -p 3000:3000 -v ./environment/environment.yaml:/app/environment/environment.yaml $npm_package_name"
+    "docker:buildx": "docker buildx build --platform linux/arm64,linux/amd64 --tag syncin/server:latest --tag syncin/server:${npm_package_version} --tag syncin/server:$(echo ${npm_package_version} | cut -d. -f1) . --push",
+    "docker:start": "docker run --name sync-in -it --rm -e SKIP_INIT=true -p 8080:8080 -v ./environment/environment.yaml:/app/environment/environment.yaml $npm_package_name"
   },
   "devDependencies": {
     "commit-and-tag-version": "^12.5.1",
