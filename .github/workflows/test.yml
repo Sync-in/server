@@ -1,0 +1,33 @@
+name: Test Workflow
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint code
+        run: npm run lint
+
+      - name: Copy environment file
+        run: |
+          cp environment/environment.dist.yaml environment/environment.yaml
+          sed -i "s|dataPath: /home/|dataPath: /tmp/|" environment/environment.yaml
+
+      - name: Run unit tests
+        run: npm run test
