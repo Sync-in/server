@@ -13,12 +13,10 @@ export class HighlightPipe implements PipeTransform {
       return text
     }
     if (search && text) {
-      let pattern = search.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&')
+      let pattern = search.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
       pattern = pattern
         .split(' ')
-        .filter((t) => {
-          return t.length > 0
-        })
+        .filter((t) => t.length > 0)
         .join('|')
       const regex = new RegExp(pattern, 'gi')
       return text.replace(regex, (match) => `<b>${match}</b>`)

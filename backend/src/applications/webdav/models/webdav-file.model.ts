@@ -76,6 +76,7 @@ export class WebDAVFile implements Omit<FileProps, 'path'> {
     return SUPPORTED_LOCKS
   }
 
+  // eslint-disable-next-line @typescript-eslint/class-literal-property-style
   get lockdiscovery() {
     // implemented in propfind method, used for propname case
     return null

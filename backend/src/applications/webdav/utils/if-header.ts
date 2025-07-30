@@ -12,7 +12,7 @@ import { IfHeader } from '../interfaces/if-header.interface'
 //                     "etag":{"mustMatch":true,"value":"W/\"A weak ETag\""}},
 //                    {"path":"/webdav/specs/","etag":{"mustMatch":true,"value":"\"strong ETag\""}}]
 
-const ifHeaderRegExp = /(?:<([^>]+)>)?\s*\(([^\)]+)\)/g
+const ifHeaderRegExp = /(?:<([^>]+)>)?\s*\(([^)]+)\)/g
 const ifHeaderInternalRegExp = /((not)|\[([^\]]+)\]|<(DAV:no-lock)>|<([^>]+)>|([^\s]+))/gi
 
 function parseIfHeaderInternal(path: string, group: string) {

@@ -73,7 +73,7 @@ export class AuthInterceptor implements HttpInterceptor {
     return throwError(() => error)
   }
 
-  private handleRetries(request: HttpRequest<any>, next: HttpHandler, error: HttpErrorResponse): Observable<any> {
+  private handleRetries(request: HttpRequest<any>, next: HttpHandler, _error: HttpErrorResponse): Observable<any> {
     return next.handle(request).pipe(
       retryWhen((error) =>
         error.pipe(

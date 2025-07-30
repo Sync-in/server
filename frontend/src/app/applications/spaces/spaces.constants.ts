@@ -104,14 +104,14 @@ export const SPACES_MENU: AppMenu = {
       title: SPACES_TITLE.SHORT_PERSONAL_FILES,
       icon: SPACES_ICON.PERSONAL,
       link: SPACES_PATH.PERSONAL_FILES,
-      matchLink: new RegExp(`^${SPACES_PATH.PERSONAL_FILES}[\/|\?]`)
+      matchLink: new RegExp(`^${SPACES_PATH.PERSONAL_FILES}[/|?]`)
     },
     {
       id: USER_PERMISSION.SPACES,
       title: SPACES_TITLE.SPACES,
       icon: SPACES_ICON.SPACES,
       link: SPACES_PATH.SPACES,
-      matchLink: new RegExp(`^${SPACES_PATH.SPACES}(\\?|$)|^${SPACES_PATH.SPACES}\/${SPACES_PATH.FILES}\/(?!${SPACES_PATH.PERSONAL}(\/|\\?|$))`)
+      matchLink: new RegExp(`^${SPACES_PATH.SPACES}(\\?|$)|^${SPACES_PATH.SPACES}/${SPACES_PATH.FILES}/(?!${SPACES_PATH.PERSONAL}(/|\\?|$))`)
     },
     {
       id: USER_PERMISSION.SHARES,
@@ -140,7 +140,7 @@ export const SPACES_MENU: AppMenu = {
       title: SPACES_TITLE.TRASH,
       icon: SPACES_ICON.TRASH,
       link: SPACES_PATH.TRASH,
-      matchLink: new RegExp(`^${SPACES_PATH.SPACES}\/${SPACES_PATH.TRASH}\/`)
+      matchLink: new RegExp(`^${SPACES_PATH.SPACES}/${SPACES_PATH.TRASH}/`)
     }
   ]
 } as const

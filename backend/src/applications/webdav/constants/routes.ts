@@ -29,4 +29,3 @@ export const WEBDAV_SPACES: Record<(typeof WEBDAV_NS)[keyof typeof WEBDAV_NS], {
     spaceRepository: [SPACE_REPOSITORY.TRASH]
   }
 }
-

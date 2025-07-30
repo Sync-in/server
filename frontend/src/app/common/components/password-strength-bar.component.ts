@@ -56,7 +56,7 @@ export class PasswordStrengthBarComponent implements OnChanges {
 
   private static measureStrength(p: string) {
     let _force = 0
-    const _regex = /[$-/:-?{-~!"^_`\[\]]/g // "
+    const _regex = /[$-/:-?{-~!"^_`[\]]/g // "
 
     const _lowerLetters = /[a-z]+/.test(p)
     const _upperLetters = /[A-Z]+/.test(p)
@@ -84,7 +84,7 @@ export class PasswordStrengthBarComponent implements OnChanges {
     return _force
   }
 
-  ngOnChanges(changes: { [propName: string]: SimpleChange }) {
+  ngOnChanges(changes: Record<string, SimpleChange>) {
     const password = changes['passwordToCheck'].currentValue
     this.setBarColors(5, '#DDD')
     if (password) {
@@ -94,18 +94,9 @@ export class PasswordStrengthBarComponent implements OnChanges {
   }
 
   private getColor(s: number) {
-    let idx
-    if (s <= 10) {
-      idx = 0
-    } else if (s <= 20) {
-      idx = 1
-    } else if (s <= 30) {
-      idx = 2
-    } else if (s <= 40) {
-      idx = 3
-    } else {
-      idx = 4
-    }
+    // Compute index from 0 to 4 depending on s value (in steps of 10)
+    const idx = Math.min(Math.floor((s - 1) / 10), 4)
+
     return {
       idx: idx + 1,
       col: this.colors[idx]

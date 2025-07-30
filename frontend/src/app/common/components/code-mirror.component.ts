@@ -33,17 +33,10 @@ function normalizeLineEndings(str: string) {
 declare const CodeMirror: any
 
 @Component({
+  // eslint-disable-next-line @angular-eslint/component-selector
   selector: 'ngx-codemirror',
   template: `
-    <textarea
-      [name]="name"
-      class="ngx-codemirror {{ className }}"
-      [class.ngx-codemirror--focused]="isFocused"
-      autocomplete="off"
-      [autofocus]="autoFocus"
-      #ref
-    >
-    </textarea>
+    <textarea [name]="name" class="ngx-codemirror {{ className }}" [class.ngx-codemirror--focused]="isFocused" autocomplete="off" #ref> </textarea>
   `,
   providers: [
     {
@@ -69,6 +62,7 @@ export class CodeMirrorComponent implements AfterViewInit, OnDestroy, ControlVal
   /* called when the editor is focused or loses focus */
   @Output() focusChange = new EventEmitter<boolean>()
   /* called when the editor is scrolled */
+  // eslint-disable-next-line @angular-eslint/no-output-native
   @Output() scroll = new EventEmitter<ScrollInfo>()
   @ViewChild('ref', { static: true }) ref: ElementRef
   value = ''
@@ -92,7 +86,7 @@ export class CodeMirrorComponent implements AfterViewInit, OnDestroy, ControlVal
    * @link http://codemirror.net/doc/manual.html#config
    */
   @Input()
-  set options(value: { [key: string]: any }) {
+  set options(value: Record<string, any>) {
     this._options = value
     if (!this._differ && value) {
       this._differ = this._differs.find(value).create()

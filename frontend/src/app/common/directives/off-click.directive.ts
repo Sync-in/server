@@ -7,6 +7,7 @@
 import { Directive, HostListener, Input, OnDestroy, OnInit } from '@angular/core'
 
 @Directive({
+  // eslint-disable-next-line @angular-eslint/directive-selector
   selector: '[offClick]'
 })
 export class OffClickDirective implements OnInit, OnDestroy {
