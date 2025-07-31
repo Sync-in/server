@@ -12,8 +12,6 @@ _Welcome to the official Sync-in server repository!_
 - 🧪 [Try the demo](https://sync-in.com/docs/demo)
 
 <a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
-<a href="https://www.paypal.com/donate/?business=HU3F3CMDDH7YJ&no_recurring=0&item_name=I+rely+on+your+donations+to+grow+the+Sync-in+open+source+project.+Thank+you+for+your+support+%E2%80%94+it+truly+makes+a+difference%21&currency_code=EUR" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-blue.svg" alt="Paypal"/></a>
-<a href="https://liberapay.com/sync-in/donate" target="_blank"><img src="https://img.shields.io/badge/Donate-LiberaPay-yellow.svg" alt="LiberaPay"/></a>
 <a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/badge/Discord-Online-brightgreen.svg" alt="Discord"/></a>
 
 The **Sync-in Server** is designed to run on your own infrastructure, it gives you **full control over your data** while offering a modern,
@@ -79,10 +77,7 @@ If you find it useful, you can:
 - 💬 Join the community on :
    - [Discord](https://discord.gg/qhJyzwaymT)
    - [Stack Overflow](https://stackoverflow.com/questions/tagged/sync-in)
-- 💖 Support the project via :
-   - [Paypal](https://www.paypal.com/donate/?business=HU3F3CMDDH7YJ&no_recurring=0&item_name=I+rely+on+your+donations+to+grow+the+Sync-in+open+source+project.+Thank+you+for+your+support+%E2%80%94+it+truly+makes+a+difference%21&currency_code=EUR)
-   - [Liberapay](https://liberapay.com/sync-in)
-   - [Patreon](https://www.patreon.com/sync_in)
+- 💖 [Support the project !](https://sync-in.com/support)
 
 ---
 
