@@ -107,7 +107,8 @@ export class FilesManager {
     } else if (!(await isPathExists(dirName(space.realPath)))) {
       throw new FileError(HttpStatus.CONFLICT, 'Parent must exists')
     }
-    let fileLock: FileLock
+    /* File Lock */
+    let fileLock: FileLock | undefined
     if (options?.dav) {
       // check locks
       await this.filesLockManager.checkConflicts(space.dbFile, options?.dav?.depth || DEPTH.RESOURCE, {
@@ -122,32 +123,26 @@ export class FilesManager {
       }
       fileLock = lock
     }
-    // check range
-    let startRange = 0
-    if ((fExists || fTmpExists) && req.headers['content-range']) {
-      // with PUT method, some webdav clients use the `content-range` header,
-      // which is normally reserved for a response to a request containing the `range` header.
-      // However, for more compatibility let's accept it
-      const match = /\d+/.exec(req.headers['content-range'])
-      if (!match.length) {
-        if (fileLock) {
-          await this.filesLockManager.removeLock(fileLock.key)
-        }
-        throw new FileError(HttpStatus.BAD_REQUEST, 'Content-range : header is malformed')
-      }
-      startRange = parseInt(match[0], 10)
-      const size = await fileSize(options?.tmpPath || space.realPath)
-      if (startRange !== size) {
-        if (fileLock) {
-          await this.filesLockManager.removeLock(fileLock.key)
-        }
-        throw new FileError(HttpStatus.BAD_REQUEST, 'Content-range : start offset does not match the current file size')
-      }
-    }
-    // todo: check file in db to update
-    // todo : versioning here
-    let checksum: string
     try {
+      // check range
+      let startRange = 0
+      if ((fExists || fTmpExists) && req.headers['content-range']) {
+        // with PUT method, some webdav clients use the `content-range` header,
+        // which is normally reserved for a response to a request containing the `range` header.
+        // However, for more compatibility let's accept it
+        const match = /\d+/.exec(req.headers['content-range'])
+        if (!match.length) {
+          throw new FileError(HttpStatus.BAD_REQUEST, 'Content-range : header is malformed')
+        }
+        startRange = parseInt(match[0], 10)
+        const size = await fileSize(options?.tmpPath || space.realPath)
+        if (startRange !== size) {
+          throw new FileError(HttpStatus.BAD_REQUEST, 'Content-range : start offset does not match the current file size')
+        }
+      }
+      // todo: check file in db to update
+      // todo : versioning here
+      let checksum: string
       if (options?.checksumAlg) {
         checksum = await writeFromStreamAndChecksum(options?.tmpPath || space.realPath, req.raw, startRange, options.checksumAlg)
       } else {
@@ -166,15 +161,19 @@ export class FilesManager {
           throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Unable to move tmp file to dst file')
         }
       }
+      if (options?.checksumAlg) {
+        return checksum
+      }
+      return fExists
     } finally {
       if (fileLock) {
-        await this.filesLockManager.removeLock(fileLock.key)
+        try {
+          await this.filesLockManager.removeLock(fileLock.key)
+        } catch (e) {
+          this.logger.warn(`Failed to remove lock ${fileLock.key}: ${e}`)
+        }
       }
     }
-    if (options?.checksumAlg) {
-      return checksum
-    }
-    return fExists
   }
 
   async saveMultipart(user: UserModel, space: SpaceEnv, req: FastifySpaceRequest) {
