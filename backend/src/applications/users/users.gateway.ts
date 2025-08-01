@@ -19,6 +19,7 @@ import { JwtIdentityPayload } from '../../authentication/interfaces/jwt-payload.
 import { sleep } from '../../common/functions'
 import { GetWsUser } from '../../infrastructure/websocket/decorators/web-socket-user.decorator'
 import { AuthenticatedSocketIO } from '../../infrastructure/websocket/interfaces/auth-socket-io.interface'
+import { getClientAddress } from '../../infrastructure/websocket/utils'
 import { USER_ONLINE_STATUS } from './constants/user'
 import { USER_ROOM_PREFIX, USERS_WS } from './constants/websocket'
 import { EventChangeOnlineStatus, EventUpdateOnlineStatus, UserOnline } from './interfaces/websocket.interface'
@@ -47,7 +48,7 @@ export class WebSocketUsers implements OnGatewayInit, OnGatewayConnection, OnGat
     )
     this.sendAllOnlineUsers(socket.user.id).catch((e: Error) => this.logger.error(`${this.handleConnection.name} - ${e}`))
     this.logger.log(
-      `Connected: *${socket.user.login}* (${socket.user.id}) [${socket.id}] ${socket.handshake.address} ${socket.handshake.headers['user-agent']}`
+      `Connected: *${socket.user.login}* (${socket.user.id}) [${socket.id}] ${getClientAddress(socket)} ${socket.handshake.headers['user-agent']}`
     )
   }
 
@@ -55,7 +56,7 @@ export class WebSocketUsers implements OnGatewayInit, OnGatewayConnection, OnGat
     socket.leave(`${USER_ROOM_PREFIX}${socket.user.id}`)
     this.sendOfflineUser(socket.user.id).catch((e: Error) => this.logger.error(`${this.handleDisconnect.name} - ${e}`))
     this.logger.log(
-      `Disconnected: *${socket.user.login}* (${socket.user.id}) [${socket.id}] ${socket.handshake.address} ${socket.handshake.headers['user-agent']}`
+      `Disconnected: *${socket.user.login}* (${socket.user.id}) [${socket.id}] ${getClientAddress(socket)} ${socket.handshake.headers['user-agent']}`
     )
   }
 

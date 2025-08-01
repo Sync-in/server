@@ -15,6 +15,7 @@ import { Namespace, ServerOptions, Socket } from 'socket.io'
 import { USERS_WS } from '../../../applications/users/constants/websocket'
 import { type JwtPayload } from '../../../authentication/interfaces/jwt-payload.interface'
 import { configuration } from '../../../configuration/config.environment'
+import { getClientAddress } from '../utils'
 import { ClusterAdapter } from './cluster.adapter'
 import { RedisAdapter } from './redis.adapter'
 
@@ -97,7 +98,7 @@ export class WebSocketAdapter extends IoAdapter {
   }
 
   private onAuthError(error: string, socket: Socket, next: (err?: Error) => void) {
-    this.logger.warn(`${error} - ${socket.handshake.address} ${socket.id} ${socket.handshake.url} ${socket.handshake.headers['user-agent']}`)
+    this.logger.warn(`${error} - ${getClientAddress(socket)} ${socket.id} ${socket.handshake.url} ${socket.handshake.headers['user-agent']}`)
     next(new WsException('Unauthorized'))
   }
 }
