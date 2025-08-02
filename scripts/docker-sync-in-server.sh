@@ -11,13 +11,12 @@ if [ "${SKIP_INIT}" != "true" ]; then
       fi
       # if INIT_ADMIN is defined (regardless of its value)
       if [ "${INIT_ADMIN+x}" ]; then
+        echo "INIT_ADMIN invoked"
         # create an administrator account if one doesn’t already exist, using the supplied login and password when provided
         if ! node server/infrastructure/database/scripts/create-user.js --role admin --login "${INIT_ADMIN_LOGIN}" --password "${INIT_ADMIN_PASSWORD}"; then
           echo "Error: unable to create administrator !" >&2
           exit 1
         fi
-      else
-        echo "SKIP_INIT_ADMIN invoked"
       fi
       touch .init
       chmod -R 755 /app/data
