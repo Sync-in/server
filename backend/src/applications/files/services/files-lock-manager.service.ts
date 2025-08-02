@@ -72,7 +72,7 @@ export class FilesLockManager {
       davLock: davLock
     }
     this.logger.verbose(`${this.create.name} - ${key}`)
-    this.cache.set(key, lock, ttl).catch((e: Error) => this.logger.error(`${this.create.name} - ${e}`))
+    await this.cache.set(key, lock, ttl)
     return [true, lock]
   }
 
