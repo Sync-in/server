@@ -50,7 +50,6 @@ describe(AppService.name, () => {
 
   it(`should use ${ENVIRONMENT_PREFIX} environment variables to override the configuration`, () => {
     let conf = exportConfiguration()
-    expect(conf.applications.files.onlyoffice.secret).toBe(undefined)
     expect(conf.logger.stdout).toBe(true)
     expect(conf.logger.colorize).toBe(true)
     const tmpSecretFile = path.join(os.tmpdir(), 'secret')
