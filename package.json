@@ -29,7 +29,7 @@
     "build": "npm run build -ws",
     "release:build": "npm run build && node scripts/build/release.mjs",
     "release:clean": "rm -rf $npm_package_name*",
-    "release:bump": "commit-and-tag-version  --no-commit",
+    "release:bump": "commit-and-tag-version",
     "release:bump:dry": "npm run release:bump -- --dry-run",
     "lint": "npm run lint -ws",
     "test": "npm -w backend test",
