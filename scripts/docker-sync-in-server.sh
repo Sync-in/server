@@ -9,7 +9,8 @@ if [ "${SKIP_INIT}" != "true" ]; then
         echo "Error: unable to migrate database schema !" >&2
         exit 1
       fi
-      if [ "${SKIP_INIT_ADMIN}" != "true" ]; then
+      # if INIT_ADMIN is defined (regardless of its value)
+      if [ "${INIT_ADMIN+x}" ]; then
         # create an administrator account if one doesn’t already exist, using the supplied login and password when provided
         if ! node server/infrastructure/database/scripts/create-user.js --role admin --login "${INIT_ADMIN_LOGIN}" --password "${INIT_ADMIN_PASSWORD}"; then
           echo "Error: unable to create administrator !" >&2
