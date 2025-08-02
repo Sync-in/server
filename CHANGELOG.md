@@ -1,3 +1,16 @@
+
+## [1.2.1](https://github.com/Sync-in/server/compare/v1.2.0...v1.2.1) (2025-08-02)
+
+
+### Bug Fixes
+
+* **backend:files:** await lock creation to prevent premature destruction ([05f1a98](https://github.com/Sync-in/server/commit/05f1a98077eceb33fdc3b8312fc0884870c40a38))
+* **backend:files:** remove duplicate extension on compressed archives introduced by path-traversal security patch ([9deeafc](https://github.com/Sync-in/server/commit/9deeafcd2cacd6371e0e423416425511ae3e9ff7))
+* **backend:files:** restore folder upload regression after path-traversal patch ([3204fd0](https://github.com/Sync-in/server/commit/3204fd0524b87edd0a7450bb3d27315e5a390452))
+* **backend:users:** support client WebSocket IP from x-forwarded-for when trustProxy is enabled ([3e66c40](https://github.com/Sync-in/server/commit/3e66c40b6d0884b66b8f45c183ea0253903e4c16))
+* **docker:** use INIT_ADMIN env var to control admin account creation ([c6bb358](https://github.com/Sync-in/server/commit/c6bb3589e832bf46a492814bc05e2d8de2699435))
+* **frontend:files:** correct folder drag-and-drop for browsers without webkitRelativePath ([e0115ec](https://github.com/Sync-in/server/commit/e0115ec38805c1dfcd39ab7522c81549ec05bdd4))
+
 ## [1.2.0](https://github.com/Sync-in/server/compare/v1.1.1...v1.2.0) (2025-07-28)
 
 ### Features
