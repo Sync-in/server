@@ -5,6 +5,7 @@
  */
 
 import { join } from 'node:path'
+import { CSRF_KEY, WS_KEY } from '../authentication/constants/auth'
 import { transformAndValidate } from '../common/functions'
 import { configLoader } from './config.loader'
 import { Configuration } from './config.validation'
@@ -16,7 +17,8 @@ function loadConfiguration(): Configuration {
   const config: Configuration = configLoader()
   // AUTHENTICATION
   // CSRF & WS settings
-  config.auth.token.csrf = config.auth.token.ws = { ...config.auth.token.refresh }
+  config.auth.token.csrf = { ...config.auth.token.refresh, name: CSRF_KEY }
+  config.auth.token.ws = { ...config.auth.token.refresh, name: WS_KEY }
   // APPLICATIONS CONFIGURATION
   // SPACES & FILES
   if (!config.applications.files.dataPath) {
