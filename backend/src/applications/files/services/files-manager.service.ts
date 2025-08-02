@@ -480,7 +480,8 @@ export class FilesManager {
     // If it is used in other services in the future, make sure to refactor accordingly to sanitize inputs properly.
     const srcPath = dirName(space.realPath)
     // todo: a guest link tasksPath should be in specific directory (guest link has no home)
-    const dstPath = await uniqueFilePathFromDir(path.join(dto.compressInDirectory ? srcPath : user.tasksPath, `${dto.name}.${dto.extension}`))
+    const archiveExt = dto.name.endsWith(dto.extension) ? '' : `.${dto.extension}`
+    const dstPath = await uniqueFilePathFromDir(path.join(dto.compressInDirectory ? srcPath : user.tasksPath, `${dto.name}${archiveExt}`))
     const archive: Archiver = archiver('tar', {
       gzip: dto.extension === tarGzExtension,
       gzipOptions: {
