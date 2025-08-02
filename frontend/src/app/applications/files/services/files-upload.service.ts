@@ -11,6 +11,7 @@ import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applicatio
 import { lastValueFrom, Observable } from 'rxjs'
 import { filter, tap } from 'rxjs/operators'
 import { supportUploadDirectory } from '../../../common/utils/functions'
+import { FileUpload } from '../interfaces/file-upload.interface'
 import { FilesTasksService } from './files-tasks.service'
 import { FilesService } from './files.service'
 
@@ -24,7 +25,7 @@ export class FilesUploadService {
     private readonly filesTasksService: FilesTasksService
   ) {}
 
-  async addFiles(files: File[]) {
+  async addFiles(files: FileUpload[]) {
     const apiRoute = `${API_FILES_OPERATION_UPLOAD}/${this.filesService.currentRoute}`
     const taskReqs: [FileTask, Observable<any>][] = []
 
@@ -75,13 +76,14 @@ export class FilesUploadService {
     task.props.progress = Math.round((100 * ev.loaded) / ev.total)
   }
 
-  private sortFiles(files: File[]): Record<string, { nb: number; size: number; form: FormData }> {
+  private sortFiles(files: FileUpload[]): Record<string, { nb: number; size: number; form: FormData }> {
     /* Separate files in root directory and directories */
     const sort: Record<string, { nb: number; size: number; form: FormData }> = {}
     for (const f of files) {
-      const key = f.webkitRelativePath ? f.webkitRelativePath.split('/')[0] : f.name
+      const relPath = f.relativePath || f.webkitRelativePath
+      const key = relPath ? relPath.split('/')[0] : f.name
       if (!(key in sort)) sort[key] = { nb: 0, size: 0, form: new FormData() }
-      sort[key].form.append('file', f, f.webkitRelativePath || f.name)
+      sort[key].form.append('file', f, relPath || f.name)
       sort[key].nb++
       sort[key].size += f.size
     }
@@ -89,17 +91,16 @@ export class FilesUploadService {
   }
 
   private webkitReadDataTransfer(ev: any) {
-    // todo: make this func -> async/await
     let queue = ev.dataTransfer.items.length
-    const files = []
+    const files: FileUpload[] = []
     const readDirectory = (reader: any) => {
       reader.readEntries(function (entries: any[]) {
         if (entries.length) {
           queue += entries.length
           for (const entry of entries) {
             if (entry.isFile) {
-              entry.file((file: File) => {
-                fileReadSuccess(file)
+              entry.file((file: FileUpload) => {
+                fileReadSuccess(entry, file)
               }, readError)
             } else if (entry.isDirectory) {
               readDirectory(entry.createReader())
@@ -111,7 +112,8 @@ export class FilesUploadService {
         }
       }, readError)
     }
-    const fileReadSuccess = (file: File) => {
+    const fileReadSuccess = (entry: { fullPath?: string }, file: FileUpload) => {
+      setRelativePath(entry, file)
       files.push(file)
       decrement()
     }
@@ -125,6 +127,12 @@ export class FilesUploadService {
       }
     }
 
+    const setRelativePath = (entry: { fullPath?: string }, file: FileUpload) => {
+      if (entry.fullPath && entry.fullPath !== `/${file.name}`) {
+        file.relativePath = entry.fullPath.startsWith('/') ? entry.fullPath.slice(1) : entry.fullPath
+      }
+    }
+
     for (const item of ev.dataTransfer.items) {
       const entry = item.webkitGetAsEntry()
       if (!entry) {
@@ -132,7 +140,7 @@ export class FilesUploadService {
         return
       }
       if (entry.isFile) {
-        fileReadSuccess(item.getAsFile())
+        fileReadSuccess(entry, item.getAsFile())
       } else {
         readDirectory(entry.createReader())
       }
