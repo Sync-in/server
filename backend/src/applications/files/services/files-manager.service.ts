@@ -47,7 +47,6 @@ import {
   makeDir,
   moveFiles,
   removeFiles,
-  sanitizeName,
   touchFile,
   uniqueDatedFilePath,
   uniqueFilePathFromDir,
@@ -195,17 +194,22 @@ export class FilesManager {
       }
     }
 
+    const basePath = realParentPath + path.sep
+
     for await (const part of req.files()) {
-      // important: sanitize file names
-      const partFileName = sanitizeName(part.filename)
-      const dstDir = path.join(realParentPath, dirName(partFileName))
-      const dstFile = path.join(dstDir, fileName(partFileName))
+      // part.filename may contain a path like foo/bar.txt.
+      const dstFile = path.resolve(basePath, part.filename)
+      // prevent path traversal
+      if (!dstFile.startsWith(basePath)) {
+        throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
+      }
       // make dir in space
+      const dstDir = dirName(dstFile)
       if (!(await isPathExists(dstDir))) {
         await makeDir(dstDir, true)
       }
       // create lock
-      const dbFile = { ...space.dbFile, path: path.join(dirName(space.dbFile.path), partFileName) }
+      const dbFile = { ...space.dbFile, path: path.join(dirName(space.dbFile.path), part.filename) }
       const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, DEPTH.RESOURCE)
       if (!ok) throw new LockConflict(fileLock, 'Conflicting lock')
       // do
