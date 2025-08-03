@@ -1,0 +1,19 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    ports:
+      - "80:80"
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "5"
+    depends_on:
+      - sync_in
+    networks:
+      - sync_in_network
+

@@ -1,0 +1,54 @@
+#include:
+#  - ./config/nginx/docker-compose.nginx.yaml
+#  - ./config/onlyoffice/docker-compose.onlyoffice.yaml
+#  - ./config/sync-in-desktop-releases/docker-compose.sync-in-desktop-releases.yaml
+
+name: sync-in
+services:
+  sync_in:
+    image: syncin/server:1
+    container_name: sync-in
+    restart: always
+    environment:
+      - INIT_ADMIN
+      - INIT_ADMIN_PASSWORD
+      - INIT_ADMIN_LOGIN
+      - PUID=${PUID:-8888}
+      - PGID=${PGID:-8888}
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./environment.yaml:/app/environment/environment.yaml
+      - data:/app/data
+      - desktop_releases:/app/static/releases:ro
+    depends_on:
+      - mariadb
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "5"
+    networks:
+      - sync_in_network
+
+  mariadb:
+    image: mariadb:11
+    container_name: mariadb
+    restart: always
+    command: --innodb_ft_cache_size=16000000 --max-allowed-packet=1G
+    environment:
+      MYSQL_ROOT_PASSWORD: MySQLRootPassword
+      MYSQL_DATABASE: sync_in
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    networks:
+      - sync_in_network
+
+networks:
+  sync_in_network:
+    driver: bridge
+
+volumes:
+  data:
+  mariadb_data:
+  desktop_releases:

@@ -60,9 +60,9 @@ Sync-in fits seamlessly into any environment — from small teams to large enter
 
 - 🌍 **Official website**: [https://sync-in.com](https://sync-in.com)
 - 📖 **Documentation**: [https://sync-in.com/docs](https://sync-in.com/docs)
-- 🗄️ **Server** - Full-stack server : [https://github.com/Sync-in/server](https://github.com/Sync-in/server)
+- 🗄️ **Server** : [https://github.com/Sync-in/server](https://github.com/Sync-in/server)
 - 💻 **Desktop & CLI** - Cross-platform desktop app and command-line interface : [https://github.com/Sync-in/desktop](https://github.com/Sync-in/desktop)
-- 🐳 **Docker** - Docker images and deployment configuration : [https://github.com/Sync-in/docker](https://github.com/Sync-in/docker)
+- 🐳 **Docker** - Setup & Deployment Guide : [https://sync-in.com/docs/setup-guide/docker](https://sync-in.com/docs/setup-guide/docker)
 
 ---
 
@@ -75,8 +75,8 @@ If you find it useful, you can:
 - 🐛 Report issues and suggest improvements
 - 🤝 Contribute code, translations, or documentation
 - 💬 Join the community on :
+   - [GitHub Discussions](https://github.com/orgs/Sync-in/discussions)
    - [Discord](https://discord.gg/qhJyzwaymT)
-   - [Stack Overflow](https://stackoverflow.com/questions/tagged/sync-in)
 - 💖 [Support the project !](https://sync-in.com/support)
 
 ---

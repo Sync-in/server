@@ -1,0 +1,15 @@
+services:
+  sync_in_desktop_releases:
+    profiles: [ "releases" ]
+    image: syncin/desktop-releases:latest
+    container_name: sync-in-desktop-releases
+    user: "${PUID:-8888}:${PGID:-8888}"
+    volumes:
+      - desktop_releases:/releases:ro
+    restart: "no"
+    entrypoint: [ "/bin/true" ]
+    networks:
+      - sync_in_network
+
+volumes:
+  desktop_releases:
