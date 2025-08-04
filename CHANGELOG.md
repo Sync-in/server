@@ -1,4 +1,15 @@
 
+## [1.2.2](https://github.com/Sync-in/server/compare/v1.2.1...v1.2.2) (2025-08-04)
+
+### Features
+
+* **onlyoffice** updated compatibility with version 9.x (added md, vsdx, odg... to viewable extensions)
+* **docker** include Docker Compose files to track them across releases
+
+### Bug Fixes
+
+* **test:** assign proper token names for csrf and ws ([bfe43e5](https://github.com/Sync-in/server/commit/bfe43e5f099cf4a4b07943a55e9242843d8b74c2))
+
 ## [1.2.1](https://github.com/Sync-in/server/compare/v1.2.0...v1.2.1) (2025-08-02)
 
 
