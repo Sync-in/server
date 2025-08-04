@@ -39,8 +39,8 @@ jobs:
         with:
           body_path: latest-changelog.md
           files: |
-            sync-in-server.zip
-            sync-in-server.tar.gz
+            release/*.zip
+            release/*.tar.gz
 
       - name: Clean build
         run: npm run release:clean
@@ -56,5 +56,3 @@ jobs:
 
       - name: Docker Build & Push (multi-arch)
         run: npm run docker:buildx
-
-

@@ -75,7 +75,7 @@ If you find it useful, you can:
 - 🐛 Report issues and suggest improvements
 - 🤝 Contribute code, translations, or documentation
 - 💬 Join the community on :
-   - [GitHub Discussions](https://github.com/orgs/Sync-in/discussions)
+   - [GitHub Discussions](https://github.com/Sync-in/server/discussions)
    - [Discord](https://discord.gg/qhJyzwaymT)
 - 💖 [Support the project !](https://sync-in.com/support)
 

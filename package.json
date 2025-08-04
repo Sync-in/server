@@ -28,7 +28,7 @@
   "scripts": {
     "build": "npm run build -ws",
     "release:build": "npm run build && node scripts/build/release.mjs",
-    "release:clean": "rm -rf $npm_package_name*",
+    "release:clean": "rm -rf release",
     "release:bump": "commit-and-tag-version",
     "release:bump:dry": "npm run release:bump -- --dry-run",
     "lint": "npm run lint -ws",

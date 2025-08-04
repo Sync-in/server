@@ -2,9 +2,9 @@ node_modules
 logs
 .run
 dist
+release
 .idea
 .DS_Store
-sync-in-server*
 backend/coverage
 backend/logs
 environment/environment.yaml

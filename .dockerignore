@@ -2,7 +2,7 @@
 .idea
 .run
 dist
-sync-in-server*
+release
 backend/logs
 backend/node_modules
 frontend/node_modules
