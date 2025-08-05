@@ -10,6 +10,7 @@ _Welcome to the official Sync-in server repository!_
 - 🌍 [Website](https://sync-in.com)
 - 📄 [Documentation](https://sync-in.com/docs)
 - 🧪 [Try the demo](https://sync-in.com/docs/demo)
+- 🐳 [Deploy with Docker](https://sync-in.com/docs/setup-guide/docker)
 
 <a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
 <a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/badge/Discord-Online-brightgreen.svg" alt="Discord"/></a>
