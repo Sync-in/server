@@ -17,6 +17,7 @@
   },
   "license": "AGPL-3.0-or-later",
   "private": true,
+  "os": ["!win32"],
   "engineStrict": true,
   "engines": {
     "node": ">=22.15.0"

@@ -1,22 +1,13 @@
 #!/usr/bin/env node
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
-import { exec } from 'child_process'
+import { exec, execSync } from 'child_process'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const rootDir = path.resolve(__dirname, '../..')
 const pathRelative = (curPath) => path.relative(rootDir, curPath)
-
-/* Packages JSON */
-const rootPKGPath = path.join(rootDir, 'package.json')
-const backendPKGPath = path.join(rootDir, 'backend', 'package.json')
 
 /* Release */
 const releaseDir = path.join(rootDir, 'release')
@@ -34,7 +25,7 @@ const releaseConf = {
   }
 }
 
-// Check server build
+/* Check server build */
 if (!fs.existsSync(releaseConf.server.src)) {
   console.error(`❌ ${pathRelative(releaseConf.server.src)} directory does not exist. Have you run the build ?`)
   process.exit(1)
@@ -46,7 +37,7 @@ for (const subDir of ['server', 'static']) {
   }
 }
 
-// Clean Up Release Directory
+/* Clean up release directory */
 if (fs.existsSync(releaseDir)) {
   try {
     await fs.promises.rm(releaseDir, { recursive: true, force: true })
@@ -57,7 +48,7 @@ if (fs.existsSync(releaseDir)) {
   }
 }
 
-// Create Release Directory
+/* Create release directory */
 try {
   await fs.promises.mkdir(releaseDir, { recursive: true })
   console.log(`✅ dir created: ${pathRelative(releaseDir)}`)
@@ -66,29 +57,49 @@ try {
   process.exit(1)
 }
 
-const [rootPkgRaw, backendPkgRaw] = await Promise.all([fs.promises.readFile(rootPKGPath, 'utf8'), fs.promises.readFile(backendPKGPath, 'utf8')])
-const rootPkg = JSON.parse(rootPkgRaw)
-const backendPkg = JSON.parse(backendPkgRaw)
+/* Create package.json */
+const rootPKGPath = path.join(rootDir, 'package.json')
+const rootPkg = JSON.parse(await fs.promises.readFile(rootPKGPath, 'utf8'))
+
+function extractDependencies() {
+  try {
+    const raw = execSync(`cd ${rootDir} && npm -w backend list --depth=0 --omit=dev --include=optional --json`, { encoding: 'utf8' })
+    const json = JSON.parse(raw)
+    const dependencies = Object.fromEntries(
+      Object.entries(json.dependencies[Object.keys(json.dependencies)[0]].dependencies).map((p) => [p[0], p[1].version])
+    )
+    const nbDeps = Object.keys(dependencies).length
+    if (nbDeps <= 3) {
+      throw new Error(`The number of dependencies seems incorrect : ${nbDeps}`)
+    }
+    console.error(`✅ extracted dependencies : ${nbDeps}`)
+    return dependencies
+  } catch (e) {
+    console.error(`❌ extract dependencies : ${e}`)
+    process.exit(1)
+  }
+}
 
 const releasePKG = {
-  name: rootPkg.name,
+  name: '@sync-in/server',
   version: rootPkg.version,
   description: rootPkg.description,
   author: rootPkg.author,
-  license: rootPkg.license,
   homepage: rootPkg.homepage,
   repository: rootPkg.repository,
   bugs: rootPkg.bugs,
-  os: ['!win32'],
+  license: rootPkg.license,
+  os: rootPkg.os,
+  engineStrict: rootPkg.engineStrict,
+  engines: rootPkg.engines,
   keywords: rootPkg.keywords,
+  publishConfig: {
+    access: 'public',
+  },
   bin: {
-    'sync-in-server': 'server/main.js'
+    'sync-in-server': 'sync-in-server.js'
   },
-  scripts: {
-    init_env: 'cp environment/environment.dist.min.yaml environment.yaml'
-  },
-  dependencies: backendPkg.dependencies,
-  optionalDependencies: backendPkg.optionalDependencies
+  dependencies: extractDependencies()
 }
 
 /* Move dist -> release/sync-in-server */
@@ -104,12 +115,34 @@ try {
 const extraFiles = ['CHANGELOG.md', 'README.md', 'LICENSE']
 for (const f of extraFiles) {
   try {
-    await fs.promises.copyFile(path.join(rootDir, f), path.join(releaseConf.server.dst, f))
+    await fs.promises.copyFile(path.join(rootDir, f), path.join(releaseConf.server.dst, path.basename(f)))
     console.log(`✅ ${pathRelative(path.join(releaseConf.server.dst, f))} copied`)
   } catch (e) {
     console.error(`❌ ${pathRelative(path.join(releaseConf.server.dst, f))} not copied - ${e}`)
     process.exit(1)
   }
+}
+
+/* CLI: sync-in-server.js */
+const srcCLI = 'scripts/npm-sync-in-server.js'
+const dstCLIName = 'sync-in-server.js'
+try {
+  await fs.promises.copyFile(path.join(rootDir, srcCLI), path.join(releaseConf.server.dst, dstCLIName))
+  console.log(`✅ ${pathRelative(path.join(releaseConf.server.dst, dstCLIName))} copied`)
+} catch (e) {
+  console.error(`❌ ${pathRelative(path.join(releaseConf.server.dst, dstCLIName))} not copied - ${e}`)
+  process.exit(1)
+}
+
+/* Migrations directory */
+const migrationsDirName = 'migrations'
+const migrationsDirectory = path.join(rootDir, 'backend', migrationsDirName)
+try {
+  await fs.promises.cp(migrationsDirectory, path.join(releaseConf.server.dst, migrationsDirName), { recursive: true })
+  console.log(`✅ ${pathRelative(path.join(releaseConf.server.dst, migrationsDirName))} copied`)
+} catch (e) {
+  console.error(`❌ ${pathRelative(path.join(releaseConf.server.dst, migrationsDirName))} not copied - ${e}`)
+  process.exit(1)
 }
 
 /* Environment files */
@@ -151,11 +184,8 @@ try {
   process.exit(1)
 }
 
-
 try {
   await Promise.all([
-    exec(`cd ${releaseDir} && zip -r ${releaseConf.server.name}.zip ${releaseConf.server.name}`),
-    exec(`cd ${releaseDir} && tar -czf ${releaseConf.server.name}.tar.gz ${releaseConf.server.name}`),
     exec(`cd ${releaseDir} && zip -r ${releaseConf.docker.name}.zip ${releaseConf.docker.name}`),
     exec(`cd ${releaseDir} && tar -czf ${releaseConf.docker.name}.tar.gz ${releaseConf.docker.name}`)
   ])

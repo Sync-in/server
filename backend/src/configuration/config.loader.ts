@@ -31,7 +31,7 @@ export function configLoader(): any {
     throw new Error(`Missing configuration: "${ENVIRONMENT_FILE_NAME}" not found, or no variables beginning with "${ENVIRONMENT_PREFIX}" are set.`)
   }
 
-  if (!config.logger.stdout) {
+  if (config.logger.stdout === false) {
     // ensure log directory exists
     const logFilePath = config.logger.filePath || DEFAULT_LOG_FILE_PATH
     const dirLogPath = path.dirname(logFilePath)
@@ -44,10 +44,19 @@ export function configLoader(): any {
   return config
 }
 
+function buildPathsUp(basePath: string, fileName: string, levels = 4): string[] {
+  // Generates candidate file paths, optionally walking up from __dirname to a given depth.
+  return Array.from({ length: levels + 1 }, (_, i) => path.resolve(basePath, ...Array(i).fill('..'), fileName))
+}
+
 function loadEnvFile(envPath: string, envFileName: string, throwIfMissing = false): any {
-  for (const ePath of [path.join(__dirname, `../../../${envPath}`), `./${envPath}`, envFileName]) {
-    if (fs.existsSync(ePath) && fs.lstatSync(ePath).isFile()) {
-      return yaml.load(fs.readFileSync(ePath, 'utf8'))
+  const candidates = [envPath, envFileName, ...buildPathsUp(__dirname, envPath), ...buildPathsUp(__dirname, envFileName)]
+  for (const envFilePath of candidates) {
+    if (fs.existsSync(envFilePath) && fs.lstatSync(envFilePath).isFile()) {
+      if (envFileName === ENVIRONMENT_FILE_NAME) {
+        console.log(`Load configuration → ${envFilePath}`)
+      }
+      return yaml.load(fs.readFileSync(envFilePath, 'utf8'))
     }
   }
   if (throwIfMissing) {

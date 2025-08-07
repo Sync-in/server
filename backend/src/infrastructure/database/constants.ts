@@ -9,5 +9,5 @@ import { IS_DEV_ENV } from '../../configuration/config.constants'
 
 export const DB_CHARSET = 'utf8mb4'
 export const DB_TOKEN_PROVIDER = 'DB'
-export const SCHEMA_PATH = path.join(__dirname, `./schema${IS_DEV_ENV ? '.ts' : '.js'}`)
-export const MIGRATIONS_PATH = './migrations'
+export const SCHEMA_PATH = path.join(__dirname, `schema${IS_DEV_ENV ? '.ts' : '.js'}`)
+export const MIGRATIONS_PATH = path.join(__dirname, '../../../migrations')
