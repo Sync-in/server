@@ -4,9 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { join } from 'node:path'
 import type { Options } from 'pino-http'
-import { APP_LOGS_PATH } from './config.constants'
 import type { LoggerConfig } from './config.validation'
 
 export const configLogger = (loggerConfig: LoggerConfig) =>
@@ -59,7 +57,7 @@ export const configLogger = (loggerConfig: LoggerConfig) =>
         messageFormat: `[{context}]{if user} <{user}> {end} ${
           loggerConfig.colorize ? '\x1b[37m' : ''
         }{msg}{if res} ({res.contentLength} bytes in {responseTime}ms) {userAgent}{end}{if reqId} | {reqId}{end}`,
-        destination: loggerConfig.stdout ? 1 : join(APP_LOGS_PATH, 'server.log'),
+        destination: loggerConfig.stdout ? 1 : loggerConfig.filePath,
         mkdir: true,
         sync: false
       }

@@ -9,20 +9,17 @@ import * as yaml from 'js-yaml'
 import fs from 'node:fs'
 import path from 'node:path'
 import {
-  APP_LOGS_PATH,
+  DEFAULT_LOG_FILE_PATH,
   ENVIRONMENT_DIST_FILE_NAME,
   ENVIRONMENT_DIST_PATH,
   ENVIRONMENT_FILE_NAME,
   ENVIRONMENT_PATH,
   ENVIRONMENT_PREFIX
 } from './config.constants'
+import type { Configuration } from './config.validation'
 
 export function configLoader(): any {
-  if (!fs.existsSync(APP_LOGS_PATH)) {
-    fs.mkdirSync(APP_LOGS_PATH, { recursive: true })
-  }
-
-  let config = loadEnvFile(ENVIRONMENT_PATH, ENVIRONMENT_FILE_NAME)
+  let config: Partial<Configuration> = loadEnvFile(ENVIRONMENT_PATH, ENVIRONMENT_FILE_NAME)
 
   if (hasEnvConfig()) {
     // If any environment vars are found, parse the config model and apply those settings
@@ -32,6 +29,16 @@ export function configLoader(): any {
 
   if (Object.keys(config).length === 0) {
     throw new Error(`Missing configuration: "${ENVIRONMENT_FILE_NAME}" not found, or no variables beginning with "${ENVIRONMENT_PREFIX}" are set.`)
+  }
+
+  if (!config.logger.stdout) {
+    // ensure log directory exists
+    const logFilePath = config.logger.filePath || DEFAULT_LOG_FILE_PATH
+    const dirLogPath = path.dirname(logFilePath)
+    if (!fs.existsSync(dirLogPath)) {
+      fs.mkdirSync(dirLogPath, { recursive: true })
+    }
+    console.log(`Logging to file → ${logFilePath}`)
   }
 
   return config

@@ -17,6 +17,8 @@ logger:
   stdout: true
   # colorize output
   colorize: true
+  # file path where logs are written when stdout is false
+  filePath: /var/log/sync-in/server.log
 mysql:
   url: mysql://user:MySQLRootPassword@localhost:3306/database
   logQueries: false

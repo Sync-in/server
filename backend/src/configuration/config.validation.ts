@@ -14,6 +14,7 @@ import { CacheConfig } from '../infrastructure/cache/cache.config'
 import { MySQLConfig } from '../infrastructure/database/database.config'
 import { MailerConfig } from '../infrastructure/mailer/mailer.config'
 import { WebSocketConfig } from '../infrastructure/websocket/web-socket.config'
+import { DEFAULT_LOG_FILE_PATH } from './config.constants'
 
 export class ServerConfig {
   @IsIP()
@@ -46,6 +47,9 @@ export class LoggerConfig {
 
   @IsBoolean()
   colorize: boolean = true
+
+  @IsString()
+  filePath: string = DEFAULT_LOG_FILE_PATH
 }
 
 export class Configuration {

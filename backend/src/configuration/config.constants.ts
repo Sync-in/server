@@ -15,5 +15,5 @@ export const ENVIRONMENT_DIST_FILE_NAME = 'environment.dist.yaml'
 export const ENVIRONMENT_DIST_PATH = `environment/${ENVIRONMENT_DIST_FILE_NAME}`
 export const STATIC_PATH = path.resolve(path.join(__dirname, IS_TEST_ENV ? '../../../dist/static' : '../../static'))
 export const STATIC_ASSETS_PATH = path.join(STATIC_PATH, 'assets')
-export const APP_LOGS_PATH = path.join(__dirname, '../../logs')
+export const DEFAULT_LOG_FILE_PATH = path.join(__dirname, '../../logs/server.log')
 export const ENVIRONMENT_PREFIX = 'SYNCIN_'
