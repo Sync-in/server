@@ -11,9 +11,12 @@ _Welcome to the official Sync-in server repository!_
 - 📄 [Documentation](https://sync-in.com/docs)
 - 🧪 [Try the demo](https://sync-in.com/docs/demo)
 - 🐳 [Deploy with Docker](https://sync-in.com/docs/setup-guide/docker)
+- 📦 [Deploy with NPM](https://sync-in.com/docs/setup-guide/npm)
 
 <a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
 <a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/badge/Discord-Online-brightgreen.svg" alt="Discord"/></a>
+<a href="https://www.npmjs.com/package/@sync-in/server" target="_blank"><img src="https://img.shields.io/badge/NPM-Package-red?logo=npm" alt="NPM"/></a>
+<a href="https://hub.docker.com/r/syncin/server" target="_blank"><img src="https://img.shields.io/docker/pulls/syncin/server.svg" alt="Docker pulls"/></a>
 
 The **Sync-in Server** is designed to run on your own infrastructure, it gives you **full control over your data** while offering a modern,
 intuitive interface for both internal and external users.
