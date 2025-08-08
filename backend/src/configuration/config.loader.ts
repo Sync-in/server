@@ -31,7 +31,7 @@ export function configLoader(): any {
     throw new Error(`Missing configuration: "${ENVIRONMENT_FILE_NAME}" not found, or no variables beginning with "${ENVIRONMENT_PREFIX}" are set.`)
   }
 
-  if (config.logger.stdout === false) {
+  if (config.logger?.stdout === false) {
     // ensure log directory exists
     const logFilePath = config.logger.filePath || DEFAULT_LOG_FILE_PATH
     const dirLogPath = path.dirname(logFilePath)
