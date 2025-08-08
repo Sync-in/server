@@ -48,7 +48,9 @@ export class LoggerConfig {
   @IsBoolean()
   colorize: boolean = true
 
+  @IsOptional()
   @IsString()
+  @Transform(({ value }) => value || DEFAULT_LOG_FILE_PATH)
   filePath: string = DEFAULT_LOG_FILE_PATH
 }
 
