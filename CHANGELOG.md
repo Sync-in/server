@@ -1,4 +1,12 @@
 
+## [1.3.0](https://github.com/Sync-in/server/compare/v1.2.2...v1.3.0) (2025-08-08)
+
+
+### Features
+
+* add support for npm distribution and server management CLI ([4a5f821](https://github.com/Sync-in/server/commit/4a5f8215d1caf6d7a3296f223a8ec90a20fe46e0))
+* **backend:** make log file path configurable via logger.filePath ([5ffac5a](https://github.com/Sync-in/server/commit/5ffac5a9f42e707da0c9f5d6fba73d6d6022b8fb))
+
 ## [1.2.2](https://github.com/Sync-in/server/compare/v1.2.1...v1.2.2) (2025-08-04)
 
 ### Features

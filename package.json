@@ -1,7 +1,7 @@
 {
   "productName": "Sync-in",
   "name": "sync-in-server",
-  "version": "1.2.2",
+  "version": "1.3.0",
   "description": "The secure, open-source platform for file storage, sharing, collaboration, and sync",
   "author": {
     "name": "Johan Legrand",
@@ -17,7 +17,9 @@
   },
   "license": "AGPL-3.0-or-later",
   "private": true,
-  "os": ["!win32"],
+  "os": [
+    "!win32"
+  ],
   "engineStrict": true,
   "engines": {
     "node": ">=22.15.0"
