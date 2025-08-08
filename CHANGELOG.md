@@ -1,4 +1,13 @@
 
+## [1.3.1](https://github.com/Sync-in/server/compare/v1.3.0...v1.3.1) (2025-08-08)
+
+
+### Bug Fixes
+
+* **backend:conf:** handle undefined logger.stdout in some environments ([08087ba](https://github.com/Sync-in/server/commit/08087bab675860d4c35041f9cd1752840df3cc7f))
+* **backend:test:** log path ([eabf3d7](https://github.com/Sync-in/server/commit/eabf3d734721fbfd821489ac2bc83913c9afaf2e))
+* **backend:validation:** log file path ([0e8c695](https://github.com/Sync-in/server/commit/0e8c695437dae0e6000e213382e1f4c7d91aef93))
+
 ## [1.3.0](https://github.com/Sync-in/server/compare/v1.2.2...v1.3.0) (2025-08-08)
 
 
