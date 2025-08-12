@@ -41,7 +41,7 @@ Available commands:
   status            Show server status (daemon mode only)
   version           Show installed sync-in-server version
   migrate-db        Run database migrations
-  create-user       Create an admin user in the database
+  create-user       Create a user or administrator in the database
   update            Update the server version
   help              Show this help message
 
@@ -49,7 +49,8 @@ Examples:
   npx sync-in-server init            # copy default environment.yaml
   npx sync-in-server start           # attached mode
   npx sync-in-server start -d        # daemon mode
-  npx sync-in-server create-user --role admin --login "userLogin" --password "userPassword"
+  npx sync-in-server create-user     # create default administrator account : sync-in/sync-in
+  npx sync-in-server create-user --role admin  --login "userLogin" --password "userPassword"
   npx sync-in-server version
   npx sync-in-server help
 `)
@@ -228,14 +229,20 @@ async function updateVersion() {
 }
 
 async function createUser(args) {
-  console.log('👤 Creating user in database...')
+  let userType = 'User'
+  if (args.length === 0 || (args.includes('--role') && args.includes('admin'))) {
+    userType = 'Administrator'
+    console.log(`👤 Creating ${args.length === 0 ? 'default' : ''} ${userType} in database...`)
+  } else {
+    console.log(`👤 Creating ${userType} in database...`)
+  }
   const scriptArgs = [CREATE_USER_SCRIPT, ...args]
   const result = spawnSync('node', scriptArgs, { stdio: 'inherit' })
   if (result.status !== 0) {
-    console.error('❌ User creation failed.')
+    console.error(`❌ ${userType} creation failed.`)
     process.exit(result.status)
   }
-  console.log('✅ User created successfully.')
+  console.log(`✅ ${userType} created successfully.`)
 }
 
 function getPackageJson() {
