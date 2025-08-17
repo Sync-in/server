@@ -115,7 +115,7 @@ export class SyncManager {
   async copyMove(req: FastifySpaceRequest, syncCopyMoveDto: SyncCopyMoveDto, isMove: boolean): Promise<void | { ino: number; mtime: number }> {
     const dstSpace: SpaceEnv = await this.spacesManager.spaceEnv(req.user, SYNC_PATH_TO_SPACE_SEGMENTS(syncCopyMoveDto.destination))
     try {
-      await this.filesManager.copyMove(req.user, req.space, dstSpace, isMove, true)
+      await this.filesManager.copyMove(req.user, req.space, dstSpace, isMove, true, true)
       if (!isMove) {
         if (syncCopyMoveDto.mtime) {
           // update mtime

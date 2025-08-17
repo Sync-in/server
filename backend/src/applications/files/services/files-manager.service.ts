@@ -270,6 +270,7 @@ export class FilesManager {
     dstSpace: SpaceEnv,
     isMove: boolean,
     overwrite = false,
+    mkdirDstParentPath = false,
     dav?: { depth: LOCK_DEPTH; lockTokens: string[] }
   ): Promise<void> {
     // checks
@@ -289,7 +290,16 @@ export class FilesManager {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
     }
     if (!(await isPathExists(dirName(dstSpace.realPath)))) {
-      throw new FileError(HttpStatus.CONFLICT, 'Parent must exists')
+      if (mkdirDstParentPath) {
+        try {
+          await makeDir(dirName(dstSpace.realPath), true)
+        } catch (e) {
+          this.logger.error(`${this.copyMove.name} - Cannot create parent directory for destination ${dstSpace.realPath} : ${e}`)
+          throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Cannot create parent directory for destination')
+        }
+      } else {
+        throw new FileError(HttpStatus.CONFLICT, 'Parent must exists')
+      }
     }
     if (srcSpace.realPath === dstSpace.realPath) {
       throw new FileError(HttpStatus.FORBIDDEN, 'Cannot copy/move source onto itself')

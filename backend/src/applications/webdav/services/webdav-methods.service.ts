@@ -109,35 +109,6 @@ export class WebDAVMethods {
     }
   }
 
-  private async lockRefresh(req: FastifyDAVRequest, res: FastifyReply, dbFilePath: string) {
-    if (req.dav?.ifHeaders?.length !== 1) {
-      this.logger.warn('Expected a lock token (only one lock may be refreshed at a time)')
-      return res.status(HttpStatus.BAD_REQUEST).send('Expected a lock token (only one lock may be refreshed at a time)')
-    }
-
-    let token: string
-    try {
-      token = extractOneToken(req.dav.ifHeaders)
-    } catch (e) {
-      this.logger.warn(`${this.lockRefresh.name} - unable to extract token : ${JSON.stringify(req.dav.ifHeaders)} (${e})`)
-      return res.status(HttpStatus.BAD_REQUEST).send('Unable to extract token')
-    }
-
-    const lock = await this.filesLockManager.isLockedWithToken(token, dbFilePath)
-    if (!lock) {
-      this.logger.warn(`Lock token does not exist or not match URL : ${token}`)
-      return DAV_ERROR_RES(HttpStatus.PRECONDITION_FAILED, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
-    }
-    if (lock.owner.id !== req.user.id) {
-      this.logger.warn(`Lock token does not match owner : ${lock.owner.login} != ${req.user.login}`)
-      return res.status(HttpStatus.FORBIDDEN).send('Lock token does not match owner')
-    }
-
-    await this.filesLockManager.refreshLockTimeout(lock, req.dav.lock.timeout)
-    const lockProp = LOCK_PROP([lock])
-    return res.type(XML_CONTENT_TYPE).status(HttpStatus.OK).send(xmlBuild(lockProp))
-  }
-
   @IfHeaderDecorator()
   async unlock(req: FastifyDAVRequest, res: FastifyReply) {
     if (!(await isPathExists(req.space.realPath))) {
@@ -374,7 +345,7 @@ export class WebDAVMethods {
       return
     }
     try {
-      await this.filesManager.copyMove(req.user, req.space, dstSpace, req.dav.copyMove.isMove, req.dav.copyMove.overwrite, {
+      await this.filesManager.copyMove(req.user, req.space, dstSpace, req.dav.copyMove.isMove, req.dav.copyMove.overwrite, false, {
         depth: req.dav.depth,
         lockTokens: extractAllTokens(req.dav.ifHeaders)
       })
@@ -459,6 +430,35 @@ export class WebDAVMethods {
       res.status(HttpStatus.PRECONDITION_FAILED).send('If header condition failed')
     }
     return atLeastOneOk
+  }
+
+  private async lockRefresh(req: FastifyDAVRequest, res: FastifyReply, dbFilePath: string) {
+    if (req.dav?.ifHeaders?.length !== 1) {
+      this.logger.warn('Expected a lock token (only one lock may be refreshed at a time)')
+      return res.status(HttpStatus.BAD_REQUEST).send('Expected a lock token (only one lock may be refreshed at a time)')
+    }
+
+    let token: string
+    try {
+      token = extractOneToken(req.dav.ifHeaders)
+    } catch (e) {
+      this.logger.warn(`${this.lockRefresh.name} - unable to extract token : ${JSON.stringify(req.dav.ifHeaders)} (${e})`)
+      return res.status(HttpStatus.BAD_REQUEST).send('Unable to extract token')
+    }
+
+    const lock = await this.filesLockManager.isLockedWithToken(token, dbFilePath)
+    if (!lock) {
+      this.logger.warn(`Lock token does not exist or not match URL : ${token}`)
+      return DAV_ERROR_RES(HttpStatus.PRECONDITION_FAILED, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
+    }
+    if (lock.owner.id !== req.user.id) {
+      this.logger.warn(`Lock token does not match owner : ${lock.owner.login} != ${req.user.login}`)
+      return res.status(HttpStatus.FORBIDDEN).send('Lock token does not match owner')
+    }
+
+    await this.filesLockManager.refreshLockTimeout(lock, req.dav.lock.timeout)
+    const lockProp = LOCK_PROP([lock])
+    return res.type(XML_CONTENT_TYPE).status(HttpStatus.OK).send(xmlBuild(lockProp))
   }
 
   private handleError(req: FastifyDAVRequest, res: FastifyReply, e: any, toUrl?: string) {
