@@ -46,7 +46,7 @@ export class SendFile {
     // Ranges, LastModified, Etag are also handled
     // Send function uses decodeURIComponent, but filePath is already decoded : we need to encode it again before passing it.
     const encodedFilePath = encodeURIComponent(this.filePath)
-    this.fileName = this.downloadName ? encodeURIComponent(this.downloadName) : fileName(encodedFilePath)
+    this.fileName = encodeURIComponent(this.downloadName ? this.downloadName : fileName(this.filePath))
     const sendResult: SendResult = await send(req.raw, encodedFilePath, this.sendOptions)
     // Check if the path was correctly validated
     if (sendResult.metadata['path'] === undefined) {
