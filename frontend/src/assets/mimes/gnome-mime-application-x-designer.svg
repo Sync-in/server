@@ -1,1 +1,48 @@
-application-x-glade.svg
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+ <defs>
+  <clipPath id="0">
+   <path d="m74.38 10.5c-3.881 0-7 3.119-7 7v477c0 3.881 3.119 7 7 7h363.25c3.881 0 7-3.119 7-7v-344.72l-139.25-139.28h-231"/>
+  </clipPath>
+ </defs>
+ <g fill-opacity=".078">
+  <path d="m66.61 0c-4.047 0-7.299 3.253-7.299 7.299v497.4c0 4.047 3.253 7.299 7.299 7.299h378.79c4.047 0 7.299-3.253 7.299-7.299v-359.46l-145.21-145.24h-240.88"/>
+  <path d="m69.2 3.5c-3.991 0-7.2 3.208-7.2 7.2v490.6c0 3.991 3.208 7.2 7.2 7.2h373.61c3.991 0 7.2-3.208 7.2-7.2v-354.55l-143.22-143.25h-237.59"/>
+  <path d="m71.786 7c-3.936 0-7.1 3.164-7.1 7.1v483.8c0 3.936 3.164 7.1 7.1 7.1h368.43c3.936 0 7.1-3.164 7.1-7.1v-349.63l-141.24-141.27h-234.29"/>
+ </g>
+ <path fill="#e46431" d="m74.38 10.5c-3.881 0-7 3.119-7 7v477c0 3.881 3.119 7 7 7h363.25c3.881 0 7-3.119 7-7v-344.72l-139.25-139.28h-231"/>
+ <path opacity=".25" style="clip-path:url(#0)" d="m308.78 148.78c4.487 5.957 11.243 10.577 16.06 16.313 7.83 7.837 15.669 15.665 23.5 23.5l-263.91 205.88 408.81 408.81h43.06v-8.594l8.594 8.594h25.844v-8.625l8.625 8.625h25.844v-8.625l8.625 8.625h25.844v-8.594l8.594 8.594h25.844v-8.625l8.625 8.625h25.844v-8.625l8.625 8.625h25.844v-8.594l8.594 8.594h17.219v-215l-324.25-324.25v-114.25h-132.25c-1.321 0-2.542-0.37-3.594-1"/>
+ <path fill="#fff" d="m444.62 149.78l-139.25-139.28v132.28c0 3.881 3.119 7 7 7h132.25" fill-opacity=".196"/>
+ <text style="word-spacing:0;letter-spacing:0" font-size="129.23" y="39.41" x="-210.55" font-family="Gentium Book Basic" line-height="125%">
+  <tspan y="39.41" x="-210.55"/>
+ </text>
+ <text style="text-anchor:middle" transform="scale(4.0128.2492)" font-size="46.954" y="-191" x="144.61" font-family="Arial"/>
+ <text style="word-spacing:0;letter-spacing:0" font-size="129.23" y="-40.586" x="370.72" font-family="Gentium Book Basic" line-height="125%">
+  <tspan y="-40.586" x="370.72"/>
+ </text>
+ <text style="text-anchor:middle" transform="scale(4.0128.2492)" font-size="46.954" y="-512.03" x="289.46" font-family="Arial"/>
+ <text style="word-spacing:0;letter-spacing:0" font-size="129.23" y="-221.85" x="-700.86" font-family="Gentium Book Basic" line-height="125%">
+  <tspan y="-221.85" x="-700.86"/>
+ </text>
+ <text style="text-anchor:middle" transform="scale(4.0128.2492)" font-size="46.954" y="-1239.38" x="22.422" font-family="Arial"/>
+ <text style="word-spacing:0;letter-spacing:0" font-size="129.23" y="-438.32" x="397.19" font-family="Gentium Book Basic" line-height="125%">
+  <tspan y="-438.32" x="397.19"/>
+ </text>
+ <text style="text-anchor:middle" transform="scale(4.0128.2492)" font-size="46.954" y="-2108.05" x="296.06" font-family="Arial"/>
+ <text style="word-spacing:0;letter-spacing:0" font-size="129.23" y="-518.33" x="978.46" font-family="Gentium Book Basic" line-height="125%">
+  <tspan y="-518.33" x="978.46"/>
+ </text>
+ <text style="text-anchor:middle" transform="scale(4.0128.2492)" font-size="46.954" y="-2429.09" x="440.91" font-family="Arial"/>
+ <text style="word-spacing:0;letter-spacing:0" font-size="129.23" y="-990.73" x="589.34" font-family="Gentium Book Basic" line-height="125%">
+  <tspan y="-990.73" x="589.34"/>
+ </text>
+ <text style="text-anchor:middle" transform="scale(4.0128.2492)" font-size="46.954" y="-4324.74" x="343.94" font-family="Arial"/>
+ <text style="word-spacing:0;letter-spacing:0" font-size="129.23" y="-1070.73" x="1170.6" font-family="Gentium Book Basic" line-height="125%">
+  <tspan y="-1070.73" x="1170.6"/>
+ </text>
+ <text style="text-anchor:middle" transform="scale(4.0128.2492)" font-size="46.954" y="-4645.77" x="488.79" font-family="Arial"/>
+ <text style="word-spacing:0;letter-spacing:0" font-size="208.33" y="343.99" x="-662.2" font-family="Gentium Book Basic" line-height="125%">
+  <tspan y="343.99" x="-662.2"/>
+ </text>
+ <path fill="#fff" d="m360.07 179.47l-275.65 215.01h43.07v-25.801h8.614v25.801h25.842v-25.801h8.614v25.801h25.842v-25.801h8.614v25.801h25.842v-25.801h8.614v25.801h25.842v-25.801h8.614v25.801h25.842v-25.801h8.614v25.801h25.842v-25.801h8.614v25.801h17.229v-215.01m-43.07 94.6v77.4h-103.37l103.37-77.4" fill-rule="evenodd"/>
+</svg>
