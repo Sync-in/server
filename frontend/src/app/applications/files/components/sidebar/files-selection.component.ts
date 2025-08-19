@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, computed, input, InputSignal, Signal, inject } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, input, InputSignal, Signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowsAlt, faClipboardCheck } from '@fortawesome/free-solid-svg-icons'
@@ -61,12 +61,12 @@ export class FilesSelectionComponent {
     this.layout.toggleRSideBar(false)
     this.router
       .navigate([share.type === 0 ? SPACES_PATH.SHARED : SPACES_PATH.LINKS], { queryParams: { select: share.name } })
-      .catch((e: Error) => console.error(e))
+      .catch(console.error)
   }
 
   goToSpace(space: { alias: string; name: string }) {
     this.layout.toggleRSideBar(false)
-    this.router.navigate([SPACES_PATH.SPACES], { queryParams: { select: space.name } }).catch((e: Error) => console.error(e))
+    this.router.navigate([SPACES_PATH.SPACES], { queryParams: { select: space.name } }).catch(console.error)
   }
 
   goToComments() {
@@ -87,6 +87,6 @@ export class FilesSelectionComponent {
           pathId: sync.id
         }
       })
-      .catch((e: Error) => console.error(e))
+      .catch(console.error)
   }
 }

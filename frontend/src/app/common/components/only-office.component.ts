@@ -54,7 +54,7 @@ export class OnlyOfficeComponent implements OnChanges {
         .then(() => {
           this.createEditor()
         })
-        .catch((e) => console.error(e))
+        .catch(console.error)
     }
   }
 }

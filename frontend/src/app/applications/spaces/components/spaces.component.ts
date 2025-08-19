@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core'
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -197,7 +197,7 @@ export class SpacesComponent implements OnInit {
     if (!space.enabled) {
       this.layout.sendNotification('warning', space.name, 'Space is disabled')
     } else {
-      this.router.navigate([SPACES_PATH.FILES, space.alias], { relativeTo: this.activatedRoute }).catch((e: Error) => console.error(e))
+      this.router.navigate([SPACES_PATH.FILES, space.alias], { relativeTo: this.activatedRoute }).catch(console.error)
     }
   }
 

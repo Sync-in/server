@@ -3,7 +3,7 @@
  * This file is part of Sync-in | The open source file sync and share solution
  * See the LICENSE file for licensing details
  */
-import { Component, Renderer2, inject } from '@angular/core'
+import { Component, inject, Renderer2 } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowCircleRight, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
@@ -109,11 +109,11 @@ export class SyncWizardClientComponent {
   }
 
   onNext() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SERVER]).catch((e: Error) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SERVER]).catch(console.error)
   }
 
   onCancel() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.PATHS]).catch((e: Error) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.PATHS]).catch(console.error)
     this.syncService.resetWizard()
   }
 

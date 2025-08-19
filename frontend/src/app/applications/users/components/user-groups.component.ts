@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, ViewChild, inject } from '@angular/core'
+import { Component, ElementRef, inject, ViewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -251,7 +251,7 @@ export class UserGroupsComponent {
 
   browse(m: MemberModel) {
     if (m.isGroup) {
-      this.router.navigate([m.name], { relativeTo: this.activatedRoute }).catch((e: Error) => console.error(e))
+      this.router.navigate([m.name], { relativeTo: this.activatedRoute }).catch(console.error)
     }
   }
 

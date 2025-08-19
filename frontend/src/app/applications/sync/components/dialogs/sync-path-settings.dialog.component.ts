@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faRotate, faTimes } from '@fortawesome/free-solid-svg-icons'
@@ -59,7 +59,7 @@ export class SyncPathSettingsDialogComponent implements OnInit {
     }
     if (this.store.isElectronApp()) {
       this.syncService.updatePath(this.syncPath.export(true)).then(() => {
-        this.syncService.refreshPaths().catch((e) => console.error(e))
+        this.syncService.refreshPaths().catch(console.error)
         this.layout.closeDialog()
       })
     } else {
@@ -78,7 +78,7 @@ export class SyncPathSettingsDialogComponent implements OnInit {
       this.syncService
         .removePath(this.syncPath.id)
         .then(() => {
-          this.syncService.refreshPaths().catch((e) => console.error(e))
+          this.syncService.refreshPaths().catch(console.error)
           this.layout.closeDialog()
           this.layout.sendNotification('success', 'Sync deleted', this.syncPath.settings.name)
         })

@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, computed, Signal, ViewChild, inject } from '@angular/core'
+import { Component, computed, inject, Signal, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -95,6 +95,6 @@ export class SearchComponent {
   }
 
   goTo(f: FileContentModel) {
-    this.router.navigate([SPACES_PATH.SPACES, ...f.path.split('/')], { queryParams: { select: f.name } }).catch((e: Error) => console.error(e))
+    this.router.navigate([SPACES_PATH.SPACES, ...f.path.split('/')], { queryParams: { select: f.name } }).catch(console.error)
   }
 }

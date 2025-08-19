@@ -57,7 +57,7 @@ export class SyncWizardSettingsComponent {
   }
 
   onPrevious() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SERVER]).catch((e: Error) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SERVER]).catch(console.error)
   }
 
   async onSubmit() {
@@ -66,7 +66,7 @@ export class SyncWizardSettingsComponent {
       this.error = r
     } else {
       await this.syncService.refreshPaths()
-      this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.PATHS], { state: { id: r.id, withSettings: false } }).catch((e: Error) => console.error(e))
+      this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.PATHS], { state: { id: r.id, withSettings: false } }).catch(console.error)
       this.syncService.resetWizard()
     }
   }

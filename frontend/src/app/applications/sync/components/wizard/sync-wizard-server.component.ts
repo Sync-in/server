@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, signal, ViewChild, WritableSignal, inject } from '@angular/core'
+import { Component, inject, signal, ViewChild, WritableSignal } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -128,7 +128,7 @@ export class SyncWizardServerComponent {
       this.canCreateDir = false
     } else {
       const backRoute = segments.length === 2 && segments[0] === SPACES_PATH.FILES ? [SPACES_PATH.SPACES] : segments.slice(0, -1)
-      this.browse(backRoute.join('/')).catch((e: Error) => console.error(e))
+      this.browse(backRoute.join('/')).catch(console.error)
     }
   }
 
@@ -137,7 +137,7 @@ export class SyncWizardServerComponent {
       next: () => {
         this.browse(this.currentPath, this.newDirectoryName)
           .then(() => (this.newDirectoryName = ''))
-          .catch((e: Error) => console.error(e))
+          .catch(console.error)
       },
       error: (e: HttpErrorResponse) => this.setInfoMsg(e.error.message)
     })
@@ -201,11 +201,11 @@ export class SyncWizardServerComponent {
   }
 
   onNext() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SETTINGS]).catch((e: Error) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SETTINGS]).catch(console.error)
   }
 
   onPrevious() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT]).catch((e: Error) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT]).catch(console.error)
   }
 
   setServerPath(serverPath: SyncWizardPath) {

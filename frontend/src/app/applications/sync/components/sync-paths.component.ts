@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, effect, OnDestroy, OnInit, ViewChild, inject } from '@angular/core'
+import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -265,7 +265,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
 
   onRefresh() {
     this.onSelect()
-    this.syncService.refreshPaths().catch((e) => console.error(e))
+    this.syncService.refreshPaths().catch(console.error)
   }
 
   doSync(run: boolean) {
@@ -308,7 +308,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   }
 
   addToSync() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD]).catch((e) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD]).catch(console.error)
   }
 
   sortBy(column: string, toUpdate = true, collection?: SyncPathModel[]) {
@@ -331,7 +331,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   }
 
   showErrors(syncPath: SyncPathModel) {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.TRANSFERS], { state: { id: syncPath.id } }).catch((e: Error) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.TRANSFERS], { state: { id: syncPath.id } }).catch(console.error)
   }
 
   private checkRouteState() {

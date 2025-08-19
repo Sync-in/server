@@ -264,7 +264,7 @@ export class SharedComponent implements OnInit {
 
   goTo(share?: ShareFileModel) {
     share = share || this.selected
-    this.sharesService.goTo(share).catch((e: Error) => console.error(e))
+    this.sharesService.goTo(share).catch(console.error)
   }
 
   goToComments(share: ShareFileModel) {

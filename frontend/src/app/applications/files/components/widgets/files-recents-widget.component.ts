@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, computed, Signal, inject } from '@angular/core'
+import { Component, computed, inject, Signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFileLines } from '@fortawesome/free-regular-svg-icons'
@@ -51,6 +51,6 @@ export class FilesRecentsWidgetComponent {
   }
 
   goToFile(f: FileRecentModel) {
-    this.router.navigate([SPACES_PATH.SPACES, ...f.path.split('/')], { queryParams: { select: f.name } }).catch((e: Error) => console.error(e))
+    this.router.navigate([SPACES_PATH.SPACES, ...f.path.split('/')], { queryParams: { select: f.name } }).catch(console.error)
   }
 }

@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, Component, effect, ElementRef, QueryList, ViewChildren, inject } from '@angular/core'
+import { AfterViewInit, Component, effect, ElementRef, inject, QueryList, ViewChildren } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCheck, faCircleInfo, faMagnifyingGlass, faTimes, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
@@ -116,6 +116,6 @@ export class NotificationsComponent implements AfterViewInit {
     const element = n.content.app === NOTIFICATION_APP.SYNC ? n.content.element.split('/').at(-1) : n.content.element
     this.router
       .navigate([SPACES_PATH.SPACES, ...n.content.url.split('/')], { queryParams: { select: element } })
-      .catch((e: Error) => console.error(e))
+      .catch(console.error)
   }
 }

@@ -5,7 +5,7 @@
  */
 
 import { IActionMapping, ITreeOptions, TREE_ACTIONS, TreeModel, TreeModule, TreeNode } from '@ali-hm/angular-tree-component'
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild, inject } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -291,7 +291,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
       if (urlSegments[0] !== SPACES_PATH.SPACES) {
         urlSegments.unshift(SPACES_PATH.SPACES)
       }
-      this.router.navigate(urlSegments).catch((e: Error) => console.error(e))
+      this.router.navigate(urlSegments).catch(console.error)
     }
   }
 

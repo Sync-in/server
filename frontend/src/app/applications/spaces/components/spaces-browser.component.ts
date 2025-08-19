@@ -6,7 +6,7 @@
 
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, Renderer2, ViewChild, inject } from '@angular/core'
+import { AfterViewInit, Component, ElementRef, HostListener, inject, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -455,7 +455,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
     if (!file.isRenamed) {
       if (file.isDir) {
-        this.router.navigate([file.root?.alias || file.name], { relativeTo: this.activatedRoute }).catch((e: Error) => console.error(e))
+        this.router.navigate([file.root?.alias || file.name], { relativeTo: this.activatedRoute }).catch(console.error)
       } else {
         this.shortcutView()
       }
@@ -542,7 +542,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   addToSync() {
     this.router
       .navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT], { state: { file: this.selection[0] } })
-      .catch((e: Error) => console.error(e))
+      .catch(console.error)
   }
 
   addToClipboard() {
@@ -642,7 +642,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         }
       }
     }
-    this.filesUpload.addFiles(ev.files).catch((e: Error) => console.error(e))
+    this.filesUpload.addFiles(ev.files).catch(console.error)
   }
 
   onDropFiles(ev: { dataTransfer: { files: File[] } }) {

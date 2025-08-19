@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import { API_SYNC_CLIENTS, SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import {
@@ -114,7 +114,7 @@ export class SyncService {
         reportOnly: reportOnly,
         async: async
       })
-      .catch((e) => console.error(e))
+      .catch(console.error)
   }
 
   async refreshPaths(): Promise<void> {
@@ -138,7 +138,7 @@ export class SyncService {
       const repository = segments.shift()
       this.router
         .navigate([SPACES_PATH.SPACES, ...SYNC_PATH_REPOSITORY[repository], ...segments], name ? { queryParams: { select: name } } : {})
-        .catch((e: Error) => console.error(e))
+        .catch(console.error)
     }
   }
 

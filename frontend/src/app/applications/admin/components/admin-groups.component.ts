@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, ViewChild, inject } from '@angular/core'
+import { Component, ElementRef, inject, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -203,7 +203,7 @@ export class AdminGroupsComponent {
 
   onPersonalGroupsView(state: boolean) {
     this.personalGroupsView = state
-    this.router.navigate([ADMIN_PATH.BASE, state ? ADMIN_PATH.PGROUPS : ADMIN_PATH.GROUPS]).catch((e: Error) => console.error(e))
+    this.router.navigate([ADMIN_PATH.BASE, state ? ADMIN_PATH.PGROUPS : ADMIN_PATH.GROUPS]).catch(console.error)
   }
 
   refresh() {
@@ -235,7 +235,7 @@ export class AdminGroupsComponent {
 
   browse(m: MemberModel) {
     if (m.isGroup) {
-      this.router.navigate([m.name], { relativeTo: this.activatedRoute }).catch((e: Error) => console.error(e))
+      this.router.navigate([m.name], { relativeTo: this.activatedRoute }).catch(console.error)
     }
   }
 
@@ -304,7 +304,7 @@ export class AdminGroupsComponent {
             } else {
               this.router
                 .navigate([`${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}`, g.parent?.id ? g.parent.name : ''], { queryParams: { select: g.name } })
-                .catch((e: Error) => console.error(e))
+                .catch(console.error)
             }
           }
         })
@@ -363,7 +363,7 @@ export class AdminGroupsComponent {
                   } else {
                     this.router
                       .navigate([`${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}`, g.parent?.id ? g.parent.name : ''], { queryParams: { select: g.name } })
-                      .catch((e: Error) => console.error(e))
+                      .catch(console.error)
                   }
                 }
               })

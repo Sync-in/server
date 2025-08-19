@@ -5,7 +5,7 @@
  */
 
 import { AsyncPipe, Location, NgComponentOutlet, NgTemplateOutlet } from '@angular/common'
-import { Component, ElementRef, OnDestroy, Renderer2, ViewChild, inject } from '@angular/core'
+import { Component, ElementRef, inject, OnDestroy, Renderer2, ViewChild } from '@angular/core'
 import { ResolveEnd, Router, RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAngleLeft, faAngleRight, faUserSecret } from '@fortawesome/free-solid-svg-icons'
@@ -114,7 +114,7 @@ export class SideBarLeftComponent implements OnDestroy {
 
   checkComponentRoute(menu?: AppMenu) {
     if (this.currentMenu.link !== this.currentUrl) {
-      this.router.navigate([this.currentMenu.link]).catch((e: Error) => console.error(e))
+      this.router.navigate([this.currentMenu.link]).catch(console.error)
     }
     if (menu) {
       menu.miniOpened = false

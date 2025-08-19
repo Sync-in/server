@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpEventType, HttpUploadProgressEvent } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { API_FILES_OPERATION_UPLOAD } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { lastValueFrom, Observable } from 'rxjs'
@@ -60,7 +60,7 @@ export class FilesUploadService {
     if (ev.dataTransfer.items && ev.dataTransfer.items[0]?.webkitGetAsEntry) {
       this.webkitReadDataTransfer(ev)
     } else {
-      this.addFiles(ev.dataTransfer.files).catch((e: Error) => console.error(e))
+      this.addFiles(ev.dataTransfer.files).catch(console.error)
     }
   }
 
@@ -120,7 +120,7 @@ export class FilesUploadService {
     }
     const decrement = () => {
       if (--queue == 0) {
-        this.addFiles(files).catch((e: Error) => console.error(e))
+        this.addFiles(files).catch(console.error)
       }
     }
 

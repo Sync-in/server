@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import { CLIENT_TOKEN_EXPIRED_ERROR } from '@sync-in-server/backend/src/applications/sync/constants/auth'
 import { API_SYNC_AUTH_COOKIE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
@@ -119,7 +119,7 @@ export class AuthService {
           this.layout.clean()
           this.store.clean()
           if (redirect) {
-            this.router.navigate([AUTH_PATHS.BASE, AUTH_PATHS.LOGIN]).catch((e: Error) => console.error(e))
+            this.router.navigate([AUTH_PATHS.BASE, AUTH_PATHS.LOGIN]).catch(console.error)
           }
           if (expired) {
             this.layout.sendNotification('warning', 'Session has expired', 'Please sign in')
@@ -134,7 +134,7 @@ export class AuthService {
       next: (r: LoginResponseDto) => {
         this.userService.disconnectWebSocket()
         this.initUserFromResponse(r)
-        this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch((e: Error) => console.error(e))
+        this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch(console.error)
       },
       error: (e: HttpErrorResponse) => {
         console.error(e)

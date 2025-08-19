@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, ViewChild, inject } from '@angular/core'
+import { Component, ElementRef, inject, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Data, Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -214,7 +214,7 @@ export class AdminUsersComponent {
 
   onGuestsView(state: boolean) {
     this.guestsView = state
-    this.router.navigate([ADMIN_PATH.BASE, state ? ADMIN_PATH.GUESTS : ADMIN_PATH.USERS]).catch((e: Error) => console.error(e))
+    this.router.navigate([ADMIN_PATH.BASE, state ? ADMIN_PATH.GUESTS : ADMIN_PATH.USERS]).catch(console.error)
   }
 
   onContextMenu(ev: any) {

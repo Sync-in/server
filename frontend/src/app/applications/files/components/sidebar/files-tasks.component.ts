@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, OnDestroy, inject } from '@angular/core'
+import { Component, inject, OnDestroy } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -101,7 +101,7 @@ export class FilesTasksComponent implements OnDestroy {
           return
         }
       }
-      this.router.navigate([`${SPACES_PATH.SPACES}/${task.path}`], { queryParams: { select: task.name } }).catch((e: Error) => console.error(e))
+      this.router.navigate([`${SPACES_PATH.SPACES}/${task.path}`], { queryParams: { select: task.name } }).catch(console.error)
     }
   }
 }

@@ -15,9 +15,7 @@ export const authGuard: CanActivateFn = (_route: ActivatedRouteSnapshot, state: 
 
 export const noAuthGuard: CanActivateFn = (): boolean => {
   if (inject(AuthService).isLogged()) {
-    inject(Router)
-      .navigate([])
-      .catch((e: Error) => console.error(e))
+    inject(Router).navigate([]).catch(console.error)
     return false
   }
   return true

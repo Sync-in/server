@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core'
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowDown, faArrowRotateRight, faArrowUp, faCircleInfo } from '@fortawesome/free-solid-svg-icons'
@@ -151,6 +151,6 @@ export class TrashComponent implements OnInit {
   }
 
   browse(trash: TrashModel) {
-    this.router.navigate([SPACES_PATH.SPACES_TRASH, trash.alias]).catch((e: Error) => console.error(e))
+    this.router.navigate([SPACES_PATH.SPACES_TRASH, trash.alias]).catch(console.error)
   }
 }

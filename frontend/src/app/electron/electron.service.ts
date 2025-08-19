@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { effect, Injectable, NgZone, inject } from '@angular/core'
+import { effect, inject, Injectable, NgZone } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications/sync/dtos/sync-client-auth.dto'
@@ -118,7 +118,7 @@ export class Electron {
   private getSyncsWithErrors() {
     this.invoke(EVENT.SYNC.ERRORS)
       .then((syncs: SyncStatus[]) => this.store.clientSyncsWithErrors.next(syncs))
-      .catch((e) => console.error(e))
+      .catch(console.error)
   }
 
   private updateSyncMenuIcon() {

@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import {
   ADMIN_USERS_ROUTE,
@@ -143,6 +143,6 @@ export class AdminService {
 
   initImpersonateUser(r: LoginResponseDto) {
     this.authService.initUserFromResponse(r, true)
-    this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch((e: Error) => console.error(e))
+    this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch(console.error)
   }
 }

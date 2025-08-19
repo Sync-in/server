@@ -142,7 +142,7 @@ export class SyncClientsComponent {
             withSettings: true
           }
         })
-        .catch((e: Error) => console.error(e))
+        .catch(console.error)
     } else {
       const modalRef: BsModalRef<SyncPathSettingsDialogComponent> = this.layout.openDialog(SyncPathSettingsDialogComponent, 'md', {
         initialState: { syncPathSelected: this.selectedPath, syncClientSelected: this.selected } as SyncPathSettingsDialogComponent

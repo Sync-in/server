@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import { LINK_ERROR, LINK_TYPE } from '@sync-in-server/backend/src/applications/links/constants/links'
 import {
@@ -77,9 +77,9 @@ export class LinksService {
         }
         if (r.error) {
           if (r.error === LINK_ERROR.UNAUTHORIZED) {
-            this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${LINKS_PATH.AUTH}`]).catch((e: Error) => console.error(e))
+            this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${LINKS_PATH.AUTH}`]).catch(console.error)
           } else {
-            this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${r.error}`]).catch((e: Error) => console.error(e))
+            this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${r.error}`]).catch(console.error)
           }
         }
         return false
@@ -96,9 +96,9 @@ export class LinksService {
       this.http.get<LoginResponseDto>(`${API_PUBLIC_LINK_ACCESS}/${uuid}`).subscribe((r) => {
         this.authService.initUserFromResponse(r)
         if (link.space) {
-          this.router.navigate([SPACES_PATH.SPACES], { queryParams: { select: link.space.name } }).catch((e: Error) => console.error(e))
+          this.router.navigate([SPACES_PATH.SPACES], { queryParams: { select: link.space.name } }).catch(console.error)
         } else {
-          this.router.navigate([SPACES_PATH.SPACES_SHARES], { queryParams: { select: link.share.name } }).catch((e: Error) => console.error(e))
+          this.router.navigate([SPACES_PATH.SPACES_SHARES], { queryParams: { select: link.share.name } }).catch(console.error)
         }
       })
     } else {
@@ -110,14 +110,14 @@ export class LinksService {
     return this.http.post<LoginResponseDto>(`${API_PUBLIC_LINK_AUTH}/${uuid}`, { password } as UserPasswordDto).pipe(
       map((r: LoginResponseDto) => {
         this.authService.initUserFromResponse(r)
-        this.router.navigate([`${LINKS_PATH.LINK}/${uuid}`]).catch((e: Error) => console.error(e))
+        this.router.navigate([`${LINKS_PATH.LINK}/${uuid}`]).catch(console.error)
         return true
       }),
       catchError((e) => {
         if (e.error.message === LINK_ERROR.UNAUTHORIZED) {
           this.layout.sendNotification('warning', 'Link', 'Bad password')
         } else {
-          this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${e.error.message}`]).catch((e: Error) => console.error(e))
+          this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${e.error.message}`]).catch(console.error)
         }
         return of(false)
       })
