@@ -1,4 +1,11 @@
 
+## [1.3.7](https://github.com/Sync-in/server/compare/v1.3.6...v1.3.7) (2025-08-19)
+
+
+### Bug Fixes
+
+* **backend:** broken canvas deps v3 ([8917d97](https://github.com/Sync-in/server/commit/8917d9798b725809ab27314e60dbcbeb57b58160))
+
 ## [1.3.6](https://github.com/Sync-in/server/compare/v1.3.5...v1.3.6) (2025-08-19)
 
 
