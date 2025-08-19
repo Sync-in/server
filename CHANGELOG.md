@@ -1,4 +1,11 @@
 
+## [1.3.4](https://github.com/Sync-in/server/compare/v1.3.3...v1.3.4) (2025-08-19)
+
+
+### Chores
+
+* **ci:** remove husky prepare ([8e911ab](https://github.com/Sync-in/server/commit/8e911abf11e5a3265ea6afe30e26879452766a20))
+
 ## [1.3.3](https://github.com/Sync-in/server/compare/v1.3.2...v1.3.3) (2025-08-19)
 
 
