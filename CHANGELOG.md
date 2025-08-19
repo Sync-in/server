@@ -1,33 +1,5 @@
 
-## [1.3.7](https://github.com/Sync-in/server/compare/v1.3.6...v1.3.7) (2025-08-19)
-
-
-### Bug Fixes
-
-* **backend:** broken canvas deps v3 ([8917d97](https://github.com/Sync-in/server/commit/8917d9798b725809ab27314e60dbcbeb57b58160))
-
-## [1.3.6](https://github.com/Sync-in/server/compare/v1.3.5...v1.3.6) (2025-08-19)
-
-
-### Bug Fixes
-
-* **backend:** broken canvas deps v2 ([5c83a0e](https://github.com/Sync-in/server/commit/5c83a0ebede435d1ca229df516d89dc1b21a40fc))
-
-## [1.3.5](https://github.com/Sync-in/server/compare/v1.3.4...v1.3.5) (2025-08-19)
-
-
-### Bug Fixes
-
-* **backend:** broken canvas deps ([3c0689a](https://github.com/Sync-in/server/commit/3c0689a340fe92170409ce98c9ba0480950b34d1))
-
-## [1.3.4](https://github.com/Sync-in/server/compare/v1.3.3...v1.3.4) (2025-08-19)
-
-
-### Chores
-
-* **ci:** remove husky prepare ([8e911ab](https://github.com/Sync-in/server/commit/8e911abf11e5a3265ea6afe30e26879452766a20))
-
-## [1.3.3](https://github.com/Sync-in/server/compare/v1.3.2...v1.3.3) (2025-08-19)
+## [1.3.7](https://github.com/Sync-in/server/compare/v1.3.2...v1.3.7) (2025-08-19)
 
 
 ### Bug Fixes
@@ -43,7 +15,8 @@
 * **frontend:** bump to angular 20 ([363671a](https://github.com/Sync-in/server/commit/363671ac5e6ad6299477bf07f0bcffe1cff3e3f4))
 * **npm-sync-in-server.js:** more verbose createUser function ([1ea155a](https://github.com/Sync-in/server/commit/1ea155a23f092312cb234758c59002bbe01458b2))
 * **frontend:** update-angular-19-to-20 ([14f0397](https://github.com/Sync-in/server/commit/14f03973a77370f531bd1ed4c6c2052b76c15ea2))
-* add Husky pre-commit hook for lint and test ([281e32d](https://github.com/Sync-in/server/commit/281e32df28e092b6ea0a57d94b6f8279ca67c4c1))
+* **ci:** add Husky pre-commit hook for lint and test ([281e32d](https://github.com/Sync-in/server/commit/281e32df28e092b6ea0a57d94b6f8279ca67c4c1))
+* **ci:** remove husky prepare ([8e911ab](https://github.com/Sync-in/server/commit/8e911abf11e5a3265ea6afe30e26879452766a20))
 
 ## [1.3.2](https://github.com/Sync-in/server/compare/v1.3.1...v1.3.2) (2025-08-08)
 
