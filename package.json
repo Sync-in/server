@@ -3,6 +3,32 @@
   "name": "sync-in-server",
   "version": "1.3.7",
   "description": "The secure, open-source platform for file storage, sharing, collaboration, and sync",
+  "keywords": [
+    "sync-in",
+    "self-hosted",
+    "open-source",
+    "data-sovereignty",
+    "cloud-storage",
+    "privacy-first",
+    "file-server",
+    "file-manager",
+    "file-storage",
+    "file-sharing",
+    "file-sync",
+    "synchronization",
+    "sync",
+    "webdav",
+    "collaboration",
+    "onlyoffice",
+    "full-text-search",
+    "access-control",
+    "spaces",
+    "secure-links",
+    "document-management",
+    "nextcloud-alternative",
+    "owncloud-alternative",
+    "dropbox-alternative"
+  ],
   "funding": [
     {
       "type": "github",
@@ -38,7 +64,6 @@
   "os": [
     "!win32"
   ],
-  "engineStrict": true,
   "engines": {
     "node": ">=22.15.0"
   },
