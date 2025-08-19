@@ -1,4 +1,18 @@
 
+## [1.3.8](https://github.com/Sync-in/server/compare/v1.3.7...v1.3.8) (2025-08-19)
+
+
+### Bug Fixes
+
+* **frontend:assets:** replace symlinked SVGs with real files to fix Angular 20 build issues ([3749e44](https://github.com/Sync-in/server/commit/3749e4419ad4bce037297bd9872c0b585af6c73f))
+
+
+### Chores
+
+* **CHANGELOG.md:** cleanup ([a44c6ce](https://github.com/Sync-in/server/commit/a44c6ce11b6d65758452788b5733c017af48a516))
+* **husky:** limit pre-commit hook to lint only ([20fa56d](https://github.com/Sync-in/server/commit/20fa56d36f024d5a1a5559569e3dd67749c02277))
+* **README.md:** add keywords ([81c1a6e](https://github.com/Sync-in/server/commit/81c1a6e1dc23d9e4416ef6face0830b5278154d9))
+
 ## [1.3.7](https://github.com/Sync-in/server/compare/v1.3.2...v1.3.7) (2025-08-19)
 
 

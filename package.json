@@ -1,7 +1,7 @@
 {
   "productName": "Sync-in",
   "name": "sync-in-server",
-  "version": "1.3.7",
+  "version": "1.3.8",
   "description": "The secure, open-source platform for file storage, sharing, collaboration, and sync",
   "keywords": [
     "sync-in",
