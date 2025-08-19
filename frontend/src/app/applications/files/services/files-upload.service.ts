@@ -17,10 +17,10 @@ import { FilesService } from './files.service'
 
 @Injectable({ providedIn: 'root' })
 export class FilesUploadService {
+  public supportUploadDirectory = supportUploadDirectory()
   private readonly http = inject(HttpClient)
   private readonly filesService = inject(FilesService)
   private readonly filesTasksService = inject(FilesTasksService)
-  public supportUploadDirectory = supportUploadDirectory()
 
   async addFiles(files: FileUpload[]) {
     const apiRoute = `${API_FILES_OPERATION_UPLOAD}/${this.filesService.currentRoute}`

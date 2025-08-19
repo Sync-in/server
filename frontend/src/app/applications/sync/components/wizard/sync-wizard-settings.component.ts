@@ -23,8 +23,6 @@ import { SyncPathDirectionIconComponent } from '../utils/sync-path-direction-ico
   templateUrl: './sync-wizard-settings.component.html'
 })
 export class SyncWizardSettingsComponent {
-  private readonly router = inject(Router)
-  private readonly layout = inject(LayoutService)
   protected readonly syncService = inject(SyncService)
   protected readonly SYNC_PATH_CONFLICT_MODE = SYNC_PATH_CONFLICT_MODE
   protected readonly SYNC_PATH_MODE = SYNC_PATH_MODE
@@ -32,6 +30,8 @@ export class SyncWizardSettingsComponent {
   protected readonly translatedRemotePath = this.syncService.translateServerPath(this.syncService.wizard.remotePath.serverPath)
   protected syncPath: SyncPathModel
   protected error: string = null
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
 
   constructor() {
     this.syncPath = new SyncPathModel({

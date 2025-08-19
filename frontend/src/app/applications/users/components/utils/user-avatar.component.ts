@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, Input, OnInit } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faLightbulb, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
@@ -72,7 +72,6 @@ import { MemberModel } from '../../models/member.model'
   `
 })
 export class UserAvatarComponent implements OnInit {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   @Input() user: OwnerType | MemberModel | any
   @Input() isMember = false
   @Input() unknownUserAsInfo = false
@@ -81,6 +80,7 @@ export class UserAvatarComponent implements OnInit {
   @Input() fontSize = 16
   @Input() tooltipPlacement: AvailableBSPositions = 'auto'
   @Input() container: string = null
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { faUsers, faUserShield, faLightbulb }
 
   ngOnInit(): void {

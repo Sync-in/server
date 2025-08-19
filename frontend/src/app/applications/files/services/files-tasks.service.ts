@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { API_FILES_TASKS } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
@@ -74,6 +74,17 @@ export class FilesTasksService {
     })
   }
 
+  updateTask(task: FileTask) {
+    if (task.status === FileTaskStatus.PENDING) {
+      const currentTask = this.findTask(task.id, true)
+      Object.assign(currentTask, task)
+    } else {
+      this.deleteTask(task.id, true)
+      this.addTask(task)
+      this.taskDone(task)
+    }
+  }
+
   private loadAll() {
     this.http.get<FileTask[]>(API_FILES_TASKS).subscribe({
       next: (fileTasks: FileTask[]) => fileTasks.forEach((task: FileTask) => this.addTask(task)),
@@ -116,17 +127,6 @@ export class FilesTasksService {
           console.warn(e)
         }
       })
-    }
-  }
-
-  updateTask(task: FileTask) {
-    if (task.status === FileTaskStatus.PENDING) {
-      const currentTask = this.findTask(task.id, true)
-      Object.assign(currentTask, task)
-    } else {
-      this.deleteTask(task.id, true)
-      this.addTask(task)
-      this.taskDone(task)
     }
   }
 

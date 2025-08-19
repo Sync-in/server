@@ -20,13 +20,13 @@ import { LinksService } from '../../services/links.service'
 })
 export class PublicLinkComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly activatedRoute = inject(ActivatedRoute)
-  private readonly linksService = inject(LinksService)
   protected readonly icons = { SPACES: SPACES_ICON.SPACES }
   protected readonly logoUrl = logoUrl
-  private linkUUID: string
   protected mimeUrl: string = null
   protected link: SpaceLink
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly linksService = inject(LinksService)
+  private linkUUID: string
 
   constructor() {
     this.activatedRoute.params.subscribe((params: Params) => (this.linkUUID = params.uuid))

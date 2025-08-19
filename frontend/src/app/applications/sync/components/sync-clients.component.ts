@@ -47,9 +47,6 @@ import { SyncPathSettingsDialogComponent } from './dialogs/sync-path-settings.di
 })
 export class SyncClientsComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly router = inject(Router)
-  private readonly layout = inject(LayoutService)
-  private readonly syncService = inject(SyncService)
   protected readonly icons = {
     faArrowRotateRight,
     faTrashCan,
@@ -65,12 +62,15 @@ export class SyncClientsComponent {
     faPen,
     faKey
   }
-  private focusOnSelectId: string
-  private focusOnSelectPathId: number
   protected loading = false
   protected selected: SyncClientModel
   protected selectedPath: SyncPathModel
   protected clients: SyncClientModel[] = []
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
+  private readonly syncService = inject(SyncService)
+  private focusOnSelectId: string
+  private focusOnSelectPathId: number
 
   constructor() {
     this.layout.setBreadcrumbIcon(USER_ICON.CLIENTS)

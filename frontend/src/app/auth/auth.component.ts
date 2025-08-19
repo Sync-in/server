@@ -24,14 +24,14 @@ import { AuthService } from './auth.service'
 })
 export class AuthComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly fb = inject(UntypedFormBuilder)
-  private readonly router = inject(Router)
-  private readonly auth = inject(AuthService)
   protected readonly icons = { faLock, faUserAlt }
   protected logoUrl = logoDarkUrl
   protected loginForm: FormGroup
   protected hasError: any = null
   protected submitted = false
+  private readonly fb = inject(UntypedFormBuilder)
+  private readonly router = inject(Router)
+  private readonly auth = inject(AuthService)
 
   constructor() {
     const fb = this.fb

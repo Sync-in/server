@@ -36,11 +36,6 @@ import { getServerPath } from '../sync.utils'
   providedIn: 'root'
 })
 export class SyncService {
-  private readonly router = inject(Router)
-  private readonly http = inject(HttpClient)
-  private readonly layout = inject(LayoutService)
-  private readonly store = inject(StoreService)
-  private readonly electron = inject(Electron)
   // wizard
   public wizard: {
     localPath: {
@@ -59,6 +54,11 @@ export class SyncService {
       scheduler: { unit: string; value: number }
     }
   }
+  private readonly router = inject(Router)
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
+  private readonly electron = inject(Electron)
 
   constructor() {
     this.resetWizard()

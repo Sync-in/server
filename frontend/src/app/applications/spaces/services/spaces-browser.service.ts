@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { UrlSegment } from '@angular/router'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { API_SPACES_BROWSE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
@@ -20,6 +20,7 @@ import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../spaces.constants'
 
 @Injectable({ providedIn: 'root' })
 export class SpacesBrowserService {
+  public inPersonalSpace = false
   private readonly http = inject(HttpClient)
   private readonly layout = inject(LayoutService)
   private browseApi: string
@@ -28,7 +29,6 @@ export class SpacesBrowserService {
   private breadCrumbFilesRepo = false
   private inShareRepo = false
   private inRootSpace = false
-  public inPersonalSpace = false
 
   setEnvironment(repository: SPACE_REPOSITORY, routes: UrlSegment[]) {
     this.breadCrumbFilesRepo = SPACES_PATH.FILES === repository

@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faArrowDown, faArrowUp, faCog, faTh, faThLarge, faThList } from '@fortawesome/free-solid-svg-icons'
@@ -33,7 +33,6 @@ export interface ViewMode {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NavigationViewComponent {
-  private readonly layout = inject(LayoutService)
   @Input() sortParams: { column: string; asc: boolean }
   @Input() sortFields: Record<string, string>
   @Output() switchView = new EventEmitter<ViewMode>()
@@ -48,6 +47,7 @@ export class NavigationViewComponent {
     thXl: { enabled: true, text: 'XL', icon: faTh, dimensions: 192, image: 152, imageRes: 512, faSize: 65, textSize: 13, margins: 18 },
     thXxl: { enabled: true, text: 'XXL', icon: faThLarge, dimensions: 232, image: 192, imageRes: 1024, faSize: 80, textSize: 13, margins: 18 }
   }
+  private readonly layout = inject(LayoutService)
 
   constructor() {
     this.viewsMode.tl.text = this.layout.translateString(this.viewsMode.tl.text)

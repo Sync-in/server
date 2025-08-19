@@ -25,11 +25,11 @@ import { UserService } from '../user.service'
 })
 export class UserApplicationsComponent {
   protected readonly store = inject(StoreService)
-  private readonly layout = inject(LayoutService)
-  private readonly userService = inject(UserService)
   protected readonly icons = { faWindows, faApple, faLinux, faDownload, faTerminal }
   protected readonly APP_STORE_OS = APP_STORE_PLATFORM
   protected readonly APP_STORE_PLATFORM_LIST = Object.values(APP_STORE_PLATFORM)
+  private readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
 
   constructor() {
     this.userService.checkAppStoreAvailability()

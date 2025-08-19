@@ -4,14 +4,12 @@
  * See the LICENSE file for licensing details
  */
 
-import { Directive, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, Renderer2, inject } from '@angular/core'
+import { Directive, ElementRef, EventEmitter, HostListener, inject, Input, OnInit, Output, Renderer2 } from '@angular/core'
 
 @Directive({
   selector: '[appInputEdit]'
 })
 export class InputEditDirective implements OnInit {
-  private readonly elementRef = inject(ElementRef)
-  private readonly renderer = inject(Renderer2)
   @Input() inputObject: { isRenamed: boolean } & any
   @Input() inputField = 'name'
   @Input() fullWidth = false
@@ -21,6 +19,8 @@ export class InputEditDirective implements OnInit {
   @Input() disableKeyboard = false
   @Output() updateObject = new EventEmitter<{ object: any; name: string }>(true)
   @Output() renamingInProgress = new EventEmitter<boolean>(true)
+  private readonly elementRef = inject(ElementRef)
+  private readonly renderer = inject(Renderer2)
   private dangerColor = '#dd4b39'
   private primaryColor = '#3c8dbc'
 

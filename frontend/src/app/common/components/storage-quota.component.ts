@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -33,11 +33,11 @@ import { quotaRegexp } from '../utils/regexp'
     </div>`
 })
 export class StorageQuotaComponent implements OnInit {
-  protected locale = inject<L10nLocale>(L10N_LOCALE)
   @Input() quota: number
   @Output() quotaChange = new EventEmitter<number>()
   @Input() maxWidthPercent = 75
   @Input() fullWidth = false
+  protected locale = inject<L10nLocale>(L10N_LOCALE)
   protected quotaText: string
   protected invalid = false
 

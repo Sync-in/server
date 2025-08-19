@@ -70,11 +70,6 @@ import { UserPersonalGroupLeaveDialogComponent } from './dialogs/user-personal-g
   templateUrl: 'user-groups.component.html'
 })
 export class UserGroupsComponent {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly router = inject(Router)
-  private readonly activatedRoute = inject(ActivatedRoute)
-  private readonly layout = inject(LayoutService)
-  private readonly userService = inject(UserService)
   @ViewChild(VirtualScrollComponent) scrollView: {
     element: ElementRef
     viewPortItems: MemberModel[]
@@ -83,6 +78,7 @@ export class UserGroupsComponent {
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     GROUPS: USER_ICON.GROUPS,
@@ -157,18 +153,8 @@ export class UserGroupsComponent {
       sortable: true
     }
   }
-  private readonly sortSettings: SortSettings = {
-    default: [{ prop: 'name', type: 'string' }],
-    name: [{ prop: 'name', type: 'string' }],
-    type: [{ prop: 'type', type: 'string' }],
-    role: [{ prop: 'isGroupManager', type: 'number' }],
-    createdAt: [{ prop: 'createdAt', type: 'date' }],
-    modifiedAt: [{ prop: 'modifiedAt', type: 'date' }]
-  }
-  protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
   // States
   protected currentGroup: GroupBrowseModel['parentGroup']
-  protected canCreatePersonalGroup = this.userService.userHavePermission(USER_PERMISSION.PERSONAL_GROUPS_ADMIN)
   protected isCurrentGroupManager = false
   protected allowedAction = {
     addGroup: false,
@@ -179,10 +165,24 @@ export class UserGroupsComponent {
     editGroup: false,
     leaveGroup: false
   }
-  private focusOnSelect: string
   protected loading = false
   protected selected: MemberModel = null
   protected members: MemberModel[] = []
+  private readonly router = inject(Router)
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
+  protected canCreatePersonalGroup = this.userService.userHavePermission(USER_PERMISSION.PERSONAL_GROUPS_ADMIN)
+  private readonly sortSettings: SortSettings = {
+    default: [{ prop: 'name', type: 'string' }],
+    name: [{ prop: 'name', type: 'string' }],
+    type: [{ prop: 'type', type: 'string' }],
+    role: [{ prop: 'isGroupManager', type: 'number' }],
+    createdAt: [{ prop: 'createdAt', type: 'date' }],
+    modifiedAt: [{ prop: 'modifiedAt', type: 'date' }]
+  }
+  protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
+  private focusOnSelect: string
 
   constructor() {
     this.activatedRoute.data.subscribe((route: Data) => this.setEnv(route.routes as UrlSegment[]))

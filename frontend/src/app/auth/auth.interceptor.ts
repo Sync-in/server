@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http'
-import { Injectable, Injector, inject } from '@angular/core'
+import { inject, Injectable, Injector } from '@angular/core'
 import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH } from '@sync-in-server/backend/src/authentication/constants/routes'
 import { BehaviorSubject, concatMap, delay, Observable, of, retryWhen, throwError } from 'rxjs'
 import { catchError, filter, finalize, switchMap, take } from 'rxjs/operators'

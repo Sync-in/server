@@ -35,9 +35,7 @@ export const syncWizardServerActivate: CanActivateFn = (): boolean => {
   const syncService = inject(SyncService)
   const canActivate = Boolean(syncService.wizard.localPath)
   if (!canActivate) {
-    inject(Router)
-      .navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT])
-      .catch(console.error)
+    inject(Router).navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT]).catch(console.error)
   }
   return canActivate
 }

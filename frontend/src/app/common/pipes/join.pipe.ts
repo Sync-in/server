@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Pipe, PipeTransform, inject } from '@angular/core'
+import { inject, Pipe, PipeTransform } from '@angular/core'
 import { L10nTranslationService } from 'angular-l10n'
 import { CapitalizePipe } from './capitalize.pipe'
 

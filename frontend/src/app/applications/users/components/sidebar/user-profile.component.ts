@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, OnDestroy, inject } from '@angular/core'
+import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -26,15 +26,15 @@ import { UserService } from '../../user.service'
   imports: [FormsModule, RouterLink, CapitalizePipe, FaIconComponent, L10nTranslateDirective]
 })
 export class UserProfileComponent implements OnDestroy {
-  private readonly layout = inject(LayoutService)
-  private readonly authService = inject(AuthService)
-  private readonly userService = inject(UserService)
   protected readonly store = inject(StoreService)
   protected readonly USER_PATH = USER_PATH
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly icons = { faUserAlt, faCircleHalfStroke, faCog, faPowerOff, faUserSecret }
   protected user: UserType
   protected userAvatar: string = null
+  private readonly layout = inject(LayoutService)
+  private readonly authService = inject(AuthService)
+  private readonly userService = inject(UserService)
   private subscriptions: Subscription[] = []
 
   constructor() {

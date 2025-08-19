@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectorRef, NgZone, OnDestroy, Pipe, PipeTransform, inject } from '@angular/core'
+import { ChangeDetectorRef, inject, NgZone, OnDestroy, Pipe, PipeTransform } from '@angular/core'
 import { Dayjs } from 'dayjs'
 import { dJs } from '../utils/time'
 

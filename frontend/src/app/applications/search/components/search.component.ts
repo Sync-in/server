@@ -42,19 +42,18 @@ import { SEARCH_ICON, SEARCH_PATH } from '../search.constants'
   templateUrl: './search.component.html'
 })
 export class SearchComponent {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly router = inject(Router)
-  private readonly layout = inject(LayoutService)
-  protected readonly store = inject(StoreService)
-  private readonly filesService = inject(FilesService)
-
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly store = inject(StoreService)
+  public searchContent: Signal<string> = computed(() => this.store.currentSearch().content)
   protected readonly icons = { SEARCH_ICON, faSpinner, faTrashCan, faTimes, faFont }
   protected minCharsToSearch = minCharsToSearch
   protected loading = false
   protected errorMessage: string = null
   protected selectedId: number = null
-  public searchContent: Signal<string> = computed(() => this.store.currentSearch().content)
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
+  private readonly filesService = inject(FilesService)
 
   constructor() {
     this.layout.setBreadcrumbIcon(SEARCH_ICON)

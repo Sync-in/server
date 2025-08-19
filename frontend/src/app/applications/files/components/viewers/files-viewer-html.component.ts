@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Component, Input, OnInit, inject } from '@angular/core'
+import { Component, inject, Input, OnInit } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
 import { LayoutService } from '../../../../layout/layout.service'
 
@@ -16,12 +16,12 @@ import { LayoutService } from '../../../../layout/layout.service'
   }`
 })
 export class FilesViewerHtmlComponent implements OnInit {
-  private readonly http = inject(HttpClient)
-  private readonly sanitizer = inject(DomSanitizer)
-  private readonly layout = inject(LayoutService)
   @Input() currentHeight: number
   @Input() fileUrl: string
   protected content: any = null
+  private readonly http = inject(HttpClient)
+  private readonly sanitizer = inject(DomSanitizer)
+  private readonly layout = inject(LayoutService)
 
   ngOnInit() {
     this.http.get(this.fileUrl, { responseType: 'text' }).subscribe({

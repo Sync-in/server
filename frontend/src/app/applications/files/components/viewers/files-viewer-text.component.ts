@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { AfterViewInit, Component, Input, OnInit, ViewChild, ViewEncapsulation, inject } from '@angular/core'
+import { AfterViewInit, Component, inject, Input, OnInit, ViewChild, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { CodeMirrorComponent } from '../../../../common/components/code-mirror.component'
 import { themeDark } from '../../../../layout/layout.interfaces'
@@ -30,13 +30,13 @@ import { FileModel } from '../../models/file.model'
   </div>`
 })
 export class FilesViewerTextComponent implements OnInit, AfterViewInit {
-  private readonly http = inject(HttpClient)
-  private readonly layout = inject(LayoutService)
   @ViewChild('CodeMirror', { static: true }) ref: any
   @Input() currentHeight: number
   @Input() file: FileModel
   protected ready = false
   protected content: string
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
   protected options = {
     lineNumbers: false,
     readOnly: true,

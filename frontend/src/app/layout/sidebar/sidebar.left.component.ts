@@ -33,19 +33,8 @@ import { LayoutService } from '../layout.service'
   imports: [RouterLink, FaIconComponent, AutoResizeDirective, L10nTranslateDirective, NgComponentOutlet, AsyncPipe, NgTemplateOutlet]
 })
 export class SideBarLeftComponent implements OnDestroy {
-  protected readonly store = inject(StoreService)
-  private readonly router = inject(Router)
-  private readonly renderer = inject(Renderer2)
-  private readonly location = inject(Location)
-  private readonly authService = inject(AuthService)
-  private readonly layout = inject(LayoutService)
-  private readonly userService = inject(UserService)
   @ViewChild('sidebar', { static: true }) sidebar: ElementRef
-  private subscriptions: Subscription[] = []
-  private menuAppsHovered = false
-  private menuIconsHovered = false
-  private menuAppsHoveredTimeout: ReturnType<typeof setTimeout> = null
-  private menuIconsStopPropagation = false
+  protected readonly store = inject(StoreService)
   protected readonly icons = { faAngleLeft, faAngleRight, faUserSecret }
   protected logoIconUrl = logoIconUrl
   protected appName: string
@@ -55,6 +44,17 @@ export class SideBarLeftComponent implements OnDestroy {
   protected currentUrl: string
   protected currentMenu: AppMenu
   protected appsMenu: AppMenu = APP_MENU
+  private readonly router = inject(Router)
+  private readonly renderer = inject(Renderer2)
+  private readonly location = inject(Location)
+  private readonly authService = inject(AuthService)
+  private readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
+  private subscriptions: Subscription[] = []
+  private menuAppsHovered = false
+  private menuIconsHovered = false
+  private menuAppsHoveredTimeout: ReturnType<typeof setTimeout> = null
+  private menuIconsStopPropagation = false
 
   constructor() {
     this.appName = APP_NAME

@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import type { CreateOrUpdateShareDto } from '@sync-in-server/backend/src/applications/shares/dto/create-or-update-share.dto'
 import type { ShareProps } from '@sync-in-server/backend/src/applications/shares/interfaces/share-props.interface'
 import type { ShareChild } from '@sync-in-server/backend/src/applications/shares/models/share-child.model'

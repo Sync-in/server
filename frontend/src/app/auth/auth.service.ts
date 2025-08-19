@@ -32,15 +32,15 @@ import { AUTH_PATHS } from './auth.constants'
   providedIn: 'root'
 })
 export class AuthService {
+  public returnUrl: string
   private readonly http = inject(HttpClient)
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
   private readonly userService = inject(UserService)
   private readonly layout = inject(LayoutService)
   private readonly electron = inject(Electron)
+
   private _refreshExpiration = parseInt(localStorage.getItem('refresh_expiration') || '0', 10) || 0
-  private _accessExpiration = parseInt(localStorage.getItem('access_expiration') || '0', 10) || 0
-  public returnUrl: string
 
   get refreshExpiration(): number {
     return this._refreshExpiration
@@ -51,6 +51,8 @@ export class AuthService {
     this._refreshExpiration = value !== 0 ? value + 60 : value
     localStorage.setItem('refresh_expiration', value.toString())
   }
+
+  private _accessExpiration = parseInt(localStorage.getItem('access_expiration') || '0', 10) || 0
 
   get accessExpiration(): number {
     return this._accessExpiration

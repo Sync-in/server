@@ -4,19 +4,19 @@
  * See the LICENSE file for licensing details
  */
 
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, Renderer2, inject } from '@angular/core'
+import { AfterViewInit, Directive, ElementRef, inject, Input, OnDestroy, Renderer2 } from '@angular/core'
 import { skip, Subscription } from 'rxjs'
 import { defaultResizeOffset } from '../../layout/layout.constants'
 import { LayoutService } from '../../layout/layout.service'
 
 @Directive({ selector: '[appAutoResize]' })
 export class AutoResizeDirective implements AfterViewInit, OnDestroy {
-  private readonly elementRef = inject(ElementRef)
-  private readonly renderer = inject(Renderer2)
-  private readonly layout = inject(LayoutService)
   @Input() overFlowX = 'hidden'
   @Input() resizeOffset: number = defaultResizeOffset
   @Input() useMaxHeight = true
+  private readonly elementRef = inject(ElementRef)
+  private readonly renderer = inject(Renderer2)
+  private readonly layout = inject(LayoutService)
   private readonly resizeSubscription: Subscription
 
   constructor() {

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, OnDestroy, inject } from '@angular/core'
+import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCopy, faKey } from '@fortawesome/free-solid-svg-icons'
@@ -51,11 +51,6 @@ import { UserService } from '../user.service'
 })
 export class UserAccountComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly store = inject(StoreService)
-  private readonly layout = inject(LayoutService)
-  private readonly userService = inject(UserService)
-  private readonly clipBoardService = inject(ClipboardService)
-  private subscriptions: Subscription[] = []
   protected readonly allNotifications = Object.values(USER_NOTIFICATION_TEXT)
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
@@ -63,10 +58,15 @@ export class UserAccountComponent implements OnDestroy {
   protected user: UserType
   protected userAvatar: string = null
   protected webdavUrl = `${window.location.origin}/${WEBDAV_BASE_PATH}`
-  protected languages = this.layout.getLanguages(true)
   // password
   protected oldPassword: string
   protected newPassword: string
+  private readonly store = inject(StoreService)
+  private readonly layout = inject(LayoutService)
+  protected languages = this.layout.getLanguages(true)
+  private readonly userService = inject(UserService)
+  private readonly clipBoardService = inject(ClipboardService)
+  private subscriptions: Subscription[] = []
 
   constructor() {
     this.subscriptions.push(this.store.user.subscribe((user: UserType) => (this.user = user)))
@@ -137,6 +137,11 @@ export class UserAccountComponent implements OnDestroy {
     })
   }
 
+  clipBoardLink() {
+    this.clipBoardService.copyFromContent(this.webdavUrl)
+    this.layout.sendNotification('info', 'Link copied', this.webdavUrl)
+  }
+
   private updateLanguage(language: string) {
     this.user.language = language
     this.layout.setLanguage(language)
@@ -152,10 +157,5 @@ export class UserAccountComponent implements OnDestroy {
     this.oldPassword = ''
     this.newPassword = ''
     this.layout.sendNotification('info', 'Configuration', 'Password has been updated')
-  }
-
-  clipBoardLink() {
-    this.clipBoardService.copyFromContent(this.webdavUrl)
-    this.layout.sendNotification('info', 'Link copied', this.webdavUrl)
   }
 }

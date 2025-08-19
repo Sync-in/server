@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpParams } from '@angular/common/http'
-import { Component, Input, OnInit, inject } from '@angular/core'
+import { Component, inject, Input, OnInit } from '@angular/core'
 import { API_FILES_ONLY_OFFICE_SETTINGS } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import { OnlyOfficeReqConfig } from '@sync-in-server/backend/src/applications/files/interfaces/only-office-config.interface'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -29,13 +29,13 @@ import { OnlyOfficeComponent } from '../utils/only-office.component'
   `
 })
 export class FilesViewerDocumentComponent implements OnInit {
-  private readonly http = inject(HttpClient)
-  private readonly layout = inject(LayoutService)
   @Input() file: FileModel
   @Input() currentHeight: number
   @Input() mode: 'view' | 'edit'
   protected docId: string
   protected documentConfig: OnlyOfficeReqConfig = null
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
 
   ngOnInit() {
     this.docId = `viewer-doc-${this.file.id}`

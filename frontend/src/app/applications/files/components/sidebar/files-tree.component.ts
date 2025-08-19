@@ -32,11 +32,6 @@ import { FilesService } from '../../services/files.service'
   templateUrl: 'files-tree.component.html'
 })
 export class FilesTreeComponent implements OnInit, OnDestroy {
-  private readonly layout = inject(LayoutService)
-  private readonly router = inject(Router)
-  private readonly user = inject(UserService)
-  private readonly filesService = inject(FilesService)
-  protected readonly store = inject(StoreService)
   @ViewChild('tree', { static: true }) tree: any
   @Output() selected = new EventEmitter()
   @Input() showFiles = false
@@ -47,6 +42,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
   @Input() sideBarHeader = true
   @Input() resizeOffset = defaultResizeOffset
   @Input() toggleNodesAtStartup = false
+  protected readonly store = inject(StoreService)
   protected readonly icons = {
     faArrowRotateRight,
     faArrowsAlt,
@@ -79,8 +75,11 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
   protected srcAllowed = true
   protected dstAllowed = true
   protected errorMsg = null
+  private readonly layout = inject(LayoutService)
+  private readonly router = inject(Router)
+  private readonly user = inject(UserService)
+  private readonly filesService = inject(FilesService)
   private copyMoveOnHeight = 80
-  private _copyMoveOn = false
   private subscriptions: Subscription[] = []
   private preventDblClick = false
   private preventTimer: any
@@ -91,20 +90,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
     }
   }
 
-  get selection() {
-    return this.filesService.treeNodeSelected
-  }
-
-  set selection(node: TreeNode) {
-    this.filesService.treeNodeSelected = node
-    if (node) {
-      if ([0, -1, -2].indexOf(node.data.id) === -1) {
-        this.selected.emit(node.data)
-      } else {
-        this.selected.emit(null)
-      }
-    }
-  }
+  private _copyMoveOn = false
 
   get copyMoveOn() {
     return this._copyMoveOn
@@ -120,6 +106,21 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
         this.resizeOffset -= this.copyMoveOnHeight
       }
       setTimeout(() => this.layout.resizeEvent.next(), 0)
+    }
+  }
+
+  get selection() {
+    return this.filesService.treeNodeSelected
+  }
+
+  set selection(node: TreeNode) {
+    this.filesService.treeNodeSelected = node
+    if (node) {
+      if ([0, -1, -2].indexOf(node.data.id) === -1) {
+        this.selected.emit(node.data)
+      } else {
+        this.selected.emit(null)
+      }
     }
   }
 

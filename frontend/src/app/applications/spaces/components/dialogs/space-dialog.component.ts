@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAnchor, faCog, faPen, faPlus, faSpinner, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
@@ -59,11 +59,6 @@ import { ExternalFilePathEvent, SpaceRootPathDialogComponent } from './space-roo
   templateUrl: 'space-dialog.component.html'
 })
 export class SpaceDialogComponent implements OnInit {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly layout = inject(LayoutService)
-  private readonly userService = inject(UserService)
-  private readonly spacesService = inject(SpacesService)
-  private readonly linksService = inject(LinksService)
   @Input({ required: true }) space: SpaceModel = new SpaceModel({
     id: 0,
     name: '',
@@ -73,6 +68,8 @@ export class SpaceDialogComponent implements OnInit {
     storageQuota: null
   } as SpaceProps)
   @Output() spaceChange = new EventEmitter<['add' | 'update' | 'delete', SpaceModel]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
     LINKS: SPACES_ICON.LINKS,
@@ -84,7 +81,6 @@ export class SpaceDialogComponent implements OnInit {
     faCog,
     faUsers
   }
-  protected readonly user: UserType = this.userService.user
   protected readonly SPACE_MAX_DISABLED_DAYS = SPACE_MAX_DISABLED_DAYS
   // states
   protected addRootFileEvent = new Subject<FileTreeEvent | ExternalFilePathEvent>()
@@ -94,6 +90,10 @@ export class SpaceDialogComponent implements OnInit {
   protected confirmDeletion = false
   protected loading = false
   protected submitted = false
+  private readonly userService = inject(UserService)
+  protected readonly user: UserType = this.userService.user
+  private readonly spacesService = inject(SpacesService)
+  private readonly linksService = inject(LinksService)
 
   ngOnInit() {
     if (!this.space.id) {

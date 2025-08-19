@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, HostListener, OnDestroy, Renderer2, DOCUMENT, inject } from '@angular/core'
+import { Component, DOCUMENT, HostListener, inject, OnDestroy, Renderer2 } from '@angular/core'
 import { RouterOutlet } from '@angular/router'
 import { Subscription } from 'rxjs'
 import { themeLight } from './layout.interfaces'
@@ -19,10 +19,10 @@ import { SideBarRightComponent } from './sidebar/sidebar.right.component'
   imports: [RouterOutlet, NavBarComponent, SideBarLeftComponent, SideBarRightComponent]
 })
 export class LayoutComponent implements OnDestroy {
+  protected themeMode = themeLight
   private readonly document = inject<Document>(DOCUMENT)
   private readonly layout = inject(LayoutService)
   private readonly renderer = inject(Renderer2)
-  protected themeMode = themeLight
   private rightSideBarClass = 'control-sidebar-open'
   private leftSideBarCollapsedClass = 'sidebar-collapse'
   private leftSideBarOpenedClass = 'sidebar-open'
@@ -67,6 +67,14 @@ export class LayoutComponent implements OnDestroy {
     }
   }
 
+  toggleRightSideBar(show: boolean) {
+    if (show) {
+      this.renderer.addClass(this.document.body, this.rightSideBarClass)
+    } else {
+      this.renderer.removeClass(this.document.body, this.rightSideBarClass)
+    }
+  }
+
   private openLeftSideBar() {
     this.renderer.removeClass(this.document.body, this.leftSideBarCollapsedClass)
     this.renderer.addClass(this.document.body, this.leftSideBarOpenedClass)
@@ -75,14 +83,6 @@ export class LayoutComponent implements OnDestroy {
   private collapseLeftSideBar() {
     this.renderer.removeClass(this.document.body, this.leftSideBarOpenedClass)
     this.renderer.addClass(this.document.body, this.leftSideBarCollapsedClass)
-  }
-
-  toggleRightSideBar(show: boolean) {
-    if (show) {
-      this.renderer.addClass(this.document.body, this.rightSideBarClass)
-    } else {
-      this.renderer.removeClass(this.document.body, this.rightSideBarClass)
-    }
   }
 
   private checkLeftSideBarCollapse() {

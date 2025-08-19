@@ -26,13 +26,13 @@ import { NotificationsService } from '../../notifications.service'
   templateUrl: 'notifications.component.html'
 })
 export class NotificationsComponent implements AfterViewInit {
-  private readonly router = inject(Router)
+  @ViewChildren('notificationsHtml') notificationsHtml!: QueryList<ElementRef>
   protected readonly store = inject(StoreService)
+  protected readonly icons = { faCheck, faTimes, faMagnifyingGlass, faTrashAlt, faCircleInfo }
+  private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)
   private readonly notificationsService = inject(NotificationsService)
-  @ViewChildren('notificationsHtml') notificationsHtml!: QueryList<ElementRef>
   private observer!: IntersectionObserver
-  protected readonly icons = { faCheck, faTimes, faMagnifyingGlass, faTrashAlt, faCircleInfo }
 
   constructor() {
     // Re-observe the elements if notifications array has changes
@@ -67,6 +67,28 @@ export class NotificationsComponent implements AfterViewInit {
     )
   }
 
+  removeAll() {
+    this.notificationsService.deleteNotification().subscribe({
+      next: () => this.store.notifications.set([]),
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Notifications', 'Unable to delete', e)
+    })
+  }
+
+  remove(notification: NotificationModel) {
+    this.notificationsService.deleteNotification(notification.id).subscribe({
+      next: () =>
+        this.store.notifications.update((notifications: NotificationModel[]) => {
+          return notifications.filter((n) => notification.id !== n.id)
+        }),
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Notifications', 'Unable to delete', e)
+    })
+  }
+
+  goto(n: NotificationModel) {
+    const element = n.content.app === NOTIFICATION_APP.SYNC ? n.content.element.split('/').at(-1) : n.content.element
+    this.router.navigate([SPACES_PATH.SPACES, ...n.content.url.split('/')], { queryParams: { select: element } }).catch(console.error)
+  }
+
   private observeUnreadNotifications() {
     // Only watch the unread notifications
     if (!this.notificationsHtml) return
@@ -93,29 +115,5 @@ export class NotificationsComponent implements AfterViewInit {
       },
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Notifications', 'Unable to mark as read', e)
     })
-  }
-
-  removeAll() {
-    this.notificationsService.deleteNotification().subscribe({
-      next: () => this.store.notifications.set([]),
-      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Notifications', 'Unable to delete', e)
-    })
-  }
-
-  remove(notification: NotificationModel) {
-    this.notificationsService.deleteNotification(notification.id).subscribe({
-      next: () =>
-        this.store.notifications.update((notifications: NotificationModel[]) => {
-          return notifications.filter((n) => notification.id !== n.id)
-        }),
-      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Notifications', 'Unable to delete', e)
-    })
-  }
-
-  goto(n: NotificationModel) {
-    const element = n.content.app === NOTIFICATION_APP.SYNC ? n.content.element.split('/').at(-1) : n.content.element
-    this.router
-      .navigate([SPACES_PATH.SPACES, ...n.content.url.split('/')], { queryParams: { select: element } })
-      .catch(console.error)
   }
 }

@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, OnDestroy, inject } from '@angular/core'
+import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowsAlt, faClone, faDownload, faQuestion, faTimes, faTrashCan } from '@fortawesome/free-solid-svg-icons'
@@ -32,10 +32,6 @@ import { FilesCompressionDialogComponent } from '../dialogs/files-compression-di
 })
 export class FilesClipboardComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly layout = inject(LayoutService)
-  private readonly store = inject(StoreService)
-  private readonly filesService = inject(FilesService)
-  private subscriptions: Subscription[] = []
   protected readonly icons = { faTrashCan, faTimes, faDownload, faArrowsAlt, faClone, faQuestion }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected operations = {
@@ -44,8 +40,12 @@ export class FilesClipboardComponent implements OnDestroy {
     download: { text: 'Download', operation: FILE_OPERATION.DOWNLOAD },
     compress: { text: 'Compress', operation: FILE_OPERATION.COMPRESS }
   }
-  protected selectedAction: 'copyPaste' | 'cutPaste' | 'download' | 'compress' = this.filesService.clipboardAction
   protected files: FileModel[] = []
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
+  private readonly filesService = inject(FilesService)
+  protected selectedAction: 'copyPaste' | 'cutPaste' | 'download' | 'compress' = this.filesService.clipboardAction
+  private subscriptions: Subscription[] = []
 
   constructor() {
     this.subscriptions.push(this.store.filesClipboard.subscribe((files: FileModel[]) => (this.files = files)))

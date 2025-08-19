@@ -18,10 +18,10 @@ import { LINK_ERROR_TRANSLATION } from '../../links.constants'
   templateUrl: 'public-link-error.component.html'
 })
 export class PublicLinkErrorComponent {
-  private readonly activatedRoute = inject(ActivatedRoute)
   protected readonly logoUrl = logoUrl
   protected readonly icons = { faExclamationCircle }
   protected error: string
+  private readonly activatedRoute = inject(ActivatedRoute)
 
   constructor() {
     this.activatedRoute.params.subscribe((params: Params) => (this.error = LINK_ERROR_TRANSLATION[params.error]))

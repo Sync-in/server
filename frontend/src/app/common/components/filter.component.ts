@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, ElementRef, HostListener, OnDestroy, signal, ViewChild, inject } from '@angular/core'
+import { Component, ElementRef, HostListener, inject, OnDestroy, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faTimes } from '@fortawesome/free-solid-svg-icons'
@@ -35,12 +35,12 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
   `
 })
 export class FilterComponent implements OnDestroy {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly fb = inject(FormBuilder)
   @ViewChild('iFilter', { static: true }) iFilter: ElementRef
   public search = signal('')
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly searchControl: FormControl
   protected readonly faTimes = faTimes
+  private readonly fb = inject(FormBuilder)
   private readonly subscription: Subscription
 
   constructor() {

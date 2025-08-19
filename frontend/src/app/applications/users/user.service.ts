@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { NOTIFICATIONS_WS } from '@sync-in-server/backend/src/applications/notifications/constants/websocket'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'

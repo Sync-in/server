@@ -5,14 +5,13 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Injectable, NgZone, inject } from '@angular/core'
+import { inject, Injectable, NgZone } from '@angular/core'
 import { Title } from '@angular/platform-browser'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { ContextMenuComponent, ContextMenuService } from '@perfectmemory/ngx-contextmenu'
 import { getBrowserLanguage, L10nTranslationService } from 'angular-l10n'
 import { BsLocaleService } from 'ngx-bootstrap/datepicker'
-import { BsModalService } from 'ngx-bootstrap/modal'
-import { BsModalRef } from 'ngx-bootstrap/modal'
+import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal'
 import { ActiveToast, ToastrService } from 'ngx-toastr'
 import { BehaviorSubject, fromEvent, mergeWith, Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -30,14 +29,6 @@ declare const window: any
 
 @Injectable({ providedIn: 'root' })
 export class LayoutService {
-  private readonly title = inject(Title)
-  private readonly ngZone = inject(NgZone)
-  private readonly translation = inject(L10nTranslationService)
-  private readonly bsLocale = inject(BsLocaleService)
-  private readonly bsModal = inject(BsModalService)
-  private readonly toastr = inject(ToastrService)
-  private readonly contextMenu = inject<ContextMenuService<any>>(ContextMenuService)
-  private readonly electron = inject(Electron)
   public currentRightSideBarTab: string | null = null
   // Resize event
   public resizeEvent = new BehaviorSubject<void | null>(null)
@@ -62,6 +53,14 @@ export class LayoutService {
   // Navigation breadcrumb icon
   public breadcrumbIcon = new BehaviorSubject<IconDefinition>(null)
   public minimizedWindows = new BehaviorSubject<AppWindow[]>([])
+  private readonly title = inject(Title)
+  private readonly ngZone = inject(NgZone)
+  private readonly translation = inject(L10nTranslationService)
+  private readonly bsLocale = inject(BsLocaleService)
+  private readonly bsModal = inject(BsModalService)
+  private readonly toastr = inject(ToastrService)
+  private readonly contextMenu = inject<ContextMenuService<any>>(ContextMenuService)
+  private readonly electron = inject(Electron)
   // States
   private readonly screenMediumSize = 767 // px
   private readonly screenSmallSize = 576 // px

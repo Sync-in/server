@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCog, faPlus, faSpinner, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
@@ -56,12 +56,6 @@ import { ShareRepositoryComponent } from '../utils/share-repository.component'
   templateUrl: 'share-dialog.component.html'
 })
 export class ShareDialogComponent implements OnInit {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly layout = inject(LayoutService)
-  private readonly userService = inject(UserService)
-  private readonly sharesService = inject(SharesService)
-  private readonly linksService = inject(LinksService)
-  private readonly spacesService = inject(SpacesService)
   @Input() share: ShareModel
   @Input() file: FileSpace & Pick<FileModel, 'root'>
   @Input() parentShareId: number = null
@@ -70,6 +64,8 @@ export class ShareDialogComponent implements OnInit {
   @Input() inSharesList = false
   @Input() allowFilesOptions = true
   @Output() shareChange = new EventEmitter<['add' | 'update' | 'delete', ShareModel]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected readonly icons = {
     SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
     SHARES: SPACES_ICON.SHARES,
@@ -80,12 +76,16 @@ export class ShareDialogComponent implements OnInit {
     faUsers,
     faCog
   }
-  protected readonly user = this.userService.user
   protected tabView: undefined | 'members' | 'links'
   protected allowedPermissions: Partial<`${SPACE_OPERATION}`>[] = []
   protected confirmDeletion = false
   protected loading = false
   protected submitted = false
+  private readonly userService = inject(UserService)
+  protected readonly user = this.userService.user
+  private readonly sharesService = inject(SharesService)
+  private readonly linksService = inject(LinksService)
+  private readonly spacesService = inject(SpacesService)
 
   ngOnInit() {
     if (!this.share) {

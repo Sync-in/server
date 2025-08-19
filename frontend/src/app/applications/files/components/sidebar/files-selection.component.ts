@@ -40,11 +40,8 @@ import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.compone
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })
 export class FilesSelectionComponent {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly router = inject(Router)
-  private readonly layout = inject(LayoutService)
-  private readonly filesService = inject(FilesService)
   files: InputSignal<FileModel[]> = input.required<FileModel[]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected multiple: Signal<boolean> = computed(() => this.files().length > 1)
   protected resizeOffset: Signal<number> = computed(() => (this.multiple() ? 120 : 80))
   protected readonly cardImageSize = defaultCardImageSize
@@ -56,12 +53,13 @@ export class FilesSelectionComponent {
     faClipboardCheck,
     faArrowsAlt
   }
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
+  private readonly filesService = inject(FilesService)
 
   goToShare(share: { type: number; name: string }) {
     this.layout.toggleRSideBar(false)
-    this.router
-      .navigate([share.type === 0 ? SPACES_PATH.SHARED : SPACES_PATH.LINKS], { queryParams: { select: share.name } })
-      .catch(console.error)
+    this.router.navigate([share.type === 0 ? SPACES_PATH.SHARED : SPACES_PATH.LINKS], { queryParams: { select: share.name } }).catch(console.error)
   }
 
   goToSpace(space: { alias: string; name: string }) {

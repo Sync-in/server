@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, Input, OnDestroy, OnInit, signal, ViewChild, WritableSignal, inject } from '@angular/core'
+import { Component, inject, Input, OnDestroy, OnInit, signal, ViewChild, WritableSignal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowDown, faArrowUp, faFilter, faFlask, faMapMarkerAlt, faRotate, faSpinner, faStop } from '@fortawesome/free-solid-svg-icons'
@@ -56,10 +56,6 @@ import { SYNC_ICON } from '../../sync.constants'
 })
 export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
   locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly layout = inject(LayoutService)
-  private readonly electron = inject(Electron)
-  private readonly store = inject(StoreService)
-  private readonly syncService = inject(SyncService)
   @ViewChild(AutoResizeDirective, { static: true }) autoResizeDirective: AutoResizeDirective
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @Input() syncPath: SyncPathModel
@@ -96,12 +92,6 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
       sortable: true
     }
   }
-  private readonly sortSettings: SortSettings = {
-    default: [{ prop: 'nbTasks', type: 'number' }],
-    action: [{ prop: 'actionText', type: 'string' }],
-    file: [{ prop: 'file', type: 'string' }]
-  }
-  protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
   protected readonly itemsPerPage = 500
   protected currentPage = 1
   protected running = false
@@ -110,6 +100,16 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
   protected showFiltered = false
   protected count = { actions: 0, filtered: 0 }
   protected transfers: WritableSignal<SyncTransferModel[]> = signal([])
+  private readonly layout = inject(LayoutService)
+  private readonly electron = inject(Electron)
+  private readonly store = inject(StoreService)
+  private readonly syncService = inject(SyncService)
+  private readonly sortSettings: SortSettings = {
+    default: [{ prop: 'nbTasks', type: 'number' }],
+    action: [{ prop: 'actionText', type: 'string' }],
+    file: [{ prop: 'file', type: 'string' }]
+  }
+  protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
   private subscriptions: Subscription[] = []
 
   ngOnInit() {

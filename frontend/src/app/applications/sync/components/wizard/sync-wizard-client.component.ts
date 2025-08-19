@@ -23,14 +23,14 @@ import { SYNC_ICON, SYNC_PATH, SYNC_TITLE } from '../../sync.constants'
   templateUrl: 'sync-wizard-client.component.html'
 })
 export class SyncWizardClientComponent {
+  public pathIsValid = false
+  public infoMsg: string = null
+  protected readonly syncService = inject(SyncService)
+  protected readonly icons = { faTimesCircle, faArrowCircleRight }
   private readonly router = inject(Router)
   private readonly renderer = inject(Renderer2)
   private readonly store = inject(StoreService)
   private readonly layout = inject(LayoutService)
-  protected readonly syncService = inject(SyncService)
-  protected readonly icons = { faTimesCircle, faArrowCircleRight }
-  public pathIsValid = false
-  public infoMsg: string = null
 
   constructor() {
     this.layout.setBreadcrumbIcon(SYNC_ICON.WIZARD)

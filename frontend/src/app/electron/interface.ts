@@ -8,6 +8,7 @@ export interface ElectronIpcRenderer {
   on: (channel: string, listener: (event: any, ...args: any[]) => void) => this
   invoke: (channel: string, ...args: any[]) => Promise<any>
   send: (channel: string, ...args: any[]) => void
-  removeAllListeners(channel?: string): this
   showFilePath: (file: File) => string
+
+  removeAllListeners(channel?: string): this
 }

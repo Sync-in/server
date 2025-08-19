@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, Input, OnInit, inject } from '@angular/core'
+import { Component, inject, Input, OnInit } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faKey, faUserPen } from '@fortawesome/free-solid-svg-icons'
@@ -22,14 +22,14 @@ import { UserService } from '../../user.service'
   templateUrl: 'user-personal-group-edit-user-dialog.component.html'
 })
 export class UserPersonalGroupEditUserDialogComponent implements OnInit {
-  protected readonly layout = inject(LayoutService)
-  private readonly userService = inject(UserService)
   @Input({ required: true }) parentGroup: GroupBrowseModel['parentGroup']
   @Input({ required: true }) user: MemberModel
+  protected readonly layout = inject(LayoutService)
   protected submitted = false
   protected isManager = false
   protected readonly USER_GROUP_ROLE = USER_GROUP_ROLE
   protected readonly icons = { faUserPen, faKey }
+  private readonly userService = inject(UserService)
 
   ngOnInit() {
     this.isManager = this.user.isGroupManager

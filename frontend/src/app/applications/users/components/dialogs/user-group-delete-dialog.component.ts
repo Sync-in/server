@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faMinus, faUserMinus } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -22,13 +22,13 @@ import { UserService } from '../../user.service'
   templateUrl: 'user-group-delete-dialog.component.html'
 })
 export class UserGroupDeleteDialogComponent {
-  private readonly layout = inject(LayoutService)
-  private readonly userService = inject(UserService)
   @Input({ required: true }) parentGroup: GroupBrowseModel['parentGroup']
   @Input({ required: true }) member: MemberModel
   @Output() wasDeleted = new EventEmitter<boolean>()
   protected submitted = false
   protected readonly icons = { GROUPS: USER_ICON.GROUPS, faMinus, faUserMinus }
+  private readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
 
   onSubmit() {
     this.submitted = true

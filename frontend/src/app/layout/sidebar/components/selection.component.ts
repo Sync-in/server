@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, computed, Signal, inject } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, Signal } from '@angular/core'
 import { FilesSelectionComponent } from '../../../applications/files/components/sidebar/files-selection.component'
 import { LinkSelectionComponent } from '../../../applications/links/components/sidebar/link-selection.component'
 import { ShareSelectionComponent } from '../../../applications/shares/components/sidebar/share-selection.component'

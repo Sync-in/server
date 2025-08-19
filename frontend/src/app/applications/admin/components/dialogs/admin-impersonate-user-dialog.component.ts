@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, Input, inject } from '@angular/core'
+import { Component, inject, Input } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faUserSecret } from '@fortawesome/free-solid-svg-icons'
@@ -25,16 +25,16 @@ import { AdminUserModel } from '../../models/admin-user.model'
   templateUrl: 'admin-impersonate-user-dialog.component.html'
 })
 export class AdminImpersonateUserDialogComponent {
+  @Input({ required: true }) user: AdminUserModel
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
-  private readonly adminService = inject(AdminService)
-  @Input({ required: true }) user: AdminUserModel
   protected submitted = false
   protected readonly icons = { faUserSecret }
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
   protected impersonateUserForm = new FormGroup<{
     password: FormControl<string>
   }>({ password: new FormControl('', Validators.required) })
+  private readonly adminService = inject(AdminService)
 
   onSubmit() {
     this.submitted = true

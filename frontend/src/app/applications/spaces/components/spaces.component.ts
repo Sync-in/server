@@ -69,18 +69,13 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
   templateUrl: 'spaces.component.html'
 })
 export class SpacesComponent implements OnInit {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly layout = inject(LayoutService)
-  private readonly router = inject(Router)
-  private readonly activatedRoute = inject(ActivatedRoute)
-  private readonly spacesService = inject(SpacesService)
-  private readonly store = inject(StoreService)
-  private readonly userService = inject(UserService)
   @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: SpaceModel[]; scrollInto: (arg: SpaceModel | number) => void }
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected readonly SPACE_ROLE = SPACE_ROLE
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected galleryMode: ViewMode
@@ -142,6 +137,18 @@ export class SpacesComponent implements OnInit {
       sortable: true
     }
   }
+  protected btnSortFields = { name: 'Name', managers: 'Managers', permissions: 'Permissions', modified: 'Modified' }
+  protected loading = false
+  protected spaces: SpaceModel[] = []
+  protected selected: SpaceModel = null
+  protected canCreateSpace = false
+  protected canEditSpace = false
+  protected canManageRoots = false
+  private readonly router = inject(Router)
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly spacesService = inject(SpacesService)
+  private readonly store = inject(StoreService)
+  private readonly userService = inject(UserService)
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'name', type: 'string' }],
     name: [{ prop: 'name', type: 'string' }],
@@ -150,15 +157,8 @@ export class SpacesComponent implements OnInit {
     modified: [{ prop: 'modified', type: 'date' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  protected btnSortFields = { name: 'Name', managers: 'Managers', permissions: 'Permissions', modified: 'Modified' }
   // States
   private focusOnSelect: string
-  protected loading = false
-  protected spaces: SpaceModel[] = []
-  protected selected: SpaceModel = null
-  protected canCreateSpace = false
-  protected canEditSpace = false
-  protected canManageRoots = false
 
   constructor() {
     this.loadSpaces()
@@ -212,14 +212,6 @@ export class SpacesComponent implements OnInit {
       this.canManageRoots = false
     }
     this.store.spaceSelection.set(this.selected)
-  }
-
-  private focusOn(select: string) {
-    const s = this.spaces.find((space) => space.name === select)
-    if (s) {
-      setTimeout(() => this.scrollView.scrollInto(s), 100)
-      this.onSelect(s)
-    }
   }
 
   sortBy(column: string, toUpdate = true, collection?: SpaceModel[]) {
@@ -303,5 +295,13 @@ export class SpacesComponent implements OnInit {
       initialState: { space: this.selected } as SharedChildrenDialogComponent
     })
     modalRef.content.sharesCountEvent.subscribe((sharesCount: number) => (this.selected.counts.shares = sharesCount))
+  }
+
+  private focusOn(select: string) {
+    const s = this.spaces.find((space) => space.name === select)
+    if (s) {
+      setTimeout(() => this.scrollView.scrollInto(s), 100)
+      this.onSelect(s)
+    }
   }
 }

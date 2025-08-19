@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core'
+import { Component, ElementRef, EventEmitter, inject, Input, OnInit, Output, ViewChild } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faDice, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
@@ -46,7 +46,6 @@ import { genPassword, togglePasswordType } from '../utils/functions'
     </div> `
 })
 export class InputPasswordComponent implements OnInit {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   @ViewChild('Password', { static: true }) passwordElement: ElementRef
   @Input() password: string
   @Output() passwordChange = new EventEmitter<string>()
@@ -57,6 +56,7 @@ export class InputPasswordComponent implements OnInit {
   @Input() disabled = false
   @Input() isRequired = false
   @Input() focus = false
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly toggleVisiblePassword = togglePasswordType
   protected readonly icons = { faEye, faEyeSlash, faDice }
 

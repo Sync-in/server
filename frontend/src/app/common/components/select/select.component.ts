@@ -5,7 +5,7 @@
  */
 
 import { NgTemplateOutlet } from '@angular/common'
-import { Component, ElementRef, EventEmitter, forwardRef, Input, OnDestroy, OnInit, Output, TemplateRef, inject } from '@angular/core'
+import { Component, ElementRef, EventEmitter, forwardRef, inject, Input, OnDestroy, OnInit, Output, TemplateRef } from '@angular/core'
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms'
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -31,7 +31,6 @@ import { SelectItem } from './select.model'
   ]
 })
 export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor {
-  private readonly sanitizer = inject(DomSanitizer)
   public element: ElementRef = inject(ElementRef)
   @Input({ required: true }) searchFunction: (search: string) => any
   @Input() customTemplateOptions: TemplateRef<any>
@@ -47,11 +46,6 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
   @Output() removed = new EventEmitter<any>()
   @Output() typed = new EventEmitter<any>()
   @Output() opened = new EventEmitter<any>()
-  private subscription: Subscription
-  private _items: any[] = []
-  private _optionsOpened = false
-  private _disabled = false
-  private _active: SelectItem | any = null
   public options: SelectItem[] = []
   public itemObjects: SelectItem[] = []
   public activeOption: SelectItem
@@ -59,20 +53,15 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
   public inputValue = ''
   protected onChange: any = Function.prototype
   protected onTouched: any = Function.prototype
+  private readonly sanitizer = inject(DomSanitizer)
+  private subscription: Subscription
   private behavior: GenericBehavior
 
   public constructor() {
     this.clickedOutside = this.clickedOutside.bind(this)
   }
 
-  get optionsOpened(): boolean {
-    return this._optionsOpened
-  }
-
-  set optionsOpened(value: boolean) {
-    this._optionsOpened = value
-    this.opened.emit(value)
-  }
+  private _items: any[] = []
 
   public set items(value: any[]) {
     if (!value.length) {
@@ -97,6 +86,19 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
     )
   }
 
+  private _optionsOpened = false
+
+  get optionsOpened(): boolean {
+    return this._optionsOpened
+  }
+
+  set optionsOpened(value: boolean) {
+    this._optionsOpened = value
+    this.opened.emit(value)
+  }
+
+  private _disabled = false
+
   public get disabled(): boolean {
     return this._disabled
   }
@@ -108,6 +110,8 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
       this.hideOptions()
     }
   }
+
+  private _active: SelectItem | any = null
 
   public get active(): SelectItem | any {
     return this._active
@@ -219,19 +223,6 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
 
   ngOnDestroy() {
     this.subscription.unsubscribe()
-  }
-
-  private doSearch(search: string) {
-    this.searchFunction(search).subscribe({
-      next: (items: any[]) => {
-        this.items = items
-      },
-      error: (e: any) => {
-        console.error(e)
-        this.items = []
-      },
-      complete: () => this.behavior.filter()
-    })
   }
 
   remove(item: SelectItem) {
@@ -348,6 +339,19 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
     this.hideOptions()
     this.focusToInput(value.name)
     this.element.nativeElement.querySelector('.ui-select-container').focus()
+  }
+
+  private doSearch(search: string) {
+    this.searchFunction(search).subscribe({
+      next: (items: any[]) => {
+        this.items = items
+      },
+      error: (e: any) => {
+        console.error(e)
+        this.items = []
+      },
+      complete: () => this.behavior.filter()
+    })
   }
 
   private open() {

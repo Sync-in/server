@@ -44,16 +44,13 @@ import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../spaces.constants'
   templateUrl: 'trash.component.html'
 })
 export class TrashComponent implements OnInit {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly layout = inject(LayoutService)
-  private readonly router = inject(Router)
-  private readonly store = inject(StoreService)
-  private readonly spacesService = inject(SpacesService)
   @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: TrashModel[]; scrollInto: (arg: TrashModel | number) => void }
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = { SPACES: SPACES_ICON.SPACES, PERSONAL: SPACES_ICON.PERSONAL, faArrowDown, faArrowUp, faArrowRotateRight, faCircleInfo }
   protected readonly TAB_MENU = TAB_MENU
@@ -89,6 +86,10 @@ export class TrashComponent implements OnInit {
       sortable: true
     }
   }
+  protected btnSortFields = { name: 'Name', nb: 'Elements', mtime: 'Modified' }
+  private readonly router = inject(Router)
+  private readonly store = inject(StoreService)
+  private readonly spacesService = inject(SpacesService)
   private readonly sortSettings: SortSettings = {
     default: [
       { prop: 'isPersonal', type: 'number' },
@@ -99,7 +100,6 @@ export class TrashComponent implements OnInit {
     modified: [{ prop: 'mtime', type: 'date' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  protected btnSortFields = { name: 'Name', nb: 'Elements', mtime: 'Modified' }
 
   constructor() {
     this.loadTrashBins()

@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { API_NOTIFICATIONS, NOTIFICATIONS_ROUTE } from '@sync-in-server/backend/src/applications/notifications/constants/routes'
 import type { NotificationFromUser } from '@sync-in-server/backend/src/applications/notifications/interfaces/notification-properties.interface'
 import { ActiveToast } from 'ngx-toastr'

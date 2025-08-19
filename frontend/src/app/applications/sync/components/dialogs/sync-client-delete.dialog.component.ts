@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 import { HttpErrorResponse } from '@angular/common/http'
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Input, Output, inject } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, Output } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faSpinner, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -19,12 +19,12 @@ import { SyncService } from '../../services/sync.service'
   templateUrl: './sync-client-delete.dialog.component.html'
 })
 export class SyncClientDeleteDialogComponent {
-  protected readonly layout = inject(LayoutService)
-  private readonly syncService = inject(SyncService)
   @Input() client: SyncClientModel
   @Output() wasDeleted = new EventEmitter()
+  protected readonly layout = inject(LayoutService)
   protected readonly icons = { faSpinner, faTrashCan }
   protected submitted = false
+  private readonly syncService = inject(SyncService)
 
   @HostListener('document:keyup.enter')
   onEnter() {

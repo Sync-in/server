@@ -6,7 +6,7 @@
 
 import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAddressCard, faShieldHalved, faSpinner, faUserPen, faUserPlus, faUsers } from '@fortawesome/free-solid-svg-icons'
@@ -66,11 +66,10 @@ import { AdminUserDeleteDialogComponent } from './admin-user-delete-dialog.compo
   templateUrl: 'admin-user-dialog.component.html'
 })
 export class AdminUserDialogComponent implements OnInit {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly layout = inject(LayoutService)
-  private readonly adminService = inject(AdminService)
   @Input() user: AdminUserModel = null
   @Output() userChange = new EventEmitter<['add' | 'update' | 'delete', AdminUserModel]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected submitted = false
   protected loading = false
   protected confirmDeletion = false
@@ -93,6 +92,7 @@ export class AdminUserDialogComponent implements OnInit {
     groups: FormControl<MemberModel[]>
     applications: FormControl<USER_PERMISSION[]>
   }>
+  private readonly adminService = inject(AdminService)
 
   ngOnInit() {
     this.userForm = new FormGroup({

@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { API_COMMENTS_FROM_SPACE, API_COMMENTS_RECENTS } from '@sync-in-server/backend/src/applications/comments/constants/routes'
 import type { CreateOrUpdateCommentDto, DeleteCommentDto } from '@sync-in-server/backend/src/applications/comments/dto/comment.dto'
 import type { CommentRecent } from '@sync-in-server/backend/src/applications/comments/interfaces/comment-recent.interface'

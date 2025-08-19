@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, computed, Signal, inject } from '@angular/core'
+import { Component, computed, inject, Signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCommentDots } from '@fortawesome/free-regular-svg-icons'
@@ -25,22 +25,18 @@ import { CommentsService } from '../../services/comments.service'
   templateUrl: './comments-recents-widget.component.html'
 })
 export class CommentsRecentsWidgetComponent {
+  protected moreElements = false
+  protected readonly icons = { faCommentDots, faMagnifyingGlassPlus, faMagnifyingGlassMinus, faTrashAlt }
   private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
   private readonly commentsService = inject(CommentsService)
   private nbInitialComments = 10
   private nbComments = this.nbInitialComments
-  protected moreElements = false
   protected comments: Signal<CommentRecentModel[]> = computed(() => this.store.commentsRecents().slice(0, this.nbComments))
-  protected readonly icons = { faCommentDots, faMagnifyingGlassPlus, faMagnifyingGlassMinus, faTrashAlt }
 
   constructor() {
     this.load()
-  }
-
-  private load() {
-    this.commentsService.loadRecents(this.nbComments)
   }
 
   switchMore() {
@@ -58,5 +54,9 @@ export class CommentsRecentsWidgetComponent {
     this.router
       .navigate([SPACES_PATH.SPACES, ...c.file.path.split('/')], { queryParams: { select: c.file.name } })
       .then(() => this.layout.showRSideBarTab(TAB_MENU.COMMENTS, true))
+  }
+
+  private load() {
+    this.commentsService.loadRecents(this.nbComments)
   }
 }

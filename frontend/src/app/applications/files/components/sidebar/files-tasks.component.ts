@@ -41,10 +41,6 @@ import { FilesService } from '../../services/files.service'
 })
 export class FilesTasksComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly router = inject(Router)
-  private readonly store = inject(StoreService)
-  private readonly filesService = inject(FilesService)
-  private readonly filesTasksService = inject(FilesTasksService)
   protected readonly icons = { faTrashAlt, faFlag, faClock, faFile, faFolderClosed }
   protected readonly iconsStatus: IconDefinition[] = [faSpinner, faCheck, faExclamation]
   protected readonly iconsOperation = {
@@ -60,6 +56,10 @@ export class FilesTasksComponent implements OnDestroy {
   protected nbEndedTasks = 0
   protected nbTotalTasks = 0
   protected tasks: FileTask[] = []
+  private readonly router = inject(Router)
+  private readonly store = inject(StoreService)
+  private readonly filesService = inject(FilesService)
+  private readonly filesTasksService = inject(FilesTasksService)
   private subscriptions: Subscription[] = []
 
   constructor() {

@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core'
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -66,12 +66,6 @@ import { LinkDialogComponent } from './dialogs/link-dialog.component'
   templateUrl: 'links.component.html'
 })
 export class LinksComponent implements OnInit {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly activatedRoute = inject(ActivatedRoute)
-  private readonly store = inject(StoreService)
-  protected readonly layout = inject(LayoutService)
-  private readonly linksService = inject(LinksService)
-  private readonly sharesService = inject(SharesService)
   @ViewChild(VirtualScrollComponent) scrollView: {
     element: ElementRef
     viewPortItems: ShareLinkModel[]
@@ -81,6 +75,8 @@ export class LinksComponent implements OnInit {
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected readonly icons = {
     faLink,
     faArrowRotateRight,
@@ -100,7 +96,6 @@ export class LinksComponent implements OnInit {
   protected loading = false
   protected linkWasCopied = false
   protected galleryMode: ViewMode
-  private focusOnSelect: string
   protected shares: ShareLinkModel[] = []
   protected selected: ShareLinkModel = null
   // Sort
@@ -147,6 +142,12 @@ export class LinksComponent implements OnInit {
       sortable: true
     }
   }
+  protected btnSortFields = { name: 'Name', link: 'Link', accessed: 'Accessed' }
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly store = inject(StoreService)
+  private readonly linksService = inject(LinksService)
+  private readonly sharesService = inject(SharesService)
+  private focusOnSelect: string
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'name', type: 'string' }],
     link: [{ prop: 'link.name', type: 'string' }],
@@ -156,7 +157,6 @@ export class LinksComponent implements OnInit {
     accessed: [{ prop: 'link.currentAccess', type: 'date' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  protected btnSortFields = { name: 'Name', link: 'Link', accessed: 'Accessed' }
 
   constructor() {
     this.loadShareLinks()
@@ -235,14 +235,6 @@ export class LinksComponent implements OnInit {
     this.layout.openContextMenu(ev, this.targetContextMenu)
   }
 
-  private focusOn(select: string) {
-    const s = this.shares.find((share) => share.name === select)
-    if (s) {
-      setTimeout(() => this.scrollView.scrollInto(s), 100)
-      this.onSelect(s)
-    }
-  }
-
   copyToClipboard() {
     if (this.selected) {
       this.linksService.copyLinkToClipboard(this.selected.link.uuid)
@@ -255,5 +247,13 @@ export class LinksComponent implements OnInit {
   goTo(share?: ShareLinkModel) {
     share = share || this.selected
     this.sharesService.goTo(share).catch(console.error)
+  }
+
+  private focusOn(select: string) {
+    const s = this.shares.find((share) => share.name === select)
+    if (s) {
+      setTimeout(() => this.scrollView.scrollInto(s), 100)
+      this.onSelect(s)
+    }
   }
 }

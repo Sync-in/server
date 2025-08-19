@@ -68,11 +68,6 @@ import { AdminUserDialogComponent } from './dialogs/admin-user-dialog.component'
   templateUrl: 'admin-users.component.html'
 })
 export class AdminUsersComponent {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly router = inject(Router)
-  private readonly activatedRoute = inject(ActivatedRoute)
-  private readonly layout = inject(LayoutService)
-  private readonly adminService = inject(AdminService)
   @ViewChild(VirtualScrollComponent) scrollView: {
     element: ElementRef
     viewPortItems: AdminUserModel[]
@@ -81,6 +76,7 @@ export class AdminUsersComponent {
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     faRotate,
@@ -153,6 +149,15 @@ export class AdminUsersComponent {
       sortable: true
     }
   }
+  // States
+  protected guestsView = false
+  protected loading = false
+  protected selected: AdminUserModel = null
+  protected users: AdminUserModel[] = []
+  private readonly router = inject(Router)
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly layout = inject(LayoutService)
+  private readonly adminService = inject(AdminService)
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'login', type: 'string' }],
     login: [{ prop: 'login', type: 'string' }],
@@ -163,31 +168,12 @@ export class AdminUsersComponent {
     isActive: [{ prop: 'isActive', type: 'number' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  // States
-  protected guestsView = false
-  protected loading = false
-  protected selected: AdminUserModel = null
-  protected users: AdminUserModel[] = []
 
   constructor() {
     this.layout.setBreadcrumbIcon(ADMIN_ICON.USERS)
     this.activatedRoute.data.subscribe((route: Data) => {
       this.guestsView = route.type === USER_ROLE.GUEST
       this.setEnv()
-    })
-  }
-
-  private setEnv() {
-    this.tableHeaders.managers.show = this.guestsView
-    this.tableHeaders.storage.show = !this.guestsView
-    this.loadUsersOrGuests()
-    this.layout.setBreadcrumbNav({
-      url: this.guestsView
-        ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GUESTS}/${ADMIN_TITLE.GUESTS}`
-        : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.USERS}/${ADMIN_TITLE.USERS}`,
-      splicing: 2,
-      translating: true,
-      sameLink: true
     })
   }
 
@@ -320,6 +306,20 @@ export class AdminUsersComponent {
   impersonateIdentity() {
     this.layout.openDialog(AdminImpersonateUserDialogComponent, 'sm', {
       initialState: { user: this.selected } as AdminImpersonateUserDialogComponent
+    })
+  }
+
+  private setEnv() {
+    this.tableHeaders.managers.show = this.guestsView
+    this.tableHeaders.storage.show = !this.guestsView
+    this.loadUsersOrGuests()
+    this.layout.setBreadcrumbNav({
+      url: this.guestsView
+        ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GUESTS}/${ADMIN_TITLE.GUESTS}`
+        : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.USERS}/${ADMIN_TITLE.USERS}`,
+      splicing: 2,
+      translating: true,
+      sameLink: true
     })
   }
 }

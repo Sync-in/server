@@ -20,13 +20,13 @@ import { LinksService } from '../../services/links.service'
 })
 export class PublicLinkAuthComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly activatedRoute = inject(ActivatedRoute)
-  private readonly linksService = inject(LinksService)
   protected readonly logoUrl = logoUrl
   protected readonly linkProtected = linkProtected
   protected readonly icons = { faKey, faSignInAlt }
-  private uuid: string
   protected password = ''
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly linksService = inject(LinksService)
+  private uuid: string
 
   constructor() {
     this.activatedRoute.params.subscribe((p: Params) => (this.uuid = p.uuid))

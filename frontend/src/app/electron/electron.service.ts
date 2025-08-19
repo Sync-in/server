@@ -29,10 +29,10 @@ declare global {
   providedIn: 'root'
 })
 export class Electron {
-  private readonly ngZone = inject(NgZone)
-  private readonly store = inject(StoreService)
   public readonly enabled = checkIfElectronApp()
   public readonly ipcRenderer = this.enabled ? window.ipcRenderer : null
+  private readonly ngZone = inject(NgZone)
+  private readonly store = inject(StoreService)
   private syncTasksCount: Record<number, number> = {}
 
   constructor() {

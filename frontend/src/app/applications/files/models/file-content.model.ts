@@ -31,6 +31,10 @@ export class FileContentModel implements FileContent {
     this.setInfos()
   }
 
+  fallBackMimeUrl() {
+    this.mimeUrl = defaultMimeUrl
+  }
+
   private setInfos() {
     const repository = this.path.split('/')[0]
     const isPersonal = this.path.split('/')[1] === SPACE_ALIAS.PERSONAL
@@ -40,9 +44,5 @@ export class FileContentModel implements FileContent {
       .join('/')
     this.iconClass = repository === SPACE_REPOSITORY.SHARES ? 'purple' : 'primary'
     this.icon = repository === SPACE_REPOSITORY.SHARES ? SPACES_ICON.SHARES : isPersonal ? SPACES_ICON.PERSONAL : SPACES_ICON.SPACES
-  }
-
-  fallBackMimeUrl() {
-    this.mimeUrl = defaultMimeUrl
   }
 }

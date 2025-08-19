@@ -5,7 +5,7 @@
  */
 
 import { NgOptimizedImage } from '@angular/common'
-import { Component, OnDestroy, inject } from '@angular/core'
+import { Component, inject, OnDestroy } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faTimes, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -20,9 +20,9 @@ import { LayoutService } from '../../layout.service'
   templateUrl: 'windows.component.html'
 })
 export class WindowsComponent implements OnDestroy {
-  private readonly layout = inject(LayoutService)
   protected readonly icons = { faXmark, faTimes }
   protected windows: AppWindow[] = []
+  private readonly layout = inject(LayoutService)
   private readonly subscription: Subscription = null
 
   constructor() {

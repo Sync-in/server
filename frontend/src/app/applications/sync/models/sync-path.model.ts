@@ -59,28 +59,6 @@ export class SyncPathModel implements Partial<SyncPath> {
     this.setStatus(false)
   }
 
-  private setInfos() {
-    this.isWriteable = hasWritePermission(this.settings?.permissions)
-    this.newly = getNewly(this.settings.lastSync || 0, true)
-    const repository = this.settings.remotePath.split('/')[0]
-    this.showedPath = this.settings.remotePath.split('/').slice(1).join('/')
-    this.iconClass = repository === SPACE_REPOSITORY.SHARES ? 'purple' : 'primary'
-    switch (repository) {
-      case SPACES_PATH.PERSONAL:
-        this.icon = SPACES_ICON.PERSONAL
-        this.mime = mimeDirectory
-        break
-      case SPACES_PATH.SPACES:
-        this.icon = SPACES_ICON.SPACES
-        this.mime = mimeDirectory
-        break
-      case SPACES_PATH.SHARES:
-        this.icon = SPACES_ICON.SHARES
-        this.mime = mimeDirectoryShare
-        break
-    }
-  }
-
   setStatus(inSync: boolean) {
     if (inSync) {
       this.mimeUrl = getAssetsMimeUrl(mimeDirectorySync)
@@ -111,6 +89,28 @@ export class SyncPathModel implements Partial<SyncPath> {
       conflictMode: this.settings.conflictMode,
       filters: this.settings.filters,
       scheduler: this.settings.scheduler
+    }
+  }
+
+  private setInfos() {
+    this.isWriteable = hasWritePermission(this.settings?.permissions)
+    this.newly = getNewly(this.settings.lastSync || 0, true)
+    const repository = this.settings.remotePath.split('/')[0]
+    this.showedPath = this.settings.remotePath.split('/').slice(1).join('/')
+    this.iconClass = repository === SPACE_REPOSITORY.SHARES ? 'purple' : 'primary'
+    switch (repository) {
+      case SPACES_PATH.PERSONAL:
+        this.icon = SPACES_ICON.PERSONAL
+        this.mime = mimeDirectory
+        break
+      case SPACES_PATH.SPACES:
+        this.icon = SPACES_ICON.SPACES
+        this.mime = mimeDirectory
+        break
+      case SPACES_PATH.SHARES:
+        this.icon = SPACES_ICON.SHARES
+        this.mime = mimeDirectoryShare
+        break
     }
   }
 }

@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Injectable, inject } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
 import { API_SHARES_LIST, SHARES_ROUTE } from '@sync-in-server/backend/src/applications/shares/constants/routes'

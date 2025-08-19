@@ -6,7 +6,7 @@
 
 import { NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import type { ShareChild } from '@sync-in-server/backend/src/applications/shares/models/share-child.model'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -35,19 +35,19 @@ import { ShareDialogComponent } from './share-dialog.component'
   styleUrls: ['shared-children-dialog.component.scss']
 })
 export class SharedChildrenDialogComponent implements OnInit {
-  protected readonly layout = inject(LayoutService)
-  private readonly sharesService = inject(SharesService)
-  private readonly linksService = inject(LinksService)
-  private readonly spacesService = inject(SpacesService)
   @Input() fromAdmin = false
   @Input() share: ShareFileModel
   @Input() space: SpaceModel
   @Output() sharesCountEvent = new EventEmitter<number>()
+  protected readonly layout = inject(LayoutService)
   protected readonly icons = { SHARED: SPACES_ICON.SHARED_WITH_OTHERS, LINKS: SPACES_ICON.LINKS }
   protected loading = false
   protected childSharesLength = 0
   protected childShares: ShareChildModel[]
   protected selected: ShareChildModel
+  private readonly sharesService = inject(SharesService)
+  private readonly linksService = inject(LinksService)
+  private readonly spacesService = inject(SpacesService)
 
   ngOnInit() {
     this.loadChildShares()

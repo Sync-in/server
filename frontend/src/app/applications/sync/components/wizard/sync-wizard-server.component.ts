@@ -31,14 +31,20 @@ import { isSynchronizable } from '../../sync.utils'
 })
 export class SyncWizardServerComponent {
   locale = inject<L10nLocale>(L10N_LOCALE)
+  @ViewChild(AutoResizeDirective, { static: true }) autoResize: AutoResizeDirective
+  protected readonly icons = { faArrowCircleLeft, faArrowCircleRight, faFolderPlus }
+  protected infoMsg: string = null
+  protected newDirectoryName: string
+  protected selectedPath: SyncWizardPath
+  protected currentPath: string
+  protected currentShowedPath: string
+  protected canCreateDir = false
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
   private readonly userService = inject(UserService)
   private readonly filesService = inject(FilesService)
   private readonly syncService = inject(SyncService)
   private readonly layout = inject(LayoutService)
-  @ViewChild(AutoResizeDirective, { static: true }) autoResize: AutoResizeDirective
-  protected readonly icons = { faArrowCircleLeft, faArrowCircleRight, faFolderPlus }
   private readonly rootPaths: SyncWizardPath[] = [
     this.userService.userHavePermission(USER_PERMISSION.PERSONAL_SPACE)
       ? new SyncWizardPath({
@@ -74,13 +80,7 @@ export class SyncWizardServerComponent {
         })
       : null
   ].filter(Boolean)
-  protected infoMsg: string = null
-  protected newDirectoryName: string
-  protected selectedPath: SyncWizardPath
-  protected currentPath: string
   protected currentPaths: WritableSignal<SyncWizardPath[]> = signal([...this.rootPaths])
-  protected currentShowedPath: string
-  protected canCreateDir = false
 
   constructor() {
     if (this.syncService.wizard.remotePath) {
@@ -168,6 +168,18 @@ export class SyncWizardServerComponent {
     }
   }
 
+  onNext() {
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SETTINGS]).catch(console.error)
+  }
+
+  onPrevious() {
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT]).catch(console.error)
+  }
+
+  setServerPath(serverPath: SyncWizardPath) {
+    this.syncService.wizard.remotePath = serverPath
+  }
+
   private setCurrentPaths(paths?: SyncWizardPath[]) {
     for (const syncPath of this.store.clientSyncPaths()) {
       const searchRegexp = new RegExp(`^${syncPath.settings.remotePath}((\\/.*)+|\\/?)$`)
@@ -198,17 +210,5 @@ export class SyncWizardServerComponent {
     if (timeout) {
       setTimeout(() => (this.infoMsg = null), 6000)
     }
-  }
-
-  onNext() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SETTINGS]).catch(console.error)
-  }
-
-  onPrevious() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT]).catch(console.error)
-  }
-
-  setServerPath(serverPath: SyncWizardPath) {
-    this.syncService.wizard.remotePath = serverPath
   }
 }

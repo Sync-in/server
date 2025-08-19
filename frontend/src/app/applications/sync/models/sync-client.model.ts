@@ -36,6 +36,15 @@ export class SyncClientModel implements Omit<SyncClientPaths, 'paths'> {
     this.setIcon()
   }
 
+  setExpiration() {
+    const expired = currentTimeStamp() >= this.tokenExpiration
+    this.expiration = {
+      value: this.tokenExpiration * 1000,
+      reached: expired,
+      approaching: expired ? false : currentTimeStamp() + 90 * 86400 >= this.tokenExpiration
+    }
+  }
+
   private setIcon() {
     if (this.info.os === 'darwin') {
       this.icon = faApple
@@ -46,15 +55,6 @@ export class SyncClientModel implements Omit<SyncClientPaths, 'paths'> {
     } else if (this.info.os.startsWith('linux')) {
       this.icon = faLinux
       this.osName = 'Linux'
-    }
-  }
-
-  setExpiration() {
-    const expired = currentTimeStamp() >= this.tokenExpiration
-    this.expiration = {
-      value: this.tokenExpiration * 1000,
-      reached: expired,
-      approaching: expired ? false : currentTimeStamp() + 90 * 86400 >= this.tokenExpiration
     }
   }
 }

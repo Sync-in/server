@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, ViewChild, inject } from '@angular/core'
+import { Component, ElementRef, inject, ViewChild } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowDown, faArrowRotateRight, faArrowUp, faKey, faPen, faPlus, faRotate } from '@fortawesome/free-solid-svg-icons'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
@@ -47,9 +47,6 @@ import { UserAvatarComponent } from './utils/user-avatar.component'
   templateUrl: 'user-guests.component.html'
 })
 export class UserGuestsComponent {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly layout = inject(LayoutService)
-  private readonly userService = inject(UserService)
   @ViewChild(VirtualScrollComponent) scrollView: {
     element: ElementRef
     viewPortItems: GuestUserModel[]
@@ -58,6 +55,7 @@ export class UserGuestsComponent {
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = { faRotate, faPlus, faPen, faArrowDown, faArrowUp, faKey, faArrowRotateRight }
   // Sort
@@ -112,6 +110,13 @@ export class UserGuestsComponent {
       sortable: true
     }
   }
+  protected loading = false
+  protected selected: GuestUserModel = null
+  protected guests: GuestUserModel[] = []
+  private readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
+  // States
+  protected canCreateGuest = this.userService.userHavePermission(USER_PERMISSION.GUESTS_ADMIN)
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'login', type: 'string' }],
     login: [{ prop: 'login', type: 'string' }],
@@ -123,11 +128,6 @@ export class UserGuestsComponent {
     isActive: [{ prop: 'isActive', type: 'number' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  // States
-  protected canCreateGuest = this.userService.userHavePermission(USER_PERMISSION.GUESTS_ADMIN)
-  protected loading = false
-  protected selected: GuestUserModel = null
-  protected guests: GuestUserModel[] = []
 
   constructor() {
     this.loadGuests()

@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, Output, inject } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faUserMinus } from '@fortawesome/free-solid-svg-icons'
@@ -23,17 +23,17 @@ import { AdminUserModel } from '../../models/admin-user.model'
   templateUrl: 'admin-user-delete-dialog.component.html'
 })
 export class AdminUserDeleteDialogComponent {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly layout = inject(LayoutService)
-  private readonly adminService = inject(AdminService)
   @Input({ required: true }) user: AdminUserModel
   @Output() wasDeleted = new EventEmitter<boolean>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected submitted = false
   protected readonly icons = { faUserMinus }
   protected deleteUserForm = new FormGroup<{
     adminPassword: FormControl<string>
     deleteSpace: FormControl<boolean>
   }>({ adminPassword: new FormControl('', Validators.required), deleteSpace: new FormControl(false) })
+  private readonly layout = inject(LayoutService)
+  private readonly adminService = inject(AdminService)
 
   onClose() {
     this.wasDeleted.emit(false)

@@ -25,13 +25,12 @@ import { SyncPathSettingsComponent } from '../shared/sync-path-settings.componen
   templateUrl: 'sync-path-settings.dialog.component.html'
 })
 export class SyncPathSettingsDialogComponent implements OnInit {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly layout = inject(LayoutService)
-  protected readonly store = inject(StoreService)
-  private readonly syncService = inject(SyncService)
   @Input({ required: true }) syncPathSelected: SyncPathModel
   @Input() syncClientSelected: SyncClientModel // not needed from client, only for web
   @Output() mustRefresh = new EventEmitter<void>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
+  protected readonly store = inject(StoreService)
   protected readonly ELECTRON_DIALOG = ELECTRON_DIALOG
   protected readonly SYNC_PATH_FILTER_TYPE = SYNC_PATH_FILTER_TYPE
   protected syncPath: SyncPathModel
@@ -47,6 +46,7 @@ export class SyncPathSettingsDialogComponent implements OnInit {
   }
   protected readonly icons = { faTimes, faRotate }
   protected confirmDeletion = false
+  private readonly syncService = inject(SyncService)
 
   ngOnInit() {
     this.syncPath = new SyncPathModel(JSON.parse(JSON.stringify(this.syncPathSelected)))
