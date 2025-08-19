@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -18,14 +18,11 @@ import { SyncService } from '../../services/sync.service'
   templateUrl: './sync-transfers-delete.dialog.component.html'
 })
 export class SyncTransfersDeleteDialogComponent {
+  protected readonly layout = inject(LayoutService)
+  private readonly syncService = inject(SyncService)
   @Input() syncPath: SyncPathModel = null
   @Output() wasDeleted = new EventEmitter<void>()
   protected readonly icons = { faTrashCan }
-
-  constructor(
-    protected readonly layout: LayoutService,
-    private readonly syncService: SyncService
-  ) {}
 
   doClear() {
     this.syncService.deleteTransfers(this.syncPath?.id).then(() => {

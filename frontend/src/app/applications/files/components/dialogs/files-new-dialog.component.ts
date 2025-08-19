@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, EventEmitter, HostListener, Inject, Input, OnInit, Output, ViewChild } from '@angular/core'
+import { Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Output, ViewChild, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCaretDown, faFileAlt, faFolderClosed, faGlobe } from '@fortawesome/free-solid-svg-icons'
@@ -25,6 +25,9 @@ import { FilesService } from '../../services/files.service'
   imports: [FaIconComponent, L10nTranslateDirective, BsDropdownModule, FormsModule, L10nTranslatePipe, AutofocusDirective, KeyValuePipe]
 })
 export class FilesNewDialogComponent implements OnInit {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected layout = inject(LayoutService)
+  private filesService = inject(FilesService)
   @Input() files: FileModel[]
   @Input() inputType: 'file' | 'directory' | 'download'
   @Output() refreshFiles = new EventEmitter()
@@ -37,12 +40,6 @@ export class FilesNewDialogComponent implements OnInit {
   protected docTypes = DOCUMENT_TYPE
   protected submitted = false
   protected error: string
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected layout: LayoutService,
-    private filesService: FilesService
-  ) {}
 
   ngOnInit() {
     if (this.inputType === 'download') {

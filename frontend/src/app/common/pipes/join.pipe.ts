@@ -4,14 +4,13 @@
  * See the LICENSE file for licensing details
  */
 
-import { Pipe, PipeTransform } from '@angular/core'
+import { Pipe, PipeTransform, inject } from '@angular/core'
 import { L10nTranslationService } from 'angular-l10n'
 import { CapitalizePipe } from './capitalize.pipe'
 
 @Pipe({ name: 'join' })
 export class JoinPipe implements PipeTransform {
-  constructor(private readonly translate: L10nTranslationService) {}
-
+  private readonly translate = inject(L10nTranslationService)
   transform(input: string[], translate = false, field: string = null, separator = ', '): string {
     if (!input.length) return ''
     const arr = (field ? input.map((item: any) => item[field]) : input.concat()).sort()

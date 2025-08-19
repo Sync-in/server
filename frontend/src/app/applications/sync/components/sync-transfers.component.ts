@@ -4,13 +4,13 @@
  * See the LICENSE file for licensing details
  */
 import { KeyValuePipe } from '@angular/common'
-import { Component, effect, ElementRef, Inject, ViewChild } from '@angular/core'
+import { Component, effect, ElementRef, ViewChild, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowDown, faArrowUp, faRedo, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
@@ -42,6 +42,11 @@ import { SyncTransfersDeleteDialogComponent } from './dialogs/sync-transfers-del
   templateUrl: 'sync-transfers.component.html'
 })
 export class SyncTransfersComponent {
+  locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly store = inject(StoreService)
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
+  private readonly syncService = inject(SyncService)
   @ViewChild(VirtualScrollComponent) scrollView: {
     element: ElementRef
     viewPortItems: SyncTransferModel[]
@@ -101,13 +106,7 @@ export class SyncTransfersComponent {
   private search: string = null
   private query: string = null
 
-  constructor(
-    @Inject(L10N_LOCALE) public locale: L10nLocale,
-    protected readonly store: StoreService,
-    private readonly router: Router,
-    private readonly layout: LayoutService,
-    private readonly syncService: SyncService
-  ) {
+  constructor() {
     this.layout.setBreadcrumbIcon(SYNC_ICON.TRANSFERS)
     this.layout.setBreadcrumbNav({
       url: `/${SYNC_PATH.BASE}/${SYNC_PATH.TRANSFERS}/${SYNC_TITLE.TRANSFERS}`,

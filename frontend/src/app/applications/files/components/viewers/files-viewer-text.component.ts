@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { AfterViewInit, Component, Input, OnInit, ViewChild, ViewEncapsulation } from '@angular/core'
+import { AfterViewInit, Component, Input, OnInit, ViewChild, ViewEncapsulation, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { CodeMirrorComponent } from '../../../../common/components/code-mirror.component'
 import { themeDark } from '../../../../layout/layout.interfaces'
@@ -30,6 +30,8 @@ import { FileModel } from '../../models/file.model'
   </div>`
 })
 export class FilesViewerTextComponent implements OnInit, AfterViewInit {
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
   @ViewChild('CodeMirror', { static: true }) ref: any
   @Input() currentHeight: number
   @Input() file: FileModel
@@ -44,11 +46,6 @@ export class FilesViewerTextComponent implements OnInit, AfterViewInit {
   private readonly maxSize = 5242880 // 5MB
   private readonly modeUrl = `${assetsUrl}/codemirror/mode/%N/%N.js`
   private mode: string = null
-
-  constructor(
-    private readonly http: HttpClient,
-    private readonly layout: LayoutService
-  ) {}
 
   ngOnInit() {
     this.ref.codeMirror.modeURL = this.modeUrl

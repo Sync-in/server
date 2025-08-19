@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import type { CreateOrUpdateShareDto } from '@sync-in-server/backend/src/applications/shares/dto/create-or-update-share.dto'
 import type { ShareProps } from '@sync-in-server/backend/src/applications/shares/interfaces/share-props.interface'
 import type { ShareChild } from '@sync-in-server/backend/src/applications/shares/models/share-child.model'
@@ -29,8 +29,7 @@ import { SpaceModel, SpaceRootModel } from '../models/space.model'
 
 @Injectable({ providedIn: 'root' })
 export class SpacesService {
-  constructor(private readonly http: HttpClient) {}
-
+  private readonly http = inject(HttpClient)
   listSpaces(): Observable<SpaceModel[]> {
     return this.http.get<SpaceProps[]>(API_SPACES_LIST).pipe(map((sps: SpaceProps[]) => sps.map((s: SpaceProps) => new SpaceModel(s))))
   }

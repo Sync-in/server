@@ -6,11 +6,11 @@
 
 import { NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import type { ShareChild } from '@sync-in-server/backend/src/applications/shares/models/share-child.model'
 import { L10nTranslateDirective } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
@@ -35,6 +35,10 @@ import { ShareDialogComponent } from './share-dialog.component'
   styleUrls: ['shared-children-dialog.component.scss']
 })
 export class SharedChildrenDialogComponent implements OnInit {
+  protected readonly layout = inject(LayoutService)
+  private readonly sharesService = inject(SharesService)
+  private readonly linksService = inject(LinksService)
+  private readonly spacesService = inject(SpacesService)
   @Input() fromAdmin = false
   @Input() share: ShareFileModel
   @Input() space: SpaceModel
@@ -44,13 +48,6 @@ export class SharedChildrenDialogComponent implements OnInit {
   protected childSharesLength = 0
   protected childShares: ShareChildModel[]
   protected selected: ShareChildModel
-
-  constructor(
-    protected readonly layout: LayoutService,
-    private readonly sharesService: SharesService,
-    private readonly linksService: LinksService,
-    private readonly spacesService: SpacesService
-  ) {}
 
   ngOnInit() {
     this.loadChildShares()

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, Inject, signal, ViewChild, WritableSignal } from '@angular/core'
+import { Component, signal, ViewChild, WritableSignal, inject } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -30,6 +30,13 @@ import { isSynchronizable } from '../../sync.utils'
   templateUrl: 'sync-wizard-server.component.html'
 })
 export class SyncWizardServerComponent {
+  locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly router = inject(Router)
+  private readonly store = inject(StoreService)
+  private readonly userService = inject(UserService)
+  private readonly filesService = inject(FilesService)
+  private readonly syncService = inject(SyncService)
+  private readonly layout = inject(LayoutService)
   @ViewChild(AutoResizeDirective, { static: true }) autoResize: AutoResizeDirective
   protected readonly icons = { faArrowCircleLeft, faArrowCircleRight, faFolderPlus }
   private readonly rootPaths: SyncWizardPath[] = [
@@ -75,15 +82,7 @@ export class SyncWizardServerComponent {
   protected currentShowedPath: string
   protected canCreateDir = false
 
-  constructor(
-    @Inject(L10N_LOCALE) public locale: L10nLocale,
-    private readonly router: Router,
-    private readonly store: StoreService,
-    private readonly userService: UserService,
-    private readonly filesService: FilesService,
-    private readonly syncService: SyncService,
-    private readonly layout: LayoutService
-  ) {
+  constructor() {
     if (this.syncService.wizard.remotePath) {
       this.browse(this.syncService.wizard.remotePath.path.split('/').slice(0, -1).join('/'), this.syncService.wizard.remotePath.name).catch(
         (e: Error) => {

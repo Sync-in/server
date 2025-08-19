@@ -4,14 +4,14 @@
  * See the LICENSE file for licensing details
  */
 
-import { Directive, ElementRef, Input, OnInit } from '@angular/core'
+import { Directive, ElementRef, Input, OnInit, inject } from '@angular/core'
 
 @Directive({ selector: '[appAutofocus]' })
 export class AutofocusDirective implements OnInit {
+  private readonly elementRef = inject(ElementRef)
+
   @Input() autoFocus = true
   @Input() autoSelect = true
-
-  constructor(private readonly elementRef: ElementRef) {}
 
   ngOnInit() {
     setTimeout(() => {

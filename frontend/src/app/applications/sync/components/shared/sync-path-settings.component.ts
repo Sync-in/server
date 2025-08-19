@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, Inject, Input } from '@angular/core'
+import { Component, Input, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -35,6 +35,7 @@ import { SyncPathDirectionIconComponent } from '../utils/sync-path-direction-ico
   templateUrl: './sync-path-settings.component.html'
 })
 export class SyncPathSettingsComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   @Input() syncPath: SyncPathModel
   @Input() direction = 'center'
   @Input() showPaths = false
@@ -56,6 +57,4 @@ export class SyncPathSettingsComponent {
   protected readonly SYNC_PATH_MODE = SYNC_PATH_MODE
   protected readonly SYNC_PATH_DIFF_MODE = SYNC_PATH_DIFF_MODE
   protected readonly SYNC_PATH_SCHEDULER_UNIT = SYNC_PATH_SCHEDULER_UNIT
-
-  constructor(@Inject(L10N_LOCALE) protected readonly locale: L10nLocale) {}
 }

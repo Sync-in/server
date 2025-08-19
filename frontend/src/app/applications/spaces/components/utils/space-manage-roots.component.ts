@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faPen, faTimes } from '@fortawesome/free-solid-svg-icons'
@@ -44,6 +44,7 @@ import { ExternalFilePathEvent } from '../dialogs/space-root-path-dialog.compone
   templateUrl: 'space-manage-roots.component.html'
 })
 export class SpaceManageRootsComponent implements OnInit, OnDestroy {
+  protected locale = inject<L10nLocale>(L10N_LOCALE)
   @ViewChild('InputRename') inputRename: ElementRef
   @Input({ required: true }) space: Partial<SpaceModel>
   @Input({ required: true }) user: UserType
@@ -53,8 +54,6 @@ export class SpaceManageRootsComponent implements OnInit, OnDestroy {
   protected readonly icons = { faTimes, faPen }
   protected readonly SPACES_PERMISSIONS_TEXT = SPACES_PERMISSIONS_TEXT
   protected readonly originalOrderKeyValue = originalOrderKeyValue
-
-  constructor(@Inject(L10N_LOCALE) protected locale: L10nLocale) {}
 
   ngOnInit() {
     if (this.addRootFile) {

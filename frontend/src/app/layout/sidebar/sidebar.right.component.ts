@@ -5,7 +5,7 @@
  */
 
 import { AsyncPipe, NgComponentOutlet } from '@angular/common'
-import { Component, computed, OnDestroy } from '@angular/core'
+import { Component, computed, OnDestroy, inject } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faBell, faFlag, faUser, faWindowRestore } from '@fortawesome/free-regular-svg-icons'
@@ -30,6 +30,8 @@ import { WindowsComponent } from './components/windows.component'
   templateUrl: 'sidebar.right.component.html'
 })
 export class SideBarRightComponent implements OnDestroy {
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
   protected visible = false
   protected showComponents = false
   protected tabs: TabMenu[] = []
@@ -92,10 +94,7 @@ export class SideBarRightComponent implements OnDestroy {
     }
   ]
 
-  constructor(
-    private readonly layout: LayoutService,
-    private readonly store: StoreService
-  ) {
+  constructor() {
     this.tabs = [...this.firstsTabs, ...this.lastsTabs]
     this.subscriptions.push(this.layout.rightSideBarIsOpen.subscribe((state: boolean) => this.setVisible(state)))
     this.subscriptions.push(this.layout.rightSideBarSetTabs.subscribe((menuTabs: { name: TAB_GROUP; tabs: TabMenu[] }) => this.setTabs(menuTabs)))

@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, computed, Inject, Signal, ViewChild } from '@angular/core'
+import { Component, computed, Signal, ViewChild, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -42,6 +42,12 @@ import { SEARCH_ICON, SEARCH_PATH } from '../search.constants'
   templateUrl: './search.component.html'
 })
 export class SearchComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
+  protected readonly store = inject(StoreService)
+  private readonly filesService = inject(FilesService)
+
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   protected readonly icons = { SEARCH_ICON, faSpinner, faTrashCan, faTimes, faFont }
   protected minCharsToSearch = minCharsToSearch
@@ -50,13 +56,7 @@ export class SearchComponent {
   protected selectedId: number = null
   public searchContent: Signal<string> = computed(() => this.store.currentSearch().content)
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly layout: LayoutService,
-    protected readonly store: StoreService,
-    private readonly filesService: FilesService
-  ) {
+  constructor() {
     this.layout.setBreadcrumbIcon(SEARCH_ICON)
     this.layout.setBreadcrumbNav({ url: `/${SEARCH_PATH.BASE}`, translating: false, sameLink: true })
   }

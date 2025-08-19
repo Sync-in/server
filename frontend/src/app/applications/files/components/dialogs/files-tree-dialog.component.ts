@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFile, faFolderClosed } from '@fortawesome/free-regular-svg-icons'
 import { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
@@ -29,6 +29,7 @@ export interface FileTreeEvent {
   templateUrl: 'files-tree-dialog.component.html'
 })
 export class FilesTreeDialogComponent {
+  protected readonly layout = inject(LayoutService)
   @Input() currentRoots: SpaceRootProps[] = []
   @Output() submitEvent = new EventEmitter<FileTreeEvent>()
   @Input() allowSpaces = false
@@ -38,8 +39,6 @@ export class FilesTreeDialogComponent {
   protected readonly icons = { faFile, faFolderClosed }
   protected errorSelection = null
   protected selection: FileTree = null
-
-  constructor(protected readonly layout: LayoutService) {}
 
   onSelect(file: FileTree) {
     if (file) {

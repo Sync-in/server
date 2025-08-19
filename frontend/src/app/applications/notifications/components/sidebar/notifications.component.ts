@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, Component, effect, ElementRef, QueryList, ViewChildren } from '@angular/core'
+import { AfterViewInit, Component, effect, ElementRef, QueryList, ViewChildren, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCheck, faCircleInfo, faMagnifyingGlass, faTimes, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
@@ -26,16 +26,15 @@ import { NotificationsService } from '../../notifications.service'
   templateUrl: 'notifications.component.html'
 })
 export class NotificationsComponent implements AfterViewInit {
+  private readonly router = inject(Router)
+  protected readonly store = inject(StoreService)
+  private readonly layout = inject(LayoutService)
+  private readonly notificationsService = inject(NotificationsService)
   @ViewChildren('notificationsHtml') notificationsHtml!: QueryList<ElementRef>
   private observer!: IntersectionObserver
   protected readonly icons = { faCheck, faTimes, faMagnifyingGlass, faTrashAlt, faCircleInfo }
 
-  constructor(
-    private readonly router: Router,
-    protected readonly store: StoreService,
-    private readonly layout: LayoutService,
-    private readonly notificationsService: NotificationsService
-  ) {
+  constructor() {
     // Re-observe the elements if notifications array has changes
     effect(() => {
       this.store.unreadNotifications()

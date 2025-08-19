@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, computed, Signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, Signal, inject } from '@angular/core'
 import { FilesSelectionComponent } from '../../../applications/files/components/sidebar/files-selection.component'
 import { LinkSelectionComponent } from '../../../applications/links/components/sidebar/link-selection.component'
 import { ShareSelectionComponent } from '../../../applications/shares/components/sidebar/share-selection.component'
@@ -20,10 +20,9 @@ import { StoreService } from '../../../store/store.service'
   templateUrl: 'selection.component.html'
 })
 export class SelectionComponent {
+  protected readonly store = inject(StoreService)
   protected SPACES_PATH = SPACES_PATH
   protected selectionType: Signal<(typeof SPACES_PATH)[keyof typeof SPACES_PATH]> = computed(() => this.setRepository(this.store.repository()))
-
-  constructor(protected readonly store: StoreService) {}
 
   private setRepository(repository: string) {
     if ([SPACES_PATH.SPACES, SPACES_PATH.SHARED, SPACES_PATH.LINKS, SPACES_PATH.TRASHES].indexOf(repository) > -1) {

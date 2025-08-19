@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { API_SYNC_CLIENTS, SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import {
@@ -36,6 +36,11 @@ import { getServerPath } from '../sync.utils'
   providedIn: 'root'
 })
 export class SyncService {
+  private readonly router = inject(Router)
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
+  private readonly electron = inject(Electron)
   // wizard
   public wizard: {
     localPath: {
@@ -55,13 +60,7 @@ export class SyncService {
     }
   }
 
-  constructor(
-    private readonly router: Router,
-    private readonly http: HttpClient,
-    private readonly layout: LayoutService,
-    private readonly store: StoreService,
-    private readonly electron: Electron
-  ) {
+  constructor() {
     this.resetWizard()
   }
 

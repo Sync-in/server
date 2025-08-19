@@ -6,13 +6,13 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, Inject, ViewChild } from '@angular/core'
+import { Component, ElementRef, ViewChild, inject } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowDown, faArrowRotateRight, faArrowUp, faKey, faPen, faPlus, faRotate } from '@fortawesome/free-solid-svg-icons'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
@@ -47,6 +47,9 @@ import { UserAvatarComponent } from './utils/user-avatar.component'
   templateUrl: 'user-guests.component.html'
 })
 export class UserGuestsComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
   @ViewChild(VirtualScrollComponent) scrollView: {
     element: ElementRef
     viewPortItems: GuestUserModel[]
@@ -126,11 +129,7 @@ export class UserGuestsComponent {
   protected selected: GuestUserModel = null
   protected guests: GuestUserModel[] = []
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly layout: LayoutService,
-    private readonly userService: UserService
-  ) {
+  constructor() {
     this.loadGuests()
     this.layout.setBreadcrumbIcon(USER_ICON.GUESTS)
     this.layout.setBreadcrumbNav({

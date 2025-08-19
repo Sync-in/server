@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, Inject, ViewChild } from '@angular/core'
+import { Component, ElementRef, ViewChild, inject } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -27,7 +27,7 @@ import { GROUP_TYPE } from '@sync-in-server/backend/src/applications/users/const
 import { USER_GROUP_ROLE, USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { filter, take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
@@ -70,6 +70,11 @@ import { UserPersonalGroupLeaveDialogComponent } from './dialogs/user-personal-g
   templateUrl: 'user-groups.component.html'
 })
 export class UserGroupsComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly router = inject(Router)
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
   @ViewChild(VirtualScrollComponent) scrollView: {
     element: ElementRef
     viewPortItems: MemberModel[]
@@ -179,13 +184,7 @@ export class UserGroupsComponent {
   protected selected: MemberModel = null
   protected members: MemberModel[] = []
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly layout: LayoutService,
-    private readonly userService: UserService
-  ) {
+  constructor() {
     this.activatedRoute.data.subscribe((route: Data) => this.setEnv(route.routes as UrlSegment[]))
     this.activatedRoute.queryParams.subscribe((params) => (this.focusOnSelect = params.select))
     this.layout.setBreadcrumbIcon(USER_ICON.GROUPS)

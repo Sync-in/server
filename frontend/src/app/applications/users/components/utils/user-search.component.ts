@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, EventEmitter, Inject, Input, NgZone, OnInit, Output, ViewChild } from '@angular/core'
+import { Component, ElementRef, EventEmitter, Input, NgZone, OnInit, Output, ViewChild, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faPen, faTimes } from '@fortawesome/free-solid-svg-icons'
@@ -42,6 +42,8 @@ import { USER_ICON } from '../../user.constants'
   templateUrl: 'users-search.component.html'
 })
 export class UserSearchComponent implements OnInit {
+  protected locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly ngZone = inject(NgZone)
   @ViewChild('InputTypeHead') inputTypeHead: ElementRef
   @Input() members: MemberModel[] = []
   @Output() membersChange = new EventEmitter<MemberModel[]>()
@@ -64,11 +66,6 @@ export class UserSearchComponent implements OnInit {
   protected asyncSearchUsersOrGroups: Observable<any> = new Observable((observer: any) => observer.next(this.selection)).pipe(
     mergeMap((search: any) => this.searchFunction(search || '').pipe(tap((results: MemberModel[]) => (this.lastResults = results))))
   )
-
-  constructor(
-    @Inject(L10N_LOCALE) protected locale: L10nLocale,
-    private readonly ngZone: NgZone
-  ) {}
 
   ngOnInit() {
     this.setDefaultPlaceHolder()

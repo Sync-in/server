@@ -5,7 +5,7 @@
  */
 
 import { NgTemplateOutlet } from '@angular/common'
-import { Component, ElementRef, EventEmitter, forwardRef, Input, OnDestroy, OnInit, Output, TemplateRef } from '@angular/core'
+import { Component, ElementRef, EventEmitter, forwardRef, Input, OnDestroy, OnInit, Output, TemplateRef, inject } from '@angular/core'
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms'
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -31,6 +31,8 @@ import { SelectItem } from './select.model'
   ]
 })
 export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor {
+  private readonly sanitizer = inject(DomSanitizer)
+  public element: ElementRef = inject(ElementRef)
   @Input({ required: true }) searchFunction: (search: string) => any
   @Input() customTemplateOptions: TemplateRef<any>
   @Input() customTemplateSelect: TemplateRef<any>
@@ -53,18 +55,13 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
   public options: SelectItem[] = []
   public itemObjects: SelectItem[] = []
   public activeOption: SelectItem
-  public element: ElementRef
   public inputMode = false
   public inputValue = ''
   protected onChange: any = Function.prototype
   protected onTouched: any = Function.prototype
   private behavior: GenericBehavior
 
-  public constructor(
-    element: ElementRef,
-    private readonly sanitizer: DomSanitizer
-  ) {
-    this.element = element
+  public constructor() {
     this.clickedOutside = this.clickedOutside.bind(this)
   }
 

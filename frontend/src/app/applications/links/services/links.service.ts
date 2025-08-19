@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { LINK_ERROR, LINK_TYPE } from '@sync-in-server/backend/src/applications/links/constants/links'
 import {
@@ -26,7 +26,7 @@ import { SPACE_OPERATION, SPACE_ROLE } from '@sync-in-server/backend/src/applica
 import { MEMBER_TYPE } from '@sync-in-server/backend/src/applications/users/constants/member'
 import type { UserPasswordDto } from '@sync-in-server/backend/src/applications/users/dto/user-password.dto'
 import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { ClipboardService } from 'ngx-clipboard'
 import { catchError, map, Observable, of } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -45,13 +45,11 @@ import { ShareLinkModel } from '../models/share-link.model'
   providedIn: 'root'
 })
 export class LinksService {
-  constructor(
-    private readonly router: Router,
-    private readonly http: HttpClient,
-    private readonly layout: LayoutService,
-    private readonly authService: AuthService,
-    private readonly clipboard: ClipboardService
-  ) {}
+  private readonly router = inject(Router)
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
+  private readonly authService = inject(AuthService)
+  private readonly clipboard = inject(ClipboardService)
 
   shareLinksList(): Observable<ShareLinkModel[]> {
     return this.http.get<ShareLinkModel[]>(API_SHARES_LINKS_LIST).pipe(map((sls: Partial<ShareLinkModel>[]) => sls.map((s) => new ShareLinkModel(s))))

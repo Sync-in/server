@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, Inject, OnInit, ViewChild } from '@angular/core'
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -26,7 +26,7 @@ import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-cont
 import type { ShareFile } from '@sync-in-server/backend/src/applications/shares/interfaces/share-file.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
@@ -77,6 +77,8 @@ export class SharedComponent implements OnInit {
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected readonly icons = {
     SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
     faArrowRotateRight,
@@ -95,7 +97,6 @@ export class SharedComponent implements OnInit {
   protected readonly TAB_MENU = TAB_MENU
   protected loading = false
   protected galleryMode: ViewMode
-  private focusOnSelect: string
   protected shares: ShareFileModel[] = []
   protected selected: ShareFileModel = null
   // Sort
@@ -133,21 +134,19 @@ export class SharedComponent implements OnInit {
       sortable: true
     }
   }
+  protected btnSortFields = { name: 'Name', created: 'Created' }
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly store = inject(StoreService)
+  private readonly sharesService = inject(SharesService)
+  private focusOnSelect: string
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'name', type: 'string' }],
     name: [{ prop: 'name', type: 'string' }],
     created: [{ prop: 'createdAt', type: 'date' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  protected btnSortFields = { name: 'Name', created: 'Created' }
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly store: StoreService,
-    private readonly sharesService: SharesService
-  ) {
+  constructor() {
     this.loadShares()
     this.activatedRoute.queryParams.subscribe((params) => (this.focusOnSelect = params.select))
     this.layout.setBreadcrumbIcon(this.icons.SHARED)
@@ -263,14 +262,6 @@ export class SharedComponent implements OnInit {
     this.layout.openContextMenu(ev, this.targetContextMenu)
   }
 
-  private focusOn(select: string) {
-    const s = this.shares.find((share) => share.name === select)
-    if (s) {
-      setTimeout(() => this.scrollView.scrollInto(s), 100)
-      this.onSelect(s)
-    }
-  }
-
   goTo(share?: ShareFileModel) {
     share = share || this.selected
     this.sharesService.goTo(share).catch((e: Error) => console.error(e))
@@ -278,5 +269,13 @@ export class SharedComponent implements OnInit {
 
   goToComments(share: ShareFileModel) {
     this.sharesService.goTo(share).then(() => this.layout.showRSideBarTab(TAB_MENU.COMMENTS, true))
+  }
+
+  private focusOn(select: string) {
+    const s = this.shares.find((share) => share.name === select)
+    if (s) {
+      setTimeout(() => this.scrollView.scrollInto(s), 100)
+      this.onSelect(s)
+    }
   }
 }

@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, effect, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, effect, OnDestroy, OnInit, ViewChild, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -74,6 +74,11 @@ import { SyncPathSchedulerComponent } from './utils/sync-path-scheduler.componen
   templateUrl: 'sync-paths.component.html'
 })
 export class SyncPathsComponent implements OnInit, OnDestroy {
+  locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly router = inject(Router)
+  protected readonly store = inject(StoreService)
+  private readonly layout = inject(LayoutService)
+  private readonly syncService = inject(SyncService)
   @ViewChild(AutoResizeDirective, { static: true }) autoResize: AutoResizeDirective
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('SyncPathContextMenu', { static: true }) syncPathContextMenu: ContextMenuComponent<any>
@@ -180,13 +185,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   private focusOnPathId: number = null
   private focusOnPathSettings = false
 
-  constructor(
-    @Inject(L10N_LOCALE) public locale: L10nLocale,
-    private readonly router: Router,
-    protected readonly store: StoreService,
-    private readonly layout: LayoutService,
-    private readonly syncService: SyncService
-  ) {
+  constructor() {
     this.layout.setBreadcrumbIcon(SYNC_ICON.SYNC)
     this.layout.setBreadcrumbNav({
       url: `/${SYNC_PATH.BASE}/${SYNC_PATH.PATHS}/${SYNC_TITLE.SYNCS}`,

@@ -4,8 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { DOCUMENT } from '@angular/common'
-import { Component, HostListener, Inject, OnDestroy, Renderer2 } from '@angular/core'
+import { Component, HostListener, OnDestroy, Renderer2, DOCUMENT, inject } from '@angular/core'
 import { RouterOutlet } from '@angular/router'
 import { Subscription } from 'rxjs'
 import { themeLight } from './layout.interfaces'
@@ -20,6 +19,9 @@ import { SideBarRightComponent } from './sidebar/sidebar.right.component'
   imports: [RouterOutlet, NavBarComponent, SideBarLeftComponent, SideBarRightComponent]
 })
 export class LayoutComponent implements OnDestroy {
+  private readonly document = inject<Document>(DOCUMENT)
+  private readonly layout = inject(LayoutService)
+  private readonly renderer = inject(Renderer2)
   protected themeMode = themeLight
   private rightSideBarClass = 'control-sidebar-open'
   private leftSideBarCollapsedClass = 'sidebar-collapse'
@@ -27,11 +29,7 @@ export class LayoutComponent implements OnDestroy {
   private isSmallerThanMediumScreen = false
   private subscriptions: Subscription[] = []
 
-  constructor(
-    @Inject(DOCUMENT) private readonly document: Document,
-    private readonly layout: LayoutService,
-    private readonly renderer: Renderer2
-  ) {
+  constructor() {
     this.subscriptions.push(this.layout.switchTheme.subscribe((theme: string) => this.setTheme(theme)))
     this.subscriptions.push(this.layout.toggleRightSideBar.subscribe((status: boolean) => this.toggleRightSideBar(status)))
     this.subscriptions.push(this.layout.toggleLeftSideBar.subscribe((status) => this.toggleLeftSideBar(status)))

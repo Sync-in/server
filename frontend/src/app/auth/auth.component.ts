@@ -5,7 +5,7 @@
  */
 
 import { NgOptimizedImage } from '@angular/common'
-import { Component, Inject } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -23,18 +23,19 @@ import { AuthService } from './auth.service'
   imports: [AutofocusDirective, ReactiveFormsModule, FaIconComponent, L10nTranslateDirective, L10nTranslatePipe, NgOptimizedImage]
 })
 export class AuthComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly fb = inject(UntypedFormBuilder)
+  private readonly router = inject(Router)
+  private readonly auth = inject(AuthService)
   protected readonly icons = { faLock, faUserAlt }
   protected logoUrl = logoDarkUrl
   protected loginForm: FormGroup
   protected hasError: any = null
   protected submitted = false
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly fb: UntypedFormBuilder,
-    private readonly router: Router,
-    private readonly auth: AuthService
-  ) {
+  constructor() {
+    const fb = this.fb
+
     this.loginForm = fb.group({
       username: this.fb.control('', [Validators.required]),
       password: this.fb.control('', [Validators.required])

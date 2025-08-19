@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Component, Input, OnDestroy, OnInit } from '@angular/core'
+import { Component, Input, OnDestroy, OnInit, inject } from '@angular/core'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
@@ -21,6 +21,8 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
   templateUrl: 'files-viewer-dialog.component.html'
 })
 export class FilesViewerDialogComponent implements OnInit, OnDestroy {
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
   @Input() currentFile: FileModel
   @Input() mode: 'view' | 'edit' = 'view'
   private subscription: Subscription = null
@@ -28,11 +30,6 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   private hookShortMime = null
   protected canAccess = false
   protected currentHeight: number
-
-  constructor(
-    private readonly http: HttpClient,
-    private readonly layout: LayoutService
-  ) {}
 
   ngOnInit() {
     this.subscription = this.layout.resizeEvent.subscribe(() => this.onResize())

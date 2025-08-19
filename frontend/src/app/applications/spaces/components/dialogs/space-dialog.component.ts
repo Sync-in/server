@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAnchor, faCog, faPen, faPlus, faSpinner, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
@@ -15,7 +15,7 @@ import { SpaceProps } from '@sync-in-server/backend/src/applications/spaces/mode
 import type { SpaceRootProps } from '@sync-in-server/backend/src/applications/spaces/models/space-root-props.model'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TabsModule } from 'ngx-bootstrap/tabs'
 import { Observable, Subject } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -59,6 +59,11 @@ import { ExternalFilePathEvent, SpaceRootPathDialogComponent } from './space-roo
   templateUrl: 'space-dialog.component.html'
 })
 export class SpaceDialogComponent implements OnInit {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
+  private readonly spacesService = inject(SpacesService)
+  private readonly linksService = inject(LinksService)
   @Input({ required: true }) space: SpaceModel = new SpaceModel({
     id: 0,
     name: '',
@@ -89,14 +94,6 @@ export class SpaceDialogComponent implements OnInit {
   protected confirmDeletion = false
   protected loading = false
   protected submitted = false
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly userService: UserService,
-    private readonly spacesService: SpacesService,
-    private readonly linksService: LinksService
-  ) {}
 
   ngOnInit() {
     if (!this.space.id) {

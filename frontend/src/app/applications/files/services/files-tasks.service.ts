@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { API_FILES_TASKS } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
@@ -22,6 +22,9 @@ import { FileEvent } from '../interfaces/file-event.interface'
 
 @Injectable({ providedIn: 'root' })
 export class FilesTasksService {
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
   private readonly onDone = {
     [FILE_OPERATION.DELETE]: { title: 'Deletion', fileEvent: { delete: true } as Partial<FileEvent> },
     [FILE_OPERATION.MOVE]: { title: 'Move', fileEvent: { delete: true, reloadFocusOnDst: true } as Partial<FileEvent> },
@@ -34,11 +37,7 @@ export class FilesTasksService {
   private watcher: Subscription = null
   private watch = timer(1000, 1000).pipe(tap(() => this.doWatch()))
 
-  constructor(
-    private readonly http: HttpClient,
-    private readonly layout: LayoutService,
-    private readonly store: StoreService
-  ) {
+  constructor() {
     this.loadAll()
   }
 

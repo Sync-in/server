@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { API_NOTIFICATIONS, NOTIFICATIONS_ROUTE } from '@sync-in-server/backend/src/applications/notifications/constants/routes'
 import type { NotificationFromUser } from '@sync-in-server/backend/src/applications/notifications/interfaces/notification-properties.interface'
 import { ActiveToast } from 'ngx-toastr'
@@ -20,11 +20,9 @@ import { NotificationModel } from './models/notification.model'
   providedIn: 'root'
 })
 export class NotificationsService {
-  constructor(
-    private readonly http: HttpClient,
-    private readonly store: StoreService,
-    private readonly layout: LayoutService
-  ) {}
+  private readonly http = inject(HttpClient)
+  private readonly store = inject(StoreService)
+  private readonly layout = inject(LayoutService)
 
   getNotifications(unread: boolean = false): Observable<NotificationModel[]> {
     return this.http

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, computed, Signal } from '@angular/core'
+import { Component, computed, Signal, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFileLines } from '@fortawesome/free-regular-svg-icons'
@@ -22,17 +22,16 @@ import { FilesService } from '../../services/files.service'
   templateUrl: './files-recents-widget.component.html'
 })
 export class FilesRecentsWidgetComponent {
+  private readonly router = inject(Router)
+  private readonly store = inject(StoreService)
+  private readonly filesService = inject(FilesService)
   private nbInitialFiles = 10
   private nbFiles = this.nbInitialFiles
   protected moreElements = false
   protected files: Signal<FileRecentModel[]> = computed(() => this.store.filesRecents().slice(0, this.nbFiles))
   protected readonly icons = { faFileLines, faMagnifyingGlassPlus, faMagnifyingGlassMinus, faTrashAlt }
 
-  constructor(
-    private readonly router: Router,
-    private readonly store: StoreService,
-    private readonly filesService: FilesService
-  ) {
+  constructor() {
     this.load()
   }
 

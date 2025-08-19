@@ -6,7 +6,7 @@
 
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, Component, ElementRef, HostListener, Inject, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core'
+import { AfterViewInit, Component, ElementRef, HostListener, NgZone, OnDestroy, OnInit, Renderer2, ViewChild, inject } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -46,7 +46,7 @@ import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/a
 import type { SpaceFiles } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-files.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -109,6 +109,16 @@ import { SpaceAnchorFileDialogComponent } from './dialogs/space-anchor-file-dial
   templateUrl: 'spaces-browser.component.html'
 })
 export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly router = inject(Router)
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly zone = inject(NgZone)
+  private readonly renderer = inject(Renderer2)
+  protected readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
+  private readonly spacesBrowser = inject(SpacesBrowserService)
+  private readonly filesService = inject(FilesService)
+  private readonly filesUpload = inject(FilesUploadService)
   @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: FileModel[]; scrollInto: (arg: FileModel | number) => void }
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: any
@@ -254,19 +264,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   protected files: FileModel[] = []
   protected selection: FileModel[] = []
   protected stats = { dirs: 0, files: 0, size: 0, elements: 0 }
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly zone: NgZone,
-    private readonly renderer: Renderer2,
-    protected readonly layout: LayoutService,
-    private readonly store: StoreService,
-    private readonly spacesBrowser: SpacesBrowserService,
-    private readonly filesService: FilesService,
-    private readonly filesUpload: FilesUploadService
-  ) {}
 
   ngOnInit() {
     this.galleryMode = this.btnNavigationView.currentView()

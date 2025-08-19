@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, Inject, Input, OnDestroy, OnInit, signal, ViewChild, WritableSignal } from '@angular/core'
+import { Component, Input, OnDestroy, OnInit, signal, ViewChild, WritableSignal, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowDown, faArrowUp, faFilter, faFlask, faMapMarkerAlt, faRotate, faSpinner, faStop } from '@fortawesome/free-solid-svg-icons'
@@ -55,6 +55,11 @@ import { SYNC_ICON } from '../../sync.constants'
   templateUrl: 'sync-path-report.dialog.component.html'
 })
 export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
+  locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly layout = inject(LayoutService)
+  private readonly electron = inject(Electron)
+  private readonly store = inject(StoreService)
+  private readonly syncService = inject(SyncService)
   @ViewChild(AutoResizeDirective, { static: true }) autoResizeDirective: AutoResizeDirective
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @Input() syncPath: SyncPathModel
@@ -106,14 +111,6 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
   protected count = { actions: 0, filtered: 0 }
   protected transfers: WritableSignal<SyncTransferModel[]> = signal([])
   private subscriptions: Subscription[] = []
-
-  constructor(
-    @Inject(L10N_LOCALE) public locale: L10nLocale,
-    private readonly layout: LayoutService,
-    private readonly electron: Electron,
-    private readonly store: StoreService,
-    private readonly syncService: SyncService
-  ) {}
 
   ngOnInit() {
     this.electron.ipcRenderer.on(EVENT.SYNC.REPORT_TRANSFER, (_ev, tr: SyncTransfer) => this.addTransfer(tr))

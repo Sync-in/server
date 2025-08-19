@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { effect, Injectable, NgZone } from '@angular/core'
+import { effect, Injectable, NgZone, inject } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications/sync/dtos/sync-client-auth.dto'
@@ -29,14 +29,13 @@ declare global {
   providedIn: 'root'
 })
 export class Electron {
+  private readonly ngZone = inject(NgZone)
+  private readonly store = inject(StoreService)
   public readonly enabled = checkIfElectronApp()
   public readonly ipcRenderer = this.enabled ? window.ipcRenderer : null
   private syncTasksCount: Record<number, number> = {}
 
-  constructor(
-    private readonly ngZone: NgZone,
-    private readonly store: StoreService
-  ) {
+  constructor() {
     this.store.isElectronApp.set(this.enabled)
     if (this.enabled) {
       effect(() => {

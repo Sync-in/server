@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCog, faPlus, faSpinner, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
@@ -14,7 +14,7 @@ import { LINK_TYPE } from '@sync-in-server/backend/src/applications/links/consta
 import { SPACE_ALIAS, SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TabsModule } from 'ngx-bootstrap/tabs'
 import { Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -56,6 +56,12 @@ import { ShareRepositoryComponent } from '../utils/share-repository.component'
   templateUrl: 'share-dialog.component.html'
 })
 export class ShareDialogComponent implements OnInit {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
+  private readonly sharesService = inject(SharesService)
+  private readonly linksService = inject(LinksService)
+  private readonly spacesService = inject(SpacesService)
   @Input() share: ShareModel
   @Input() file: FileSpace & Pick<FileModel, 'root'>
   @Input() parentShareId: number = null
@@ -80,15 +86,6 @@ export class ShareDialogComponent implements OnInit {
   protected confirmDeletion = false
   protected loading = false
   protected submitted = false
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly userService: UserService,
-    private readonly sharesService: SharesService,
-    private readonly linksService: LinksService,
-    private readonly spacesService: SpacesService
-  ) {}
 
   ngOnInit() {
     if (!this.share) {

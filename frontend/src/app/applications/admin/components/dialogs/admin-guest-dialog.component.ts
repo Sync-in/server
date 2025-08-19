@@ -6,24 +6,22 @@
 
 import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, Inject } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
-import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
+import { L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TabDirective, TabHeadingDirective, TabsetComponent } from 'ngx-bootstrap/tabs'
 import { Observable } from 'rxjs'
 import { InputPasswordComponent } from '../../../../common/components/input-password.component'
 import { PasswordStrengthBarComponent } from '../../../../common/components/password-strength-bar.component'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
-import { LayoutService } from '../../../../layout/layout.service'
 import { UserGuestDialogComponent } from '../../../users/components/dialogs/user-guest-dialog.component'
 import { UserSearchComponent } from '../../../users/components/utils/user-search.component'
 import { GuestUserModel } from '../../../users/models/guest.model'
 import { MemberModel } from '../../../users/models/member.model'
-import { UserService } from '../../../users/user.service'
 import { AdminService } from '../../admin.service'
 
 @Component({
@@ -50,13 +48,9 @@ import { AdminService } from '../../admin.service'
   templateUrl: '../../../users/components/dialogs/user-guest-dialog.component.html'
 })
 export class AdminGuestDialogComponent extends UserGuestDialogComponent {
-  constructor(
-    @Inject(L10N_LOCALE) locale: L10nLocale,
-    layout: LayoutService,
-    userService: UserService,
-    private readonly adminService: AdminService
-  ) {
-    super(locale, layout, userService)
+  private readonly adminService = inject(AdminService)
+  constructor() {
+    super()
   }
 
   override searchMembers(query: string): Observable<MemberModel[]> {

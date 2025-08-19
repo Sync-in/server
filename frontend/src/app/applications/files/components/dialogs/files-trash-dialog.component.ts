@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Inject, Input, Output } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Input, Output, inject } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faSpinner, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -18,16 +18,13 @@ import { FileModel } from '../../models/file.model'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FilesTrashDialogComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected layout = inject(LayoutService)
   @Input() files: FileModel[] = []
   @Input() permanently = false
   @Output() removeFiles = new EventEmitter<void>()
   protected readonly icons = { faTrashCan, faSpinner }
   protected submitted = false
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected layout: LayoutService
-  ) {}
 
   @HostListener('document:keyup.enter')
   onEnter() {

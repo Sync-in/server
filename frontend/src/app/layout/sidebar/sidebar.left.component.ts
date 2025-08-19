@@ -5,7 +5,7 @@
  */
 
 import { AsyncPipe, Location, NgComponentOutlet, NgTemplateOutlet } from '@angular/common'
-import { Component, ElementRef, OnDestroy, Renderer2, ViewChild } from '@angular/core'
+import { Component, ElementRef, OnDestroy, Renderer2, ViewChild, inject } from '@angular/core'
 import { ResolveEnd, Router, RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAngleLeft, faAngleRight, faUserSecret } from '@fortawesome/free-solid-svg-icons'
@@ -33,6 +33,13 @@ import { LayoutService } from '../layout.service'
   imports: [RouterLink, FaIconComponent, AutoResizeDirective, L10nTranslateDirective, NgComponentOutlet, AsyncPipe, NgTemplateOutlet]
 })
 export class SideBarLeftComponent implements OnDestroy {
+  protected readonly store = inject(StoreService)
+  private readonly router = inject(Router)
+  private readonly renderer = inject(Renderer2)
+  private readonly location = inject(Location)
+  private readonly authService = inject(AuthService)
+  private readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
   @ViewChild('sidebar', { static: true }) sidebar: ElementRef
   private subscriptions: Subscription[] = []
   private menuAppsHovered = false
@@ -49,15 +56,7 @@ export class SideBarLeftComponent implements OnDestroy {
   protected currentMenu: AppMenu
   protected appsMenu: AppMenu = APP_MENU
 
-  constructor(
-    protected readonly store: StoreService,
-    private readonly router: Router,
-    private readonly renderer: Renderer2,
-    private readonly location: Location,
-    private readonly authService: AuthService,
-    private readonly layout: LayoutService,
-    private readonly userService: UserService
-  ) {
+  constructor() {
     this.appName = APP_NAME
     this.appVersion = APP_VERSION
     this.appsMenu.submenus = [SPACES_MENU, SEARCH_MENU, SYNC_MENU, USER_MENU, ADMIN_MENU]

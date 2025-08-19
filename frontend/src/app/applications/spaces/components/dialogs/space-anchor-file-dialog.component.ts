@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, inject } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAnchor, faPlus, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -30,6 +30,10 @@ import { SpaceManageRootsComponent } from '../utils/space-manage-roots.component
   templateUrl: 'space-anchor-file-dialog.component.html'
 })
 export class SpaceAnchorFileDialogComponent implements OnInit {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
+  private spacesService = inject(SpacesService)
   @Input({ required: true }) files: FileModel[]
   public addAnchoredFiles = new EventEmitter<{ space: SpaceModel; fileNames: string[] }>()
   protected readonly icons = { faAnchor, faPlus, faSpinner, SPACES: SPACES_ICON.SPACES }
@@ -40,13 +44,6 @@ export class SpaceAnchorFileDialogComponent implements OnInit {
   // states
   protected submitted = false
   protected loading = false
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly userService: UserService,
-    private spacesService: SpacesService
-  ) {}
 
   ngOnInit() {
     for (const f of this.files) {

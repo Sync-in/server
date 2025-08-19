@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, Inject } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -23,7 +23,7 @@ import {
   faTrashCan
 } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
@@ -46,6 +46,10 @@ import { SyncPathSettingsDialogComponent } from './dialogs/sync-path-settings.di
   styleUrl: './sync-clients.component.scss'
 })
 export class SyncClientsComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
+  private readonly syncService = inject(SyncService)
   protected readonly icons = {
     faArrowRotateRight,
     faTrashCan,
@@ -68,12 +72,7 @@ export class SyncClientsComponent {
   protected selectedPath: SyncPathModel
   protected clients: SyncClientModel[] = []
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly layout: LayoutService,
-    private readonly syncService: SyncService
-  ) {
+  constructor() {
     this.layout.setBreadcrumbIcon(USER_ICON.CLIENTS)
     this.layout.setBreadcrumbNav({
       url: `/${USER_PATH.BASE}/${USER_PATH.CLIENTS}/${USER_TITLE.CLIENTS}`,

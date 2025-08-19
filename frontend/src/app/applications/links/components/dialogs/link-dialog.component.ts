@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faClipboard, faClipboardCheck, faEye, faEyeSlash, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons'
@@ -60,6 +60,12 @@ import { LinksService } from '../../services/links.service'
   templateUrl: 'link-dialog.component.html'
 })
 export class LinkDialogComponent implements OnInit {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
+  private readonly sharesService = inject(SharesService)
+  private readonly linksService = inject(LinksService)
+  private readonly spacesService = inject(SpacesService)
   // from links component or children dialog component
   @Input() share: ShareLinkModel | (Partial<ShareModel> & { link: LinkGuest })
   @Input() parentSpaceId: number = null
@@ -99,14 +105,7 @@ export class LinkDialogComponent implements OnInit {
     isActive: FormControl<boolean>
   }>
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    public readonly layout: LayoutService,
-    private readonly userService: UserService,
-    private readonly sharesService: SharesService,
-    private readonly linksService: LinksService,
-    private readonly spacesService: SpacesService
-  ) {
+  constructor() {
     // set picker expiration to current date + 1 day
     this.minDate.setDate(this.minDate.getDate() + 1)
   }

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, Inject, input, InputSignal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, input, InputSignal, inject } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { SPACE_ROLE } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
@@ -37,17 +37,14 @@ import { SpaceUserAnchorsDialogComponent } from '../dialogs/space-user-anchors-d
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })
 export class SpaceSelectionComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly userService = inject(UserService)
+  private readonly layout = inject(LayoutService)
   space: InputSignal<SpaceModel> = input.required<SpaceModel>()
   protected readonly SPACE_ROLE = SPACE_ROLE
   protected readonly icons = { SPACES: SPACES_ICON.SPACES, ANCHORED: SPACES_ICON.ANCHORED, SHARED: SPACES_ICON.SHARED_WITH_OTHERS }
   protected readonly cardImageSize = defaultCardImageSize
   protected resizeOffset = defaultResizeOffset
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly userService: UserService,
-    private readonly layout: LayoutService
-  ) {}
 
   openSpaceRootsDialog() {
     this.layout.openDialog(SpaceUserAnchorsDialogComponent, 'md', {

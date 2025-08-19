@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { NOTIFICATIONS_WS } from '@sync-in-server/backend/src/applications/notifications/constants/websocket'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
@@ -56,13 +56,13 @@ import { myAvatarUrl } from './user.functions'
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
-  constructor(
-    private readonly http: HttpClient,
-    private readonly layout: LayoutService,
-    private readonly store: StoreService,
-    private readonly webSocket: Socket,
-    private readonly notifications: NotificationsService
-  ) {
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
+  private readonly webSocket = inject(Socket)
+  private readonly notifications = inject(NotificationsService)
+
+  constructor() {
     this.webSocket.fromEvent('connect').subscribe(() => this.notifications.checkUnreadNotifications())
     this.webSocket.fromEvent('disconnect').subscribe(() => this.store.onlineUsers.set([]))
     this.webSocket.fromEvent(NOTIFICATIONS_WS.EVENTS.NOTIFICATION).subscribe(() => this.notifications.checkUnreadNotifications(true))

@@ -5,7 +5,7 @@
  */
 
 import { IActionMapping, ITreeOptions, TREE_ACTIONS, TreeModel, TreeModule, TreeNode } from '@ali-hm/angular-tree-component'
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild, inject } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -32,6 +32,11 @@ import { FilesService } from '../../services/files.service'
   templateUrl: 'files-tree.component.html'
 })
 export class FilesTreeComponent implements OnInit, OnDestroy {
+  private readonly layout = inject(LayoutService)
+  private readonly router = inject(Router)
+  private readonly user = inject(UserService)
+  private readonly filesService = inject(FilesService)
+  protected readonly store = inject(StoreService)
   @ViewChild('tree', { static: true }) tree: any
   @Output() selected = new EventEmitter()
   @Input() showFiles = false
@@ -80,13 +85,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
   private preventDblClick = false
   private preventTimer: any
 
-  constructor(
-    private readonly layout: LayoutService,
-    private readonly router: Router,
-    private readonly user: UserService,
-    private readonly filesService: FilesService,
-    protected readonly store: StoreService
-  ) {
+  constructor() {
     if (this.enableCopyMove) {
       this.subscriptions.push(toObservable(this.store.filesSelection).subscribe(() => this.checkAllowed(this.selection)))
     }

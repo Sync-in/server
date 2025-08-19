@@ -5,7 +5,7 @@
  */
 
 import { Location } from '@angular/common'
-import { Component, OnDestroy } from '@angular/core'
+import { Component, OnDestroy, inject } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons'
 import { USER_ONLINE_STATUS_LIST } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -22,17 +22,16 @@ import { LayoutService } from '../layout.service'
   imports: [BreadcrumbComponent, FaIconComponent]
 })
 export class NavBarComponent implements OnDestroy {
+  private readonly location = inject(Location)
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
   private subscriptions: Subscription[] = []
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly icons = { faAngleLeft, faAngleRight }
   protected user: UserType
   protected userAvatar: string = null
 
-  constructor(
-    private readonly location: Location,
-    private readonly layout: LayoutService,
-    private readonly store: StoreService
-  ) {
+  constructor() {
     this.subscriptions.push(this.store.user.subscribe((user: UserType) => (this.user = user)))
     this.subscriptions.push(this.store.userAvatarUrl.subscribe((avatarUrl) => (this.userAvatar = avatarUrl)))
   }

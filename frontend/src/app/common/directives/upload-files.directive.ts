@@ -4,19 +4,16 @@
  * See the LICENSE file for licensing details
  */
 
-import { Directive, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, Renderer2 } from '@angular/core'
+import { Directive, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, Renderer2, inject } from '@angular/core'
 
 @Directive({ selector: '[appUploadFiles]' })
 export class UploadFilesDirective implements OnInit, OnDestroy {
+  private elementRef = inject(ElementRef)
+  private readonly renderer = inject(Renderer2)
   @Input() options: { isMultiple?: boolean; isDirectory?: boolean }
   @Output() uploadFiles = new EventEmitter<{ files: File[]; isDirectory: boolean }>()
   private eventElement: () => void | undefined
   private eventInput: () => void | undefined
-
-  constructor(
-    private elementRef: ElementRef,
-    private readonly renderer: Renderer2
-  ) {}
 
   ngOnInit() {
     const input = document.createElement('input')

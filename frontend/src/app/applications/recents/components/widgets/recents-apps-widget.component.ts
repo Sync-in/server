@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -18,10 +18,9 @@ import { UserService } from '../../../users/user.service'
   templateUrl: './recents-apps-widget.component.html'
 })
 export class RecentsAppsWidgetComponent {
+  protected readonly userService = inject(UserService)
   protected readonly USER_PERMISSION = USER_PERMISSION
   protected readonly SPACES_ICON = SPACES_ICON
   protected readonly SPACES_PATH = SPACES_PATH
   protected readonly SPACES_TITLE = SPACES_TITLE
-
-  constructor(protected readonly userService: UserService) {}
 }

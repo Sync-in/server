@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, Inject, input, InputSignal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, input, InputSignal, inject } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
@@ -35,16 +35,13 @@ import { ShareRepositoryComponent } from '../utils/share-repository.component'
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })
 export class ShareSelectionComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly layout = inject(LayoutService)
+  private readonly sharesService = inject(SharesService)
   share: InputSignal<ShareFileModel> = input.required<ShareFileModel>()
   protected readonly iconShared = SPACES_ICON.SHARED_WITH_OTHERS
   protected readonly cardImageSize = defaultCardImageSize
   protected readonly resizeOffset = defaultResizeOffset
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly layout: LayoutService,
-    private readonly sharesService: SharesService
-  ) {}
 
   childShareDialog(share: ShareFileModel) {
     if (!share.counts.shares) return

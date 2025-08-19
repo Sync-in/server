@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, OnDestroy } from '@angular/core'
+import { Component, OnDestroy, inject } from '@angular/core'
 import { RouterLink, RouterLinkActive } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -19,12 +19,13 @@ import { BreadCrumbUrl } from './breadcrumb.interfaces'
   imports: [RouterLink, RouterLinkActive, FaIconComponent]
 })
 export class BreadcrumbComponent implements OnDestroy {
+  private readonly layout = inject(LayoutService)
   protected readonly icons = { faChevronRight }
   protected breadcrumbIcon: IconDefinition = faHome
   protected levels: { link: string[] | string; title: string }[] = []
   private subscriptions: Subscription[] = []
 
-  constructor(private readonly layout: LayoutService) {
+  constructor() {
     this.subscriptions.push(this.layout.breadcrumbNav.subscribe((url) => this.updateNav(url)))
     this.subscriptions.push(this.layout.breadcrumbIcon.subscribe((icon) => (this.breadcrumbIcon = icon)))
   }

@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http'
-import { Injectable, Injector } from '@angular/core'
+import { Injectable, Injector, inject } from '@angular/core'
 import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH } from '@sync-in-server/backend/src/authentication/constants/routes'
 import { BehaviorSubject, concatMap, delay, Observable, of, retryWhen, throwError } from 'rxjs'
 import { catchError, filter, finalize, switchMap, take } from 'rxjs/operators'
@@ -16,15 +16,12 @@ import { AuthService } from './auth.service'
   providedIn: 'root'
 })
 export class AuthInterceptor implements HttpInterceptor {
-  private auth: AuthService | null
+  private readonly injector = inject(Injector)
+  private auth: AuthService | null = null
   private isRefreshingToken = false
   private waitForRefreshToken: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false)
   private retryCount = 3
   private retryWaitMilliSeconds = 2000
-
-  constructor(private readonly injector: Injector) {
-    this.auth = null
-  }
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const encodedUrl = hasReservedUrlChars(request.url)

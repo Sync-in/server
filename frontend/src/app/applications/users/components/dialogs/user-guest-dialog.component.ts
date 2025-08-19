@@ -6,7 +6,7 @@
 
 import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAddressCard, faPen, faPlus, faShieldHalved, faSpinner, faUsers, faUsersGear } from '@fortawesome/free-solid-svg-icons'
@@ -52,6 +52,9 @@ import { UserSearchComponent } from '../utils/user-search.component'
   templateUrl: 'user-guest-dialog.component.html'
 })
 export class UserGuestDialogComponent implements OnInit {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
+  protected readonly userService = inject(UserService)
   @Input() guest: GuestUserModel = null
   @Output() guestChange = new EventEmitter<['add' | 'update' | 'delete', GuestUserModel]>()
   protected readonly user: UserType = this.userService.user
@@ -76,12 +79,6 @@ export class UserGuestDialogComponent implements OnInit {
     isActive: FormControl<boolean>
     managers: FormControl<MemberModel[]>
   }>
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    protected readonly userService: UserService
-  ) {}
 
   ngOnInit() {
     this.guestForm = new FormGroup({

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, computed, Inject, input, InputSignal, Signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, input, InputSignal, Signal, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowsAlt, faClipboardCheck } from '@fortawesome/free-solid-svg-icons'
@@ -40,6 +40,10 @@ import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.compone
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })
 export class FilesSelectionComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
+  private readonly filesService = inject(FilesService)
   files: InputSignal<FileModel[]> = input.required<FileModel[]>()
   protected multiple: Signal<boolean> = computed(() => this.files().length > 1)
   protected resizeOffset: Signal<number> = computed(() => (this.multiple() ? 120 : 80))
@@ -52,13 +56,6 @@ export class FilesSelectionComponent {
     faClipboardCheck,
     faArrowsAlt
   }
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly layout: LayoutService,
-    private readonly filesService: FilesService
-  ) {}
 
   goToShare(share: { type: number; name: string }) {
     this.layout.toggleRSideBar(false)

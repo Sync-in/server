@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, Inject, ViewChild } from '@angular/core'
+import { Component, ElementRef, ViewChild, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -31,7 +31,7 @@ import { USER_GROUP_ROLE } from '@sync-in-server/backend/src/applications/users/
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { filter, take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
@@ -78,6 +78,11 @@ import { AdminGroupEditUserDialogComponent } from './dialogs/admin-group-edit-us
   templateUrl: 'admin-groups.component.html'
 })
 export class AdminGroupsComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly router = inject(Router)
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly layout = inject(LayoutService)
+  private readonly adminService = inject(AdminService)
   @ViewChild(VirtualScrollComponent) scrollView: {
     element: ElementRef
     viewPortItems: MemberModel[]
@@ -155,13 +160,7 @@ export class AdminGroupsComponent {
   protected selected: MemberModel = null
   protected members: MemberModel[] = []
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly layout: LayoutService,
-    private readonly adminService: AdminService
-  ) {
+  constructor() {
     this.activatedRoute.data.subscribe((route: Data) => {
       this.personalGroupsView = route.type === GROUP_TYPE.PERSONAL
       this.setEnv(route.routes as UrlSegment[])

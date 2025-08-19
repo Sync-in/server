@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, Inject, OnDestroy } from '@angular/core'
+import { Component, OnDestroy, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCopy, faKey } from '@fortawesome/free-solid-svg-icons'
@@ -50,6 +50,11 @@ import { UserService } from '../user.service'
   templateUrl: 'user-account.component.html'
 })
 export class UserAccountComponent implements OnDestroy {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly store = inject(StoreService)
+  private readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
+  private readonly clipBoardService = inject(ClipboardService)
   private subscriptions: Subscription[] = []
   protected readonly allNotifications = Object.values(USER_NOTIFICATION_TEXT)
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
@@ -63,13 +68,7 @@ export class UserAccountComponent implements OnDestroy {
   protected oldPassword: string
   protected newPassword: string
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly store: StoreService,
-    private readonly layout: LayoutService,
-    private readonly userService: UserService,
-    private readonly clipBoardService: ClipboardService
-  ) {
+  constructor() {
     this.subscriptions.push(this.store.user.subscribe((user: UserType) => (this.user = user)))
     this.subscriptions.push(this.store.userAvatarUrl.subscribe((avatarUrl) => (this.userAvatar = avatarUrl)))
     this.layout.setBreadcrumbIcon(USER_ICON.ACCOUNT)

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, Inject, Input, OnChanges, OnInit } from '@angular/core'
+import { Component, Input, OnChanges, OnInit, inject } from '@angular/core'
 import { L10N_LOCALE, L10nLocale } from 'angular-l10n'
 import { pathSlice } from '../../../../common/utils/functions'
 import { ShareLinkModel } from '../../../links/models/share-link.model'
@@ -23,10 +23,9 @@ import { ShareModel } from '../../models/share.model'
   </div>`
 })
 export class ShareFileNameComponent implements OnInit, OnChanges {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   @Input({ required: true }) share: ShareModel | ShareLinkModel
   protected fileName: string
-
-  constructor(@Inject(L10N_LOCALE) protected readonly locale: L10nLocale) {}
 
   ngOnInit() {
     this.setFilePath()

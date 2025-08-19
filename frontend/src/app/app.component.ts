@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, Inject } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { RouterOutlet } from '@angular/router'
 import { FaConfig } from '@fortawesome/angular-fontawesome'
 import { L10N_LOCALE, L10nLoader, L10nLocale } from 'angular-l10n'
@@ -19,12 +19,13 @@ import { dJs } from './common/utils/time'
   template: '<router-outlet></router-outlet>'
 })
 export class AppComponent {
-  constructor(
-    @Inject(L10N_LOCALE) private locale: L10nLocale,
-    private l10nLoader: L10nLoader,
-    private bsLocaleService: BsLocaleService,
-    faConfig: FaConfig
-  ) {
+  private locale = inject<L10nLocale>(L10N_LOCALE)
+  private l10nLoader = inject(L10nLoader)
+  private bsLocaleService = inject(BsLocaleService)
+
+  constructor() {
+    const faConfig = inject(FaConfig)
+
     faConfig.fixedWidth = true
     setTheme('bs5')
     defineLocale('fr', frLocale)

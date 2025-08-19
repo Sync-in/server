@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, Inject, OnInit, ViewChild } from '@angular/core'
+import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowDown, faArrowRotateRight, faArrowUp, faCircleInfo } from '@fortawesome/free-solid-svg-icons'
@@ -44,6 +44,11 @@ import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../spaces.constants'
   templateUrl: 'trash.component.html'
 })
 export class TrashComponent implements OnInit {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
+  private readonly router = inject(Router)
+  private readonly store = inject(StoreService)
+  private readonly spacesService = inject(SpacesService)
   @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: TrashModel[]; scrollInto: (arg: TrashModel | number) => void }
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
@@ -96,13 +101,7 @@ export class TrashComponent implements OnInit {
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
   protected btnSortFields = { name: 'Name', nb: 'Elements', mtime: 'Modified' }
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly router: Router,
-    private readonly store: StoreService,
-    private readonly spacesService: SpacesService
-  ) {
+  constructor() {
     this.loadTrashBins()
     this.layout.setBreadcrumbIcon(SPACES_ICON.TRASH)
     this.layout.setBreadcrumbNav({ url: `/${SPACES_PATH.TRASH}/${SPACES_TITLE.TRASH}`, translating: true, sameLink: true })

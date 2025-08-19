@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, Inject, input, InputSignal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, input, InputSignal, inject } from '@angular/core'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
@@ -21,11 +21,10 @@ import { ShareLinkModel } from '../../models/share-link.model'
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })
 export class LinkSelectionComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   link: InputSignal<ShareLinkModel> = input.required<ShareLinkModel>()
   protected readonly cardImageSize = defaultCardImageSize
   protected readonly resizeOffset = defaultResizeOffset
   protected accessHover = false
   protected lastAccessHover = false
-
-  constructor(@Inject(L10N_LOCALE) protected readonly locale: L10nLocale) {}
 }

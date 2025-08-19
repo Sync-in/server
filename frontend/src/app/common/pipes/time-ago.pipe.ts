@@ -4,25 +4,21 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectorRef, NgZone, OnDestroy, Pipe, PipeTransform } from '@angular/core'
+import { ChangeDetectorRef, NgZone, OnDestroy, Pipe, PipeTransform, inject } from '@angular/core'
 import { Dayjs } from 'dayjs'
 import { dJs } from '../utils/time'
 
 @Pipe({ name: 'amTimeAgo', pure: false })
 export class TimeAgoPipe implements PipeTransform, OnDestroy {
+  private readonly cdRef = inject(ChangeDetectorRef)
+  private ngZone = inject(NgZone)
   private currentTimer: number | null
-
   private lastTime: number
   private lastValue: any
   private lastOmitSuffix: boolean
   private lastLocale?: string
   private lastText: string
   private formatFn: (d: Dayjs) => string
-
-  constructor(
-    private readonly cdRef: ChangeDetectorRef,
-    private ngZone: NgZone
-  ) {}
 
   format(d: Dayjs) {
     return d.from(dJs(), this.lastOmitSuffix)

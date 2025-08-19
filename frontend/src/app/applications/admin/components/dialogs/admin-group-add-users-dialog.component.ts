@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faUserPlus } from '@fortawesome/free-solid-svg-icons'
 import { GROUP_TYPE } from '@sync-in-server/backend/src/applications/users/constants/group'
@@ -25,17 +25,14 @@ import { AdminService } from '../../admin.service'
   templateUrl: 'admin-group-add-users-dialog.component.html'
 })
 export class AdminGroupAddUsersDialogComponent {
+  protected readonly layout = inject(LayoutService)
+  private readonly adminService = inject(AdminService)
   @Input({ required: true }) parentGroup: GroupBrowseModel['parentGroup']
   @Input({ required: true }) currentMemberIds: number[] = []
   @Output() hasChanges = new EventEmitter<boolean>()
   protected newMembers: MemberModel[] = []
   protected submitted = false
   protected readonly icons = { faUserPlus }
-
-  constructor(
-    protected readonly layout: LayoutService,
-    private readonly adminService: AdminService
-  ) {}
 
   searchMembers(query: string): Observable<MemberModel[]> {
     const search: SearchMembersDto = {

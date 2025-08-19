@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { CLIENT_TOKEN_EXPIRED_ERROR } from '@sync-in-server/backend/src/applications/sync/constants/auth'
 import { API_SYNC_AUTH_COOKIE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
@@ -32,18 +32,15 @@ import { AUTH_PATHS } from './auth.constants'
   providedIn: 'root'
 })
 export class AuthService {
+  private readonly http = inject(HttpClient)
+  private readonly router = inject(Router)
+  private readonly store = inject(StoreService)
+  private readonly userService = inject(UserService)
+  private readonly layout = inject(LayoutService)
+  private readonly electron = inject(Electron)
   private _refreshExpiration = parseInt(localStorage.getItem('refresh_expiration') || '0', 10) || 0
   private _accessExpiration = parseInt(localStorage.getItem('access_expiration') || '0', 10) || 0
   public returnUrl: string
-
-  constructor(
-    private readonly http: HttpClient,
-    private readonly router: Router,
-    private readonly store: StoreService,
-    private readonly userService: UserService,
-    private readonly layout: LayoutService,
-    private readonly electron: Electron
-  ) {}
 
   get refreshExpiration(): number {
     return this._refreshExpiration

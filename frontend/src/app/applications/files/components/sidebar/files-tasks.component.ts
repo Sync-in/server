@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, Inject, OnDestroy } from '@angular/core'
+import { Component, OnDestroy, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -40,6 +40,11 @@ import { FilesService } from '../../services/files.service'
   templateUrl: 'files-tasks.component.html'
 })
 export class FilesTasksComponent implements OnDestroy {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly router = inject(Router)
+  private readonly store = inject(StoreService)
+  private readonly filesService = inject(FilesService)
+  private readonly filesTasksService = inject(FilesTasksService)
   protected readonly icons = { faTrashAlt, faFlag, faClock, faFile, faFolderClosed }
   protected readonly iconsStatus: IconDefinition[] = [faSpinner, faCheck, faExclamation]
   protected readonly iconsOperation = {
@@ -57,13 +62,7 @@ export class FilesTasksComponent implements OnDestroy {
   protected tasks: FileTask[] = []
   private subscriptions: Subscription[] = []
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly store: StoreService,
-    private readonly filesService: FilesService,
-    private readonly filesTasksService: FilesTasksService
-  ) {
+  constructor() {
     this.subscriptions.push(this.store.filesActiveTasks.subscribe((tasks: FileTask[]) => this.updateTasks(tasks, true)))
     this.subscriptions.push(this.store.filesEndedTasks.subscribe((tasks: FileTask[]) => this.updateTasks(tasks, false)))
   }

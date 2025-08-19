@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
 import { API_SHARES_LIST, SHARES_ROUTE } from '@sync-in-server/backend/src/applications/shares/constants/routes'
@@ -25,10 +25,8 @@ import { getFilePath } from '../shares.functions'
 
 @Injectable({ providedIn: 'root' })
 export class SharesService {
-  constructor(
-    private readonly http: HttpClient,
-    private readonly router: Router
-  ) {}
+  private readonly http = inject(HttpClient)
+  private readonly router = inject(Router)
 
   getShare(shareId: number): Observable<ShareModel> {
     return this.http.get<ShareProps>(`${SHARES_ROUTE.BASE}/${shareId}`).pipe(map((s: ShareProps) => new ShareModel(s)))

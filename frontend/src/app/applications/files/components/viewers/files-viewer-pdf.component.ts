@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core'
+import { ChangeDetectionStrategy, Component, Input, OnInit, inject } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
 import { assetsUrl } from '../../files.constants'
 
@@ -14,12 +14,11 @@ import { assetsUrl } from '../../files.constants'
   template: ` <iframe [src]="url" class="app-viewer-iframe" [style.height.px]="currentHeight"></iframe> `
 })
 export class FilesViewerPdfComponent implements OnInit {
+  private readonly sanitizer = inject(DomSanitizer)
   @Input() fileUrl: string
   @Input() currentHeight: number
   protected url: any
   private readonly pdfjsUrl = `${assetsUrl}/pdfjs/web/viewer.html?file=`
-
-  constructor(private readonly sanitizer: DomSanitizer) {}
 
   ngOnInit() {
     this.url = this.sanitizer.bypassSecurityTrustResourceUrl(`${this.pdfjsUrl}${encodeURIComponent(this.fileUrl)}`)

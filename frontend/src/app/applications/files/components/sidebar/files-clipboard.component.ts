@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, Inject, OnDestroy } from '@angular/core'
+import { Component, OnDestroy, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowsAlt, faClone, faDownload, faQuestion, faTimes, faTrashCan } from '@fortawesome/free-solid-svg-icons'
@@ -13,7 +13,7 @@ import { tarExtension } from '@sync-in-server/backend/src/applications/files/con
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -31,6 +31,10 @@ import { FilesCompressionDialogComponent } from '../dialogs/files-compression-di
   templateUrl: 'files-clipboard.component.html'
 })
 export class FilesClipboardComponent implements OnDestroy {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
+  private readonly filesService = inject(FilesService)
   private subscriptions: Subscription[] = []
   protected readonly icons = { faTrashCan, faTimes, faDownload, faArrowsAlt, faClone, faQuestion }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
@@ -43,12 +47,7 @@ export class FilesClipboardComponent implements OnDestroy {
   protected selectedAction: 'copyPaste' | 'cutPaste' | 'download' | 'compress' = this.filesService.clipboardAction
   protected files: FileModel[] = []
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly layout: LayoutService,
-    private readonly store: StoreService,
-    private readonly filesService: FilesService
-  ) {
+  constructor() {
     this.subscriptions.push(this.store.filesClipboard.subscribe((files: FileModel[]) => (this.files = files)))
   }
 

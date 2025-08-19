@@ -5,12 +5,12 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, Input, OnInit, inject } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAnchor, faPlus, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import type { SpaceRootProps } from '@sync-in-server/backend/src/applications/spaces/models/space-root-props.model'
 import { L10nTranslateDirective } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Subject } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -28,6 +28,8 @@ import { ExternalFilePathEvent } from './space-root-path-dialog.component'
   templateUrl: 'space-user-anchors-dialog.component.html'
 })
 export class SpaceUserAnchorsDialogComponent implements OnInit {
+  protected readonly layout = inject(LayoutService)
+  private readonly spacesService = inject(SpacesService)
   @Input({ required: true }) space: SpaceModel
   @Input({ required: true }) user: UserType
   protected addRootFileEvent = new Subject<FileTreeEvent | ExternalFilePathEvent>()
@@ -35,11 +37,6 @@ export class SpaceUserAnchorsDialogComponent implements OnInit {
   // states
   protected submitted = false
   protected loading = false
-
-  constructor(
-    protected readonly layout: LayoutService,
-    private readonly spacesService: SpacesService
-  ) {}
 
   ngOnInit() {
     if (this.space?.roots.length) {

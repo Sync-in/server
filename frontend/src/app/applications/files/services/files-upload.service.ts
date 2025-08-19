@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpEventType, HttpUploadProgressEvent } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { API_FILES_OPERATION_UPLOAD } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { lastValueFrom, Observable } from 'rxjs'
@@ -17,13 +17,10 @@ import { FilesService } from './files.service'
 
 @Injectable({ providedIn: 'root' })
 export class FilesUploadService {
+  private readonly http = inject(HttpClient)
+  private readonly filesService = inject(FilesService)
+  private readonly filesTasksService = inject(FilesTasksService)
   public supportUploadDirectory = supportUploadDirectory()
-
-  constructor(
-    private readonly http: HttpClient,
-    private readonly filesService: FilesService,
-    private readonly filesTasksService: FilesTasksService
-  ) {}
 
   async addFiles(files: FileUpload[]) {
     const apiRoute = `${API_FILES_OPERATION_UPLOAD}/${this.filesService.currentRoute}`

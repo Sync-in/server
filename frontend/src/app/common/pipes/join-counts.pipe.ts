@@ -4,13 +4,12 @@
  * See the LICENSE file for licensing details
  */
 
-import { Pipe, PipeTransform } from '@angular/core'
+import { Pipe, PipeTransform, inject } from '@angular/core'
 import { L10nTranslationService } from 'angular-l10n'
 
 @Pipe({ name: 'joinCounts' })
 export class JoinCountsPipe implements PipeTransform {
-  constructor(private readonly translate: L10nTranslationService) {}
-
+  private readonly translate = inject(L10nTranslationService)
   transform(input: Record<string, number>, ignoreKeys: string[] = []): string {
     let output = ''
     if (!input) return output

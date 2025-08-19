@@ -6,7 +6,7 @@
 
 import type { TreeNode } from '@ali-hm/angular-tree-component'
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import {
@@ -43,6 +43,11 @@ import { FilesTasksService } from './files-tasks.service'
 
 @Injectable({ providedIn: 'root' })
 export class FilesService {
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
+  private readonly sanitizer = inject(DomSanitizer)
+  private readonly filesTasksService = inject(FilesTasksService)
   // Tree section
   public treeNodeSelected: TreeNode = null
   public treeCopyMoveOn = new Subject<void>()
@@ -50,14 +55,6 @@ export class FilesService {
   public clipboardAction: 'copyPaste' | 'cutPaste' = 'copyPaste'
   // Files
   public currentRoute: string
-
-  constructor(
-    private readonly http: HttpClient,
-    private readonly layout: LayoutService,
-    private readonly store: StoreService,
-    private readonly sanitizer: DomSanitizer,
-    private readonly filesTasksService: FilesTasksService
-  ) {}
 
   getTreeNode(nodePath: string, showFiles = false): Promise<FileTree[]> {
     return firstValueFrom(

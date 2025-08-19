@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, Inject, OnInit, ViewChild } from '@angular/core'
+import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -25,7 +25,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
@@ -66,6 +66,12 @@ import { LinkDialogComponent } from './dialogs/link-dialog.component'
   templateUrl: 'links.component.html'
 })
 export class LinksComponent implements OnInit {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly store = inject(StoreService)
+  protected readonly layout = inject(LayoutService)
+  private readonly linksService = inject(LinksService)
+  private readonly sharesService = inject(SharesService)
   @ViewChild(VirtualScrollComponent) scrollView: {
     element: ElementRef
     viewPortItems: ShareLinkModel[]
@@ -152,14 +158,7 @@ export class LinksComponent implements OnInit {
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
   protected btnSortFields = { name: 'Name', link: 'Link', accessed: 'Accessed' }
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly store: StoreService,
-    protected readonly layout: LayoutService,
-    private readonly linksService: LinksService,
-    private readonly sharesService: SharesService
-  ) {
+  constructor() {
     this.loadShareLinks()
     this.activatedRoute.queryParams.subscribe((params) => (this.focusOnSelect = params.select))
     this.layout.setBreadcrumbIcon(this.icons.faLink)
@@ -255,6 +254,6 @@ export class LinksComponent implements OnInit {
 
   goTo(share?: ShareLinkModel) {
     share = share || this.selected
-    this.sharesService.goTo(share)
+    this.sharesService.goTo(share).catch(console.error)
   }
 }

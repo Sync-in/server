@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCog, faPen, faSpinner, faUsers } from '@fortawesome/free-solid-svg-icons'
@@ -25,6 +25,8 @@ import { UserService } from '../../user.service'
   templateUrl: 'user-group-dialog.component.html'
 })
 export class UserGroupDialogComponent implements OnInit {
+  protected readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
   @Input() originalGroup: MemberModel
   @Output() groupChange = new EventEmitter<['add' | 'update', MemberModel]>()
   protected group: MemberModel
@@ -34,11 +36,6 @@ export class UserGroupDialogComponent implements OnInit {
   protected isPersonalGroup = true
   protected submitted = false
   protected loading = false
-
-  constructor(
-    protected readonly layout: LayoutService,
-    private readonly userService: UserService
-  ) {}
 
   ngOnInit() {
     if (!this.originalGroup?.id) {

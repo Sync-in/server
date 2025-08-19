@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, Inject, OnInit, ViewChild } from '@angular/core'
+import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -25,7 +25,7 @@ import { SPACE_OPERATION, SPACE_ROLE } from '@sync-in-server/backend/src/applica
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { Member } from '@sync-in-server/backend/src/applications/users/interfaces/member.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
@@ -69,6 +69,13 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
   templateUrl: 'spaces.component.html'
 })
 export class SpacesComponent implements OnInit {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
+  private readonly router = inject(Router)
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly spacesService = inject(SpacesService)
+  private readonly store = inject(StoreService)
+  private readonly userService = inject(UserService)
   @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: SpaceModel[]; scrollInto: (arg: SpaceModel | number) => void }
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
@@ -153,15 +160,7 @@ export class SpacesComponent implements OnInit {
   protected canEditSpace = false
   protected canManageRoots = false
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly router: Router,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly spacesService: SpacesService,
-    private readonly store: StoreService,
-    private readonly userService: UserService
-  ) {
+  constructor() {
     this.loadSpaces()
     this.canCreateSpace = this.userService.userHavePermission(USER_PERMISSION.SPACES_ADMIN)
     this.layout.setBreadcrumbIcon(SPACES_ICON.SPACES)
