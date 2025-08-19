@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, OnDestroy } from '@angular/core'
+import { Component, inject, OnDestroy } from '@angular/core'
 import { RouterOutlet } from '@angular/router'
 import { faCommentDots } from '@fortawesome/free-regular-svg-icons'
 import { faClipboardList, faFolderTree, faInfo } from '@fortawesome/free-solid-svg-icons'
@@ -24,6 +24,8 @@ import { FileModel } from '../../files/models/file.model'
   template: ` <router-outlet></router-outlet> `
 })
 export class SpacesNavComponent implements OnDestroy {
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
   private tabs: TabMenu[] = [
     { label: TAB_MENU.SELECTION, components: [SelectionComponent], loadComponent: false, icon: faInfo, title: 'Informations', active: false },
     { label: TAB_MENU.TREE, components: [FilesTreeComponent], loadComponent: true, icon: faFolderTree, title: null, active: false },
@@ -40,10 +42,7 @@ export class SpacesNavComponent implements OnDestroy {
     }
   ]
 
-  constructor(
-    private readonly layout: LayoutService,
-    private readonly store: StoreService
-  ) {
+  constructor() {
     this.layout.setTabsRSideBar(TAB_GROUP.FILES, this.tabs)
   }
 

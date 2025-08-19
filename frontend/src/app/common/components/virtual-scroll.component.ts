@@ -9,6 +9,7 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  inject,
   Input,
   NgZone,
   OnChanges,
@@ -58,7 +59,6 @@ import { LayoutService } from '../../layout/layout.service'
   ]
 })
 export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
-  protected viewPortItems: T[] = []
   @ViewChild('content', { read: ElementRef, static: true }) contentElementRef: ElementRef
   @ViewChild('shim', { read: ElementRef, static: true }) shimElementRef: ElementRef
   @Output() isScrollBottom = new EventEmitter<boolean>()
@@ -70,6 +70,11 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
   @Input() childHeight = 35
   @Input() childWidth: number
   @Input() bufferAmount = 0
+  protected viewPortItems: T[] = []
+  private readonly element = inject(ElementRef)
+  private readonly renderer = inject(Renderer2)
+  private readonly ngZone = inject(NgZone)
+  private readonly layout = inject(LayoutService)
   private subscriptions: Subscription[] = []
   private scrollbarWidth = 0
   private _scrollChat = new Subject<void>()
@@ -89,13 +94,6 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
     skip(1),
     switchMap((state) => of(state).pipe(repeat({ count: 30, delay: 10 })))
   )
-
-  constructor(
-    private readonly element: ElementRef,
-    private readonly renderer: Renderer2,
-    private readonly ngZone: NgZone,
-    private readonly layout: LayoutService
-  ) {}
 
   ngOnInit() {
     this.resizeOffsetHeight(true)

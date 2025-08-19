@@ -6,7 +6,7 @@
 
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, Component, ElementRef, HostListener, Inject, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core'
+import { AfterViewInit, Component, ElementRef, HostListener, inject, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -46,7 +46,7 @@ import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/a
 import type { SpaceFiles } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-files.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -115,6 +115,8 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('MainReadOnlyContextMenu', { static: true }) mainReadOnlyContextMenu: ContextMenuComponent<any>
   @ViewChild('FileContextMenu', { static: true }) fileContextMenu: ContextMenuComponent<any>
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   // Static
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
@@ -152,10 +154,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   protected locationNotFound = false
   protected forbiddenResource = false
   protected serverError = false
-  // Space
-  private baseRepoUrl: string
-  private currentRoute: string
-  private isPersonalSpace: boolean
   protected isFilesRepo: boolean
   protected isSharesRepo: boolean
   protected isTrashRepo: boolean
@@ -170,16 +168,11 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   protected hasDisabledItemsInSelection = false
   protected canCompress = true
   protected renamingInProgress = false
-  protected isElectronApp = this.store.isElectronApp()
   // Upload
   protected supportUploadFolder = false
-  private uploadButtonsShowed = false
-  // Others
-  private subscriptions: Subscription[] = []
   // Settings
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
-  private focusOnSelect: string
   protected tableHeaders: Record<'name' | 'anchored' | 'infos' | 'permissions' | 'size' | 'mtime', TableHeaderConfig> = {
     name: {
       label: 'Name',
@@ -223,6 +216,29 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       sortable: true
     }
   }
+  protected btnSortFields = { name: 'Name', isDir: 'Type', size: 'Size', mtime: 'Modified' }
+  protected galleryMode: ViewMode
+  // Data
+  protected files: FileModel[] = []
+  protected selection: FileModel[] = []
+  protected stats = { dirs: 0, files: 0, size: 0, elements: 0 }
+  private readonly router = inject(Router)
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly zone = inject(NgZone)
+  private readonly renderer = inject(Renderer2)
+  private readonly store = inject(StoreService)
+  protected isElectronApp = this.store.isElectronApp()
+  private readonly spacesBrowser = inject(SpacesBrowserService)
+  private readonly filesService = inject(FilesService)
+  private readonly filesUpload = inject(FilesUploadService)
+  // Space
+  private baseRepoUrl: string
+  private currentRoute: string
+  private isPersonalSpace: boolean
+  private uploadButtonsShowed = false
+  // Others
+  private subscriptions: Subscription[] = []
+  private focusOnSelect: string
   // Sort
   private readonly sortSettings: SortSettings = {
     default: [
@@ -239,8 +255,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     mtime: [{ prop: 'mtime', type: 'number' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  protected btnSortFields = { name: 'Name', isDir: 'Type', size: 'Size', mtime: 'Modified' }
-  protected galleryMode: ViewMode
   // DnD part
   private eventDragOverHandler: () => void | undefined
   private eventDragEnterHandler: () => void | undefined
@@ -250,23 +264,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private eventDropHandler: () => void | undefined
   private eventKeysHandler: () => void | undefined
   private moveFromDrag = false
-  // Data
-  protected files: FileModel[] = []
-  protected selection: FileModel[] = []
-  protected stats = { dirs: 0, files: 0, size: 0, elements: 0 }
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly zone: NgZone,
-    private readonly renderer: Renderer2,
-    protected readonly layout: LayoutService,
-    private readonly store: StoreService,
-    private readonly spacesBrowser: SpacesBrowserService,
-    private readonly filesService: FilesService,
-    private readonly filesUpload: FilesUploadService
-  ) {}
 
   ngOnInit() {
     this.galleryMode = this.btnNavigationView.currentView()
@@ -317,47 +314,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         return
       default:
         return
-    }
-  }
-
-  private setSpace(route: { repository: SPACE_REPOSITORY; routes: UrlSegment[] }) {
-    this.currentRoute = this.filesService.currentRoute = `${route.repository}${pathFromRoutes(route.routes)}`
-    this.baseRepoUrl = `${route.repository}${route.routes.length ? `/${route.routes[0].path}` : ''}`
-    this.isFilesRepo = route.repository === SPACES_PATH.FILES
-    this.isSharesRepo = route.repository === SPACES_PATH.SHARES
-    this.isTrashRepo = route.repository === SPACES_PATH.TRASH
-    this.inRootSpace = this.isSharesRepo ? route.routes.length === 0 : route.routes.length === 1
-    this.inSharesList = this.isSharesRepo && this.inRootSpace
-    this.spacesBrowser.setEnvironment(route.repository, route.routes)
-    this.isPersonalSpace = this.spacesBrowser.inPersonalSpace
-    this.loadFiles()
-  }
-
-  private onFileEvent(ev: FileEvent) {
-    if (ev.archiveId) {
-      this.filesService.downloadTaskArchive(ev.archiveId)
-      return
-    }
-    const matchDstPath = ev?.fileDstPath === this.currentRoute
-    if (ev.filePath === this.currentRoute || matchDstPath) {
-      // special case on move task, the src is removed, the dst is added
-      const mustReloadFocus = matchDstPath && ev.reloadFocusOnDst
-      if (ev.fileName) {
-        if (ev.focus || mustReloadFocus) this.focusOnSelect = ev.fileName
-        if (ev.delete && !mustReloadFocus) {
-          if (ev.status === FileTaskStatus.SUCCESS) {
-            this.files = this.files.filter((file: FileModel) => file.name !== ev.fileName)
-            this.updateFilesStats(this.files)
-            this.resetFilesSelection()
-          } else {
-            const file = this.files.find((file: FileModel) => file.name === ev.fileName)
-            if (file) {
-              file.isBeingDeleted = false
-            }
-          }
-        }
-      }
-      if (ev.reload || mustReloadFocus) this.loadFiles()
     }
   }
 
@@ -458,21 +414,10 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
     if (!file.isRenamed) {
       if (file.isDir) {
-        this.router.navigate([file.root?.alias || file.name], { relativeTo: this.activatedRoute }).catch((e: Error) => console.error(e))
+        this.router.navigate([file.root?.alias || file.name], { relativeTo: this.activatedRoute }).catch(console.error)
       } else {
         this.shortcutView()
       }
-    }
-  }
-
-  private removeFiles() {
-    const selection = this.selection.filter((f: FileModel) => !f.root?.alias)
-    if (this.selection.length !== selection.length) {
-      this.layout.sendNotification('warning', 'Remove', 'You can not remove an anchored file')
-    }
-    // process other files
-    if (selection.length) {
-      this.filesService.delete(selection)
     }
   }
 
@@ -543,38 +488,11 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   addToSync() {
-    this.router
-      .navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT], { state: { file: this.selection[0] } })
-      .catch((e: Error) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT], { state: { file: this.selection[0] } }).catch(console.error)
   }
 
   addToClipboard() {
     this.filesService.addToClipboard(this.selection)
-  }
-
-  private setFilePermissionsAndSpace(): Partial<FileSpace> {
-    if (this.selection[0]?.root && this.selection[0].root.permissions.indexOf(SPACE_OPERATION.SHARE_OUTSIDE) === -1) {
-      // space case, if file is a space root without the share permissions
-      this.layout.sendNotification('warning', this.selection[0].name, 'You do not have share permission')
-      return null
-    }
-    const f: Partial<FileSpace> = { ...this.selection[0] }
-    if (this.isPersonalSpace) {
-      f.permissions = this.spacePermissions
-    } else if (this.selection[0]?.root) {
-      f.permissions = this.selection[0].root.permissions
-      if (this.inSharesList) {
-        f.space = { alias: this.selection[0].root.alias, name: this.selection[0].root.alias, root: undefined }
-      } else {
-        const spaceAlias = this.currentRoute.split('/')[1]
-        f.space = { alias: spaceAlias, name: spaceAlias, root: { alias: this.selection[0].root.alias, name: this.selection[0].name } }
-      }
-    } else {
-      f.permissions = this.spacePermissions
-      const [spaceAlias, rootAlias] = this.currentRoute.split('/').slice(1, 3)
-      f.space = { alias: spaceAlias, name: spaceAlias, root: { alias: rootAlias, name: rootAlias } }
-    }
-    return f
   }
 
   openShareDialog() {
@@ -645,7 +563,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         }
       }
     }
-    this.filesUpload.addFiles(ev.files).catch((e: Error) => console.error(e))
+    this.filesUpload.addFiles(ev.files).catch(console.error)
   }
 
   onDropFiles(ev: { dataTransfer: { files: File[] } }) {
@@ -681,13 +599,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.layout.openDialog(FilesNewDialogComponent, null, { initialState: { files: this.files, inputType: type } as FilesNewDialogComponent })
   }
 
-  private openViewerDialog(mode: 'view' | 'edit') {
-    this.layout.openDialog(FilesViewerDialogComponent, 'full', {
-      id: this.selection[0].id,
-      initialState: { currentFile: this.selection[0], mode: mode } as FilesViewerDialogComponent
-    })
-  }
-
   openEmptyTrashDialog() {
     if (this.isTrashRepo && this.inRootSpace) {
       this.layout.openDialog(FilesTrashEmptyDialogComponent, null, { initialState: { files: this.files } as FilesTrashEmptyDialogComponent })
@@ -703,6 +614,90 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       } as FilesTrashDialogComponent
     })
     modalRef.content.removeFiles.pipe(take(1)).subscribe(() => this.removeFiles())
+  }
+
+  private setSpace(route: { repository: SPACE_REPOSITORY; routes: UrlSegment[] }) {
+    this.currentRoute = this.filesService.currentRoute = `${route.repository}${pathFromRoutes(route.routes)}`
+    this.baseRepoUrl = `${route.repository}${route.routes.length ? `/${route.routes[0].path}` : ''}`
+    this.isFilesRepo = route.repository === SPACES_PATH.FILES
+    this.isSharesRepo = route.repository === SPACES_PATH.SHARES
+    this.isTrashRepo = route.repository === SPACES_PATH.TRASH
+    this.inRootSpace = this.isSharesRepo ? route.routes.length === 0 : route.routes.length === 1
+    this.inSharesList = this.isSharesRepo && this.inRootSpace
+    this.spacesBrowser.setEnvironment(route.repository, route.routes)
+    this.isPersonalSpace = this.spacesBrowser.inPersonalSpace
+    this.loadFiles()
+  }
+
+  private onFileEvent(ev: FileEvent) {
+    if (ev.archiveId) {
+      this.filesService.downloadTaskArchive(ev.archiveId)
+      return
+    }
+    const matchDstPath = ev?.fileDstPath === this.currentRoute
+    if (ev.filePath === this.currentRoute || matchDstPath) {
+      // special case on move task, the src is removed, the dst is added
+      const mustReloadFocus = matchDstPath && ev.reloadFocusOnDst
+      if (ev.fileName) {
+        if (ev.focus || mustReloadFocus) this.focusOnSelect = ev.fileName
+        if (ev.delete && !mustReloadFocus) {
+          if (ev.status === FileTaskStatus.SUCCESS) {
+            this.files = this.files.filter((file: FileModel) => file.name !== ev.fileName)
+            this.updateFilesStats(this.files)
+            this.resetFilesSelection()
+          } else {
+            const file = this.files.find((file: FileModel) => file.name === ev.fileName)
+            if (file) {
+              file.isBeingDeleted = false
+            }
+          }
+        }
+      }
+      if (ev.reload || mustReloadFocus) this.loadFiles()
+    }
+  }
+
+  private removeFiles() {
+    const selection = this.selection.filter((f: FileModel) => !f.root?.alias)
+    if (this.selection.length !== selection.length) {
+      this.layout.sendNotification('warning', 'Remove', 'You can not remove an anchored file')
+    }
+    // process other files
+    if (selection.length) {
+      this.filesService.delete(selection)
+    }
+  }
+
+  private setFilePermissionsAndSpace(): Partial<FileSpace> {
+    if (this.selection[0]?.root && this.selection[0].root.permissions.indexOf(SPACE_OPERATION.SHARE_OUTSIDE) === -1) {
+      // space case, if file is a space root without the share permissions
+      this.layout.sendNotification('warning', this.selection[0].name, 'You do not have share permission')
+      return null
+    }
+    const f: Partial<FileSpace> = { ...this.selection[0] }
+    if (this.isPersonalSpace) {
+      f.permissions = this.spacePermissions
+    } else if (this.selection[0]?.root) {
+      f.permissions = this.selection[0].root.permissions
+      if (this.inSharesList) {
+        f.space = { alias: this.selection[0].root.alias, name: this.selection[0].root.alias, root: undefined }
+      } else {
+        const spaceAlias = this.currentRoute.split('/')[1]
+        f.space = { alias: spaceAlias, name: spaceAlias, root: { alias: this.selection[0].root.alias, name: this.selection[0].name } }
+      }
+    } else {
+      f.permissions = this.spacePermissions
+      const [spaceAlias, rootAlias] = this.currentRoute.split('/').slice(1, 3)
+      f.space = { alias: spaceAlias, name: spaceAlias, root: { alias: rootAlias, name: rootAlias } }
+    }
+    return f
+  }
+
+  private openViewerDialog(mode: 'view' | 'edit') {
+    this.layout.openDialog(FilesViewerDialogComponent, 'full', {
+      id: this.selection[0].id,
+      initialState: { currentFile: this.selection[0], mode: mode } as FilesViewerDialogComponent
+    })
   }
 
   private focusOn(select: string) {

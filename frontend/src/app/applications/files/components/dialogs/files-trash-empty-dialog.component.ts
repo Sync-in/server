@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, HostListener, Input } from '@angular/core'
+import { Component, HostListener, inject, Input } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faSpinner, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -19,13 +19,10 @@ import { FilesService } from '../../services/files.service'
 })
 export class FilesTrashEmptyDialogComponent {
   @Input() files: FileModel[] = []
+  protected layout = inject(LayoutService)
   protected readonly icons = { faTrashCan, faSpinner }
   protected submitted = false
-
-  constructor(
-    protected layout: LayoutService,
-    private filesService: FilesService
-  ) {}
+  private filesService = inject(FilesService)
 
   @HostListener('document:keyup.enter')
   onEnter() {

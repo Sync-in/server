@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, EventEmitter, HostListener, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, HostListener, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFolderClosed } from '@fortawesome/free-solid-svg-icons'
@@ -28,7 +28,8 @@ export class SpaceRootPathDialogComponent implements OnInit {
   @Input() currentRoots: SpaceRootModel[] = []
   @Output() submitEvent = new EventEmitter<ExternalFilePathEvent>()
   @Input() withRootName = true
-
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected readonly icons = { faFolderClosed }
   protected newSpaceRoot: { name: string; externalPath: string } = { name: '', externalPath: '' }
   // states
@@ -36,12 +37,7 @@ export class SpaceRootPathDialogComponent implements OnInit {
   protected rootNameIsValid = false
   protected rootPathIsValid = false
   protected rootIsValid = false
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly spacesService: SpacesService
-  ) {}
+  private readonly spacesService = inject(SpacesService)
 
   ngOnInit() {
     if (!this.withRootName) {

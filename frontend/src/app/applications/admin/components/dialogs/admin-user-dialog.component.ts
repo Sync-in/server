@@ -6,7 +6,7 @@
 
 import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAddressCard, faShieldHalved, faSpinner, faUserPen, faUserPlus, faUsers } from '@fortawesome/free-solid-svg-icons'
@@ -20,7 +20,7 @@ import {
 import type { CreateUserDto, UpdateUserDto } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TabDirective, TabHeadingDirective, TabsetComponent } from 'ngx-bootstrap/tabs'
 import { Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -68,6 +68,8 @@ import { AdminUserDeleteDialogComponent } from './admin-user-delete-dialog.compo
 export class AdminUserDialogComponent implements OnInit {
   @Input() user: AdminUserModel = null
   @Output() userChange = new EventEmitter<['add' | 'update' | 'delete', AdminUserModel]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected submitted = false
   protected loading = false
   protected confirmDeletion = false
@@ -90,12 +92,7 @@ export class AdminUserDialogComponent implements OnInit {
     groups: FormControl<MemberModel[]>
     applications: FormControl<USER_PERMISSION[]>
   }>
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly adminService: AdminService
-  ) {}
+  private readonly adminService = inject(AdminService)
 
   ngOnInit() {
     this.userForm = new FormGroup({

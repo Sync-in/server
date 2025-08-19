@@ -9,6 +9,6 @@ import { checkPdfjs } from './pdfjs.mjs'
 
 console.log('build assets ...')
 if (process.env.NODE_ENV !== 'development') {
-  checkPdfjs().catch((e) => console.error(e))
+  checkPdfjs().catch(console.error)
 }
-checkCodeMirror().catch((e) => console.error(e))
+checkCodeMirror().catch(console.error)

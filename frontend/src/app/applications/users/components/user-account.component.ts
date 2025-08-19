@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, Inject, OnDestroy } from '@angular/core'
+import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCopy, faKey } from '@fortawesome/free-solid-svg-icons'
@@ -50,7 +50,7 @@ import { UserService } from '../user.service'
   templateUrl: 'user-account.component.html'
 })
 export class UserAccountComponent implements OnDestroy {
-  private subscriptions: Subscription[] = []
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly allNotifications = Object.values(USER_NOTIFICATION_TEXT)
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
@@ -58,18 +58,17 @@ export class UserAccountComponent implements OnDestroy {
   protected user: UserType
   protected userAvatar: string = null
   protected webdavUrl = `${window.location.origin}/${WEBDAV_BASE_PATH}`
-  protected languages = this.layout.getLanguages(true)
   // password
   protected oldPassword: string
   protected newPassword: string
+  private readonly store = inject(StoreService)
+  private readonly layout = inject(LayoutService)
+  protected languages = this.layout.getLanguages(true)
+  private readonly userService = inject(UserService)
+  private readonly clipBoardService = inject(ClipboardService)
+  private subscriptions: Subscription[] = []
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly store: StoreService,
-    private readonly layout: LayoutService,
-    private readonly userService: UserService,
-    private readonly clipBoardService: ClipboardService
-  ) {
+  constructor() {
     this.subscriptions.push(this.store.user.subscribe((user: UserType) => (this.user = user)))
     this.subscriptions.push(this.store.userAvatarUrl.subscribe((avatarUrl) => (this.userAvatar = avatarUrl)))
     this.layout.setBreadcrumbIcon(USER_ICON.ACCOUNT)
@@ -138,6 +137,11 @@ export class UserAccountComponent implements OnDestroy {
     })
   }
 
+  clipBoardLink() {
+    this.clipBoardService.copyFromContent(this.webdavUrl)
+    this.layout.sendNotification('info', 'Link copied', this.webdavUrl)
+  }
+
   private updateLanguage(language: string) {
     this.user.language = language
     this.layout.setLanguage(language)
@@ -153,10 +157,5 @@ export class UserAccountComponent implements OnDestroy {
     this.oldPassword = ''
     this.newPassword = ''
     this.layout.sendNotification('info', 'Configuration', 'Password has been updated')
-  }
-
-  clipBoardLink() {
-    this.clipBoardService.copyFromContent(this.webdavUrl)
-    this.layout.sendNotification('info', 'Link copied', this.webdavUrl)
   }
 }

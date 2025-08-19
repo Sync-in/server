@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCog, faPen, faPlus, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
@@ -49,6 +49,8 @@ export class AdminGroupDialogComponent implements OnInit {
   @Input() group: AdminGroupModel = null
   @Input() parentGroup: Pick<AdminGroupModel, 'id' | 'name' | 'type'> = null
   @Output() groupChange = new EventEmitter<['add' | 'update', AdminGroupModel]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected readonly icons = { GROUPS: USER_ICON.GROUPS, faPen, faPlus, faCog, faShieldHalved }
   protected tabView: undefined | 'permissions'
   protected submitted = false
@@ -65,12 +67,7 @@ export class AdminGroupDialogComponent implements OnInit {
     applications: FormControl<USER_PERMISSION[]>
     parent: FormControl<AdminGroupModel['parent']>
   }>
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly adminService: AdminService
-  ) {}
+  private readonly adminService = inject(AdminService)
 
   ngOnInit() {
     this.groupForm = new FormGroup({

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, Renderer2 } from '@angular/core'
+import { AfterViewInit, Directive, ElementRef, inject, Input, OnDestroy, Renderer2 } from '@angular/core'
 import { skip, Subscription } from 'rxjs'
 import { defaultResizeOffset } from '../../layout/layout.constants'
 import { LayoutService } from '../../layout/layout.service'
@@ -14,15 +14,14 @@ export class AutoResizeDirective implements AfterViewInit, OnDestroy {
   @Input() overFlowX = 'hidden'
   @Input() resizeOffset: number = defaultResizeOffset
   @Input() useMaxHeight = true
+  private readonly elementRef = inject(ElementRef)
+  private readonly renderer = inject(Renderer2)
+  private readonly layout = inject(LayoutService)
   private readonly resizeSubscription: Subscription
 
-  constructor(
-    private readonly elementRef: ElementRef,
-    private readonly renderer: Renderer2,
-    private readonly layout: LayoutService
-  ) {
-    this.renderer.setStyle(elementRef.nativeElement, 'overflow-y', 'auto')
-    this.renderer.setStyle(elementRef.nativeElement, 'scrollbar-width', 'thin')
+  constructor() {
+    this.renderer.setStyle(this.elementRef.nativeElement, 'overflow-y', 'auto')
+    this.renderer.setStyle(this.elementRef.nativeElement, 'scrollbar-width', 'thin')
     this.resizeSubscription = this.layout.resizeEvent.pipe(skip(1)).subscribe(() => this.onResize())
   }
 

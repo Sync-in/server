@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, Inject, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, ElementRef, inject, Input, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faPen, faTimes } from '@fortawesome/free-solid-svg-icons'
@@ -49,12 +49,11 @@ export class SpaceManageRootsComponent implements OnInit, OnDestroy {
   @Input({ required: true }) user: UserType
   @Input() showUsers = true
   @Input() addRootFile: Subject<FileTreeEvent | ExternalFilePathEvent> = null
-  private subscription: Subscription = null
+  protected locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { faTimes, faPen }
   protected readonly SPACES_PERMISSIONS_TEXT = SPACES_PERMISSIONS_TEXT
   protected readonly originalOrderKeyValue = originalOrderKeyValue
-
-  constructor(@Inject(L10N_LOCALE) protected locale: L10nLocale) {}
+  private subscription: Subscription = null
 
   ngOnInit() {
     if (this.addRootFile) {

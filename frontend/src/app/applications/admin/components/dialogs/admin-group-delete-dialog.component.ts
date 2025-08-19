@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faMinus, faUserMinus } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -27,11 +27,8 @@ export class AdminGroupDeleteDialogComponent {
   @Output() wasDeleted = new EventEmitter<boolean>()
   protected submitted = false
   protected readonly icons = { GROUPS: USER_ICON.GROUPS, faMinus, faUserMinus }
-
-  constructor(
-    private readonly layout: LayoutService,
-    private readonly adminService: AdminService
-  ) {}
+  private readonly layout = inject(LayoutService)
+  private readonly adminService = inject(AdminService)
 
   onSubmit() {
     this.submitted = true

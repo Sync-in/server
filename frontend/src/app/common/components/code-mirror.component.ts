@@ -12,6 +12,7 @@ import {
   ElementRef,
   EventEmitter,
   forwardRef,
+  inject,
   Input,
   KeyValueDiffer,
   KeyValueDiffers,
@@ -61,21 +62,20 @@ export class CodeMirrorComponent implements AfterViewInit, OnDestroy, ControlVal
   @Output() cursorActivity = new EventEmitter<Editor>()
   /* called when the editor is focused or loses focus */
   @Output() focusChange = new EventEmitter<boolean>()
-  /* called when the editor is scrolled */
   // eslint-disable-next-line @angular-eslint/no-output-native
   @Output() scroll = new EventEmitter<ScrollInfo>()
   @ViewChild('ref', { static: true }) ref: ElementRef
+  /* called when the editor is scrolled */
   value = ''
   disabled = false
   isFocused = false
   textArea: EditorFromTextArea
   codeMirror: any
+  private _differs = inject(KeyValueDiffers)
+  private readonly _ngZone = inject(NgZone)
   private _differ: KeyValueDiffer<string, any>
 
-  constructor(
-    private _differs: KeyValueDiffers,
-    private readonly _ngZone: NgZone
-  ) {
+  constructor() {
     this.codeMirror = CodeMirror ? CodeMirror : import('codemirror')
   }
 

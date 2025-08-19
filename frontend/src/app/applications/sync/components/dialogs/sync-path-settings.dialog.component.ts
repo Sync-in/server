@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faRotate, faTimes } from '@fortawesome/free-solid-svg-icons'
@@ -28,6 +28,9 @@ export class SyncPathSettingsDialogComponent implements OnInit {
   @Input({ required: true }) syncPathSelected: SyncPathModel
   @Input() syncClientSelected: SyncClientModel // not needed from client, only for web
   @Output() mustRefresh = new EventEmitter<void>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
+  protected readonly store = inject(StoreService)
   protected readonly ELECTRON_DIALOG = ELECTRON_DIALOG
   protected readonly SYNC_PATH_FILTER_TYPE = SYNC_PATH_FILTER_TYPE
   protected syncPath: SyncPathModel
@@ -43,13 +46,7 @@ export class SyncPathSettingsDialogComponent implements OnInit {
   }
   protected readonly icons = { faTimes, faRotate }
   protected confirmDeletion = false
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    protected readonly store: StoreService,
-    private readonly syncService: SyncService
-  ) {}
+  private readonly syncService = inject(SyncService)
 
   ngOnInit() {
     this.syncPath = new SyncPathModel(JSON.parse(JSON.stringify(this.syncPathSelected)))
@@ -62,7 +59,7 @@ export class SyncPathSettingsDialogComponent implements OnInit {
     }
     if (this.store.isElectronApp()) {
       this.syncService.updatePath(this.syncPath.export(true)).then(() => {
-        this.syncService.refreshPaths().catch((e) => console.error(e))
+        this.syncService.refreshPaths().catch(console.error)
         this.layout.closeDialog()
       })
     } else {
@@ -81,7 +78,7 @@ export class SyncPathSettingsDialogComponent implements OnInit {
       this.syncService
         .removePath(this.syncPath.id)
         .then(() => {
-          this.syncService.refreshPaths().catch((e) => console.error(e))
+          this.syncService.refreshPaths().catch(console.error)
           this.layout.closeDialog()
           this.layout.sendNotification('success', 'Sync deleted', this.syncPath.settings.name)
         })

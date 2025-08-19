@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -25,11 +25,8 @@ export class UserPersonalGroupLeaveDialogComponent {
   @Output() wasLeft = new EventEmitter<boolean>()
   protected submitted = false
   protected readonly icons = { GROUPS: USER_ICON.GROUPS, faRightFromBracket }
-
-  constructor(
-    private readonly layout: LayoutService,
-    private readonly userService: UserService
-  ) {}
+  private readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
 
   onClose() {
     this.wasLeft.emit(false)

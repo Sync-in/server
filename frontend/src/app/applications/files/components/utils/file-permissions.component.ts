@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, Inject, Input, OnChanges } from '@angular/core'
+import { Component, inject, Input, OnChanges } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AvailableBSPositions } from 'ngx-bootstrap/positioning'
@@ -35,10 +35,9 @@ export class FilePermissionsComponent implements OnChanges {
   @Input({ required: true }) permissions: Partial<typeof SPACES_PERMISSIONS_TEXT> = {}
   @Input() tooltipPlacement: AvailableBSPositions = 'top'
   @Input() replaceEmptyPermissions = false
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected hasPermissions = false
   protected readonly originalOrderKeyValue = originalOrderKeyValue
-
-  constructor(@Inject(L10N_LOCALE) protected readonly locale: L10nLocale) {}
 
   ngOnChanges() {
     this.hasPermissions = !!Object.keys(this.permissions).length

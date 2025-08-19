@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import { LINK_ERROR, LINK_TYPE } from '@sync-in-server/backend/src/applications/links/constants/links'
 import {
@@ -26,7 +26,7 @@ import { SPACE_OPERATION, SPACE_ROLE } from '@sync-in-server/backend/src/applica
 import { MEMBER_TYPE } from '@sync-in-server/backend/src/applications/users/constants/member'
 import type { UserPasswordDto } from '@sync-in-server/backend/src/applications/users/dto/user-password.dto'
 import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { ClipboardService } from 'ngx-clipboard'
 import { catchError, map, Observable, of } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -45,13 +45,11 @@ import { ShareLinkModel } from '../models/share-link.model'
   providedIn: 'root'
 })
 export class LinksService {
-  constructor(
-    private readonly router: Router,
-    private readonly http: HttpClient,
-    private readonly layout: LayoutService,
-    private readonly authService: AuthService,
-    private readonly clipboard: ClipboardService
-  ) {}
+  private readonly router = inject(Router)
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
+  private readonly authService = inject(AuthService)
+  private readonly clipboard = inject(ClipboardService)
 
   shareLinksList(): Observable<ShareLinkModel[]> {
     return this.http.get<ShareLinkModel[]>(API_SHARES_LINKS_LIST).pipe(map((sls: Partial<ShareLinkModel>[]) => sls.map((s) => new ShareLinkModel(s))))
@@ -79,9 +77,9 @@ export class LinksService {
         }
         if (r.error) {
           if (r.error === LINK_ERROR.UNAUTHORIZED) {
-            this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${LINKS_PATH.AUTH}`]).catch((e: Error) => console.error(e))
+            this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${LINKS_PATH.AUTH}`]).catch(console.error)
           } else {
-            this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${r.error}`]).catch((e: Error) => console.error(e))
+            this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${r.error}`]).catch(console.error)
           }
         }
         return false
@@ -98,9 +96,9 @@ export class LinksService {
       this.http.get<LoginResponseDto>(`${API_PUBLIC_LINK_ACCESS}/${uuid}`).subscribe((r) => {
         this.authService.initUserFromResponse(r)
         if (link.space) {
-          this.router.navigate([SPACES_PATH.SPACES], { queryParams: { select: link.space.name } }).catch((e: Error) => console.error(e))
+          this.router.navigate([SPACES_PATH.SPACES], { queryParams: { select: link.space.name } }).catch(console.error)
         } else {
-          this.router.navigate([SPACES_PATH.SPACES_SHARES], { queryParams: { select: link.share.name } }).catch((e: Error) => console.error(e))
+          this.router.navigate([SPACES_PATH.SPACES_SHARES], { queryParams: { select: link.share.name } }).catch(console.error)
         }
       })
     } else {
@@ -112,14 +110,14 @@ export class LinksService {
     return this.http.post<LoginResponseDto>(`${API_PUBLIC_LINK_AUTH}/${uuid}`, { password } as UserPasswordDto).pipe(
       map((r: LoginResponseDto) => {
         this.authService.initUserFromResponse(r)
-        this.router.navigate([`${LINKS_PATH.LINK}/${uuid}`]).catch((e: Error) => console.error(e))
+        this.router.navigate([`${LINKS_PATH.LINK}/${uuid}`]).catch(console.error)
         return true
       }),
       catchError((e) => {
         if (e.error.message === LINK_ERROR.UNAUTHORIZED) {
           this.layout.sendNotification('warning', 'Link', 'Bad password')
         } else {
-          this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${e.error.message}`]).catch((e: Error) => console.error(e))
+          this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${e.error.message}`]).catch(console.error)
         }
         return of(false)
       })

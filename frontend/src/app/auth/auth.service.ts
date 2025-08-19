@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import { CLIENT_TOKEN_EXPIRED_ERROR } from '@sync-in-server/backend/src/applications/sync/constants/auth'
 import { API_SYNC_AUTH_COOKIE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
@@ -32,18 +32,15 @@ import { AUTH_PATHS } from './auth.constants'
   providedIn: 'root'
 })
 export class AuthService {
-  private _refreshExpiration = parseInt(localStorage.getItem('refresh_expiration') || '0', 10) || 0
-  private _accessExpiration = parseInt(localStorage.getItem('access_expiration') || '0', 10) || 0
   public returnUrl: string
+  private readonly http = inject(HttpClient)
+  private readonly router = inject(Router)
+  private readonly store = inject(StoreService)
+  private readonly userService = inject(UserService)
+  private readonly layout = inject(LayoutService)
+  private readonly electron = inject(Electron)
 
-  constructor(
-    private readonly http: HttpClient,
-    private readonly router: Router,
-    private readonly store: StoreService,
-    private readonly userService: UserService,
-    private readonly layout: LayoutService,
-    private readonly electron: Electron
-  ) {}
+  private _refreshExpiration = parseInt(localStorage.getItem('refresh_expiration') || '0', 10) || 0
 
   get refreshExpiration(): number {
     return this._refreshExpiration
@@ -54,6 +51,8 @@ export class AuthService {
     this._refreshExpiration = value !== 0 ? value + 60 : value
     localStorage.setItem('refresh_expiration', value.toString())
   }
+
+  private _accessExpiration = parseInt(localStorage.getItem('access_expiration') || '0', 10) || 0
 
   get accessExpiration(): number {
     return this._accessExpiration
@@ -122,7 +121,7 @@ export class AuthService {
           this.layout.clean()
           this.store.clean()
           if (redirect) {
-            this.router.navigate([AUTH_PATHS.BASE, AUTH_PATHS.LOGIN]).catch((e: Error) => console.error(e))
+            this.router.navigate([AUTH_PATHS.BASE, AUTH_PATHS.LOGIN]).catch(console.error)
           }
           if (expired) {
             this.layout.sendNotification('warning', 'Session has expired', 'Please sign in')
@@ -137,7 +136,7 @@ export class AuthService {
       next: (r: LoginResponseDto) => {
         this.userService.disconnectWebSocket()
         this.initUserFromResponse(r)
-        this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch((e: Error) => console.error(e))
+        this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch(console.error)
       },
       error: (e: HttpErrorResponse) => {
         console.error(e)

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { ActivatedRoute, Params, RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faExclamationCircle } from '@fortawesome/free-solid-svg-icons'
@@ -21,8 +21,9 @@ export class PublicLinkErrorComponent {
   protected readonly logoUrl = logoUrl
   protected readonly icons = { faExclamationCircle }
   protected error: string
+  private readonly activatedRoute = inject(ActivatedRoute)
 
-  constructor(private readonly activatedRoute: ActivatedRoute) {
+  constructor() {
     this.activatedRoute.params.subscribe((params: Params) => (this.error = LINK_ERROR_TRANSLATION[params.error]))
   }
 }

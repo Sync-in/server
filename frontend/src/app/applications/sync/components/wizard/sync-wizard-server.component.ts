@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, Inject, signal, ViewChild, WritableSignal } from '@angular/core'
+import { Component, inject, signal, ViewChild, WritableSignal } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -30,8 +30,21 @@ import { isSynchronizable } from '../../sync.utils'
   templateUrl: 'sync-wizard-server.component.html'
 })
 export class SyncWizardServerComponent {
+  locale = inject<L10nLocale>(L10N_LOCALE)
   @ViewChild(AutoResizeDirective, { static: true }) autoResize: AutoResizeDirective
   protected readonly icons = { faArrowCircleLeft, faArrowCircleRight, faFolderPlus }
+  protected infoMsg: string = null
+  protected newDirectoryName: string
+  protected selectedPath: SyncWizardPath
+  protected currentPath: string
+  protected currentShowedPath: string
+  protected canCreateDir = false
+  private readonly router = inject(Router)
+  private readonly store = inject(StoreService)
+  private readonly userService = inject(UserService)
+  private readonly filesService = inject(FilesService)
+  private readonly syncService = inject(SyncService)
+  private readonly layout = inject(LayoutService)
   private readonly rootPaths: SyncWizardPath[] = [
     this.userService.userHavePermission(USER_PERMISSION.PERSONAL_SPACE)
       ? new SyncWizardPath({
@@ -67,23 +80,9 @@ export class SyncWizardServerComponent {
         })
       : null
   ].filter(Boolean)
-  protected infoMsg: string = null
-  protected newDirectoryName: string
-  protected selectedPath: SyncWizardPath
-  protected currentPath: string
   protected currentPaths: WritableSignal<SyncWizardPath[]> = signal([...this.rootPaths])
-  protected currentShowedPath: string
-  protected canCreateDir = false
 
-  constructor(
-    @Inject(L10N_LOCALE) public locale: L10nLocale,
-    private readonly router: Router,
-    private readonly store: StoreService,
-    private readonly userService: UserService,
-    private readonly filesService: FilesService,
-    private readonly syncService: SyncService,
-    private readonly layout: LayoutService
-  ) {
+  constructor() {
     if (this.syncService.wizard.remotePath) {
       this.browse(this.syncService.wizard.remotePath.path.split('/').slice(0, -1).join('/'), this.syncService.wizard.remotePath.name).catch(
         (e: Error) => {
@@ -129,7 +128,7 @@ export class SyncWizardServerComponent {
       this.canCreateDir = false
     } else {
       const backRoute = segments.length === 2 && segments[0] === SPACES_PATH.FILES ? [SPACES_PATH.SPACES] : segments.slice(0, -1)
-      this.browse(backRoute.join('/')).catch((e: Error) => console.error(e))
+      this.browse(backRoute.join('/')).catch(console.error)
     }
   }
 
@@ -138,7 +137,7 @@ export class SyncWizardServerComponent {
       next: () => {
         this.browse(this.currentPath, this.newDirectoryName)
           .then(() => (this.newDirectoryName = ''))
-          .catch((e: Error) => console.error(e))
+          .catch(console.error)
       },
       error: (e: HttpErrorResponse) => this.setInfoMsg(e.error.message)
     })
@@ -167,6 +166,18 @@ export class SyncWizardServerComponent {
       }
       this.selectPath(path)
     }
+  }
+
+  onNext() {
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SETTINGS]).catch(console.error)
+  }
+
+  onPrevious() {
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT]).catch(console.error)
+  }
+
+  setServerPath(serverPath: SyncWizardPath) {
+    this.syncService.wizard.remotePath = serverPath
   }
 
   private setCurrentPaths(paths?: SyncWizardPath[]) {
@@ -199,17 +210,5 @@ export class SyncWizardServerComponent {
     if (timeout) {
       setTimeout(() => (this.infoMsg = null), 6000)
     }
-  }
-
-  onNext() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SETTINGS]).catch((e: Error) => console.error(e))
-  }
-
-  onPrevious() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_CLIENT]).catch((e: Error) => console.error(e))
-  }
-
-  setServerPath(serverPath: SyncWizardPath) {
-    this.syncService.wizard.remotePath = serverPath
   }
 }

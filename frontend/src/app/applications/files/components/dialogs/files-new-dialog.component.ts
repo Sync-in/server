@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, EventEmitter, HostListener, Inject, Input, OnInit, Output, ViewChild } from '@angular/core'
+import { Component, ElementRef, EventEmitter, HostListener, inject, Input, OnInit, Output, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCaretDown, faFileAlt, faFolderClosed, faGlobe } from '@fortawesome/free-solid-svg-icons'
@@ -29,6 +29,8 @@ export class FilesNewDialogComponent implements OnInit {
   @Input() inputType: 'file' | 'directory' | 'download'
   @Output() refreshFiles = new EventEmitter()
   @ViewChild('InputText', { static: true }) inputText: ElementRef
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected layout = inject(LayoutService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = { faCaretDown, faGlobe, faFolderClosed, faFileAlt }
   protected fileProp = { title: '', name: '', placeholder: '' }
@@ -37,12 +39,7 @@ export class FilesNewDialogComponent implements OnInit {
   protected docTypes = DOCUMENT_TYPE
   protected submitted = false
   protected error: string
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected layout: LayoutService,
-    private filesService: FilesService
-  ) {}
+  private filesService = inject(FilesService)
 
   ngOnInit() {
     if (this.inputType === 'download') {
@@ -93,6 +90,12 @@ export class FilesNewDialogComponent implements OnInit {
     this.layout.closeDialog()
   }
 
+  pasteUrl() {
+    setTimeout(() => {
+      this.fileProp.name = this.downloadProp.url.split('/').slice(-1)[0]
+    }, 200)
+  }
+
   private fileNamePosition() {
     return this.fileProp.name.lastIndexOf('.')
   }
@@ -102,11 +105,5 @@ export class FilesNewDialogComponent implements OnInit {
       this.inputText.nativeElement.focus()
       this.inputText.nativeElement.setSelectionRange(0, this.fileNamePosition())
     }, 0)
-  }
-
-  pasteUrl() {
-    setTimeout(() => {
-      this.fileProp.name = this.downloadProp.url.split('/').slice(-1)[0]
-    }, 200)
   }
 }

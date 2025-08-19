@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, Input, OnInit } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
 import { assetsUrl } from '../../files.constants'
 
@@ -17,9 +17,8 @@ export class FilesViewerPdfComponent implements OnInit {
   @Input() fileUrl: string
   @Input() currentHeight: number
   protected url: any
+  private readonly sanitizer = inject(DomSanitizer)
   private readonly pdfjsUrl = `${assetsUrl}/pdfjs/web/viewer.html?file=`
-
-  constructor(private readonly sanitizer: DomSanitizer) {}
 
   ngOnInit() {
     this.url = this.sanitizer.bypassSecurityTrustResourceUrl(`${this.pdfjsUrl}${encodeURIComponent(this.fileUrl)}`)

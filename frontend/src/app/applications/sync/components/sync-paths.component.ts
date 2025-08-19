@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, effect, Inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -74,10 +74,16 @@ import { SyncPathSchedulerComponent } from './utils/sync-path-scheduler.componen
   templateUrl: 'sync-paths.component.html'
 })
 export class SyncPathsComponent implements OnInit, OnDestroy {
+  locale = inject<L10nLocale>(L10N_LOCALE)
   @ViewChild(AutoResizeDirective, { static: true }) autoResize: AutoResizeDirective
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('SyncPathContextMenu', { static: true }) syncPathContextMenu: ContextMenuComponent<any>
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
+  // data
+  public syncsInProgress: SyncStatus[] = []
+  public syncPathSelected: SyncPathModel = null
+  public allSyncsRunning = false
+  protected readonly store = inject(StoreService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     faCalendarXmark,
@@ -158,6 +164,13 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
       sortable: true
     }
   }
+  // constants
+  protected readonly SYNC_PATH_MODE = SYNC_PATH_MODE
+  protected readonly CLIENT_SCHEDULER_STATE = CLIENT_SCHEDULER_STATE
+  protected readonly SYNC_PATH_CONFLICT_MODE = SYNC_PATH_CONFLICT_MODE
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
+  private readonly syncService = inject(SyncService)
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'settings.name', type: 'string' }],
     name: [{ prop: 'settings.name', type: 'string' }],
@@ -168,25 +181,11 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
     lastSync: [{ prop: 'lastSync', type: 'date' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  // constants
-  protected readonly SYNC_PATH_MODE = SYNC_PATH_MODE
-  protected readonly CLIENT_SCHEDULER_STATE = CLIENT_SCHEDULER_STATE
-  protected readonly SYNC_PATH_CONFLICT_MODE = SYNC_PATH_CONFLICT_MODE
-  // data
-  public syncsInProgress: SyncStatus[] = []
-  public syncPathSelected: SyncPathModel = null
-  public allSyncsRunning = false
   private subscriptions: Subscription[] = []
   private focusOnPathId: number = null
   private focusOnPathSettings = false
 
-  constructor(
-    @Inject(L10N_LOCALE) public locale: L10nLocale,
-    private readonly router: Router,
-    protected readonly store: StoreService,
-    private readonly layout: LayoutService,
-    private readonly syncService: SyncService
-  ) {
+  constructor() {
     this.layout.setBreadcrumbIcon(SYNC_ICON.SYNC)
     this.layout.setBreadcrumbNav({
       url: `/${SYNC_PATH.BASE}/${SYNC_PATH.PATHS}/${SYNC_TITLE.SYNCS}`,
@@ -266,7 +265,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
 
   onRefresh() {
     this.onSelect()
-    this.syncService.refreshPaths().catch((e) => console.error(e))
+    this.syncService.refreshPaths().catch(console.error)
   }
 
   doSync(run: boolean) {
@@ -309,7 +308,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   }
 
   addToSync() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD]).catch((e) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD]).catch(console.error)
   }
 
   sortBy(column: string, toUpdate = true, collection?: SyncPathModel[]) {
@@ -332,7 +331,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   }
 
   showErrors(syncPath: SyncPathModel) {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.TRANSFERS], { state: { id: syncPath.id } }).catch((e: Error) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.TRANSFERS], { state: { id: syncPath.id } }).catch(console.error)
   }
 
   private checkRouteState() {

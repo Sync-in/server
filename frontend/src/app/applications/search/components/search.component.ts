@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, computed, Inject, Signal, ViewChild } from '@angular/core'
+import { Component, computed, inject, Signal, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -43,20 +43,19 @@ import { SEARCH_ICON, SEARCH_PATH } from '../search.constants'
 })
 export class SearchComponent {
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly store = inject(StoreService)
+  public searchContent: Signal<string> = computed(() => this.store.currentSearch().content)
   protected readonly icons = { SEARCH_ICON, faSpinner, faTrashCan, faTimes, faFont }
   protected minCharsToSearch = minCharsToSearch
   protected loading = false
   protected errorMessage: string = null
   protected selectedId: number = null
-  public searchContent: Signal<string> = computed(() => this.store.currentSearch().content)
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
+  private readonly filesService = inject(FilesService)
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly layout: LayoutService,
-    protected readonly store: StoreService,
-    private readonly filesService: FilesService
-  ) {
+  constructor() {
     this.layout.setBreadcrumbIcon(SEARCH_ICON)
     this.layout.setBreadcrumbNav({ url: `/${SEARCH_PATH.BASE}`, translating: false, sameLink: true })
   }
@@ -95,6 +94,6 @@ export class SearchComponent {
   }
 
   goTo(f: FileContentModel) {
-    this.router.navigate([SPACES_PATH.SPACES, ...f.path.split('/')], { queryParams: { select: f.name } }).catch((e: Error) => console.error(e))
+    this.router.navigate([SPACES_PATH.SPACES, ...f.path.split('/')], { queryParams: { select: f.name } }).catch(console.error)
   }
 }

@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import {
   ADMIN_USERS_ROUTE,
@@ -47,11 +47,9 @@ import { AdminUserModel } from './models/admin-user.model'
   providedIn: 'root'
 })
 export class AdminService {
-  constructor(
-    private readonly http: HttpClient,
-    private readonly router: Router,
-    private readonly authService: AuthService
-  ) {}
+  private readonly http = inject(HttpClient)
+  private readonly router = inject(Router)
+  private readonly authService = inject(AuthService)
 
   listUsers(areGuests = false): Observable<AdminUserModel[]> {
     return this.http
@@ -145,6 +143,6 @@ export class AdminService {
 
   initImpersonateUser(r: LoginResponseDto) {
     this.authService.initUserFromResponse(r, true)
-    this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch((e: Error) => console.error(e))
+    this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch(console.error)
   }
 }

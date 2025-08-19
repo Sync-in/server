@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAnchor, faCog, faPen, faPlus, faSpinner, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
@@ -15,7 +15,7 @@ import { SpaceProps } from '@sync-in-server/backend/src/applications/spaces/mode
 import type { SpaceRootProps } from '@sync-in-server/backend/src/applications/spaces/models/space-root-props.model'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TabsModule } from 'ngx-bootstrap/tabs'
 import { Observable, Subject } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -68,6 +68,8 @@ export class SpaceDialogComponent implements OnInit {
     storageQuota: null
   } as SpaceProps)
   @Output() spaceChange = new EventEmitter<['add' | 'update' | 'delete', SpaceModel]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
     LINKS: SPACES_ICON.LINKS,
@@ -79,7 +81,6 @@ export class SpaceDialogComponent implements OnInit {
     faCog,
     faUsers
   }
-  protected readonly user: UserType = this.userService.user
   protected readonly SPACE_MAX_DISABLED_DAYS = SPACE_MAX_DISABLED_DAYS
   // states
   protected addRootFileEvent = new Subject<FileTreeEvent | ExternalFilePathEvent>()
@@ -89,14 +90,10 @@ export class SpaceDialogComponent implements OnInit {
   protected confirmDeletion = false
   protected loading = false
   protected submitted = false
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly userService: UserService,
-    private readonly spacesService: SpacesService,
-    private readonly linksService: LinksService
-  ) {}
+  private readonly userService = inject(UserService)
+  protected readonly user: UserType = this.userService.user
+  private readonly spacesService = inject(SpacesService)
+  private readonly linksService = inject(LinksService)
 
   ngOnInit() {
     if (!this.space.id) {

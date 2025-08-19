@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, ElementRef, EventEmitter, Inject, Input, OnInit, Output, ViewChild } from '@angular/core'
+import { Component, ElementRef, EventEmitter, inject, Input, OnInit, Output, ViewChild } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faDice, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
@@ -56,10 +56,9 @@ export class InputPasswordComponent implements OnInit {
   @Input() disabled = false
   @Input() isRequired = false
   @Input() focus = false
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly toggleVisiblePassword = togglePasswordType
   protected readonly icons = { faEye, faEyeSlash, faDice }
-
-  constructor(@Inject(L10N_LOCALE) protected readonly locale: L10nLocale) {}
 
   ngOnInit() {
     if (this.focus) {

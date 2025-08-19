@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, Inject, input, InputSignal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, input, InputSignal } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
@@ -22,9 +22,8 @@ import { SPACES_ICON } from '../../spaces.constants'
 })
 export class TrashSelectionComponent {
   trash: InputSignal<TrashModel> = input.required<TrashModel>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly iconTrash = SPACES_ICON.TRASH
   protected readonly cardImageSize = defaultCardImageSize
   protected readonly resizeOffset = defaultResizeOffset
-
-  constructor(@Inject(L10N_LOCALE) protected readonly locale: L10nLocale) {}
 }

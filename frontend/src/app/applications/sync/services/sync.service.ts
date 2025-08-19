@@ -5,7 +5,7 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import { API_SYNC_CLIENTS, SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import {
@@ -54,14 +54,13 @@ export class SyncService {
       scheduler: { unit: string; value: number }
     }
   }
+  private readonly router = inject(Router)
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
+  private readonly electron = inject(Electron)
 
-  constructor(
-    private readonly router: Router,
-    private readonly http: HttpClient,
-    private readonly layout: LayoutService,
-    private readonly store: StoreService,
-    private readonly electron: Electron
-  ) {
+  constructor() {
     this.resetWizard()
   }
 
@@ -115,7 +114,7 @@ export class SyncService {
         reportOnly: reportOnly,
         async: async
       })
-      .catch((e) => console.error(e))
+      .catch(console.error)
   }
 
   async refreshPaths(): Promise<void> {
@@ -139,7 +138,7 @@ export class SyncService {
       const repository = segments.shift()
       this.router
         .navigate([SPACES_PATH.SPACES, ...SYNC_PATH_REPOSITORY[repository], ...segments], name ? { queryParams: { select: name } } : {})
-        .catch((e: Error) => console.error(e))
+        .catch(console.error)
     }
   }
 

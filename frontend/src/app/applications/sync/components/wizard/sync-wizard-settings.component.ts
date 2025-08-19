@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { SYNC_PATH_CONFLICT_MODE, SYNC_PATH_MODE } from '@sync-in-server/backend/src/applications/sync/constants/sync'
@@ -23,18 +23,17 @@ import { SyncPathDirectionIconComponent } from '../utils/sync-path-direction-ico
   templateUrl: './sync-wizard-settings.component.html'
 })
 export class SyncWizardSettingsComponent {
+  protected readonly syncService = inject(SyncService)
   protected readonly SYNC_PATH_CONFLICT_MODE = SYNC_PATH_CONFLICT_MODE
   protected readonly SYNC_PATH_MODE = SYNC_PATH_MODE
   protected readonly icons = { CLIENT: SYNC_ICON.CLIENT, SERVER: SYNC_ICON.SERVER }
   protected readonly translatedRemotePath = this.syncService.translateServerPath(this.syncService.wizard.remotePath.serverPath)
   protected syncPath: SyncPathModel
   protected error: string = null
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
 
-  constructor(
-    private readonly router: Router,
-    private readonly layout: LayoutService,
-    protected readonly syncService: SyncService
-  ) {
+  constructor() {
     this.syncPath = new SyncPathModel({
       settings: {
         name: this.syncService.wizard.localPath.name,
@@ -58,7 +57,7 @@ export class SyncWizardSettingsComponent {
   }
 
   onPrevious() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SERVER]).catch((e: Error) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SERVER]).catch(console.error)
   }
 
   async onSubmit() {
@@ -67,7 +66,7 @@ export class SyncWizardSettingsComponent {
       this.error = r
     } else {
       await this.syncService.refreshPaths()
-      this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.PATHS], { state: { id: r.id, withSettings: false } }).catch((e: Error) => console.error(e))
+      this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.PATHS], { state: { id: r.id, withSettings: false } }).catch(console.error)
       this.syncService.resetWizard()
     }
   }

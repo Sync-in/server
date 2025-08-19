@@ -5,7 +5,7 @@
  */
 
 import { AsyncPipe, Location, NgComponentOutlet, NgTemplateOutlet } from '@angular/common'
-import { Component, ElementRef, OnDestroy, Renderer2, ViewChild } from '@angular/core'
+import { Component, ElementRef, inject, OnDestroy, Renderer2, ViewChild } from '@angular/core'
 import { ResolveEnd, Router, RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAngleLeft, faAngleRight, faUserSecret } from '@fortawesome/free-solid-svg-icons'
@@ -34,11 +34,7 @@ import { LayoutService } from '../layout.service'
 })
 export class SideBarLeftComponent implements OnDestroy {
   @ViewChild('sidebar', { static: true }) sidebar: ElementRef
-  private subscriptions: Subscription[] = []
-  private menuAppsHovered = false
-  private menuIconsHovered = false
-  private menuAppsHoveredTimeout: ReturnType<typeof setTimeout> = null
-  private menuIconsStopPropagation = false
+  protected readonly store = inject(StoreService)
   protected readonly icons = { faAngleLeft, faAngleRight, faUserSecret }
   protected logoIconUrl = logoIconUrl
   protected appName: string
@@ -48,16 +44,19 @@ export class SideBarLeftComponent implements OnDestroy {
   protected currentUrl: string
   protected currentMenu: AppMenu
   protected appsMenu: AppMenu = APP_MENU
+  private readonly router = inject(Router)
+  private readonly renderer = inject(Renderer2)
+  private readonly location = inject(Location)
+  private readonly authService = inject(AuthService)
+  private readonly layout = inject(LayoutService)
+  private readonly userService = inject(UserService)
+  private subscriptions: Subscription[] = []
+  private menuAppsHovered = false
+  private menuIconsHovered = false
+  private menuAppsHoveredTimeout: ReturnType<typeof setTimeout> = null
+  private menuIconsStopPropagation = false
 
-  constructor(
-    protected readonly store: StoreService,
-    private readonly router: Router,
-    private readonly renderer: Renderer2,
-    private readonly location: Location,
-    private readonly authService: AuthService,
-    private readonly layout: LayoutService,
-    private readonly userService: UserService
-  ) {
+  constructor() {
     this.appName = APP_NAME
     this.appVersion = APP_VERSION
     this.appsMenu.submenus = [SPACES_MENU, SEARCH_MENU, SYNC_MENU, USER_MENU, ADMIN_MENU]
@@ -115,7 +114,7 @@ export class SideBarLeftComponent implements OnDestroy {
 
   checkComponentRoute(menu?: AppMenu) {
     if (this.currentMenu.link !== this.currentUrl) {
-      this.router.navigate([this.currentMenu.link]).catch((e: Error) => console.error(e))
+      this.router.navigate([this.currentMenu.link]).catch(console.error)
     }
     if (menu) {
       menu.miniOpened = false

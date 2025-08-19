@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faClipboard, faClipboardCheck, faEye, faEyeSlash, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons'
@@ -60,6 +60,7 @@ import { LinksService } from '../../services/links.service'
   templateUrl: 'link-dialog.component.html'
 })
 export class LinkDialogComponent implements OnInit {
+  readonly layout = inject(LayoutService)
   // from links component or children dialog component
   @Input() share: ShareLinkModel | (Partial<ShareModel> & { link: LinkGuest })
   @Input() parentSpaceId: number = null
@@ -72,6 +73,7 @@ export class LinkDialogComponent implements OnInit {
   // submit event
   @Output() submitEvent = new EventEmitter<CreateOrUpdateLinkDto>()
   @Output() shareChange = new EventEmitter<['update' | 'delete', ShareLinkModel] | ['add', ShareModel]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected confirmDeletion = false
   protected submitted = false
   protected readonly SPACES_PERMISSIONS_TEXT = SPACES_PERMISSIONS_TEXT
@@ -98,15 +100,12 @@ export class LinkDialogComponent implements OnInit {
     permissions: FormControl<string | null>
     isActive: FormControl<boolean>
   }>
+  private readonly userService = inject(UserService)
+  private readonly sharesService = inject(SharesService)
+  private readonly linksService = inject(LinksService)
+  private readonly spacesService = inject(SpacesService)
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    public readonly layout: LayoutService,
-    private readonly userService: UserService,
-    private readonly sharesService: SharesService,
-    private readonly linksService: LinksService,
-    private readonly spacesService: SpacesService
-  ) {
+  constructor() {
     // set picker expiration to current date + 1 day
     this.minDate.setDate(this.minDate.getDate() + 1)
   }
@@ -130,76 +129,6 @@ export class LinkDialogComponent implements OnInit {
       this.isLinkIsExpired(this.share ? this.share.link.expiresAt : this.link.expiresAt)
     }
     this.linkForm.controls.expiresAt.valueChanges.subscribe((date: Date) => this.isLinkIsExpired(date))
-  }
-
-  private initFile() {
-    const fileShare: ShareModel = this.sharesService.initShareFromFile(this.userService.user, this.file, this.isSharesRepo, this.inSharesList)[0]
-    this.share = {
-      ...fileShare,
-      link: {
-        id: -1,
-        userId: -1,
-        uuid: '',
-        isActive: true,
-        requireAuth: false,
-        permissions: '',
-        nbAccess: 0,
-        limitAccess: 0
-      } as LinkGuest
-    }
-    this.linksService.genUUID().subscribe((uuid: string) => (this.share.link.uuid = uuid))
-    this.initShareLink()
-    // update permissions (text)
-    this.onPermissionChange()
-  }
-
-  private initShareLink() {
-    this.linkForm = new FormGroup({
-      shareName: new FormControl<string>(this.share.name, Validators.required),
-      shareDescription: new FormControl<string>(this.share.description || ''),
-      name: new FormControl<string>(this.share.link?.name || ''),
-      email: new FormControl<string>(this.share.link?.email || '', Validators.email),
-      language: new FormControl<string>(this.share.link.language || null),
-      limitAccess: new FormControl<number>(this.share.link.limitAccess || null),
-      expiresAt: new FormControl<Date | null>(this.share.link.expiresAt || null),
-      requireAuth: new FormControl<boolean>(this.share.link.requireAuth || false),
-      permissions: new FormControl<string>(this.share.link.permissions),
-      isActive: new FormControl<boolean>(this.share.link.isActive)
-    })
-    this.permissions = setAllowedBooleanPermissions(this.share.file.permissions, this.share.link.permissions, [
-      SPACE_OPERATION.SHARE_INSIDE,
-      SPACE_OPERATION.SHARE_OUTSIDE,
-      ...(this.share.file.isDir ? [] : [SPACE_OPERATION.DELETE, SPACE_OPERATION.ADD])
-    ])
-  }
-
-  private initLink() {
-    this.linkForm = new FormGroup({
-      shareName: new FormControl<string>(''),
-      shareDescription: new FormControl<string>(''),
-      name: new FormControl<string>(this.link.name || ''),
-      email: new FormControl<string>(this.link.email || '', Validators.email),
-      language: new FormControl<string>(this.link.language || null),
-      limitAccess: new FormControl<number>(this.link.limitAccess || null),
-      expiresAt: new FormControl<Date | null>(this.link.expiresAt || null),
-      requireAuth: new FormControl<boolean>(this.link.requireAuth || false),
-      permissions: new FormControl<string>(this.link.permissions),
-      isActive: new FormControl<boolean>(this.link.isActive)
-    })
-    if (!this.link.id) {
-      this.linkForm.controls.name.markAsDirty()
-      this.linkForm.controls.isActive.markAsDirty()
-    }
-  }
-
-  private isLinkIsExpired(date: Date) {
-    if (date === undefined || date === null) {
-      this.linkIsExpired = false
-      if (date === null) return
-      // change value from undefined to null
-      this.linkForm.controls.expiresAt.setValue(null)
-    }
-    this.linkIsExpired = currentDate() >= date
   }
 
   onPermissionChange() {
@@ -316,6 +245,76 @@ export class LinkDialogComponent implements OnInit {
     // can submit empty object
     // the manager that received the update will close this dialog
     this.submitEvent.emit(update)
+  }
+
+  private initFile() {
+    const fileShare: ShareModel = this.sharesService.initShareFromFile(this.userService.user, this.file, this.isSharesRepo, this.inSharesList)[0]
+    this.share = {
+      ...fileShare,
+      link: {
+        id: -1,
+        userId: -1,
+        uuid: '',
+        isActive: true,
+        requireAuth: false,
+        permissions: '',
+        nbAccess: 0,
+        limitAccess: 0
+      } as LinkGuest
+    }
+    this.linksService.genUUID().subscribe((uuid: string) => (this.share.link.uuid = uuid))
+    this.initShareLink()
+    // update permissions (text)
+    this.onPermissionChange()
+  }
+
+  private initShareLink() {
+    this.linkForm = new FormGroup({
+      shareName: new FormControl<string>(this.share.name, Validators.required),
+      shareDescription: new FormControl<string>(this.share.description || ''),
+      name: new FormControl<string>(this.share.link?.name || ''),
+      email: new FormControl<string>(this.share.link?.email || '', Validators.email),
+      language: new FormControl<string>(this.share.link.language || null),
+      limitAccess: new FormControl<number>(this.share.link.limitAccess || null),
+      expiresAt: new FormControl<Date | null>(this.share.link.expiresAt || null),
+      requireAuth: new FormControl<boolean>(this.share.link.requireAuth || false),
+      permissions: new FormControl<string>(this.share.link.permissions),
+      isActive: new FormControl<boolean>(this.share.link.isActive)
+    })
+    this.permissions = setAllowedBooleanPermissions(this.share.file.permissions, this.share.link.permissions, [
+      SPACE_OPERATION.SHARE_INSIDE,
+      SPACE_OPERATION.SHARE_OUTSIDE,
+      ...(this.share.file.isDir ? [] : [SPACE_OPERATION.DELETE, SPACE_OPERATION.ADD])
+    ])
+  }
+
+  private initLink() {
+    this.linkForm = new FormGroup({
+      shareName: new FormControl<string>(''),
+      shareDescription: new FormControl<string>(''),
+      name: new FormControl<string>(this.link.name || ''),
+      email: new FormControl<string>(this.link.email || '', Validators.email),
+      language: new FormControl<string>(this.link.language || null),
+      limitAccess: new FormControl<number>(this.link.limitAccess || null),
+      expiresAt: new FormControl<Date | null>(this.link.expiresAt || null),
+      requireAuth: new FormControl<boolean>(this.link.requireAuth || false),
+      permissions: new FormControl<string>(this.link.permissions),
+      isActive: new FormControl<boolean>(this.link.isActive)
+    })
+    if (!this.link.id) {
+      this.linkForm.controls.name.markAsDirty()
+      this.linkForm.controls.isActive.markAsDirty()
+    }
+  }
+
+  private isLinkIsExpired(date: Date) {
+    if (date === undefined || date === null) {
+      this.linkIsExpired = false
+      if (date === null) return
+      // change value from undefined to null
+      this.linkForm.controls.expiresAt.setValue(null)
+    }
+    this.linkIsExpired = currentDate() >= date
   }
 
   private mustIncludePassword(): boolean {

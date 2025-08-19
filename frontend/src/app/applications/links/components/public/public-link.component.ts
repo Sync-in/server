@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, Inject } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { ActivatedRoute, Data, Params, RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { SpaceLink } from '@sync-in-server/backend/src/applications/links/interfaces/link-space.interface'
@@ -19,17 +19,16 @@ import { LinksService } from '../../services/links.service'
   templateUrl: 'public-link.component.html'
 })
 export class PublicLinkComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { SPACES: SPACES_ICON.SPACES }
   protected readonly logoUrl = logoUrl
-  private linkUUID: string
   protected mimeUrl: string = null
   protected link: SpaceLink
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly linksService = inject(LinksService)
+  private linkUUID: string
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly linksService: LinksService
-  ) {
+  constructor() {
     this.activatedRoute.params.subscribe((params: Params) => (this.linkUUID = params.uuid))
     this.activatedRoute.data.subscribe((data: Data) => this.setLink(data.link))
   }

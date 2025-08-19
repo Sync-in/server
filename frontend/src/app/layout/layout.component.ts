@@ -4,8 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { DOCUMENT } from '@angular/common'
-import { Component, HostListener, Inject, OnDestroy, Renderer2 } from '@angular/core'
+import { Component, DOCUMENT, HostListener, inject, OnDestroy, Renderer2 } from '@angular/core'
 import { RouterOutlet } from '@angular/router'
 import { Subscription } from 'rxjs'
 import { themeLight } from './layout.interfaces'
@@ -21,17 +20,16 @@ import { SideBarRightComponent } from './sidebar/sidebar.right.component'
 })
 export class LayoutComponent implements OnDestroy {
   protected themeMode = themeLight
+  private readonly document = inject<Document>(DOCUMENT)
+  private readonly layout = inject(LayoutService)
+  private readonly renderer = inject(Renderer2)
   private rightSideBarClass = 'control-sidebar-open'
   private leftSideBarCollapsedClass = 'sidebar-collapse'
   private leftSideBarOpenedClass = 'sidebar-open'
   private isSmallerThanMediumScreen = false
   private subscriptions: Subscription[] = []
 
-  constructor(
-    @Inject(DOCUMENT) private readonly document: Document,
-    private readonly layout: LayoutService,
-    private readonly renderer: Renderer2
-  ) {
+  constructor() {
     this.subscriptions.push(this.layout.switchTheme.subscribe((theme: string) => this.setTheme(theme)))
     this.subscriptions.push(this.layout.toggleRightSideBar.subscribe((status: boolean) => this.toggleRightSideBar(status)))
     this.subscriptions.push(this.layout.toggleLeftSideBar.subscribe((status) => this.toggleLeftSideBar(status)))
@@ -69,6 +67,14 @@ export class LayoutComponent implements OnDestroy {
     }
   }
 
+  toggleRightSideBar(show: boolean) {
+    if (show) {
+      this.renderer.addClass(this.document.body, this.rightSideBarClass)
+    } else {
+      this.renderer.removeClass(this.document.body, this.rightSideBarClass)
+    }
+  }
+
   private openLeftSideBar() {
     this.renderer.removeClass(this.document.body, this.leftSideBarCollapsedClass)
     this.renderer.addClass(this.document.body, this.leftSideBarOpenedClass)
@@ -77,14 +83,6 @@ export class LayoutComponent implements OnDestroy {
   private collapseLeftSideBar() {
     this.renderer.removeClass(this.document.body, this.leftSideBarOpenedClass)
     this.renderer.addClass(this.document.body, this.leftSideBarCollapsedClass)
-  }
-
-  toggleRightSideBar(show: boolean) {
-    if (show) {
-      this.renderer.addClass(this.document.body, this.rightSideBarClass)
-    } else {
-      this.renderer.removeClass(this.document.body, this.rightSideBarClass)
-    }
   }
 
   private checkLeftSideBarCollapse() {

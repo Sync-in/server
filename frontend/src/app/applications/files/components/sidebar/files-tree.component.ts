@@ -5,7 +5,7 @@
  */
 
 import { IActionMapping, ITreeOptions, TREE_ACTIONS, TreeModel, TreeModule, TreeNode } from '@ali-hm/angular-tree-component'
-import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -42,6 +42,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
   @Input() sideBarHeader = true
   @Input() resizeOffset = defaultResizeOffset
   @Input() toggleNodesAtStartup = false
+  protected readonly store = inject(StoreService)
   protected readonly icons = {
     faArrowRotateRight,
     faArrowsAlt,
@@ -74,38 +75,22 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
   protected srcAllowed = true
   protected dstAllowed = true
   protected errorMsg = null
+  private readonly layout = inject(LayoutService)
+  private readonly router = inject(Router)
+  private readonly user = inject(UserService)
+  private readonly filesService = inject(FilesService)
   private copyMoveOnHeight = 80
-  private _copyMoveOn = false
   private subscriptions: Subscription[] = []
   private preventDblClick = false
   private preventTimer: any
 
-  constructor(
-    private readonly layout: LayoutService,
-    private readonly router: Router,
-    private readonly user: UserService,
-    private readonly filesService: FilesService,
-    protected readonly store: StoreService
-  ) {
+  constructor() {
     if (this.enableCopyMove) {
       this.subscriptions.push(toObservable(this.store.filesSelection).subscribe(() => this.checkAllowed(this.selection)))
     }
   }
 
-  get selection() {
-    return this.filesService.treeNodeSelected
-  }
-
-  set selection(node: TreeNode) {
-    this.filesService.treeNodeSelected = node
-    if (node) {
-      if ([0, -1, -2].indexOf(node.data.id) === -1) {
-        this.selected.emit(node.data)
-      } else {
-        this.selected.emit(null)
-      }
-    }
-  }
+  private _copyMoveOn = false
 
   get copyMoveOn() {
     return this._copyMoveOn
@@ -121,6 +106,21 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
         this.resizeOffset -= this.copyMoveOnHeight
       }
       setTimeout(() => this.layout.resizeEvent.next(), 0)
+    }
+  }
+
+  get selection() {
+    return this.filesService.treeNodeSelected
+  }
+
+  set selection(node: TreeNode) {
+    this.filesService.treeNodeSelected = node
+    if (node) {
+      if ([0, -1, -2].indexOf(node.data.id) === -1) {
+        this.selected.emit(node.data)
+      } else {
+        this.selected.emit(null)
+      }
     }
   }
 
@@ -292,7 +292,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
       if (urlSegments[0] !== SPACES_PATH.SPACES) {
         urlSegments.unshift(SPACES_PATH.SPACES)
       }
-      this.router.navigate(urlSegments).catch((e: Error) => console.error(e))
+      this.router.navigate(urlSegments).catch(console.error)
     }
   }
 

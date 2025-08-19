@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpEventType, HttpUploadProgressEvent } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { API_FILES_OPERATION_UPLOAD } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { lastValueFrom, Observable } from 'rxjs'
@@ -18,12 +18,9 @@ import { FilesService } from './files.service'
 @Injectable({ providedIn: 'root' })
 export class FilesUploadService {
   public supportUploadDirectory = supportUploadDirectory()
-
-  constructor(
-    private readonly http: HttpClient,
-    private readonly filesService: FilesService,
-    private readonly filesTasksService: FilesTasksService
-  ) {}
+  private readonly http = inject(HttpClient)
+  private readonly filesService = inject(FilesService)
+  private readonly filesTasksService = inject(FilesTasksService)
 
   async addFiles(files: FileUpload[]) {
     const apiRoute = `${API_FILES_OPERATION_UPLOAD}/${this.filesService.currentRoute}`
@@ -63,7 +60,7 @@ export class FilesUploadService {
     if (ev.dataTransfer.items && ev.dataTransfer.items[0]?.webkitGetAsEntry) {
       this.webkitReadDataTransfer(ev)
     } else {
-      this.addFiles(ev.dataTransfer.files).catch((e: Error) => console.error(e))
+      this.addFiles(ev.dataTransfer.files).catch(console.error)
     }
   }
 
@@ -123,7 +120,7 @@ export class FilesUploadService {
     }
     const decrement = () => {
       if (--queue == 0) {
-        this.addFiles(files).catch((e: Error) => console.error(e))
+        this.addFiles(files).catch(console.error)
       }
     }
 

@@ -5,7 +5,7 @@
  */
 
 import { AsyncPipe, NgComponentOutlet } from '@angular/common'
-import { Component, computed, OnDestroy } from '@angular/core'
+import { Component, computed, inject, OnDestroy } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faBell, faFlag, faUser, faWindowRestore } from '@fortawesome/free-regular-svg-icons'
@@ -36,6 +36,8 @@ export class SideBarRightComponent implements OnDestroy {
   protected theme = themeLight
   protected networkIsOnline = true
   protected readonly icons = { faWifi }
+  private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
   private subscriptions: Subscription[] = []
   private showDelay: any = null
   // tabs
@@ -92,10 +94,7 @@ export class SideBarRightComponent implements OnDestroy {
     }
   ]
 
-  constructor(
-    private readonly layout: LayoutService,
-    private readonly store: StoreService
-  ) {
+  constructor() {
     this.tabs = [...this.firstsTabs, ...this.lastsTabs]
     this.subscriptions.push(this.layout.rightSideBarIsOpen.subscribe((state: boolean) => this.setVisible(state)))
     this.subscriptions.push(this.layout.rightSideBarSetTabs.subscribe((menuTabs: { name: TAB_GROUP; tabs: TabMenu[] }) => this.setTabs(menuTabs)))
@@ -107,6 +106,17 @@ export class SideBarRightComponent implements OnDestroy {
 
   ngOnDestroy() {
     this.subscriptions.forEach((s) => s.unsubscribe())
+  }
+
+  setTabVisible(tabName: string) {
+    if (!this.visible) {
+      this.selectTab(tabName)
+      this.layout.toggleRSideBar(true)
+    } else if (tabName && tabName !== this.layout.currentRightSideBarTab) {
+      this.selectTab(tabName)
+    } else {
+      this.layout.toggleRSideBar(false)
+    }
   }
 
   private setVisible(state: boolean) {
@@ -143,17 +153,6 @@ export class SideBarRightComponent implements OnDestroy {
       if (!atLeastOneActive) {
         this.tabs[0].active = true
       }
-    }
-  }
-
-  setTabVisible(tabName: string) {
-    if (!this.visible) {
-      this.selectTab(tabName)
-      this.layout.toggleRSideBar(true)
-    } else if (tabName && tabName !== this.layout.currentRightSideBarTab) {
-      this.selectTab(tabName)
-    } else {
-      this.layout.toggleRSideBar(false)
     }
   }
 }

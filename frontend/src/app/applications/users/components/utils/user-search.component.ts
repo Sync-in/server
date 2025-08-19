@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, EventEmitter, Inject, Input, NgZone, OnInit, Output, ViewChild } from '@angular/core'
+import { Component, ElementRef, EventEmitter, inject, Input, NgZone, OnInit, Output, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faPen, faTimes } from '@fortawesome/free-solid-svg-icons'
@@ -53,29 +53,22 @@ export class UserSearchComponent implements OnInit {
   @Input() searchFunction: (search: string) => any
   @Input() editFunction: (member: MemberModel) => void = null
   @Input() customPlaceholder: string
+  protected locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly MEMBER_TYPE = MEMBER_TYPE
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly SPACES_PERMISSIONS_TEXT = SPACES_PERMISSIONS_TEXT
   protected readonly icons = { GROUPS: USER_ICON.GROUPS, LINKS: SPACES_ICON.LINKS, faTimes, faPen }
-  private defaultPlaceholder = 'Type to search for users or groups to add'
-  private lastResults: MemberModel[] = []
-  protected placeHolder = this.defaultPlaceholder
   protected selection = ''
+  private readonly ngZone = inject(NgZone)
+  private defaultPlaceholder = 'Type to search for users or groups to add'
+  protected placeHolder = this.defaultPlaceholder
+  private lastResults: MemberModel[] = []
   protected asyncSearchUsersOrGroups: Observable<any> = new Observable((observer: any) => observer.next(this.selection)).pipe(
     mergeMap((search: any) => this.searchFunction(search || '').pipe(tap((results: MemberModel[]) => (this.lastResults = results))))
   )
 
-  constructor(
-    @Inject(L10N_LOCALE) protected locale: L10nLocale,
-    private readonly ngZone: NgZone
-  ) {}
-
   ngOnInit() {
     this.setDefaultPlaceHolder()
-  }
-
-  private setDefaultPlaceHolder() {
-    this.placeHolder = this.customPlaceholder || this.defaultPlaceholder
   }
 
   onSelect(selection: { item: MemberModel }) {
@@ -111,5 +104,9 @@ export class UserSearchComponent implements OnInit {
 
   onPreview() {
     this.setDefaultPlaceHolder()
+  }
+
+  private setDefaultPlaceHolder() {
+    this.placeHolder = this.customPlaceholder || this.defaultPlaceholder
   }
 }

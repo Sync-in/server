@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, Input } from '@angular/core'
+import { Component, inject, Input } from '@angular/core'
 import { SYNC_PATH_SCHEDULER_UNIT } from '@sync-in-server/backend/src/applications/sync/constants/sync'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { StoreService } from '../../../../store/store.service'
@@ -35,8 +35,7 @@ import { SyncPathModel } from '../../models/sync-path.model'
 })
 export class SyncPathSchedulerComponent {
   @Input({ required: true }) s: SyncPathModel
+  protected readonly store = inject(StoreService)
   protected readonly SYNC_PATH_SCHEDULER_UNIT = SYNC_PATH_SCHEDULER_UNIT
   protected readonly CLIENT_SCHEDULER_STATE = CLIENT_SCHEDULER_STATE
-
-  constructor(protected readonly store: StoreService) {}
 }

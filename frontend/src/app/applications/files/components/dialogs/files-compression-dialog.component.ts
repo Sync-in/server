@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, Inject, Input, OnInit, Output } from '@angular/core'
+import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFileArchive } from '@fortawesome/free-solid-svg-icons'
@@ -25,15 +25,12 @@ export class FilesCompressionDialogComponent implements OnInit {
   @Input() archiveProps: CompressFileDto = { name: '', files: [], compressInDirectory: true, extension: tarExtension }
   @Output() submitEvent = new EventEmitter()
   public disableInDirCompression = false
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected compression = false
   protected readonly icons = { faFileArchive }
   protected submitted = false
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly filesService: FilesService
-  ) {}
+  private readonly filesService = inject(FilesService)
 
   ngOnInit() {
     if (this.disableInDirCompression) {

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, EventEmitter, Inject, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
@@ -35,9 +35,8 @@ import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
 export class AdminPermissionsComponent {
   @Input() permissions: USER_PERMISSION[] = []
   @Output() permissionsChange = new EventEmitter<USER_PERMISSION[]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly allApplications = Object.values(USER_PERMISSION)
-
-  constructor(@Inject(L10N_LOCALE) protected readonly locale: L10nLocale) {}
 
   updatePermissions(app: USER_PERMISSION, event: any) {
     if (event.target.checked) {

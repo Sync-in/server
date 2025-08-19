@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCog, faPlus, faSpinner, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
@@ -14,7 +14,7 @@ import { LINK_TYPE } from '@sync-in-server/backend/src/applications/links/consta
 import { SPACE_ALIAS, SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TabsModule } from 'ngx-bootstrap/tabs'
 import { Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
@@ -64,6 +64,8 @@ export class ShareDialogComponent implements OnInit {
   @Input() inSharesList = false
   @Input() allowFilesOptions = true
   @Output() shareChange = new EventEmitter<['add' | 'update' | 'delete', ShareModel]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected readonly icons = {
     SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
     SHARES: SPACES_ICON.SHARES,
@@ -74,21 +76,16 @@ export class ShareDialogComponent implements OnInit {
     faUsers,
     faCog
   }
-  protected readonly user = this.userService.user
   protected tabView: undefined | 'members' | 'links'
   protected allowedPermissions: Partial<`${SPACE_OPERATION}`>[] = []
   protected confirmDeletion = false
   protected loading = false
   protected submitted = false
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly userService: UserService,
-    private readonly sharesService: SharesService,
-    private readonly linksService: LinksService,
-    private readonly spacesService: SpacesService
-  ) {}
+  private readonly userService = inject(UserService)
+  protected readonly user = this.userService.user
+  private readonly sharesService = inject(SharesService)
+  private readonly linksService = inject(LinksService)
+  private readonly spacesService = inject(SpacesService)
 
   ngOnInit() {
     if (!this.share) {

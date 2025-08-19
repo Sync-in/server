@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, Inject, Input, OnChanges, OnInit } from '@angular/core'
+import { Component, inject, Input, OnChanges, OnInit } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faQuestion } from '@fortawesome/free-solid-svg-icons'
@@ -56,18 +56,15 @@ export class ShareRepositoryComponent implements OnInit, OnChanges {
   @Input() galleryMode: ViewMode
   @Input() showIcon = true
   @Input() showFullPath = false
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected repository: ShareRepository
+  private readonly layout = inject(LayoutService)
   private unknownRepository: ShareRepository = {
     icon: faQuestion,
     label: '',
     class: 'circle-primary-icon',
     translate: false
   }
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly layout: LayoutService
-  ) {}
 
   ngOnInit() {
     this.setRepository()

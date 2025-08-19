@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, EventEmitter, Input, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFile, faFolderClosed } from '@fortawesome/free-regular-svg-icons'
 import { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
@@ -35,11 +35,10 @@ export class FilesTreeDialogComponent {
   @Input() toggleNodesAtStartup = true
   // sharing case
   @Input() mustHaveShareOutsidePermission = false
+  protected readonly layout = inject(LayoutService)
   protected readonly icons = { faFile, faFolderClosed }
   protected errorSelection = null
   protected selection: FileTree = null
-
-  constructor(protected readonly layout: LayoutService) {}
 
   onSelect(file: FileTree) {
     if (file) {

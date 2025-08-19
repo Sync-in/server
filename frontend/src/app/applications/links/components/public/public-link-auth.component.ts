@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, Inject } from '@angular/core'
+import { Component, inject } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Params, RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -19,17 +19,16 @@ import { LinksService } from '../../services/links.service'
   templateUrl: 'public-link-auth.component.html'
 })
 export class PublicLinkAuthComponent {
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly logoUrl = logoUrl
   protected readonly linkProtected = linkProtected
   protected readonly icons = { faKey, faSignInAlt }
-  private uuid: string
   protected password = ''
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly linksService = inject(LinksService)
+  private uuid: string
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly linksService: LinksService
-  ) {
+  constructor() {
     this.activatedRoute.params.subscribe((p: Params) => (this.uuid = p.uuid))
   }
 

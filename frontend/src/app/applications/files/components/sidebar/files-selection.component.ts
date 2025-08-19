@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, computed, Inject, input, InputSignal, Signal } from '@angular/core'
+import { ChangeDetectionStrategy, Component, computed, inject, input, InputSignal, Signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowsAlt, faClipboardCheck } from '@fortawesome/free-solid-svg-icons'
@@ -41,6 +41,7 @@ import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.compone
 })
 export class FilesSelectionComponent {
   files: InputSignal<FileModel[]> = input.required<FileModel[]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected multiple: Signal<boolean> = computed(() => this.files().length > 1)
   protected resizeOffset: Signal<number> = computed(() => (this.multiple() ? 120 : 80))
   protected readonly cardImageSize = defaultCardImageSize
@@ -52,24 +53,18 @@ export class FilesSelectionComponent {
     faClipboardCheck,
     faArrowsAlt
   }
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly layout: LayoutService,
-    private readonly filesService: FilesService
-  ) {}
+  private readonly router = inject(Router)
+  private readonly layout = inject(LayoutService)
+  private readonly filesService = inject(FilesService)
 
   goToShare(share: { type: number; name: string }) {
     this.layout.toggleRSideBar(false)
-    this.router
-      .navigate([share.type === 0 ? SPACES_PATH.SHARED : SPACES_PATH.LINKS], { queryParams: { select: share.name } })
-      .catch((e: Error) => console.error(e))
+    this.router.navigate([share.type === 0 ? SPACES_PATH.SHARED : SPACES_PATH.LINKS], { queryParams: { select: share.name } }).catch(console.error)
   }
 
   goToSpace(space: { alias: string; name: string }) {
     this.layout.toggleRSideBar(false)
-    this.router.navigate([SPACES_PATH.SPACES], { queryParams: { select: space.name } }).catch((e: Error) => console.error(e))
+    this.router.navigate([SPACES_PATH.SPACES], { queryParams: { select: space.name } }).catch(console.error)
   }
 
   goToComments() {
@@ -90,6 +85,6 @@ export class FilesSelectionComponent {
           pathId: sync.id
         }
       })
-      .catch((e: Error) => console.error(e))
+      .catch(console.error)
   }
 }

@@ -15,16 +15,17 @@ type SortProps = { prop: string; type: sortType }[]
 export type SortSettings = Record<string, SortProps>
 
 export class SortTable {
-  private _sortParam: SortParam
-  private defaultId = 'default'
   protected keyStore: string
   protected sortSettings: SortSettings
+  private defaultId = 'default'
 
   constructor(keyStore: string, sortSettings: SortSettings) {
     this.keyStore = `sortBy${keyStore}`
     this.sortSettings = sortSettings
     this._sortParam = this.sort
   }
+
+  private _sortParam: SortParam
 
   get sortParam(): SortParam {
     return this._sortParam || this.sort

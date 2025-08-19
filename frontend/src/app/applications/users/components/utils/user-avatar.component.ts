@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { ChangeDetectionStrategy, Component, Inject, Input, OnInit } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, Input, OnInit } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faLightbulb, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
@@ -80,9 +80,8 @@ export class UserAvatarComponent implements OnInit {
   @Input() fontSize = 16
   @Input() tooltipPlacement: AvailableBSPositions = 'auto'
   @Input() container: string = null
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { faUsers, faUserShield, faLightbulb }
-
-  constructor(@Inject(L10N_LOCALE) protected readonly locale: L10nLocale) {}
 
   ngOnInit(): void {
     if (this.height < 28) {

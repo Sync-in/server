@@ -34,7 +34,7 @@
     "release:clean": "rm -rf release",
     "release:bump": "commit-and-tag-version",
     "release:bump:dry": "npm run release:bump -- --dry-run",
-    "lint": "npm run lint -ws",
+    "lint": "npm -ws run lint",
     "test": "npm -w backend test",
     "start": "node dist/server/main.js",
     "reset": "rm -Rf frontend/node_modules frontend/.angular backend/node_modules node_modules; npm cache clean --force",

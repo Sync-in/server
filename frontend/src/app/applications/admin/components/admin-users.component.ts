@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, Inject, ViewChild } from '@angular/core'
+import { Component, ElementRef, inject, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Data, Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -26,7 +26,7 @@ import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-cont
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
@@ -76,6 +76,7 @@ export class AdminUsersComponent {
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     faRotate,
@@ -148,6 +149,15 @@ export class AdminUsersComponent {
       sortable: true
     }
   }
+  // States
+  protected guestsView = false
+  protected loading = false
+  protected selected: AdminUserModel = null
+  protected users: AdminUserModel[] = []
+  private readonly router = inject(Router)
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly layout = inject(LayoutService)
+  private readonly adminService = inject(AdminService)
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'login', type: 'string' }],
     login: [{ prop: 'login', type: 'string' }],
@@ -158,37 +168,12 @@ export class AdminUsersComponent {
     isActive: [{ prop: 'isActive', type: 'number' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  // States
-  protected guestsView = false
-  protected loading = false
-  protected selected: AdminUserModel = null
-  protected users: AdminUserModel[] = []
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly layout: LayoutService,
-    private readonly adminService: AdminService
-  ) {
+  constructor() {
     this.layout.setBreadcrumbIcon(ADMIN_ICON.USERS)
     this.activatedRoute.data.subscribe((route: Data) => {
       this.guestsView = route.type === USER_ROLE.GUEST
       this.setEnv()
-    })
-  }
-
-  private setEnv() {
-    this.tableHeaders.managers.show = this.guestsView
-    this.tableHeaders.storage.show = !this.guestsView
-    this.loadUsersOrGuests()
-    this.layout.setBreadcrumbNav({
-      url: this.guestsView
-        ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GUESTS}/${ADMIN_TITLE.GUESTS}`
-        : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.USERS}/${ADMIN_TITLE.USERS}`,
-      splicing: 2,
-      translating: true,
-      sameLink: true
     })
   }
 
@@ -215,7 +200,7 @@ export class AdminUsersComponent {
 
   onGuestsView(state: boolean) {
     this.guestsView = state
-    this.router.navigate([ADMIN_PATH.BASE, state ? ADMIN_PATH.GUESTS : ADMIN_PATH.USERS]).catch((e: Error) => console.error(e))
+    this.router.navigate([ADMIN_PATH.BASE, state ? ADMIN_PATH.GUESTS : ADMIN_PATH.USERS]).catch(console.error)
   }
 
   onContextMenu(ev: any) {
@@ -321,6 +306,20 @@ export class AdminUsersComponent {
   impersonateIdentity() {
     this.layout.openDialog(AdminImpersonateUserDialogComponent, 'sm', {
       initialState: { user: this.selected } as AdminImpersonateUserDialogComponent
+    })
+  }
+
+  private setEnv() {
+    this.tableHeaders.managers.show = this.guestsView
+    this.tableHeaders.storage.show = !this.guestsView
+    this.loadUsersOrGuests()
+    this.layout.setBreadcrumbNav({
+      url: this.guestsView
+        ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GUESTS}/${ADMIN_TITLE.GUESTS}`
+        : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.USERS}/${ADMIN_TITLE.USERS}`,
+      splicing: 2,
+      translating: true,
+      sameLink: true
     })
   }
 }

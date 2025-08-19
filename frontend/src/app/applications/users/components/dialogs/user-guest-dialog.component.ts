@@ -6,7 +6,7 @@
 
 import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, Inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAddressCard, faPen, faPlus, faShieldHalved, faSpinner, faUsers, faUsersGear } from '@fortawesome/free-solid-svg-icons'
@@ -54,6 +54,9 @@ import { UserSearchComponent } from '../utils/user-search.component'
 export class UserGuestDialogComponent implements OnInit {
   @Input() guest: GuestUserModel = null
   @Output() guestChange = new EventEmitter<['add' | 'update' | 'delete', GuestUserModel]>()
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
+  protected readonly userService = inject(UserService)
   protected readonly user: UserType = this.userService.user
   protected readonly icons = { GROUPS: USER_ICON.GROUPS, faPlus, faPen, faUsersGear, faSpinner, faAddressCard, faUsers, faShieldHalved }
   protected readonly allNotifications = Object.values(USER_NOTIFICATION_TEXT)
@@ -76,12 +79,6 @@ export class UserGuestDialogComponent implements OnInit {
     isActive: FormControl<boolean>
     managers: FormControl<MemberModel[]>
   }>
-
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    protected readonly userService: UserService
-  ) {}
 
   ngOnInit() {
     this.guestForm = new FormGroup({

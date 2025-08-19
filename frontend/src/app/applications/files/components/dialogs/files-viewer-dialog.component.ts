@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Component, Input, OnDestroy, OnInit } from '@angular/core'
+import { Component, inject, Input, OnDestroy, OnInit } from '@angular/core'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
@@ -23,16 +23,13 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
 export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   @Input() currentFile: FileModel
   @Input() mode: 'view' | 'edit' = 'view'
+  protected canAccess = false
+  protected currentHeight: number
+  private readonly http = inject(HttpClient)
+  private readonly layout = inject(LayoutService)
   private subscription: Subscription = null
   private readonly offsetTop = 42
   private hookShortMime = null
-  protected canAccess = false
-  protected currentHeight: number
-
-  constructor(
-    private readonly http: HttpClient,
-    private readonly layout: LayoutService
-  ) {}
 
   ngOnInit() {
     this.subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
@@ -66,15 +63,15 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
     }
   }
 
-  private onResize() {
-    this.currentHeight = window.innerHeight - this.offsetTop
-  }
-
   onClose() {
     this.layout.closeDialog(null, this.currentFile.id)
   }
 
   onMinimize() {
     this.layout.minimizeDialog(this.currentFile.id, { name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl })
+  }
+
+  private onResize() {
+    this.currentHeight = window.innerHeight - this.offsetTop
   }
 }

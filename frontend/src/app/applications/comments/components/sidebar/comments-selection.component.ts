@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, computed, ElementRef, Inject, OnDestroy, Signal, ViewChild } from '@angular/core'
+import { Component, computed, ElementRef, inject, OnDestroy, Signal, ViewChild } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -40,17 +40,16 @@ import { CommentsService } from '../../services/comments.service'
 })
 export class CommentsSelectionComponent implements OnDestroy {
   @ViewChild('CommentCreate', { static: true }) commentInput: ElementRef<HTMLInputElement>
-  private subscriptions: Subscription[] = []
-  protected file: Signal<FileModel> = computed(() => (this.store.filesSelection().length ? this.store.filesSelection()[0] : null))
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected comments: CommentModel[] = []
   protected readonly icons = { faEdit }
+  private readonly store = inject(StoreService)
+  protected file: Signal<FileModel> = computed(() => (this.store.filesSelection().length ? this.store.filesSelection()[0] : null))
+  private readonly layout = inject(LayoutService)
+  private readonly commentsService = inject(CommentsService)
+  private subscriptions: Subscription[] = []
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly store: StoreService,
-    private readonly layout: LayoutService,
-    private readonly commentsService: CommentsService
-  ) {
+  constructor() {
     this.subscriptions.push(toObservable(this.file).subscribe((file: FileModel) => this.loadComments(file)))
   }
 

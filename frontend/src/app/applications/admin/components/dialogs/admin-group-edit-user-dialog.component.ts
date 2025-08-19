@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, Input, OnInit } from '@angular/core'
+import { Component, inject, Input, OnInit } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faKey, faUserPen } from '@fortawesome/free-solid-svg-icons'
@@ -24,15 +24,12 @@ import { AdminGroupModel } from '../../models/admin-group.model'
 export class AdminGroupEditUserDialogComponent implements OnInit {
   @Input({ required: true }) parentGroup: Pick<AdminGroupModel, 'id' | 'name' | 'type' | 'description'>
   @Input({ required: true }) user: MemberModel
+  protected readonly layout = inject(LayoutService)
   protected submitted = false
   protected isManager = false
   protected readonly USER_GROUP_ROLE = USER_GROUP_ROLE
   protected readonly icons = { faUserPen, faKey }
-
-  constructor(
-    protected readonly layout: LayoutService,
-    private readonly adminService: AdminService
-  ) {}
+  private readonly adminService = inject(AdminService)
 
   ngOnInit() {
     this.isManager = this.user.isGroupManager

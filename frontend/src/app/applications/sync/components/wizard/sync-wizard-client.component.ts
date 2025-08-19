@@ -3,7 +3,7 @@
  * This file is part of Sync-in | The open source file sync and share solution
  * See the LICENSE file for licensing details
  */
-import { Component, Renderer2 } from '@angular/core'
+import { Component, inject, Renderer2 } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowCircleRight, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
@@ -23,17 +23,16 @@ import { SYNC_ICON, SYNC_PATH, SYNC_TITLE } from '../../sync.constants'
   templateUrl: 'sync-wizard-client.component.html'
 })
 export class SyncWizardClientComponent {
-  protected readonly icons = { faTimesCircle, faArrowCircleRight }
   public pathIsValid = false
   public infoMsg: string = null
+  protected readonly syncService = inject(SyncService)
+  protected readonly icons = { faTimesCircle, faArrowCircleRight }
+  private readonly router = inject(Router)
+  private readonly renderer = inject(Renderer2)
+  private readonly store = inject(StoreService)
+  private readonly layout = inject(LayoutService)
 
-  constructor(
-    private readonly router: Router,
-    private readonly renderer: Renderer2,
-    private readonly store: StoreService,
-    private readonly layout: LayoutService,
-    protected readonly syncService: SyncService
-  ) {
+  constructor() {
     this.layout.setBreadcrumbIcon(SYNC_ICON.WIZARD)
     this.layout.setBreadcrumbNav({
       url: `/${SYNC_PATH.BASE}/${SYNC_PATH.WIZARD}/${SYNC_PATH.WIZARD_CLIENT}/${SYNC_TITLE.WIZARD_CLIENT}`,
@@ -110,11 +109,11 @@ export class SyncWizardClientComponent {
   }
 
   onNext() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SERVER]).catch((e: Error) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.WIZARD, SYNC_PATH.WIZARD_SERVER]).catch(console.error)
   }
 
   onCancel() {
-    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.PATHS]).catch((e: Error) => console.error(e))
+    this.router.navigate([SYNC_PATH.BASE, SYNC_PATH.PATHS]).catch(console.error)
     this.syncService.resetWizard()
   }
 

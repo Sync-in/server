@@ -5,7 +5,7 @@
  */
 
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, Inject, OnInit, ViewChild } from '@angular/core'
+import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowDown, faArrowRotateRight, faArrowUp, faCircleInfo } from '@fortawesome/free-solid-svg-icons'
@@ -49,6 +49,8 @@ export class TrashComponent implements OnInit {
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly layout = inject(LayoutService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = { SPACES: SPACES_ICON.SPACES, PERSONAL: SPACES_ICON.PERSONAL, faArrowDown, faArrowUp, faArrowRotateRight, faCircleInfo }
   protected readonly TAB_MENU = TAB_MENU
@@ -84,6 +86,10 @@ export class TrashComponent implements OnInit {
       sortable: true
     }
   }
+  protected btnSortFields = { name: 'Name', nb: 'Elements', mtime: 'Modified' }
+  private readonly router = inject(Router)
+  private readonly store = inject(StoreService)
+  private readonly spacesService = inject(SpacesService)
   private readonly sortSettings: SortSettings = {
     default: [
       { prop: 'isPersonal', type: 'number' },
@@ -94,15 +100,8 @@ export class TrashComponent implements OnInit {
     modified: [{ prop: 'mtime', type: 'date' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
-  protected btnSortFields = { name: 'Name', nb: 'Elements', mtime: 'Modified' }
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    protected readonly layout: LayoutService,
-    private readonly router: Router,
-    private readonly store: StoreService,
-    private readonly spacesService: SpacesService
-  ) {
+  constructor() {
     this.loadTrashBins()
     this.layout.setBreadcrumbIcon(SPACES_ICON.TRASH)
     this.layout.setBreadcrumbNav({ url: `/${SPACES_PATH.TRASH}/${SPACES_TITLE.TRASH}`, translating: true, sameLink: true })
@@ -152,6 +151,6 @@ export class TrashComponent implements OnInit {
   }
 
   browse(trash: TrashModel) {
-    this.router.navigate([SPACES_PATH.SPACES_TRASH, trash.alias]).catch((e: Error) => console.error(e))
+    this.router.navigate([SPACES_PATH.SPACES_TRASH, trash.alias]).catch(console.error)
   }
 }

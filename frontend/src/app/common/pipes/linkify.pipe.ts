@@ -4,12 +4,12 @@
  * See the LICENSE file for licensing details
  */
 
-import { Pipe, PipeTransform, SecurityContext } from '@angular/core'
+import { inject, Pipe, PipeTransform, SecurityContext } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
 
 @Pipe({ name: 'linkify' })
 export class LinkifyPipe implements PipeTransform {
-  constructor(private readonly sanitizer: DomSanitizer) {}
+  private readonly sanitizer = inject(DomSanitizer)
 
   transform(value: any): any {
     return this.sanitizer.sanitize(SecurityContext.HTML, this.stylize(value))

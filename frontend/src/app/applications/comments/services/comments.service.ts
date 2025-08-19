@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
-import { Injectable } from '@angular/core'
+import { inject, Injectable } from '@angular/core'
 import { API_COMMENTS_FROM_SPACE, API_COMMENTS_RECENTS } from '@sync-in-server/backend/src/applications/comments/constants/routes'
 import type { CreateOrUpdateCommentDto, DeleteCommentDto } from '@sync-in-server/backend/src/applications/comments/dto/comment.dto'
 import type { CommentRecent } from '@sync-in-server/backend/src/applications/comments/interfaces/comment-recent.interface'
@@ -21,11 +21,9 @@ import { CommentModel } from '../models/comment.model'
   providedIn: 'root'
 })
 export class CommentsService {
-  constructor(
-    private readonly store: StoreService,
-    private readonly layout: LayoutService,
-    private readonly http: HttpClient
-  ) {}
+  private readonly store = inject(StoreService)
+  private readonly layout = inject(LayoutService)
+  private readonly http = inject(HttpClient)
 
   getComments(file: FileModel): Observable<CommentModel[]> {
     return this.http.get<Comment[]>(`${API_COMMENTS_FROM_SPACE}/${file.path}`).pipe(map((cs) => cs.map((c) => new CommentModel(c))))

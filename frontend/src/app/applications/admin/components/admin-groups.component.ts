@@ -6,7 +6,7 @@
 
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, Inject, ViewChild } from '@angular/core'
+import { Component, ElementRef, inject, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -31,7 +31,7 @@ import { USER_GROUP_ROLE } from '@sync-in-server/backend/src/applications/users/
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
-import { BsModalRef } from 'ngx-bootstrap/modal/bs-modal-ref.service'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { filter, take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
@@ -86,6 +86,7 @@ export class AdminGroupsComponent {
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     GROUPS: USER_ICON.GROUPS,
@@ -137,6 +138,15 @@ export class AdminGroupsComponent {
       sortable: true
     }
   }
+  protected personalGroupsView = false
+  protected loading = false
+  protected currentGroup: GroupBrowseModel['parentGroup']
+  protected selected: MemberModel = null
+  protected members: MemberModel[] = []
+  private readonly router = inject(Router)
+  private readonly activatedRoute = inject(ActivatedRoute)
+  private readonly layout = inject(LayoutService)
+  private readonly adminService = inject(AdminService)
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'name', type: 'string' }],
     name: [{ prop: 'name', type: 'string' }],
@@ -149,19 +159,8 @@ export class AdminGroupsComponent {
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
   // States
   private focusOnSelect: string
-  protected personalGroupsView = false
-  protected loading = false
-  protected currentGroup: GroupBrowseModel['parentGroup']
-  protected selected: MemberModel = null
-  protected members: MemberModel[] = []
 
-  constructor(
-    @Inject(L10N_LOCALE) protected readonly locale: L10nLocale,
-    private readonly router: Router,
-    private readonly activatedRoute: ActivatedRoute,
-    private readonly layout: LayoutService,
-    private readonly adminService: AdminService
-  ) {
+  constructor() {
     this.activatedRoute.data.subscribe((route: Data) => {
       this.personalGroupsView = route.type === GROUP_TYPE.PERSONAL
       this.setEnv(route.routes as UrlSegment[])
@@ -170,73 +169,18 @@ export class AdminGroupsComponent {
     this.layout.setBreadcrumbIcon(ADMIN_ICON.GROUPS)
   }
 
-  private setEnv(routes: UrlSegment[]) {
-    let currentGroupName: string
-    if (!routes.length) {
-      this.layout.setBreadcrumbNav({
-        url: this.personalGroupsView
-          ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.PGROUPS}/${ADMIN_TITLE.PGROUPS}`
-          : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}/${ADMIN_TITLE.GROUPS}`,
-        splicing: 2,
-        translating: true,
-        sameLink: true
-      })
-    } else {
-      currentGroupName = routes[routes.length - 1].path
-      this.layout.setBreadcrumbNav({
-        url: this.personalGroupsView
-          ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.PGROUPS}${pathFromRoutes(routes)}`
-          : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}${pathFromRoutes(routes)}`,
-        firstLink: `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}`,
-        splicing: 1,
-        translating: true,
-        sameLink: false,
-        mutateLevel: {
-          0: {
-            setTitle: this.personalGroupsView ? ADMIN_TITLE.PGROUPS : ADMIN_TITLE.GROUPS,
-            translateTitle: true
-          }
-        }
-      })
-    }
-    this.loadGroups(currentGroupName)
-  }
-
   onPersonalGroupsView(state: boolean) {
     this.personalGroupsView = state
-    this.router.navigate([ADMIN_PATH.BASE, state ? ADMIN_PATH.PGROUPS : ADMIN_PATH.GROUPS]).catch((e: Error) => console.error(e))
+    this.router.navigate([ADMIN_PATH.BASE, state ? ADMIN_PATH.PGROUPS : ADMIN_PATH.GROUPS]).catch(console.error)
   }
 
   refresh() {
     this.loadGroups(this.currentGroup?.name)
   }
 
-  private loadGroups(currentGroupName?: string) {
-    this.loading = true
-    this.onSelect()
-    this.adminService.browseGroup(currentGroupName, this.personalGroupsView).subscribe({
-      next: (browse: GroupBrowseModel) => {
-        this.currentGroup = browse.parentGroup
-        this.sortBy(this.sortTable.sortParam.column, false, browse.members)
-        if (this.focusOnSelect) {
-          this.focusOn(this.focusOnSelect)
-        } else {
-          this.scrollView.scrollInto(-1)
-        }
-        this.loading = false
-      },
-      error: (e: HttpErrorResponse) => {
-        this.members = []
-        this.layout.sendNotification('error', 'Groups', e.error.message)
-        this.onSelect()
-        this.loading = false
-      }
-    })
-  }
-
   browse(m: MemberModel) {
     if (m.isGroup) {
-      this.router.navigate([m.name], { relativeTo: this.activatedRoute }).catch((e: Error) => console.error(e))
+      this.router.navigate([m.name], { relativeTo: this.activatedRoute }).catch(console.error)
     }
   }
 
@@ -305,7 +249,7 @@ export class AdminGroupsComponent {
             } else {
               this.router
                 .navigate([`${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}`, g.parent?.id ? g.parent.name : ''], { queryParams: { select: g.name } })
-                .catch((e: Error) => console.error(e))
+                .catch(console.error)
             }
           }
         })
@@ -364,7 +308,7 @@ export class AdminGroupsComponent {
                   } else {
                     this.router
                       .navigate([`${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}`, g.parent?.id ? g.parent.name : ''], { queryParams: { select: g.name } })
-                      .catch((e: Error) => console.error(e))
+                      .catch(console.error)
                   }
                 }
               })
@@ -378,6 +322,61 @@ export class AdminGroupsComponent {
         })
       }
     }
+  }
+
+  private setEnv(routes: UrlSegment[]) {
+    let currentGroupName: string
+    if (!routes.length) {
+      this.layout.setBreadcrumbNav({
+        url: this.personalGroupsView
+          ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.PGROUPS}/${ADMIN_TITLE.PGROUPS}`
+          : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}/${ADMIN_TITLE.GROUPS}`,
+        splicing: 2,
+        translating: true,
+        sameLink: true
+      })
+    } else {
+      currentGroupName = routes[routes.length - 1].path
+      this.layout.setBreadcrumbNav({
+        url: this.personalGroupsView
+          ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.PGROUPS}${pathFromRoutes(routes)}`
+          : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}${pathFromRoutes(routes)}`,
+        firstLink: `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}`,
+        splicing: 1,
+        translating: true,
+        sameLink: false,
+        mutateLevel: {
+          0: {
+            setTitle: this.personalGroupsView ? ADMIN_TITLE.PGROUPS : ADMIN_TITLE.GROUPS,
+            translateTitle: true
+          }
+        }
+      })
+    }
+    this.loadGroups(currentGroupName)
+  }
+
+  private loadGroups(currentGroupName?: string) {
+    this.loading = true
+    this.onSelect()
+    this.adminService.browseGroup(currentGroupName, this.personalGroupsView).subscribe({
+      next: (browse: GroupBrowseModel) => {
+        this.currentGroup = browse.parentGroup
+        this.sortBy(this.sortTable.sortParam.column, false, browse.members)
+        if (this.focusOnSelect) {
+          this.focusOn(this.focusOnSelect)
+        } else {
+          this.scrollView.scrollInto(-1)
+        }
+        this.loading = false
+      },
+      error: (e: HttpErrorResponse) => {
+        this.members = []
+        this.layout.sendNotification('error', 'Groups', e.error.message)
+        this.onSelect()
+        this.loading = false
+      }
+    })
   }
 
   private focusOn(select: string) {

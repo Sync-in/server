@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, computed, Signal } from '@angular/core'
+import { Component, computed, inject, Signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFileLines } from '@fortawesome/free-regular-svg-icons'
@@ -22,22 +22,17 @@ import { FilesService } from '../../services/files.service'
   templateUrl: './files-recents-widget.component.html'
 })
 export class FilesRecentsWidgetComponent {
+  protected moreElements = false
+  protected readonly icons = { faFileLines, faMagnifyingGlassPlus, faMagnifyingGlassMinus, faTrashAlt }
+  private readonly router = inject(Router)
+  private readonly store = inject(StoreService)
+  private readonly filesService = inject(FilesService)
   private nbInitialFiles = 10
   private nbFiles = this.nbInitialFiles
-  protected moreElements = false
   protected files: Signal<FileRecentModel[]> = computed(() => this.store.filesRecents().slice(0, this.nbFiles))
-  protected readonly icons = { faFileLines, faMagnifyingGlassPlus, faMagnifyingGlassMinus, faTrashAlt }
 
-  constructor(
-    private readonly router: Router,
-    private readonly store: StoreService,
-    private readonly filesService: FilesService
-  ) {
+  constructor() {
     this.load()
-  }
-
-  private load() {
-    this.filesService.loadRecents(this.nbFiles)
   }
 
   switchMore() {
@@ -52,6 +47,10 @@ export class FilesRecentsWidgetComponent {
   }
 
   goToFile(f: FileRecentModel) {
-    this.router.navigate([SPACES_PATH.SPACES, ...f.path.split('/')], { queryParams: { select: f.name } }).catch((e: Error) => console.error(e))
+    this.router.navigate([SPACES_PATH.SPACES, ...f.path.split('/')], { queryParams: { select: f.name } }).catch(console.error)
+  }
+
+  private load() {
+    this.filesService.loadRecents(this.nbFiles)
   }
 }
