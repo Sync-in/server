@@ -3,6 +3,24 @@
   "name": "sync-in-server",
   "version": "1.3.3",
   "description": "The secure, open-source platform for file storage, sharing, collaboration, and sync",
+  "funding": [
+    {
+      "type": "github",
+      "url": "https://github.com/sponsors/sync-in"
+    },
+    {
+      "type": "patreon",
+      "url": "https://patreon.com/sync_in"
+    },
+    {
+      "type": "liberapay",
+      "url": "https://liberapay.com/sync-in"
+    },
+    {
+      "type": "project",
+      "url": "https://sync-in.com/support"
+    }
+  ],
   "author": {
     "name": "Johan Legrand",
     "email": "johan.legrand@sync-in.com"
@@ -29,7 +47,6 @@
     "frontend"
   ],
   "scripts": {
-    "prepare": "husky",
     "build": "npm run build -ws",
     "release:build": "npm run build && node scripts/build/release.mjs",
     "release:clean": "rm -rf release",
