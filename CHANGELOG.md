@@ -1,4 +1,22 @@
 
+## [1.3.3](https://github.com/Sync-in/server/compare/v1.3.2...v1.3.3) (2025-08-19)
+
+
+### Bug Fixes
+
+* **backend:files:** correct archive name when downloading a folder ([1474949](https://github.com/Sync-in/server/commit/147494906e7a04f520195dfb747eb791daabfbc3))
+* **backend:sync:** avoid "parent must exist" error when files are moved before destination folder creation during sync ([8c92535](https://github.com/Sync-in/server/commit/8c9253551aa1d90c7fe340b81e5f9b48c82b6fdf))
+
+
+### Chores
+
+* **docker:** allow http2 in nginx directives ([4ad2ffb](https://github.com/Sync-in/server/commit/4ad2ffbfe12720af75aeac1d7ee7e383d73ad981))
+* **frontend:** add missing video-mp4 mime type ([d210268](https://github.com/Sync-in/server/commit/d210268bc8cb5a5e61e0bbc24f431915b509b32d))
+* **frontend:** bump to angular 20 ([363671a](https://github.com/Sync-in/server/commit/363671ac5e6ad6299477bf07f0bcffe1cff3e3f4))
+* **npm-sync-in-server.js:** more verbose createUser function ([1ea155a](https://github.com/Sync-in/server/commit/1ea155a23f092312cb234758c59002bbe01458b2))
+* **frontend:** update-angular-19-to-20 ([14f0397](https://github.com/Sync-in/server/commit/14f03973a77370f531bd1ed4c6c2052b76c15ea2))
+* add Husky pre-commit hook for lint and test ([281e32d](https://github.com/Sync-in/server/commit/281e32df28e092b6ea0a57d94b6f8279ca67c4c1))
+
 ## [1.3.2](https://github.com/Sync-in/server/compare/v1.3.1...v1.3.2) (2025-08-08)
 
 ### Features
