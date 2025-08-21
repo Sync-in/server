@@ -53,19 +53,19 @@ describe(AppService.name, () => {
     expect(conf.logger.stdout).toBe(true)
     expect(conf.logger.colorize).toBe(true)
     const tmpSecretFile = path.join(os.tmpdir(), 'secret')
-    fs.writeFileSync(tmpSecretFile, 'foobar8888')
-    process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_ONLYOFFICE_SECRET`] = 'foobar'
+    fs.writeFileSync(tmpSecretFile, 'fooBAR8888')
+    process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_ONLYOFFICE_SECRET`] = 'fooBAR'
     process.env[`${ENVIRONMENT_PREFIX}LOGGER_STDOUT`] = 'false'
     process.env[`${ENVIRONMENT_PREFIX}LOGGER_COLORIZE`] = '"false"'
     process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_MAXUPLOADSIZE`] = '8888'
     // docker compose secret file
     process.env[`${ENVIRONMENT_PREFIX}AUTH_TOKEN_ACCESS_SECRET_FILE`] = tmpSecretFile
     conf = exportConfiguration(true)
-    expect(conf.applications.files.onlyoffice.secret).toBe('foobar')
+    expect(conf.applications.files.onlyoffice.secret).toBe('fooBAR')
     expect(conf.logger.stdout).toBe(false)
     expect(conf.logger.colorize).toBe(false)
     expect(conf.applications.files.maxUploadSize).toBe(8888)
-    expect(conf.auth.token.access.secret).toBe('foobar8888')
+    expect(conf.auth.token.access.secret).toBe('fooBAR8888')
     // cleanup secret file
     fs.promises.rm(tmpSecretFile, { force: true }).catch((e) => {
       console.error(e)
