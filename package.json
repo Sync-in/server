@@ -90,6 +90,9 @@
     "husky": "^9.1.7",
     "prettier": "^3.4.1"
   },
+  "overrides": {
+    "jsdom": "^26.1.0"
+  },
   "commit-and-tag-version": {
     "header": "",
     "types": [
