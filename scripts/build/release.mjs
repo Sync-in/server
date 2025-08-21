@@ -62,14 +62,18 @@ const rootPKGPath = path.join(rootDir, 'package.json')
 const rootPkg = JSON.parse(await fs.promises.readFile(rootPKGPath, 'utf8'))
 
 function extractDependencies() {
+  const pkgName = '@sync-in-server/backend'
   try {
     const raw = execSync(`cd ${rootDir} && npm -w backend list --depth=0 --omit=dev --include=optional --json`, { encoding: 'utf8' })
     const json = JSON.parse(raw)
+    if (!pkgName in json.dependencies) {
+      throw new Error(`${pkgName} is missing from dependencies`)
+    }
     const dependencies = Object.fromEntries(
-      Object.entries(json.dependencies[Object.keys(json.dependencies)[0]].dependencies).map((p) => [p[0], p[1].version])
+      Object.entries(json.dependencies[pkgName].dependencies).map((p) => [p[0], p[1].version])
     )
     const nbDeps = Object.keys(dependencies).length
-    if (nbDeps <= 3) {
+    if (nbDeps <= 10) {
       throw new Error(`The number of dependencies seems incorrect : ${nbDeps}`)
     }
     console.error(`✅ extracted dependencies : ${nbDeps}`)
@@ -92,6 +96,7 @@ const releasePKG = {
   os: rootPkg.os,
   engineStrict: rootPkg.engineStrict,
   engines: rootPkg.engines,
+  funding: rootPkg.funding,
   keywords: rootPkg.keywords,
   publishConfig: {
     access: 'public',
