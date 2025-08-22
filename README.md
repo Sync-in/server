@@ -14,9 +14,10 @@ _Welcome to the official Sync-in server repository!_
 - 📦 [Deploy with NPM](https://sync-in.com/docs/setup-guide/npm)
 
 <a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
-<a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/discord/1391081837849346088?logo=discord&label=Discord" alt="Discord"/></a>
-<a href="https://www.npmjs.com/package/@sync-in/server" target="_blank"><img src="https://img.shields.io/npm/d18m/@sync-in/server.svg?logo=npm&label=NPM%20Downloads&color=cb3837" alt="NPM"/></a>
+<a href="https://github.com/Sync-in/server/releases" target="_blank"><img src="https://img.shields.io/github/v/release/Sync-in/server?sort=semver&display_name=tag&style=flat&logo=github&label=Release" alt="GitHub Release"/></a>
 <a href="https://hub.docker.com/r/syncin/server" target="_blank"><img src="https://img.shields.io/docker/pulls/syncin/server?logo=docker&label=Docker%20Hub%20Pulls" alt="Docker pulls"/></a>
+<a href="https://www.npmjs.com/package/@sync-in/server" target="_blank"><img src="https://img.shields.io/npm/d18m/@sync-in/server.svg?logo=npm&label=NPM%20Downloads&color=cb3837" alt="NPM"/></a>
+<a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/discord/1391081837849346088?logo=discord&label=Discord" alt="Discord"/></a>
 
 The **Sync-in Server** is designed to run on your own infrastructure, it gives you **full control over your data** while offering a modern,
 intuitive interface for both internal and external users.
