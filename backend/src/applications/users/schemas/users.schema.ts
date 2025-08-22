@@ -45,8 +45,8 @@ export const users = mysqlTable(
     storageQuota: bigint('storageQuota', { mode: 'number', unsigned: true }),
     notification: tinyint('notification', { unsigned: true }).default(1).notNull(),
     onlineStatus: tinyint('onlineStatus', { unsigned: true }).default(0).notNull(),
-    currentIp: char('currentIp', { length: 15 }),
-    lastIp: char('lastIp', { length: 15 }),
+    currentIp: varchar('currentIp', { length: 45 }),
+    lastIp: varchar('lastIp', { length: 45 }),
     currentAccess: datetime('currentAccess', { mode: 'date' }),
     lastAccess: datetime('lastAccess', { mode: 'date' }),
     createdAt: datetime('createdAt', { mode: 'date' })

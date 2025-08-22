@@ -5,9 +5,23 @@
  */
 
 import path from 'node:path'
-import { IS_DEV_ENV } from '../../configuration/config.constants'
+import fs from 'node:fs'
 
 export const DB_CHARSET = 'utf8mb4'
 export const DB_TOKEN_PROVIDER = 'DB'
-export const SCHEMA_PATH = path.join(__dirname, `schema${IS_DEV_ENV ? '.ts' : '.js'}`)
-export const MIGRATIONS_PATH = path.join(__dirname, '../../../migrations')
+export const MIGRATIONS_PATH = path.relative(process.cwd(), path.join(__dirname, '../../../migrations'))
+
+export function getSchemaPath(): string {
+  // Look for schema.ts (dev) or schema.js (production), throw if none is found
+  const extensions = ['js', 'ts']
+
+  for (const ext of extensions) {
+    const filePath = path.join(__dirname, `schema.${ext}`)
+    if (fs.existsSync(filePath)) {
+      console.log('USE SCHEMA PATH', filePath)
+      return filePath
+    }
+  }
+
+  throw new Error('No schema.ts or schema.js file found !')
+}
