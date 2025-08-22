@@ -53,9 +53,6 @@ function loadEnvFile(envPath: string, envFileName: string, throwIfMissing = fals
   const candidates = [envPath, envFileName, ...buildPathsUp(__dirname, envPath), ...buildPathsUp(__dirname, envFileName)]
   for (const envFilePath of candidates) {
     if (fs.existsSync(envFilePath) && fs.lstatSync(envFilePath).isFile()) {
-      if (envFileName === ENVIRONMENT_FILE_NAME) {
-        console.log(`Load configuration → ${envFilePath}`)
-      }
       return yaml.load(fs.readFileSync(envFilePath, 'utf8'))
     }
   }

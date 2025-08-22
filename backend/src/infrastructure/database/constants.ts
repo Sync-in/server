@@ -18,7 +18,6 @@ export function getSchemaPath(): string {
   for (const ext of extensions) {
     const filePath = path.join(__dirname, `schema.${ext}`)
     if (fs.existsSync(filePath)) {
-      console.log('USE SCHEMA PATH', filePath)
       return filePath
     }
   }
