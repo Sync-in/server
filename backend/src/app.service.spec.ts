@@ -13,6 +13,10 @@ import process from 'node:process'
 import { AppService } from './app.service'
 import { ENVIRONMENT_PREFIX } from './configuration/config.constants'
 import { configuration, exportConfiguration } from './configuration/config.environment'
+jest.mock('@socket.io/cluster-adapter', () => ({
+  setupPrimary: jest.fn()
+}))
+import { setupPrimary } from '@socket.io/cluster-adapter'
 
 describe(AppService.name, () => {
   let appService: AppService
@@ -27,24 +31,54 @@ describe(AppService.name, () => {
   })
 
   it('should clusterize', () => {
+    // --- MASTER, adapter='cluster' -> covers setupPrimary()
+    configuration.websocket.adapter = 'cluster'
     configuration.server.restartOnFailure = true
-    const callBack = jest.fn().mockReturnValue({ process: { pid: 1 } })
-    cluster.fork = jest.fn(() => callBack())
+
+    const bootstrap = jest.fn()
+
+    // IMPORTANT: do NOT call bootstrap() from fork mock
+    const fakeWorker = { process: { pid: 1 } } as any
+    cluster.fork = jest.fn(() => fakeWorker)
+
     const spyExit = jest.spyOn(cluster, 'on')
-    expect(() => AppService.clusterize(callBack)).not.toThrow()
-    expect(callBack).toHaveBeenCalledTimes(configuration.server.workers)
-    expect(cluster.fork).toHaveBeenCalledTimes(configuration.server.workers)
-    callBack.mockClear()
+
+    // 1) master path (cluster.isPrimary true by default)
+    expect(() => AppService.clusterize(bootstrap)).not.toThrow()
+
+    // setupPrimary() must have run once (covers the “line 21” site)
+    expect(setupPrimary).toHaveBeenCalledTimes(1)
+
+    // fork called exactly workers times
+    expect((cluster.fork as jest.Mock).mock.calls.length).toBe(configuration.server.workers)
+
+    // --- Test exit handler with ONLY ONE registered handler
+    // TRUE branch: restart twice -> fork called +2
+    const forkCallsAfterMaster = (cluster.fork as jest.Mock).mock.calls.length
     AppService.schedulerPID = 1
-    cluster.emit('exit', { process: { pid: 1 } }, 1, 1)
+    cluster.emit('exit', { process: { pid: 1 } } as any, 1 as any, 'SIGKILL' as any)
     AppService.schedulerPID = 0
-    cluster.emit('exit', { process: { pid: 1 } }, 1, 1)
-    expect(spyExit).toHaveBeenCalled()
-    expect(callBack).toHaveBeenCalledTimes(2)
+    cluster.emit('exit', { process: { pid: 2 } } as any, 1 as any, 'SIGKILL' as any)
+    expect((cluster.fork as jest.Mock).mock.calls.length).toBe(forkCallsAfterMaster + 2)
+
+    // FALSE branch: no restart -> fork unchanged
+    configuration.server.restartOnFailure = false
+    const forkCallsAfterTrue = (cluster.fork as jest.Mock).mock.calls.length
+    cluster.emit('exit', { process: { pid: 3 } } as any, 1 as any, 'SIGKILL' as any)
+    expect((cluster.fork as jest.Mock).mock.calls.length).toBe(forkCallsAfterTrue)
+
+    // --- MASTER again, adapter != 'cluster' -> covers the FALSE side of the adapter check
+    configuration.websocket.adapter = null
+    expect(() => AppService.clusterize(bootstrap)).not.toThrow()
+    // setupPrimary should NOT be called again
+    expect(setupPrimary).toHaveBeenCalledTimes(1)
+
+    // --- WORKER path (else branch): bootstrap should be called exactly once here
     jest.replaceProperty(cluster, 'isPrimary', false)
-    callBack.mockClear()
-    expect(() => AppService.clusterize(callBack)).not.toThrow()
-    expect(callBack).toHaveBeenCalledTimes(1)
+    bootstrap.mockClear() // isolate bootstrap count for a worker branch
+    expect(() => AppService.clusterize(bootstrap)).not.toThrow()
+    expect(bootstrap).toHaveBeenCalledTimes(1)
+
     spyExit.mockClear()
   })
 
@@ -66,9 +100,7 @@ describe(AppService.name, () => {
     expect(conf.logger.colorize).toBe(false)
     expect(conf.applications.files.maxUploadSize).toBe(8888)
     expect(conf.auth.token.access.secret).toBe('fooBAR8888')
-    // cleanup secret file
-    fs.promises.rm(tmpSecretFile, { force: true }).catch((e) => {
-      console.error(e)
-    })
+    // clean up secret file
+    fs.promises.rm(tmpSecretFile, { force: true }).catch(console.error)
   })
 })
