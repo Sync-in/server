@@ -7,7 +7,6 @@
 import path from 'node:path'
 import process from 'node:process'
 
-export const IS_DEV_ENV: boolean = process.env['NODE_ENV'] === 'development'
 export const IS_TEST_ENV: boolean = process.env['NODE_ENV'] === 'test'
 export const ENVIRONMENT_FILE_NAME = 'environment.yaml'
 export const ENVIRONMENT_PATH = `environment/${ENVIRONMENT_FILE_NAME}`

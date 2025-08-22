@@ -194,7 +194,7 @@ function migrateDatabase() {
   console.log('🗄️ Running database migrations...')
   const result = spawnSync('npx', CMD_DB_ARGS, { stdio: 'inherit' })
   if (result.status !== 0) {
-    console.error('❌ Database migrations failed. Please verify database connectivity and credentials (stdout error case).')
+    console.error('❌ Database migrations failed. Please verify database connectivity and credentials.')
     process.exit(result.status)
   }
   console.log('✅ Database migrations completed successfully.')

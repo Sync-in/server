@@ -6,10 +6,10 @@
 
 import { Config, defineConfig } from 'drizzle-kit'
 import { configLoader } from '../../configuration/config.loader'
-import { MIGRATIONS_PATH, SCHEMA_PATH } from './constants'
+import { getSchemaPath, MIGRATIONS_PATH } from './constants'
 
 export default defineConfig({
-  schema: SCHEMA_PATH,
+  schema: getSchemaPath(),
   out: MIGRATIONS_PATH,
   strict: false,
   dialect: 'mysql',
