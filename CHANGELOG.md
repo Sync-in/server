@@ -1,4 +1,17 @@
 
+## [1.3.9](https://github.com/Sync-in/server/compare/v1.3.8...v1.3.9) (2025-08-22)
+
+
+### Features
+
+* **backend:** allow IPv6 in database fields for IP addresses ([757f2d1](https://github.com/Sync-in/server/commit/757f2d117865fa41c2cdf759b9f54477434dee79))
+
+
+### Bug Fixes
+
+* **backend:config:** do not lowercase env var values ([cb73ab0](https://github.com/Sync-in/server/commit/cb73ab0287346b58ae8f34ed985d891a9a5a6732))
+* **docker:nginx:** optionalize OnlyOffice proxying and avoid startup failure when container is absent ([2be107f](https://github.com/Sync-in/server/commit/2be107feda42ca8bb1edd1a9b99e3e62ff9dc234))
+
 ## [1.3.8](https://github.com/Sync-in/server/compare/v1.3.7...v1.3.8) (2025-08-19)
 
 
