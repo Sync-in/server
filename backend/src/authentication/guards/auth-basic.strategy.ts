@@ -5,7 +5,7 @@
  */
 
 import { Injectable } from '@nestjs/common'
-import { PassportStrategy } from '@nestjs/passport'
+import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { instanceToPlain, plainToInstance } from 'class-transformer'
 import { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
@@ -16,7 +16,7 @@ import { Cache } from '../../infrastructure/cache/services/cache.service'
 import { AuthMethod } from '../models/auth-method'
 
 @Injectable()
-export class AuthBasicStrategy extends PassportStrategy(BasicStrategy, 'basic') {
+export class AuthBasicStrategy extends PassportStrategy(BasicStrategy, 'basic') implements AbstractStrategy {
   static readonly CACHE_TTL = 900
 
   constructor(

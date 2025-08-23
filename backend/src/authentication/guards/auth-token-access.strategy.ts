@@ -5,7 +5,7 @@
  */
 
 import { Injectable } from '@nestjs/common'
-import { PassportStrategy } from '@nestjs/passport'
+import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
 import { ExtractJwt, Strategy } from 'passport-jwt'
@@ -15,7 +15,7 @@ import { TOKEN_TYPE } from '../interfaces/token.interface'
 import { AuthManager } from '../services/auth-manager.service'
 
 @Injectable()
-export class AuthTokenAccessStrategy extends PassportStrategy(Strategy, 'tokenAccess') {
+export class AuthTokenAccessStrategy extends PassportStrategy(Strategy, 'tokenAccess') implements AbstractStrategy {
   private static accessCookieName: string
 
   constructor(
@@ -31,7 +31,6 @@ export class AuthTokenAccessStrategy extends PassportStrategy(Strategy, 'tokenAc
     AuthTokenAccessStrategy.accessCookieName = authManager.authConfig.token.access.name
   }
 
-  // not declared properly:  https://github.com/nestjs/passport/issues/929
   validate(req: FastifyRequest, jwtPayload: JwtPayload): UserModel {
     this.logger.assign({ user: jwtPayload.identity.login })
     this.authManager.csrfValidation(req, jwtPayload, TOKEN_TYPE.ACCESS)

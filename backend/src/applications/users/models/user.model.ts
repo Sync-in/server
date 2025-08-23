@@ -47,7 +47,7 @@ export class UserModel implements User {
   fullName: string
   impersonated?: boolean
   avatarBase64?: string
-  // permissions as list
+  // permissions as a list
   applications: string[] = []
   private _homePath: string
   private _filesPath: string

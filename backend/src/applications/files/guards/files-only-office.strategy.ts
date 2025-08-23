@@ -5,7 +5,7 @@
  */
 
 import { Injectable } from '@nestjs/common'
-import { PassportStrategy } from '@nestjs/passport'
+import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { PinoLogger } from 'nestjs-pino'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { AuthTokenAccessStrategy } from '../../../authentication/guards/auth-token-access.strategy'
@@ -15,7 +15,7 @@ import { UserModel } from '../../users/models/user.model'
 import { ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME } from '../constants/only-office'
 
 @Injectable()
-export class FilesOnlyOfficeStrategy extends PassportStrategy(Strategy, 'filesOnlyOfficeToken') {
+export class FilesOnlyOfficeStrategy extends PassportStrategy(Strategy, 'filesOnlyOfficeToken') implements AbstractStrategy {
   constructor(private readonly logger: PinoLogger) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -28,7 +28,6 @@ export class FilesOnlyOfficeStrategy extends PassportStrategy(Strategy, 'filesOn
     })
   }
 
-  // not declared properly:  https://github.com/nestjs/passport/issues/929
   validate(jwtPayload: JwtPayload): UserModel {
     this.logger.assign({ user: jwtPayload.identity.login })
     return new UserModel(jwtPayload.identity)
