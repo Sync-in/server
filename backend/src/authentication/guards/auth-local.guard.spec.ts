@@ -48,7 +48,7 @@ describe(AuthLocalGuard.name, () => {
   })
 
   it('should validate the user authentication', async () => {
-    authMethod.validateUser = jest.fn().mockReturnValue(userTest)
+    authMethod.validateUser = jest.fn().mockReturnValueOnce(userTest)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       body: {
@@ -56,11 +56,13 @@ describe(AuthLocalGuard.name, () => {
         password: userTest.password
       }
     })
-    expect(await authLocalGuard.canActivate(context)).toBeDefined()
+    expect(await authLocalGuard.canActivate(context)).toBe(true)
+    expect(userTest.password).toBeUndefined()
   })
 
   it('should not validate the user authentication', async () => {
-    authMethod.validateUser = jest.fn().mockReturnValue(null)
+    userTest.password = 'password'
+    authMethod.validateUser = jest.fn().mockReturnValueOnce(null)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       body: {
@@ -68,11 +70,11 @@ describe(AuthLocalGuard.name, () => {
         password: userTest.password
       }
     })
-    await expect(authLocalGuard.canActivate(context)).rejects.toThrow()
+    await expect(authLocalGuard.canActivate(context)).rejects.toThrow(/password/i)
   })
 
   it('should throw error due to malformed body', async () => {
-    authMethod.validateUser = jest.fn().mockReturnValue(null)
+    authMethod.validateUser = jest.fn().mockReturnValueOnce(null)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       body: null

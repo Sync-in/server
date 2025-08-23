@@ -22,10 +22,7 @@ export class AuthMethodDatabase implements AuthMethod {
       user = await this.usersManager.findUser(loginOrEmail, false)
     } catch (e) {
       this.logger.error(`${this.validateUser.name} - ${e}`)
-      throw new HttpException(
-        CONNECT_ERROR_CODE.has(e.cause?.code) ? 'Authentication service connection error' : e.message,
-        HttpStatus.INTERNAL_SERVER_ERROR
-      )
+      throw new HttpException(CONNECT_ERROR_CODE.has(e.cause?.code) ? 'Authentication service error' : e.message, HttpStatus.INTERNAL_SERVER_ERROR)
     }
     if (!user) {
       this.logger.warn(`${this.validateUser.name} - login or email not found for *${loginOrEmail}*`)

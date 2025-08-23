@@ -170,6 +170,30 @@ describe(AuthTokenAccessGuard.name, () => {
     await expect(authAccessGuard.canActivate(context)).rejects.toThrow(new RegExp(CSRF_ERROR.MISMATCH))
   })
 
+  it('should pass with method GET and a valid access token in cookies and a mismatch CSRF', async () => {
+    context.switchToHttp().getRequest.mockReturnValue({
+      method: 'GET',
+      raw: { user: '' },
+      headers: { [authConfig.token.csrf.name]: csrfToken + '*' },
+      cookies: {
+        [authConfig.token.access.name]: accessToken
+      }
+    })
+    await expect(authAccessGuard.canActivate(context)).resolves.not.toThrow()
+  })
+
+  it('should throw an error with method POST and a valid access token in cookies and a mismatch CSRF', async () => {
+    context.switchToHttp().getRequest.mockReturnValue({
+      method: 'POST',
+      raw: { user: '' },
+      headers: { [authConfig.token.csrf.name]: csrfToken + '*' },
+      cookies: {
+        [authConfig.token.access.name]: accessToken
+      }
+    })
+    await expect(authAccessGuard.canActivate(context)).rejects.toThrow(new RegExp(CSRF_ERROR.MISMATCH))
+  })
+
   it('should bypass access token when AuthTokenSkip decorator is applied to context', () => {
     context = createMock<ExecutionContext>()
     AuthTokenSkip()(context.getHandler())

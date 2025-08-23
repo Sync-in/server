@@ -5,6 +5,7 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing'
+import { CONNECT_ERROR_CODE } from '../../../app.constants'
 import { UserModel } from '../../../applications/users/models/user.model'
 import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service'
 import { AdminUsersQueries } from '../../../applications/users/services/admin-users-queries.service'
@@ -65,11 +66,15 @@ describe(AuthMethodDatabase.name, () => {
       .fn()
       .mockReturnValueOnce(null)
       .mockReturnValueOnce({ ...userTest, password: await hashPassword('bar') })
-      .mockRejectedValueOnce({ message: 'db error', code: 'ECONNREFUSED' })
       .mockRejectedValueOnce({ message: 'db error', code: 'OTHER' })
+      .mockRejectedValueOnce(
+        new Error('Authentication service error', {
+          cause: { code: Array.from(CONNECT_ERROR_CODE)[0] }
+        })
+      )
     expect(await authMethodDatabase.validateUser(userTest.login, userTest.password)).toBeNull()
     expect(await authMethodDatabase.validateUser(userTest.login, userTest.password)).toBeNull()
-    await expect(authMethodDatabase.validateUser(userTest.login, userTest.password)).rejects.toThrow()
-    await expect(authMethodDatabase.validateUser(userTest.login, userTest.password)).rejects.toThrow()
+    await expect(authMethodDatabase.validateUser(userTest.login, userTest.password)).rejects.toThrow(/db error/i)
+    await expect(authMethodDatabase.validateUser(userTest.login, userTest.password)).rejects.toThrow(/authentication service/i)
   })
 })

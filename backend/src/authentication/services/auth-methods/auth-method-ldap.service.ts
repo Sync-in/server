@@ -33,7 +33,7 @@ export class AuthMethodLdapService implements AuthMethod {
     let user = await this.usersManager.findUser(loginOrEmail, false)
     if (user) {
       if (user.isGuest) {
-        // allow guests to be authenticated from db & check if current user is defined as active
+        // allow guests to be authenticated from db and check if the current user is defined as active
         return this.usersManager.logUser(user, password, ip)
       }
       if (!user.isActive) {
@@ -41,7 +41,7 @@ export class AuthMethodLdapService implements AuthMethod {
         throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
       }
     }
-    const entry = await this.checkAuth(loginOrEmail, password)
+    const entry: false | LdapUserEntry = await this.checkAuth(loginOrEmail, password)
     if (entry === false) {
       if (user) {
         this.usersManager.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.validateUser.name} : ${e}`))
@@ -85,7 +85,7 @@ export class AuthMethodLdapService implements AuthMethod {
       }
     }
     if (error && CONNECT_ERROR_CODE.has(error.code)) {
-      throw new HttpException('Authentication service connection error', HttpStatus.INTERNAL_SERVER_ERROR)
+      throw new HttpException('Authentication service error', HttpStatus.INTERNAL_SERVER_ERROR)
     }
     return false
   }

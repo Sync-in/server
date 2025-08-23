@@ -1,7 +1,7 @@
 {
   "Sign-in to your account": "Connectez-vous à votre compte",
   "Wrong login or password": "Identifiant ou mot de passe incorrect",
-  "Authentication service connection error": "Erreur de connexion au service d’authentification",
+  "Authentication service error": "Erreur du service d’authentification",
   "Account locked": "Compte verrouillé",
   "Account is not allowed": "Compte non autorisé",
   "Account matching error": "Erreur de correspondance de compte",
