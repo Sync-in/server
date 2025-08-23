@@ -18,6 +18,7 @@ import { AuthBasicStrategy } from './auth-basic.strategy'
 
 describe(AuthBasicGuard.name, () => {
   let authBasicGuard: AuthBasicGuard
+  let authBasicStrategy: AuthBasicStrategy
   let authMethod: AuthMethod
   let cache: Cache
   let userTest: UserModel
@@ -38,7 +39,8 @@ describe(AuthBasicGuard.name, () => {
         {
           provide: PinoLogger,
           useValue: {
-            assign: () => undefined
+            assign: () => undefined,
+            error: jest.fn()
           }
         },
         {
@@ -53,6 +55,7 @@ describe(AuthBasicGuard.name, () => {
     }).compile()
 
     authBasicGuard = module.get<AuthBasicGuard>(AuthBasicGuard)
+    authBasicStrategy = module.get<AuthBasicStrategy>(AuthBasicStrategy)
     authMethod = module.get<AuthMethod>(AuthMethod)
     cache = module.get<Cache>(Cache)
     userTest = new UserModel(generateUserTest(), false)
@@ -62,10 +65,12 @@ describe(AuthBasicGuard.name, () => {
 
   it('should be defined', () => {
     expect(authBasicGuard).toBeDefined()
+    expect(authBasicStrategy).toBeDefined()
     expect(authMethod).toBeDefined()
     expect(cache).toBeDefined()
-    expect(userTest).toBeDefined()
     expect(encodedAuth).toBeDefined()
+    expect(userTest).toBeDefined()
+    expect(userTest.password).toBeDefined()
   })
 
   it('should validate the user authentication', async () => {
@@ -75,6 +80,7 @@ describe(AuthBasicGuard.name, () => {
       headers: { authorization: `Basic ${encodedAuth}` }
     })
     expect(await authBasicGuard.canActivate(context)).toBe(true)
+    expect(userTest.password).toBeUndefined()
   })
 
   it('should validate the user authentication with cache', async () => {
@@ -84,6 +90,31 @@ describe(AuthBasicGuard.name, () => {
       headers: { authorization: `Basic ${encodedAuth}` }
     })
     expect(await authBasicGuard.canActivate(context)).toBe(true)
+  })
+
+  it('should not validate the user authentication when cache returns null (explicitly unauthorized)', async () => {
+    cache.get = jest.fn().mockReturnValueOnce(null)
+    context.switchToHttp().getRequest.mockReturnValue({
+      raw: { user: '' },
+      headers: { authorization: `Basic ${encodedAuth}` }
+    })
+    await expect(authBasicGuard.canActivate(context)).rejects.toThrow()
+  })
+
+  it('should not validate the user authentication when cache returns undefined and database return null', async () => {
+    cache.get = jest.fn().mockReturnValueOnce(undefined)
+    authMethod.validateUser = jest.fn().mockReturnValueOnce(null)
+    jest.spyOn(cache, 'set').mockRejectedValueOnce(new Error('cache failed'))
+    context.switchToHttp().getRequest.mockReturnValue({
+      raw: { user: '' },
+      headers: { authorization: `Basic ${encodedAuth}` }
+    })
+    const loggerSpy = jest
+      .spyOn(authBasicStrategy['logger'], 'error') // <-- spy the SAME instance used in the class
+      .mockImplementation(() => undefined)
+    await expect(authBasicGuard.canActivate(context)).rejects.toThrow()
+    expect(loggerSpy).toHaveBeenCalled()
+    expect(loggerSpy.mock.calls[0][0]).toEqual(expect.stringContaining('cache failed'))
   })
 
   it('should not validate the user authentication', async () => {

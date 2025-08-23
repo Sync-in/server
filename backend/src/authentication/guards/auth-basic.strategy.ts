@@ -27,7 +27,6 @@ export class AuthBasicStrategy extends PassportStrategy(BasicStrategy, 'basic') 
     super({ passReqToCallback: true, realm: SERVER_NAME })
   }
 
-  // not declared properly:  https://github.com/nestjs/passport/issues/929
   async validate(req: FastifyRequest, loginOrEmail: string, password: string): Promise<Omit<UserModel, 'password'> | null> {
     this.logger.assign({ user: loginOrEmail })
     const authBasicUser = `auth-webdav-${req.headers['authorization'].split(' ').at(-1).toLowerCase()}`
