@@ -5,6 +5,7 @@ dist
 release
 .idea
 .DS_Store
+coverage
 backend/coverage
 backend/logs
 environment/environment.yaml
