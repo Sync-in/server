@@ -8,14 +8,15 @@ import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PinoLogger } from 'nestjs-pino'
 import nodemailer from 'nodemailer'
+import type { Logger as NodeMailLogger } from 'nodemailer/lib/shared'
 import { MailDefaultsTransport, MailProps, MailTransport } from './interfaces/mail.interface'
 import { MailerConfig } from './mailer.config'
 
 @Injectable()
 export class Mailer {
+  public available: boolean = false
   private readonly transporter: nodemailer.Transporter
   private readonly configuration: MailerConfig
-  public available: boolean = false
 
   constructor(
     private configService: ConfigService,
@@ -23,24 +24,25 @@ export class Mailer {
   ) {
     this.logger.setContext(Mailer.name.toUpperCase())
     this.configuration = this.configService.get<MailerConfig>('mail')
-    if (this.configuration) {
-      this.logger.logger.level = this.configuration.debug ? 'debug' : 'info'
-      if (this.configuration.secure && (this.configuration.port === 587 || this.configuration.port === 25)) {
-        this.logger.warn(`Secure transport has been disabled due to use of port : ${this.configuration.port}`)
-        this.configuration.secure = false
-      }
-      this.transporter = nodemailer.createTransport(
-        {
-          host: this.configuration.host,
-          port: this.configuration.port,
-          auth: this.configuration.auth,
-          secure: this.configuration.secure,
-          logger: this.configuration.logger ? (this.logger as any) : false
-        } satisfies MailTransport,
-        { from: this.configuration.sender, tls: { rejectUnauthorized: false } } satisfies MailDefaultsTransport
-      )
-      this.verify().catch((e: Error) => this.logger.error(e))
+    if (!this.configuration) {
+      return
     }
+    this.logger.logger.level = this.configuration.debug ? 'debug' : 'info'
+    if (this.configuration.secure && (this.configuration.port === 587 || this.configuration.port === 25)) {
+      this.logger.warn(`Secure transport has been disabled due to use of port : ${this.configuration.port}`)
+      this.configuration.secure = false
+    }
+    this.transporter = nodemailer.createTransport(
+      {
+        host: this.configuration.host,
+        port: this.configuration.port,
+        auth: this.configuration.auth,
+        secure: this.configuration.secure,
+        logger: this.configuration.logger ? (this.logger as NodeMailLogger & any) : false
+      } satisfies MailTransport,
+      { from: this.configuration.sender, tls: { rejectUnauthorized: false } } satisfies MailDefaultsTransport
+    )
+    this.verify().catch(this.logger.error)
   }
 
   async sendMails(mails: MailProps[]) {

@@ -105,12 +105,6 @@ describe(AuthMethodLdapService.name, () => {
     configuration.auth.ldap = { servers: ['ldap://localhost:389'], loginAttribute: 'uid', baseDN: 'ou=people,dc=example,dc=org', filter: '' }
   })
 
-  afterEach(() => {
-    // Ensure per-test spies/mocks are reset
-    jest.restoreAllMocks()
-    jest.clearAllMocks()
-  })
-
   it('should be defined', () => {
     expect(authMethodLdapService).toBeDefined()
     expect(usersManager).toBeDefined()
