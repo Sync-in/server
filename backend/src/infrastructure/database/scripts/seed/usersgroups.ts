@@ -32,10 +32,10 @@ export const usersAndGroups = async () => {
   const newGroups: Partial<Group>[] = []
 
   for (let i = 0; i < 10; i++) {
-    let login = faker.internet.userName()
+    let login = faker.person.firstName()
     let email = faker.internet.email()
     while (alreadyUsed.includes(login) || alreadyUsed.includes(email)) {
-      login = faker.internet.userName()
+      login = faker.person.firstName()
       email = faker.internet.email()
     }
     alreadyUsed.push(login, email)
@@ -76,7 +76,7 @@ export const usersAndGroups = async () => {
   const usersGroupsInfo: ResultSetHeader = (await db.insert(usersGroups).values(newUsersGroups))[0]
   console.log('users & groups: ', usersGroupsInfo.info)
 
-  await db.$client.end()
+  db.$client.end()
 }
 
 if (require.main === module) {
