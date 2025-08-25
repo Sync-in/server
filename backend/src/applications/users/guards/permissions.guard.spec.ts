@@ -31,7 +31,7 @@ describe(UserPermissionsGuard.name, () => {
     expect(userTest).toBeDefined()
   })
 
-  it('should pass with a valid permission', async () => {
+  it('should pass with a valid permission', () => {
     userTest.applications = [USER_PERMISSION.PERSONAL_SPACE]
     context = createMock<ExecutionContext>()
     UserHavePermission(USER_PERMISSION.PERSONAL_SPACE)(context.getHandler())
@@ -41,7 +41,7 @@ describe(UserPermissionsGuard.name, () => {
     expect(permissionsGuard.canActivate(context)).toBe(true)
   })
 
-  it('should pass if any of the permissions are granted', async () => {
+  it('should pass if any of the permissions are granted', () => {
     userTest.applications = [USER_PERMISSION.PERSONAL_SPACE]
     context = createMock<ExecutionContext>()
     UserHavePermission([USER_PERMISSION.SPACES, USER_PERMISSION.PERSONAL_SPACE])(context.getHandler())
@@ -51,7 +51,7 @@ describe(UserPermissionsGuard.name, () => {
     expect(permissionsGuard.canActivate(context)).toBe(true)
   })
 
-  it('should not pass with a bad permission', async () => {
+  it('should not pass with a bad permission', () => {
     userTest.applications = []
     context = createMock<ExecutionContext>()
     UserHavePermission(USER_PERMISSION.PERSONAL_SPACE)(context.getHandler())
@@ -61,7 +61,7 @@ describe(UserPermissionsGuard.name, () => {
     expect(() => permissionsGuard.canActivate(context)).toThrow(HttpException)
   })
 
-  it('should pass with no permissions but with the admin role', async () => {
+  it('should pass with no permissions but with the admin role', () => {
     userTest.applications = []
     userTest.role = USER_ROLE.ADMINISTRATOR
     context = createMock<ExecutionContext>()
@@ -74,7 +74,7 @@ describe(UserPermissionsGuard.name, () => {
     userTest.role = USER_ROLE.USER
   })
 
-  it('should not pass with a missing decorator', async () => {
+  it('should not pass with a missing decorator', () => {
     userTest.applications = [USER_PERMISSION.PERSONAL_SPACE]
     context = createMock<ExecutionContext>()
     context.switchToHttp().getRequest.mockReturnValue({
@@ -83,7 +83,7 @@ describe(UserPermissionsGuard.name, () => {
     expect(permissionsGuard.canActivate(context)).toBeFalsy()
   })
 
-  it('should pass with an empty decorator', async () => {
+  it('should pass with an empty decorator', () => {
     userTest.applications = [USER_PERMISSION.PERSONAL_SPACE]
     context = createMock<ExecutionContext>()
     UserHavePermission()(context.getHandler())

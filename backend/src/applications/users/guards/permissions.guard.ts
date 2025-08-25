@@ -18,13 +18,13 @@ export class UserPermissionsGuard implements CanActivate {
 
   canActivate(ctx: ExecutionContext): boolean {
     const permissions: USER_PERMISSION | USER_PERMISSION[] = this.reflector.getAllAndOverride(UserHavePermission, [ctx.getHandler(), ctx.getClass()])
-    if (typeof permissions === 'object') {
-      // used to bypass the check, the guard is called without argument, the value is '{}'
-      return true
-    }
     if (permissions === undefined) {
       this.logger.warn(`no application defined on ${ctx.getClass().name}:${ctx.getHandler().name}`)
       return false
+    }
+    if (Object.keys(permissions).length === 0) {
+      // used to bypass the check, the guard is called without argument, the value is '{}'
+      return true
     }
     const req: FastifyAuthenticatedRequest = ctx.switchToHttp().getRequest()
     if (req.user.isAdmin) {
