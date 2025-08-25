@@ -127,14 +127,14 @@ describe(AuthMethodLdapService.name, () => {
   })
 
   it('should throw FORBIDDEN for locked account and LDAP login mismatch', async () => {
-    // Phase 1: compte verrouillé
+    // Phase 1: locked account
     usersManager.findUser.mockResolvedValue({ login: 'john', isGuest: false, isActive: false } as UserModel)
     const loggerErrorSpy1 = jest.spyOn(authMethodLdapService['logger'], 'error').mockImplementation(() => undefined as any)
 
     await expect(authMethodLdapService.validateUser('john', 'pwd')).rejects.toThrow(/account locked/i)
     expect(loggerErrorSpy1).toHaveBeenCalled()
 
-    // Phase 2: mismatch entre login demandé et login retourné par LDAP
+    // Phase 2: mismatch between requested login and LDAP returned login
     const existingUser: any = buildUser({ id: 8 })
     usersManager.findUser.mockResolvedValue(existingUser)
     const originalAttr = configuration.auth.ldap.loginAttribute
@@ -144,12 +144,12 @@ describe(AuthMethodLdapService.name, () => {
 
     await expect(authMethodLdapService.validateUser('john', 'pwd')).rejects.toThrow(/account matching error/i)
 
-    // restaurer l'attribut pour ne pas impacter les autres tests
+    // restore the attribute to avoid impacting other tests
     configuration.auth.ldap.loginAttribute = originalAttr
   })
 
   it('should handle invalid LDAP credentials for both existing and unknown users', async () => {
-    // Phase 1: existing user -> updateAccesses appelé avec success=false et logger.error intercepté
+    // Phase 1: existing user -> updateAccesses invoked with success=false and logger.error intercepted
     const existingUser: any = buildUser({ id: 1 })
     usersManager.findUser.mockResolvedValue(existingUser)
     // Make LDAP bind throw InvalidCredentialsError
@@ -164,7 +164,7 @@ describe(AuthMethodLdapService.name, () => {
     expect(usersManager.updateAccesses).toHaveBeenCalledWith(existingUser, '10.0.0.1', false)
     expect(loggerErrorSpy).toHaveBeenCalled()
 
-    // Phase 2: unknown user -> aucune mise à jour des accès
+    // Phase 2: unknown user → no access update
     usersManager.updateAccesses.mockClear()
     usersManager.findUser.mockResolvedValue(null)
     ldapClient.bind.mockRejectedValue(new InvalidCredentialsError('invalid'))
@@ -177,10 +177,10 @@ describe(AuthMethodLdapService.name, () => {
   })
 
   it('should handle LDAP new-user flow: missing fields, creation success, and multi-email selection', async () => {
-    // Phase 1: entrée LDAP incomplète -> null + log erreur, pas de création
+    // Phase 1: incomplete LDAP entry -> null + error log, no creation
     usersManager.findUser.mockResolvedValue(null)
     mockBindResolve(ldapClient)
-    // Simule une entrée avec mail manquant
+    // Simulate an entry with missing mail
     mockSearchEntries(ldapClient, [{ uid: 'jane', cn: 'Jane Doe', mail: undefined }])
     const loggerErrorSpy = jest.spyOn(authMethodLdapService['logger'], 'error').mockImplementation(() => undefined as any)
 
@@ -190,13 +190,13 @@ describe(AuthMethodLdapService.name, () => {
     expect(adminUsersManager.createUserOrGuest).not.toHaveBeenCalled()
     expect(loggerErrorSpy).toHaveBeenCalled()
 
-    // Phase 2: création d'un nouvel utilisateur (succès, simple email)
+    // Phase 2: create a new user (success, single email)
     usersManager.findUser.mockResolvedValue(null)
     setupLdapSuccess([{ uid: 'john', cn: 'John Doe', mail: 'john@example.org' }])
 
     const createdUser: any = { id: 2, login: 'john', isGuest: false, isActive: true, makePaths: jest.fn() }
     adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
-    // Couvrir la branche de catch de succès
+    // Cover the success-flow catch branch
     const loggerErrorSpy2 = spyLoggerError()
     usersManager.updateAccesses.mockRejectedValueOnce(new Error('updateAccesses success flow boom'))
 
@@ -210,7 +210,7 @@ describe(AuthMethodLdapService.name, () => {
     expect(usersManager.updateAccesses).toHaveBeenCalledWith(createdUser, '192.168.1.10', true)
     expect(loggerErrorSpy2).toHaveBeenCalled()
 
-    // Phase 3: multi-emails -> garder le premier
+    // Phase 3: multiple emails -> keep the first
     usersManager.findUser.mockResolvedValue(null)
     setupLdapSuccess([{ uid: 'multi', cn: 'Multi Mail', mail: ['first@example.org', 'second@example.org'] }])
 
@@ -302,7 +302,7 @@ describe(AuthMethodLdapService.name, () => {
   })
 
   it('should log failed access when LDAP search returns no entry or throws after bind', async () => {
-    // Phase 1: aucune entrée trouvée après un bind réussi -> accès échoué
+    // Phase 1: no entry found after a successful bind -> failed access
     const existingUser: any = { id: 7, login: 'ghost', isGuest: false, isActive: true }
     usersManager.findUser.mockResolvedValue(existingUser)
     setupLdapSuccess([])
@@ -312,7 +312,7 @@ describe(AuthMethodLdapService.name, () => {
     expect(resA).toBeNull()
     expect(usersManager.updateAccesses).toHaveBeenCalledWith(existingUser, '10.10.0.1', false)
 
-    // Phase 2: exception lors de la recherche après un bind -> accès échoué
+    // Phase 2: exception during search after a bind -> failed access
     jest.clearAllMocks()
     const existingUser2: any = { id: 10, login: 'john', isGuest: false, isActive: true }
     usersManager.findUser.mockResolvedValue(existingUser2)
