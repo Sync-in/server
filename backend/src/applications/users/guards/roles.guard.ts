@@ -22,7 +22,7 @@ export class UserRolesGuard implements CanActivate {
       // used to bypass the check, the guard is called without argument, the value is '{}'
       return true
     }
-    if (role === undefined) {
+    if (role === undefined || !Number.isFinite(role)) {
       this.logger.warn(`no role defined on : ${ctx.getClass().name}:${ctx.getHandler().name}`)
       return false
     }
