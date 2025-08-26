@@ -38,6 +38,7 @@ export const ONLY_OFFICE_EXTENSIONS = {
     ['wps', 'word'],
     ['wpt', 'word'],
     ['xml', 'word'],
+    ['md', 'word'],
 
     // CELL
     ['csv', 'cell'],
@@ -106,6 +107,7 @@ export const ONLY_OFFICE_EXTENSIONS = {
     ['ott', 'word'],
     ['rtf', 'word'],
     ['txt', 'word'],
+    ['md', 'word'],
 
     // CELL
     ['xlsb', 'cell'],
