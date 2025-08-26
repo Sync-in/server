@@ -44,6 +44,9 @@ export class FilesConfig {
   @IsInt()
   maxUploadSize: number = 5368709120 // 5 GB
 
+  @IsBoolean()
+  showHiddenFiles: boolean = false
+
   @IsNotEmptyObject()
   @ValidateNested()
   @Type(() => FilesOnlyOfficeConfig)

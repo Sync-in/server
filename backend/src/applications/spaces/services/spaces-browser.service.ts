@@ -7,7 +7,7 @@
 import { HttpException, Injectable, Logger } from '@nestjs/common'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { DEFAULT_FILTERS } from '../../files/constants/files'
+import { configuration } from '../../../configuration/config.environment'
 import { FileLock } from '../../files/interfaces/file-lock.interface'
 import { FileProps } from '../../files/interfaces/file-props.interface'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
@@ -138,7 +138,7 @@ export class SpacesBrowser {
           this.logger.log(`${this.parsePath.name} - ignore special file : ${element.name}`)
           continue
         }
-        if (DEFAULT_FILTERS.has(element.name)) {
+        if (!configuration.applications.files.showHiddenFiles && element.name[0] === '.') {
           this.logger.verbose(`${this.parsePath.name} - ignore filtered file : ${element.name}`)
           continue
         }

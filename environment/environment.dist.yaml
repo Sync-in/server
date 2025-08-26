@@ -81,6 +81,8 @@ applications:
     dataPath: /home/sync-in
     # Default to 5 GB if not specified
     maxUploadSize: 5368709120
+    # Show files starting with a dot in the file explorer (default: false)
+    showHiddenFiles: false
     onlyoffice:
       enabled: false
       # for an external server (e.g: https://onlyoffice.domain.com), remember the url must be accessible from browser !

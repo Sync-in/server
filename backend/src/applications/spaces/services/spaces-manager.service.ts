@@ -12,9 +12,9 @@ import { ACTION } from '../../../common/constants'
 import { convertDiffUpdate, diffCollection, differencePermissions } from '../../../common/functions'
 import type { Entries } from '../../../common/interfaces'
 import { createSlug, regExpNumberSuffix } from '../../../common/shared'
+import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
-import { DEFAULT_FILTERS } from '../../files/constants/files'
 import { FileError } from '../../files/models/file-error'
 import { dirListFileNames, dirSize, getProps, isPathExists, moveFiles, removeFiles } from '../../files/utils/files'
 import { LINK_TYPE } from '../../links/constants/links'
@@ -183,7 +183,7 @@ export class SpacesManager {
     for (const space of [...(await this.listSpaces(user.id)), personalTrash] as SpaceTrash[]) {
       const rPath = space.alias === SPACE_ALIAS.PERSONAL ? user.trashPath : SpaceModel.getTrashPath(space.alias)
       try {
-        space.nb = (await fs.readdir(rPath)).filter((f) => !DEFAULT_FILTERS.has(f)).length
+        space.nb = (await fs.readdir(rPath)).filter((f) => configuration.applications.files.showHiddenFiles || f[0] !== '.').length
         if (space.nb) {
           const stats = await fs.stat(rPath)
           space.mtime = stats.mtime.getTime()

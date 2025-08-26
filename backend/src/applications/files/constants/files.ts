@@ -6,26 +6,6 @@
 
 export const DEFAULT_HIGH_WATER_MARK = 1024 * 1024
 export const DEFAULT_MIME_TYPE = 'application/octet-stream'
-export const DEFAULT_FILTERS = new Set([
-  '.DS_Store',
-  '.swp',
-  '.AppleDouble',
-  '.AppleDesktop',
-  'Thumbs.db',
-  '.Spotlight-V100',
-  '.DocumentRevisions-V100',
-  '.fseventsd',
-  '.MobileBackups',
-  'Icon?',
-  '__MACOSX',
-  '.thumbnails',
-  '.DAV',
-  '.desktop',
-  'desktop.ini',
-  '.TemporaryItems',
-  '.localized',
-  '__pycache__'
-])
 export const EXTRA_MIMES_TYPE = new Map([
   ['.ts', 'text-typescript'],
   ['.py', 'text-x-python'],
