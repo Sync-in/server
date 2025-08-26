@@ -1,7 +1,7 @@
 {
   "productName": "Sync-in",
   "name": "sync-in-server",
-  "version": "1.3.9",
+  "version": "1.4.0",
   "description": "The secure, open-source platform for file storage, sharing, collaboration, and sync",
   "keywords": [
     "sync-in",
@@ -75,8 +75,8 @@
     "build": "npm run build -ws",
     "release:build": "npm run build && node scripts/build/release.mjs",
     "release:clean": "rm -rf release",
-    "bump:version": "commit-and-tag-version",
-    "bump:version:dry": "commit-and-tag-version --dry-run",
+    "bump:version": "npm run test && commit-and-tag-version",
+    "bump:version:dry": "npm run test && commit-and-tag-version --dry-run",
     "lint": "npm -ws run lint",
     "test": "npm -w backend test",
     "start": "node dist/server/main.js",
@@ -94,6 +94,9 @@
     "jsdom": "^26.1.0"
   },
   "commit-and-tag-version": {
-    "header": ""
+    "header": "",
+    "skip": {
+      "commit": true
+    }
   }
 }

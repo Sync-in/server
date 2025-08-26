@@ -1,4 +1,19 @@
 
+## [1.4.0](https://github.com/Sync-in/server/compare/v1.3.9...v1.4.0) (2025-08-26)
+
+
+### Features
+
+* **backend:webdav:** add temporary hook for Joplin sync compatibility (laurent22/joplin[#12249](https://github.com/Sync-in/server/issues/12249)) ([fc22a7d](https://github.com/Sync-in/server/commit/fc22a7d828f99abe65423d03418fe397ab45d7b0))
+* **backend:files:** add showHiddenFiles option to toggle visibility of dotfiles ([ed47fbf](https://github.com/Sync-in/server/commit/ed47fbf3fe7fe5b66868489c319d3c438fde0dbf))
+* **backend:files:** allow markdown files to be edited with onlyOffice ([c3d9d85](https://github.com/Sync-in/server/commit/c3d9d85d3f1dc90f4afae8db8ce9d128c8ecadf2))
+* **frontend:spaces:** open documents in edit mode on double-click ([d6ef175](https://github.com/Sync-in/server/commit/d6ef175d951b4e11ce78d280e4982e3ed8a4bb3f))
+
+
+### Bug Fixes
+
+* **backend:users:** ensure permission guards correctly evaluate array permissions ([c27dc7b](https://github.com/Sync-in/server/commit/c27dc7b7ac20293febca17d18ae8608d61eb1b44))
+
 ## [1.3.9](https://github.com/Sync-in/server/compare/v1.3.8...v1.3.9) (2025-08-22)
 
 
