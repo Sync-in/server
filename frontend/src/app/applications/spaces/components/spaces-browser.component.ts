@@ -416,7 +416,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       if (file.isDir) {
         this.router.navigate([file.root?.alias || file.name], { relativeTo: this.activatedRoute }).catch(console.error)
       } else {
-        this.shortcutView()
+        this.shortcutView(true)
       }
     }
   }
@@ -434,9 +434,11 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-  shortcutView() {
+  shortcutView(editMode = false) {
     if (this.selection[0].isDir) {
       this.browse(this.selection[0])
+    } else if (editMode && this.selection[0].isEditable) {
+      this.openViewerDialog('edit')
     } else if (this.selection[0].isViewable) {
       this.openViewerDialog('view')
     } else {
