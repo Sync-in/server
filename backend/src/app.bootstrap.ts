@@ -15,6 +15,7 @@ import { Logger, LoggerErrorInterceptor } from 'nestjs-pino'
 import { CONTENT_SECURITY_POLICY } from './app.constants'
 import { AppModule } from './app.module'
 import { HTTP_WEBDAV_METHOD } from './applications/applications.constants'
+import { WEBDAV_NS, WEBDAV_SPACES } from './applications/webdav/constants/routes'
 import { IS_TEST_ENV, STATIC_PATH } from './configuration/config.constants'
 import { configuration } from './configuration/config.environment'
 import { WebSocketAdapter } from './infrastructure/websocket/adapters/web-socket.adapter'
@@ -47,6 +48,15 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
   }
   // '*' body parser allow binary data as stream (unlimited body size)
   fastifyInstance.addContentTypeParser('*', { bodyLimit: 0 }, (_req: FastifyRequest, _payload: FastifyRequest['raw'], done) => done(null))
+
+  // Joplin clients send incorrect `Content-Type` headers when syncing over WebDAV (issue: https://github.com/laurent22/joplin/issues/122499)
+  // This hook intercepts matching requests and sets `application/octet-stream` to ensure compatibility and successful sync.
+  // todo: remove it when fixed on Joplin side
+  fastifyInstance.addHook('onRequest', async (req, _reply) => {
+    if ((req.headers['user-agent'] || '').indexOf('Joplin') !== -1 && req.originalUrl.startsWith(WEBDAV_SPACES[WEBDAV_NS.WEBDAV].route)) {
+      req.headers['content-type'] = 'application/octet-stream'
+    }
+  })
 
   /* INTERCEPTORS */
   app.useGlobalInterceptors(
