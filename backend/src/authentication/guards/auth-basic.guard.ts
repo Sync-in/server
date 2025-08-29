@@ -5,8 +5,7 @@
  */
 
 import { ExecutionContext, Injectable, Logger } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
-import { IAuthGuard } from '@nestjs/passport/dist/auth.guard'
+import { AuthGuard, IAuthGuard } from '@nestjs/passport'
 import { FastifyRequest } from 'fastify'
 import { HTTP_METHOD } from '../../applications/applications.constants'
 import { WEBDAV_BASE_PATH } from '../../applications/webdav/constants/routes'

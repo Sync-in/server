@@ -5,8 +5,7 @@
  */
 
 import { ExecutionContext, Injectable, Logger } from '@nestjs/common'
-import { AuthGuard } from '@nestjs/passport'
-import { IAuthGuard } from '@nestjs/passport/dist/auth.guard'
+import { AuthGuard, IAuthGuard } from '@nestjs/passport'
 
 @Injectable()
 export class AuthLocalGuard extends AuthGuard('local') implements IAuthGuard {
