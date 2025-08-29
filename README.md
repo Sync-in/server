@@ -18,6 +18,7 @@ _Welcome to the official Sync-in server repository!_
 <a href="https://hub.docker.com/r/syncin/server" target="_blank"><img src="https://img.shields.io/docker/pulls/syncin/server?logo=docker&label=Docker%20Hub%20Pulls" alt="Docker pulls"/></a>
 <a href="https://www.npmjs.com/package/@sync-in/server" target="_blank"><img src="https://img.shields.io/npm/d18m/@sync-in/server.svg?logo=npm&label=NPM%20Downloads&color=cb3837" alt="NPM"/></a>
 <a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/discord/1391081837849346088?logo=discord&label=Discord" alt="Discord"/></a>
+<a href="https://deepwiki.com/Sync-in/server"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 
 The **Sync-in Server** is designed to run on your own infrastructure, it gives you **full control over your data** while offering a modern,
 intuitive interface for both internal and external users.
@@ -91,7 +92,7 @@ If you find it useful, you can:
 ## 🤝 Contributing
 Before submitting your pull request, please confirm the following:
 
-- ✅ I have read and followed the [contribution guide](readme/CONTRIBUTING.md).
+- ✅ I have read and followed the [contribution guide](CONTRIBUTING.md).
 - ✅ I am submitting this pull request in good faith and to help improve Sync-in.
 
 ---
