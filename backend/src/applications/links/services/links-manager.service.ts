@@ -59,7 +59,7 @@ export class LinksManager {
     if (!spaceLink.space && !spaceLink.share.isDir) {
       // download the file (authentication has been verified before)
       this.logger.log(`${this.linkAccess.name} - *${user.login}* (${user.id}) downloading ${spaceLink.share.name}`)
-      this.incrementLinkAccess(link)
+      this.incrementLinkNbAccess(link)
       const spaceEnv: SpaceEnv = await this.spaceEnvFromLink(user, spaceLink)
       const sendFile: SendFile = this.filesManager.sendFileFromSpace(spaceEnv, true, spaceLink.share.name)
       try {
@@ -72,7 +72,7 @@ export class LinksManager {
     } else if (link.user.id !== identity.id) {
       // authenticate user to allow access to the directory
       this.logger.log(`${this.linkAccess.name} - *${user.login}* (${user.id}) is logged`)
-      this.incrementLinkAccess(link)
+      this.incrementLinkNbAccess(link)
       this.usersManager.updateAccesses(user, req.ip, true).catch((e: Error) => this.logger.error(`${this.linkAccess.name} - ${e}`))
       return this.authManager.setCookies(user, res)
     }
@@ -130,9 +130,7 @@ export class LinksManager {
     return true
   }
 
-  private incrementLinkAccess(link: LinkAsUser) {
-    if (link.limitAccess !== null) {
-      this.linksQueries.incrementLinkAccess(link.uuid).catch((e: Error) => this.logger.error(`${this.incrementLinkAccess.name} - ${e}`))
-    }
+  private incrementLinkNbAccess(link: LinkAsUser) {
+    this.linksQueries.incrementLinkNbAccess(link.uuid).catch((e: Error) => this.logger.error(`${this.incrementLinkNbAccess.name} - ${e}`))
   }
 }

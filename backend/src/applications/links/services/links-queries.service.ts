@@ -179,7 +179,7 @@ export class LinksQueries {
     return r
   }
 
-  async incrementLinkAccess(uuid: string) {
+  async incrementLinkNbAccess(uuid: string) {
     await this.db
       .update(links)
       .set({ nbAccess: sql`${links.nbAccess} + 1` } as Record<keyof Link, any>)
