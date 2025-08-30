@@ -17,12 +17,12 @@ if ! getent passwd "${PUID}" >/dev/null 2>&1; then
     adduser -D -u "${PUID}" -G "${group_name}" -s /bin/sh syncin
 fi
 
-# Change application ownership to syncin if needed
-CURRENT_UID=$(stat -c '%u' /app)
-CURRENT_GID=$(stat -c '%g' /app)
+# Change application data ownership to syncin if needed
+CURRENT_UID=$(stat -c '%u' /app/data)
+CURRENT_GID=$(stat -c '%g' /app/data)
 
 if [ "${CURRENT_UID}" != "${PUID}" ] || [ "${CURRENT_GID}" != "${PGID}" ]; then
-    chown -R "${PUID}:${PGID}" /app
+    chown -R "${PUID}:${PGID}" /app/data
 fi
 
 # Launch server as syncin user
