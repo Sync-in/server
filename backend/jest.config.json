@@ -10,7 +10,7 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "collectCoverageFrom": [
-    "**/*.{(guard|strategy|service|controller),}.(t|j)s",
+    "**/*.{(guard|strategy|service|filter|pipe|provider|interceptor),}.(t|j)s",
     "!**/*-queries.service.(t|j)s",
     "!**/*-scheduler.service.(t|j)s"
   ],
