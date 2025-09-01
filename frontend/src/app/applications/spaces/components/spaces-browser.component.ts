@@ -748,6 +748,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private modifySelection(file: FileModel) {
+    if (!file) return
     if (file.isSelected) {
       this.updateSelection(this.selection.filter((f) => f.id !== file.id))
     } else {
@@ -891,6 +892,8 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         }
         let code = ev.keyCode || ev.which
         if ([37, 38, 39, 40].indexOf(code) === -1) {
+          return
+        } else if ((code === 37 || code === 39) && !this.galleryMode.enabled) {
           return
         }
         ev.preventDefault()
