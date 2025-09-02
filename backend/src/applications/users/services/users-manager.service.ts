@@ -321,7 +321,7 @@ export class UsersManager {
 
   async leavePersonalGroup(user: UserModel, groupId: number): Promise<void> {
     const currentGroup: GroupWithMembers = await this.usersQueries.getGroupWithMembers(user.id, groupId, true)
-    if (!currentGroup || currentGroup.type === MEMBER_TYPE.GROUP || !currentGroup.members.find((m) => m.id === user.id)) {
+    if (!currentGroup || currentGroup.type === MEMBER_TYPE.GROUP) {
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
     }
     const userWhoLeaves = currentGroup.members.find((m) => m.id === user.id)

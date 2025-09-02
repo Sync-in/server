@@ -235,7 +235,7 @@ export class AdminUsersManager {
   }
 
   async getGroup(groupId: number): Promise<AdminGroup> {
-    const group = this.adminQueries.groupFromId(groupId)
+    const group = await this.adminQueries.groupFromId(groupId)
     if (!group) {
       throw new HttpException('Group not found', HttpStatus.NOT_FOUND)
     }
@@ -350,30 +350,6 @@ export class AdminUsersManager {
     }
   }
 
-  private async renameUserSpace(oldLogin: string, newLogin: string): Promise<boolean> {
-    const currentUserSpace: string = UserModel.getHomePath(oldLogin)
-    if (await isPathExists(currentUserSpace)) {
-      const newUserSpace: string = UserModel.getHomePath(newLogin)
-      if (await isPathExists(newUserSpace)) {
-        this.logger.warn(`${this.renameUserSpace.name} - user space *${newLogin}* already exists : ${newUserSpace}`)
-        return false
-      } else {
-        try {
-          await moveFiles(currentUserSpace, newUserSpace)
-          return true
-        } catch (e) {
-          // try to restore
-          await moveFiles(newUserSpace, currentUserSpace, true)
-          this.logger.error(`${this.renameUserSpace.name} - unable to rename user space from *${currentUserSpace}* to *${newUserSpace}* : ${e}`)
-          return false
-        }
-      }
-    } else {
-      this.logger.warn(`${this.renameUserSpace.name} - user space *${oldLogin}* does not exist : ${currentUserSpace}`)
-      return false
-    }
-  }
-
   checkUser(user: User | AdminUser | GuestUser, checkOnly: true): void
   checkUser(user: User | AdminUser | GuestUser, checkOnly?: false): UserModel
   checkUser(user: User | AdminUser | GuestUser, checkOnly = false): UserModel | void {
@@ -382,6 +358,28 @@ export class AdminUsersManager {
     }
     if (!checkOnly) {
       return new UserModel(user, true)
+    }
+  }
+
+  private async renameUserSpace(oldLogin: string, newLogin: string): Promise<boolean> {
+    const currentUserSpace: string = UserModel.getHomePath(oldLogin)
+    if (!(await isPathExists(currentUserSpace))) {
+      this.logger.warn(`${this.renameUserSpace.name} - user space *${oldLogin}* does not exist : ${currentUserSpace}`)
+      return false
+    }
+    const newUserSpace: string = UserModel.getHomePath(newLogin)
+    if (await isPathExists(newUserSpace)) {
+      this.logger.warn(`${this.renameUserSpace.name} - user space *${newLogin}* already exists : ${newUserSpace}`)
+      return false
+    }
+    try {
+      await moveFiles(currentUserSpace, newUserSpace)
+      return true
+    } catch (e) {
+      // try to restore
+      await moveFiles(newUserSpace, currentUserSpace, true)
+      this.logger.error(`${this.renameUserSpace.name} - unable to rename user space from *${currentUserSpace}* to *${newUserSpace}* : ${e}`)
+      return false
     }
   }
 
