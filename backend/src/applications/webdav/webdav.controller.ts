@@ -21,7 +21,7 @@ export class WebDAVController {
 
   @Options()
   serverOptions() {
-    // OPTIONS method is handled in the `DavProtocolGuard`
+    // OPTIONS method is handled in the `DavProtocolGuard`, return empty response with headers
     return
   }
 
@@ -32,7 +32,7 @@ export class WebDAVController {
 
   @Options(WEBDAV_BASE_PATH)
   webdavOptions() {
-    // OPTIONS method is handled in the `DavProtocolGuard`
+    // OPTIONS method is handled in the `DavProtocolGuard`, return empty response with headers
     return
   }
 

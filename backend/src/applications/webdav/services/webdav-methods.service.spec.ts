@@ -10,6 +10,7 @@ import { FilesLockManager } from '../../files/services/files-lock-manager.servic
 import { FilesManager } from '../../files/services/files-manager.service'
 import { dirName, isPathExists } from '../../files/utils/files'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces'
+import * as PathsUtils from '../../spaces/utils/paths'
 import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
 import { STANDARD_PROPS } from '../constants/webdav'
 import * as IfHeaderUtils from '../utils/if-header'
@@ -23,6 +24,15 @@ jest.mock('../../files/utils/files', () => ({
 }))
 jest.mock('../../spaces/utils/permissions', () => ({
   haveSpaceEnvPermissions: jest.fn()
+}))
+
+jest.mock('../../spaces/utils/paths', () => {
+  const actual = jest.requireActual('../../spaces/utils/paths')
+  return { ...actual, dbFileFromSpace: jest.fn() }
+})
+
+jest.mock('../decorators/if-header.decorator', () => ({
+  IfHeaderDecorator: () => (_target?: any, _key?: string, _desc?: any) => undefined
 }))
 
 describe(WebDAVMethods.name, () => {
@@ -472,26 +482,21 @@ describe(WebDAVMethods.name, () => {
   })
 
   describe('put', () => {
-    it('returns 204 when file existed and sets etag header', async () => {
-      filesManager.saveStream.mockResolvedValue(true)
+    it.each([
+      { existed: true, expected: HttpStatus.NO_CONTENT, checkEtag: true },
+      { existed: false, expected: HttpStatus.CREATED, checkEtag: false }
+    ])('returns correct status for PUT when existed=%s', async ({ existed, expected, checkEtag }) => {
+      filesManager.saveStream.mockResolvedValue(existed)
       const req = baseReq({ method: 'PUT' })
       const res = makeRes()
 
       const result = await service.put(req, res)
 
-      expect(result).toBe(res)
-      expect(res.headers['etag']).toBeDefined()
-      expect(res.statusCode).toBe(HttpStatus.NO_CONTENT)
-    })
-
-    it('returns 201 when file did not exist', async () => {
-      filesManager.saveStream.mockResolvedValue(false)
-      const req = baseReq({ method: 'PUT' })
-      const res = makeRes()
-
-      await service.put(req, res)
-
-      expect(res.statusCode).toBe(HttpStatus.CREATED)
+      if (checkEtag) {
+        expect(res.headers['etag']).toBeDefined()
+        expect(result).toBe(res)
+      }
+      expect(res.statusCode).toBe(expected)
     })
 
     it('delegates errors to handleError', async () => {
@@ -828,6 +833,30 @@ describe(WebDAVMethods.name, () => {
       expect(result).toBeUndefined()
     })
 
+    it('aborts with 412 when destination If-Header haveLock mismatches', async () => {
+      const handler = (service as any)['webDAVHandler']
+      const dstSpace = { ...baseReq().space, url: '/dst', realPath: '/real/dst', dbFile: { path: 'dst' } }
+      jest.spyOn(handler, 'spaceEnv').mockResolvedValue(dstSpace)
+      ;(isPathExists as jest.Mock).mockResolvedValue(true)
+      filesLockManager.getLocksByPath.mockResolvedValue([{}]) // there is a lock, but mustMatch=false -> mismatch
+
+      const req = baseReq({
+        method: 'COPY',
+        dav: {
+          ...baseReq().dav,
+          copyMove: { destination: '/dst', isMove: false, overwrite: true },
+          ifHeaders: [{ path: '/dst', haveLock: { mustMatch: false } }]
+        }
+      })
+      const res = makeRes()
+
+      const result = await service.copyMove(req, res)
+
+      expect(result).toBeUndefined()
+      expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+      expect(res.body).toBe('If header condition failed')
+    })
+
     it('returns 204 when destination existed; 201 when not', async () => {
       const handler = (service as any)['webDAVHandler']
       jest.spyOn(handler, 'spaceEnv').mockResolvedValue({ ...baseReq().space, url: '/dst', realPath: '/real/dst', dbFile: { path: 'dst' } })
@@ -876,6 +905,30 @@ describe(WebDAVMethods.name, () => {
       // Verify the log message includes an arrow to the destination (toUrl)
       expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(' -> /dst'))
     })
+
+    it('returns early when evaluateIfHeaders returns false (explicit spy)', async () => {
+      const req = baseReq({
+        method: 'COPY',
+        dav: {
+          ...baseReq().dav,
+          copyMove: { destination: '/dst', isMove: false, overwrite: true },
+          ifHeaders: [{ path: '/dst' }]
+        }
+      })
+      const res = makeRes()
+      const handler = (service as any)['webDAVHandler']
+      // Ensure destination space resolves so we reach the evaluateIfHeaders call
+      jest.spyOn(handler, 'spaceEnv').mockResolvedValue({ ...req.space, url: '/dst', realPath: '/real/dst', dbFile: { path: 'dst' } })
+      ;(isPathExists as jest.Mock).mockResolvedValue(true)
+      // Decorator is no-op (mocked), so copyMove calls evaluateIfHeaders once for destination: force it to return false
+      const spy = jest.spyOn<any, any>(service as any, 'evaluateIfHeaders').mockResolvedValue(false)
+
+      const result = await service.copyMove(req, res as any)
+
+      expect(spy).toHaveBeenCalledTimes(1)
+      expect(result).toBeUndefined()
+      expect(filesManager.copyMove).not.toHaveBeenCalled()
+    })
   })
 
   describe('evaluateIfHeaders', () => {
@@ -888,46 +941,44 @@ describe(WebDAVMethods.name, () => {
       expect(ok).toBe(true)
     })
 
-    it('fails with 412 on haveLock mismatch', async () => {
-      const req = baseReq({
-        dav: {
-          ...baseReq().dav,
-          ifHeaders: [{ haveLock: { mustMatch: true } }]
+    const negativeIfHeaderCases = [
+      {
+        name: 'haveLock mismatch',
+        dav: { ifHeaders: [{ haveLock: { mustMatch: true } }] },
+        setup: async () => {
+          // No lock present => match=false, mustMatch=true => mismatch
+          ;(PathsUtils.dbFileFromSpace as unknown as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1, inTrash: false })
+          filesLockManager.getLocksByPath.mockResolvedValue([])
         }
-      })
-      const res = makeRes()
-      filesLockManager.getLocksByPath.mockResolvedValue([])
-
-      const ok = await (service as any).evaluateIfHeaders(req, res)
-
-      expect(ok).toBe(false)
-      expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
-    })
-
-    it('fails with 412 on token not found', async () => {
-      const req = baseReq({
-        dav: {
-          ...baseReq().dav,
-          ifHeaders: [{ token: { value: 'missing', mustMatch: true } }]
+      },
+      {
+        name: 'haveLock mismatch when locks exist but mustMatch=false',
+        dav: { ifHeaders: [{ haveLock: { mustMatch: false } }] },
+        setup: async () => {
+          // Lock present => match=true, mustMatch=false => mismatch
+          ;(PathsUtils.dbFileFromSpace as unknown as jest.Mock).mockReturnValue({ path: 'dst', spaceId: 1, inTrash: false })
+          filesLockManager.getLocksByPath.mockResolvedValue([{}])
         }
-      })
-      const res = makeRes()
-      filesLockManager.getLockByToken.mockResolvedValue(null)
-
-      const ok = await (service as any).evaluateIfHeaders(req, res)
-
-      expect(ok).toBe(false)
-      expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
-    })
-
-    it('fails with 412 on etag mismatch', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      const req = baseReq({
-        dav: {
-          ...baseReq().dav,
-          ifHeaders: [{ etag: { value: 'W/"bad"', mustMatch: true } }]
+      },
+      {
+        name: 'token not found',
+        dav: { ifHeaders: [{ token: { value: 'missing', mustMatch: true } }] },
+        setup: async () => {
+          filesLockManager.getLockByToken.mockResolvedValue(null)
         }
-      })
+      },
+      {
+        name: 'etag mismatch',
+        dav: { ifHeaders: [{ etag: { value: 'W/"bad"', mustMatch: true } }] },
+        setup: async () => {
+          ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        }
+      }
+    ] as const
+
+    it.each(negativeIfHeaderCases)('fails with 412 on %s', async ({ dav, setup }) => {
+      await setup()
+      const req = baseReq({ dav: { ...baseReq().dav, ...dav } })
       const res = makeRes()
 
       const ok = await (service as any).evaluateIfHeaders(req, res)
@@ -1047,24 +1098,27 @@ describe(WebDAVMethods.name, () => {
   })
 
   describe('lockRefresh', () => {
-    it('returns 400 when more than one or zero tokens in If header', async () => {
-      const req = baseReq({ dav: { ...baseReq().dav, body: undefined, ifHeaders: [] } })
+    const refresh400Cases = [
+      {
+        name: 'more than one or zero tokens in If header',
+        dav: { body: undefined, ifHeaders: [] },
+        expectMsg: 'Expected a lock token'
+      },
+      {
+        name: 'token extraction fails',
+        dav: { body: undefined, ifHeaders: [{ notAToken: true }] },
+        expectMsg: 'Unable to extract token'
+      }
+    ] as const
+
+    it.each(refresh400Cases)('returns 400 when %s', async ({ dav, expectMsg }) => {
+      const req = baseReq({ dav: { ...baseReq().dav, ...dav } })
       const res = makeRes()
 
       await (service as any).lockRefresh(req, res, req.space.dbFile.path)
 
       expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
-      expect(res.body).toContain('Expected a lock token')
-    })
-
-    it('returns 400 when token extraction fails', async () => {
-      const req = baseReq({ dav: { ...baseReq().dav, body: undefined, ifHeaders: [{ notAToken: true }] } })
-      const res = makeRes()
-
-      await (service as any).lockRefresh(req, res, req.space.dbFile.path)
-
-      expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
-      expect(res.body).toContain('Unable to extract token')
+      expect(res.body).toContain(expectMsg)
     })
 
     it('returns 412 when token not found or not matching URL', async () => {

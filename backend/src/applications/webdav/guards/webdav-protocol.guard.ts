@@ -39,8 +39,9 @@ export class WebDAVProtocolGuard implements CanActivate {
     this.setDAVContext(req)
     switch (req.method) {
       case HTTP_METHOD.OPTIONS:
-        this.optionsMethod(res)
-        break
+        // hook to stop propagation and return headers on all webdav routes
+        res.headers(OPTIONS_HEADERS)
+        throw new HttpException(null, HttpStatus.OK)
       case HTTP_METHOD.PROPFIND:
         return this.propfindMethod(req)
       case HTTP_METHOD.LOCK:
@@ -106,12 +107,6 @@ export class WebDAVProtocolGuard implements CanActivate {
       this.logger.verbose(`If header after : ${JSON.stringify(ifHeaders)}`)
       if (ifHeaders.length) req.dav.ifHeaders = ifHeaders
     }
-  }
-
-  private optionsMethod(res: FastifyReply) {
-    // hook to return headers on all webdav routes
-    res.headers(OPTIONS_HEADERS)
-    throw new HttpException(null, HttpStatus.OK)
   }
 
   private propfindMethod(req: FastifyDAVRequest) {
