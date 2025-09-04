@@ -73,7 +73,7 @@ export class FilesSelectionComponent {
 
   addToClipboard() {
     this.filesService.addToClipboard(this.files())
-    this.layout.showRSideBarTab(TAB_MENU.CLIPBOARD)
+    this.layout.showRSideBarTab(TAB_MENU.CLIPBOARD, true)
   }
 
   goToSync(sync: { clientId: string; clientName: string; id: number }) {

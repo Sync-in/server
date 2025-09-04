@@ -4,7 +4,8 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, inject, OnDestroy } from '@angular/core'
+import { Component, computed, inject, OnDestroy } from '@angular/core'
+import { toObservable } from '@angular/core/rxjs-interop'
 import { RouterOutlet } from '@angular/router'
 import { faCommentDots } from '@fortawesome/free-regular-svg-icons'
 import { faClipboardList, faFolderTree, faInfo } from '@fortawesome/free-solid-svg-icons'
@@ -27,7 +28,22 @@ export class SpacesNavComponent implements OnDestroy {
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
   private tabs: TabMenu[] = [
-    { label: TAB_MENU.SELECTION, components: [SelectionComponent], loadComponent: false, icon: faInfo, title: 'Informations', active: false },
+    {
+      label: TAB_MENU.SELECTION,
+      components: [SelectionComponent],
+      loadComponent: false,
+      icon: faInfo,
+      count: {
+        value: toObservable(
+          computed(() =>
+            this.store.filesSelection().length > 1 ? (this.store.filesSelection().length > 1000 ? '999+' : this.store.filesSelection().length) : 0
+          )
+        ),
+        level: 'primary'
+      },
+      title: 'Informations',
+      active: false
+    },
     { label: TAB_MENU.TREE, components: [FilesTreeComponent], loadComponent: true, icon: faFolderTree, title: null, active: false },
     { label: TAB_MENU.COMMENTS, components: [CommentsSelectionComponent], loadComponent: false, icon: faCommentDots, title: null, active: false },
     {
