@@ -63,7 +63,8 @@ export class SpaceRootPathDialogComponent implements OnInit {
       this.newSpaceRoot.externalPath = '/' + this.newSpaceRoot.externalPath
     }
     for (const root of this.currentRoots) {
-      if (this.newSpaceRoot.externalPath.startsWith(root.externalPath)) {
+      const normalizedRoot = root.externalPath[root.externalPath.length - 1] === '/' ? root.externalPath : `${root.externalPath}/`
+      if (this.newSpaceRoot.externalPath.startsWith(normalizedRoot)) {
         this.rootPathIsValid = false
         this.error = 'Parent location already exists in files'
         return
