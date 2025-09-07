@@ -1,4 +1,23 @@
 
+## [1.5.0](https://github.com/Sync-in/server/compare/v1.4.0...v1.5.0) (2025-09-07)
+
+
+### Features
+
+* **files:** optimize document opening to avoid extra API calls ([bf57d93](https://github.com/Sync-in/server/commit/bf57d93dcaea312328db9f1f5290e46471d2f638))
+* **frontend:files:** display count for multiple selected files and open sidebar pasteboard when adding files ([39feccd](https://github.com/Sync-in/server/commit/39feccd3d89f29cdc4effb2bb4c016c7c1258729))
+* **frontend:spaces:** enable keyboard navigation when files are selected in list mode ([7e38ce2](https://github.com/Sync-in/server/commit/7e38ce29fbfe11b84ccd7824aea1e43ae46e0d0f))
+
+
+### Bug Fixes
+
+* **backend:links:** increment nbAccess even when no limit is set ([d6d2e74](https://github.com/Sync-in/server/commit/d6d2e7425c16510ee9e15107a02f21d2038be89f))
+* **frontend:spaces:** prevent false positives when checking external location ([f1fdd0d](https://github.com/Sync-in/server/commit/f1fdd0d4088e98f4e24f4a4c18cf6f67e3e5d0d4))
+
+### Performance
+* **docker:** only change application data ownership ([6e88991](https://github.com/Sync-in/server/commit/6e889915fedf613030e43919e637d7888aea94a1))
+
+
 ## [1.4.0](https://github.com/Sync-in/server/compare/v1.3.9...v1.4.0) (2025-08-26)
 
 
