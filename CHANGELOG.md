@@ -1,4 +1,11 @@
 
+## [1.5.1](https://github.com/Sync-in/server/compare/v1.5.0...v1.5.1) (2025-09-07)
+
+
+### Bug Fixes
+
+* **docker:** fix /app ownership for .init file ([e43f478](https://github.com/Sync-in/server/commit/e43f47873768fa24ba2e66bc1bbd90214bde5ca1))
+
 ## [1.5.0](https://github.com/Sync-in/server/compare/v1.4.0...v1.5.0) (2025-09-07)
 
 

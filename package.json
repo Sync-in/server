@@ -1,7 +1,7 @@
 {
   "productName": "Sync-in",
   "name": "sync-in-server",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "The secure, open-source platform for file storage, sharing, collaboration, and sync",
   "keywords": [
     "sync-in",
@@ -94,9 +94,6 @@
     "jsdom": "^26.1.0"
   },
   "commit-and-tag-version": {
-    "header": "",
-    "skip": {
-      "commit": true
-    }
+    "header": ""
   }
 }
