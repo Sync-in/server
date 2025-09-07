@@ -17,6 +17,9 @@ if ! getent passwd "${PUID}" >/dev/null 2>&1; then
     adduser -D -u "${PUID}" -G "${group_name}" -s /bin/sh syncin
 fi
 
+# Change /app ownership to syncin (for writing .init file)
+chown "${PUID}:${PGID}" /app
+
 # Change application data ownership to syncin if needed
 CURRENT_UID=$(stat -c '%u' /app/data)
 CURRENT_GID=$(stat -c '%g' /app/data)
