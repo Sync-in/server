@@ -5,48 +5,67 @@
   -->
 
 <!-- The user image in the menu -->
-<div class="sidebar-component-title">
-  <div class="d-flex flex-fill justify-content-between">
-    @if (!user?.isLink) {
-      <button class="btn btn-xs btn-secondary" (click)="collapseRSideBar()" type="button" [routerLink]=USER_PATH.BASE>
-        <fa-icon [icon]="icons.faUserAlt"></fa-icon>
+<div class="d-flex flex-column" style="height: 92vh">
+  <div class="sidebar-component-title">
+    <div class="d-flex flex-fill justify-content-between">
+      @if (!user?.isLink) {
+        <button class="btn btn-xs btn-secondary" (click)="collapseRSideBar()" type="button" [routerLink]=USER_PATH.BASE>
+          <fa-icon [icon]="icons.faUserAlt"></fa-icon>
+        </button>
+      }
+      <button class="btn btn-xs btn-secondary" (click)="toggleTheme()" type="button">
+        <fa-icon [icon]="icons.faCircleHalfStroke"></fa-icon>
       </button>
-    }
-    <button class="btn btn-xs btn-secondary" (click)="toggleTheme()" type="button">
-      <fa-icon [icon]="icons.faCircleHalfStroke"></fa-icon>
-    </button>
-    @if (user?.isAdmin) {
-      <button class="btn btn-xs btn-secondary" (click)="collapseRSideBar()" type="button" routerLink="/admin">
-        <fa-icon [icon]="icons.faCog"></fa-icon>
-      </button>
-    }
-    @if (!store.isElectronApp() || store.isElectronApp() && store.userImpersonate()) {
-      <button (click)="logOut()" class="btn btn-xs btn-secondary" type="button">
-        <fa-icon [icon]="store.userImpersonate() ? icons.faUserSecret : icons.faPowerOff"></fa-icon>
-      </button>
-    }
-  </div>
-</div>
-<div class="user-header">
-  <div class="d-flex flex-column justify-content-center me-2">
-    <div class="avatar-lg">
-      <img class="avatar-img" [src]="userAvatar" alt="">
-      <span class="avatar-{{allOnlineStatus[user?.onlineStatus]}}"></span>
+      @if (user?.isAdmin) {
+        <button class="btn btn-xs btn-secondary" (click)="collapseRSideBar()" type="button" routerLink="/admin">
+          <fa-icon [icon]="icons.faCog"></fa-icon>
+        </button>
+      }
+      @if (!store.isElectronApp() || store.isElectronApp() && store.userImpersonate()) {
+        <button (click)="logOut()" class="btn btn-xs btn-secondary" type="button">
+          <fa-icon [icon]="store.userImpersonate() ? icons.faUserSecret : icons.faPowerOff"></fa-icon>
+        </button>
+      }
     </div>
   </div>
-  <div class="user-details">
-    @if (user?.isLink) {
-      <div l10nTranslate>Guest Link</div>
-    } @else {
-      <div>{{ user?.fullName }}</div>
-      <div class="small">{{ user?.email }}</div>
-    }
-    <select [ngModel]="user?.onlineStatus"
-            (ngModelChange)="setOnlineStatus($event)"
-            class="form-select form-select-sm mt-1">
-      @for (s of allOnlineStatus; track $index) {
-        <option [ngValue]="allOnlineStatus.indexOf(s)" l10nTranslate>{{ s | capitalize }}</option>
+  <div class="user-header">
+    <div class="d-flex flex-column justify-content-center me-2">
+      <div class="avatar-lg">
+        <img class="avatar-img" [src]="userAvatar" alt="">
+        <span class="avatar-{{allOnlineStatus[user?.onlineStatus]}}"></span>
+      </div>
+    </div>
+    <div class="user-details">
+      @if (user?.isLink) {
+        <div l10nTranslate>Guest Link</div>
+      } @else {
+        <div>{{ user?.fullName }}</div>
+        <div class="small">{{ user?.email }}</div>
       }
-    </select>
+      <select [ngModel]="user?.onlineStatus"
+              (ngModelChange)="setOnlineStatus($event)"
+              class="form-select form-select-sm mt-1">
+        @for (s of allOnlineStatus; track $index) {
+          <option [ngValue]="allOnlineStatus.indexOf(s)" l10nTranslate>{{ s | capitalize }}</option>
+        }
+      </select>
+    </div>
+  </div>
+  <div class="d-flex flex-column mt-auto fs-xs">
+    <hr />
+    <div class="d-flex flex-column mx-3">
+      <div class="mb-3">
+        <img alt="" height="26" [src]="this.layout.switchTheme.getValue() === themeLight ? logoUrl: logoDarkUrl">
+      </div>
+      <div>
+        <a href="https://sync-in.com" target="_blank">Website</a>
+        <span>&nbsp;|&nbsp;</span>
+        <a href="https://sync-in.com/docs" target="_blank">Documentation</a>
+        <span>&nbsp;|&nbsp;</span>
+        <a href="https://github.com/Sync-in/server/releases" target="_blank">Versions</a>
+        <span>&nbsp;|&nbsp;</span>
+        <a href="https://sync-in.com/support" target="_blank"> 💛</a>
+      </div>
+    </div>
   </div>
 </div>

@@ -14,8 +14,10 @@ import { L10nTranslateDirective } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { AuthService } from '../../../../auth/auth.service'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
+import { themeLight } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
+import { logoDarkUrl, logoUrl } from '../../../files/files.constants'
 import { UserType } from '../../interfaces/user.interface'
 import { USER_PATH } from '../../user.constants'
 import { UserService } from '../../user.service'
@@ -26,13 +28,16 @@ import { UserService } from '../../user.service'
   imports: [FormsModule, RouterLink, CapitalizePipe, FaIconComponent, L10nTranslateDirective]
 })
 export class UserProfileComponent implements OnDestroy {
+  protected readonly logoDarkUrl = logoDarkUrl
+  protected readonly logoUrl = logoUrl
   protected readonly store = inject(StoreService)
   protected readonly USER_PATH = USER_PATH
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly icons = { faUserAlt, faCircleHalfStroke, faCog, faPowerOff, faUserSecret }
   protected user: UserType
   protected userAvatar: string = null
-  private readonly layout = inject(LayoutService)
+  protected readonly layout = inject(LayoutService)
+  protected readonly themeLight = themeLight
   private readonly authService = inject(AuthService)
   private readonly userService = inject(UserService)
   private subscriptions: Subscription[] = []
