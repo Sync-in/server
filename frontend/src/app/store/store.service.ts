@@ -42,6 +42,8 @@ export class StoreService {
   public filesActiveTasks = new BehaviorSubject<FileTask[]>([])
   public filesEndedTasks = new BehaviorSubject<FileTask[]>([])
   public filesRecents: WritableSignal<FileRecentModel[]> = signal<FileRecentModel[]>([])
+  // OnlyOffice
+  public filesOnlyOffice: WritableSignal<{ enabled: boolean }> = signal({ enabled: null })
   // Search
   public currentSearch: WritableSignal<SearchFilesDto> = signal<SearchFilesDto>({ content: '', fullText: false })
   public filesSearch: WritableSignal<FileContentModel[]> = signal<FileContentModel[]>([])

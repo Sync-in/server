@@ -10,6 +10,7 @@ import { inject, Injectable } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import {
+  API_FILES_ONLY_OFFICE_STATUS,
   API_FILES_OPERATION_MAKE,
   API_FILES_RECENTS,
   API_FILES_SEARCH,
@@ -36,6 +37,7 @@ import { downloadWithAnchor } from '../../../common/utils/functions'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
+import { FilesViewerDialogComponent } from '../components/dialogs/files-viewer-dialog.component'
 import { FileContentModel } from '../models/file-content.model'
 import { FileRecentModel } from '../models/file-recent.model'
 import { FileModel } from '../models/file.model'
@@ -206,6 +208,61 @@ export class FilesService {
         })
       )
     )
+  }
+
+  async openViewerDialog(mode: 'view' | 'edit', currentFile: FileModel) {
+    this.http.head(currentFile.dataUrl).subscribe({
+      next: async () => {
+        let shortMime: string
+        try {
+          shortMime = await this.viewerHook(mode, currentFile)
+        } catch {
+          // OnlyOffice not enabled, falling back to download
+          this.download(currentFile)
+          return
+        }
+        this.layout.openDialog(FilesViewerDialogComponent, 'full', {
+          id: currentFile.id,
+          initialState: { currentFile: currentFile, mode: mode, shortMime: shortMime } as FilesViewerDialogComponent
+        })
+      },
+      error: (err: HttpErrorResponse) => {
+        console.error(err.message)
+        this.layout.sendNotification('error', 'Unable to open document', currentFile?.name)
+      }
+    })
+  }
+
+  private async viewerHook(mode: 'view' | 'edit', currentFile: FileModel): Promise<string> {
+    const onlyOfficeEnabled = await this.getOnlyOfficeStatus()
+    if (currentFile.shortMime === 'document' && !onlyOfficeEnabled) {
+      if (currentFile.mime.startsWith('text-')) {
+        return 'text'
+      }
+      throw new Error('Feature not enabled')
+    }
+    if (currentFile.shortMime === 'pdf') {
+      if (mode === 'edit' && onlyOfficeEnabled) {
+        return 'document'
+      }
+    }
+    return currentFile.shortMime
+  }
+
+  private async getOnlyOfficeStatus(): Promise<boolean> {
+    if (this.store.filesOnlyOffice().enabled !== null) {
+      return this.store.filesOnlyOffice().enabled
+    }
+    try {
+      const status = await firstValueFrom(this.http.get<{ enabled: boolean }>(API_FILES_ONLY_OFFICE_STATUS))
+      // if the request succeeds, "enabled" will always be true
+      this.store.filesOnlyOffice.set(status)
+      return status.enabled
+    } catch {
+      const fallback = { enabled: false }
+      this.store.filesOnlyOffice.set(fallback)
+      return fallback.enabled
+    }
   }
 
   private isValidName(fileName: string): boolean {

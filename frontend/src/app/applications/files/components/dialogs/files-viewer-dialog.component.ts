@@ -4,63 +4,35 @@
  * See the LICENSE file for licensing details
  */
 
-import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { Component, inject, Input, OnDestroy, OnInit } from '@angular/core'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
 import { FilesViewerDocumentComponent } from '../viewers/files-viewer-document.component'
-import { FilesViewerHtmlComponent } from '../viewers/files-viewer-html.component'
 import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.component'
 import { FilesViewerPdfComponent } from '../viewers/files-viewer-pdf.component'
 import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component'
 
 @Component({
   selector: 'app-files-viewer-dialog',
-  imports: [FilesViewerPdfComponent, FilesViewerMediaComponent, FilesViewerHtmlComponent, FilesViewerTextComponent, FilesViewerDocumentComponent],
+  imports: [FilesViewerPdfComponent, FilesViewerMediaComponent, FilesViewerTextComponent, FilesViewerDocumentComponent],
   templateUrl: 'files-viewer-dialog.component.html'
 })
 export class FilesViewerDialogComponent implements OnInit, OnDestroy {
-  @Input() currentFile: FileModel
-  @Input() mode: 'view' | 'edit' = 'view'
-  protected canAccess = false
+  @Input({ required: true }) currentFile: FileModel
+  @Input({ required: true }) mode: 'view' | 'edit'
+  @Input({ required: true }) shortMime: string
   protected currentHeight: number
-  private readonly http = inject(HttpClient)
   private readonly layout = inject(LayoutService)
-  private subscription: Subscription = null
+  private readonly subscription: Subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
   private readonly offsetTop = 42
-  private hookShortMime = null
 
   ngOnInit() {
-    this.subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
-    this.http.head(this.currentFile.dataUrl).subscribe({
-      next: () => {
-        if (this.mode === 'view' && this.currentFile.shortMime === 'document' && this.currentFile.mime === 'text-plain') {
-          this.hookShortMime = this.currentFile.shortMime
-          this.currentFile.shortMime = null
-        } else if (this.mode === 'view' && this.currentFile.shortMime === 'text' && this.currentFile.mime === 'text-html') {
-          this.hookShortMime = this.currentFile.shortMime
-          this.currentFile.shortMime = 'html'
-        } else if (this.mode === 'edit' && this.currentFile.shortMime === 'pdf') {
-          this.hookShortMime = this.currentFile.shortMime
-          this.currentFile.shortMime = 'document'
-        }
-        this.onResize()
-        this.canAccess = true
-      },
-      error: (err: HttpErrorResponse) => {
-        console.error(err.message)
-        this.layout.sendNotification('error', 'Unable to open document', this.currentFile?.name)
-        this.onClose()
-      }
-    })
+    this.onResize()
   }
 
   ngOnDestroy() {
     this.subscription.unsubscribe()
-    if (this.hookShortMime) {
-      this.currentFile.shortMime = this.hookShortMime
-    }
   }
 
   onClose() {

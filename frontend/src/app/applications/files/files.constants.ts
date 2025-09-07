@@ -25,4 +25,33 @@ export const linkProtected = `${assetsUrl}/protected.png`
 export const defaultMimeUrl = getAssetsMimeUrl(mimeFile)
 export const excludeFromMedias = new Set(['matroska', 'mpegurl', 'msvideo'])
 export const compressibleMimes = new Set(['application-gzip', 'application-zip', 'application-x-tar'])
-export const notViewableExtensions = new Set(['rar', '7z', 'iso', 'numbers', 'pages', 'dmg'])
+export const notViewableExtensions = new Set([
+  'rar',
+  '7z',
+  'iso',
+  'zip',
+  'tar',
+  'gz',
+  'bz2',
+  'xz',
+  'exe',
+  'dll',
+  'msi',
+  'bat',
+  'cmd',
+  'sh',
+  'apk',
+  'appimage',
+  'dmg',
+  'img',
+  'bin',
+  'vhd',
+  'vmdk',
+  'so',
+  'o',
+  'a',
+  'lib',
+  'sys',
+  'drv',
+  'cab'
+])

@@ -147,7 +147,7 @@ export class FileModel implements File {
         this.isViewable = true
         this.shortMime = 'media'
         this.haveThumbnail = true
-      } else if (this.shortMime === 'image' && extension !== 'svg') {
+      } else if (this.shortMime === 'image') {
         this.isImage = true
         this.isViewable = true
         this.haveThumbnail = true

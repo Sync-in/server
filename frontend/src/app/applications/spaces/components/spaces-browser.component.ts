@@ -68,7 +68,6 @@ import { FilesCompressionDialogComponent } from '../../files/components/dialogs/
 import { FilesNewDialogComponent } from '../../files/components/dialogs/files-new-dialog.component'
 import { FilesTrashDialogComponent } from '../../files/components/dialogs/files-trash-dialog.component'
 import { FilesTrashEmptyDialogComponent } from '../../files/components/dialogs/files-trash-empty-dialog.component'
-import { FilesViewerDialogComponent } from '../../files/components/dialogs/files-viewer-dialog.component'
 import { FilePermissionsComponent } from '../../files/components/utils/file-permissions.component'
 import { FileEvent } from '../../files/interfaces/file-event.interface'
 import { FileModel } from '../../files/models/file.model'
@@ -696,10 +695,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private openViewerDialog(mode: 'view' | 'edit') {
-    this.layout.openDialog(FilesViewerDialogComponent, 'full', {
-      id: this.selection[0].id,
-      initialState: { currentFile: this.selection[0], mode: mode } as FilesViewerDialogComponent
-    })
+    this.filesService.openViewerDialog(mode, this.selection[0]).catch(console.error)
   }
 
   private focusOn(select: string) {

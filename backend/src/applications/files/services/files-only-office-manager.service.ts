@@ -60,6 +60,10 @@ export class FilesOnlyOfficeManager {
     private readonly filesQueries: FilesQueries
   ) {}
 
+  getStatus(): { enabled: boolean } {
+    return { enabled: configuration.applications.files.onlyoffice.enabled }
+  }
+
   async getSettings(user: UserModel, space: SpaceEnv, mode: 'edit' | 'view', req: FastifySpaceRequest): Promise<OnlyOfficeReqConfig> {
     if (!(await isPathExists(space.realPath))) {
       throw new HttpException('Document not found', HttpStatus.NOT_FOUND)

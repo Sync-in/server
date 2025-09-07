@@ -7,6 +7,7 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Request, Res, StreamableFile, UseInterceptors } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
+import { SkipSpaceGuard } from '../spaces/decorators/space-skip-guard.decorator'
 import { GetSpace } from '../spaces/decorators/space.decorator'
 import { FastifySpaceRequest } from '../spaces/interfaces/space-request.interface'
 import { SpaceEnv } from '../spaces/models/space-env.model'
@@ -46,5 +47,11 @@ export class FilesOnlyOfficeController {
   @HttpCode(HttpStatus.OK)
   onlyOfficeCallBack(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body('token') token: string, @Query('fid') fileId: string) {
     return this.filesOnlyOfficeManager.callBack(user, space, token, fileId)
+  }
+
+  @Get(FILES_ROUTE.ONLY_OFFICE_STATUS)
+  @SkipSpaceGuard()
+  onlyOfficeStatus(): { enabled: boolean } {
+    return this.filesOnlyOfficeManager.getStatus()
   }
 }
