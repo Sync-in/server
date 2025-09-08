@@ -14,6 +14,14 @@ export class JwtIdentityPayload {
   impersonatedFromId?: number
   impersonatedClientId?: string
   clientId?: string
+  twoFaEnabled?: boolean
+}
+
+export class JwtIdentity2FaPayload {
+  id: number
+  login: string
+  role: number
+  twoFaEnabled: true
 }
 
 export class JwtPayload {

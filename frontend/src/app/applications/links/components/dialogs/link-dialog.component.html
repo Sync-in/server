@@ -21,7 +21,7 @@
   @if (share || link) {
     <div class="d-flex flex-fill align-items-center">
       <fa-icon [icon]="icons.links" class="circle-primary-icon me-2"></fa-icon>
-      <div class="d-flex flex-column">
+      <div class="d-flex flex-column overflow-wrap-and-whitespace me-2">
         <span>{{ linkForm.value.name || linkForm.value.shareName }}</span>
         <span class="fs-xxxs">{{ linkForm.value.email }}</span>
       </div>

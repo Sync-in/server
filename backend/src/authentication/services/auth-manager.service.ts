@@ -5,7 +5,6 @@
  */
 import { unsign, UnsignResult } from '@fastify/cookie'
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import crypto from 'node:crypto'
@@ -13,24 +12,18 @@ import { HTTP_CSRF_IGNORED_METHODS } from '../../applications/applications.const
 import { UserModel } from '../../applications/users/models/user.model'
 import { convertHumanTimeToSeconds } from '../../common/functions'
 import { currentTimeStamp } from '../../common/shared'
-import { AuthConfig } from '../auth.config'
-import { CSRF_ERROR, CSRF_KEY, TOKEN_PATHS, TOKEN_TYPES } from '../constants/auth'
-import { LoginResponseDto } from '../dto/login-response.dto'
+import { configuration, serverConfig } from '../../configuration/config.environment'
+import { CSRF_ERROR, CSRF_KEY, TOKEN_2FA_TYPES, TOKEN_PATHS, TOKEN_TYPES } from '../constants/auth'
+import { LoginResponseDto, LoginVerify2FaDto } from '../dto/login-response.dto'
 import { TokenResponseDto } from '../dto/token-response.dto'
-import { JwtIdentityPayload, JwtPayload } from '../interfaces/jwt-payload.interface'
+import { JwtIdentity2FaPayload, JwtIdentityPayload, JwtPayload } from '../interfaces/jwt-payload.interface'
 import { TOKEN_TYPE } from '../interfaces/token.interface'
 
 @Injectable()
 export class AuthManager {
   private readonly logger = new Logger(AuthManager.name)
-  public readonly authConfig: AuthConfig
 
-  constructor(
-    private readonly jwt: JwtService,
-    private readonly config: ConfigService
-  ) {
-    this.authConfig = this.config.get<AuthConfig>('auth')
-  }
+  constructor(private readonly jwt: JwtService) {}
 
   async getTokens(user: UserModel, refresh = false): Promise<TokenResponseDto> {
     const currentTime = currentTimeStamp()
@@ -38,8 +31,8 @@ export class AuthManager {
       this.logger.error(`${this.getTokens.name} - token refresh has incorrect expiration : *${user.login}*`)
       throw new HttpException('Token has expired', HttpStatus.FORBIDDEN)
     }
-    const accessExpiration = convertHumanTimeToSeconds(this.authConfig.token.access.expiration)
-    const refreshExpiration = refresh ? user.exp - currentTime : convertHumanTimeToSeconds(this.authConfig.token.refresh.expiration)
+    const accessExpiration = convertHumanTimeToSeconds(configuration.auth.token.access.expiration)
+    const refreshExpiration = refresh ? user.exp - currentTime : convertHumanTimeToSeconds(configuration.auth.token.refresh.expiration)
     return {
       [TOKEN_TYPE.ACCESS]: await this.jwtSign(user, TOKEN_TYPE.ACCESS, accessExpiration),
       [TOKEN_TYPE.REFRESH]: await this.jwtSign(user, TOKEN_TYPE.REFRESH, refreshExpiration),
@@ -48,20 +41,33 @@ export class AuthManager {
     }
   }
 
-  async setCookies(user: UserModel, res: FastifyReply): Promise<LoginResponseDto> {
-    const response = new LoginResponseDto(user)
+  async setCookies(user: UserModel, res: FastifyReply, init2FaVerify: true): Promise<LoginVerify2FaDto>
+  async setCookies(user: UserModel, res: FastifyReply, init2FaVerify?: false): Promise<LoginResponseDto>
+  async setCookies(user: UserModel, res: FastifyReply, init2FaVerify = false): Promise<LoginResponseDto | LoginVerify2FaDto> {
+    // If `verify2Fa` is true, it sets the cookies and response required for valid 2FA authentication.
+    const verify2Fa = init2FaVerify && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
+    const response = verify2Fa ? new LoginVerify2FaDto(serverConfig) : new LoginResponseDto(user, serverConfig)
     const currentTime = currentTimeStamp()
     const csrfToken: string = crypto.randomUUID()
-    for (const type of TOKEN_TYPES) {
-      const tokenExpiration = convertHumanTimeToSeconds(this.authConfig.token[type].expiration)
-      const cookieValue: string = type === TOKEN_TYPE.CSRF ? csrfToken : await this.jwtSign(user, type, tokenExpiration, csrfToken)
-      res.setCookie(this.authConfig.token[type].name, cookieValue, {
-        signed: type === TOKEN_TYPE.CSRF,
+    const tokenTypes: TOKEN_TYPE[] = verify2Fa ? TOKEN_2FA_TYPES : TOKEN_TYPES
+    for (const type of tokenTypes) {
+      const isCSRFToken = type === TOKEN_TYPE.CSRF || type === TOKEN_TYPE.CSRF_2FA
+      const tokenExpiration = convertHumanTimeToSeconds(configuration.auth.token[type].expiration)
+      let cookieValue: string
+      if (isCSRFToken) {
+        cookieValue = csrfToken
+      } else if (verify2Fa) {
+        cookieValue = await this.jwtSign2Fa(user, type, tokenExpiration, csrfToken)
+      } else {
+        cookieValue = await this.jwtSign(user, type, tokenExpiration, csrfToken)
+      }
+      res.setCookie(configuration.auth.token[type].name, cookieValue, {
+        signed: isCSRFToken,
         path: TOKEN_PATHS[type],
-        maxAge: convertHumanTimeToSeconds(this.authConfig.token[type].cookieMaxAge),
-        httpOnly: type !== TOKEN_TYPE.CSRF
+        maxAge: tokenExpiration,
+        httpOnly: !isCSRFToken
       })
-      if (type === TOKEN_TYPE.ACCESS || type === TOKEN_TYPE.REFRESH) {
+      if (type === TOKEN_TYPE.ACCESS || type === TOKEN_TYPE.REFRESH || type === TOKEN_TYPE.ACCESS_2FA) {
         response.token[`${type}_expiration`] = tokenExpiration + currentTime
       }
     }
@@ -72,25 +78,23 @@ export class AuthManager {
     const response = {} as TokenResponseDto
     const currentTime = currentTimeStamp()
     let refreshTokenExpiration: number
-    let refreshMaxAge: number
     // refresh cookie must have the `exp` attribute
     // reuse token expiration to make it final
     if (user.exp && user.exp > currentTime) {
       refreshTokenExpiration = user.exp - currentTime
-      refreshMaxAge = refreshTokenExpiration
     } else {
       this.logger.error(`${this.refreshCookies.name} - token ${TOKEN_TYPE.REFRESH} has incorrect expiration : *${user.login}*`)
       throw new HttpException('Token has expired', HttpStatus.FORBIDDEN)
     }
     const csrfToken: string = crypto.randomUUID()
     for (const type of TOKEN_TYPES) {
-      const tokenExpiration = type === TOKEN_TYPE.REFRESH ? refreshTokenExpiration : convertHumanTimeToSeconds(this.authConfig.token[type].expiration)
-      const maxAge = type === TOKEN_TYPE.REFRESH ? refreshMaxAge : convertHumanTimeToSeconds(this.authConfig.token[type].cookieMaxAge)
+      const tokenExpiration =
+        type === TOKEN_TYPE.ACCESS ? convertHumanTimeToSeconds(configuration.auth.token[TOKEN_TYPE.ACCESS].expiration) : refreshTokenExpiration
       const cookieValue: string = type === TOKEN_TYPE.CSRF ? csrfToken : await this.jwtSign(user, type, tokenExpiration, csrfToken)
-      res.setCookie(this.authConfig.token[type].name, cookieValue, {
+      res.setCookie(configuration.auth.token[type].name, cookieValue, {
         signed: type === TOKEN_TYPE.CSRF,
         path: TOKEN_PATHS[type],
-        maxAge: maxAge,
+        maxAge: tokenExpiration,
         httpOnly: type !== TOKEN_TYPE.CSRF
       })
       if (type === TOKEN_TYPE.ACCESS || type === TOKEN_TYPE.REFRESH) {
@@ -102,7 +106,35 @@ export class AuthManager {
 
   async clearCookies(res: FastifyReply) {
     for (const [type, path] of Object.entries(TOKEN_PATHS)) {
-      res.clearCookie(this.authConfig.token[type].name, { path: path, httpOnly: type !== TOKEN_TYPE.CSRF })
+      res.clearCookie(configuration.auth.token[type].name, { path: path, httpOnly: type !== TOKEN_TYPE.CSRF })
+    }
+  }
+
+  csrfValidation(req: FastifyRequest, jwtPayload: JwtPayload, type: TOKEN_TYPE.ACCESS | TOKEN_TYPE.REFRESH): void {
+    // ignore safe methods
+    if (HTTP_CSRF_IGNORED_METHODS.has(req.method)) {
+      return
+    }
+
+    // check csrf only for access and refresh cookies
+    if (typeof req.cookies !== 'object' || req.cookies[configuration.auth.token[type].name] === undefined) {
+      return
+    }
+
+    if (!jwtPayload.csrf) {
+      this.logger.warn(`${this.csrfValidation.name} - ${CSRF_ERROR.MISSING_JWT}`)
+      throw new HttpException(CSRF_ERROR.MISSING_JWT, HttpStatus.FORBIDDEN)
+    }
+
+    if (!req.headers[CSRF_KEY]) {
+      this.logger.warn(`${this.csrfValidation.name} - ${CSRF_ERROR.MISSING_HEADERS}`)
+      throw new HttpException(CSRF_ERROR.MISSING_HEADERS, HttpStatus.FORBIDDEN)
+    }
+
+    const csrfHeader: UnsignResult = unsign(req.headers[CSRF_KEY] as string, configuration.auth.token.csrf.secret)
+    if (jwtPayload.csrf !== csrfHeader.value) {
+      this.logger.warn(`${this.csrfValidation.name} - ${CSRF_ERROR.MISMATCH}`)
+      throw new HttpException(CSRF_ERROR.MISMATCH, HttpStatus.FORBIDDEN)
     }
   }
 
@@ -118,42 +150,34 @@ export class AuthManager {
           applications: user.applications,
           impersonatedFromId: user.impersonatedFromId || undefined,
           impersonatedClientId: user.impersonatedClientId || undefined,
-          clientId: user.clientId || undefined
+          clientId: user.clientId || undefined,
+          twoFaEnabled: user.twoFaEnabled || undefined
         } satisfies JwtIdentityPayload,
         ...((type === TOKEN_TYPE.ACCESS || type === TOKEN_TYPE.REFRESH) && { csrf: csrfToken })
       },
       {
-        secret: this.authConfig.token[type].secret,
+        secret: configuration.auth.token[type].secret,
         expiresIn: expiration
       }
     )
   }
 
-  csrfValidation(req: FastifyRequest, jwtPayload: JwtPayload, type: TOKEN_TYPE.ACCESS | TOKEN_TYPE.REFRESH): void {
-    // ignore safe methods
-    if (HTTP_CSRF_IGNORED_METHODS.has(req.method)) {
-      return
-    }
-
-    // check csrf only for access & refresh cookies
-    if (typeof req.cookies !== 'object' || req.cookies[this.authConfig.token[type].name] === undefined) {
-      return
-    }
-
-    if (!jwtPayload.csrf) {
-      this.logger.warn(`${this.csrfValidation.name} - ${CSRF_ERROR.MISSING_JWT}`)
-      throw new HttpException(CSRF_ERROR.MISSING_JWT, HttpStatus.FORBIDDEN)
-    }
-
-    if (!req.headers[CSRF_KEY]) {
-      this.logger.warn(`${this.csrfValidation.name} - ${CSRF_ERROR.MISSING_HEADERS}`)
-      throw new HttpException(CSRF_ERROR.MISSING_HEADERS, HttpStatus.FORBIDDEN)
-    }
-
-    const csrfHeader: UnsignResult = unsign(req.headers[CSRF_KEY] as string, this.authConfig.token.csrf.secret)
-    if (jwtPayload.csrf !== csrfHeader.value) {
-      this.logger.warn(`${this.csrfValidation.name} - ${CSRF_ERROR.MISMATCH}`)
-      throw new HttpException(CSRF_ERROR.MISMATCH, HttpStatus.FORBIDDEN)
-    }
+  private jwtSign2Fa(user: UserModel, type: TOKEN_TYPE, expiration: number, csrfToken: string): Promise<string> {
+    // Restrict the temporary token to the minimum required information
+    return this.jwt.signAsync(
+      {
+        identity: {
+          id: user.id,
+          login: user.login,
+          role: user.role,
+          twoFaEnabled: true
+        } satisfies JwtIdentity2FaPayload,
+        csrf: csrfToken
+      },
+      {
+        secret: configuration.auth.token[type].secret,
+        expiresIn: expiration
+      }
+    )
   }
 }

@@ -6,6 +6,8 @@
 
 import { Body, Controller, Delete, Get, Header, Param, ParseIntPipe, Patch, Post, Put, Req, Search, StreamableFile, UseGuards } from '@nestjs/common'
 import { createReadStream } from 'fs'
+import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
+import { AuthTwoFaGuard } from '../../authentication/guards/auth-two-fa-guard'
 import { FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface'
 import { USERS_ROUTE } from './constants/routes'
 import { USER_PERMISSION, USER_ROLE } from './constants/user'
@@ -15,7 +17,7 @@ import { GetUser } from './decorators/user.decorator'
 import { UserCreateOrUpdateGroupDto } from './dto/create-or-update-group.dto'
 import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from './dto/create-or-update-user.dto'
 import { SearchMembersDto } from './dto/search-members.dto'
-import { UserLanguageDto, UserNotificationDto, UserPasswordDto } from './dto/user-properties.dto'
+import { UserLanguageDto, UserNotificationDto, UserUpdatePasswordDto } from './dto/user-properties.dto'
 import { UserPermissionsGuard } from './guards/permissions.guard'
 import { UserRolesGuard } from './guards/roles.guard'
 import { GroupBrowse } from './interfaces/group-browse.interface'
@@ -33,7 +35,7 @@ export class UsersController {
 
   @Get(USERS_ROUTE.ME)
   @UserHaveRole(USER_ROLE.LINK)
-  me(@GetUser() user: UserModel): Promise<{ user: Omit<UserModel, 'password'> }> {
+  me(@GetUser() user: UserModel): Promise<Omit<LoginResponseDto, 'token'>> {
     return this.usersManager.me(user)
   }
 
@@ -44,7 +46,8 @@ export class UsersController {
   }
 
   @Put(`${USERS_ROUTE.ME}/${USERS_ROUTE.PASSWORD}`)
-  updatePassword(@GetUser() user: UserModel, @Body() userPasswordDto: UserPasswordDto) {
+  @UseGuards(AuthTwoFaGuard)
+  updatePassword(@GetUser() user: UserModel, @Body() userPasswordDto: UserUpdatePasswordDto) {
     return this.usersManager.updatePassword(user, userPasswordDto)
   }
 

@@ -18,7 +18,7 @@ export class UserNotificationDto {
   notification: number
 }
 
-export class UserPasswordDto {
+export class UserUpdatePasswordDto {
   @IsNotEmpty()
   @IsString()
   oldPassword: string
@@ -27,4 +27,11 @@ export class UserPasswordDto {
   @IsString()
   @MinLength(USER_PASSWORD_MIN_LENGTH)
   newPassword: string
+}
+
+export class UserPasswordDto {
+  @IsNotEmpty()
+  @IsString()
+  @MinLength(USER_PASSWORD_MIN_LENGTH)
+  password: string
 }

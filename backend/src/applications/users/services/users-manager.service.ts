@@ -12,22 +12,25 @@ import { WriteStream } from 'fs'
 import { createWriteStream } from 'node:fs'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
+import { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface'
 import { comparePassword } from '../../../common/functions'
 import { convertImageToBase64, generateAvatar, pngMimeType, svgMimeType } from '../../../common/image'
 import { STATIC_ASSETS_PATH } from '../../../configuration/config.constants'
+import { configuration, serverConfig } from '../../../configuration/config.environment'
 import { isPathExists, moveFiles } from '../../files/utils/files'
 import { MEMBER_TYPE } from '../constants/member'
 import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_ONLINE_STATUS, USER_ROLE } from '../constants/user'
 import { UserCreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
 import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto'
 import { SearchMembersDto } from '../dto/search-members.dto'
-import { UserLanguageDto, UserNotificationDto, UserPasswordDto } from '../dto/user-properties.dto'
+import type { UserLanguageDto, UserNotificationDto, UserUpdatePasswordDto } from '../dto/user-properties.dto'
 import type { GroupBrowse } from '../interfaces/group-browse.interface'
 import type { GroupMember, GroupWithMembers } from '../interfaces/group-member'
 import type { GuestUser } from '../interfaces/guest-user.interface'
 import type { Member } from '../interfaces/member.interface'
+import type { UserSecrets } from '../interfaces/user-secrets.interface'
 import type { UserOnline } from '../interfaces/websocket.interface'
 import { UserModel } from '../models/user.model'
 import type { Group } from '../schemas/group.interface'
@@ -44,7 +47,7 @@ export class UsersManager {
   private readonly logger = new Logger(UsersManager.name)
 
   constructor(
-    private readonly usersQueries: UsersQueries,
+    public readonly usersQueries: UsersQueries,
     private readonly adminUsersManager: AdminUsersManager
   ) {}
 
@@ -61,15 +64,7 @@ export class UsersManager {
   }
 
   async logUser(user: UserModel, password: string, ip: string): Promise<UserModel> {
-    if (user.role === USER_ROLE.LINK) {
-      this.logger.error(`${this.logUser.name} - guest link account ${user} is not authorized to login`)
-      throw new HttpException('Account is not allowed', HttpStatus.FORBIDDEN)
-    }
-    if (!user.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
-      this.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.logUser.name} - ${e}`))
-      this.logger.error(`${this.logUser.name} - user account *${user.login}* is locked`)
-      throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
-    }
+    this.validateUserAccess(user, ip)
     const authSuccess: boolean = await comparePassword(password, user.password)
     this.updateAccesses(user, ip, authSuccess).catch((e: Error) => this.logger.error(`${this.logUser.name} - ${e}`))
     if (authSuccess) {
@@ -80,14 +75,27 @@ export class UsersManager {
     return null
   }
 
-  async me(authUser: UserModel): Promise<{ user: Omit<UserModel, 'password'> }> {
+  validateUserAccess(user: UserModel, ip: string) {
+    if (user.role === USER_ROLE.LINK) {
+      this.logger.error(`${this.logUser.name} - guest link account ${user} is not authorized to login`)
+      throw new HttpException('Account is not allowed', HttpStatus.FORBIDDEN)
+    }
+    if (!user.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
+      this.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.logUser.name} - ${e}`))
+      this.logger.error(`${this.logUser.name} - user account *${user.login}* is locked`)
+      throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
+    }
+  }
+
+  async me(authUser: UserModel): Promise<Omit<LoginResponseDto, 'token'>> {
     const user = await this.fromUserId(authUser.id)
     if (!user) {
-      throw new HttpException(`User *${authUser.login} (${authUser.id}) not found`, HttpStatus.NOT_FOUND)
+      this.logger.warn(`User *${authUser.login} (${authUser.id}) not found`)
+      throw new HttpException(`User not found`, HttpStatus.NOT_FOUND)
     }
     user.impersonated = !!authUser.impersonatedFromId
     user.clientId = authUser.clientId
-    return { user: user }
+    return { user: user, server: serverConfig }
   }
 
   async compareUserPassword(userId: number, password: string): Promise<boolean> {
@@ -101,7 +109,7 @@ export class UsersManager {
     }
   }
 
-  async updatePassword(user: UserModel, userPasswordDto: UserPasswordDto) {
+  async updatePassword(user: UserModel, userPasswordDto: UserUpdatePasswordDto) {
     const r = await this.usersQueries.selectUserProperties(user.id, ['password'])
     if (!r) {
       throw new HttpException('Unable to check password', HttpStatus.NOT_FOUND)
@@ -145,8 +153,22 @@ export class UsersManager {
     }
   }
 
-  async updateAccesses(user: UserModel, ip: string, success: boolean) {
-    const passwordAttempts = success ? 0 : Math.min(user.passwordAttempts + 1, USER_MAX_PASSWORD_ATTEMPTS)
+  async updateSecrets(userId: number, secrets: UserSecrets) {
+    const userProps = (await this.usersQueries.selectUserProperties(userId, ['secrets'])) as { secrets: UserSecrets }
+    const updatedSecrets = userProps['secrets'] ? { ...userProps['secrets'], ...secrets } : secrets
+    if (!(await this.usersQueries.updateUserOrGuest(userId, { secrets: updatedSecrets }))) {
+      throw new HttpException('Unable to update secrets', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+
+  async updateAccesses(user: UserModel, ip: string, success: boolean, isAuthTwoFa = false) {
+    let passwordAttempts: number
+    if (!isAuthTwoFa && configuration.auth.mfa.totp.enabled && user.twoFaEnabled) {
+      // Do not reset password attempts if the login still requires 2FA validation
+      passwordAttempts = user.passwordAttempts
+    } else {
+      passwordAttempts = success ? 0 : Math.min(user.passwordAttempts + 1, USER_MAX_PASSWORD_ATTEMPTS)
+    }
     await this.usersQueries.updateUserOrGuest(user.id, {
       lastAccess: user.currentAccess,
       currentAccess: new Date(),

@@ -142,7 +142,40 @@
                                         placeholder="new password">
                     </app-input-password>
                   </div>
-                  <button (click)="submitPassword()" class="d-flex btn btn-xs btn-primary text-nowrap" type="button" l10nTranslate>Update</button>
+                  <button [disabled]="!newPassword || !oldPassword || newPassword.length < passwordMinLength"
+                          (click)="submitPassword()"
+                          class="d-flex btn btn-xs btn-primary text-nowrap"
+                          type="button" l10nTranslate>Update
+                  </button>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <span class="col-3 align-self-start text-nowrap" l10nTranslate>Security</span>
+                <div class="col-auto">
+                  <div class="fw-500 mb-2" l10nTranslate>Two-Factor Authentication</div>
+                  @if (user.twoFaEnabled) {
+                    <button (click)="enable2Fa()"
+                            [disabled]="!store.server().twoFaEnabled"
+                            class="btn btn-xs btn-warning me-2"
+                            type="button" l10nTranslate>
+                      Reset
+                    </button>
+                      <button (click)="disable2Fa()"
+                              [disabled]="!store.server().twoFaEnabled"
+                              class="btn btn-xs btn-danger"
+                              type="button" l10nTranslate>
+                        Disable
+                      </button>
+                  } @else {
+                    <div class="mb-1">
+                      <button (click)="enable2Fa()"
+                              [disabled]="!store.server().twoFaEnabled"
+                              class="btn btn-xs btn-primary me-1"
+                              type="button" l10nTranslate>
+                        Enable
+                      </button>
+                    </div>
+                  }
                 </div>
               </div>
             }

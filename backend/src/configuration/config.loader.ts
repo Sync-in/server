@@ -16,10 +16,10 @@ import {
   ENVIRONMENT_PATH,
   ENVIRONMENT_PREFIX
 } from './config.constants'
-import type { Configuration } from './config.validation'
+import type { GlobalConfig } from './config.validation'
 
 export function configLoader(): any {
-  let config: Partial<Configuration> = loadEnvFile(ENVIRONMENT_PATH, ENVIRONMENT_FILE_NAME)
+  let config: Partial<GlobalConfig> = loadEnvFile(ENVIRONMENT_PATH, ENVIRONMENT_FILE_NAME)
 
   if (hasEnvConfig()) {
     // If any environment vars are found, parse the config model and apply those settings

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { HttpClient } from '@angular/common/http'
+import { HttpClient, HttpHeaders } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import {
@@ -27,12 +27,13 @@ import type {
 } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
 import type { AdminDeleteUserDto } from '@sync-in-server/backend/src/applications/users/dto/delete-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
-import type { UserPasswordDto } from '@sync-in-server/backend/src/applications/users/dto/user-password.dto'
+import type { UserPasswordDto } from '@sync-in-server/backend/src/applications/users/dto/user-properties.dto'
 import type { AdminGroup } from '@sync-in-server/backend/src/applications/users/interfaces/admin-group.interface'
 import type { AdminUser } from '@sync-in-server/backend/src/applications/users/interfaces/admin-user.interface'
 import type { GroupBrowse } from '@sync-in-server/backend/src/applications/users/interfaces/group-browse.interface'
 import type { GuestUser } from '@sync-in-server/backend/src/applications/users/interfaces/guest-user.interface'
 import type { Member } from '@sync-in-server/backend/src/applications/users/interfaces/member.interface'
+import { TWO_FA_HEADER } from '@sync-in-server/backend/src/authentication/constants/auth'
 import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import { catchError, map, Observable } from 'rxjs'
 import { AuthService } from '../../auth/auth.service'
@@ -81,11 +82,14 @@ export class AdminService {
       .pipe(map((u) => (isGuest ? new GuestUserModel(u) : new AdminUserModel(u))))
   }
 
-  deleteUser(userId: number, adminDeleteUserDto?: AdminDeleteUserDto, isGuest = false): Observable<void> {
+  deleteUser(userId: number, adminDeleteUserDto?: AdminDeleteUserDto, isGuest = false, totpCode?: string): Observable<void> {
     if (isGuest) {
       return this.http.delete<void>(`${API_ADMIN_GUESTS}/${userId}`)
     } else {
-      return this.http.request<void>('delete', `${API_ADMIN_USERS}/${userId}`, { body: adminDeleteUserDto })
+      return this.http.request<void>('delete', `${API_ADMIN_USERS}/${userId}`, {
+        headers: totpCode ? new HttpHeaders({ [TWO_FA_HEADER]: totpCode }) : undefined,
+        body: adminDeleteUserDto
+      })
     }
   }
 
@@ -137,8 +141,10 @@ export class AdminService {
     )
   }
 
-  impersonateUser(userId: number, passwordDto: UserPasswordDto): Observable<LoginResponseDto> {
-    return this.http.post<LoginResponseDto>(`${API_ADMIN_IMPERSONATE}/${userId}`, passwordDto)
+  impersonateUser(userId: number, adminPasswordDto: UserPasswordDto, totpCode?: string): Observable<LoginResponseDto> {
+    return this.http.post<LoginResponseDto>(`${API_ADMIN_IMPERSONATE}/${userId}`, adminPasswordDto, {
+      headers: totpCode ? { [TWO_FA_HEADER]: totpCode } : {}
+    })
   }
 
   initImpersonateUser(r: LoginResponseDto) {

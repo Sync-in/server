@@ -1,0 +1,72 @@
+<!--
+  ~ Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+  ~ This file is part of Sync-in | The open source file sync and share solution
+  ~ See the LICENSE file for licensing details
+  -->
+<div class="modal-header align-items-center justify-content-center">
+  <h4 class="modal-title">
+    <fa-icon [icon]="icons.faLock" class="me-2"></fa-icon>
+    <span l10nTranslate>Two-Factor Authentication</span>
+  </h4>
+</div>
+<div class="modal-body modal-auth-verify-2fa">
+  @if (wasEnabled) {
+    <p class="text-align-center" l10nTranslate>
+      Keep these codes in a safe place. They will allow you to access your account if you lose access to your two-factor authentication.
+    </p>
+    <p class="text-align-center font-italic text-warning" l10nTranslate>
+      These recovery codes are for one-time use only and will only be displayed here once.
+    </p>
+    <ul class="list-group text-align-center my-3">
+      @for (code of recoveryCodes; track $index) {
+        <li class="list-group-item font-monospace">{{ code }}</li>
+      }
+    </ul>
+    <div class="d-grid gap-2">
+      <button type="button" (click)="downloadRecoveryCodes()" class="btn btn-primary" l10nTranslate>Download</button>
+      <button type="button" (click)="clipBoardRecoveryCodes()" class="btn btn-success" l10nTranslate>Copy</button>
+      <button type="button" (click)="onClose(true)" class="btn btn-secondary" l10nTranslate>Close</button>
+    </div>
+  } @else {
+    <div class="d-flex flex-column text-align-center justify-content-center align-items-center fs-xs mt-2 mb-4" style="height: 45px">
+      @if (hasError) {
+        <div class="text-danger" l10nTranslate>{{ hasError }}</div>
+      } @else {
+        <span l10nTranslate>Scan this QR code using your authenticator app.</span>
+        <small class="text-muted">&nbsp;<i l10nTranslate>(Such as FreeOTP, Proton Authenticator etc.)</i></small>
+      }
+    </div>
+    <div class="text-center my-3">
+      <img [src]="qrDataUrl" alt="QR Code" class="img-fluid border p-2 rounded" style="max-width: 150px;">
+    </div>
+    <div class="text-muted small text-center mb-3">
+      <div class="mb-2" l10nTranslate>Or enter this secret manually</div>
+      <div>
+        <fa-icon [icon]="icons.faCopy"></fa-icon>
+        <strong (click)="clipBoardSecret()" role="button" class="ms-1 font-monospace link-primary">{{ secret }}</strong>
+      </div>
+    </div>
+    <hr>
+    <div class="text-align-center mb-3" l10nTranslate>Confirm activation with your TOTP code</div>
+    <form (ngSubmit)="onSubmit()" [formGroup]="twoFaForm">
+      <div class="mb-3">
+        <input
+          appAutofocus
+          type="text"
+          [maxlength]=twoFaCodelength
+          class="form-control text-center fs-4"
+          formControlName="totpCode"
+          placeholder="••••••"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          name="totp"
+        />
+      </div>
+      <div class="d-grid gap-2">
+        <button type="submit" [disabled]="twoFaForm.invalid || submitted" class="btn btn-primary" l10nTranslate>Confirm</button>
+        <button type="button" (click)="onClose()" class="btn btn-secondary" l10nTranslate>Cancel</button>
+      </div>
+    </form>
+  }
+</div>
+

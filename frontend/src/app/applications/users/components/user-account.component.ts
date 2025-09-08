@@ -4,6 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
+import { HttpErrorResponse } from '@angular/common/http'
 import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -14,10 +15,13 @@ import {
   USER_PASSWORD_MIN_LENGTH
 } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
+import { TwoFaSetup } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { ProgressbarModule } from 'ngx-bootstrap/progressbar'
 import { ClipboardService } from 'ngx-clipboard'
 import { Subscription } from 'rxjs'
+import { filter, take } from 'rxjs/operators'
 import { InputPasswordComponent } from '../../../common/components/input-password.component'
 import { PasswordStrengthBarComponent } from '../../../common/components/password-strength-bar.component'
 import { StorageUsageComponent } from '../../../common/components/storage-usage.component'
@@ -30,6 +34,7 @@ import { StoreService } from '../../../store/store.service'
 import { UserType } from '../interfaces/user.interface'
 import { USER_ICON, USER_LANGUAGE_AUTO, USER_PATH, USER_TITLE } from '../user.constants'
 import { UserService } from '../user.service'
+import { UserAuth2faEnableDialogComponent } from './dialogs/user-auth-2fa-enable-dialog.component'
 
 @Component({
   selector: 'app-user-account',
@@ -61,7 +66,7 @@ export class UserAccountComponent implements OnDestroy {
   // password
   protected oldPassword: string
   protected newPassword: string
-  private readonly store = inject(StoreService)
+  protected readonly store = inject(StoreService)
   private readonly layout = inject(LayoutService)
   protected languages = this.layout.getLanguages(true)
   private readonly userService = inject(UserService)
@@ -108,7 +113,7 @@ export class UserAccountComponent implements OnDestroy {
     this.userService.uploadAvatar(ev.target.files[0])
   }
 
-  submitPassword() {
+  async submitPassword() {
     if (!this.oldPassword) {
       this.layout.sendNotification('error', 'Configuration', 'Current password missing !')
       return
@@ -121,9 +126,27 @@ export class UserAccountComponent implements OnDestroy {
       this.layout.sendNotification('warning', 'Configuration', 'New password must have 8 characters minimum')
       return
     }
-    this.userService.changePassword({ oldPassword: this.oldPassword, newPassword: this.newPassword }).subscribe({
-      next: () => this.goodCurrentPassword(),
-      error: () => this.badCurrentPassword()
+    const auth2Fa = await this.userService.auth2FaVerifyDialog()
+    if (auth2Fa === false) {
+      this.oldPassword = ''
+      this.newPassword = ''
+      return
+    }
+    const totpCode = typeof auth2Fa === 'string' ? auth2Fa : undefined
+    this.userService.changePassword({ oldPassword: this.oldPassword, newPassword: this.newPassword }, totpCode).subscribe({
+      next: () => {
+        this.oldPassword = ''
+        this.newPassword = ''
+        this.layout.sendNotification('info', 'Configuration', 'Password has been updated')
+      },
+      error: (e: HttpErrorResponse) => {
+        this.oldPassword = ''
+        if (e.status === 403) {
+          this.layout.sendNotification('error', 'Configuration', 'Unable to update password', e)
+        } else {
+          this.layout.sendNotification('warning', 'Configuration', 'Current password does not match')
+        }
+      }
     })
   }
 
@@ -142,20 +165,49 @@ export class UserAccountComponent implements OnDestroy {
     this.layout.sendNotification('info', 'Link copied', this.webdavUrl)
   }
 
+  async enable2Fa() {
+    this.userService.init2Fa().subscribe({
+      next: (init: TwoFaSetup) => {
+        const modalRef: BsModalRef<UserAuth2faEnableDialogComponent> = this.layout.openDialog(
+          UserAuth2faEnableDialogComponent,
+          'xs',
+          { initialState: { qrDataUrl: init.qrDataUrl, secret: init.secret } as UserAuth2faEnableDialogComponent },
+          { keyboard: false }
+        )
+        modalRef.content.isValid
+          .pipe(
+            filter((isValid: boolean) => isValid),
+            take(1)
+          )
+          .subscribe(() => {
+            this.layout.sendNotification('success', 'Configuration', 'Two-Factor Authentication is enabled')
+            this.store.user.next({ ...this.store.user.getValue(), twoFaEnabled: true })
+          })
+      },
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Configuration', 'Two-Factor Authentication has failed', e)
+    })
+  }
+
+  async disable2Fa() {
+    const auth2Fa = await this.userService.auth2FaVerifyDialog()
+    if (auth2Fa === false) {
+      return
+    }
+    const totpCode = typeof auth2Fa === 'string' ? auth2Fa : undefined
+    this.userService.disable2Fa({ code: totpCode }).subscribe({
+      next: () => {
+        this.layout.sendNotification('success', 'Configuration', 'Two-Factor Authentication is disabled')
+        this.store.user.next({ ...this.store.user.getValue(), twoFaEnabled: false })
+      },
+      error: (e: HttpErrorResponse) => {
+        this.layout.sendNotification('error', 'Configuration', 'Two-Factor Authentication has failed', e)
+      }
+    })
+  }
+
   private updateLanguage(language: string) {
     this.user.language = language
     this.layout.setLanguage(language)
     this.layout.sendNotification('info', 'Configuration', 'Language updated')
-  }
-
-  private badCurrentPassword() {
-    this.oldPassword = ''
-    this.layout.sendNotification('warning', 'Configuration', 'Current password does not match')
-  }
-
-  private goodCurrentPassword() {
-    this.oldPassword = ''
-    this.newPassword = ''
-    this.layout.sendNotification('info', 'Configuration', 'Password has been updated')
   }
 }

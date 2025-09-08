@@ -140,7 +140,7 @@ export class UsersQueries {
       .where(and(...where))
   }
 
-  async selectUserProperties(userId: number, fields: Partial<keyof User>[]): Promise<Record<string, any>> {
+  async selectUserProperties(userId: number, fields: Partial<keyof User>[]): Promise<Partial<User>> {
     const select: Record<keyof User, any> = convertToSelect(users, fields)
     const [r]: Record<string, any>[] = await this.db.select(select).from(users).where(eq(users.id, userId)).limit(1)
     return r
@@ -456,75 +456,6 @@ export class UsersQueries {
     return guest
   }
 
-  private async searchGroups(
-    searchMembersDto: SearchMembersDto,
-    userId?: number,
-    limit = 3
-  ): Promise<Pick<Group, 'id' | 'name' | 'description' | 'type' | 'permissions'>[]> {
-    /* Search for groups */
-    const where: SQL[] = [like(groups.name, `%${searchMembersDto.search}%`)]
-    if (userId) {
-      let idsWhitelist: number[] = await this.groupsWhitelist(userId)
-      if (searchMembersDto.ignoreGroupIds?.length) {
-        idsWhitelist = idsWhitelist.filter((id) => searchMembersDto.ignoreGroupIds.indexOf(id) === -1)
-      }
-      where.unshift(inArray(groups.id, idsWhitelist))
-    } else if (searchMembersDto.ignoreGroupIds?.length) {
-      where.unshift(notInArray(groups.id, searchMembersDto.ignoreGroupIds))
-    }
-    if (searchMembersDto.excludePersonalGroups) {
-      where.unshift(eq(groups.type, GROUP_TYPE.USER))
-    }
-    return this.db
-      .select({ id: groups.id, name: groups.name, description: groups.description, type: groups.type, permissions: groups.permissions })
-      .from(groups)
-      .where(and(...where))
-      .limit(limit)
-  }
-
-  private async searchUsers(
-    searchMembersDto: SearchMembersDto,
-    userId?: number,
-    limit = 3
-  ): Promise<Pick<UserModel, 'id' | 'login' | 'email' | 'fullName' | 'role' | 'permissions'>[]> {
-    /* Search for users */
-    const where: SQL[] = [
-      ne(users.role, USER_ROLE.LINK),
-      or(like(sql`CONCAT_WS('-', ${users.login}, ${users.email}, ${users.firstName}, ${users.lastName})`, `%${searchMembersDto.search}%`))
-    ]
-    if (userId) {
-      let idsWhitelist: number[] = await this.usersWhitelist(userId)
-      if (searchMembersDto.ignoreUserIds?.length) {
-        idsWhitelist = idsWhitelist.filter((id) => searchMembersDto.ignoreUserIds.indexOf(id) === -1)
-      }
-      where.unshift(inArray(users.id, idsWhitelist))
-    } else {
-      if (searchMembersDto.ignoreUserIds?.length) {
-        where.unshift(notInArray(users.id, searchMembersDto.ignoreUserIds))
-      }
-    }
-    if (typeof searchMembersDto.usersRole !== 'undefined') {
-      if (searchMembersDto.usersRole === USER_ROLE.USER) {
-        // allow admin users
-        where.unshift(lte(users.role, searchMembersDto.usersRole))
-      } else {
-        where.unshift(eq(users.role, searchMembersDto.usersRole))
-      }
-    }
-    return this.db
-      .select({
-        id: users.id,
-        login: users.login,
-        email: users.email,
-        fullName: userFullNameSQL(users),
-        role: users.role,
-        permissions: users.permissions
-      })
-      .from(users)
-      .where(and(...where))
-      .limit(limit)
-  }
-
   @CacheDecorator(900)
   async usersWhitelist(userId: number, lowerOrEqualUserRole: USER_ROLE = USER_ROLE.GUEST): Promise<number[]> {
     /* Get the list of user ids allowed to the current user
@@ -635,5 +566,74 @@ export class UsersQueries {
     `
     const [r]: { userId: number }[][] = (await this.db.execute(withChildren)) as MySqlQueryResult
     return r.length ? r.map((r) => r.userId) : []
+  }
+
+  private async searchGroups(
+    searchMembersDto: SearchMembersDto,
+    userId?: number,
+    limit = 3
+  ): Promise<Pick<Group, 'id' | 'name' | 'description' | 'type' | 'permissions'>[]> {
+    /* Search for groups */
+    const where: SQL[] = [like(groups.name, `%${searchMembersDto.search}%`)]
+    if (userId) {
+      let idsWhitelist: number[] = await this.groupsWhitelist(userId)
+      if (searchMembersDto.ignoreGroupIds?.length) {
+        idsWhitelist = idsWhitelist.filter((id) => searchMembersDto.ignoreGroupIds.indexOf(id) === -1)
+      }
+      where.unshift(inArray(groups.id, idsWhitelist))
+    } else if (searchMembersDto.ignoreGroupIds?.length) {
+      where.unshift(notInArray(groups.id, searchMembersDto.ignoreGroupIds))
+    }
+    if (searchMembersDto.excludePersonalGroups) {
+      where.unshift(eq(groups.type, GROUP_TYPE.USER))
+    }
+    return this.db
+      .select({ id: groups.id, name: groups.name, description: groups.description, type: groups.type, permissions: groups.permissions })
+      .from(groups)
+      .where(and(...where))
+      .limit(limit)
+  }
+
+  private async searchUsers(
+    searchMembersDto: SearchMembersDto,
+    userId?: number,
+    limit = 3
+  ): Promise<Pick<UserModel, 'id' | 'login' | 'email' | 'fullName' | 'role' | 'permissions'>[]> {
+    /* Search for users */
+    const where: SQL[] = [
+      ne(users.role, USER_ROLE.LINK),
+      or(like(sql`CONCAT_WS('-', ${users.login}, ${users.email}, ${users.firstName}, ${users.lastName})`, `%${searchMembersDto.search}%`))
+    ]
+    if (userId) {
+      let idsWhitelist: number[] = await this.usersWhitelist(userId)
+      if (searchMembersDto.ignoreUserIds?.length) {
+        idsWhitelist = idsWhitelist.filter((id) => searchMembersDto.ignoreUserIds.indexOf(id) === -1)
+      }
+      where.unshift(inArray(users.id, idsWhitelist))
+    } else {
+      if (searchMembersDto.ignoreUserIds?.length) {
+        where.unshift(notInArray(users.id, searchMembersDto.ignoreUserIds))
+      }
+    }
+    if (typeof searchMembersDto.usersRole !== 'undefined') {
+      if (searchMembersDto.usersRole === USER_ROLE.USER) {
+        // allow admin users
+        where.unshift(lte(users.role, searchMembersDto.usersRole))
+      } else {
+        where.unshift(eq(users.role, searchMembersDto.usersRole))
+      }
+    }
+    return this.db
+      .select({
+        id: users.id,
+        login: users.login,
+        email: users.email,
+        fullName: userFullNameSQL(users),
+        role: users.role,
+        permissions: users.permissions
+      })
+      .from(users)
+      .where(and(...where))
+      .limit(limit)
   }
 }

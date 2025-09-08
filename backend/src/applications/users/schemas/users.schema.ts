@@ -6,6 +6,8 @@
 
 import { SQL, sql } from 'drizzle-orm'
 import { bigint, boolean, char, datetime, index, mysqlTable, tinyint, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
+import { jsonColumn } from '../../../infrastructure/database/columns'
+import { UserSecrets } from '../interfaces/user-secrets.interface'
 
 /*
   role:
@@ -39,6 +41,7 @@ export const users = mysqlTable(
     passwordAttempts: tinyint('passwordAttempts', { unsigned: true }).default(0).notNull(),
     role: tinyint('role', { unsigned: true }).default(1).notNull(),
     isActive: boolean('isActive').default(true).notNull(),
+    secrets: jsonColumn<UserSecrets>()('secrets'),
     language: char('language', { length: 2 }),
     permissions: varchar('permissions', { length: 255 }).default('').notNull(),
     storageUsage: bigint('storageUsage', { mode: 'number', unsigned: true }).default(0),

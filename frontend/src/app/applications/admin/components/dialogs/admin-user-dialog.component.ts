@@ -9,7 +9,17 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faAddressCard, faShieldHalved, faSpinner, faUserPen, faUserPlus, faUsers } from '@fortawesome/free-solid-svg-icons'
+import {
+  faAddressCard,
+  faLock,
+  faLockOpen,
+  faShieldHalved,
+  faSpinner,
+  faTrash,
+  faUserPen,
+  faUserPlus,
+  faUsers
+} from '@fortawesome/free-solid-svg-icons'
 import {
   USER_LOGIN_VALIDATION,
   USER_NOTIFICATION_TEXT,
@@ -39,6 +49,7 @@ import { USER_ICON, USER_LANGUAGE_AUTO, USER_PASSWORD_CHANGE_TEXT } from '../../
 import { AdminService } from '../../admin.service'
 import { AdminUserModel } from '../../models/admin-user.model'
 import { AdminPermissionsComponent } from '../utils/admin-permissions.component'
+import { AdminResetUserTwoFaDialogComponent } from './admin-reset-user-two-fa-dialog.component'
 import { AdminUserDeleteDialogComponent } from './admin-user-delete-dialog.component'
 
 @Component({
@@ -74,7 +85,18 @@ export class AdminUserDialogComponent implements OnInit {
   protected loading = false
   protected confirmDeletion = false
   protected tabView: undefined | 'permissions' | 'groups'
-  protected readonly icons = { GROUPS: USER_ICON.GROUPS, faUserPlus, faUserPen, faSpinner, faAddressCard, faUsers, faShieldHalved }
+  protected readonly icons = {
+    GROUPS: USER_ICON.GROUPS,
+    faUserPlus,
+    faUserPen,
+    faSpinner,
+    faAddressCard,
+    faUsers,
+    faShieldHalved,
+    faTrash,
+    faLock,
+    faLockOpen
+  }
   protected readonly allNotifications = Object.values(USER_NOTIFICATION_TEXT)
   protected readonly defaultPassword: string = this.layout.translateString(USER_PASSWORD_CHANGE_TEXT)
   protected readonly languages: string[] = this.layout.getLanguages(true)
@@ -150,6 +172,15 @@ export class AdminUserDialogComponent implements OnInit {
     } else {
       this.layout.closeDialog()
     }
+  }
+
+  reset2Fa() {
+    const modalRef: BsModalRef<AdminResetUserTwoFaDialogComponent> = this.layout.openDialog(AdminResetUserTwoFaDialogComponent, 'sm', {
+      initialState: { user: this.user } as AdminResetUserTwoFaDialogComponent
+    })
+    modalRef.content.wasReset.pipe(take(1)).subscribe((wasReset: boolean) => {
+      this.user.twoFaEnabled = wasReset
+    })
   }
 
   onSubmit() {

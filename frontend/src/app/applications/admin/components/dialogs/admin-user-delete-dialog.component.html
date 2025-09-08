@@ -19,14 +19,17 @@
 <div class="modal-body" [formGroup]="deleteUserForm">
   <div class="d-flex align-items-center avatar mb-3">
     <img class="avatar-img" [src]="user.avatarUrl" alt="">
-    <span class="fw-bold mx-2">{{ user.login | capitalize }}</span>
-    <span l10nTranslate>will be permanently removed</span>
+    <div class="d-flex flex-column">
+      <span class="mx-2"><b>{{ user.login | capitalize }}</b></span>
+      <span class="mx-2">{{ user.email }}</span>
+    </div>
   </div>
   <app-input-password id="password"
                       [password]="deleteUserForm.value.adminPassword"
                       (passwordChange)="deleteUserForm.controls.adminPassword.setValue($event)"
                       [isRequired]="true"
                       [focus]="true"
+                      (keyup.enter)="!deleteUserForm.invalid && !submitted && onSubmit()"
                       placeholder="Enter your password to confirm">
   </app-input-password>
   <div class="form-check form-check-inline mt-3">
@@ -39,7 +42,13 @@
   </div>
 </div>
 <div class="modal-footer">
-  <button (click)="onClose()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onClose()"
+          class="btn btn-sm btn-secondary ms-auto"
+          data-dismiss="modal"
+          type="button"
+          l10nTranslate>
+    Cancel
+  </button>
   <button (click)="onSubmit()"
           [disabled]="deleteUserForm.invalid || submitted" class="btn btn-sm btn-primary"
           type="button"

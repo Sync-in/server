@@ -73,12 +73,13 @@ export async function comparePassword(password: string, hash: string): Promise<b
   return await bcrypt.compare(password, hash)
 }
 
-export function generateShortUUID(length: number = 16): string {
-  return crypto.randomBytes(length).toString('base64url')
+export function generateShortUUID(length: number = 32, encoding: BufferEncoding = 'base64url'): string {
+  const bytes = Math.ceil((length * 3) / 4) // adapt to real length
+  return crypto.randomBytes(bytes).toString(encoding)
 }
 
-export function anonymizePassword(obj: { password?: string }) {
-  return { ...obj, ...(obj?.password && { password: '********' }) }
+export function anonymizePassword(obj: { password?: string; secrets?: string }) {
+  return { ...obj, ...(obj?.password && { password: '********' }), ...(obj?.secrets && { secrets: '********' }) }
 }
 
 export function splitFullName(fullName: string): { firstName: string; lastName: string } {

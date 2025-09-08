@@ -285,7 +285,7 @@ export class FilesOnlyOfficeManager {
     if (existingDocKey) {
       return existingDocKey
     }
-    const docKey = generateShortUUID(16)
+    const docKey = generateShortUUID(64)
     await this.cache.set(cacheKey, docKey, this.expiration)
     this.logger.debug(`${this.getDocumentKey.name} - ${cacheKey} (${docKey}) created`)
     return docKey

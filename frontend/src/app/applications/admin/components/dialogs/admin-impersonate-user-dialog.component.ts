@@ -10,12 +10,12 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faUserSecret } from '@fortawesome/free-solid-svg-icons'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
-import { UserPasswordDto } from '@sync-in-server/backend/src/applications/users/dto/user-password.dto'
-import { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
+import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { InputPasswordComponent } from '../../../../common/components/input-password.component'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
 import { LayoutService } from '../../../../layout/layout.service'
+import { UserService } from '../../../users/user.service'
 import { AdminService } from '../../admin.service'
 import { AdminUserModel } from '../../models/admin-user.model'
 
@@ -34,11 +34,18 @@ export class AdminImpersonateUserDialogComponent {
   protected impersonateUserForm = new FormGroup<{
     password: FormControl<string>
   }>({ password: new FormControl('', Validators.required) })
+  private readonly userService = inject(UserService)
   private readonly adminService = inject(AdminService)
 
-  onSubmit() {
+  async onSubmit() {
     this.submitted = true
-    this.adminService.impersonateUser(this.user.id, { password: this.impersonateUserForm.value.password } satisfies UserPasswordDto).subscribe({
+    const auth2Fa = await this.userService.auth2FaVerifyDialog()
+    if (auth2Fa === false) {
+      this.layout.closeDialog()
+      return
+    }
+    const totpCode = typeof auth2Fa === 'string' ? auth2Fa : undefined
+    this.adminService.impersonateUser(this.user.id, { password: this.impersonateUserForm.value.password }, totpCode).subscribe({
       next: (r: LoginResponseDto) => {
         this.layout.closeDialog()
         setTimeout(() => this.adminService.initImpersonateUser(r), 500)

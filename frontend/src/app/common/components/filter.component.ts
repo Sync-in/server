@@ -23,7 +23,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
         class="form-control form-control-sm"
         style="padding-right: 24px"
         (keyup.escape)="clear()"
-        [placeholder]="'Filter' | translate: locale.language"
+        [placeholder]="('Filter' | translate: locale.language) + ' (Ctrl/⌘+F)'"
         [formControl]="searchControl"
       />
       @if (search()) {
@@ -62,7 +62,6 @@ export class FilterComponent implements OnDestroy {
     } else if (ev.keyCode === 27) {
       // escape key
       ev.preventDefault()
-      ev.stopPropagation()
     }
   }
 

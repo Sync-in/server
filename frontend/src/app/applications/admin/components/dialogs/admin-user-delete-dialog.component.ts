@@ -14,6 +14,7 @@ import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { InputPasswordComponent } from '../../../../common/components/input-password.component'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
 import { LayoutService } from '../../../../layout/layout.service'
+import { UserService } from '../../../users/user.service'
 import { AdminService } from '../../admin.service'
 import { AdminUserModel } from '../../models/admin-user.model'
 
@@ -34,19 +35,31 @@ export class AdminUserDeleteDialogComponent {
   }>({ adminPassword: new FormControl('', Validators.required), deleteSpace: new FormControl(false) })
   private readonly layout = inject(LayoutService)
   private readonly adminService = inject(AdminService)
+  private readonly userService = inject(UserService)
 
   onClose() {
     this.wasDeleted.emit(false)
     this.layout.closeDialog()
   }
 
-  onSubmit() {
+  async onSubmit() {
     this.submitted = true
+    const auth2Fa = await this.userService.auth2FaVerifyDialog()
+    if (auth2Fa === false) {
+      this.onClose()
+      return
+    }
+    const totpCode = typeof auth2Fa === 'string' ? auth2Fa : undefined
     this.adminService
-      .deleteUser(this.user.id, {
-        adminPassword: this.deleteUserForm.value.adminPassword,
-        deleteSpace: this.deleteUserForm.value.deleteSpace
-      } satisfies AdminDeleteUserDto)
+      .deleteUser(
+        this.user.id,
+        {
+          adminPassword: this.deleteUserForm.value.adminPassword,
+          deleteSpace: this.deleteUserForm.value.deleteSpace
+        } satisfies AdminDeleteUserDto,
+        false,
+        totpCode
+      )
       .subscribe({
         next: () => {
           this.wasDeleted.emit(true)

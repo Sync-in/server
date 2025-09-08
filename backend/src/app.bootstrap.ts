@@ -80,7 +80,7 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
     secret: configuration.auth.token.csrf.secret,
     parseOptions: {
       secure: 'auto',
-      sameSite: configuration.auth.sameSite,
+      sameSite: configuration.auth.cookieSameSite,
       httpOnly: true
     }
   })

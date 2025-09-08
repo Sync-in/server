@@ -20,7 +20,7 @@ import { Cache } from '../services/cache.service'
 
 @Injectable()
 export class MysqlCacheAdapter implements Cache {
-  /* Useful sql commands to stats the scheduler
+  /* Useful SQL commands to stats the scheduler
     SHOW VARIABLES LIKE 'event_scheduler';
     SHOW EVENTS;
   */

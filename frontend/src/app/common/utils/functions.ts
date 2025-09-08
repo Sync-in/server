@@ -174,10 +174,10 @@ export function filterArray(search: string, collection: any[], field?: string) {
   }
 }
 
-export function downloadWithAnchor(href: string) {
+export function downloadWithAnchor(href: string, downloadName = '') {
   const anchor = document.createElement('a')
   anchor.href = href
-  anchor.download = ''
+  anchor.download = downloadName
   document.body.appendChild(anchor)
   anchor.click()
   document.body.removeChild(anchor)

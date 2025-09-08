@@ -677,7 +677,7 @@ export class SharesManager {
     language?: string,
     isActive: boolean = true
   ): Promise<Partial<User>> {
-    const random = generateShortUUID(32)
+    const random = generateShortUUID(64)
     const guestLink = {
       login: random,
       email: `${random}@sync-in`,
@@ -685,7 +685,7 @@ export class SharesManager {
       lastName: 'Link',
       language: language || null,
       permissions: permission,
-      password: await hashPassword(password || generateShortUUID(12)),
+      password: await hashPassword(password || generateShortUUID(24)),
       role: USER_ROLE.LINK,
       isActive: isActive
     } satisfies CreateUserDto

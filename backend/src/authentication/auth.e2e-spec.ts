@@ -308,13 +308,13 @@ describe('Auth (e2e)', () => {
         expect(cookie.content).toContain('HttpOnly')
       }
       expect(cookie.content).not.toContain('Secure')
-      expect(cookie.content[cookie.content.length - 1].split('=')[1].toLowerCase()).toBe(authConfig.sameSite)
+      expect(cookie.content[cookie.content.length - 1].split('=')[1].toLowerCase()).toBe(authConfig.cookieSameSite)
       if (clear) {
         expect(cookie.content[0].split('=')[1]).toBe('')
         expect(cookie.content[1].split('=')[1]).toBe('0')
         expect(cookie.content[3].split('=')[1]).toBe('Thu, 01 Jan 1970 00:00:00 GMT')
       } else {
-        expect(parseInt(cookie.content[1].split('=')[1])).toBeCloseTo(convertHumanTimeToSeconds(authConfig.token[cookie.type].cookieMaxAge), -1)
+        expect(parseInt(cookie.content[1].split('=')[1])).toBeCloseTo(convertHumanTimeToSeconds(authConfig.token[cookie.type].expiration), -1)
         expect(cookie.content[0].split('=')[1]).not.toBe('')
       }
     }

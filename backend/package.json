@@ -73,9 +73,11 @@
     "passport-local": "^1.0.0",
     "pdfjs-dist": "^5.2.133",
     "pino-pretty": "^13.0.0",
+    "qrcode-generator": "^2.0.4",
     "sax": "^1.4.1",
     "socket.io": "^4.8.1",
     "tar": "^7.4.3",
+    "time2fa": "^1.4.2",
     "yauzl": "^3.2.0"
   },
   "optionalDependencies": {
@@ -107,6 +109,7 @@
     "@types/passport-local": "^1.0.38",
     "@types/passport-strategy": "^0.2.38",
     "@types/pdfjs-dist": "^2.10.377",
+    "@types/qrcode": "^1.5.5",
     "@types/sax": "^1.2.7",
     "@types/supertest": "^6.0.2",
     "@types/tar": "^6.1.13",

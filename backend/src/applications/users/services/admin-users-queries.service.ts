@@ -12,7 +12,7 @@ import { DBSchema } from '../../../infrastructure/database/interfaces/database.i
 import { concatDistinctObjectsInArray, dateTimeUTC, dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils'
 import { GROUP_TYPE } from '../constants/group'
 import { MEMBER_TYPE } from '../constants/member'
-import { USER_GROUP_ROLE, USER_ROLE } from '../constants/user'
+import { USER_GROUP_ROLE, USER_ROLE, USER_SECRET } from '../constants/user'
 import { CreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
 import type { AdminGroup } from '../interfaces/admin-group.interface'
 import type { AdminUser } from '../interfaces/admin-user.interface'
@@ -51,6 +51,8 @@ export class AdminUsersQueries {
           lastName: users.lastName,
           notification: users.notification,
           permissions: users.permissions,
+          twoFaEnabled:
+            sql<boolean>`JSON_UNQUOTE(JSON_EXTRACT(${users.secrets}, ${sql.raw(`'$.${USER_SECRET.TWO_FA_SECRET}'`)})) IS NOT NULL`.mapWith(Boolean),
           groups: concatDistinctObjectsInArray(groups.id, {
             id: groups.id,
             name: groups.name,

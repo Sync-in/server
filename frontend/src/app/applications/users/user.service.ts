@@ -30,16 +30,31 @@ import type {
   UpdateUserFromGroupDto
 } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
-import type { UserLanguageDto, UserNotificationDto, UserPasswordDto } from '@sync-in-server/backend/src/applications/users/dto/user-properties.dto'
+import type {
+  UserLanguageDto,
+  UserNotificationDto,
+  UserPasswordDto,
+  UserUpdatePasswordDto
+} from '@sync-in-server/backend/src/applications/users/dto/user-properties.dto'
 import type { GroupBrowse } from '@sync-in-server/backend/src/applications/users/interfaces/group-browse.interface'
 import type { GroupMember } from '@sync-in-server/backend/src/applications/users/interfaces/group-member'
 import type { GuestUser } from '@sync-in-server/backend/src/applications/users/interfaces/guest-user.interface'
 import type { Member } from '@sync-in-server/backend/src/applications/users/interfaces/member.interface'
-import {
+import type {
   EventChangeOnlineStatus,
   EventUpdateOnlineStatus,
-  type UserOnline
+  UserOnline
 } from '@sync-in-server/backend/src/applications/users/interfaces/websocket.interface'
+import { TWO_FA_HEADER } from '@sync-in-server/backend/src/authentication/constants/auth'
+import {
+  API_TWO_FA_ADMIN_RESET_USER,
+  API_TWO_FA_DISABLE,
+  API_TWO_FA_ENABLE,
+  API_TWO_FA_VERIFY
+} from '@sync-in-server/backend/src/authentication/constants/routes'
+import type { TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
+import type { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Socket } from 'ngx-socket-io'
 import { catchError, map, Observable } from 'rxjs'
 import { AppMenu } from '../../layout/layout.interfaces'
@@ -47,6 +62,7 @@ import { LayoutService } from '../../layout/layout.service'
 import { StoreService } from '../../store/store.service'
 import { NotificationsService } from '../notifications/notifications.service'
 import { SPACES_TITLE } from '../spaces/spaces.constants'
+import { UserAuth2FaVerifyDialogComponent } from './components/dialogs/user-auth-2fa-verify-dialog.component'
 import { UserType } from './interfaces/user.interface'
 import { GroupBrowseModel } from './models/group-browse.model'
 import { GuestUserModel } from './models/guest.model'
@@ -192,8 +208,10 @@ export class UserService {
     })
   }
 
-  changePassword(userPasswordDto: UserPasswordDto): Observable<any> {
-    return this.http.put(API_USERS_MY_PASSWORD, userPasswordDto)
+  changePassword(userPasswordDto: UserUpdatePasswordDto, totpCode?: string): Observable<any> {
+    return this.http.put(API_USERS_MY_PASSWORD, userPasswordDto, {
+      headers: totpCode ? { [TWO_FA_HEADER]: totpCode } : {}
+    })
   }
 
   changeLanguage(userLanguageDto: UserLanguageDto): Observable<any> {
@@ -265,6 +283,46 @@ export class UserService {
       next: (manifest: AppStoreManifest) => this.store.appStoreManifest.set(manifest),
       error: (e: HttpErrorResponse) => console.error(e)
     })
+  }
+
+  init2Fa(): Observable<TwoFaSetup> {
+    return this.http.get<TwoFaSetup>(API_TWO_FA_ENABLE)
+  }
+
+  enable2Fa(twoFaVerifyDto: TwoFaVerifyDto): Observable<TwoFaEnableResult> {
+    return this.http.post<TwoFaEnableResult>(API_TWO_FA_ENABLE, twoFaVerifyDto)
+  }
+
+  disable2Fa(twoFaVerifyDto: TwoFaVerifyDto): Observable<TwoFaVerifyResult> {
+    return this.http.post<TwoFaVerifyResult>(API_TWO_FA_DISABLE, twoFaVerifyDto)
+  }
+
+  verify2Fa(twoFaVerifyDto: TwoFaVerifyDto): Observable<TwoFaVerifyResult> {
+    return this.http.post<TwoFaVerifyResult>(API_TWO_FA_VERIFY, twoFaVerifyDto)
+  }
+
+  adminResetUser2Fa(userId: number, adminPasswordDto: UserPasswordDto, totpCode?: string): Observable<TwoFaVerifyResult> {
+    return this.http.post<TwoFaVerifyResult>(`${API_TWO_FA_ADMIN_RESET_USER}/${userId}`, adminPasswordDto, {
+      headers: totpCode ? { [TWO_FA_HEADER]: totpCode } : {}
+    })
+  }
+
+  async auth2FaVerifyDialog(): Promise<boolean | string> {
+    // returns: true (no check), false (check failed), string (totpCode)
+    if (this.store.server().twoFaEnabled && this.user.twoFaEnabled) {
+      return new Promise((resolve) => {
+        const modalRef: BsModalRef<UserAuth2FaVerifyDialogComponent> = this.layout.openDialog(
+          UserAuth2FaVerifyDialogComponent,
+          'xs',
+          {},
+          { keyboard: false }
+        )
+        modalRef.content.isValid = (result: false | string) => {
+          resolve(result)
+        }
+      })
+    }
+    return true
   }
 
   private checkQuota(user: UserType) {

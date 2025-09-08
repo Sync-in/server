@@ -54,7 +54,7 @@ export class LoggerConfig {
   filePath: string = DEFAULT_LOG_FILE_PATH
 }
 
-export class Configuration {
+export class GlobalConfig {
   @IsDefined()
   @IsObject()
   @IsNotEmptyObject()
