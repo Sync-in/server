@@ -1,4 +1,11 @@
 
+## [1.5.2](https://github.com/Sync-in/server/compare/v1.5.1...v1.5.2) (2025-09-09)
+
+
+### Bug Fixes
+
+* crash on non-AVX CPUs with musl: @napi-rs/canvas >=0.1.7.8 triggers "Illegal Instruction" when AVX is not supported ([de2f983](https://github.com/Sync-in/server/commit/de2f98348395fa7e711c52c30d1e1d59579282d3))
+
 ## [1.5.1](https://github.com/Sync-in/server/compare/v1.5.0...v1.5.1) (2025-09-07)
 
 
