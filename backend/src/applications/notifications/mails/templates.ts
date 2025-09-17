@@ -26,6 +26,6 @@ ${footer}
 export const mailAuthor = (author: UserModel) =>
   `<img style="border-radius: 50% !important; vertical-align: middle; object-fit: cover;" height="40" width="40" src="${author.avatarBase64}" alt="avatar">&nbsp;<b>${author.fullName}</b>&nbsp;`
 
-export const mailEventOnElement = (event: string, element: string) => `${event}&nbsp;:&nbsp;<b>${capitalizeString(element)}</b>`
+export const mailEventOnElement = (event: string, element: string) => `${event}:&nbsp;<b>${capitalizeString(element)}</b>`
 
 export const mailItalicContent = (content: string) => `<p><i>${content}</i></p>`

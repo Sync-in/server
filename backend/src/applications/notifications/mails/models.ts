@@ -121,16 +121,22 @@ export function linkMail(
     author: UserModel
     action: ACTION
     linkUUID: string
+    linkPassword: string
   }
 ): [string, string] {
   const tr = translateObject(language, {
     title: options.action === ACTION.ADD ? 'Share' : 'Space',
     defaultFooter: defaultFooter,
+    passwordText: 'Access password',
     urlText: 'Access it from',
     event: notification.event
   })
 
-  const content = `${options.author ? mailAuthor(options.author) : ''}${mailEventOnElement(tr.event, notification.element)}`
+  let content = `${options.author ? mailAuthor(options.author) : ''}${mailEventOnElement(tr.event, notification.element)}`
+
+  if (options.linkPassword) {
+    content += `<br><br>${tr.passwordText}:&nbsp;<div style="border:1px solid #000; padding:8px; display:inline-block;">${options.linkPassword}</div>`
+  }
 
   const footer = `<br>${tr.urlText}&nbsp;<a href="${urlFromLink(options.currentUrl, options.linkUUID)}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
 

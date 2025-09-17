@@ -1124,6 +1124,7 @@ export class SharesManager {
         {
           author: user,
           linkUUID: link.linkSettings.uuid,
+          linkPassword: link.linkSettings.password,
           currentUrl: this.contextManager.get('headerOriginUrl'),
           action: action
         } satisfies NotificationOptions

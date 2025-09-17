@@ -109,6 +109,7 @@ export class NotificationsManager {
           currentUrl: options.currentUrl,
           author: options.author,
           linkUUID: options.linkUUID,
+          linkPassword: options.linkPassword,
           action: options.action
         })
       case NOTIFICATION_APP.SYNC:

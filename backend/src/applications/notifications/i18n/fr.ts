@@ -29,6 +29,7 @@ export const fr = {
   'You no longer have access to the share': `Vous n'avez plus accès au partage`,
   'You are no longer a member of the parent share, your child share has been deleted': `Vous n'êtes plus membre du partage parent, votre partage enfant a été supprimé`,
   'Access your shares from': 'Accédez à vos partages depuis',
+  'Access password': `Mot de passe d'accès`,
   Sync: 'Synchronisation',
   'Access your syncs from': 'Accédez à vos synchronisations depuis',
   'You are no longer synchronizing': 'Vous ne synchronisez plus'
