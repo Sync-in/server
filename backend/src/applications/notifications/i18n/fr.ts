@@ -32,5 +32,11 @@ export const fr = {
   'Access password': `Mot de passe d'accès`,
   Sync: 'Synchronisation',
   'Access your syncs from': 'Accédez à vos synchronisations depuis',
-  'You are no longer synchronizing': 'Vous ne synchronisez plus'
+  'You are no longer synchronizing': 'Vous ne synchronisez plus',
+  'Security notification': 'Notification de sécurité',
+  'Two-factor authentication (2FA) on your account has been disabled': `L’authentification à deux facteurs (2FA) sur votre compte a été désactivée`,
+  'Two-factor authentication (2FA) on your account has been enabled': `L’authentification à deux facteurs (2FA) sur votre compte a été activée`,
+  'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.': `Vous recevez cette notification car la sécurité de votre compte Sync-in a été modifiée. Si vous pensez qu’il s’agit d’une erreur, vérifiez vos paramètres de sécurité ou contactez votre administrateur.`,
+  'Address IP': 'Adresse IP',
+  Browser: 'Navigateur'
 } as const

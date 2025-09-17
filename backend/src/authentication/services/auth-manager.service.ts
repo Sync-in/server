@@ -146,6 +146,7 @@ export class AuthManager {
           login: user.login,
           email: user.email,
           fullName: user.fullName,
+          language: user.language,
           role: user.role,
           applications: user.applications,
           impersonatedFromId: user.impersonatedFromId || undefined,
@@ -169,6 +170,7 @@ export class AuthManager {
         identity: {
           id: user.id,
           login: user.login,
+          language: user.language,
           role: user.role,
           twoFaEnabled: true
         } satisfies JwtIdentity2FaPayload,

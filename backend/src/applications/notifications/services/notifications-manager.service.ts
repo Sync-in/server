@@ -14,7 +14,7 @@ import { NOTIFICATION_APP } from '../constants/notifications'
 import { NOTIFICATIONS_WS } from '../constants/websocket'
 import type { NotificationContent, NotificationFromUser, NotificationOptions } from '../interfaces/notification-properties.interface'
 import type { UserMailNotification } from '../interfaces/user-mail-notification'
-import { commentMail, linkMail, shareMail, spaceMail, spaceRootMail, syncMail } from '../mails/models'
+import { auth2FaMail, commentMail, linkMail, shareMail, spaceMail, spaceRootMail, syncMail } from '../mails/models'
 import { WebSocketNotifications } from '../notifications.gateway'
 import { NotificationsQueries } from './notifications-queries.service'
 
@@ -114,6 +114,8 @@ export class NotificationsManager {
         })
       case NOTIFICATION_APP.SYNC:
         return syncMail(language, content, { currentUrl: options.currentUrl, action: options.action })
+      case NOTIFICATION_APP.AUTH_2FA:
+        return auth2FaMail(language, content)
       default:
         this.logger.error(`${this.genMail.name} - case not handled : ${content.app}`)
     }

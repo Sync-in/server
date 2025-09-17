@@ -12,7 +12,8 @@ export enum NOTIFICATION_APP {
   SPACE_ROOTS = 'spaces_roots',
   SHARES = 'shares',
   LINKS = 'links',
-  SYNC = 'sync'
+  SYNC = 'sync',
+  AUTH_2FA = 'auth_2fa'
 }
 
 export const NOTIFICATION_APP_EVENT = {
@@ -41,5 +42,9 @@ export const NOTIFICATION_APP_EVENT = {
   },
   SYNC: {
     [ACTION.DELETE]: 'You are no longer synchronizing'
+  },
+  AUTH_2FA: {
+    [ACTION.ADD]: 'Two-factor authentication (2FA) on your account has been enabled',
+    [ACTION.DELETE]: 'Two-factor authentication (2FA) on your account has been disabled'
   }
 }

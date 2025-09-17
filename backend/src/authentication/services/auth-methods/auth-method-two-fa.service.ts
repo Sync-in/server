@@ -7,9 +7,13 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { configuration } from 'src/configuration/config.environment'
 import { Totp } from 'time2fa'
+import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../../applications/notifications/constants/notifications'
+import { NotificationContent } from '../../../applications/notifications/interfaces/notification-properties.interface'
+import { NotificationsManager } from '../../../applications/notifications/services/notifications-manager.service'
 import { UserPasswordDto } from '../../../applications/users/dto/user-properties.dto'
 import { UserModel } from '../../../applications/users/models/user.model'
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
+import { ACTION } from '../../../common/constants'
 import { generateShortUUID } from '../../../common/functions'
 import { qrcodeToDataURL } from '../../../common/qrcode'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
@@ -26,7 +30,8 @@ export class AuthMethod2FA {
 
   constructor(
     private readonly cache: Cache,
-    private readonly usersManager: UsersManager
+    private readonly usersManager: UsersManager,
+    private readonly notificationsManager: NotificationsManager
   ) {}
 
   async initTwoFactor(user: UserModel): Promise<TwoFaSetup> {
@@ -54,6 +59,7 @@ export class AuthMethod2FA {
       twoFaSecret: secret,
       recoveryCodes: recoveryCodes.map((code) => this.encryptSecret(code))
     })
+    this.sendEmailNotification(req, ACTION.ADD)
     return { ...auth, recoveryCodes: recoveryCodes }
   }
 
@@ -64,6 +70,7 @@ export class AuthMethod2FA {
     }
     // store and disable TwoFA & recovery codes
     await this.usersManager.updateSecrets(req.user.id, { twoFaSecret: undefined, recoveryCodes: undefined })
+    this.sendEmailNotification(req, ACTION.DELETE)
     return auth
   }
 
@@ -168,5 +175,17 @@ export class AuthMethod2FA {
 
   private generateRecoveryCodes(count = 5): string[] {
     return Array.from({ length: count }, () => generateShortUUID())
+  }
+
+  private sendEmailNotification(req: FastifyAuthenticatedRequest, action: ACTION) {
+    const notification: NotificationContent = {
+      app: NOTIFICATION_APP.AUTH_2FA,
+      event: NOTIFICATION_APP_EVENT.AUTH_2FA[action],
+      element: req.headers['user-agent'],
+      url: req.ip
+    }
+    this.notificationsManager
+      .sendEmailNotification([req.user], notification)
+      .catch((e: Error) => this.logger.error(`${this.sendEmailNotification.name} - ${e}`))
   }
 }
