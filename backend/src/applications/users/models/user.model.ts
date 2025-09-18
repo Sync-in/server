@@ -214,7 +214,8 @@ export class UserModel implements User {
 
   private initSecrets(props: Partial<UserModel>) {
     // Remove the `twoFaEnabled` property to avoid conflicts with the current getter when using `plainToClass` with `class-validator`
-    if ('twoFaEnabled' in props) {
+    // The `props` variable may be empty when the class is instantiated using `plainToClass`
+    if (props && 'twoFaEnabled' in props) {
       // Only used when the User model is instantiated from a token payload
       // Set a `twoFaSecret` property (boolean) on the `secrets` property so that the `twoFaEnabled` getter returns `true`
       this.secrets = { twoFaSecret: popFromObject('twoFaEnabled', props) }

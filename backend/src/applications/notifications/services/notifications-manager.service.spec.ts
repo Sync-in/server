@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { Mailer } from '../../../infrastructure/mailer/mailer.service'
 import { USER_NOTIFICATION } from '../../users/constants/user'
 import { UsersManager } from '../../users/services/users-manager.service'
+import { getAvatarBase64 } from '../../users/utils/avatar'
 import { NOTIFICATION_APP } from '../constants/notifications'
 import { NOTIFICATIONS_WS } from '../constants/websocket'
 import * as mailModels from '../mails/models'
@@ -25,10 +26,13 @@ jest.mock('../mails/models', () => ({
   syncMail: jest.fn(() => ['sync title', 'sync html'])
 }))
 
+jest.mock('../../users/utils/avatar', () => ({
+  getAvatarBase64: jest.fn()
+}))
+
 describe(NotificationsManager.name, () => {
   let service: NotificationsManager
 
-  const usersManagerMock = { getAvatarBase64: jest.fn() }
   const mailerMock = { available: true, sendMails: jest.fn() }
   const notificationsQueriesMock = {
     list: jest.fn(),
@@ -51,12 +55,11 @@ describe(NotificationsManager.name, () => {
     notificationsQueriesMock.delete.mockResolvedValue(undefined)
     notificationsQueriesMock.list.mockResolvedValue([])
     notificationsQueriesMock.usersNotifiedByEmail.mockResolvedValue([])
-    usersManagerMock.getAvatarBase64.mockResolvedValue('avatar-base64')
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         NotificationsManager,
-        { provide: UsersManager, useValue: usersManagerMock },
+        { provide: UsersManager, useValue: {} },
         { provide: Mailer, useValue: mailerMock },
         { provide: WebSocketNotifications, useValue: webSocketNotificationsMock },
         { provide: NotificationsQueries, useValue: notificationsQueriesMock }
@@ -182,12 +185,12 @@ describe(NotificationsManager.name, () => {
           author: { id: 1, login: 'john' }
         } as any
       )
-      expect(usersManagerMock.getAvatarBase64).not.toHaveBeenCalled()
+      expect(getAvatarBase64).not.toHaveBeenCalled()
       expect(mailerMock.sendMails).not.toHaveBeenCalled()
     })
 
     it('enriches author avatar and sends mapped mails', async () => {
-      usersManagerMock.getAvatarBase64.mockResolvedValueOnce('base64-xxx')
+      ;(getAvatarBase64 as jest.Mock).mockResolvedValueOnce('base64-xxx')
       const toUsers = [
         { id: 1, email: 'a@test', language: 'en' },
         { id: 2, email: 'b@test', language: 'fr' }
@@ -195,7 +198,7 @@ describe(NotificationsManager.name, () => {
       const options: any = { author: { id: 9, login: 'jdoe' }, content: 'hello', currentUrl: 'https://app.test/path' }
       const content = { app: NOTIFICATION_APP.COMMENTS } as any
       await service.sendEmailNotification(toUsers as any, content, options)
-      expect(usersManagerMock.getAvatarBase64).toHaveBeenCalledWith('jdoe')
+      expect(getAvatarBase64).toHaveBeenCalledWith('jdoe')
       expect(options.author.avatarBase64).toBe('base64-xxx')
       expect(mailerMock.sendMails).toHaveBeenCalledTimes(1)
       expect((mailerMock.sendMails as jest.Mock).mock.calls[0][0]).toEqual([

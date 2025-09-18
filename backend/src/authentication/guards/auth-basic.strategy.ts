@@ -37,6 +37,7 @@ export class AuthBasicStrategy extends PassportStrategy(BasicStrategy, 'basic') 
     }
     if (userFromCache !== undefined) {
       // cached
+      // warning: plainToInstance do not use constructor to instantiate class
       return plainToInstance(UserModel, userFromCache)
     }
     const userFromDB: UserModel = await this.authMethod.validateUser(loginOrEmail, password, req.ip)

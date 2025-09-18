@@ -5,7 +5,6 @@
  */
 
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
-import { configuration } from 'src/configuration/config.environment'
 import { Totp } from 'time2fa'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../../applications/notifications/constants/notifications'
 import { NotificationContent } from '../../../applications/notifications/interfaces/notification-properties.interface'
@@ -16,6 +15,7 @@ import { UsersManager } from '../../../applications/users/services/users-manager
 import { ACTION } from '../../../common/constants'
 import { generateShortUUID } from '../../../common/functions'
 import { qrcodeToDataURL } from '../../../common/qrcode'
+import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { TWO_FA_CODE_LENGTH } from '../../constants/auth'
 import { TwoFaVerifyDto } from '../../dto/two-fa-verify.dto'

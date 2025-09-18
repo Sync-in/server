@@ -8,9 +8,11 @@ import { ConfigModule } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthManager } from '../../authentication/services/auth-manager.service'
+import { AuthMethod2FA } from '../../authentication/services/auth-methods/auth-method-two-fa.service'
 import { exportConfiguration } from '../../configuration/config.environment'
 import { Cache } from '../../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../infrastructure/database/constants'
+import { NotificationsManager } from '../notifications/services/notifications-manager.service'
 import { UserModel } from './models/user.model'
 import { AdminUsersManager } from './services/admin-users-manager.service'
 import { AdminUsersQueries } from './services/admin-users-queries.service'
@@ -41,7 +43,9 @@ describe(UsersController.name, () => {
         AdminUsersManager,
         AdminUsersQueries,
         AuthManager,
-        JwtService
+        JwtService,
+        AuthMethod2FA,
+        { provide: NotificationsManager, useValue: {} }
       ]
     }).compile()
     userController = module.get<UsersController>(UsersController)

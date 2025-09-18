@@ -95,6 +95,7 @@ export function transformAndValidate<T extends object>(
   transformOptions: ClassTransformOptions = {},
   validatorOptions: ValidatorOptions = {}
 ): T {
+  // warning: plainToInstance do not use constructor to instantiate class
   const instance: T = plainToInstance(schema, object, transformOptions)
   const errors: ValidationError[] = validateSync(instance, validatorOptions)
   if (errors.length > 0) {

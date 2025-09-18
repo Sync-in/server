@@ -8,7 +8,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { Test, TestingModule } from '@nestjs/testing'
+import { NotificationsManager } from '../applications/notifications/services/notifications-manager.service'
 import { UserModel } from '../applications/users/models/user.model'
+import { UsersManager } from '../applications/users/services/users-manager.service'
 import { generateUserTest } from '../applications/users/utils/test'
 import { convertHumanTimeToSeconds } from '../common/functions'
 import { currentTimeStamp } from '../common/shared'
@@ -17,9 +19,12 @@ import { Cache } from '../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../infrastructure/database/constants'
 import { AuthConfig } from './auth.config'
 import { AuthController } from './auth.controller'
+import { TOKEN_PATHS } from './constants/auth'
 import { LoginResponseDto } from './dto/login-response.dto'
+import { AuthTwoFaGuard } from './guards/auth-two-fa-guard'
 import { TOKEN_TYPE } from './interfaces/token.interface'
 import { AuthManager } from './services/auth-manager.service'
+import { AuthMethod2FA } from './services/auth-methods/auth-method-two-fa.service'
 
 describe(AuthController.name, () => {
   let module: TestingModule
@@ -31,7 +36,17 @@ describe(AuthController.name, () => {
     module = await Test.createTestingModule({
       imports: [await ConfigModule.forRoot({ load: [exportConfiguration], isGlobal: true }), PassportModule],
       controllers: [AuthController],
-      providers: [ConfigService, AuthManager, JwtService, { provide: DB_TOKEN_PROVIDER, useValue: {} }, { provide: Cache, useValue: {} }]
+      providers: [
+        ConfigService,
+        AuthManager,
+        JwtService,
+        AuthMethod2FA,
+        AuthTwoFaGuard,
+        { provide: DB_TOKEN_PROVIDER, useValue: {} },
+        { provide: Cache, useValue: {} },
+        { provide: UsersManager, useValue: {} },
+        { provide: NotificationsManager, useValue: {} }
+      ]
     }).compile()
 
     module.useLogger(['fatal'])
@@ -63,7 +78,7 @@ describe(AuthController.name, () => {
   it('should clear JWT in cookies', async () => {
     const res: any = { clearCookie: jest.fn() }
     await expect(authController.logout(res)).resolves.not.toThrow()
-    expect(res.clearCookie).toHaveBeenCalledTimes(4)
+    expect(res.clearCookie).toHaveBeenCalledTimes(Object.keys(TOKEN_PATHS).length)
   })
 
   it('should refresh JWT in cookies', async () => {
