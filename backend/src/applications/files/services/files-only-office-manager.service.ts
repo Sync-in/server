@@ -24,7 +24,7 @@ import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.inter
 import type { SpaceEnv } from '../../spaces/models/space-env.model'
 import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
 import type { UserModel } from '../../users/models/user.model'
-import { UsersManager } from '../../users/services/users-manager.service'
+import { getAvatarBase64 } from '../../users/utils/avatar'
 import { DEPTH, LOCK_SCOPE } from '../../webdav/constants/webdav'
 import { CACHE_ONLY_OFFICE } from '../constants/cache'
 import {
@@ -55,7 +55,6 @@ export class FilesOnlyOfficeManager {
     private readonly contextManager: ContextManager,
     private readonly cache: Cache,
     private readonly jwt: JwtService,
-    private readonly usersManager: UsersManager,
     private readonly filesLockManager: FilesLockManager,
     private readonly filesQueries: FilesQueries
   ) {}
@@ -180,7 +179,7 @@ export class FilesOnlyOfficeManager {
           lang: 'en',
           region: 'en',
           callbackUrl: callBackUrl,
-          user: { id: user.id.toString(), name: `${user.fullName} (${user.email})`, image: await this.usersManager.getAvatarBase64(user.login) },
+          user: { id: user.id.toString(), name: `${user.fullName} (${user.email})`, image: await getAvatarBase64(user.login) },
           coEditing: {
             mode: 'fast',
             change: true

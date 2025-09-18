@@ -54,7 +54,6 @@ describe(LinksManager.name, () => {
     } as any
 
     usersManagerMock = {
-      getAvatarBase64: jest.fn(),
       compareUserPassword: jest.fn(),
       updateAccesses: jest.fn()
     } as any
@@ -128,14 +127,12 @@ describe(LinksManager.name, () => {
         space: null
       } as any
       linksQueriesMock.spaceLink.mockResolvedValueOnce(spaceLink)
-      usersManagerMock.getAvatarBase64.mockResolvedValueOnce('base64-avatar')
 
       const res = await service.linkValidation(identity, link.uuid)
 
       expect(res.ok).toBe(true)
       expect(res.error).toBeNull()
       expect(res.link).toBe(spaceLink)
-      expect(spaceLink.owner.avatar).toBe('base64-avatar')
       expect((spaceLink.owner as any).login).toBeUndefined()
       expect(linksQueriesMock.spaceLink).toHaveBeenCalledWith(link.uuid)
 

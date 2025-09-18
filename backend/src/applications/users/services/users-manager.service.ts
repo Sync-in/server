@@ -16,8 +16,7 @@ import { LoginResponseDto } from '../../../authentication/dto/login-response.dto
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface'
 import { comparePassword } from '../../../common/functions'
-import { convertImageToBase64, generateAvatar, pngMimeType, svgMimeType } from '../../../common/image'
-import { STATIC_ASSETS_PATH } from '../../../configuration/config.constants'
+import { generateAvatar, pngMimeType, svgMimeType } from '../../../common/image'
 import { configuration, serverConfig } from '../../../configuration/config.environment'
 import { isPathExists, moveFiles } from '../../files/utils/files'
 import { MEMBER_TYPE } from '../constants/member'
@@ -36,14 +35,12 @@ import { UserModel } from '../models/user.model'
 import type { Group } from '../schemas/group.interface'
 import type { UserGroup } from '../schemas/user-group.interface'
 import type { User } from '../schemas/user.interface'
+import { USER_AVATAR_FILE_NAME, USER_AVATAR_MAX_UPLOAD_SIZE, USER_DEFAULT_AVATAR_FILE_PATH } from '../utils/avatar'
 import { AdminUsersManager } from './admin-users-manager.service'
 import { UsersQueries } from './users-queries.service'
 
 @Injectable()
 export class UsersManager {
-  private readonly defaultAvatarFilePath = path.join(STATIC_ASSETS_PATH, 'avatar.svg')
-  private readonly userAvatarFileName = 'avatar.png'
-  private readonly maxAvatarUploadSize = 1024 * 1024 * 5
   private readonly logger = new Logger(UsersManager.name)
 
   constructor(
@@ -77,12 +74,12 @@ export class UsersManager {
 
   validateUserAccess(user: UserModel, ip: string) {
     if (user.role === USER_ROLE.LINK) {
-      this.logger.error(`${this.logUser.name} - guest link account ${user} is not authorized to login`)
+      this.logger.error(`${this.validateUserAccess.name} - guest link account ${user} is not authorized to login`)
       throw new HttpException('Account is not allowed', HttpStatus.FORBIDDEN)
     }
     if (!user.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
-      this.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.logUser.name} - ${e}`))
-      this.logger.error(`${this.logUser.name} - user account *${user.login}* is locked`)
+      this.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.validateUserAccess.name} - ${e}`))
+      this.logger.error(`${this.validateUserAccess.name} - user account *${user.login}* is locked`)
       throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
     }
   }
@@ -130,11 +127,11 @@ export class UsersManager {
   }
 
   async updateAvatar(req: FastifyAuthenticatedRequest) {
-    const part: MultipartFile = await req.file({ limits: { fileSize: this.maxAvatarUploadSize } })
+    const part: MultipartFile = await req.file({ limits: { fileSize: USER_AVATAR_MAX_UPLOAD_SIZE } })
     if (!part.mimetype.startsWith('image/')) {
       throw new HttpException('Unsupported file type', HttpStatus.BAD_REQUEST)
     }
-    const dstPath = path.join(req.user.tmpPath, this.userAvatarFileName)
+    const dstPath = path.join(req.user.tmpPath, USER_AVATAR_FILE_NAME)
     try {
       await pipeline(part.file, createWriteStream(dstPath))
     } catch (e) {
@@ -146,7 +143,7 @@ export class UsersManager {
       throw new HttpException('Image is too large (5MB max)', HttpStatus.PAYLOAD_TOO_LARGE)
     }
     try {
-      await moveFiles(dstPath, path.join(req.user.homePath, this.userAvatarFileName), true)
+      await moveFiles(dstPath, path.join(req.user.homePath, USER_AVATAR_FILE_NAME), true)
     } catch (e) {
       this.logger.error(`${this.updateAvatar.name} - ${e}`)
       throw new HttpException('Unable to create avatar', HttpStatus.INTERNAL_SERVER_ERROR)
@@ -182,13 +179,13 @@ export class UsersManager {
   async getAvatar(userLogin: string, generate: true, generateIsNotExists?: boolean): Promise<undefined>
   async getAvatar(userLogin: string, generate?: false, generateIsNotExists?: boolean): Promise<[path: string, mime: string]>
   async getAvatar(userLogin: string, generate: boolean = false, generateIsNotExists?: boolean): Promise<[path: string, mime: string]> {
-    const avatarPath = path.join(UserModel.getHomePath(userLogin), this.userAvatarFileName)
+    const avatarPath = path.join(UserModel.getHomePath(userLogin), USER_AVATAR_FILE_NAME)
     const avatarExists = await isPathExists(avatarPath)
     if (!avatarExists && generateIsNotExists) {
       generate = true
     }
     if (!generate) {
-      return [avatarExists ? avatarPath : this.defaultAvatarFilePath, avatarExists ? pngMimeType : svgMimeType]
+      return [avatarExists ? avatarPath : USER_DEFAULT_AVATAR_FILE_PATH, avatarExists ? pngMimeType : svgMimeType]
     }
     if (!(await isPathExists(UserModel.getHomePath(userLogin)))) {
       throw new HttpException(`Home path for user *${userLogin}* does not exist`, HttpStatus.FORBIDDEN)
@@ -208,11 +205,6 @@ export class UsersManager {
     if (generateIsNotExists) {
       return [avatarPath, pngMimeType]
     }
-  }
-
-  async getAvatarBase64(userLogin: string): Promise<string> {
-    const userAvatarPath = path.join(UserModel.getHomePath(userLogin), this.userAvatarFileName)
-    return convertImageToBase64((await isPathExists(userAvatarPath)) ? userAvatarPath : this.defaultAvatarFilePath)
   }
 
   setOnlineStatus(user: JwtIdentityPayload, onlineStatus: USER_ONLINE_STATUS) {

@@ -9,12 +9,12 @@ import { MailProps } from '../../../infrastructure/mailer/interfaces/mail.interf
 import { Mailer } from '../../../infrastructure/mailer/mailer.service'
 import { USER_NOTIFICATION } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
-import { UsersManager } from '../../users/services/users-manager.service'
+import { getAvatarBase64 } from '../../users/utils/avatar'
 import { NOTIFICATION_APP } from '../constants/notifications'
 import { NOTIFICATIONS_WS } from '../constants/websocket'
 import type { NotificationContent, NotificationFromUser, NotificationOptions } from '../interfaces/notification-properties.interface'
 import type { UserMailNotification } from '../interfaces/user-mail-notification'
-import { auth2FaMail, commentMail, linkMail, shareMail, spaceMail, spaceRootMail, syncMail } from '../mails/models'
+import { auth2FaMail, authLocked, commentMail, linkMail, shareMail, spaceMail, spaceRootMail, syncMail } from '../mails/models'
 import { WebSocketNotifications } from '../notifications.gateway'
 import { NotificationsQueries } from './notifications-queries.service'
 
@@ -23,7 +23,6 @@ export class NotificationsManager {
   private readonly logger = new Logger(NotificationsManager.name)
 
   constructor(
-    private readonly usersManager: UsersManager,
     private readonly mailer: Mailer,
     private readonly notificationsQueries: NotificationsQueries,
     private readonly webSocketNotifications: WebSocketNotifications
@@ -62,21 +61,12 @@ export class NotificationsManager {
     return this.notificationsQueries.delete(user.id, notificationId)
   }
 
-  private async storeNotification(toUserIds: number[], content: NotificationContent, authorId?: number): Promise<void> {
-    // store it in db
-    try {
-      await this.notificationsQueries.create(authorId || null, toUserIds, content)
-    } catch (e) {
-      this.logger.error(`${this.create.name} - ${e}`)
-    }
-  }
-
   async sendEmailNotification(toUsers: UserMailNotification[], content: NotificationContent, options?: NotificationOptions): Promise<void> {
     if (!this.mailer.available) {
       return
     }
     if (options?.author) {
-      options.author.avatarBase64 = await this.usersManager.getAvatarBase64(options.author.login)
+      options.author.avatarBase64 = await getAvatarBase64(options.author.login)
     }
     this.mailer
       .sendMails(
@@ -92,6 +82,15 @@ export class NotificationsManager {
         )
       )
       .catch((e: Error) => this.logger.error(`${this.sendEmailNotification.name} - ${e}`))
+  }
+
+  private async storeNotification(toUserIds: number[], content: NotificationContent, authorId?: number): Promise<void> {
+    // store it in db
+    try {
+      await this.notificationsQueries.create(authorId || null, toUserIds, content)
+    } catch (e) {
+      this.logger.error(`${this.create.name} - ${e}`)
+    }
   }
 
   private genMail(language: string, content: NotificationContent, options?: NotificationOptions): [string, string] {
