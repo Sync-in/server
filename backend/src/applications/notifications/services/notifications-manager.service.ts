@@ -115,6 +115,8 @@ export class NotificationsManager {
         return syncMail(language, content, { currentUrl: options.currentUrl, action: options.action })
       case NOTIFICATION_APP.AUTH_2FA:
         return auth2FaMail(language, content)
+      case NOTIFICATION_APP.AUTH_LOCKED:
+        return authLocked(language, content)
       default:
         this.logger.error(`${this.genMail.name} - case not handled : ${content.app}`)
     }

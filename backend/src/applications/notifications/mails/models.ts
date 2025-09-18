@@ -182,3 +182,19 @@ export function auth2FaMail(language: string, notification: NotificationContent)
 
   return [tr.title, mailTemplate(content, footer)]
 }
+
+export function authLocked(language: string, notification: NotificationContent): [string, string] {
+  const tr = translateObject(language, {
+    title: 'Security notification',
+    footer:
+      'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.',
+    event: notification.event,
+    addressIp: 'Address IP'
+  })
+
+  const content = `${tr.event}<br><br>${tr.addressIp}:&nbsp;${notification.url}<br>`
+
+  const footer = `<br>${tr.footer}<br>`
+
+  return [tr.title, mailTemplate(content, footer)]
+}

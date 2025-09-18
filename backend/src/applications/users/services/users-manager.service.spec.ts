@@ -16,6 +16,7 @@ import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import * as filesUtilsModule from '../../files/utils/files'
 import { fileName, isPathExists } from '../../files/utils/files'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { MEMBER_TYPE } from '../constants/member'
 import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_ROLE } from '../constants/user'
 import { CreateUserDto } from '../dto/create-or-update-user.dto'
@@ -69,6 +70,10 @@ describe(UsersManager.name, () => {
     }
   }
 
+  const notificationsManager = {
+    sendEmailNotification: jest.fn().mockResolvedValue(undefined)
+  }
+
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -76,6 +81,7 @@ describe(UsersManager.name, () => {
         AdminUsersQueries,
         UsersManager,
         UsersQueries,
+        { provide: NotificationsManager, useValue: notificationsManager },
         { provide: AuthManager, useValue: {} },
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
         { provide: Cache, useValue: {} }

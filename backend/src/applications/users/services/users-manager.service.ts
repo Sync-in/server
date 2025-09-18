@@ -15,10 +15,13 @@ import { pipeline } from 'node:stream/promises'
 import { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface'
+import { ACTION } from '../../../common/constants'
 import { comparePassword } from '../../../common/functions'
 import { generateAvatar, pngMimeType, svgMimeType } from '../../../common/image'
 import { configuration, serverConfig } from '../../../configuration/config.environment'
 import { isPathExists, moveFiles } from '../../files/utils/files'
+import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { MEMBER_TYPE } from '../constants/member'
 import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_ONLINE_STATUS, USER_ROLE } from '../constants/user'
 import { UserCreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
@@ -45,7 +48,8 @@ export class UsersManager {
 
   constructor(
     public readonly usersQueries: UsersQueries,
-    private readonly adminUsersManager: AdminUsersManager
+    private readonly adminUsersManager: AdminUsersManager,
+    private readonly notificationsManager: NotificationsManager
   ) {}
 
   async fromUserId(id: number): Promise<UserModel> {
@@ -80,6 +84,7 @@ export class UsersManager {
     if (!user.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
       this.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.validateUserAccess.name} - ${e}`))
       this.logger.error(`${this.validateUserAccess.name} - user account *${user.login}* is locked`)
+      this.notifyAccountLocked(user, ip)
       throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
     }
   }
@@ -421,5 +426,16 @@ export class UsersManager {
 
   searchMembers(user: UserModel, searchMembersDto: SearchMembersDto): Promise<Member[]> {
     return this.usersQueries.searchUsersOrGroups(searchMembersDto, user.id)
+  }
+
+  private notifyAccountLocked(user: UserModel, ip: string) {
+    this.notificationsManager
+      .sendEmailNotification([user], {
+        app: NOTIFICATION_APP.AUTH_LOCKED,
+        event: NOTIFICATION_APP_EVENT.AUTH_LOCKED[ACTION.DELETE],
+        element: null,
+        url: ip
+      })
+      .catch((e: Error) => this.logger.error(`${this.validateUserAccess.name} - ${e}`))
   }
 }
