@@ -17,13 +17,14 @@ import { GetUser } from './decorators/user.decorator'
 import { UserCreateOrUpdateGroupDto } from './dto/create-or-update-group.dto'
 import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from './dto/create-or-update-user.dto'
 import { SearchMembersDto } from './dto/search-members.dto'
-import { UserLanguageDto, UserNotificationDto, UserUpdatePasswordDto } from './dto/user-properties.dto'
+import { UserAppPasswordDto, UserLanguageDto, UserNotificationDto, UserUpdatePasswordDto } from './dto/user-properties.dto'
 import { UserPermissionsGuard } from './guards/permissions.guard'
 import { UserRolesGuard } from './guards/roles.guard'
 import { GroupBrowse } from './interfaces/group-browse.interface'
 import { GroupMember } from './interfaces/group-member'
 import { GuestUser } from './interfaces/guest-user.interface'
 import { Member } from './interfaces/member.interface'
+import { UserAppPassword } from './interfaces/user-secrets.interface'
 import { UserModel } from './models/user.model'
 import { UsersManager } from './services/users-manager.service'
 
@@ -37,6 +38,24 @@ export class UsersController {
   @UserHaveRole(USER_ROLE.LINK)
   me(@GetUser() user: UserModel): Promise<Omit<LoginResponseDto, 'token'>> {
     return this.usersManager.me(user)
+  }
+
+  @Get(`${USERS_ROUTE.ME}/${USERS_ROUTE.APP_PASSWORDS}`)
+  @UserHaveRole(USER_ROLE.USER)
+  listAppPasswords(@GetUser() user: UserModel): Promise<Omit<UserAppPassword, 'password'>[]> {
+    return this.usersManager.listAppPasswords(user)
+  }
+
+  @Post(`${USERS_ROUTE.ME}/${USERS_ROUTE.APP_PASSWORDS}`)
+  @UserHaveRole(USER_ROLE.USER)
+  generateAppPassword(@GetUser() user: UserModel, @Body() userAppPasswordDto: UserAppPasswordDto): Promise<UserAppPassword> {
+    return this.usersManager.generateAppPassword(user, userAppPasswordDto)
+  }
+
+  @Delete(`${USERS_ROUTE.ME}/${USERS_ROUTE.APP_PASSWORDS}/:name`)
+  @UserHaveRole(USER_ROLE.USER)
+  deleteAppPassword(@GetUser() user: UserModel, @Param('name') name: string): Promise<void> {
+    return this.usersManager.deleteAppPassword(user, name)
   }
 
   @Put(`${USERS_ROUTE.ME}/${USERS_ROUTE.LANGUAGE}`)

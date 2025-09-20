@@ -14,6 +14,7 @@ import {
   USER_ONLINE_STATUS_LIST,
   USER_PASSWORD_MIN_LENGTH
 } from '@sync-in-server/backend/src/applications/users/constants/user'
+import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
 import { TwoFaSetup } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -35,6 +36,7 @@ import { UserType } from '../interfaces/user.interface'
 import { USER_ICON, USER_LANGUAGE_AUTO, USER_PATH, USER_TITLE } from '../user.constants'
 import { UserService } from '../user.service'
 import { UserAuth2faEnableDialogComponent } from './dialogs/user-auth-2fa-enable-dialog.component'
+import { UserAuthManageAppPasswordsDialogComponent } from './dialogs/user-auth-manage-app-passwords-dialog.component'
 
 @Component({
   selector: 'app-user-account',
@@ -156,7 +158,7 @@ export class UserAccountComponent implements OnDestroy {
         this.user.notification = status
         this.layout.sendNotification('info', 'Configuration', 'Notification preference updated')
       },
-      error: () => this.layout.sendNotification('error', 'Configuration', 'Unable to update notification preference')
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Configuration', 'Unable to update notification preference', e)
     })
   }
 
@@ -202,6 +204,22 @@ export class UserAccountComponent implements OnDestroy {
       error: (e: HttpErrorResponse) => {
         this.layout.sendNotification('error', 'Configuration', 'Two-Factor Authentication has failed', e)
       }
+    })
+  }
+
+  async manageAppPasswords() {
+    this.userService.listAppPasswords().subscribe({
+      next: (appPasswords: Omit<UserAppPassword, 'password'>[]) => {
+        const modalRef: BsModalRef<UserAuthManageAppPasswordsDialogComponent> = this.layout.openDialog(
+          UserAuthManageAppPasswordsDialogComponent,
+          'md',
+          { initialState: { appPasswords: appPasswords } as UserAuthManageAppPasswordsDialogComponent }
+        )
+        modalRef.content.nbAppPasswords.subscribe((nb: number) => {
+          this.store.user.next({ ...this.store.user.getValue(), appPasswords: nb })
+        })
+      },
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Configuration', 'Unable to get app passwords', e)
     })
   }
 

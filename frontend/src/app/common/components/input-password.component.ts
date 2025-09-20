@@ -9,8 +9,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faDice, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
+import { genPassword } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { genPassword, togglePasswordType } from '../utils/functions'
+import { togglePasswordType } from '../utils/functions'
 
 @Component({
   selector: 'app-input-password',

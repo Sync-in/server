@@ -14,7 +14,6 @@ export const WS_KEY = 'sync-in-ws'
 
 export const TWO_FA_CODE_LENGTH = 6
 export const TWO_FA_VERIFY_EXPIRATION = '5m'
-
 export const TWO_FA_HEADER = 'sync-in-two-fa-code'
 
 export const TOKEN_PATHS = {

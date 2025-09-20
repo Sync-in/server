@@ -8,6 +8,7 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { CONNECT_ERROR_CODE } from '../../../app.constants'
 import { UserModel } from '../../../applications/users/models/user.model'
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
+import { AUTH_SCOPE } from '../../constants/scope'
 import { AuthMethod } from '../../models/auth-method'
 
 @Injectable()
@@ -16,7 +17,7 @@ export class AuthMethodDatabase implements AuthMethod {
 
   constructor(private readonly usersManager: UsersManager) {}
 
-  async validateUser(loginOrEmail: string, password: string, ip?: string): Promise<UserModel> {
+  async validateUser(loginOrEmail: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
     let user: UserModel
     try {
       user = await this.usersManager.findUser(loginOrEmail, false)
@@ -28,6 +29,6 @@ export class AuthMethodDatabase implements AuthMethod {
       this.logger.warn(`${this.validateUser.name} - login or email not found for *${loginOrEmail}*`)
       return null
     }
-    return await this.usersManager.logUser(user, password, ip)
+    return await this.usersManager.logUser(user, password, ip, scope)
   }
 }

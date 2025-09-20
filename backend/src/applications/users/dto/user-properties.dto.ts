@@ -4,7 +4,10 @@
  * See the LICENSE file for licensing details
  */
 
-import { IsInt, IsNotEmpty, IsString, MinLength, ValidateIf } from 'class-validator'
+import { Transform } from 'class-transformer'
+import { IsDate, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MinLength, ValidateIf } from 'class-validator'
+import { AUTH_SCOPE } from '../../../authentication/constants/scope'
+import { currentDate } from '../../../common/shared'
 import { USER_PASSWORD_MIN_LENGTH } from '../constants/user'
 
 export class UserLanguageDto {
@@ -34,4 +37,19 @@ export class UserPasswordDto {
   @IsString()
   @MinLength(USER_PASSWORD_MIN_LENGTH)
   password: string
+}
+
+export class UserAppPasswordDto {
+  @IsNotEmpty()
+  @IsString()
+  name: string
+
+  @Transform(({ value }) => value.toLowerCase())
+  @IsEnum(AUTH_SCOPE)
+  app: AUTH_SCOPE
+
+  @IsOptional()
+  @Transform(({ value }) => (value ? currentDate(value) : null))
+  @IsDate()
+  expiration?: Date
 }

@@ -133,6 +133,11 @@ export class UserModel implements User {
     return !!this.secrets?.twoFaSecret
   }
 
+  @Expose()
+  get appPasswords(): number {
+    return this.secrets?.appPasswords?.length || 0
+  }
+
   static getHomePath(userLogin: string, isGuest = false, isLink = false): string {
     if (isGuest || isLink) {
       return path.join(configuration.applications.files.tmpPath, isGuest ? 'guests' : 'links', userLogin)

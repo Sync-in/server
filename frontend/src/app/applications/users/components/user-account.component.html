@@ -153,29 +153,30 @@
                 <span class="col-3 align-self-start text-nowrap" l10nTranslate>Security</span>
                 <div class="col-auto">
                   <div class="fw-500 mb-2" l10nTranslate>Two-Factor Authentication</div>
+                  <button (click)="enable2Fa()"
+                          [disabled]="!store.server().twoFaEnabled"
+                          class="btn btn-xs btn-primary"
+                          type="button" l10nTranslate>
+                    {{user.twoFaEnabled ? 'Reset' : 'Enable'}}
+                  </button>
                   @if (user.twoFaEnabled) {
-                    <button (click)="enable2Fa()"
+                    <button (click)="disable2Fa()"
                             [disabled]="!store.server().twoFaEnabled"
-                            class="btn btn-xs btn-warning me-2"
+                            class="btn btn-xs btn-danger ms-2"
                             type="button" l10nTranslate>
-                      Reset
+                      Disable
                     </button>
-                      <button (click)="disable2Fa()"
-                              [disabled]="!store.server().twoFaEnabled"
-                              class="btn btn-xs btn-danger"
-                              type="button" l10nTranslate>
-                        Disable
-                      </button>
-                  } @else {
-                    <div class="mb-1">
-                      <button (click)="enable2Fa()"
-                              [disabled]="!store.server().twoFaEnabled"
-                              class="btn btn-xs btn-primary me-1"
-                              type="button" l10nTranslate>
-                        Enable
-                      </button>
-                    </div>
                   }
+                  <div class="fw-500 mt-3 mb-2" l10nTranslate>Application Passwords</div>
+                  <button (click)="manageAppPasswords()"
+                          class="btn btn-xs btn-primary me-1"
+                          type="button" l10nTranslate>
+                    @if (user.appPasswords > 0) {
+                      <span l10nTranslate>Manage</span>&nbsp;<span>({{user.appPasswords}})</span>
+                    } @else {
+                      <span l10nTranslate>Generate</span>
+                    }
+                  </button>
                 </div>
               </div>
             }

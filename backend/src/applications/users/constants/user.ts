@@ -68,5 +68,5 @@ export const USER_NOTIFICATION_TEXT = {
 export const USER_SECRET = {
   TWO_FA_SECRET: 'twoFaSecret',
   RECOVERY_CODES: 'recoveryCodes',
-  WEBDAV_PASSWORD: 'webdavPassword'
+  APP_PASSWORDS: 'appPasswords'
 } as const

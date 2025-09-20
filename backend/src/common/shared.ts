@@ -36,6 +36,24 @@ export function createSlug(input: string, replaceCount = false): string {
   return r
 }
 
+export function createLightSlug(input: string) {
+  return input
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+export function genPassword(length = 12) {
+  const chars = '0123456789abcdefghijklmnopqrstuvwxyz!@#$%^&*()ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  let password = ''
+  for (let i = 0; i <= length; i++) {
+    const randomNumber = Math.floor(Math.random() * chars.length)
+    password += chars.substring(randomNumber, randomNumber + 1)
+  }
+  return password
+}
+
 export function popFromObject(key: string, object: any): any {
   const item = object[key]
   delete object[key]

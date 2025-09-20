@@ -58,16 +58,6 @@ export function genRandomUUID(): string {
   return Math.random().toString(36).substring(7)
 }
 
-export function genPassword(length = 12) {
-  const chars = '0123456789abcdefghijklmnopqrstuvwxyz!@#$%^&*()ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-  let password = ''
-  for (let i = 0; i <= length; i++) {
-    const randomNumber = Math.floor(Math.random() * chars.length)
-    password += chars.substring(randomNumber, randomNumber + 1)
-  }
-  return password
-}
-
 export function convertTextToBytes(bytes: number, unit: string, precision = 0): number {
   const exponent = units.indexOf(unit.toUpperCase())
   return parseInt((bytes * Math.pow(1024, Math.floor(exponent))).toFixed(precision), 10)

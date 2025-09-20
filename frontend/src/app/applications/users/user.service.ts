@@ -11,6 +11,7 @@ import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces
 import { SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import { AppStoreManifest } from '@sync-in-server/backend/src/applications/sync/interfaces/store-manifest.interface'
 import {
+  API_USERS_MY_APP_PASSWORDS,
   API_USERS_MY_AVATAR,
   API_USERS_MY_GROUPS,
   API_USERS_MY_GROUPS_BROWSE,
@@ -31,6 +32,7 @@ import type {
 } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
 import type {
+  UserAppPasswordDto,
   UserLanguageDto,
   UserNotificationDto,
   UserPasswordDto,
@@ -40,6 +42,7 @@ import type { GroupBrowse } from '@sync-in-server/backend/src/applications/users
 import type { GroupMember } from '@sync-in-server/backend/src/applications/users/interfaces/group-member'
 import type { GuestUser } from '@sync-in-server/backend/src/applications/users/interfaces/guest-user.interface'
 import type { Member } from '@sync-in-server/backend/src/applications/users/interfaces/member.interface'
+import type { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import type {
   EventChangeOnlineStatus,
   EventUpdateOnlineStatus,
@@ -283,6 +286,18 @@ export class UserService {
       next: (manifest: AppStoreManifest) => this.store.appStoreManifest.set(manifest),
       error: (e: HttpErrorResponse) => console.error(e)
     })
+  }
+
+  listAppPasswords(): Observable<Omit<UserAppPassword, 'password'>[]> {
+    return this.http.get<Omit<UserAppPassword, 'password'>[]>(API_USERS_MY_APP_PASSWORDS)
+  }
+
+  generateAppPassword(userAppPasswordDto: UserAppPasswordDto): Observable<UserAppPassword> {
+    return this.http.post<UserAppPassword>(API_USERS_MY_APP_PASSWORDS, userAppPasswordDto)
+  }
+
+  deleteAppPassword(name: string): Observable<void> {
+    return this.http.delete<void>(`${API_USERS_MY_APP_PASSWORDS}/${name}`)
   }
 
   init2Fa(): Observable<TwoFaSetup> {
