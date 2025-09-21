@@ -5,7 +5,7 @@
  */
 
 import { Inject, Injectable } from '@nestjs/common'
-import { and, desc, eq, inArray, SelectedFields, sql, SQL } from 'drizzle-orm'
+import { and, desc, eq, inArray, SelectedFields, SQL } from 'drizzle-orm'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { dbCheckAffectedRows } from '../../../infrastructure/database/utils'
@@ -26,7 +26,7 @@ export class NotificationsQueries {
       .select({
         id: notifications.id,
         fromUser: { id: users.id, login: users.login, email: users.email, fullName: userFullNameSQL(users) },
-        content: sql`${notifications.content}`.mapWith(JSON.parse),
+        content: notifications.content,
         wasRead: notifications.wasRead,
         createdAt: notifications.createdAt
       } satisfies NotificationFromUser | SelectedFields<any, any>)

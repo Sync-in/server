@@ -5,7 +5,8 @@
  */
 
 import { sql } from 'drizzle-orm'
-import { bigint, char, datetime, index, json, mysqlTable } from 'drizzle-orm/mysql-core'
+import { bigint, char, datetime, index, mysqlTable } from 'drizzle-orm/mysql-core'
+import { jsonColumn } from '../../../infrastructure/database/columns'
 import { files } from '../../files/schemas/files.schema'
 import { shares } from '../../shares/schemas/shares.schema'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
@@ -34,7 +35,7 @@ export const syncPaths = mysqlTable(
     spaceRootId: bigint('spaceRootId', { mode: 'number', unsigned: true }).references(() => spacesRoots.id, { onDelete: 'cascade' }),
     shareId: bigint('shareId', { mode: 'number', unsigned: true }).references(() => shares.id, { onDelete: 'cascade' }),
     fileId: bigint('fileId', { mode: 'number', unsigned: true }).references(() => files.id, { onDelete: 'cascade' }),
-    settings: json('settings').$type<SyncPathSettings>().notNull(),
+    settings: jsonColumn<SyncPathSettings>()('settings').notNull(),
     createdAt: datetime('createdAt', { mode: 'date' })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull()

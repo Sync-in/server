@@ -97,7 +97,7 @@ export class SyncQueries {
         ownerId: syncClients.ownerId,
         token: syncClients.token,
         tokenExpiration: syncClients.tokenExpiration,
-        info: sql`${syncClients.info}`.mapWith(JSON.parse),
+        info: syncClients.info,
         enabled: syncClients.enabled,
         currentAccess: syncClients.currentAccess,
         currentIp: syncClients.currentIp,
@@ -117,7 +117,7 @@ export class SyncQueries {
       .select({
         id: syncClients.id,
         tokenExpiration: syncClients.tokenExpiration,
-        info: sql`${syncClients.info}`.mapWith(JSON.parse),
+        info: syncClients.info,
         enabled: syncClients.enabled,
         currentAccess: syncClients.currentAccess,
         currentIp: syncClients.currentIp,
@@ -127,7 +127,7 @@ export class SyncQueries {
         isCurrentClient: sql<boolean>`IF (${clientId} IS NOT NULL AND ${syncClients.id} = ${clientId}, 1, 0)`.mapWith(Boolean),
         paths: concatDistinctObjectsInArray(syncPaths.id, {
           id: syncPaths.id,
-          settings: sql`${syncPaths.settings}`.mapWith(JSON.parse),
+          settings: syncPaths.settings,
           createdAt: syncPaths.createdAt
         })
       })
@@ -203,7 +203,7 @@ export class SyncQueries {
                ELSE NULL
           END
         `.as('remotePath'),
-        settings: sql`${syncPaths.settings}`.mapWith(JSON.parse)
+        settings: syncPaths.settings
       })
       .from(syncPaths)
       .leftJoin(files, eq(files.id, syncPaths.fileId))
@@ -219,7 +219,7 @@ export class SyncQueries {
   async getPathSettings(clientId: string, pathId: number): Promise<SyncPathSettings> {
     const [path] = await this.db
       .select({
-        settings: sql`${syncPaths.settings}`.mapWith(JSON.parse)
+        settings: syncPaths.settings
       })
       .from(syncPaths)
       .where(and(eq(syncPaths.clientId, clientId), eq(syncPaths.id, pathId)))

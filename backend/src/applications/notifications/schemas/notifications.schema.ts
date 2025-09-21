@@ -5,7 +5,8 @@
  */
 
 import { sql } from 'drizzle-orm'
-import { bigint, boolean, datetime, index, json, mysqlTable } from 'drizzle-orm/mysql-core'
+import { bigint, boolean, datetime, index, mysqlTable } from 'drizzle-orm/mysql-core'
+import { jsonColumn } from '../../../infrastructure/database/columns'
 import { users } from '../../users/schemas/users.schema'
 import type { NotificationContent } from '../interfaces/notification-properties.interface'
 
@@ -17,7 +18,7 @@ export const notifications = mysqlTable(
     toUserId: bigint('toUserId', { mode: 'number', unsigned: true })
       .references(() => users.id, { onDelete: 'cascade' })
       .notNull(),
-    content: json('content').$type<NotificationContent>(),
+    content: jsonColumn<NotificationContent>()('content'),
     wasRead: boolean('wasRead').default(false).notNull(),
     createdAt: datetime('createdAt', { mode: 'date' })
       .default(sql`CURRENT_TIMESTAMP`)

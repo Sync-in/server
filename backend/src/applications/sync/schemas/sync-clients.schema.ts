@@ -5,7 +5,8 @@
  */
 
 import { sql } from 'drizzle-orm'
-import { bigint, boolean, char, datetime, index, json, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
+import { bigint, boolean, char, datetime, index, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
+import { jsonColumn } from '../../../infrastructure/database/columns'
 import { users } from '../../users/schemas/users.schema'
 import type { SyncClientInfo } from '../interfaces/sync-client.interface'
 
@@ -18,7 +19,7 @@ export const syncClients = mysqlTable(
       .notNull(),
     token: char('token', { length: 36 }).notNull(),
     tokenExpiration: bigint('tokenExpiration', { mode: 'number', unsigned: true }).notNull(),
-    info: json('info').$type<SyncClientInfo>().notNull(),
+    info: jsonColumn<SyncClientInfo>()('info').notNull(),
     enabled: boolean('enabled').default(true).notNull(),
     currentIp: varchar('currentIp', { length: 45 }),
     lastIp: varchar('lastIp', { length: 45 }),
