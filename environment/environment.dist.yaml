@@ -80,8 +80,8 @@ auth:
     # totp configuration
     totp:
       # enable TOTP authentication
-      # default: false
-      enabled: false
+      # default: true
+      enabled: true
       # name displayed in the authentication app (FreeOTP, Proton Authenticator, Aegis Authenticator etc.)
       # default: Sync-in
       issuer: Sync-in

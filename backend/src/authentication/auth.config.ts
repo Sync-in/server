@@ -24,7 +24,7 @@ import { ACCESS_KEY, CSRF_KEY, REFRESH_KEY, WS_KEY } from './constants/auth'
 
 export class AuthMfaTotpConfig {
   @IsBoolean()
-  enabled = false
+  enabled = true
 
   @IsString()
   issuer = SERVER_NAME
