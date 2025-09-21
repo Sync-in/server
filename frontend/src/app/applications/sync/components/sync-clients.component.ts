@@ -105,7 +105,7 @@ export class SyncClientsComponent {
         }
       },
       error: (e: HttpErrorResponse) => {
-        console.log(e)
+        console.error(e)
         this.loading = false
         this.layout.sendNotification('error', 'Clients', e.error.message)
       }

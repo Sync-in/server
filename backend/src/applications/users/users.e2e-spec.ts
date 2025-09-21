@@ -34,7 +34,7 @@ describe('Users (e2e)', () => {
 
   afterAll(async () => {
     await expect(
-      adminUsersManager.deleteUserOrGuest(userTest.id, userTest.login, { deleteSpace: true } satisfies DeleteUserDto)
+      adminUsersManager.deleteUserOrGuest(userTest.id, userTest.login, { deleteSpace: true, isGuest: false } satisfies DeleteUserDto)
     ).resolves.not.toThrow()
     await dbCloseConnection(app)
     await app.close()

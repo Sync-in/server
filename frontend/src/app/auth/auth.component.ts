@@ -10,6 +10,7 @@ import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faKey, faLock, faQrcode, faUserAlt } from '@fortawesome/free-solid-svg-icons'
+import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { TWO_FA_CODE_LENGTH } from '@sync-in-server/backend/src/authentication/constants/auth'
 import { TwoFaResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import { TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
@@ -40,7 +41,7 @@ export class AuthComponent {
   })
   protected twoFaForm: FormGroup = this.fb.group({
     totpCode: this.fb.control('', [Validators.required, Validators.pattern(new RegExp(`^\\d{${TWO_FA_CODE_LENGTH}}$`))]),
-    recoveryCode: this.fb.control('', [Validators.required, Validators.minLength(8)]),
+    recoveryCode: this.fb.control('', [Validators.required, Validators.minLength(USER_PASSWORD_MIN_LENGTH)]),
     isRecoveryCode: this.fb.control(false)
   })
   private readonly router = inject(Router)

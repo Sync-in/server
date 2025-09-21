@@ -93,7 +93,7 @@ describe(UsersManager.name, () => {
     adminUsersQueries = module.get(AdminUsersQueries)
     usersQueriesService = module.get(UsersQueries)
     userTest = new UserModel(generateUserTest(), false)
-    deleteUserDto = { deleteSpace: true } satisfies DeleteUserDto
+    deleteUserDto = { deleteSpace: true, isGuest: false } satisfies DeleteUserDto
   })
 
   afterEach(() => jest.restoreAllMocks())

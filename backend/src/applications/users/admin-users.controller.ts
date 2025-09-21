@@ -7,7 +7,7 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Res, Search, UseGuards } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
-import { AuthTwoFaGuard } from '../../authentication/guards/auth-two-fa-guard'
+import { AuthTwoFaGuard, AuthTwoFaGuardWithoutPassword } from '../../authentication/guards/auth-two-fa-guard'
 import { GROUP_TYPE } from './constants/group'
 import { ADMIN_USERS_ROUTE } from './constants/routes'
 import { USER_ROLE } from './constants/user'
@@ -15,9 +15,8 @@ import { UserHaveRole } from './decorators/roles.decorator'
 import { GetUser } from './decorators/user.decorator'
 import { CreateOrUpdateGroupDto } from './dto/create-or-update-group.dto'
 import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from './dto/create-or-update-user.dto'
-import { AdminDeleteUserDto } from './dto/delete-user.dto'
+import { DeleteUserDto } from './dto/delete-user.dto'
 import { SearchMembersDto } from './dto/search-members.dto'
-import { UserPasswordDto } from './dto/user-properties.dto'
 import { UserRolesGuard } from './guards/roles.guard'
 import { AdminGroup } from './interfaces/admin-group.interface'
 import { AdminUser } from './interfaces/admin-user.interface'
@@ -44,6 +43,7 @@ export class AdminUsersController {
   }
 
   @Post(ADMIN_USERS_ROUTE.USERS)
+  @UseGuards(AuthTwoFaGuardWithoutPassword)
   createUser(@Body() createUserDto: CreateUserDto): Promise<AdminUser> {
     return this.adminUsersManager.createUserOrGuest(
       createUserDto,
@@ -53,14 +53,15 @@ export class AdminUsersController {
   }
 
   @Put(`${ADMIN_USERS_ROUTE.USERS}/:id`)
+  @UseGuards(AuthTwoFaGuardWithoutPassword)
   updateUser(@Param('id', ParseIntPipe) userId: number, @Body() updateUserDto: UpdateUserDto): Promise<AdminUser> {
     return this.adminUsersManager.updateUserOrGuest(userId, updateUserDto)
   }
 
   @Delete(`${ADMIN_USERS_ROUTE.USERS}/:id`)
   @UseGuards(AuthTwoFaGuard)
-  deleteUser(@GetUser() admin: UserModel, @Param('id', ParseIntPipe) userId: number, @Body() adminDeleteUserDto: AdminDeleteUserDto): Promise<void> {
-    return this.adminUsersManager.deleteUserFromAdmin(admin, userId, adminDeleteUserDto)
+  deleteUser(@Param('id', ParseIntPipe) userId: number, @Body() deleteUserDto: DeleteUserDto): Promise<void> {
+    return this.adminUsersManager.deleteUserOrGuestFromAdmin(userId, { ...deleteUserDto, isGuest: false })
   }
 
   @Get(`${ADMIN_USERS_ROUTE.GUESTS}/${ADMIN_USERS_ROUTE.LIST}`)
@@ -74,18 +75,21 @@ export class AdminUsersController {
   }
 
   @Post(ADMIN_USERS_ROUTE.GUESTS)
+  @UseGuards(AuthTwoFaGuardWithoutPassword)
   createGuest(@GetUser() user: UserModel, @Body() createGuestDto: CreateUserDto): Promise<GuestUser> {
     return this.adminUsersManager.createGuest(user, createGuestDto)
   }
 
   @Put(`${ADMIN_USERS_ROUTE.GUESTS}/:id`)
+  @UseGuards(AuthTwoFaGuardWithoutPassword)
   updateGuest(@Param('id', ParseIntPipe) guestId: number, @Body() updateGuestDto: UpdateUserDto): Promise<GuestUser> {
     return this.adminUsersManager.updateGuest(guestId, updateGuestDto)
   }
 
   @Delete(`${ADMIN_USERS_ROUTE.GUESTS}/:id`)
-  deleteGuest(@Param('id', ParseIntPipe) guestId: number): Promise<void> {
-    return this.adminUsersManager.deleteGuest(guestId)
+  @UseGuards(AuthTwoFaGuard)
+  deleteGuest(@Param('id', ParseIntPipe) guestId: number, @Body() deleteUserDto: DeleteUserDto): Promise<void> {
+    return this.adminUsersManager.deleteUserOrGuestFromAdmin(guestId, { ...deleteUserDto, isGuest: true })
   }
 
   @Search(ADMIN_USERS_ROUTE.MEMBERS)
@@ -147,10 +151,9 @@ export class AdminUsersController {
   impersonateUser(
     @GetUser() admin: UserModel,
     @Param('id', ParseIntPipe) userId: number,
-    @Body() adminPasswordDto: UserPasswordDto,
     @Res({ passthrough: true }) res: FastifyReply
   ): Promise<LoginResponseDto> {
-    return this.adminUsersManager.impersonateUser(admin, userId, adminPasswordDto, res)
+    return this.adminUsersManager.impersonateUser(admin, userId, res)
   }
 
   @Post(`${ADMIN_USERS_ROUTE.IMPERSONATE}/${ADMIN_USERS_ROUTE.LOGOUT}`)

@@ -12,7 +12,7 @@
       </div>
       <div class="body">
         @if (twoFaVerify) {
-          <p class="fs-sm mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Two-factor authentication' }}</p>
+          <p class="fs-sm mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Two-factor Authentication' }}</p>
           <form (ngSubmit)="onSubmit2Fa()" [formGroup]="twoFaForm">
             <div class="input-group mt-2 mb-4">
               @if (twoFaForm.value.isRecoveryCode) {

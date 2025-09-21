@@ -9,7 +9,6 @@ import { Totp } from 'time2fa'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../../applications/notifications/constants/notifications'
 import { NotificationContent } from '../../../applications/notifications/interfaces/notification-properties.interface'
 import { NotificationsManager } from '../../../applications/notifications/services/notifications-manager.service'
-import { UserPasswordDto } from '../../../applications/users/dto/user-properties.dto'
 import { UserModel } from '../../../applications/users/models/user.model'
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import { ACTION } from '../../../common/constants'
@@ -96,19 +95,20 @@ export class AuthMethod2FA {
     return fromLogin ? [auth, user] : auth
   }
 
-  async adminResetUserTwoFa(adminId: number, userId: number, adminPassword: UserPasswordDto) {
-    // check admin password
+  async adminResetUserTwoFa(userId: number) {
     const auth: TwoFaVerifyResult = { success: false, message: '' }
-    if (!(await this.usersManager.usersQueries.compareUserPassword(adminId, adminPassword.password))) {
-      auth.message = 'Bad password'
-      return auth
+    try {
+      await this.usersManager.updateSecrets(userId, { twoFaSecret: undefined, recoveryCodes: undefined })
+      auth.success = true
+    } catch (e) {
+      auth.success = false
+      auth.message = e.message
+      this.logger.error(`${this.adminResetUserTwoFa.name} - ${e}`)
     }
-    await this.usersManager.updateSecrets(userId, { twoFaSecret: undefined, recoveryCodes: undefined })
-    auth.success = true
     return auth
   }
 
-  private async loadUser(userId: number, ip: string) {
+  async loadUser(userId: number, ip: string) {
     const user: UserModel = await this.usersManager.fromUserId(userId)
     if (!user) {
       this.logger.warn(`User *${user.login}* (${user.id}) not found`)
@@ -118,7 +118,7 @@ export class AuthMethod2FA {
     return user
   }
 
-  private async verifyUserPassword(user: UserModel, password: string, ip: string) {
+  async verifyUserPassword(user: UserModel, password: string, ip: string) {
     if (!(await this.usersManager.compareUserPassword(user.id, password))) {
       this.usersManager.updateAccesses(user, ip, false, true).catch((e: Error) => this.logger.error(`${this.enableTwoFactor.name} - ${e}`))
       throw new HttpException('Incorrect code or password', HttpStatus.BAD_REQUEST)

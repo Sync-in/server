@@ -9,8 +9,6 @@ import { FastifyReply } from 'fastify'
 import { USER_ROLE } from '../applications/users/constants/user'
 import { UserHaveRole } from '../applications/users/decorators/roles.decorator'
 import { GetUser } from '../applications/users/decorators/user.decorator'
-
-import { UserPasswordDto } from '../applications/users/dto/user-properties.dto'
 import { UserRolesGuard } from '../applications/users/guards/roles.guard'
 import { UserModel } from '../applications/users/models/user.model'
 import { ACCESS_KEY, TOKEN_PATHS } from './constants/auth'
@@ -110,21 +108,10 @@ export class AuthController {
     return authStatus
   }
 
-  @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_VERIFY}`)
-  @UseGuards(UserRolesGuard)
-  @UserHaveRole(USER_ROLE.USER)
-  twoFaVerify(@Body() body: TwoFaVerifyDto, @Req() req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
-    return this.authMethod2FA.verify(body, req)
-  }
-
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_ADMIN_RESET_USER}/:id`)
   @UseGuards(UserRolesGuard, AuthTwoFaGuard)
   @UserHaveRole(USER_ROLE.ADMINISTRATOR)
-  twoFaReset(
-    @GetUser() admin: UserModel,
-    @Param('id', ParseIntPipe) userId: number,
-    @Body() adminPassword: UserPasswordDto
-  ): Promise<TwoFaVerifyResult> {
-    return this.authMethod2FA.adminResetUserTwoFa(admin.id, userId, adminPassword)
+  twoFaReset(@Param('id', ParseIntPipe) userId: number): Promise<TwoFaVerifyResult> {
+    return this.authMethod2FA.adminResetUserTwoFa(userId)
   }
 }

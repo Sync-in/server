@@ -29,6 +29,7 @@ import {
 } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { CreateUserDto, UpdateUserDto } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
+import type { TwoFaVerifyResult } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TabDirective, TabHeadingDirective, TabsetComponent } from 'ngx-bootstrap/tabs'
@@ -46,10 +47,10 @@ import { LayoutService } from '../../../../layout/layout.service'
 import { UserSearchComponent } from '../../../users/components/utils/user-search.component'
 import { MemberModel } from '../../../users/models/member.model'
 import { USER_ICON, USER_LANGUAGE_AUTO, USER_PASSWORD_CHANGE_TEXT } from '../../../users/user.constants'
+import { UserService } from '../../../users/user.service'
 import { AdminService } from '../../admin.service'
 import { AdminUserModel } from '../../models/admin-user.model'
 import { AdminPermissionsComponent } from '../utils/admin-permissions.component'
-import { AdminResetUserTwoFaDialogComponent } from './admin-reset-user-two-fa-dialog.component'
 import { AdminUserDeleteDialogComponent } from './admin-user-delete-dialog.component'
 
 @Component({
@@ -115,6 +116,7 @@ export class AdminUserDialogComponent implements OnInit {
     applications: FormControl<USER_PERMISSION[]>
   }>
   private readonly adminService = inject(AdminService)
+  private readonly userService = inject(UserService)
 
   ngOnInit() {
     this.userForm = new FormGroup({
@@ -174,16 +176,26 @@ export class AdminUserDialogComponent implements OnInit {
     }
   }
 
-  reset2Fa() {
-    const modalRef: BsModalRef<AdminResetUserTwoFaDialogComponent> = this.layout.openDialog(AdminResetUserTwoFaDialogComponent, 'sm', {
-      initialState: { user: this.user } as AdminResetUserTwoFaDialogComponent
-    })
-    modalRef.content.wasReset.pipe(take(1)).subscribe((wasReset: boolean) => {
-      this.user.twoFaEnabled = wasReset
+  async reset2Fa() {
+    const auth2FaHeaders = await this.userService.auth2FaVerifyDialog(true)
+    if (auth2FaHeaders === false) return
+    this.userService.adminResetUser2Fa(this.user.id, auth2FaHeaders).subscribe({
+      next: (verify: TwoFaVerifyResult) => {
+        this.user.twoFaEnabled = !verify.success
+        if (verify.success) {
+          this.layout.sendNotification('success', 'Two-Factor Authentication is disabled', this.user.login)
+        } else {
+          this.layout.sendNotification('error', 'Two-Factor Authentication', verify.message)
+        }
+      },
+      error: (e: HttpErrorResponse) => {
+        this.submitted = false
+        this.layout.sendNotification('error', 'Two-Factor Authentication', this.user.login, e)
+      }
     })
   }
 
-  onSubmit() {
+  async onSubmit() {
     this.submitted = true
     if (this.confirmDeletion) {
       // delete
@@ -201,7 +213,11 @@ export class AdminUserDialogComponent implements OnInit {
       })
     } else if (!this.user) {
       // create
-      this.adminService.createUser(this.makeDto(true)).subscribe({
+      const auth2FaHeaders = await this.userService.auth2FaVerifyDialog()
+      if (auth2FaHeaders === false) {
+        return
+      }
+      this.adminService.createUser(this.makeDto(true), auth2FaHeaders).subscribe({
         next: (u: AdminUserModel) => {
           this.userChange.emit(['add', u])
           this.layout.sendNotification('success', 'User created', this.userForm.value.login)
@@ -211,7 +227,11 @@ export class AdminUserDialogComponent implements OnInit {
       })
     } else {
       // update
-      this.adminService.updateUser(this.user.id, this.makeDto()).subscribe({
+      const auth2FaHeaders = await this.userService.auth2FaVerifyDialog()
+      if (auth2FaHeaders === false) {
+        return
+      }
+      this.adminService.updateUser(this.user.id, this.makeDto(), auth2FaHeaders).subscribe({
         next: (u: AdminUserModel) => {
           this.userChange.emit(['update', u])
           this.layout.sendNotification('success', 'User updated', this.userForm.value.login)

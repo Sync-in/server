@@ -24,6 +24,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
+import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { BsModalRef } from 'ngx-bootstrap/modal'
@@ -40,11 +41,11 @@ import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { LayoutService } from '../../../layout/layout.service'
 import { UserAvatarComponent } from '../../users/components/utils/user-avatar.component'
 import { GuestUserModel } from '../../users/models/guest.model'
+import { UserService } from '../../users/user.service'
 import { ADMIN_ICON, ADMIN_PATH, ADMIN_TITLE } from '../admin.constants'
 import { AdminService } from '../admin.service'
 import { AdminUserModel } from '../models/admin-user.model'
 import { AdminGuestDialogComponent } from './dialogs/admin-guest-dialog.component'
-import { AdminImpersonateUserDialogComponent } from './dialogs/admin-impersonate-user-dialog.component'
 import { AdminUserDialogComponent } from './dialogs/admin-user-dialog.component'
 
 @Component({
@@ -158,6 +159,7 @@ export class AdminUsersComponent {
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly layout = inject(LayoutService)
   private readonly adminService = inject(AdminService)
+  private readonly userService = inject(UserService)
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'login', type: 'string' }],
     login: [{ prop: 'login', type: 'string' }],
@@ -303,9 +305,14 @@ export class AdminUsersComponent {
     }
   }
 
-  impersonateIdentity() {
-    this.layout.openDialog(AdminImpersonateUserDialogComponent, 'sm', {
-      initialState: { user: this.selected } as AdminImpersonateUserDialogComponent
+  async impersonateIdentity() {
+    const auth2FaHeaders = await this.userService.auth2FaVerifyDialog(true)
+    if (auth2FaHeaders === false) return
+    this.adminService.impersonateUser(this.selected.id, auth2FaHeaders).subscribe({
+      next: (r: LoginResponseDto) => {
+        setTimeout(() => this.adminService.initImpersonateUser(r), 500)
+      },
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Impersonate identity', this.selected.login, e)
     })
   }
 

@@ -21,7 +21,6 @@ import { AuthTokenAccessGuard } from './guards/auth-token-access.guard'
 import { AuthTokenAccessStrategy } from './guards/auth-token-access.strategy'
 import { AuthTokenRefreshGuard } from './guards/auth-token-refresh.guard'
 import { AuthTokenRefreshStrategy } from './guards/auth-token-refresh.strategy'
-import { AuthTwoFaGuard } from './guards/auth-two-fa-guard'
 import { AuthMethod } from './models/auth-method'
 import { AuthManager } from './services/auth-manager.service'
 import { AuthMethodDatabase } from './services/auth-methods/auth-method-database.service'
@@ -48,9 +47,8 @@ import { AuthMethod2FA } from './services/auth-methods/auth-method-two-fa.servic
     AuthAnonymousStrategy,
     AuthManager,
     AuthMethod2FA,
-    AuthTwoFaGuard,
     { provide: AuthMethod, useClass: configuration.auth.method === 'ldap' ? AuthMethodLdapService : AuthMethodDatabase }
   ],
-  exports: [AuthManager, AuthMethod, AuthMethod2FA, AuthTwoFaGuard]
+  exports: [AuthManager, AuthMethod, AuthMethod2FA]
 })
 export class AuthModule {}

@@ -69,12 +69,12 @@ export class UserAuth2faEnableDialogComponent {
 
   clipBoardSecret() {
     this.clipBoardService.copyFromContent(this.secret)
-    this.layout.sendNotification('info', 'Two-factor authentication', 'Secret copied')
+    this.layout.sendNotification('info', 'Two-factor Authentication', 'Secret copied')
   }
 
   clipBoardRecoveryCodes() {
     this.clipBoardService.copyFromContent(this.recoveryCodes.join('\n'))
-    this.layout.sendNotification('info', 'Two-factor authentication', 'Recovery codes copied')
+    this.layout.sendNotification('info', 'Two-factor Authentication', 'Recovery codes copied')
   }
 
   downloadRecoveryCodes() {

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { HttpErrorResponse } from '@angular/common/http'
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -16,6 +16,7 @@ import {
 } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
+import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '@sync-in-server/backend/src/authentication/constants/auth'
 import { TwoFaSetup } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
@@ -32,7 +33,7 @@ import { TimeAgoPipe } from '../../../common/pipes/time-ago.pipe'
 import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
-import { UserTwoFaVerify, UserType } from '../interfaces/user.interface'
+import { UserType } from '../interfaces/user.interface'
 import { USER_ICON, USER_LANGUAGE_AUTO, USER_PATH, USER_TITLE } from '../user.constants'
 import { UserService } from '../user.service'
 import { UserAuth2faEnableDialogComponent } from './dialogs/user-auth-2fa-enable-dialog.component'
@@ -128,14 +129,11 @@ export class UserAccountComponent implements OnDestroy {
       this.layout.sendNotification('warning', 'Configuration', 'New password must have 8 characters minimum')
       return
     }
-    const auth2Fa = await this.userService.auth2FaVerifyDialog()
-    if (auth2Fa === false) {
-      this.oldPassword = ''
-      this.newPassword = ''
+    const auth2FaHeaders = await this.userService.auth2FaVerifyDialog()
+    if (auth2FaHeaders === false) {
       return
     }
-    const totpCode = auth2Fa === true ? undefined : auth2Fa.totpCode
-    this.userService.changePassword({ oldPassword: this.oldPassword, newPassword: this.newPassword }, totpCode).subscribe({
+    this.userService.changePassword({ oldPassword: this.oldPassword, newPassword: this.newPassword }, auth2FaHeaders).subscribe({
       next: () => {
         this.oldPassword = ''
         this.newPassword = ''
@@ -191,12 +189,12 @@ export class UserAccountComponent implements OnDestroy {
   }
 
   async disable2Fa() {
-    const auth2Fa: boolean | UserTwoFaVerify = await this.userService.auth2FaVerifyDialog(true)
-    if (typeof auth2Fa === 'boolean') {
-      // two-fa must be enabled to be disabled
+    const auth2FaHeaders: false | HttpHeaders = await this.userService.auth2FaVerifyDialog(true)
+    if (!auth2FaHeaders) {
+      // two-fa is already enabled to be disabled
       return
     }
-    this.userService.disable2Fa({ code: auth2Fa.totpCode, password: auth2Fa.password }).subscribe({
+    this.userService.disable2Fa({ code: auth2FaHeaders.get(TWO_FA_HEADER_CODE), password: auth2FaHeaders.get(TWO_FA_HEADER_PASSWORD) }).subscribe({
       next: () => {
         this.layout.sendNotification('success', 'Configuration', 'Two-Factor Authentication is disabled')
         this.store.user.next({ ...this.store.user.getValue(), twoFaEnabled: false })
@@ -208,7 +206,11 @@ export class UserAccountComponent implements OnDestroy {
   }
 
   async manageAppPasswords() {
-    this.userService.listAppPasswords().subscribe({
+    const auth2FaHeaders: false | HttpHeaders = await this.userService.auth2FaVerifyDialog()
+    if (auth2FaHeaders === false) {
+      return
+    }
+    this.userService.listAppPasswords(auth2FaHeaders).subscribe({
       next: (appPasswords: Omit<UserAppPassword, 'password'>[]) => {
         const modalRef: BsModalRef<UserAuthManageAppPasswordsDialogComponent> = this.layout.openDialog(
           UserAuthManageAppPasswordsDialogComponent,

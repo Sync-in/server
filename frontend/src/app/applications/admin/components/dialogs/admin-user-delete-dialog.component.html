@@ -16,7 +16,7 @@
   }
   <button (click)="onClose()" aria-label="Close" class="btn-close btn-close-white {{user ? 'ms-2' : 'ms-auto'}} ms-2" type="button"></button>
 </div>
-<div class="modal-body" [formGroup]="deleteUserForm">
+<div class="modal-body">
   <div class="d-flex align-items-center avatar mb-3">
     <img class="avatar-img" [src]="user.avatarUrl" alt="">
     <div class="d-flex flex-column">
@@ -24,18 +24,10 @@
       <span class="mx-2">{{ user.email }}</span>
     </div>
   </div>
-  <app-input-password id="password"
-                      [password]="deleteUserForm.value.adminPassword"
-                      (passwordChange)="deleteUserForm.controls.adminPassword.setValue($event)"
-                      [isRequired]="true"
-                      [focus]="true"
-                      (keyup.enter)="!deleteUserForm.invalid && !submitted && onSubmit()"
-                      placeholder="Enter your password to confirm">
-  </app-input-password>
   <div class="form-check form-check-inline mt-3">
     <div class="d-flex">
       <label class="form-check-label" for="deleteSpace">
-        <input class="form-check-input" formControlName="deleteSpace" id="deleteSpace" type="checkbox">
+        <input class="form-check-input" [(ngModel)]="deleteSpace" id="deleteSpace" type="checkbox">
         <span l10nTranslate>Delete all user files</span>
       </label>
     </div>
@@ -50,7 +42,7 @@
     Cancel
   </button>
   <button (click)="onSubmit()"
-          [disabled]="deleteUserForm.invalid || submitted" class="btn btn-sm btn-primary"
+          [disabled]="submitted" class="btn btn-sm btn-danger"
           type="button"
           l10nTranslate>
     Confirm

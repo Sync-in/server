@@ -7,7 +7,7 @@
 import { Body, Controller, Delete, Get, Header, Param, ParseIntPipe, Patch, Post, Put, Req, Search, StreamableFile, UseGuards } from '@nestjs/common'
 import { createReadStream } from 'fs'
 import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
-import { AuthTwoFaGuard } from '../../authentication/guards/auth-two-fa-guard'
+import { AuthTwoFaGuardWithoutPassword } from '../../authentication/guards/auth-two-fa-guard'
 import { FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface'
 import { USERS_ROUTE } from './constants/routes'
 import { USER_PERMISSION, USER_ROLE } from './constants/user'
@@ -42,12 +42,14 @@ export class UsersController {
 
   @Get(`${USERS_ROUTE.ME}/${USERS_ROUTE.APP_PASSWORDS}`)
   @UserHaveRole(USER_ROLE.USER)
+  @UseGuards(AuthTwoFaGuardWithoutPassword)
   listAppPasswords(@GetUser() user: UserModel): Promise<Omit<UserAppPassword, 'password'>[]> {
     return this.usersManager.listAppPasswords(user)
   }
 
   @Post(`${USERS_ROUTE.ME}/${USERS_ROUTE.APP_PASSWORDS}`)
   @UserHaveRole(USER_ROLE.USER)
+  @UseGuards(AuthTwoFaGuardWithoutPassword)
   generateAppPassword(@GetUser() user: UserModel, @Body() userAppPasswordDto: UserAppPasswordDto): Promise<UserAppPassword> {
     return this.usersManager.generateAppPassword(user, userAppPasswordDto)
   }
@@ -65,7 +67,7 @@ export class UsersController {
   }
 
   @Put(`${USERS_ROUTE.ME}/${USERS_ROUTE.PASSWORD}`)
-  @UseGuards(AuthTwoFaGuard)
+  @UseGuards(AuthTwoFaGuardWithoutPassword)
   updatePassword(@GetUser() user: UserModel, @Body() userPasswordDto: UserUpdatePasswordDto) {
     return this.usersManager.updatePassword(user, userPasswordDto)
   }

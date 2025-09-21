@@ -9,8 +9,3 @@ import type { UserModel } from '@sync-in-server/backend/src/applications/users/m
 export type UserType = Omit<UserModel, 'permissions' | 'password'>
 
 export type UserStatus = keyof Pick<UserType, 'isAdmin' | 'isUser' | 'isGuest' | 'isLink' | 'clientId'>
-
-export interface UserTwoFaVerify {
-  totpCode: string
-  password: string
-}

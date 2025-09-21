@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { HttpErrorResponse } from '@angular/common/http'
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormGroup, FormsModule, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
@@ -89,14 +89,18 @@ export class UserAuthManageAppPasswordsDialogComponent implements OnInit {
     })
   }
 
-  genAppPassword() {
+  async genAppPassword() {
     for (const appPwd of this.appPasswords) {
       if (appPwd.name === this.appPasswordForm.value.name) {
         this.hasError = 'This name is already used'
         return
       }
     }
-    this.userService.generateAppPassword(this.appPasswordForm.value).subscribe({
+    const auth2FaHeaders: false | HttpHeaders = await this.userService.auth2FaVerifyDialog()
+    if (auth2FaHeaders === false) {
+      return
+    }
+    this.userService.generateAppPassword(this.appPasswordForm.value, auth2FaHeaders).subscribe({
       next: (appPassword: UserAppPassword) => {
         this.appPasswordForm.patchValue({ name: '', expiration: null })
         this.appPasswords.unshift(appPassword)
