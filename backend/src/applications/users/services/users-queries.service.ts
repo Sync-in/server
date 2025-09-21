@@ -29,6 +29,7 @@ import { SearchMembersDto } from '../dto/search-members.dto'
 import { GroupMember, GroupWithMembers } from '../interfaces/group-member'
 import { GuestUser } from '../interfaces/guest-user.interface'
 import { Member } from '../interfaces/member.interface'
+import { UserSecrets } from '../interfaces/user-secrets.interface'
 import { UserOnline } from '../interfaces/websocket.interface'
 import { UserModel } from '../models/user.model'
 import { Group } from '../schemas/group.interface'
@@ -130,6 +131,11 @@ export class UsersQueries {
     // merge user and groups permissions
     user.permissions = uniquePermissions(`${user.permissions},${groupsPermissions}`, USER_PERMS_SEP)
     return user
+  }
+
+  async getUserSecrets(userId: number): Promise<UserSecrets> {
+    const [r]: { secrets: UserSecrets }[] = await this.db.select({ secrets: users.secrets }).from(users).where(eq(users.id, userId)).limit(1)
+    return r.secrets || {}
   }
 
   selectUsers(fields: Partial<keyof User>[] = ['id', 'login', 'email'], where: SQL[]): Promise<Partial<User>[]> {

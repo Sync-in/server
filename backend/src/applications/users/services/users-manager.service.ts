@@ -161,8 +161,8 @@ export class UsersManager {
   }
 
   async updateSecrets(userId: number, secrets: UserSecrets) {
-    const userProps = (await this.usersQueries.selectUserProperties(userId, ['secrets'])) as { secrets: UserSecrets }
-    const updatedSecrets = userProps['secrets'] ? { ...userProps['secrets'], ...secrets } : secrets
+    const userSecrets = await this.usersQueries.getUserSecrets(userId)
+    const updatedSecrets = { ...userSecrets, ...secrets }
     if (!(await this.usersQueries.updateUserOrGuest(userId, { secrets: updatedSecrets }))) {
       throw new HttpException('Unable to update secrets', HttpStatus.INTERNAL_SERVER_ERROR)
     }
@@ -218,7 +218,7 @@ export class UsersManager {
   }
 
   async listAppPasswords(user: UserModel): Promise<Omit<UserAppPassword, 'password'>[]> {
-    const secrets = (await this.usersQueries.selectUserProperties(user.id, ['secrets'])).secrets as UserSecrets
+    const secrets = await this.usersQueries.getUserSecrets(user.id)
     if (Array.isArray(secrets.appPasswords)) {
       // remove passwords from response
       return secrets.appPasswords.map(({ password, ...rest }: UserAppPassword) => rest)
@@ -227,7 +227,7 @@ export class UsersManager {
   }
 
   async generateAppPassword(user: UserModel, userAppPasswordDto: UserAppPasswordDto): Promise<UserAppPassword> {
-    const secrets = (await this.usersQueries.selectUserProperties(user.id, ['secrets'])).secrets as UserSecrets
+    const secrets = await this.usersQueries.getUserSecrets(user.id)
     const slugName = createLightSlug(userAppPasswordDto.name)
     if (Array.isArray(secrets.appPasswords) && secrets.appPasswords.find((p: UserAppPassword) => p.name === slugName)) {
       throw new HttpException('Name already used', HttpStatus.BAD_REQUEST)
@@ -254,7 +254,7 @@ export class UsersManager {
   }
 
   async deleteAppPassword(user: UserModel, passwordName: string): Promise<void> {
-    const secrets = (await this.usersQueries.selectUserProperties(user.id, ['secrets'])).secrets as UserSecrets
+    const secrets = await this.usersQueries.getUserSecrets(user.id)
     if (!Array.isArray(secrets.appPasswords) || !secrets.appPasswords.find((p: UserAppPassword) => p.name === passwordName)) {
       throw new HttpException('App password not found', HttpStatus.NOT_FOUND)
     }
@@ -266,7 +266,7 @@ export class UsersManager {
 
   async validateAppPassword(user: UserModel, password: string, ip: string, scope: AUTH_SCOPE): Promise<boolean> {
     if (!scope || !user.haveRole(USER_ROLE.USER)) return false
-    const secrets = (await this.usersQueries.selectUserProperties(user.id, ['secrets'])).secrets as UserSecrets
+    const secrets = await this.usersQueries.getUserSecrets(user.id)
     if (!Array.isArray(secrets.appPasswords)) return false
     for (const p of secrets.appPasswords) {
       if (p.app !== scope) continue
