@@ -49,7 +49,7 @@ export class AdminUserDeleteDialogComponent {
       this.onClose()
       return
     }
-    const totpCode = typeof auth2Fa === 'string' ? auth2Fa : undefined
+    const totpCode = auth2Fa === true ? undefined : auth2Fa.totpCode
     this.adminService
       .deleteUser(
         this.user.id,

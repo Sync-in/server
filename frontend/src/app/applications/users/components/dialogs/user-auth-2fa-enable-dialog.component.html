@@ -47,11 +47,20 @@
       </div>
     </div>
     <hr>
-    <div class="text-align-center mb-3" l10nTranslate>Confirm activation with your TOTP code</div>
     <form (ngSubmit)="onSubmit()" [formGroup]="twoFaForm">
+      <div class="text-align-center mb-3" l10nTranslate>Enter your password</div>
+      <div class="mb-3">
+        <app-input-password id="password"
+                            [password]="twoFaForm.value.password"
+                            (passwordChange)="twoFaForm.controls.password.setValue($event)"
+                            [focus]="true"
+                            [centered]="true"
+                            placeholder="••••••">
+        </app-input-password>
+      </div>
+      <div class="text-align-center mb-3" l10nTranslate>Valid with your TOTP code</div>
       <div class="mb-3">
         <input
-          appAutofocus
           type="text"
           [maxlength]=twoFaCodelength
           class="form-control text-center fs-4"

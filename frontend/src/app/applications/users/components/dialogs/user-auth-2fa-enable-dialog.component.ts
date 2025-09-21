@@ -12,14 +12,14 @@ import { TWO_FA_CODE_LENGTH } from '@sync-in-server/backend/src/authentication/c
 import { TwoFaEnableResult } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { ClipboardService } from 'ngx-clipboard'
-import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
+import { InputPasswordComponent } from '../../../../common/components/input-password.component'
 import { downloadWithAnchor } from '../../../../common/utils/functions'
 import { LayoutService } from '../../../../layout/layout.service'
 import { UserService } from '../../user.service'
 
 @Component({
   selector: 'app-user-auth-2fa-enable-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, AutofocusDirective, ReactiveFormsModule],
+  imports: [FaIconComponent, L10nTranslateDirective, ReactiveFormsModule, InputPasswordComponent],
   templateUrl: 'user-auth-2fa-enable-dialog.component.html'
 })
 export class UserAuth2faEnableDialogComponent {
@@ -38,7 +38,8 @@ export class UserAuth2faEnableDialogComponent {
   private readonly clipBoardService = inject(ClipboardService)
   private readonly fb = inject(UntypedFormBuilder)
   protected twoFaForm: FormGroup = this.fb.group({
-    totpCode: this.fb.control('', [Validators.required, Validators.pattern(new RegExp(`^\\d{${TWO_FA_CODE_LENGTH}}$`))])
+    totpCode: this.fb.control('', [Validators.required, Validators.pattern(new RegExp(`^\\d{${TWO_FA_CODE_LENGTH}}$`))]),
+    password: this.fb.control('')
   })
 
   onClose(state = false) {
@@ -48,7 +49,7 @@ export class UserAuth2faEnableDialogComponent {
 
   onSubmit() {
     this.submitted = true
-    this.userService.enable2Fa({ code: this.twoFaForm.value.totpCode }).subscribe({
+    this.userService.enable2Fa({ code: this.twoFaForm.value.totpCode, password: this.twoFaForm.value.password }).subscribe({
       next: (res: TwoFaEnableResult) => {
         if (res.success) {
           this.wasEnabled = true

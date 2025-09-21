@@ -15,6 +15,13 @@
       "when": 1755785750261,
       "tag": "0001_square_mauler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1758413556822,
+      "tag": "0002_sleepy_korath",
+      "breakpoints": true
     }
   ]
 }

@@ -55,7 +55,7 @@ import {
   API_TWO_FA_ENABLE,
   API_TWO_FA_VERIFY
 } from '@sync-in-server/backend/src/authentication/constants/routes'
-import type { TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
+import type { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
 import type { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Socket } from 'ngx-socket-io'
@@ -66,7 +66,7 @@ import { StoreService } from '../../store/store.service'
 import { NotificationsService } from '../notifications/notifications.service'
 import { SPACES_TITLE } from '../spaces/spaces.constants'
 import { UserAuth2FaVerifyDialogComponent } from './components/dialogs/user-auth-2fa-verify-dialog.component'
-import { UserType } from './interfaces/user.interface'
+import { UserTwoFaVerify, UserType } from './interfaces/user.interface'
 import { GroupBrowseModel } from './models/group-browse.model'
 import { GuestUserModel } from './models/guest.model'
 import { MemberModel } from './models/member.model'
@@ -304,11 +304,11 @@ export class UserService {
     return this.http.get<TwoFaSetup>(API_TWO_FA_ENABLE)
   }
 
-  enable2Fa(twoFaVerifyDto: TwoFaVerifyDto): Observable<TwoFaEnableResult> {
-    return this.http.post<TwoFaEnableResult>(API_TWO_FA_ENABLE, twoFaVerifyDto)
+  enable2Fa(twoFaVerifyWithPasswordDto: TwoFaVerifyWithPasswordDto): Observable<TwoFaEnableResult> {
+    return this.http.post<TwoFaEnableResult>(API_TWO_FA_ENABLE, twoFaVerifyWithPasswordDto)
   }
 
-  disable2Fa(twoFaVerifyDto: TwoFaVerifyDto): Observable<TwoFaVerifyResult> {
+  disable2Fa(twoFaVerifyDto: TwoFaVerifyWithPasswordDto): Observable<TwoFaVerifyResult> {
     return this.http.post<TwoFaVerifyResult>(API_TWO_FA_DISABLE, twoFaVerifyDto)
   }
 
@@ -322,17 +322,17 @@ export class UserService {
     })
   }
 
-  async auth2FaVerifyDialog(): Promise<boolean | string> {
-    // returns: true (no check), false (check failed), string (totpCode)
+  async auth2FaVerifyDialog(withPassword = false): Promise<boolean | UserTwoFaVerify> {
+    // returns: true (no check), false (check failed), `UserTwoFaVerify` (totpCode & password?)
     if (this.store.server().twoFaEnabled && this.user.twoFaEnabled) {
       return new Promise((resolve) => {
         const modalRef: BsModalRef<UserAuth2FaVerifyDialogComponent> = this.layout.openDialog(
           UserAuth2FaVerifyDialogComponent,
           'xs',
-          {},
+          { initialState: { withPassword: withPassword } },
           { keyboard: false }
         )
-        modalRef.content.isValid = (result: false | string) => {
+        modalRef.content.isValid = (result: false | UserTwoFaVerify) => {
           resolve(result)
         }
       })

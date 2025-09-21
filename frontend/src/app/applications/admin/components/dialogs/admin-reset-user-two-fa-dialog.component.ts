@@ -43,7 +43,7 @@ export class AdminResetUserTwoFaDialogComponent {
       this.layout.closeDialog()
       return
     }
-    const totpCode = typeof auth2Fa === 'string' ? auth2Fa : undefined
+    const totpCode = auth2Fa === true ? undefined : auth2Fa.totpCode
     this.userService.adminResetUser2Fa(this.user.id, { password: this.adminForm.value.password }, totpCode).subscribe({
       next: (verify: TwoFaVerifyResult) => {
         this.wasReset.emit(verify.success)

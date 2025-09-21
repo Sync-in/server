@@ -4,14 +4,20 @@
  * See the LICENSE file for licensing details
  */
 
-import { IsBoolean, IsDefined, IsOptional, IsString } from 'class-validator'
+import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator'
 
 export class TwoFaVerifyDto {
-  @IsDefined()
   @IsString()
+  @IsNotEmpty()
   code!: string
 
   @IsOptional()
   @IsBoolean()
   isRecoveryCode?: boolean
+}
+
+export class TwoFaVerifyWithPasswordDto extends TwoFaVerifyDto {
+  @IsString()
+  @IsNotEmpty()
+  password!: string
 }

@@ -18,7 +18,7 @@ import { AUTH_ROUTE } from './constants/routes'
 import { AuthTokenSkip } from './decorators/auth-token-skip.decorator'
 import { LoginResponseDto, LoginVerify2FaDto, TwoFaResponseDto } from './dto/login-response.dto'
 import { TokenResponseDto } from './dto/token-response.dto'
-import { TwoFaVerifyDto } from './dto/two-fa-verify.dto'
+import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './dto/two-fa-verify.dto'
 import { AuthLocalGuard } from './guards/auth-local.guard'
 import { AuthTokenRefreshGuard } from './guards/auth-token-refresh.guard'
 import { AuthTwoFaGuard } from './guards/auth-two-fa-guard'
@@ -81,14 +81,14 @@ export class AuthController {
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_ENABLE}`)
   @UseGuards(UserRolesGuard)
   @UserHaveRole(USER_ROLE.USER)
-  twoFaEnable(@Body() body: TwoFaVerifyDto, @Req() req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
+  twoFaEnable(@Body() body: TwoFaVerifyWithPasswordDto, @Req() req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
     return this.authMethod2FA.enableTwoFactor(body, req)
   }
 
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_DISABLE}`)
   @UseGuards(UserRolesGuard)
   @UserHaveRole(USER_ROLE.USER)
-  twoFaDisable(@Body() body: TwoFaVerifyDto, @Req() req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
+  twoFaDisable(@Body() body: TwoFaVerifyWithPasswordDto, @Req() req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
     return this.authMethod2FA.disableTwoFactor(body, req)
   }
 

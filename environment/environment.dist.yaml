@@ -73,6 +73,7 @@ auth:
   method: mysql
   # key used to encrypt user secret keys in the database
   # optional, but strongly recommended
+  # warning: do not change the encryption key after MFA activation, or the codes will become invalid
   encryptionKey: changeEncryptionKeyWithStrongKey
   # multifactor authentication
   mfa:

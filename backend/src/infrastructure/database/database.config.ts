@@ -5,11 +5,10 @@
  */
 
 import { Transform } from 'class-transformer'
-import { IsBoolean, IsDefined, IsNotEmpty, IsString } from 'class-validator'
+import { IsBoolean, IsNotEmpty, IsString } from 'class-validator'
 import { DB_CHARSET } from './constants'
 
 export class MySQLConfig {
-  @IsDefined()
   @IsString()
   @IsNotEmpty()
   @Transform(({ value }) => (value.endsWith(`?charset=${DB_CHARSET}`) ? value : `${value}?charset=${DB_CHARSET}`))

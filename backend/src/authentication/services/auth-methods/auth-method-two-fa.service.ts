@@ -18,7 +18,7 @@ import { qrcodeToDataURL } from '../../../common/qrcode'
 import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { TWO_FA_CODE_LENGTH } from '../../constants/auth'
-import { TwoFaVerifyDto } from '../../dto/two-fa-verify.dto'
+import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from '../../dto/two-fa-verify.dto'
 import { FastifyAuthenticatedRequest } from '../../interfaces/auth-request.interface'
 import { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from '../../interfaces/two-fa-setup.interface'
 import { decryptSecret, encryptSecret } from '../../utils/crypt-secret'
@@ -36,26 +36,28 @@ export class AuthMethod2FA {
 
   async initTwoFactor(user: UserModel): Promise<TwoFaSetup> {
     const { secret, qrDataUrl } = this.generateSecretAndQr(user.email)
-    // store encrypted secret in cache for 5mn
+    // store encrypted secret in cache for 5 minutes
     await this.cache.set(this.getCacheKey(user.id), this.encryptSecret(secret), 300)
     return { secret, qrDataUrl }
   }
 
-  async enableTwoFactor(body: TwoFaVerifyDto, req: FastifyAuthenticatedRequest): Promise<TwoFaEnableResult> {
+  async enableTwoFactor(body: TwoFaVerifyWithPasswordDto, req: FastifyAuthenticatedRequest): Promise<TwoFaEnableResult> {
     // retrieve encrypted secret from cache
     const secret: string = await this.cache.get(this.getCacheKey(req.user.id))
     if (!secret) {
       throw new HttpException('The secret has expired', HttpStatus.BAD_REQUEST)
     }
-    // verify code with secret
-    const auth = this.validateTwoFactorCode(body.code, secret)
+    // load user
+    const [auth, user] = await this.verify(body, req, true, secret)
     if (!auth.success) {
-      throw new HttpException(auth.message, HttpStatus.BAD_REQUEST)
+      throw new HttpException(auth.message, HttpStatus.FORBIDDEN)
     }
+    // verify user password
+    await this.verifyUserPassword(user, body.password, req.ip)
     // generate recovery codes
     const recoveryCodes = this.generateRecoveryCodes()
     // store and enable TwoFA & recovery codes
-    await this.usersManager.updateSecrets(req.user.id, {
+    await this.usersManager.updateSecrets(user.id, {
       twoFaSecret: secret,
       recoveryCodes: recoveryCodes.map((code) => this.encryptSecret(code))
     })
@@ -63,34 +65,33 @@ export class AuthMethod2FA {
     return { ...auth, recoveryCodes: recoveryCodes }
   }
 
-  async disableTwoFactor(body: TwoFaVerifyDto, req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
-    const auth = await this.verify(body, req)
+  async disableTwoFactor(body: TwoFaVerifyWithPasswordDto, req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
+    // load user
+    const [auth, user] = await this.verify(body, req, true)
     if (!auth.success) {
       throw new HttpException(auth.message, HttpStatus.FORBIDDEN)
     }
+    // verify user password
+    await this.verifyUserPassword(user, body.password, req.ip)
     // store and disable TwoFA & recovery codes
-    await this.usersManager.updateSecrets(req.user.id, { twoFaSecret: undefined, recoveryCodes: undefined })
+    await this.usersManager.updateSecrets(user.id, { twoFaSecret: undefined, recoveryCodes: undefined })
     this.sendEmailNotification(req, ACTION.DELETE)
     return auth
   }
 
-  async verify(body: TwoFaVerifyDto, req: FastifyAuthenticatedRequest, fromLogin?: false): Promise<TwoFaVerifyResult>
-  async verify(body: TwoFaVerifyDto, req: FastifyAuthenticatedRequest, fromLogin: true): Promise<[TwoFaVerifyResult, UserModel]>
+  async verify(verifyDto: TwoFaVerifyDto, req: FastifyAuthenticatedRequest, fromLogin?: false, secret?: string): Promise<TwoFaVerifyResult>
+  async verify(verifyDto: TwoFaVerifyDto, req: FastifyAuthenticatedRequest, fromLogin: true, secret?: string): Promise<[TwoFaVerifyResult, UserModel]>
   async verify(
     verifyDto: TwoFaVerifyDto,
     req: FastifyAuthenticatedRequest,
-    fromLogin = false
+    fromLogin = false,
+    secret?: string
   ): Promise<TwoFaVerifyResult | [TwoFaVerifyResult, UserModel]> {
-    const code = verifyDto.code
-    const user = await this.usersManager.fromUserId(req.user.id)
-    if (!user) {
-      this.logger.warn(`User *${user.login}* (${user.id}) not found`)
-      throw new HttpException(`User not found`, HttpStatus.NOT_FOUND)
-    }
-    this.usersManager.validateUserAccess(user, req.ip)
+    const user = await this.loadUser(req.user.id, req.ip)
+    secret = secret || user.secrets.twoFaSecret
     const auth = verifyDto.isRecoveryCode
-      ? await this.validateRecoveryCode(req.user.id, code, user.secrets.recoveryCodes)
-      : this.validateTwoFactorCode(code, user.secrets.twoFaSecret)
+      ? await this.validateRecoveryCode(req.user.id, verifyDto.code, user.secrets.recoveryCodes)
+      : this.validateTwoFactorCode(verifyDto.code, secret)
     this.usersManager.updateAccesses(user, req.ip, auth.success, true).catch((e: Error) => this.logger.error(`${this.verify.name} - ${e}`))
     return fromLogin ? [auth, user] : auth
   }
@@ -107,11 +108,32 @@ export class AuthMethod2FA {
     return auth
   }
 
+  private async loadUser(userId: number, ip: string) {
+    const user: UserModel = await this.usersManager.fromUserId(userId)
+    if (!user) {
+      this.logger.warn(`User *${user.login}* (${user.id}) not found`)
+      throw new HttpException(`User not found`, HttpStatus.NOT_FOUND)
+    }
+    this.usersManager.validateUserAccess(user, ip)
+    return user
+  }
+
+  private async verifyUserPassword(user: UserModel, password: string, ip: string) {
+    if (!(await this.usersManager.compareUserPassword(user.id, password))) {
+      this.usersManager.updateAccesses(user, ip, false, true).catch((e: Error) => this.logger.error(`${this.enableTwoFactor.name} - ${e}`))
+      throw new HttpException('Incorrect code or password', HttpStatus.BAD_REQUEST)
+    }
+  }
+
   private validateTwoFactorCode(code: string, encryptedSecret: string): TwoFaVerifyResult {
     const auth: TwoFaVerifyResult = { success: false, message: '' }
+    if (!encryptedSecret) {
+      auth.message = 'Incorrect code or password'
+      return auth
+    }
     try {
       auth.success = Totp.validate({ passcode: code, secret: this.decryptSecret(encryptedSecret), drift: 1 })
-      if (!auth.success) auth.message = 'Invalid code'
+      if (!auth.success) auth.message = 'Incorrect code or password'
     } catch (e) {
       this.logger.error(`${this.validateTwoFactorCode.name} - ${e}`)
       auth.message = e.message

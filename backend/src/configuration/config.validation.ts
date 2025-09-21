@@ -5,7 +5,20 @@
  */
 
 import { Transform, Type } from 'class-transformer'
-import { IsBoolean, IsDefined, IsInt, IsIP, IsNotEmptyObject, IsObject, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator'
+import {
+  IsBoolean,
+  IsDefined,
+  IsInt,
+  IsIP,
+  IsNotEmpty,
+  IsNotEmptyObject,
+  IsObject,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested
+} from 'class-validator'
 import { cpus } from 'node:os'
 import type { Level } from 'pino'
 import { ApplicationsConfig } from '../applications/applications.config'
@@ -38,8 +51,8 @@ export class ServerConfig {
 }
 
 export class LoggerConfig {
-  @IsDefined()
   @IsString()
+  @IsNotEmpty()
   level: Level = 'info'
 
   @IsBoolean()

@@ -28,7 +28,9 @@ import { togglePasswordType } from '../utils/functions'
         [class.is-invalid]="isRequired && password?.length < passwordMinLength"
         (keyup)="passwordChange.emit(password)"
         type="password"
-        class="form-control form-control-sm"
+        class="form-control form-control-sm pe-0"
+        [class.text-center]="centered"
+        [style.padding-left]="centered ? '2rem' : ''"
         [placeholder]="placeholder | translate: locale.language"
         [required]="isRequired"
       />
@@ -57,6 +59,7 @@ export class InputPasswordComponent implements OnInit {
   @Input() disabled = false
   @Input() isRequired = false
   @Input() focus = false
+  @Input() centered = false
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly toggleVisiblePassword = togglePasswordType
   protected readonly icons = { faEye, faEyeSlash, faDice }

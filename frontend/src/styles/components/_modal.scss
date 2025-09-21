@@ -14,6 +14,7 @@
 
   .modal-header {
     line-height: 1;
+    @extend .no-select;
 
     .modal-title {
       @extend .text-truncate;

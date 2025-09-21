@@ -44,7 +44,7 @@ export class AdminImpersonateUserDialogComponent {
       this.layout.closeDialog()
       return
     }
-    const totpCode = typeof auth2Fa === 'string' ? auth2Fa : undefined
+    const totpCode = auth2Fa === true ? undefined : auth2Fa.totpCode
     this.adminService.impersonateUser(this.user.id, { password: this.impersonateUserForm.value.password }, totpCode).subscribe({
       next: (r: LoginResponseDto) => {
         this.layout.closeDialog()

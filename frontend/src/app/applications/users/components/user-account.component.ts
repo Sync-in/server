@@ -32,7 +32,7 @@ import { TimeAgoPipe } from '../../../common/pipes/time-ago.pipe'
 import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
-import { UserType } from '../interfaces/user.interface'
+import { UserTwoFaVerify, UserType } from '../interfaces/user.interface'
 import { USER_ICON, USER_LANGUAGE_AUTO, USER_PATH, USER_TITLE } from '../user.constants'
 import { UserService } from '../user.service'
 import { UserAuth2faEnableDialogComponent } from './dialogs/user-auth-2fa-enable-dialog.component'
@@ -134,7 +134,7 @@ export class UserAccountComponent implements OnDestroy {
       this.newPassword = ''
       return
     }
-    const totpCode = typeof auth2Fa === 'string' ? auth2Fa : undefined
+    const totpCode = auth2Fa === true ? undefined : auth2Fa.totpCode
     this.userService.changePassword({ oldPassword: this.oldPassword, newPassword: this.newPassword }, totpCode).subscribe({
       next: () => {
         this.oldPassword = ''
@@ -186,23 +186,23 @@ export class UserAccountComponent implements OnDestroy {
             this.store.user.next({ ...this.store.user.getValue(), twoFaEnabled: true })
           })
       },
-      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Configuration', 'Two-Factor Authentication has failed', e)
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Configuration', 'Two-Factor Authentication', e)
     })
   }
 
   async disable2Fa() {
-    const auth2Fa = await this.userService.auth2FaVerifyDialog()
-    if (auth2Fa === false) {
+    const auth2Fa: boolean | UserTwoFaVerify = await this.userService.auth2FaVerifyDialog(true)
+    if (typeof auth2Fa === 'boolean') {
+      // two-fa must be enabled to be disabled
       return
     }
-    const totpCode = typeof auth2Fa === 'string' ? auth2Fa : undefined
-    this.userService.disable2Fa({ code: totpCode }).subscribe({
+    this.userService.disable2Fa({ code: auth2Fa.totpCode, password: auth2Fa.password }).subscribe({
       next: () => {
         this.layout.sendNotification('success', 'Configuration', 'Two-Factor Authentication is disabled')
         this.store.user.next({ ...this.store.user.getValue(), twoFaEnabled: false })
       },
       error: (e: HttpErrorResponse) => {
-        this.layout.sendNotification('error', 'Configuration', 'Two-Factor Authentication has failed', e)
+        this.layout.sendNotification('error', 'Configuration', 'Two-Factor Authentication', e)
       }
     })
   }
