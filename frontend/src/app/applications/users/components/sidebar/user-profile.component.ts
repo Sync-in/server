@@ -12,6 +12,7 @@ import { faCircleHalfStroke, faCog, faPowerOff, faUserAlt, faUserSecret } from '
 import { USER_ONLINE_STATUS_LIST } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { Subscription } from 'rxjs'
+import { APP_URL } from '../../../../app.constants'
 import { AuthService } from '../../../../auth/auth.service'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
 import { themeLight } from '../../../../layout/layout.interfaces'
@@ -25,6 +26,13 @@ import { UserService } from '../../user.service'
 @Component({
   selector: 'app-user-profile',
   templateUrl: 'user-profile.component.html',
+  styles: `
+    @media (max-height: 300px) {
+      .hide-on-small-height {
+        display: none !important;
+      }
+    }
+  `,
   imports: [FormsModule, RouterLink, CapitalizePipe, FaIconComponent, L10nTranslateDirective]
 })
 export class UserProfileComponent implements OnDestroy {
@@ -33,6 +41,7 @@ export class UserProfileComponent implements OnDestroy {
   protected readonly store = inject(StoreService)
   protected readonly USER_PATH = USER_PATH
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
+  protected appBaseUrl = `${APP_URL.WEBSITE}`
   protected readonly icons = { faUserAlt, faCircleHalfStroke, faCog, faPowerOff, faUserSecret }
   protected user: UserType
   protected userAvatar: string = null
@@ -45,6 +54,7 @@ export class UserProfileComponent implements OnDestroy {
   constructor() {
     this.subscriptions.push(this.store.user.subscribe((user: UserType) => (this.user = user)))
     this.subscriptions.push(this.store.userAvatarUrl.subscribe((avatarUrl: string) => (this.userAvatar = avatarUrl)))
+    this.appBaseUrl = this.layout.getCurrentLanguage() === 'fr' ? `${APP_URL.WEBSITE}/fr/` : `${APP_URL.WEBSITE}/`
   }
 
   ngOnDestroy() {
@@ -66,5 +76,18 @@ export class UserProfileComponent implements OnDestroy {
   logOut() {
     this.authService.logout()
     this.layout.toggleRSideBar(false)
+  }
+
+  openLink(urlType: 'website' | 'news' | 'docs' | 'versions' | 'support') {
+    switch (urlType) {
+      case 'website':
+        this.layout.openUrl(this.appBaseUrl)
+        break
+      case 'versions':
+        this.layout.openUrl(APP_URL.RELEASES)
+        break
+      default:
+        this.layout.openUrl(`${this.appBaseUrl}${urlType}`)
+    }
   }
 }

@@ -253,6 +253,14 @@ export class LayoutService {
     this.breadcrumbNav.next(url)
   }
 
+  openUrl(url: string) {
+    if (this.electron.enabled) {
+      this.electron.openUrl(url)
+    } else {
+      window.open(url, '_blank')
+    }
+  }
+
   translateString(text: string, args?: any): string {
     return text ? this.translation.translate(text, args) : text
   }
