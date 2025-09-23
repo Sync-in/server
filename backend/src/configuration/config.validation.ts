@@ -44,7 +44,7 @@ export class ServerConfig {
   workers: number = 2
 
   @IsOptional()
-  trustProxy: boolean | string = false
+  trustProxy: boolean | string | number = 1
 
   @IsBoolean()
   restartOnFailure: boolean = true

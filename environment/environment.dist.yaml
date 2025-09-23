@@ -6,8 +6,9 @@ server:
   # workers: `auto` (use all cpus) | number
   # regardless of the value, starts with at least 2 workers, 1 worker is dedicated to scheduled tasks
   workers: 4
-  # trust proxy: `true` | `false` | `127.0.0.1,192.168.1.1/24`
-  trustProxy: false
+  # trust proxy: `true` | `false` | `127.0.0.1,192.168.1.1/24` | number (trust the nth hop from the front-facing proxy server as the client)
+  # default: 1
+  trustProxy: 1
   # restartOnFailure: automatically restart workers if they are killed or die
   # default: `true`
   restartOnFailure: true
