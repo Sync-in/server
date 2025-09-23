@@ -12,7 +12,7 @@
       </div>
       <div class="body">
         @if (twoFaVerify) {
-          <p class="fs-sm mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Two-factor Authentication' }}</p>
+          <p class="fs-sm mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Two-Factor Authentication' }}</p>
           <form (ngSubmit)="onSubmit2Fa()" [formGroup]="twoFaForm">
             <div class="input-group mt-2 mb-4">
               @if (twoFaForm.value.isRecoveryCode) {
@@ -26,10 +26,10 @@
                        formControlName="recoveryCode" />
               } @else {
                 <span class="input-group-text">
-                <fa-icon [icon]="icons.faQrcode"></fa-icon>
-              </span>
+                  <fa-icon [icon]="icons.faQrcode"></fa-icon>
+                </span>
                 <input appAutofocus
-                       [placeholder]="'TOTP code' | translate:locale.language"
+                       [placeholder]="'Authentication code' | translate:locale.language"
                        type="text"
                        class="form-control"
                        formControlName="totpCode"
@@ -47,12 +47,12 @@
               </div>
             </div>
             <div class="d-flex mt-4">
+              <button type="button" (click)="onCancel2Fa()" class="btn btn-secondary px-4 w-50 me-2" l10nTranslate>Cancel</button>
               <button type="submit"
                       [disabled]="twoFaForm.value.isRecoveryCode ? twoFaForm.controls.recoveryCode.invalid : twoFaForm.controls.totpCode.invalid || submitted"
-                      class="btn btn-primary px-4 w-50 me-2" l10nTranslate>
+                      class="btn btn-primary px-4 w-50" l10nTranslate>
                 Confirm
               </button>
-              <button type="button" (click)="onCancel2Fa()" class="btn btn-secondary px-4 w-50" l10nTranslate>Cancel</button>
             </div>
           </form>
         } @else {

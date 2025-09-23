@@ -119,13 +119,15 @@ export class AuthMethod2FA {
   }
 
   async verifyUserPassword(user: UserModel, password: string, ip: string) {
+    // This function works with any authentication method, provided that
+    // the authentication service implements proper user password updates in the database.
     if (!(await this.usersManager.compareUserPassword(user.id, password))) {
       this.usersManager.updateAccesses(user, ip, false, true).catch((e: Error) => this.logger.error(`${this.enableTwoFactor.name} - ${e}`))
       throw new HttpException('Incorrect code or password', HttpStatus.BAD_REQUEST)
     }
   }
 
-  private validateTwoFactorCode(code: string, encryptedSecret: string): TwoFaVerifyResult {
+  validateTwoFactorCode(code: string, encryptedSecret: string): TwoFaVerifyResult {
     const auth: TwoFaVerifyResult = { success: false, message: '' }
     if (!encryptedSecret) {
       auth.message = 'Incorrect code or password'

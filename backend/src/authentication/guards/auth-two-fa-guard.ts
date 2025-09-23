@@ -30,7 +30,6 @@ function AuthTwoFaGuardFactory(options: TwoFaGuardOptions = { withPassword: true
         if (!req.headers[TWO_FA_HEADER_PASSWORD]) {
           throw new HttpException('Missing TWO-FA password', HttpStatus.FORBIDDEN)
         }
-
         await this.authMethod2FA.verifyUserPassword(user, req.headers[TWO_FA_HEADER_PASSWORD] as string, req.ip)
       }
 

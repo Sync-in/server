@@ -681,7 +681,7 @@
   "Security": "Sécurité",
   "Recovery code": "Code de récupération",
   "Use a recovery code": "Utiliser un code de récupération",
-  "TOTP code": "Code TOTP",
+  "Authentication code": "Code d'authentification",
   "TOTP Verification": "Vérification TOTP",
   "Secret copied": "Secret copié",
   "Recovery codes copied": "Codes de récupération copiés",
