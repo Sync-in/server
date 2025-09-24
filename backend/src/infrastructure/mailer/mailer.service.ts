@@ -38,9 +38,10 @@ export class Mailer {
         port: this.configuration.port,
         auth: this.configuration.auth,
         secure: this.configuration.secure,
+        ignoreTLS: this.configuration.ignoreTLS,
         logger: this.configuration.logger ? (this.logger as NodeMailLogger & any) : false
       } satisfies MailTransport,
-      { from: this.configuration.sender, tls: { rejectUnauthorized: false } } satisfies MailDefaultsTransport
+      { from: this.configuration.sender, tls: { rejectUnauthorized: this.configuration.rejectUnauthorized } } satisfies MailDefaultsTransport
     )
     this.verify().catch(this.logger.error)
   }

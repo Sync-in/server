@@ -32,6 +32,14 @@ export class MailerConfig {
   secure?: boolean = false
 
   @IsOptional()
+  @IsBoolean()
+  ignoreTLS?: boolean = false
+
+  @IsOptional()
+  @IsBoolean()
+  rejectUnauthorized?: boolean = true
+
+  @IsOptional()
   @IsObject()
   @ValidateNested()
   @Type(() => AuthMailConfig)

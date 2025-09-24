@@ -8,6 +8,7 @@ export interface MailTransport {
   host: string
   port: number
   secure: boolean
+  ignoreTLS: boolean
   auth: {
     user: string
     pass: string

@@ -60,8 +60,16 @@ mail:
     user: user
     pass: password
   # secure: defines if the connection should use SSL (if true) or not (if false)
+  # note: setting `secure: false` does not necessarily mean messages are sent in plaintext
+  # if the server supports STARTTLS, the connection is usually upgraded to TLS automatically
   # default: `false`
   secure: false
+  # ignoreTLS: if true, disables the use of STARTTLS even if the server advertises it
+  # default: false
+  ignoreTLS: false
+  # rejectUnauthorized: reject the connection if the server's TLS certificate is invalid
+  # default: true
+  rejectUnauthorized: true
   # enable logger
   # default: `false`
   logger: false
