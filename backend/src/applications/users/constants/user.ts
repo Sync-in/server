@@ -64,3 +64,9 @@ export const USER_NOTIFICATION_TEXT = {
   APPLICATION: 'application',
   APPLICATION_EMAIL: 'application & email'
 } as const
+
+export const USER_SECRET = {
+  TWO_FA_SECRET: 'twoFaSecret',
+  RECOVERY_CODES: 'recoveryCodes',
+  APP_PASSWORDS: 'appPasswords'
+} as const

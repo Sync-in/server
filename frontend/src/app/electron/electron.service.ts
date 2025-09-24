@@ -77,6 +77,10 @@ export class Electron {
     this.send(EVENT.MISC.FILE_OPEN, path)
   }
 
+  openUrl(url: string) {
+    this.send(EVENT.MISC.URL_OPEN, url)
+  }
+
   private setSync(sync: SyncStatus) {
     if (sync.reportOnly) {
       this.store.clientSyncIsReporting.next(sync.state)

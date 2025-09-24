@@ -37,6 +37,7 @@ export class AdminUserModel implements AdminUser {
 
   // extra properties
   isAdmin = false
+  twoFaEnabled?: boolean
   userRoleText: string
   userIsActiveText: string
   avatarUrl?: string

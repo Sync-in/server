@@ -11,7 +11,7 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { ContextMenuComponent, ContextMenuService } from '@perfectmemory/ngx-contextmenu'
 import { getBrowserLanguage, L10nTranslationService } from 'angular-l10n'
 import { BsLocaleService } from 'ngx-bootstrap/datepicker'
-import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal'
+import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal'
 import { ActiveToast, ToastrService } from 'ngx-toastr'
 import { BehaviorSubject, fromEvent, mergeWith, Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -74,7 +74,7 @@ export class LayoutService {
   )
   // Modal section
   private modalIDS: (number | string)[] = []
-  private readonly dialogConfig = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
+  private readonly dialogConfig: ModalOptions = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
 
   constructor() {
     this.title.setTitle(APP_NAME)
@@ -121,12 +121,12 @@ export class LayoutService {
     this.setTheme(this.switchTheme.getValue() === themeLight ? themeDark : themeLight)
   }
 
-  openDialog(dialog: any, size: 'sm' | 'md' | 'lg' | 'xl' | 'full' = 'md', componentStates: any = {}): BsModalRef {
-    const dialogClass = `modal-${size} modal-primary`
+  openDialog(dialog: any, size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full', componentStates: any = {}, override: ModalOptions = {}): BsModalRef {
+    const dialogClass = `modal-${size || 'sm'} modal-primary`
     if (componentStates.id && this.minimizedWindows.getValue().find((w: AppWindow) => w.id === componentStates.id)) {
       return this.restoreDialog(componentStates.id)
     }
-    const modalRef = this.bsModal.show(dialog, Object.assign(componentStates, this.dialogConfig, { class: dialogClass }))
+    const modalRef = this.bsModal.show(dialog, Object.assign(componentStates, { ...this.dialogConfig, ...override }, { class: dialogClass }))
     if (modalRef.id && this.modalIDS.indexOf(modalRef.id) === -1) {
       this.modalIDS.push(modalRef.id)
     }
@@ -251,6 +251,14 @@ export class LayoutService {
 
   setBreadcrumbNav(url: BreadCrumbUrl) {
     this.breadcrumbNav.next(url)
+  }
+
+  openUrl(url: string) {
+    if (this.electron.enabled) {
+      this.electron.openUrl(url)
+    } else {
+      window.open(url, '_blank')
+    }
   }
 
   translateString(text: string, args?: any): string {

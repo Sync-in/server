@@ -25,8 +25,13 @@ import { AdminUsersManager } from '../../users/services/admin-users-manager.serv
 import { AdminUsersQueries } from '../../users/services/admin-users-queries.service'
 import { UsersManager } from '../../users/services/users-manager.service'
 import { UsersQueries } from '../../users/services/users-queries.service'
+import { getAvatarBase64 } from '../../users/utils/avatar'
 import { LinksManager } from './links-manager.service'
 import { LinksQueries } from './links-queries.service'
+
+jest.mock('../../users/utils/avatar', () => ({
+  getAvatarBase64: jest.fn()
+}))
 
 describe(LinksManager.name, () => {
   let service: LinksManager
@@ -54,7 +59,6 @@ describe(LinksManager.name, () => {
     } as any
 
     usersManagerMock = {
-      getAvatarBase64: jest.fn(),
       compareUserPassword: jest.fn(),
       updateAccesses: jest.fn()
     } as any
@@ -128,16 +132,16 @@ describe(LinksManager.name, () => {
         space: null
       } as any
       linksQueriesMock.spaceLink.mockResolvedValueOnce(spaceLink)
-      usersManagerMock.getAvatarBase64.mockResolvedValueOnce('base64-avatar')
+      ;(getAvatarBase64 as jest.Mock).mockResolvedValueOnce('base64-xxx')
 
       const res = await service.linkValidation(identity, link.uuid)
 
       expect(res.ok).toBe(true)
       expect(res.error).toBeNull()
       expect(res.link).toBe(spaceLink)
-      expect(spaceLink.owner.avatar).toBe('base64-avatar')
       expect((spaceLink.owner as any).login).toBeUndefined()
       expect(linksQueriesMock.spaceLink).toHaveBeenCalledWith(link.uuid)
+      expect(getAvatarBase64).toHaveBeenCalledWith('jane')
 
       // extra coverage: directly assert private checkLink with default ignoreAuth=false
       const directCheck = (service as any).checkLink(identity, link)

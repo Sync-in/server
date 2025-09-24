@@ -4,13 +4,14 @@
  * See the LICENSE file for licensing details
  */
 
-import { HttpClient, HttpErrorResponse } from '@angular/common/http'
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { NOTIFICATIONS_WS } from '@sync-in-server/backend/src/applications/notifications/constants/websocket'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import { AppStoreManifest } from '@sync-in-server/backend/src/applications/sync/interfaces/store-manifest.interface'
 import {
+  API_USERS_MY_APP_PASSWORDS,
   API_USERS_MY_AVATAR,
   API_USERS_MY_GROUPS,
   API_USERS_MY_GROUPS_BROWSE,
@@ -30,16 +31,26 @@ import type {
   UpdateUserFromGroupDto
 } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
-import type { UserLanguageDto, UserNotificationDto, UserPasswordDto } from '@sync-in-server/backend/src/applications/users/dto/user-properties.dto'
+import type {
+  UserAppPasswordDto,
+  UserLanguageDto,
+  UserNotificationDto,
+  UserUpdatePasswordDto
+} from '@sync-in-server/backend/src/applications/users/dto/user-properties.dto'
 import type { GroupBrowse } from '@sync-in-server/backend/src/applications/users/interfaces/group-browse.interface'
 import type { GroupMember } from '@sync-in-server/backend/src/applications/users/interfaces/group-member'
 import type { GuestUser } from '@sync-in-server/backend/src/applications/users/interfaces/guest-user.interface'
 import type { Member } from '@sync-in-server/backend/src/applications/users/interfaces/member.interface'
-import {
+import type { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
+import type {
   EventChangeOnlineStatus,
   EventUpdateOnlineStatus,
-  type UserOnline
+  UserOnline
 } from '@sync-in-server/backend/src/applications/users/interfaces/websocket.interface'
+import { API_TWO_FA_ADMIN_RESET_USER, API_TWO_FA_DISABLE, API_TWO_FA_ENABLE } from '@sync-in-server/backend/src/authentication/constants/routes'
+import type { TwoFaVerifyWithPasswordDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
+import type { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Socket } from 'ngx-socket-io'
 import { catchError, map, Observable } from 'rxjs'
 import { AppMenu } from '../../layout/layout.interfaces'
@@ -47,6 +58,7 @@ import { LayoutService } from '../../layout/layout.service'
 import { StoreService } from '../../store/store.service'
 import { NotificationsService } from '../notifications/notifications.service'
 import { SPACES_TITLE } from '../spaces/spaces.constants'
+import { UserAuth2FaVerifyDialogComponent } from './components/dialogs/user-auth-2fa-verify-dialog.component'
 import { UserType } from './interfaces/user.interface'
 import { GroupBrowseModel } from './models/group-browse.model'
 import { GuestUserModel } from './models/guest.model'
@@ -192,8 +204,8 @@ export class UserService {
     })
   }
 
-  changePassword(userPasswordDto: UserPasswordDto): Observable<any> {
-    return this.http.put(API_USERS_MY_PASSWORD, userPasswordDto)
+  changePassword(userPasswordDto: UserUpdatePasswordDto, twoFaHeaders: HttpHeaders): Observable<any> {
+    return this.http.put(API_USERS_MY_PASSWORD, userPasswordDto, { headers: twoFaHeaders })
   }
 
   changeLanguage(userLanguageDto: UserLanguageDto): Observable<any> {
@@ -265,6 +277,53 @@ export class UserService {
       next: (manifest: AppStoreManifest) => this.store.appStoreManifest.set(manifest),
       error: (e: HttpErrorResponse) => console.error(e)
     })
+  }
+
+  listAppPasswords(twoFaHeaders: HttpHeaders): Observable<Omit<UserAppPassword, 'password'>[]> {
+    return this.http.get<Omit<UserAppPassword, 'password'>[]>(API_USERS_MY_APP_PASSWORDS, { headers: twoFaHeaders })
+  }
+
+  generateAppPassword(userAppPasswordDto: UserAppPasswordDto, twoFaHeaders: HttpHeaders): Observable<UserAppPassword> {
+    return this.http.post<UserAppPassword>(API_USERS_MY_APP_PASSWORDS, userAppPasswordDto, { headers: twoFaHeaders })
+  }
+
+  deleteAppPassword(name: string): Observable<void> {
+    return this.http.delete<void>(`${API_USERS_MY_APP_PASSWORDS}/${name}`)
+  }
+
+  init2Fa(): Observable<TwoFaSetup> {
+    return this.http.get<TwoFaSetup>(API_TWO_FA_ENABLE)
+  }
+
+  enable2Fa(twoFaVerifyWithPasswordDto: TwoFaVerifyWithPasswordDto): Observable<TwoFaEnableResult> {
+    return this.http.post<TwoFaEnableResult>(API_TWO_FA_ENABLE, twoFaVerifyWithPasswordDto)
+  }
+
+  disable2Fa(twoFaVerifyDto: TwoFaVerifyWithPasswordDto): Observable<TwoFaVerifyResult> {
+    return this.http.post<TwoFaVerifyResult>(API_TWO_FA_DISABLE, twoFaVerifyDto)
+  }
+
+  adminResetUser2Fa(userId: number, twoFaHeaders: HttpHeaders): Observable<TwoFaVerifyResult> {
+    return this.http.post<TwoFaVerifyResult>(`${API_TWO_FA_ADMIN_RESET_USER}/${userId}`, null, { headers: twoFaHeaders })
+  }
+
+  async auth2FaVerifyDialog(withPassword = false): Promise<false | HttpHeaders> {
+    // returns: false (dialog closed), undefined (no check), `HttpHeaders` (code and/or password to check)
+    const TwoFaEnabled = this.store.server().twoFaEnabled && this.user.twoFaEnabled
+    if (withPassword || TwoFaEnabled) {
+      return new Promise((resolve) => {
+        const modalRef: BsModalRef<UserAuth2FaVerifyDialogComponent> = this.layout.openDialog(
+          UserAuth2FaVerifyDialogComponent,
+          'xs',
+          { initialState: { withPassword: withPassword, withTwoFaEnabled: TwoFaEnabled } },
+          { keyboard: false }
+        )
+        modalRef.content.isValid = (result: false | HttpHeaders) => {
+          resolve(result)
+        }
+      })
+    }
+    return undefined
   }
 
   private checkQuota(user: UserType) {

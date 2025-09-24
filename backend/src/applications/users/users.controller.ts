@@ -6,6 +6,8 @@
 
 import { Body, Controller, Delete, Get, Header, Param, ParseIntPipe, Patch, Post, Put, Req, Search, StreamableFile, UseGuards } from '@nestjs/common'
 import { createReadStream } from 'fs'
+import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
+import { AuthTwoFaGuardWithoutPassword } from '../../authentication/guards/auth-two-fa-guard'
 import { FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface'
 import { USERS_ROUTE } from './constants/routes'
 import { USER_PERMISSION, USER_ROLE } from './constants/user'
@@ -15,13 +17,14 @@ import { GetUser } from './decorators/user.decorator'
 import { UserCreateOrUpdateGroupDto } from './dto/create-or-update-group.dto'
 import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from './dto/create-or-update-user.dto'
 import { SearchMembersDto } from './dto/search-members.dto'
-import { UserLanguageDto, UserNotificationDto, UserPasswordDto } from './dto/user-properties.dto'
+import { UserAppPasswordDto, UserLanguageDto, UserNotificationDto, UserUpdatePasswordDto } from './dto/user-properties.dto'
 import { UserPermissionsGuard } from './guards/permissions.guard'
 import { UserRolesGuard } from './guards/roles.guard'
 import { GroupBrowse } from './interfaces/group-browse.interface'
 import { GroupMember } from './interfaces/group-member'
 import { GuestUser } from './interfaces/guest-user.interface'
 import { Member } from './interfaces/member.interface'
+import { UserAppPassword } from './interfaces/user-secrets.interface'
 import { UserModel } from './models/user.model'
 import { UsersManager } from './services/users-manager.service'
 
@@ -33,8 +36,28 @@ export class UsersController {
 
   @Get(USERS_ROUTE.ME)
   @UserHaveRole(USER_ROLE.LINK)
-  me(@GetUser() user: UserModel): Promise<{ user: Omit<UserModel, 'password'> }> {
+  me(@GetUser() user: UserModel): Promise<Omit<LoginResponseDto, 'token'>> {
     return this.usersManager.me(user)
+  }
+
+  @Get(`${USERS_ROUTE.ME}/${USERS_ROUTE.APP_PASSWORDS}`)
+  @UserHaveRole(USER_ROLE.USER)
+  @UseGuards(AuthTwoFaGuardWithoutPassword)
+  listAppPasswords(@GetUser() user: UserModel): Promise<Omit<UserAppPassword, 'password'>[]> {
+    return this.usersManager.listAppPasswords(user)
+  }
+
+  @Post(`${USERS_ROUTE.ME}/${USERS_ROUTE.APP_PASSWORDS}`)
+  @UserHaveRole(USER_ROLE.USER)
+  @UseGuards(AuthTwoFaGuardWithoutPassword)
+  generateAppPassword(@GetUser() user: UserModel, @Body() userAppPasswordDto: UserAppPasswordDto): Promise<UserAppPassword> {
+    return this.usersManager.generateAppPassword(user, userAppPasswordDto)
+  }
+
+  @Delete(`${USERS_ROUTE.ME}/${USERS_ROUTE.APP_PASSWORDS}/:name`)
+  @UserHaveRole(USER_ROLE.USER)
+  deleteAppPassword(@GetUser() user: UserModel, @Param('name') name: string): Promise<void> {
+    return this.usersManager.deleteAppPassword(user, name)
   }
 
   @Put(`${USERS_ROUTE.ME}/${USERS_ROUTE.LANGUAGE}`)
@@ -44,7 +67,8 @@ export class UsersController {
   }
 
   @Put(`${USERS_ROUTE.ME}/${USERS_ROUTE.PASSWORD}`)
-  updatePassword(@GetUser() user: UserModel, @Body() userPasswordDto: UserPasswordDto) {
+  @UseGuards(AuthTwoFaGuardWithoutPassword)
+  updatePassword(@GetUser() user: UserModel, @Body() userPasswordDto: UserUpdatePasswordDto) {
     return this.usersManager.updatePassword(user, userPasswordDto)
   }
 

@@ -13,12 +13,10 @@ import { ShareModel } from '../../models/share.model'
 @Component({
   selector: 'app-share-file-name',
   imports: [],
-  template: ` <div class="d-flex align-items-center text-truncate">
+  template: ` <div class="d-flex align-items-center">
     <img [src]="share.mimeUrl" draggable="false" height="30" width="30" alt="" (error)="share.fallBackMimeUrl()" />
-    <div class="d-flex flex-column text-truncate ms-2">
-      <div class="text-truncate">
-        {{ fileName }}
-      </div>
+    <div class="d-flex flex-column overflow-wrap-and-whitespace ms-2">
+      {{ fileName }}
     </div>
   </div>`
 })

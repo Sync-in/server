@@ -14,6 +14,7 @@
 
   .modal-header {
     line-height: 1;
+    @extend .no-select;
 
     .modal-title {
       @extend .text-truncate;
@@ -36,6 +37,14 @@
     @extend .no-select-pointer;
     width: 98% !important;
   }
+
+}
+
+.modal-xs {
+  max-width: $modal-xs;
+  --bs-modal-width: $modal-xs;
+  margin-right: auto;
+  margin-left: auto;
 }
 
 .modal-full {
@@ -70,4 +79,9 @@
 .modal-backdrop {
   // used by the files viewer
   --bs-backdrop-zindex: 0 !important;
+}
+
+.modal-auth-verify-2fa {
+  border-bottom-left-radius: var(--bs-modal-inner-border-radius);
+  border-bottom-right-radius: var(--bs-modal-inner-border-radius);
 }

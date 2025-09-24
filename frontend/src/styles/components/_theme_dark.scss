@@ -344,12 +344,12 @@
     }
   }
 
-  .profile-page {
-    .list-group-item {
-      background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%);
-      color: $white;
-    }
+  .list-group-item {
+    background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%);
+    color: $white;
+  }
 
+  .profile-page {
     select {
       background-color: transparent;
       color: $white;
@@ -446,6 +446,14 @@
     color: $gray-light;
     background-color: $sidebar-dark-apps-menu-title-bg;
     border-top-color: $sidebar-dark-apps-menu-title-bg;
+  }
+
+  .modal-auth-verify-2fa {
+    .card {
+      color: $gray-light;
+      background-color: $sidebar-dark-icons-menu-bg;
+      border-color: $sidebar-dark-icons-menu-border-color;
+    }
   }
 
   typeahead-container, .ui-select-choices {

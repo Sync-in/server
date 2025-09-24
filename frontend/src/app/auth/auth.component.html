@@ -11,24 +11,70 @@
         <img alt="" height="65" width="240" [ngSrc]="logoUrl" [priority]="true">
       </div>
       <div class="body">
-        <form (ngSubmit)="onSubmit()" [formGroup]="loginForm">
-          <p class="fs-sm mb-0 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Sign-in to your account' }}</p>
-          <div class="input-group my-2">
+        @if (twoFaVerify) {
+          <p class="fs-sm mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Two-Factor Authentication' }}</p>
+          <form (ngSubmit)="onSubmit2Fa()" [formGroup]="twoFaForm">
+            <div class="input-group mt-2 mb-4">
+              @if (twoFaForm.value.isRecoveryCode) {
+                <span class="input-group-text">
+                  <fa-icon [icon]="icons.faKey"></fa-icon>
+                </span>
+                <input appAutofocus
+                       [placeholder]="'Recovery code' | translate:locale.language"
+                       type="password"
+                       class="form-control"
+                       formControlName="recoveryCode" />
+              } @else {
+                <span class="input-group-text">
+                  <fa-icon [icon]="icons.faQrcode"></fa-icon>
+                </span>
+                <input appAutofocus
+                       [placeholder]="'Authentication code' | translate:locale.language"
+                       type="text"
+                       class="form-control"
+                       formControlName="totpCode"
+                       inputmode="numeric"
+                       autocomplete="one-time-code"
+                       [maxlength]=twoFaCodelength />
+              }
+            </div>
+            <div class="d-flex text-white-50 fs-xs">
+              <div class="form-check form-switch form-check-inline">
+                <label class="form-check-label" for="useRecovery">
+                  <input class="form-check-input" formControlName="isRecoveryCode" id="useRecovery" type="checkbox">
+                  <span l10nTranslate>Use a recovery code</span>
+                </label>
+              </div>
+            </div>
+            <div class="d-flex mt-4">
+              <button type="button" (click)="onCancel2Fa()" class="btn btn-secondary px-4 w-50 me-2" l10nTranslate>Cancel</button>
+              <button type="submit"
+                      [disabled]="twoFaForm.value.isRecoveryCode ? twoFaForm.controls.recoveryCode.invalid : twoFaForm.controls.totpCode.invalid || submitted"
+                      class="btn btn-primary px-4 w-50" l10nTranslate>
+                Confirm
+              </button>
+            </div>
+          </form>
+        } @else {
+          <form (ngSubmit)="onSubmit()" [formGroup]="loginForm">
+            <p class="fs-sm mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Sign-in to your account' }}</p>
+            <div class="input-group my-2">
               <span class="input-group-text">
                 <fa-icon [icon]="icons.faUserAlt"></fa-icon>
               </span>
-            <input appAutofocus class="form-control" formControlName="username" [placeholder]="'Login or Email' | translate:locale.language" type="text" />
-          </div>
-          <div class="input-group mb-4">
+              <input appAutofocus class="form-control" formControlName="username" [placeholder]="'Login or Email' | translate:locale.language" type="text" />
+            </div>
+            <div class="input-group mb-4">
               <span class="input-group-text">
                 <fa-icon [icon]="icons.faLock"></fa-icon>
               </span>
-            <input class="form-control" formControlName="password" [placeholder]="'Password' | translate:locale.language" type="password" />
-          </div>
-          <div class="d-flex">
-            <button [disabled]="loginForm.invalid || submitted" class="btn btn-primary px-4 w-100" type="submit" l10nTranslate>Sign in</button>
-          </div>
-        </form>
+              <input class="form-control" formControlName="password" [placeholder]="'Password' | translate:locale.language" type="password" />
+            </div>
+            <div class="d-flex">
+              <button type="submit" [disabled]="loginForm.invalid || submitted" class="btn btn-primary px-4 w-100" l10nTranslate>Sign in</button>
+            </div>
+          </form>
+        }
       </div>
     </div>
   </div>

@@ -36,7 +36,7 @@ interface ShareRepository {
         [style.font-size.px]="galleryMode.faSize / 1.8"
       ></fa-icon>
     } @else {
-      <div class="d-flex align-items-center">
+      <div class="d-flex align-items-center overflow-wrap-and-whitespace">
         @if (showIcon) {
           <fa-icon [icon]="repository.icon" [class]="repository.class" class="me-2"></fa-icon>
         }

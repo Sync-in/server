@@ -21,7 +21,7 @@
   @if (share || link) {
     <div class="d-flex flex-fill align-items-center">
       <fa-icon [icon]="icons.links" class="circle-primary-icon me-2"></fa-icon>
-      <div class="d-flex flex-column">
+      <div class="d-flex flex-column overflow-wrap-and-whitespace me-2">
         <span>{{ linkForm.value.name || linkForm.value.shareName }}</span>
         <span class="fs-xxxs">{{ linkForm.value.email }}</span>
       </div>
@@ -158,14 +158,14 @@
         <div class="d-flex align-items-center justify-content-between">
           <label for="expiration" l10nTranslate>Expiration</label>
           <input
+            bsDatepicker
             id="expiration"
             formControlName="expiresAt"
             placement="left"
             type="text"
             class="form-control form-control-sm ms-auto w-50"
             [class.text-danger]="linkIsExpired"
-            [placeholder]="'Unlimited' | translate:locale.language"
-            bsDatepicker
+            [placeholder]="'Never expires' | translate:locale.language"
             [bsConfig]="{
           dateInputFormat: 'YYYY-MM-DD',
           containerClass: 'theme-dark-blue',

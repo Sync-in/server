@@ -13,10 +13,17 @@ import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications
 import type { ClientAuthCookieDto } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
 import { API_ADMIN_IMPERSONATE_LOGOUT, API_USERS_ME } from '@sync-in-server/backend/src/applications/users/constants/routes'
 import { CSRF_KEY } from '@sync-in-server/backend/src/authentication/constants/auth'
-import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH } from '@sync-in-server/backend/src/authentication/constants/routes'
-import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
+import {
+  API_AUTH_LOGIN,
+  API_AUTH_LOGOUT,
+  API_AUTH_REFRESH,
+  API_TWO_FA_LOGIN_VERIFY
+} from '@sync-in-server/backend/src/authentication/constants/routes'
+import { LoginResponseDto, TwoFaResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import type { TokenResponseDto } from '@sync-in-server/backend/src/authentication/dto/token-response.dto'
+import { TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
+import { ServerConfig } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import { catchError, finalize, map, Observable, of, throwError } from 'rxjs'
 import { switchMap, tap } from 'rxjs/operators'
 import { USER_PATH } from '../applications/users/user.constants'
@@ -64,12 +71,17 @@ export class AuthService {
     localStorage.setItem('access_expiration', value.toString())
   }
 
-  login(login: string, password: string): Observable<{ success: boolean; message: any }> {
+  login(login: string, password: string): Observable<{ success: boolean; message: any; twoFaEnabled?: boolean }> {
     return this.http.post<LoginResponseDto>(API_AUTH_LOGIN, { login, password }).pipe(
       map((r: LoginResponseDto) => {
-        this.accessExpiration = r.token.access_expiration
-        this.refreshExpiration = r.token.refresh_expiration
-        this.userService.initUser(r.user)
+        if (r.server.twoFaEnabled && r.user.twoFaEnabled) {
+          // check 2FA before logging in the user
+          this.accessExpiration = r.token.access_2fa_expiration
+          this.refreshExpiration = this.accessExpiration
+          return { success: true, twoFaEnabled: true, message: null }
+        } else {
+          this.initUserFromResponse(r)
+        }
         return { success: true, message: null }
       }),
       catchError((e) => {
@@ -150,6 +162,7 @@ export class AuthService {
       this.accessExpiration = r.token.access_expiration
       this.refreshExpiration = r.token.refresh_expiration
       this.userService.initUser(r.user, impersonate)
+      this.setServerConfig(r.server)
     }
   }
 
@@ -162,7 +175,6 @@ export class AuthService {
       map((r) => {
         this.accessExpiration = r.access_expiration
         this.refreshExpiration = r.refresh_expiration
-        console.debug('refresh token done')
         return true
       }),
       catchError((e: HttpErrorResponse) => {
@@ -186,8 +198,11 @@ export class AuthService {
       this.logout()
       return of(false)
     } else if (!this.store.user.getValue()) {
-      return this.http.get<LoginResponseDto>(API_USERS_ME).pipe(
-        tap((r: LoginResponseDto) => this.userService.initUser(r.user)),
+      return this.http.get<Omit<LoginResponseDto, 'token'>>(API_USERS_ME).pipe(
+        tap((r: Omit<LoginResponseDto, 'token'>) => {
+          this.userService.initUser(r.user)
+          this.setServerConfig(r.server)
+        }),
         map(() => true),
         catchError((e: HttpErrorResponse) => {
           if (e.status === 401) {
@@ -208,6 +223,15 @@ export class AuthService {
       return request.clone({ headers: request.headers.set(CSRF_KEY, getCookie(CSRF_KEY)) })
     }
     return request
+  }
+
+  loginWith2Fa(verify: TwoFaVerifyDto): Observable<TwoFaResponseDto> {
+    return this.http.post<TwoFaResponseDto>(API_TWO_FA_LOGIN_VERIFY, verify)
+  }
+
+  private setServerConfig(serverConfig: ServerConfig) {
+    if (!serverConfig) return
+    this.store.server.set(serverConfig)
   }
 
   private refreshTokenHasExpired(): boolean {

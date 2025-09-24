@@ -121,18 +121,23 @@ export function linkMail(
     author: UserModel
     action: ACTION
     linkUUID: string
+    linkPassword: string
   }
 ): [string, string] {
   const tr = translateObject(language, {
     title: options.action === ACTION.ADD ? 'Share' : 'Space',
-    defaultFooter: defaultFooter,
+    passwordText: 'Access password',
     urlText: 'Access it from',
     event: notification.event
   })
 
-  const content = `${options.author ? mailAuthor(options.author) : ''}${mailEventOnElement(tr.event, notification.element)}`
+  let content = `${options.author ? mailAuthor(options.author) : ''}${mailEventOnElement(tr.event, notification.element)}`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${urlFromLink(options.currentUrl, options.linkUUID)}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
+  if (options.linkPassword) {
+    content += `<br><br>${tr.passwordText}:&nbsp;<div style="border:1px solid #000; padding:8px; display:inline-block;">${options.linkPassword}</div>`
+  }
+
+  const footer = `<br>${tr.urlText}&nbsp;<a href="${urlFromLink(options.currentUrl, options.linkUUID)}">${SERVER_NAME}</a>`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -159,4 +164,37 @@ export function syncMail(
   const footer = `<br>${tr.urlText}&nbsp;<a href="${syncUrl}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
+}
+
+export function auth2FaMail(language: string, notification: NotificationContent): [string, string] {
+  const tr = translateObject(language, {
+    title: 'Security notification',
+    footer:
+      'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.',
+    event: notification.event,
+    addressIp: 'Address IP',
+    browser: 'Browser'
+  })
+
+  const content = `${tr.event}<br><br>${tr.addressIp}:&nbsp;${notification.url}<br>${tr.browser}:&nbsp;${notification.element}`
+
+  const footer = `<br>${tr.footer}<br>`
+
+  return [tr.title, mailTemplate(content, footer)]
+}
+
+export function authLocked(language: string, notification: NotificationContent): [string, string] {
+  const tr = translateObject(language, {
+    title: 'Security notification',
+    footer:
+      'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.',
+    event: notification.event,
+    addressIp: 'Address IP'
+  })
+
+  const content = `${tr.event}<br><br>${tr.addressIp}:&nbsp;${notification.url}<br>`
+
+  const footer = `<br>${tr.footer}<br>`
+
+  return [tr.title, mailTemplate(content, footer)]
 }

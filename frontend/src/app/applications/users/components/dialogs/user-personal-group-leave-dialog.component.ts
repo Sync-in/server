@@ -16,7 +16,7 @@ import { USER_ICON } from '../../user.constants'
 import { UserService } from '../../user.service'
 
 @Component({
-  selector: 'app-admin-group-delete-dialog',
+  selector: 'app-user-personal-group-leave-dialog',
   imports: [FaIconComponent, L10nTranslateDirective],
   templateUrl: 'user-personal-group-leave-dialog.component.html'
 })

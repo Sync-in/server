@@ -25,6 +25,7 @@ import { AuthMethod } from './models/auth-method'
 import { AuthManager } from './services/auth-manager.service'
 import { AuthMethodDatabase } from './services/auth-methods/auth-method-database.service'
 import { AuthMethodLdapService } from './services/auth-methods/auth-method-ldap.service'
+import { AuthMethod2FA } from './services/auth-methods/auth-method-two-fa.service'
 
 @Global()
 @Module({
@@ -45,8 +46,9 @@ import { AuthMethodLdapService } from './services/auth-methods/auth-method-ldap.
     AuthBasicStrategy,
     AuthAnonymousStrategy,
     AuthManager,
+    AuthMethod2FA,
     { provide: AuthMethod, useClass: configuration.auth.method === 'ldap' ? AuthMethodLdapService : AuthMethodDatabase }
   ],
-  exports: [AuthManager, AuthMethod]
+  exports: [AuthManager, AuthMethod, AuthMethod2FA]
 })
 export class AuthModule {}

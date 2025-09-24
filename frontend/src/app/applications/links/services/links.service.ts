@@ -24,7 +24,7 @@ import {
 } from '@sync-in-server/backend/src/applications/shares/constants/routes'
 import { SPACE_OPERATION, SPACE_ROLE } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { MEMBER_TYPE } from '@sync-in-server/backend/src/applications/users/constants/member'
-import type { UserPasswordDto } from '@sync-in-server/backend/src/applications/users/dto/user-password.dto'
+import type { UserPasswordDto } from '@sync-in-server/backend/src/applications/users/dto/user-properties.dto'
 import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { ClipboardService } from 'ngx-clipboard'

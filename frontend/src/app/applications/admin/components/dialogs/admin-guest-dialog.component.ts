@@ -10,6 +10,7 @@ import { Component, inject } from '@angular/core'
 import { ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
+import type { DeleteUserDto } from '@sync-in-server/backend/src/applications/users/dto/delete-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
 import { L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TabDirective, TabHeadingDirective, TabsetComponent } from 'ngx-bootstrap/tabs'
@@ -63,11 +64,15 @@ export class AdminGuestDialogComponent extends UserGuestDialogComponent {
     return this.adminService.searchMembers(search)
   }
 
-  override onSubmit() {
+  override async onSubmit() {
     this.submitted = true
     if (this.confirmDeletion) {
       // delete
-      this.adminService.deleteUser(this.guest.id, null, true).subscribe({
+      const auth2FaHeaders = await this.userService.auth2FaVerifyDialog(true)
+      if (auth2FaHeaders === false) {
+        return
+      }
+      this.adminService.deleteUser(this.guest.id, { deleteSpace: true, isGuest: true } satisfies DeleteUserDto, auth2FaHeaders).subscribe({
         next: () => {
           this.guestChange.emit(['delete', this.guest])
           this.layout.sendNotification('success', 'Guest deleted', this.guest.login)
@@ -77,7 +82,11 @@ export class AdminGuestDialogComponent extends UserGuestDialogComponent {
       })
     } else if (!this.guest) {
       // create
-      this.adminService.createUser(this.makeDto(true), true).subscribe({
+      const auth2FaHeaders = await this.userService.auth2FaVerifyDialog()
+      if (auth2FaHeaders === false) {
+        return
+      }
+      this.adminService.createUser(this.makeDto(true), auth2FaHeaders, true).subscribe({
         next: (g: GuestUserModel) => {
           this.guestChange.emit(['add', g])
           this.layout.sendNotification('success', 'Guest created', this.guestForm.value.login)
@@ -93,7 +102,11 @@ export class AdminGuestDialogComponent extends UserGuestDialogComponent {
         this.submitted = false
         return
       }
-      this.adminService.updateUser(this.guest.id, updateDto, true).subscribe({
+      const auth2FaHeaders = await this.userService.auth2FaVerifyDialog()
+      if (auth2FaHeaders === false) {
+        return
+      }
+      this.adminService.updateUser(this.guest.id, updateDto, auth2FaHeaders, true).subscribe({
         next: (g: GuestUserModel) => {
           if (g) {
             this.guestChange.emit(['update', g])

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { HttpClient } from '@angular/common/http'
+import { HttpClient, HttpHeaders } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import {
@@ -25,9 +25,8 @@ import type {
   UpdateUserDto,
   UpdateUserFromGroupDto
 } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
-import type { AdminDeleteUserDto } from '@sync-in-server/backend/src/applications/users/dto/delete-user.dto'
+import type { DeleteUserDto } from '@sync-in-server/backend/src/applications/users/dto/delete-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
-import type { UserPasswordDto } from '@sync-in-server/backend/src/applications/users/dto/user-password.dto'
 import type { AdminGroup } from '@sync-in-server/backend/src/applications/users/interfaces/admin-group.interface'
 import type { AdminUser } from '@sync-in-server/backend/src/applications/users/interfaces/admin-user.interface'
 import type { GroupBrowse } from '@sync-in-server/backend/src/applications/users/interfaces/group-browse.interface'
@@ -65,28 +64,27 @@ export class AdminService {
       .pipe(map((u) => (isGuest ? new GuestUserModel(u) : new AdminUserModel(u))))
   }
 
-  createUser(createUserDto: CreateUserDto, isGuest?: false): Observable<AdminUserModel>
-  createUser(createUserDto: CreateUserDto, isGuest: true): Observable<GuestUserModel>
-  createUser(createUserDto: CreateUserDto, isGuest = false): Observable<AdminUserModel | GuestUserModel> {
+  createUser(createUserDto: CreateUserDto, twoFaHeaders: HttpHeaders, isGuest?: false): Observable<AdminUserModel>
+  createUser(createUserDto: CreateUserDto, twoFaHeaders: HttpHeaders, isGuest: true): Observable<GuestUserModel>
+  createUser(createUserDto: CreateUserDto, twoFaHeaders: HttpHeaders, isGuest = false): Observable<AdminUserModel | GuestUserModel> {
     return this.http
-      .post<AdminUser | GuestUser>(isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS, createUserDto)
+      .post<AdminUser | GuestUser>(isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS, createUserDto, { headers: twoFaHeaders })
       .pipe(map((u) => (isGuest ? new GuestUserModel(u) : new AdminUserModel(u))))
   }
 
-  updateUser(userId: number, updateUserDto: UpdateUserDto, isGuest?: false): Observable<AdminUserModel>
-  updateUser(userId: number, updateUserDto: UpdateUserDto, isGuest: true): Observable<GuestUserModel>
-  updateUser(userId: number, updateUserDto: UpdateUserDto, isGuest = false): Observable<AdminUserModel | GuestUserModel> {
+  updateUser(userId: number, updateUserDto: UpdateUserDto, twoFaHeaders: HttpHeaders, isGuest?: false): Observable<AdminUserModel>
+  updateUser(userId: number, updateUserDto: UpdateUserDto, twoFaHeaders: HttpHeaders, isGuest: true): Observable<GuestUserModel>
+  updateUser(userId: number, updateUserDto: UpdateUserDto, twoFaHeaders: HttpHeaders, isGuest = false): Observable<AdminUserModel | GuestUserModel> {
     return this.http
-      .put<AdminUser | GuestUser>(`${isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS}/${userId}`, updateUserDto)
+      .put<AdminUser | GuestUser>(`${isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS}/${userId}`, updateUserDto, { headers: twoFaHeaders })
       .pipe(map((u) => (isGuest ? new GuestUserModel(u) : new AdminUserModel(u))))
   }
 
-  deleteUser(userId: number, adminDeleteUserDto?: AdminDeleteUserDto, isGuest = false): Observable<void> {
-    if (isGuest) {
-      return this.http.delete<void>(`${API_ADMIN_GUESTS}/${userId}`)
-    } else {
-      return this.http.request<void>('delete', `${API_ADMIN_USERS}/${userId}`, { body: adminDeleteUserDto })
-    }
+  deleteUser(userId: number, deleteUserDto: DeleteUserDto, twoFaHeaders: HttpHeaders): Observable<void> {
+    return this.http.request<void>('delete', `${deleteUserDto.isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS}/${userId}`, {
+      headers: twoFaHeaders,
+      body: deleteUserDto
+    })
   }
 
   browseGroup(name?: string, personalGroups = false): Observable<GroupBrowseModel> {
@@ -137,8 +135,8 @@ export class AdminService {
     )
   }
 
-  impersonateUser(userId: number, passwordDto: UserPasswordDto): Observable<LoginResponseDto> {
-    return this.http.post<LoginResponseDto>(`${API_ADMIN_IMPERSONATE}/${userId}`, passwordDto)
+  impersonateUser(userId: number, twoFaHeaders: HttpHeaders): Observable<LoginResponseDto> {
+    return this.http.post<LoginResponseDto>(`${API_ADMIN_IMPERSONATE}/${userId}`, null, { headers: twoFaHeaders })
   }
 
   initImpersonateUser(r: LoginResponseDto) {

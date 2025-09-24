@@ -10,6 +10,7 @@ import { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { UserModel } from '../../applications/users/models/user.model'
+import { configuration } from '../../configuration/config.environment'
 import { JwtPayload } from '../interfaces/jwt-payload.interface'
 import { TOKEN_TYPE } from '../interfaces/token.interface'
 import { AuthManager } from '../services/auth-manager.service'
@@ -24,11 +25,11 @@ export class AuthTokenRefreshStrategy extends PassportStrategy(Strategy, 'tokenR
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([AuthTokenRefreshStrategy.extractJWTFromCookie, ExtractJwt.fromAuthHeaderAsBearerToken()]),
-      secretOrKey: authManager.authConfig.token.refresh.secret,
+      secretOrKey: configuration.auth.token.refresh.secret,
       ignoreExpiration: false,
       passReqToCallback: true
     })
-    AuthTokenRefreshStrategy.refreshCookieName = authManager.authConfig.token.refresh.name
+    AuthTokenRefreshStrategy.refreshCookieName = configuration.auth.token.refresh.name
   }
 
   validate(req: FastifyRequest, jwtPayload: JwtPayload): UserModel {

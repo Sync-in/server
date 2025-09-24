@@ -4,10 +4,11 @@
  * See the LICENSE file for licensing details
  */
 
-import { Transform, Type } from 'class-transformer'
+import { Exclude, Transform, Type } from 'class-transformer'
 import {
   ArrayNotEmpty,
   IsArray,
+  IsBoolean,
   IsDefined,
   IsIn,
   IsNotEmpty,
@@ -18,12 +19,30 @@ import {
   ValidateIf,
   ValidateNested
 } from 'class-validator'
-import { CSRF_KEY, WS_KEY } from './constants/auth'
+import { SERVER_NAME } from '../app.constants'
+import { ACCESS_KEY, CSRF_KEY, REFRESH_KEY, WS_KEY } from './constants/auth'
+
+export class AuthMfaTotpConfig {
+  @IsBoolean()
+  enabled = true
+
+  @IsString()
+  issuer = SERVER_NAME
+}
+
+export class AuthMfaConfig {
+  @IsDefined()
+  @IsNotEmptyObject()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AuthMfaTotpConfig)
+  totp: AuthMfaTotpConfig = new AuthMfaTotpConfig()
+}
 
 export class AuthTokenAccessConfig {
-  @IsString()
-  @IsNotEmpty()
-  name = 'sync-in-access'
+  @Exclude({ toClassOnly: true })
+  // force default name
+  name = ACCESS_KEY
 
   @IsString()
   @IsNotEmpty()
@@ -32,16 +51,12 @@ export class AuthTokenAccessConfig {
   @IsString()
   @IsNotEmpty()
   expiration = '30m'
-
-  @IsNotEmpty()
-  @IsString()
-  cookieMaxAge = '30m'
 }
 
 export class AuthTokenRefreshConfig {
-  @IsString()
-  @IsNotEmpty()
-  name = 'sync-in-refresh'
+  @Exclude({ toClassOnly: true })
+  // force default name
+  name = REFRESH_KEY
 
   @IsString()
   @IsNotEmpty()
@@ -50,10 +65,6 @@ export class AuthTokenRefreshConfig {
   @IsString()
   @IsNotEmpty()
   expiration = '4h'
-
-  @IsNotEmpty()
-  @IsString()
-  cookieMaxAge = '4h'
 }
 
 export class AuthTokenCsrfConfig extends AuthTokenRefreshConfig {
@@ -124,9 +135,20 @@ export class AuthConfig {
   @IsIn(['mysql', 'ldap'])
   method: 'mysql' | 'ldap' = 'mysql'
 
+  @IsOptional()
+  @IsString()
+  encryptionKey: string
+
+  @IsDefined()
+  @IsNotEmptyObject()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AuthMfaConfig)
+  mfa: AuthMfaConfig = new AuthMfaConfig()
+
   @IsString()
   @IsIn(['lax', 'strict'])
-  sameSite: 'lax' | 'strict' = 'strict'
+  cookieSameSite: 'lax' | 'strict' = 'strict'
 
   @IsDefined()
   @IsNotEmptyObject()

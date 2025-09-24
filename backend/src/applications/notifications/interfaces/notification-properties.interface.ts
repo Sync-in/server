@@ -23,6 +23,7 @@ export interface NotificationOptions {
   content?: string
   action?: ACTION
   linkUUID?: string
+  linkPassword?: string
 }
 
 export type NotificationFromUser = Omit<Notification, 'fromUserId' | 'toUserId'> & { fromUser: Owner }

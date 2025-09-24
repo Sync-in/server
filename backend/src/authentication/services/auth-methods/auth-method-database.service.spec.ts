@@ -6,6 +6,7 @@
 
 import { Test, TestingModule } from '@nestjs/testing'
 import { CONNECT_ERROR_CODE } from '../../../app.constants'
+import { NotificationsManager } from '../../../applications/notifications/services/notifications-manager.service'
 import { UserModel } from '../../../applications/users/models/user.model'
 import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service'
 import { AdminUsersQueries } from '../../../applications/users/services/admin-users-queries.service'
@@ -33,10 +34,8 @@ describe(AuthMethodDatabase.name, () => {
         AdminUsersQueries,
         { provide: AuthManager, useValue: {} },
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
-        {
-          provide: Cache,
-          useValue: {}
-        }
+        { provide: Cache, useValue: {} },
+        { provide: NotificationsManager, useValue: {} }
       ]
     }).compile()
 

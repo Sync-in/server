@@ -20,6 +20,10 @@ export abstract class Cache {
 
   abstract mget(keys: string[]): Promise<any[]>
 
+  /* ttl (seconds):
+      - 0: infinite expiration
+      - undefined: default ttl
+  */
   abstract set(key: string, data: any, ttl?: number): Promise<boolean>
 
   abstract del(key: string): Promise<boolean>

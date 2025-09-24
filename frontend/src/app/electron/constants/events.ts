@@ -30,6 +30,7 @@ export const EVENT = {
   },
   MISC: {
     DIALOG_OPEN: 'dialog-open',
+    URL_OPEN: 'url-open',
     FILE_OPEN: 'file-open',
     SWITCH_THEME: 'switch-theme',
     NETWORK_IS_ONLINE: 'network-is-online'

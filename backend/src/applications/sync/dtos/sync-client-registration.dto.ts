@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { IsDefined, IsNotEmpty, IsNotEmptyObject, IsObject, IsString, IsUUID } from 'class-validator'
+import { IsDefined, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, IsUUID } from 'class-validator'
 import { SyncClientInfo } from '../interfaces/sync-client.interface'
 
 export class SyncClientRegistrationDto {
@@ -15,6 +15,10 @@ export class SyncClientRegistrationDto {
   @IsNotEmpty()
   @IsString()
   password: string
+
+  @IsOptional()
+  @IsString()
+  code?: string
 
   @IsNotEmpty()
   @IsString()

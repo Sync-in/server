@@ -5,14 +5,33 @@
  */
 
 import { UserModel } from '../../applications/users/models/user.model'
+import { ServerConfig } from '../../configuration/config.interfaces'
 import { TokenResponseDto } from './token-response.dto'
 
 export class LoginResponseDto {
+  server: ServerConfig
   user: UserModel
   token: TokenResponseDto
 
-  constructor(user: UserModel) {
+  constructor(user: UserModel, serverConfig: ServerConfig) {
+    this.server = serverConfig
     this.user = user
     this.token = new TokenResponseDto()
   }
+}
+
+export class LoginVerify2FaDto {
+  server: ServerConfig
+  user = { twoFaEnabled: true }
+  token: TokenResponseDto
+
+  constructor(serverConfig: ServerConfig) {
+    this.server = serverConfig
+    this.token = new TokenResponseDto()
+  }
+}
+
+export class TwoFaResponseDto extends LoginResponseDto {
+  success: boolean
+  message: string
 }

@@ -1,6 +1,7 @@
 mysql:
   url: mysql://user:MySQLRootPassword@localhost:3306/database
 auth:
+  encryptionKey: changeEncryptionKeyWithStrongKey
   token:
     access:
       secret: changeAccessWithStrongSecret

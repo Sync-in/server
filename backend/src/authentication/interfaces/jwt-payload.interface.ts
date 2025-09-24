@@ -9,11 +9,21 @@ export class JwtIdentityPayload {
   login: string
   email: string
   fullName: string
+  language: string
   role: number
   applications: string[]
   impersonatedFromId?: number
   impersonatedClientId?: string
   clientId?: string
+  twoFaEnabled?: boolean
+}
+
+export class JwtIdentity2FaPayload {
+  id: number
+  login: string
+  language: string
+  role: number
+  twoFaEnabled: true
 }
 
 export class JwtPayload {

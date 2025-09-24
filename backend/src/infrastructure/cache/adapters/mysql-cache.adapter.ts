@@ -7,7 +7,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { CronJob } from 'cron'
-import { and, between, eq, exists, inArray, like, notBetween, sql, SQL } from 'drizzle-orm'
+import { and, between, eq, exists, inArray, like, notBetween, SQL } from 'drizzle-orm'
 import cluster from 'node:cluster'
 import { createSlug, currentTimeStamp } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
@@ -20,7 +20,7 @@ import { Cache } from '../services/cache.service'
 
 @Injectable()
 export class MysqlCacheAdapter implements Cache {
-  /* Useful sql commands to stats the scheduler
+  /* Useful SQL commands to stats the scheduler
     SHOW VARIABLES LIKE 'event_scheduler';
     SHOW EVENTS;
   */
@@ -30,8 +30,6 @@ export class MysqlCacheAdapter implements Cache {
   private readonly scheduledJobName = 'cache_expired_keys' as const
   private readonly scheduledJobInterval = 5 // minutes
   private readonly logger = new Logger(Cache.name.toUpperCase())
-  private readonly whereNotExpired: () => SQL = () => notBetween(cache.expiration, 0, currentTimeStamp())
-  private readonly whereExpired: () => SQL = () => between(cache.expiration, 0, currentTimeStamp())
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
@@ -84,7 +82,7 @@ export class MysqlCacheAdapter implements Cache {
 
   async get(key: string): Promise<any> {
     const [v]: { value: any }[] = await this.db
-      .select({ value: sql`${cache.value}`.mapWith(JSON.parse) })
+      .select({ value: cache.value })
       .from(cache)
       .where(and(eq(cache.key, key), this.whereNotExpired()))
       .limit(1)
@@ -93,7 +91,7 @@ export class MysqlCacheAdapter implements Cache {
 
   async mget(keys: string[]): Promise<any[]> {
     const vs: { value: any }[] = await this.db
-      .select({ value: sql`${cache.value}`.mapWith(JSON.parse) })
+      .select({ value: cache.value })
       .from(cache)
       .where(and(inArray(cache.key, keys), this.whereNotExpired()))
     return vs.map((v: { value: any }) => v.value)
@@ -131,16 +129,20 @@ export class MysqlCacheAdapter implements Cache {
     return createSlug(args.join(' '))
   }
 
+  async quit(): Promise<void> {
+    this.logger.verbose(`${this.quit.name}`)
+  }
+
+  private readonly whereNotExpired: () => SQL = () => notBetween(cache.expiration, 0, currentTimeStamp())
+
+  private readonly whereExpired: () => SQL = () => between(cache.expiration, 0, currentTimeStamp())
+
   private getTTL(ttl: number): number {
     /* ttl (seconds):
         - 0 : infinite expiration
         - undefined : default ttl
     */
     return ttl ? currentTimeStamp() + ttl : ttl === 0 ? this.infiniteExpiration : currentTimeStamp() + this.defaultTTL
-  }
-
-  async quit(): Promise<void> {
-    this.logger.verbose(`${this.quit.name}`)
   }
 
   private serialize(data: any) {

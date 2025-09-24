@@ -10,10 +10,9 @@ import { AuthManager } from '../../../authentication/services/auth-manager.servi
 import { GROUP_TYPE } from '../constants/group'
 import { USER_GROUP_ROLE, USER_ROLE } from '../constants/user'
 import type { CreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
-import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto'
-import type { AdminDeleteUserDto } from '../dto/delete-user.dto'
+import type { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto'
+import type { DeleteUserDto } from '../dto/delete-user.dto'
 import type { SearchMembersDto } from '../dto/search-members.dto'
-import type { UserPasswordDto } from '../dto/user-password.dto'
 import { UserModel } from '../models/user.model'
 import { AdminUsersManager } from './admin-users-manager.service'
 import { AdminUsersQueries } from './admin-users-queries.service'
@@ -324,26 +323,17 @@ describe(AdminUsersManager.name, () => {
       adminQueriesMock.deleteUser.mockRejectedValueOnce(new Error('db crash'))
       await expectHttp(service.deleteUserOrGuest(10, 'john', { deleteSpace: false } as any))
     })
-
-    it('deleteGuest -> getGuest then delete', async () => {
-      setGuest({ id: 77, login: 'g77' } as any)
-      adminQueriesMock.deleteUser.mockResolvedValueOnce(true)
-      fs.isPathExists.mockResolvedValueOnce(false)
-      await expect(service.deleteGuest(77)).resolves.toBeUndefined()
-      expect(adminQueriesMock.deleteUser).toHaveBeenCalledWith(77, 'g77')
-    })
   })
 
   describe('deleteUserFromAdmin', () => {
     it('admin password incorrect / deletion ok', async () => {
-      const admin = new UserModel({ id: 1 } as any, true)
       adminQueriesMock.usersQueries.compareUserPassword.mockResolvedValueOnce(false)
-      await expectHttp(service.deleteUserFromAdmin(admin, 10, { adminPassword: 'bad' } as AdminDeleteUserDto))
+      await expectHttp(service.deleteUserOrGuestFromAdmin(10, { isGuest: false } as DeleteUserDto))
 
       adminQueriesMock.usersQueries.compareUserPassword.mockResolvedValueOnce(true)
       adminQueriesMock.usersQueries.from.mockResolvedValueOnce({ id: 10, login: 'to-del' } as any)
       adminQueriesMock.deleteUser.mockResolvedValueOnce(true)
-      await service.deleteUserFromAdmin(admin, 10, { adminPassword: 'ok', deleteSpace: true } as any)
+      await service.deleteUserOrGuestFromAdmin(10, { isGuest: false, deleteSpace: true } as DeleteUserDto)
       expect(adminQueriesMock.deleteUser).toHaveBeenCalledWith(10, 'to-del')
     })
   })
@@ -438,16 +428,16 @@ describe(AdminUsersManager.name, () => {
     const res: any = {}
     it('self / bad password / ok + logout (guard + non-admin + admin)', async () => {
       const admin = new UserModel({ id: 5 } as any, true)
-      await expectHttp(service.impersonateUser(admin, 5, { password: 'x' } as UserPasswordDto, res))
+      await expectHttp(service.impersonateUser(admin, 5, res))
 
       adminQueriesMock.usersQueries.compareUserPassword.mockResolvedValueOnce(false)
-      await expectHttp(service.impersonateUser(admin, 6, { password: 'bad' } as any, res))
+      await expectHttp(service.impersonateUser(admin, 6, res))
 
       const admin2 = new UserModel({ id: 5, clientId: 'c1' } as any, true)
       adminQueriesMock.usersQueries.compareUserPassword.mockResolvedValueOnce(true)
       adminQueriesMock.usersQueries.from.mockResolvedValueOnce({ id: 6, login: 'user' } as any)
       authManagerMock.setCookies.mockResolvedValueOnce({ accessToken: 't' })
-      expect(await service.impersonateUser(admin2, 6, { password: 'ok' } as any, res)).toEqual({ accessToken: 't' })
+      expect(await service.impersonateUser(admin2, 6, res)).toEqual({ accessToken: 't' })
 
       const notImpersonated = new UserModel({ id: 1 } as any, true)
       await expectHttp(service.logoutImpersonateUser(notImpersonated, res))

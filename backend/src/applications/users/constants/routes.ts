@@ -11,6 +11,7 @@ export const USERS_ROUTE = {
   ME: 'me',
   LANGUAGE: 'language',
   PASSWORD: 'password',
+  APP_PASSWORDS: 'app_passwords',
   NOTIFICATION: 'notification',
   AVATAR: 'avatar',
   GROUPS: 'groups',
@@ -23,6 +24,7 @@ export const USERS_ROUTE = {
 export const API_USERS_ME = `${USERS_ROUTE.BASE}/${USERS_ROUTE.ME}`
 export const API_USERS_MY_LANGUAGE = `${API_USERS_ME}/${USERS_ROUTE.LANGUAGE}`
 export const API_USERS_MY_PASSWORD = `${API_USERS_ME}/${USERS_ROUTE.PASSWORD}`
+export const API_USERS_MY_APP_PASSWORDS = `${API_USERS_ME}/${USERS_ROUTE.APP_PASSWORDS}`
 export const API_USERS_MY_NOTIFICATION = `${API_USERS_ME}/${USERS_ROUTE.NOTIFICATION}`
 export const API_USERS_MY_AVATAR = `${API_USERS_ME}/${USERS_ROUTE.AVATAR}`
 export const API_USERS_MY_GROUPS = `${API_USERS_ME}/${USERS_ROUTE.GROUPS}`

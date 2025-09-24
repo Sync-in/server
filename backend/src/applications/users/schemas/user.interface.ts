@@ -4,6 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
+import type { UserSecrets } from '../interfaces/user-secrets.interface'
 import type { users } from './users.schema'
 
 type UserSchema = typeof users.$inferSelect
@@ -17,6 +18,7 @@ export class User implements UserSchema {
   password: string
   role: number
   isActive: boolean
+  secrets: UserSecrets
   language: string
   permissions: string
   storageUsage: number

@@ -124,6 +124,21 @@
               <app-storage-usage id="storage" [item]="user"></app-storage-usage>
             </div>
             <div class="flex-fill col-6 ps-4">
+              <div class="d-flex flex-column">
+                <label for="twoFa" l10nTranslate>Two-Factor Authentication</label>
+                <div id="twoFa" class="pt-1">
+                  <span>
+                    <fa-icon [icon]="user.twoFaEnabled ? icons.faLock : icons.faLockOpen"></fa-icon>
+                    {{ (user.twoFaEnabled ? 'enabled' : 'disabled') | translate:locale.language | titlecase }}
+                  </span>
+                  @if (user.twoFaEnabled) {
+                    <span (click)="reset2Fa()" class="ms-3 link-danger" role="button">
+                      <fa-icon [icon]="icons.faTrash"></fa-icon>
+                      <span class="ms-1" l10nTranslate>Reset</span>
+                    </span>
+                  }
+                </div>
+              </div>
             </div>
           </div>
         }
@@ -160,8 +175,8 @@
             <label class="form-check-label" for="isActive">
               <input class="form-check-input" formControlName="isActive" id="isActive" type="checkbox">
               <span [class.text-danger]="!userForm.value.isActive">
-                    {{ (userForm.value.isActive ? 'active' : 'suspended') | translate:locale.language | titlecase }}
-                  </span>
+                {{ (userForm.value.isActive ? 'active' : 'suspended') | translate:locale.language | titlecase }}
+              </span>
             </label>
           </div>
           <div class="d-flex">

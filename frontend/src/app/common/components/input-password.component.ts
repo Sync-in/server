@@ -9,8 +9,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faDice, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
+import { genPassword } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { genPassword, togglePasswordType } from '../utils/functions'
+import { togglePasswordType } from '../utils/functions'
 
 @Component({
   selector: 'app-input-password',
@@ -27,7 +28,9 @@ import { genPassword, togglePasswordType } from '../utils/functions'
         [class.is-invalid]="isRequired && password?.length < passwordMinLength"
         (keyup)="passwordChange.emit(password)"
         type="password"
-        class="form-control form-control-sm"
+        class="form-control form-control-sm pe-0"
+        [class.text-center]="centered"
+        [style.padding-left]="centered ? '2rem' : ''"
         [placeholder]="placeholder | translate: locale.language"
         [required]="isRequired"
       />
@@ -56,6 +59,7 @@ export class InputPasswordComponent implements OnInit {
   @Input() disabled = false
   @Input() isRequired = false
   @Input() focus = false
+  @Input() centered = false
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly toggleVisiblePassword = togglePasswordType
   protected readonly icons = { faEye, faEyeSlash, faDice }

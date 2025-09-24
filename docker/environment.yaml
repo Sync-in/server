@@ -1,9 +1,7 @@
-server:
-  # prevent displaying Docker internal IP addresses
-  trustProxy: true
 mysql:
   url: mysql://root:MySQLRootPassword@mariadb:3306/sync_in
 auth:
+  encryptionKey: changeEncryptionKeyWithStrongKey
   token:
     access:
       secret: changeAccessWithStrongSecret

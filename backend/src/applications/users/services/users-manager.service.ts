@@ -12,40 +12,46 @@ import { WriteStream } from 'fs'
 import { createWriteStream } from 'node:fs'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
+import { AUTH_SCOPE } from '../../../authentication/constants/scope'
+import { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface'
-import { comparePassword } from '../../../common/functions'
-import { convertImageToBase64, generateAvatar, pngMimeType, svgMimeType } from '../../../common/image'
-import { STATIC_ASSETS_PATH } from '../../../configuration/config.constants'
+import { ACTION } from '../../../common/constants'
+import { comparePassword, hashPassword } from '../../../common/functions'
+import { generateAvatar, pngMimeType, svgMimeType } from '../../../common/image'
+import { createLightSlug, genPassword } from '../../../common/shared'
+import { configuration, serverConfig } from '../../../configuration/config.environment'
 import { isPathExists, moveFiles } from '../../files/utils/files'
+import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { MEMBER_TYPE } from '../constants/member'
 import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_ONLINE_STATUS, USER_ROLE } from '../constants/user'
-import { UserCreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
-import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto'
-import { SearchMembersDto } from '../dto/search-members.dto'
-import { UserLanguageDto, UserNotificationDto, UserPasswordDto } from '../dto/user-properties.dto'
+import type { UserCreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
+import type { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto'
+import type { SearchMembersDto } from '../dto/search-members.dto'
+import type { UserAppPasswordDto, UserLanguageDto, UserNotificationDto, UserUpdatePasswordDto } from '../dto/user-properties.dto'
 import type { GroupBrowse } from '../interfaces/group-browse.interface'
 import type { GroupMember, GroupWithMembers } from '../interfaces/group-member'
 import type { GuestUser } from '../interfaces/guest-user.interface'
 import type { Member } from '../interfaces/member.interface'
+import type { UserAppPassword, UserSecrets } from '../interfaces/user-secrets.interface'
 import type { UserOnline } from '../interfaces/websocket.interface'
 import { UserModel } from '../models/user.model'
 import type { Group } from '../schemas/group.interface'
 import type { UserGroup } from '../schemas/user-group.interface'
 import type { User } from '../schemas/user.interface'
+import { USER_AVATAR_FILE_NAME, USER_AVATAR_MAX_UPLOAD_SIZE, USER_DEFAULT_AVATAR_FILE_PATH } from '../utils/avatar'
 import { AdminUsersManager } from './admin-users-manager.service'
 import { UsersQueries } from './users-queries.service'
 
 @Injectable()
 export class UsersManager {
-  private readonly defaultAvatarFilePath = path.join(STATIC_ASSETS_PATH, 'avatar.svg')
-  private readonly userAvatarFileName = 'avatar.png'
-  private readonly maxAvatarUploadSize = 1024 * 1024 * 5
   private readonly logger = new Logger(UsersManager.name)
 
   constructor(
-    private readonly usersQueries: UsersQueries,
-    private readonly adminUsersManager: AdminUsersManager
+    public readonly usersQueries: UsersQueries,
+    private readonly adminUsersManager: AdminUsersManager,
+    private readonly notificationsManager: NotificationsManager
   ) {}
 
   async fromUserId(id: number): Promise<UserModel> {
@@ -60,17 +66,12 @@ export class UsersManager {
     return user ? new UserModel(user, removePassword) : null
   }
 
-  async logUser(user: UserModel, password: string, ip: string): Promise<UserModel> {
-    if (user.role === USER_ROLE.LINK) {
-      this.logger.error(`${this.logUser.name} - guest link account ${user} is not authorized to login`)
-      throw new HttpException('Account is not allowed', HttpStatus.FORBIDDEN)
+  async logUser(user: UserModel, password: string, ip: string, scope?: AUTH_SCOPE): Promise<UserModel> {
+    this.validateUserAccess(user, ip)
+    let authSuccess: boolean = await comparePassword(password, user.password)
+    if (!authSuccess && scope) {
+      authSuccess = await this.validateAppPassword(user, password, ip, scope)
     }
-    if (!user.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
-      this.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.logUser.name} - ${e}`))
-      this.logger.error(`${this.logUser.name} - user account *${user.login}* is locked`)
-      throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
-    }
-    const authSuccess: boolean = await comparePassword(password, user.password)
     this.updateAccesses(user, ip, authSuccess).catch((e: Error) => this.logger.error(`${this.logUser.name} - ${e}`))
     if (authSuccess) {
       await user.makePaths()
@@ -80,14 +81,28 @@ export class UsersManager {
     return null
   }
 
-  async me(authUser: UserModel): Promise<{ user: Omit<UserModel, 'password'> }> {
+  validateUserAccess(user: UserModel, ip: string) {
+    if (user.role === USER_ROLE.LINK) {
+      this.logger.error(`${this.validateUserAccess.name} - guest link account ${user} is not authorized to login`)
+      throw new HttpException('Account is not allowed', HttpStatus.FORBIDDEN)
+    }
+    if (!user.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
+      this.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.validateUserAccess.name} - ${e}`))
+      this.logger.error(`${this.validateUserAccess.name} - user account *${user.login}* is locked`)
+      this.notifyAccountLocked(user, ip)
+      throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
+    }
+  }
+
+  async me(authUser: UserModel): Promise<Omit<LoginResponseDto, 'token'>> {
     const user = await this.fromUserId(authUser.id)
     if (!user) {
-      throw new HttpException(`User *${authUser.login} (${authUser.id}) not found`, HttpStatus.NOT_FOUND)
+      this.logger.warn(`User *${authUser.login} (${authUser.id}) not found`)
+      throw new HttpException(`User not found`, HttpStatus.NOT_FOUND)
     }
     user.impersonated = !!authUser.impersonatedFromId
     user.clientId = authUser.clientId
-    return { user: user }
+    return { user: user, server: serverConfig }
   }
 
   async compareUserPassword(userId: number, password: string): Promise<boolean> {
@@ -101,7 +116,7 @@ export class UsersManager {
     }
   }
 
-  async updatePassword(user: UserModel, userPasswordDto: UserPasswordDto) {
+  async updatePassword(user: UserModel, userPasswordDto: UserUpdatePasswordDto) {
     const r = await this.usersQueries.selectUserProperties(user.id, ['password'])
     if (!r) {
       throw new HttpException('Unable to check password', HttpStatus.NOT_FOUND)
@@ -122,11 +137,11 @@ export class UsersManager {
   }
 
   async updateAvatar(req: FastifyAuthenticatedRequest) {
-    const part: MultipartFile = await req.file({ limits: { fileSize: this.maxAvatarUploadSize } })
+    const part: MultipartFile = await req.file({ limits: { fileSize: USER_AVATAR_MAX_UPLOAD_SIZE } })
     if (!part.mimetype.startsWith('image/')) {
       throw new HttpException('Unsupported file type', HttpStatus.BAD_REQUEST)
     }
-    const dstPath = path.join(req.user.tmpPath, this.userAvatarFileName)
+    const dstPath = path.join(req.user.tmpPath, USER_AVATAR_FILE_NAME)
     try {
       await pipeline(part.file, createWriteStream(dstPath))
     } catch (e) {
@@ -138,15 +153,29 @@ export class UsersManager {
       throw new HttpException('Image is too large (5MB max)', HttpStatus.PAYLOAD_TOO_LARGE)
     }
     try {
-      await moveFiles(dstPath, path.join(req.user.homePath, this.userAvatarFileName), true)
+      await moveFiles(dstPath, path.join(req.user.homePath, USER_AVATAR_FILE_NAME), true)
     } catch (e) {
       this.logger.error(`${this.updateAvatar.name} - ${e}`)
       throw new HttpException('Unable to create avatar', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
-  async updateAccesses(user: UserModel, ip: string, success: boolean) {
-    const passwordAttempts = success ? 0 : Math.min(user.passwordAttempts + 1, USER_MAX_PASSWORD_ATTEMPTS)
+  async updateSecrets(userId: number, secrets: UserSecrets) {
+    const userSecrets = await this.usersQueries.getUserSecrets(userId)
+    const updatedSecrets = { ...userSecrets, ...secrets }
+    if (!(await this.usersQueries.updateUserOrGuest(userId, { secrets: updatedSecrets }))) {
+      throw new HttpException('Unable to update secrets', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+
+  async updateAccesses(user: UserModel, ip: string, success: boolean, isAuthTwoFa = false) {
+    let passwordAttempts: number
+    if (!isAuthTwoFa && configuration.auth.mfa.totp.enabled && user.twoFaEnabled) {
+      // Do not reset password attempts if the login still requires 2FA validation
+      passwordAttempts = user.passwordAttempts
+    } else {
+      passwordAttempts = success ? 0 : Math.min(user.passwordAttempts + 1, USER_MAX_PASSWORD_ATTEMPTS)
+    }
     await this.usersQueries.updateUserOrGuest(user.id, {
       lastAccess: user.currentAccess,
       currentAccess: new Date(),
@@ -160,13 +189,13 @@ export class UsersManager {
   async getAvatar(userLogin: string, generate: true, generateIsNotExists?: boolean): Promise<undefined>
   async getAvatar(userLogin: string, generate?: false, generateIsNotExists?: boolean): Promise<[path: string, mime: string]>
   async getAvatar(userLogin: string, generate: boolean = false, generateIsNotExists?: boolean): Promise<[path: string, mime: string]> {
-    const avatarPath = path.join(UserModel.getHomePath(userLogin), this.userAvatarFileName)
+    const avatarPath = path.join(UserModel.getHomePath(userLogin), USER_AVATAR_FILE_NAME)
     const avatarExists = await isPathExists(avatarPath)
     if (!avatarExists && generateIsNotExists) {
       generate = true
     }
     if (!generate) {
-      return [avatarExists ? avatarPath : this.defaultAvatarFilePath, avatarExists ? pngMimeType : svgMimeType]
+      return [avatarExists ? avatarPath : USER_DEFAULT_AVATAR_FILE_PATH, avatarExists ? pngMimeType : svgMimeType]
     }
     if (!(await isPathExists(UserModel.getHomePath(userLogin)))) {
       throw new HttpException(`Home path for user *${userLogin}* does not exist`, HttpStatus.FORBIDDEN)
@@ -188,9 +217,74 @@ export class UsersManager {
     }
   }
 
-  async getAvatarBase64(userLogin: string): Promise<string> {
-    const userAvatarPath = path.join(UserModel.getHomePath(userLogin), this.userAvatarFileName)
-    return convertImageToBase64((await isPathExists(userAvatarPath)) ? userAvatarPath : this.defaultAvatarFilePath)
+  async listAppPasswords(user: UserModel): Promise<Omit<UserAppPassword, 'password'>[]> {
+    const secrets = await this.usersQueries.getUserSecrets(user.id)
+    if (Array.isArray(secrets.appPasswords)) {
+      // remove passwords from response
+      return secrets.appPasswords.map(({ password, ...rest }: UserAppPassword) => rest)
+    }
+    return []
+  }
+
+  async generateAppPassword(user: UserModel, userAppPasswordDto: UserAppPasswordDto): Promise<UserAppPassword> {
+    const secrets = await this.usersQueries.getUserSecrets(user.id)
+    const slugName = createLightSlug(userAppPasswordDto.name)
+    if (Array.isArray(secrets.appPasswords) && secrets.appPasswords.find((p: UserAppPassword) => p.name === slugName)) {
+      throw new HttpException('Name already used', HttpStatus.BAD_REQUEST)
+    }
+    secrets.appPasswords = Array.isArray(secrets.appPasswords) ? secrets.appPasswords : []
+    const clearPassword = genPassword(24)
+    const appPassword: UserAppPassword = {
+      name: createLightSlug(userAppPasswordDto.name),
+      app: userAppPasswordDto.app,
+      expiration: userAppPasswordDto.expiration,
+      password: await hashPassword(clearPassword),
+      createdAt: new Date(),
+      currentIp: null,
+      currentAccess: null,
+      lastIp: null,
+      lastAccess: null
+    }
+    secrets.appPasswords.unshift(appPassword)
+    if (!(await this.usersQueries.updateUserOrGuest(user.id, { secrets: secrets }))) {
+      throw new HttpException('Unable to update app passwords', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+    // return clear password only once
+    return { ...appPassword, password: clearPassword }
+  }
+
+  async deleteAppPassword(user: UserModel, passwordName: string): Promise<void> {
+    const secrets = await this.usersQueries.getUserSecrets(user.id)
+    if (!Array.isArray(secrets.appPasswords) || !secrets.appPasswords.find((p: UserAppPassword) => p.name === passwordName)) {
+      throw new HttpException('App password not found', HttpStatus.NOT_FOUND)
+    }
+    secrets.appPasswords = secrets.appPasswords.filter((p: UserAppPassword) => p.name !== passwordName)
+    if (!(await this.usersQueries.updateUserOrGuest(user.id, { secrets: secrets }))) {
+      throw new HttpException('Unable to delete app password', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+
+  async validateAppPassword(user: UserModel, password: string, ip: string, scope: AUTH_SCOPE): Promise<boolean> {
+    if (!scope || !user.haveRole(USER_ROLE.USER)) return false
+    const secrets = await this.usersQueries.getUserSecrets(user.id)
+    if (!Array.isArray(secrets.appPasswords)) return false
+    for (const p of secrets.appPasswords) {
+      if (p.app !== scope) continue
+      const expMs = p.expiration ? new Date(p.expiration) : null
+      if (p.expiration && new Date() > expMs) continue // expired
+      if (await comparePassword(password, p.password)) {
+        p.lastAccess = p.currentAccess
+        p.currentAccess = new Date()
+        p.lastIp = p.currentIp
+        p.currentIp = ip
+        // update accesses
+        this.usersQueries
+          .updateUserOrGuest(user.id, { secrets: secrets })
+          .catch((e: Error) => this.logger.error(`${this.validateAppPassword.name} - ${e}`))
+        return true
+      }
+    }
+    return false
   }
 
   setOnlineStatus(user: JwtIdentityPayload, onlineStatus: USER_ONLINE_STATUS) {
@@ -407,5 +501,16 @@ export class UsersManager {
 
   searchMembers(user: UserModel, searchMembersDto: SearchMembersDto): Promise<Member[]> {
     return this.usersQueries.searchUsersOrGroups(searchMembersDto, user.id)
+  }
+
+  private notifyAccountLocked(user: UserModel, ip: string) {
+    this.notificationsManager
+      .sendEmailNotification([user], {
+        app: NOTIFICATION_APP.AUTH_LOCKED,
+        event: NOTIFICATION_APP_EVENT.AUTH_LOCKED[ACTION.DELETE],
+        element: null,
+        url: ip
+      })
+      .catch((e: Error) => this.logger.error(`${this.validateUserAccess.name} - ${e}`))
   }
 }

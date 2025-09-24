@@ -16,6 +16,7 @@ import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import * as filesUtilsModule from '../../files/utils/files'
 import { fileName, isPathExists } from '../../files/utils/files'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { MEMBER_TYPE } from '../constants/member'
 import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_ROLE } from '../constants/user'
 import { CreateUserDto } from '../dto/create-or-update-user.dto'
@@ -36,8 +37,7 @@ jest.mock('../../../common/image', () => {
   const actual = jest.requireActual('../../../common/image')
   return {
     ...actual,
-    generateAvatar: jest.fn(() => Readable.from([Buffer.from('PNGDATA')])),
-    convertImageToBase64: jest.fn(() => Promise.resolve('BASE64_IMAGE'))
+    generateAvatar: jest.fn(() => Readable.from([Buffer.from('PNGDATA')]))
   }
 })
 
@@ -70,6 +70,10 @@ describe(UsersManager.name, () => {
     }
   }
 
+  const notificationsManager = {
+    sendEmailNotification: jest.fn().mockResolvedValue(undefined)
+  }
+
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -77,6 +81,7 @@ describe(UsersManager.name, () => {
         AdminUsersQueries,
         UsersManager,
         UsersQueries,
+        { provide: NotificationsManager, useValue: notificationsManager },
         { provide: AuthManager, useValue: {} },
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
         { provide: Cache, useValue: {} }
@@ -88,7 +93,7 @@ describe(UsersManager.name, () => {
     adminUsersQueries = module.get(AdminUsersQueries)
     usersQueriesService = module.get(UsersQueries)
     userTest = new UserModel(generateUserTest(), false)
-    deleteUserDto = { deleteSpace: true } satisfies DeleteUserDto
+    deleteUserDto = { deleteSpace: true, isGuest: false } satisfies DeleteUserDto
   })
 
   afterEach(() => jest.restoreAllMocks())
@@ -273,12 +278,6 @@ describe(UsersManager.name, () => {
     await expect(usersManager.getAvatar(userTest.login, true)).rejects.toThrow('Unable to create avatar')
     usersManager.findUser = jest.fn().mockResolvedValue(null)
     await expect(usersManager.getAvatar(userTest.login, true)).rejects.toThrow('avatar not found')
-    const s1 = await usersManager.getAvatarBase64(userTest.login)
-    expect(s1).toBe('BASE64_IMAGE')
-    ;(imageModule.convertImageToBase64 as jest.Mock).mockClear()
-    const s2 = await usersManager.getAvatarBase64('non-existent-login')
-    expect(s2).toBe('BASE64_IMAGE')
-    expect(imageModule.convertImageToBase64).toHaveBeenCalledWith(expect.stringMatching(/avatar\.svg$/))
   })
 
   it('updateAvatar branches: mime error, stream error, truncated, move fail, success', async () => {

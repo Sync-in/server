@@ -1,0 +1,68 @@
+<!--
+  ~ Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+  ~ This file is part of Sync-in | The open source file sync and share solution
+  ~ See the LICENSE file for licensing details
+  -->
+<div class="modal-header align-items-center justify-content-center">
+  <h4 class="modal-title">
+    <fa-icon [icon]="icons.faLock" class="me-2"></fa-icon>
+    @if (withTwoFaEnabled) {
+      <span l10nTranslate>Two-Factor Authentication</span>
+    } @else {
+      <span l10nTranslate>Password Authentication</span>
+    }
+  </h4>
+</div>
+<div class="modal-body modal-auth-verify-2fa">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <p [class.text-danger]="hasError" class="d-flex justify-content-center align-items-center mb-3" l10nTranslate>
+        @if (hasError) {
+          {{ hasError }}
+        } @else if (withPassword) {
+          Enter your password
+        } @else {
+          Valid with your TOTP code
+        }
+      </p>
+      <form (ngSubmit)="onSubmit()" [formGroup]="twoFaForm">
+        @if (withPassword) {
+          <div class="mb-4">
+            <app-input-password id="password"
+                                [password]="twoFaForm.value.password"
+                                (passwordChange)="updatePassword($event)"
+                                [focus]="true"
+                                [centered]="true"
+                                placeholder="••••••••">
+            </app-input-password>
+          </div>
+        }
+        @if (withTwoFaEnabled) {
+          @if (withPassword) {
+            <div class="text-align-center mb-3" l10nTranslate>Valid with your TOTP code</div>
+          }
+          <div class="mb-3">
+            <input
+              appAutofocus
+              [autoFocus]="!withPassword"
+              [autoSelect]="!withPassword"
+              type="text"
+              [maxlength]=twoFaCodelength
+              class="form-control text-center fs-4"
+              formControlName="totpCode"
+              placeholder="••••••"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              name="totp"
+            />
+          </div>
+        }
+        <div class="d-grid gap-2">
+          <button type="submit" [disabled]="twoFaForm.invalid || submitted" class="btn btn-primary" l10nTranslate>Confirm</button>
+          <button type="button" (click)="onClose()" class="btn btn-secondary" l10nTranslate>Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+

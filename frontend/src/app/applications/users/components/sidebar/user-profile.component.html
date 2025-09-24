@@ -5,7 +5,7 @@
   -->
 
 <!-- The user image in the menu -->
-<div class="d-flex flex-column" style="height: 92vh">
+<div class="d-flex flex-column 100vh">
   <div class="sidebar-component-title">
     <div class="d-flex flex-fill justify-content-between">
       @if (!user?.isLink) {
@@ -51,20 +51,20 @@
       </select>
     </div>
   </div>
-  <div class="d-flex flex-column mt-auto fs-xs">
+  <div class="d-none d-md-block hide-on-small-height position-absolute w-100 fs-xs" style="bottom: 46px">
     <hr />
-    <div class="d-flex flex-column mx-3 mt-auto">
+    <div class="d-flex flex-column mx-3">
       <div class="mb-1">
         <img alt="" height="26" [src]="this.layout.switchTheme.getValue() === themeLight ? logoUrl: logoDarkUrl">
       </div>
       <div>
-        <a href="https://sync-in.com" target="_blank">Website</a>
+        <a class="link-primary cursor-pointer" (click)="openLink('website')" l10nTranslate>Website</a>
         <span>&nbsp;|&nbsp;</span>
-        <a href="https://sync-in.com/docs" target="_blank">Documentation</a>
+        <a class="link-primary cursor-pointer" (click)="openLink('docs')" l10nTranslate>Documentation</a>
         <span>&nbsp;|&nbsp;</span>
-        <a href="https://github.com/Sync-in/server/releases" target="_blank">Versions</a>
+        <a class="link-primary cursor-pointer" (click)="openLink('versions')" l10nTranslate>Versions</a>
         <span>&nbsp;|&nbsp;</span>
-        <a href="https://sync-in.com/support" target="_blank"> 💛</a>
+        <a class="link-primary cursor-pointer" (click)="openLink('support')"> 💛</a>
       </div>
     </div>
   </div>

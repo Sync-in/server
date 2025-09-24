@@ -13,11 +13,13 @@ import { BasicStrategy } from 'passport-http'
 import { SERVER_NAME } from '../../app.constants'
 import { UserModel } from '../../applications/users/models/user.model'
 import { Cache } from '../../infrastructure/cache/services/cache.service'
+import { AUTH_SCOPE } from '../constants/scope'
 import { AuthMethod } from '../models/auth-method'
 
 @Injectable()
 export class AuthBasicStrategy extends PassportStrategy(BasicStrategy, 'basic') implements AbstractStrategy {
-  static readonly CACHE_TTL = 900
+  private readonly CACHE_TTL = 900
+  private readonly CACHE_KEY_PREFIX = 'auth-webdav'
 
   constructor(
     private readonly authMethod: AuthMethod,
@@ -29,7 +31,7 @@ export class AuthBasicStrategy extends PassportStrategy(BasicStrategy, 'basic') 
 
   async validate(req: FastifyRequest, loginOrEmail: string, password: string): Promise<Omit<UserModel, 'password'> | null> {
     this.logger.assign({ user: loginOrEmail })
-    const authBasicUser = `auth-webdav-${req.headers['authorization'].split(' ').at(-1).toLowerCase()}`
+    const authBasicUser = `${this.CACHE_KEY_PREFIX}-${req.headers['authorization'].split(' ').at(-1).toLowerCase()}`
     const userFromCache: any = await this.cache.get(authBasicUser)
     if (userFromCache === null) {
       // not authorized
@@ -37,14 +39,15 @@ export class AuthBasicStrategy extends PassportStrategy(BasicStrategy, 'basic') 
     }
     if (userFromCache !== undefined) {
       // cached
+      // warning: plainToInstance do not use constructor to instantiate class
       return plainToInstance(UserModel, userFromCache)
     }
-    const userFromDB: UserModel = await this.authMethod.validateUser(loginOrEmail, password, req.ip)
+    const userFromDB: UserModel = await this.authMethod.validateUser(loginOrEmail, password, req.ip, AUTH_SCOPE.WEBDAV)
     if (userFromDB !== null) {
       userFromDB.removePassword()
     }
     const userToCache: Record<string, any> | null = userFromDB ? instanceToPlain(userFromDB, { excludePrefixes: ['_'] }) : null
-    this.cache.set(authBasicUser, userToCache, AuthBasicStrategy.CACHE_TTL).catch((e: Error) => this.logger.error(`${this.validate.name} - ${e}`))
+    this.cache.set(authBasicUser, userToCache, this.CACHE_TTL).catch((e: Error) => this.logger.error(`${this.validate.name} - ${e}`))
     return userFromDB
   }
 }

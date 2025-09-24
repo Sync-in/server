@@ -8,12 +8,13 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { Client, ClientOptions, Entry, InvalidCredentialsError } from 'ldapts'
 import { CONNECT_ERROR_CODE } from '../../../app.constants'
 import { USER_ROLE } from '../../../applications/users/constants/user'
-import { CreateUserDto, UpdateUserDto } from '../../../applications/users/dto/create-or-update-user.dto'
+import type { CreateUserDto, UpdateUserDto } from '../../../applications/users/dto/create-or-update-user.dto'
 import { UserModel } from '../../../applications/users/models/user.model'
 import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service'
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import { comparePassword, splitFullName } from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
+import type { AUTH_SCOPE } from '../../constants/scope'
 import { AuthMethod } from '../../models/auth-method'
 
 type LdapUserEntry = Entry & { uid: string; mail: string; cn: string }
@@ -29,8 +30,8 @@ export class AuthMethodLdapService implements AuthMethod {
     private readonly adminUsersManager: AdminUsersManager
   ) {}
 
-  async validateUser(loginOrEmail: string, password: string, ip?: string): Promise<UserModel> {
-    let user = await this.usersManager.findUser(loginOrEmail, false)
+  async validateUser(loginOrEmail: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
+    let user: UserModel = await this.usersManager.findUser(loginOrEmail, false)
     if (user) {
       if (user.isGuest) {
         // allow guests to be authenticated from db and check if the current user is defined as active
@@ -43,8 +44,18 @@ export class AuthMethodLdapService implements AuthMethod {
     }
     const entry: false | LdapUserEntry = await this.checkAuth(loginOrEmail, password)
     if (entry === false) {
+      // LDAP auth failed
       if (user) {
-        this.usersManager.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.validateUser.name} : ${e}`))
+        let authSuccess = false
+        if (scope) {
+          // try user app password
+          authSuccess = await this.usersManager.validateAppPassword(user, password, ip, scope)
+        }
+        this.usersManager.updateAccesses(user, ip, authSuccess).catch((e: Error) => this.logger.error(`${this.validateUser.name} : ${e}`))
+        if (authSuccess) {
+          // logged with app password
+          return user
+        }
       }
       return null
     } else if (!entry.mail || !entry.uid) {

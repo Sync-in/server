@@ -13,10 +13,9 @@ import { isPathExists, moveFiles, removeFiles } from '../../files/utils/files'
 import { GROUP_TYPE } from '../constants/group'
 import { USER_ROLE } from '../constants/user'
 import type { CreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
-import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto'
-import type { AdminDeleteUserDto, DeleteUserDto } from '../dto/delete-user.dto'
+import type { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto'
+import type { DeleteUserDto } from '../dto/delete-user.dto'
 import type { SearchMembersDto } from '../dto/search-members.dto'
-import type { UserPasswordDto } from '../dto/user-password.dto'
 import type { AdminGroup } from '../interfaces/admin-group.interface'
 import type { AdminUser } from '../interfaces/admin-user.interface'
 import type { GroupBrowse } from '../interfaces/group-browse.interface'
@@ -185,14 +184,14 @@ export class AdminUsersManager {
     }
   }
 
-  async deleteUserFromAdmin(admin: UserModel, userId: number, adminDeleteUserDto: AdminDeleteUserDto): Promise<void> {
-    // check admin password
-    if (!(await this.adminQueries.usersQueries.compareUserPassword(admin.id, adminDeleteUserDto.adminPassword))) {
-      throw new HttpException('Bad password', HttpStatus.BAD_REQUEST)
-    }
+  async deleteUserOrGuestFromAdmin(userId: number, deleteUserDto: DeleteUserDto): Promise<void> {
     const userToDelete: UserModel = this.checkUser(await this.adminQueries.usersQueries.from(userId))
+    if (userToDelete.isGuest !== deleteUserDto.isGuest) {
+      throw new HttpException('User mismatch', HttpStatus.BAD_REQUEST)
+    }
     await this.deleteUserOrGuest(userToDelete.id, userToDelete.login, {
-      deleteSpace: adminDeleteUserDto.deleteSpace
+      deleteSpace: deleteUserDto.isGuest ? true : deleteUserDto.deleteSpace,
+      isGuest: deleteUserDto.isGuest
     } satisfies DeleteUserDto)
   }
 
@@ -215,12 +214,6 @@ export class AdminUsersManager {
       throw new HttpException('Guest must have at least one manager', HttpStatus.BAD_REQUEST)
     }
     return this.updateUserOrGuest(guestId, updateGuestDto, USER_ROLE.GUEST)
-  }
-
-  async deleteGuest(guestId: number): Promise<void> {
-    // guest has no space but a temporary directory
-    const guest: GuestUser = await this.getGuest(guestId)
-    return this.deleteUserOrGuest(guest.id, guest.login, { deleteSpace: true, isGuest: true })
   }
 
   async browseGroups(name?: string, type: GROUP_TYPE = GROUP_TYPE.USER): Promise<GroupBrowse> {
@@ -309,13 +302,9 @@ export class AdminUsersManager {
     return this.adminQueries.usersQueries.searchUsersOrGroups(searchMembersDto)
   }
 
-  async impersonateUser(admin: UserModel, userId: number, adminPassword: UserPasswordDto, res: FastifyReply): Promise<LoginResponseDto> {
-    // check admin password
+  async impersonateUser(admin: UserModel, userId: number, res: FastifyReply): Promise<LoginResponseDto> {
     if (admin.id === userId) {
       throw new HttpException('You are already logged in', HttpStatus.BAD_REQUEST)
-    }
-    if (!(await this.adminQueries.usersQueries.compareUserPassword(admin.id, adminPassword.password))) {
-      throw new HttpException('Bad password', HttpStatus.BAD_REQUEST)
     }
     const user: UserModel = this.checkUser(await this.adminQueries.usersQueries.from(userId))
     user.impersonatedFromId = admin.id

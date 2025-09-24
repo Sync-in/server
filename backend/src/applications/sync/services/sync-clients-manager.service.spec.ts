@@ -12,12 +12,14 @@ import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
 import { AuthMethod } from '../../../authentication/models/auth-method'
 import { AuthManager } from '../../../authentication/services/auth-manager.service'
+import { AuthMethod2FA } from '../../../authentication/services/auth-methods/auth-method-two-fa.service'
 import * as commonFunctions from '../../../common/functions'
 import * as commonShared from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { isPathExists } from '../../files/utils/files'
-import { UsersQueries } from '../../users/services/users-queries.service'
+import { UserModel } from '../../users/models/user.model'
+import { UsersManager } from '../../users/services/users-manager.service'
 import { CLIENT_AUTH_TYPE, CLIENT_TOKEN_EXPIRED_ERROR } from '../constants/auth'
 import { APP_STORE_DIRNAME, APP_STORE_REPOSITORY } from '../constants/store'
 import { SYNC_CLIENT_TYPE } from '../constants/sync'
@@ -53,7 +55,7 @@ describe(SyncClientsManager.name, () => {
   let http: { axiosRef: jest.Mock }
   let authManager: { setCookies: jest.Mock; getTokens: jest.Mock }
   let authMethod: { validateUser: jest.Mock }
-  let usersQueries: { from: jest.Mock; updateUserOrGuest: jest.Mock }
+  let usersManager: { fromUserId: jest.Mock; updateAccesses: jest.Mock }
   let syncQueries: {
     getOrCreateClient: jest.Mock
     deleteClient: jest.Mock
@@ -76,23 +78,24 @@ describe(SyncClientsManager.name, () => {
     info: { type: 'desktop' },
     ...overrides
   })
-  const makeUser = (overrides: any = {}) => ({
-    id: 1,
-    isActive: true,
-    login: 'u',
-    email: 'u@x',
-    firstName: 'U',
-    lastName: 'X',
-    role: 1,
-    permissions: 'desktop',
-    ...overrides
-  })
+  const makeUser = (overrides: any = {}) =>
+    new UserModel({
+      id: 1,
+      isActive: true,
+      login: 'u',
+      email: 'u@x',
+      firstName: 'U',
+      lastName: 'X',
+      role: 1,
+      permissions: 'desktop',
+      ...overrides
+    })
 
   beforeAll(async () => {
     http = { axiosRef: jest.fn() }
     authManager = { setCookies: jest.fn(), getTokens: jest.fn() }
     authMethod = { validateUser: jest.fn() }
-    usersQueries = { from: jest.fn(), updateUserOrGuest: jest.fn() }
+    usersManager = { fromUserId: jest.fn(), updateAccesses: jest.fn() }
     syncQueries = {
       getOrCreateClient: jest.fn(),
       deleteClient: jest.fn(),
@@ -114,9 +117,10 @@ describe(SyncClientsManager.name, () => {
         { provide: Cache, useValue: cacheMock },
         { provide: HttpService, useValue: http },
         { provide: SyncQueries, useValue: syncQueries },
-        { provide: UsersQueries, useValue: usersQueries },
+        { provide: UsersManager, useValue: usersManager },
         { provide: AuthManager, useValue: authManager },
-        { provide: AuthMethod, useValue: authMethod }
+        { provide: AuthMethod, useValue: authMethod },
+        { provide: AuthMethod2FA, useValue: {} }
       ]
     }).compile()
 
@@ -139,7 +143,7 @@ describe(SyncClientsManager.name, () => {
     ;(isPathExists as jest.Mock).mockReset()
     ;(fs.readFile as jest.Mock).mockReset()
     ;(syncQueries.updateClientInfo as jest.Mock).mockResolvedValue(undefined)
-    ;(usersQueries.updateUserOrGuest as jest.Mock).mockResolvedValue(undefined)
+    ;(usersManager.updateAccesses as jest.Mock).mockResolvedValue(undefined)
     ;(service as any).cache = cacheMock
     cacheMock.get.mockResolvedValue(undefined)
     cacheMock.get.mockClear()
@@ -222,7 +226,7 @@ describe(SyncClientsManager.name, () => {
     it('should forbid when owner user does not exist', async () => {
       syncQueries.getClient.mockResolvedValue(makeClient())
       syncQueries.updateClientInfo.mockRejectedValueOnce(new Error('update-fails')) // silence expected
-      usersQueries.from.mockResolvedValue(null)
+      usersManager.fromUserId.mockResolvedValue(null)
       await expect(service.authenticate(CLIENT_AUTH_TYPE.TOKEN, dto as any, ip, {} as FastifyReply)).rejects.toMatchObject({
         status: HttpStatus.FORBIDDEN,
         response: 'User does not exist'
@@ -231,7 +235,7 @@ describe(SyncClientsManager.name, () => {
 
     it('should forbid when owner account is inactive', async () => {
       syncQueries.getClient.mockResolvedValue(makeClient())
-      usersQueries.from.mockResolvedValue(makeUser({ isActive: false }))
+      usersManager.fromUserId.mockResolvedValue(makeUser({ isActive: false }))
       await expect(service.authenticate(CLIENT_AUTH_TYPE.TOKEN, dto as any, ip, {} as FastifyReply)).rejects.toMatchObject({
         status: HttpStatus.FORBIDDEN,
         response: 'Account suspended or not authorized'
@@ -241,7 +245,7 @@ describe(SyncClientsManager.name, () => {
     it('should forbid when owner lacks DESKTOP_APP permission', async () => {
       mockHavePermission = false
       syncQueries.getClient.mockResolvedValue(makeClient())
-      usersQueries.from.mockResolvedValue(makeUser({ permissions: '', role: 999 }))
+      usersManager.fromUserId.mockResolvedValue(makeUser({ permissions: '', role: 999 }))
       await expect(service.authenticate(CLIENT_AUTH_TYPE.TOKEN, dto as any, ip, {} as FastifyReply)).rejects.toMatchObject({
         status: HttpStatus.FORBIDDEN,
         response: 'Missing permission'
@@ -250,8 +254,8 @@ describe(SyncClientsManager.name, () => {
 
     it('should perform COOKIE authentication and renew client token when needed', async () => {
       syncQueries.getClient.mockResolvedValue(makeClient({ ownerId: 7 }))
-      usersQueries.from.mockResolvedValue(makeUser({ id: 7, login: 'john', email: 'john@doe', firstName: 'John', lastName: 'Doe' }))
-      usersQueries.updateUserOrGuest.mockRejectedValueOnce(new Error('update-access-fail')) // silence expected
+      usersManager.fromUserId.mockResolvedValue(makeUser({ id: 7, login: 'john', email: 'john@doe', firstName: 'John', lastName: 'Doe' }))
+      usersManager.updateAccesses.mockRejectedValueOnce(new Error('update-access-fail')) // silence expected
       authManager.setCookies.mockResolvedValue({ access_token: 'a', refresh_token: 'b' })
       jest.spyOn(service, 'renewTokenAndExpiration').mockResolvedValue('new-client-token')
 
@@ -265,7 +269,7 @@ describe(SyncClientsManager.name, () => {
 
     it('should perform TOKEN authentication and not renew when not needed', async () => {
       syncQueries.getClient.mockResolvedValue(makeClient({ ownerId: 8 }))
-      usersQueries.from.mockResolvedValue(makeUser({ id: 8, login: 'alice', email: 'alice@doe', firstName: 'Alice' }))
+      usersManager.fromUserId.mockResolvedValue(makeUser({ id: 8, login: 'alice', email: 'alice@doe', firstName: 'Alice' }))
       authManager.getTokens.mockResolvedValue({ access_token: 'x', refresh_token: 'y' })
       jest.spyOn(service, 'renewTokenAndExpiration').mockResolvedValue(undefined)
 
@@ -276,7 +280,7 @@ describe(SyncClientsManager.name, () => {
 
     it('should throw when auth type is unknown (else branch)', async () => {
       syncQueries.getClient.mockResolvedValue(makeClient({ ownerId: 9 }))
-      usersQueries.from.mockResolvedValue(makeUser({ id: 9, login: 'bob', email: 'bob@doe', firstName: 'Bob' }))
+      usersManager.fromUserId.mockResolvedValue(makeUser({ id: 9, login: 'bob', email: 'bob@doe', firstName: 'Bob' }))
       jest.spyOn(service, 'renewTokenAndExpiration').mockResolvedValue(undefined)
       await expect(service.authenticate('unknown' as any, { clientId: 'cid', token: 'ctok' } as any, ip, {} as FastifyReply)).rejects.toBeInstanceOf(
         TypeError
@@ -307,9 +311,9 @@ describe(SyncClientsManager.name, () => {
     it('should renew token and return new value when close to expiration', async () => {
       ;(commonShared.currentTimeStamp as jest.Mock).mockReturnValue(1_000)
       ;(commonFunctions.convertHumanTimeToSeconds as jest.Mock).mockImplementation((v: string) =>
-        v === '90d' ? 90 * 24 * 3600 : v === '180d' ? 180 * 24 * 3600 : 0
+        v === '60d' ? 60 * 24 * 3600 : v === '120d' ? 120 * 24 * 3600 : 0
       )
-      const client = { id: 'cid', tokenExpiration: 1_000 + 90 * 24 * 3600 - 1 } as any
+      const client = { id: 'cid', tokenExpiration: 1_000 + 60 * 24 * 3600 - 1 } as any
       syncQueries.renewClientTokenAndExpiration.mockResolvedValue(undefined)
 
       const r = await service.renewTokenAndExpiration(client, owner)

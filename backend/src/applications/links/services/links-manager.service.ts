@@ -14,9 +14,10 @@ import { SendFile } from '../../files/utils/send-file'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service'
-import { UserPasswordDto } from '../../users/dto/user-password.dto'
+import { UserPasswordDto } from '../../users/dto/user-properties.dto'
 import { UserModel } from '../../users/models/user.model'
 import { UsersManager } from '../../users/services/users-manager.service'
+import { getAvatarBase64 } from '../../users/utils/avatar'
 import { LINK_ERROR } from '../constants/links'
 import { LinkAsUser } from '../interfaces/link-guest.interface'
 import { SpaceLink } from '../interfaces/link-space.interface'
@@ -41,7 +42,7 @@ export class LinksManager {
     }
     const spaceLink: SpaceLink = ok ? await this.linksQueries.spaceLink(uuid) : null
     if (spaceLink?.owner?.login) {
-      spaceLink.owner.avatar = await this.usersManager.getAvatarBase64(spaceLink.owner.login)
+      spaceLink.owner.avatar = await getAvatarBase64(spaceLink.owner.login)
       // for security reasons
       delete spaceLink.owner.login
     }

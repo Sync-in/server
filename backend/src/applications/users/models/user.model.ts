@@ -7,10 +7,12 @@
 import { Exclude, Expose } from 'class-transformer'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { popFromObject } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { GUEST_PERMISSION, USER_PATH, USER_PERMISSION, USER_PERMS_SEP, USER_ROLE } from '../constants/user'
 import type { Owner } from '../interfaces/owner.interface'
+import type { UserSecrets } from '../interfaces/user-secrets.interface'
 import type { User } from '../schemas/user.interface'
 
 export class UserModel implements User {
@@ -21,12 +23,12 @@ export class UserModel implements User {
   lastName: string
   role: number
   language: string
+  isActive: boolean
   notification: number
   onlineStatus: number
   permissions: string
   storageUsage: number
   storageQuota: number
-  isActive: boolean
   passwordAttempts: number
   currentIp: string
   lastIp: string
@@ -36,6 +38,8 @@ export class UserModel implements User {
   // exclusions
   @Exclude()
   password: string
+  @Exclude()
+  secrets: UserSecrets
   @Exclude()
   // only used on backend
   impersonatedFromId?: number
@@ -49,16 +53,12 @@ export class UserModel implements User {
   avatarBase64?: string
   // permissions as a list
   applications: string[] = []
-  private _homePath: string
-  private _filesPath: string
-  private _trashPath: string
-  private _tmpPath: string
-  private _tasksPath: string
-
   @Exclude({ toPlainOnly: true })
   exp?: number // refresh token expiration needed to refresh
 
-  constructor(props: Partial<User> & { exp?: number }, removePassword = true) {
+  constructor(props: Partial<User> & { exp?: number; twoFaEnabled?: boolean }, removePassword = true) {
+    // User model can be instantiated with data from the database or from a token payload
+    this.initSecrets(props)
     Object.assign(this, props)
     if (removePassword) {
       // always remove the password field from model for obvious security reasons
@@ -70,18 +70,37 @@ export class UserModel implements User {
     this.setProfile()
   }
 
-  toString(): string {
-    return `*User <${this.login}> (${this.id})*`
-  }
+  private _homePath: string
 
-  removePassword() {
-    delete this.password
-  }
-
-  setFullName() {
-    if (!this.fullName) {
-      this.fullName = `${this.firstName || ''} ${this.lastName || ''}`.trim()
+  get homePath(): string {
+    if (this.isLink || this.isGuest) {
+      return (this._homePath ||= path.join(configuration.applications.files.tmpPath, this.isGuest ? 'guests' : 'links', this.login))
     }
+    return (this._homePath ||= path.join(configuration.applications.files.usersPath, this.login))
+  }
+
+  private _filesPath: string
+
+  get filesPath(): string {
+    return (this._filesPath ||= path.join(this.homePath, SPACE_REPOSITORY.FILES))
+  }
+
+  private _trashPath: string
+
+  get trashPath(): string {
+    return (this._trashPath ||= path.join(this.homePath, SPACE_REPOSITORY.TRASH))
+  }
+
+  private _tmpPath: string
+
+  get tmpPath(): string {
+    return (this._tmpPath ||= path.join(this.homePath, USER_PATH.TMP))
+  }
+
+  private _tasksPath: string
+
+  get tasksPath(): string {
+    return (this._tasksPath ||= path.join(this.tmpPath, USER_PATH.TASKS))
   }
 
   @Expose()
@@ -109,27 +128,52 @@ export class UserModel implements User {
     return this.storageQuota !== null && this.storageUsage >= this.storageQuota
   }
 
-  get homePath(): string {
-    if (this.isLink || this.isGuest) {
-      return (this._homePath ||= path.join(configuration.applications.files.tmpPath, this.isGuest ? 'guests' : 'links', this.login))
+  @Expose()
+  get twoFaEnabled(): boolean {
+    return !!this.secrets?.twoFaSecret
+  }
+
+  @Expose()
+  get appPasswords(): number {
+    return this.secrets?.appPasswords?.length || 0
+  }
+
+  static getHomePath(userLogin: string, isGuest = false, isLink = false): string {
+    if (isGuest || isLink) {
+      return path.join(configuration.applications.files.tmpPath, isGuest ? 'guests' : 'links', userLogin)
     }
-    return (this._homePath ||= path.join(configuration.applications.files.usersPath, this.login))
+    return path.join(configuration.applications.files.usersPath, userLogin)
   }
 
-  get filesPath(): string {
-    return (this._filesPath ||= path.join(this.homePath, SPACE_REPOSITORY.FILES))
+  static getFilesPath(userLogin: string): string {
+    return path.join(UserModel.getHomePath(userLogin), SPACE_REPOSITORY.FILES)
   }
 
-  get trashPath(): string {
-    return (this._trashPath ||= path.join(this.homePath, SPACE_REPOSITORY.TRASH))
+  static getTrashPath(userLogin: string): string {
+    return path.join(UserModel.getHomePath(userLogin), SPACE_REPOSITORY.TRASH)
   }
 
-  get tmpPath(): string {
-    return (this._tmpPath ||= path.join(this.homePath, USER_PATH.TMP))
+  static getTasksPath(userLogin: string, isGuest = false, isLink = false): string {
+    return path.join(UserModel.getHomePath(userLogin, isGuest, isLink), USER_PATH.TMP, USER_PATH.TASKS)
   }
 
-  get tasksPath(): string {
-    return (this._tasksPath ||= path.join(this.tmpPath, USER_PATH.TASKS))
+  static getRepositoryPath(userLogin: string, inTrash = false): string {
+    if (inTrash) return UserModel.getTrashPath(userLogin)
+    return UserModel.getFilesPath(userLogin)
+  }
+
+  toString(): string {
+    return `*User <${this.login}> (${this.id})*`
+  }
+
+  removePassword() {
+    delete this.password
+  }
+
+  setFullName() {
+    if (!this.fullName) {
+      this.fullName = `${this.firstName || ''} ${this.lastName || ''}`.trim()
+    }
   }
 
   async makePaths(): Promise<void> {
@@ -159,6 +203,30 @@ export class UserModel implements User {
     return `${initials.f.toUpperCase()}${initials.l.toLowerCase()}`
   }
 
+  havePermission(permission: string): boolean {
+    if (this.isAdmin) {
+      return true
+    }
+    if (permission === USER_PERMISSION.PERSONAL_SPACE && this.isGuest) {
+      return false
+    }
+    return this.applications.indexOf(permission) !== -1
+  }
+
+  haveRole(role: number): boolean {
+    return this.role <= role
+  }
+
+  private initSecrets(props: Partial<UserModel>) {
+    // Remove the `twoFaEnabled` property to avoid conflicts with the current getter when using `plainToClass` with `class-validator`
+    // The `props` variable may be empty when the class is instantiated using `plainToClass`
+    if (props && 'twoFaEnabled' in props) {
+      // Only used when the User model is instantiated from a token payload
+      // Set a `twoFaSecret` property (boolean) on the `secrets` property so that the `twoFaEnabled` getter returns `true`
+      this.secrets = { twoFaSecret: popFromObject('twoFaEnabled', props) }
+    }
+  }
+
   private setProfile() {
     if (this.isLink) {
       this.login = `Link (${this.id})`
@@ -174,43 +242,5 @@ export class UserModel implements User {
       this.applications = this.permissions.split(USER_PERMS_SEP)
     }
     delete this.permissions
-  }
-
-  havePermission(permission: string): boolean {
-    if (this.isAdmin) {
-      return true
-    }
-    if (permission === USER_PERMISSION.PERSONAL_SPACE && this.isGuest) {
-      return false
-    }
-    return this.applications.indexOf(permission) !== -1
-  }
-
-  haveRole(role: number): boolean {
-    return this.role <= role
-  }
-
-  static getHomePath(userLogin: string, isGuest = false, isLink = false): string {
-    if (isGuest || isLink) {
-      return path.join(configuration.applications.files.tmpPath, isGuest ? 'guests' : 'links', userLogin)
-    }
-    return path.join(configuration.applications.files.usersPath, userLogin)
-  }
-
-  static getFilesPath(userLogin: string): string {
-    return path.join(UserModel.getHomePath(userLogin), SPACE_REPOSITORY.FILES)
-  }
-
-  static getTrashPath(userLogin: string): string {
-    return path.join(UserModel.getHomePath(userLogin), SPACE_REPOSITORY.TRASH)
-  }
-
-  static getTasksPath(userLogin: string, isGuest = false, isLink = false): string {
-    return path.join(UserModel.getHomePath(userLogin, isGuest, isLink), USER_PATH.TMP, USER_PATH.TASKS)
-  }
-
-  static getRepositoryPath(userLogin: string, inTrash = false): string {
-    if (inTrash) return UserModel.getTrashPath(userLogin)
-    return UserModel.getFilesPath(userLogin)
   }
 }

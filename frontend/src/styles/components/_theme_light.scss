@@ -344,14 +344,14 @@
     }
   }
 
+  .list-group-item {
+    background-color: lighten($gray-light, 10%);
+    color: $custom-color;
+  }
+
   .profile-page {
     .box {
       background-color: $gray-lighter;
-    }
-
-    .list-group-item {
-      background-color: lighten($gray-light, 10%);
-      color: $custom-color;
     }
   }
 

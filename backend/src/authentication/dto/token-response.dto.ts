@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { IsInt, IsString } from 'class-validator'
+import { IsInt, IsOptional, IsString } from 'class-validator'
 
 export class TokenResponseDto {
   @IsString()
@@ -18,4 +18,8 @@ export class TokenResponseDto {
 
   @IsInt()
   refresh_expiration: number
+
+  @IsOptional()
+  @IsInt()
+  access_2fa_expiration?: number
 }

@@ -142,7 +142,41 @@
                                         placeholder="new password">
                     </app-input-password>
                   </div>
-                  <button (click)="submitPassword()" class="d-flex btn btn-xs btn-primary text-nowrap" type="button" l10nTranslate>Update</button>
+                  <button [disabled]="!newPassword || !oldPassword || newPassword.length < passwordMinLength"
+                          (click)="submitPassword()"
+                          class="d-flex btn btn-xs btn-primary text-nowrap"
+                          type="button" l10nTranslate>Update
+                  </button>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <span class="col-3 align-self-start text-nowrap" l10nTranslate>Security</span>
+                <div class="col-auto">
+                  <div class="fw-500 mb-2" l10nTranslate>Two-Factor Authentication</div>
+                  <button (click)="enable2Fa()"
+                          [disabled]="!store.server().twoFaEnabled"
+                          class="btn btn-xs btn-primary"
+                          type="button" l10nTranslate>
+                    {{user.twoFaEnabled ? 'Reset' : 'Enable'}}
+                  </button>
+                  @if (user.twoFaEnabled) {
+                    <button (click)="disable2Fa()"
+                            [disabled]="!store.server().twoFaEnabled"
+                            class="btn btn-xs btn-danger ms-2"
+                            type="button" l10nTranslate>
+                      Disable
+                    </button>
+                  }
+                  <div class="fw-500 mt-3 mb-2" l10nTranslate>Application Passwords</div>
+                  <button (click)="manageAppPasswords()"
+                          class="btn btn-xs btn-primary me-1"
+                          type="button" l10nTranslate>
+                    @if (user.appPasswords > 0) {
+                      <span l10nTranslate>Manage</span>&nbsp;<span>({{user.appPasswords}})</span>
+                    } @else {
+                      <span l10nTranslate>Generate</span>
+                    }
+                  </button>
                 </div>
               </div>
             }

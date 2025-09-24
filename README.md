@@ -41,6 +41,7 @@ Sync-in fits seamlessly into any environment — from small teams to large enter
 - 🔒 Security & Data Ownership
   - Full control over data security and compliance
   - Designed to protect sensitive documents and prevent unauthorized access
+  - **Multi-Factor Authentication (MFA)**: TOTP (authenticator apps), recovery codes, app passwords
 - 🔑 Advanced User Access Control
   - **Spaces & Shares**: Organize files with fine-grained access permissions
   - Role-based permission system ensuring secure file management

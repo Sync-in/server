@@ -47,9 +47,8 @@ export class SyncMakeDto extends MakeFileDto {
 }
 
 export class SyncCopyMoveDto {
-  @IsDefined()
-  @IsNotEmpty()
   @IsString()
+  @IsNotEmpty()
   destination: string
 
   @IsOptional()
