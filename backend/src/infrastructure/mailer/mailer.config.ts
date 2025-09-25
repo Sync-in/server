@@ -37,7 +37,7 @@ export class MailerConfig {
 
   @IsOptional()
   @IsBoolean()
-  rejectUnauthorized?: boolean = true
+  rejectUnauthorized?: boolean = false
 
   @IsOptional()
   @IsObject()
