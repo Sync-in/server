@@ -5,15 +5,15 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing'
+import { Mocked } from 'jest-mock'
+import { Client, InvalidCredentialsError } from 'ldapts'
 import { CONNECT_ERROR_CODE } from '../../../app.constants'
 import { UserModel } from '../../../applications/users/models/user.model'
 import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service'
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
-import { AuthMethodLdapService } from './auth-method-ldap.service'
-import { configuration } from '../../../configuration/config.environment'
-import { Client, InvalidCredentialsError } from 'ldapts'
-import { Mocked } from 'jest-mock'
 import * as commonFunctions from '../../../common/functions'
+import { configuration } from '../../../configuration/config.environment'
+import { AuthMethodLdapService } from './auth-method-ldap.service'
 
 // Mock ldapts Client to simulate LDAP behaviors
 jest.mock('ldapts', () => {
@@ -102,7 +102,12 @@ describe(AuthMethodLdapService.name, () => {
     authMethodLdapService = module.get<AuthMethodLdapService>(AuthMethodLdapService)
     adminUsersManager = module.get<Mocked<AdminUsersManager>>(AdminUsersManager)
     usersManager = module.get<Mocked<UsersManager>>(UsersManager)
-    configuration.auth.ldap = { servers: ['ldap://localhost:389'], loginAttribute: 'uid', baseDN: 'ou=people,dc=example,dc=org', filter: '' }
+    configuration.auth.ldap = {
+      servers: ['ldap://localhost:389'],
+      attributes: { login: 'uid', email: 'mail' },
+      baseDN: 'ou=people,dc=example,dc=org',
+      filter: ''
+    }
   })
 
   it('should be defined', () => {
@@ -137,15 +142,10 @@ describe(AuthMethodLdapService.name, () => {
     // Phase 2: mismatch between requested login and LDAP returned login
     const existingUser: any = buildUser({ id: 8 })
     usersManager.findUser.mockResolvedValue(existingUser)
-    const originalAttr = configuration.auth.ldap.loginAttribute
-    configuration.auth.ldap.loginAttribute = 'cn'
     mockBindResolve(ldapClient)
     mockSearchEntries(ldapClient, [{ uid: 'jane', cn: 'john', mail: 'jane@example.org' }])
 
-    await expect(authMethodLdapService.validateUser('john', 'pwd')).rejects.toThrow(/account matching error/i)
-
-    // restore the attribute to avoid impacting other tests
-    configuration.auth.ldap.loginAttribute = originalAttr
+    await expect(authMethodLdapService.validateUser('john', 'pwd')).resolves.toEqual(null)
   })
 
   it('should handle invalid LDAP credentials for both existing and unknown users', async () => {
@@ -355,7 +355,7 @@ describe(AuthMethodLdapService.name, () => {
     usersManager.findUser.mockResolvedValue(existingUser)
 
     // Ensure LDAP loginAttribute matches uid for this test (a previous test sets it to 'cn')
-    configuration.auth.ldap.loginAttribute = 'uid'
+    configuration.auth.ldap.attributes.login = 'uid'
 
     setupLdapSuccess([{ uid: 'john', cn: 'John Doe', mail: 'john@example.org' }])
     adminUsersManager.updateUserOrGuest.mockRejectedValue(new Error('db error'))
@@ -378,7 +378,7 @@ describe(AuthMethodLdapService.name, () => {
     // Phase A: LDAP returns an entry but loginAttribute value does not match -> checkAccess returns false (covers return after loop)
     const userA: any = { id: 20, login: 'john', isGuest: false, isActive: true }
     usersManager.findUser.mockResolvedValue(userA)
-    configuration.auth.ldap.loginAttribute = 'uid'
+    configuration.auth.ldap.attributes.login = 'uid'
     ldapClient.bind.mockResolvedValue(undefined)
     // Non-matching entry: uid !== requested uid
     ldapClient.search.mockResolvedValue({ searchEntries: [{ uid: 'jane', cn: 'Jane Doe', mail: 'jane@example.org' }] })
@@ -392,7 +392,7 @@ describe(AuthMethodLdapService.name, () => {
     jest.clearAllMocks()
     const userB: any = buildUser({ id: 21, email: 'old@ex.org' })
     usersManager.findUser.mockResolvedValue(userB)
-    configuration.auth.ldap.loginAttribute = 'uid'
+    configuration.auth.ldap.attributes.login = 'uid'
     setupLdapSuccess([{ uid: 'john', cn: 'John Doe', mail: 'john@example.org' }])
     adminUsersManager.updateUserOrGuest.mockResolvedValue(undefined)
 

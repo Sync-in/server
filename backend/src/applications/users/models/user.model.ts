@@ -170,8 +170,8 @@ export class UserModel implements User {
     delete this.password
   }
 
-  setFullName() {
-    if (!this.fullName) {
+  setFullName(force = false) {
+    if (!this.fullName || force) {
       this.fullName = `${this.firstName || ''} ${this.lastName || ''}`.trim()
     }
   }
