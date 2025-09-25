@@ -244,8 +244,7 @@ export class FilesManager {
     const fileExtension = path.extname(space.realPath)
     if (checkDocument && fileExtension !== '.txt' && Object.values(DOCUMENT_TYPE).indexOf(fileExtension) > -1) {
       const srcSample = path.join(__dirname, `${SAMPLE_PATH_WITHOUT_EXT}${fileExtension}`)
-      await copyFiles(srcSample, space.realPath)
-      return touchFile(space.realPath)
+      return copyFiles(srcSample, space.realPath, false, false, false)
     } else {
       return createEmptyFile(space.realPath)
     }

@@ -136,17 +136,19 @@ export function touchFile(rPath: string, mtime?: number): Promise<void> {
   return fs.utimes(rPath, mtime, mtime)
 }
 
-export async function copyFiles(srcPath: string, dstPath: string, overwrite = false, recursive = true): Promise<void> {
+export async function copyFiles(srcPath: string, dstPath: string, overwrite = false, recursive = true, preserveTimestamps = true): Promise<void> {
   /*
     If src is a directory it will copy everything inside of this directory, not the entire directory itself
     If src is a file, dest cannot be a directory
    */
   if (!recursive && (await isPathIsDir(srcPath))) {
-    const stat = await fs.stat(srcPath)
     await fs.mkdir(dstPath)
-    await fs.utimes(dstPath, stat.atime, stat.mtime)
+    if (preserveTimestamps) {
+      const stat = await fs.stat(srcPath)
+      await fs.utimes(dstPath, stat.atime, stat.mtime)
+    }
   } else {
-    await fse.copy(srcPath, dstPath, { overwrite, preserveTimestamps: true })
+    await fse.copy(srcPath, dstPath, { overwrite, preserveTimestamps: preserveTimestamps })
   }
 }
 
