@@ -115,18 +115,22 @@ auth:
   ldap:
     # e.g: [ldap://localhost:389, ldaps://localhost:636] (array required)
     servers: []
-    # baseDN: distinguished name, e.g. (ou=people,dc=ldap,dc=sync-in,dc=com)
+    # baseDN: distinguished name ( e.g.ou=people,dc=ldap,dc=sync-in,dc=com)
     baseDN:
     # filter, e.g: (acl=admin)
     filter:
-    # login attribute: `uid` or `mail`
-    # default: uid
-    loginAttribute:
+    attributes:
+      # login attribute (e.g. `uid` | `sAMAccountName` | `userPrincipalName` | `userid`)
+      # default: `uid`
+      login: uid
+      # email attribute: `mail` or `email`
+      # default: `mail`
+      email: mail
 applications:
   files:
     # required
     dataPath: /home/sync-in
-    # default: `5368709120` (5 GB)
+    # default: 5368709120 (5 GB)
     maxUploadSize: 5368709120
     # Show files starting with a dot in the file explorer
     # default: false
@@ -137,7 +141,7 @@ applications:
       enabled: false
       # for an external server (e.g., https://onlyoffice.domain.com), remember the url must be accessible from browser !
       # if externalServer is empty (case of official docker compose), we use the local instance
-      # default: `null`
+      # default: null
       externalServer:
       # secret used for jwt tokens, it must be the same on the onlyoffice server
       # required

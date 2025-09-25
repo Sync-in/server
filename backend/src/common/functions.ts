@@ -82,9 +82,13 @@ export function anonymizePassword(obj: { password?: string; secrets?: string }) 
   return { ...obj, ...(obj?.password && { password: '********' }), ...(obj?.secrets && { secrets: '********' }) }
 }
 
-export function splitFullName(fullName: string): { firstName: string; lastName: string } {
+export function splitFullName(fullName?: string): { firstName: string; lastName: string } {
+  if (!fullName || !fullName.trim()) return { firstName: '', lastName: '' }
   const parts = fullName.trim().split(/\s+/)
-  const lastName = parts.pop()
+  if (parts.length === 1) {
+    return { firstName: '', lastName: parts[0] }
+  }
+  const lastName = parts.pop()!
   const firstName = parts.join(' ')
   return { firstName, lastName }
 }

@@ -109,6 +109,18 @@ export class AuthTokenConfig {
   ws: AuthTokenWSConfig
 }
 
+export class AuthMethodLdapAttributesConfig {
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value || 'uid')
+  login? = 'uid'
+
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value || 'mail')
+  email? = 'mail'
+}
+
 export class AuthMethodLdapConfig {
   @Transform(({ value }) => (Array.isArray(value) ? value.filter((v: string) => Boolean(v)) : value))
   @ArrayNotEmpty()
@@ -124,10 +136,12 @@ export class AuthMethodLdapConfig {
   @IsString()
   filter?: string
 
-  @IsString()
-  @IsNotEmpty()
-  @IsIn(['uid', 'mail'])
-  loginAttribute = 'uid'
+  @IsDefined()
+  @IsNotEmptyObject()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AuthMethodLdapAttributesConfig)
+  attributes: AuthMethodLdapAttributesConfig = new AuthMethodLdapAttributesConfig()
 }
 
 export class AuthConfig {
