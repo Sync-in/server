@@ -1,4 +1,24 @@
 
+## [1.6.0](https://github.com/Sync-in/server/compare/v1.5.2...v1.6.0) (2025-09-26)
+
+🔥🚀 Support for Multi-Factor Authentication (MFA) & App Passwords
+
+### Features
+
+* **feat: mfa and app passwords** ([5ed579f](https://github.com/Sync-in/server/commit/5ed579fd31dcf51770abe52f385b4ed306a22bd8) [431a988](https://github.com/Sync-in/server/commit/431a988c6d0b88711b50b642bd440c42f80283ce) [43a8b10](https://github.com/Sync-in/server/commit/43a8b10eb8869eafd3014cdad034c2b093237edf) [91eda5c](https://github.com/Sync-in/server/commit/91eda5cbc396da3bd6cfddf5e1e4001466327575))
+* **backend:sync:** handle 2FA during client registration ([b0aadde](https://github.com/Sync-in/server/commit/b0aadde6323ffc9a61f43ea424b7cff8922f718d))
+* **backend:auth:** add support for AD-specific LDAP attributes ([1b6a8fc](https://github.com/Sync-in/server/commit/1b6a8fc139db54a71a4aaa5cba7715d349ffef0f))
+* **backend:infrastructure:** allow configuration of ignoreTLS and rejectUnauthorized for SMTP transport ([c1b3f5a](https://github.com/Sync-in/server/commit/c1b3f5a810e2cdc6977b48022f491e602b70ee9f))
+* **backend:notifications:** add email notifications for two-factor authentication security events ([b207f33](https://github.com/Sync-in/server/commit/b207f336c2dc75deec7992975b7aa1376289ee42))
+* **backend:notifications:** include link password in sent emails ([1a3ed0a](https://github.com/Sync-in/server/commit/1a3ed0a7624c16986ced259d8e272eaa2872c8a8))
+* **backend:users:** add email notifications when account is locked ([954bb10](https://github.com/Sync-in/server/commit/954bb1061e6399768aad13d9822491975a843b9b))
+
+
+### Bug Fixes
+
+* **backend:auth:** improve handling of sql errors ([f4b78fa](https://github.com/Sync-in/server/commit/f4b78fa2779d2fea01d7dd554d861cb6272b594e))
+* **backend:users:** ensure default value for user secrets when null ([090eb6e](https://github.com/Sync-in/server/commit/090eb6e61f4973522f201879e611b744aa0677e8))
+
 ## [1.5.2](https://github.com/Sync-in/server/compare/v1.5.1...v1.5.2) (2025-09-09)
 
 
