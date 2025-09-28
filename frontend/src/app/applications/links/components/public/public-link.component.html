@@ -13,7 +13,7 @@
   <div class="d-flex flex-column align-content-center">
     <div (click)="followLink()" class="resource d-flex flex-column align-items-center mt-3 mx-auto cursor-pointer">
       @if (mimeUrl) {
-        <img [src]="mimeUrl" alt="" height="96" class="no-select-pointer">
+        <img [src]="mimeUrl" alt="" height="96" class="no-select-pointer" (error)="fallBackMimeUrl()">
       } @else {
         <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false" style="min-width: 128px; min-height: 128px; font-size: 64px"></fa-icon>
       }

@@ -9,7 +9,7 @@ import { ActivatedRoute, Data, Params, RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { SpaceLink } from '@sync-in-server/backend/src/applications/links/interfaces/link-space.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { getAssetsMimeUrl, logoUrl, mimeDirectory, mimeDirectoryShare } from '../../../files/files.constants'
+import { defaultMimeUrl, getAssetsMimeUrl, logoUrl, mimeDirectory, mimeDirectoryShare } from '../../../files/files.constants'
 import { SPACES_ICON } from '../../../spaces/spaces.constants'
 import { LinksService } from '../../services/links.service'
 
@@ -42,5 +42,9 @@ export class PublicLinkComponent {
 
   followLink() {
     this.linksService.linkAccess(this.linkUUID, this.link)
+  }
+
+  fallBackMimeUrl() {
+    this.mimeUrl = defaultMimeUrl
   }
 }
