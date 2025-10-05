@@ -10,6 +10,7 @@ import {
   IsArray,
   IsBoolean,
   IsDefined,
+  IsEnum,
   IsIn,
   IsNotEmpty,
   IsNotEmptyObject,
@@ -21,6 +22,7 @@ import {
 } from 'class-validator'
 import { SERVER_NAME } from '../app.constants'
 import { ACCESS_KEY, CSRF_KEY, REFRESH_KEY, WS_KEY } from './constants/auth'
+import { LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './constants/auth-ldap'
 
 export class AuthMfaTotpConfig {
   @IsBoolean()
@@ -112,13 +114,14 @@ export class AuthTokenConfig {
 export class AuthMethodLdapAttributesConfig {
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value || 'uid')
-  login? = 'uid'
+  @Transform(({ value }) => value || LDAP_LOGIN_ATTR.UID)
+  @IsEnum(LDAP_LOGIN_ATTR)
+  login: LDAP_LOGIN_ATTR = LDAP_LOGIN_ATTR.UID
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value || 'mail')
-  email? = 'mail'
+  @Transform(({ value }) => value || LDAP_COMMON_ATTR.MAIL)
+  email: string = LDAP_COMMON_ATTR.MAIL
 }
 
 export class AuthMethodLdapConfig {

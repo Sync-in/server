@@ -120,7 +120,7 @@ auth:
     # filter, e.g: (acl=admin)
     filter:
     attributes:
-      # login attribute (e.g. `uid` | `sAMAccountName` | `userPrincipalName`)
+      # login attribute: `uid` | `sAMAccountName` | `userPrincipalName`
       # default: `uid`
       login: uid
       # email attribute: `mail` or `email`
