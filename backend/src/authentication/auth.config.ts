@@ -149,6 +149,14 @@ export class AuthMethodLdapConfig {
   @IsOptional()
   @IsString()
   adminGroup?: string
+
+  @IsOptional()
+  @IsString()
+  upnSuffix?: string
+
+  @IsOptional()
+  @IsString()
+  netbiosName?: string
 }
 
 export class AuthConfig {

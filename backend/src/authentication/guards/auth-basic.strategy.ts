@@ -30,6 +30,8 @@ export class AuthBasicStrategy extends PassportStrategy(BasicStrategy, 'basic') 
   }
 
   async validate(req: FastifyRequest, loginOrEmail: string, password: string): Promise<Omit<UserModel, 'password'> | null> {
+    loginOrEmail = loginOrEmail.trim()
+    password = password.trim()
     this.logger.assign({ user: loginOrEmail })
     const authBasicUser = `${this.CACHE_KEY_PREFIX}-${req.headers['authorization'].split(' ').at(-1).toLowerCase()}`
     const userFromCache: any = await this.cache.get(authBasicUser)

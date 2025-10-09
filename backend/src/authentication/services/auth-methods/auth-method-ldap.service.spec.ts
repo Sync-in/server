@@ -201,7 +201,7 @@ describe(AuthMethodLdapService.name, () => {
     usersManager.updateAccesses.mockRejectedValueOnce(new Error('updateAccesses success flow boom'))
     const resB = await authMethodLdapService.validateUser('john', 'pwd', '192.168.1.10')
     expect(adminUsersManager.createUserOrGuest).toHaveBeenCalledWith(
-      { login: 'john', email: 'john@example.org', password: 'pwd', firstName: 'John', lastName: 'Doe' },
+      { login: 'john', email: 'john@example.org', password: 'pwd', firstName: 'John', lastName: 'Doe', role: 1 },
       expect.anything() // USER_ROLE.USER
     )
     expect(resB).toBe(createdUser)

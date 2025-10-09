@@ -120,7 +120,7 @@ auth:
     # filter, e.g: (acl=admin)
     filter:
     attributes:
-      # login attribute: `uid` | `sAMAccountName` | `userPrincipalName`
+      # login attribute: `uid` | `sAMAccountName` | `userPrincipalName`, used to authenticate the user
       # default: `uid`
       login: uid
       # email attribute: `mail` or `email`
@@ -128,6 +128,10 @@ auth:
       email: mail
     # adminGroup: The CN of a group containing Sync-in administrators (e.g., administrators)
     adminGroup:
+    # upnSuffix: AD domain suffix used with `userPrincipalName` to build UPN-style logins (e.g., user@`sync-in.com`)
+    upnSuffix:
+    # netbiosName: NetBIOS domain name used with `sAMAccountName` to build legacy logins (e.g., `SYNC_IN`\user)
+    netbiosName:
 applications:
   files:
     # required

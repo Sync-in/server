@@ -5,7 +5,7 @@
  */
 
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
-import { AndFilter, Client, ClientOptions, Entry, EqualityFilter, InvalidCredentialsError } from 'ldapts'
+import { AndFilter, Client, ClientOptions, Entry, EqualityFilter, InvalidCredentialsError, OrFilter } from 'ldapts'
 import { CONNECT_ERROR_CODE } from '../../../app.constants'
 import { USER_ROLE } from '../../../applications/users/constants/user'
 import type { CreateUserDto, UpdateUserDto } from '../../../applications/users/dto/create-or-update-user.dto'
@@ -23,12 +23,7 @@ type LdapUserEntry = Entry & Record<LDAP_LOGIN_ATTR | (typeof LDAP_COMMON_ATTR)[
 @Injectable()
 export class AuthMethodLdapService implements AuthMethod {
   private readonly logger = new Logger(AuthMethodLdapService.name)
-  private readonly servers: string[] = configuration.auth.ldap.servers
-  private readonly baseDN: string = configuration.auth.ldap.baseDN
-  private readonly filter: string = configuration.auth.ldap.filter
-  private readonly loginAttribute: LDAP_LOGIN_ATTR = configuration.auth.ldap.attributes.login
-  private readonly emailAttribute: string = configuration.auth.ldap.attributes.email
-  private readonly adminGroup: string = configuration.auth.ldap.adminGroup
+  private readonly ldapConfig = configuration.auth.ldap
   private clientOptions: ClientOptions = { timeout: 6000, connectTimeout: 6000, url: '' }
 
   constructor(
@@ -37,7 +32,7 @@ export class AuthMethodLdapService implements AuthMethod {
   ) {}
 
   async validateUser(login: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
-    let user: UserModel = await this.usersManager.findUser(this.normalizeLogin(login), false)
+    let user: UserModel = await this.usersManager.findUser(this.dbLogin(login), false)
     if (user) {
       if (user.isGuest) {
         // allow guests to be authenticated from db and check if the current user is defined as active
@@ -64,9 +59,9 @@ export class AuthMethodLdapService implements AuthMethod {
         }
       }
       return null
-    } else if (!entry[this.loginAttribute] || !entry[this.emailAttribute]) {
+    } else if (!entry[this.ldapConfig.attributes.login] || !entry[this.ldapConfig.attributes.email]) {
       this.logger.error(`${this.validateUser.name} - required ldap fields are missing : 
-      [${this.loginAttribute}, ${this.emailAttribute}] => 
+      [${this.ldapConfig.attributes.login}, ${this.ldapConfig.attributes.email}] => 
       (${JSON.stringify(entry)})`)
       return null
     }
@@ -77,27 +72,27 @@ export class AuthMethodLdapService implements AuthMethod {
   }
 
   private async checkAuth(login: string, password: string): Promise<LdapUserEntry | false> {
-    const loginAttr = this.loginAttribute
-    const isAD = loginAttr === LDAP_LOGIN_ATTR.SAM || loginAttr === LDAP_LOGIN_ATTR.UPN
+    const ldapLogin = this.buildLdapLogin(login)
+    const isAD = this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.SAM || this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN
     // AD: bind directly with the user input (UPN or DOMAIN\user)
     // Generic LDAP: build DN from login attribute + baseDN
-    const bindUserDN = isAD ? login : `${loginAttr}=${login},${this.baseDN}`
+    const bindUserDN = isAD ? ldapLogin : `${this.ldapConfig.attributes.login}=${ldapLogin},${this.ldapConfig.baseDN}`
     let client: Client
     let error: any
-    for (const s of this.servers) {
+    for (const s of this.ldapConfig.servers) {
       client = new Client({ ...this.clientOptions, url: s })
       try {
         await client.bind(bindUserDN, password)
-        return await this.checkAccess(client, login)
+        return await this.checkAccess(ldapLogin, client)
       } catch (e) {
         if (e.errors?.length) {
           for (const err of e.errors) {
-            this.logger.warn(`${this.checkAuth.name} - ${login} : ${err}`)
+            this.logger.warn(`${this.checkAuth.name} - ${ldapLogin} : ${err}`)
             error = err
           }
         } else {
           error = e
-          this.logger.warn(`${this.checkAuth.name} - ${login} : ${e}`)
+          this.logger.warn(`${this.checkAuth.name} - ${ldapLogin} : ${e}`)
         }
         if (error instanceof InvalidCredentialsError) {
           return false
@@ -112,10 +107,10 @@ export class AuthMethodLdapService implements AuthMethod {
     return false
   }
 
-  private async checkAccess(client: Client, login: string): Promise<LdapUserEntry | false> {
-    const searchFilter = this.buildUserFilter(login, this.filter)
+  private async checkAccess(login: string, client: Client): Promise<LdapUserEntry | false> {
+    const searchFilter = this.buildUserFilter(login, this.ldapConfig.filter)
     try {
-      const { searchEntries } = await client.search(this.baseDN, {
+      const { searchEntries } = await client.search(this.ldapConfig.baseDN, {
         scope: 'sub',
         filter: searchFilter,
         attributes: ALL_LDAP_ATTRIBUTES
@@ -172,7 +167,7 @@ export class AuthMethodLdapService implements AuthMethod {
     if (Object.keys(identityHasChanged).length > 0) {
       try {
         if (identityHasChanged?.role != null) {
-          if (user.role === USER_ROLE.ADMINISTRATOR && !this.adminGroup) {
+          if (user.role === USER_ROLE.ADMINISTRATOR && !this.ldapConfig.adminGroup) {
             // Prevent removing admin role when adminGroup was removed or not defined
             delete identityHasChanged.role
           }
@@ -213,10 +208,13 @@ export class AuthMethodLdapService implements AuthMethod {
   }
 
   private createIdentity(entry: LdapUserEntry, password: string): CreateUserDto {
-    const isAdmin = typeof this.adminGroup === 'string' && this.adminGroup && entry[LDAP_COMMON_ATTR.MEMBER_OF]?.includes(this.adminGroup)
+    const isAdmin =
+      typeof this.ldapConfig.adminGroup === 'string' &&
+      this.ldapConfig.adminGroup &&
+      entry[LDAP_COMMON_ATTR.MEMBER_OF]?.includes(this.ldapConfig.adminGroup)
     return {
-      login: this.normalizeLogin(entry[this.loginAttribute]),
-      email: entry[this.emailAttribute] as string,
+      login: this.dbLogin(entry[this.ldapConfig.attributes.login]),
+      email: entry[this.ldapConfig.attributes.email] as string,
       password: password,
       role: isAdmin ? USER_ROLE.ADMINISTRATOR : USER_ROLE.USER,
       ...this.getFirstNameAndLastName(entry)
@@ -240,23 +238,48 @@ export class AuthMethodLdapService implements AuthMethod {
     return { firstName: '', lastName: '' }
   }
 
-  private normalizeLogin(login: string, toLowerCase = true): string {
-    const normalized = (login.includes('\\') ? login.split('\\').slice(-1)[0] : login).trim()
-    return toLowerCase ? normalized.toLowerCase() : normalized
+  private dbLogin(login: string): string {
+    if (login.includes('@')) {
+      return login.split('@')[0]
+    } else if (login.includes('\\')) {
+      return login.split('\\').slice(-1)[0]
+    }
+    return login
+  }
+
+  private buildLdapLogin(login: string): string {
+    if (this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN) {
+      if (this.ldapConfig.upnSuffix && !login.includes('@')) {
+        return `${login}@${this.ldapConfig.upnSuffix}`
+      }
+    } else if (this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.SAM) {
+      if (this.ldapConfig.netbiosName && !login.includes('\\')) {
+        return `${this.ldapConfig.netbiosName}\\${login}`
+      }
+    }
+    return login
   }
 
   private buildUserFilter(login: string, extraFilter?: string): string {
     // Build a safe LDAP filter to search for a user.
     // Important: - Values passed to EqualityFilter are auto-escaped by ldapts
     //            - extraFilter is appended as-is (assumed trusted configuration)
-    // Output: (&(|(userPrincipalName=john.doe)(sAMAccountName=john.doe)(uid=john.doe))(*extraFilter*))
+    // Output: (&(|(userPrincipalName=john.doe@sync-in.com)(sAMAccountName=john.doe)(uid=john.doe))(*extraFilter*))
 
-    // OR clause: accept UPN, sAMAccountName, or uid
-    const normalizedLogin = this.normalizeLogin(login, false)
+    // Handle the case where the sAMAccountName is provided in domain-qualified format (e.g., SYNC_IN\\user)
+    // Note: sAMAccountName is always stored without the domain in Active Directory.
+    const uid = this.dbLogin(login)
 
-    const eq = new EqualityFilter({ attribute: this.loginAttribute, value: normalizedLogin })
+    const or = new OrFilter({
+      filters: [
+        new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.UPN, value: login }),
+        new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.SAM, value: uid }),
+        new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.UID, value: uid })
+      ]
+    })
+
     // Convert to LDAP filter string
-    let filterString = new AndFilter({ filters: [eq] }).toString()
+    let filterString = new AndFilter({ filters: [or] }).toString()
 
     // Optionally append an extra filter from config (trusted source)
     if (extraFilter && extraFilter.trim()) {
