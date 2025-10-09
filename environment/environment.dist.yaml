@@ -115,7 +115,7 @@ auth:
   ldap:
     # e.g: [ldap://localhost:389, ldaps://localhost:636] (array required)
     servers: []
-    # baseDN: distinguished name ( e.g.ou=people,dc=ldap,dc=sync-in,dc=com)
+    # baseDN: distinguished name (e.g., ou=people,dc=ldap,dc=sync-in,dc=com)
     baseDN:
     # filter, e.g: (acl=admin)
     filter:
@@ -126,6 +126,8 @@ auth:
       # email attribute: `mail` or `email`
       # default: `mail`
       email: mail
+    # adminGroup: The CN of a group containing Sync-in administrators (e.g., administrators)
+    adminGroup:
 applications:
   files:
     # required

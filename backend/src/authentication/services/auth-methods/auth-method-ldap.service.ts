@@ -23,11 +23,12 @@ type LdapUserEntry = Entry & Record<LDAP_LOGIN_ATTR | (typeof LDAP_COMMON_ATTR)[
 @Injectable()
 export class AuthMethodLdapService implements AuthMethod {
   private readonly logger = new Logger(AuthMethodLdapService.name)
-  private readonly loginAttribute: LDAP_LOGIN_ATTR = configuration.auth.ldap.attributes.login
-  private readonly emailAttribute: string = configuration.auth.ldap.attributes.email
   private readonly servers: string[] = configuration.auth.ldap.servers
   private readonly baseDN: string = configuration.auth.ldap.baseDN
   private readonly filter: string = configuration.auth.ldap.filter
+  private readonly loginAttribute: LDAP_LOGIN_ATTR = configuration.auth.ldap.attributes.login
+  private readonly emailAttribute: string = configuration.auth.ldap.attributes.email
+  private readonly adminGroup: string = configuration.auth.ldap.adminGroup
   private clientOptions: ClientOptions = { timeout: 6000, connectTimeout: 6000, url: '' }
 
   constructor(
@@ -141,7 +142,8 @@ export class AuthMethodLdapService implements AuthMethod {
 
   private async updateOrCreateUser(identity: CreateUserDto, user: UserModel): Promise<UserModel> {
     if (user === null) {
-      const createdUser = await this.adminUsersManager.createUserOrGuest(identity, USER_ROLE.USER)
+      // create
+      const createdUser = await this.adminUsersManager.createUserOrGuest(identity, identity.role)
       const freshUser = await this.usersManager.fromUserId(createdUser.id)
       if (!freshUser) {
         this.logger.error(`${this.updateOrCreateUser.name} - user was not found : ${createdUser.login} (${createdUser.id})`)
@@ -153,7 +155,7 @@ export class AuthMethodLdapService implements AuthMethod {
       this.logger.error(`${this.updateOrCreateUser.name} - user login mismatch : ${identity.login} !== ${user.login}`)
       throw new HttpException('Account matching error', HttpStatus.FORBIDDEN)
     }
-    // check if user information has changed
+    // update: check if user information has changed
     const identityHasChanged: UpdateUserDto = Object.fromEntries(
       (
         await Promise.all(
@@ -169,7 +171,15 @@ export class AuthMethodLdapService implements AuthMethod {
     )
     if (Object.keys(identityHasChanged).length > 0) {
       try {
+        if (identityHasChanged?.role != null) {
+          if (user.role === USER_ROLE.ADMINISTRATOR && !this.adminGroup) {
+            // Prevent removing admin role when adminGroup was removed or not defined
+            delete identityHasChanged.role
+          }
+        }
+        // Update user properties
         await this.adminUsersManager.updateUserOrGuest(user.id, identityHasChanged)
+        // Extra stuff
         if (identityHasChanged?.password) {
           delete identityHasChanged.password
         }
@@ -187,7 +197,15 @@ export class AuthMethodLdapService implements AuthMethod {
 
   private convertToLdapUserEntry(entry: Entry): LdapUserEntry {
     for (const attr of ALL_LDAP_ATTRIBUTES) {
+      if (attr === LDAP_COMMON_ATTR.MEMBER_OF && entry[attr]) {
+        entry[attr] = (Array.isArray(entry[attr]) ? entry[attr] : entry[attr] ? [entry[attr]] : [])
+          .filter((v: any) => typeof v === 'string')
+          .map((v) => v.match(/cn\s*=\s*([^,]+)/i)?.[1]?.trim())
+          .filter(Boolean)
+        continue
+      }
       if (Array.isArray(entry[attr])) {
+        // Keep only the first value for all other attributes (e.g., email)
         entry[attr] = entry[attr].length > 0 ? entry[attr][0] : null
       }
     }
@@ -195,10 +213,12 @@ export class AuthMethodLdapService implements AuthMethod {
   }
 
   private createIdentity(entry: LdapUserEntry, password: string): CreateUserDto {
+    const isAdmin = typeof this.adminGroup === 'string' && this.adminGroup && entry[LDAP_COMMON_ATTR.MEMBER_OF]?.includes(this.adminGroup)
     return {
       login: this.normalizeLogin(entry[this.loginAttribute]),
       email: entry[this.emailAttribute] as string,
       password: password,
+      role: isAdmin ? USER_ROLE.ADMINISTRATOR : USER_ROLE.USER,
       ...this.getFirstNameAndLastName(entry)
     } satisfies CreateUserDto
   }

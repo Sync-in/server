@@ -145,6 +145,10 @@ export class AuthMethodLdapConfig {
   @ValidateNested()
   @Type(() => AuthMethodLdapAttributesConfig)
   attributes: AuthMethodLdapAttributesConfig = new AuthMethodLdapAttributesConfig()
+
+  @IsOptional()
+  @IsString()
+  adminGroup?: string
 }
 
 export class AuthConfig {
