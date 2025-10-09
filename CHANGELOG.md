@@ -1,4 +1,12 @@
 
+## [1.7.0](https://github.com/Sync-in/server/compare/v1.6.1...v1.7.0) (2025-10-09)
+
+
+### Features
+
+* **backend:auth:** add `adminGroup` support and improve LDAP user role assignment ([9074145](https://github.com/Sync-in/server/commit/9074145c9c86e023c73e0a5522f87441356bb240))
+* **backend:auth:** enhance LDAP authentication configuration with upnSuffix and netbiosName parameters ([5a5d623](https://github.com/Sync-in/server/commit/5a5d62317198d3c1164bc6f9efe6bdb50bfe25f7))
+
 ## [1.6.1](https://github.com/Sync-in/server/compare/v1.6.0...v1.6.1) (2025-10-09)
 
 
