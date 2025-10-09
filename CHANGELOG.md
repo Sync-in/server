@@ -1,4 +1,12 @@
 
+## [1.6.1](https://github.com/Sync-in/server/compare/v1.6.0...v1.6.1) (2025-10-09)
+
+
+### Bug Fixes
+
+* **backend:auth:** improve AD/LDAP authentication handling and normalization ([db1a9e3](https://github.com/Sync-in/server/commit/db1a9e3d4a02c6be5ef594b4a383e05d0bc50fc4))
+* **frontend:links:** fallback to default MIME URL when origin MIME URL is not found ([5724f3a](https://github.com/Sync-in/server/commit/5724f3a730fc8d8b51268071b0d3370bc62f6901))
+
 ## [1.6.0](https://github.com/Sync-in/server/compare/v1.5.2...v1.6.0) (2025-09-26)
 
 🔥🚀 Support for Multi-Factor Authentication (MFA) & App Passwords
