@@ -16,6 +16,7 @@ export class Space implements SpaceSchema {
   description: string
   storageUsage: number
   storageQuota: number
+  storageIndexing: boolean
   createdAt: Date
   modifiedAt: Date
   disabledAt: Date

@@ -92,7 +92,7 @@
           <div class="box-body">
             @if (user.isUser) {
               <div class="row mb-3">
-                <span class="col-3 align-self-center" l10nTranslate>Avatar</span>
+                <span class="col-4 align-self-start" l10nTranslate>Avatar</span>
                 <div class="col-auto">
                   <button (click)="genAvatar()" class="btn btn-xs btn-success me-1" type="button" l10nTranslate>Generate</button>
                   <button class="btn-file-upload btn btn-xs btn-secondary" type="button">
@@ -103,7 +103,7 @@
               </div>
             }
             <div class="row mb-3">
-              <span class="col-3 align-self-center" l10nTranslate>Language</span>
+              <span class="col-4 align-self-start" l10nTranslate>Language</span>
               <div class="col-auto">
                 <select [(ngModel)]="language" class="form-select form-select-sm">
                   @for (l of languages; track $index) {
@@ -113,7 +113,7 @@
               </div>
             </div>
             <div class="row mb-3">
-              <span class="col-3 align-self-center" l10nTranslate>Notification</span>
+              <span class="col-4 align-self-start" l10nTranslate>Notification</span>
               <div class="col-auto">
                 <select [ngModel]="user?.notification"
                         (ngModelChange)="updateNotification($event)"
@@ -126,7 +126,24 @@
             </div>
             @if (user.isUser) {
               <div class="row mb-3">
-                <span class="col-3 align-self-start text-nowrap" l10nTranslate>Password</span>
+                <span class="col-4 text-nowrap align-self-start" l10nTranslate>Full-text search</span>
+                <div class="col-auto">
+                  <div class="d-flex align-items-center form-check form-switch cursor-pointer">
+                    <input
+                      [ngModel]="user.storageIndexing"
+                      (ngModelChange)="updateStorageIndexing($event)"
+                      class="form-check-input"
+                      id="switchFullText"
+                      type="checkbox"
+                      role="button">
+                    <label class="form-check-label mb-0 ms-2" for="switchFullText">
+                      <span l10nTranslate>{{ user.storageIndexing ? 'enabled' : 'disabled' }}&nbsp;<span l10nTranslate>for personal files</span></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <span class="col-4 text-nowrap align-self-start " l10nTranslate>Password</span>
                 <div class="col-auto">
                   <div class="mb-1">
                     <app-input-password [(password)]="oldPassword"
@@ -150,14 +167,14 @@
                 </div>
               </div>
               <div class="row mb-3">
-                <span class="col-3 align-self-start text-nowrap" l10nTranslate>Security</span>
+                <span class="col-4 align-self-start text-nowrap" l10nTranslate>Security</span>
                 <div class="col-auto">
                   <div class="fw-500 mb-2" l10nTranslate>Two-Factor Authentication</div>
                   <button (click)="enable2Fa()"
                           [disabled]="!store.server().twoFaEnabled"
                           class="btn btn-xs btn-primary"
                           type="button" l10nTranslate>
-                    {{user.twoFaEnabled ? 'Reset' : 'Enable'}}
+                    {{ user.twoFaEnabled ? 'Reset' : 'Enable' }}
                   </button>
                   @if (user.twoFaEnabled) {
                     <button (click)="disable2Fa()"
@@ -172,7 +189,7 @@
                           class="btn btn-xs btn-primary me-1"
                           type="button" l10nTranslate>
                     @if (user.appPasswords > 0) {
-                      <span l10nTranslate>Manage</span>&nbsp;<span>({{user.appPasswords}})</span>
+                      <span l10nTranslate>Manage</span>&nbsp;<span>({{ user.appPasswords }})</span>
                     } @else {
                       <span l10nTranslate>Generate</span>
                     }

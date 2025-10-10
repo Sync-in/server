@@ -32,57 +32,58 @@
       </ng-template>
       <div class="d-flex col-12">
         <div class="d-flex flex-column col-6 pe-2">
-          <div class="mb-3 px-0" style="max-width: 80%">
-            <label for="name" l10nTranslate>
-              Space name
-            </label>
-            <input
-              id="name"
-              type="text"
-              [(ngModel)]="space.name"
-              appAutofocus
-              class="form-control form-control-sm {{ !space.name ? 'is-invalid' : '' }}"
-              required>
-          </div>
-          <div class="mb-3 px-0" style="max-width: 80%">
-            <label for="description" l10nTranslate>
-              Description
-            </label>
-            <input
-              id="description"
-              type="text"
-              [(ngModel)]="space.description"
-              class="form-control form-control-sm">
-          </div>
-          <div class="d-flex flex-column align-items-start mb-3" style="max-width: 80%">
-            <app-storage-quota [(quota)]="space.storageQuota" [fullWidth]="true" class="w-100"></app-storage-quota>
-          </div>
-          @if (space.storageUsage) {
-            <div class="d-flex flex-column mb-3" style="max-width: 80%">
-              <label for="storage" l10nTranslate>Storage Usage</label>
-              <app-storage-usage id="storage" [item]="space"></app-storage-usage>
-            </div>
-          }
-          <div class="mb-3 px-0">
-            <label for="switchStatus" l10nTranslate>Space status</label>
-            <div class="d-flex align-items-center form-check form-switch cursor-pointer">
-              <input class="form-check-input" [(ngModel)]="space.enabled" id="switchStatus" type="checkbox" role="button">
-              <label class="form-check-label mb-0 ms-2" for="switchStatus" l10nTranslate>
-                {{ space.enabled ? 'enabled' : 'disabled' }}
+          <div style="max-width: 85%">
+            <div class="mb-3 px-0">
+              <label for="name" l10nTranslate>
+                Space name
               </label>
+              <input
+                id="name"
+                type="text"
+                [(ngModel)]="space.name"
+                appAutofocus
+                class="form-control form-control-sm {{ !space.name ? 'is-invalid' : '' }}"
+                required>
             </div>
-            @if (!space.enabled) {
-              <div class="text-danger mt-2">
-                <span l10nTranslate>Space and data will be deleted in</span>
-                <span class="fw-bold">
-                  @if (space.disabledAt) {
-                    <span>&nbsp;{{ space.disabledAt | amAdd: SPACE_MAX_DISABLED_DAYS : 'days'| amTimeAgo:true }}</span>
-                  } @else {
-                    <span>&nbsp;{{ SPACE_MAX_DISABLED_DAYS | amDuration:'days' }}</span>
-                  }
-                </span>
+            <div class="mb-3 px-0">
+              <label for="description" l10nTranslate>
+                Description
+              </label>
+              <input
+                id="description"
+                type="text"
+                [(ngModel)]="space.description"
+                class="form-control form-control-sm">
+            </div>
+            <div class="d-flex flex-column align-items-start mb-3">
+              <app-storage-quota [(quota)]="space.storageQuota" [fullWidth]="true" class="w-100"></app-storage-quota>
+            </div>
+            @if (space.storageUsage) {
+              <div class="d-flex flex-column mb-3">
+                <label for="storage" l10nTranslate>Storage Usage</label>
+                <app-storage-usage id="storage" [item]="space"></app-storage-usage>
               </div>
             }
+            <div class="d-flex justify-content-between">
+              <div>
+                <label for="switchStatus" l10nTranslate>Space status</label>
+                <div class="d-flex align-items-center form-check form-switch cursor-pointer">
+                  <input class="form-check-input" [(ngModel)]="space.enabled" id="switchStatus" type="checkbox" role="button">
+                  <label class="form-check-label mb-0 ms-2" for="switchStatus" l10nTranslate>
+                    {{ space.enabled ? 'enabled' : 'disabled' }}
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label for="switchFullText" l10nTranslate>Full-text search</label>
+                <div class="d-flex align-items-center form-check form-switch cursor-pointer">
+                  <input class="form-check-input" [(ngModel)]="space.storageIndexing" id="switchFullText" type="checkbox" role="button">
+                  <label class="form-check-label mb-0 ms-2" for="switchFullText" l10nTranslate>
+                    {{ space.storageIndexing ? 'enabled' : 'disabled' }}
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="d-flex flex-column col-6">
@@ -169,6 +170,18 @@
             class="btn btn-sm btn-danger" type="button" l10nTranslate>
       Remove
     </button>
+    @if (!space.enabled) {
+      <div class="text-danger white-space-truncate fs-sm mx-auto">
+        <span l10nTranslate>Space and data will be deleted in</span>
+        <span class="fw-bold">
+          @if (space.disabledAt) {
+            <span>&nbsp;{{ space.disabledAt | amAdd: SPACE_MAX_DISABLED_DAYS : 'days'| amTimeAgo:true }}</span>
+          } @else {
+            <span>&nbsp;{{ SPACE_MAX_DISABLED_DAYS | amDuration:'days' }}</span>
+          }
+        </span>
+      </div>
+    }
   }
   @if (tabView === 'links') {
     <button (click)="openCreateLinkDialog()"

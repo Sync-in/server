@@ -47,7 +47,7 @@ export class FilesContentManager {
       }
       indexSuffixes.push(indexSuffix)
     }
-    // cleanup old tables
+    // clean up old tables
     await this.filesIndexer.cleanIndexes(indexSuffixes)
   }
 

@@ -33,6 +33,7 @@ export class SpaceModel implements Partial<SpaceProps> {
   enabled: boolean
   storageUsage: number
   storageQuota: number
+  storageIndexing: boolean
   modifiedAt: Date
   disabledAt: Date
   createdAt: Date

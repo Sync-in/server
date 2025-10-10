@@ -17,7 +17,7 @@ import { GetUser } from './decorators/user.decorator'
 import { UserCreateOrUpdateGroupDto } from './dto/create-or-update-group.dto'
 import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from './dto/create-or-update-user.dto'
 import { SearchMembersDto } from './dto/search-members.dto'
-import { UserAppPasswordDto, UserLanguageDto, UserNotificationDto, UserUpdatePasswordDto } from './dto/user-properties.dto'
+import { UserAppPasswordDto, UserLanguageDto, UserNotificationDto, UserStorageIndexingDto, UserUpdatePasswordDto } from './dto/user-properties.dto'
 import { UserPermissionsGuard } from './guards/permissions.guard'
 import { UserRolesGuard } from './guards/roles.guard'
 import { GroupBrowse } from './interfaces/group-browse.interface'
@@ -76,6 +76,12 @@ export class UsersController {
   @UserHaveRole(USER_ROLE.GUEST)
   updateNotification(@GetUser() user: UserModel, @Body() userNotificationDto: UserNotificationDto) {
     return this.usersManager.updateNotification(user, userNotificationDto)
+  }
+
+  @Put(`${USERS_ROUTE.ME}/${USERS_ROUTE.STORAGE_INDEXING}`)
+  @UserHaveRole(USER_ROLE.USER)
+  updateStorageIndexing(@GetUser() user: UserModel, @Body() userStorageIndexingDto: UserStorageIndexingDto) {
+    return this.usersManager.updateStorageIndexing(user, userStorageIndexingDto)
   }
 
   @Get(`${USERS_ROUTE.AVATAR}/:login`)

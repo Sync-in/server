@@ -160,6 +160,16 @@ export class UserAccountComponent implements OnDestroy {
     })
   }
 
+  updateStorageIndexing(status: boolean) {
+    this.userService.changeStorageIndexing({ storageIndexing: status }).subscribe({
+      next: () => {
+        this.user.storageIndexing = status
+        this.layout.sendNotification('info', 'Configuration', 'Full-text search preference updated')
+      },
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Configuration', 'Unable to update full-text search preference', e)
+    })
+  }
+
   clipBoardLink() {
     this.clipBoardService.copyFromContent(this.webdavUrl)
     this.layout.sendNotification('info', 'Link copied', this.webdavUrl)

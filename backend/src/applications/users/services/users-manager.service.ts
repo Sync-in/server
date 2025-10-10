@@ -29,7 +29,13 @@ import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_ONLINE_STATUS, USER_R
 import type { UserCreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
 import type { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '../dto/search-members.dto'
-import type { UserAppPasswordDto, UserLanguageDto, UserNotificationDto, UserUpdatePasswordDto } from '../dto/user-properties.dto'
+import type {
+  UserAppPasswordDto,
+  UserLanguageDto,
+  UserNotificationDto,
+  UserStorageIndexingDto,
+  UserUpdatePasswordDto
+} from '../dto/user-properties.dto'
 import type { GroupBrowse } from '../interfaces/group-browse.interface'
 import type { GroupMember, GroupWithMembers } from '../interfaces/group-member'
 import type { GuestUser } from '../interfaces/guest-user.interface'
@@ -132,7 +138,13 @@ export class UsersManager {
 
   async updateNotification(user: UserModel, userNotificationDto: UserNotificationDto) {
     if (!(await this.usersQueries.updateUserOrGuest(user.id, userNotificationDto))) {
-      throw new HttpException('Unable to update notification', HttpStatus.INTERNAL_SERVER_ERROR)
+      throw new HttpException('Unable to update notification preference', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+
+  async updateStorageIndexing(user: UserModel, userStorageIndexingDto: UserStorageIndexingDto) {
+    if (!(await this.usersQueries.updateUserOrGuest(user.id, userStorageIndexingDto))) {
+      throw new HttpException('Unable to update full-text search preference', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 

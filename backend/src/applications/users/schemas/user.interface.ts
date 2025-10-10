@@ -23,6 +23,7 @@ export class User implements UserSchema {
   permissions: string
   storageUsage: number
   storageQuota: number
+  storageIndexing: boolean
   notification: number
   onlineStatus: number
   passwordAttempts: number

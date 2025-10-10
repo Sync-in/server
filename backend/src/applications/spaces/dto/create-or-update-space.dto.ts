@@ -68,6 +68,10 @@ export class CreateOrUpdateSpaceDto {
   storageQuota?: number = null
 
   @IsOptional()
+  @IsBoolean()
+  storageIndexing?: boolean
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SpaceRootDto)

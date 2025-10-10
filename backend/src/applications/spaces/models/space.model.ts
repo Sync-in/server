@@ -19,6 +19,7 @@ export class SpaceModel implements Space {
   description: string
   storageQuota: number
   storageUsage: number
+  storageIndexing: boolean
   modifiedAt: Date
   disabledAt: Date
   createdAt: Date

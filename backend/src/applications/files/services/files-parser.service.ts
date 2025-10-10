@@ -42,7 +42,7 @@ export class FilesParser {
         login: users.login
       })
       .from(users)
-      .where(and(...[lte(users.role, USER_ROLE.USER), ...(userId ? [eq(users.id, userId)] : [])]))) {
+      .where(and(...[lte(users.role, USER_ROLE.USER), eq(users.storageIndexing, true), ...(userId ? [eq(users.id, userId)] : [])]))) {
       const userFilesPath = UserModel.getFilesPath(user.login)
       if (!(await isPathExists(userFilesPath))) {
         this.logger.warn(`${this.userPaths.name} - user path does not exist : ${userFilesPath}`)
@@ -71,7 +71,7 @@ export class FilesParser {
       .leftJoin(spacesRoots, eq(spacesRoots.spaceId, spaces.id))
       .leftJoin(files, eq(files.id, spacesRoots.fileId))
       .leftJoin(users, eq(users.id, files.ownerId))
-      .where(and(...(spaceIds ? [inArray(spaces.id, spaceIds)] : [])))
+      .where(and(eq(spaces.storageIndexing, true), ...(spaceIds ? [inArray(spaces.id, spaceIds)] : [])))
       .groupBy(spaces.id)) {
       const spaceFilesPath = SpaceModel.getFilesPath(space.alias)
       if (!(await isPathExists(spaceFilesPath))) {
@@ -111,13 +111,13 @@ export class FilesParser {
       .leftJoin(
         files,
         or(
-          // if the child share is from a share with an external path, the child share should have an external path and a fileId
+          // If the child share is from a share with an external path, the child share should have an external path and a fileId
           and(isNotNull(shares.fileId), eq(files.id, shares.fileId)),
           and(isNull(shares.externalPath), isNull(shares.fileId), isNotNull(spacesRoots.fileId), eq(files.id, spacesRoots.fileId))
         )
       )
-      .leftJoin(spaces, and(isNull(shares.externalPath), isNotNull(files.spaceId), eq(spaces.id, files.spaceId)))
-      .leftJoin(users, eq(users.id, files.ownerId))
+      .leftJoin(spaces, and(isNull(shares.externalPath), isNotNull(files.spaceId), eq(spaces.id, files.spaceId), eq(spaces.storageIndexing, true)))
+      .leftJoin(users, and(eq(users.id, files.ownerId), eq(users.storageIndexing, true)))
       .where(and(...[eq(shares.type, SHARE_TYPE.COMMON), ...(shareIds ? [inArray(shares.id, shareIds)] : [])]))
       .groupBy(shares.id)) {
       let shareFilesPath: string
@@ -127,6 +127,9 @@ export class FilesParser {
         shareFilesPath = path.join(UserModel.getFilesPath(share.file.fromOwner), share.file.path)
       } else if (share.file.fromSpace) {
         shareFilesPath = path.join(SpaceModel.getFilesPath(share.file.fromSpace), share.file.path)
+      } else {
+        // Exclude shares that don’t match these cases (join conditions)
+        continue
       }
       if (!(await isPathExists(shareFilesPath))) {
         this.logger.warn(`${this.sharePaths.name} - share path does not exist : ${shareFilesPath}`)
