@@ -20,6 +20,7 @@ import {
   API_USERS_MY_LANGUAGE,
   API_USERS_MY_NOTIFICATION,
   API_USERS_MY_PASSWORD,
+  API_USERS_MY_STORAGE_INDEXING,
   USERS_ROUTE
 } from '@sync-in-server/backend/src/applications/users/constants/routes'
 import { USER_ONLINE_STATUS, USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -31,10 +32,11 @@ import type {
   UpdateUserFromGroupDto
 } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
-import type {
+import {
   UserAppPasswordDto,
   UserLanguageDto,
   UserNotificationDto,
+  UserStorageIndexingDto,
   UserUpdatePasswordDto
 } from '@sync-in-server/backend/src/applications/users/dto/user-properties.dto'
 import type { GroupBrowse } from '@sync-in-server/backend/src/applications/users/interfaces/group-browse.interface'
@@ -214,6 +216,10 @@ export class UserService {
 
   changeNotification(userNotificationDto: UserNotificationDto): Observable<any> {
     return this.http.put(API_USERS_MY_NOTIFICATION, userNotificationDto)
+  }
+
+  changeStorageIndexing(userStorageIndexingDto: UserStorageIndexingDto): Observable<any> {
+    return this.http.put(API_USERS_MY_STORAGE_INDEXING, userStorageIndexingDto)
   }
 
   changeOnlineStatus(status: USER_ONLINE_STATUS, store: boolean = true) {

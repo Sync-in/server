@@ -15,7 +15,7 @@
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
 </div>
 <div class="modal-body">
-  <div>
+  <div class="overflow-wrap-and-whitespace">
     @switch (submitted) {
       @case (false) {
         @if (files.length > 1) {

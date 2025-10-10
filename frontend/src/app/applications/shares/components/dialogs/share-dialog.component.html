@@ -33,35 +33,37 @@
       </ng-template>
       <div class="d-flex col-12">
         <div class="d-flex flex-column col-6 pe-2">
-          <div class="mb-3 px-0" style="max-width: 80%">
-            <label for="name" l10nTranslate>
-              Share name
-            </label>
-            <input
-              id="name"
-              type="text"
-              [(ngModel)]="share.name"
-              appAutofocus
-              class="form-control form-control-sm {{ !share.name ? 'is-invalid' : '' }}"
-              required>
-          </div>
-          <div class="mb-3 px-0" style="max-width: 80%">
-            <label for="description" l10nTranslate>
-              Description
-            </label>
-            <input
-              id="description"
-              type="text"
-              [(ngModel)]="share.description"
-              class="form-control form-control-sm">
-          </div>
-          <div class="mb-3 px-0">
-            <label for="switchStatus" l10nTranslate>Share status</label>
-            <div class="d-flex align-items-center form-check form-switch cursor-pointer">
-              <input class="form-check-input" [(ngModel)]="share.enabled" id="switchStatus" type="checkbox" role="button">
-              <label class="form-check-label mb-0 ms-2" for="switchStatus" l10nTranslate>
-                {{ share.enabled ? 'enabled' : 'disabled' }}
+          <div style="max-width: 80%">
+            <div class="mb-3 px-0">
+              <label for="name" l10nTranslate>
+                Share name
               </label>
+              <input
+                id="name"
+                type="text"
+                [(ngModel)]="share.name"
+                appAutofocus
+                class="form-control form-control-sm {{ !share.name ? 'is-invalid' : '' }}"
+                required>
+            </div>
+            <div class="mb-3 px-0">
+              <label for="description" l10nTranslate>
+                Description
+              </label>
+              <input
+                id="description"
+                type="text"
+                [(ngModel)]="share.description"
+                class="form-control form-control-sm">
+            </div>
+            <div class="mb-3 px-0">
+              <label for="switchStatus" l10nTranslate>Share status</label>
+              <div class="d-flex align-items-center form-check form-switch cursor-pointer">
+                <input class="form-check-input" [(ngModel)]="share.enabled" id="switchStatus" type="checkbox" role="button">
+                <label class="form-check-label mb-0 ms-2" for="switchStatus" l10nTranslate>
+                  {{ share.enabled ? 'enabled' : 'disabled' }}
+                </label>
+              </div>
             </div>
           </div>
         </div>

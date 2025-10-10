@@ -217,6 +217,7 @@ export class SpacesManager {
       description: createOrUpdateSpaceDto.description,
       enabled: createOrUpdateSpaceDto.enabled,
       storageQuota: createOrUpdateSpaceDto.storageQuota,
+      storageIndexing: createOrUpdateSpaceDto.storageIndexing,
       disabledAt: createOrUpdateSpaceDto.enabled ? null : new Date()
     })
     try {
@@ -239,9 +240,10 @@ export class SpacesManager {
   async updateSpace(user: UserModel, spaceId: number, createOrUpdateSpaceDto: CreateOrUpdateSpaceDto): Promise<SpaceProps> {
     /* only managers of the space can update it */
     const space: SpaceProps = await this.userCanAccessSpace(user.id, spaceId, true)
-    // check & update space info
+    // check and update space info
     const spaceDiffProps: Partial<SpaceProps> = { modifiedAt: new Date() }
-    for (const prop of ['name', 'description', 'enabled', 'storageQuota']) {
+    const props: (keyof CreateOrUpdateSpaceDto)[] = ['name', 'description', 'enabled', 'storageQuota', 'storageIndexing']
+    for (const prop of props) {
       if (createOrUpdateSpaceDto[prop] !== space[prop]) {
         spaceDiffProps[prop] = createOrUpdateSpaceDto[prop]
         if (prop === 'name') {

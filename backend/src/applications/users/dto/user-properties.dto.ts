@@ -5,7 +5,7 @@
  */
 
 import { Transform } from 'class-transformer'
-import { IsDate, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MinLength, ValidateIf } from 'class-validator'
+import { IsBoolean, IsDate, IsDefined, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, MinLength, ValidateIf } from 'class-validator'
 import { AUTH_SCOPE } from '../../../authentication/constants/scope'
 import { currentDate } from '../../../common/shared'
 import { USER_PASSWORD_MIN_LENGTH } from '../constants/user'
@@ -19,6 +19,12 @@ export class UserNotificationDto {
   @IsNotEmpty()
   @IsInt()
   notification: number
+}
+
+export class UserStorageIndexingDto {
+  @IsDefined()
+  @IsBoolean()
+  storageIndexing: boolean
 }
 
 export class UserUpdatePasswordDto {

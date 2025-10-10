@@ -46,6 +46,7 @@ export const users = mysqlTable(
     permissions: varchar('permissions', { length: 255 }).default('').notNull(),
     storageUsage: bigint('storageUsage', { mode: 'number', unsigned: true }).default(0),
     storageQuota: bigint('storageQuota', { mode: 'number', unsigned: true }),
+    storageIndexing: boolean('storageIndexing').default(true).notNull(),
     notification: tinyint('notification', { unsigned: true }).default(1).notNull(),
     onlineStatus: tinyint('onlineStatus', { unsigned: true }).default(0).notNull(),
     currentIp: varchar('currentIp', { length: 45 }),

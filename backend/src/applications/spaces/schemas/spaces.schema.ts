@@ -27,6 +27,7 @@ export const spaces = mysqlTable(
     enabled: boolean('enabled').default(true).notNull(),
     storageUsage: bigint('storageUsage', { mode: 'number', unsigned: true }).default(0).notNull(),
     storageQuota: bigint('storageQuota', { mode: 'number', unsigned: true }),
+    storageIndexing: boolean('storageIndexing').default(true).notNull(),
     createdAt: datetime('createdAt', { mode: 'date' })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

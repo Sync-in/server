@@ -126,6 +126,7 @@ export class SpacesQueries {
           enabled: spaces.enabled,
           storageUsage: spaces.storageUsage,
           storageQuota: spaces.storageQuota,
+          storageIndexing: spaces.storageIndexing,
           createdAt: spaces.createdAt,
           modifiedAt: spaces.modifiedAt,
           disabledAt: spaces.disabledAt,
@@ -169,7 +170,7 @@ export class SpacesQueries {
             permissions: otherMembers.permissions,
             createdAt: dateTimeUTC(otherMembers.createdAt)
           })
-        })
+        } satisfies SpaceProps | SelectedFields<any, any>)
         .from(spacesMembers)
         .innerJoin(
           spaces,

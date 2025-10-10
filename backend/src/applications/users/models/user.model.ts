@@ -29,6 +29,7 @@ export class UserModel implements User {
   permissions: string
   storageUsage: number
   storageQuota: number
+  storageIndexing: boolean
   passwordAttempts: number
   currentIp: string
   lastIp: string
