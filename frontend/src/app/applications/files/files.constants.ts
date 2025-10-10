@@ -23,7 +23,6 @@ export const logoDarkUrl = `${assetsUrl}/logo-dark${mimeExtension}`
 export const logoUrl = `${assetsUrl}/logo${mimeExtension}`
 export const linkProtected = `${assetsUrl}/protected.png`
 export const defaultMimeUrl = getAssetsMimeUrl(mimeFile)
-export const excludeFromMedias = new Set(['matroska', 'mpegurl', 'msvideo'])
 export const compressibleMimes = new Set(['application-gzip', 'application-zip', 'application-x-tar'])
 export const notViewableExtensions = new Set([
   'rar',
@@ -37,9 +36,7 @@ export const notViewableExtensions = new Set([
   'exe',
   'dll',
   'msi',
-  'bat',
   'cmd',
-  'sh',
   'apk',
   'appimage',
   'dmg',

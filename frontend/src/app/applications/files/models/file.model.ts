@@ -24,7 +24,6 @@ import { userAvatarUrl } from '../../users/user.functions'
 import {
   compressibleMimes,
   defaultMimeUrl,
-  excludeFromMedias,
   getAssetsMimeUrl,
   mimeDirectory,
   mimeDirectoryShare,
@@ -152,13 +151,9 @@ export class FileModel implements File {
         this.isViewable = true
         this.haveThumbnail = true
       } else if (['video', 'audio'].indexOf(this.shortMime) > -1) {
-        if (excludeFromMedias.has(mime)) {
-          this.isViewable = false
-        } else {
-          this.shortMime = 'media'
-          this.isViewable = true
-          this.haveThumbnail = true
-        }
+        this.shortMime = 'media'
+        this.isViewable = true
+        this.haveThumbnail = true
       } else if (compressibleMimes.has(mime)) {
         this.isCompressible = false
         this.isViewable = false
