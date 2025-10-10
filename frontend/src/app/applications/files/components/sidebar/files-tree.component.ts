@@ -18,6 +18,7 @@ import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/
 import { L10nTranslateDirective } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
+import { TapDirective } from '../../../../common/directives/tap.directive'
 import { defaultResizeOffset } from '../../../../layout/layout.constants'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
@@ -28,7 +29,7 @@ import { FilesService } from '../../services/files.service'
 
 @Component({
   selector: 'app-files-tree',
-  imports: [AutoResizeDirective, TreeModule, L10nTranslateDirective, FaIconComponent],
+  imports: [AutoResizeDirective, TreeModule, L10nTranslateDirective, FaIconComponent, TapDirective],
   templateUrl: 'files-tree.component.html'
 })
 export class FilesTreeComponent implements OnInit, OnDestroy {

@@ -32,6 +32,7 @@ import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { filter, take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
+import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { JoinCountsPipe } from '../../../common/pipes/join-counts.pipe'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
@@ -65,7 +66,8 @@ import { UserPersonalGroupLeaveDialogComponent } from './dialogs/user-personal-g
     TimeAgoPipe,
     BsDropdownDirective,
     BsDropdownToggleDirective,
-    BsDropdownMenuDirective
+    BsDropdownMenuDirective,
+    TapDirective
   ],
   templateUrl: 'user-groups.component.html'
 })

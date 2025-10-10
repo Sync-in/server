@@ -54,6 +54,7 @@ import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { InputEditDirective } from '../../../common/directives/input-edit.directive'
+import { TapDirective } from '../../../common/directives/tap.directive'
 import { UploadFilesDirective } from '../../../common/directives/upload-files.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
@@ -103,7 +104,8 @@ import { SpaceAnchorFileDialogComponent } from './dialogs/space-anchor-file-dial
     SearchFilterPipe,
     UserAvatarComponent,
     UploadFilesDirective,
-    FilePermissionsComponent
+    FilePermissionsComponent,
+    TapDirective
   ],
   templateUrl: 'spaces-browser.component.html'
 })

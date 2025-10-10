@@ -75,8 +75,7 @@
         @for (s of scrollView?.viewPortItems; track s.id) {
           <div (click)="onSelect(s)"
                (contextmenu)="onTargetContextMenu($event, s)"
-               (pressup)="onTargetContextMenu($event, s)"
-               (tap)="browse(s)"
+               (appTap)="browse(s)"
                [class.disabled]="!s.enabled"
                [class.selected]="s.id === selected?.id"
                [style.height.px]="galleryMode.dimensions"
@@ -142,8 +141,7 @@
         @for (s of scrollView?.viewPortItems; track s.id) {
           <tr (click)="onSelect(s)"
               (contextmenu)="onTargetContextMenu($event, s)"
-              (pressup)="onTargetContextMenu($event, s)"
-              (tap)="browse(s)"
+              (appTap)="browse(s)"
               [class.disabled]="!s.enabled"
               [class.selected]="s.id === selected?.id">
             @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {

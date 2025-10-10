@@ -31,6 +31,7 @@ import { take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
+import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { JoinCountsPipe } from '../../../common/pipes/join-counts.pipe'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
@@ -64,7 +65,8 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
     NavigationViewComponent,
     FilterComponent,
     SearchFilterPipe,
-    FilePermissionsComponent
+    FilePermissionsComponent,
+    TapDirective
   ],
   templateUrl: 'spaces.component.html'
 })

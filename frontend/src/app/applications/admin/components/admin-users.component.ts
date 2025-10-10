@@ -33,6 +33,7 @@ import { take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { StorageUsageComponent } from '../../../common/components/storage-usage.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
+import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
@@ -64,7 +65,8 @@ import { AdminUserDialogComponent } from './dialogs/admin-user-dialog.component'
     ContextMenuModule,
     ButtonCheckboxDirective,
     FormsModule,
-    UserAvatarComponent
+    UserAvatarComponent,
+    TapDirective
   ],
   templateUrl: 'admin-users.component.html'
 })

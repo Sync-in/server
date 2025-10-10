@@ -100,8 +100,7 @@
       @for (m of scrollView?.viewPortItems; track m.mid) {
         <tr (click)="onSelect(m)"
             (contextmenu)="onTargetContextMenu($event, m)"
-            (pressup)="onTargetContextMenu($event, m)"
-            (tap)="browse(m)"
+            (appTap)="browse(m)"
             [class.selected]="m.mid === selected?.mid">
           @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
             @if (th.value.show) {

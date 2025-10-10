@@ -62,7 +62,7 @@
   <tree-root #tree [nodes]="nodes" [options]="options">
     <ng-template #treeNodeWrapperTemplate let-index="index" let-node>
       <div (click)="node.mouseAction('click', $event)"
-           (tap)="node.mouseAction('dblClick', $event)"
+           (appTap)="node.mouseAction('dblClick', $event)"
            [class.tree-selected]="node.isActive"
            [class.tree-disabled]="!node.data.enabled"
            [style.padding-left]="node.getNodePadding()"

@@ -16,6 +16,7 @@ import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
+import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
@@ -39,7 +40,8 @@ import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../spaces.constants'
     VirtualScrollComponent,
     SearchFilterPipe,
     L10nTranslateDirective,
-    ContextMenuModule
+    ContextMenuModule,
+    TapDirective
   ],
   templateUrl: 'trash.component.html'
 })

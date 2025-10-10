@@ -31,6 +31,7 @@ import { take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
+import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
@@ -61,7 +62,8 @@ import { LinkDialogComponent } from './dialogs/link-dialog.component'
     VirtualScrollComponent,
     SearchFilterPipe,
     ShareRepositoryComponent,
-    FilePermissionsComponent
+    FilePermissionsComponent,
+    TapDirective
   ],
   templateUrl: 'links.component.html'
 })

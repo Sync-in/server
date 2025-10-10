@@ -17,6 +17,7 @@ import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
+import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
@@ -42,7 +43,8 @@ import { UserAvatarComponent } from './utils/user-avatar.component'
     SearchFilterPipe,
     TimeDateFormatPipe,
     ContextMenuModule,
-    UserAvatarComponent
+    UserAvatarComponent,
+    TapDirective
   ],
   templateUrl: 'user-guests.component.html'
 })

@@ -18,6 +18,7 @@ import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { AutofocusDirective } from '../../../common/directives/auto-focus.directive'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
+import { TapDirective } from '../../../common/directives/tap.directive'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
@@ -37,7 +38,8 @@ import { SEARCH_ICON, SEARCH_PATH } from '../search.constants'
     FormsModule,
     AutoResizeDirective,
     TooltipDirective,
-    SearchFilterPipe
+    SearchFilterPipe,
+    TapDirective
   ],
   templateUrl: './search.component.html'
 })

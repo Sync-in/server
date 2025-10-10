@@ -40,7 +40,6 @@
     "angular-l10n": "^17.0.0",
     "codemirror": "^5.65.16",
     "dayjs": "^1.11.13",
-    "hammerjs": "^2.0.8",
     "ngx-bootstrap": "^20.0.0",
     "ngx-clipboard": "^16.0.0",
     "ngx-socket-io": "^4.9.3",

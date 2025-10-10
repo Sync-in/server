@@ -85,8 +85,7 @@
       @for (u of scrollView?.viewPortItems; track u.id) {
         <tr (click)="onSelect(u)"
             (contextmenu)="onTargetContextMenu($event, u)"
-            (pressup)="onTargetContextMenu($event, u)"
-            (tap)="openDialog()"
+            (appTap)="openDialog()"
             [class.disabled]="!u.isActive"
             [class.selected]="u.id === selected?.id">
           @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {

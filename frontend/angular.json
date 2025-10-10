@@ -42,7 +42,6 @@
               "src/styles/index.scss"
             ],
             "scripts": [
-              "hammerjs/hammer.min.js",
               "codemirror/lib/codemirror.js",
               "codemirror/mode/meta.js",
               "codemirror/addon/mode/loadmode.js",

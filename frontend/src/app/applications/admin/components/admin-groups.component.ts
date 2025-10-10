@@ -36,6 +36,7 @@ import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { filter, take } from 'rxjs/operators'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
+import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { JoinCountsPipe } from '../../../common/pipes/join-counts.pipe'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
@@ -73,7 +74,8 @@ import { AdminGroupEditUserDialogComponent } from './dialogs/admin-group-edit-us
     BsDropdownToggleDirective,
     BsDropdownMenuDirective,
     ButtonCheckboxDirective,
-    FormsModule
+    FormsModule,
+    TapDirective
   ],
   templateUrl: 'admin-groups.component.html'
 })
