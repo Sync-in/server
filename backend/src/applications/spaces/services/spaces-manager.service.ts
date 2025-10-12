@@ -395,10 +395,8 @@ export class SpacesManager {
   }
 
   async updateSpacesQuota(spaceId?: number) {
-    for (const space of await this.spacesQueries.selectSpaces(
-      ['id', 'alias', 'storageUsage', 'storageQuota'],
-      [...(spaceId ? [eq(spaces.id, spaceId)] : [])]
-    )) {
+    const props: (keyof Space)[] = ['id', 'alias', 'storageUsage', 'storageQuota']
+    for (const space of await this.spacesQueries.selectSpaces(props, [...(spaceId ? [eq(spaces.id, spaceId)] : [])])) {
       const spacePath = SpaceModel.getHomePath(space.alias)
       if (!(await isPathExists(spacePath))) {
         this.logger.warn(`${this.updateSpacesQuota.name} - *${space.alias}* home path does not exist`)
