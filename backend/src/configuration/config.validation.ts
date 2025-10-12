@@ -38,10 +38,10 @@ export class ServerConfig {
   @Max(65535)
   port: number = 8080
 
-  @Transform(({ value }) => (value === 0 || value === 'auto' ? cpus().length : Math.max(Number(value), 2)))
+  @Transform(({ value }) => (value === 0 || value === 'auto' ? cpus().length : Math.max(Number(value), 1)))
   @IsInt()
-  @Min(2)
-  workers: number = 2
+  @Min(1)
+  workers: number = 1
 
   @IsOptional()
   trustProxy: boolean | string | number = 1

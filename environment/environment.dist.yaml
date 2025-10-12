@@ -3,9 +3,9 @@ server:
   host: 0.0.0.0
   # default port : `8080`
   port: 8080
-  # workers: `auto` (use all cpus) | number
-  # regardless of the value, starts with at least 2 workers, 1 worker is dedicated to scheduled tasks
-  workers: 2
+  # workers: `auto` or `0` (use all cpus) | number of CPUs to use
+  # default: 1
+  workers: 1
   # trust proxy: number (trust the nth hop from the front-facing proxy server as the client) | `true` | `false` | `127.0.0.1,192.168.1.1/24`
   # default: 1
   trustProxy: 1
