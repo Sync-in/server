@@ -44,25 +44,26 @@
           }
         </span>
         <div class="fs-xxxs">
-          <div>
-            <progressbar [max]="100"
-                         [value]="task.status > 0 ? 100 : task.props.progress || 100"
-                         [type]="task.status < 1 ? 'warning' : task.status === 2 ? 'danger' : null"
-                         class="custom-progress-bar position-relative">
+          <progressbar [max]="100"
+                       [value]="task.status > 0 ? 100 : task.props.progress || 100"
+                       [type]="task.status < 1 ? 'warning' : task.status === 2 ? 'danger' : null"
+                       class="custom-progress-bar position-relative">
               <span class="d-flex align-items-center justify-content-center position-absolute mx-1 w-100">
                 @if (task.props.size) {
                   <span>{{ task.props.size | toBytes:2 }}&nbsp;•&nbsp;</span>
                 }
                 @if (task.props.directories) {
-                  <span><fa-icon [icon]="icons.faFolderClosed" [fixedWidth]="false"></fa-icon>&nbsp;{{ task.props.directories }}&nbsp;•&nbsp;</span>
+                  <fa-icon [icon]="icons.faFolderClosed"></fa-icon>
+                  <span>&nbsp;{{ task.props.directories }}&nbsp;•&nbsp;</span>
                 }
                 @if (task.props.files) {
-                  <span><fa-icon [icon]="icons.faFile" [fixedWidth]="false"></fa-icon>&nbsp;{{ task.props.files }}&nbsp;•&nbsp;</span>
+                  <fa-icon [icon]="icons.faFile"></fa-icon>
+                  <span>&nbsp;{{ task.props.files }}&nbsp;•&nbsp;</span>
                 }
-                <span><fa-icon [icon]="icons.faClock" [fixedWidth]="false"></fa-icon>&nbsp;{{ task.startedAt | amTimeAgo:true }}</span>
+                <fa-icon [icon]="icons.faClock"></fa-icon>
+                <span>&nbsp;{{ task.startedAt | amTimeAgo:true }}</span>
               </span>
-            </progressbar>
-          </div>
+          </progressbar>
         </div>
       </div>
     </div>
