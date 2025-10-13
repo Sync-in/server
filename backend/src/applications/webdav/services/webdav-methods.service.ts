@@ -463,11 +463,12 @@ export class WebDAVMethods {
 
   private handleError(req: FastifyDAVRequest, res: FastifyReply, e: any, toUrl?: string) {
     this.logger.error(`Unable to ${req.method} ${req.dav.url}${toUrl ? ` -> ${toUrl}` : ''} : ${e.message}`)
+    const errorMsg = e.message.split(',')[0]
     if (e instanceof LockConflict) {
       return DAV_ERROR_RES(HttpStatus.LOCKED, PRECONDITION.LOCK_CONFLICT, res, e.lock.davLock?.lockroot || e.lock.dbFilePath)
     } else if (e instanceof FileError) {
-      return res.status(e.httpCode).send(e.message)
+      return res.status(e.httpCode).send(errorMsg)
     }
-    throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR)
+    throw new HttpException(errorMsg, HttpStatus.INTERNAL_SERVER_ERROR)
   }
 }
