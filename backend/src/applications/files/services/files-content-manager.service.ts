@@ -70,8 +70,8 @@ export class FilesContentManager {
       context.regexBasePath = new RegExp(`^/?${p.realPath}/?`)
       context.pathPrefix = p.pathPrefix || ''
       if (!p.isDir) {
-        // space root file case
-        const rootFileContent = await this.analyzeFile(p.realPath, context)
+        // Handles the space root file or shared file case
+        const rootFileContent = await this.analyzeFile(p.realPath, context, true)
         if (rootFileContent !== null) {
           this.filesIndexer.insertRecord(indexName, rootFileContent).catch((e: Error) => {
             errorRecords++
@@ -132,11 +132,11 @@ export class FilesContentManager {
     }
   }
 
-  private async analyzeFile(realPath: string, context: FileIndexContext): Promise<FileContent> {
+  private async analyzeFile(realPath: string, context: FileIndexContext, isRootFile = false): Promise<FileContent> {
     const extension = path.extname(realPath).slice(1).toLowerCase()
     if (!indexableExtensions.has(extension)) return null
 
-    const fileName = path.basename(realPath)
+    const fileName = isRootFile ? path.basename(context.pathPrefix) : path.basename(realPath)
 
     // ignore temporary documents
     if (fileName.startsWith('~$')) return null
@@ -152,7 +152,9 @@ export class FilesContentManager {
       return null
     }
 
-    const filePath = path.join(context.pathPrefix, path.dirname(realPath).replace(context.regexBasePath, '') || '.')
+    const filePath = isRootFile
+      ? path.dirname(context.pathPrefix) || '.'
+      : path.join(context.pathPrefix, path.dirname(realPath).replace(context.regexBasePath, '') || '.')
 
     const f = context.db.get(stats.ino)
     if (f && f.size === stats.size && f.path === filePath && f.name === fileName) {

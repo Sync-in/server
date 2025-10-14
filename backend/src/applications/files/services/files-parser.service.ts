@@ -42,7 +42,7 @@ export class FilesParser {
         login: users.login
       })
       .from(users)
-      .where(and(...[lte(users.role, USER_ROLE.USER), eq(users.storageIndexing, true), ...(userId ? [eq(users.id, userId)] : [])]))) {
+      .where(and(...[eq(users.storageIndexing, true), lte(users.role, USER_ROLE.USER), ...(userId ? [eq(users.id, userId)] : [])]))) {
       const userFilesPath = UserModel.getFilesPath(user.login)
       if (!(await isPathExists(userFilesPath))) {
         this.logger.warn(`${this.userPaths.name} - user path does not exist : ${userFilesPath}`)
@@ -118,7 +118,7 @@ export class FilesParser {
       )
       .leftJoin(spaces, and(isNull(shares.externalPath), isNotNull(files.spaceId), eq(spaces.id, files.spaceId), eq(spaces.storageIndexing, true)))
       .leftJoin(users, and(eq(users.id, files.ownerId), eq(users.storageIndexing, true)))
-      .where(and(...[eq(shares.type, SHARE_TYPE.COMMON), ...(shareIds ? [inArray(shares.id, shareIds)] : [])]))
+      .where(and(eq(shares.storageIndexing, true), ...[eq(shares.type, SHARE_TYPE.COMMON), ...(shareIds ? [inArray(shares.id, shareIds)] : [])]))
       .groupBy(shares.id)) {
       let shareFilesPath: string
       if (share.externalPath) {

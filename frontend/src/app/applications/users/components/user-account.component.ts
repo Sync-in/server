@@ -20,7 +20,6 @@ import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '@sync-in-server/back
 import { TwoFaSetup } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
-import { ProgressbarModule } from 'ngx-bootstrap/progressbar'
 import { ClipboardService } from 'ngx-clipboard'
 import { Subscription } from 'rxjs'
 import { filter, take } from 'rxjs/operators'
@@ -48,7 +47,6 @@ import { UserAuthManageAppPasswordsDialogComponent } from './dialogs/user-auth-m
     L10nTranslatePipe,
     TimeDateFormatPipe,
     TimeAgoPipe,
-    ProgressbarModule,
     PasswordStrengthBarComponent,
     L10nTranslateDirective,
     FaIconComponent,

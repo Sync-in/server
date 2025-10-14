@@ -44,8 +44,8 @@
   @if (errorMessage) {
     <div class="p-3 text-danger fw-500">{{ errorMessage }}</div>
   }
-  @for (f of this.store.filesSearch() | searchFilter:inputFilter.search(); track f.id) {
-    <div class="app-div-striped py-2" (click)="selectedId = f.id" (appTap)="goTo(f)" [class.selected]="f.id === selectedId">
+  @for (f of this.store.filesSearch() | searchFilter:inputFilter.search(); track $index) {
+    <div class="app-div-striped py-2" (click)="selectedId = $index" (appTap)="goTo(f)" [class.selected]="$index === selectedId">
       <div class="d-flex align-items-center text-truncate px-2 py-1">
         <img [src]="f.mimeUrl" (error)="f.fallBackMimeUrl()" alt="" draggable="false" height="28">
         <div class="d-flex flex-column text-truncate ms-2" style="height: 34px">

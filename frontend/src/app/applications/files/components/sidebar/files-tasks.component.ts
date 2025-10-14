@@ -23,7 +23,7 @@ import {
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
-import { ProgressbarModule } from 'ngx-bootstrap/progressbar'
+import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
@@ -36,7 +36,7 @@ import { FilesService } from '../../services/files.service'
 
 @Component({
   selector: 'app-files-tasks',
-  imports: [FaIconComponent, L10nTranslatePipe, AutoResizeDirective, TooltipModule, ProgressbarModule, TimeAgoPipe, ToBytesPipe],
+  imports: [FaIconComponent, L10nTranslatePipe, AutoResizeDirective, TooltipModule, ProgressbarComponent, TimeAgoPipe, ToBytesPipe],
   templateUrl: 'files-tasks.component.html'
 })
 export class FilesTasksComponent implements OnDestroy {

@@ -76,6 +76,7 @@ export class SharesService {
       name: '',
       createdAt: new Date(),
       modifiedAt: new Date(),
+      storageIndexing: true,
       enabled: true,
       ...(isSharesRepo ? { parent: { id: 0, ownerId: 0, alias: file.space.alias, name: file.space.name } } : {})
     }

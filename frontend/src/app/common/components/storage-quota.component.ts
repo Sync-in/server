@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
+import { Component, computed, inject, input, model, OnInit, signal } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -14,59 +14,81 @@ import { quotaRegexp } from '../utils/regexp'
 @Component({
   selector: 'app-storage-quota',
   imports: [L10nTranslatePipe, TooltipModule, FormsModule, L10nTranslateDirective],
-  template: ` <label for="storageQuota" l10nTranslate>Storage Quota</label>
+  template: `
+    <label for="storageQuota" l10nTranslate>Storage Quota</label>
     <div id="storageQuota">
       <input
         id="quota"
-        [(ngModel)]="quotaText"
-        (ngModelChange)="validateQuota()"
+        [ngModel]="quotaText()"
+        (ngModelChange)="onQuotaInput($event)"
         (blur)="onQuotaBlur()"
         [placeholder]="'Unlimited' | translate: locale.language"
-        class="form-control form-control-sm {{ invalid ? 'is-invalid' : '' }}"
-        [class.w-100]="fullWidth"
-        [style.max-width.%]="maxWidthPercent"
+        class="form-control form-control-sm {{ invalid() ? 'is-invalid' : '' }}"
+        [class.w-100]="fullWidth()"
+        [style.max-width.%]="displayMaxWidth()"
         placement="top"
         tooltip='"512 MB" "12 GB" "2 TB" ...'
         triggers="focus"
         type="text"
       />
-    </div>`
+    </div>
+  `
 })
 export class StorageQuotaComponent implements OnInit {
-  @Input() quota: number
-  @Output() quotaChange = new EventEmitter<number>()
-  @Input() maxWidthPercent = 75
-  @Input() fullWidth = false
+  // two-way binding via banana in parent: [(quota)]="..."
+  quota = model<number | null>(null)
+
+  // plain inputs converted to signals
+  maxWidthPercent = input<number>(75)
+  fullWidth = input<boolean>(false)
+
+  // derived: what we actually apply in the template
+  displayMaxWidth = computed(() => (this.fullWidth() ? 100 : this.maxWidthPercent()))
+
+  // locale as before
   protected locale = inject<L10nLocale>(L10N_LOCALE)
-  protected quotaText: string
-  protected invalid = false
+
+  // internal state as signals
+  protected quotaText = signal<string>('') // text shown/edited in the input
+  protected invalid = signal<boolean>(false)
 
   ngOnInit() {
-    if (this.fullWidth) {
-      this.maxWidthPercent = 100
+    // initialize text from initial quota value (one-time on init)
+    const q = this.quota()
+    if (q !== null && q !== undefined) {
+      this.quotaText.set(q === 0 ? '0' : convertBytesToText(q))
     }
-    if (this.quota !== null) {
-      this.quotaText = this.quota === 0 ? '0' : convertBytesToText(this.quota)
-    }
+    // keep initial max width behavior but via computed (no mutation of inputs)
+    // -> handled by displayMaxWidth()
   }
 
+  // called on each keystroke
+  onQuotaInput(value: string) {
+    this.quotaText.set(value)
+    this.validateQuota()
+  }
+
+  // called on blur (commit the numeric value back to the model)
   onQuotaBlur() {
-    if (this.quotaText) {
-      if (this.quotaText === '0') {
-        this.quotaChange.emit(0)
+    const t = this.quotaText()
+    if (t) {
+      if (t === '0') {
+        this.quota.set(0)
         return
       }
-      const b = quotaRegexp.exec(this.quotaText)
+      const b = quotaRegexp.exec(t)
       if (b) {
-        this.quotaText = `${b[1]} ${b[2].toUpperCase()}`
-        this.quotaChange.emit(convertTextToBytes(parseInt(b[1]), b[2]))
+        const pretty = `${b[1]} ${b[2].toUpperCase()}`
+        this.quotaText.set(pretty)
+        this.quota.set(convertTextToBytes(parseInt(b[1], 10), b[2]))
         return
       }
     }
-    this.quotaChange.emit(null)
+    this.quota.set(null)
   }
 
   validateQuota() {
-    this.invalid = this.quotaText && this.quotaText !== '0' && !quotaRegexp.test(this.quotaText)
+    const t = this.quotaText()
+    this.invalid.set(!!t && t !== '0' && !quotaRegexp.test(t))
   }
 }

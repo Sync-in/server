@@ -43,7 +43,7 @@ export class SyncPathsManager {
       throw new HttpException('Client id is missing', HttpStatus.BAD_REQUEST)
     }
     if (req.space.quotaIsExceeded) {
-      throw new HttpException('Space quota is exceeded', HttpStatus.INSUFFICIENT_STORAGE)
+      throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)
     }
     if (!(await isPathExists(req.space.realPath))) {
       throw new HttpException(`Remote path not found : ${syncPathDto.remotePath}`, HttpStatus.NOT_FOUND)

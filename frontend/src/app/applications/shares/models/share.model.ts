@@ -24,6 +24,9 @@ export class ShareModel implements ShareProps {
   description: string
   enabled: boolean
   externalPath: string
+  storageUsage: number
+  storageQuota: number
+  storageIndexing: boolean
   createdAt: Date
   modifiedAt: Date
   disabledAt: Date
