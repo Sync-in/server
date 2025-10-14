@@ -135,7 +135,7 @@ describe(SyncPathsManager.name, () => {
       })
     })
 
-    it('should throw INSUFFICIENT_STORAGE when space quota is exceeded', async () => {
+    it('should throw INSUFFICIENT_STORAGE when storage quota is exceeded', async () => {
       const req = baseReq()
       req.space.quotaIsExceeded = true
       await expect(service.createPath(req, { remotePath: 'x' } as any)).rejects.toMatchObject({

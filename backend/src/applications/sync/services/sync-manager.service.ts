@@ -148,7 +148,7 @@ export class SyncManager {
       throw new HttpException('Space not found', HttpStatus.NOT_FOUND)
     }
     if (space.quotaIsExceeded) {
-      throw new HttpException('Space quota is exceeded', HttpStatus.INSUFFICIENT_STORAGE)
+      throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)
     }
     if (!(await isPathExists(space.realPath))) {
       throw new HttpException(`Remote path not found : ${syncPathSettings.remotePath}`, HttpStatus.NOT_FOUND)

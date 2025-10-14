@@ -128,6 +128,14 @@ export class CreateOrUpdateShareDto {
   enabled?: boolean
 
   @IsOptional()
+  @IsInt()
+  storageQuota?: number = null
+
+  @IsOptional()
+  @IsBoolean()
+  storageIndexing?: boolean
+
+  @IsOptional()
   @ValidateNested()
   @Type(() => ShareParentDto)
   parent?: ShareParentDto

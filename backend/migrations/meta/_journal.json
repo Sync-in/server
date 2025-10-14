@@ -29,6 +29,13 @@
       "when": 1760089921667,
       "tag": "0003_fancy_gauntlet",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1760345527424,
+      "tag": "0004_soft_sphinx",
+      "breakpoints": true
     }
   ]
 }

@@ -66,7 +66,6 @@ export class FilesScheduler {
         .from(users)) {
         const userTasksPath = UserModel.getTasksPath(user.login, user.role === USER_ROLE.GUEST, user.role === USER_ROLE.LINK)
         if (!(await isPathExists(userTasksPath))) {
-          this.logger.verbose(`${this.cleanupUserTaskFiles.name} - *${user.login}* tasks path does not exist`)
           continue
         }
         if (await dirHasChildren(userTasksPath, false)) {
@@ -91,7 +90,7 @@ export class FilesScheduler {
   }
 
   @Timeout(30000)
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron(CronExpression.EVERY_8_HOURS)
   async clearRecentFiles(): Promise<void> {
     this.logger.log(`${this.clearRecentFiles.name} - START`)
     const keepNumber = 100

@@ -56,14 +56,38 @@
                 [(ngModel)]="share.description"
                 class="form-control form-control-sm">
             </div>
-            <div class="mb-3 px-0">
-              <label for="switchStatus" l10nTranslate>Share status</label>
-              <div class="d-flex align-items-center form-check form-switch cursor-pointer">
-                <input class="form-check-input" [(ngModel)]="share.enabled" id="switchStatus" type="checkbox" role="button">
-                <label class="form-check-label mb-0 ms-2" for="switchStatus" l10nTranslate>
-                  {{ share.enabled ? 'enabled' : 'disabled' }}
-                </label>
+            @if (share.externalPath) {
+              <div class="d-flex flex-column align-items-start mb-3">
+                <app-storage-quota [(quota)]="share.storageQuota" [fullWidth]="true" class="w-100"></app-storage-quota>
               </div>
+              @if (share.storageUsage) {
+                <div class="d-flex flex-column mb-3">
+                  <label for="storage" l10nTranslate>Storage Usage</label>
+                  <app-storage-usage id="storage" [item]="share"></app-storage-usage>
+                </div>
+              }
+            }
+            <div class="d-flex justify-content-between">
+              <div>
+                <label for="switchStatus" l10nTranslate>Share status</label>
+                <div class="d-flex align-items-center form-check form-switch cursor-pointer">
+                  <input class="form-check-input" [(ngModel)]="share.enabled" id="switchStatus" type="checkbox" role="button">
+                  <label class="form-check-label mb-0 ms-2" for="switchStatus" l10nTranslate>
+                    {{ share.enabled ? 'enabled' : 'disabled' }}
+                  </label>
+                </div>
+              </div>
+              @if (share.externalPath) {
+                <div>
+                  <label for="switchFullText" l10nTranslate>Full-text search</label>
+                  <div class="d-flex align-items-center form-check form-switch cursor-pointer">
+                    <input class="form-check-input" [(ngModel)]="share.storageIndexing" id="switchFullText" type="checkbox" role="button">
+                    <label class="form-check-label mb-0 ms-2" for="switchFullText" l10nTranslate>
+                      {{ share.storageIndexing ? 'enabled' : 'disabled' }}
+                    </label>
+                  </div>
+                </div>
+              }
             </div>
           </div>
         </div>

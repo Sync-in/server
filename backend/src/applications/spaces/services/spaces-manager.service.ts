@@ -10,10 +10,9 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { ACTION } from '../../../common/constants'
 import { convertDiffUpdate, diffCollection, differencePermissions } from '../../../common/functions'
-import type { Entries } from '../../../common/interfaces'
+import type { Entries, StorageQuota } from '../../../common/interfaces'
 import { createSlug, regExpNumberSuffix } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { FileError } from '../../files/models/file-error'
 import { dirListFileNames, dirSize, getProps, isPathExists, moveFiles, removeFiles } from '../../files/utils/files'
@@ -29,6 +28,7 @@ import { SharesManager } from '../../shares/services/shares-manager.service'
 import { MEMBER_TYPE } from '../../users/constants/member'
 import { USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
+import type { User } from '../../users/schemas/user.interface'
 import { users } from '../../users/schemas/users.schema'
 import { UsersQueries } from '../../users/services/users-queries.service'
 import { CACHE_QUOTA_SPACE_PREFIX, CACHE_QUOTA_TTL, CACHE_QUOTA_USER_PREFIX } from '../constants/cache'
@@ -45,7 +45,6 @@ import {
 import { CreateOrUpdateSpaceDto, SpaceMemberDto } from '../dto/create-or-update-space.dto'
 import { DeleteSpaceDto } from '../dto/delete-space.dto'
 import { SearchSpaceDto } from '../dto/search-space.dto'
-import { SpaceQuota } from '../interfaces/space-quota.interface'
 import { SpaceTrash } from '../interfaces/space-trash.interface'
 import { SpaceEnv } from '../models/space-env.model'
 import { SpaceProps } from '../models/space-props.model'
@@ -64,7 +63,6 @@ export class SpacesManager {
 
   constructor(
     private readonly contextManager: ContextManager,
-    private readonly cache: Cache,
     private readonly spacesQueries: SpacesQueries,
     private readonly usersQueries: UsersQueries,
     private readonly sharesManager: SharesManager,
@@ -368,10 +366,11 @@ export class SpacesManager {
   }
 
   async updatePersonalSpacesQuota(forUser?: UserModel) {
-    for (const user of await this.usersQueries.selectUsers(
-      ['id', 'login', 'storageUsage', 'storageQuota'],
-      [lte(users.role, USER_ROLE.USER), ...(forUser ? [eq(users.id, forUser.id)] : [])]
-    )) {
+    const props: (keyof User)[] = ['id', 'login', 'storageUsage', 'storageQuota']
+    for (const user of await this.usersQueries.selectUsers(props, [
+      lte(users.role, USER_ROLE.USER),
+      ...(forUser ? [eq(users.id, forUser.id)] : [])
+    ])) {
       const userPath = UserModel.getHomePath(user.login)
       if (!(await isPathExists(userPath))) {
         this.logger.warn(`${this.updatePersonalSpacesQuota.name} - *${user.login}* home path does not exist`)
@@ -381,8 +380,8 @@ export class SpacesManager {
       for (const [path, error] of Object.entries(errors)) {
         this.logger.warn(`${this.updatePersonalSpacesQuota.name} - unable to get size for *${user.login}* on ${path} : ${error}`)
       }
-      const spaceQuota: SpaceQuota = { storageUsage: size, storageQuota: user.storageQuota }
-      this.cache
+      const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: user.storageQuota }
+      this.spacesQueries.cache
         .set(`${CACHE_QUOTA_USER_PREFIX}-${user.id}`, spaceQuota, CACHE_QUOTA_TTL)
         .catch((e: Error) => this.logger.error(`${this.updatePersonalSpacesQuota.name} - ${e}`))
       if (user.storageUsage !== spaceQuota.storageUsage) {
@@ -395,19 +394,22 @@ export class SpacesManager {
   }
 
   async updateSpacesQuota(spaceId?: number) {
-    const props: (keyof Space)[] = ['id', 'alias', 'storageUsage', 'storageQuota']
-    for (const space of await this.spacesQueries.selectSpaces(props, [...(spaceId ? [eq(spaces.id, spaceId)] : [])])) {
+    for (const space of await this.spacesQueries.spacesQuotaPaths(spaceId)) {
       const spacePath = SpaceModel.getHomePath(space.alias)
       if (!(await isPathExists(spacePath))) {
         this.logger.warn(`${this.updateSpacesQuota.name} - *${space.alias}* home path does not exist`)
         continue
       }
-      const [size, errors] = await dirSize(spacePath)
-      for (const [path, error] of Object.entries(errors)) {
-        this.logger.warn(`${this.updateSpacesQuota.name} - unable to get size for *${space.alias}* on ${path} : ${error}`)
+      let size = 0
+      for (const rPath of [spacePath, ...space.externalPaths.filter(Boolean)]) {
+        const [rPathSize, errors] = await dirSize(rPath)
+        size += rPathSize
+        for (const [path, error] of Object.entries(errors)) {
+          this.logger.warn(`${this.updateSpacesQuota.name} - unable to get size for *${space.alias}* on ${path} : ${error}`)
+        }
       }
-      const spaceQuota: SpaceQuota = { storageUsage: size, storageQuota: space.storageQuota }
-      this.cache
+      const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: space.storageQuota }
+      this.spacesQueries.cache
         .set(`${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`, spaceQuota, CACHE_QUOTA_TTL)
         .catch((e: Error) => this.logger.error(`${this.updateSpacesQuota.name} - ${e}`))
       if (space.storageUsage !== spaceQuota.storageUsage) {
@@ -419,10 +421,8 @@ export class SpacesManager {
 
   async deleteExpiredSpaces() {
     /* Removes spaces that have been disabled for more than 30 days */
-    for (const space of (await this.spacesQueries.selectSpaces(
-      ['id', 'name', 'alias', 'disabledAt'],
-      [eq(spaces.enabled, false), isNotNull(spaces.disabledAt)]
-    )) as Pick<Space, 'id' | 'name' | 'alias' | 'disabledAt'>[]) {
+    const props: (keyof Space)[] = ['id', 'name', 'alias', 'disabledAt']
+    for (const space of await this.spacesQueries.selectSpaces(props, [eq(spaces.enabled, false), isNotNull(spaces.disabledAt)])) {
       const disabled = new Date(space.disabledAt)
       disabled.setDate(disabled.getDate() + SPACE_MAX_DISABLED_DAYS)
       if (new Date() > disabled) {
@@ -714,7 +714,9 @@ export class SpacesManager {
     }
     await this.spacesQueries.deleteSpace(space.id, deleteNow)
     if (deleteNow) {
-      this.cache.del(`${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`).catch((e: Error) => this.logger.error(`${this.deleteOrDisableSpace.name} - ${e}`))
+      this.spacesQueries.cache
+        .del(`${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`)
+        .catch((e: Error) => this.logger.error(`${this.deleteOrDisableSpace.name} - ${e}`))
       await this.deleteSpaceLocation(space.alias)
     }
   }
@@ -801,7 +803,7 @@ export class SpacesManager {
 
   private async setQuotaExceeded(user: UserModel, space: SpaceEnv) {
     /* extract quota from spaces|shares|roots */
-    if (space.inSharesList || (space.inSharesRepository && space.root?.externalPath)) {
+    if (space.inSharesList) {
       return
     }
     const cacheQuotaKey = quotaKeyFromSpace(user.id, space)
@@ -809,15 +811,18 @@ export class SpacesManager {
       this.logger.verbose(`${this.setQuotaExceeded.name} - quota was ignored for space : *${space.alias}* (${space.id})`)
       return
     }
-    let quota: SpaceQuota = await this.cache.get(cacheQuotaKey)
+    let quota: StorageQuota = await this.spacesQueries.cache.get(cacheQuotaKey)
     if (!quota) {
       // the quota scheduler has not started yet or the cache has been cleared
       if (space.inPersonalSpace) {
         await this.updatePersonalSpacesQuota(user)
+      } else if (space.inSharesRepository) {
+        // Shares with external paths
+        await this.sharesManager.updateSharesExternalPathQuota(space.id)
       } else {
         await this.updateSpacesQuota(space.id)
       }
-      quota = await this.cache.get(cacheQuotaKey)
+      quota = await this.spacesQueries.cache.get(cacheQuotaKey)
     }
     if (quota) {
       space.storageUsage = quota.storageUsage

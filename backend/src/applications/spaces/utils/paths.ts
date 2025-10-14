@@ -11,7 +11,7 @@ import { FileDBProps } from '../../files/interfaces/file-db-props.interface'
 import { FileProps } from '../../files/interfaces/file-props.interface'
 import { FileError } from '../../files/models/file-error'
 import { UserModel } from '../../users/models/user.model'
-import { CACHE_QUOTA_SPACE_PREFIX, CACHE_QUOTA_USER_PREFIX } from '../constants/cache'
+import { CACHE_QUOTA_SHARE_PREFIX, CACHE_QUOTA_SPACE_PREFIX, CACHE_QUOTA_USER_PREFIX } from '../constants/cache'
 import { SPACE_REPOSITORY } from '../constants/spaces'
 import { SpaceEnv } from '../models/space-env.model'
 import { SpaceModel } from '../models/space.model'
@@ -185,21 +185,19 @@ export function dbFileFromSpace(userId: number, space: SpaceEnv): FileDBProps {
 
 export function quotaKeyFromSpace(userId: number, space: SpaceEnv) {
   if (space.inPersonalSpace) {
-    // personal user space
+    // Personal user space
     return `${CACHE_QUOTA_USER_PREFIX}-${userId}`
   } else if (space.root?.externalPath) {
-    // external paths are managed by admin, set a quota on a root is not intended
-    return null
+    // External paths used as shares or as space roots share the same quota as their origin
+    if (space.inSharesRepository) {
+      return `${CACHE_QUOTA_SHARE_PREFIX}-${space.root?.externalParentShareId || space.id}`
+    }
+    return `${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`
   } else if (space.root.file?.path && space.root.owner?.login) {
-    // space root is linked on a user file
+    // Space root is linked on a user file
     return `${CACHE_QUOTA_USER_PREFIX}-${space.root.owner.id}`
   } else if (space.root.file?.space?.id) {
-    if (space.root.file.root?.id) {
-      // share linked to a root space with an external path, set a quota on a root is not intended
-      return null
-    } else {
-      return `${CACHE_QUOTA_SPACE_PREFIX}-${space.root.file.space.id}`
-    }
+    return `${CACHE_QUOTA_SPACE_PREFIX}-${space.root.file.space.id}`
   } else if (space.id) {
     return `${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`
   } else {

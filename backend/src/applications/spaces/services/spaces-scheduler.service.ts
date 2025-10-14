@@ -6,36 +6,42 @@
 
 import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression, Timeout } from '@nestjs/schedule'
+import { SharesManager } from '../../shares/services/shares-manager.service'
 import { SpacesManager } from './spaces-manager.service'
 
 @Injectable()
 export class SpacesScheduler {
   private readonly logger = new Logger(SpacesScheduler.name)
 
-  constructor(private readonly spacesManager: SpacesManager) {}
+  constructor(
+    private readonly spacesManager: SpacesManager,
+    private readonly sharesManager: SharesManager
+  ) {}
 
   @Timeout(60000)
   @Cron(CronExpression.EVERY_HOUR)
-  async updatePersonalSpacesQuota() {
-    this.logger.log(`${this.updatePersonalSpacesQuota.name} - START`)
+  async updateQuotas() {
+    this.logger.log('Update Personal Quotas - START')
     try {
       await this.spacesManager.updatePersonalSpacesQuota()
     } catch (e) {
-      this.logger.error(`${this.updatePersonalSpacesQuota.name} - ${e}`)
+      this.logger.error(`Update Personal Quotas} - ${e}`)
     }
-    this.logger.log(`${this.updatePersonalSpacesQuota.name} - END`)
-  }
-
-  @Timeout(60000)
-  @Cron(CronExpression.EVERY_HOUR)
-  async updateSpacesQuota() {
-    this.logger.log(`${this.updateSpacesQuota.name} - START`)
+    this.logger.log('Update Personal Quotas - END')
+    this.logger.log('Update Space Quotas - START')
     try {
       await this.spacesManager.updateSpacesQuota()
     } catch (e) {
-      this.logger.error(`${this.updateSpacesQuota.name} - ${e}`)
+      this.logger.error(`Update Space Quotas - ${e}`)
     }
-    this.logger.log(`${this.updateSpacesQuota.name} - END`)
+    this.logger.log('Update Space Quotas - END')
+    this.logger.log('Update Share External Path Quotas - START')
+    try {
+      await this.sharesManager.updateSharesExternalPathQuota()
+    } catch (e) {
+      this.logger.error(`Update Share External Path Quotas - ${e}`)
+    }
+    this.logger.log('Update Share External Path Quotas - END')
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_4AM)

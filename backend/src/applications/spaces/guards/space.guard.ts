@@ -45,12 +45,12 @@ export class SpaceGuard implements CanActivate {
     }
     if ([SPACE_OPERATION.ADD, SPACE_OPERATION.MODIFY].indexOf(permission) > -1) {
       if (req.space.quotaIsExceeded) {
-        logger.warn(`Space quota is exceeded for *${req.space.alias}* (${req.space.id})`)
-        throw new HttpException('Space quota is exceeded', HttpStatus.INSUFFICIENT_STORAGE)
+        logger.warn(`Storage quota exceeded for *${req.space.alias}* (${req.space.id})`)
+        throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)
       } else if (req.space.storageQuota) {
         const contentLength = parseInt(req.headers['content-length'] || '0', 10) || 0
         if (req.space.willExceedQuota(contentLength)) {
-          throw new HttpException('Quota will be exceeded', HttpStatus.INSUFFICIENT_STORAGE)
+          throw new HttpException('Storage quota will be exceeded', HttpStatus.INSUFFICIENT_STORAGE)
         }
       }
     }

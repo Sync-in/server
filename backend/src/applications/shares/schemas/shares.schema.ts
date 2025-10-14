@@ -32,12 +32,19 @@ import { users } from '../../users/schemas/users.schema'
   alias: used to navigate over web & webdav, must be unique
   name: set by user and showed to others
 
-  parent: if the share is a child share :
+  parent: if the share is a child share:
     - parentId is required
     - spaceId & spaceRootId must have the same value as their parents
     - fileId is required when the file is inside the parent share
     - fileId is not required when child share is directly linked to parent share (with a space root or an external path)
-    - if the share has an external path : file.shareExternalId must match with the first parent share
+    - if the share has an external path: file.shareExternalId must match with the first parent share
+
+  storageQuota:
+    0 : no storage
+    null : unlimited
+    other: limited to value
+
+  Storage properties are only used for shares that have an external path.
 */
 
 export const shares = mysqlTable(
@@ -55,6 +62,9 @@ export const shares = mysqlTable(
     name: varchar('name', { length: 255 }).notNull(),
     enabled: boolean('enabled').default(true).notNull(),
     description: varchar('description', { length: 255 }),
+    storageUsage: bigint('storageUsage', { mode: 'number', unsigned: true }).default(0).notNull(),
+    storageQuota: bigint('storageQuota', { mode: 'number', unsigned: true }),
+    storageIndexing: boolean('storageIndexing').default(true).notNull(),
     createdAt: datetime('createdAt', { mode: 'date' })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),

@@ -29,7 +29,6 @@ import { filePathSQL, files } from '../../files/schemas/files.schema'
 import { FilesQueries } from '../../files/services/files-queries.service'
 import { links } from '../../links/schemas/links.schema'
 import { shares } from '../../shares/schemas/shares.schema'
-import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { syncClients } from '../../sync/schemas/sync-clients.schema'
 import { syncPaths } from '../../sync/schemas/sync-paths.schema'
 import { GROUP_TYPE } from '../../users/constants/group'
@@ -66,9 +65,8 @@ export class SpacesQueries {
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
-    private readonly cache: Cache,
-    private readonly filesQueries: FilesQueries,
-    private readonly sharesQueries: SharesQueries
+    public readonly cache: Cache,
+    private readonly filesQueries: FilesQueries
   ) {}
 
   spaceExistsForAlias(alias: string): any | undefined {
@@ -88,6 +86,21 @@ export class SpacesQueries {
       .select(select)
       .from(spaces)
       .where(and(...where))
+  }
+
+  spacesQuotaPaths(spaceId?: number): Promise<(Partial<Space> & { externalPaths: string[] })[]> {
+    return this.db
+      .select({
+        id: spaces.id,
+        alias: spaces.alias,
+        storageUsage: spaces.storageUsage,
+        storageQuota: spaces.storageQuota,
+        externalPaths: sql<string[]>`JSON_ARRAYAGG(${spacesRoots.externalPath})`.mapWith(JSON.parse).as('externalPaths')
+      })
+      .from(spaces)
+      .leftJoin(spacesRoots, and(eq(spacesRoots.spaceId, spaces.id), isNotNull(spacesRoots.externalPath)))
+      .where(and(...[...(spaceId ? [eq(spaces.id, spaceId)] : [])]))
+      .groupBy(spaces.id)
   }
 
   async userIsSpaceManager(userId: number, spaceId: number, shareId?: number): Promise<boolean> {

@@ -18,6 +18,8 @@ import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TabsModule } from 'ngx-bootstrap/tabs'
 import { Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
+import { StorageQuotaComponent } from '../../../../common/components/storage-quota.component'
+import { StorageUsageComponent } from '../../../../common/components/storage-usage.component'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
 import { pathSlice } from '../../../../common/utils/functions'
@@ -51,7 +53,9 @@ import { ShareRepositoryComponent } from '../utils/share-repository.component'
     UserSearchComponent,
     ShareRepositoryComponent,
     ShareFileNameComponent,
-    FilePermissionsComponent
+    FilePermissionsComponent,
+    StorageQuotaComponent,
+    StorageUsageComponent
   ],
   templateUrl: 'share-dialog.component.html'
 })

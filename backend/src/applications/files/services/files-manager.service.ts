@@ -333,8 +333,8 @@ export class FilesManager {
       if (!isMove || (isMove && srcSpace.id !== dstSpace.id)) {
         const size = isDir ? (await dirSize(srcSpace.realPath))[0] : await fileSize(srcSpace.realPath)
         if (dstSpace.willExceedQuota(size)) {
-          this.logger.warn(`${this.copyMove.name} - quota will be exceeded for *${dstSpace.alias}* (${dstSpace.id})`)
-          throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, 'Quota will be exceeded')
+          this.logger.warn(`${this.copyMove.name} - storage quota will be exceeded for *${dstSpace.alias}* (${dstSpace.id})`)
+          throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, 'Storage quota will be exceeded')
         }
       }
     }

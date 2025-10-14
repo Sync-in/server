@@ -65,7 +65,7 @@ export class SharesQueries {
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
-    private readonly cache: Cache
+    public readonly cache: Cache
   ) {}
 
   async uniqueShareAlias(name: string): Promise<string> {
@@ -145,6 +145,19 @@ export class SharesQueries {
       .select({ id: shares.id, ownerId: shares.ownerId })
       .from(shares)
       .where(and(...where))
+  }
+
+  sharesQuotaExternalPaths(shareId?: number): Promise<Partial<Share>[]> {
+    return this.db
+      .select({
+        id: shares.id,
+        alias: shares.alias,
+        storageUsage: shares.storageUsage,
+        storageQuota: shares.storageQuota,
+        externalPath: shares.externalPath
+      })
+      .from(shares)
+      .where(and(isNotNull(shares.externalPath), ...[...(shareId ? [eq(shares.id, shareId)] : [])]))
   }
 
   async listShareLinks(user: UserModel, shareId: number, asAdmin?: boolean): Promise<ShareLink>
@@ -228,6 +241,9 @@ export class SharesQueries {
         externalPath: sql`IF (${shares.externalPath} IS NOT NULL AND ${shares.ownerId} IS NOT NULL, '.', ${shares.externalPath})`,
         enabled: shares.enabled,
         description: shares.description,
+        storageUsage: shares.storageUsage,
+        storageQuota: shares.storageQuota,
+        storageIndexing: shares.storageIndexing,
         createdAt: shares.createdAt,
         modifiedAt: shares.modifiedAt,
         disabledAt: shares.disabledAt,
@@ -296,20 +312,14 @@ export class SharesQueries {
     return dbGetInsertedId(await this.db.insert(shares).values(share as Share))
   }
 
-  async updateShare(set: Partial<Record<keyof Share, any>>, filters: Partial<Record<keyof Share, any>>) {
-    const where: SQL[] = convertToWhere(shares, filters)
+  async updateShare(id: number, set: Partial<Record<keyof Share, any>>): Promise<boolean> {
     try {
-      dbCheckAffectedRows(
-        await this.db
-          .update(shares)
-          .set(set)
-          .where(and(...where))
-          .limit(1),
-        1
-      )
-      this.logger.debug(`${this.updateShare.name} - ${JSON.stringify(filters)} was updated : ${JSON.stringify(set)}`)
+      dbCheckAffectedRows(await this.db.update(shares).set(set).where(eq(shares.id, id)).limit(1), 1)
+      this.logger.debug(`${this.updateShare.name} - share (${id}) was updated : ${JSON.stringify(set)}`)
+      return true
     } catch (e) {
-      this.logger.error(`${this.updateShare.name} - ${JSON.stringify(filters)} was not updated : ${JSON.stringify(set)} : ${e}`)
+      this.logger.error(`${this.updateShare.name} - share (${id}) was not updated : ${JSON.stringify(set)} : ${e}`)
+      return false
     }
   }
 

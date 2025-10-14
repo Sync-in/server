@@ -16,11 +16,11 @@ import {
   hashPassword,
   intersectPermissions
 } from '../../../common/functions'
-import type { Entries } from '../../../common/interfaces'
+import type { Entries, StorageQuota } from '../../../common/interfaces'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import type { FileProps } from '../../files/interfaces/file-props.interface'
 import { FileError } from '../../files/models/file-error'
-import { checkExternalPath, getProps, isPathExists } from '../../files/utils/files'
+import { checkExternalPath, dirSize, getProps, isPathExists } from '../../files/utils/files'
 import { LINK_TYPE } from '../../links/constants/links'
 import type { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto'
 import type { LinkGuest } from '../../links/interfaces/link-guest.interface'
@@ -30,6 +30,7 @@ import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/co
 import type { NotificationContent, NotificationOptions } from '../../notifications/interfaces/notification-properties.interface'
 import type { UserMailNotification } from '../../notifications/interfaces/user-mail-notification'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
+import { CACHE_QUOTA_SHARE_PREFIX, CACHE_QUOTA_TTL } from '../../spaces/constants/cache'
 import { SPACE_OPERATION, SPACE_PERMS_SEP, SPACE_REPOSITORY, SPACE_ROLE } from '../../spaces/constants/spaces'
 import type { SpaceMemberDto } from '../../spaces/dto/create-or-update-space.dto'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
@@ -62,7 +63,7 @@ export class SharesManager {
     private readonly contextManager: ContextManager,
     private readonly notificationsManager: NotificationsManager,
     private readonly sharesQueries: SharesQueries,
-    private readonly spaceQueries: SpacesQueries,
+    private readonly spacesQueries: SpacesQueries,
     private readonly usersQueries: UsersQueries,
     private readonly linksQueries: LinksQueries
   ) {}
@@ -90,7 +91,7 @@ export class SharesManager {
     } else if (share.file?.space?.alias) {
       share.file.ownerId = null
       // retrieve space permissions (cached query)
-      const spacePermissions: Partial<SpaceEnv> = await this.spaceQueries.permissions(user.id, share.file.space.alias, share.file.space.root?.alias)
+      const spacePermissions: Partial<SpaceEnv> = await this.spacesQueries.permissions(user.id, share.file.space.alias, share.file.space.root?.alias)
       if (!spacePermissions) {
         this.logger.warn(`${this.setAllowedPermissions.name} - missing space permissions : ${JSON.stringify(share)}`)
         throw new HttpException('Space not found', HttpStatus.NOT_FOUND)
@@ -132,6 +133,8 @@ export class SharesManager {
       description: createOrUpdateShareDto.description,
       externalPath: createOrUpdateShareDto.externalPath,
       enabled: createOrUpdateShareDto.enabled,
+      storageQuota: createOrUpdateShareDto.storageQuota,
+      storageIndexing: createOrUpdateShareDto.storageIndexing,
       disabledAt: createOrUpdateShareDto.enabled ? null : new Date(),
       type: createOrUpdateShareDto.type || SHARE_TYPE.COMMON
     }
@@ -159,10 +162,10 @@ export class SharesManager {
           throw new HttpException('The location does not exist', HttpStatus.NOT_FOUND)
         }
         const fileProps: FileProps = { ...(await getProps(realPath, createOrUpdateShareDto.file.path)), id: createOrUpdateShareDto.file.id }
-        share.fileId = await this.spaceQueries.getOrCreateUserFile(user.id, fileProps)
+        share.fileId = await this.spacesQueries.getOrCreateUserFile(user.id, fileProps)
       } else if (createOrUpdateShareDto.file.space?.alias) {
         /* SPACE CASE */
-        const spacePermissions: Partial<SpaceEnv> = await this.spaceQueries.permissions(
+        const spacePermissions: Partial<SpaceEnv> = await this.spacesQueries.permissions(
           user.id,
           createOrUpdateShareDto.file.space.alias,
           createOrUpdateShareDto.file.space.root.alias
@@ -207,7 +210,7 @@ export class SharesManager {
         if (!isSpaceRoot && !isExternalSpaceRoot) {
           const fileProps: FileProps = { ...(await getProps(space.realPath, space.dbFile.path)), id: undefined }
           // get or create file id
-          share.fileId = await this.spaceQueries.getOrCreateSpaceFile(createOrUpdateShareDto.file.id, fileProps, space.dbFile)
+          share.fileId = await this.spacesQueries.getOrCreateSpaceFile(createOrUpdateShareDto.file.id, fileProps, space.dbFile)
         }
       } else {
         // unexpected case
@@ -223,11 +226,12 @@ export class SharesManager {
   }
 
   async updateShare(user: UserModel, shareId: number, createOrUpdateShareDto: CreateOrUpdateShareDto, asAdmin = false): Promise<ShareProps> {
-    // asAdmin : true if the user is the owner of the parent share or if the share is requested from the administration
+    // asAdmin: true if the user is the owner of the parent share or if the share is requested from the administration
     const share: ShareProps = await this.getShareWithMembers(user, shareId, asAdmin)
-    // check & update share info
+    // check and update share info
     const shareDiffProps: Partial<ShareProps> = { modifiedAt: new Date() }
-    for (const prop of ['name', 'description', 'enabled']) {
+    const props: (keyof CreateOrUpdateShareDto)[] = ['name', 'description', 'enabled', 'storageQuota', 'storageIndexing']
+    for (const prop of props) {
       if (createOrUpdateShareDto[prop] !== share[prop]) {
         shareDiffProps[prop] = createOrUpdateShareDto[prop]
         if (prop === 'name') {
@@ -238,7 +242,9 @@ export class SharesManager {
       }
     }
     // update in db
-    this.sharesQueries.updateShare(shareDiffProps, { id: shareId }).catch((e: Error) => this.logger.error(`${this.updateShare.name} - ${e}`))
+    if (!(await this.sharesQueries.updateShare(shareId, shareDiffProps))) {
+      throw new HttpException('Unable to update share', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
     // check & update members
     const linkMembers: ShareMemberDto[] = await this.createOrUpdateLinksAsMembers(user, share, LINK_TYPE.SHARE, createOrUpdateShareDto.links)
     // intersect share permissions for members
@@ -354,7 +360,7 @@ export class SharesManager {
     if (!isLinkedToShareSpaceRoot && !isLinkedToShareExternalPath) {
       // fileId is mandatory for a file in a child share
       const fileProps: FileProps = { ...(await getProps(pShareEnv.realPath, pShareEnv.dbFile.path)), id: undefined }
-      fileId = await this.spaceQueries.getOrCreateSpaceFile(createOrUpdateShareDto.file.id, fileProps, pShareEnv.dbFile)
+      fileId = await this.spacesQueries.getOrCreateSpaceFile(createOrUpdateShareDto.file.id, fileProps, pShareEnv.dbFile)
     }
 
     const share: Partial<Share> = {
@@ -709,6 +715,29 @@ export class SharesManager {
     await this.deleteGuestLinks(members)
   }
 
+  async updateSharesExternalPathQuota(shareId?: number) {
+    for (const share of await this.sharesQueries.sharesQuotaExternalPaths(shareId)) {
+      if (!(await isPathExists(share.externalPath))) {
+        this.logger.warn(`${this.updateSharesExternalPathQuota.name} - *${share.alias}* home path does not exist`)
+        continue
+      }
+      const [size, errors] = await dirSize(share.externalPath)
+      for (const [path, error] of Object.entries(errors)) {
+        this.logger.warn(`${this.updateSharesExternalPathQuota.name} - unable to get size for *${share.alias}* on ${path} : ${error}`)
+      }
+      const shareQuota: StorageQuota = { storageUsage: size, storageQuota: share.storageQuota }
+      this.sharesQueries.cache
+        .set(`${CACHE_QUOTA_SHARE_PREFIX}-${share.id}`, shareQuota, CACHE_QUOTA_TTL)
+        .catch((e: Error) => this.logger.error(`${this.updateSharesExternalPathQuota.name} - ${e}`))
+      if (share.storageUsage !== shareQuota.storageUsage) {
+        this.logger.log(
+          `${this.updateSharesExternalPathQuota.name} - share *${share.alias}* (${share.id}) : storage usage updated : ${shareQuota.storageUsage}`
+        )
+        await this.sharesQueries.updateShare(share.id, { storageUsage: shareQuota.storageUsage })
+      }
+    }
+  }
+
   private async updateMembers(user: UserModel, share: Partial<Share>, oldMembers: ShareMemberDto[], currentMembers: ShareMemberDto[]) {
     if (oldMembers.length === 0 && currentMembers.length === 0) {
       return
@@ -947,8 +976,8 @@ export class SharesManager {
         const members: ShareChildMember[] = await this.sharesQueries.membersFromChildSharesPermissions(share.id, [share.ownerId], null, false)
         await this.sharesQueries.deleteShare(share.id)
         this.logger.log(`${this.removeShareFromOwners.name} - share *${share.alias}* (${share.id}) from owner (${share.ownerId}) was removed`)
-        // clear cache & notify users
-        if (!fromUserId || fromUserId !== share.ownerId) {
+        // clear cache and notify users
+        if (share.ownerId && (!fromUserId || fromUserId !== share.ownerId)) {
           this.clearCachePermissionsAndOrNotify(share, ACTION.DELETE_PERMANENTLY, [share.ownerId]).catch((e: Error) =>
             this.logger.error(`${this.removeShareFromOwners.name} - ${e}`)
           )

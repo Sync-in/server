@@ -21,6 +21,9 @@ export class Share implements ShareSchema {
   name: string
   enabled: boolean
   description: string
+  storageUsage: number
+  storageQuota: number
+  storageIndexing: boolean
   createdAt: Date
   modifiedAt: Date
   disabledAt: Date
