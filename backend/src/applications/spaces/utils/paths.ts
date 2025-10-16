@@ -86,13 +86,14 @@ export function realTrashPathFromSpace(user: UserModel, space: SpaceEnv) {
     return UserModel.getTrashPath(user.login)
   } else if (space.root?.externalPath) {
     // external path from space or share
+    // space case: use the space trash
     if (space.root.file?.space?.alias) {
-      // space case
       return SpaceModel.getTrashPath(space.root.file.space.alias)
+    } else if (space.inFilesRepository && !space.inSharesRepository) {
+      return SpaceModel.getTrashPath(space.alias)
     }
-    // share case
-    // todo: store the deleted files in the same path with .trash ?
-    return null
+    // share case: use the user's trash because this type of share has no owner
+    return UserModel.getTrashPath(user.login)
   } else if (space.root?.file?.path && space.root.owner?.login) {
     // space root is linked to a file in a personal space
     return UserModel.getTrashPath(space.root.owner.login)
@@ -102,9 +103,8 @@ export function realTrashPathFromSpace(user: UserModel, space: SpaceEnv) {
   } else if (space.alias) {
     // space files (no root)
     return SpaceModel.getTrashPath(space.alias)
-  } else {
-    return null
   }
+  return null
 }
 
 export function realPathFromRootFile(f: FileProps): string {
