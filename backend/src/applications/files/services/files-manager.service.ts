@@ -339,7 +339,7 @@ export class FilesManager {
       }
     }
 
-    // check lock conflicts on source & destination
+    // check lock conflicts on source and destination
     let recursive: boolean
     let depth: LOCK_DEPTH
     if (dav?.depth) {
@@ -362,7 +362,7 @@ export class FilesManager {
       await this.delete(user, dstSpace)
     }
 
-    // send to task watcher
+    // send it to task watcher
     if (srcSpace.task?.cacheKey) {
       if (!isDir) srcSpace.task.props.totalSize = await fileSize(srcSpace.realPath)
       FileTaskEvent.emit('startWatch', srcSpace, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, dstSpace.realPath)

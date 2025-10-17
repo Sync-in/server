@@ -45,6 +45,9 @@ export class FilesConfig {
   maxUploadSize: number = 5368709120 // 5 GB
 
   @IsBoolean()
+  contentIndexing: boolean = true
+
+  @IsBoolean()
   showHiddenFiles: boolean = false
 
   @IsNotEmptyObject()

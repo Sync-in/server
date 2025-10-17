@@ -8,6 +8,7 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import fs from 'fs/promises'
 import { Stats } from 'node:fs'
 import path from 'node:path'
+import { configuration } from '../../../configuration/config.environment'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { UserModel } from '../../users/models/user.model'
@@ -33,6 +34,9 @@ export class FilesSearchManager {
   async search(user: UserModel, search: SearchFilesDto): Promise<FileContent[]> {
     const [spaceIds, shareIds] = await Promise.all([this.spacesQueries.spaceIds(user.id), this.sharesQueries.shareIds(user.id, +user.isAdmin)])
     if (search.fullText) {
+      if (!configuration.applications.files.contentIndexing) {
+        throw new HttpException('Full-text search is disabled', HttpStatus.BAD_REQUEST)
+      }
       return await this.searchFullText(user.id, spaceIds, shareIds, search.content, search.limit)
     } else {
       return await this.searchFileNames(user.id, spaceIds, shareIds, search.content, search.limit)

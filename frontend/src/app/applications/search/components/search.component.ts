@@ -12,7 +12,7 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFont, faSpinner, faTimes, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { minCharsToSearch } from '@sync-in-server/backend/src/applications/files/constants/indexing'
 import type { SearchFilesDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
-import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
+import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { FilterComponent } from '../../../common/components/filter.component'
@@ -39,7 +39,8 @@ import { SEARCH_ICON, SEARCH_PATH } from '../search.constants'
     AutoResizeDirective,
     TooltipDirective,
     SearchFilterPipe,
-    TapDirective
+    TapDirective,
+    L10nTranslateDirective
   ],
   templateUrl: './search.component.html'
 })

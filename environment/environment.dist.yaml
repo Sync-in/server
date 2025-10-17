@@ -138,6 +138,9 @@ applications:
     dataPath: /home/sync-in
     # default: 5368709120 (5 GB)
     maxUploadSize: 5368709120
+    # Enable indexing of file contents for search (disabling this turns off full-text search)
+    # default: true
+    contentIndexing: true
     # Show files starting with a dot in the file explorer
     # default: false
     showHiddenFiles: false

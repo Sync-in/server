@@ -42,7 +42,7 @@
 </div>
 <div appAutoResize class="fs-xs">
   @if (errorMessage) {
-    <div class="p-3 text-danger fw-500">{{ errorMessage }}</div>
+    <div class="p-3 text-danger fw-500" l10nTranslate>{{ errorMessage }}</div>
   }
   @for (f of this.store.filesSearch() | searchFilter:inputFilter.search(); track $index) {
     <div class="app-div-striped py-2" (click)="selectedId = $index" (appTap)="goTo(f)" [class.selected]="$index === selectedId">
