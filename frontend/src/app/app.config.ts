@@ -6,7 +6,7 @@
 
 import { HashLocationStrategy, LocationStrategy } from '@angular/common'
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXsrfConfiguration } from '@angular/common/http'
-import { ApplicationConfig, importProvidersFrom, provideZoneChangeDetection } from '@angular/core'
+import { ApplicationConfig, importProvidersFrom, isDevMode, provideZoneChangeDetection } from '@angular/core'
 import { provideAnimations } from '@angular/platform-browser/animations'
 import { provideRouter } from '@angular/router'
 import { CSRF_KEY } from '@sync-in-server/backend/src/authentication/constants/auth'
@@ -15,7 +15,7 @@ import { BsModalService } from 'ngx-bootstrap/modal'
 import { TooltipConfig } from 'ngx-bootstrap/tooltip'
 import { SocketIoModule } from 'ngx-socket-io'
 import { provideToastr } from 'ngx-toastr'
-import { l10nConfig, TranslationStorage } from '../i18n/l10n'
+import { l10nConfig, TranslationLoader, TranslationMissing, TranslationStorage } from '../i18n/l10n'
 import { routes } from './app.routes'
 import { AuthInterceptor } from './auth/auth.interceptor'
 import { getToolTipConfig } from './layout/layout.tooltip.config'
@@ -28,7 +28,11 @@ export const appConfig: ApplicationConfig = {
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     provideRouter(routes),
     provideHttpClient(withInterceptorsFromDi(), withXsrfConfiguration({ cookieName: CSRF_KEY, headerName: CSRF_KEY })),
-    provideL10nTranslation(l10nConfig, { storage: TranslationStorage }),
+    provideL10nTranslation(l10nConfig, {
+      storage: TranslationStorage,
+      translationLoader: TranslationLoader,
+      ...(isDevMode() ? { missingTranslationHandler: TranslationMissing } : {})
+    }),
     provideL10nIntl(),
     provideAnimations(),
     provideToastr({ positionClass: 'toast-bottom-right', preventDuplicates: false, timeOut: 7000 }),

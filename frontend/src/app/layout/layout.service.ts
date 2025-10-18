@@ -15,7 +15,7 @@ import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal'
 import { ActiveToast, ToastrService } from 'ngx-toastr'
 import { BehaviorSubject, fromEvent, mergeWith, Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { i18nAsset } from '../../i18n/l10n'
+import { i18nLanguageText } from '../../i18n/l10n'
 import { APP_NAME } from '../app.constants'
 import { USER_LANGUAGE_AUTO } from '../applications/users/user.constants'
 import { getTheme } from '../common/utils/functions'
@@ -237,10 +237,10 @@ export class LayoutService {
   }
 
   getLanguages(withAutoOption = false): string[] {
-    const languages: string[] = Object.keys(i18nAsset)
-    if (withAutoOption) {
+    const languages: string[] = Object.keys(i18nLanguageText)
+    if (!withAutoOption) {
       // auto if no language defined by user
-      languages.unshift(USER_LANGUAGE_AUTO)
+      return languages.filter((l: string) => l !== USER_LANGUAGE_AUTO)
     }
     return languages
   }

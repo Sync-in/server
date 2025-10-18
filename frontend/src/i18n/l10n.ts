@@ -5,18 +5,18 @@
  */
 
 import { Injectable } from '@angular/core'
-import { L10nConfig, L10nLocale, L10nStorage } from 'angular-l10n'
+import { L10nConfig, L10nLocale, L10nMissingTranslationHandler, L10nStorage, L10nTranslationLoader } from 'angular-l10n'
+import { from, Observable, of } from 'rxjs'
+import { catchError, map } from 'rxjs/operators'
 import 'dayjs/locale/fr'
-import enLocale from './en.json'
-import frLocale from './fr.json'
+import { USER_LANGUAGE_AUTO } from '../app/applications/users/user.constants'
 
-export const i18nAsset: any = { en: enLocale, fr: frLocale }
-
-export const i18nLanguageText = { auto: 'Auto', en: 'English', fr: 'Français' }
+export const i18nLanguageText = { [USER_LANGUAGE_AUTO]: 'Auto', en: 'English', fr: 'Français' }
 
 export const l10nConfig: L10nConfig = {
   format: 'language',
-  providers: [{ name: 'app', asset: i18nAsset }],
+  // Provider without static asset: resources will be loaded through TranslationLoader
+  providers: [{ name: 'app', asset: 'app' }],
   fallback: false,
   cache: true,
   keySeparator: '|',
@@ -50,19 +50,23 @@ export class TranslationStorage implements L10nStorage {
   }
 }
 
-// @Injectable()
-// export class TranslationLoader implements L10nTranslationLoader {
-//   public get(language: string, provider: L10nProvider): Observable<{ [key: string]: any }> {
-//     const data = import(`./${language}.json`)
-//     console.log(data)
-//     return from(data)
-//   }
-// }
+@Injectable()
+export class TranslationLoader implements L10nTranslationLoader {
+  public get(language: string): Observable<Record<string, any>> {
+    // Dynamically load the JSON file for the requested language
+    return from(import(`./${language}.json`)).pipe(
+      map((module: any) => module?.default ?? module ?? {}),
+      catchError(() => of({}))
+    )
+  }
+}
 
-// @Injectable()
-// export class TranslationMissing implements L10nMissingTranslationHandler {
-//   public handle(key: string, value?: string, params?: any): string | any {
-//     console.error('translation missing: ', key, value, params)
-//     return 'no translation'
-//   }
-// }
+@Injectable()
+export class TranslationMissing implements L10nMissingTranslationHandler {
+  public handle(key: string, value?: string, params?: any): string | any {
+    // Log missing translations and return the key by default
+    // to make it easier to spot during development
+    console.error('translation missing: ', key, value, params)
+    return key ?? 'no translation'
+  }
+}
