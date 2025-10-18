@@ -25,6 +25,14 @@ export const USER_TITLE = {
   APPS: 'Applications'
 } as const
 
+export const USER_NOTIFICATION_TEXT = {
+  APPLICATION: 'application',
+  APPLICATION_EMAIL: 'application and email'
+} as const
+
+// Indexes correspond to status number of `USER_ONLINE_STATUS`
+export const USER_ONLINE_STATUS_LIST = ['available', 'busy', 'absent', 'offline']
+
 export const USER_ICON = {
   ACCOUNT: faUser,
   CLIENTS: faLaptop,

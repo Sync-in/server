@@ -26,7 +26,7 @@
                           (ngModelChange)="setOnlineStatus($event)"
                           class="form-select form-select-sm my-auto mt-2">
                     @for (n of allOnlineStatus; track $index) {
-                      <option [ngValue]="allOnlineStatus.indexOf(n)" l10nTranslate>{{ n | capitalize }}</option>
+                      <option [ngValue]="allOnlineStatus.indexOf(n)">{{ n | translate:locale.language | capitalize }}</option>
                     }
                   </select>
                 </div>
@@ -162,7 +162,8 @@
                   <button [disabled]="!newPassword || !oldPassword || newPassword.length < passwordMinLength"
                           (click)="submitPassword()"
                           class="d-flex btn btn-xs btn-primary text-nowrap"
-                          type="button" l10nTranslate>Update
+                          type="button" l10nTranslate>
+                    Update
                   </button>
                 </div>
               </div>

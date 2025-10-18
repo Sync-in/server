@@ -53,17 +53,10 @@ export enum USER_ONLINE_STATUS {
   OFFLINE
 }
 
-export const USER_ONLINE_STATUS_LIST = ['available', 'busy', 'absent', 'offline']
-
 export enum USER_NOTIFICATION {
   APPLICATION,
   APPLICATION_EMAIL
 }
-
-export const USER_NOTIFICATION_TEXT = {
-  APPLICATION: 'application',
-  APPLICATION_EMAIL: 'application & email'
-} as const
 
 export const USER_SECRET = {
   TWO_FA_SECRET: 'twoFaSecret',

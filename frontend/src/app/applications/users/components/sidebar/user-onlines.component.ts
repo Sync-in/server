@@ -5,11 +5,12 @@
  */
 
 import { Component, computed, inject, Signal } from '@angular/core'
-import { USER_ONLINE_STATUS, USER_ONLINE_STATUS_LIST } from '@sync-in-server/backend/src/applications/users/constants/user'
+import { USER_ONLINE_STATUS } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { StoreService } from '../../../../store/store.service'
 import { UserOnlineModel } from '../../models/user-online.model'
+import { USER_ONLINE_STATUS_LIST } from '../../user.constants'
 
 @Component({
   selector: 'app-onlines',

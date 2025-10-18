@@ -46,7 +46,7 @@
               (ngModelChange)="setOnlineStatus($event)"
               class="form-select form-select-sm mt-1">
         @for (s of allOnlineStatus; track $index) {
-          <option [ngValue]="allOnlineStatus.indexOf(s)" l10nTranslate>{{ s | capitalize }}</option>
+          <option [ngValue]="allOnlineStatus.indexOf(s)">{{ s | translate:locale.language | capitalize }}</option>
         }
       </select>
     </div>

@@ -81,7 +81,7 @@
       </div>
     </div>
   }
-  <div [tooltip]="('Scheduler: ' + store.clientScheduler() | translate:locale.language)" container="body">
+  <div [tooltip]="(('Scheduler' | translate:locale.language) + ': ' + (store.clientScheduler() | translate:locale.language))" container="body">
     <div class="btn-group btn-group-sm me-1" dropdown>
       <button class="btn btn-sm {{store.clientScheduler() === CLIENT_SCHEDULER_STATE.DISABLED ? 'btn-warning' : 'btn-success'}} dropdown-toggle" dropdownToggle type="button">
         @if (store.clientScheduler() === CLIENT_SCHEDULER_STATE.DISABLED) {

@@ -20,13 +20,7 @@ import {
   faUserPlus,
   faUsers
 } from '@fortawesome/free-solid-svg-icons'
-import {
-  USER_LOGIN_VALIDATION,
-  USER_NOTIFICATION_TEXT,
-  USER_PERMISSION,
-  USER_PERMS_SEP,
-  USER_ROLE
-} from '@sync-in-server/backend/src/applications/users/constants/user'
+import { USER_LOGIN_VALIDATION, USER_PERMISSION, USER_PERMS_SEP, USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { CreateUserDto, UpdateUserDto } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
 import type { TwoFaVerifyResult } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
@@ -46,7 +40,7 @@ import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pi
 import { LayoutService } from '../../../../layout/layout.service'
 import { UserSearchComponent } from '../../../users/components/utils/user-search.component'
 import { MemberModel } from '../../../users/models/member.model'
-import { USER_ICON, USER_LANGUAGE_AUTO, USER_PASSWORD_CHANGE_TEXT } from '../../../users/user.constants'
+import { USER_ICON, USER_LANGUAGE_AUTO, USER_NOTIFICATION_TEXT, USER_PASSWORD_CHANGE_TEXT } from '../../../users/user.constants'
 import { UserService } from '../../../users/user.service'
 import { AdminService } from '../../admin.service'
 import { AdminUserModel } from '../../models/admin-user.model'

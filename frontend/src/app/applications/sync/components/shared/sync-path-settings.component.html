@@ -98,10 +98,10 @@
              style="width: 70px"
              type="number">
       <select [(ngModel)]="syncPath.settings.scheduler.unit" class="form-select form-select-sm">
-        <option l10nTranslate [ngValue]="SYNC_PATH_SCHEDULER_UNIT.DISABLED">{{ SYNC_PATH_SCHEDULER_UNIT.DISABLED }}</option>
-        <option l10nTranslate [ngValue]="SYNC_PATH_SCHEDULER_UNIT.MINUTE">{{ SYNC_PATH_SCHEDULER_UNIT.MINUTE }}s</option>
-        <option l10nTranslate [ngValue]="SYNC_PATH_SCHEDULER_UNIT.HOUR">{{ SYNC_PATH_SCHEDULER_UNIT.HOUR }}s</option>
-        <option l10nTranslate [ngValue]="SYNC_PATH_SCHEDULER_UNIT.DAY">{{ SYNC_PATH_SCHEDULER_UNIT.DAY }}s</option>
+        <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.DISABLED" l10nTranslate>disabled</option>
+        <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.MINUTE" l10nTranslate>scheduler_unit_minute</option>
+        <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.HOUR" l10nTranslate>scheduler_unit_hour</option>
+        <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.DAY" l10nTranslate>scheduler_unit_day</option>
       </select>
     </div>
   </div>

@@ -9,8 +9,7 @@ import { FormsModule } from '@angular/forms'
 import { RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCircleHalfStroke, faCog, faPowerOff, faUserAlt, faUserSecret } from '@fortawesome/free-solid-svg-icons'
-import { USER_ONLINE_STATUS_LIST } from '@sync-in-server/backend/src/applications/users/constants/user'
-import { L10nTranslateDirective } from 'angular-l10n'
+import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { APP_URL } from '../../../../app.constants'
 import { AuthService } from '../../../../auth/auth.service'
@@ -20,7 +19,7 @@ import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
 import { logoDarkUrl, logoUrl } from '../../../files/files.constants'
 import { UserType } from '../../interfaces/user.interface'
-import { USER_PATH } from '../../user.constants'
+import { USER_ONLINE_STATUS_LIST, USER_PATH } from '../../user.constants'
 import { UserService } from '../../user.service'
 
 @Component({
@@ -33,12 +32,13 @@ import { UserService } from '../../user.service'
       }
     }
   `,
-  imports: [FormsModule, RouterLink, CapitalizePipe, FaIconComponent, L10nTranslateDirective]
+  imports: [FormsModule, RouterLink, CapitalizePipe, FaIconComponent, L10nTranslateDirective, L10nTranslatePipe]
 })
 export class UserProfileComponent implements OnDestroy {
   protected readonly logoDarkUrl = logoDarkUrl
   protected readonly logoUrl = logoUrl
   protected readonly store = inject(StoreService)
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly USER_PATH = USER_PATH
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected appBaseUrl = `${APP_URL.WEBSITE}`

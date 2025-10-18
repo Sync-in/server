@@ -9,11 +9,7 @@ import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCopy, faKey } from '@fortawesome/free-solid-svg-icons'
-import {
-  USER_NOTIFICATION_TEXT,
-  USER_ONLINE_STATUS_LIST,
-  USER_PASSWORD_MIN_LENGTH
-} from '@sync-in-server/backend/src/applications/users/constants/user'
+import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
 import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '@sync-in-server/backend/src/authentication/constants/auth'
@@ -33,7 +29,7 @@ import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
 import { UserType } from '../interfaces/user.interface'
-import { USER_ICON, USER_LANGUAGE_AUTO, USER_PATH, USER_TITLE } from '../user.constants'
+import { USER_ICON, USER_LANGUAGE_AUTO, USER_NOTIFICATION_TEXT, USER_ONLINE_STATUS_LIST, USER_PATH, USER_TITLE } from '../user.constants'
 import { UserService } from '../user.service'
 import { UserAuth2faEnableDialogComponent } from './dialogs/user-auth-2fa-enable-dialog.component'
 import { UserAuthManageAppPasswordsDialogComponent } from './dialogs/user-auth-manage-app-passwords-dialog.component'

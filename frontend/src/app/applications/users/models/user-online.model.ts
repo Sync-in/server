@@ -4,9 +4,10 @@
  * See the LICENSE file for licensing details
  */
 
-import { USER_ONLINE_STATUS, USER_ONLINE_STATUS_LIST } from '@sync-in-server/backend/src/applications/users/constants/user'
+import { USER_ONLINE_STATUS } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { UserOnline } from '@sync-in-server/backend/src/applications/users/interfaces/websocket.interface'
 import { popFromObject } from '@sync-in-server/backend/src/common/shared'
+import { USER_ONLINE_STATUS_LIST } from '../user.constants'
 import { userAvatarUrl } from '../user.functions'
 
 export class UserOnlineModel implements UserOnline {

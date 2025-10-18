@@ -113,7 +113,7 @@ export class NotificationsComponent implements AfterViewInit {
           return updatedNotifications
         })
       },
-      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Notifications', 'Unable to mark as read', e)
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Notifications', 'Mark as read', e)
     })
   }
 }

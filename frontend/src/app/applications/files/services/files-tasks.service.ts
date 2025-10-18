@@ -25,14 +25,37 @@ export class FilesTasksService {
   private readonly http = inject(HttpClient)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
-  private readonly onDone = {
-    [FILE_OPERATION.DELETE]: { title: 'Deletion', fileEvent: { delete: true } as Partial<FileEvent> },
-    [FILE_OPERATION.MOVE]: { title: 'Move', fileEvent: { delete: true, reloadFocusOnDst: true } as Partial<FileEvent> },
-    [FILE_OPERATION.COPY]: { title: 'Copy', fileEvent: { reload: true, focus: true } as Partial<FileEvent> },
-    [FILE_OPERATION.DOWNLOAD]: { title: 'Download', fileEvent: { reload: true, focus: true } as Partial<FileEvent> },
-    [FILE_OPERATION.UPLOAD]: { title: 'Upload', fileEvent: { reload: true, focus: true } as Partial<FileEvent> },
-    [FILE_OPERATION.COMPRESS]: { title: 'Compression', fileEvent: { reload: true, focus: true } as Partial<FileEvent> },
-    [FILE_OPERATION.DECOMPRESS]: { title: 'Decompression', fileEvent: { reload: true, focus: true } as Partial<FileEvent> }
+  private readonly onDone: Partial<
+    Record<
+      FILE_OPERATION,
+      { fileEvent: Partial<Pick<FileEvent, 'reload' | 'focus' | 'reloadFocusOnDst' | 'delete'>>; msg: { failed: string; success: string } }
+    >
+  > = {
+    [FILE_OPERATION.DELETE]: {
+      fileEvent: { delete: true },
+      msg: { success: 'Deletion done', failed: 'Deletion failed' }
+    },
+    [FILE_OPERATION.MOVE]: {
+      fileEvent: { delete: true, reloadFocusOnDst: true },
+      msg: { success: 'Move done', failed: 'Move failed' }
+    },
+    [FILE_OPERATION.COPY]: { msg: { success: 'Copy done', failed: 'Copy failed' }, fileEvent: { reload: true, focus: true } as Partial<FileEvent> },
+    [FILE_OPERATION.DOWNLOAD]: {
+      fileEvent: { reload: true, focus: true },
+      msg: { success: 'Download done', failed: 'Download failed' }
+    },
+    [FILE_OPERATION.UPLOAD]: {
+      fileEvent: { reload: true, focus: true },
+      msg: { success: 'Upload done', failed: 'Upload failed' }
+    },
+    [FILE_OPERATION.COMPRESS]: {
+      fileEvent: { reload: true, focus: true },
+      msg: { success: 'Compression done', failed: 'Compression failed' }
+    },
+    [FILE_OPERATION.DECOMPRESS]: {
+      fileEvent: { reload: true, focus: true },
+      msg: { success: 'Decompression done', failed: 'Decompression failed' }
+    }
   }
   private watcher: Subscription = null
   private watch = timer(1000, 1000).pipe(tap(() => this.doWatch()))
@@ -148,7 +171,7 @@ export class FilesTasksService {
   private taskDone(task: FileTask) {
     if (task.type in this.onDone) {
       if (this.onDone[task.type].fileEvent) {
-        const fileEvent: FileEvent = { ...this.onDone[task.type].fileEvent, status: task.status }
+        const fileEvent: Partial<FileEvent> = { ...this.onDone[task.type].fileEvent, status: task.status }
         if (task.type === FILE_OPERATION.COPY || task.type === FILE_OPERATION.MOVE) {
           fileEvent.filePath = task.props.src.path
           fileEvent.fileName = task.props.src.name
@@ -160,16 +183,16 @@ export class FilesTasksService {
             fileEvent.archiveId = task.props.compressInDirectory === false ? task.id : null
           }
         }
-        this.store.filesOnEvent.next(fileEvent)
+        this.store.filesOnEvent.next(fileEvent as FileEvent)
       }
       if (task.status === FileTaskStatus.SUCCESS) {
         if (task.type === FILE_OPERATION.DELETE) {
           this.removeDeletedChildTasks(task)
         } else {
-          this.layout.sendNotification('info', `${this.onDone[task.type].title} done`, task.name)
+          this.layout.sendNotification('info', this.onDone[task.type].msg.success, task.name)
         }
       } else {
-        this.layout.sendNotification('error', `${this.onDone[task.type].title} failed`, task.name, {
+        this.layout.sendNotification('error', this.onDone[task.type].msg.failed, task.name, {
           error: { message: task.result }
         } as HttpErrorResponse)
       }
