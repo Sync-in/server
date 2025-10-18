@@ -142,7 +142,7 @@
                   formControlName="language"
                   class="form-control form-select form-select-sm ms-auto w-50">
             @for (l of languages; track $index) {
-              <option [ngValue]="l">{{ l }}</option>
+              <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
             }
           </select>
         </div>

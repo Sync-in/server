@@ -29,6 +29,7 @@ import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TabDirective, TabHeadingDirective, TabsetComponent } from 'ngx-bootstrap/tabs'
 import { Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
+import { i18nLanguageText } from '../../../../../i18n/l10n'
 import { InputPasswordComponent } from '../../../../common/components/input-password.component'
 import { PasswordStrengthBarComponent } from '../../../../common/components/password-strength-bar.component'
 import { StorageQuotaComponent } from '../../../../common/components/storage-quota.component'
@@ -109,6 +110,7 @@ export class AdminUserDialogComponent implements OnInit {
     groups: FormControl<MemberModel[]>
     applications: FormControl<USER_PERMISSION[]>
   }>
+  protected readonly i18nLanguageText = i18nLanguageText
   private readonly adminService = inject(AdminService)
   private readonly userService = inject(UserService)
 
@@ -238,7 +240,9 @@ export class AdminUserDialogComponent implements OnInit {
   }
 
   private makeDto(create: true): CreateUserDto
+
   private makeDto(create?: false): UpdateUserDto
+
   private makeDto(create = false): CreateUserDto | UpdateUserDto {
     let dto = {}
     if (create) {

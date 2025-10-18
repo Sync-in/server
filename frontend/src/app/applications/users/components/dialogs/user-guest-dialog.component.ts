@@ -16,6 +16,7 @@ import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TabDirective, TabHeadingDirective, TabsetComponent } from 'ngx-bootstrap/tabs'
 import { Observable } from 'rxjs'
+import { i18nLanguageText } from '../../../../../i18n/l10n'
 import { InputPasswordComponent } from '../../../../common/components/input-password.component'
 import { PasswordStrengthBarComponent } from '../../../../common/components/password-strength-bar.component'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
@@ -79,6 +80,7 @@ export class UserGuestDialogComponent implements OnInit {
     isActive: FormControl<boolean>
     managers: FormControl<MemberModel[]>
   }>
+  protected readonly i18nLanguageText = i18nLanguageText
 
   ngOnInit() {
     this.guestForm = new FormGroup({
@@ -171,7 +173,9 @@ export class UserGuestDialogComponent implements OnInit {
   }
 
   protected makeDto(create: true): CreateUserDto
+
   protected makeDto(create?: false): UpdateUserDto
+
   protected makeDto(create = false): CreateUserDto | UpdateUserDto {
     let dto = {}
     if (create) {

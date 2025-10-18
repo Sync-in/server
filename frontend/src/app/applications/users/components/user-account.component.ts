@@ -14,11 +14,12 @@ import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
 import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '@sync-in-server/backend/src/authentication/constants/auth'
 import { TwoFaSetup } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
-import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
+import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe, L10nTranslationService } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { ClipboardService } from 'ngx-clipboard'
 import { Subscription } from 'rxjs'
 import { filter, take } from 'rxjs/operators'
+import { i18nLanguageText } from '../../../../i18n/l10n'
 import { InputPasswordComponent } from '../../../common/components/input-password.component'
 import { PasswordStrengthBarComponent } from '../../../common/components/password-strength-bar.component'
 import { StorageUsageComponent } from '../../../common/components/storage-usage.component'
@@ -53,6 +54,7 @@ import { UserAuthManageAppPasswordsDialogComponent } from './dialogs/user-auth-m
 })
 export class UserAccountComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly i18nLanguageText = i18nLanguageText
   protected readonly allNotifications = Object.values(USER_NOTIFICATION_TEXT)
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
@@ -64,6 +66,7 @@ export class UserAccountComponent implements OnDestroy {
   protected oldPassword: string
   protected newPassword: string
   protected readonly store = inject(StoreService)
+  protected readonly l10nTranslationService = inject(L10nTranslationService)
   private readonly layout = inject(LayoutService)
   protected languages = this.layout.getLanguages(true)
   private readonly userService = inject(UserService)

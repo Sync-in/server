@@ -9,24 +9,23 @@
  * Script: unused_translations.js
  *
  * Purpose:
- *  - Read frontend/i18n/fr.json
- *  - Extract and flatten all keys (dot notation, e.g., "section.sub.title")
+ *  - Read one or many translation JSON files
+ *  - Read top-level keys only (no flattening)
  *  - Search each key across all .ts and .html files of the project
- *  - Matches must be for the full phrase (no partial substring) and case-insensitive
- *  - Print the list of unused keys
+ *  - Matches must be for the full phrase (no partial substring)
+ *  - Print the list of unused keys per translation file
  *
  * Usage:
  *  - node scripts/unused_translations.js
- *  - Options:
- *      --print-used        Also print found keys with first occurrence
- *      --root=<path>       Project root path (default: process.cwd())
- *      --translations=<p>  Path to translation file (default: frontend/i18n/fr.json)
- *      --include=<path>    Start directory for scanning files (default: project root)
- *      --quiet             Reduced output (only print unused keys)
+ *  - node scripts/unused_translations.js --i18n=<path>
+ *    <path> can be:
+ *      - a directory containing .json files (non-recursive)
+ *      - a specific .json file
+ *    Default: frontend/src/i18n
  *
  * Notes:
  *  - Word boundaries are adapted to i18n keys (allowed characters: [A-Za-z0-9_.-]).
- *  - Ignored directories: node_modules, .git, dist, build, out, coverage, tmp, .idea, .vscode
+ *  - Ignored directories: all directories that starts with '.' and node_modules, dist, build, out, coverage, tmp
  */
 
 const fs = require('fs')
@@ -42,18 +41,28 @@ const argMap = new Map(
     })
 )
 
-const PROJECT_ROOT = path.resolve(process.cwd(), argMap.get('root') || '')
-const TRANSLATION_FILE = path.resolve(PROJECT_ROOT, argMap.get('translations') || 'frontend/src/i18n/fr.json')
-// Directory to start scanning from (defaults to project root)
-const SEARCH_ROOT = path.resolve(PROJECT_ROOT, argMap.get('include') || '')
+const PROJECT_ROOT = process.cwd()
+// Single option: --i18n=<dir or file>. Default to the standard i18n directory.
+const I18N_PATH = path.resolve(PROJECT_ROOT, argMap.get('i18n') || 'frontend/src/i18n')
 
-const PRINT_USED = Boolean(argMap.get('print-used'))
-const QUIET = Boolean(argMap.get('quiet'))
-
-const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'out', 'coverage', 'tmp', '.idea', '.vscode'])
+const IGNORED_DIRS = new Set([
+  'node_modules',
+  'dist',
+  'build',
+  'out',
+  'coverage',
+  'release',
+  'tmp',
+  'scripts',
+  'coverage',
+  'logs',
+  'migrations',
+  'docker',
+  'environment'
+])
 
 // Static list of keys to ignore when reporting unused translations.
-// Add exact key strings as they appear in fr.json.
+// Add exact key strings as they appear in the translation JSONs.
 const IGNORE_UNUSED_KEYS = ['Sync already exists', 'nb_elements', 'one_message', 'nb_messages']
 
 function readJson(filePath) {
@@ -64,22 +73,6 @@ function readJson(filePath) {
     console.error(`Error: cannot read/parse "${filePath}": ${e.message}`)
     process.exit(2)
   }
-}
-
-function flattenKeys(obj, prefix = '') {
-  const keys = []
-  const isObject = (v) => v && typeof v === 'object' && !Array.isArray(v)
-
-  for (const [k, v] of Object.entries(obj || {})) {
-    const current = prefix ? `${prefix}.${k}` : k
-    if (isObject(v)) {
-      keys.push(...flattenKeys(v, current))
-    } else {
-      // Add final leaf key (we don't filter by value type)
-      keys.push(current)
-    }
-  }
-  return keys
 }
 
 function walkFiles(startDir) {
@@ -95,6 +88,7 @@ function walkFiles(startDir) {
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name)
       if (entry.isDirectory()) {
+        if (entry.name.startsWith('.')) continue
         if (IGNORED_DIRS.has(entry.name)) continue
         walk(fullPath)
       } else if (entry.isFile()) {
@@ -185,57 +179,83 @@ function findUsageMap(keys, files) {
   return { used: Array.from(used), unused, where }
 }
 
+function resolveTranslationTargets(entryPath) {
+  if (!fs.existsSync(entryPath)) {
+    console.error(`Error: path not found: ${entryPath}`)
+    process.exit(1)
+  }
+  const stat = fs.statSync(entryPath)
+  if (stat.isFile()) {
+    if (!entryPath.toLowerCase().endsWith('.json')) {
+      console.error(`Error: file is not a .json: ${entryPath}`)
+      process.exit(1)
+    }
+    return [entryPath]
+  }
+  if (stat.isDirectory()) {
+    const files = fs
+      .readdirSync(entryPath, { withFileTypes: true })
+      .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.json'))
+      .map((e) => path.join(entryPath, e.name))
+      .sort()
+    if (files.length === 0) {
+      console.error(`Error: no .json files found in directory: ${entryPath}`)
+      process.exit(1)
+    }
+    return files
+  }
+  console.error(`Error: unsupported path type: ${entryPath}`)
+  process.exit(1)
+}
+
 function main() {
   const startTs = Date.now()
 
-  if (!fs.existsSync(TRANSLATION_FILE)) {
-    console.error(`Error: translation file not found: ${TRANSLATION_FILE}`)
-    process.exit(1)
-  }
-
-  const dict = readJson(TRANSLATION_FILE)
-  const keys = flattenKeys(dict).sort()
-
-  const searchRoot = fs.existsSync(SEARCH_ROOT) ? SEARCH_ROOT : PROJECT_ROOT
+  const translationFiles = resolveTranslationTargets(I18N_PATH)
+  const searchRoot = PROJECT_ROOT
   const files = walkFiles(searchRoot)
 
-  const { used, unused, where } = findUsageMap(keys, files)
+  console.log('Translations analysis')
+  console.log(`- Project root: ${PROJECT_ROOT}`)
+  console.log(`- Scanned directory: ${searchRoot}`)
+  console.log(`- .ts/.html files scanned: ${files.length}`)
+  console.log(`- Translation sources:`)
+  for (const f of translationFiles) {
+    console.log(`  - ${f}`)
+  }
 
-  if (!QUIET) {
-    console.log('Translations analysis (fr.json)')
-    console.log(`- Project root: ${PROJECT_ROOT}`)
-    console.log(`- Translations file: ${TRANSLATION_FILE}`)
-    console.log(`- Scanned directory: ${searchRoot}`)
-    console.log(`- .ts/.html files scanned: ${files.length}`)
+  let totalUnused = 0
+
+  for (const tFile of translationFiles) {
+    const dict = readJson(tFile)
+    const keys = Object.keys(dict || {}).sort()
+
+    const { used, unused /*, where */ } = findUsageMap(keys, files)
+
+    console.log(`\n[${tFile}]`)
     console.log(`- Total keys: ${keys.length}`)
     console.log(`- Keys found: ${used.length}`)
     console.log(`- Keys ignored: ${IGNORE_UNUSED_KEYS.length}`)
     console.log(`- Unused keys: ${unused.length}`)
-    if (PRINT_USED) {
-      console.log('\nUsed keys (first occurrence):')
-      for (const k of used) {
-        console.log(`  - ${k}  @ ${where.get(k)}`)
+
+    if (unused.length) {
+      console.log('Unused keys:')
+      for (const k of unused) {
+        console.log(`  - ${k}`)
       }
+    } else {
+      console.log('No unused keys detected.')
     }
+
+    totalUnused += unused.length
   }
 
-  if (unused.length) {
-    console.log('\nUnused keys:')
-    for (const k of unused) {
-      console.log(`  - ${k}`)
-    }
-  } else {
-    console.log('\nNo unused keys detected.')
-  }
-
-  if (!QUIET) {
-    const ms = Date.now() - startTs
-    console.log(`\nDone in ${ms} ms`)
-  }
+  const ms = Date.now() - startTs
+  console.log(`\nDone in ${ms} ms`)
 
   // Exit 0 even if there are unused keys (audit script).
   // To fail CI when unused keys exist:
-  // process.exit(unused.length ? 1 : 0);
+  // process.exit(totalUnused ? 1 : 0);
 }
 
 if (require.main === module) {

@@ -24,6 +24,7 @@ import { ButtonsModule } from 'ngx-bootstrap/buttons'
 import { BsDatepickerModule } from 'ngx-bootstrap/datepicker'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { Observable } from 'rxjs'
+import { i18nLanguageText } from '../../../../../i18n/l10n'
 import { InputPasswordComponent } from '../../../../common/components/input-password.component'
 import { PasswordStrengthBarComponent } from '../../../../common/components/password-strength-bar.component'
 import { originalOrderKeyValue } from '../../../../common/utils/functions'
@@ -100,6 +101,7 @@ export class LinkDialogComponent implements OnInit {
     permissions: FormControl<string | null>
     isActive: FormControl<boolean>
   }>
+  protected readonly i18nLanguageText = i18nLanguageText
   private readonly userService = inject(UserService)
   private readonly sharesService = inject(SharesService)
   private readonly linksService = inject(LinksService)

@@ -12,6 +12,8 @@ import frLocale from './fr.json'
 
 export const i18nAsset: any = { en: enLocale, fr: frLocale }
 
+export const i18nLanguageText = { auto: 'Auto', en: 'English', fr: 'Français' }
+
 export const l10nConfig: L10nConfig = {
   format: 'language',
   providers: [{ name: 'app', asset: i18nAsset }],
@@ -20,8 +22,8 @@ export const l10nConfig: L10nConfig = {
   keySeparator: '|',
   defaultLocale: { language: 'en' },
   schema: [
-    { locale: { language: 'en' }, dir: 'ltr', text: 'United States' },
-    { locale: { language: 'fr' }, dir: 'ltr', text: 'France' }
+    { locale: { language: 'en' }, dir: 'ltr' },
+    { locale: { language: 'fr' }, dir: 'ltr' }
   ]
 }
 
