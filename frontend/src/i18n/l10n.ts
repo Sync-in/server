@@ -9,9 +9,25 @@ import { L10nConfig, L10nLocale, L10nMissingTranslationHandler, L10nStorage, L10
 import { from, Observable, of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
 import 'dayjs/locale/fr'
+import 'dayjs/locale/de.js'
+import 'dayjs/locale/es.js'
+import 'dayjs/locale/pt.js'
+import 'dayjs/locale/it.js'
+import 'dayjs/locale/zh.js'
+import 'dayjs/locale/hi.js'
 import { USER_LANGUAGE_AUTO } from '../app/applications/users/user.constants'
 
-export const i18nLanguageText = { [USER_LANGUAGE_AUTO]: 'Auto', en: 'English', fr: 'Français' }
+export const i18nLanguageText = {
+  [USER_LANGUAGE_AUTO]: 'Auto',
+  en: 'English',
+  fr: 'Français',
+  de: 'Deutsch',
+  es: 'Español',
+  pt: 'Português',
+  it: 'Italiano',
+  zh: '中文 (简体)',
+  hi: 'हिन्दी'
+}
 
 export const l10nConfig: L10nConfig = {
   format: 'language',
@@ -23,7 +39,13 @@ export const l10nConfig: L10nConfig = {
   defaultLocale: { language: 'en' },
   schema: [
     { locale: { language: 'en' }, dir: 'ltr' },
-    { locale: { language: 'fr' }, dir: 'ltr' }
+    { locale: { language: 'fr' }, dir: 'ltr' },
+    { locale: { language: 'de' }, dir: 'ltr' },
+    { locale: { language: 'es' }, dir: 'ltr' },
+    { locale: { language: 'it' }, dir: 'ltr' },
+    { locale: { language: 'pt' }, dir: 'ltr' },
+    { locale: { language: 'hi' }, dir: 'ltr' },
+    { locale: { language: 'zh' }, dir: 'ltr' }
   ]
 }
 

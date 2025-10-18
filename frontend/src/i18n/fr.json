@@ -562,6 +562,7 @@
   "Download Apple Silicon ARM64 version": "Télécharger la version Apple Silicon ARM64",
   "Download tar.gz version": "Télécharger la version tar.gz",
   "Repository": "Dépôt",
+  "public": "public",
   "local": "local",
   "remote": "distant",
   "System requirements": "Configuration requise",

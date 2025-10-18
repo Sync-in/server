@@ -4,11 +4,15 @@
  * See the LICENSE file for licensing details
  */
 
+import { de } from './de'
+import { es } from './es'
 import { fr } from './fr'
+import { hi } from './hi'
+import { it } from './it'
+import { pt } from './pt'
+import { zh } from './zh'
 
-export const translations = {
-  fr
-}
+export const translations = { fr, de, es, hi, it, pt, zh }
 
 export function translateObject<T>(language: string, obj: T): T {
   if (language?.length && Object.keys(translations).indexOf(language) > -1) {
