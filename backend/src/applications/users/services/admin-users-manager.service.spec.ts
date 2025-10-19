@@ -58,6 +58,7 @@ describe(AdminUsersManager.name, () => {
       checkGroupNameExists: jest.Mock
       checkUserExists: jest.Mock
       searchUsersOrGroups: jest.Mock
+      clearWhiteListCaches: jest.Mock
     }
     updateUserGroups: jest.Mock
     updateGuestManagers: jest.Mock
@@ -100,7 +101,8 @@ describe(AdminUsersManager.name, () => {
         compareUserPassword: jest.fn(),
         checkGroupNameExists: jest.fn(),
         checkUserExists: jest.fn(),
-        searchUsersOrGroups: jest.fn()
+        searchUsersOrGroups: jest.fn(),
+        clearWhiteListCaches: jest.fn()
       },
       updateUserGroups: jest.fn(),
       updateGuestManagers: jest.fn(),

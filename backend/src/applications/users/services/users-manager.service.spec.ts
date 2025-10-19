@@ -143,6 +143,7 @@ describe(UsersManager.name, () => {
 
     usersQueriesService.checkUserExists = jest.fn().mockReturnValue(undefined)
     usersQueriesService.createUserOrGuest = jest.fn().mockReturnValue(888)
+    usersQueriesService.clearWhiteListCaches = jest.fn()
     const created = await adminUsersManager.createUserOrGuest(userTest satisfies CreateUserDto, USER_ROLE.USER)
     expect(created).toBeInstanceOf(UserModel)
     expect(await isPathExists(created.filesPath)).toBe(true)

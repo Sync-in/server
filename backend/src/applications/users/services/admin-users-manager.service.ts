@@ -67,6 +67,7 @@ export class AdminUsersManager {
       this.logger.log(
         `${this.createUserOrGuest.name} - ${USER_ROLE[userRole]} (${userId}) was created : ${JSON.stringify(anonymizePassword(createUserDto))}`
       )
+      this.adminQueries.usersQueries.clearWhiteListCaches('*')
       await user.makePaths()
       if (userRole <= USER_ROLE.USER) {
         return asAdmin ? this.getUser(user.id) : user

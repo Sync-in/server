@@ -544,13 +544,30 @@ export class UsersQueries {
     return JSON.parse(r[0].ids) || []
   }
 
-  clearWhiteListCaches(userIds: number[]) {
-    this.cache
-      .mdel([
-        ...userIds.map((id) => this.cache.genSlugKey(this.constructor.name, this.usersWhitelist.name, id)),
-        ...userIds.map((id) => this.cache.genSlugKey(this.constructor.name, this.groupsWhitelist.name, id))
-      ])
-      .catch((e: Error) => this.logger.error(`${this.clearWhiteListCaches.name} - ${e}`))
+  clearWhiteListCaches(userIds: number[] | '*') {
+    if (userIds === '*') {
+      // means all entries
+      for (const pattern of [
+        this.cache.genSlugKey(this.constructor.name, this.usersWhitelist.name, userIds),
+        this.cache.genSlugKey(this.constructor.name, this.groupsWhitelist.name, userIds)
+      ]) {
+        this.cache
+          .keys(pattern)
+          .then((keys: string[]) => {
+            if (!keys.length) return
+            this.logger.verbose(`${this.clearWhiteListCaches.name} - ${JSON.stringify(keys)}`)
+            this.cache.mdel(keys).catch((e: Error) => this.logger.error(`${this.clearWhiteListCaches.name} - ${e}`))
+          })
+          .catch((e: Error) => this.logger.error(`${this.clearWhiteListCaches.name} - ${e}`))
+      }
+    } else {
+      this.cache
+        .mdel([
+          ...userIds.map((id: number) => this.cache.genSlugKey(this.constructor.name, this.usersWhitelist.name, id)),
+          ...userIds.map((id: number) => this.cache.genSlugKey(this.constructor.name, this.groupsWhitelist.name, id))
+        ])
+        .catch((e: Error) => this.logger.error(`${this.clearWhiteListCaches.name} - ${e}`))
+    }
   }
 
   async allUserIdsFromGroupsAndSubGroups(groupIds: number[]): Promise<number[]> {
