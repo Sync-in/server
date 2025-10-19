@@ -27,8 +27,8 @@ export class FilesUploadService {
     const taskReqs: [FileTask, Observable<any>][] = []
 
     for (const [key, data] of Object.entries(this.sortFiles(files))) {
-      const path = `${this.filesService.currentRoute}/${key}`.split('/').slice(0, -1).join('/').normalize()
-      const name = `${this.filesService.currentRoute}/${key}`.split('/').slice(-1)[0].normalize()
+      const path = `${this.filesService.currentRoute}/${key}`.split('/').slice(0, -1).join('/')
+      const name = `${this.filesService.currentRoute}/${key}`.split('/').slice(-1)[0]
       const task: FileTask = this.filesTasksService.createUploadTask(path, name, data.size)
       taskReqs.unshift([
         task,
@@ -78,9 +78,9 @@ export class FilesUploadService {
     const sort: Record<string, { nb: number; size: number; form: FormData }> = {}
     for (const f of files) {
       const relPath = f.relativePath || f.webkitRelativePath
-      const key = relPath ? relPath.split('/')[0] : f.name
+      const key = (relPath ? relPath.split('/')[0] : f.name).normalize()
       if (!(key in sort)) sort[key] = { nb: 0, size: 0, form: new FormData() }
-      sort[key].form.append('file', f, relPath || f.name)
+      sort[key].form.append('file', f, (relPath || f.name).normalize())
       sort[key].nb++
       sort[key].size += f.size
     }

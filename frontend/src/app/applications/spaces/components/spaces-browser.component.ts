@@ -700,26 +700,26 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.filesService.openViewerDialog(mode, this.selection[0]).catch(console.error)
   }
 
-  private focusOn(select: string) {
-    if (select) {
-      if (this.files.length) {
-        let f = this.files.find((file) => file.name.toLowerCase() === select.toLowerCase())
-        if (!f && this.hasRoots) {
-          f = this.files.find((file) => file.root?.alias.toLowerCase() === select.toLowerCase())
-        }
-        if (f) {
-          setTimeout(() => this.scrollView.scrollInto(f), 100)
-          this.updateSelection([f])
-        } else {
-          // wait for the `loadFiles`
-          this.focusOnSelect = select
-        }
-      } else {
-        // wait for the `loadFiles`
-        this.focusOnSelect = select
-      }
-    } else {
+  private focusOn(selectName: string) {
+    if (!selectName) {
       this.focusOnSelect = null
+      return
+    }
+    if (!this.files.length) {
+      // wait for the `loadFiles`
+      this.focusOnSelect = selectName
+      return
+    }
+    let f = this.files.find((file) => file.name.toLowerCase() === selectName.toLowerCase())
+    if (!f && this.hasRoots) {
+      f = this.files.find((file) => file.root?.alias.toLowerCase() === selectName.toLowerCase())
+    }
+    if (f) {
+      setTimeout(() => this.scrollView.scrollInto(f), 100)
+      this.updateSelection([f])
+    } else {
+      // wait for the `loadFiles`
+      this.focusOnSelect = selectName
     }
   }
 
