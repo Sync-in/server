@@ -50,7 +50,7 @@
     "@nestjs/platform-socket.io": "^11.0.15",
     "@nestjs/schedule": "^6.0.0",
     "@nestjs/websockets": "^11.0.15",
-    "@socket.io/cluster-adapter": "^0.2.2",
+    "@socket.io/cluster-adapter": "^0.3.0",
     "archiver": "^7.0.1",
     "bcryptjs": "^3.0.0",
     "canvas": "^3.2.0",
@@ -87,7 +87,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
-    "@faker-js/faker": "^9.2.0",
+    "@faker-js/faker": "^10.1.0",
     "@golevelup/ts-jest": "^0.7.0",
     "@nestjs/cli": "^11.0.6",
     "@nestjs/schematics": "^11.0.5",

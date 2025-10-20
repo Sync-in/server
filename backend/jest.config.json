@@ -9,6 +9,9 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "transformIgnorePatterns": [
+    "/node_modules/(?!@faker-js/faker)"
+  ],
   "collectCoverageFrom": [
     "**/*.{(guard|strategy|service|filter|pipe|provider|interceptor),}.(t|j)s",
     "!**/*-queries.service.(t|j)s",

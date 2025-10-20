@@ -9,6 +9,9 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
+  "transformIgnorePatterns": [
+    "/node_modules/(?!@faker-js/faker)"
+  ],
   "collectCoverageFrom": [
     "**/*.controller.(t|j)s"
   ],

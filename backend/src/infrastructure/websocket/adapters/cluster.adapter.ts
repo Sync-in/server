@@ -11,7 +11,7 @@ import { ServerOptions } from 'socket.io'
 
 @Injectable()
 export class ClusterAdapter extends IoAdapter {
-  private readonly clusterAdapter = createAdapter({ requestsTimeout: 60000 })
+  private readonly clusterAdapter = createAdapter()
 
   createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options)
