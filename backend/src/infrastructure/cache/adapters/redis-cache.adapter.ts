@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { RedisClientOptions } from '@redis/client'
 import { createClient, RedisClientType } from 'redis'
 import { createSlug } from '../../../common/shared'
@@ -12,7 +12,7 @@ import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../services/cache.service'
 
 @Injectable()
-export class RedisCacheAdapter implements Cache, OnModuleInit {
+export class RedisCacheAdapter implements Cache {
   defaultTTL: number = configuration.cache.ttl
   infiniteExpiration = -1
   private readonly logger = new Logger(Cache.name.toUpperCase())

@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import { Inject, Injectable, Logger } from '@nestjs/common'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { CronJob } from 'cron'
 import { and, between, eq, exists, inArray, like, notBetween, SQL } from 'drizzle-orm'
@@ -20,7 +20,7 @@ import { cache } from '../schemas/mysql-cache.schema'
 import { Cache } from '../services/cache.service'
 
 @Injectable()
-export class MysqlCacheAdapter implements Cache, OnModuleInit, OnModuleDestroy {
+export class MysqlCacheAdapter implements Cache {
   /* Useful SQL commands to stats the scheduler
     SHOW VARIABLES LIKE 'event_scheduler';
     SHOW EVENTS;
