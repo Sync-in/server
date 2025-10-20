@@ -4,9 +4,8 @@
  * See the LICENSE file for licensing details
  */
 
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common'
-import { Cron, CronExpression, SchedulerRegistry, Timeout } from '@nestjs/schedule'
-import { CronJob } from 'cron'
+import { Inject, Injectable, Logger } from '@nestjs/common'
+import { Cron, CronExpression, Timeout } from '@nestjs/schedule'
 import { sql } from 'drizzle-orm'
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -25,25 +24,14 @@ import { FilesContentManager } from './files-content-manager.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
 
 @Injectable()
-export class FilesScheduler implements OnModuleInit {
+export class FilesScheduler {
   private readonly logger = new Logger(FilesScheduler.name)
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
-    private readonly schedulerRegistry: SchedulerRegistry,
     private readonly cache: Cache,
     private readonly filesContentManager: FilesContentManager
   ) {}
-
-  onModuleInit() {
-    if (!configuration.applications.files.contentIndexing) return
-    // Conditional loading of file content indexing
-    const job = new CronJob(CronExpression.EVERY_4_HOURS, () => this.indexContentFiles())
-    this.schedulerRegistry.addCronJob('indexContentFiles', job)
-    job.start()
-    const timeout = setTimeout(() => this.indexContentFiles(), 60_000)
-    this.schedulerRegistry.addTimeout('bootstrapIndexContentFiles', timeout)
-  }
 
   @Timeout(30000)
   async cleanupInterruptedTasks(): Promise<void> {
@@ -129,7 +117,11 @@ export class FilesScheduler implements OnModuleInit {
     this.logger.log(`${this.clearRecentFiles.name} - ${nbCleared} records cleared - END`)
   }
 
+  @Timeout(120000)
+  @Cron(CronExpression.EVERY_4_HOURS)
   async indexContentFiles(): Promise<void> {
+    // Conditional loading of file content indexing
+    if (!configuration.applications.files.contentIndexing) return
     this.logger.log(`${this.indexContentFiles.name} - START`)
     await this.filesContentManager.parseAndIndexAllFiles()
     this.logger.log(`${this.indexContentFiles.name} - END`)
