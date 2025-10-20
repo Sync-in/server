@@ -83,7 +83,7 @@
   "optionalDependencies": {
     "@socket.io/redis-adapter": "^8.3.0",
     "ldapts": "^8.0.0",
-    "redis": "^4.7.0"
+    "redis": "^5.8.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",

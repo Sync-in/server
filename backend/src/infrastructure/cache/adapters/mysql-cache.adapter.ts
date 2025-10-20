@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Inject, Injectable, Logger } from '@nestjs/common'
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { CronJob } from 'cron'
 import { and, between, eq, exists, inArray, like, notBetween, SQL } from 'drizzle-orm'
@@ -14,12 +14,13 @@ import { configuration } from '../../../configuration/config.environment'
 import { DB_TOKEN_PROVIDER } from '../../database/constants'
 import { DBSchema } from '../../database/interfaces/database.interface'
 import { dbCheckAffectedRows } from '../../database/utils'
+import { SCHEDULER_ENV, SCHEDULER_STATE } from '../../scheduler/scheduler.constants'
 import { MysqlCache } from '../schemas/mysql-cache.interface'
 import { cache } from '../schemas/mysql-cache.schema'
 import { Cache } from '../services/cache.service'
 
 @Injectable()
-export class MysqlCacheAdapter implements Cache {
+export class MysqlCacheAdapter implements Cache, OnModuleInit, OnModuleDestroy {
   /* Useful SQL commands to stats the scheduler
     SHOW VARIABLES LIKE 'event_scheduler';
     SHOW EVENTS;
@@ -34,12 +35,10 @@ export class MysqlCacheAdapter implements Cache {
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
     private readonly scheduler: SchedulerRegistry
-  ) {
-    this.initScheduler().catch((e: Error) => this.logger.error(e))
-  }
+  ) {}
 
-  async initScheduler(): Promise<void> {
-    if (!cluster.worker || cluster.worker.id === 1) {
+  async onModuleInit(): Promise<void> {
+    if (cluster.isWorker && process.env[SCHEDULER_ENV] === SCHEDULER_STATE.ENABLED) {
       try {
         await this.db.execute(`SET GLOBAL event_scheduler = ON;`)
         await this.db.execute(`DROP EVENT IF EXISTS ${this.scheduledJobName};`)
@@ -54,6 +53,12 @@ export class MysqlCacheAdapter implements Cache {
         this.scheduler.addCronJob(this.scheduledJobName, this.scheduledJob)
         this.scheduledJob.start()
       }
+    }
+  }
+
+  async onModuleDestroy(): Promise<void> {
+    if (this.scheduledJob) {
+      await this.scheduledJob.stop()
     }
   }
 
@@ -97,7 +102,7 @@ export class MysqlCacheAdapter implements Cache {
     return vs.map((v: { value: any }) => v.value)
   }
 
-  async set(key: any, data: any, ttl?: number): Promise<boolean> {
+  async set(key: string, data: unknown, ttl?: number): Promise<boolean> {
     data = this.serialize(data)
     const exp = this.getTTL(ttl)
     try {
@@ -127,10 +132,6 @@ export class MysqlCacheAdapter implements Cache {
 
   genSlugKey(...args: any[]): string {
     return createSlug(args.join(' '))
-  }
-
-  async quit(): Promise<void> {
-    this.logger.verbose(`${this.quit.name}`)
   }
 
   private readonly whereNotExpired: () => SQL = () => notBetween(cache.expiration, 0, currentTimeStamp())

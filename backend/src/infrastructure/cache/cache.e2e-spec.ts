@@ -22,6 +22,7 @@ describe(Cache.name, () => {
 
     module.useLogger(['fatal'])
     cache = module.get<Cache>(Cache)
+    cache.onModuleInit()
   })
 
   afterAll(async () => {

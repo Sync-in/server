@@ -19,7 +19,7 @@ export class SchedulerModule {
         imports: [NestScheduleModule.forRoot()]
       }
     } else {
-      // do not initialize the ScheduleModule dependency, all calls to Interval, Cron ... will be ignored
+      // do not initialize the ScheduleModule dependency; all calls to Interval, Cron ... will be ignored
       return { module: SchedulerModule }
     }
   }

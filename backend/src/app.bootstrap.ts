@@ -33,6 +33,9 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
     bufferLogs: true
   })
 
+  /* NestJS starts listening for shutdown hooks */
+  app.enableShutdownHooks()
+
   /* Fastify instance */
   const fastifyInstance = fastifyAdapter.getInstance()
 

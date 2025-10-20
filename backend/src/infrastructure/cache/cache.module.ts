@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { BeforeApplicationShutdown, Global, Module } from '@nestjs/common'
+import { Global, Module } from '@nestjs/common'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { configuration } from '../../configuration/config.environment'
 import { MysqlCacheAdapter } from './adapters/mysql-cache.adapter'
@@ -22,10 +22,4 @@ import { Cache } from './services/cache.service'
   ],
   exports: [Cache]
 })
-export class CacheModule implements BeforeApplicationShutdown {
-  constructor(private readonly cache: Cache) {}
-
-  async beforeApplicationShutdown() {
-    await this.cache.quit()
-  }
-}
+export class CacheModule {}
