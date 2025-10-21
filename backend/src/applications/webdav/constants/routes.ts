@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { SERVER_NAME } from '../../../app.constants'
+import { SERVER_NAME } from '../../../common/shared'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 
 export const WEBDAV_BASE_PATH = 'webdav'

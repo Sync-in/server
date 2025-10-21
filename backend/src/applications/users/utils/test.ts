@@ -5,7 +5,7 @@
  */
 
 import { faker } from '@faker-js/faker'
-import { SERVER_NAME } from '../../../app.constants'
+import { SERVER_NAME } from '../../../common/shared'
 import { USER_PERMISSION, USER_ROLE } from '../constants/user'
 import type { UserModel } from '../models/user.model'
 

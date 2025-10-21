@@ -4,9 +4,8 @@
  * See the LICENSE file for licensing details
  */
 
-import { SERVER_NAME } from '../../../app.constants'
 import { ACTION } from '../../../common/constants'
-import { capitalizeString } from '../../../common/shared'
+import { capitalizeString, SERVER_NAME } from '../../../common/shared'
 import { fileName } from '../../files/utils/files'
 import { UserModel } from '../../users/models/user.model'
 import { translateObject } from '../i18n'

@@ -20,7 +20,7 @@ import {
   ValidateIf,
   ValidateNested
 } from 'class-validator'
-import { SERVER_NAME } from '../app.constants'
+import { SERVER_NAME } from '../common/shared'
 import { ACCESS_KEY, CSRF_KEY, REFRESH_KEY, WS_KEY } from './constants/auth'
 import { LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './constants/auth-ldap'
 

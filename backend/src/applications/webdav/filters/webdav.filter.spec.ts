@@ -5,7 +5,7 @@
  */
 import { ArgumentsHost, HttpException } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
-import { SERVER_NAME } from '../../../app.constants'
+import { SERVER_NAME } from '../../../common/shared'
 import { XML_CONTENT_TYPE } from '../constants/webdav'
 import { WebDAVExceptionsFilter } from './webdav.filter'
 

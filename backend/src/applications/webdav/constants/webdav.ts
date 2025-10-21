@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { SERVER_NAME } from '../../../app.constants'
+import { SERVER_NAME } from '../../../common/shared'
 import { HTTP_STANDARD_METHOD, HTTP_WEBDAV_METHOD } from '../../applications.constants'
 import { WEBDAV_BASE_PATH } from './routes'
 

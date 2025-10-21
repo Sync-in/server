@@ -5,7 +5,7 @@
  */
 
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common'
-import { SERVER_NAME } from '../../../app.constants'
+import { SERVER_NAME } from '../../../common/shared'
 import { XML_CONTENT_TYPE } from '../constants/webdav'
 
 @Catch(HttpException)

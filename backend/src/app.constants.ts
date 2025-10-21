@@ -4,8 +4,6 @@
  * See the LICENSE file for licensing details
  */
 
-export const SERVER_NAME = 'Sync-in' as const
-
 export const CONTENT_SECURITY_POLICY = (onlyOfficeServer: string) => ({
   useDefaults: false,
   directives: {

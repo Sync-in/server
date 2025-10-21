@@ -6,8 +6,7 @@
 
 import { FastifyReply } from 'fastify'
 import http from 'node:http'
-import { SERVER_NAME } from '../../../app.constants'
-import { currentTimeStamp, encodeUrl } from '../../../common/shared'
+import { currentTimeStamp, encodeUrl, SERVER_NAME } from '../../../common/shared'
 import { FileLock } from '../../files/interfaces/file-lock.interface'
 import { LOCK_SCOPE, NS_DAV, NS_PREFIX, PROPSTAT, XML_CONTENT_TYPE } from '../constants/webdav'
 import { XML_NS, xmlBuild } from './xml'
