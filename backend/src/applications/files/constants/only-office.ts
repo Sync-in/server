@@ -96,6 +96,7 @@ export const ONLY_OFFICE_EXTENSIONS = {
 
   EDITABLE: new Map([
     // WORD
+    ['doc', 'word'],
     ['docm', 'word'],
     ['docx', 'word'],
     ['dotm', 'word'],
@@ -112,6 +113,7 @@ export const ONLY_OFFICE_EXTENSIONS = {
     // CELL
     ['xlsb', 'cell'],
     ['xlsm', 'cell'],
+    ['xls', 'cell'],
     ['xlsx', 'cell'],
     ['xltm', 'cell'],
     ['xltx', 'cell'],
@@ -125,6 +127,7 @@ export const ONLY_OFFICE_EXTENSIONS = {
     ['ppsm', 'slide'],
     ['ppsx', 'slide'],
     ['pptm', 'slide'],
+    ['ppt', 'slide'],
     ['pptx', 'slide'],
     ['odp', 'slide'],
     ['otp', 'slide'],
