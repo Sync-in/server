@@ -16,7 +16,7 @@
   <div class="modal-body">
     @switch (shortMime) {
       @case ('image') {
-        <div class="d-flex justify-content-center bg-black" [style.height.px]="currentHeight">
+        <div class="d-flex justify-content-center" [style.height.px]="currentHeight">
           <img [src]="currentFile.dataUrl" [style.max-height.px]="currentHeight" alt="" class="img-fluid align-self-center">
         </div>
       }
