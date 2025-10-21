@@ -5,10 +5,12 @@
  */
 
 import { HttpClient, HttpParams } from '@angular/common/http'
-import { Component, inject, Input, OnInit } from '@angular/core'
+import { Component, inject, Input, OnDestroy, OnInit } from '@angular/core'
 import { API_FILES_ONLY_OFFICE_SETTINGS } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import { OnlyOfficeReqConfig } from '@sync-in-server/backend/src/applications/files/interfaces/only-office-config.interface'
+import { SERVER_NAME } from '@sync-in-server/backend/src/common/shared'
 import { LayoutService } from '../../../../layout/layout.service'
+import { StoreService } from '../../../../store/store.service'
 import { FileModel } from '../../models/file.model'
 import { OnlyOfficeComponent } from '../utils/only-office.component'
 
@@ -28,7 +30,7 @@ import { OnlyOfficeComponent } from '../utils/only-office.component'
     }
   `
 })
-export class FilesViewerDocumentComponent implements OnInit {
+export class FilesViewerDocumentComponent implements OnInit, OnDestroy {
   @Input() file: FileModel
   @Input() currentHeight: number
   @Input() mode: 'view' | 'edit'
@@ -36,6 +38,7 @@ export class FilesViewerDocumentComponent implements OnInit {
   protected documentConfig: OnlyOfficeReqConfig = null
   private readonly http = inject(HttpClient)
   private readonly layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
 
   ngOnInit() {
     this.docId = `viewer-doc-${this.file.id}`
@@ -54,6 +57,14 @@ export class FilesViewerDocumentComponent implements OnInit {
           } else {
             data.config.editorConfig.mode = this.mode
           }
+          if (this.mode === 'edit') {
+            // set lock on file
+            this.file.lock = {
+              owner: `${SERVER_NAME} - ${this.store.user.getValue().fullName} (${this.store.user.getValue().email})`,
+              ownerLogin: this.store.user.getValue().login,
+              isExclusive: false
+            }
+          }
           data.config.editorConfig.lang = this.layout.getCurrentLanguage()
           data.config.editorConfig.region = this.layout.getCurrentLanguage()
           this.documentConfig = data
@@ -63,6 +74,11 @@ export class FilesViewerDocumentComponent implements OnInit {
           this.layout.sendNotification('error', 'Unable to open document', e.error.message)
         }
       })
+  }
+
+  ngOnDestroy() {
+    // remove lock
+    this.file.lock = null
   }
 
   loadError(errorMessage: string): void {
