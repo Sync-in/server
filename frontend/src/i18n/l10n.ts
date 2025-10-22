@@ -15,6 +15,7 @@ import 'dayjs/locale/pt.js'
 import 'dayjs/locale/it.js'
 import 'dayjs/locale/zh.js'
 import 'dayjs/locale/hi.js'
+import 'dayjs/locale/ru.js'
 import { USER_LANGUAGE_AUTO } from '../app/applications/users/user.constants'
 
 export const i18nLanguageText = {
@@ -26,7 +27,8 @@ export const i18nLanguageText = {
   pt: 'Português',
   it: 'Italiano',
   zh: '中文 (简体)',
-  hi: 'हिन्दी'
+  hi: 'हिन्दी',
+  ru: 'Русский'
 }
 
 export const l10nConfig: L10nConfig = {
@@ -45,7 +47,8 @@ export const l10nConfig: L10nConfig = {
     { locale: { language: 'it' }, dir: 'ltr' },
     { locale: { language: 'pt' }, dir: 'ltr' },
     { locale: { language: 'hi' }, dir: 'ltr' },
-    { locale: { language: 'zh' }, dir: 'ltr' }
+    { locale: { language: 'zh' }, dir: 'ltr' },
+    { locale: { language: 'ru' }, dir: 'ltr' }
   ]
 }
 

@@ -8,7 +8,7 @@ import { Component, inject } from '@angular/core'
 import { RouterOutlet } from '@angular/router'
 import { FaConfig } from '@fortawesome/angular-fontawesome'
 import { L10N_LOCALE, L10nLoader, L10nLocale } from 'angular-l10n'
-import { defineLocale, deLocale, enGbLocale, esLocale, frLocale, hiLocale, itLocale, ptBrLocale, zhCnLocale } from 'ngx-bootstrap/chronos'
+import { defineLocale, deLocale, enGbLocale, esLocale, frLocale, hiLocale, itLocale, ptBrLocale, zhCnLocale, ruLocale } from 'ngx-bootstrap/chronos'
 import { BsLocaleService } from 'ngx-bootstrap/datepicker'
 import { setTheme } from 'ngx-bootstrap/utils'
 import { dJs } from './common/utils/time'
@@ -36,6 +36,7 @@ export class AppComponent {
     defineLocale('it', itLocale)
     defineLocale('zh', zhCnLocale)
     defineLocale('hi', hiLocale)
+    defineLocale('ru', ruLocale)
     this.l10nLoader.init().then(() => {
       dJs.locale(this.locale.language)
       this.bsLocaleService.use(this.locale.language)
