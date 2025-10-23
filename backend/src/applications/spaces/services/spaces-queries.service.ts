@@ -482,6 +482,7 @@ export class SpacesQueries {
       const unionAlias = this.fromUserAndGroups({ id: spaces.id })
       this.spaceIdsQuery = this.db.select({ id: unionAlias.id }).from(unionAlias).groupBy(unionAlias.id).prepare()
     }
+    // `userId` is used in `fromUserAndGroups` function
     return (await this.spaceIdsQuery.execute({ userId })).map((r: { id: number }) => r.id)
   }
 
@@ -521,7 +522,12 @@ export class SpacesQueries {
         })
       }
       if (fromId) {
-        pQuery = this.db.select(select).from(unionAlias).where(eq(unionAlias.id, fromId)).limit(1).prepare()
+        pQuery = this.db
+          .select(select)
+          .from(unionAlias)
+          .where(eq(unionAlias.id, sql.placeholder('fromId')))
+          .limit(1)
+          .prepare()
         this.spaceFromIdWithPermissionsQuery = pQuery
       } else {
         pQuery = this.db.select(select).from(unionAlias).groupBy(unionAlias.id).prepare()
@@ -533,7 +539,8 @@ export class SpacesQueries {
       }
     }
     // SpaceProps instance is required, if the user is a space manager, he must have all permissions
-    return (await pQuery.execute({ userId })).map((s: Partial<SpaceProps>) => new SpaceProps(s))
+    // `userId` is used in `fromUserAndGroups` function
+    return (await pQuery.execute({ userId, fromId })).map((s: Partial<SpaceProps>) => new SpaceProps(s))
   }
 
   async spacesWithDetails(userId: number): Promise<SpaceProps[]> {
@@ -707,6 +714,7 @@ export class SpacesQueries {
       }
       this.spacePermissionsQuery = this.db.select(select).from(unionAlias).groupBy(unionAlias.id).limit(1).prepare()
     }
+    // `userId` is used in `fromUserAndGroups` function
     const r: MySqlQueryResult = await this.spacePermissionsQuery.execute({ userId, spaceAlias })
     return r.length ? r.at(0) : null
   }
@@ -759,6 +767,7 @@ export class SpacesQueries {
       }
       this.spaceAndRootPermissionsQuery = this.db.select(select).from(unionAlias).groupBy(unionAlias.id).limit(1).prepare()
     }
+    // `userId` is used in `fromUserQuery` and `fromGroupsQuery` function
     const r: MySqlQueryResult = await this.spaceAndRootPermissionsQuery.execute({ userId, spaceAlias, rootAlias })
     return r.length ? r.at(0) : null
   }

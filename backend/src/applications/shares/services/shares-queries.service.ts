@@ -857,6 +857,8 @@ export class SharesQueries {
       }
       this.sharePermissionsQuery = this.db.select(select).from(unionAlias).groupBy(unionAlias.id).limit(1).prepare()
     }
+    // `userId` is used in `fromUserQuery` and `fromGroupsQuery` function
+    // `isAdmin` is used in `fromAdminSharesQuery` function
     const [r]: Partial<SpaceEnv>[] = await this.sharePermissionsQuery.execute({ userId, shareAlias, isAdmin })
     if (r) {
       r.permissions = uniquePermissions(r.permissions)
