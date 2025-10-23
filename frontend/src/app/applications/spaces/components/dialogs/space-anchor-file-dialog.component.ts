@@ -31,7 +31,7 @@ import { SpaceManageRootsComponent } from '../utils/space-manage-roots.component
 })
 export class SpaceAnchorFileDialogComponent implements OnInit {
   @Input({ required: true }) files: FileModel[]
-  public addAnchoredFiles = new EventEmitter<{ space: SpaceModel; fileNames: string[] }>()
+  public addAnchoredFiles = new EventEmitter<{ space: SpaceModel; rootFiles: { id: number; name: string }[] }>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly icons = { faAnchor, faPlus, faSpinner, SPACES: SPACES_ICON.SPACES }
@@ -81,7 +81,7 @@ export class SpaceAnchorFileDialogComponent implements OnInit {
         if (roots.length) {
           this.addAnchoredFiles.emit({
             space: this.selectedSpace,
-            fileNames: roots.map((r: SpaceRootModel): string => r.file.path.split('/').at(-1))
+            rootFiles: roots.map((r: SpaceRootModel) => ({ id: r.file.id, name: r.file.path.split('/').at(-1) }))
           })
         }
         this.layout.closeDialog()

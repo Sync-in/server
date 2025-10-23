@@ -510,7 +510,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       } as ShareDialogComponent
     })
     modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['add' | string, ShareModel]) => {
-      this.selection[0].shares.push({ id: r[1].id, alias: r[1].alias, name: r[1].name, type: SHARE_TYPE.COMMON })
+      const s = r[1]
+      if (this.selection[0].id < 0) this.selection[0].id = s.file.id
+      this.selection[0].shares.push({ id: s.id, alias: s.alias, name: s.name, type: SHARE_TYPE.COMMON })
     })
   }
 
@@ -527,6 +529,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['update' | 'delete', ShareLinkModel] | ['add', ShareModel]) => {
       const [action, s] = r
       if (action === 'add') {
+        if (this.selection[0].id < 0) this.selection[0].id = s.file.id
         this.selection[0].links.push({ id: s.id, alias: s.alias, name: s.name, type: SHARE_TYPE.LINK })
       }
     })
@@ -536,9 +539,11 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     const modalRef: BsModalRef<SpaceAnchorFileDialogComponent> = this.layout.openDialog(SpaceAnchorFileDialogComponent, 'lg', {
       initialState: { files: this.selection } as SpaceAnchorFileDialogComponent
     })
-    modalRef.content.addAnchoredFiles.pipe(take(1)).subscribe((up: { space: SpaceModel; fileNames: string[] }) => {
-      for (const f of this.files) {
-        if (up.fileNames.indexOf(f.name) > -1 && f.spaces.map((s: Partial<SpaceModel>) => s.id).indexOf(up.space.id) === -1) {
+    modalRef.content.addAnchoredFiles.pipe(take(1)).subscribe((up: { space: SpaceModel; rootFiles: { id: number; name: string }[] }) => {
+      for (const f of this.selection) {
+        const rootFile = up.rootFiles.find((rf: { id: number; name: string }) => rf.name === f.name)
+        if (rootFile && f.spaces.map((s: Partial<SpaceModel>) => s.id).indexOf(up.space.id) === -1) {
+          if (f.id < 0) f.id = rootFile.id
           f.spaces.push(up.space)
         }
       }
