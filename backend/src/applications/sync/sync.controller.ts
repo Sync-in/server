@@ -164,7 +164,7 @@ export class SyncController {
   @UseInterceptors(ContextInterceptor)
   updatePaths(
     @GetUser() user: UserModel,
-    @Body(new ParseArrayPipe({ items: SyncPathDto })) syncPathsDto: SyncPathDto[]
+    @Body(new ParseArrayPipe({ items: SyncPathDto, whitelist: true })) syncPathsDto: SyncPathDto[]
   ): Promise<{
     add: SyncPathSettings[]
     update: Partial<Record<keyof SyncPathSettings, any>>[]

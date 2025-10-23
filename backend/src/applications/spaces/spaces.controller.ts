@@ -149,7 +149,7 @@ export class SpacesController {
   createUserRoots(
     @GetUser() user: UserModel,
     @Param('id', ParseIntPipe) spaceId: number,
-    @Body(new ParseArrayPipe({ items: SpaceRootDto })) roots: SpaceRootDto[]
+    @Body(new ParseArrayPipe({ items: SpaceRootDto, whitelist: true })) roots: SpaceRootDto[]
   ): Promise<SpaceRootDto[]> {
     return this.spacesManager.updateUserRoots(user, spaceId, roots, true)
   }
@@ -158,7 +158,7 @@ export class SpacesController {
   updateUserRoots(
     @GetUser() user: UserModel,
     @Param('id', ParseIntPipe) spaceId: number,
-    @Body(new ParseArrayPipe({ items: SpaceRootDto })) roots: SpaceRootDto[]
+    @Body(new ParseArrayPipe({ items: SpaceRootDto, whitelist: true })) roots: SpaceRootDto[]
   ): Promise<SpaceRootDto[]> {
     return this.spacesManager.updateUserRoots(user, spaceId, roots)
   }
