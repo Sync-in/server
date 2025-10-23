@@ -38,12 +38,10 @@ export const ru = {
     'Ваш аккаунт был заблокирован после нескольких неудачных попыток входа',
   'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':
     'Это уведомление касается вашего аккаунта в Sync-in. Пожалуйста, обратитесь к администратору для анализа и разблокировки аккаунта.',
-  'Two-factor authentication (2FA) on your account has been disabled':
-    'Двухфакторная аутентификация (2FA) для вашего аккаунта была отключена',
-  'Two-factor authentication (2FA) on your account has been enabled':
-    'Двухфакторная аутентификация (2FA) для вашего аккаунта была включена',
+  'Two-factor authentication (2FA) on your account has been disabled': 'Двухфакторная аутентификация (2FA) для вашего аккаунта была отключена',
+  'Two-factor authentication (2FA) on your account has been enabled': 'Двухфакторная аутентификация (2FA) для вашего аккаунта была включена',
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':
     'Вы получили это уведомление, потому что изменились настройки безопасности вашего аккаунта в Sync-in. Если вы считаете, что это ошибка, проверьте настройки безопасности или свяжитесь с администратором.',
   'Address IP': 'IP-адрес',
   Browser: 'Браузер'
-} as const;
+} as const
