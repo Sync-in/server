@@ -7,9 +7,10 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { TestingModule } from '@nestjs/testing'
 import { Column, eq, inArray, isNull, SQL, sql } from 'drizzle-orm'
-import { MySqlDatabase } from 'drizzle-orm/mysql-core'
+import { MySqlDatabase, MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { DB_TOKEN_PROVIDER } from './constants'
+import * as schema from './schema'
 
 async function dbGetConnection(app: NestFastifyApplication | TestingModule, mode: 'pool' | 'client' = 'pool') {
   const db: MySqlDatabase<any, any> = await app.resolve(DB_TOKEN_PROVIDER)
@@ -89,4 +90,10 @@ export function concatDistinctObjectsInArray(mustBeNotNull: Column, object: Reco
   expr.append(sql`))), ']'), JSON_ARRAY())`)
   expr.mapWith(JSON.parse)
   return expr
+}
+
+export function getTablesWithFileIdColumn(): MySqlTableWithColumns<any>[] {
+  return Object.entries(schema)
+    .filter(([_table, columns]) => 'fileId' in columns)
+    .map(([_table, columns]) => columns as MySqlTableWithColumns<any>)
 }

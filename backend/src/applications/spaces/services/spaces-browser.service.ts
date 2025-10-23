@@ -20,7 +20,7 @@ import { UserModel } from '../../users/models/user.model'
 import { LOCK_SCOPE } from '../../webdav/constants/webdav'
 import { SpaceFiles } from '../interfaces/space-files.interface'
 import { SpaceEnv } from '../models/space-env.model'
-import { realPathFromRootFile, IsRealPathIsDirAndExists } from '../utils/paths'
+import { IsRealPathIsDirAndExists, realPathFromRootFile } from '../utils/paths'
 import { SpacesManager } from './spaces-manager.service'
 import { SpacesQueries } from './spaces-queries.service'
 

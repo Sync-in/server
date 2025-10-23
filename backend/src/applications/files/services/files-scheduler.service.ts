@@ -6,19 +6,22 @@
 
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression, Timeout } from '@nestjs/schedule'
-import { sql } from 'drizzle-orm'
+import { isNotNull, sql } from 'drizzle-orm'
+import { unionAll } from 'drizzle-orm/mysql-core'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
+import { getTablesWithFileIdColumn } from '../../../infrastructure/database/utils'
 import { USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { users } from '../../users/schemas/users.schema'
 import { CACHE_TASK_PREFIX } from '../constants/cache'
 import { FileTask, FileTaskStatus } from '../models/file-task'
 import { filesRecents } from '../schemas/files-recents.schema'
+import { files } from '../schemas/files.schema'
 import { dirHasChildren, isPathExists, removeFiles } from '../utils/files'
 import { FilesContentManager } from './files-content-manager.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
@@ -125,5 +128,42 @@ export class FilesScheduler {
     this.logger.log(`${this.indexContentFiles.name} - START`)
     await this.filesContentManager.parseAndIndexAllFiles()
     this.logger.log(`${this.indexContentFiles.name} - END`)
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_4AM)
+  async deleteOrphanFiles() {
+    this.logger.log(`${this.deleteOrphanFiles.name} - START`)
+    const selects: any[] = []
+    for (const table of getTablesWithFileIdColumn()) {
+      selects.push(this.db.selectDistinct({ id: table.fileId }).from(table).where(isNotNull(table.fileId)))
+    }
+    if (selects.length === 0) {
+      this.logger.warn(`${this.deleteOrphanFiles.name} - no tables with fileId column`)
+      return
+    }
+    const unionSub = (selects.length === 1 ? selects[0] : unionAll(...(selects as [any, any, ...any[]]))).as('u')
+    // Debug
+    // const [preview] = (await this.db.execute(sql`
+    //   SELECT f.id
+    //   FROM ${files} AS f
+    //   LEFT JOIN ${unionSub} ON ${unionSub.id} = f.id
+    //   WHERE ${unionSub.id} IS NULL
+    // `)) as any[]
+    // console.log(preview.length, preview)
+    const deleteQuery = sql`
+      DELETE f
+      FROM ${files} AS f
+      LEFT JOIN ${unionSub} ON ${unionSub.id} = f.id
+      WHERE ${unionSub.id} IS NULL
+    `
+    try {
+      await this.db.transaction(async (tx) => {
+        const [r] = await tx.execute(deleteQuery)
+        this.logger.log(`${this.deleteOrphanFiles.name} - files: ${r.affectedRows}`)
+      })
+    } catch (e) {
+      this.logger.log(`${this.deleteOrphanFiles.name} - ${e}`)
+    }
+    this.logger.log(`${this.deleteOrphanFiles.name} - END`)
   }
 }

@@ -44,7 +44,7 @@ export class SpacesScheduler {
     this.logger.log('Update Share External Path Quotas - END')
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_4AM)
+  @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async deleteExpiredSpaces() {
     /* Removes spaces that have been disabled for more than 30 days */
     this.logger.log(`${this.deleteExpiredSpaces.name} - START`)
