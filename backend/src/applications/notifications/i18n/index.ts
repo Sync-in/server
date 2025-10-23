@@ -11,8 +11,9 @@ import { hi } from './hi'
 import { it } from './it'
 import { pt } from './pt'
 import { zh } from './zh'
+import { ru } from './ru'
 
-export const translations = { fr, de, es, hi, it, pt, zh }
+export const translations = { fr, de, es, hi, it, pt, zh, ru }
 
 export function translateObject<T>(language: string, obj: T): T {
   if (language?.length && Object.keys(translations).indexOf(language) > -1) {
