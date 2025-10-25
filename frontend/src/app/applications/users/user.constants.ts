@@ -43,7 +43,7 @@ export const USER_ICON = {
 
 export const USER_PASSWORD_CHANGE_TEXT = 'Change me !'
 
-export const USER_LANGUAGE_AUTO = 'auto'
+export const USER_LANGUAGE_AUTO = 'auto' as const
 
 export const USER_MENU: AppMenu = {
   title: USER_TITLE.ACCOUNT,

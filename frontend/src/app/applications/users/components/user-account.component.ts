@@ -234,7 +234,6 @@ export class UserAccountComponent implements OnDestroy {
 
   private updateLanguage(language: string) {
     this.user.language = language
-    this.layout.setLanguage(language)
-    this.layout.sendNotification('info', 'Configuration', 'Language updated')
+    this.layout.setLanguage(language).then(() => this.layout.sendNotification('info', 'Configuration', 'Language updated'))
   }
 }

@@ -97,7 +97,7 @@ export class UserService {
 
   initUser(user: UserType, impersonate = false) {
     this.refreshAvatar()
-    this.layout.setLanguage(user.language)
+    this.layout.setLanguage(user.language).catch(console.error)
     this.store.userImpersonate.set(impersonate || user.impersonated)
     this.store.user.next(user)
     this.checkQuota(this.store.user.getValue())

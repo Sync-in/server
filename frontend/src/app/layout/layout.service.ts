@@ -221,13 +221,14 @@ export class LayoutService {
     }
   }
 
-  setLanguage(language: string) {
+  setLanguage(language: string): Promise<void> {
     if (!language || language === USER_LANGUAGE_AUTO) {
       language = getBrowserLanguage(LANG_FORMAT) || ''
     }
     if (language && language !== this.getCurrentLanguage()) {
-      this.translation.setLocale({ language }).catch(console.error)
+      return this.translation.setLocale({ language })
     }
+    return Promise.resolve()
   }
 
   getCurrentLanguage() {

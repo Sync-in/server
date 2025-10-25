@@ -4,6 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
+import type { i18nLocaleSupported } from '../../../common/interfaces'
 import { de } from './de'
 import { es } from './es'
 import { fr } from './fr'
@@ -18,7 +19,7 @@ import { ru } from './ru'
 import { tr } from './tr'
 import { zh } from './zh'
 
-export const translations = { de, es, fr, hi, it, ja, ko, pl, pt, ru, tr, zh, 'pt-BR': pt_BR }
+export const translations: Record<Exclude<i18nLocaleSupported, 'en'>, any> = { de, es, fr, hi, it, ja, ko, pl, pt, ru, tr, zh, 'pt-BR': pt_BR }
 
 export function translateObject<T>(language: string, obj: T): T {
   if (language?.length && Object.keys(translations).indexOf(language) > -1) {

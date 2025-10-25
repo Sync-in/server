@@ -5,6 +5,7 @@
  */
 
 import { inject, Injectable } from '@angular/core'
+import type { i18nLocaleSupported } from '@sync-in-server/backend/src/common/interfaces'
 import {
   getBrowserLanguage,
   L10N_LOCALE,
@@ -15,62 +16,18 @@ import {
   L10nStorage,
   L10nTranslationLoader
 } from 'angular-l10n'
-import {
-  defineLocale,
-  deLocale,
-  enGbLocale,
-  esLocale,
-  frLocale,
-  hiLocale,
-  itLocale,
-  jaLocale,
-  koLocale,
-  plLocale,
-  ptBrLocale,
-  ruLocale,
-  trLocale,
-  zhCnLocale
-} from 'ngx-bootstrap/chronos'
 import { BsLocaleService } from 'ngx-bootstrap/datepicker'
 import { from, Observable, of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
-import 'dayjs/esm/locale/de'
-import 'dayjs/esm/locale/en'
-import 'dayjs/esm/locale/es'
-import 'dayjs/esm/locale/fr'
-import 'dayjs/esm/locale/hi'
-import 'dayjs/esm/locale/it'
-import 'dayjs/esm/locale/ja'
-import 'dayjs/esm/locale/ko'
-import 'dayjs/esm/locale/pl'
-import 'dayjs/esm/locale/pt'
-import 'dayjs/esm/locale/pt-br'
-import 'dayjs/esm/locale/ru'
-import 'dayjs/esm/locale/tr'
-import 'dayjs/esm/locale/zh'
 import { USER_LANGUAGE_AUTO } from '../app/applications/users/user.constants'
-import { dJs } from '../app/common/utils/time'
-
-// BOOTSTRAP LOCALES
-defineLocale('de', deLocale)
-defineLocale('en', enGbLocale)
-defineLocale('es', esLocale)
-defineLocale('fr', frLocale)
-defineLocale('hi', hiLocale)
-defineLocale('it', itLocale)
-defineLocale('ja', jaLocale)
-defineLocale('ko', koLocale)
-defineLocale('pl', plLocale)
-defineLocale('pt', ptBrLocale)
-defineLocale('pt-br', ptBrLocale)
-defineLocale('ru', ruLocale)
-defineLocale('tr', trLocale)
-defineLocale('zh', zhCnLocale)
+import { loadBootstrapLocale } from './lib/bs.i18n'
+import { loadDayjsLocale } from './lib/dayjs.i18n'
 
 export const LANG_FORMAT: L10nFormat = 'language-region' as const
 export const STORAGE_SESSION_KEY = 'locale' as const
+export const LANG_DEFAULT: i18nLocaleSupported = 'en'
 
-export const i18nLanguageText = {
+export const i18nLanguageText: Record<i18nLocaleSupported | typeof USER_LANGUAGE_AUTO, string> = {
   [USER_LANGUAGE_AUTO]: 'Auto',
   de: 'Deutsch',
   en: 'English',
@@ -88,14 +45,16 @@ export const i18nLanguageText = {
   zh: '中文（简体) '
 }
 
-export const l10nConfig: L10nConfig = {
+export const l10nConfig: L10nConfig & {
+  schema: { locale: { language: i18nLocaleSupported }; dir: 'ltr' | 'rtl' }[]
+} = {
   format: LANG_FORMAT,
   // Provider without static asset: resources will be loaded through TranslationLoader
   providers: [{ name: 'app', asset: 'app' }],
   fallback: false,
   cache: true,
   keySeparator: '|',
-  defaultLocale: { language: 'en' },
+  defaultLocale: { language: LANG_DEFAULT },
   schema: [
     { locale: { language: 'de' }, dir: 'ltr' },
     { locale: { language: 'en' }, dir: 'ltr' },
@@ -165,7 +124,8 @@ export class TranslationLoader implements L10nTranslationLoader {
       language = language.split('-')[0]
     }
     if (Object.hasOwn(i18nLanguageText, language)) {
-      dJs.locale(language)
+      loadDayjsLocale(language).catch(console.error)
+      loadBootstrapLocale(language)
       this.bsLocale.use(language)
     } else {
       return of({})
@@ -184,7 +144,7 @@ export class TranslationMissing implements L10nMissingTranslationHandler {
 
   public handle(key: string, value?: string, params?: any): string {
     // Log missing translations and return the key by default to make it easier to spot during development
-    if (this.locale.language.startsWith('en')) {
+    if (this.locale.language.startsWith(LANG_DEFAULT)) {
       // Skip missing-translation logs for English since it's the default language
       return key
     }

@@ -10,3 +10,5 @@ export interface StorageQuota {
   storageUsage: number
   storageQuota: number
 }
+
+export type i18nLocaleSupported = 'de' | 'en' | 'es' | 'fr' | 'hi' | 'it' | 'ja' | 'ko' | 'pl' | 'pt' | 'pt-BR' | 'ru' | 'tr' | 'zh'
