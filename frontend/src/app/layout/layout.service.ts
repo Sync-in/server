@@ -7,19 +7,19 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { inject, Injectable, NgZone } from '@angular/core'
 import { Title } from '@angular/platform-browser'
+import { FaConfig } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { ContextMenuComponent, ContextMenuService } from '@perfectmemory/ngx-contextmenu'
 import { getBrowserLanguage, L10nTranslationService } from 'angular-l10n'
-import { BsLocaleService } from 'ngx-bootstrap/datepicker'
 import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal'
+import { setTheme } from 'ngx-bootstrap/utils'
 import { ActiveToast, ToastrService } from 'ngx-toastr'
 import { BehaviorSubject, fromEvent, mergeWith, Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { i18nLanguageText } from '../../i18n/l10n'
+import { i18nLanguageText, LANG_FORMAT } from '../../i18n/l10n'
 import { APP_NAME } from '../app.constants'
 import { USER_LANGUAGE_AUTO } from '../applications/users/user.constants'
 import { getTheme } from '../common/utils/functions'
-import { dJs } from '../common/utils/time'
 import { EVENT } from '../electron/constants/events'
 import { Electron } from '../electron/electron.service'
 import { BreadCrumbUrl } from './breadcrumb/breadcrumb.interfaces'
@@ -56,7 +56,7 @@ export class LayoutService {
   private readonly title = inject(Title)
   private readonly ngZone = inject(NgZone)
   private readonly translation = inject(L10nTranslationService)
-  private readonly bsLocale = inject(BsLocaleService)
+  private readonly faConfig = inject(FaConfig)
   private readonly bsModal = inject(BsModalService)
   private readonly toastr = inject(ToastrService)
   private readonly contextMenu = inject<ContextMenuService<any>>(ContextMenuService)
@@ -77,6 +77,8 @@ export class LayoutService {
   private readonly dialogConfig: ModalOptions = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
 
   constructor() {
+    setTheme('bs5')
+    this.faConfig.fixedWidth = true
     this.title.setTitle(APP_NAME)
     this.preferTheme.subscribe((theme) => this.setTheme(theme))
   }
@@ -220,15 +222,11 @@ export class LayoutService {
   }
 
   setLanguage(language: string) {
-    if (!language) {
-      language = getBrowserLanguage('language') || ''
-      language = language.split('-')[0]
+    if (!language || language === USER_LANGUAGE_AUTO) {
+      language = getBrowserLanguage(LANG_FORMAT) || ''
     }
-    if (language && language !== this.translation.getLocale().language) {
-      this.translation.setLocale({ language }).then(() => {
-        dJs.locale(language)
-        this.bsLocale.use(language)
-      })
+    if (language && language !== this.getCurrentLanguage()) {
+      this.translation.setLocale({ language }).catch(console.error)
     }
   }
 

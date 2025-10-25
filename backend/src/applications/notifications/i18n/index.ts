@@ -9,11 +9,16 @@ import { es } from './es'
 import { fr } from './fr'
 import { hi } from './hi'
 import { it } from './it'
+import { ja } from './ja'
+import { ko } from './ko'
+import { pl } from './pl'
 import { pt } from './pt'
-import { zh } from './zh'
+import { pt_BR } from './pt_br'
 import { ru } from './ru'
+import { tr } from './tr'
+import { zh } from './zh'
 
-export const translations = { fr, de, es, hi, it, pt, zh, ru }
+export const translations = { de, es, fr, hi, it, ja, ko, pl, pt, ru, tr, zh, 'pt-BR': pt_BR }
 
 export function translateObject<T>(language: string, obj: T): T {
   if (language?.length && Object.keys(translations).indexOf(language) > -1) {
