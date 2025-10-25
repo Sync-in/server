@@ -7,10 +7,10 @@
 import { MultipartFile } from '@fastify/multipart'
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import bcrypt from 'bcryptjs'
-import { PNGStream } from 'canvas'
 import { WriteStream } from 'fs'
 import { createWriteStream } from 'node:fs'
 import path from 'node:path'
+import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { AUTH_SCOPE } from '../../../authentication/constants/scope'
 import { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
@@ -217,7 +217,7 @@ export class UsersManager {
       throw new HttpException(`avatar not found`, HttpStatus.NOT_FOUND)
     }
     const avatarFile: WriteStream = createWriteStream(avatarPath)
-    const avatarStream: PNGStream = generateAvatar(user.getInitials())
+    const avatarStream = Readable.from(await generateAvatar(user.getInitials()))
     try {
       await pipeline(avatarStream, avatarFile)
     } catch (e) {

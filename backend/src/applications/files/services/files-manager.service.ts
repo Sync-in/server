@@ -8,7 +8,6 @@ import { HttpService } from '@nestjs/axios'
 import { HttpStatus, Injectable, Logger } from '@nestjs/common'
 import archiver, { Archiver, ArchiverError } from 'archiver'
 import { AxiosResponse } from 'axios'
-import { PNGStream } from 'canvas'
 import fs from 'node:fs'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
@@ -574,7 +573,7 @@ export class FilesManager {
     }
   }
 
-  async generateThumbnail(space: SpaceEnv, size: number): Promise<PNGStream> {
+  async generateThumbnail(space: SpaceEnv, size: number): Promise<Buffer> {
     if (!(await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
     }

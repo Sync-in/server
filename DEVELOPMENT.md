@@ -35,7 +35,7 @@ cd server
 
 Quick and simple example with docker:
 ```
-sudo docker run -it -e MARIADB_DATABASE=database -e MARIADB_ROOT_PASSWORD=MySQLRootPassword mariadb:11
+sudo docker run -it -e MARIADB_DATABASE=database -e MARIADB_ROOT_PASSWORD=MySQLRootPassword -p 3306:3306 mariadb:11
 ```
 
 ### Create and edit your environment file

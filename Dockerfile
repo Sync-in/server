@@ -1,5 +1,5 @@
 FROM node:22-alpine AS build
-RUN apk add --no-cache build-base g++ cairo-dev pango-dev giflib-dev libjpeg-turbo-dev
+RUN apk add --no-cache build-base g++
 WORKDIR /build
 COPY . .
 RUN npm ci && \
@@ -8,7 +8,7 @@ RUN npm ci && \
     npm -w backend ci --omit=dev
 
 FROM node:22-alpine AS sync-in
-RUN apk add --no-cache cairo-dev pango-dev giflib-dev libjpeg-turbo-dev fontconfig ttf-liberation su-exec && \
+RUN apk add --no-cache su-exec && \
     mkdir -p /app/data /app/environment
 WORKDIR /app
 COPY --from=build --chown=8888:8888 /build/LICENSE .

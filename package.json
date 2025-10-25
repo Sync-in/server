@@ -91,7 +91,6 @@
     "prettier": "^3.4.1"
   },
   "overrides": {
-    "jsdom": "^26.1.0",
     "@napi-rs/canvas": "0.1.77"
   },
   "commit-and-tag-version": {
