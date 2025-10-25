@@ -4,11 +4,11 @@
  * See the LICENSE file for licensing details
  */
 
-import dayjs from 'dayjs'
-import duration from 'dayjs/plugin/duration'
-import localizedFormat from 'dayjs/plugin/localizedFormat'
-import relativeTime from 'dayjs/plugin/relativeTime'
-import utc from 'dayjs/plugin/utc'
+import dayjs from 'dayjs/esm'
+import duration from 'dayjs/esm/plugin/duration'
+import localizedFormat from 'dayjs/esm/plugin/localizedFormat'
+import relativeTime from 'dayjs/esm/plugin/relativeTime'
+import utc from 'dayjs/esm/plugin/utc'
 
 dayjs.extend(relativeTime)
 dayjs.extend(localizedFormat)

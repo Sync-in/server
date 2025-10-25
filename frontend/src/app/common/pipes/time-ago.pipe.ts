@@ -5,7 +5,7 @@
  */
 
 import { ChangeDetectorRef, inject, NgZone, OnDestroy, Pipe, PipeTransform } from '@angular/core'
-import { Dayjs } from 'dayjs'
+import { Dayjs } from 'dayjs/esm'
 import { dJs } from '../utils/time'
 
 @Pipe({ name: 'amTimeAgo', pure: false })
