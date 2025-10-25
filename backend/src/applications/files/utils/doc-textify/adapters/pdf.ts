@@ -3,11 +3,14 @@
  * This file is part of Sync-in | The open source file sync and share solution
  * See the LICENSE file for licensing details
  */
+import path from 'node:path'
 import { getDocument, GlobalWorkerOptions, PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { DocTextifyOptions } from '../interfaces/doc-textify.interfaces'
 
 // Enable parallel PDF parsing via Node.js worker threads
 GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs')
+const pdfjsDistDir = path.dirname(require.resolve('pdfjs-dist/package.json'))
+const standardFontsDir = path.join(pdfjsDistDir, 'standard_fonts') + '/'
 
 // Type guard to filter true text items
 function isTextItem(item: any): item is { str: string; transform: [number, number, number, number, number, number] } {
@@ -22,7 +25,7 @@ export async function parsePdf(filePath: string, options: DocTextifyOptions): Pr
 
   try {
     // Load the document, allowing system fonts as fallback
-    const loadingTask = getDocument({ url: filePath, useSystemFonts: true })
+    const loadingTask = getDocument({ url: filePath, disableFontFace: true, standardFontDataUrl: standardFontsDir })
     doc = await loadingTask.promise
     const fragments: string[] = []
     let lastY: number | undefined = undefined
