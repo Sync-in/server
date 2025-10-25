@@ -26,15 +26,8 @@
     {
       "idx": 3,
       "version": "5",
-      "when": 1760089921667,
-      "tag": "0003_fancy_gauntlet",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1760345527424,
-      "tag": "0004_soft_sphinx",
+      "when": 1761385913473,
+      "tag": "0003_giant_luckman",
       "breakpoints": true
     }
   ]

@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "ffa22779-d12a-4b0e-9aed-657e020cc05d",
+  "id": "da1a6d68-b222-46e6-bda9-2a917b447be2",
   "prevId": "076fc362-3587-4607-8075-e08cb473342e",
   "tables": {
     "cache": {
@@ -129,7 +129,7 @@
         },
         "language": {
           "name": "language",
-          "type": "char(2)",
+          "type": "varchar(10)",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
@@ -1088,6 +1088,29 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
+        },
+        "storageUsage": {
+          "name": "storageUsage",
+          "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        },
+        "storageQuota": {
+          "name": "storageQuota",
+          "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "storageIndexing": {
+          "name": "storageIndexing",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
         },
         "createdAt": {
           "name": "createdAt",
