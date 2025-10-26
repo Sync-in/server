@@ -13,7 +13,7 @@ export const pngMimeType = 'image/png'
 export const svgMimeType = 'image/svg+xml'
 
 export async function generateThumbnail(filePath: string, size: number) {
-  const image = sharp(filePath)
+  const image = sharp(filePath).rotate()
   let { width, height } = await image.metadata()
 
   if (!width || !height) throw new Error('Invalid image dimensions')
