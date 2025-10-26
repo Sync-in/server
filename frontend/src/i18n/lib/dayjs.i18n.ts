@@ -4,10 +4,10 @@
  * See the LICENSE file for licensing details
  */
 
-import type { i18nLocaleSupported } from '@sync-in-server/backend/src/common/interfaces'
+import { i18nLocaleSupported } from '@sync-in-server/backend/src/common/i18n'
 import { dJs } from '../../app/common/utils/time'
 
-const DAYJS_LOADER: Record<i18nLocaleSupported, () => Promise<unknown>> = {
+const DAYJS_LOADER: Record<i18nLocaleSupported, () => Promise<ILocale>> = {
   de: () => import('dayjs/esm/locale/de'),
   en: () => import('dayjs/esm/locale/en'),
   es: () => import('dayjs/esm/locale/es'),
@@ -21,7 +21,7 @@ const DAYJS_LOADER: Record<i18nLocaleSupported, () => Promise<unknown>> = {
   'pt-BR': () => import('dayjs/esm/locale/pt-br'),
   ru: () => import('dayjs/esm/locale/ru'),
   tr: () => import('dayjs/esm/locale/tr'),
-  zh: () => import('dayjs/esm/locale/zh-cn')
+  zh: () => import('dayjs/esm/locale/zh')
 }
 
 export async function loadDayjsLocale(language: string) {

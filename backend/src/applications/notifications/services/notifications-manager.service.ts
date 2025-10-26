@@ -5,6 +5,7 @@
  */
 
 import { Injectable, Logger } from '@nestjs/common'
+import { i18nLocale } from '../../../common/i18n'
 import { MailProps } from '../../../infrastructure/mailer/interfaces/mail.interface'
 import { Mailer } from '../../../infrastructure/mailer/mailer.service'
 import { USER_NOTIFICATION } from '../../users/constants/user'
@@ -72,7 +73,7 @@ export class NotificationsManager {
       .sendMails(
         await Promise.all(
           toUsers.map(async (m) => {
-            const [title, html] = this.genMail(m.language, content, options)
+            const [title, html] = this.genMail(m.language as i18nLocale, content, options)
             return {
               to: m.email,
               subject: title,
@@ -93,7 +94,7 @@ export class NotificationsManager {
     }
   }
 
-  private genMail(language: string, content: NotificationContent, options?: NotificationOptions): [string, string] {
+  private genMail(language: i18nLocale, content: NotificationContent, options?: NotificationOptions): [string, string] {
     switch (content.app) {
       case NOTIFICATION_APP.COMMENTS:
         return commentMail(language, content, { content: options.content, currentUrl: options.currentUrl, author: options.author })

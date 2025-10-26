@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import type { i18nLocaleSupported } from '../../../common/interfaces'
+import { i18nLocale } from '../../../common/i18n'
 import { de } from './de'
 import { es } from './es'
 import { fr } from './fr'
@@ -19,14 +19,30 @@ import { ru } from './ru'
 import { tr } from './tr'
 import { zh } from './zh'
 
-export const translations: Record<Exclude<i18nLocaleSupported, 'en'>, any> = { de, es, fr, hi, it, ja, ko, pl, pt, ru, tr, zh, 'pt-BR': pt_BR }
+export const translations = new Map<i18nLocale, Record<string, string>>([
+  ['de', de],
+  ['es', es],
+  ['fr', fr],
+  ['hi', hi],
+  ['it', it],
+  ['ja', ja],
+  ['ko', ko],
+  ['pl', pl],
+  ['pt', pt],
+  ['pt-BR', pt_BR],
+  ['ru', ru],
+  ['tr', tr],
+  ['zh', zh]
+])
 
-export function translateObject<T>(language: string, obj: T): T {
-  if (language?.length && Object.keys(translations).indexOf(language) > -1) {
-    const tr = translations[language]
-    for (const k of Object.keys(obj).filter((k) => !!obj[k] && tr[obj[k]])) {
-      obj[k] = tr[obj[k]]
-    }
+export function translateObject(language: i18nLocale, obj: Record<string, string>): Record<string, string> {
+  if (!language || !translations.has(language)) return obj
+  const tr: Record<string, string> = translations.get(language)
+  if (!tr) return obj
+  for (const key in obj) {
+    const v = obj[key]
+    const t = tr[v]
+    if (t) obj[key] = t
   }
   return obj
 }

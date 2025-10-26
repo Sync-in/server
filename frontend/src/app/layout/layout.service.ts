@@ -10,13 +10,13 @@ import { Title } from '@angular/platform-browser'
 import { FaConfig } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { ContextMenuComponent, ContextMenuService } from '@perfectmemory/ngx-contextmenu'
-import { getBrowserLanguage, L10nTranslationService } from 'angular-l10n'
+import { L10nTranslationService } from 'angular-l10n'
 import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal'
 import { setTheme } from 'ngx-bootstrap/utils'
 import { ActiveToast, ToastrService } from 'ngx-toastr'
 import { BehaviorSubject, fromEvent, mergeWith, Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { i18nLanguageText, LANG_FORMAT } from '../../i18n/l10n'
+import { getBrowserL10nLocale, i18nLanguageText } from '../../i18n/l10n'
 import { APP_NAME } from '../app.constants'
 import { USER_LANGUAGE_AUTO } from '../applications/users/user.constants'
 import { getTheme } from '../common/utils/functions'
@@ -223,7 +223,7 @@ export class LayoutService {
 
   setLanguage(language: string): Promise<void> {
     if (!language || language === USER_LANGUAGE_AUTO) {
-      language = getBrowserLanguage(LANG_FORMAT) || ''
+      language = getBrowserL10nLocale().language
     }
     if (language && language !== this.getCurrentLanguage()) {
       return this.translation.setLocale({ language })
@@ -231,7 +231,7 @@ export class LayoutService {
     return Promise.resolve()
   }
 
-  getCurrentLanguage() {
+  getCurrentLanguage(): string {
     return this.translation.getLocale().language
   }
 

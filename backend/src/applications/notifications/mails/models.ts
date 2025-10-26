@@ -5,6 +5,7 @@
  */
 
 import { ACTION } from '../../../common/constants'
+import { i18nLocale } from '../../../common/i18n'
 import { capitalizeString, SERVER_NAME } from '../../../common/shared'
 import { fileName } from '../../files/utils/files'
 import { UserModel } from '../../users/models/user.model'
@@ -14,7 +15,7 @@ import { defaultFooter, mailAuthor, mailEventOnElement, mailItalicContent, mailT
 import { urlFromLink, urlFromSpace, urlFromSpaceFile, urlFromSync } from './urls'
 
 export function commentMail(
-  language: string,
+  language: i18nLocale,
   notification: NotificationContent,
   options: {
     content: string
@@ -38,7 +39,7 @@ export function commentMail(
 }
 
 export function spaceMail(
-  language: string,
+  language: i18nLocale,
   notification: NotificationContent,
   options: {
     currentUrl: string
@@ -62,7 +63,7 @@ export function spaceMail(
 }
 
 export function spaceRootMail(
-  language: string,
+  language: i18nLocale,
   notification: NotificationContent,
   options: {
     currentUrl: string
@@ -90,7 +91,7 @@ export function spaceRootMail(
 }
 
 export function shareMail(
-  language: string,
+  language: i18nLocale,
   notification: NotificationContent,
   options: {
     currentUrl: string
@@ -113,7 +114,7 @@ export function shareMail(
 }
 
 export function linkMail(
-  language: string,
+  language: i18nLocale,
   notification: NotificationContent,
   options: {
     currentUrl: string
@@ -142,7 +143,7 @@ export function linkMail(
 }
 
 export function syncMail(
-  language: string,
+  language: i18nLocale,
   notification: NotificationContent,
   options: {
     currentUrl: string
@@ -165,7 +166,7 @@ export function syncMail(
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
 
-export function auth2FaMail(language: string, notification: NotificationContent): [string, string] {
+export function auth2FaMail(language: i18nLocale, notification: NotificationContent): [string, string] {
   const tr = translateObject(language, {
     title: 'Security notification',
     footer:
@@ -182,7 +183,7 @@ export function auth2FaMail(language: string, notification: NotificationContent)
   return [tr.title, mailTemplate(content, footer)]
 }
 
-export function authLocked(language: string, notification: NotificationContent): [string, string] {
+export function authLocked(language: i18nLocale, notification: NotificationContent): [string, string] {
   const tr = translateObject(language, {
     title: 'Security notification',
     footer:

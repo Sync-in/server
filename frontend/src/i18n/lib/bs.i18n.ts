@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import type { i18nLocaleSupported } from '@sync-in-server/backend/src/common/interfaces'
+import { i18nLocaleSupported } from '@sync-in-server/backend/src/common/i18n'
 import {
   defineLocale,
   deLocale,
@@ -41,7 +41,7 @@ const BOOTSTRAP_LOCALES: Record<i18nLocaleSupported, LocaleData> = {
 }
 
 export function loadBootstrapLocale(language: string): void {
-  const locale = BOOTSTRAP_LOCALES[language]
+  const locale: LocaleData = BOOTSTRAP_LOCALES[language]
   if (!locale) return
-  defineLocale(language, locale)
+  defineLocale(language.toLowerCase(), locale)
 }

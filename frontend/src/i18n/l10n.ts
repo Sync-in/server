@@ -5,7 +5,7 @@
  */
 
 import { inject, Injectable } from '@angular/core'
-import type { i18nLocaleSupported } from '@sync-in-server/backend/src/common/interfaces'
+import { i18nLocaleSupported, LANG_SUPPORTED, normalizeLanguage } from '@sync-in-server/backend/src/common/i18n'
 import {
   getBrowserLanguage,
   L10N_LOCALE,
@@ -73,17 +73,17 @@ export const l10nConfig: L10nConfig & {
   ]
 }
 
-export function getL10nLocale(): L10nLocale {
-  return { language: getBrowserLanguage(LANG_FORMAT) }
+export function getBrowserL10nLocale(): L10nLocale {
+  return { language: normalizeLanguage(getBrowserLanguage(LANG_FORMAT)) }
 }
 
 @Injectable({ providedIn: 'root' })
 export class TranslationStorage implements L10nStorage {
   private readonly hasStorage = typeof Storage !== 'undefined'
 
-  public async read(): Promise<L10nLocale | null> {
+  async read(): Promise<L10nLocale | null> {
     if (!this.hasStorage) {
-      return getL10nLocale()
+      return getBrowserL10nLocale()
     }
     let stored: L10nLocale | null = null
     const raw = sessionStorage.getItem(STORAGE_SESSION_KEY)
@@ -96,15 +96,15 @@ export class TranslationStorage implements L10nStorage {
       }
     }
     const lang = stored?.language
-    const isSupported = !!lang && Object.hasOwn(i18nLanguageText, lang)
+    const isSupported = !!lang && LANG_SUPPORTED.has(lang as i18nLocaleSupported)
     if (!isSupported) {
       sessionStorage.removeItem(STORAGE_SESSION_KEY)
-      return getL10nLocale()
+      return getBrowserL10nLocale()
     }
     return stored
   }
 
-  public async write(locale: L10nLocale): Promise<void> {
+  async write(locale: L10nLocale): Promise<void> {
     if (!this.hasStorage) return
     try {
       const value = JSON.stringify(locale)
@@ -120,13 +120,10 @@ export class TranslationLoader implements L10nTranslationLoader {
   private readonly bsLocale = inject(BsLocaleService)
 
   get(language: string): Observable<Record<string, any>> {
-    if (!Object.hasOwn(i18nLanguageText, language)) {
-      language = language.split('-')[0]
-    }
-    if (Object.hasOwn(i18nLanguageText, language)) {
+    if (language && LANG_SUPPORTED.has(language as i18nLocaleSupported)) {
       loadDayjsLocale(language).catch(console.error)
       loadBootstrapLocale(language)
-      this.bsLocale.use(language)
+      this.bsLocale.use(language.toLowerCase())
     } else {
       return of({})
     }
