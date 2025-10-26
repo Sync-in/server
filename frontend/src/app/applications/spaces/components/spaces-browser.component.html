@@ -241,7 +241,7 @@
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
               @if (f.isImage) {
-                <img (error)="f.isImage = false" [style.height.px]="galleryMode.image" alt="" class="img-fluid"
+                <img (error)="f.isImage = false" [style.max-height.px]="galleryMode.image" alt="" class="img-fluid"
                      draggable="true" src="{{f.thumbnailUrl}}?size={{galleryMode.imageRes}}">
               } @else {
                 <img [src]="f.mimeUrl" [height]="galleryMode.image" [width]="galleryMode.image" alt="" draggable="true" (error)="f.fallBackMimeUrl()">
