@@ -7,7 +7,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, InputSignal, Signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faArrowsAlt, faClipboardCheck } from '@fortawesome/free-solid-svg-icons'
+import { faArrowsAlt, faClipboardCheck, faLock, faUnlock } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
@@ -50,6 +50,8 @@ export class FilesSelectionComponent {
     SHARES: SPACES_ICON.SHARES,
     LINKS: SPACES_ICON.LINKS,
     SYNC: SYNC_ICON.SYNC,
+    faLock,
+    faUnlock,
     faClipboardCheck,
     faArrowsAlt
   }
