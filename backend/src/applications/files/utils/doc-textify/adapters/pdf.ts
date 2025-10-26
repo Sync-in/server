@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 import path from 'node:path'
-import { getDocument, GlobalWorkerOptions, PDFDocumentProxy } from 'pdfjs-dist/legacy/build/pdf.mjs'
+import { getDocument, GlobalWorkerOptions, PDFDocumentProxy, VerbosityLevel } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { DocTextifyOptions } from '../interfaces/doc-textify.interfaces'
 
 // Enable parallel PDF parsing via Node.js worker threads
@@ -25,7 +25,7 @@ export async function parsePdf(filePath: string, options: DocTextifyOptions): Pr
 
   try {
     // Load the document, allowing system fonts as fallback
-    const loadingTask = getDocument({ url: filePath, disableFontFace: true, standardFontDataUrl: standardFontsDir })
+    const loadingTask = getDocument({ url: filePath, disableFontFace: true, standardFontDataUrl: standardFontsDir, verbosity: VerbosityLevel.ERRORS })
     doc = await loadingTask.promise
     const fragments: string[] = []
     let lastY: number | undefined = undefined
