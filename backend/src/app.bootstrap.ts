@@ -25,8 +25,10 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
   const fastifyAdapter = new FastifyAdapter({
     logger: false,
     trustProxy: configuration.server.trustProxy,
-    ignoreTrailingSlash: true,
-    maxParamLength: 256,
+    routerOptions: {
+      ignoreTrailingSlash: true,
+      maxParamLength: 256
+    },
     bodyLimit: 26214400 /* 25 MB */
   })
   const app: NestFastifyApplication = await NestFactory.create<NestFastifyApplication>(AppModule, fastifyAdapter, {
