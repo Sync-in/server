@@ -10,6 +10,7 @@ import archiver, { Archiver, ArchiverError } from 'archiver'
 import { AxiosResponse } from 'axios'
 import fs from 'node:fs'
 import path from 'node:path'
+import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { extract as extractTar } from 'tar'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
@@ -573,7 +574,7 @@ export class FilesManager {
     }
   }
 
-  async generateThumbnail(space: SpaceEnv, size: number): Promise<Buffer> {
+  async generateThumbnail(space: SpaceEnv, size: number): Promise<Readable> {
     if (!(await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
     }

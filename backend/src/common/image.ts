@@ -4,16 +4,18 @@
  * See the LICENSE file for licensing details
  */
 
-import sharp from 'sharp'
 import { Resvg } from '@resvg/resvg-js'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { Readable } from 'node:stream'
+import sharp from 'sharp'
 
 export const pngMimeType = 'image/png'
 export const svgMimeType = 'image/svg+xml'
+sharp.cache(false)
 
-export async function generateThumbnail(filePath: string, size: number) {
-  const image = sharp(filePath).rotate()
+export async function generateThumbnail(filePath: string, size: number): Promise<Readable> {
+  const image = sharp(filePath, { autoOrient: true })
   let { width, height } = await image.metadata()
 
   if (!width || !height) throw new Error('Invalid image dimensions')
@@ -31,7 +33,7 @@ export async function generateThumbnail(filePath: string, size: number) {
     }
   }
 
-  return image.resize(width, height, { fit: 'inside' }).png({ compressionLevel: 0 }).toBuffer()
+  return image.resize(width, height, { fit: 'inside' }).png({ compressionLevel: 0 })
 }
 
 export async function generateAvatar(initials: string): Promise<Buffer> {
