@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Logger } from '@nestjs/common'
+import { BeforeApplicationShutdown, Logger } from '@nestjs/common'
 import {
   MessageBody,
   OnGatewayConnection,
@@ -26,11 +26,12 @@ import { EventChangeOnlineStatus, EventUpdateOnlineStatus, UserOnline } from './
 import { UsersManager } from './services/users-manager.service'
 
 @WebSocketGateway()
-export class WebSocketUsers implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class WebSocketUsers implements BeforeApplicationShutdown, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server
   private readonly internalEventOnlineUsers = 'listOnlineUsers'
   private readonly logger = new Logger(WebSocketUsers.name)
   private initialized = false
+  private shuttingDown = false
   private readonly waitTime: number = 3000 //ms
   // to show local rooms : this.server.of('/').adapter.rooms
 
@@ -41,7 +42,12 @@ export class WebSocketUsers implements OnGatewayInit, OnGatewayConnection, OnGat
     setTimeout(() => (this.initialized = true), this.waitTime)
   }
 
+  beforeApplicationShutdown(_signal?: string) {
+    this.shuttingDown = true
+  }
+
   async handleConnection(socket: AuthenticatedSocketIO): Promise<void> {
+    if (this.shuttingDown) return
     socket.join(`${USER_ROOM_PREFIX}${socket.user.id}`)
     this.sendOnlineUser(socket.user, parseInt((socket.handshake.query.onlineStatus as string) || '0')).catch((e: Error) =>
       this.logger.error(`${this.handleConnection.name} - ${e}`)
@@ -53,6 +59,7 @@ export class WebSocketUsers implements OnGatewayInit, OnGatewayConnection, OnGat
   }
 
   async handleDisconnect(socket: AuthenticatedSocketIO): Promise<void> {
+    if (this.shuttingDown) return
     socket.leave(`${USER_ROOM_PREFIX}${socket.user.id}`)
     this.sendOfflineUser(socket.user.id).catch((e: Error) => this.logger.error(`${this.handleDisconnect.name} - ${e}`))
     this.logger.log(
