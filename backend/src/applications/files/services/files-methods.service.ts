@@ -7,7 +7,7 @@
 import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import path from 'node:path'
-import { pngMimeType } from '../../../common/image'
+import { Readable } from 'node:stream'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service'
@@ -146,10 +146,9 @@ export class FilesMethods {
     }
   }
 
-  async genThumbnail(space: SpaceEnv, size: number): Promise<StreamableFile> {
+  async genThumbnail(space: SpaceEnv, size: number): Promise<Readable> {
     try {
-      const pngStream = await this.filesManager.generateThumbnail(space, size)
-      return new StreamableFile(pngStream, { type: pngMimeType })
+      return await this.filesManager.generateThumbnail(space, size)
     } catch (e) {
       this.handleError(space, this.genThumbnail.name, e)
     }

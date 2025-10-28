@@ -88,10 +88,11 @@
   "devDependencies": {
     "commit-and-tag-version": "^12.5.1",
     "husky": "^9.1.7",
+    "noop3": "^1000.0.0",
     "prettier": "^3.4.1"
   },
   "overrides": {
-    "@napi-rs/canvas": "0.1.77"
+    "@napi-rs/canvas": "npm:noop3"
   },
   "commit-and-tag-version": {
     "header": ""

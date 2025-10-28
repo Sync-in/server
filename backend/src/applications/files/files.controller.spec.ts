@@ -20,7 +20,7 @@ describe(FilesController.name, () => {
   const fakeUser: any = { id: 1, login: 'john', role: 1 }
   const fakeSpace: any = { id: 42, key: 'space-key', url: '/space/a', realPath: '/data/space/a', realBasePath: '/data/space' }
   const fakeReq: any = { user: fakeUser, space: fakeSpace, headers: {}, method: 'GET', ip: '127.0.0.1' }
-  const fakeRes: any = { header: jest.fn().mockReturnThis(), status: jest.fn().mockReturnThis(), send: jest.fn() }
+  const fakeRes: any = { header: jest.fn().mockReturnThis(), status: jest.fn().mockReturnThis(), type: jest.fn().mockReturnThis(), send: jest.fn() }
 
   // Mocks
   const filesMethodsMock = {
@@ -142,20 +142,36 @@ describe(FilesController.name, () => {
       filesMethodsMock.genThumbnail.mockResolvedValue(stream)
 
       // pass undefined to exercise controller default parameter
-      const result = await filesController.genThumbnail(fakeSpace, undefined as unknown as number)
+      const result = await filesController.genThumbnail(fakeSpace, undefined as unknown as number, fakeRes)
 
       expect(filesMethodsMock.genThumbnail).toHaveBeenCalledWith(fakeSpace, 256)
-      expect(result).toBe(stream)
+      expect(fakeRes.type).toHaveBeenCalled()
+      expect(fakeRes.send).toHaveBeenCalledWith(stream)
+      expect(result).toBeUndefined()
     })
 
     it('genThumbnail() should pass provided size', async () => {
       const stream = {} as any
       filesMethodsMock.genThumbnail.mockResolvedValue(stream)
 
-      const result = await filesController.genThumbnail(fakeSpace, 512)
+      const result = await filesController.genThumbnail(fakeSpace, 512, fakeRes)
 
       expect(filesMethodsMock.genThumbnail).toHaveBeenCalledWith(fakeSpace, 512)
-      expect(result).toBe(stream)
+      expect(fakeRes.type).toHaveBeenCalled()
+      expect(fakeRes.send).toHaveBeenCalledWith(stream)
+      expect(result).toBeUndefined()
+    })
+
+    it('genThumbnail() should reduce size larger than 1024', async () => {
+      const stream = {} as any
+      filesMethodsMock.genThumbnail.mockResolvedValue(stream)
+
+      const result = await filesController.genThumbnail(fakeSpace, 2048, fakeRes)
+
+      expect(filesMethodsMock.genThumbnail).toHaveBeenCalledWith(fakeSpace, 1024)
+      expect(fakeRes.type).toHaveBeenCalled()
+      expect(fakeRes.send).toHaveBeenCalledWith(stream)
+      expect(result).toBeUndefined()
     })
   })
 

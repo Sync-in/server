@@ -4,76 +4,66 @@
  * See the LICENSE file for licensing details
  */
 
-import { Resvg } from '@resvg/resvg-js'
 import fs from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
+import { promisify } from 'node:util'
 import sharp from 'sharp'
+import TextToSVG from 'text-to-svg' // Sharp settings
 
+// Sharp settings
+sharp.cache(false)
+sharp.concurrency(Math.min(2, os.cpus()?.length || 1))
+
+// Constants
 export const pngMimeType = 'image/png'
 export const svgMimeType = 'image/svg+xml'
-sharp.cache(false)
+const avatarSize = 256
+const fontPath = path.join(__dirname, 'fonts', 'avatar.ttf')
+const loadTextToSVG = promisify(TextToSVG.load.bind(TextToSVG))
+let textToSvgCache: Promise<TextToSVG> | null = null
 
 export async function generateThumbnail(filePath: string, size: number): Promise<Readable> {
-  const image = sharp(filePath, { autoOrient: true })
-  let { width, height } = await image.metadata()
-
-  if (!width || !height) throw new Error('Invalid image dimensions')
-
-  // Calculate the new dimensions, maintaining the aspect ratio
-  if (width > height) {
-    if (width > size) {
-      height = Math.round((height * size) / width)
-      width = size
-    }
-  } else {
-    if (height > size) {
-      width = Math.round((width * size) / height)
-      height = size
-    }
-  }
-
-  return image.resize(width, height, { fit: 'inside' }).png({ compressionLevel: 0 })
+  return sharp(filePath, {
+    sequentialRead: true, // sequential read = more efficient I/O
+    limitInputPixels: 268e6 // protects against extremely large images
+  })
+    .rotate()
+    .resize({
+      width: size,
+      height: size,
+      fit: 'inside',
+      kernel: 'lanczos3',
+      withoutEnlargement: true,
+      fastShrinkOnLoad: true // true by default, added for clarity
+    })
+    .png({
+      compressionLevel: 1,
+      palette: true
+    })
 }
 
-export async function generateAvatar(initials: string): Promise<Buffer> {
-  const width = 256
-  const height = 256
+export async function generateAvatar(initials: string): Promise<NodeJS.ReadableStream> {
+  const tts = await getTextToSvg()
   const { backgroundColor, foregroundColor } = randomColor()
+  const fontSize = fitFontSize(tts, initials, avatarSize * 0.8, 170)
 
-  const fontPath = path.join(__dirname, 'fonts', 'avatar.ttf')
-  const fontBase64 = (await fs.readFile(fontPath)).toString('base64')
-
-  const svg = `
-  <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-    <style>
-      @font-face {
-        font-family: 'Avatar';
-        src: url('data:font/ttf;base64,${fontBase64}') format('truetype');
-      }
-      text {
-        font-family: 'Avatar', sans-serif;
-        font-size: 150px;
-        fill: ${foregroundColor};
-        dominant-baseline: central;
-        text-anchor: middle;
-      }
-    </style>
-    <rect width="100%" height="100%" fill="${backgroundColor}" />
-    <text x="50%" y="50%">${initials}</text>
-  </svg>
-  `
-
-  // Rasterize SVG to PNG
-  const resvg = new Resvg(svg, {
-    fitTo: { mode: 'width', value: width },
-    font: {
-      fontFiles: [fontPath],
-      loadSystemFonts: false
-    }
+  const d = tts.getD(initials, {
+    x: avatarSize / 2,
+    y: avatarSize / 2.1,
+    fontSize,
+    anchor: 'center middle'
   })
 
-  return resvg.render().asPng()
+  const svg = `
+<svg width="${avatarSize}" height="${avatarSize}" viewBox="0 0 ${avatarSize} ${avatarSize}"
+     xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="${backgroundColor}"/>
+  <path d="${d}" fill="${foregroundColor}" />
+</svg>`.trim()
+
+  return sharp(Buffer.from(svg, 'utf8')).png()
 }
 
 export async function convertImageToBase64(imgPath: string) {
@@ -99,4 +89,20 @@ function randomColor() {
     backgroundColor: `#${color}`,
     foregroundColor: brightness > 180 ? '#000000' : '#ffffff'
   }
+}
+
+function fitFontSize(tts: TextToSVG, text: string, box: number, start = 170): number {
+  // Heuristic to make the text occupy ~80% of the available width
+  let size = start
+  // Lower bound to prevent infinite loops when the font renders very small
+  while (size > 20) {
+    const m = tts.getMetrics(text, { fontSize: size, anchor: 'center middle' })
+    if (m.width <= box) break
+    size -= 4
+  }
+  return size
+}
+
+function getTextToSvg(): Promise<TextToSVG> {
+  return (textToSvgCache ??= loadTextToSVG(fontPath) as Promise<TextToSVG>)
 }

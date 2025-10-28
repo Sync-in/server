@@ -4,8 +4,26 @@
  * See the LICENSE file for licensing details
  */
 
-import { Body, Controller, Copy, Delete, Get, Head, Logger, Move, Post, Query, Req, Res, Search, StreamableFile, UseGuards } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Copy,
+  Delete,
+  Get,
+  Head,
+  Logger,
+  Move,
+  ParseIntPipe,
+  Post,
+  Query,
+  Req,
+  Res,
+  Search,
+  StreamableFile,
+  UseGuards
+} from '@nestjs/common'
 import { FastifyReply } from 'fastify'
+import { pngMimeType } from '../../common/image'
 import { SkipSpaceGuard } from '../spaces/decorators/space-skip-guard.decorator'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator'
 import { GetSpace } from '../spaces/decorators/space.decorator'
@@ -89,8 +107,15 @@ export class FilesController {
   }
 
   @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.THUMBNAIL}/*`)
-  async genThumbnail(@GetSpace() space: SpaceEnv, @Query('size') size: number = 256): Promise<StreamableFile> {
-    return this.filesMethods.genThumbnail(space, size)
+  async genThumbnail(
+    @GetSpace() space: SpaceEnv,
+    @Query('size', new ParseIntPipe({ optional: true })) size = 256,
+    @Res() res: FastifyReply
+  ): Promise<StreamableFile> {
+    if (size > 1024) size = 1024
+    const thumb = await this.filesMethods.genThumbnail(space, size)
+    res.type(pngMimeType)
+    return res.send(thumb)
   }
 
   // TASKS OPERATIONS
