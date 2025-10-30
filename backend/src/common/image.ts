@@ -19,6 +19,7 @@ sharp.concurrency(Math.min(2, os.cpus()?.length || 1))
 // Constants
 export const pngMimeType = 'image/png'
 export const svgMimeType = 'image/svg+xml'
+export const webpMimeType = 'image/webp'
 const avatarSize = 256
 const fontPath = path.join(__dirname, 'fonts', 'avatar.ttf')
 const loadTextToSVG = promisify(TextToSVG.load.bind(TextToSVG))
@@ -34,14 +35,11 @@ export async function generateThumbnail(filePath: string, size: number): Promise
       width: size,
       height: size,
       fit: 'inside',
-      kernel: 'lanczos3',
+      kernel: 'nearest',
       withoutEnlargement: true,
       fastShrinkOnLoad: true // true by default, added for clarity
     })
-    .png({
-      compressionLevel: 1,
-      palette: true
-    })
+    .webp({ quality: 80, effort: 0, alphaQuality: 90 })
 }
 
 export async function generateAvatar(initials: string): Promise<NodeJS.ReadableStream> {

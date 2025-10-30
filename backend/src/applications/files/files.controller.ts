@@ -23,7 +23,7 @@ import {
   UseGuards
 } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
-import { pngMimeType } from '../../common/image'
+import { webpMimeType } from '../../common/image'
 import { SkipSpaceGuard } from '../spaces/decorators/space-skip-guard.decorator'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator'
 import { GetSpace } from '../spaces/decorators/space.decorator'
@@ -114,7 +114,7 @@ export class FilesController {
   ): Promise<StreamableFile> {
     if (size > 1024) size = 1024
     const thumb = await this.filesMethods.genThumbnail(space, size)
-    res.type(pngMimeType)
+    res.type(webpMimeType)
     return res.send(thumb)
   }
 
