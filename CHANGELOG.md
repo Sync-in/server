@@ -1,16 +1,25 @@
-## [1.8.0](https://github.com/Sync-in/server/compare/v1.7.0...v1.8.0) (2025-10-26)
+## [1.8.1](https://github.com/Sync-in/server/compare/v1.8.0...v1.8.1) (2025-10-30)
 
 ### Highlights
 
 * 🌍 **14 languages supported** — added 12 new ones: 🇩🇪 🇪🇸 🇵🇹 🇧🇷 🇮🇹 🇨🇳 🇮🇳 🇹🇷 🇯🇵 🇰🇷 🇵🇱 🇷🇺
 * ⚡ **Better suited for small systems** – reduced the default number of backend workers from **2 to 1** to improve memory efficiency on lightweight
   setups (e.g. Raspberry Pi).
+* 😈 **FreeBSD support** – npm distribution is now compatible with FreeBSD
 * 🔍 **Indexing & search controls** — new config to enable/disable indexing, per-space toggles, and full-text search preferences.
 * 📊 **Quotas** — define storage quotas for external shares; storage from anchored external locations now counts toward the space’s total usage.
 * 🖼️ **Thumbnails** — photo thumbnail generation is now **3× faster**.
-* 🐳 **Docker** — minimized system dependencies for a **lighter and more efficient image**.
+* 🐳 **Docker** — minimized system dependencies for a **lighter and more efficient image** (from 562MB to 357MB, saving 205MB!).
 
 ➡️ [More details](https://sync-in.com/news/sync-in-server-1-8)
+
+### Bug Fixes
+
+* **backend:files:** lower PDF.js verbosity to reduce logging noise ([336fce8](https://github.com/Sync-in/server/commit/336fce8d6b9f2873c10bfaf3a7ca226eb3cb6069))
+* **backend:users:** handle graceful shutdown in WebSocket gateway to prevent new connections during app termination ([0f02820](https://github.com/Sync-in/server/commit/0f02820a291fd5764e928a00cd540514ddfc5ad3))
+* **backend:** update router options access to use `options.routerOptions` instead of deprecated `constraints` property (Fastify v6 compatibility) ([2d74512](https://github.com/Sync-in/server/commit/2d74512a800ba7d80e043679249ec98d3ab6f180))
+
+## [1.8.0](https://github.com/Sync-in/server/compare/v1.7.0...v1.8.0) (2025-10-26)
 
 ### Features
 
