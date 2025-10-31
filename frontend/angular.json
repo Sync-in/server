@@ -40,12 +40,6 @@
             ],
             "styles": [
               "src/styles/index.scss"
-            ],
-            "scripts": [
-              "codemirror/lib/codemirror.js",
-              "codemirror/mode/meta.js",
-              "codemirror/addon/mode/loadmode.js",
-              "codemirror/addon/mode/overlay.js"
             ]
           },
           "configurations": {

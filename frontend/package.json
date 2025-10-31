@@ -20,6 +20,7 @@
     "update:angular": "ng update @angular/cli@latest @angular/core@latest --allow-dirty"
   },
   "dependencies": {
+    "@acrodata/code-editor": "^0.5.1",
     "@ali-hm/angular-tree-component": "^20.1.6",
     "@angular/animations": "^20.1.7",
     "@angular/cdk": "^20.1.6",
@@ -30,6 +31,7 @@
     "@angular/platform-browser": "^20.1.7",
     "@angular/platform-browser-dynamic": "^20.1.7",
     "@angular/router": "^20.1.7",
+    "@codemirror/language-data": "^6.5.2",
     "@fortawesome/angular-fontawesome": "^3.0.0",
     "@fortawesome/fontawesome-svg-core": "^7.0.0",
     "@fortawesome/free-brands-svg-icons": "^7.0.0",
@@ -38,7 +40,7 @@
     "@perfectmemory/ngx-contextmenu": "^20.0.0",
     "@videogular/ngx-videogular": "^20.0.0",
     "angular-l10n": "^17.0.0",
-    "codemirror": "^5.65.16",
+    "codemirror": "^6.0.2",
     "dayjs": "^1.11.13",
     "ngx-bootstrap": "^20.0.0",
     "ngx-clipboard": "^16.0.0",
