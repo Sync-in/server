@@ -4,11 +4,9 @@
  * See the LICENSE file for licensing details
  */
 
-import { checkCodeMirror } from './codemirror.mjs'
 import { checkPdfjs } from './pdfjs.mjs'
 
-console.log('build assets ...')
 if (process.env.NODE_ENV !== 'development') {
+  console.log('build assets ...')
   checkPdfjs().catch(console.error)
 }
-checkCodeMirror().catch(console.error)

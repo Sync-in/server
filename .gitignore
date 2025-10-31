@@ -15,5 +15,4 @@ frontend/tmp
 frontend/out-tsc
 frontend/bazel-out
 /frontend/src/assets/pdfjs/
-/frontend/src/assets/codemirror/
 circular-dependencies.png
