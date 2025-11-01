@@ -27,6 +27,7 @@ let textToSvgCache: Promise<TextToSVG> | null = null
 
 export async function generateThumbnail(filePath: string, size: number): Promise<Readable> {
   return sharp(filePath, {
+    failOn: 'none',
     sequentialRead: true, // sequential read = more efficient I/O
     limitInputPixels: 268e6 // protects against extremely large images
   })
