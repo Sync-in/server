@@ -104,7 +104,7 @@ describe(FilesController.name, () => {
     })
 
     it('upload() should call filesMethods.upload(req, res)', async () => {
-      await filesController.upload(fakeReq, fakeRes)
+      await filesController.uploadCreate(fakeReq, fakeRes)
 
       expect(filesMethodsMock.upload).toHaveBeenCalledWith(fakeReq, fakeRes)
     })

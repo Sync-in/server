@@ -22,7 +22,7 @@ export class FilesUploadService {
   private readonly filesService = inject(FilesService)
   private readonly filesTasksService = inject(FilesTasksService)
 
-  async addFiles(files: FileUpload[]) {
+  async addFiles(files: FileUpload[], overwrite: boolean) {
     const apiRoute = `${API_FILES_OPERATION_UPLOAD}/${this.filesService.currentRoute}`
     const taskReqs: [FileTask, Observable<any>][] = []
 
@@ -32,7 +32,7 @@ export class FilesUploadService {
       const task: FileTask = this.filesTasksService.createUploadTask(path, name, data.size)
       taskReqs.unshift([
         task,
-        this.uploadFiles(`${apiRoute}/${key}`, data.form).pipe(
+        this.uploadFiles(`${apiRoute}/${key}`, data.form, overwrite).pipe(
           filter((ev: any) => ev.type === HttpEventType.UploadProgress),
           tap((ev: HttpUploadProgressEvent) => this.updateProgress(task, ev))
         )
@@ -56,16 +56,20 @@ export class FilesUploadService {
     }
   }
 
-  onDropFiles(ev: any) {
+  onDropFiles(ev: any, overwrite: boolean) {
     if (ev.dataTransfer.items && ev.dataTransfer.items[0]?.webkitGetAsEntry) {
-      this.webkitReadDataTransfer(ev)
+      this.webkitReadDataTransfer(ev, overwrite)
     } else {
-      this.addFiles(ev.dataTransfer.files).catch(console.error)
+      this.addFiles(ev.dataTransfer.files, overwrite).catch(console.error)
     }
   }
 
-  private uploadFiles(url: string, form: FormData) {
-    return this.http.post(url, form, { reportProgress: true, observe: 'events' })
+  private uploadFiles(url: string, form: FormData, overwrite: boolean) {
+    return this.http.request(overwrite ? 'put' : 'post', url, {
+      body: form,
+      reportProgress: true,
+      observe: 'events'
+    })
   }
 
   private updateProgress(task: FileTask, ev: HttpUploadProgressEvent) {
@@ -87,7 +91,7 @@ export class FilesUploadService {
     return sort
   }
 
-  private webkitReadDataTransfer(ev: any) {
+  private webkitReadDataTransfer(ev: any, overwrite: boolean) {
     let queue = ev.dataTransfer.items.length
     const files: FileUpload[] = []
     const readDirectory = (reader: any) => {
@@ -120,7 +124,7 @@ export class FilesUploadService {
     }
     const decrement = () => {
       if (--queue == 0) {
-        this.addFiles(files).catch(console.error)
+        this.addFiles(files, overwrite).catch(console.error)
       }
     }
 
