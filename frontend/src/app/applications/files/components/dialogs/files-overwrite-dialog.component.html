@@ -1,0 +1,25 @@
+<!--
+  ~ Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+  ~ This file is part of Sync-in | The open source file sync and share solution
+  ~ See the LICENSE file for licensing details
+  -->
+
+<div class="modal-header">
+  <h4 class="modal-title" l10nTranslate>
+    <fa-icon [icon]="icons.faFileShield" class="me-1"></fa-icon>
+    <span l10nTranslate>Overwrite Existing File(s)</span>
+  </h4>
+  <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
+</div>
+<div class="modal-body">
+  <div l10nTranslate>Do you want to replace the existing file(s)?</div>
+  <ul class="my-2" style="padding-left: inherit">
+    @for (file of files; track $index) {
+      <li><b>{{ file.name }}</b></li>
+    }
+  </ul>
+</div>
+<div class="modal-footer">
+  <button (click)="onAction(false)" class="btn btn-sm btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onAction(true)" [disabled]="submitted" class="btn btn-sm btn-danger" type="button" l10nTranslate>Confirm</button>
+</div>

@@ -43,8 +43,6 @@ export class FilesMethods {
     try {
       await this.filesManager.saveMultipart(req.user, req.space, req)
     } catch (e) {
-      // if error we need to close the stream
-      // req.raw.destroy()
       this.logger.error(`${this.upload.name} - unable to ${FILE_OPERATION.UPLOAD} ${req.space.url} : ${e}`)
       return res
         .header('Connection', 'close')

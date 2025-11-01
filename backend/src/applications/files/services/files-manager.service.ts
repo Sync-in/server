@@ -178,7 +178,7 @@ export class FilesManager {
   async saveMultipart(user: UserModel, space: SpaceEnv, req: FastifySpaceRequest) {
     /* Accepted methods:
         POST: create new resource
-        PUT: create or update new resource (even if parent path does not exist)
+        PUT: create or update new resource (even if a parent path does not exist)
     */
     const realParentPath = dirName(space.realPath)
 

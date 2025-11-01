@@ -556,32 +556,33 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-  onUploadFiles(ev: { files: File[] }, isDirectory = false) {
+  async onUploadFiles(ev: { files: File[] }, isDirectory = false) {
+    let doOverwrite = false
     if (isDirectory) {
       const dirName = ev.files[0].webkitRelativePath.split('/')[0]
-      if (this.files.find((f) => f.name === dirName)) {
-        this.layout.sendNotification('warning', 'This folder already exists', dirName)
-        return
+      const dirExist = this.files.find((f) => f.name.toLowerCase() === dirName.toLowerCase())
+      if (dirExist) {
+        doOverwrite = await this.filesService.openOverwriteDialog([{ name: dirName } as File])
+        if (!doOverwrite) return
       }
     } else {
-      for (const uF of ev.files) {
-        if (this.files.find((f) => uF.name === f.name)) {
-          this.layout.sendNotification('warning', 'This file already exists', uF.name)
-          return
-        }
+      const exist: File[] = [...ev.files].filter((f: File) => this.files.some((x) => x.name.toLowerCase() === f.name.toLowerCase()))
+      if (exist.length > 0) {
+        doOverwrite = await this.filesService.openOverwriteDialog(exist)
+        if (!doOverwrite) return
       }
     }
-    this.filesUpload.addFiles(ev.files).catch(console.error)
+    this.filesUpload.addFiles(ev.files, doOverwrite).catch(console.error)
   }
 
-  onDropFiles(ev: { dataTransfer: { files: File[] } }) {
-    for (const uF of ev.dataTransfer.files) {
-      if (this.files.find((f) => uF.name === f.name)) {
-        this.layout.sendNotification('warning', 'This file already exists', uF.name)
-        return
-      }
+  async onDropFiles(ev: { dataTransfer: { files: File[] } }) {
+    let doOverwrite = false
+    const exist: File[] = [...ev.dataTransfer.files].filter((f: File) => this.files.some((x) => x.name.toLowerCase() === f.name.toLowerCase()))
+    if (exist.length > 0) {
+      doOverwrite = await this.filesService.openOverwriteDialog(exist)
+      if (!doOverwrite) return
     }
-    this.filesUpload.onDropFiles(ev)
+    this.filesUpload.onDropFiles(ev, doOverwrite)
   }
 
   decompressFile() {

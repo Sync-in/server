@@ -15,6 +15,7 @@ import {
   Move,
   ParseIntPipe,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -73,7 +74,12 @@ export class FilesController {
   }
 
   @Post(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
-  async upload(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
+  async uploadCreate(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
+    return this.filesMethods.upload(req, res)
+  }
+
+  @Put(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
+  async uploadOverwrite(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
     return this.filesMethods.upload(req, res)
   }
 

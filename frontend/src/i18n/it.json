@@ -536,8 +536,6 @@
   "Drop folder here": "Rilascia qui la cartella",
   "This directory is already synced": "Questa directory è già sincronizzata",
   "The parent directory is already synced": "La directory padre è già sincronizzata",
-  "This folder already exists": "Questa cartella esiste già",
-  "This file already exists": "Questo file esiste già",
   "This directory is not accessible": "Questa directory non è accessibile",
   "This directory is read-only, you will not be able to modify it": "Questa directory è di sola lettura, non potrai modificarla",
   "Please select the server directory to sync, if it doesn't exist you can create it.": "Seleziona la directory del server da sincronizzare; se non esiste, puoi crearla.",
@@ -597,5 +595,7 @@
   "Valid with your TOTP code": "Conferma con il tuo codice TOTP",
   "The secret has expired": "Il segreto è scaduto",
   "Keep these codes in a safe place. They will allow you to access your account if you lose access to your two-factor authentication.": "Conserva questi codici in un luogo sicuro. Ti permetteranno di accedere al tuo account se perdi l’accesso alla tua autenticazione a due fattori.",
-  "These recovery codes are for one-time use only and will only be displayed here once.": "Questi codici di recupero sono monouso e verranno mostrati qui una sola volta."
+  "These recovery codes are for one-time use only and will only be displayed here once.": "Questi codici di recupero sono monouso e verranno mostrati qui una sola volta.",
+  "Overwrite Existing File(s)": "Sovrascrivere il/i file esistente/i",
+  "Do you want to replace the existing file(s)?": "Vuoi sostituire il/i file esistente/i?"
 }

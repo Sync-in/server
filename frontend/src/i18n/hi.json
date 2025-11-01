@@ -536,8 +536,6 @@
   "Drop folder here": "फ़ोल्डर यहाँ छोड़ें",
   "This directory is already synced": "यह निर्देशिका पहले से सिंक है",
   "The parent directory is already synced": "अभिभावक निर्देशिका पहले से सिंक है",
-  "This folder already exists": "यह फ़ोल्डर पहले से मौजूद है",
-  "This file already exists": "यह फ़ाइल पहले से मौजूद है",
   "This directory is not accessible": "यह निर्देशिका सुलभ नहीं है",
   "This directory is read-only, you will not be able to modify it": "यह निर्देशिका केवल-पढ़ने योग्य है, आप इसे संशोधित नहीं कर पाएँगे",
   "Please select the server directory to sync, if it doesn't exist you can create it.": "कृपया सिंक करने हेतु सर्वर निर्देशिका चुनें; यदि वह मौजूद नहीं है, तो आप उसे बना सकते हैं।",
@@ -597,5 +595,7 @@
   "Valid with your TOTP code": "अपने TOTP कोड से सत्यापित करें",
   "The secret has expired": "सीक्रेट समाप्त हो गया है",
   "Keep these codes in a safe place. They will allow you to access your account if you lose access to your two-factor authentication.": "इन कोडों को सुरक्षित स्थान पर रखें। यदि आप द्वि-कारक प्रमाणीकरण की पहुँच खो देते हैं, तो ये आपके खाते तक पहुँचने में मदद करेंगे।",
-  "These recovery codes are for one-time use only and will only be displayed here once.": "ये रिकवरी कोड केवल एक बार उपयोग के लिए हैं और यहाँ केवल एक बार दिखाए जाएँगे।"
+  "These recovery codes are for one-time use only and will only be displayed here once.": "ये रिकवरी कोड केवल एक बार उपयोग के लिए हैं और यहाँ केवल एक बार दिखाए जाएँगे।",
+  "Overwrite Existing File(s)": "मौजूदा फ़ाइल(ों) को अधिलेखित करें",
+  "Do you want to replace the existing file(s)?": "क्या आप मौजूदा फ़ाइल(ों) को बदलना चाहते हैं?"
 }

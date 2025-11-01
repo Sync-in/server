@@ -32,11 +32,13 @@ import type { FileContent } from '@sync-in-server/backend/src/applications/files
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
+import { BsModalRef } from 'ngx-bootstrap/modal'
 import { firstValueFrom, map, Observable, Subject } from 'rxjs'
 import { downloadWithAnchor } from '../../../common/utils/functions'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
+import { FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
 import { FilesViewerDialogComponent } from '../components/dialogs/files-viewer-dialog.component'
 import { FileContentModel } from '../models/file-content.model'
 import { FileRecentModel } from '../models/file-recent.model'
@@ -208,6 +210,17 @@ export class FilesService {
         })
       )
     )
+  }
+
+  async openOverwriteDialog(files: File[]): Promise<boolean> {
+    const overwriteDialog: BsModalRef<FilesOverwriteDialogComponent> = this.layout.openDialog(FilesOverwriteDialogComponent, null, {
+      initialState: {
+        files: files
+      } as FilesOverwriteDialogComponent
+    })
+    return new Promise<boolean>((resolve) => {
+      overwriteDialog.content.overwrite.subscribe(resolve)
+    })
   }
 
   async openViewerDialog(mode: 'view' | 'edit', currentFile: FileModel) {
