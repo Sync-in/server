@@ -35,6 +35,7 @@ import { FileError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
 import {
   checkFileName,
+  copyFileContent,
   copyFiles,
   createEmptyFile,
   dirName,
@@ -244,7 +245,7 @@ export class FilesManager {
     const fileExtension = path.extname(space.realPath)
     if (checkDocument && fileExtension !== '.txt' && Object.values(DOCUMENT_TYPE).indexOf(fileExtension) > -1) {
       const srcSample = path.join(__dirname, `${SAMPLE_PATH_WITHOUT_EXT}${fileExtension}`)
-      return copyFiles(srcSample, space.realPath, false, false, false)
+      return copyFileContent(srcSample, space.realPath)
     } else {
       return createEmptyFile(space.realPath)
     }
