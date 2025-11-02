@@ -26,3 +26,23 @@ hr {
 .progress-bar {
   overflow: visible !important;
 }
+
+// codemirror
+.cm-focused {
+  outline: none !important;
+}
+
+.cm-panel.cm-search {
+  display: flex;
+  align-items: center;
+
+  label {
+    display: flex;
+    align-items: center;
+  }
+
+  button[aria-label="close"] {
+    right: 10px !important;
+    font-size: 18px !important;
+  }
+}
