@@ -597,5 +597,7 @@
   "Keep these codes in a safe place. They will allow you to access your account if you lose access to your two-factor authentication.": "Bu kodları güvenli bir yerde saklayın. İki aşamalı doğrulamaya erişimi kaybetseniz bile hesabınıza erişmenizi sağlar.",
   "These recovery codes are for one-time use only and will only be displayed here once.": "Bu kurtarma kodları tek kullanımlıktır ve burada yalnızca bir kez görüntülenir.",
   "Overwrite Existing File(s)": "Mevcut dosya(ları) üzerine yaz",
-  "Do you want to replace the existing file(s)?": "Mevcut dosya(ları) değiştirmek istiyor musunuz?"
+  "Replace Existing File": "Mevcut dosyayı değiştir",
+  "Do you want to replace the existing file(s)?": "Mevcut dosya(ları) değiştirmek istiyor musunuz?",
+  "RenameFileToExisting": "<b>{{ old }}</b> dosyasını <b>{{ new }}</b> olarak yeniden adlandırmak istiyor musunuz?"
 }

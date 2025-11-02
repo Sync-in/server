@@ -165,7 +165,7 @@ export class FilesMethods {
     let dstSpace: SpaceEnv
     try {
       dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
-      await this.filesManager.copyMove(user, space, dstSpace, isMove)
+      await this.filesManager.copyMove(user, space, dstSpace, isMove, copyMoveFileDto.overwrite)
     } catch (e) {
       this.handleError(space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, dstSpace)
     }

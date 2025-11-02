@@ -18,8 +18,12 @@ export class CopyMoveFileDto {
   @IsOptional()
   @IsString()
   @RejectIfMatch(regExpInvalidFileName, { message: 'Forbidden characters' })
-  // renaming use case
+  // Renaming scenario
   dstName?: string
+
+  @IsOptional()
+  @IsBoolean()
+  overwrite? = false
 }
 
 export class DownloadFileDto {

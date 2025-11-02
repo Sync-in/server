@@ -597,5 +597,7 @@
   "Keep these codes in a safe place. They will allow you to access your account if you lose access to your two-factor authentication.": "Conserva questi codici in un luogo sicuro. Ti permetteranno di accedere al tuo account se perdi l’accesso alla tua autenticazione a due fattori.",
   "These recovery codes are for one-time use only and will only be displayed here once.": "Questi codici di recupero sono monouso e verranno mostrati qui una sola volta.",
   "Overwrite Existing File(s)": "Sovrascrivere il/i file esistente/i",
-  "Do you want to replace the existing file(s)?": "Vuoi sostituire il/i file esistente/i?"
+  "Replace Existing File": "Sostituire il file esistente",
+  "Do you want to replace the existing file(s)?": "Vuoi sostituire il/i file esistente/i?",
+  "RenameFileToExisting": "Vuoi rinominare <b>{{ old }}</b> in <b>{{ new }}</b>?"
 }

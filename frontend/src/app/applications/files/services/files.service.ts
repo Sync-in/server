@@ -33,7 +33,7 @@ import type { FileRecent } from '@sync-in-server/backend/src/applications/files/
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
 import { BsModalRef } from 'ngx-bootstrap/modal'
-import { firstValueFrom, map, Observable, Subject } from 'rxjs'
+import { EMPTY, firstValueFrom, map, Observable, Subject } from 'rxjs'
 import { downloadWithAnchor } from '../../../common/utils/functions'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
@@ -115,17 +115,11 @@ export class FilesService {
     }
   }
 
-  rename(file: FileModel, name: string) {
-    if (!this.isValidName(name)) return
+  rename(file: FileModel, name: string, overwrite = false): Observable<Pick<FileTask, 'name'>> {
+    if (!this.isValidName(name)) return EMPTY
     const dstDirectory = file.path.split('/').slice(0, -1).join('/') || '.'
-    const op: CopyMoveFileDto = { dstDirectory: dstDirectory, dstName: name }
-    this.http.request<Pick<FileTask, 'name'>>(FILE_OPERATION.MOVE, file.dataUrl, { body: op }).subscribe({
-      next: (dto: Pick<FileTask, 'name'>) => {
-        file.rename(dto.name)
-        file.isEditable = false
-      },
-      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Rename', file.name, e)
-    })
+    const op: CopyMoveFileDto = { dstDirectory: dstDirectory, dstName: name, overwrite: overwrite }
+    return this.http.request<Pick<FileTask, 'name'>>(FILE_OPERATION.MOVE, file.dataUrl, { body: op })
   }
 
   delete(files: FileModel[]) {
@@ -212,10 +206,11 @@ export class FilesService {
     )
   }
 
-  async openOverwriteDialog(files: File[]): Promise<boolean> {
+  async openOverwriteDialog(files: File[] | FileModel[], renamedTo?: string): Promise<boolean> {
     const overwriteDialog: BsModalRef<FilesOverwriteDialogComponent> = this.layout.openDialog(FilesOverwriteDialogComponent, null, {
       initialState: {
-        files: files
+        files: files,
+        renamedTo: renamedTo
       } as FilesOverwriteDialogComponent
     })
     return new Promise<boolean>((resolve) => {

@@ -20,5 +20,6 @@
   "scheduler_unit_day": "scheduler_unit_day",
   "no_selection": "no item selected",
   "one_selection": "{{ nb }} item selected",
-  "nb_selections": "{{ nb }} items selected"
+  "nb_selections": "{{ nb }} items selected",
+  "RenameFileToExisting": "Do you want to rename <b>{{ old }}</b> to <b>{{ new }}</b>?"
 }

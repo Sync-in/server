@@ -40,7 +40,7 @@ import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/c
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import type { FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
-import { FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import { type FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { SHARE_TYPE } from '@sync-in-server/backend/src/applications/shares/constants/shares'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import type { SpaceFiles } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-files.interface'
@@ -476,14 +476,32 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.selection[0].isRenamed = !this.selection[0].isRenamed
   }
 
-  renameFile(ev: { object: FileModel; name: string }) {
+  async renameFile(ev: { object: FileModel; name: string }) {
     const f: FileModel = ev.object
-    const name = ev.name
-    if (this.files.find((file) => file.name === name)) {
-      this.layout.sendNotification('error', 'Rename', 'The destination already exists')
-      return
+    const renamedTo = ev.name
+    let overwrite = false
+    const fileExists = this.files.find((file) => file.name.toLowerCase() === renamedTo.toLowerCase() && file.id !== f.id)
+    if (fileExists) {
+      overwrite = await this.filesService.openOverwriteDialog([f], renamedTo)
+      if (!overwrite) return
     }
-    this.filesService.rename(f, name)
+    this.filesService
+      .rename(f, renamedTo, overwrite)
+      .pipe(take(1))
+      .subscribe({
+        next: (dto: Pick<FileTask, 'name'>) => {
+          f.rename(dto.name)
+          f.isEditable = false
+          if (overwrite) {
+            this.sortBy(
+              this.sortTable.sortParam.column,
+              false,
+              this.files.filter((file) => file.id !== fileExists.id)
+            )
+          }
+        },
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Rename', f.name, e)
+      })
   }
 
   setRenamingInProgress(ev: boolean) {
@@ -557,32 +575,32 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   async onUploadFiles(ev: { files: File[] }, isDirectory = false) {
-    let doOverwrite = false
+    let overwrite = false
     if (isDirectory) {
       const dirName = ev.files[0].webkitRelativePath.split('/')[0]
-      const dirExist = this.files.find((f) => f.name.toLowerCase() === dirName.toLowerCase())
-      if (dirExist) {
-        doOverwrite = await this.filesService.openOverwriteDialog([{ name: dirName } as File])
-        if (!doOverwrite) return
+      const dirExists = this.files.find((f) => f.name.toLowerCase() === dirName.toLowerCase())
+      if (dirExists) {
+        overwrite = await this.filesService.openOverwriteDialog([dirExists])
+        if (!overwrite) return
       }
     } else {
       const exist: File[] = [...ev.files].filter((f: File) => this.files.some((x) => x.name.toLowerCase() === f.name.toLowerCase()))
       if (exist.length > 0) {
-        doOverwrite = await this.filesService.openOverwriteDialog(exist)
-        if (!doOverwrite) return
+        overwrite = await this.filesService.openOverwriteDialog(exist)
+        if (!overwrite) return
       }
     }
-    this.filesUpload.addFiles(ev.files, doOverwrite).catch(console.error)
+    this.filesUpload.addFiles(ev.files, overwrite).catch(console.error)
   }
 
   async onDropFiles(ev: { dataTransfer: { files: File[] } }) {
-    let doOverwrite = false
+    let overwrite = false
     const exist: File[] = [...ev.dataTransfer.files].filter((f: File) => this.files.some((x) => x.name.toLowerCase() === f.name.toLowerCase()))
     if (exist.length > 0) {
-      doOverwrite = await this.filesService.openOverwriteDialog(exist)
-      if (!doOverwrite) return
+      overwrite = await this.filesService.openOverwriteDialog(exist)
+      if (!overwrite) return
     }
-    this.filesUpload.onDropFiles(ev, doOverwrite)
+    this.filesUpload.onDropFiles(ev, overwrite)
   }
 
   decompressFile() {
