@@ -45,7 +45,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   ngOnInit() {
     const language: LanguageDescription = LanguageDescription.matchFilename(languages, this.file.name)
     if (language?.name || this.file.size <= this.maxSize) {
-      this.currentLanguage = language.name
+      this.currentLanguage = language?.name
       this.http.get(this.file.dataUrl, { responseType: 'text' }).subscribe((data: string) => (this.content = data))
     } else {
       this.content = this.layout.translateString('This file contains binary data that can not be read')
