@@ -100,11 +100,18 @@ export class FilesService {
     downloadWithAnchor(file.dataUrl)
   }
 
-  copyMove(files: FileModel[], dstDirectory: string, type: FILE_OPERATION.COPY | FILE_OPERATION.MOVE) {
+  async copyMove(files: FileModel[], dstDirectory: string, type: FILE_OPERATION.COPY | FILE_OPERATION.MOVE): Promise<void> {
+    let overwrite = false
+    const dstFiles = await this.getTreeNode(dstDirectory, true)
+    const exist: FileModel[] = files.filter((f: FileModel) => dstFiles.some((x) => x.name.toLowerCase() === f.name.toLowerCase()))
+    if (exist.length > 0) {
+      overwrite = await this.openOverwriteDialog(exist)
+      if (!overwrite) return
+    }
     const isMove = type === FILE_OPERATION.MOVE
     for (const file of files) {
       if (isMove) file.isBeingDeleted = true
-      const op: CopyMoveFileDto = { dstDirectory: dstDirectory }
+      const op: CopyMoveFileDto = { dstDirectory: dstDirectory, overwrite: overwrite }
       this.http.request<FileTask>(type, file.taskUrl, { body: op }).subscribe({
         next: (t: FileTask) => this.filesTasksService.addTask(t),
         error: (e: HttpErrorResponse) => {
