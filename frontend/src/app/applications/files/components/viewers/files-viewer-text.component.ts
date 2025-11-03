@@ -6,55 +6,71 @@
 
 import { CodeEditor } from '@acrodata/code-editor'
 import { HttpClient } from '@angular/common/http'
-import { Component, inject, input, OnDestroy, OnInit, ViewEncapsulation } from '@angular/core'
+import { Component, inject, input, OnDestroy, OnInit, signal, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
+import { openSearchPanel } from '@codemirror/search'
+import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
+import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
+import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { themeDark } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
+import { FilesUploadService } from '../../services/files-upload.service'
 
 @Component({
   selector: 'app-files-viewer-text',
   encapsulation: ViewEncapsulation.None,
-  imports: [CodeEditor, FormsModule],
+  imports: [CodeEditor, TooltipModule, FormsModule, FaIconComponent, L10nTranslatePipe],
   styles: [
     `
       .code-editor {
-        height: 100%;
+        height: calc(100% - 40px);
         font-size: 0.75rem;
       }
     `
   ],
-  template: ` <div [style.height.px]="currentHeight()">
-    <code-editor
-      [languages]="languages"
-      [language]="currentLanguage"
-      [ngModel]="content"
-      [theme]="currentTheme"
-      [readonly]="true"
-      [lineWrapping]="true"
-    ></code-editor>
-  </div>`
+  templateUrl: 'files-viewer-text.component.html'
 })
 export class FilesViewerTextComponent implements OnInit, OnDestroy {
   currentHeight = input<number>()
   file = input<FileModel>()
+  isReadonly = signal(true)
+  isReadable = signal(false)
+  isModified = signal(false)
+  protected openSearchPanel = openSearchPanel
   protected content: string
   protected currentLanguage = undefined
   protected readonly languages: LanguageDescription[] = languages
   protected currentTheme: any = 'light'
+  protected readonly icons = { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass }
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   private readonly layout = inject(LayoutService)
   private readonly http = inject(HttpClient)
+  private readonly filesUpload = inject(FilesUploadService)
   private subscription = this.layout.switchTheme.subscribe((layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light'))
   private readonly maxSize = 5242880 // 5MB
+
+  toggleReadonly() {
+    this.isReadonly.update((value) => !value)
+  }
+
+  async save() {
+    const file = new File([new Blob([this.content])], this.file().name, { type: 'text/plain' })
+    await this.filesUpload.addFiles([file], true)
+    this.isModified.set(false)
+  }
 
   ngOnInit() {
     const language: LanguageDescription = LanguageDescription.matchFilename(languages, this.file().name)
     if (language?.name || this.file().size <= this.maxSize) {
       this.currentLanguage = language?.name
+      this.isReadable.set(true)
       this.http.get(this.file().dataUrl, { responseType: 'text' }).subscribe((data: string) => (this.content = data))
     } else {
+      this.isReadable.set(false)
       this.content = this.layout.translateString('This file contains binary data that can not be read')
     }
   }

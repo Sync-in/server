@@ -1,0 +1,46 @@
+<!--
+  ~ Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+  ~ This file is part of Sync-in | The open source file sync and share solution
+  ~ See the LICENSE file for licensing details
+  -->
+
+<div [style.height.px]="currentHeight()">
+  <div class="app-top-menu">
+    <button
+      (click)="toggleReadonly()"
+      [tooltip]="'Read-only' | translate:locale.language"
+      container="body"
+      class="d-none d-sm-block btn btn-sm btn-secondary me-1"
+      type="button"
+      [disabled]="!isReadable()">
+      <fa-icon [icon]="isReadonly() ? icons.faLock : icons.faLockOpen"></fa-icon>
+    </button>
+    <button
+      (click)="save()"
+      [tooltip]="'Save' | translate:locale.language"
+      container="body"
+      class="d-none d-sm-block btn btn-sm btn-secondary me-1"
+      type="button"
+      [disabled]="isReadonly() || !isModified()">
+      <fa-icon [icon]="icons.faFloppyDisk"></fa-icon>
+    </button>
+    <button
+      (click)="openSearchPanel(editor.view)"
+      [tooltip]="'Search' | translate:locale.language"
+      container="body"
+      class="d-none d-sm-block btn btn-sm btn-secondary me-1"
+      type="button"
+      [disabled]="!isReadable()">
+      <fa-icon [icon]="icons.faMagnifyingGlass"></fa-icon>
+    </button>
+  </div>
+  <code-editor
+    #editor
+    [languages]="languages"
+    [language]="currentLanguage"
+    [(ngModel)]="content"
+    (change)="isModified.set(true)"
+    [theme]="currentTheme"
+    [readonly]="isReadonly()"
+    [lineWrapping]="true" />
+</div>
