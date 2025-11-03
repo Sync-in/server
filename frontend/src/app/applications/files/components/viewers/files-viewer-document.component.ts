@@ -5,7 +5,7 @@
  */
 
 import { HttpClient, HttpParams } from '@angular/common/http'
-import { Component, inject, Input, OnDestroy, OnInit } from '@angular/core'
+import { Component, inject, input, Input, OnDestroy, OnInit } from '@angular/core'
 import { API_FILES_ONLY_OFFICE_SETTINGS } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import { OnlyOfficeReqConfig } from '@sync-in-server/backend/src/applications/files/interfaces/only-office-config.interface'
 import { SERVER_NAME } from '@sync-in-server/backend/src/common/shared'
@@ -19,7 +19,7 @@ import { OnlyOfficeComponent } from '../utils/only-office.component'
   imports: [OnlyOfficeComponent],
   template: `
     @if (documentConfig) {
-      <div [style.height.px]="currentHeight">
+      <div [style.height.px]="currentHeight()">
         <app-files-onlyoffice-document
           [id]="docId"
           [documentServerUrl]="documentConfig.documentServerUrl"
@@ -31,9 +31,9 @@ import { OnlyOfficeComponent } from '../utils/only-office.component'
   `
 })
 export class FilesViewerDocumentComponent implements OnInit, OnDestroy {
-  @Input() file: FileModel
-  @Input() currentHeight: number
-  @Input() mode: 'view' | 'edit'
+  @Input({ required: true }) file: FileModel
+  @Input({ required: true }) mode: 'view' | 'edit'
+  currentHeight = input<number>()
   protected docId: string
   protected documentConfig: OnlyOfficeReqConfig = null
   private readonly http = inject(HttpClient)

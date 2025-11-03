@@ -5,26 +5,26 @@
  */
 
 import { HttpClient } from '@angular/common/http'
-import { Component, inject, Input, OnInit } from '@angular/core'
+import { Component, inject, input, OnInit } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
 import { LayoutService } from '../../../../layout/layout.service'
 
 @Component({
   selector: 'app-files-viewer-html',
   template: `@if (content) {
-    <iframe [src]="content" [style.height.px]="currentHeight" class="app-viewer-iframe" sandbox></iframe>
+    <iframe [src]="content" [style.height.px]="currentHeight()" class="app-viewer-iframe" sandbox></iframe>
   }`
 })
 export class FilesViewerHtmlComponent implements OnInit {
-  @Input() currentHeight: number
-  @Input() fileUrl: string
+  fileUrl = input<string>()
+  currentHeight = input<number>()
   protected content: any = null
   private readonly http = inject(HttpClient)
   private readonly sanitizer = inject(DomSanitizer)
   private readonly layout = inject(LayoutService)
 
   ngOnInit() {
-    this.http.get(this.fileUrl, { responseType: 'text' }).subscribe({
+    this.http.get(this.fileUrl(), { responseType: 'text' }).subscribe({
       next: (data: string) => (this.content = this.sanitizer.bypassSecurityTrustResourceUrl(`data:text/html,${data}`)),
       error: (e) => {
         this.content = this.sanitizer.bypassSecurityTrustResourceUrl(
