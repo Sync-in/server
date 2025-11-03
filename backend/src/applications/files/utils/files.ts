@@ -263,7 +263,7 @@ export async function uniqueDatedFilePath(rPath: string): Promise<{ isDir: boole
   } else {
     const extension = path.extname(rPath)
     const nameWithoutExtension = path.basename(rPath, extension)
-    return { isDir: true, path: path.join(path.dirname(rPath), `${nameWithoutExtension}-${date}${extension}`) }
+    return { isDir: false, path: path.join(path.dirname(rPath), `${nameWithoutExtension}-${date}${extension}`) }
   }
 }
 

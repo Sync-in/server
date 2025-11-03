@@ -427,14 +427,12 @@ export class FilesManager {
           // move the resource in db
           const trashFileDB: FileDBProps = { ...space.dbFile, inTrash: true }
           const dstTrashFileDB: FileDBProps = { ...trashFileDB, path: path.join(dirName(trashFileDB.path), fileName(dstTrash.path)) }
-          this.filesQueries
-            .moveFiles(trashFileDB, dstTrashFileDB, dstTrash.isDir)
-            .catch((e: Error) => this.logger.error(`${this.delete.name} - ${e}`))
+          await this.filesQueries.moveFiles(trashFileDB, dstTrashFileDB, dstTrash.isDir)
         }
         await moveFiles(space.realPath, trashFile, true)
       } else {
-        this.logger.log(`Unable to find trash path for space - *${space.alias}* (${space.id}) : delete permanently : ${space.realPath}`)
-        // todo: define a default trash for external paths
+        // unsupported case: delete the file (this shouldn't happen)
+        this.logger.error(`Unable to find trash path for space - *${space.alias}* (${space.id}) : delete permanently : ${space.realPath}`)
         forceDeleteInDB = true
         await removeFiles(space.realPath)
       }
