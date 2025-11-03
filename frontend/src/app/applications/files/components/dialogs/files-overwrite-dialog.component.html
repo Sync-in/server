@@ -17,16 +17,17 @@
 </div>
 <div class="modal-body">
   @if (renamedTo) {
-    <div
-      [innerHTML]="'RenameFileToExisting' | translate:locale.language:{ old: files[0].name, new: renamedTo }">
-    </div>
+    <div [innerHTML]="'RenameFileToExisting' | translate:locale.language:{ old: files[0].name, new: renamedTo }"></div>
   } @else {
-    <div l10nTranslate>Do you want to replace the existing file(s)?</div>
-    <ul class="my-2" style="padding-left: inherit">
-      @for (file of files; track $index) {
-        <li><b>{{ file.name }}</b></li>
-      }
-    </ul>
+    <div class="fw-bold mb-3" l10nTranslate>Do you want to replace the existing file(s)?</div>
+    @for (f of files; track $index) {
+      <div class="d-flex align-items-center mb-1" draggable="true">
+        <img [src]="f.mimeUrl" alt="" height="24" width="24" (error)="f.fallBackMimeUrl()">
+        <div class="d-flex flex-column text-truncate ms-1">
+          <span>{{ f.name }}</span>
+        </div>
+      </div>
+    }
   }
 </div>
 <div class="modal-footer">

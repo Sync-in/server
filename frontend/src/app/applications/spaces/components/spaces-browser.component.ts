@@ -480,7 +480,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     const f: FileModel = ev.object
     const renamedTo = ev.name
     let overwrite = false
-    const fileExists = this.files.find((file) => file.name.toLowerCase() === renamedTo.toLowerCase() && file.id !== f.id)
+    const fileExists: FileModel = this.files.find((file) => file.name.toLowerCase() === renamedTo.toLowerCase() && file.id !== f.id)
     if (fileExists) {
       overwrite = await this.filesService.openOverwriteDialog([f], renamedTo)
       if (!overwrite) return
@@ -493,6 +493,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
           f.rename(dto.name)
           f.isEditable = false
           if (overwrite) {
+            f.updateMime(fileExists.mime)
             this.sortBy(
               this.sortTable.sortParam.column,
               false,
@@ -584,7 +585,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         if (!overwrite) return
       }
     } else {
-      const exist: File[] = [...ev.files].filter((f: File) => this.files.some((x) => x.name.toLowerCase() === f.name.toLowerCase()))
+      const exist: FileModel[] = this.files.filter((x: FileModel) => [...ev.files].some((f) => f.name.toLowerCase() === x.name.toLowerCase()))
       if (exist.length > 0) {
         overwrite = await this.filesService.openOverwriteDialog(exist)
         if (!overwrite) return
@@ -595,7 +596,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   async onDropFiles(ev: { dataTransfer: { files: File[] } }) {
     let overwrite = false
-    const exist: File[] = [...ev.dataTransfer.files].filter((f: File) => this.files.some((x) => x.name.toLowerCase() === f.name.toLowerCase()))
+    const exist: FileModel[] = this.files.filter((x: FileModel) =>
+      [...ev.dataTransfer.files].some((f) => f.name.toLowerCase() === x.name.toLowerCase())
+    )
     if (exist.length > 0) {
       overwrite = await this.filesService.openOverwriteDialog(exist)
       if (!overwrite) return

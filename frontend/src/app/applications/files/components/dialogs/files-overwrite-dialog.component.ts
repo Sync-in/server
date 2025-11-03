@@ -9,6 +9,7 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFileShield } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
+import { FileModel } from '../../models/file.model'
 
 @Component({
   selector: 'app-files-overwrite-dialog',
@@ -16,7 +17,7 @@ import { LayoutService } from '../../../../layout/layout.service'
   templateUrl: 'files-overwrite-dialog.component.html'
 })
 export class FilesOverwriteDialogComponent {
-  @Input() files: File[] = []
+  @Input() files: FileModel[] = []
   @Input() renamedTo: string
   public overwrite = output<boolean>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)

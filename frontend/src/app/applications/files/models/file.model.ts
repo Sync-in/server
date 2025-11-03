@@ -117,6 +117,11 @@ export class FileModel implements File {
     this.path = [...this.path.split('/').slice(0, -1), this.name].join('/')
   }
 
+  updateMime(mime: string) {
+    this.mime = mime
+    this.setMimeUrl()
+  }
+
   private getType(inShare: boolean) {
     return this.isDir ? (inShare ? mimeDirectoryShare : mimeDirectory) : mimeFile
   }
