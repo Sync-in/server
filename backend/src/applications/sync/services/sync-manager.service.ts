@@ -266,6 +266,7 @@ export class SyncManager {
 
   private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv) {
     this.logger.error(`unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}`)
+    // Remove the last part to avoid exposing the path
     const errorMsg = e.message.split(',')[0]
     if (e instanceof LockConflict) {
       throw new HttpException('The file is locked', HttpStatus.LOCKED)

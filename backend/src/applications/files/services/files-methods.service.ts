@@ -39,15 +39,11 @@ export class FilesMethods {
     }
   }
 
-  async upload(req: FastifySpaceRequest, res: FastifyReply): Promise<void> {
+  async upload(req: FastifySpaceRequest): Promise<void> {
     try {
       await this.filesManager.saveMultipart(req.user, req.space, req)
     } catch (e) {
-      this.logger.error(`${this.upload.name} - unable to ${FILE_OPERATION.UPLOAD} ${req.space.url} : ${e}`)
-      return res
-        .header('Connection', 'close')
-        .status(e.httpCode || 500)
-        .send({ message: e.message })
+      this.handleError(req.space, FILE_OPERATION.UPLOAD, e)
     }
   }
 
@@ -174,6 +170,7 @@ export class FilesMethods {
 
   private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv) {
     this.logger.error(`unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}`)
+    // Remove the last part to avoid exposing the path
     const errorMsg = e.message.split(',')[0]
     if (e instanceof LockConflict) {
       throw new HttpException('The file is locked', HttpStatus.LOCKED)

@@ -11,7 +11,6 @@ import { AxiosResponse } from 'axios'
 import fs from 'node:fs'
 import path from 'node:path'
 import { Readable } from 'node:stream'
-import { pipeline } from 'node:stream/promises'
 import { extract as extractTar } from 'tar'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { generateThumbnail } from '../../../common/image'
@@ -19,6 +18,7 @@ import { HTTP_METHOD } from '../../applications.constants'
 import { SPACE_OPERATION } from '../../spaces/constants/spaces'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
+import { SpacesManager } from '../../spaces/services/spaces-manager.service'
 import { realTrashPathFromSpace } from '../../spaces/utils/paths'
 import { canAccessToSpace, haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
 import { UserModel } from '../../users/models/user.model'
@@ -68,7 +68,8 @@ export class FilesManager {
   constructor(
     private readonly http: HttpService,
     private readonly filesQueries: FilesQueries,
-    private readonly filesLockManager: FilesLockManager
+    private readonly filesLockManager: FilesLockManager,
+    private readonly spacesManager: SpacesManager
   ) {}
 
   sendFileFromSpace(space: SpaceEnv, asAttachment = false, downloadName = ''): SendFile {
@@ -181,9 +182,10 @@ export class FilesManager {
         POST: create new resource
         PUT: create or update new resource (even if a parent path does not exist)
     */
+    const overwrite = req.method === HTTP_METHOD.PUT
     const realParentPath = dirName(space.realPath)
 
-    if (req.method === HTTP_METHOD.POST) {
+    if (!overwrite) {
       if (await isPathExists(space.realPath)) {
         throw new FileError(HttpStatus.BAD_REQUEST, 'Resource already exists')
       }
@@ -198,14 +200,31 @@ export class FilesManager {
     const basePath = realParentPath + path.sep
 
     for await (const part of req.files()) {
-      // part.filename may contain a path like foo/bar.txt.
+      // part.filename may contain a path like foo/bar.txt
       const dstFile = path.resolve(basePath, part.filename)
       // prevent path traversal
       if (!dstFile.startsWith(basePath)) {
         throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
       }
-      // make dir in space
+
       const dstDir = dirName(dstFile)
+
+      if (overwrite) {
+        // prevent errors when an uploaded file would replace a directory with the same name
+        // only applies in `overwrite` cases
+        if ((await isPathExists(dstFile)) && (await isPathIsDir(dstFile))) {
+          // If a directory already exists at the destination path, delete it to allow overwriting with the uploaded file
+          const dstUrl = path.join(path.dirname(space.url), part.filename)
+          const dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
+          await this.delete(user, dstSpace)
+        } else if ((await isPathExists(dstDir)) && !(await isPathIsDir(dstDir))) {
+          // If the destination's parent exists but is a file, remove it so we can create the directory
+          const dstUrl = path.join(path.dirname(space.url), path.dirname(part.filename))
+          const dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
+          await this.delete(user, dstSpace)
+        }
+      }
+      // make dir in space
       if (!(await isPathExists(dstDir))) {
         await makeDir(dstDir, true)
       }
@@ -215,7 +234,7 @@ export class FilesManager {
       if (!ok) throw new LockConflict(fileLock, 'Conflicting lock')
       // do
       try {
-        await pipeline(part.file, fs.createWriteStream(dstFile, { highWaterMark: DEFAULT_HIGH_WATER_MARK }))
+        await writeFromStream(dstFile, part.file)
       } finally {
         await this.filesLockManager.removeLock(fileLock.key)
       }

@@ -7,6 +7,7 @@
 import { HttpService } from '@nestjs/axios'
 import { Test, TestingModule } from '@nestjs/testing'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
+import { SpacesManager } from '../../spaces/services/spaces-manager.service'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesManager } from './files-manager.service'
 import { FilesQueries } from './files-queries.service'
@@ -19,6 +20,7 @@ describe(FilesManager.name, () => {
       providers: [
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
         { provide: FilesLockManager, useValue: {} },
+        { provide: SpacesManager, useValue: {} },
         {
           provide: HttpService,
           useValue: {}

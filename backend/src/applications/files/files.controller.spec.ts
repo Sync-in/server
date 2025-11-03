@@ -103,10 +103,10 @@ describe(FilesController.name, () => {
       expect(filesMethodsMock.make).toHaveBeenCalledWith(fakeUser, fakeSpace, dto)
     })
 
-    it('upload() should call filesMethods.upload(req, res)', async () => {
-      await filesController.uploadCreate(fakeReq, fakeRes)
+    it('upload() should call filesMethods.upload(req)', async () => {
+      await filesController.uploadCreate(fakeReq)
 
-      expect(filesMethodsMock.upload).toHaveBeenCalledWith(fakeReq, fakeRes)
+      expect(filesMethodsMock.upload).toHaveBeenCalledWith(fakeReq)
     })
 
     it('copy() should call filesMethods.copy(user, space, dto) and return its result', async () => {

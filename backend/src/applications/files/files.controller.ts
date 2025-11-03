@@ -74,13 +74,13 @@ export class FilesController {
   }
 
   @Post(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
-  async uploadCreate(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
-    return this.filesMethods.upload(req, res)
+  async uploadCreate(@Req() req: FastifySpaceRequest): Promise<void> {
+    return this.filesMethods.upload(req)
   }
 
   @Put(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
-  async uploadOverwrite(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
-    return this.filesMethods.upload(req, res)
+  async uploadOverwrite(@Req() req: FastifySpaceRequest): Promise<void> {
+    return this.filesMethods.upload(req)
   }
 
   @Copy(`${FILES_ROUTE.OPERATION}/*`)

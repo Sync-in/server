@@ -463,6 +463,7 @@ export class WebDAVMethods {
 
   private handleError(req: FastifyDAVRequest, res: FastifyReply, e: any, toUrl?: string) {
     this.logger.error(`Unable to ${req.method} ${req.dav.url}${toUrl ? ` -> ${toUrl}` : ''} : ${e.message}`)
+    // Remove the last part to avoid exposing the path
     const errorMsg = e.message.split(',')[0]
     if (e instanceof LockConflict) {
       return DAV_ERROR_RES(HttpStatus.LOCKED, PRECONDITION.LOCK_CONFLICT, res, e.lock.davLock?.lockroot || e.lock.dbFilePath)
