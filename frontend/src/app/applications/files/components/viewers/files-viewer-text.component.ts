@@ -6,7 +6,7 @@
 
 import { CodeEditor } from '@acrodata/code-editor'
 import { HttpClient } from '@angular/common/http'
-import { Component, inject, input, OnDestroy, OnInit, signal, ViewEncapsulation } from '@angular/core'
+import { Component, inject, input, linkedSignal, OnDestroy, OnInit, signal, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
@@ -37,7 +37,8 @@ import { FilesUploadService } from '../../services/files-upload.service'
 export class FilesViewerTextComponent implements OnInit, OnDestroy {
   currentHeight = input<number>()
   file = input<FileModel>()
-  isReadonly = signal(true)
+  mode = input<'view' | 'edit'>('view')
+  isReadonly = linkedSignal(() => this.mode() === 'view')
   isReadable = signal(false)
   isModified = signal(false)
   protected openSearchPanel = openSearchPanel
