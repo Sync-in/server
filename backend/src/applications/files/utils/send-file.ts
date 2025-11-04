@@ -23,7 +23,7 @@ export class SendFile {
       etag: true,
       dotfiles: 'allow',
       lastModified: true,
-      cacheControl: false,
+      cacheControl: true,
       index: false,
       highWaterMark: DEFAULT_HIGH_WATER_MARK
     }
