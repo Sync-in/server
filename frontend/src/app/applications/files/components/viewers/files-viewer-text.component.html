@@ -8,7 +8,7 @@
   <div class="app-top-menu">
     <button
       (click)="toggleReadonly()"
-      [tooltip]="'Read-only' | translate:locale.language"
+      [tooltip]="(isReadonly() ? 'Read-only' : 'Read-write') | translate:locale.language"
       [adaptivePosition]="true"
       container="body"
       class="d-none d-sm-block btn btn-sm btn-secondary me-1"
@@ -40,7 +40,7 @@
     [languages]="languages"
     [language]="currentLanguage"
     [(ngModel)]="content"
-    (change)="isModified.set(true)"
+    (change)="contentChange()"
     [theme]="currentTheme"
     [readonly]="isReadonly()"
     [lineWrapping]="true" />

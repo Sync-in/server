@@ -12,6 +12,7 @@ import { lastValueFrom, Observable } from 'rxjs'
 import { filter, tap } from 'rxjs/operators'
 import { supportUploadDirectory } from '../../../common/utils/functions'
 import { FileUpload } from '../interfaces/file-upload.interface'
+import { FileModel } from '../models/file.model'
 import { FilesTasksService } from './files-tasks.service'
 import { FilesService } from './files.service'
 
@@ -62,6 +63,14 @@ export class FilesUploadService {
     } else {
       this.addFiles(ev.dataTransfer.files, overwrite).catch(console.error)
     }
+  }
+
+  uploadOneFile(file: FileModel, content: string, overwrite: boolean) {
+    const url = `${API_FILES_OPERATION_UPLOAD}/${file.path}`
+    const fileContent = new File([new Blob([content])], file.name.normalize(), { type: file.mime.replace('-', '/') })
+    const formData = new FormData()
+    formData.append('file', fileContent)
+    return this.http.request<void>(overwrite ? 'put' : 'post', url, { body: formData })
   }
 
   private uploadFiles(url: string, form: FormData, overwrite: boolean) {

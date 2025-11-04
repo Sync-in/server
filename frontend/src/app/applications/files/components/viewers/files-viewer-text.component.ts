@@ -5,7 +5,7 @@
  */
 
 import { CodeEditor } from '@acrodata/code-editor'
-import { HttpClient } from '@angular/common/http'
+import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { Component, inject, input, linkedSignal, OnDestroy, OnInit, signal, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LanguageDescription } from '@codemirror/language'
@@ -41,28 +41,19 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   isReadonly = linkedSignal(() => this.mode() === 'view')
   isReadable = signal(false)
   isModified = signal(false)
-  protected openSearchPanel = openSearchPanel
+  protected readonly openSearchPanel = openSearchPanel
   protected content: string
   protected currentLanguage = undefined
   protected readonly languages: LanguageDescription[] = languages
   protected currentTheme: any = 'light'
   protected readonly icons = { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass }
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private isContentReady = false
   private readonly layout = inject(LayoutService)
   private readonly http = inject(HttpClient)
   private readonly filesUpload = inject(FilesUploadService)
   private subscription = this.layout.switchTheme.subscribe((layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light'))
   private readonly maxSize = 5242880 // 5MB
-
-  toggleReadonly() {
-    this.isReadonly.update((value) => !value)
-  }
-
-  async save() {
-    const file = new File([new Blob([this.content])], this.file().name, { type: 'text/plain' })
-    await this.filesUpload.addFiles([file], true)
-    this.isModified.set(false)
-  }
 
   ngOnInit() {
     const language: LanguageDescription = LanguageDescription.matchFilename(languages, this.file().name)
@@ -73,6 +64,26 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
     } else {
       this.isReadable.set(false)
       this.content = this.layout.translateString('This file contains binary data that can not be read')
+    }
+  }
+
+  toggleReadonly() {
+    this.isReadonly.update((value) => !value)
+  }
+
+  save() {
+    this.filesUpload.uploadOneFile(this.file(), this.content, true).subscribe({
+      next: () => this.isModified.set(false),
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Unable to save document', e.error.message)
+    })
+  }
+
+  contentChange() {
+    // Ignore first call
+    if (this.isContentReady) {
+      this.isModified.set(true)
+    } else {
+      this.isContentReady = true
     }
   }
 
