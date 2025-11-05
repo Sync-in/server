@@ -264,17 +264,17 @@ export class AuthMethodLdapService implements AuthMethod {
     // Build a safe LDAP filter to search for a user.
     // Important: - Values passed to EqualityFilter are auto-escaped by ldapts
     //            - extraFilter is appended as-is (assumed trusted configuration)
-    // Output: (&(|(userPrincipalName=john.doe@sync-in.com)(sAMAccountName=john.doe)(uid=john.doe))(*extraFilter*))
+    // Output: (&(|(userPrincipalName=john.doe@sync-in.com)(sAMAccountName=john.doe)(cn=john.doe))(*extraFilter*))
 
     // Handle the case where the sAMAccountName is provided in domain-qualified format (e.g., SYNC_IN\\user)
     // Note: sAMAccountName is always stored without the domain in Active Directory.
-    const uid = this.dbLogin(login)
+    const dbLogin = this.dbLogin(login)
 
     const or = new OrFilter({
       filters: [
         new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.UPN, value: login }),
-        new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.SAM, value: uid }),
-        new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.UID, value: uid })
+        new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.SAM, value: dbLogin }),
+        new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.CN, value: dbLogin })
       ]
     })
 
