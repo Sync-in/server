@@ -24,6 +24,7 @@ export class SendFile {
       dotfiles: 'allow',
       lastModified: true,
       cacheControl: true,
+      maxAge: 0,
       index: false,
       highWaterMark: DEFAULT_HIGH_WATER_MARK
     }
