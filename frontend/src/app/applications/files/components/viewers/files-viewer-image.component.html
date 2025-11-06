@@ -4,7 +4,7 @@
   ~ See the LICENSE file for licensing details
   -->
 
-<div [style.height.px]="currentHeight()">
+<div>
   <div class="app-top-menu d-flex justify-content-between">
     <div class="d-flex">
       <button
@@ -55,9 +55,12 @@
       <fa-icon [icon]="icons.faInfo"></fa-icon>
     </button>
   </div>
-  <div class="d-flex justify-content-center" [style.height]="`calc(${currentHeight()}px - 40px)`">
-  <img #image (load)="onImageLoad()" [src]="file().dataUrl" [style.max-height]="`calc(${currentHeight()}px - 40px)`" alt="" class="img-fluid align-self-center" />
-    <div class="info-box position-absolute end-0 bottom-0" [class.d-none]="!isInfoboxOpen()">
+  <div class="app-viewer-image" [style.height.px]="currentHeightWithOffset()">
+  <img #image
+       (load)="onImageLoad()"
+       [src]="file().dataUrl" [style.max-height.px]="currentHeightWithOffset()"
+       alt="" />
+    <div class="info-box" [class.d-none]="!isInfoboxOpen()">
       {{ file().mime }}
       {{ imageResolution() }}
       {{ file().hSize }}

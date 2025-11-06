@@ -363,6 +363,26 @@
   border: none;
 }
 
+.app-viewer-image {
+  display: flex;
+  justify-content: center;
+  background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
+
+  img {
+    @extend .img-fluid;
+    align-self: center;
+  }
+
+  .info-box {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    text-shadow: 1px 1px 2px #000,
+    0 0 1em #fff,
+    0 0 0.2em #fff;
+  }
+}
+
 .app-comment {
   textarea {
     padding: .15rem .3rem;
