@@ -724,7 +724,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private openViewerDialog(mode: 'view' | 'edit') {
-    this.filesService.openViewerDialog(mode, this.selection[0]).catch(console.error)
+    this.filesService.openViewerDialog(mode, this.selection[0], this.files).catch(console.error)
   }
 
   private focusOn(selectName: string) {

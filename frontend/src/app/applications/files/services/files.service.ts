@@ -225,7 +225,7 @@ export class FilesService {
     })
   }
 
-  async openViewerDialog(mode: 'view' | 'edit', currentFile: FileModel) {
+  async openViewerDialog(mode: 'view' | 'edit', currentFile: FileModel, directoryFiles: FileModel[]) {
     this.http.head(currentFile.dataUrl).subscribe({
       next: async () => {
         let shortMime: string
@@ -238,7 +238,12 @@ export class FilesService {
         }
         this.layout.openDialog(FilesViewerDialogComponent, 'full', {
           id: currentFile.id,
-          initialState: { currentFile: currentFile, mode: mode, shortMime: shortMime } as FilesViewerDialogComponent
+          initialState: {
+            currentFile: currentFile,
+            directoryFiles: directoryFiles,
+            mode: mode,
+            shortMime: shortMime
+          } satisfies Partial<FilesViewerDialogComponent>
         })
       },
       error: (err: HttpErrorResponse) => {
