@@ -73,8 +73,26 @@ export class LayoutService {
     map((e: any) => (e.matches ? themeDark : themeLight))
   )
   // Modal section
-  private modalIDS: (number | string)[] = []
-  private readonly dialogConfig: ModalOptions = { animated: true, keyboard: true, backdrop: true, ignoreBackdropClick: true }
+  private modalIDS = new Set<number | string>()
+  private readonly dialogConfig: ModalOptions = {
+    animated: true,
+    keyboard: false,
+    backdrop: true,
+    focus: true,
+    ignoreBackdropClick: true,
+    closeInterceptor: () => {
+      if (this.bsModal['lastDismissReason'] !== 'browser-back-navigation-clicked') {
+        // allow to close for other cases
+        return Promise.resolve()
+      }
+      // avoid browser navigation when a modal is open
+      if (this.atLeastOneModalOpen()) {
+        // back to initial route
+        history.forward()
+      }
+      return Promise.reject('blocked-by-interceptor')
+    }
+  }
 
   constructor() {
     setTheme('bs5')
@@ -129,19 +147,14 @@ export class LayoutService {
       return this.restoreDialog(componentStates.id)
     }
     const modalRef = this.bsModal.show(dialog, Object.assign(componentStates, { ...this.dialogConfig, ...override }, { class: dialogClass }))
-    if (modalRef.id && this.modalIDS.indexOf(modalRef.id) === -1) {
-      this.modalIDS.push(modalRef.id)
-    }
+    this.modalIDS.add(modalRef.id)
     return modalRef
   }
 
   minimizeDialog(modalID: any, element: { name: string; mimeUrl: string }): BsModalRef<unknown> {
     const modal = this.getModal(modalID)
     if (modal) {
-      this.bsModal['_renderer'].setAttribute(modal['instance']._element.nativeElement, 'aria-hidden', 'true')
-      this.bsModal['_renderer'].removeClass(modal['instance']._element.nativeElement, 'show')
-      setTimeout(() => this.bsModal['_renderer'].setStyle(modal['instance']._element.nativeElement, 'display', 'none'), 100)
-
+      this.closeModalWithEffect(modal)
       if (!this.minimizedWindows.getValue().find((m: AppWindow) => m.id === modalID)) {
         this.minimizedWindows.next([...this.minimizedWindows.getValue(), { id: modalID, element }])
       }
@@ -152,36 +165,40 @@ export class LayoutService {
   restoreDialog(modalID: any): BsModalRef<unknown> {
     const modal: BsModalRef<unknown> = this.getModal(modalID)
     if (modal) {
-      this.bsModal['_renderer'].setAttribute(modal['instance']._element.nativeElement, 'aria-hidden', 'false')
-      this.bsModal['_renderer'].setStyle(modal['instance']._element.nativeElement, 'display', 'block')
-      setTimeout(() => {
-        this.bsModal['_renderer'].addClass(modal['instance']._element.nativeElement, 'show')
-      }, 100)
+      this.openModalWithEffect(modal)
+      this.minimizedWindows.next(this.minimizedWindows.getValue().filter((m: AppWindow) => m.id !== modalID))
     }
     return modal
   }
 
-  closeDialog(delay: number | null = null, id: any = null, all = false) {
+  closeDialog(delay: number | null = null, id: number | string = null, all = false) {
     if (all) {
       this.bsModal.hide()
-      this.modalIDS = []
-    } else {
-      if (id) {
-        this.modalIDS = this.modalIDS.filter((mid) => mid !== id)
-      } else {
-        id = this.modalIDS.pop()
-      }
-      if (delay) {
-        setTimeout(() => this.bsModal.hide(id), delay)
-      } else {
-        this.bsModal.hide(id)
-      }
-      this.minimizedWindows.next(this.minimizedWindows.getValue().filter((m) => m.id !== id))
+      this.modalIDS.clear()
+      this.minimizedWindows.next([])
+      return
     }
-  }
-
-  getModal(modalID: any): BsModalRef {
-    return this.bsModal['loaders'].find((loader: any) => loader.instance?.config.id === modalID)
+    if (!id) {
+      let last: string | number
+      for (const value of this.modalIDS) {
+        last = value
+      }
+      if (last !== undefined) {
+        id = last
+      } else {
+        console.warn('Last modal id not found')
+        return
+      }
+    }
+    this.modalIDS.delete(id)
+    const modal: BsModalRef<unknown> = this.getModal(id)
+    if (!modal) return
+    if (delay) {
+      setTimeout(() => this.closeModalWithEffect(modal, true), delay)
+    } else {
+      this.closeModalWithEffect(modal, true)
+    }
+    this.minimizedWindows.next(this.minimizedWindows.getValue().filter((m) => m.id !== id))
   }
 
   openContextMenu(event: any, component: ContextMenuComponent<any>) {
@@ -267,6 +284,37 @@ export class LayoutService {
   clean() {
     this.toggleRSideBar(false)
     this.closeDialog(null, null, true)
+  }
+
+  private openModalWithEffect(modal: BsModalRef<unknown>) {
+    this.bsModal['_renderer'].setAttribute(modal['instance']._element.nativeElement, 'aria-hidden', 'false')
+    this.bsModal['_renderer'].setStyle(modal['instance']._element.nativeElement, 'display', 'block')
+    setTimeout(() => {
+      this.bsModal['_renderer'].addClass(modal['instance']._element.nativeElement, 'show')
+    }, 100)
+  }
+
+  private closeModalWithEffect(modal: BsModalRef<unknown>, hide = false) {
+    this.bsModal['_renderer'].setAttribute(modal['instance']._element.nativeElement, 'aria-hidden', 'true')
+    this.bsModal['_renderer'].removeClass(modal['instance']._element.nativeElement, 'show')
+    setTimeout(() => this.bsModal['_renderer'].setStyle(modal['instance']._element.nativeElement, 'display', 'none'), 500)
+    if (hide) {
+      this.bsModal.hide(modal.id)
+    }
+  }
+
+  private getModal(modalID: any): BsModalRef {
+    const modal = this.bsModal['loaders'].find((loader: any) => loader.instance?.config.id === modalID)
+    if (modal) {
+      modal.id = modalID
+      return modal
+    }
+    console.warn(`Modal ${modalID} not found`)
+    return null
+  }
+
+  private atLeastOneModalOpen(): boolean {
+    return this.modalIDS.size - this.minimizedWindows.getValue().length > 0
   }
 
   private setTheme(theme: string) {

@@ -85,3 +85,18 @@
   border-bottom-left-radius: var(--bs-modal-inner-border-radius);
   border-bottom-right-radius: var(--bs-modal-inner-border-radius);
 }
+
+/* Initial state (before opening) */
+.modal.fade .modal-dialog {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.95);
+  transition:
+          transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 0.3s ease-out;
+}
+
+/* Final state (modal visible) */
+.modal.show .modal-dialog {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
