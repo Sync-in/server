@@ -41,7 +41,7 @@
     </button>
     <button
       btnCheckbox
-      [ngModel]="this.isSearchPanelOpen()"
+      [ngModel]="isSearchPanelOpen"
       (ngModelChange)="toggleSearch()"
       [tooltip]="'Search' | translate:locale.language"
       container="body"

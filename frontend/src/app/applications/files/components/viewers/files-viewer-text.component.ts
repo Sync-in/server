@@ -6,7 +6,7 @@
 
 import { CodeEditor } from '@acrodata/code-editor'
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Component, HostListener, inject, input, linkedSignal, OnDestroy, OnInit, signal, ViewChild, ViewEncapsulation } from '@angular/core'
+import { Component, HostListener, inject, input, linkedSignal, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
@@ -55,7 +55,7 @@ import { FilesUploadService } from '../../services/files-upload.service'
   templateUrl: 'files-viewer-text.component.html'
 })
 export class FilesViewerTextComponent implements OnInit, OnDestroy {
-  @ViewChild('editor') editor: CodeEditor
+  editor = viewChild<CodeEditor>('editor')
   currentHeight = input<number>()
   file = input<FileModel>()
   mode = input<'view' | 'edit'>('view')
@@ -146,11 +146,11 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   }
 
   toggleSearch() {
-    this.isSearchPanelOpen.set(!this.isSearchPanelOpen())
+    this.isSearchPanelOpen.update((value) => !value)
     if (this.isSearchPanelOpen()) {
-      openSearchPanel(this.editor.view)
+      openSearchPanel(this.editor().view)
     } else {
-      closeSearchPanel(this.editor.view)
+      closeSearchPanel(this.editor().view)
     }
   }
 

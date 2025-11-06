@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, inject, Input, OnDestroy, OnInit } from '@angular/core'
+import { Component, computed, inject, Input, OnDestroy, OnInit } from '@angular/core'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
@@ -25,6 +25,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) mode: 'view' | 'edit'
   @Input({ required: true }) shortMime: string
   protected currentHeight: number
+  protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
   private readonly layout = inject(LayoutService)
   private readonly subscription: Subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
   private readonly offsetTop = 42
