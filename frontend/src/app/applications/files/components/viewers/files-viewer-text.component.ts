@@ -6,14 +6,15 @@
 
 import { CodeEditor } from '@acrodata/code-editor'
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, input, linkedSignal, OnDestroy, OnInit, signal, ViewEncapsulation } from '@angular/core'
+import { Component, HostListener, inject, input, linkedSignal, OnDestroy, OnInit, signal, ViewChild, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
-import { openSearchPanel } from '@codemirror/search'
+import { closeSearchPanel, openSearchPanel } from '@codemirror/search'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
+import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { themeDark } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -23,37 +24,71 @@ import { FilesUploadService } from '../../services/files-upload.service'
 @Component({
   selector: 'app-files-viewer-text',
   encapsulation: ViewEncapsulation.None,
-  imports: [CodeEditor, TooltipModule, FormsModule, FaIconComponent, L10nTranslatePipe],
+  imports: [CodeEditor, TooltipModule, FormsModule, FaIconComponent, L10nTranslatePipe, ButtonCheckboxDirective],
   styles: [
     `
       .code-editor {
         height: calc(100% - 40px);
-        font-size: 0.75rem;
+        font-size: 0.8rem;
       }
     `
   ],
   templateUrl: 'files-viewer-text.component.html'
 })
 export class FilesViewerTextComponent implements OnInit, OnDestroy {
+  @ViewChild('editor') editor: CodeEditor
   currentHeight = input<number>()
   file = input<FileModel>()
   mode = input<'view' | 'edit'>('view')
   isReadonly = linkedSignal(() => this.mode() === 'view')
   isReadable = signal(false)
   isModified = signal(false)
-  protected readonly openSearchPanel = openSearchPanel
   protected content: string
   protected currentLanguage = undefined
   protected readonly languages: LanguageDescription[] = languages
   protected currentTheme: any = 'light'
   protected readonly icons = { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass }
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected isSearchPanelOpen = false
   private isContentReady = false
   private readonly layout = inject(LayoutService)
   private readonly http = inject(HttpClient)
   private readonly filesUpload = inject(FilesUploadService)
   private subscription = this.layout.switchTheme.subscribe((layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light'))
   private readonly maxSize = 5242880 // 5MB
+
+  @HostListener('document:keydown', ['$event'])
+  onKeyDown(event: KeyboardEvent) {
+    // ESC
+    if (event.key === 'Escape' || event.key === 'Esc') {
+      event.stopPropagation()
+      event.preventDefault()
+      if (this.isSearchPanelOpen) {
+        this.toggleSearch()
+      } else if (!this.isModified()) {
+        if (this.isModified()) {
+          // show dialog alert
+        } else {
+          this.layout.closeDialog()
+        }
+      }
+      return
+    }
+    // Ctrl/Cmd+S | Ctrl/Cmd+F
+    if (event.ctrlKey || event.metaKey) {
+      switch (event.key.toLowerCase()) {
+        case 's':
+          event.preventDefault()
+          this.save()
+          return
+        case 'f':
+          event.preventDefault()
+          event.stopPropagation()
+          this.toggleSearch()
+          return
+      }
+    }
+  }
 
   ngOnInit() {
     const language: LanguageDescription = LanguageDescription.matchFilename(languages, this.file().name)
@@ -76,6 +111,15 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
       next: () => this.isModified.set(false),
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Unable to save document', e.error.message)
     })
+  }
+
+  toggleSearch() {
+    this.isSearchPanelOpen = !this.isSearchPanelOpen
+    if (this.isSearchPanelOpen) {
+      openSearchPanel(this.editor.view)
+    } else {
+      closeSearchPanel(this.editor.view)
+    }
   }
 
   contentChange() {

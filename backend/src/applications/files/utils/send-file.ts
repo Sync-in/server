@@ -44,7 +44,7 @@ export class SendFile {
   async stream(req: FastifyRequest, res: FastifyReply): Promise<StreamableFile> {
     // SendStream manages HEAD (no including body in response) & GET request (with body)
     // Ranges, LastModified, Etag are also handled
-    // Send function uses decodeURIComponent, but filePath is already decoded : we need to encode it again before passing it.
+    // Send function uses decodeURIComponent, but filePath is already decoded: we need to encode it again before passing it.
     const encodedFilePath = encodeURIComponent(this.filePath)
     this.fileName = encodeURIComponent(this.downloadName ? this.downloadName : fileName(this.filePath))
     const sendResult: SendResult = await send(req.raw, encodedFilePath, this.sendOptions)

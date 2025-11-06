@@ -26,10 +26,12 @@
       <fa-icon [icon]="icons.faFloppyDisk"></fa-icon>
     </button>
     <button
-      (click)="openSearchPanel(editor.view)"
+      btnCheckbox
+      [ngModel]="this.isSearchPanelOpen"
+      (ngModelChange)="toggleSearch()"
       [tooltip]="'Search' | translate:locale.language"
       container="body"
-      class="d-none d-sm-block btn btn-sm btn-secondary me-1"
+      class="d-none d-sm-block btn btn-sm btn-custom me-1"
       type="button"
       [disabled]="!isReadable()">
       <fa-icon [icon]="icons.faMagnifyingGlass"></fa-icon>

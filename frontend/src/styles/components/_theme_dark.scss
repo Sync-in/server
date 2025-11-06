@@ -612,4 +612,13 @@
   .avatar-img {
     background-color: darken($gray-light, 5%);
   }
+
+  // Code Mirror
+  .cm-panel.cm-search {
+    button[aria-label="close"] {
+      right: 10px !important;
+      font-size: 18px !important;
+      color: $gray-light !important;
+    }
+  }
 }
