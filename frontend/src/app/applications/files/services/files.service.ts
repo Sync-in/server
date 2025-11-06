@@ -232,12 +232,12 @@ export class FilesService {
         try {
           shortMime = await this.viewerHook(mode, currentFile)
         } catch {
-          // OnlyOffice not enabled, falling back to download
+          // OnlyOffice isn't enabled, falling back to download
           this.download(currentFile)
           return
         }
         this.layout.openDialog(FilesViewerDialogComponent, 'full', {
-          id: currentFile.id,
+          id: currentFile.id, // only used to manage the modal
           initialState: {
             currentFile: currentFile,
             directoryFiles: directoryFiles,

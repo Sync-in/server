@@ -26,11 +26,13 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) shortMime: string
   protected currentHeight: number
   protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
+  private openedFile: { id: string | number; name: string; mimeUrl: string }
   private readonly layout = inject(LayoutService)
   private readonly subscription: Subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
   private readonly offsetTop = 42
 
   ngOnInit() {
+    this.openedFile = { id: this.currentFile.id, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
     this.onResize()
   }
 
@@ -39,11 +41,11 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   }
 
   onClose() {
-    this.layout.closeDialog(null, this.currentFile.id)
+    this.layout.closeDialog(null, this.openedFile.id)
   }
 
   onMinimize() {
-    this.layout.minimizeDialog(this.currentFile.id, { name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl })
+    this.layout.minimizeDialog(this.openedFile.id, { name: this.openedFile.name, mimeUrl: this.openedFile.mimeUrl })
   }
 
   private onResize() {
