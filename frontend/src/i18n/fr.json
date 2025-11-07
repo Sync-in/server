@@ -599,5 +599,9 @@
   "Overwrite Existing File(s)": "Écraser le(s) fichier(s) existant(s)",
   "Replace Existing File": "Remplacer le fichier existant",
   "Do you want to replace the existing file(s)?": "Voulez-vous remplacer le(s) fichier(s) existant(s) ?",
-  "RenameFileToExisting": "Souhaitez-vous renommer <b>{{ old }}</b> en <b>{{ new }}</b> ?"
+  "RenameFileToExisting": "Souhaitez-vous renommer <b>{{ old }}</b> en <b>{{ new }}</b> ?",
+  "Save": "Enregistrer",
+  "Line Wrap": "Retour à la ligne automatique",
+  "Read-only": "Lecture seule",
+  "Read-write": "Lecture-écriture"
 }

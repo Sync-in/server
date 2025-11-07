@@ -599,5 +599,9 @@
   "Overwrite Existing File(s)": "既存のファイルを上書き",
   "Replace Existing File": "既存のファイルを置き換える",
   "Do you want to replace the existing file(s)?": "既存のファイルを置き換えますか？",
-  "RenameFileToExisting": "<b>{{ old }}</b> の名前を <b>{{ new }}</b> に変更しますか？"
+  "RenameFileToExisting": "<b>{{ old }}</b> の名前を <b>{{ new }}</b> に変更しますか？",
+  "Save": "保存",
+  "Line Wrap": "折り返し",
+  "Read-only": "読み取り専用",
+  "Read-write": "読み書き可能"
 }

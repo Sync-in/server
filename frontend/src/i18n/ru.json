@@ -599,5 +599,9 @@
   "Overwrite Existing File(s)": "Перезаписать существующие файл(ы)",
   "Replace Existing File": "Заменить существующий файл",
   "Do you want to replace the existing file(s)?": "Вы хотите заменить существующие файл(ы)?",
-  "RenameFileToExisting": "Переименовать <b>{{ old }}</b> в <b>{{ new }}</b>?"
+  "RenameFileToExisting": "Переименовать <b>{{ old }}</b> в <b>{{ new }}</b>?",
+  "Save": "Сохранить",
+  "Line Wrap": "Перенос строк",
+  "Read-only": "Только чтение",
+  "Read-write": "Чтение и запись"
 }

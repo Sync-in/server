@@ -599,5 +599,9 @@
   "Overwrite Existing File(s)": "Mevcut dosya(ları) üzerine yaz",
   "Replace Existing File": "Mevcut dosyayı değiştir",
   "Do you want to replace the existing file(s)?": "Mevcut dosya(ları) değiştirmek istiyor musunuz?",
-  "RenameFileToExisting": "<b>{{ old }}</b> dosyasını <b>{{ new }}</b> olarak yeniden adlandırmak istiyor musunuz?"
+  "RenameFileToExisting": "<b>{{ old }}</b> dosyasını <b>{{ new }}</b> olarak yeniden adlandırmak istiyor musunuz?",
+  "Save": "Kaydet",
+  "Line Wrap": "Satır kaydırma",
+  "Read-only": "Salt okunur",
+  "Read-write": "Okuma/Yazma"
 }

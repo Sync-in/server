@@ -599,5 +599,9 @@
   "Overwrite Existing File(s)": "기존 파일 덮어쓰기",
   "Replace Existing File": "기존 파일 교체",
   "Do you want to replace the existing file(s)?": "기존 파일을 교체하시겠습니까?",
-  "RenameFileToExisting": "<b>{{ old }}</b>의 이름을 <b>{{ new }}</b>(으)로 변경하시겠습니까?"
+  "RenameFileToExisting": "<b>{{ old }}</b>의 이름을 <b>{{ new }}</b>(으)로 변경하시겠습니까?",
+  "Save": "저장",
+  "Line Wrap": "자동 줄 바꿈",
+  "Read-only": "읽기 전용",
+  "Read-write": "읽기/쓰기"
 }

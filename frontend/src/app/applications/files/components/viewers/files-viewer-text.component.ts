@@ -29,7 +29,6 @@ import { FilesUploadService } from '../../services/files-upload.service'
     `
       .code-editor {
         height: calc(100% - 40px);
-        font-size: 0.8rem;
       }
 
       .cm-focused {
@@ -83,16 +82,13 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   onKeyDown(event: KeyboardEvent) {
     // ESC
     if (event.key === 'Escape' || event.key === 'Esc') {
-      event.stopPropagation()
       event.preventDefault()
-      if (this.isSearchPanelOpen) {
+      if (this.isSearchPanelOpen()) {
+        event.stopPropagation()
         this.toggleSearch()
-      } else if (!this.isModified()) {
-        if (this.isModified()) {
-          // show dialog alert
-        } else {
-          this.layout.closeDialog()
-        }
+      } else if (this.isModified()) {
+        event.stopPropagation()
+        // Show dialog alert
       }
       return
     }
@@ -126,8 +122,8 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
 
   toggleReadonly() {
     this.isReadonly.set(!this.isReadonly())
+    // Reset search state when open to enable/disable the replace function
     if (this.isSearchPanelOpen()) {
-      // reset search state when open to enable/disable the replace function
       setTimeout(() => {
         this.toggleSearch()
         this.toggleSearch()
@@ -168,8 +164,6 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    if (this.subscription) {
-      this.subscription.unsubscribe()
-    }
+    this.subscription.unsubscribe()
   }
 }
