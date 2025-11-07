@@ -4,66 +4,81 @@
   ~ See the LICENSE file for licensing details
   -->
 
-<div>
-  <div class="app-top-menu d-flex justify-content-between">
-    <div class="d-flex">
-      <button
-        (click)="previousImage()"
-        [tooltip]="'Previous' | translate:locale.language"
-        [adaptivePosition]="true"
-        container="body"
-        class="d-none d-sm-block btn btn-sm btn-custom me-1"
-        type="button">
-        <fa-icon [icon]="icons.faAngleLeft"></fa-icon>
-      </button>
-      <button
-        (click)="nextImage()"
-        [tooltip]="'Next' | translate:locale.language"
-        container="body"
-        class="d-none d-sm-block btn btn-sm btn-custom me-1"
-        type="button">
-        <fa-icon [icon]="icons.faAngleRight"></fa-icon>
-      </button>
-      @if (!isSlideshowActive()) {
-      <button
-        (click)="startSlideshow()"
-        [tooltip]="'Start slideshow' | translate:locale.language"
-        container="body"
-        class="d-none d-sm-block btn btn-sm btn-custom me-1"
-        type="button">
-        <fa-icon [icon]="icons.faPlay"></fa-icon>
-       </button>
-      } @else {
-      <button
-        (click)="stopSlideshow()"
-        [tooltip]="'Stop slideshow' | translate:locale.language"
-        container="body"
-        class="d-none d-sm-block btn btn-sm btn-custom me-1"
-        type="button">
-        <fa-icon [icon]="icons.faStop"></fa-icon>
-      </button>
-      }
-    </div>
-    <div>{{ imageIndex() + 1 }} of {{ imageCount() }}</div>
+<div class="app-top-menu d-flex justify-content-between">
+  <div class="d-flex">
     <button
-      btnCheckbox
-      [(ngModel)]="isInfoboxOpen"
-      [tooltip]="'Info' | translate:locale.language"
+      (click)="previousImage()"
+      [tooltip]="'Previous' | translate:locale.language"
+      [adaptivePosition]="true"
       container="body"
       class="d-none d-sm-block btn btn-sm btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faInfo"></fa-icon>
+      <fa-icon [icon]="icons.faAngleLeft"></fa-icon>
+    </button>
+    <button
+      (click)="nextImage()"
+      [tooltip]="'Next' | translate:locale.language"
+      container="body"
+      class="d-none d-sm-block btn btn-sm btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faAngleRight"></fa-icon>
+    </button>
+    @if (!isSlideshowActive()) {
+    <button
+      (click)="startSlideshow()"
+      [tooltip]="'Start slideshow' | translate:locale.language"
+      container="body"
+      class="d-none d-sm-block btn btn-sm btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faPlay"></fa-icon>
+     </button>
+    } @else {
+    <button
+      (click)="stopSlideshow()"
+      [tooltip]="'Stop slideshow' | translate:locale.language"
+      container="body"
+      class="d-none d-sm-block btn btn-sm btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faStop"></fa-icon>
+    </button>
+    }
+    <button
+      (click)="fullscreen()"
+      [tooltip]="'Fullscreen' | translate:locale.language"
+      container="body"
+      class="d-none d-sm-block btn btn-sm btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faExpand"></fa-icon>
     </button>
   </div>
-  <div class="app-viewer-image" [style.height.px]="currentHeightWithOffset()">
+  <div>{{ imageIndex() + 1 }} of {{ imageCount() }}</div>
+  <button
+    btnCheckbox
+    [(ngModel)]="isInfoboxOpen"
+    [tooltip]="'Infos' | translate:locale.language"
+    container="body"
+    class="d-none d-sm-block btn btn-sm btn-custom me-1"
+    type="button">
+    <fa-icon [icon]="icons.faInfo"></fa-icon>
+  </button>
+</div>
+<div class="app-viewer-image" [style.height.px]="currentHeightWithOffset()">
   <img #image
        (load)="onImageLoad()"
        [src]="file().dataUrl" [style.max-height.px]="currentHeightWithOffset()"
        alt="" />
-    <div class="info-box" [class.d-none]="!isInfoboxOpen()">
-      {{ file().mime }}
-      {{ imageResolution() }}
-      {{ file().hSize }}
+  <div class="info-box p-2 m-2 d-flex flex-column app-small-card rounded opacity-75" [class.d-none]="!isInfoboxOpen()">
+    <div class="d-flex mb-1">
+      <div class="d-flex col-sm fw-bold">{{ 'Type' | translate:locale.language }}</div>
+      <div>{{ file().mime }}</div>
+    </div>
+    <div class="d-flex mb-1">
+      <div class="d-flex col-sm fw-bold">{{ 'Dimensions' | translate:locale.language }}</div>
+      <div>{{ imageResolution() }}</div>
+    </div>
+    <div class="d-flex mb-1">
+      <div class="d-flex col-sm fw-bold">{{ 'Size' | translate:locale.language }}</div>
+      <div>{{ file().hSize }}</div>
     </div>
   </div>
 </div>

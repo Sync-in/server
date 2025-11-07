@@ -8,7 +8,7 @@ import { ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, i
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faAngleLeft, faAngleRight, faInfo, faPlay, faStop } from '@fortawesome/free-solid-svg-icons'
+import { faAngleLeft, faAngleRight, faExpand, faInfo, faPlay, faStop } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -31,7 +31,7 @@ export class FilesViewerImageComponent {
   protected imageCount = computed(() => this.directoryImages().length)
   protected imageIndex = computed(() => this.directoryImages().indexOf(this.file()))
   protected imageResolution = signal<string>('')
-  protected readonly icons = { faAngleLeft, faAngleRight, faInfo, faPlay, faStop }
+  protected readonly icons = { faAngleLeft, faAngleRight, faExpand, faInfo, faPlay, faStop }
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   private readonly slideDelay = 5000
   private destroyRef = inject(DestroyRef)
@@ -49,6 +49,10 @@ export class FilesViewerImageComponent {
 
   protected previousImage() {
     this.file.set(this.directoryImages()[(this.imageCount() + this.imageIndex() - 1) % this.imageCount()])
+  }
+
+  protected fullscreen() {
+    this.imageRef().nativeElement.requestFullscreen()
   }
 
   protected startSlideshow() {
