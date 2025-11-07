@@ -23,7 +23,7 @@ import { getTheme } from '../common/utils/functions'
 import { EVENT } from '../electron/constants/events'
 import { Electron } from '../electron/electron.service'
 import { BreadCrumbUrl } from './breadcrumb/breadcrumb.interfaces'
-import { AppWindow, TAB_GROUP, TabMenu, themeDark, themeLight } from './layout.interfaces'
+import { AppWindow, TAB_GROUP, TAB_MENU, TabMenu, themeDark, themeLight } from './layout.interfaces'
 
 declare const window: any
 
@@ -35,9 +35,9 @@ export class LayoutService {
   public switchTheme = new BehaviorSubject<string>(sessionStorage.getItem('themeMode') || getTheme())
   // Toggle Left sidebar tabs (1: open / 2: collapse / 3: toggle)
   public toggleLeftSideBar = new BehaviorSubject<number>(this.isSmallerMediumScreen() ? 2 : 1)
-  // Left sidebar : save user action
+  // Left sidebar: save user action
   public saveLeftSideBarIsOpen = new BehaviorSubject<boolean>(true)
-  // Left sidebar : get status
+  // Left sidebar: get status
   public leftSideBarIsOpen = new BehaviorSubject<boolean>(true)
   // Toggle Right sidebar show / hide
   public toggleRightSideBar = new Subject<boolean>()
@@ -73,25 +73,13 @@ export class LayoutService {
     map((e: any) => (e.matches ? themeDark : themeLight))
   )
   // Modal section
-  private modalIDS = new Set<number | string>()
+  private modalIds = new Set<number | string>()
   private readonly dialogConfig: ModalOptions = {
     animated: true,
-    keyboard: false,
+    keyboard: true,
     backdrop: true,
-    focus: true,
     ignoreBackdropClick: true,
-    closeInterceptor: () => {
-      if (this.bsModal['lastDismissReason'] !== 'browser-back-navigation-clicked') {
-        // allow to close for other cases
-        return Promise.resolve()
-      }
-      // avoid browser navigation when a modal is open
-      if (this.atLeastOneModalOpen()) {
-        // back to initial route
-        history.forward()
-      }
-      return Promise.reject('blocked-by-interceptor')
-    }
+    closeInterceptor: (): Promise<void> => this.closeModalInterceptor()
   }
 
   constructor() {
@@ -101,12 +89,15 @@ export class LayoutService {
     this.preferTheme.subscribe((theme) => this.setTheme(theme))
   }
 
-  showRSideBarTab(tabName: string | null = null, tabVisible = false) {
+  showRSideBarTab(tabName: TAB_MENU = null, tabVisible = false, delay: number = 0) {
     // show or collapse right sidebar
     if (tabVisible && this.rightSideBarIsOpen.getValue()) {
       this.rightSideBarSelectTab.next(tabName)
     } else {
       this.rightSideBarOpenAndShowTab.next(tabName)
+    }
+    if (delay > 0) {
+      setTimeout(() => this.hideRSideBarTab(tabName), delay)
     }
   }
 
@@ -141,32 +132,36 @@ export class LayoutService {
     this.setTheme(this.switchTheme.getValue() === themeLight ? themeDark : themeLight)
   }
 
-  openDialog(dialog: any, size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full', componentStates: any = {}, override: ModalOptions = {}): BsModalRef {
+  openDialog(dialog: any, size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full', componentState: any = {}, override: ModalOptions = {}): BsModalRef {
     const dialogClass = `modal-${size || 'sm'} modal-primary`
-    if (componentStates.id && this.minimizedWindows.getValue().find((w: AppWindow) => w.id === componentStates.id)) {
-      return this.restoreDialog(componentStates.id)
+    if (componentState.id && this.minimizedWindows.getValue().find((w: AppWindow) => w.id === componentState.id)) {
+      return this.restoreDialog(componentState.id)
     }
-    const modalRef = this.bsModal.show(dialog, Object.assign(componentStates, { ...this.dialogConfig, ...override }, { class: dialogClass }))
-    this.modalIDS.add(modalRef.id)
+    const state: ModalOptions = Object.assign(componentState, { ...this.dialogConfig, ...override }, { class: dialogClass })
+    const modalRef = this.bsModal.show(dialog, state)
+    this.modalIds.add(modalRef.id)
     return modalRef
   }
 
-  minimizeDialog(modalID: any, element: { name: string; mimeUrl: string }): BsModalRef<unknown> {
-    const modal = this.getModal(modalID)
+  minimizeDialog(modalId: any, element: { name: string; mimeUrl: string }): BsModalRef<unknown> {
+    const modal = this.getModal(modalId)
     if (modal) {
       this.closeModalWithEffect(modal)
-      if (!this.minimizedWindows.getValue().find((m: AppWindow) => m.id === modalID)) {
-        this.minimizedWindows.next([...this.minimizedWindows.getValue(), { id: modalID, element }])
+      if (!this.minimizedWindows.getValue().find((m: AppWindow) => m.id === modalId)) {
+        this.minimizedWindows.next([...this.minimizedWindows.getValue(), { id: modalId, element }])
+      }
+      if (this.minimizedWindows.getValue().length === 1) {
+        this.showRSideBarTab(TAB_MENU.WINDOWS, false, 3000)
       }
     }
     return modal
   }
 
-  restoreDialog(modalID: any): BsModalRef<unknown> {
-    const modal: BsModalRef<unknown> = this.getModal(modalID)
+  restoreDialog(modalId: any): BsModalRef<unknown> {
+    const modal: BsModalRef<unknown> = this.getModal(modalId)
     if (modal) {
       this.openModalWithEffect(modal)
-      this.minimizedWindows.next(this.minimizedWindows.getValue().filter((m: AppWindow) => m.id !== modalID))
+      this.minimizedWindows.next(this.minimizedWindows.getValue().filter((m: AppWindow) => m.id !== modalId))
     }
     return modal
   }
@@ -174,13 +169,15 @@ export class LayoutService {
   closeDialog(delay: number | null = null, id: number | string = null, all = false) {
     if (all) {
       this.bsModal.hide()
-      this.modalIDS.clear()
+      this.modalIds.clear()
       this.minimizedWindows.next([])
       return
     }
     if (!id) {
       let last: string | number
-      for (const value of this.modalIDS) {
+      const minimizedIds: (string | number)[] = this.minimizedWindows.getValue().map((w) => w.id)
+      for (const value of this.modalIds) {
+        if (minimizedIds.indexOf(value) > -1) continue
         last = value
       }
       if (last !== undefined) {
@@ -190,7 +187,7 @@ export class LayoutService {
         return
       }
     }
-    this.modalIDS.delete(id)
+    this.modalIds.delete(id)
     const modal: BsModalRef<unknown> = this.getModal(id)
     if (!modal) return
     if (delay) {
@@ -303,18 +300,37 @@ export class LayoutService {
     }
   }
 
-  private getModal(modalID: any): BsModalRef {
-    const modal = this.bsModal['loaders'].find((loader: any) => loader.instance?.config.id === modalID)
+  private closeModalInterceptor(): Promise<void> {
+    const reason = this.bsModal['lastDismissReason']
+    if (reason == 'browser-back-navigation-clicked') {
+      // Avoid browser navigation when a modal is open
+      if (this.atLeastOneModalOpen()) {
+        // Restore to initial route
+        history.forward()
+      }
+      return Promise.reject('blocked-by-interceptor')
+    } else if (reason === 'esc') {
+      // Manual closing to keep `modalIds` up to date
+      this.closeDialog()
+      return Promise.reject('blocked-by-interceptor')
+    } else {
+      // Allow closing in all other cases
+      return Promise.resolve()
+    }
+  }
+
+  private getModal(modalId: any): BsModalRef {
+    const modal: BsModalRef = this.bsModal['loaders'].find((loader: any) => loader.instance?.config.id === modalId)
     if (modal) {
-      modal.id = modalID
+      modal.id = modalId
       return modal
     }
-    console.warn(`Modal ${modalID} not found`)
+    console.warn(`Modal ${modalId} not found`)
     return null
   }
 
   private atLeastOneModalOpen(): boolean {
-    return this.modalIDS.size - this.minimizedWindows.getValue().length > 0
+    return this.modalIds.size - this.minimizedWindows.getValue().length > 0
   }
 
   private setTheme(theme: string) {
