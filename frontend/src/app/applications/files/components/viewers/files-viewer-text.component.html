@@ -23,15 +23,30 @@
       class="d-none d-sm-block btn btn-sm btn-secondary me-1"
       type="button"
       [disabled]="isReadonly() || !isModified()">
-      <fa-icon [icon]="icons.faFloppyDisk"></fa-icon>
+      @if (isSaving()) {
+        <fa-icon [icon]="icons.faSpinner" animation="spin"></fa-icon>
+      } @else {
+        <fa-icon [icon]="icons.faFloppyDisk"></fa-icon>
+      }
+    </button>
+
+    <button
+      btnCheckbox
+      [ngModel]="lineWrapping()"
+      (ngModelChange)="lineWrapping.set($event)"
+      [tooltip]="'Line Wrap' | translate:locale.language"
+      container="body"
+      class="d-none d-sm-block btn btn-sm btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faArrowsLeftRightToLine"></fa-icon>
     </button>
     <button
       btnCheckbox
-      [ngModel]="this.isSearchPanelOpen"
+      [ngModel]="this.isSearchPanelOpen()"
       (ngModelChange)="toggleSearch()"
       [tooltip]="'Search' | translate:locale.language"
       container="body"
-      class="d-none d-sm-block btn btn-sm btn-custom me-1"
+      class="d-none d-sm-block btn btn-sm btn-custom"
       type="button"
       [disabled]="!isReadable()">
       <fa-icon [icon]="icons.faMagnifyingGlass"></fa-icon>
@@ -39,11 +54,12 @@
   </div>
   <code-editor
     #editor
+    [autoFocus]="true"
     [languages]="languages"
     [language]="currentLanguage"
     [(ngModel)]="content"
     (change)="contentChange()"
     [theme]="currentTheme"
     [readonly]="isReadonly()"
-    [lineWrapping]="true" />
+    [lineWrapping]="lineWrapping()" />
 </div>

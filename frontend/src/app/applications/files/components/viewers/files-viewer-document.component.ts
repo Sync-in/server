@@ -17,6 +17,14 @@ import { OnlyOfficeComponent } from '../utils/only-office.component'
 @Component({
   selector: 'app-files-viewer-document',
   imports: [OnlyOfficeComponent],
+  styles: [
+    `
+      // fix onlyoffice iframe blinking when we hide and show via the windows manager
+      .doc-placeholder {
+        display: none !important;
+      }
+    `
+  ],
   template: `
     @if (documentConfig) {
       <div [style.height.px]="currentHeight()">

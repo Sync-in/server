@@ -135,6 +135,7 @@ export class FileModel implements File {
       const longMime = mimeArray[mimeArray.length - 1]
       const extension = this.name.split('.').pop().toLowerCase()
       this.shortMime = mimeArray[0]
+
       if (extension === 'pdf') {
         // uses pdfjs for reading and onlyoffice for writing, this test should be placed first
         this.shortMime = longMime
@@ -144,9 +145,6 @@ export class FileModel implements File {
         this.shortMime = 'document'
         this.isEditable = ONLY_OFFICE_EXTENSIONS.EDITABLE.has(extension)
         this.isViewable = this.isEditable || ONLY_OFFICE_EXTENSIONS.VIEWABLE.has(extension)
-      } else if (longMime === 'html') {
-        this.isViewable = true
-        this.isEditable = true
       } else if (extension === 'mp4') {
         this.isViewable = true
         this.shortMime = 'media'
@@ -164,6 +162,7 @@ export class FileModel implements File {
         this.isViewable = false
       } else if (!notViewableExtensions.has(extension)) {
         this.isViewable = true
+        this.isEditable = true
         this.shortMime = 'text'
       }
       return mime

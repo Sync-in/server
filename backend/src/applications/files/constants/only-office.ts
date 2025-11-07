@@ -34,10 +34,8 @@ export const ONLY_OFFICE_EXTENSIONS = {
     ['rtf', 'word'],
     ['stw', 'word'],
     ['sxw', 'word'],
-    ['txt', 'word'],
     ['wps', 'word'],
     ['wpt', 'word'],
-    ['xml', 'word'],
     ['md', 'word'],
 
     // CELL
@@ -107,7 +105,6 @@ export const ONLY_OFFICE_EXTENSIONS = {
     ['odt', 'word'],
     ['ott', 'word'],
     ['rtf', 'word'],
-    ['txt', 'word'],
     ['md', 'word'],
 
     // CELL
@@ -155,7 +152,6 @@ export const ONLY_OFFICE_CONVERT_EXTENSIONS = {
     'rtf',
     'stw',
     'sxw',
-    'txt',
     'wps',
     'wpt',
     'xps'

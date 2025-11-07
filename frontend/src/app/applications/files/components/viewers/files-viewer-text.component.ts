@@ -12,7 +12,7 @@ import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
 import { closeSearchPanel, openSearchPanel } from '@codemirror/search'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
+import { faArrowsLeftRightToLine, faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -31,6 +31,26 @@ import { FilesUploadService } from '../../services/files-upload.service'
         height: calc(100% - 40px);
         font-size: 0.8rem;
       }
+
+      .cm-focused {
+        outline: none !important;
+      }
+
+      .cm-panel.cm-search {
+        display: flex;
+        align-items: center;
+        text-wrap: nowrap;
+
+        label {
+          display: flex;
+          align-items: center;
+        }
+
+        button[aria-label='close'] {
+          right: 10px !important;
+          font-size: 18px !important;
+        }
+      }
     `
   ],
   templateUrl: 'files-viewer-text.component.html'
@@ -40,16 +60,18 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   currentHeight = input<number>()
   file = input<FileModel>()
   mode = input<'view' | 'edit'>('view')
-  isReadonly = linkedSignal(() => this.mode() === 'view')
-  isReadable = signal(false)
-  isModified = signal(false)
+  protected isReadonly = linkedSignal(() => this.mode() === 'view')
+  protected isReadable = signal(false)
+  protected isModified = signal(false)
+  protected isSaving = signal(false)
+  protected lineWrapping = signal(false)
   protected content: string
   protected currentLanguage = undefined
   protected readonly languages: LanguageDescription[] = languages
   protected currentTheme: any = 'light'
-  protected readonly icons = { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass }
+  protected readonly icons = { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass, faSpinner, faArrowsLeftRightToLine }
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected isSearchPanelOpen = false
+  protected isSearchPanelOpen = signal(false)
   private isContentReady = false
   private readonly layout = inject(LayoutService)
   private readonly http = inject(HttpClient)
@@ -103,19 +125,33 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   }
 
   toggleReadonly() {
-    this.isReadonly.update((value) => !value)
+    this.isReadonly.set(!this.isReadonly())
+    if (this.isSearchPanelOpen()) {
+      // reset search state when open to enable/disable the replace function
+      setTimeout(() => {
+        this.toggleSearch()
+        this.toggleSearch()
+      }, 100)
+    }
   }
 
   save() {
+    this.isSaving.set(true)
     this.filesUpload.uploadOneFile(this.file(), this.content, true).subscribe({
-      next: () => this.isModified.set(false),
-      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Unable to save document', e.error.message)
+      next: () => {
+        this.isModified.set(false)
+        this.isSaving.set(false)
+      },
+      error: (e: HttpErrorResponse) => {
+        this.isSaving.set(false)
+        this.layout.sendNotification('error', 'Unable to save document', e.error.message)
+      }
     })
   }
 
   toggleSearch() {
-    this.isSearchPanelOpen = !this.isSearchPanelOpen
-    if (this.isSearchPanelOpen) {
+    this.isSearchPanelOpen.set(!this.isSearchPanelOpen())
+    if (this.isSearchPanelOpen()) {
       openSearchPanel(this.editor.view)
     } else {
       closeSearchPanel(this.editor.view)
