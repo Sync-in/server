@@ -8,16 +8,17 @@
   box-shadow: none !important;
 }
 
-.btn-custom {
-  @extend .btn;
-  background-color: $secondary;
-  border-color: darken($secondary, 4%);
-  margin-right: 0.2rem;
-
+.btn-secondary {
   &:hover {
-    background-color: darken($secondary, 8%);
-    border-color: darken($secondary, 8%);
+    background-color: darken($secondary, 10%);
+    border-color: darken($secondary, 10%);
   }
+}
+
+.btn-custom {
+  @extend .btn-secondary;
+  background-color: $secondary;
+  margin-right: 0.2rem;
 
   &.active {
     background-color: $primary !important;
