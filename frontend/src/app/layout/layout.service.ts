@@ -11,7 +11,7 @@ import { FaConfig } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { ContextMenuComponent, ContextMenuService } from '@perfectmemory/ngx-contextmenu'
 import { L10nTranslationService } from 'angular-l10n'
-import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal'
+import { BsModalRef, BsModalService, ModalContainerComponent, ModalOptions } from 'ngx-bootstrap/modal'
 import { setTheme } from 'ngx-bootstrap/utils'
 import { ActiveToast, ToastrService } from 'ngx-toastr'
 import { BehaviorSubject, fromEvent, mergeWith, Observable, Subject } from 'rxjs'
@@ -26,6 +26,10 @@ import { BreadCrumbUrl } from './breadcrumb/breadcrumb.interfaces'
 import { AppWindow, TAB_GROUP, TAB_MENU, TabMenu, themeDark, themeLight } from './layout.interfaces'
 
 declare const window: any
+
+interface ModalComponent extends ModalContainerComponent {
+  id: string | number
+}
 
 @Injectable({ providedIn: 'root' })
 export class LayoutService {
@@ -52,7 +56,10 @@ export class LayoutService {
   public breadcrumbNav = new BehaviorSubject<BreadCrumbUrl>({ url: '' })
   // Navigation breadcrumb icon
   public breadcrumbIcon = new BehaviorSubject<IconDefinition>(null)
-  public minimizedWindows = new BehaviorSubject<AppWindow[]>([])
+  // Modal section
+  public windows = new BehaviorSubject<AppWindow[]>([]) // minimized modals
+  public modalRefs = new Map<number | string, BsModalRef>()
+  // Services
   private readonly title = inject(Title)
   private readonly ngZone = inject(NgZone)
   private readonly translation = inject(L10nTranslationService)
@@ -72,9 +79,7 @@ export class LayoutService {
   private preferTheme = fromEvent(window.matchMedia('(prefers-color-scheme: dark)'), 'change').pipe(
     map((e: any) => (e.matches ? themeDark : themeLight))
   )
-  // Modal section
-  private modalIds = new Set<number | string>()
-  private readonly dialogConfig: ModalOptions = {
+  private readonly modalOptions: ModalOptions = {
     animated: true,
     keyboard: true,
     backdrop: true,
@@ -134,34 +139,35 @@ export class LayoutService {
 
   openDialog(dialog: any, size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full', componentState: any = {}, override: ModalOptions = {}): BsModalRef {
     const dialogClass = `modal-${size || 'sm'} modal-primary`
-    if (componentState.id && this.minimizedWindows.getValue().find((w: AppWindow) => w.id === componentState.id)) {
-      return this.restoreDialog(componentState.id)
+    if (componentState.id && this.windows.getValue().find((w: AppWindow) => w.id === componentState.id)) {
+      this.restoreDialog(componentState.id)
+      return this.modalRefs.get(componentState.id)
     }
-    const state: ModalOptions = Object.assign(componentState, { ...this.dialogConfig, ...override }, { class: dialogClass })
+    const state: ModalOptions = Object.assign(componentState, { ...this.modalOptions, ...override }, { class: dialogClass })
     const modalRef = this.bsModal.show(dialog, state)
-    this.modalIds.add(modalRef.id)
+    this.modalRefs.set(modalRef.id, modalRef)
     return modalRef
   }
 
-  minimizeDialog(modalId: any, element: { name: string; mimeUrl: string }): BsModalRef<unknown> {
-    const modal = this.getModal(modalId)
+  minimizeDialog(modalId: any, element: { name: string; mimeUrl: string }): ModalComponent {
+    const modal = this.getModalComponent(modalId)
     if (modal) {
       this.closeModalWithEffect(modal)
-      if (!this.minimizedWindows.getValue().find((m: AppWindow) => m.id === modalId)) {
-        this.minimizedWindows.next([...this.minimizedWindows.getValue(), { id: modalId, element }])
+      if (!this.windows.getValue().find((m: AppWindow) => m.id === modalId)) {
+        this.windows.next([...this.windows.getValue(), { id: modalId, element }])
       }
-      if (this.minimizedWindows.getValue().length === 1) {
+      if (this.windows.getValue().length === 1) {
         this.showRSideBarTab(TAB_MENU.WINDOWS, false, 3000)
       }
     }
     return modal
   }
 
-  restoreDialog(modalId: any): BsModalRef<unknown> {
-    const modal: BsModalRef<unknown> = this.getModal(modalId)
+  restoreDialog(modalId: any): ModalComponent {
+    const modal = this.getModalComponent(modalId)
     if (modal) {
       this.openModalWithEffect(modal)
-      this.minimizedWindows.next(this.minimizedWindows.getValue().filter((m: AppWindow) => m.id !== modalId))
+      this.windows.next(this.windows.getValue().filter((m: AppWindow) => m.id !== modalId))
     }
     return modal
   }
@@ -169,14 +175,14 @@ export class LayoutService {
   closeDialog(delay: number | null = null, id: number | string = null, all = false) {
     if (all) {
       this.bsModal.hide()
-      this.modalIds.clear()
-      this.minimizedWindows.next([])
+      this.modalRefs.clear()
+      this.windows.next([])
       return
     }
     if (!id) {
       let last: string | number
-      const minimizedIds: (string | number)[] = this.minimizedWindows.getValue().map((w) => w.id)
-      for (const value of this.modalIds) {
+      const minimizedIds: (string | number)[] = this.windows.getValue().map((w) => w.id)
+      for (const value of this.modalRefs.keys()) {
         if (minimizedIds.indexOf(value) > -1) continue
         last = value
       }
@@ -187,15 +193,15 @@ export class LayoutService {
         return
       }
     }
-    this.modalIds.delete(id)
-    const modal: BsModalRef<unknown> = this.getModal(id)
+    const modal = this.getModalComponent(id)
+    this.modalRefs.delete(id)
     if (!modal) return
     if (delay) {
       setTimeout(() => this.closeModalWithEffect(modal, true), delay)
     } else {
       this.closeModalWithEffect(modal, true)
     }
-    this.minimizedWindows.next(this.minimizedWindows.getValue().filter((m) => m.id !== id))
+    this.windows.next(this.windows.getValue().filter((m) => m.id !== id))
   }
 
   openContextMenu(event: any, component: ContextMenuComponent<any>) {
@@ -283,7 +289,7 @@ export class LayoutService {
     this.closeDialog(null, null, true)
   }
 
-  private openModalWithEffect(modal: BsModalRef<unknown>) {
+  private openModalWithEffect(modal: ModalComponent) {
     this.bsModal['_renderer'].setAttribute(modal['instance']._element.nativeElement, 'aria-hidden', 'false')
     this.bsModal['_renderer'].setStyle(modal['instance']._element.nativeElement, 'display', 'block')
     setTimeout(() => {
@@ -291,7 +297,7 @@ export class LayoutService {
     }, 100)
   }
 
-  private closeModalWithEffect(modal: BsModalRef<unknown>, hide = false) {
+  private closeModalWithEffect(modal: ModalComponent, hide = false) {
     this.bsModal['_renderer'].setAttribute(modal['instance']._element.nativeElement, 'aria-hidden', 'true')
     this.bsModal['_renderer'].removeClass(modal['instance']._element.nativeElement, 'show')
     setTimeout(() => this.bsModal['_renderer'].setStyle(modal['instance']._element.nativeElement, 'display', 'none'), 500)
@@ -319,8 +325,8 @@ export class LayoutService {
     }
   }
 
-  private getModal(modalId: any): BsModalRef {
-    const modal: BsModalRef = this.bsModal['loaders'].find((loader: any) => loader.instance?.config.id === modalId)
+  private getModalComponent(modalId: number | string): ModalComponent {
+    const modal: ModalComponent = this.bsModal['loaders'].find((loader: any) => loader.instance?.config.id === modalId)
     if (modal) {
       modal.id = modalId
       return modal
@@ -330,7 +336,7 @@ export class LayoutService {
   }
 
   private atLeastOneModalOpen(): boolean {
-    return this.modalIds.size - this.minimizedWindows.getValue().length > 0
+    return this.modalRefs.size - this.windows.getValue().length > 0
   }
 
   private setTheme(theme: string) {

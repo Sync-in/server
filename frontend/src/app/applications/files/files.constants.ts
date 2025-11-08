@@ -23,8 +23,15 @@ export const logoDarkUrl = `${assetsUrl}/logo-dark${mimeExtension}`
 export const logoUrl = `${assetsUrl}/logo${mimeExtension}`
 export const linkProtected = `${assetsUrl}/protected.png`
 export const defaultMimeUrl = getAssetsMimeUrl(mimeFile)
-export const compressibleMimes = new Set(['application-gzip', 'application-zip', 'application-x-tar'])
-export const notViewableExtensions = new Set([
+export const COMPRESSIBLE_MIMES = new Set(['application-gzip', 'application-zip', 'application-x-tar'])
+export const SHORT_MIME = {
+  DOCUMENT: 'document',
+  TEXT: 'text',
+  IMAGE: 'image',
+  MEDIA: 'media',
+  PDF: 'pdf'
+} as const
+export const UNSUPPORTED_VIEW_EXTENSIONS = new Set([
   'rar',
   '7z',
   'iso',

@@ -22,13 +22,14 @@ import { setTextIconPermissions } from '../../spaces/spaces.functions'
 import type { OwnerType } from '../../users/interfaces/owner.interface'
 import { userAvatarUrl } from '../../users/user.functions'
 import {
-  compressibleMimes,
+  COMPRESSIBLE_MIMES,
   defaultMimeUrl,
   getAssetsMimeUrl,
   mimeDirectory,
   mimeDirectoryShare,
   mimeFile,
-  notViewableExtensions
+  SHORT_MIME,
+  UNSUPPORTED_VIEW_EXTENSIONS
 } from '../files.constants'
 
 export class FileModel implements File {
@@ -66,7 +67,7 @@ export class FileModel implements File {
   comments: CommentModel[]
 
   // Computed
-  shortMime: string
+  shortMime: (typeof SHORT_MIME)[keyof typeof SHORT_MIME]
   mimeUrl: string
   hSize: string
   hTimeAgo: string
@@ -131,44 +132,41 @@ export class FileModel implements File {
       this.isViewable = false
       return this.getType(inShare)
     } else if (mime) {
-      const mimeArray = mime.split('-')
-      const longMime = mimeArray[mimeArray.length - 1]
+      const temporaryMime = mime.split('-')[0]
       const extension = this.name.split('.').pop().toLowerCase()
-      this.shortMime = mimeArray[0]
-
-      if (extension === 'pdf') {
-        // uses pdfjs for reading and onlyoffice for writing, this test should be placed first
-        this.shortMime = longMime
+      if (extension === SHORT_MIME.PDF) {
+        this.shortMime = SHORT_MIME.PDF
         this.isViewable = true
         this.isEditable = ONLY_OFFICE_EXTENSIONS.EDITABLE.has(extension)
       } else if (ONLY_OFFICE_EXTENSIONS.EDITABLE.has(extension) || ONLY_OFFICE_EXTENSIONS.VIEWABLE.has(extension)) {
-        this.shortMime = 'document'
+        this.shortMime = SHORT_MIME.DOCUMENT
         this.isEditable = ONLY_OFFICE_EXTENSIONS.EDITABLE.has(extension)
         this.isViewable = this.isEditable || ONLY_OFFICE_EXTENSIONS.VIEWABLE.has(extension)
       } else if (extension === 'mp4') {
         this.isViewable = true
-        this.shortMime = 'media'
+        this.shortMime = SHORT_MIME.MEDIA
         this.haveThumbnail = true
-      } else if (this.shortMime === 'image') {
+      } else if (temporaryMime === SHORT_MIME.IMAGE) {
+        this.shortMime = SHORT_MIME.IMAGE
         this.isImage = true
         this.isViewable = true
         this.haveThumbnail = true
-      } else if (['video', 'audio'].indexOf(this.shortMime) > -1) {
-        this.shortMime = 'media'
+      } else if (['video', 'audio'].indexOf(temporaryMime) > -1) {
+        this.shortMime = SHORT_MIME.MEDIA
         this.isViewable = true
         this.haveThumbnail = true
-      } else if (compressibleMimes.has(mime)) {
+      } else if (COMPRESSIBLE_MIMES.has(mime)) {
         this.isCompressible = false
         this.isViewable = false
-      } else if (!notViewableExtensions.has(extension)) {
+      } else if (!UNSUPPORTED_VIEW_EXTENSIONS.has(extension)) {
         this.isViewable = true
         this.isEditable = true
-        this.shortMime = 'text'
+        this.shortMime = SHORT_MIME.TEXT
       }
       return mime
     } else {
       this.isViewable = true
-      this.shortMime = 'text'
+      this.shortMime = SHORT_MIME.TEXT
       return this.getType(inShare)
     }
   }

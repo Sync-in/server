@@ -170,6 +170,7 @@
   "Unable to update notification preference": "Impossibile aggiornare la preferenza di notifica",
   "Unable to update full-text search preference": "Impossibile aggiornare la preferenza di ricerca full-text",
   "Unable to open document": "Impossibile aprire il documento",
+  "Unable to save document": "Impossibile salvare il documento",
   "Home": "Home",
   "Recents": "Recenti",
   "recents": "recenti",
@@ -603,5 +604,7 @@
   "Save": "Salva",
   "Line Wrap": "A capo automatico",
   "Read-only": "Sola lettura",
-  "Read-write": "Lettura e scrittura"
+  "Read-write": "Lettura e scrittura",
+  "Save And Exit": "Salva e esci",
+  "Close Without Saving": "Chiudi senza salvare"
 }

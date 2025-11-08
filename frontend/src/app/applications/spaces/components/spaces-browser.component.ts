@@ -36,7 +36,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { tarExtension } from '@sync-in-server/backend/src/applications/files/constants/compress'
-import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_MODE, FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import type { FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
@@ -439,9 +439,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     if (this.selection[0].isDir) {
       this.browse(this.selection[0])
     } else if (editMode && this.selection[0].isEditable) {
-      this.openViewerDialog('edit')
+      this.openViewerDialog(FILE_MODE.EDIT)
     } else if (this.selection[0].isViewable) {
-      this.openViewerDialog('view')
+      this.openViewerDialog(FILE_MODE.VIEW)
     } else {
       this.downloadFiles()
     }
@@ -452,7 +452,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       this.layout.sendNotification('info', 'The file is locked', this.selection[0].lock.owner)
       return
     }
-    this.openViewerDialog('edit')
+    this.openViewerDialog(FILE_MODE.EDIT)
   }
 
   shortcutUploadFiles() {
@@ -723,8 +723,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     return f
   }
 
-  private openViewerDialog(mode: 'view' | 'edit') {
-    this.filesService.openViewerDialog(mode, this.selection[0], this.files).catch(console.error)
+  private openViewerDialog(mode: FILE_MODE) {
+    const permissions = this.selection[0]?.root ? this.selection[0].root.permissions : this.spacePermissions
+    this.filesService.openViewerDialog(mode, this.selection[0], this.files, permissions).catch(console.error)
   }
 
   private focusOn(selectName: string) {

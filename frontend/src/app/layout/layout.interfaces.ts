@@ -60,6 +60,6 @@ export interface TabMenu {
 }
 
 export interface AppWindow {
-  id: any
+  id: number | string
   element: { name: string; mimeUrl: string }
 }

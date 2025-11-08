@@ -170,6 +170,7 @@
   "Unable to update notification preference": "Bildirim tercihi güncellenemedi",
   "Unable to update full-text search preference": "Tam metin arama tercihi güncellenemedi",
   "Unable to open document": "Belge açılamadı",
+  "Unable to save document": "Belge kaydedilemedi",
   "Home": "Ana sayfa",
   "Recents": "Son kullanılanlar",
   "recents": "son",
@@ -603,5 +604,7 @@
   "Save": "Kaydet",
   "Line Wrap": "Satır kaydırma",
   "Read-only": "Salt okunur",
-  "Read-write": "Okuma/Yazma"
+  "Read-write": "Okuma/Yazma",
+  "Save And Exit": "Kaydet ve çık",
+  "Close Without Saving": "Kaydetmeden kapat"
 }

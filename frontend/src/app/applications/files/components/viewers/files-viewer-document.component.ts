@@ -6,6 +6,7 @@
 
 import { HttpClient, HttpParams } from '@angular/common/http'
 import { Component, inject, input, Input, OnDestroy, OnInit } from '@angular/core'
+import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { API_FILES_ONLY_OFFICE_SETTINGS } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import { OnlyOfficeReqConfig } from '@sync-in-server/backend/src/applications/files/interfaces/only-office-config.interface'
 import { SERVER_NAME } from '@sync-in-server/backend/src/common/shared'
@@ -40,7 +41,7 @@ import { OnlyOfficeComponent } from '../utils/only-office.component'
 })
 export class FilesViewerDocumentComponent implements OnInit, OnDestroy {
   @Input({ required: true }) file: FileModel
-  @Input({ required: true }) mode: 'view' | 'edit'
+  @Input({ required: true }) mode: FILE_MODE
   currentHeight = input<number>()
   protected docId: string
   protected documentConfig: OnlyOfficeReqConfig = null
@@ -60,12 +61,12 @@ export class FilesViewerDocumentComponent implements OnInit, OnDestroy {
             return
           }
           // do not allow edit if backend only allow 'view' mode
-          if (this.mode === 'edit' && data.config.editorConfig.mode !== 'edit') {
-            data.config.editorConfig.mode = 'view'
+          if (this.mode === FILE_MODE.EDIT && data.config.editorConfig.mode !== FILE_MODE.EDIT) {
+            data.config.editorConfig.mode = FILE_MODE.VIEW
           } else {
             data.config.editorConfig.mode = this.mode
           }
-          if (this.mode === 'edit') {
+          if (this.mode === FILE_MODE.EDIT) {
             // set lock on file
             this.file.lock = {
               owner: `${SERVER_NAME} - ${this.store.user.getValue().fullName} (${this.store.user.getValue().email})`,

@@ -170,6 +170,7 @@
   "Unable to update notification preference": "无法更新通知偏好",
   "Unable to update full-text search preference": "无法更新全文搜索偏好",
   "Unable to open document": "无法打开文档",
+  "Unable to save document": "无法保存文档",
   "Home": "首页",
   "Recents": "最近",
   "recents": "最近",
@@ -603,5 +604,7 @@
   "Save": "保存",
   "Line Wrap": "自动换行",
   "Read-only": "只读",
-  "Read-write": "读写"
+  "Read-write": "读写",
+  "Save And Exit": "保存并退出",
+  "Close Without Saving": "不保存并关闭"
 }

@@ -6,14 +6,21 @@
 
 import { ExecutionContext, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { AuthGuard, IAuthGuard } from '@nestjs/passport'
+import { FastifyRequest } from 'fastify'
 import { Observable } from 'rxjs'
 import { configuration } from '../../../configuration/config.environment'
+import { API_FILES_ONLY_OFFICE_STATUS } from '../constants/routes'
 
 @Injectable()
 export class FilesOnlyOfficeGuard extends AuthGuard('filesOnlyOfficeToken') implements IAuthGuard {
   private readonly logger = new Logger(FilesOnlyOfficeGuard.name)
 
   canActivate(ctx: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+    const req: FastifyRequest = ctx.switchToHttp().getRequest()
+    if (req.originalUrl === API_FILES_ONLY_OFFICE_STATUS) {
+      // Skip token validation for the status endpoint
+      return true
+    }
     if (!configuration.applications.files.onlyoffice.enabled) {
       this.logger.warn(`${this.canActivate.name} - feature not enabled`)
       throw new HttpException('Feature not enabled', HttpStatus.BAD_REQUEST)

@@ -13,6 +13,7 @@ import { FastifySpaceRequest } from '../spaces/interfaces/space-request.interfac
 import { SpaceEnv } from '../spaces/models/space-env.model'
 import { GetUser } from '../users/decorators/user.decorator'
 import { UserModel } from '../users/models/user.model'
+import { FILE_MODE } from './constants/operations'
 import { API_FILES_ONLY_OFFICE, FILES_ROUTE } from './constants/routes'
 import { OnlyOfficeEnvironment } from './decorators/only-office-environment.decorator'
 import { OnlyOfficeReqConfig } from './interfaces/only-office-config.interface'
@@ -32,7 +33,7 @@ export class FilesOnlyOfficeController {
   onlyOfficeSettings(
     @GetUser() user: UserModel,
     @GetSpace() space: SpaceEnv,
-    @Query('mode') mode: 'view' | 'edit' = 'view',
+    @Query('mode') mode: FILE_MODE = FILE_MODE.VIEW,
     @Request() req: FastifySpaceRequest
   ): Promise<OnlyOfficeReqConfig> {
     return this.filesOnlyOfficeManager.getSettings(user, space, mode, req)

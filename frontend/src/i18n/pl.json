@@ -170,6 +170,7 @@
   "Unable to update notification preference": "Nie można zaktualizować preferencji powiadomień",
   "Unable to update full-text search preference": "Nie można zaktualizować preferencji wyszukiwania pełnotekstowego",
   "Unable to open document": "Nie można otworzyć dokumentu",
+  "Unable to save document": "Nie można zapisać dokumentu",
   "Home": "Strona główna",
   "Recents": "Ostatnie",
   "recents": "ostatnie",
@@ -603,5 +604,7 @@
   "Save": "Zapisz",
   "Line Wrap": "Zawijanie wierszy",
   "Read-only": "Tylko do odczytu",
-  "Read-write": "Odczyt i zapis"
+  "Read-write": "Odczyt i zapis",
+  "Save And Exit": "Zapisz i wyjdź",
+  "Close Without Saving": "Zamknij bez zapisywania"
 }

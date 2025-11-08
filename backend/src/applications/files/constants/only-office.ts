@@ -25,7 +25,6 @@ export const ONLY_OFFICE_EXTENSIONS = {
     ['html', 'word'],
     ['hwp', 'word'],
     ['hwpx', 'word'],
-    ['md', 'word'],
     ['mht', 'word'],
     ['mhtml', 'word'],
     ['odt', 'word'],
@@ -36,7 +35,6 @@ export const ONLY_OFFICE_EXTENSIONS = {
     ['sxw', 'word'],
     ['wps', 'word'],
     ['wpt', 'word'],
-    ['md', 'word'],
 
     // CELL
     ['csv', 'cell'],
@@ -105,7 +103,6 @@ export const ONLY_OFFICE_EXTENSIONS = {
     ['odt', 'word'],
     ['ott', 'word'],
     ['rtf', 'word'],
-    ['md', 'word'],
 
     // CELL
     ['xlsb', 'cell'],

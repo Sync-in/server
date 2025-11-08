@@ -170,6 +170,7 @@
   "Unable to update notification preference": "알림 설정을 업데이트할 수 없습니다",
   "Unable to update full-text search preference": "전문 검색 설정을 업데이트할 수 없습니다",
   "Unable to open document": "문서를 열 수 없습니다",
+  "Unable to save document": "문서를 저장할 수 없습니다",
   "Home": "홈",
   "Recents": "최근 항목",
   "recents": "최근",
@@ -603,5 +604,7 @@
   "Save": "저장",
   "Line Wrap": "자동 줄 바꿈",
   "Read-only": "읽기 전용",
-  "Read-write": "읽기/쓰기"
+  "Read-write": "읽기/쓰기",
+  "Save And Exit": "저장하고 종료",
+  "Close Without Saving": "저장하지 않고 닫기"
 }

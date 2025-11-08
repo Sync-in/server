@@ -87,7 +87,7 @@ export class SideBarRightComponent implements OnDestroy {
       components: [WindowsComponent],
       icon: faWindowRestore,
       title: null,
-      count: { value: this.layout.minimizedWindows.pipe(map((modals: AppWindow[]) => modals.length)), level: 'maroon' },
+      count: { value: this.layout.windows.pipe(map((modals: AppWindow[]) => modals.length)), level: 'maroon' },
       showOnCount: true,
       firstOfLasts: true,
       active: false

@@ -8,7 +8,7 @@ import type { TreeNode } from '@ali-hm/angular-tree-component'
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
-import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_MODE, FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import {
   API_FILES_ONLY_OFFICE_STATUS,
   API_FILES_OPERATION_MAKE,
@@ -31,6 +31,7 @@ import type { FileTask } from '@sync-in-server/backend/src/applications/files/mo
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
+import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { EMPTY, firstValueFrom, map, Observable, Subject } from 'rxjs'
@@ -40,6 +41,7 @@ import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
 import { FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
 import { FilesViewerDialogComponent } from '../components/dialogs/files-viewer-dialog.component'
+import { SHORT_MIME } from '../files.constants'
 import { FileContentModel } from '../models/file-content.model'
 import { FileRecentModel } from '../models/file-recent.model'
 import { FileModel } from '../models/file.model'
@@ -225,16 +227,20 @@ export class FilesService {
     })
   }
 
-  async openViewerDialog(mode: 'view' | 'edit', currentFile: FileModel, directoryFiles: FileModel[]) {
+  async openViewerDialog(mode: FILE_MODE, currentFile: FileModel, directoryFiles: FileModel[], permissions: string) {
     this.http.head(currentFile.dataUrl).subscribe({
       next: async () => {
-        let shortMime: string
+        let hookedShortMime: string
         try {
-          shortMime = await this.viewerHook(mode, currentFile)
+          hookedShortMime = await this.viewerHook(mode, currentFile)
         } catch {
           // OnlyOffice isn't enabled, falling back to download
           this.download(currentFile)
           return
+        }
+        const isWriteable = permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
+        if (mode === FILE_MODE.EDIT && !isWriteable) {
+          mode = FILE_MODE.VIEW
         }
         this.layout.openDialog(FilesViewerDialogComponent, 'full', {
           id: currentFile.id, // only used to manage the modal
@@ -242,7 +248,8 @@ export class FilesService {
             currentFile: currentFile,
             directoryFiles: directoryFiles,
             mode: mode,
-            shortMime: shortMime
+            isWriteable: isWriteable,
+            hookedShortMime: hookedShortMime
           } satisfies Partial<FilesViewerDialogComponent>
         })
       },
@@ -253,17 +260,17 @@ export class FilesService {
     })
   }
 
-  private async viewerHook(mode: 'view' | 'edit', currentFile: FileModel): Promise<string> {
+  private async viewerHook(mode: FILE_MODE, currentFile: FileModel): Promise<string> {
     const onlyOfficeEnabled = await this.getOnlyOfficeStatus()
-    if (currentFile.shortMime === 'document' && !onlyOfficeEnabled) {
+    if (currentFile.shortMime === SHORT_MIME.DOCUMENT && !onlyOfficeEnabled) {
       if (currentFile.mime.startsWith('text-')) {
-        return 'text'
+        return SHORT_MIME.TEXT
       }
       throw new Error('Feature not enabled')
     }
-    if (currentFile.shortMime === 'pdf') {
-      if (mode === 'edit' && onlyOfficeEnabled) {
-        return 'document'
+    if (currentFile.shortMime === SHORT_MIME.PDF) {
+      if (mode === FILE_MODE.EDIT && onlyOfficeEnabled) {
+        return SHORT_MIME.DOCUMENT
       }
     }
     return currentFile.shortMime
@@ -275,7 +282,6 @@ export class FilesService {
     }
     try {
       const status = await firstValueFrom(this.http.get<{ enabled: boolean }>(API_FILES_ONLY_OFFICE_STATUS))
-      // if the request succeeds, "enabled" will always be true
       this.store.filesOnlyOffice.set(status)
       return status.enabled
     } catch {

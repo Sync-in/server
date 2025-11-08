@@ -26,7 +26,7 @@ export class WindowsComponent implements OnDestroy {
   private readonly subscription: Subscription = null
 
   constructor() {
-    this.subscription = this.layout.minimizedWindows.subscribe((windows: AppWindow[]) => this.setWindows(windows))
+    this.subscription = this.layout.windows.subscribe((windows: AppWindow[]) => this.setWindows(windows))
   }
 
   ngOnDestroy() {
@@ -40,16 +40,25 @@ export class WindowsComponent implements OnDestroy {
   onClose(ev: MouseEvent, window: AppWindow) {
     ev.preventDefault()
     ev.stopPropagation()
-    this.layout.closeDialog(null, window.id)
-    if (!this.layout.minimizedWindows.getValue().length) {
+    const modal = this.layout.modalRefs.get(window.id)
+    if (modal) {
+      modal.content.onClose()
+    }
+    if (!this.layout.windows.getValue().length) {
       this.layout.toggleRSideBar(false)
     }
   }
 
   onCloseAll() {
-    this.layout.closeDialog(null, null, true)
-    this.layout.minimizedWindows.next([])
-    this.layout.toggleRSideBar(false)
+    for (const w of this.layout.windows.getValue()) {
+      const modal = this.layout.modalRefs.get(w.id)
+      if (modal) {
+        modal.content.onClose()
+      }
+    }
+    if (!this.layout.windows.getValue().length) {
+      this.layout.toggleRSideBar(false)
+    }
   }
 
   private setWindows(windows: AppWindow[]) {

@@ -170,6 +170,7 @@
   "Unable to update notification preference": "Benachrichtigungseinstellung kann nicht aktualisiert werden",
   "Unable to update full-text search preference": "Volltextsuche-Einstellung kann nicht aktualisiert werden",
   "Unable to open document": "Dokument kann nicht geöffnet werden",
+  "Unable to save document": "Dokument kann nicht gespeichert werden",
   "Home": "Startseite",
   "Recents": "Zuletzt verwendet",
   "recents": "zuletzt",
@@ -603,5 +604,7 @@
   "Save": "Speichern",
   "Line Wrap": "Zeilenumbruch",
   "Read-only": "Schreibgeschützt",
-  "Read-write": "Lesen/Schreiben"
+  "Read-write": "Lesen/Schreiben",
+  "Save And Exit": "Speichern und beenden",
+  "Close Without Saving": "Schließen ohne zu speichern"
 }

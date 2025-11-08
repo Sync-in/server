@@ -170,6 +170,7 @@
   "Unable to update notification preference": "通知設定を更新できません",
   "Unable to update full-text search preference": "フルテキスト検索設定を更新できません",
   "Unable to open document": "ドキュメントを開けません",
+  "Unable to save document": "ドキュメントを保存できません",
   "Home": "ホーム",
   "Recents": "最近",
   "recents": "最近",
@@ -603,5 +604,7 @@
   "Save": "保存",
   "Line Wrap": "折り返し",
   "Read-only": "読み取り専用",
-  "Read-write": "読み書き可能"
+  "Read-write": "読み書き可能",
+  "Save And Exit": "保存して終了",
+  "Close Without Saving": "保存せずに閉じる"
 }

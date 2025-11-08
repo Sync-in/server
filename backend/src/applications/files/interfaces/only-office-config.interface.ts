@@ -4,6 +4,8 @@
  * See the LICENSE file for licensing details
  */
 
+import { FILE_MODE } from '../constants/operations'
+
 export interface OnlyOfficeReqConfig {
   documentServerUrl: string
   config: OnlyOfficeConfig
@@ -72,7 +74,7 @@ export interface OnlyOfficeConfig {
     }
     createUrl?: string
     lang?: string
-    mode?: 'view' | 'edit'
+    mode?: FILE_MODE
     recent?: any[]
     region?: string
     templates?: any[]

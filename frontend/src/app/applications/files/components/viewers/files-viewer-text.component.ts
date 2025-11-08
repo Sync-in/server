@@ -6,17 +6,32 @@
 
 import { CodeEditor } from '@acrodata/code-editor'
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Component, HostListener, inject, input, linkedSignal, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
+import {
+  Component,
+  effect,
+  HostListener,
+  inject,
+  input,
+  linkedSignal,
+  OnDestroy,
+  OnInit,
+  output,
+  signal,
+  untracked,
+  viewChild,
+  ViewEncapsulation
+} from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
 import { closeSearchPanel, openSearchPanel } from '@codemirror/search'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowsLeftRightToLine, faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass, faSpinner } from '@fortawesome/free-solid-svg-icons'
-import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
+import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
-import { themeDark } from '../../../../layout/layout.interfaces'
+import { AppWindow, themeDark } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
 import { FilesUploadService } from '../../services/files-upload.service'
@@ -24,7 +39,7 @@ import { FilesUploadService } from '../../services/files-upload.service'
 @Component({
   selector: 'app-files-viewer-text',
   encapsulation: ViewEncapsulation.None,
-  imports: [CodeEditor, TooltipModule, FormsModule, FaIconComponent, L10nTranslatePipe, ButtonCheckboxDirective],
+  imports: [CodeEditor, TooltipModule, FormsModule, FaIconComponent, L10nTranslatePipe, ButtonCheckboxDirective, L10nTranslateDirective],
   styles: [
     `
       .code-editor {
@@ -46,8 +61,7 @@ import { FilesUploadService } from '../../services/files-upload.service'
         }
 
         button[aria-label='close'] {
-          right: 10px !important;
-          font-size: 18px !important;
+          display: none;
         }
       }
     `
@@ -56,14 +70,18 @@ import { FilesUploadService } from '../../services/files-upload.service'
 })
 export class FilesViewerTextComponent implements OnInit, OnDestroy {
   editor = viewChild<CodeEditor>('editor')
-  currentHeight = input<number>()
-  file = input<FileModel>()
-  mode = input<'view' | 'edit'>('view')
-  protected isReadonly = linkedSignal(() => this.mode() === 'view')
+  currentHeight = input.required<number>()
+  file = input.required<FileModel>()
+  mode = input.required<FILE_MODE>()
+  isWriteable = input.required<boolean>()
+  modalClosing = input.required<boolean>()
+  readonlyChange = output<boolean>()
+  protected isReadonly = linkedSignal(() => this.mode() === FILE_MODE.VIEW)
   protected isReadable = signal(false)
   protected isModified = signal(false)
   protected isSaving = signal(false)
   protected lineWrapping = signal(false)
+  protected warnOnUnsavedChanges = signal(false)
   protected content: string
   protected currentLanguage = undefined
   protected readonly languages: LanguageDescription[] = languages
@@ -71,12 +89,33 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   protected readonly icons = { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass, faSpinner, faArrowsLeftRightToLine }
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected isSearchPanelOpen = signal(false)
+  protected readonly layout = inject(LayoutService)
   private isContentReady = false
-  private readonly layout = inject(LayoutService)
   private readonly http = inject(HttpClient)
   private readonly filesUpload = inject(FilesUploadService)
   private subscription = this.layout.switchTheme.subscribe((layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light'))
   private readonly maxSize = 5242880 // 5MB
+
+  constructor() {
+    effect(() => {
+      // Only track modalClosing
+      if (!this.modalClosing()) return
+      const fileId = untracked(() => this.file().id)
+      const modified = untracked(() => this.isModified()) // ignore dependency on isModified
+      if (modified) {
+        this.warnOnUnsavedChanges.set(true)
+        // restore dialog if minimized
+        if (this.layout.windows.getValue().find((w: AppWindow) => w.id === fileId)) {
+          this.layout.restoreDialog(fileId)
+        }
+      } else {
+        this.layout.closeDialog(null, fileId)
+      }
+    })
+    effect(() => {
+      this.readonlyChange.emit(this.isReadonly())
+    })
+  }
 
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
@@ -86,9 +125,12 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
       if (this.isSearchPanelOpen()) {
         event.stopPropagation()
         this.toggleSearch()
+      } else if (this.warnOnUnsavedChanges()) {
+        event.stopPropagation()
+        this.warnOnUnsavedChanges.set(false)
       } else if (this.isModified()) {
         event.stopPropagation()
-        // Show dialog alert
+        this.warnOnUnsavedChanges.set(true)
       }
       return
     }
@@ -121,7 +163,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   }
 
   toggleReadonly() {
-    this.isReadonly.set(!this.isReadonly())
+    this.isReadonly.update((state) => !state)
     // Reset search state when open to enable/disable the replace function
     if (this.isSearchPanelOpen()) {
       setTimeout(() => {
@@ -131,12 +173,16 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
     }
   }
 
-  save() {
+  save(exit = false) {
     this.isSaving.set(true)
     this.filesUpload.uploadOneFile(this.file(), this.content, true).subscribe({
       next: () => {
         this.isModified.set(false)
         this.isSaving.set(false)
+        this.warnOnUnsavedChanges.set(false)
+        if (exit) {
+          this.layout.closeDialog(null, this.file().id)
+        }
       },
       error: (e: HttpErrorResponse) => {
         this.isSaving.set(false)

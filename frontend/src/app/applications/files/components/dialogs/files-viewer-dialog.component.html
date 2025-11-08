@@ -6,29 +6,36 @@
 
 <div class="modal-header">
   <h4 class="modal-title">
-    <i class="fas fa-eye"></i>
-    <span>{{ currentFile.name }}</span>
+    <fa-icon [icon]="isEditing ? icons.faPen : icons.faEye"></fa-icon>
+    <span class="ms-2">{{ currentFile.name }}</span>
   </h4>
   <button (click)="onMinimize()" aria-label="Minimize" class="btn-minimize btn-minimize-white" type="button"></button>
   <button (click)="onClose()" aria-label="Close" class="btn-close btn-close-white ms-3" type="button"></button>
 </div>
 @if (currentFile) {
   <div class="modal-body">
-    @switch (shortMime) {
-      @case ('image') {
+    @switch (hookedShortMime) {
+      @case (SHORT_MIME.IMAGE) {
         <app-files-viewer-image [currentHeight]="currentHeight" [(file)]="currentFile" [directoryImages]="directoryImages()"></app-files-viewer-image>
       }
-      @case ('pdf') {
+      @case (SHORT_MIME.PDF) {
         <app-files-viewer-pdf [currentHeight]="currentHeight" [fileUrl]="currentFile.dataUrl"></app-files-viewer-pdf>
       }
-      @case ('media') {
+      @case (SHORT_MIME.MEDIA) {
         <app-files-viewer-media [currentHeight]="currentHeight" [fileUrl]="currentFile.dataUrl"></app-files-viewer-media>
       }
-      @case ('document') {
+      @case (SHORT_MIME.DOCUMENT) {
         <app-files-viewer-document [currentHeight]="currentHeight" [file]="currentFile" [mode]="mode"></app-files-viewer-document>
       }
       @default {
-        <app-files-viewer-text [currentHeight]="currentHeight" [file]="currentFile" [mode]="mode"></app-files-viewer-text>
+        <app-files-viewer-text
+          [currentHeight]="currentHeight"
+          [file]="currentFile"
+          [mode]="mode"
+          [isWriteable]="isWriteable"
+          [modalClosing]="modalClosing()"
+          (readonlyChange)="onReadonlyChange($event)">
+        </app-files-viewer-text>
       }
     }
   </div>

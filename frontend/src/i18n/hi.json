@@ -170,6 +170,7 @@
   "Unable to update notification preference": "सूचना प्राथमिकता अपडेट नहीं की जा सकी",
   "Unable to update full-text search preference": "पूर्ण-पाठ खोज प्राथमिकता अपडेट नहीं की जा सकी",
   "Unable to open document": "दस्तावेज़ नहीं खोला जा सका",
+  "Unable to save document": "दस्तावेज़ सहेजा नहीं जा सका",
   "Home": "होम",
   "Recents": "हाल के",
   "recents": "हाल के",
@@ -603,5 +604,7 @@
   "Save": "सहेजें",
   "Line Wrap": "लाइन रैप",
   "Read-only": "केवल-पढ़ने योग्य",
-  "Read-write": "पढ़ने-लिखने योग्य"
+  "Read-write": "पढ़ने-लिखने योग्य",
+  "Save And Exit": "सहेजें और बाहर निकलें",
+  "Close Without Saving": "बिना सहेजे बंद करें"
 }

@@ -8,6 +8,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
 import { ContextManager } from '../../infrastructure/context/services/context-manager.service'
 import { SpacesManager } from '../spaces/services/spaces-manager.service'
+import { FILE_MODE } from './constants/operations'
 import { FilesOnlyOfficeController } from './files-only-office.controller'
 import { FilesMethods } from './services/files-methods.service'
 import { FilesOnlyOfficeManager } from './services/files-only-office-manager.service'
@@ -49,13 +50,13 @@ describe(FilesOnlyOfficeController.name, () => {
       const user: any = { id: 1 }
       const space: any = { id: 'space-1' }
       const req: any = { headers: {}, params: {}, query: {} }
-      const expected = { config: 'ok', mode: 'view' }
+      const expected = { config: 'ok', mode: FILE_MODE.VIEW }
       filesOnlyOfficeManagerMock.getSettings.mockResolvedValue(expected)
 
       const result = await controller.onlyOfficeSettings(user, space, undefined as any, req)
 
       expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledTimes(1)
-      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, 'view', req)
+      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, FILE_MODE.VIEW, req)
       expect(result).toBe(expected)
     })
 
@@ -63,12 +64,12 @@ describe(FilesOnlyOfficeController.name, () => {
       const user: any = { id: 2 }
       const space: any = { id: 'space-2' }
       const req: any = { headers: { 'x-test': '1' } }
-      const expected = { config: 'ok', mode: 'edit' }
+      const expected = { config: 'ok', mode: FILE_MODE.EDIT }
       filesOnlyOfficeManagerMock.getSettings.mockResolvedValue(expected)
 
-      const result = await controller.onlyOfficeSettings(user, space, 'edit', req)
+      const result = await controller.onlyOfficeSettings(user, space, FILE_MODE.EDIT, req)
 
-      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, 'edit', req)
+      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, FILE_MODE.EDIT, req)
       expect(result).toBe(expected)
     })
   })

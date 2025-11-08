@@ -16,3 +16,8 @@ export enum FILE_OPERATION {
   TOUCH = 'touch',
   THUMBNAIL = 'thumbnail'
 }
+
+export enum FILE_MODE {
+  VIEW = 'view',
+  EDIT = 'edit'
+}

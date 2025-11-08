@@ -170,6 +170,7 @@
   "Unable to update notification preference": "Не удалось обновить настройки уведомлений",
   "Unable to update full-text search preference": "Не удалось обновить настройки полнотекстового поиска",
   "Unable to open document": "Не удалось открыть документ",
+  "Unable to save document": "Не удалось сохранить документ",
   "Home": "Главная",
   "Recents": "Недавние",
   "recents": "недавние",
@@ -603,5 +604,7 @@
   "Save": "Сохранить",
   "Line Wrap": "Перенос строк",
   "Read-only": "Только чтение",
-  "Read-write": "Чтение и запись"
+  "Read-write": "Чтение и запись",
+  "Save And Exit": "Сохранить и выйти",
+  "Close Without Saving": "Закрыть без сохранения"
 }

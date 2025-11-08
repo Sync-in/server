@@ -34,6 +34,7 @@ import {
   ONLY_OFFICE_INTERNAL_URI,
   ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME
 } from '../constants/only-office'
+import { FILE_MODE } from '../constants/operations'
 import { API_FILES_ONLY_OFFICE_CALLBACK, API_FILES_ONLY_OFFICE_DOCUMENT } from '../constants/routes'
 import type { FileProps } from '../interfaces/file-props.interface'
 import { OnlyOfficeCallBack, OnlyOfficeConfig, OnlyOfficeConvertForm, OnlyOfficeReqConfig } from '../interfaces/only-office-config.interface'
@@ -63,7 +64,7 @@ export class FilesOnlyOfficeManager {
     return { enabled: configuration.applications.files.onlyoffice.enabled }
   }
 
-  async getSettings(user: UserModel, space: SpaceEnv, mode: 'edit' | 'view', req: FastifySpaceRequest): Promise<OnlyOfficeReqConfig> {
+  async getSettings(user: UserModel, space: SpaceEnv, mode: FILE_MODE, req: FastifySpaceRequest): Promise<OnlyOfficeReqConfig> {
     if (!(await isPathExists(space.realPath))) {
       throw new HttpException('Document not found', HttpStatus.NOT_FOUND)
     }
@@ -74,10 +75,10 @@ export class FilesOnlyOfficeManager {
     if (!ONLY_OFFICE_EXTENSIONS.VIEWABLE.has(fileExtension) && !ONLY_OFFICE_EXTENSIONS.EDITABLE.has(fileExtension)) {
       throw new HttpException('Document not supported', HttpStatus.BAD_REQUEST)
     }
-    if (mode === 'edit' && (!ONLY_OFFICE_EXTENSIONS.EDITABLE.has(fileExtension) || !haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY))) {
-      mode = 'view'
+    if (mode === FILE_MODE.EDIT && (!ONLY_OFFICE_EXTENSIONS.EDITABLE.has(fileExtension) || !haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY))) {
+      mode = FILE_MODE.VIEW
     }
-    if (mode === 'edit') {
+    if (mode === FILE_MODE.EDIT) {
       // check lock conflicts
       try {
         await this.filesLockManager.checkConflicts(space.dbFile, DEPTH.RESOURCE, { userId: user.id, lockScope: LOCK_SCOPE.SHARED })
@@ -144,7 +145,7 @@ export class FilesOnlyOfficeManager {
   private async genConfiguration(
     user: UserModel,
     space: SpaceEnv,
-    mode: 'edit' | 'view',
+    mode: FILE_MODE,
     fileId: string,
     fileUrl: string,
     fileExtension: string,
@@ -165,12 +166,12 @@ export class FilesOnlyOfficeManager {
           key: await this.getDocumentKey(fileId),
           permissions: {
             download: true,
-            edit: mode === 'edit',
+            edit: mode === FILE_MODE.EDIT,
             changeHistory: false,
             comment: true,
             fillForms: true,
             print: true,
-            review: mode === 'edit'
+            review: mode === FILE_MODE.EDIT
           },
           url: fileUrl
         },
