@@ -6,7 +6,6 @@
 
 import { Routes } from '@angular/router'
 import { routeResolver } from '../../common/resolvers/route.resolver'
-import { SyncClientsComponent } from '../sync/components/sync-clients.component'
 import { userHaveDesktopAppPermission } from '../sync/sync.guards'
 import { UserAccountComponent } from './components/user-account.component'
 import { UserApplicationsComponent } from './components/user-applications.component'
@@ -24,7 +23,7 @@ export const userRoutes: Routes = [
       {
         path: USER_PATH.CLIENTS,
         canActivate: [userHaveDesktopAppPermission],
-        component: SyncClientsComponent
+        loadComponent: () => import('../sync/components/sync-clients.component').then((c) => c.SyncClientsComponent)
       },
       {
         path: USER_PATH.GROUPS,
