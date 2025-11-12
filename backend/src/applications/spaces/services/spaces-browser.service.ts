@@ -8,6 +8,7 @@ import { HttpException, Injectable, Logger } from '@nestjs/common'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { configuration } from '../../../configuration/config.environment'
+import { FileDBProps } from '../../files/interfaces/file-db-props.interface'
 import { FileLock } from '../../files/interfaces/file-lock.interface'
 import { FileProps } from '../../files/interfaces/file-props.interface'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
@@ -17,7 +18,6 @@ import { dirName, fileName, getProps } from '../../files/utils/files'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { USER_PERMISSION } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
-import { LOCK_SCOPE } from '../../webdav/constants/webdav'
 import { SpaceFiles } from '../interfaces/space-files.interface'
 import { SpaceEnv } from '../models/space-env.model'
 import { IsRealPathIsDirAndExists, realPathFromRootFile } from '../utils/paths'
@@ -56,7 +56,8 @@ export class SpacesBrowser {
       this.parseRootFiles(user, space, {
         withShares: options.withSpacesAndShares,
         withHasComments: options.withHasComments,
-        withSyncs: options.withSyncs
+        withSyncs: options.withSyncs,
+        withLocks: options.withLocks
       })
     ])
     this.updateDBFiles(user, space, dbFiles, fsFiles, options)
@@ -83,6 +84,7 @@ export class SpacesBrowser {
       withShares?: boolean
       withHasComments?: boolean
       withSyncs?: boolean
+      withLocks?: boolean
     }
   ): Promise<FileProps[]> {
     if (space.inFilesRepository && space.id && !space.root.alias) {
@@ -155,9 +157,12 @@ export class SpacesBrowser {
     }
   }
 
-  private async updateRootFile(f: FileProps, options: { withShares?: boolean; withHasComments?: boolean; withSyncs?: boolean }): Promise<FileProps> {
-    // get realpath
+  private async updateRootFile(
+    f: FileProps,
+    options: { withShares?: boolean; withHasComments?: boolean; withSyncs?: boolean; withLocks?: boolean }
+  ): Promise<FileProps> {
     const realPath = realPathFromRootFile(f)
+    const originalPath = f.path
     f.path = f.root.name
     try {
       const fileProps: FileProps = await getProps(realPath, f.path)
@@ -170,8 +175,28 @@ export class SpacesBrowser {
       if (options.withSyncs) {
         fileProps.syncs = f.syncs
       }
+      if (options.withLocks && (f.origin || f.root?.owner)) {
+        // `f.origin` is used for shares
+        // `f.root.owner` is used for anchored files in spaces
+        // all other files are handled in the `enrichWithLocks` function
+        const dbFile: FileDBProps = {
+          ...(f.origin?.spaceId
+            ? { spaceId: f.origin.spaceId, ...(f.origin.spaceExternalRootId ? { spaceExternalRootId: f.origin.spaceExternalRootId } : {}) }
+            : f.origin?.shareExternalId
+              ? { shareExternalId: f.origin.shareExternalId }
+              : { ownerId: f.origin?.ownerId ?? f.root.owner.id }),
+          path: originalPath,
+          inTrash: f.inTrash
+        }
+        const locks = await this.filesLockManager.getLocksByPath(dbFile)
+        if (locks.length > 0) {
+          fileProps.lock = this.filesLockManager.convertLockToFileLockProps(locks[0])
+        }
+      }
+      // `owner.id` is only used in the `withLocks` condition
+      delete f.root.owner?.id
+      // check `f.id`; it can be null for external roots
       if (f.id) {
-        // f.id is null for external roots
         // todo: check if a db file referenced under external roots have an id and correctly parsed here
         this.filesQueries.compareAndUpdateFileProps(f, fileProps).catch((e: Error) => this.logger.error(`${this.updateRootFile.name} - ${e}`))
         fileProps.id = f.id
@@ -299,13 +324,8 @@ export class SpacesBrowser {
     }
     const locks: Record<string, FileLock> = await this.filesLockManager.browseParentChildLocks(space.dbFile, false)
     if (!Object.keys(locks).length) return
-    for (const f of files.filter((f) => (f.root && f.root.alias in locks) || (!f.root && f.name in locks))) {
-      const lock: FileLock = f.root ? locks[f.root.alias] : locks[f.name]
-      f.lock = {
-        owner: lock?.davLock?.owner || `${lock.owner.fullName} (${lock.owner.email})`,
-        ownerLogin: lock.owner.login,
-        isExclusive: lock?.davLock?.lockscope ? lock?.davLock?.lockscope === LOCK_SCOPE.EXCLUSIVE : true
-      }
+    for (const f of files.filter((f) => !f.root && !f.origin && f.name in locks)) {
+      f.lock = this.filesLockManager.convertLockToFileLockProps(locks[f.name])
     }
   }
 }

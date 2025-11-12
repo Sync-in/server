@@ -663,10 +663,14 @@ export class SharesQueries {
         ctime: files.ctime,
         mtime: files.mtime,
         mime: files.mime,
+        originOwnerId: sql`${originOwner.id}`.as('originOwnerId'),
         originOwnerLogin: sql`${originOwner.login}`.as('originOwnerLogin'),
+        originSpaceId: sql`${spaces.id}`.as('originSpaceId'),
         originSpaceAlias: sql`${spaces.alias}`.as('originSpaceAlias'),
+        originSpaceExternalRootId: sql`${files.spaceExternalRootId}`.as('originSpaceExternalRootId'),
         originSpaceRootExternalPath: sql`IF (${spacesRoots.externalPath} IS NULL,
                                              ${shareSpaceRoot.externalPath}, ${spacesRoots.externalPath})`.as('originSpaceRootExternalPath'),
+        originShareExternalId: sql`IF (${shares.externalPath} IS NOT NULL, ${shares.parentId}, NULL)`.as('originShareExternalId'),
         rootId: sql`${shares.id}`.as('rootId'),
         rootAlias: shares.alias,
         rootName: shares.name,
@@ -674,6 +678,7 @@ export class SharesQueries {
         rootEnabled: shares.enabled,
         rootExternalPath: shares.externalPath,
         rootPermissions: sharesMembers.permissions,
+        rootOwnerId: sql`${users.id}`.as('rootOwnerId'),
         rootOwnerLogin: sql`${users.login}`.as('rootOwnerLogin'),
         rootOwnerEmail: sql`${users.email}`.as('rootOwnerEmail'),
         rootOwnerFullName: userFullNameSQL(users).as('rootOwnerFullName'),
@@ -743,9 +748,13 @@ export class SharesQueries {
         mtime: unionAlias.mtime,
         mime: unionAlias.mime,
         origin: {
+          ownerId: unionAlias.originOwnerId,
           ownerLogin: unionAlias.originOwnerLogin,
+          spaceId: unionAlias.originSpaceId,
           spaceAlias: unionAlias.originSpaceAlias,
-          spaceRootExternalPath: unionAlias.originSpaceRootExternalPath
+          spaceExternalRootId: unionAlias.originSpaceExternalRootId,
+          spaceRootExternalPath: unionAlias.originSpaceRootExternalPath,
+          shareExternalId: unionAlias.originShareExternalId
         },
         root: {
           id: unionAlias.rootId,
@@ -755,7 +764,12 @@ export class SharesQueries {
           enabled: unionAlias.rootEnabled,
           externalPath: unionAlias.rootExternalPath,
           permissions: spaceGroupConcatPermissions(unionAlias.rootPermissions),
-          owner: { login: unionAlias.rootOwnerLogin, email: unionAlias.rootOwnerEmail, fullName: unionAlias.rootOwnerFullName } as Owner
+          owner: {
+            id: unionAlias.rootOwnerId,
+            login: unionAlias.rootOwnerLogin,
+            email: unionAlias.rootOwnerEmail,
+            fullName: unionAlias.rootOwnerFullName
+          } satisfies Owner
         },
         shares: sql`IF (${sql.placeholder('withShares')}, ${concatDistinctObjectsInArray(unionAlias.childShareId, {
           id: unionAlias.childShareId,

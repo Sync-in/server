@@ -28,7 +28,15 @@ export interface FileProps extends Omit<File, 'ownerId' | 'spaceId' | 'spaceExte
   mime: string
   inTrash?: boolean
   // used with shares
-  origin?: { ownerLogin: string; spaceAlias: string; spaceRootExternalPath?: string }
+  origin?: {
+    ownerId: number
+    ownerLogin: string
+    spaceId: number
+    spaceAlias: string
+    spaceExternalRootId: number
+    spaceRootExternalPath: string
+    shareExternalId: number
+  }
   // root can be a share or a space root
   // enabled, and description are only used for shares
   root?: Pick<SpaceRoot, 'id' | 'alias' | 'permissions'> &

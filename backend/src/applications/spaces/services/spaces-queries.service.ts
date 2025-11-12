@@ -269,7 +269,7 @@ export class SpacesQueries {
           name: spacesRoots.name,
           externalPath: spacesRoots.externalPath,
           permissions: spacesRoots.permissions,
-          owner: { login: users.login, email: users.email, fullName: userFullNameSQL(users) }
+          owner: { id: users.id, login: users.login, email: users.email, fullName: userFullNameSQL(users) }
         },
         shares: sql`IF (${sql.placeholder('withShares')}, ${concatDistinctObjectsInArray(shares.id, {
           id: shares.id,
