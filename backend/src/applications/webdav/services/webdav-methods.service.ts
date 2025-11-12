@@ -91,7 +91,7 @@ export class WebDAVMethods {
       owner: req.dav.lock.owner
     }
 
-    const [ok, fileLock] = await this.filesLockManager.create(req.user, req.space.dbFile, req.dav.depth, req.dav.lock.timeout, davLock)
+    const [ok, fileLock] = await this.filesLockManager.create(req.user, req.space.dbFile, req.dav.depth, davLock, req.dav.lock.timeout)
     if (ok) {
       // Locking unmapped URLs: must create an empty resource (that is not a collection)
       if (!rExists) {

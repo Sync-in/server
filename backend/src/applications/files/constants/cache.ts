@@ -5,9 +5,10 @@
  */
 
 // cache task key = `ftask-$(userId}-${taskId}` => FileTask
-export const CACHE_TASK_PREFIX = 'ftask'
-export const CACHE_TASK_TTL = 86400 // 1 day
+export const CACHE_TASK_PREFIX = 'ftask' as const
+export const CACHE_TASK_TTL = 86400 as const // one day
 // cache token key = `flock|token?:${uuid}|path:${path}|ownerId?:${number}|spaceId?:${number}|...props` => FileLock
-export const CACHE_LOCK_PREFIX = 'flock'
+export const CACHE_LOCK_PREFIX = 'flock' as const
+export const CACHE_LOCK_DEFAULT_TIMEOUT = 28800 as const // 8 hours in seconds
 // cache only office = `office|${fileId}` => docKey
-export const CACHE_ONLY_OFFICE = 'foffice'
+export const CACHE_ONLY_OFFICE = 'foffice' as const

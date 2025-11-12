@@ -11,6 +11,12 @@ import type { SyncPath } from '../../sync/schemas/sync-path.interface'
 import type { Owner } from '../../users/interfaces/owner.interface'
 import type { File } from '../schemas/file.interface'
 
+export interface FileLockProps {
+  owner: string
+  ownerLogin: string
+  isExclusive: boolean
+}
+
 export interface FileProps extends Omit<File, 'ownerId' | 'spaceId' | 'spaceExternalRootId' | 'shareExternalId' | 'inTrash'> {
   id: number
   name: string
@@ -24,14 +30,14 @@ export interface FileProps extends Omit<File, 'ownerId' | 'spaceId' | 'spaceExte
   // used with shares
   origin?: { ownerLogin: string; spaceAlias: string; spaceRootExternalPath?: string }
   // root can be a share or a space root
-  // enabled & description are only used for shares
+  // enabled, and description are only used for shares
   root?: Pick<SpaceRoot, 'id' | 'alias' | 'permissions'> &
     Partial<Pick<SpaceRoot, 'name' | 'externalPath'>> &
     Partial<Pick<Share, 'enabled' | 'description'>> & {
       owner: Owner
     }
-  lock?: { owner: string; ownerLogin: string; isExclusive: boolean }
-  // used by the files browser to enrich files
+  lock?: FileLockProps
+  // used by the file browser to enrich files
   spaces?: Pick<Space, 'id' | 'alias' | 'name'>[]
   shares?: Pick<Share, 'id' | 'alias' | 'name' | 'type'>[]
   syncs?: Pick<SyncPath, 'clientId' | 'id'> & { clientName: string }[]

@@ -8,7 +8,8 @@ import { HttpClient, HttpParams } from '@angular/common/http'
 import { Component, inject, input, Input, OnDestroy, OnInit } from '@angular/core'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { API_FILES_ONLY_OFFICE_SETTINGS } from '@sync-in-server/backend/src/applications/files/constants/routes'
-import { OnlyOfficeReqConfig } from '@sync-in-server/backend/src/applications/files/interfaces/only-office-config.interface'
+import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
+import type { OnlyOfficeReqConfig } from '@sync-in-server/backend/src/applications/files/interfaces/only-office-config.interface'
 import { SERVER_NAME } from '@sync-in-server/backend/src/common/shared'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
@@ -72,7 +73,7 @@ export class FilesViewerDocumentComponent implements OnInit, OnDestroy {
               owner: `${SERVER_NAME} - ${this.store.user.getValue().fullName} (${this.store.user.getValue().email})`,
               ownerLogin: this.store.user.getValue().login,
               isExclusive: false
-            }
+            } satisfies FileLockProps
           }
           data.config.editorConfig.lang = this.layout.getCurrentLanguage()
           data.config.editorConfig.region = this.layout.getCurrentLanguage()

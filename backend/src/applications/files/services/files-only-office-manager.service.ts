@@ -14,7 +14,6 @@ import os from 'node:os'
 import path from 'node:path'
 import { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface'
 import { convertHumanTimeToSeconds, generateShortUUID } from '../../../common/functions'
-import { SERVER_NAME } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
@@ -26,6 +25,7 @@ import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
 import type { UserModel } from '../../users/models/user.model'
 import { getAvatarBase64 } from '../../users/utils/avatar'
 import { DEPTH, LOCK_SCOPE } from '../../webdav/constants/webdav'
+import { WebDAVLock } from '../../webdav/interfaces/webdav.interface'
 import { CACHE_ONLY_OFFICE } from '../constants/cache'
 import {
   ONLY_OFFICE_CONVERT_ERROR,
@@ -253,12 +253,18 @@ export class FilesOnlyOfficeManager {
   }
 
   private async genFileLock(user: UserModel, space: SpaceEnv): Promise<void> {
-    const [ok, _fileLock] = await this.filesLockManager.create(user, space.dbFile, DEPTH.RESOURCE, this.expiration, {
-      lockroot: null,
-      locktoken: null,
-      lockscope: LOCK_SCOPE.SHARED,
-      owner: `${SERVER_NAME} - ${user.fullName} (${user.email})`
-    })
+    const [ok, _fileLock] = await this.filesLockManager.create(
+      user,
+      space.dbFile,
+      DEPTH.RESOURCE,
+      {
+        lockroot: null,
+        locktoken: null,
+        lockscope: LOCK_SCOPE.SHARED,
+        owner: `OnlyOffice - ${user.fullName} (${user.email})`
+      } satisfies WebDAVLock,
+      this.expiration
+    )
     if (!ok) {
       throw new Error('document is locked')
     }

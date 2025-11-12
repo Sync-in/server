@@ -267,7 +267,7 @@ describe(WebDAVMethods.name, () => {
       const req = baseReq()
       const res = makeRes()
 
-      filesLockManager.create.mockImplementation(async (_user, _dbFile, _depth, _timeout, davLock) => {
+      filesLockManager.create.mockImplementation(async (_user, _dbFile, _depth, davLock, _timeout) => {
         davLock.locktoken = 'opaquetoken:1'
         return [
           true,
@@ -301,7 +301,7 @@ describe(WebDAVMethods.name, () => {
       const req = baseReq()
       const res = makeRes()
 
-      filesLockManager.create.mockImplementation(async (_user, _dbFile, _depth, _timeout, davLock) => {
+      filesLockManager.create.mockImplementation(async (_user, _dbFile, _depth, davLock, _timeout) => {
         davLock.locktoken = 'opaquetoken:new'
         return [
           true,

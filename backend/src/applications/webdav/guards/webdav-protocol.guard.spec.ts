@@ -4,12 +4,12 @@ import { FastifyReply } from 'fastify'
 import { urlToPath } from '../../../common/functions'
 import { decodeUrl } from '../../../common/shared'
 import { HTTP_METHOD } from '../../applications.constants'
-import { FilesLockManager } from '../../files/services/files-lock-manager.service'
+import { CACHE_LOCK_DEFAULT_TIMEOUT } from '../../files/constants/cache'
 import { DEPTH, HEADER, LOCK_SCOPE, OPTIONS_HEADERS, PROPSTAT } from '../constants/webdav'
 import { FastifyDAVRequest } from '../interfaces/webdav.interface'
+import * as IfHeaderUtils from '../utils/if-header'
 import { PROPFIND_ALL_PROP } from '../utils/webdav'
 import { WebDAVProtocolGuard } from './webdav-protocol.guard'
-import * as IfHeaderUtils from '../utils/if-header'
 
 // Keep these mocks to control path transforms in COPY/MOVE tests
 jest.mock('../../../common/shared', () => ({
@@ -232,7 +232,7 @@ describe(WebDAVProtocolGuard.name, () => {
       const res = makeRes()
       const ctx = makeCtx(req, res)
       await expect(guard.canActivate(ctx)).resolves.toBe(true)
-      expect(req.dav.lock.timeout).toBe(FilesLockManager.defaultLockTimeoutSeconds)
+      expect(req.dav.lock.timeout).toBe(CACHE_LOCK_DEFAULT_TIMEOUT)
       expect(req.dav.lock.lockscope).toBe(LOCK_SCOPE.EXCLUSIVE)
       expect(req.dav.lock.owner).toContain('Custom Owner')
       expect(req.dav.depth).toBe(DEPTH.RESOURCE)
@@ -253,7 +253,7 @@ describe(WebDAVProtocolGuard.name, () => {
     })
 
     it('clamps timeout Second-N to default when N exceeds default', async () => {
-      const big = FilesLockManager.defaultLockTimeoutSeconds + 1000
+      const big = CACHE_LOCK_DEFAULT_TIMEOUT + 1000
       const req = baseReq(HTTP_METHOD.LOCK, {
         headers: { [HEADER.TIMEOUT]: `Second-${big}` },
         body: '<lockinfo xmlns="DAV:"><lockscope><exclusive/></lockscope></lockinfo>'
@@ -261,7 +261,7 @@ describe(WebDAVProtocolGuard.name, () => {
       const res = makeRes()
       const ctx = makeCtx(req, res)
       await expect(guard.canActivate(ctx)).resolves.toBe(true)
-      expect(req.dav.lock.timeout).toBe(FilesLockManager.defaultLockTimeoutSeconds)
+      expect(req.dav.lock.timeout).toBe(CACHE_LOCK_DEFAULT_TIMEOUT)
     })
 
     it('invalid timeout -> NaN (no fallback), depth=infinity', async () => {
@@ -308,7 +308,7 @@ describe(WebDAVProtocolGuard.name, () => {
 
       try {
         await expect(guard.canActivate(ctx)).resolves.toBe(true)
-        expect(req.dav.lock.timeout).toBe(FilesLockManager.defaultLockTimeoutSeconds)
+        expect(req.dav.lock.timeout).toBe(CACHE_LOCK_DEFAULT_TIMEOUT)
         expect(req.dav.ifHeaders).toBeUndefined()
       } finally {
         spyIf.mockRestore()

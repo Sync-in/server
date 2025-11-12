@@ -10,7 +10,7 @@ import {
   API_FILES_OPERATION_THUMBNAIL,
   API_FILES_TASK_OPERATION
 } from '@sync-in-server/backend/src/applications/files/constants/routes'
-import type { FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
+import type { FileLockProps, FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { File } from '@sync-in-server/backend/src/applications/files/schemas/file.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { popFromObject } from '@sync-in-server/backend/src/common/shared'
@@ -59,7 +59,7 @@ export class FileModel implements File {
     enabled?: boolean
     description?: string
   }
-  lock?: FileProps['lock']
+  lock?: FileLockProps
   shares: { id: number; alias: string; name: string; type: number }[] = []
   links: { id: number; alias: string; name: string; type: number }[] = []
   spaces: { id: number; alias: string; name: string }[] = []

@@ -12,9 +12,10 @@ import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { UserModel } from '../../users/models/user.model'
 import { DEPTH, LOCK_DEPTH, LOCK_PREFIX, LOCK_SCOPE } from '../../webdav/constants/webdav'
 import { WebDAVLock } from '../../webdav/interfaces/webdav.interface'
-import { CACHE_LOCK_PREFIX } from '../constants/cache'
+import { CACHE_LOCK_DEFAULT_TIMEOUT, CACHE_LOCK_PREFIX } from '../constants/cache'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileLock } from '../interfaces/file-lock.interface'
+import { FileLockProps } from '../interfaces/file-props.interface'
 import { LockConflict } from '../models/file-lock-error'
 import { files } from '../schemas/files.schema'
 import { dirName, fileName } from '../utils/files'
@@ -34,12 +35,11 @@ export class FilesLockManager {
       * If created with OnlyOffice, they are stored with no token and a davLock property whose `locktoken` & `lockroot` properties are null
   Cache token key format = `flock|token?:${uuid}|path:${path}|ownerId?:${number}|spaceId?:${number}|...props` => FileLock
   */
-  public static readonly defaultLockTimeoutSeconds = 86400 // 1 day
   private readonly logger = new Logger(FilesLockManager.name)
 
   constructor(private readonly cache: Cache) {}
 
-  async create(user: UserModel, dbFile: FileDBProps, depth: LOCK_DEPTH, ttl?: number, davLock?: WebDAVLock): Promise<[boolean, FileLock]> {
+  async create(user: UserModel, dbFile: FileDBProps, depth: LOCK_DEPTH, davLock?: WebDAVLock, ttl?: number): Promise<[boolean, FileLock]> {
     let token: string
     let lockscope: LOCK_SCOPE
     if (davLock) {
@@ -60,7 +60,7 @@ export class FilesLockManager {
       }
       throw new Error(e)
     }
-    ttl ??= FilesLockManager.defaultLockTimeoutSeconds
+    ttl ??= CACHE_LOCK_DEFAULT_TIMEOUT
     const key = `${CACHE_LOCK_PREFIX}|${this.genSuffixKey(dbFile, { depth: depth, token: token })}`
     const expiration = Math.floor(currentTimeStamp() + ttl)
     const lock: FileLock = {
@@ -158,7 +158,7 @@ export class FilesLockManager {
     options?: { userId?: number; lockScope?: LOCK_SCOPE; lockTokens?: string[] }
   ): Promise<void> {
     /* Checks if a file could be modified, created, moved, or deleted
-       Throws an `LockConflict` error when there are parent locks (depth: 0) or child locks (depth: infinite) that prevent modifications
+       Throws an `LockConflict` error when there are parent locks (depth: 0) or child locks (depth: infinite) that prevent modification
        Returns on the first conflict (compliant with the RFC 4918)
     */
     for await (const l of this.searchParentLocks(dbFile, { includeRoot: true, depth: DEPTH.INFINITY })) {
@@ -187,6 +187,28 @@ export class FilesLockManager {
     }
   }
 
+  async *searchChildLocks(dbFile: FileDBProps) {
+    const props = this.genSuffixKey(dbFile, { ignorePath: true })
+    const path = dbFile.path === '.' ? '*' : `${dbFile.path}/*`
+    this.logger.verbose(`${this.searchChildLocks.name} - ${path} (${props})`)
+    const keys = await this.searchKeysByPath(path, props)
+    if (keys.length) {
+      for (const l of (await this.cache.mget(keys)).filter(Boolean) as FileLock[]) {
+        this.logger.verbose(`-> ${l.dbFilePath} (owner: ${l.owner.login})`)
+        yield l
+      }
+    }
+  }
+
+  convertLockToFileLockProps(lock: FileLock): FileLockProps {
+    if (!lock) return null
+    return {
+      owner: lock?.davLock?.owner || `${lock.owner.fullName} (${lock.owner.email})`,
+      ownerLogin: lock.owner.login,
+      isExclusive: lock?.davLock?.lockscope ? lock?.davLock?.lockscope === LOCK_SCOPE.EXCLUSIVE : true
+    }
+  }
+
   private async *searchParentLocks(dbFile: FileDBProps, options: { includeRoot?: boolean; depth?: LOCK_DEPTH } = {}): AsyncGenerator<FileLock> {
     const props = this.genSuffixKey(dbFile, { ignorePath: true })
     let path = dbFile.path
@@ -206,19 +228,6 @@ export class FilesLockManager {
         }
       }
       path = dirName(path)
-    }
-  }
-
-  async *searchChildLocks(dbFile: FileDBProps) {
-    const props = this.genSuffixKey(dbFile, { ignorePath: true })
-    const path = dbFile.path === '.' ? '*' : `${dbFile.path}/*`
-    this.logger.verbose(`${this.searchChildLocks.name} - ${path} (${props})`)
-    const keys = await this.searchKeysByPath(path, props)
-    if (keys.length) {
-      for (const l of (await this.cache.mget(keys)).filter(Boolean) as FileLock[]) {
-        this.logger.verbose(`-> ${l.dbFilePath} (owner: ${l.owner.login})`)
-        yield l
-      }
     }
   }
 

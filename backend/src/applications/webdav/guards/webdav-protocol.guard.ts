@@ -10,7 +10,7 @@ import { FastifyReply } from 'fastify'
 import { urlToPath } from '../../../common/functions'
 import { decodeUrl } from '../../../common/shared'
 import { HTTP_METHOD } from '../../applications.constants'
-import { FilesLockManager } from '../../files/services/files-lock-manager.service'
+import { CACHE_LOCK_DEFAULT_TIMEOUT } from '../../files/constants/cache'
 import { USER_PERMISSION } from '../../users/constants/user'
 import {
   ALLOW_EMPTY_BODY_METHODS,
@@ -160,15 +160,15 @@ export class WebDAVProtocolGuard implements CanActivate {
       // timeout: 'Infinite, Second-4100000000' | 'Second-4100000000' | 'Infinite'
       const timeout = req.headers[HEADER.TIMEOUT] as string
       if (timeout.toLowerCase() === 'infinite') {
-        req.dav.lock.timeout = FilesLockManager.defaultLockTimeoutSeconds
+        req.dav.lock.timeout = CACHE_LOCK_DEFAULT_TIMEOUT
       } else {
         try {
           const timeoutSplit = timeout.split('-')
           const seconds = parseInt(timeoutSplit[timeoutSplit.length - 1], 10)
-          req.dav.lock.timeout = seconds > FilesLockManager.defaultLockTimeoutSeconds ? FilesLockManager.defaultLockTimeoutSeconds : seconds
+          req.dav.lock.timeout = seconds > CACHE_LOCK_DEFAULT_TIMEOUT ? CACHE_LOCK_DEFAULT_TIMEOUT : seconds
         } catch (e) {
           this.logger.warn(`${this.lockMethod.name} - unable to set timeout, use the default value : ${e}`)
-          req.dav.lock.timeout = FilesLockManager.defaultLockTimeoutSeconds
+          req.dav.lock.timeout = CACHE_LOCK_DEFAULT_TIMEOUT
         }
       }
     }
