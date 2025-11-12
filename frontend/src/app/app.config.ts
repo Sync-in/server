@@ -35,7 +35,13 @@ export const appConfig: ApplicationConfig = {
     }),
     provideL10nIntl(),
     provideAnimations(),
-    provideToastr({ positionClass: 'toast-bottom-right', preventDuplicates: false, timeOut: 7000 }),
+    provideToastr({
+      positionClass: 'toast-bottom-right',
+      preventDuplicates: false,
+      maxOpened: 6,
+      autoDismiss: true,
+      timeOut: 6000
+    }),
     { provide: TooltipConfig, useFactory: getToolTipConfig },
     BsModalService,
     importProvidersFrom(SocketIoModule.forRoot(webSocketOptions))
