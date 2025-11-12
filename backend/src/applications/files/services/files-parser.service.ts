@@ -103,7 +103,7 @@ export class FilesParser {
         id: shares.id,
         alias: shares.alias,
         externalPath: sql<string>`IF (${shares.externalPath} IS NOT NULL, ${shares.externalPath}, ${spacesRoots.externalPath})`,
-        isDir: sql<boolean>`IF (${shares.externalPath} IS NOT NULL, 1, ${files.isDir})`,
+        isDir: sql<boolean>`IF (${shares.externalPath} IS NOT NULL AND ${shares.fileId} IS NULL, 1, ${files.isDir})`,
         file: { path: sql<string>`IF (${files.id} IS NOT NULL, ${filePathSQL(files)}, '.')`, fromOwner: users.login, fromSpace: spaces.alias }
       })
       .from(shares)

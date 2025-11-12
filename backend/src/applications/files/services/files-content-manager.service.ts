@@ -128,7 +128,7 @@ export class FilesContentManager {
         }
       }
     } catch (e) {
-      this.logger.warn(`${this.parseFiles.name} - ${context.indexSuffix} - unable to parse : ${dir} : ${e}`)
+      this.logger.warn(`${this.parseFiles.name} - ${context.indexSuffix} - unable to parse: ${dir} - ${e}`)
     }
   }
 
@@ -145,7 +145,7 @@ export class FilesContentManager {
     try {
       stats = await fs.stat(realPath)
     } catch (e) {
-      this.logger.warn(`${this.analyzeFile.name} - unable to stats ${realPath} : ${e}`)
+      this.logger.warn(`${this.analyzeFile.name} - unable to stats: ${realPath} - ${e}`)
       return null
     }
     if (stats.size === 0 || stats.size > this.maxDocumentSize) {
@@ -190,7 +190,7 @@ export class FilesContentManager {
       )
       return content.length ? content : null
     } catch (e) {
-      this.logger.warn(`${this.parseContent.name} - unable to index : ${rPath} : ${e}`)
+      this.logger.warn(`${this.parseContent.name} - unable to index: ${rPath} - ${e}`)
     }
     return null
   }
