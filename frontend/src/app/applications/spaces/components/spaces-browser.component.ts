@@ -835,7 +835,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private initEventHandlers() {
     this.zone.runOutsideAngular(() => {
       this.eventDragOverHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'dragover', (ev): boolean | void => {
-        if (this.isTrashRepo && !this.moveFromDrag) {
+        if (this.inSharesList || (this.isTrashRepo && !this.moveFromDrag)) {
           ev.preventDefault()
           return false
         }
@@ -849,6 +849,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         }
       })
       this.eventDragStartHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'dragstart', (ev) => {
+        if (this.inSharesList) {
+          ev.preventDefault()
+        }
         if (ev.target.parentElement.nodeName === 'TD' || ev.target.parentElement.nodeName === 'DIV') {
           const f: FileModel =
             this.scrollView.viewPortItems[
@@ -893,7 +896,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         this.moveFromDrag = false
       })
       this.eventDropHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'drop', (ev): boolean | void => {
-        if (this.isTrashRepo && !this.moveFromDrag) {
+        if (this.inSharesList || (this.isTrashRepo && !this.moveFromDrag)) {
           ev.preventDefault()
           return false
         }

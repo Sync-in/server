@@ -48,6 +48,16 @@ export class LayoutComponent implements OnDestroy {
     }
   }
 
+  @HostListener('dragover', ['$event'])
+  onDragOver(event: DragEvent) {
+    event.preventDefault()
+  }
+
+  @HostListener('drop', ['$event'])
+  onDrop(event: DragEvent) {
+    event.preventDefault()
+  }
+
   toggleLeftSideBar(status: number) {
     // 1: open / 2: collapse / 3: toggle
     if (status === 1) {
