@@ -6,7 +6,7 @@
 
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="isEditing ? icons.faPen : icons.faEye"></fa-icon>
+    <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
     <span class="ms-2">{{ currentFile.name }}</span>
   </h4>
   <button (click)="onMinimize()" aria-label="Minimize" class="btn-minimize btn-minimize-white" type="button"></button>
@@ -31,10 +31,9 @@
         <app-files-viewer-text
           [currentHeight]="currentHeight"
           [file]="currentFile"
-          [mode]="mode"
           [isWriteable]="isWriteable"
           [modalClosing]="modalClosing()"
-          (readonlyChange)="onReadonlyChange($event)">
+          [(isReadonly)]="isReadonly">
         </app-files-viewer-text>
       }
     }

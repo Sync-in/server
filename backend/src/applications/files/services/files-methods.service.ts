@@ -14,6 +14,7 @@ import { SpacesManager } from '../../spaces/services/spaces-manager.service'
 import { UserModel } from '../../users/models/user.model'
 import { FILE_OPERATION } from '../constants/operations'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto } from '../dto/file-operations.dto'
+import { FileLockProps } from '../interfaces/file-props.interface'
 import { FileError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
 import { checkFileName, dirName, fileName, isPathExists, sanitizeName } from '../utils/files'
@@ -145,6 +146,22 @@ export class FilesMethods {
       return await this.filesManager.generateThumbnail(space, size)
     } catch (e) {
       this.handleError(space, this.genThumbnail.name, e)
+    }
+  }
+
+  async lock(user: UserModel, space: SpaceEnv): Promise<FileLockProps> {
+    try {
+      return await this.filesManager.lock(user, space)
+    } catch (e) {
+      this.handleError(space, FILE_OPERATION.LOCK, e)
+    }
+  }
+
+  async unlock(user: UserModel, space: SpaceEnv): Promise<void> {
+    try {
+      return await this.filesManager.unlock(user, space)
+    } catch (e) {
+      this.handleError(space, FILE_OPERATION.UNLOCK, e)
     }
   }
 

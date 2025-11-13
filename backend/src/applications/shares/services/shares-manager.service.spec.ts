@@ -7,6 +7,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as commonFunctions from '../../../common/functions'
+import { intersectPermissions } from '../../../common/shared'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { LINK_TYPE } from '../../links/constants/links'
@@ -39,7 +40,14 @@ jest.mock('../../../common/functions', () => {
   return {
     ...actual,
     generateShortUUID: jest.fn(),
-    hashPassword: jest.fn(),
+    hashPassword: jest.fn()
+  }
+})
+
+jest.mock('../../../common/shared', () => {
+  const actual = jest.requireActual('../../../common/shared')
+  return {
+    ...actual,
     intersectPermissions: jest.fn()
   }
 })
@@ -225,7 +233,7 @@ describe(SharesManager.name, () => {
       }
       jest.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(baseLink)
       jest.spyOn(service, 'getShareLink').mockResolvedValueOnce({ file: { permissions: 'SHARE_PERMS' } } as any)
-      ;(commonFunctions.intersectPermissions as jest.Mock).mockReturnValue('INTERSECTED')
+      ;(intersectPermissions as jest.Mock).mockReturnValue('INTERSECTED')
       linksQueriesMock.updateLinkFromSpaceOrShare.mockResolvedValueOnce(undefined)
 
       const dto: any = {

@@ -23,6 +23,7 @@ import { realTrashPathFromSpace } from '../../spaces/utils/paths'
 import { canAccessToSpace, haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
 import { UserModel } from '../../users/models/user.model'
 import { DEPTH, LOCK_DEPTH } from '../../webdav/constants/webdav'
+import { CACHE_LOCK_FILE_TTL } from '../constants/cache'
 import { tarGzExtension } from '../constants/compress'
 import { COMPRESSION_EXTENSION, DEFAULT_HIGH_WATER_MARK } from '../constants/files'
 import { FILE_OPERATION } from '../constants/operations'
@@ -31,6 +32,7 @@ import { CompressFileDto } from '../dto/file-operations.dto'
 import { FileTaskEvent } from '../events/file-task-event'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileLock } from '../interfaces/file-lock.interface'
+import { FileLockProps } from '../interfaces/file-props.interface'
 import { FileError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
 import {
@@ -179,14 +181,16 @@ export class FilesManager {
 
   async saveMultipart(user: UserModel, space: SpaceEnv, req: FastifySpaceRequest) {
     /* Accepted methods:
-        POST: create new resource
-        PUT: create or update new resource (even if a parent path does not exist)
+        POST: creates new resource
+        PUT: creates or fully replaces a resource at the given URI (even if intermediate paths do not exist)
+        PATCH: updates the content of a single existing resource without creating it
     */
     const overwrite = req.method === HTTP_METHOD.PUT
+    const patch = req.method === HTTP_METHOD.PATCH
     const realParentPath = dirName(space.realPath)
 
     if (!overwrite) {
-      if (await isPathExists(space.realPath)) {
+      if (!patch && (await isPathExists(space.realPath))) {
         throw new FileError(HttpStatus.BAD_REQUEST, 'Resource already exists')
       }
       if (!(await isPathExists(realParentPath))) {
@@ -200,9 +204,11 @@ export class FilesManager {
     const basePath = realParentPath + path.sep
 
     for await (const part of req.files()) {
-      // part.filename may contain a path like foo/bar.txt
-      const dstFile = path.resolve(basePath, part.filename)
-      // prevent path traversal
+      // If the request uses the PATCH method, the file name corresponds to the space
+      const partFileName = patch ? fileName(space.realPath) : part.filename
+      // `part.filename` may contain a path like foo/bar.txt
+      const dstFile = path.resolve(basePath, partFileName)
+      // Prevent path traversal
       if (!dstFile.startsWith(basePath)) {
         throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
       }
@@ -210,33 +216,38 @@ export class FilesManager {
       const dstDir = dirName(dstFile)
 
       if (overwrite) {
-        // prevent errors when an uploaded file would replace a directory with the same name
-        // only applies in `overwrite` cases
+        // Prevent errors when an uploaded file would replace a directory with the same name
+        // Only applies in `overwrite` cases
         if ((await isPathExists(dstFile)) && (await isPathIsDir(dstFile))) {
           // If a directory already exists at the destination path, delete it to allow overwriting with the uploaded file
-          const dstUrl = path.join(path.dirname(space.url), part.filename)
+          const dstUrl = path.join(path.dirname(space.url), partFileName)
           const dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
           await this.delete(user, dstSpace)
         } else if ((await isPathExists(dstDir)) && !(await isPathIsDir(dstDir))) {
           // If the destination's parent exists but is a file, remove it so we can create the directory
-          const dstUrl = path.join(path.dirname(space.url), path.dirname(part.filename))
+          const dstUrl = path.join(path.dirname(space.url), path.dirname(partFileName))
           const dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
           await this.delete(user, dstSpace)
         }
       }
-      // make dir in space
+      // Create the directory in the space
       if (!(await isPathExists(dstDir))) {
         await makeDir(dstDir, true)
       }
-      // create lock
-      const dbFile = { ...space.dbFile, path: path.join(dirName(space.dbFile.path), part.filename) }
-      const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, DEPTH.RESOURCE)
-      if (!ok) throw new LockConflict(fileLock, 'Conflicting lock')
-      // do
+      // Create or refresh lock
+      const dbFile = { ...space.dbFile, path: path.join(dirName(space.dbFile.path), partFileName) }
+      const [created, fileLock] = await this.filesLockManager.createOrRefresh(user, dbFile, DEPTH.RESOURCE, CACHE_LOCK_FILE_TTL)
+      // Do
       try {
         await writeFromStream(dstFile, part.file)
       } finally {
-        await this.filesLockManager.removeLock(fileLock.key)
+        if (created) {
+          await this.filesLockManager.removeLock(fileLock.key)
+        }
+      }
+      if (patch) {
+        // Only one resource can be updated with the PATCH method.
+        break
       }
     }
   }
@@ -604,6 +615,36 @@ export class FilesManager {
     } catch (e) {
       this.logger.warn(e)
       throw new FileError(HttpStatus.BAD_REQUEST, 'File is not an image')
+    }
+  }
+
+  async lock(user: UserModel, space: SpaceEnv): Promise<FileLockProps> {
+    const rExists = await isPathExists(space.realPath)
+    if (!rExists) {
+      this.logger.warn('Lock refresh must specify an existing resource')
+      throw new FileError(HttpStatus.BAD_REQUEST, 'Lock refresh must specify an existing resource')
+    }
+    const [_created, lock] = await this.filesLockManager.createOrRefresh(user, space.dbFile, DEPTH.RESOURCE, CACHE_LOCK_FILE_TTL)
+    return this.filesLockManager.convertLockToFileLockProps(lock)
+  }
+
+  async unlock(user: UserModel, space: SpaceEnv): Promise<void> {
+    if (!(await isPathExists(space.realPath))) {
+      this.logger.warn(`Unable to unlock: ${space.url} - resource does not exist`)
+      throw new FileError(HttpStatus.BAD_REQUEST, 'Unlock must specify an existing resource')
+    }
+    const fileLocks = await this.filesLockManager.getLocksByPath(space.dbFile)
+    if (fileLocks.length === 0) {
+      this.logger.warn(`Unable to find lock: ${space.url} - resource does not exist`)
+      return
+    }
+    for (const lock of fileLocks) {
+      if (lock.owner.id === user.id) {
+        // Refresh if more than half of the TTL has passed
+        await this.filesLockManager.removeLock(lock.key)
+      } else {
+        throw new LockConflict(lock, 'Conflicting lock')
+      }
     }
   }
 }

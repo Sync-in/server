@@ -12,7 +12,7 @@
       [adaptivePosition]="true"
       class="d-none d-sm-block btn btn-sm btn-secondary me-1"
       type="button"
-      [disabled]="!isReadable() || !isWriteable()">
+      [disabled]="!isSupported() || !isWriteable()">
       <fa-icon [icon]="isReadonly() ? icons.faLock : icons.faLockOpen"></fa-icon>
     </button>
     <button
@@ -34,8 +34,7 @@
       (ngModelChange)="lineWrapping.set($event)"
       [tooltip]="'Line Wrap' | translate:locale.language"
       class="d-none d-sm-block btn btn-sm btn-custom me-1"
-      type="button"
-      [disabled]="!isReadable()">
+      type="button">
       <fa-icon [icon]="icons.faArrowsLeftRightToLine"></fa-icon>
     </button>
     <button
@@ -44,8 +43,7 @@
       (ngModelChange)="toggleSearch()"
       [tooltip]="'Search' | translate:locale.language"
       class="d-none d-sm-block btn btn-sm btn-custom"
-      type="button"
-      [disabled]="!isReadable()">
+      type="button">
       <fa-icon [icon]="icons.faMagnifyingGlass"></fa-icon>
     </button>
     @if (warnOnUnsavedChanges()) {
@@ -54,7 +52,7 @@
               type="button"
               l10nTranslate>Save And Exit
       </button>
-      <button (click)="layout.closeDialog()"
+      <button (click)="onClose()"
               class="btn btn-sm btn-danger me-2"
               data-dismiss="modal" type="button"
               l10nTranslate>Close Without Saving

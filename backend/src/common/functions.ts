@@ -123,15 +123,6 @@ export function uniquePermissions(permissions: string, permissionsSeparator: str
   ].join(permissionsSeparator)
 }
 
-export function intersectPermissions(aPermissions: string, bPermissions: string, permissionsSeparator: string = SPACE_PERMS_SEP): string {
-  const aPerms = aPermissions.split(permissionsSeparator)
-  const bPerms = bPermissions.split(permissionsSeparator)
-  return aPerms
-    .filter((p: string) => p !== '' && p !== 'null' && bPerms.indexOf(p) > -1)
-    .sort()
-    .join(permissionsSeparator)
-}
-
 export function differencePermissions(aPermissions: string, bPermissions: string, permissionsSeparator: string = SPACE_PERMS_SEP): string[] {
   const aPerms = aPermissions.split(permissionsSeparator)
   const bPerms = bPermissions.split(permissionsSeparator)

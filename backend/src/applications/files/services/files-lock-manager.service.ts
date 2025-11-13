@@ -12,7 +12,7 @@ import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { UserModel } from '../../users/models/user.model'
 import { DEPTH, LOCK_DEPTH, LOCK_PREFIX, LOCK_SCOPE } from '../../webdav/constants/webdav'
 import { WebDAVLock } from '../../webdav/interfaces/webdav.interface'
-import { CACHE_LOCK_DEFAULT_TIMEOUT, CACHE_LOCK_PREFIX } from '../constants/cache'
+import { CACHE_LOCK_DEFAULT_TTL, CACHE_LOCK_PREFIX } from '../constants/cache'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileLock } from '../interfaces/file-lock.interface'
 import { FileLockProps } from '../interfaces/file-props.interface'
@@ -60,7 +60,7 @@ export class FilesLockManager {
       }
       throw new Error(e)
     }
-    ttl ??= CACHE_LOCK_DEFAULT_TIMEOUT
+    ttl ??= CACHE_LOCK_DEFAULT_TTL
     const key = `${CACHE_LOCK_PREFIX}|${this.genSuffixKey(dbFile, { depth: depth, token: token })}`
     const expiration = Math.floor(currentTimeStamp() + ttl)
     const lock: FileLock = {
@@ -73,6 +73,33 @@ export class FilesLockManager {
     }
     this.logger.verbose(`${this.create.name} - ${key}`)
     await this.cache.set(key, lock, ttl)
+    return [true, lock]
+  }
+
+  async createOrRefresh(user: UserModel, dbFile: FileDBProps, depth: LOCK_DEPTH, ttl?: number): Promise<[boolean, FileLock]> {
+    // Returns: [created, lock]
+    ttl ??= CACHE_LOCK_DEFAULT_TTL
+    const locks = await this.getLocksByPath(dbFile)
+    // Check the existing lock and refresh it if needed
+    if (locks.length > 0) {
+      for (const lock of locks) {
+        if (lock.owner.id === user.id) {
+          // Refresh if more than half of the TTL has passed
+          const mustRefresh = lock.expiration - currentTimeStamp() < ttl / 2
+          if (mustRefresh) {
+            this.refreshLockTimeout(lock, ttl).catch((e: Error) => this.logger.error(`${this.createOrRefresh.name} - ${e}`))
+          }
+        } else {
+          throw new LockConflict(lock, 'Conflicting lock')
+        }
+      }
+      return [false, locks[0]]
+    }
+    // Create the lock
+    const [ok, lock] = await this.create(user, dbFile, depth, null, ttl)
+    if (!ok) {
+      throw new LockConflict(lock, 'Conflicting lock')
+    }
     return [true, lock]
   }
 

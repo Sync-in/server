@@ -112,7 +112,7 @@ export class WebDAVMethods {
   @IfHeaderDecorator()
   async unlock(req: FastifyDAVRequest, res: FastifyReply) {
     if (!(await isPathExists(req.space.realPath))) {
-      this.logger.warn(`Unable to unlock ${req.dav.url} : resource does not exist`)
+      this.logger.warn(`Unable to unlock: ${req.dav.url} - resource does not exist`)
       return res.status(HttpStatus.NOT_FOUND).send(req.dav.url)
     }
 

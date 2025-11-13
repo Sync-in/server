@@ -44,6 +44,7 @@ import { type FileTask, FileTaskStatus } from '@sync-in-server/backend/src/appli
 import { SHARE_TYPE } from '@sync-in-server/backend/src/applications/shares/constants/shares'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import type { SpaceFiles } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-files.interface'
+import { intersectPermissions } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { BsModalRef } from 'ngx-bootstrap/modal'
@@ -439,7 +440,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     if (this.selection[0].isDir) {
       this.browse(this.selection[0])
     } else if (editMode && this.selection[0].isEditable) {
-      this.openViewerDialog(FILE_MODE.EDIT)
+      this.shortcutEdit()
     } else if (this.selection[0].isViewable) {
       this.openViewerDialog(FILE_MODE.VIEW)
     } else {
@@ -448,7 +449,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   shortcutEdit() {
-    if (this.selection[0]?.lock?.isExclusive) {
+    if (this.selection[0]?.lock?.isExclusive && this.selection[0]?.lock?.ownerLogin !== this.store.user.getValue().login) {
       this.layout.sendNotification('info', 'The file is locked', this.selection[0].lock.owner)
       return
     }
@@ -700,7 +701,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private setFilePermissionsAndSpace(): Partial<FileSpace> {
     if (this.selection[0]?.root && this.selection[0].root.permissions.indexOf(SPACE_OPERATION.SHARE_OUTSIDE) === -1) {
-      // space case, if file is a space root without the share permissions
+      // Space case, if the file is a space root without the share outside permissions
       this.layout.sendNotification('warning', this.selection[0].name, 'You do not have share permission')
       return null
     }
@@ -724,8 +725,14 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private openViewerDialog(mode: FILE_MODE) {
-    const permissions = this.selection[0]?.root ? this.selection[0].root.permissions : this.spacePermissions
-    this.filesService.openViewerDialog(mode, this.selection[0], this.files, permissions).catch(console.error)
+    const f = this.selection[0]
+    let permissions: string
+    if (this.inSharesList) {
+      permissions = f.root.permissions
+    } else {
+      permissions = f?.root ? intersectPermissions(this.spacePermissions, f?.root.permissions) : this.spacePermissions
+    }
+    this.filesService.openViewerDialog(mode, f, this.files, permissions).catch(console.error)
   }
 
   private focusOn(selectName: string) {

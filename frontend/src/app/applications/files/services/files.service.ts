@@ -26,6 +26,7 @@ import type {
   MakeFileDto,
   SearchFilesDto
 } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
+import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
@@ -215,6 +216,14 @@ export class FilesService {
     )
   }
 
+  lock(file: FileModel): Observable<FileLockProps> {
+    return this.http.request<FileLockProps>('lock', file.dataUrl)
+  }
+
+  unlock(file: FileModel): Observable<void> {
+    return this.http.request<void>('unlock', file.dataUrl)
+  }
+
   async openOverwriteDialog(files: File[] | FileModel[], renamedTo?: string): Promise<boolean> {
     const overwriteDialog: BsModalRef<FilesOverwriteDialogComponent> = this.layout.openDialog(FilesOverwriteDialogComponent, null, {
       initialState: {
@@ -227,15 +236,15 @@ export class FilesService {
     })
   }
 
-  async openViewerDialog(mode: FILE_MODE, currentFile: FileModel, directoryFiles: FileModel[], permissions: string) {
-    this.http.head(currentFile.dataUrl).subscribe({
+  async openViewerDialog(mode: FILE_MODE, file: FileModel, directoryFiles: FileModel[], permissions: string) {
+    this.http.head(file.dataUrl).subscribe({
       next: async () => {
         let hookedShortMime: string
         try {
-          hookedShortMime = await this.viewerHook(mode, currentFile)
+          hookedShortMime = await this.viewerHook(mode, file)
         } catch {
           // OnlyOffice isn't enabled, falling back to download
-          this.download(currentFile)
+          this.download(file)
           return
         }
         const isWriteable = permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
@@ -243,9 +252,9 @@ export class FilesService {
           mode = FILE_MODE.VIEW
         }
         this.layout.openDialog(FilesViewerDialogComponent, 'full', {
-          id: currentFile.id, // only used to manage the modal
+          id: file.id, // only used to manage the modal
           initialState: {
-            currentFile: currentFile,
+            currentFile: file,
             directoryFiles: directoryFiles,
             mode: mode,
             isWriteable: isWriteable,
@@ -253,27 +262,26 @@ export class FilesService {
           } satisfies Partial<FilesViewerDialogComponent>
         })
       },
-      error: (err: HttpErrorResponse) => {
-        console.error(err.message)
-        this.layout.sendNotification('error', 'Unable to open document', currentFile?.name)
+      error: (e: HttpErrorResponse) => {
+        this.layout.sendNotification('error', 'Unable to open document', file?.name, e)
       }
     })
   }
 
-  private async viewerHook(mode: FILE_MODE, currentFile: FileModel): Promise<string> {
+  private async viewerHook(mode: FILE_MODE, file: FileModel): Promise<string> {
     const onlyOfficeEnabled = await this.getOnlyOfficeStatus()
-    if (currentFile.shortMime === SHORT_MIME.DOCUMENT && !onlyOfficeEnabled) {
-      if (currentFile.mime.startsWith('text-')) {
+    if (file.shortMime === SHORT_MIME.DOCUMENT && !onlyOfficeEnabled) {
+      if (file.mime.startsWith('text-')) {
         return SHORT_MIME.TEXT
       }
       throw new Error('Feature not enabled')
     }
-    if (currentFile.shortMime === SHORT_MIME.PDF) {
+    if (file.shortMime === SHORT_MIME.PDF) {
       if (mode === FILE_MODE.EDIT && onlyOfficeEnabled) {
         return SHORT_MIME.DOCUMENT
       }
     }
-    return currentFile.shortMime
+    return file.shortMime
   }
 
   private async getOnlyOfficeStatus(): Promise<boolean> {

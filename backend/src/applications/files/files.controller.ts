@@ -11,16 +11,18 @@ import {
   Delete,
   Get,
   Head,
+  Lock,
   Logger,
   Move,
   ParseIntPipe,
+  Patch,
   Post,
-  Put,
   Query,
   Req,
   Res,
   Search,
   StreamableFile,
+  Unlock,
   UseGuards
 } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
@@ -36,6 +38,7 @@ import { UserModel } from '../users/models/user.model'
 import { FILE_OPERATION } from './constants/operations'
 import { FILES_ROUTE } from './constants/routes'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto, SearchFilesDto } from './dto/file-operations.dto'
+import { FileLockProps } from './interfaces/file-props.interface'
 import { FileTask } from './models/file-task'
 import { FileContent } from './schemas/file-content.interface'
 import { FileRecent } from './schemas/file-recent.interface'
@@ -78,7 +81,7 @@ export class FilesController {
     return this.filesMethods.upload(req)
   }
 
-  @Put(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
+  @Patch(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
   async uploadOverwrite(@Req() req: FastifySpaceRequest): Promise<void> {
     return this.filesMethods.upload(req)
   }
@@ -122,6 +125,16 @@ export class FilesController {
     const thumb = await this.filesMethods.genThumbnail(space, size)
     res.type(webpMimeType)
     return res.send(thumb)
+  }
+
+  @Lock(`${FILES_ROUTE.OPERATION}/*`)
+  async lock(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<FileLockProps> {
+    return this.filesMethods.lock(user, space)
+  }
+
+  @Unlock(`${FILES_ROUTE.OPERATION}/*`)
+  async unlock(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<void> {
+    return this.filesMethods.unlock(user, space)
   }
 
   // TASKS OPERATIONS

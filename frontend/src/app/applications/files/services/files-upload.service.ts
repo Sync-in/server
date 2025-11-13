@@ -65,12 +65,13 @@ export class FilesUploadService {
     }
   }
 
-  uploadOneFile(file: FileModel, content: string, overwrite: boolean) {
+  uploadOneFile(file: FileModel, content: string, updateContent = false, overwrite = false) {
     const url = `${API_FILES_OPERATION_UPLOAD}/${file.path}`
-    const fileContent = new File([new Blob([content])], file.name.normalize(), { type: file.mime.replace('-', '/') })
+    const fileName = (file?.root?.alias || file.name).normalize()
+    const fileContent = new File([new Blob([content])], fileName, { type: file.mime.replace('-', '/') })
     const formData = new FormData()
     formData.append('file', fileContent)
-    return this.http.request<void>(overwrite ? 'put' : 'post', url, { body: formData })
+    return this.http.request<void>(updateContent ? 'patch' : overwrite ? 'put' : 'post', url, { body: formData })
   }
 
   private uploadFiles(url: string, form: FormData, overwrite: boolean) {

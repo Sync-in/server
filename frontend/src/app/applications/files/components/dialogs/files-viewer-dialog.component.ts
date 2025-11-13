@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, computed, inject, Input, OnDestroy, OnInit, signal } from '@angular/core'
+import { Component, computed, inject, Input, model, OnDestroy, OnInit, signal } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faEye, faPen } from '@fortawesome/free-solid-svg-icons'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
@@ -37,7 +37,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) isWriteable: boolean
   @Input({ required: true }) hookedShortMime: string
   modalClosing = signal<boolean>(false)
-  protected isEditing = false
+  protected isReadonly = model<boolean>(true)
   protected currentHeight: number
   protected readonly SHORT_MIME = SHORT_MIME
   protected readonly icons = { faEye, faPen }
@@ -48,7 +48,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   private readonly offsetTop = 42
 
   ngOnInit() {
-    this.isEditing = this.mode === FILE_MODE.EDIT
+    this.isReadonly.set(this.mode === FILE_MODE.VIEW)
     this.openedFile = { id: this.currentFile.id, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
     this.onResize()
   }
@@ -70,10 +70,6 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
 
   onMinimize() {
     this.layout.minimizeDialog(this.openedFile.id, { name: this.openedFile.name, mimeUrl: this.openedFile.mimeUrl })
-  }
-
-  onReadonlyChange(state: boolean) {
-    this.isEditing = !state
   }
 
   private onResize() {

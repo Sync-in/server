@@ -13,10 +13,10 @@ import {
   diffCollection,
   differencePermissions,
   generateShortUUID,
-  hashPassword,
-  intersectPermissions
+  hashPassword
 } from '../../../common/functions'
 import type { Entries, StorageQuota } from '../../../common/interfaces'
+import { intersectPermissions } from '../../../common/shared'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import type { FileProps } from '../../files/interfaces/file-props.interface'
 import { FileError } from '../../files/models/file-error'

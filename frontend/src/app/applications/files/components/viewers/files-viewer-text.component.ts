@@ -13,9 +13,9 @@ import {
   inject,
   input,
   linkedSignal,
+  model,
   OnDestroy,
   OnInit,
-  output,
   signal,
   untracked,
   viewChild,
@@ -27,14 +27,16 @@ import { languages } from '@codemirror/language-data'
 import { closeSearchPanel, openSearchPanel } from '@codemirror/search'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowsLeftRightToLine, faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass, faSpinner } from '@fortawesome/free-solid-svg-icons'
-import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
+import { firstValueFrom } from 'rxjs'
 import { AppWindow, themeDark } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
 import { FilesUploadService } from '../../services/files-upload.service'
+import { FilesService } from '../../services/files.service'
 
 @Component({
   selector: 'app-files-viewer-text',
@@ -71,13 +73,11 @@ import { FilesUploadService } from '../../services/files-upload.service'
 export class FilesViewerTextComponent implements OnInit, OnDestroy {
   editor = viewChild<CodeEditor>('editor')
   currentHeight = input.required<number>()
-  file = input.required<FileModel>()
-  mode = input.required<FILE_MODE>()
+  file = model.required<FileModel>()
   isWriteable = input.required<boolean>()
+  isReadonly = model.required<boolean>()
   modalClosing = input.required<boolean>()
-  readonlyChange = output<boolean>()
-  protected isReadonly = linkedSignal(() => this.mode() === FILE_MODE.VIEW)
-  protected isReadable = signal(false)
+  protected isSupported = signal(false)
   protected isModified = signal(false)
   protected isSaving = signal(false)
   protected lineWrapping = signal(false)
@@ -87,11 +87,13 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   protected readonly languages: LanguageDescription[] = languages
   protected currentTheme: any = 'light'
   protected readonly icons = { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass, faSpinner, faArrowsLeftRightToLine }
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected isSearchPanelOpen = signal(false)
   protected readonly layout = inject(LayoutService)
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly canLock = linkedSignal(() => this.isWriteable() && !this.isReadonly())
   private isContentReady = false
   private readonly http = inject(HttpClient)
+  private readonly filesServices = inject(FilesService)
   private readonly filesUpload = inject(FilesUploadService)
   private subscription = this.layout.switchTheme.subscribe((layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light'))
   private readonly maxSize = 5242880 // 5MB
@@ -109,11 +111,19 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
           this.layout.restoreDialog(fileId)
         }
       } else {
-        this.layout.closeDialog(null, fileId)
+        this.onClose()
       }
     })
     effect(() => {
-      this.readonlyChange.emit(this.isReadonly())
+      this.isReadonly()
+      // Reset search state when open to enable/disable the replace function
+      const isSearchPanelIsOpen = untracked(() => this.isSearchPanelOpen())
+      if (isSearchPanelIsOpen) {
+        setTimeout(() => {
+          this.toggleSearch()
+          this.toggleSearch()
+        }, 100)
+      }
     })
   }
 
@@ -131,6 +141,9 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
       } else if (this.isModified()) {
         event.stopPropagation()
         this.warnOnUnsavedChanges.set(true)
+      } else {
+        event.stopPropagation()
+        this.onClose()
       }
       return
     }
@@ -150,27 +163,27 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     const language: LanguageDescription = LanguageDescription.matchFilename(languages, this.file().name)
     if (language?.name || this.file().size <= this.maxSize) {
       this.currentLanguage = language?.name
-      this.isReadable.set(true)
-      this.http.get(this.file().dataUrl, { responseType: 'text' }).subscribe((data: string) => (this.content = data))
+      this.isSupported.set(true)
+      await this.lockFile()
+      this.loadContent()
     } else {
-      this.isReadable.set(false)
+      this.isReadonly.set(true)
+      this.isSupported.set(false)
       this.content = this.layout.translateString('This file contains binary data that can not be read')
     }
   }
 
-  toggleReadonly() {
-    this.isReadonly.update((state) => !state)
-    // Reset search state when open to enable/disable the replace function
-    if (this.isSearchPanelOpen()) {
-      setTimeout(() => {
-        this.toggleSearch()
-        this.toggleSearch()
-      }, 100)
+  async toggleReadonly() {
+    if (this.isReadonly()) {
+      await this.lockFile()
+    } else {
+      await this.unlockFile()
     }
+    this.isReadonly.update((state) => !state)
   }
 
   save(exit = false) {
@@ -181,7 +194,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
         this.isSaving.set(false)
         this.warnOnUnsavedChanges.set(false)
         if (exit) {
-          this.layout.closeDialog(null, this.file().id)
+          this.onClose()
         }
       },
       error: (e: HttpErrorResponse) => {
@@ -209,7 +222,50 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
     }
   }
 
+  onClose() {
+    this.unlockFile().then(() => this.layout.closeDialog(null, this.file().id))
+  }
+
   ngOnDestroy() {
     this.subscription.unsubscribe()
+  }
+
+  private loadContent() {
+    this.http.get(this.file().dataUrl, { responseType: 'text' }).subscribe({
+      next: (data: string) => (this.content = data),
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Unable to open document', this.file().name, e)
+    })
+  }
+
+  private async lockFile() {
+    if (!this.canLock()) return
+    try {
+      const lock: FileLockProps = await firstValueFrom(this.filesServices.lock(this.file()))
+      this.file.update((f) => {
+        f.lock = lock
+        return f
+      })
+    } catch (e) {
+      this.lockError(e as HttpErrorResponse)
+    }
+  }
+
+  private async unlockFile() {
+    if (!this.canLock()) return
+    try {
+      await firstValueFrom(this.filesServices.unlock(this.file()))
+      this.file.update((f) => {
+        delete f.lock
+        return f
+      })
+    } catch (e) {
+      this.lockError(e as HttpErrorResponse)
+    }
+  }
+
+  private lockError(e: HttpErrorResponse) {
+    this.isReadonly.set(true)
+    this.isSupported.set(false)
+    this.layout.sendNotification('warning', this.file().name, e.error.message)
   }
 }

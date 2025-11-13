@@ -7,7 +7,7 @@
 import { createMock, DeepMocked } from '@golevelup/ts-jest'
 import { ExecutionContext, HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { intersectPermissions } from '../../../common/functions'
+import { intersectPermissions } from '../../../common/shared'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'

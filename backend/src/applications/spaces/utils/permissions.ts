@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { intersectPermissions } from '../../../common/functions'
+import { intersectPermissions } from '../../../common/shared'
 import { USER_PERMISSION } from '../../users/constants/user'
 import type { UserModel } from '../../users/models/user.model'
 import { SPACE_ALIAS, SPACE_OPERATION, SPACE_PERMS_SEP, SPACE_REPOSITORY } from '../constants/spaces'

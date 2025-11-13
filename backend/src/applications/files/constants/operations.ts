@@ -14,7 +14,9 @@ export enum FILE_OPERATION {
   DOWNLOAD = 'download',
   UPLOAD = 'upload',
   TOUCH = 'touch',
-  THUMBNAIL = 'thumbnail'
+  THUMBNAIL = 'thumbnail',
+  LOCK = 'lock',
+  UNLOCK = 'unlock'
 }
 
 export enum FILE_MODE {

@@ -4,6 +4,8 @@
  * See the LICENSE file for licensing details
  */
 
+import { SPACE_PERMS_SEP } from '../applications/spaces/constants/spaces'
+
 export const SERVER_NAME = 'Sync-in' as const
 
 // eslint-disable-next-line no-control-regex
@@ -92,4 +94,13 @@ export function objectPropertyFromString(obj: any, property: string): any {
 
 export function capitalizeString(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+export function intersectPermissions(aPermissions: string, bPermissions: string, permissionsSeparator: string = SPACE_PERMS_SEP): string {
+  const aPerms = aPermissions.split(permissionsSeparator)
+  const bPerms = bPermissions.split(permissionsSeparator)
+  return aPerms
+    .filter((p: string) => p !== '' && p !== 'null' && bPerms.indexOf(p) > -1)
+    .sort()
+    .join(permissionsSeparator)
 }
