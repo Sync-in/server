@@ -606,5 +606,7 @@
   "Read-only": "Только чтение",
   "Read-write": "Чтение и запись",
   "Save And Exit": "Сохранить и выйти",
-  "Close Without Saving": "Закрыть без сохранения"
+  "Close Without Saving": "Закрыть без сохранения",
+  "Undo": "Отменить",
+  "Redo": "Повторить"
 }

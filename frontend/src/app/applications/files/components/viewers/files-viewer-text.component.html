@@ -17,7 +17,7 @@
     </button>
     <button
       (click)="save()"
-      [tooltip]="(isReadonly() || !isWriteable() || !isModified() ? null : 'Save') | translate:locale.language"
+      [tooltip]="(isReadonly() || !isWriteable() || !isModified() ? undefined : 'Save') | translate:locale.language"
       [isDisabled]="isReadonly() || !isWriteable() || !isModified()"
       class="d-none d-sm-block btn btn-sm btn-secondary me-1"
       type="button"
@@ -27,6 +27,22 @@
       } @else {
         <fa-icon [icon]="icons.faFloppyDisk"></fa-icon>
       }
+    </button>
+    <button
+      (click)="onUndo()"
+      [disabled]="!canUndo()"
+      [tooltip]="'Undo' | translate:locale.language"
+      class="d-none d-sm-block btn btn-sm btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faReply"></fa-icon>
+    </button>
+    <button
+      (click)="onRedo()"
+      [disabled]="!canRedo()"
+      [tooltip]="'Redo' | translate:locale.language"
+      class="d-none d-sm-block btn btn-sm btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faShare"></fa-icon>
     </button>
     <button
       btnCheckbox
@@ -73,5 +89,6 @@
     (change)="contentChange()"
     [theme]="currentTheme"
     [readonly]="isReadonly()"
+    [disabled]="isReadonly()"
     [lineWrapping]="lineWrapping()" />
 </div>

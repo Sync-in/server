@@ -606,5 +606,7 @@
   "Read-only": "只读",
   "Read-write": "读写",
   "Save And Exit": "保存并退出",
-  "Close Without Saving": "不保存并关闭"
+  "Close Without Saving": "不保存并关闭",
+  "Undo": "撤销",
+  "Redo": "重做"
 }

@@ -12,7 +12,6 @@ import {
   HostListener,
   inject,
   input,
-  linkedSignal,
   model,
   OnDestroy,
   OnInit,
@@ -22,11 +21,22 @@ import {
   ViewEncapsulation
 } from '@angular/core'
 import { FormsModule } from '@angular/forms'
+import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
 import { closeSearchPanel, openSearchPanel } from '@codemirror/search'
+import { Transaction } from '@codemirror/state'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faArrowsLeftRightToLine, faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowsLeftRightToLine,
+  faFloppyDisk,
+  faLock,
+  faLockOpen,
+  faMagnifyingGlass,
+  faReply,
+  faShare,
+  faSpinner
+} from '@fortawesome/free-solid-svg-icons'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
@@ -82,15 +92,14 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   protected isSaving = signal(false)
   protected lineWrapping = signal(false)
   protected warnOnUnsavedChanges = signal(false)
-  protected content: string
+  protected content: any = false
   protected currentLanguage = undefined
   protected readonly languages: LanguageDescription[] = languages
   protected currentTheme: any = 'light'
-  protected readonly icons = { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass, faSpinner, faArrowsLeftRightToLine }
+  protected readonly icons = { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass, faSpinner, faArrowsLeftRightToLine, faReply, faShare }
   protected isSearchPanelOpen = signal(false)
   protected readonly layout = inject(LayoutService)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private readonly canLock = linkedSignal(() => this.isWriteable() && !this.isReadonly())
   private isContentReady = false
   private readonly http = inject(HttpClient)
   private readonly filesServices = inject(FilesService)
@@ -111,7 +120,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
           this.layout.restoreDialog(fileId)
         }
       } else {
-        this.onClose()
+        this.onClose().catch(console.error)
       }
     })
     effect(() => {
@@ -143,7 +152,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
         this.warnOnUnsavedChanges.set(true)
       } else {
         event.stopPropagation()
-        this.onClose()
+        this.onClose().catch(console.error)
       }
       return
     }
@@ -168,8 +177,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
     if (language?.name || this.file().size <= this.maxSize) {
       this.currentLanguage = language?.name
       this.isSupported.set(true)
-      await this.lockFile()
-      this.loadContent()
+      this.loadContent().catch(console.error)
     } else {
       this.isReadonly.set(true)
       this.isSupported.set(false)
@@ -194,7 +202,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
         this.isSaving.set(false)
         this.warnOnUnsavedChanges.set(false)
         if (exit) {
-          this.onClose()
+          this.onClose().catch(console.error)
         }
       },
       error: (e: HttpErrorResponse) => {
@@ -222,23 +230,56 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
     }
   }
 
-  onClose() {
-    this.unlockFile().then(() => this.layout.closeDialog(null, this.file().id))
+  onUndo() {
+    undo({ state: this.editor().view.state, dispatch: this.editor().view.dispatch })
+  }
+
+  onRedo() {
+    redo({ state: this.editor().view.state, dispatch: this.editor().view.dispatch })
+  }
+
+  canUndo(): boolean {
+    if (this.editor()?.view) {
+      return undoDepth(this.editor().view.state) > 0
+    }
+    return false
+  }
+
+  canRedo(): boolean {
+    if (this.editor()?.view) {
+      return redoDepth(this.editor().view.state) > 0
+    }
+    return false
+  }
+
+  async onClose() {
+    if (!this.isReadonly()) {
+      await this.unlockFile()
+    }
+    this.layout.closeDialog(null, this.file().id)
   }
 
   ngOnDestroy() {
     this.subscription.unsubscribe()
   }
 
-  private loadContent() {
+  private async loadContent() {
+    if (!this.isReadonly()) {
+      await this.lockFile()
+    }
     this.http.get(this.file().dataUrl, { responseType: 'text' }).subscribe({
-      next: (data: string) => (this.content = data),
+      next: (data: string) => {
+        this.editor().view.dispatch({
+          changes: { from: 0, to: this.editor().view.state.doc.length, insert: data },
+          annotations: Transaction.addToHistory.of(false)
+        })
+      },
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Unable to open document', this.file().name, e)
     })
   }
 
   private async lockFile() {
-    if (!this.canLock()) return
+    if (!this.isSupported || !this.isWriteable()) return
     try {
       const lock: FileLockProps = await firstValueFrom(this.filesServices.lock(this.file()))
       this.file.update((f) => {
@@ -251,7 +292,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   }
 
   private async unlockFile() {
-    if (!this.canLock()) return
+    if (!this.isSupported || !this.isWriteable()) return
     try {
       await firstValueFrom(this.filesServices.unlock(this.file()))
       this.file.update((f) => {

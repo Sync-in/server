@@ -606,5 +606,7 @@
   "Read-only": "Sola lettura",
   "Read-write": "Lettura e scrittura",
   "Save And Exit": "Salva e esci",
-  "Close Without Saving": "Chiudi senza salvare"
+  "Close Without Saving": "Chiudi senza salvare",
+  "Undo": "Annulla",
+  "Redo": "Ripristina"
 }

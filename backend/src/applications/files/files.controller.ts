@@ -17,6 +17,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Put,
   Query,
   Req,
   Res,
@@ -81,8 +82,13 @@ export class FilesController {
     return this.filesMethods.upload(req)
   }
 
-  @Patch(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
+  @Put(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
   async uploadOverwrite(@Req() req: FastifySpaceRequest): Promise<void> {
+    return this.filesMethods.upload(req)
+  }
+
+  @Patch(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
+  async uploadContent(@Req() req: FastifySpaceRequest): Promise<void> {
     return this.filesMethods.upload(req)
   }
 

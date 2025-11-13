@@ -606,5 +606,7 @@
   "Read-only": "読み取り専用",
   "Read-write": "読み書き可能",
   "Save And Exit": "保存して終了",
-  "Close Without Saving": "保存せずに閉じる"
+  "Close Without Saving": "保存せずに閉じる",
+  "Undo": "元に戻す",
+  "Redo": "やり直す"
 }

@@ -606,5 +606,7 @@
   "Read-only": "Schreibgeschützt",
   "Read-write": "Lesen/Schreiben",
   "Save And Exit": "Speichern und beenden",
-  "Close Without Saving": "Schließen ohne zu speichern"
+  "Close Without Saving": "Schließen ohne zu speichern",
+  "Undo": "Rückgängig",
+  "Redo": "Wiederholen"
 }

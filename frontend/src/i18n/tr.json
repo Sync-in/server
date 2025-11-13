@@ -606,5 +606,7 @@
   "Read-only": "Salt okunur",
   "Read-write": "Okuma/Yazma",
   "Save And Exit": "Kaydet ve çık",
-  "Close Without Saving": "Kaydetmeden kapat"
+  "Close Without Saving": "Kaydetmeden kapat",
+  "Undo": "Geri Al",
+  "Redo": "Yinele"
 }
