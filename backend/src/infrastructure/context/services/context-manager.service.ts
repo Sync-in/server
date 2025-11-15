@@ -17,6 +17,10 @@ export class ContextManager {
     this.storage = new AsyncLocalStorage<ContextStore>()
   }
 
+  headerOriginUrl(): string {
+    return this.storage.getStore() ? this.storage.getStore().headerOriginUrl : undefined
+  }
+
   get(key: keyof ContextStore): any {
     return this.storage.getStore() ? this.storage.getStore()[key] : undefined
   }

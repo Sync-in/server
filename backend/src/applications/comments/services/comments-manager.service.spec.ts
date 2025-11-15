@@ -27,7 +27,7 @@ jest.mock('../../files/utils/files', () => ({
 
 describe(CommentsManager.name, () => {
   let commentsManager: CommentsManager
-  let contextManager: { get: jest.Mock }
+  let contextManager: { headerOriginUrl: jest.Mock }
   let commentQueries: {
     getComments: jest.Mock
     createComment: jest.Mock
@@ -74,7 +74,7 @@ describe(CommentsManager.name, () => {
       create: jest.fn().mockResolvedValue(undefined)
     }
     contextManager = {
-      get: jest.fn().mockReturnValue('https://app.local/path')
+      headerOriginUrl: jest.fn().mockReturnValue('https://app.local/path')
     }
 
     const module: TestingModule = await Test.createTestingModule({

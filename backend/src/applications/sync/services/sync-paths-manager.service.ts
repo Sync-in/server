@@ -238,7 +238,7 @@ export class SyncPathsManager {
     }
     this.notificationsManager
       .create([userId], notification, {
-        currentUrl: this.contextManager.get('headerOriginUrl'),
+        currentUrl: this.contextManager.headerOriginUrl(),
         action: action
       })
       .catch((e: Error) => this.logger.error(`${this.notify.name} - ${e}`))

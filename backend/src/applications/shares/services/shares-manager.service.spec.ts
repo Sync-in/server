@@ -57,7 +57,7 @@ describe(SharesManager.name, () => {
 
   // Mocks
   const contextManagerMock = {
-    get: jest.fn()
+    headerOriginUrl: jest.fn()
   }
 
   const notificationsManagerMock = {

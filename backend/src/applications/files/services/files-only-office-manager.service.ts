@@ -154,7 +154,7 @@ export class FilesOnlyOfficeManager {
   ): Promise<OnlyOfficeReqConfig> {
     const documentType = ONLY_OFFICE_EXTENSIONS.EDITABLE.get(fileExtension) || ONLY_OFFICE_EXTENSIONS.VIEWABLE.get(fileExtension)
     return {
-      documentServerUrl: this.externalOnlyOfficeServer || `${this.contextManager.get('headerOriginUrl')}${ONLY_OFFICE_INTERNAL_URI}`,
+      documentServerUrl: this.externalOnlyOfficeServer || `${this.contextManager.headerOriginUrl()}${ONLY_OFFICE_INTERNAL_URI}`,
       config: {
         type: isMobile ? 'mobile' : 'desktop',
         height: '100%',
@@ -207,12 +207,12 @@ export class FilesOnlyOfficeManager {
 
   private getDocumentUrl(space: SpaceEnv, token: string): string {
     // user refresh token is used here for long session
-    return `${this.contextManager.get('headerOriginUrl')}${API_FILES_ONLY_OFFICE_DOCUMENT}/${space.url}?${ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME}=${token}`
+    return `${this.contextManager.headerOriginUrl()}${API_FILES_ONLY_OFFICE_DOCUMENT}/${space.url}?${ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME}=${token}`
   }
 
   private getCallBackUrl(space: SpaceEnv, token: string, fileId: string): string {
     // user refresh token is used here for long session
-    return `${this.contextManager.get('headerOriginUrl')}${API_FILES_ONLY_OFFICE_CALLBACK}/${space.url}?fid=${fileId}&${ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME}=${token}`
+    return `${this.contextManager.headerOriginUrl()}${API_FILES_ONLY_OFFICE_CALLBACK}/${space.url}?fid=${fileId}&${ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME}=${token}`
   }
 
   private genPayloadToken(payload: OnlyOfficeConfig | OnlyOfficeConvertForm): Promise<string> {

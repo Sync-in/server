@@ -1122,7 +1122,7 @@ export class SharesManager {
       }
       this.notificationsManager
         .create(memberIds, notification, {
-          currentUrl: this.contextManager.get('headerOriginUrl'),
+          currentUrl: this.contextManager.headerOriginUrl(),
           author: user,
           action: action
         })
@@ -1154,7 +1154,7 @@ export class SharesManager {
           author: user,
           linkUUID: link.linkSettings.uuid,
           linkPassword: link.linkSettings.password,
-          currentUrl: this.contextManager.get('headerOriginUrl'),
+          currentUrl: this.contextManager.headerOriginUrl(),
           action: action
         } satisfies NotificationOptions
       )

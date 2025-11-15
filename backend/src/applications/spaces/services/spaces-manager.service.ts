@@ -884,7 +884,7 @@ export class SpacesManager {
         }
         this.notificationsManager
           .create(memberIds, notification, {
-            currentUrl: this.contextManager.get('headerOriginUrl'),
+            currentUrl: this.contextManager.headerOriginUrl(),
             action: action
           })
           .catch((e: Error) => this.logger.error(`${this.clearCachePermissionsAndOrNotify.name} - ${e}`))
@@ -917,7 +917,7 @@ export class SpacesManager {
           }
           this.notificationsManager
             .create(spaceUserIds, notification, {
-              currentUrl: this.contextManager.get('headerOriginUrl'),
+              currentUrl: this.contextManager.headerOriginUrl(),
               author: user,
               action: action
             })

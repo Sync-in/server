@@ -117,7 +117,7 @@ export class CommentsManager {
     this.notificationsManager
       .create(members, notification, {
         author: fromUser,
-        currentUrl: this.contextManager.get('headerOriginUrl'),
+        currentUrl: this.contextManager.headerOriginUrl(),
         content: comment
       })
       .catch((e: Error) => this.logger.error(`${this.notify.name} - ${e}`))

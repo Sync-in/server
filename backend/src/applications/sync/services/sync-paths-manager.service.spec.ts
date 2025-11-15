@@ -44,7 +44,7 @@ jest.mock('../../notifications/constants/notifications', () => ({
 
 describe(SyncPathsManager.name, () => {
   let service: SyncPathsManager
-  let contextManager: { get: jest.Mock }
+  let contextManager: { headerOriginUrl: jest.Mock }
   let spacesManager: { spaceEnv: jest.Mock }
   let usersQueries: Record<string, jest.Mock>
   let filesQueries: { getSpaceFileId: jest.Mock; getOrCreateSpaceFile: jest.Mock }
@@ -64,7 +64,7 @@ describe(SyncPathsManager.name, () => {
   const flush = () => new Promise((r) => setImmediate(r))
 
   beforeEach(async () => {
-    contextManager = { get: jest.fn(() => 'http://origin.local') }
+    contextManager = { headerOriginUrl: jest.fn(() => 'http://origin.local') }
     spacesManager = { spaceEnv: jest.fn() }
     usersQueries = {}
     filesQueries = {
