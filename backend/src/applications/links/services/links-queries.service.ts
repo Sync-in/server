@@ -154,7 +154,7 @@ export class LinksQueries {
           name: shares.name,
           alias: shares.alias,
           hasParent: isNotNull(shares.parentId).mapWith(Boolean),
-          isDir: sql`IF (${isNotNull(shares.externalPath)}, 1 ,${files.isDir})`.mapWith(Boolean),
+          isDir: sql`IF (${isNotNull(shares.externalPath)} OR ${isNotNull(shareSpaceRoot.externalPath)}, 1 ,${files.isDir})`.mapWith(Boolean),
           mime: files.mime
         },
         space: { name: spaces.name, alias: spaces.alias },
