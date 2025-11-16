@@ -5,7 +5,7 @@
  */
 
 export const tr = {
-  'If you no longer wish to receive notifications, change your preferences directly from your user space':
+  'If you no longer wish to receive notifications, change your preferences directly from your user space.':
     'Artık bildirim almak istemiyorsanız, kullanıcı alanınızdan doğrudan tercihlerinizi değiştirin.',
   'Access it from': 'Buradan erişin',
   Comment: 'Yorum',
@@ -34,6 +34,9 @@ export const tr = {
   Sync: 'Eşitleme',
   'Access your syncs from': 'Eşitlemelerinize buradan erişin',
   'You are no longer synchronizing': 'Artık eşitleme yapmıyorsunuz',
+  'Unlock Request': 'Kilidi açma talebi',
+  'You receive this notification because you have a lock on this file.': 'Bu dosya üzerinde bir kilidiniz olduğu için bu bildirimi alıyorsunuz.',
+  'sends you a request to unlock the file': 'size dosyanın kilidini açma talebi gönderiyor',
   'Security notification': 'Güvenlik bildirimi',
   'Your account has been locked after several unsuccessful authentication attempts':
     'Birkaç başarısız kimlik doğrulama girişiminden sonra hesabınız kilitlendi',

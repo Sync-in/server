@@ -4,8 +4,8 @@
  * See the LICENSE file for licensing details
  */
 export const ru = {
-  'If you no longer wish to receive notifications, change your preferences directly from your user space':
-    'Если вы больше не хотите получать уведомления, измените настройки прямо в вашем пользовательском пространстве',
+  'If you no longer wish to receive notifications, change your preferences directly from your user space.':
+    'Если вы больше не хотите получать уведомления, измените настройки прямо в вашем пользовательском пространстве.',
   'Access it from': 'Доступно отсюда',
   Comment: 'Комментарий',
   commented: 'прокомментировал(а)',
@@ -33,6 +33,10 @@ export const ru = {
   Sync: 'Синхронизация',
   'Access your syncs from': 'Доступ к вашим синхронизациям',
   'You are no longer synchronizing': 'Вы больше не синхронизируете',
+  'Unlock Request': 'Запрос на разблокировку',
+  'You receive this notification because you have a lock on this file.':
+    'Вы получили это уведомление, потому что у вас есть блокировка на этом файле.',
+  'sends you a request to unlock the file': 'отправляет вам запрос на разблокировку файла',
   'Security notification': 'Уведомление безопасности',
   'Your account has been locked after several unsuccessful authentication attempts':
     'Ваш аккаунт был заблокирован после нескольких неудачных попыток входа',

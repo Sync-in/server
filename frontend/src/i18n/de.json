@@ -608,5 +608,14 @@
   "Save And Exit": "Speichern und beenden",
   "Close Without Saving": "Schließen ohne zu speichern",
   "Undo": "Rückgängig",
-  "Redo": "Wiederholen"
+  "Redo": "Wiederholen",
+  "me": "ich",
+  "The file is locked by": "Die Datei ist gesperrt von",
+  "Unlock": "Entsperren",
+  "Lock": "Sperre",
+  "Exclusive": "Exklusiv",
+  "Send an unlock request": "Entsperrung anfordern",
+  "sends you a request to unlock the file": "sendet Ihnen eine Anfrage zum Entsperren der Datei",
+  "As the file owner, you can unlock the file or request the current lock owner to release it.": "Als Dateieigentümer können Sie die Datei entsperren oder den aktuellen Sperrinhaber bitten, sie freizugeben.",
+  "The file is edited by": "Die Datei wird bearbeitet von"
 }

@@ -6,7 +6,9 @@
 
 import { HttpService } from '@nestjs/axios'
 import { Test, TestingModule } from '@nestjs/testing'
+import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesManager } from './files-manager.service'
@@ -21,6 +23,8 @@ describe(FilesManager.name, () => {
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
         { provide: FilesLockManager, useValue: {} },
         { provide: SpacesManager, useValue: {} },
+        { provide: ContextManager, useValue: {} },
+        { provide: NotificationsManager, useValue: {} },
         {
           provide: HttpService,
           useValue: {}

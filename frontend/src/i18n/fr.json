@@ -608,5 +608,14 @@
   "Save And Exit": "Enregistrer et quitter",
   "Close Without Saving": "Fermer sans enregistrer",
   "Undo": "Annuler",
-  "Redo": "Rétablir"
+  "Redo": "Rétablir",
+  "me": "moi",
+  "The file is locked by": "Le fichier est verrouillé par",
+  "Unlock": "Déverrouiller",
+  "Lock": "Verrou",
+  "Exclusive": "Exclusif",
+  "Send an unlock request": "Envoyer une demande de déverrouillage",
+  "sends you a request to unlock the file": "vous envoie une demande de déverrouillage du fichier",
+  "As the file owner, you can unlock the file or request the current lock owner to release it.": "En tant que propriétaire du fichier, vous pouvez déverrouiller le fichier ou demander au propriétaire actuel du verrou de le libérer.",
+  "The file is edited by": "Le fichier est en cours d’édition par"
 }

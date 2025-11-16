@@ -1,0 +1,46 @@
+<!--
+  ~ Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+  ~ This file is part of Sync-in | The open source file sync and share solution
+  ~ See the LICENSE file for licensing details
+  -->
+
+<div class="modal-header">
+  <h4 class="modal-title">
+    <fa-icon [icon]="hasExclusiveLock ? icons.faLock : icons.faUnlock" class="me-1"></fa-icon>
+    <span>{{ file.name }}</span>
+  </h4>
+  <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
+</div>
+<div class="modal-body">
+  <div class="d-flex flex-column align-items-center avatar my-2">
+    @if (hasExclusiveLock) {
+      <span class="mb-2" l10nTranslate>The file is locked by</span>
+    } @else {
+      <span class="mb-2" l10nTranslate>The file is edited by</span>
+    }
+    <img class="avatar-img mb-2" [src]="userAvatarUrl" alt="">
+    @if (isLockOwner) {
+      <b l10nTranslate>me</b>
+    } @else {
+      <b>{{ file?.lock?.owner }}</b>
+    }
+  </div>
+  @if (!isLockOwner && isFileOwner) {
+    <div class="text-align-center mt-3 mb-1">
+      <small l10nTranslate>As the file owner, you can unlock the file or request the current lock owner to release it.</small>
+    </div>
+  }
+</div>
+<div class="modal-footer">
+  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary" data-dismiss="modal" type="button" l10nTranslate>
+    {{ hasExclusiveLock ? 'Cancel' : 'Close' | translate:locale.language }}
+  </button>
+  @if (hasExclusiveLock) {
+    @if (isLockOwner || isFileOwner) {
+      <button (click)="onUnlock()" [disabled]="submitted" class="btn btn-sm btn-primary" type="button" l10nTranslate>Unlock</button>
+    }
+    @if (!isLockOwner) {
+      <button (click)="onSendUnLockRequest()" [disabled]="submitted" class="btn btn-sm btn-success" type="button" l10nTranslate>Send an unlock request</button>
+    }
+  }
+</div>

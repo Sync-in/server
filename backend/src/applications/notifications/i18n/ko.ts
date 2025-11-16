@@ -5,7 +5,7 @@
  */
 
 export const ko = {
-  'If you no longer wish to receive notifications, change your preferences directly from your user space':
+  'If you no longer wish to receive notifications, change your preferences directly from your user space.':
     '더 이상 알림을 받고 싶지 않다면, 사용자 공간에서 바로 환경설정을 변경하세요.',
   'Access it from': '여기에서 액세스',
   Comment: '댓글',
@@ -34,6 +34,9 @@ export const ko = {
   Sync: '동기화',
   'Access your syncs from': '다음에서 내 동기화에 액세스',
   'You are no longer synchronizing': '더 이상 동기화하지 않습니다',
+  'Unlock Request': '잠금 해제 요청',
+  'You receive this notification because you have a lock on this file.': '이 파일에 잠금이 설정되어 있어 이 알림을 받았습니다.',
+  'sends you a request to unlock the file': '파일 잠금 해제 요청을 보냈습니다',
   'Security notification': '보안 알림',
   'Your account has been locked after several unsuccessful authentication attempts': '여러 번 인증에 실패하여 계정이 잠겼습니다',
   'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':

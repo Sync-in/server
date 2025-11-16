@@ -608,5 +608,14 @@
   "Save And Exit": "Salva e esci",
   "Close Without Saving": "Chiudi senza salvare",
   "Undo": "Annulla",
-  "Redo": "Ripristina"
+  "Redo": "Ripristina",
+  "me": "io",
+  "The file is locked by": "Il file è bloccato da",
+  "Unlock": "Sblocca",
+  "Lock": "Blocco",
+  "Exclusive": "Esclusivo",
+  "Send an unlock request": "Invia una richiesta di sblocco",
+  "sends you a request to unlock the file": "ti invia una richiesta per sbloccare il file",
+  "As the file owner, you can unlock the file or request the current lock owner to release it.": "In quanto proprietario del file, puoi sbloccare il file o chiedere all’attuale proprietario del blocco di rilasciarlo.",
+  "The file is edited by": "Il file è in modifica da"
 }

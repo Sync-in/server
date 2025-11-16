@@ -5,8 +5,8 @@
  */
 
 export const pt = {
-  'If you no longer wish to receive notifications, change your preferences directly from your user space':
-    'Se já não deseja receber notificações, altere as suas preferências diretamente no seu espaço de utilizador',
+  'If you no longer wish to receive notifications, change your preferences directly from your user space.':
+    'Se já não deseja receber notificações, altere as suas preferências diretamente no seu espaço de utilizador.',
   'Access it from': 'Aceda a partir de',
   Comment: 'Comentário',
   commented: 'comentou',
@@ -34,6 +34,9 @@ export const pt = {
   Sync: 'Sincronização',
   'Access your syncs from': 'Aceda às suas sincronizações a partir de',
   'You are no longer synchronizing': 'Deixou de sincronizar',
+  'Unlock Request': 'Pedido de desbloqueio',
+  'You receive this notification because you have a lock on this file.': 'Recebe esta notificação porque tem um bloqueio neste ficheiro.',
+  'sends you a request to unlock the file': 'envia-lhe um pedido para desbloquear o ficheiro',
   'Security notification': 'Notificação de segurança',
   'Your account has been locked after several unsuccessful authentication attempts':
     'A sua conta foi bloqueada após várias tentativas de autenticação sem sucesso',

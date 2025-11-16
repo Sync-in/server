@@ -7,7 +7,7 @@
 import { capitalizeString } from '../../../common/shared'
 import { UserModel } from '../../users/models/user.model'
 
-export const defaultFooter = 'If you no longer wish to receive notifications, change your preferences directly from your user space'
+export const defaultFooter = 'If you no longer wish to receive notifications, change your preferences directly from your user space.'
 
 export const mailTemplate = (content: string, footer: string) => `
 <html lang="en">

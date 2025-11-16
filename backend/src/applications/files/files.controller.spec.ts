@@ -5,6 +5,8 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing'
+import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
+import { ContextManager } from '../../infrastructure/context/services/context-manager.service'
 import { SpaceGuard } from '../spaces/guards/space.guard'
 import { FILE_OPERATION } from './constants/operations'
 import { FilesController } from './files.controller'
@@ -55,7 +57,9 @@ describe(FilesController.name, () => {
         { provide: FilesMethods, useValue: filesMethodsMock },
         { provide: FilesTasksManager, useValue: filesTasksManagerMock },
         { provide: FilesRecents, useValue: filesRecentsMock },
-        { provide: FilesSearchManager, useValue: filesSearchMock }
+        { provide: FilesSearchManager, useValue: filesSearchMock },
+        { provide: ContextManager, useValue: filesSearchMock },
+        ContextInterceptor
       ]
     })
     // IMPORTANT: override the guard referenced by @UseGuards to avoid resolving its dependencies

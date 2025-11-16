@@ -608,5 +608,14 @@
   "Save And Exit": "Kaydet ve çık",
   "Close Without Saving": "Kaydetmeden kapat",
   "Undo": "Geri Al",
-  "Redo": "Yinele"
+  "Redo": "Yinele",
+  "me": "ben",
+  "The file is locked by": "Dosya şu kişi tarafından kilitlendi",
+  "Unlock": "Kilidi Aç",
+  "Lock": "Kilit",
+  "Exclusive": "Münhasır",
+  "Send an unlock request": "Kilidi açma isteği gönder",
+  "sends you a request to unlock the file": "dosyanın kilidini açmanız için size bir istek gönderiyor",
+  "As the file owner, you can unlock the file or request the current lock owner to release it.": "Dosyanın sahibi olarak, dosyanın kilidini açabilir veya mevcut kilit sahibinden kilidi kaldırmasını isteyebilirsiniz.",
+  "The file is edited by": "Dosya şu kişi tarafından düzenleniyor"
 }

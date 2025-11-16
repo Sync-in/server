@@ -307,6 +307,15 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   private lockError(e: HttpErrorResponse) {
     this.isReadonly.set(true)
     this.isSupported.set(false)
-    this.layout.sendNotification('warning', this.file().name, e.error.message)
+    if (e.error?.owner) {
+      const lock: FileLockProps = e.error
+      this.file.update((f) => {
+        f.lock = lock
+        return f
+      })
+      this.layout.sendNotification('info', 'The file is locked', lock.owner)
+    } else {
+      this.layout.sendNotification('warning', this.file().name, e.error.message)
+    }
   }
 }

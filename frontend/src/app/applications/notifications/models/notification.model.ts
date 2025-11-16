@@ -4,13 +4,13 @@
  * See the LICENSE file for licensing details
  */
 
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { NOTIFICATION_APP } from '@sync-in-server/backend/src/applications/notifications/constants/notifications'
-import {
-  type NotificationContent,
-  type NotificationFromUser
+import type {
+  NotificationContent,
+  NotificationFromUser
 } from '@sync-in-server/backend/src/applications/notifications/interfaces/notification-properties.interface'
-import { Owner } from '@sync-in-server/backend/src/applications/users/interfaces/owner.interface'
+import type { Owner } from '@sync-in-server/backend/src/applications/users/interfaces/owner.interface'
 import { userAvatarUrl } from '../../users/user.functions'
 import { NOTIFICATION_ICON } from '../notifications.constants'
 

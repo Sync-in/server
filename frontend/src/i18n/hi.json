@@ -608,5 +608,14 @@
   "Save And Exit": "सहेजें और बाहर निकलें",
   "Close Without Saving": "बिना सहेजे बंद करें",
   "Undo": "पूर्ववत करें",
-  "Redo": "फिर से करें"
+  "Redo": "फिर से करें",
+  "me": "मैं",
+  "The file is locked by": "फ़ाइल निम्न द्वारा लॉक है",
+  "Unlock": "अनलॉक करें",
+  "Lock": "लॉक",
+  "Exclusive": "अनन्य",
+  "Send an unlock request": "अनलॉक करने का अनुरोध भेजें",
+  "sends you a request to unlock the file": "आपको फ़ाइल अनलॉक करने का अनुरोध भेजता है",
+  "As the file owner, you can unlock the file or request the current lock owner to release it.": "फ़ाइल के मालिक के रूप में, आप फ़ाइल को अनलॉक कर सकते हैं या वर्तमान लॉक मालिक से उसे रिलीज़ करने का अनुरोध कर सकते हैं।",
+  "The file is edited by": "फ़ाइल निम्न द्वारा संपादित की जा रही है"
 }

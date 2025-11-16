@@ -608,5 +608,14 @@
   "Save And Exit": "저장하고 종료",
   "Close Without Saving": "저장하지 않고 닫기",
   "Undo": "실행 취소",
-  "Redo": "다시 실행"
+  "Redo": "다시 실행",
+  "me": "나",
+  "The file is locked by": "파일이 다음 사용자에 의해 잠겨 있습니다",
+  "Unlock": "잠금 해제",
+  "Lock": "잠금",
+  "Exclusive": "배타적",
+  "Send an unlock request": "잠금 해제 요청 보내기",
+  "sends you a request to unlock the file": "파일 잠금 해제 요청을 보냈습니다",
+  "As the file owner, you can unlock the file or request the current lock owner to release it.": "파일 소유자인 경우 파일의 잠금을 직접 해제하거나 현재 잠금 소유자에게 해제를 요청할 수 있습니다.",
+  "The file is edited by": "파일이 다음 사용자에 의해 편집 중입니다"
 }

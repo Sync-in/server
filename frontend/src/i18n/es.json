@@ -608,5 +608,14 @@
   "Save And Exit": "Guardar y salir",
   "Close Without Saving": "Cerrar sin guardar",
   "Undo": "Deshacer",
-  "Redo": "Rehacer"
+  "Redo": "Rehacer",
+  "me": "yo",
+  "The file is locked by": "El archivo está bloqueado por",
+  "Unlock": "Desbloquear",
+  "Lock": "Bloqueo",
+  "Exclusive": "Exclusivo",
+  "Send an unlock request": "Enviar una solicitud de desbloqueo",
+  "sends you a request to unlock the file": "le envía una solicitud para desbloquear el archivo",
+  "As the file owner, you can unlock the file or request the current lock owner to release it.": "Como propietario del archivo, puede desbloquear el archivo o solicitar al propietario actual del bloqueo que lo libere.",
+  "The file is edited by": "El archivo está siendo editado por"
 }

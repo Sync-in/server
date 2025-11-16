@@ -66,6 +66,24 @@
             <div class="fs-xxs">{{ f.mtime | amDateFormat }}</div>
           </div>
           <div class="d-flex align-items-center mb-1">
+            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Lock</div>
+            @if (f.lock) {
+              @if (f.lock.isExclusive) {
+                <span class="badge rounded-pill bg-maroon" l10nTranslate>
+                  <fa-icon [icon]="icons.faLock"></fa-icon>
+                  <span class="ms-1" l10nTranslate>Exclusive</span>
+                </span>
+              } @else {
+                <span class="badge rounded-pill bg-maroon" l10nTranslate>
+                  <fa-icon [icon]="icons.faUnlock"></fa-icon>
+                  <span class="ms-1" l10nTranslate>Shared</span>
+                </span>
+              }
+            } @else {
+              <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+            }
+          </div>
+          <div class="d-flex align-items-center mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Shared</div>
             <div class="d-flex col-sm-7">
               @if (f.shares.length || f.links.length) {
@@ -121,9 +139,10 @@
           <hr class="mt-1 mb-2" />
           <div class="d-flex flex-wrap align-items-center p-2 fs-xs">
             @if (f.lock) {
-              <div class="badge rounded-pill white-space bg-warning cursor-pointer mb-2">
-                  <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faUnlock"></fa-icon>
-                  <span>&nbsp;{{ f.lock.owner }}</span>
+              <div (click)="openLockDialog(f)"
+                   class="badge rounded-pill white-space bg-maroon cursor-pointer mb-2">
+                <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faUnlock"></fa-icon>
+                <span>&nbsp;{{ f.lock.owner }}</span>
               </div>
             }
             @for (space of f.spaces; track space.id) {

@@ -11,6 +11,7 @@ import { DomSanitizer } from '@angular/platform-browser'
 import { FILE_MODE, FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import {
   API_FILES_ONLY_OFFICE_STATUS,
+  API_FILES_OPERATION,
   API_FILES_OPERATION_MAKE,
   API_FILES_RECENTS,
   API_FILES_SEARCH,
@@ -40,6 +41,7 @@ import { downloadWithAnchor } from '../../../common/utils/functions'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
+import { FilesLockDialogComponent } from '../components/dialogs/files-lock-dialog.component'
 import { FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
 import { FilesViewerDialogComponent } from '../components/dialogs/files-viewer-dialog.component'
 import { SHORT_MIME } from '../files.constants'
@@ -94,7 +96,9 @@ export class FilesService {
     const operation = action ? action : this.clipboardAction
     if (this.store.filesClipboard.getValue().length) {
       const dirPath: string = this.currentRoute
-      this.copyMove([...this.store.filesClipboard.getValue()], dirPath, operation === 'copyPaste' ? FILE_OPERATION.COPY : FILE_OPERATION.MOVE)
+      this.copyMove([...this.store.filesClipboard.getValue()], dirPath, operation === 'copyPaste' ? FILE_OPERATION.COPY : FILE_OPERATION.MOVE).catch(
+        console.error
+      )
       this.clearClipboard()
     }
   }
@@ -217,11 +221,24 @@ export class FilesService {
   }
 
   lock(file: FileModel): Observable<FileLockProps> {
-    return this.http.request<FileLockProps>('lock', file.dataUrl)
+    return this.http.request<FileLockProps>(FILE_OPERATION.LOCK, file.dataUrl)
   }
 
-  unlock(file: FileModel): Observable<void> {
-    return this.http.request<void>('unlock', file.dataUrl)
+  unlock(file: FileModel, forceAsOwner = false): Observable<void> {
+    const params = forceAsOwner ? new HttpParams().set('forceAsOwner', 'true') : null
+    return this.http.request<void>(FILE_OPERATION.UNLOCK, file.dataUrl, { params: params })
+  }
+
+  unlockRequest(file: FileModel): Observable<void> {
+    return this.http.request<void>(FILE_OPERATION.UNLOCK, `${API_FILES_OPERATION}/${FILE_OPERATION.UNLOCK_REQUEST}/${file.path}`)
+  }
+
+  openLockDialog(file: FileModel): void {
+    this.layout.openDialog(FilesLockDialogComponent, null, {
+      initialState: {
+        file: file
+      }
+    })
   }
 
   async openOverwriteDialog(files: File[] | FileModel[], renamedTo?: string): Promise<boolean> {
@@ -247,7 +264,11 @@ export class FilesService {
           this.download(file)
           return
         }
-        const isWriteable = permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
+        const isLockedByOther = file?.lock?.isExclusive && file.lock?.ownerLogin !== this.store.user.getValue().login
+        if (isLockedByOther) {
+          this.layout.sendNotification('info', 'The file is locked', file.lock.owner)
+        }
+        const isWriteable = !isLockedByOther && permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
         if (mode === FILE_MODE.EDIT && !isWriteable) {
           mode = FILE_MODE.VIEW
         }

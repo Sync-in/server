@@ -17,7 +17,7 @@ import { FileModel } from '../../models/file.model'
   templateUrl: 'files-overwrite-dialog.component.html'
 })
 export class FilesOverwriteDialogComponent {
-  @Input() files: FileModel[] = []
+  @Input({ required: true }) files: FileModel[] = []
   @Input() renamedTo: string
   public overwrite = output<boolean>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)

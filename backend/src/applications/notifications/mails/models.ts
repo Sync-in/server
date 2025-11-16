@@ -183,7 +183,7 @@ export function auth2FaMail(language: i18nLocale, notification: NotificationCont
   return [tr.title, mailTemplate(content, footer)]
 }
 
-export function authLocked(language: i18nLocale, notification: NotificationContent): [string, string] {
+export function authLockedMail(language: i18nLocale, notification: NotificationContent): [string, string] {
   const tr = translateObject(language, {
     title: 'Security notification',
     footer:
@@ -197,4 +197,27 @@ export function authLocked(language: i18nLocale, notification: NotificationConte
   const footer = `<br>${tr.footer}<br>`
 
   return [tr.title, mailTemplate(content, footer)]
+}
+
+export function requestUnlockMail(
+  language: i18nLocale,
+  notification: NotificationContent,
+  options: {
+    currentUrl: string
+    author: UserModel
+  }
+): [string, string] {
+  const tr = translateObject(language, {
+    title: 'Unlock Request',
+    defaultFooter: defaultFooter,
+    footer: 'You receive this notification because you have a lock on this file.',
+    urlText: 'Access it from',
+    event: notification.event
+  })
+
+  const content = `${options.author ? mailAuthor(options.author) : ''}${mailEventOnElement(tr.event, notification.element)}`
+
+  const footer = `<br>${tr.urlText}&nbsp;<a href="${urlFromSpaceFile(options.currentUrl, notification)}">${SERVER_NAME}</a><br>${tr.footer}<br>${tr.defaultFooter}`
+
+  return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }

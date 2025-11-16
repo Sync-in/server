@@ -5,8 +5,8 @@
  */
 
 export const zh = {
-  'If you no longer wish to receive notifications, change your preferences directly from your user space':
-    '如果您不再希望接收通知，请在您的用户空间中直接更改偏好设置',
+  'If you no longer wish to receive notifications, change your preferences directly from your user space.':
+    '如果您不再希望接收通知，请在您的用户空间中直接更改偏好设置。',
   'Access it from': '通过以下入口访问',
   Comment: '评论',
   commented: '评论了',
@@ -33,6 +33,9 @@ export const zh = {
   Sync: '同步',
   'Access your syncs from': '从以下位置访问您的同步',
   'You are no longer synchronizing': '您已停止同步',
+  'Unlock Request': '解锁请求',
+  'You receive this notification because you have a lock on this file.': '您收到此通知是因为您对该文件设置了锁。',
+  'sends you a request to unlock the file': '向您发送了解锁该文件的请求',
   'Security notification': '安全通知',
   'Your account has been locked after several unsuccessful authentication attempts': '在多次身份验证失败后，您的账户已被锁定',
   'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':

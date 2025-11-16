@@ -608,5 +608,14 @@
   "Save And Exit": "保存して終了",
   "Close Without Saving": "保存せずに閉じる",
   "Undo": "元に戻す",
-  "Redo": "やり直す"
+  "Redo": "やり直す",
+  "me": "自分",
+  "The file is locked by": "ファイルは次のユーザーによってロックされています",
+  "Unlock": "ロック解除",
+  "Lock": "ロック",
+  "Exclusive": "排他的",
+  "Send an unlock request": "ロック解除を依頼",
+  "sends you a request to unlock the file": "あなたにファイルのロック解除リクエストを送信しました",
+  "As the file owner, you can unlock the file or request the current lock owner to release it.": "ファイルの所有者であるあなたは、ファイルのロックを解除するか、現在のロック所有者に解除を依頼できます。",
+  "The file is edited by": "ファイルは次のユーザーによって編集中です"
 }

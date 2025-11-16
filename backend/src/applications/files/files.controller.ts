@@ -14,6 +14,7 @@ import {
   Lock,
   Logger,
   Move,
+  ParseBoolPipe,
   ParseIntPipe,
   Patch,
   Post,
@@ -24,10 +25,12 @@ import {
   Search,
   StreamableFile,
   Unlock,
-  UseGuards
+  UseGuards,
+  UseInterceptors
 } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { webpMimeType } from '../../common/image'
+import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
 import { SkipSpaceGuard } from '../spaces/decorators/space-skip-guard.decorator'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator'
 import { GetSpace } from '../spaces/decorators/space.decorator'
@@ -139,8 +142,18 @@ export class FilesController {
   }
 
   @Unlock(`${FILES_ROUTE.OPERATION}/*`)
-  async unlock(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<void> {
-    return this.filesMethods.unlock(user, space)
+  async unlock(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Query('forceAsOwner', new ParseBoolPipe({ optional: true })) forceAsOwner?: boolean
+  ): Promise<void> {
+    return this.filesMethods.unlock(user, space, forceAsOwner)
+  }
+
+  @Unlock(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UNLOCK_REQUEST}/*`)
+  @UseInterceptors(ContextInterceptor)
+  async unlockRequest(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<void> {
+    return this.filesMethods.unlockRequest(user, space)
   }
 
   // TASKS OPERATIONS

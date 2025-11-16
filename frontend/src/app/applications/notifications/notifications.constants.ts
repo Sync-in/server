@@ -5,6 +5,7 @@
  */
 
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import { faLockOpen } from '@fortawesome/free-solid-svg-icons'
 import { NOTIFICATION_APP } from '@sync-in-server/backend/src/applications/notifications/constants/notifications'
 import { COMMENTS_ICON } from '../comments/comments.constants'
 import { SPACES_ICON } from '../spaces/spaces.constants'
@@ -16,5 +17,6 @@ export const NOTIFICATION_ICON: Partial<Record<NOTIFICATION_APP, IconDefinition>
   [NOTIFICATION_APP.SPACE_ROOTS]: SPACES_ICON.SPACES,
   [NOTIFICATION_APP.SHARES]: SPACES_ICON.SHARES,
   [NOTIFICATION_APP.LINKS]: SPACES_ICON.LINKS,
-  [NOTIFICATION_APP.SYNC]: SYNC_ICON.SYNC
+  [NOTIFICATION_APP.SYNC]: SYNC_ICON.SYNC,
+  [NOTIFICATION_APP.UNLOCK_REQUEST]: faLockOpen
 }

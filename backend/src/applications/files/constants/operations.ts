@@ -16,7 +16,8 @@ export enum FILE_OPERATION {
   TOUCH = 'touch',
   THUMBNAIL = 'thumbnail',
   LOCK = 'lock',
-  UNLOCK = 'unlock'
+  UNLOCK = 'unlock',
+  UNLOCK_REQUEST = 'unlock-request'
 }
 
 export enum FILE_MODE {

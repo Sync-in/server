@@ -10,8 +10,8 @@
  */
 
 export const de = {
-  'If you no longer wish to receive notifications, change your preferences directly from your user space':
-    'Wenn Sie keine Benachrichtigungen mehr erhalten möchten, ändern Sie Ihre Einstellungen direkt in Ihrem Benutzerbereich',
+  'If you no longer wish to receive notifications, change your preferences directly from your user space.':
+    'Wenn Sie keine Benachrichtigungen mehr erhalten möchten, ändern Sie Ihre Einstellungen direkt in Ihrem Benutzerbereich.',
   'Access it from': 'Öffnen Sie es über',
   Comment: 'Kommentar',
   commented: 'hat kommentiert',
@@ -39,6 +39,10 @@ export const de = {
   Sync: 'Synchronisierung',
   'Access your syncs from': 'Öffnen Sie Ihre Synchronisierungen über',
   'You are no longer synchronizing': 'Sie synchronisieren nicht mehr',
+  'Unlock Request': 'Entsperranfrage',
+  'You receive this notification because you have a lock on this file.':
+    'Sie erhalten diese Benachrichtigung, weil Sie eine Sperre auf dieser Datei haben.',
+  'sends you a request to unlock the file': 'sendet Ihnen eine Anfrage zum Entsperren der Datei',
   'Security notification': 'Sicherheitsbenachrichtigung',
   'Your account has been locked after several unsuccessful authentication attempts':
     'Ihr Konto wurde nach mehreren fehlgeschlagenen Anmeldeversuchen gesperrt',

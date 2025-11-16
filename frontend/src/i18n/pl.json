@@ -608,5 +608,14 @@
   "Save And Exit": "Zapisz i wyjdź",
   "Close Without Saving": "Zamknij bez zapisywania",
   "Undo": "Cofnij",
-  "Redo": "Ponów"
+  "Redo": "Ponów",
+  "me": "ja",
+  "The file is locked by": "Plik jest zablokowany przez",
+  "Unlock": "Odblokuj",
+  "Lock": "Blokada",
+  "Exclusive": "Wyłączna",
+  "Send an unlock request": "Wyślij prośbę o odblokowanie",
+  "sends you a request to unlock the file": "wysyła do Ciebie prośbę o odblokowanie pliku",
+  "As the file owner, you can unlock the file or request the current lock owner to release it.": "Jako właściciel pliku możesz odblokować plik lub poprosić obecnego właściciela blokady o jej zwolnienie.",
+  "The file is edited by": "Plik jest edytowany przez"
 }

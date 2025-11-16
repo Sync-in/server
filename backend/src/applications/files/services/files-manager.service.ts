@@ -14,7 +14,11 @@ import { Readable } from 'node:stream'
 import { extract as extractTar } from 'tar'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { generateThumbnail } from '../../../common/image'
+import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { HTTP_METHOD } from '../../applications.constants'
+import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
+import { NotificationContent } from '../../notifications/interfaces/notification-properties.interface'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { SPACE_OPERATION } from '../../spaces/constants/spaces'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
@@ -70,8 +74,10 @@ export class FilesManager {
   constructor(
     private readonly http: HttpService,
     private readonly filesQueries: FilesQueries,
-    private readonly filesLockManager: FilesLockManager,
-    private readonly spacesManager: SpacesManager
+    private readonly spacesManager: SpacesManager,
+    private readonly contextManager: ContextManager,
+    private readonly notificationsManager: NotificationsManager,
+    public readonly filesLockManager: FilesLockManager
   ) {}
 
   sendFileFromSpace(space: SpaceEnv, asAttachment = false, downloadName = ''): SendFile {
@@ -181,9 +187,11 @@ export class FilesManager {
 
   async saveMultipart(user: UserModel, space: SpaceEnv, req: FastifySpaceRequest) {
     /* Accepted methods:
-        POST: creates new resource
-        PUT: creates or fully replaces a resource at the given URI (even if intermediate paths do not exist)
-        PATCH: updates the content of a single existing resource without creating it
+        POST: Creates new resource
+        PUT: Creates or fully replaces a resource at the given URI (even if intermediate paths do not exist)
+        PATCH: Updates the content of an existing resource without creating a new one.
+               In this text-editing scenario, locking and refreshing occur automatically, but unlocking must be handled explicitly via
+               the `unlock` method.
     */
     const overwrite = req.method === HTTP_METHOD.PUT
     const patch = req.method === HTTP_METHOD.PATCH
@@ -236,12 +244,15 @@ export class FilesManager {
       }
       // Create or refresh lock
       const dbFile = { ...space.dbFile, path: path.join(dirName(space.dbFile.path), partFileName) }
-      const [created, fileLock] = await this.filesLockManager.createOrRefresh(user, dbFile, DEPTH.RESOURCE, CACHE_LOCK_FILE_TTL)
+      // Use a short TTL for the PATCH method (which is also used for refreshing)
+      const ttl = patch ? CACHE_LOCK_FILE_TTL : undefined
+      const [created, fileLock] = await this.filesLockManager.createOrRefresh(user, dbFile, DEPTH.RESOURCE, ttl)
       // Do
       try {
         await writeFromStream(dstFile, part.file)
       } finally {
-        if (created) {
+        if (!patch && created) {
+          // Remove the file lock only if it has not been refreshed
           await this.filesLockManager.removeLock(fileLock.key)
         }
       }
@@ -628,7 +639,7 @@ export class FilesManager {
     return this.filesLockManager.convertLockToFileLockProps(lock)
   }
 
-  async unlock(user: UserModel, space: SpaceEnv): Promise<void> {
+  async unlock(user: UserModel, space: SpaceEnv, forceAsOwner = false): Promise<void> {
     if (!(await isPathExists(space.realPath))) {
       this.logger.warn(`Unable to unlock: ${space.url} - resource does not exist`)
       throw new FileError(HttpStatus.BAD_REQUEST, 'Unlock must specify an existing resource')
@@ -639,11 +650,35 @@ export class FilesManager {
       return
     }
     for (const lock of fileLocks) {
-      if (lock.owner.id === user.id) {
+      if ((forceAsOwner && space.dbFile?.ownerId === user.id) || lock.owner.id === user.id) {
         // Refresh if more than half of the TTL has passed
         await this.filesLockManager.removeLock(lock.key)
       } else {
         throw new LockConflict(lock, 'Conflicting lock')
+      }
+    }
+  }
+
+  async unlockRequest(user: UserModel, space: SpaceEnv): Promise<void> {
+    const fileLocks = await this.filesLockManager.getLocksByPath(space.dbFile)
+    if (fileLocks.length === 0) {
+      this.logger.warn(`Unable to find lock: ${space.url} - resource does not exist`)
+      throw new FileError(HttpStatus.NOT_FOUND, 'Lock not found')
+    }
+    for (const lock of fileLocks) {
+      if (lock.owner.id !== user.id) {
+        const notification: NotificationContent = {
+          app: NOTIFICATION_APP.UNLOCK_REQUEST,
+          event: NOTIFICATION_APP_EVENT.UNLOCK_REQUEST,
+          element: fileName(space.url),
+          url: dirName(space.url)
+        }
+        this.notificationsManager
+          .create([lock.owner.id], notification, {
+            author: user,
+            currentUrl: this.contextManager.headerOriginUrl()
+          })
+          .catch((e: Error) => this.logger.error(`${this.unlockRequest.name} - ${e}`))
       }
     }
   }

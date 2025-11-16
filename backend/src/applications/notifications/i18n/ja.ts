@@ -5,7 +5,7 @@
  */
 
 export const ja = {
-  'If you no longer wish to receive notifications, change your preferences directly from your user space':
+  'If you no longer wish to receive notifications, change your preferences directly from your user space.':
     '通知の受信を希望しない場合は、ユーザー用スペースから直接設定を変更してください。',
   'Access it from': 'こちらからアクセス',
   Comment: 'コメント',
@@ -34,6 +34,9 @@ export const ja = {
   Sync: '同期',
   'Access your syncs from': '次の場所からあなたの同期にアクセス',
   'You are no longer synchronizing': '同期を停止しました',
+  'Unlock Request': 'ロック解除リクエスト',
+  'You receive this notification because you have a lock on this file.': 'このファイルにロックが設定されているため、この通知を受け取っています。',
+  'sends you a request to unlock the file': 'あなたにファイルのロック解除をリクエストしました',
   'Security notification': 'セキュリティ通知',
   'Your account has been locked after several unsuccessful authentication attempts': '複数回の認証失敗により、あなたのアカウントはロックされました',
   'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':

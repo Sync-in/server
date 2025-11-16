@@ -449,10 +449,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   shortcutEdit() {
-    if (this.selection[0]?.lock?.isExclusive && this.selection[0]?.lock?.ownerLogin !== this.store.user.getValue().login) {
-      this.layout.sendNotification('info', 'The file is locked', this.selection[0].lock.owner)
-      return
-    }
     this.openViewerDialog(FILE_MODE.EDIT)
   }
 
@@ -645,6 +641,10 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       } as FilesTrashDialogComponent
     })
     modalRef.content.removeFiles.pipe(take(1)).subscribe(() => this.removeFiles())
+  }
+
+  openLockDialog(f: FileModel) {
+    this.filesService.openLockDialog(f)
   }
 
   private setSpace(route: { repository: SPACE_REPOSITORY; routes: UrlSegment[] }) {

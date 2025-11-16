@@ -69,7 +69,8 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
         window.DocEditor = { instances: {} }
       }
 
-      window.DocEditor.instances[this.id] = window.DocsAPI.DocEditor(this.id, JSON.parse(JSON.stringify(this.config)))
+      const config: OnlyOfficeConfig = JSON.parse(JSON.stringify(this.config))
+      window.DocEditor.instances[this.id] = window.DocsAPI.DocEditor(this.id, config)
     } catch (err) {
       console.error(err)
       this.onError(-1)

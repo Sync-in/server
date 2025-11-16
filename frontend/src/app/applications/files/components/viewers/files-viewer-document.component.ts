@@ -61,14 +61,14 @@ export class FilesViewerDocumentComponent implements OnInit, OnDestroy {
             this.layout.sendNotification('error', 'Unable to open document', 'Settings are missing')
             return
           }
-          // do not allow edit if backend only allow 'view' mode
+          // Do not allow edit if backend only allows 'view' mode
           if (this.mode === FILE_MODE.EDIT && data.config.editorConfig.mode !== FILE_MODE.EDIT) {
             data.config.editorConfig.mode = FILE_MODE.VIEW
           } else {
             data.config.editorConfig.mode = this.mode
           }
           if (this.mode === FILE_MODE.EDIT) {
-            // set lock on file
+            // Set lock on file
             this.file.lock = {
               owner: `${SERVER_NAME} - ${this.store.user.getValue().fullName} (${this.store.user.getValue().email})`,
               ownerLogin: this.store.user.getValue().login,

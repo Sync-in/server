@@ -153,15 +153,27 @@ export class FilesMethods {
     try {
       return await this.filesManager.lock(user, space)
     } catch (e) {
+      if (e instanceof LockConflict) {
+        const fileLockProps = this.filesManager.filesLockManager.convertLockToFileLockProps(e.lock)
+        throw new HttpException(fileLockProps, HttpStatus.LOCKED)
+      }
       this.handleError(space, FILE_OPERATION.LOCK, e)
     }
   }
 
-  async unlock(user: UserModel, space: SpaceEnv): Promise<void> {
+  async unlock(user: UserModel, space: SpaceEnv, forceAsOwner = false): Promise<void> {
     try {
-      return await this.filesManager.unlock(user, space)
+      return await this.filesManager.unlock(user, space, forceAsOwner)
     } catch (e) {
       this.handleError(space, FILE_OPERATION.UNLOCK, e)
+    }
+  }
+
+  async unlockRequest(user: UserModel, space: SpaceEnv): Promise<void> {
+    try {
+      return await this.filesManager.unlockRequest(user, space)
+    } catch (e) {
+      this.handleError(space, FILE_OPERATION.UNLOCK_REQUEST, e)
     }
   }
 

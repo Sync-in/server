@@ -5,8 +5,8 @@
  */
 
 export const hi = {
-  'If you no longer wish to receive notifications, change your preferences directly from your user space':
-    'यदि आप अब सूचनाएँ प्राप्त नहीं करना चाहते हैं, तो अपने उपयोगकर्ता क्षेत्र से सीधे अपनी प्राथमिकताएँ बदलें',
+  'If you no longer wish to receive notifications, change your preferences directly from your user space.':
+    'यदि आप अब सूचनाएँ प्राप्त नहीं करना चाहते हैं, तो अपने उपयोगकर्ता क्षेत्र से सीधे अपनी प्राथमिकताएँ बदलें।',
   'Access it from': 'इसे यहाँ से एक्सेस करें',
   Comment: 'टिप्पणी',
   commented: 'ने टिप्पणी की',
@@ -34,6 +34,9 @@ export const hi = {
   Sync: 'समन्वयन',
   'Access your syncs from': 'अपने समन्वयन यहाँ से एक्सेस करें',
   'You are no longer synchronizing': 'आप अब समन्वयन नहीं कर रहे हैं',
+  'Unlock Request': 'अनलॉक अनुरोध',
+  'You receive this notification because you have a lock on this file.': 'यह सूचना आपको इसलिए प्राप्त हुई है क्योंकि इस फ़ाइल पर आपका लॉक है।',
+  'sends you a request to unlock the file': 'आपको फ़ाइल अनलॉक करने का अनुरोध भेजता है',
   'Security notification': 'सुरक्षा सूचना',
   'Your account has been locked after several unsuccessful authentication attempts':
     'कई असफल प्रमाणीकरण प्रयासों के बाद आपका खाता लॉक कर दिया गया है',

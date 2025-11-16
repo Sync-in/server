@@ -89,4 +89,8 @@ export class FilesSelectionComponent {
       })
       .catch(console.error)
   }
+
+  openLockDialog(f: FileModel) {
+    this.filesService.openLockDialog(f)
+  }
 }
