@@ -96,9 +96,9 @@ export class LinksService {
       this.http.get<LoginResponseDto>(`${API_PUBLIC_LINK_ACCESS}/${uuid}`).subscribe((r) => {
         this.authService.initUserFromResponse(r)
         if (link.space) {
-          this.router.navigate([SPACES_PATH.SPACES], { queryParams: { select: link.space.name } }).catch(console.error)
+          this.router.navigate([SPACES_PATH.SPACES, link.space.alias]).catch(console.error)
         } else {
-          this.router.navigate([SPACES_PATH.SPACES_SHARES], { queryParams: { select: link.share.name } }).catch(console.error)
+          this.router.navigate([SPACES_PATH.SPACES_SHARES, link.share.alias]).catch(console.error)
         }
       })
     } else {
