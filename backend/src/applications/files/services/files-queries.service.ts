@@ -22,7 +22,7 @@ import { FileRecentLocation } from '../interfaces/file-recent-location.interface
 import { FileRecent } from '../schemas/file-recent.interface'
 import { File } from '../schemas/file.interface'
 import { filesRecents } from '../schemas/files-recents.schema'
-import { childFilesFindRegexp, childFilesReplaceRegexp, files } from '../schemas/files.schema'
+import { childFilesFindRegexp, childFilesReplaceRegexp, filePathSQL, files } from '../schemas/files.schema'
 import { dirName, fileName } from '../utils/files'
 
 @Injectable()
@@ -89,6 +89,18 @@ export class FilesQueries {
       q.leftJoin(syncPaths, and(eq(syncPaths.clientId, syncClients.id), eq(syncPaths.fileId, files.id)))
     }
     return q
+  }
+
+  async getUserFile(userId: number, fileId: number): Promise<Pick<File, 'id' | 'path'>> {
+    if (fileId > 0) {
+      const [fileInDB] = await this.db
+        .select({ id: files.id, path: filePathSQL(files) })
+        .from(files)
+        .where(and(eq(files.ownerId, userId), eq(files.id, fileId)))
+        .limit(1)
+      return fileInDB
+    }
+    return null
   }
 
   async getOrCreateUserFile(userId: number, file: FileProps): Promise<number> {

@@ -25,6 +25,7 @@ import {
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
 import { FileDBProps } from '../../files/interfaces/file-db-props.interface'
 import { FileProps } from '../../files/interfaces/file-props.interface'
+import { File } from '../../files/schemas/file.interface'
 import { filePathSQL, files } from '../../files/schemas/files.schema'
 import { FilesQueries } from '../../files/services/files-queries.service'
 import { links } from '../../links/schemas/links.schema'
@@ -649,11 +650,15 @@ export class SpacesQueries {
     }
   }
 
-  async getOrCreateUserFile(userId: number, file: FileProps): Promise<number> {
+  getUserFile(userId: number, fileId: number): Promise<Pick<File, 'id' | 'path'>> {
+    return this.filesQueries.getUserFile(userId, fileId)
+  }
+
+  getOrCreateUserFile(userId: number, file: FileProps): Promise<number> {
     return this.filesQueries.getOrCreateUserFile(userId, file)
   }
 
-  async getOrCreateSpaceFile(fileId: number, file: FileProps, dbFile: FileDBProps): Promise<number> {
+  getOrCreateSpaceFile(fileId: number, file: FileProps, dbFile: FileDBProps): Promise<number> {
     return this.filesQueries.getOrCreateSpaceFile(fileId, file, dbFile)
   }
 

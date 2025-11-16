@@ -156,6 +156,12 @@ export class SharesManager {
       if (createOrUpdateShareDto.file.ownerId) {
         /* PERSONAL SPACE CASE */
         // check file
+        if (createOrUpdateShareDto.file.ownerId === user.id && createOrUpdateShareDto.file.id > 0) {
+          // When a user shares a root space they own, it is recommended to create the share from their personal space.
+          // `file.path` come from a root space with a custom name (invalid in the personal space context); if so, retrieve the original path.
+          const f = await this.spacesQueries.getUserFile(user.id, createOrUpdateShareDto.file.id)
+          if (f) createOrUpdateShareDto.file.path = f.path
+        }
         const realPath = path.join(user.filesPath, createOrUpdateShareDto.file.path)
         if (!(await isPathExists(realPath))) {
           this.logger.warn(`${this.createShare.name} - location does not exist : ${realPath}`)
@@ -219,7 +225,7 @@ export class SharesManager {
     }
     // create share
     share.id = await this.sharesQueries.createShare(share)
-    // check & update members
+    // check and update members
     await this.createOrUpdateLinksAsMembers(user, share, LINK_TYPE.SHARE, createOrUpdateShareDto.links)
     await this.updateMembers(user, share, [], createOrUpdateShareDto.members)
     return this.getShareWithMembers(user, share.id)
