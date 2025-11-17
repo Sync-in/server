@@ -25,7 +25,6 @@ import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
 import { closeSearchPanel, openSearchPanel } from '@codemirror/search'
-import { Transaction } from '@codemirror/state'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
   faArrowsLeftRightToLine,
@@ -268,12 +267,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
       await this.lockFile()
     }
     this.http.get(this.file().dataUrl, { responseType: 'text' }).subscribe({
-      next: (data: string) => {
-        this.editor().view.dispatch({
-          changes: { from: 0, to: this.editor().view.state.doc.length, insert: data },
-          annotations: Transaction.addToHistory.of(false)
-        })
-      },
+      next: (data: string) => (this.content = data),
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Unable to open document', this.file().name, e)
     })
   }

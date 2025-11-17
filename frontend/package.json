@@ -20,7 +20,7 @@
     "update:angular": "ng update @angular/cli@latest @angular/core@latest --allow-dirty"
   },
   "dependencies": {
-    "@acrodata/code-editor": "^0.5.1",
+    "@acrodata/code-editor": "^0.6.0",
     "@ali-hm/angular-tree-component": "^20.1.6",
     "@angular/animations": "^20.1.7",
     "@angular/cdk": "^20.1.6",
