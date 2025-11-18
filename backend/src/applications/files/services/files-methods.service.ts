@@ -177,6 +177,14 @@ export class FilesMethods {
     }
   }
 
+  async getSize(space: SpaceEnv): Promise<{ size: number }> {
+    try {
+      return { size: await this.filesManager.getSize(space) }
+    } catch (e) {
+      this.handleError(space, FILE_OPERATION.GET_SIZE, e)
+    }
+  }
+
   private async copyMove(
     user: UserModel,
     space: SpaceEnv,

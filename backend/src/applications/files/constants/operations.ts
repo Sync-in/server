@@ -15,9 +15,10 @@ export enum FILE_OPERATION {
   UPLOAD = 'upload',
   TOUCH = 'touch',
   THUMBNAIL = 'thumbnail',
+  GET_SIZE = 'getSize',
   LOCK = 'lock',
   UNLOCK = 'unlock',
-  UNLOCK_REQUEST = 'unlock-request'
+  UNLOCK_REQUEST = 'unlockRequest'
 }
 
 export enum FILE_MODE {

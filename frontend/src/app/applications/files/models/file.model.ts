@@ -14,6 +14,7 @@ import type { FileLockProps, FileProps } from '@sync-in-server/backend/src/appli
 import type { File } from '@sync-in-server/backend/src/applications/files/schemas/file.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { popFromObject } from '@sync-in-server/backend/src/common/shared'
+import type { Observable } from 'rxjs'
 import { convertBytesToText, getNewly } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'
 import { CommentModel } from '../../comments/models/comment.model'
@@ -71,6 +72,7 @@ export class FileModel implements File {
   mimeUrl: string
   hSize: string
   hTimeAgo: string
+  hDirSize: Observable<string>
 
   // States
   newly = 0

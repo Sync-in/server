@@ -156,6 +156,11 @@ export class FilesController {
     return this.filesMethods.unlockRequest(user, space)
   }
 
+  @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.GET_SIZE}/*`)
+  async getSize(@GetSpace() space: SpaceEnv): Promise<{ size: number }> {
+    return this.filesMethods.getSize(space)
+  }
+
   // TASKS OPERATIONS
 
   @Post(`${FILES_ROUTE.TASK_OPERATION}/${FILE_OPERATION.DOWNLOAD}/*`)

@@ -682,4 +682,15 @@ export class FilesManager {
       }
     }
   }
+
+  async getSize(space: SpaceEnv): Promise<number> {
+    if (!(await isPathExists(space.realPath))) {
+      throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
+    }
+    if (await isPathIsDir(space.realPath)) {
+      return (await dirSize(space.realPath))[0]
+    } else {
+      return await fileSize(space.realPath)
+    }
+  }
 }

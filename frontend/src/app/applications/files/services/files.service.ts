@@ -233,6 +233,10 @@ export class FilesService {
     return this.http.request<void>(FILE_OPERATION.UNLOCK, `${API_FILES_OPERATION}/${FILE_OPERATION.UNLOCK_REQUEST}/${file.path}`)
   }
 
+  getSize(file: FileModel): Observable<number> {
+    return this.http.get<{ size: number }>(`${API_FILES_OPERATION}/${FILE_OPERATION.GET_SIZE}/${file.path}`).pipe(map((r) => r.size))
+  }
+
   openLockDialog(file: FileModel): void {
     this.layout.openDialog(FilesLockDialogComponent, null, {
       initialState: {

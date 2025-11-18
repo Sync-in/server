@@ -51,12 +51,17 @@
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Name</div>
             <div class="word-break-all fs-xxs">{{ f.name }}</div>
           </div>
-          @if (f.size) {
-            <div class="d-flex mb-1">
-              <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Size</div>
-              <div class="fs-xxs">{{ f.hSize }}</div>
+          <div class="d-flex mb-1">
+            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Size</div>
+            <div class="fs-xxs">
+              @let size = (getSizeLazy(f) | async);
+              @if (size === null) {
+                <fa-icon [icon]="icons.faSpinner" animation="spin-pulse"></fa-icon>
+              } @else {
+                {{ size }}
+              }
             </div>
-          }
+          </div>
           <div class="d-flex mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Created</div>
             <div class="fs-xxs">{{ f.ctime | amDateFormat }}</div>

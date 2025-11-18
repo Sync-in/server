@@ -4,13 +4,17 @@
  * See the LICENSE file for licensing details
  */
 
+import { AsyncPipe } from '@angular/common'
 import { ChangeDetectionStrategy, Component, computed, inject, input, InputSignal, Signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faArrowsAlt, faClipboardCheck, faLock, faUnlock } from '@fortawesome/free-solid-svg-icons'
+import { faArrowsAlt, faClipboardCheck, faLock, faSpinner, faUnlock } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
+import { catchError, of, shareReplay } from 'rxjs'
+import { map } from 'rxjs/operators'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
+import { convertBytesToText } from '../../../../common/utils/functions'
 import { defaultCardImageSize } from '../../../../layout/layout.constants'
 import { TAB_MENU } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -35,7 +39,8 @@ import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.compone
     FaIconComponent,
     FilesViewerMediaComponent,
     UserAvatarComponent,
-    FilePermissionsComponent
+    FilePermissionsComponent,
+    AsyncPipe
   ],
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })
@@ -53,7 +58,8 @@ export class FilesSelectionComponent {
     faLock,
     faUnlock,
     faClipboardCheck,
-    faArrowsAlt
+    faArrowsAlt,
+    faSpinner
   }
   private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)
@@ -92,5 +98,17 @@ export class FilesSelectionComponent {
 
   openLockDialog(f: FileModel) {
     this.filesService.openLockDialog(f)
+  }
+
+  getSizeLazy(f: FileModel) {
+    if (!f.isDir) return of(f.hSize)
+    if (!f.hDirSize) {
+      f.hDirSize = this.filesService.getSize(f).pipe(
+        map((size) => convertBytesToText(size, 0, true)),
+        catchError(() => (f.hDirSize = of(f.hSize))),
+        shareReplay(1)
+      )
+    }
+    return f.hDirSize
   }
 }
