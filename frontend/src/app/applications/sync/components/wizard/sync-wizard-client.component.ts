@@ -43,7 +43,7 @@ export class SyncWizardClientComponent {
     if (this.syncService.wizard.localPath) {
       this.checkSelection()
     }
-    const routeState = this.router.getCurrentNavigation()?.extras.state as { file: FileModel }
+    const routeState = this.router.currentNavigation()?.extras.state as { file: FileModel }
     if (routeState?.file) {
       this.syncService.addFileToRemotePath(routeState.file)
     }

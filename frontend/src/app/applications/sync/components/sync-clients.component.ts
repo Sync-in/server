@@ -80,7 +80,7 @@ export class SyncClientsComponent {
       translating: true,
       sameLink: true
     })
-    const routeState = this.router.getCurrentNavigation()?.extras.state as { clientId: string; pathId?: number }
+    const routeState = this.router.currentNavigation()?.extras.state as { clientId: string; pathId?: number }
     if (routeState?.clientId) {
       this.focusOnSelectId = routeState.clientId
       this.focusOnSelectPathId = routeState.pathId

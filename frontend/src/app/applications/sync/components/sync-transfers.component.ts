@@ -195,7 +195,7 @@ export class SyncTransfersComponent {
   }
 
   private checkRouteState() {
-    const routeState = this.router.getCurrentNavigation()?.extras.state as { id: number; withSettings: boolean }
+    const routeState = this.router.currentNavigation()?.extras.state as { id: number; withSettings: boolean }
     if (routeState?.id) {
       this.focusOnSyncPathErrorsId = routeState.id
     }
