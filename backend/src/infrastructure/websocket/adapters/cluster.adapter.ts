@@ -11,11 +11,12 @@ import { ServerOptions } from 'socket.io'
 
 @Injectable()
 export class ClusterAdapter extends IoAdapter {
-  private readonly clusterAdapter = createAdapter()
-
   createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options)
-    server.adapter(this.clusterAdapter)
+    // Prevent the connection from closing too early when NestJS shutdown hooks are enabled, which can cause errors on exit
+    server.close = () => void 0
+    const adapter: ReturnType<typeof createAdapter> = createAdapter()
+    server.adapter(adapter)
     return server
   }
 }
