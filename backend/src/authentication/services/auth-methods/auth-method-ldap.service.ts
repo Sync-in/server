@@ -24,6 +24,7 @@ type LdapUserEntry = Entry & Record<LDAP_LOGIN_ATTR | (typeof LDAP_COMMON_ATTR)[
 export class AuthMethodLdapService implements AuthMethod {
   private readonly logger = new Logger(AuthMethodLdapService.name)
   private readonly ldapConfig = configuration.auth.ldap
+  private readonly isAD = this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.SAM || this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN
   private clientOptions: ClientOptions = { timeout: 6000, connectTimeout: 6000, url: '' }
 
   constructor(
@@ -35,7 +36,7 @@ export class AuthMethodLdapService implements AuthMethod {
     let user: UserModel = await this.usersManager.findUser(this.dbLogin(login), false)
     if (user) {
       if (user.isGuest) {
-        // allow guests to be authenticated from db and check if the current user is defined as active
+        // Allow guests to be authenticated from db and check if the current user is defined as active
         return this.usersManager.logUser(user, password, ip)
       }
       if (!user.isActive) {
@@ -49,12 +50,12 @@ export class AuthMethodLdapService implements AuthMethod {
       if (user) {
         let authSuccess = false
         if (scope) {
-          // try user app password
+          // Try user app password
           authSuccess = await this.usersManager.validateAppPassword(user, password, ip, scope)
         }
         this.usersManager.updateAccesses(user, ip, authSuccess).catch((e: Error) => this.logger.error(`${this.validateUser.name} : ${e}`))
         if (authSuccess) {
-          // logged with app password
+          // Logged with app password
           return user
         }
       }
@@ -73,10 +74,9 @@ export class AuthMethodLdapService implements AuthMethod {
 
   private async checkAuth(login: string, password: string): Promise<LdapUserEntry | false> {
     const ldapLogin = this.buildLdapLogin(login)
-    const isAD = this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.SAM || this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN
     // AD: bind directly with the user input (UPN or DOMAIN\user)
     // Generic LDAP: build DN from login attribute + baseDN
-    const bindUserDN = isAD ? ldapLogin : `${this.ldapConfig.attributes.login}=${ldapLogin},${this.ldapConfig.baseDN}`
+    const bindUserDN = this.isAD ? ldapLogin : `${this.ldapConfig.attributes.login}=${ldapLogin},${this.ldapConfig.baseDN}`
     let client: Client
     let error: any
     for (const s of this.ldapConfig.servers) {
@@ -137,7 +137,7 @@ export class AuthMethodLdapService implements AuthMethod {
 
   private async updateOrCreateUser(identity: CreateUserDto, user: UserModel): Promise<UserModel> {
     if (user === null) {
-      // create
+      // Create
       const createdUser = await this.adminUsersManager.createUserOrGuest(identity, identity.role)
       const freshUser = await this.usersManager.fromUserId(createdUser.id)
       if (!freshUser) {
@@ -150,7 +150,7 @@ export class AuthMethodLdapService implements AuthMethod {
       this.logger.error(`${this.updateOrCreateUser.name} - user login mismatch : ${identity.login} !== ${user.login}`)
       throw new HttpException('Account matching error', HttpStatus.FORBIDDEN)
     }
-    // update: check if user information has changed
+    // Update: check if user information has changed
     const identityHasChanged: UpdateUserDto = Object.fromEntries(
       (
         await Promise.all(
@@ -168,7 +168,7 @@ export class AuthMethodLdapService implements AuthMethod {
       try {
         if (identityHasChanged?.role != null) {
           if (user.role === USER_ROLE.ADMINISTRATOR && !this.ldapConfig.adminGroup) {
-            // Prevent removing admin role when adminGroup was removed or not defined
+            // Prevent removing the admin role when adminGroup was removed or not defined
             delete identityHasChanged.role
           }
         }
@@ -180,7 +180,7 @@ export class AuthMethodLdapService implements AuthMethod {
         }
         Object.assign(user, identityHasChanged)
         if ('lastName' in identityHasChanged || 'firstName' in identityHasChanged) {
-          // force fullName update in current user model
+          // Force fullName update in the current user model
           user.setFullName(true)
         }
       } catch (e) {
@@ -271,11 +271,15 @@ export class AuthMethodLdapService implements AuthMethod {
     const dbLogin = this.dbLogin(login)
 
     const or = new OrFilter({
-      filters: [
-        new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.UPN, value: login }),
-        new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.SAM, value: dbLogin }),
-        new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.CN, value: dbLogin })
-      ]
+      filters: this.isAD
+        ? [
+            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.UPN, value: login }),
+            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.SAM, value: dbLogin })
+          ]
+        : [
+            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.UID, value: dbLogin }),
+            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.CN, value: dbLogin })
+          ]
     })
 
     // Convert to LDAP filter string

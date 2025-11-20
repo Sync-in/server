@@ -114,9 +114,9 @@ export class AuthTokenConfig {
 export class AuthMethodLdapAttributesConfig {
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => value || LDAP_LOGIN_ATTR.CN)
+  @Transform(({ value }) => value || LDAP_LOGIN_ATTR.UID)
   @IsEnum(LDAP_LOGIN_ATTR)
-  login: LDAP_LOGIN_ATTR = LDAP_LOGIN_ATTR.CN
+  login: LDAP_LOGIN_ATTR = LDAP_LOGIN_ATTR.UID
 
   @IsOptional()
   @IsString()
