@@ -33,6 +33,7 @@ export class AuthMethodLdapService implements AuthMethod {
   ) {}
 
   async validateUser(login: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
+    // Find user from his login or email
     let user: UserModel = await this.usersManager.findUser(this.dbLogin(login), false)
     if (user) {
       if (user.isGuest) {
@@ -44,7 +45,8 @@ export class AuthMethodLdapService implements AuthMethod {
         throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
       }
     }
-    const entry: false | LdapUserEntry = await this.checkAuth(login, password)
+    // If a user was found, use the stored login. This allows logging in with an email.
+    const entry: false | LdapUserEntry = await this.checkAuth(user?.login || login, password)
     if (entry === false) {
       // LDAP auth failed
       if (user) {
@@ -239,9 +241,7 @@ export class AuthMethodLdapService implements AuthMethod {
   }
 
   private dbLogin(login: string): string {
-    if (login.includes('@')) {
-      return login.split('@')[0]
-    } else if (login.includes('\\')) {
+    if (login.includes('\\')) {
       return login.split('\\').slice(-1)[0]
     }
     return login
@@ -264,7 +264,7 @@ export class AuthMethodLdapService implements AuthMethod {
     // Build a safe LDAP filter to search for a user.
     // Important: - Values passed to EqualityFilter are auto-escaped by ldapts
     //            - extraFilter is appended as-is (assumed trusted configuration)
-    // Output: (&(|(userPrincipalName=john.doe@sync-in.com)(sAMAccountName=john.doe)(cn=john.doe))(*extraFilter*))
+    // Output: (&(|(userPrincipalName=john.doe@sync-in.com)(sAMAccountName=john.doe)(cn=john.doe)(uid=john.doe)(mail=john.doe@sync-in.com))(*extraFilter*))
 
     // Handle the case where the sAMAccountName is provided in domain-qualified format (e.g., SYNC_IN\\user)
     // Note: sAMAccountName is always stored without the domain in Active Directory.
@@ -273,12 +273,14 @@ export class AuthMethodLdapService implements AuthMethod {
     const or = new OrFilter({
       filters: this.isAD
         ? [
-            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.UPN, value: login }),
-            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.SAM, value: dbLogin })
+            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.SAM, value: dbLogin }),
+            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.UPN, value: dbLogin }),
+            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.MAIL, value: dbLogin })
           ]
         : [
             new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.UID, value: dbLogin }),
-            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.CN, value: dbLogin })
+            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.CN, value: dbLogin }),
+            new EqualityFilter({ attribute: LDAP_LOGIN_ATTR.MAIL, value: dbLogin })
           ]
     })
 
