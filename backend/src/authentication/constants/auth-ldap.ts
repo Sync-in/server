@@ -7,6 +7,7 @@
 export enum LDAP_LOGIN_ATTR {
   UID = 'uid',
   CN = 'cn',
+  MAIL = 'mail',
   SAM = 'sAMAccountName',
   UPN = 'userPrincipalName'
 }

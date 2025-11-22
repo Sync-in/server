@@ -6,7 +6,7 @@
 
 export const USER_PASSWORD_MIN_LENGTH = 8
 export const USER_MAX_PASSWORD_ATTEMPTS = 10
-export const USER_LOGIN_VALIDATION = /^(?! )(?!.* $)[a-zA-Z0-9\-\\._ ]{2,255}$/
+export const USER_LOGIN_VALIDATION = /^(?! )(?!.* $)[a-zA-Z0-9@\-\\._ ]{2,255}$/
 
 export const USER_PATH = {
   TMP: 'tmp',

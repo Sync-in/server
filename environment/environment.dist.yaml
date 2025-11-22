@@ -19,10 +19,10 @@ logger:
   # stdout: if false logs are written to the run directory
   # default: `true`
   stdout: true
-  # colorize output
+  # Colorize output.
   # default: `true`
   colorize: true
-  # path to the log file used when stdout is set to false
+  # Path to the log file used when stdout is set to false
   filePath:
 mysql:
   # required
@@ -33,20 +33,20 @@ cache:
   # adapter: `mysql` | `redis`
   # default: `mysql`
   adapter: mysql
-  # ttl in seconds
+  # TTL in seconds
   # default: `60`
   ttl: 60
-  # redis adapter url
+  # Redis adapter url
   # default: `redis://127.0.0.1:6379`
   redis: redis://127.0.0.1:6379
 websocket:
   # adapter: `cluster` (Node.js Workers: default) | `redis`
   # default: `cluster`
   adapter: cluster
-  # cors origin allowed
+  # Cors origin allowed
   # default: `*`
   corsOrigin: '*'
-  # redis adapter url
+  # Redis adapter url
   # default: `redis://127.0.0.1:6379`
   redis: redis://127.0.0.1:6379
 mail:
@@ -59,9 +59,9 @@ mail:
   auth:
     user: user
     pass: password
-  # secure: defines if the connection should use SSL (if true) or not (if false)
-  # note: setting `secure: false` does not necessarily mean messages are sent in plaintext
-  # if the server supports STARTTLS, the connection is usually upgraded to TLS automatically
+  # Defines if the connection should use SSL (if true) or not (if false)
+  # Note: setting `secure: false` does not necessarily mean messages are sent in plaintext
+  # If the server supports STARTTLS, the connection is usually upgraded to TLS automatically
   # default: `false`
   secure: false
   # ignoreTLS: if true, disables the use of STARTTLS even if the server advertises it
@@ -70,28 +70,28 @@ mail:
   # rejectUnauthorized: reject the connection if the server's TLS certificate is invalid
   # default: false
   rejectUnauthorized: false
-  # enable logger
+  # Enable logger
   # default: `false`
   logger: false
-  # set log level to debug
+  # Set log level to debug
   # default: `false`
   debug: false
 auth:
   # adapter : `mysql` | `ldap`
   # default: `mysql`
   method: mysql
-  # key used to encrypt user secret keys in the database
-  # optional, but strongly recommended
-  # warning: do not change or remove the encryption key after MFA activation, or the codes will become invalid
+  # Key used to encrypt user secret keys in the database
+  # Optional but strongly recommended
+  # Warning: do not change or remove the encryption key after MFA activation, or the codes will become invalid
   encryptionKey: changeEncryptionKeyWithStrongKey
-  # multifactor authentication
+  # Multifactor authentication
   mfa:
-    # totp configuration
+    # TOTP configuration
     totp:
-      # enable TOTP authentication
+      # Enable TOTP authentication
       # default: true
       enabled: true
-      # name displayed in the authentication app (FreeOTP, Proton Authenticator, Aegis Authenticator etc.)
+      # Name displayed in the authentication app (FreeOTP, Proton Authenticator, Aegis Authenticator etc.)
       # default: Sync-in
       issuer: Sync-in
   # cookie sameSite setting: `lax` | `strict`
@@ -99,14 +99,14 @@ auth:
   cookieSameSite: strict
   token:
     access:
-      # used for token and cookie signatures
+      # Used for token and cookie signatures
       # required
       secret: changeAccessWithStrongSecret
       # token expiration = cookie maxAge
       # default: `30m`
       expiration: 30m
     refresh:
-      # used for token and cookie signatures
+      # Used for token and cookie signatures
       # required
       secret: changeRefreshWithStrongSecret
       # token expiration = cookie maxAge
@@ -120,10 +120,13 @@ auth:
     # filter, e.g: (acl=admin)
     filter:
     attributes:
-      # login attribute: `uid` | `cn` | `sAMAccountName` | `userPrincipalName`, used to authenticate the user
+      # Login attribute used to construct the user's DN for binding.
+      # The value of this attribute is used as the naming attribute (first RDN) when forming the Distinguished Name (DN) during authentication
+      # login: `uid` | `cn` | `mail` | `sAMAccountName` | `userPrincipalName`, used to authenticate the user
       # default: `uid`
       login: uid
-      # email attribute: `mail` or `email`
+      # Attribute used to retrieve the user's email address
+      # email: `mail` or `email`
       # default: `mail`
       email: mail
     # adminGroup: The CN of a group containing Sync-in administrators (e.g., administrators)
@@ -148,14 +151,14 @@ applications:
       # enable onlyoffice integration
       # default: false
       enabled: false
-      # for an external server (e.g., https://onlyoffice.domain.com), remember the url must be accessible from browser !
-      # if externalServer is empty (case of official docker compose), we use the local instance
+      # For an external server (e.g., https://onlyoffice.domain.com), remember the url must be accessible from browser!
+      # If externalServer is empty (case of official docker compose), we use the local instance
       # default: null
       externalServer:
-      # secret used for jwt tokens, it must be the same on the onlyoffice server
+      # Secret used for jwt tokens, it must be the same on the onlyoffice server
       # required
       secret: onlyOfficeSecret
-      # if you use https, set to `true`
+      # If you use https, set to `true`.
       # default: `false`
       verifySSL: false
   appStore:
