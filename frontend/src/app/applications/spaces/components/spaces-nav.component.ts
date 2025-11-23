@@ -41,7 +41,7 @@ export class SpacesNavComponent implements OnDestroy {
         ),
         level: 'primary'
       },
-      title: 'Informations',
+      title: 'Info',
       active: false
     },
     { label: TAB_MENU.TREE, components: [FilesTreeComponent], loadComponent: true, icon: faFolderTree, title: null, active: false },

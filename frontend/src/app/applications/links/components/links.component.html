@@ -153,7 +153,7 @@
                     @case ('from') {
                       <app-share-repository [share]="s"></app-share-repository>
                     }
-                    @case ('infos') {
+                    @case ('info') {
                       @if (s.link.limitAccess) {
                         <span class="badge rounded-pill {{s.link.nbAccess >= s.link.limitAccess ? 'bg-danger': 'bg-success'}}">
                           {{ s.link.nbAccess }}/{{ s.link.limitAccess }}
@@ -221,7 +221,7 @@
   </ng-template>
   <ng-template [divider]="true" contextMenuItem></ng-template>
   <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Informations</span>
+    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
   </ng-template>
 </context-menu>
 <!--End Context Menu-->

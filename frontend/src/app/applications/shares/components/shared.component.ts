@@ -102,7 +102,7 @@ export class SharedComponent implements OnInit {
   protected shares: ShareFileModel[] = []
   protected selected: ShareFileModel = null
   // Sort
-  protected tableHeaders: Record<'name' | 'from' | 'members' | 'infos' | 'created', TableHeaderConfig> = {
+  protected tableHeaders: Record<'name' | 'from' | 'members' | 'info' | 'created', TableHeaderConfig> = {
     name: {
       label: 'Name',
       width: 40,
@@ -125,7 +125,7 @@ export class SharedComponent implements OnInit {
       textCenter: false,
       show: true
     },
-    infos: { label: 'Infos', width: 14, textCenter: true, class: 'd-none d-md-table-cell', show: true },
+    info: { label: 'Info', width: 14, textCenter: true, class: 'd-none d-md-table-cell', show: true },
     created: {
       label: 'Created',
       width: 10,

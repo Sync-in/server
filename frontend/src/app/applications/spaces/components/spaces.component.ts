@@ -96,7 +96,7 @@ export class SpacesComponent implements OnInit {
     faCircleInfo
   }
   // Sort
-  protected tableHeaders: Record<'name' | 'managers' | 'members' | 'infos' | 'permissions' | 'modified', TableHeaderConfig> = {
+  protected tableHeaders: Record<'name' | 'managers' | 'members' | 'info' | 'permissions' | 'modified', TableHeaderConfig> = {
     name: {
       label: 'Name',
       width: 30,
@@ -120,7 +120,7 @@ export class SpacesComponent implements OnInit {
       textCenter: false,
       show: true
     },
-    infos: { label: 'Infos', width: 15, textCenter: true, class: 'd-none d-md-table-cell', show: true },
+    info: { label: 'Info', width: 15, textCenter: true, class: 'd-none d-md-table-cell', show: true },
     permissions: {
       label: 'Permissions',
       width: 10,

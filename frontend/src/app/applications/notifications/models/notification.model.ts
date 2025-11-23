@@ -29,7 +29,7 @@ export class NotificationModel implements NotificationFromUser {
   constructor(props: NotificationFromUser) {
     Object.assign(this, props)
     if (!this.fromUser) {
-      this.fromUser = { id: -1, login: null, email: null, fullName: 'Information', avatarUrl: null }
+      this.fromUser = { id: -1, login: null, email: null, fullName: 'Info', avatarUrl: null }
     } else {
       this.fromUser.avatarUrl = userAvatarUrl(this.fromUser.login)
     }

@@ -167,7 +167,7 @@
                     @case ('members') {
                       <span>{{ s.counts | joinCounts:['roots', 'shares'] }}</span>
                     }
-                    @case ('infos') {
+                    @case ('info') {
                       @if (s.counts?.roots) {
                         <span (click)="openSpaceRootsDialog()" class="badge rounded-pill bg-primary cursor-pointer me-1">
                           <fa-icon [icon]="icons.faAnchor"></fa-icon>&nbsp;{{ s.counts.roots }}
@@ -237,7 +237,7 @@
     <ng-template [divider]="true" contextMenuItem></ng-template>
   }
   <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Informations</span>
+    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
   </ng-template>
 </context-menu>
 <!--End Context Menu-->

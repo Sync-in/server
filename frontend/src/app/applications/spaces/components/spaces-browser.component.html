@@ -182,7 +182,7 @@
       </li>
       <li role="menuitem">
         <a (click)="layout.showRSideBarTab(TAB_MENU.SELECTION)" class="dropdown-item">
-          <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Informations</span>
+          <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
         </a>
       </li>
       @if (!inSharesList) {
@@ -393,7 +393,7 @@
                         </div>
                       }
                     }
-                    @case ('infos') {
+                    @case ('info') {
                       @if (f.lock) {
                         <span (click)="openLockDialog(f)"
                               tooltip="{{f.lock.owner}}"
@@ -546,7 +546,7 @@
     </ng-template>
   }
   <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Informations</span>
+    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
   </ng-template>
   @if (!inSharesList) {
     <ng-template [divider]="true" contextMenuItem></ng-template>

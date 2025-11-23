@@ -328,9 +328,7 @@
   "(this may take longer)": "(इसमें अधिक समय लग सकता है)",
   "Save in the current directory": "वर्तमान निर्देशिका में सहेजें",
   "This name is already used": "यह नाम पहले से उपयोग में है",
-  "Information": "जानकारी",
-  "Informations": "जानकारी",
-  "Infos": "जानकारी",
+  "Info": "जानकारी",
   "Size": "आकार",
   "Modified": "संशोधित",
   "modified": "संशोधित",
@@ -618,5 +616,8 @@
   "sends you a request to unlock the file": "आपको फ़ाइल अनलॉक करने का अनुरोध भेजता है",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "फ़ाइल के मालिक के रूप में, आप फ़ाइल को अनलॉक कर सकते हैं या वर्तमान लॉक मालिक से उसे रिलीज़ करने का अनुरोध कर सकते हैं।",
   "The file is edited by": "फ़ाइल निम्न द्वारा संपादित की जा रही है",
-  "A new update is available": "एक नया अपडेट उपलब्ध है"
+  "A new update is available": "एक नया अपडेट उपलब्ध है",
+  "Fullscreen": "पूर्ण स्क्रीन",
+  "Dimensions": "आयाम",
+  "Start Slideshow": "स्लाइड शो शुरू करें"
 }

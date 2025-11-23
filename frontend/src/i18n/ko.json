@@ -328,9 +328,7 @@
   "(this may take longer)": "(시간이 더 걸릴 수 있습니다)",
   "Save in the current directory": "현재 디렉터리에 저장",
   "This name is already used": "이 이름은 이미 사용 중입니다",
-  "Information": "정보",
-  "Informations": "정보",
-  "Infos": "정보",
+  "Info": "정보",
   "Size": "크기",
   "Modified": "수정됨",
   "modified": "수정됨",
@@ -618,5 +616,8 @@
   "sends you a request to unlock the file": "파일 잠금 해제 요청을 보냈습니다",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "파일 소유자인 경우 파일의 잠금을 직접 해제하거나 현재 잠금 소유자에게 해제를 요청할 수 있습니다.",
   "The file is edited by": "파일이 다음 사용자에 의해 편집 중입니다",
-  "A new update is available": "새로운 업데이트가 이용 가능합니다"
+  "A new update is available": "새로운 업데이트가 이용 가능합니다",
+  "Fullscreen": "전체 화면",
+  "Dimensions": "크기",
+  "Start Slideshow": "슬라이드 쇼 시작"
 }

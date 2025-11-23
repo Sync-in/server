@@ -328,9 +328,7 @@
   "(this may take longer)": "(bu işlem daha uzun sürebilir)",
   "Save in the current directory": "Mevcut dizine kaydet",
   "This name is already used": "Bu ad zaten kullanılıyor",
-  "Information": "Bilgi",
-  "Informations": "Bilgiler",
-  "Infos": "Bilgiler",
+  "Info": "Bilgi",
   "Size": "Boyut",
   "Modified": "Değiştirildi",
   "modified": "değiştirildi",
@@ -618,5 +616,8 @@
   "sends you a request to unlock the file": "dosyanın kilidini açmanız için size bir istek gönderiyor",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "Dosyanın sahibi olarak, dosyanın kilidini açabilir veya mevcut kilit sahibinden kilidi kaldırmasını isteyebilirsiniz.",
   "The file is edited by": "Dosya şu kişi tarafından düzenleniyor",
-  "A new update is available": "Yeni bir güncelleme mevcut"
+  "A new update is available": "Yeni bir güncelleme mevcut",
+  "Fullscreen": "Tam ekran",
+  "Dimensions": "Boyutlar",
+  "Start Slideshow": "Slayt gösterisini başlat"
 }

@@ -59,7 +59,7 @@ import { MemberModel } from '../../models/member.model'
         <fa-icon
           [icon]="unknownUserAsInfo ? icons.faLightbulb : icons.faUserShield"
           class="circle-gray-icon cursor-pointer me-1"
-          [tooltip]="(unknownUserAsInfo ? 'Information' : 'Administrator') | translate: locale.language"
+          [tooltip]="(unknownUserAsInfo ? 'Info' : 'Administrator') | translate: locale.language"
           [placement]="tooltipPlacement"
           [container]="container"
           [style.min-width.px]="width"

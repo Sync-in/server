@@ -55,7 +55,7 @@ export class SyncPathModel implements Partial<SyncPath> {
     } else {
       Object.assign(this, props)
     }
-    this.setInfos()
+    this.setProperties()
     this.setStatus(false)
   }
 
@@ -92,7 +92,7 @@ export class SyncPathModel implements Partial<SyncPath> {
     }
   }
 
-  private setInfos() {
+  private setProperties() {
     this.isWriteable = hasWritePermission(this.settings?.permissions)
     this.newly = getNewly(this.settings.lastSync || 0, true)
     const repository = this.settings.remotePath.split('/')[0]

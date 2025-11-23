@@ -101,7 +101,7 @@ export class LinksComponent implements OnInit {
   protected shares: ShareLinkModel[] = []
   protected selected: ShareLinkModel = null
   // Sort
-  protected tableHeaders: Record<'name' | 'link' | 'from' | 'infos' | 'permissions' | 'accessed', TableHeaderConfig> = {
+  protected tableHeaders: Record<'name' | 'link' | 'from' | 'info' | 'permissions' | 'accessed', TableHeaderConfig> = {
     name: {
       label: 'Name',
       width: 30,
@@ -125,7 +125,7 @@ export class LinksComponent implements OnInit {
       class: 'd-none d-md-table-cell',
       show: true
     },
-    infos: { label: 'Infos', width: 15, textCenter: true, class: 'd-none d-lg-table-cell', show: true, sortable: true },
+    info: { label: 'Info', width: 15, textCenter: true, class: 'd-none d-lg-table-cell', show: true, sortable: true },
     permissions: {
       label: 'Permissions',
       width: 10,
@@ -154,7 +154,7 @@ export class LinksComponent implements OnInit {
     default: [{ prop: 'name', type: 'string' }],
     link: [{ prop: 'link.name', type: 'string' }],
     name: [{ prop: 'name', type: 'string' }],
-    infos: [{ prop: 'link.nbAccess', type: 'number' }],
+    info: [{ prop: 'link.nbAccess', type: 'number' }],
     permissions: [{ prop: 'link.permissions', type: 'length' }],
     accessed: [{ prop: 'link.currentAccess', type: 'date' }]
   }

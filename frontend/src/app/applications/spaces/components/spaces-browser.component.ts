@@ -175,7 +175,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   // Settings
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
-  protected tableHeaders: Record<'name' | 'anchored' | 'infos' | 'permissions' | 'size' | 'mtime', TableHeaderConfig> = {
+  protected tableHeaders: Record<'name' | 'anchored' | 'info' | 'permissions' | 'size' | 'mtime', TableHeaderConfig> = {
     name: {
       label: 'Name',
       width: 45,
@@ -192,7 +192,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       show: this.hasRoots,
       sortable: true
     },
-    infos: { label: 'Infos', width: 15, textCenter: true, class: 'd-none d-md-table-cell', show: true },
+    info: { label: 'Info', width: 15, textCenter: true, class: 'd-none d-md-table-cell', show: true },
     permissions: {
       label: 'Permissions',
       width: 10,

@@ -328,9 +328,7 @@
   "(this may take longer)": "(może to potrwać dłużej)",
   "Save in the current directory": "Zapisz w bieżącym katalogu",
   "This name is already used": "Ta nazwa jest już używana",
-  "Information": "Informacja",
-  "Informations": "Informacje",
-  "Infos": "Informacje",
+  "Info": "Info",
   "Size": "Rozmiar",
   "Modified": "Zmodyfikowano",
   "modified": "zmodyfikowano",
@@ -618,5 +616,8 @@
   "sends you a request to unlock the file": "wysyła do Ciebie prośbę o odblokowanie pliku",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "Jako właściciel pliku możesz odblokować plik lub poprosić obecnego właściciela blokady o jej zwolnienie.",
   "The file is edited by": "Plik jest edytowany przez",
-  "A new update is available": "Dostępna jest nowa aktualizacja"
+  "A new update is available": "Dostępna jest nowa aktualizacja",
+  "Fullscreen": "Pełny ekran",
+  "Dimensions": "Wymiary",
+  "Start Slideshow": "Uruchom pokaz slajdów"
 }

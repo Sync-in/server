@@ -328,9 +328,7 @@
   "(this may take longer)": "（这可能需要更长时间）",
   "Save in the current directory": "保存到当前目录",
   "This name is already used": "该名称已被使用",
-  "Information": "信息",
-  "Informations": "信息",
-  "Infos": "信息",
+  "Info": "信息",
   "Size": "大小",
   "Modified": "修改时间",
   "modified": "已修改",
@@ -618,5 +616,8 @@
   "sends you a request to unlock the file": "向您发送了解锁该文件的请求",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "作为文件所有者，您可以解锁该文件，或请求当前锁定所有者释放它。",
   "The file is edited by": "该文件正由以下用户编辑",
-  "A new update is available": "有可用的新更新"
+  "A new update is available": "有可用的新更新",
+  "Fullscreen": "全屏",
+  "Dimensions": "尺寸",
+  "Start Slideshow": "开始幻灯片放映"
 }

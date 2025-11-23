@@ -328,9 +328,7 @@
   "(this may take longer)": "（時間がかかる場合があります）",
   "Save in the current directory": "現在のディレクトリに保存",
   "This name is already used": "この名前は既に使用されています",
-  "Information": "情報",
-  "Informations": "情報",
-  "Infos": "情報",
+  "Info": "情報",
   "Size": "サイズ",
   "Modified": "変更日時",
   "modified": "変更済み",
@@ -618,5 +616,8 @@
   "sends you a request to unlock the file": "あなたにファイルのロック解除リクエストを送信しました",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "ファイルの所有者であるあなたは、ファイルのロックを解除するか、現在のロック所有者に解除を依頼できます。",
   "The file is edited by": "ファイルは次のユーザーによって編集中です",
-  "A new update is available": "新しいアップデートが利用可能です"
+  "A new update is available": "新しいアップデートが利用可能です",
+  "Fullscreen": "全画面表示",
+  "Dimensions": "サイズ",
+  "Start Slideshow": "スライドショーを開始"
 }

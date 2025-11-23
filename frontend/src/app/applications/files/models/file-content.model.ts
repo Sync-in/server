@@ -28,14 +28,14 @@ export class FileContentModel implements FileContent {
   constructor(props: FileContent) {
     Object.assign(this, props)
     this.mimeUrl = getAssetsMimeUrl(this.mime)
-    this.setInfos()
+    this.setProperties()
   }
 
   fallBackMimeUrl() {
     this.mimeUrl = defaultMimeUrl
   }
 
-  private setInfos() {
+  private setProperties() {
     const repository = this.path.split('/')[0]
     const isPersonal = this.path.split('/')[1] === SPACE_ALIAS.PERSONAL
     this.showedPath = this.path

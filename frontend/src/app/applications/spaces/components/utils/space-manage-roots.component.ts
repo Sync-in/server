@@ -47,7 +47,7 @@ export class SpaceManageRootsComponent implements OnInit, OnDestroy {
   @ViewChild('InputRename') inputRename: ElementRef
   @Input({ required: true }) space: Partial<SpaceModel>
   @Input({ required: true }) user: UserType
-  @Input() showInfos = true
+  @Input() showInfo = true
   @Input() showUsers = true
   @Input() addRootFile: Subject<FileTreeEvent | ExternalFilePathEvent> = null
   protected locale = inject<L10nLocale>(L10N_LOCALE)

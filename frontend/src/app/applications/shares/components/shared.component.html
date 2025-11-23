@@ -162,7 +162,7 @@
                     @case ('members') {
                       <span>{{ s.counts | joinCounts:['shares'] }}</span>
                     }
-                    @case ('infos') {
+                    @case ('info') {
                       @if (s.counts.shares) {
                         <span (click)="openChildShareDialog(s)" class="badge rounded-pill bg-purple cursor-pointer me-1">
                           <fa-icon class="me-1" [icon]="icons.SHARED"></fa-icon>
@@ -218,7 +218,7 @@
   }
   <ng-template [divider]="true" contextMenuItem></ng-template>
   <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Informations</span>
+    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
   </ng-template>
 </context-menu>
 <!--End Context Menu-->
