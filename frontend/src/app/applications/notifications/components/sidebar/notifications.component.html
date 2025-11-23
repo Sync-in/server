@@ -44,7 +44,9 @@
         <div class="d-flex fs-xxxs pt-1" [class.text-muted]="!n.soonRead">
           <div>{{ n.createdAt | amTimeAgo }}</div>
           <div class="ms-auto">
-            <fa-icon [icon]="n.appIcon"></fa-icon>
+            @if (n.appIcon) {
+              <fa-icon [icon]="n.appIcon"></fa-icon>
+            }
             @if (n.mainElement) {
               <span>&nbsp;{{ n.mainElement }}</span>
             }

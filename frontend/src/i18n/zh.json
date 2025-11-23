@@ -617,5 +617,6 @@
   "Send an unlock request": "发送解锁请求",
   "sends you a request to unlock the file": "向您发送了解锁该文件的请求",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "作为文件所有者，您可以解锁该文件，或请求当前锁定所有者释放它。",
-  "The file is edited by": "该文件正由以下用户编辑"
+  "The file is edited by": "该文件正由以下用户编辑",
+  "A new update is available": "有可用的新更新"
 }

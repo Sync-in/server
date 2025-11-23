@@ -12,7 +12,7 @@ import { dbCheckAffectedRows } from '../../../infrastructure/database/utils'
 import { USER_NOTIFICATION } from '../../users/constants/user'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema'
 import type { NotificationContent, NotificationFromUser } from '../interfaces/notification-properties.interface'
-import type { UserMailNotification } from '../interfaces/user-mail-notification'
+import type { UserMailNotification } from '../interfaces/user-mail-notification.interface'
 import { Notification } from '../schemas/notification.interface'
 import { notifications } from '../schemas/notifications.schema'
 

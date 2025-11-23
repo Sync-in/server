@@ -19,6 +19,6 @@ import { WebSocketUsers } from './users.gateway'
 @Module({
   controllers: [UsersController, AdminUsersController],
   providers: [WebSocketUsers, UserRolesGuard, UserPermissionsGuard, UsersManager, UsersQueries, AdminUsersManager, AdminUsersQueries],
-  exports: [UsersManager, AdminUsersManager, UsersQueries]
+  exports: [UsersManager, UsersQueries, AdminUsersManager, AdminUsersQueries]
 })
 export class UsersModule {}

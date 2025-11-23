@@ -15,6 +15,7 @@ export interface NotificationContent {
   event: string
   element: string
   url: string
+  externalUrl?: string
 }
 
 export interface NotificationOptions {

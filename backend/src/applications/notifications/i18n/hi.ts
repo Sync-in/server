@@ -47,5 +47,9 @@ export const hi = {
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':
     'आपको यह सूचना इसलिए मिली है क्योंकि आपके Sync-in खाते की सुरक्षा बदल गई है। यदि आपको लगता है कि यह गलती से हुआ है, तो कृपया अपनी सुरक्षा सेटिंग्स की समीक्षा करें या अपने प्रशासक से संपर्क करें।',
   'Address IP': 'IP पता',
-  Browser: 'ब्राउज़र'
+  Browser: 'ब्राउज़र',
+  'New Version Available': 'नया संस्करण उपलब्ध है',
+  'You receive this notification because you are the administrator of this server.':
+    'आपको यह सूचना इसलिए मिली है क्योंकि आप इस सर्वर के व्यवस्थापक हैं।',
+  'A new update is available': 'एक नया अपडेट उपलब्ध है'
 } as const

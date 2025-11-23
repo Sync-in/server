@@ -85,8 +85,12 @@ export class NotificationsComponent implements AfterViewInit {
   }
 
   goto(n: NotificationModel) {
-    const element = n.content.app === NOTIFICATION_APP.SYNC ? n.content.element.split('/').at(-1) : n.content.element
-    this.router.navigate([SPACES_PATH.SPACES, ...n.content.url.split('/')], { queryParams: { select: element } }).catch(console.error)
+    if (n.content.externalUrl) {
+      window.open(n.content.externalUrl, '_blank', 'noopener')
+    } else {
+      const element = n.content.app === NOTIFICATION_APP.SYNC ? n.content.element.split('/').at(-1) : n.content.element
+      this.router.navigate([SPACES_PATH.SPACES, ...n.content.url.split('/')], { queryParams: { select: element } }).catch(console.error)
+    }
   }
 
   private observeUnreadNotifications() {

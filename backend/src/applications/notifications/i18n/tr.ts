@@ -47,5 +47,8 @@ export const tr = {
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':
     'Sync-in hesabınızın güvenliği değiştiği için bu bildirimi aldınız. Bunun bir hata olduğunu düşünüyorsanız güvenlik ayarlarınızı gözden geçirin veya yöneticinizle iletişime geçin.',
   'Address IP': 'IP adresi',
-  Browser: 'Tarayıcı'
+  Browser: 'Tarayıcı',
+  'New Version Available': 'Yeni sürüm mevcut',
+  'You receive this notification because you are the administrator of this server.': 'Bu bildirimi alıyorsunuz çünkü bu sunucunun yöneticisisiniz.',
+  'A new update is available': 'Yeni bir güncelleme mevcut'
 } as const

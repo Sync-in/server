@@ -617,5 +617,6 @@
   "Send an unlock request": "अनलॉक करने का अनुरोध भेजें",
   "sends you a request to unlock the file": "आपको फ़ाइल अनलॉक करने का अनुरोध भेजता है",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "फ़ाइल के मालिक के रूप में, आप फ़ाइल को अनलॉक कर सकते हैं या वर्तमान लॉक मालिक से उसे रिलीज़ करने का अनुरोध कर सकते हैं।",
-  "The file is edited by": "फ़ाइल निम्न द्वारा संपादित की जा रही है"
+  "The file is edited by": "फ़ाइल निम्न द्वारा संपादित की जा रही है",
+  "A new update is available": "एक नया अपडेट उपलब्ध है"
 }

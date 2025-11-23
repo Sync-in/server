@@ -617,5 +617,6 @@
   "Send an unlock request": "Kilidi açma isteği gönder",
   "sends you a request to unlock the file": "dosyanın kilidini açmanız için size bir istek gönderiyor",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "Dosyanın sahibi olarak, dosyanın kilidini açabilir veya mevcut kilit sahibinden kilidi kaldırmasını isteyebilirsiniz.",
-  "The file is edited by": "Dosya şu kişi tarafından düzenleniyor"
+  "The file is edited by": "Dosya şu kişi tarafından düzenleniyor",
+  "A new update is available": "Yeni bir güncelleme mevcut"
 }

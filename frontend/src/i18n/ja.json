@@ -617,5 +617,6 @@
   "Send an unlock request": "ロック解除を依頼",
   "sends you a request to unlock the file": "あなたにファイルのロック解除リクエストを送信しました",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "ファイルの所有者であるあなたは、ファイルのロックを解除するか、現在のロック所有者に解除を依頼できます。",
-  "The file is edited by": "ファイルは次のユーザーによって編集中です"
+  "The file is edited by": "ファイルは次のユーザーによって編集中です",
+  "A new update is available": "新しいアップデートが利用可能です"
 }

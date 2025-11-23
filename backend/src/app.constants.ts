@@ -3,7 +3,10 @@
  * This file is part of Sync-in | The open source file sync and share solution
  * See the LICENSE file for licensing details
  */
+import { version } from '../../package.json'
 
+export const VERSION = version
+export const USER_AGENT = `sync-in-server/${version}`
 export const CONTENT_SECURITY_POLICY = (onlyOfficeServer: string) => ({
   useDefaults: false,
   directives: {

@@ -45,5 +45,8 @@ export const zh = {
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':
     '您收到此通知是因为您的 Sync-in 账户安全性发生了变化。如认为这是错误，请检查您的安全设置或联系管理员。',
   'Address IP': 'IP 地址',
-  Browser: '浏览器'
+  Browser: '浏览器',
+  'New Version Available': '新版本可用',
+  'You receive this notification because you are the administrator of this server.': '您收到此通知是因为您是此服务器的管理员。',
+  'A new update is available': '有可用的新更新'
 } as const

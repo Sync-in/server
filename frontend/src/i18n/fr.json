@@ -617,5 +617,6 @@
   "Send an unlock request": "Envoyer une demande de déverrouillage",
   "sends you a request to unlock the file": "vous envoie une demande de déverrouillage du fichier",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "En tant que propriétaire du fichier, vous pouvez déverrouiller le fichier ou demander au propriétaire actuel du verrou de le libérer.",
-  "The file is edited by": "Le fichier est en cours d’édition par"
+  "The file is edited by": "Le fichier est en cours d’édition par",
+  "A new update is available": "Une nouvelle mise à jour est disponible"
 }

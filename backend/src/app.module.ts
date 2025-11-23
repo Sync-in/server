@@ -8,6 +8,7 @@ import { HttpModule } from '@nestjs/axios'
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { LoggerModule } from 'nestjs-pino'
+import { USER_AGENT } from './app.constants'
 import { AppService } from './app.service'
 import { ApplicationsModule } from './applications/applications.module'
 import { AuthModule } from './authentication/auth.module'
@@ -36,6 +37,9 @@ import { SchedulerModule } from './infrastructure/scheduler/scheduler.module'
     ApplicationsModule,
     HttpModule.register({
       global: true,
+      headers: {
+        'User-Agent': USER_AGENT
+      },
       timeout: 5000,
       maxRedirects: 5
     })

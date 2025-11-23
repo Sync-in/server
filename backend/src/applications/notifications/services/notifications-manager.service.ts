@@ -14,8 +14,19 @@ import { getAvatarBase64 } from '../../users/utils/avatar'
 import { NOTIFICATION_APP } from '../constants/notifications'
 import { NOTIFICATIONS_WS } from '../constants/websocket'
 import type { NotificationContent, NotificationFromUser, NotificationOptions } from '../interfaces/notification-properties.interface'
-import type { UserMailNotification } from '../interfaces/user-mail-notification'
-import { auth2FaMail, authLockedMail, commentMail, linkMail, requestUnlockMail, shareMail, spaceMail, spaceRootMail, syncMail } from '../mails/models'
+import type { UserMailNotification } from '../interfaces/user-mail-notification.interface'
+import {
+  auth2FaMail,
+  authLockedMail,
+  commentMail,
+  linkMail,
+  requestUnlockMail,
+  serverUpdateAvailableMail,
+  shareMail,
+  spaceMail,
+  spaceRootMail,
+  syncMail
+} from '../mails/models'
 import { WebSocketNotifications } from '../notifications.gateway'
 import { NotificationsQueries } from './notifications-queries.service'
 
@@ -120,6 +131,8 @@ export class NotificationsManager {
         return authLockedMail(language, content)
       case NOTIFICATION_APP.UNLOCK_REQUEST:
         return requestUnlockMail(language, content, { currentUrl: options.currentUrl, author: options.author })
+      case NOTIFICATION_APP.UPDATE_AVAILABLE:
+        return serverUpdateAvailableMail(language, content)
       default:
         this.logger.error(`${this.genMail.name} - case not handled : ${content.app}`)
     }
