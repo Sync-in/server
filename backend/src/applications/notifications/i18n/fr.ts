@@ -44,5 +44,9 @@ export const fr = {
   'Two-factor authentication (2FA) on your account has been enabled': `L’authentification à deux facteurs (2FA) sur votre compte a été activée`,
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.': `Vous recevez cette notification car la sécurité de votre compte Sync-in a été modifiée. Si vous pensez qu’il s’agit d’une erreur, vérifiez vos paramètres de sécurité ou contactez votre administrateur.`,
   'Address IP': 'Adresse IP',
-  Browser: 'Navigateur'
+  Browser: 'Navigateur',
+  'New Version Available': 'Nouvelle version disponible',
+  'You receive this notification because you are the administrator of this server.':
+    'Vous recevez cette notification car vous êtes l’administrateur de ce serveur.',
+  'A new update is available': 'Une nouvelle mise à jour est disponible'
 } as const

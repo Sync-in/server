@@ -22,8 +22,3 @@ export const APP_MENU: AppMenu = {
   level: 0,
   submenus: []
 } as const
-
-export const APP_URL = {
-  WEBSITE: 'https://sync-in.com',
-  RELEASES: 'https://github.com/Sync-in/server/releases'
-} as const

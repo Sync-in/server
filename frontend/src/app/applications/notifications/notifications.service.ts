@@ -44,7 +44,7 @@ export class NotificationsService {
       if (checkLast && notifications.length) {
         const n = notifications[0]
         layoutNotification = this.layout.sendNotification(
-          'warning',
+          'info',
           n.fromUser.fullName,
           this.layout.translateString(`${this.layout.translateString(n.content.event)}: <b>${n.content.element}</b>`),
           null,
@@ -54,7 +54,7 @@ export class NotificationsService {
         const nbUnread = notifications.filter((n: NotificationModel) => !n.wasRead).length
         if (nbUnread) {
           layoutNotification = this.layout.sendNotification(
-            'warning',
+            'info',
             'Notifications',
             this.layout.translateString(nbUnread === 1 ? 'one_notification' : 'nb_notifications', { nb: nbUnread })
           )

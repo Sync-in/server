@@ -10,6 +10,7 @@ import { alias, union } from 'drizzle-orm/mysql-core'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { concatDistinctObjectsInArray, dateTimeUTC, dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils'
+import { UserMailNotification } from '../../notifications/interfaces/user-mail-notification.interface'
 import { GROUP_TYPE } from '../constants/group'
 import { MEMBER_TYPE } from '../constants/member'
 import { USER_GROUP_ROLE, USER_ROLE, USER_SECRET } from '../constants/user'
@@ -84,6 +85,13 @@ export class AdminUsersQueries {
       return rs.length ? rs[0] : null
     }
     return rs
+  }
+
+  async listAdminsToNotify(): Promise<UserMailNotification[]> {
+    return this.db
+      .select({ id: users.id, email: users.email, language: users.language, notification: users.notification })
+      .from(users)
+      .where(eq(users.role, USER_ROLE.ADMINISTRATOR))
   }
 
   async groupFromId(groupId: number): Promise<AdminGroup> {

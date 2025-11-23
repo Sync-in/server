@@ -41,13 +41,16 @@ export class NotificationModel implements NotificationFromUser {
     if (
       this.content.app === NOTIFICATION_APP.COMMENTS ||
       this.content.app === NOTIFICATION_APP.SHARES ||
+      this.content.app === NOTIFICATION_APP.UPDATE_AVAILABLE ||
       this.content.app === NOTIFICATION_APP.SYNC
     ) {
       return
     }
-    const urlFragments = this.content.url.split('/')
-    if (urlFragments.length > 1) {
-      this.mainElement = urlFragments[urlFragments.length - 1]
+    if (this.content?.url) {
+      const urlFragments = this.content.url.split('/')
+      if (urlFragments.length > 1) {
+        this.mainElement = urlFragments[urlFragments.length - 1]
+      }
     }
   }
 }

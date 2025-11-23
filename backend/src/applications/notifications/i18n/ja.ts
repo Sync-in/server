@@ -46,5 +46,9 @@ export const ja = {
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':
     'この通知は、あなたの Sync-in アカウントのセキュリティが変更されたため送信されました。誤りだと思われる場合は、セキュリティ設定を確認するか管理者に連絡してください。',
   'Address IP': 'IP アドレス',
-  Browser: 'ブラウザー'
+  Browser: 'ブラウザー',
+  'New Version Available': '新しいバージョンが利用可能です',
+  'You receive this notification because you are the administrator of this server.':
+    'あなたがこのサーバーの管理者であるため、この通知を受け取っています。',
+  'A new update is available': '新しいアップデートが利用可能です'
 } as const

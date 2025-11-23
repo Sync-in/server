@@ -47,5 +47,9 @@ export const ru = {
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':
     'Вы получили это уведомление, потому что изменились настройки безопасности вашего аккаунта в Sync-in. Если вы считаете, что это ошибка, проверьте настройки безопасности или свяжитесь с администратором.',
   'Address IP': 'IP-адрес',
-  Browser: 'Браузер'
+  Browser: 'Браузер',
+  'New Version Available': 'Доступна новая версия',
+  'You receive this notification because you are the administrator of this server.':
+    'Вы получаете это уведомление, потому что вы являетесь администратором этого сервера.',
+  'A new update is available': 'Доступно новое обновление'
 } as const

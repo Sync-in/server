@@ -221,3 +221,18 @@ export function requestUnlockMail(
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
+
+export function serverUpdateAvailableMail(language: i18nLocale, notification: NotificationContent): [string, string] {
+  const tr = translateObject(language, {
+    title: 'New Version Available',
+    defaultFooter: defaultFooter,
+    footer: 'You receive this notification because you are the administrator of this server.',
+    event: notification.event
+  })
+
+  const content = `${tr.event}:&nbsp;<b><a href="${notification.externalUrl}" target="_blank" rel="noopener">${notification.element}</a></b>`
+
+  const footer = `<br>${tr.footer}<br>${tr.defaultFooter}`
+
+  return [`${SERVER_NAME} - ${tr.title}`, mailTemplate(content, footer)]
+}

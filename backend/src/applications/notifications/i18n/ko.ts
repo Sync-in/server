@@ -46,5 +46,8 @@ export const ko = {
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':
     'Sync-in 계정의 보안이 변경되어 이 알림을 받았습니다. 실수라고 생각되면 보안 설정을 확인하거나 관리자에게 문의하세요.',
   'Address IP': 'IP 주소',
-  Browser: '브라우저'
+  Browser: '브라우저',
+  'New Version Available': '새 버전이 이용 가능합니다',
+  'You receive this notification because you are the administrator of this server.': '이 서버의 관리자이기 때문에 이 알림을 받았습니다.',
+  'A new update is available': '새로운 업데이트가 이용 가능합니다'
 } as const

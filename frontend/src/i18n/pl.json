@@ -617,5 +617,6 @@
   "Send an unlock request": "Wyślij prośbę o odblokowanie",
   "sends you a request to unlock the file": "wysyła do Ciebie prośbę o odblokowanie pliku",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "Jako właściciel pliku możesz odblokować plik lub poprosić obecnego właściciela blokady o jej zwolnienie.",
-  "The file is edited by": "Plik jest edytowany przez"
+  "The file is edited by": "Plik jest edytowany przez",
+  "A new update is available": "Dostępna jest nowa aktualizacja"
 }

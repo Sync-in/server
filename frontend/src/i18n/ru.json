@@ -617,5 +617,6 @@
   "Send an unlock request": "Отправить запрос на разблокировку",
   "sends you a request to unlock the file": "отправляет вам запрос на разблокировку файла",
   "As the file owner, you can unlock the file or request the current lock owner to release it.": "Как владелец файла вы можете снять блокировку файла или попросить текущего владельца блокировки её снять.",
-  "The file is edited by": "Файл редактируется пользователем"
+  "The file is edited by": "Файл редактируется пользователем",
+  "A new update is available": "Доступно новое обновление"
 }

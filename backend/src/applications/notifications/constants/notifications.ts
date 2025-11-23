@@ -15,7 +15,8 @@ export enum NOTIFICATION_APP {
   SYNC = 'sync',
   AUTH_LOCKED = 'auth_locked',
   AUTH_2FA = 'auth_2fa',
-  UNLOCK_REQUEST = 'unlock_request'
+  UNLOCK_REQUEST = 'unlock_request',
+  UPDATE_AVAILABLE = 'server_update_available'
 }
 
 export const NOTIFICATION_APP_EVENT = {
@@ -52,5 +53,6 @@ export const NOTIFICATION_APP_EVENT = {
   AUTH_LOCKED: {
     [ACTION.DELETE]: 'Your account has been locked after several unsuccessful authentication attempts'
   },
-  UNLOCK_REQUEST: 'sends you a request to unlock the file'
+  UNLOCK_REQUEST: 'sends you a request to unlock the file',
+  UPDATE_AVAILABLE: 'A new update is available'
 }
