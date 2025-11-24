@@ -48,7 +48,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   private readonly offsetTop = 42
 
   ngOnInit() {
-    this.isReadonly.set(this.mode === FILE_MODE.VIEW)
+    this.isReadonly.set(this.mode === FILE_MODE.VIEW || this.hookedShortMime === SHORT_MIME.PDF)
     this.openedFile = { id: this.currentFile.id, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
     this.onResize()
   }
