@@ -5,7 +5,7 @@
  */
 
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { and, countDistinct, eq, inArray, like, lte, ne, notInArray, or, SelectedFields, SQL, sql } from 'drizzle-orm'
+import { and, countDistinct, eq, inArray, isNotNull, like, lte, ne, notInArray, or, SelectedFields, SQL, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/mysql-core'
 import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { anonymizePassword, comparePassword, uniquePermissions } from '../../../common/functions'
@@ -465,88 +465,94 @@ export class UsersQueries {
   @CacheDecorator(900)
   async usersWhitelist(userId: number, lowerOrEqualUserRole: USER_ROLE = USER_ROLE.GUEST): Promise<number[]> {
     /* Get the list of user ids allowed to the current user
-      - all users with no groups (except link users)
-      - all users who are members of the current user's groups (excluding link users and members of isolated groups)
-      - all guests managed by the current user
-      - all managers who manage the current guest
+       - all users with no groups (except users with a role higher than lowerOrEqualUserRole)
+       - all users who are members of groups visible to the current user
+         (VISIBLE groups for everyone, PRIVATE groups only if the current user is a member, never members of ISOLATED groups)
+       - all guests managed by the current user
+       - all managers who manage the current guest
     */
-    const usersAlias: any = alias(users, 'usersAlias')
-    const groupsAlias: any = alias(groups, 'groupsAlias')
     const userIds: any = sql`
-      WITH RECURSIVE children (id, parentId) AS
-                       (SELECT ${groups.id},
-                               ${groups.parentId}
-                        FROM ${groups}
-                        WHERE (${groups.id} IN (SELECT ${usersGroups.groupId}
-                                                FROM ${usersGroups}
-                                                WHERE ${usersGroups.userId} = ${userId}
-                                                  AND ${groups.visibility} != ${GROUP_VISIBILITY.ISOLATED}))
-                        UNION
-                        SELECT ${groupsAlias.id},
-                               ${groupsAlias.parentId}
-                        FROM ${groups} AS groupsAlias
-                               INNER JOIN children cs ON ${groupsAlias.parentId} = cs.id AND ${groupsAlias.visibility} = ${sql.raw(`${GROUP_VISIBILITY.VISIBLE}`)})
-      SELECT JSON_ARRAYAGG(id) AS ids
-      FROM (
-             -- Users from visible child groups
-             SELECT ${users.id} AS id
-             FROM children
-                    INNER JOIN ${usersGroups} ON ${usersGroups.groupId} = children.id
-                    INNER JOIN ${users} ON ${usersGroups.userId} = ${users.id} AND ${users.role} <= ${sql.raw(`${lowerOrEqualUserRole}`)}
+    WITH visible_groups AS (
+      SELECT ${groups.id} AS id
+      FROM ${groups}
+      LEFT JOIN ${usersGroups}
+        ON ${usersGroups.groupId} = ${groups.id}
+       AND ${usersGroups.userId} = ${userId}
+      WHERE
+        ${groups.visibility} != ${GROUP_VISIBILITY.ISOLATED}
+        AND (
+          ${groups.visibility} = ${GROUP_VISIBILITY.VISIBLE}
+          OR (
+            ${groups.visibility} = ${GROUP_VISIBILITY.PRIVATE}
+            AND ${usersGroups.userId} IS NOT NULL
+          )
+        )
+    )
+    SELECT JSON_ARRAYAGG(id) AS ids
+    FROM (
+      -- 1) Users from groups visible to the current user
+      SELECT ${users.id} AS id
+      FROM ${users}
+      INNER JOIN ${usersGroups}
+        ON ${usersGroups.userId} = ${users.id}
+      INNER JOIN visible_groups
+        ON visible_groups.id = ${usersGroups.groupId}
+      WHERE ${users.role} <= ${sql.raw(`${lowerOrEqualUserRole}`)}
 
-             UNION
-             -- Users visible but not assigned to groups
-             SELECT ${usersAlias.id} AS id
-             FROM ${users} AS usersAlias
-                    INNER JOIN ${users} ON ${users.id} = ${usersAlias.id} AND ${users.role} <= ${sql.raw(`${lowerOrEqualUserRole}`)}
-             WHERE NOT EXISTS (SELECT ${usersGroups.userId} FROM ${usersGroups} WHERE ${usersGroups.userId} = ${usersAlias.id})
-             UNION
-             -- Users or guests that are manager/managed
-             SELECT CASE
-                      WHEN ${usersGuests.userId} = ${userId} THEN ${usersGuests.guestId}
-                      WHEN ${usersGuests.guestId} = ${userId} THEN ${usersGuests.userId}
-                      END AS id
-             FROM ${usersGuests}
-             WHERE ${usersGuests.userId} = ${userId}
-                OR ${usersGuests.guestId} = ${userId}) AS usersUnion
-    `
+      UNION
+
+      -- 2) Users with no groups
+      SELECT ${users.id} AS id
+      FROM ${users}
+      WHERE
+        ${users.role} <= ${sql.raw(`${lowerOrEqualUserRole}`)}
+        AND NOT EXISTS (
+          SELECT 1
+          FROM ${usersGroups}
+          WHERE ${usersGroups.userId} = ${users.id}
+        )
+
+      UNION
+
+      -- 3) Guests managed by the user and managers of the current guest
+      SELECT CASE
+               WHEN ${usersGuests.userId} = ${userId} THEN ${usersGuests.guestId}
+               WHEN ${usersGuests.guestId} = ${userId} THEN ${usersGuests.userId}
+             END AS id
+      FROM ${usersGuests}
+      WHERE ${usersGuests.userId} = ${userId}
+         OR ${usersGuests.guestId} = ${userId}
+    ) AS usersUnion
+  `
     const [r] = await this.db.execute(userIds)
     return JSON.parse(r[0].ids) || []
   }
 
   @CacheDecorator(900)
   async groupsWhitelist(userId: number): Promise<number[]> {
-    /* Get the list of groups ids allowed to the current user
-      - all parent groups for which the user is a member (includes personal groups, excludes isolated groups)
-      - all subgroups inherited from parent groups
+    /* Get the list of group IDs the current user is allowed to see.
+       - A group marked VISIBLE is always included.
+       - A group marked ISOLATED is always excluded.
+       - A PRIVATE group is included only if the user is a direct member of it.
+       - Visibility does not inherit from parent or child groups.
     */
-    const groupsAlias: any = alias(groups, 'groupsAlias')
-    const groupIds: any = sql`
-      WITH RECURSIVE children (id, parentId, type) AS
-                       (SELECT ${groups.id},
-                               ${groups.parentId},
-                               ${groups.type}
-                        FROM ${groups}
-                        WHERE (${groups.id} IN (SELECT ${usersGroups.groupId}
-                                                FROM ${usersGroups}
-                                                WHERE ${usersGroups.userId} = ${userId}
-                                                  AND ${groups.visibility} != ${GROUP_VISIBILITY.ISOLATED}))
-                        UNION
-                        SELECT ${groupsAlias.id},
-                               ${groupsAlias.parentId},
-                               ${groupsAlias.type}
-                        FROM ${groups} AS groupsAlias
-                               INNER JOIN children cs ON ${groupsAlias.parentId} = cs.id AND ${groupsAlias.visibility} = ${GROUP_VISIBILITY.VISIBLE})
-      SELECT JSON_ARRAYAGG(children.id) as ids
-      FROM children
-    `
-    const [r] = await this.db.execute(groupIds)
+    const q = this.db
+      .select({ id: sql`JSON_ARRAYAGG(${groups.id}) as ids` })
+      .from(groups)
+      .leftJoin(usersGroups, and(eq(usersGroups.groupId, groups.id), eq(usersGroups.userId, userId)))
+      .where(
+        and(
+          ne(groups.visibility, GROUP_VISIBILITY.ISOLATED),
+          or(eq(groups.visibility, GROUP_VISIBILITY.VISIBLE), and(eq(groups.visibility, GROUP_VISIBILITY.PRIVATE), isNotNull(usersGroups.userId)))
+        )
+      )
+    const [r] = await this.db.execute(q)
     return JSON.parse(r[0].ids) || []
   }
 
   clearWhiteListCaches(userIds: number[] | '*') {
     if (userIds === '*') {
-      // means all entries
+      // Means all entries
       for (const pattern of [
         this.cache.genSlugKey(this.constructor.name, this.usersWhitelist.name, userIds),
         this.cache.genSlugKey(this.constructor.name, this.groupsWhitelist.name, userIds)
