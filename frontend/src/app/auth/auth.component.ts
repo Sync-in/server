@@ -4,7 +4,6 @@
  * See the LICENSE file for licensing details
  */
 
-import { NgOptimizedImage } from '@angular/common'
 import { Component, inject } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { Router } from '@angular/router'
@@ -24,7 +23,7 @@ import { AuthService } from './auth.service'
 @Component({
   selector: 'app-auth',
   templateUrl: 'auth.component.html',
-  imports: [AutofocusDirective, ReactiveFormsModule, FaIconComponent, L10nTranslateDirective, L10nTranslatePipe, NgOptimizedImage]
+  imports: [AutofocusDirective, ReactiveFormsModule, FaIconComponent, L10nTranslateDirective, L10nTranslatePipe]
 })
 export class AuthComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
