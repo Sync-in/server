@@ -13,6 +13,7 @@ RUN apk add --no-cache su-exec && \
 WORKDIR /app
 COPY --from=build --chown=8888:8888 /build/LICENSE .
 COPY --from=build --chown=8888:8888 /build/dist/ .
+COPY --from=build --chown=8888:8888 /build/package.json ./server/
 COPY --from=build --chown=8888:8888 /build/node_modules ./node_modules
 COPY --from=build --chown=8888:8888 /build/backend/migrations ./migrations
 COPY --from=build --chown=8888:8888 /build/environment/environment.dist.yaml ./environment/environment.dist.yaml
