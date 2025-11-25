@@ -1,7 +1,7 @@
 {
   "productName": "Sync-in",
   "name": "sync-in-server",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "description": "The secure, open-source platform for file storage, sharing, collaboration, and sync",
   "keywords": [
     "sync-in",
@@ -95,6 +95,10 @@
     "@napi-rs/canvas": "npm:noop3"
   },
   "commit-and-tag-version": {
-    "header": ""
+    "header": "",
+    "skip": {
+      "commit": true,
+      "tag": true
+    }
   }
 }

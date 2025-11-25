@@ -1,17 +1,62 @@
+
+## [1.9.0](https://github.com/Sync-in/server/compare/v1.8.1...v1.9.0) (2025-11-24)
+
+### Highlights 1.9
+
+* 🎨 **Visual identity updated** — refreshed branding.
+* 🖼️ **Enhanced image viewer** — browse all images in a directory, start slideshows, use fullscreen mode, and view detailed properties.
+* ✏️ **Native text editor** — search, syntax highlighting, undo/redo, and lock/unlock capabilities built directly into the UI.
+* 🔐 **Improved file lock management** — users can request unlocks from lock owners, and file owners can now remove locks themselves.
+* ⚠️ **Overwrite confirmation dialogs** — added confirmation prompts for uploads, renaming, copying, and moving files to prevent accidental overwrites.
+
+➡️ [More details](https://sync-in.com/news/sync-in-server-1-9)
+
+
+### Features
+
+* **admin:** add server update notification support ([fc72430](https://github.com/Sync-in/server/commit/fc72430d69b9d2fb31d24ef680efd602a2c94d87))
+* **backend:auth:** allow cn LDAP attribute and add AD-specific logic ([6998b1a](https://github.com/Sync-in/server/commit/6998b1af24bc6a360a146f71d8d264c582e89edc))
+* **backend:auth:** Allow the LDAP `mail` attribute to be used as the login attribute, and allow users to authenticate using either the login attribute or their email address ([a683b57](https://github.com/Sync-in/server/commit/a683b5760ce9386b51c7e21e8699bb8a8d9335c5))
+* **backend:files:** improve file upload handling with comprehensive overwrite support and directory conflict resolution ([e69a687](https://github.com/Sync-in/server/commit/e69a687071c0d5e7fc8bd76cef820c87a35e852c))
+* **docker:onlyoffice:** update DocumentServer image to v9.1 ([c64a3ae](https://github.com/Sync-in/server/commit/c64a3aeafc70b275acc9d2fa50a5b30517325673))
+* **files:** add directory size retrieval with UI and API integration ([4528b43](https://github.com/Sync-in/server/commit/4528b438e0819d3e6d9f72c11fab931257cadad0))
+* **files:** add overwrite confirmation dialog for file rename and update API to support overwrite behavior ([c7c0d96](https://github.com/Sync-in/server/commit/c7c0d96d46144062cda739e8f32726f27deb8911))
+* **files:** add overwrite confirmation dialog for file uploads and adapt API to support overwrite functionality ([d39822f](https://github.com/Sync-in/server/commit/d39822fd2d787b2b3477214c5ab885e7f712264e))
+* **files:** add unlock request feature and enable force unlock for file owners ([7441337](https://github.com/Sync-in/server/commit/7441337dd0035ef681ece616d3e21870134ea511))
+* **files:** enable locking and unlocking of edited files with improved handling and UI integration ([24ad66b](https://github.com/Sync-in/server/commit/24ad66b034e3287a5bc81c504b383539e025fc10))
+* **files:** improve file handling with edit mode toggle, unsaved changes warning, enhanced modal logic, and updated constants ([bcc3ad2](https://github.com/Sync-in/server/commit/bcc3ad28bd26b042de50506c6a5bb71aa1e720ca))
+* **frontend:config:** enhance notifications with `maxOpened` and `autoDismiss` properties ([cf850bf](https://github.com/Sync-in/server/commit/cf850bf43f61306e7bb2ee5306741f2628f2d89a))
+* **frontend:files:** add ability to edit basic text files ([85b56e2](https://github.com/Sync-in/server/commit/85b56e23d5c8c11ed62ef281bc2370965090305f))
+* **frontend:files:** add fulscreen button in image viewer ([b834618](https://github.com/Sync-in/server/commit/b8346182fd3d01061573111bf80ba9aecca86e23))
+* **frontend:files:** add new translations and improve text viewer with updated read-only state handling and line wrapping ([e90c91e](https://github.com/Sync-in/server/commit/e90c91ec48e0d46cbbb4245a0e2fc53549cc8e3a))
+* **frontend:files:** add overwrite confirmation dialog for copy/move actions ([fa2d601](https://github.com/Sync-in/server/commit/fa2d601aba4aa0ad1e4f7142212ee64db3e73a96))
+* **frontend:files:** add undo and redo functionality with i18n updates and improved editor error handling ([daccfbc](https://github.com/Sync-in/server/commit/daccfbcf7c01fe71421c696a4857a966f9bfef9b))
+* **frontend:files:** enhance overwrite handling by updating MIME type on rename and improving file model consistency and UI visuals ([f68a073](https://github.com/Sync-in/server/commit/f68a07395487dd27779fa9ec52943ccbd7e1f722))
+* **frontend:files:** enhance text viewer with search panel toggle and keyboard shortcuts handling ([5b411f0](https://github.com/Sync-in/server/commit/5b411f084913ab2ece2d499d85e3fab3b1c26f29))
+* **frontend:files:** image viewer slideshow ([49bbd4e](https://github.com/Sync-in/server/commit/49bbd4e2ea325832e30a97b969b3043c8d294ebc))
+* **frontend:files:** improve text viewer with line wrapping, saving state, and enhanced search panel handling ([e5f0863](https://github.com/Sync-in/server/commit/e5f0863bbd921ef97879ff076475aaa46a21d051))
+* **frontend:files:** improve text viewer with save error handling and updated file upload logic ([034c7a4](https://github.com/Sync-in/server/commit/034c7a4db4961433c2d9223229edbee345f2ee67))
+* **frontend:files:** start implementing image viewer and folder slideshow ([7a65927](https://github.com/Sync-in/server/commit/7a65927bc3bcfee88372f0a913db68c0daa1f768))
+* **frontend:links:** update navigation to enter spaces and shares directly instead of selecting them ([fd64265](https://github.com/Sync-in/server/commit/fd6426566c0275daaf82dc4ae21809e6682b90b8))
+* **frontend:modals:** improve modal animations, lifecycle handling, and state management ([bad0696](https://github.com/Sync-in/server/commit/bad06964b65586b751ce0c9cd4e163d921828a63))
+
+
+### Bug Fixes
+
+* **backend:common:** prevent errors on invalid image metadata with `failOn: 'none'` option in sharp ([901fdf8](https://github.com/Sync-in/server/commit/901fdf8cf9ede111cd821363a2a28470c5d9d314))
+* **backend:files:** avoid copy failures when sample documents are read-only and files are written to a CIFS share by falling back to stream copy ([3b734b8](https://github.com/Sync-in/server/commit/3b734b82b8d02072aa09d941ffd7b911cfcf3950))
+* **backend:files:** correct `isDir` SQL logic to handle external paths without associated file IDs ([b3ce7d4](https://github.com/Sync-in/server/commit/b3ce7d4ae66556d455bc5d5495ed2fe070c15efc))
+* **backend:files:** correct directory flag and ensure consistent file move operation in trash handling ([e85ead7](https://github.com/Sync-in/server/commit/e85ead7e7f8a327466279af2d103d3a4d5644b80))
+* **backend:files:** enable `cacheControl` to ensure consistent client-side caching behavior ([25ab568](https://github.com/Sync-in/server/commit/25ab56808b7f4507a09c570bc7e7623077d5c594))
+* **backend:files:** ensure locks are visible on anchored and shared files ([6445333](https://github.com/Sync-in/server/commit/64453339e1ae7f4e8a8e8f061effbccaf5070aa6))
+* **backend:files:** set `maxAge` to 0 to enforce immediate cache invalidation ([293f34c](https://github.com/Sync-in/server/commit/293f34cb0e4bf7ac46bde6b4dc2a2432c57c04ec))
+* **backend:links:** restore access to anchored files from an external location when shared via a link ([f61f09f](https://github.com/Sync-in/server/commit/f61f09fdeefaff2492ae39423ef0958962562db3))
+* **backend:shares:** ensure correct file path for root space shares owned by user ([f5adb55](https://github.com/Sync-in/server/commit/f5adb55612622875ccfcb29ebcc754c974f186fd))
+* **backend:websocket:** prevent server connection from closing on shutdown hooks ([8714644](https://github.com/Sync-in/server/commit/8714644f4d6d35d8d9297bc2f47e2e3eed485938))
+* **frontend:drag:** prevent drag-and-drop actions in the shares list and ensure proper drag event handling ([f19ab4f](https://github.com/Sync-in/server/commit/f19ab4f7ed976d909cda323f1839d458a895ec3d))
+* **frontend:files:** sync read-only value with opening mode in the text editor ([dfff2dc](https://github.com/Sync-in/server/commit/dfff2dcf152e049e25a3f07f92a41ea4a8af4805))
+
 ## [1.8.1](https://github.com/Sync-in/server/compare/v1.8.0...v1.8.1) (2025-10-30)
-
-### Highlights
-
-* 🌍 **14 languages supported** — added 12 new ones: 🇩🇪 🇪🇸 🇵🇹 🇧🇷 🇮🇹 🇨🇳 🇮🇳 🇹🇷 🇯🇵 🇰🇷 🇵🇱 🇷🇺
-* ⚡ **Better suited for small systems** – reduced the default number of backend workers from **2 to 1** to improve memory efficiency on lightweight
-  setups (e.g. Raspberry Pi).
-* 😈 **FreeBSD support** – npm distribution is now compatible with FreeBSD
-* 🔍 **Indexing & search controls** — new config to enable/disable indexing, per-space toggles, and full-text search preferences.
-* 📊 **Quotas** — define storage quotas for external shares; storage from anchored external locations now counts toward the space’s total usage.
-* 🖼️ **Thumbnails** — photo thumbnail generation is now **3× faster**.
-* 🐳 **Docker** — minimized system dependencies for a **lighter and more efficient image** (from 562MB to 357MB, saving 205MB!).
-
-➡️ [More details](https://sync-in.com/news/sync-in-server-1-8)
 
 ### Bug Fixes
 
