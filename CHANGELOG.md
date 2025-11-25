@@ -1,5 +1,5 @@
 
-## [1.9.0](https://github.com/Sync-in/server/compare/v1.8.1...v1.9.0) (2025-11-24)
+## [1.9.1](https://github.com/Sync-in/server/compare/v1.8.1...v1.9.1) (2025-11-25)
 
 ### Highlights 1.9
 
@@ -43,6 +43,7 @@
 
 ### Bug Fixes
 
+* **ci:** replace static version import with dynamic version loader, update Dockerfile and add utility function ([15f4752](https://github.com/Sync-in/server/commit/15f4752906ac04ceaf7004162f70f5ba8b9a59cc))
 * **backend:common:** prevent errors on invalid image metadata with `failOn: 'none'` option in sharp ([901fdf8](https://github.com/Sync-in/server/commit/901fdf8cf9ede111cd821363a2a28470c5d9d314))
 * **backend:files:** avoid copy failures when sample documents are read-only and files are written to a CIFS share by falling back to stream copy ([3b734b8](https://github.com/Sync-in/server/commit/3b734b82b8d02072aa09d941ffd7b911cfcf3950))
 * **backend:files:** correct `isDir` SQL logic to handle external paths without associated file IDs ([b3ce7d4](https://github.com/Sync-in/server/commit/b3ce7d4ae66556d455bc5d5495ed2fe070c15efc))
