@@ -57,11 +57,15 @@ export class FilesUploadService {
     }
   }
 
-  onDropFiles(ev: any, overwrite: boolean) {
+  onDropFiles(ev: any, exist: FileModel[]) {
+    /*
+     Important: dataTransfer.items must be accessed synchronously before any async operation; overwrite is handled after all analyses.
+     Parameter `exist`: files already present in the current drop target.
+    */
     if (ev.dataTransfer.items && ev.dataTransfer.items[0]?.webkitGetAsEntry) {
-      this.webkitReadDataTransfer(ev, overwrite)
+      this.webkitReadDataTransfer(ev, exist)
     } else {
-      this.addFiles(ev.dataTransfer.files, overwrite).catch(console.error)
+      this.addFiles(ev.dataTransfer.files, exist.length > 0).catch(console.error)
     }
   }
 
@@ -101,7 +105,7 @@ export class FilesUploadService {
     return sort
   }
 
-  private webkitReadDataTransfer(ev: any, overwrite: boolean) {
+  private webkitReadDataTransfer(ev: any, exist: FileModel[]) {
     let queue = ev.dataTransfer.items.length
     const files: FileUpload[] = []
     const readDirectory = (reader: any) => {
@@ -134,7 +138,18 @@ export class FilesUploadService {
     }
     const decrement = () => {
       if (--queue == 0) {
-        this.addFiles(files, overwrite).catch(console.error)
+        if (exist.length <= 0) {
+          this.addFiles(files, false).catch(console.error)
+          return
+        }
+        this.filesService
+          .openOverwriteDialog(exist)
+          .then((overwrite) => {
+            if (overwrite) {
+              this.addFiles(files, true).catch(console.error)
+            }
+          })
+          .catch(console.error)
       }
     }
 
