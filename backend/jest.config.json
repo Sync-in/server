@@ -10,7 +10,7 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "transformIgnorePatterns": [
-    "/node_modules/(?!@faker-js/faker)"
+    "/node_modules/(?!uuid|ldapts|@faker-js/faker/)"
   ],
   "collectCoverageFrom": [
     "**/*.{(guard|strategy|service|filter|pipe|provider|interceptor),}.(t|j)s",
