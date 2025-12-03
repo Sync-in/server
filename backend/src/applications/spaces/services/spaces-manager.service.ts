@@ -365,7 +365,9 @@ export class SpacesManager {
     return null
   }
 
-  async updatePersonalSpacesQuota(forUser?: UserModel) {
+  async updatePersonalSpacesQuota(): Promise<void>
+  async updatePersonalSpacesQuota(forUser: UserModel): Promise<StorageQuota>
+  async updatePersonalSpacesQuota(forUser?: UserModel): Promise<void | StorageQuota> {
     const props: (keyof User)[] = ['id', 'login', 'storageUsage', 'storageQuota']
     for (const user of await this.usersQueries.selectUsers(props, [
       lte(users.role, USER_ROLE.USER),
@@ -383,17 +385,27 @@ export class SpacesManager {
       const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: user.storageQuota }
       this.spacesQueries.cache
         .set(`${CACHE_QUOTA_USER_PREFIX}-${user.id}`, spaceQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error(`${this.updatePersonalSpacesQuota.name} - ${e}`))
+        .catch((e: Error) => this.logger.error(`${this.updatePersonalSpacesQuota.name} - user *${user.login}* (${user.id}) : ${e}`))
       if (user.storageUsage !== spaceQuota.storageUsage) {
-        this.logger.log(
-          `${this.updatePersonalSpacesQuota.name} - user *${user.login}* (${user.id}) : storage usage updated : ${spaceQuota.storageUsage}`
-        )
-        await this.usersQueries.updateUserOrGuest(user.id, { storageUsage: spaceQuota.storageUsage })
+        this.usersQueries
+          .updateUserOrGuest(user.id, { storageUsage: spaceQuota.storageUsage })
+          .then(
+            (updated: boolean) =>
+              updated &&
+              this.logger.log(
+                `${this.updatePersonalSpacesQuota.name} - user *${user.login}* (${user.id}) - storage usage updated: ${spaceQuota.storageUsage}`
+              )
+          )
+      }
+      if (forUser) {
+        return spaceQuota
       }
     }
   }
 
-  async updateSpacesQuota(spaceId?: number) {
+  async updateSpacesQuota(): Promise<void>
+  async updateSpacesQuota(spaceId: number): Promise<StorageQuota>
+  async updateSpacesQuota(spaceId?: number): Promise<void | StorageQuota> {
     for (const space of await this.spacesQueries.spacesQuotaPaths(spaceId)) {
       const spacePath = SpaceModel.getHomePath(space.alias)
       if (!(await isPathExists(spacePath))) {
@@ -411,10 +423,20 @@ export class SpacesManager {
       const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: space.storageQuota }
       this.spacesQueries.cache
         .set(`${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`, spaceQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error(`${this.updateSpacesQuota.name} - ${e}`))
+        .catch((e: Error) => this.logger.error(`${this.updateSpacesQuota.name} - space *${space.alias}* (${space.id}) : ${e}`))
       if (space.storageUsage !== spaceQuota.storageUsage) {
-        this.logger.log(`${this.updateSpacesQuota.name} - space *${space.alias}* (${space.id}) : storage usage updated : ${spaceQuota.storageUsage}`)
-        await this.spacesQueries.updateSpace(space.id, { storageUsage: spaceQuota.storageUsage })
+        this.spacesQueries
+          .updateSpace(space.id, { storageUsage: spaceQuota.storageUsage })
+          .then(
+            (updated: boolean) =>
+              updated &&
+              this.logger.log(
+                `${this.updateSpacesQuota.name} - space *${space.alias}* (${space.id}) - storage usage updated : ${spaceQuota.storageUsage}`
+              )
+          )
+      }
+      if (spaceId) {
+        return spaceQuota
       }
     }
   }
@@ -815,14 +837,13 @@ export class SpacesManager {
     if (!quota) {
       // the quota scheduler has not started yet or the cache has been cleared
       if (space.inPersonalSpace) {
-        await this.updatePersonalSpacesQuota(user)
+        quota = await this.updatePersonalSpacesQuota(user)
       } else if (space.inSharesRepository) {
         // Shares with external paths
-        await this.sharesManager.updateSharesExternalPathQuota(space.id)
+        quota = await this.sharesManager.updateSharesExternalPathQuota(space.id)
       } else {
-        await this.updateSpacesQuota(space.id)
+        quota = await this.updateSpacesQuota(space.id)
       }
-      quota = await this.spacesQueries.cache.get(cacheQuotaKey)
     }
     if (quota) {
       space.storageUsage = quota.storageUsage

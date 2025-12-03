@@ -721,7 +721,9 @@ export class SharesManager {
     await this.deleteGuestLinks(members)
   }
 
-  async updateSharesExternalPathQuota(shareId?: number) {
+  async updateSharesExternalPathQuota(): Promise<void>
+  async updateSharesExternalPathQuota(shareId: number): Promise<StorageQuota>
+  async updateSharesExternalPathQuota(shareId?: number): Promise<void | StorageQuota> {
     for (const share of await this.sharesQueries.sharesQuotaExternalPaths(shareId)) {
       if (!(await isPathExists(share.externalPath))) {
         this.logger.warn(`${this.updateSharesExternalPathQuota.name} - *${share.alias}* home path does not exist`)
@@ -734,12 +736,20 @@ export class SharesManager {
       const shareQuota: StorageQuota = { storageUsage: size, storageQuota: share.storageQuota }
       this.sharesQueries.cache
         .set(`${CACHE_QUOTA_SHARE_PREFIX}-${share.id}`, shareQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error(`${this.updateSharesExternalPathQuota.name} - ${e}`))
+        .catch((e: Error) => this.logger.error(`${this.updateSharesExternalPathQuota.name} - share *${share.alias}* (${share.id}) : ${e}`))
       if (share.storageUsage !== shareQuota.storageUsage) {
-        this.logger.log(
-          `${this.updateSharesExternalPathQuota.name} - share *${share.alias}* (${share.id}) : storage usage updated : ${shareQuota.storageUsage}`
-        )
-        await this.sharesQueries.updateShare(share.id, { storageUsage: shareQuota.storageUsage })
+        this.sharesQueries
+          .updateShare(share.id, { storageUsage: shareQuota.storageUsage })
+          .then(
+            (updated: boolean) =>
+              updated &&
+              this.logger.log(
+                `${this.updateSharesExternalPathQuota.name} - share *${share.alias}* (${share.id}) - storage usage updated : ${shareQuota.storageUsage}`
+              )
+          )
+      }
+      if (shareId) {
+        return shareQuota
       }
     }
   }
