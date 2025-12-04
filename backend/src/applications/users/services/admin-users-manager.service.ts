@@ -259,6 +259,10 @@ export class AdminUsersManager {
     if (!(await this.adminQueries.updateGroup(groupId, updateGroupDto))) {
       throw new HttpException('Unable to update group', HttpStatus.INTERNAL_SERVER_ERROR)
     }
+    // Clear whitelist caches when the group’s visibility is changed
+    if (updateGroupDto.visibility !== undefined) {
+      this.adminQueries.usersQueries.clearWhiteListCaches('*')
+    }
     return this.adminQueries.groupFromId(groupId)
   }
 
