@@ -1,16 +1,19 @@
 
+## [1.9.2](https://github.com/Sync-in/server/compare/v1.9.1...v1.9.2) (2025-12-06)
+
+### Security Fixes
+* **backend:security:** prevent stored XSS by serving files with `Content-Disposition: attachment` to avoid arbitrary JavaScript execution in the browser ([a6276d0](https://github.com/Sync-in/server/commit/a6276d067725637310e4e83a3eee337aae81f439))
+
+### Bug Fixes
+* **backend:users:** clear whitelist caches when group visibility changes ([071c3ae](https://github.com/Sync-in/server/commit/071c3aed68d3bdacead571d39a1f4006b2380915))
+* **frontend:files:** fix DataTransfer usage after async operations and delay overwrite until analysis completes to restore overwrite on dropped files ([d9935e5](https://github.com/Sync-in/server/commit/d9935e5a3887448635c30fd49f22657461177610))
+* **frontend:styles:** add min-width on app-auth background class ([dffd5e5](https://github.com/Sync-in/server/commit/dffd5e5c7a1a65994970bedf33a95dd00827aa94))
+
+### Community Highlights ❤️
+
+We would like to thank @x0root for reporting this vulnerability and helping improve the security of the project.
+
 ## [1.9.1](https://github.com/Sync-in/server/compare/v1.8.1...v1.9.1) (2025-11-25)
-
-### Highlights 1.9
-
-* 🎨 **Visual identity updated** — refreshed branding.
-* 🖼️ **Enhanced image viewer** — browse all images in a directory, start slideshows, use fullscreen mode, and view detailed properties.
-* ✏️ **Native text editor** — search, syntax highlighting, undo/redo, and lock/unlock capabilities built directly into the UI.
-* 🔐 **Improved file lock management** — users can request unlocks from lock owners, and file owners can now remove locks themselves.
-* ⚠️ **Overwrite confirmation dialogs** — added confirmation prompts for uploads, renaming, copying, and moving files to prevent accidental overwrites.
-
-➡️ [More details](https://sync-in.com/news/sync-in-server-1-9)
-
 
 ### Features
 
