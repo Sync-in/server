@@ -62,7 +62,7 @@ export class LinksManager {
       this.logger.log(`${this.linkAccess.name} - *${user.login}* (${user.id}) downloading ${spaceLink.share.name}`)
       this.incrementLinkNbAccess(link)
       const spaceEnv: SpaceEnv = await this.spaceEnvFromLink(user, spaceLink)
-      const sendFile: SendFile = this.filesManager.sendFileFromSpace(spaceEnv, true, spaceLink.share.name)
+      const sendFile: SendFile = this.filesManager.sendFileFromSpace(spaceEnv, spaceLink.share.name)
       try {
         await sendFile.checks()
         return await sendFile.stream(req, res)

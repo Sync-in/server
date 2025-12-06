@@ -80,8 +80,8 @@ export class FilesManager {
     public readonly filesLockManager: FilesLockManager
   ) {}
 
-  sendFileFromSpace(space: SpaceEnv, asAttachment = false, downloadName = ''): SendFile {
-    return new SendFile(space.realPath, asAttachment, downloadName)
+  sendFileFromSpace(space: SpaceEnv, downloadName = ''): SendFile {
+    return new SendFile(space.realPath, downloadName)
   }
 
   async saveStream(

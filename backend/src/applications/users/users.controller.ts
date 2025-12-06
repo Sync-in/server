@@ -9,6 +9,7 @@ import { createReadStream } from 'fs'
 import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
 import { AuthTwoFaGuardWithoutPassword } from '../../authentication/guards/auth-two-fa-guard'
 import { FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface'
+import { makeContentDispositionAttachment } from '../files/utils/send-file'
 import { USERS_ROUTE } from './constants/routes'
 import { USER_PERMISSION, USER_ROLE } from './constants/user'
 import { UserHavePermission } from './decorators/permissions.decorator'
@@ -27,6 +28,7 @@ import { Member } from './interfaces/member.interface'
 import { UserAppPassword } from './interfaces/user-secrets.interface'
 import { UserModel } from './models/user.model'
 import { UsersManager } from './services/users-manager.service'
+import { USER_AVATAR_FILE_NAME } from './utils/avatar'
 
 @Controller(USERS_ROUTE.BASE)
 @UseGuards(UserRolesGuard)
@@ -90,7 +92,7 @@ export class UsersController {
   async avatar(@GetUser() user: UserModel, @Param('login') login: 'me' | string): Promise<StreamableFile> {
     const isMe: boolean = login === 'me'
     const [path, mime] = await this.usersManager.getAvatar(isMe ? user.login : login, false, isMe && user.role <= USER_ROLE.USER)
-    return new StreamableFile(createReadStream(path), { type: mime })
+    return new StreamableFile(createReadStream(path), { type: mime, disposition: makeContentDispositionAttachment(USER_AVATAR_FILE_NAME) })
   }
 
   @Put(`${USERS_ROUTE.ME}/${USERS_ROUTE.AVATAR}`)

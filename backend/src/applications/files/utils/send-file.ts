@@ -11,12 +11,16 @@ import { DEFAULT_HIGH_WATER_MARK } from '../constants/files'
 import { FileError } from '../models/file-error'
 import { fileName, isPathExists, isPathIsDir, isPathIsReadable } from './files'
 
+export function makeContentDispositionAttachment(fileName: string) {
+  const downloadName = fileName.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  return `attachment; filename="${downloadName}";filename*=UTF-8''${fileName}`
+}
+
 export class SendFile {
   private fileName: string
 
   constructor(
     private readonly filePath: string,
-    private readonly asAttachment = true,
     private readonly downloadName = '',
     private readonly sendOptions: SendOptions = {
       acceptRanges: true,
@@ -53,10 +57,8 @@ export class SendFile {
     if (sendResult.metadata['path'] === undefined) {
       throw new FileError(HttpStatus.BAD_REQUEST, 'Location not found')
     }
-    if (this.asAttachment) {
-      const downloadName = this.fileName.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      sendResult.headers['content-disposition'] = `attachment; filename="${downloadName}";filename*=UTF-8''${this.fileName}`
-    }
+    // Force file to be downloaded as an attachment
+    sendResult.headers['content-disposition'] = makeContentDispositionAttachment(this.fileName)
     res.headers(sendResult.headers)
     res.status(sendResult.statusCode)
     // sendStream.once('stream', () => console.log(`Sending: ${this.fileName}`))

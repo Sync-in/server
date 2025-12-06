@@ -104,7 +104,7 @@ export class FilesTasksManager {
       throw new HttpException('Not applicable', HttpStatus.BAD_REQUEST)
     }
     const rPath = path.join(user.tasksPath, task.name)
-    const sendFile = new SendFile(rPath, true)
+    const sendFile = new SendFile(rPath)
     try {
       await sendFile.checks()
     } catch (e) {
