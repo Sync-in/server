@@ -29,7 +29,7 @@ describe(FilesMethods.name, () => {
   let filesMethods: FilesMethods
   let spacesManager: SpacesManager
   let userTest: UserModel
-  const spaceEnv: Partial<SpaceEnv> = {
+  const spaceEnv = {
     id: 1,
     alias: 'project',
     name: 'project',
@@ -39,7 +39,7 @@ describe(FilesMethods.name, () => {
     realBasePath: SpaceModel.getFilesPath('project'),
     realPath: path.join(SpaceModel.getFilesPath('project'), 'foo'),
     url: `${SPACE_REPOSITORY.FILES}/project/foo`
-  }
+  } as SpaceEnv
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -84,11 +84,9 @@ describe(FilesMethods.name, () => {
   })
 
   it('should avoid path traversal on CopyMove action', async () => {
-    const copyMoveFileDto = { dstDirectory: '../../../foo', dstName: '../bar/../' } satisfies CopyMoveFileDto
-    expect(() => transformAndValidate(CompressFileDto, copyMoveFileDto satisfies CopyMoveFileDto)).toThrow()
-    await expect((filesMethods as any).copyMove(userTest, spaceEnv as SpaceEnv, copyMoveFileDto satisfies CopyMoveFileDto, false)).rejects.toThrow(
-      /is not valid/i
-    )
+    const copyMoveFileDto: CopyMoveFileDto = { dstDirectory: '../../../foo', dstName: '../bar/../' }
+    expect(() => transformAndValidate(CopyMoveFileDto, copyMoveFileDto)).toThrow()
+    await expect((filesMethods as any).copyMove(userTest, spaceEnv, copyMoveFileDto, false)).rejects.toThrow(/is not valid/i)
   })
 
   it('should avoid path traversal on Compress action', async () => {
@@ -96,13 +94,11 @@ describe(FilesMethods.name, () => {
       name: '../../archive',
       compressInDirectory: false,
       files: [{ name: '../../foo', rootAlias: undefined }],
-      extension: tarExtension as typeof tarExtension
+      extension: tarExtension
     }
-    expect(() => transformAndValidate(CompressFileDto, compressFileDto satisfies CompressFileDto)).toThrow()
-    await expect(filesMethods.compress(userTest, spaceEnv as SpaceEnv, { ...(compressFileDto as CompressFileDto) })).rejects.toThrow(
-      /does not exist/i
-    )
+    expect(() => transformAndValidate(CompressFileDto, compressFileDto)).toThrow()
+    await expect(filesMethods.compress(userTest, spaceEnv, compressFileDto)).rejects.toThrow(/does not exist/i)
     compressFileDto.files[0].path = '../../../bar/../'
-    await expect(filesMethods.compress(userTest, spaceEnv as SpaceEnv, compressFileDto as CompressFileDto)).rejects.toThrow(/is not valid/i)
+    await expect(filesMethods.compress(userTest, spaceEnv, compressFileDto)).rejects.toThrow(/is not valid/i)
   })
 })
