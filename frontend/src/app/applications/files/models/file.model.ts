@@ -13,7 +13,7 @@ import {
 import type { FileLockProps, FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { File } from '@sync-in-server/backend/src/applications/files/schemas/file.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
-import { popFromObject } from '@sync-in-server/backend/src/common/shared'
+import { currentTimeStamp, popFromObject } from '@sync-in-server/backend/src/common/shared'
 import type { Observable } from 'rxjs'
 import { convertBytesToText, getNewly } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'
@@ -92,8 +92,7 @@ export class FileModel implements File {
     Object.assign(this, props)
     this.path = `${basePath}/${this.path !== '.' ? `${this.path}/` : ''}${this.root?.alias || this.name}`
     this.mime = this.getMime(this.mime, inShare)
-    this.hTimeAgo = dJs(this.mtime).fromNow(true)
-    this.newly = getNewly(this.mtime)
+    this.updateHTimeAgo(this.mtime)
     this.setMimeUrl()
     this.setHSize()
     this.setRoot(inShare)
@@ -123,6 +122,12 @@ export class FileModel implements File {
   updateMime(mime: string) {
     this.mime = mime
     this.setMimeUrl()
+  }
+
+  updateHTimeAgo(mtime?: number) {
+    mtime ??= currentTimeStamp(null, true)
+    this.hTimeAgo = dJs(mtime).fromNow(true)
+    this.newly = getNewly(mtime)
   }
 
   private getType(inShare: boolean) {

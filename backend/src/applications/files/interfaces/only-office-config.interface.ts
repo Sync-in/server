@@ -165,7 +165,7 @@ export interface OnlyOfficeConfig {
     onAppReady?: (event: object) => void
     onCollaborativeChanges?: (event: object) => void
     onDocumentReady?: (event: object) => void
-    onDocumentStateChange?: (event: object) => void
+    onDocumentStateChange?: (event: { data: boolean }) => void
     onDownloadAs?: (event: object) => void
     onError?: (event: object) => void
     onInfo?: (event: object) => void
@@ -191,7 +191,7 @@ export interface OnlyOfficeConfig {
     onRequestSelectSpreadsheet?: (event: object) => void
     onRequestSendNotify?: (event: object) => void
     onRequestSharingSettings?: (event: object) => void
-    onRequestStartFilling: (event: object) => void
+    onRequestStartFilling?: (event: object) => void
     onRequestUsers?: (event: object) => void
     onSubmit?: (event: object) => void
     onWarning?: (event: object) => void

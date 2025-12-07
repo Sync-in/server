@@ -203,6 +203,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
         if (exit) {
           this.onClose().catch(console.error)
         }
+        this.file().updateHTimeAgo()
       },
       error: (e: HttpErrorResponse) => {
         this.isSaving.set(false)

@@ -35,6 +35,7 @@ import { OnlyOfficeComponent } from '../utils/only-office.component'
           [documentServerUrl]="documentConfig.documentServerUrl"
           [config]="documentConfig.config"
           (loadError)="loadError($event)"
+          (wasSaved)="onSave()"
         ></app-files-onlyoffice-document>
       </div>
     }
@@ -94,5 +95,9 @@ export class FilesViewerDocumentComponent implements OnInit, OnDestroy {
   loadError(errorMessage: string): void {
     this.layout.closeDialog()
     this.layout.sendNotification('error', 'Unable to open document', errorMessage)
+  }
+
+  onSave() {
+    this.file.updateHTimeAgo()
   }
 }
