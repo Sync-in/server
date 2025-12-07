@@ -1,4 +1,4 @@
-FROM node:22-alpine AS build
+FROM node:22-alpine3.22 AS build
 RUN apk add --no-cache build-base g++
 WORKDIR /build
 COPY . .
@@ -7,7 +7,7 @@ RUN npm ci && \
     npm run reset && \
     npm -w backend ci --omit=dev
 
-FROM node:22-alpine AS sync-in
+FROM node:22-alpine3.22 AS sync-in
 RUN apk add --no-cache su-exec && \
     mkdir -p /app/data /app/environment
 WORKDIR /app
