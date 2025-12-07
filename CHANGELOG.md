@@ -1,10 +1,11 @@
 
-## [1.9.2](https://github.com/Sync-in/server/compare/v1.9.1...v1.9.2) (2025-12-06)
+## [1.9.3](https://github.com/Sync-in/server/compare/v1.9.1...v1.9.3) (2025-12-07)
 
 ### Security Fixes
 * **backend:security:** prevent stored XSS by serving files with `Content-Disposition: attachment` to avoid arbitrary JavaScript execution in the browser ([a6276d0](https://github.com/Sync-in/server/commit/a6276d067725637310e4e83a3eee337aae81f439))
 
 ### Bug Fixes
+* **ci:** update Dockerfile to use alpine3.22 to avoid errors with busybox-1.37.0-r29 ([ede1bec](https://github.com/Sync-in/server/commit/ede1bec4b3c33f17c3b94c32d68c4b642ee710c0))
 * **backend:users:** clear whitelist caches when group visibility changes ([071c3ae](https://github.com/Sync-in/server/commit/071c3aed68d3bdacead571d39a1f4006b2380915))
 * **frontend:files:** fix DataTransfer usage after async operations and delay overwrite until analysis completes to restore overwrite on dropped files ([d9935e5](https://github.com/Sync-in/server/commit/d9935e5a3887448635c30fd49f22657461177610))
 * **frontend:styles:** add min-width on app-auth background class ([dffd5e5](https://github.com/Sync-in/server/commit/dffd5e5c7a1a65994970bedf33a95dd00827aa94))
