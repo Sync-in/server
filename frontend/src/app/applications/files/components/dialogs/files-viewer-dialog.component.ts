@@ -8,13 +8,16 @@ import { Component, computed, inject, Input, model, OnDestroy, OnInit, signal } 
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faEye, faPen } from '@fortawesome/free-solid-svg-icons'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { L10nTranslateDirective } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
+import { StoreService } from '../../../../store/store.service'
 import { SHORT_MIME } from '../../files.constants'
 import { FileModel } from '../../models/file.model'
-import { FilesViewerDocumentComponent } from '../viewers/files-viewer-document.component'
+import { FilesViewerCollaboraOnlineComponent } from '../viewers/files-viewer-collabora-online.component'
 import { FilesViewerImageComponent } from '../viewers/files-viewer-image.component'
 import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.component'
+import { FilesViewerOnlyOfficeComponent } from '../viewers/files-viewer-only-office.component'
 import { FilesViewerPdfComponent } from '../viewers/files-viewer-pdf.component'
 import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component'
 
@@ -24,9 +27,11 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
     FilesViewerPdfComponent,
     FilesViewerMediaComponent,
     FilesViewerTextComponent,
-    FilesViewerDocumentComponent,
     FilesViewerImageComponent,
-    FaIconComponent
+    FaIconComponent,
+    FilesViewerOnlyOfficeComponent,
+    FilesViewerCollaboraOnlineComponent,
+    L10nTranslateDirective
   ],
   templateUrl: 'files-viewer-dialog.component.html'
 })
@@ -43,6 +48,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   protected readonly icons = { faEye, faPen }
   protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
   private openedFile: { id: string | number; name: string; mimeUrl: string }
+  protected readonly store = inject(StoreService)
   private readonly layout = inject(LayoutService)
   private readonly subscription: Subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
   private readonly offsetTop = 42

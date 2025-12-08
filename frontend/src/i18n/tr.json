@@ -565,7 +565,6 @@
   "remote": "uzak",
   "System requirements": "Sistem gereksinimleri",
   "Feature not enabled": "Özellik etkin değil",
-  "Check the settings": "Ayarları kontrol edin",
   "Website": "Web sitesi",
   "Documentation": "Dokümantasyon",
   "Versions": "Sürümler",
@@ -619,5 +618,11 @@
   "A new update is available": "Yeni bir güncelleme mevcut",
   "Fullscreen": "Tam ekran",
   "Dimensions": "Boyutlar",
-  "Start Slideshow": "Slayt gösterisini başlat"
+  "Start Slideshow": "Slayt gösterisini başlat",
+  "Unable to load OnlyOffice editor": "OnlyOffice düzenleyici yüklenemedi",
+  "The document server may be unreachable or the configuration is invalid": "Belge sunucusuna ulaşılamıyor olabilir veya yapılandırma geçersiz",
+  "OnlyOffice editor failed to initialize": "OnlyOffice düzenleyici başlatılamadı",
+  "DocsAPI not available": "DocsAPI kullanılamıyor",
+  "Unknown OnlyOffice error": "Bilinmeyen OnlyOffice hatası",
+  "No editor found": "Düzenleyici bulunamadı"
 }

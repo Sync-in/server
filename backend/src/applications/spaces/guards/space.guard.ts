@@ -6,14 +6,14 @@
 
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { HTTP_METHOD } from '../../applications.constants'
-import { ONLY_OFFICE_CONTEXT } from '../../files/constants/only-office'
-import { API_FILES_ONLY_OFFICE_CALLBACK } from '../../files/constants/routes'
+import { COLLABORA_CONTEXT } from '../../files/modules/collabora-online/collabora-online.constants'
+import { COLLABORA_ONLINE_TO_SPACE_SEGMENTS } from '../../files/modules/collabora-online/collabora-online.utils'
 import { SYNC_CONTEXT } from '../../sync/decorators/sync-context.decorator'
 import { SYNC_PATH_TO_SPACE_SEGMENTS } from '../../sync/utils/routes'
 import { WEB_DAV_CONTEXT } from '../../webdav/decorators/webdav-context.decorator'
 import { WEBDAV_PATH_TO_SPACE_SEGMENTS } from '../../webdav/utils/routes'
 import { SPACE_HTTP_PERMISSION, SPACE_OPERATION } from '../constants/spaces'
+import { OverrideSpacePermission } from '../decorators/space-override-permission.decorator'
 import { SKIP_SPACE_GUARD } from '../decorators/space-skip-guard.decorator'
 import { SKIP_SPACE_PERMISSIONS_CHECK } from '../decorators/space-skip-permissions.decorator'
 import { FastifySpaceRequest } from '../interfaces/space-request.interface'
@@ -31,14 +31,8 @@ export class SpaceGuard implements CanActivate {
     private readonly spacesManager: SpacesManager
   ) {}
 
-  static checkPermissions(req: FastifySpaceRequest, logger: Logger, onlyOfficeContext = false) {
-    let permission: SPACE_OPERATION
-    if (onlyOfficeContext && req.method === HTTP_METHOD.POST && req.originalUrl.startsWith(API_FILES_ONLY_OFFICE_CALLBACK)) {
-      // special case : onlyoffice callback use post method to update documents
-      permission = SPACE_OPERATION.MODIFY
-    } else {
-      permission = SPACE_HTTP_PERMISSION[req.method]
-    }
+  static checkPermissions(req: FastifySpaceRequest, logger: Logger, overrideSpacePermission?: SPACE_OPERATION) {
+    const permission = overrideSpacePermission || SPACE_HTTP_PERMISSION[req.method]
     if (!haveSpaceEnvPermissions(req.space, permission)) {
       logger.warn(`is not allowed to ${req.method} on this space path : *${req.space.alias}* (${req.space.id}) : ${req.space.url}`)
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
@@ -57,16 +51,16 @@ export class SpaceGuard implements CanActivate {
   }
 
   async canActivate(ctx: ExecutionContext): Promise<boolean> {
-    const skipSpaceGuard = this.reflector.getAllAndOverride(SKIP_SPACE_GUARD, [ctx.getHandler(), ctx.getClass()])
-    if (skipSpaceGuard) {
+    if (this.reflector.getAllAndOverride(SKIP_SPACE_GUARD, [ctx.getHandler(), ctx.getClass()])) {
       return true
     }
-    const skipSpacePermissionsCheck = this.reflector.getAllAndOverride(SKIP_SPACE_PERMISSIONS_CHECK, [ctx.getHandler(), ctx.getClass()])
+
     const req: FastifySpaceRequest = ctx.switchToHttp().getRequest()
-    const onlyOfficeContext = this.reflector.getAllAndOverride(ONLY_OFFICE_CONTEXT, [ctx.getHandler(), ctx.getClass()])
     const webDAVContext = this.reflector.getAllAndOverride(WEB_DAV_CONTEXT, [ctx.getHandler(), ctx.getClass()])
     const syncContext = this.reflector.getAllAndOverride(SYNC_CONTEXT, [ctx.getHandler(), ctx.getClass()])
-    const urlSegments = this.urlSegmentsFromContext(req, webDAVContext, syncContext)
+    const collaboraOnlineContext = this.reflector.getAllAndOverride(COLLABORA_CONTEXT, [ctx.getHandler(), ctx.getClass()])
+
+    const urlSegments = this.urlSegmentsFromContext(req, webDAVContext, syncContext, collaboraOnlineContext)
     this.checkAccessToSpace(req, urlSegments)
     let space: SpaceEnv
     try {
@@ -84,26 +78,28 @@ export class SpaceGuard implements CanActivate {
     }
     // assign space to request
     req.space = space
+    const skipSpacePermissionsCheck = this.reflector.getAllAndOverride(SKIP_SPACE_PERMISSIONS_CHECK, [ctx.getHandler(), ctx.getClass()])
     if (skipSpacePermissionsCheck === undefined) {
-      SpaceGuard.checkPermissions(req, this.logger, onlyOfficeContext)
+      const overrideSpacePermission: SPACE_OPERATION = this.reflector.getAllAndOverride(OverrideSpacePermission, [ctx.getHandler(), ctx.getClass()])
+      SpaceGuard.checkPermissions(req, this.logger, overrideSpacePermission)
     }
     return true
   }
 
-  private urlSegmentsFromContext(req: FastifySpaceRequest, webDAVContext: boolean, syncContext: boolean): string[] {
-    if (webDAVContext || syncContext) {
-      try {
-        if (webDAVContext) {
-          return WEBDAV_PATH_TO_SPACE_SEGMENTS(req.params['*'])
-        } else {
-          return SYNC_PATH_TO_SPACE_SEGMENTS(req.params['*'])
-        }
-      } catch (e) {
-        this.logger.warn(`${this.canActivate.name} - ${e}`)
-        throw new HttpException(e.message, HttpStatus.NOT_FOUND)
+  private urlSegmentsFromContext(req: FastifySpaceRequest, webDAVContext: boolean, syncContext: boolean, collaboraOnlineContext: boolean): string[] {
+    try {
+      if (webDAVContext) {
+        return WEBDAV_PATH_TO_SPACE_SEGMENTS(req.params['*'])
+      } else if (syncContext) {
+        return SYNC_PATH_TO_SPACE_SEGMENTS(req.params['*'])
+      } else if (collaboraOnlineContext) {
+        return COLLABORA_ONLINE_TO_SPACE_SEGMENTS(req)
       }
+      return PATH_TO_SPACE_SEGMENTS(req.params['*'])
+    } catch (e) {
+      this.logger.warn(`${this.canActivate.name} - ${e}`)
+      throw new HttpException(e.message, HttpStatus.NOT_FOUND)
     }
-    return PATH_TO_SPACE_SEGMENTS(req.params['*'])
   }
 
   private checkAccessToSpace(req: FastifySpaceRequest, urlSegments: string[]) {

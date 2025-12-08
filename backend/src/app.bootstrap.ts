@@ -77,7 +77,12 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
   app.useStaticAssets({ root: STATIC_PATH, prefixAvoidTrailingSlash: true })
 
   /* SECURITY */
-  await app.register(fastifyHelmet, { contentSecurityPolicy: CONTENT_SECURITY_POLICY(configuration.applications.files.onlyoffice.externalServer) })
+  await app.register(fastifyHelmet, {
+    contentSecurityPolicy: CONTENT_SECURITY_POLICY(
+      configuration.applications.files.onlyoffice.externalServer,
+      configuration.applications.files.collabora.externalServer
+    )
+  })
 
   /* COOKIES */
   // we use csrf secret to unsign csrf cookie

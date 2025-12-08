@@ -25,7 +25,14 @@
         <app-files-viewer-media [currentHeight]="currentHeight" [fileUrl]="currentFile.dataUrl"></app-files-viewer-media>
       }
       @case (SHORT_MIME.DOCUMENT) {
-        <app-files-viewer-document [currentHeight]="currentHeight" [file]="currentFile" [mode]="mode"></app-files-viewer-document>
+        @if (store.fileSettings().editor.collaboraOnline) {
+          <app-files-viewer-collabora-online [currentHeight]="currentHeight" [file]="currentFile" [mode]="mode"></app-files-viewer-collabora-online>
+        } @else if (store.fileSettings().editor.onlyOffice) {
+          <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile" [mode]="mode"></app-files-viewer-only-office>
+        } @else {
+          <!--This case should never happen-->
+          <div [style.height.px]="currentHeight" class="d-flex p-4" l10nTranslate>No editor found</div>
+        }
       }
       @default {
         <app-files-viewer-text

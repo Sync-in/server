@@ -565,7 +565,6 @@
   "remote": "远程",
   "System requirements": "系统要求",
   "Feature not enabled": "功能未启用",
-  "Check the settings": "检查设置",
   "Website": "网站",
   "Documentation": "文档",
   "Versions": "版本",
@@ -619,5 +618,11 @@
   "A new update is available": "有可用的新更新",
   "Fullscreen": "全屏",
   "Dimensions": "尺寸",
-  "Start Slideshow": "开始幻灯片放映"
+  "Start Slideshow": "开始幻灯片放映",
+  "Unable to load OnlyOffice editor": "无法加载 OnlyOffice 编辑器",
+  "The document server may be unreachable or the configuration is invalid": "文档服务器可能无法访问，或者配置无效",
+  "OnlyOffice editor failed to initialize": "OnlyOffice 编辑器初始化失败",
+  "DocsAPI not available": "DocsAPI 不可用",
+  "Unknown OnlyOffice error": "未知的 OnlyOffice 错误",
+  "No editor found": "未找到编辑器"
 }

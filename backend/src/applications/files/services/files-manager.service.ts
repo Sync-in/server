@@ -100,8 +100,8 @@ export class FilesManager {
     req: FastifyAuthenticatedRequest,
     options?: { dav?: { depth: LOCK_DEPTH; lockTokens: string[] }; checksumAlg?: string; tmpPath?: string }
   ): Promise<boolean | string> {
-    // if tmpPath is used, we lock the final destination during the transfer
-    // space.realPath is replaced by tmpPath (if allowed), if the move operation failed we remove the tmp file
+    // If tmpPath is used, we lock the final destination during the transfer
+    // space.realPath is replaced by tmpPath (if allowed). If the move operation failed, we remove the tmp file
     const fExists = await isPathExists(space.realPath)
     const fTmpExists = options?.tmpPath ? await isPathExists(options.tmpPath) : false
     if (fExists && req.method === HTTP_METHOD.POST) {
@@ -111,7 +111,7 @@ export class FilesManager {
       throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'The location is a directory')
     }
     if (options?.tmpPath) {
-      // ensure tmpPath parent dir exists
+      // Ensure tmpPath parent dir exists
       await makeDir(dirName(options.tmpPath), true)
     } else if (!(await isPathExists(dirName(space.realPath)))) {
       throw new FileError(HttpStatus.CONFLICT, 'Parent must exists')
@@ -119,13 +119,13 @@ export class FilesManager {
     /* File Lock */
     let fileLock: FileLock | undefined
     if (options?.dav) {
-      // check locks
+      // Check locks
       await this.filesLockManager.checkConflicts(space.dbFile, options?.dav?.depth || DEPTH.RESOURCE, {
         userId: user.id,
         lockTokens: options.dav?.lockTokens
       })
     } else {
-      // create lock if there is no webdav context
+      // Create lock if there is no webdav context
       const [ok, lock] = await this.filesLockManager.create(user, space.dbFile, DEPTH.RESOURCE)
       if (!ok) {
         throw new LockConflict(lock, 'Conflicting lock')
@@ -133,12 +133,12 @@ export class FilesManager {
       fileLock = lock
     }
     try {
-      // check range
+      // Check range
       let startRange = 0
       if ((fExists || fTmpExists) && req.headers['content-range']) {
-        // with PUT method, some webdav clients use the `content-range` header,
+        // With PUT method, some webdav clients use the `content-range` header,
         // which is normally reserved for a response to a request containing the `range` header.
-        // However, for more compatibility let's accept it
+        // However, for more compatibility let's accept it.
         const match = /\d+/.exec(req.headers['content-range'])
         if (!match.length) {
           throw new FileError(HttpStatus.BAD_REQUEST, 'Content-range : header is malformed')
@@ -639,7 +639,7 @@ export class FilesManager {
     return this.filesLockManager.convertLockToFileLockProps(lock)
   }
 
-  async unlock(user: UserModel, space: SpaceEnv, forceAsOwner = false): Promise<void> {
+  async unlock(user: UserModel, space: SpaceEnv, forceAsFileOwner = false): Promise<void> {
     if (!(await isPathExists(space.realPath))) {
       this.logger.warn(`Unable to unlock: ${space.url} - resource does not exist`)
       throw new FileError(HttpStatus.BAD_REQUEST, 'Unlock must specify an existing resource')
@@ -650,7 +650,7 @@ export class FilesManager {
       return
     }
     for (const lock of fileLocks) {
-      if ((forceAsOwner && space.dbFile?.ownerId === user.id) || lock.owner.id === user.id) {
+      if ((forceAsFileOwner && space.dbFile?.ownerId === user.id) || lock.owner.id === user.id) {
         // Refresh if more than half of the TTL has passed
         await this.filesLockManager.removeLock(lock.key)
       } else {

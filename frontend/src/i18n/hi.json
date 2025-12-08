@@ -565,7 +565,6 @@
   "remote": "दूरस्थ",
   "System requirements": "सिस्टम आवश्यकताएँ",
   "Feature not enabled": "विशेषता सक्षम नहीं है",
-  "Check the settings": "सेटिंग्स जाँचें",
   "Website": "वेबसाइट",
   "Documentation": "दस्तावेज़ीकरण",
   "Versions": "संस्करण",
@@ -619,5 +618,11 @@
   "A new update is available": "एक नया अपडेट उपलब्ध है",
   "Fullscreen": "पूर्ण स्क्रीन",
   "Dimensions": "आयाम",
-  "Start Slideshow": "स्लाइड शो शुरू करें"
+  "Start Slideshow": "स्लाइड शो शुरू करें",
+  "Unable to load OnlyOffice editor": "OnlyOffice संपादक लोड नहीं हो सका",
+  "The document server may be unreachable or the configuration is invalid": "दस्तावेज़ सर्वर उपलब्ध नहीं हो सकता या विन्यास अमान्य है",
+  "OnlyOffice editor failed to initialize": "OnlyOffice संपादक प्रारंभ करने में विफल रहा",
+  "DocsAPI not available": "DocsAPI उपलब्ध नहीं है",
+  "Unknown OnlyOffice error": "अज्ञात OnlyOffice त्रुटि",
+  "No editor found": "संपादक नहीं मिला"
 }

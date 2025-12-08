@@ -161,6 +161,14 @@ applications:
       # If you use https, set to `true`.
       # default: `false`
       verifySSL: false
+    collaboraOnline:
+      # enable collabora online integration
+      # default: false
+      enabled: false
+      # For an external server (e.g., https://collaboraonline.domain.com), remember the url must be accessible from browser!
+      # If externalServer is empty (case of official docker compose), we use the local instance
+      # default: null
+      externalServer:
   appStore:
     # repository: `public` | `local`
     # default: `public`

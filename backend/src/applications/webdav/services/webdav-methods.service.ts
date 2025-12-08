@@ -95,7 +95,7 @@ export class WebDAVMethods {
     if (ok) {
       // Locking unmapped URLs: must create an empty resource (that is not a collection)
       if (!rExists) {
-        // checkLocks set to false because the conflicts are already checked in `filesLockManager.create` method
+        // checkLocks set to false because the conflicts are already checked in the `filesLockManager.create` method
         await this.filesManager.mkFile(req.user, req.space, false, false, false)
       }
       const lockProp = LOCK_PROP([fileLock])
@@ -341,7 +341,7 @@ export class WebDAVMethods {
       space: dstSpace
     } as FastifyDAVRequest
     if (!(await this.evaluateIfHeaders(fakeDstReq, res))) {
-      // if there is an error the response is generated inside the `evaluateIfHeaders` function
+      // if there is an error, the response is generated inside the `evaluateIfHeaders` function
       return
     }
     try {

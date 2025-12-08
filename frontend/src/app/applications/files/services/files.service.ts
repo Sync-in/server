@@ -8,13 +8,13 @@ import type { TreeNode } from '@ali-hm/angular-tree-component'
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
-import { FILE_MODE, FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_MODE, FILE_OPERATION, FORCE_AS_FILE_OWNER } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import {
-  API_FILES_ONLY_OFFICE_STATUS,
   API_FILES_OPERATION,
   API_FILES_OPERATION_MAKE,
   API_FILES_RECENTS,
   API_FILES_SEARCH,
+  API_FILES_SETTINGS,
   API_FILES_TASK_OPERATION_COMPRESS,
   API_FILES_TASK_OPERATION_DECOMPRESS,
   API_FILES_TASK_OPERATION_DOWNLOAD,
@@ -28,6 +28,7 @@ import type {
   SearchFilesDto
 } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
+import type { FileSettings } from '@sync-in-server/backend/src/applications/files/interfaces/file-settings.interface'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
@@ -224,8 +225,8 @@ export class FilesService {
     return this.http.request<FileLockProps>(FILE_OPERATION.LOCK, file.dataUrl)
   }
 
-  unlock(file: FileModel, forceAsOwner = false): Observable<void> {
-    const params = forceAsOwner ? new HttpParams().set('forceAsOwner', 'true') : null
+  unlock(file: FileModel, forceAsFileOwner = false): Observable<void> {
+    const params = forceAsFileOwner ? new HttpParams().set(FORCE_AS_FILE_OWNER, 'true') : null
     return this.http.request<void>(FILE_OPERATION.UNLOCK, file.dataUrl, { params: params })
   }
 
@@ -264,7 +265,7 @@ export class FilesService {
         try {
           hookedShortMime = await this.viewerHook(mode, file)
         } catch {
-          // OnlyOffice isn't enabled, falling back to download
+          // No office editors are enabled, falling back to download
           this.download(file)
           return
         }
@@ -294,33 +295,33 @@ export class FilesService {
   }
 
   private async viewerHook(mode: FILE_MODE, file: FileModel): Promise<string> {
-    const onlyOfficeEnabled = await this.getOnlyOfficeStatus()
-    if (file.shortMime === SHORT_MIME.DOCUMENT && !onlyOfficeEnabled) {
+    const fileSettings = await this.getFileSettings()
+    const hasEnabledOfficeEditor = fileSettings ? fileSettings.editor.onlyOffice || fileSettings.editor.collaboraOnline : false
+    if (file.shortMime === SHORT_MIME.DOCUMENT && !hasEnabledOfficeEditor) {
       if (file.mime.startsWith('text-')) {
         return SHORT_MIME.TEXT
       }
-      throw new Error('Feature not enabled')
+      throw new Error('No editor found')
     }
     if (file.shortMime === SHORT_MIME.PDF) {
-      if (mode === FILE_MODE.EDIT && onlyOfficeEnabled) {
+      if (mode === FILE_MODE.EDIT && hasEnabledOfficeEditor) {
         return SHORT_MIME.DOCUMENT
       }
     }
     return file.shortMime
   }
 
-  private async getOnlyOfficeStatus(): Promise<boolean> {
-    if (this.store.filesOnlyOffice().enabled !== null) {
-      return this.store.filesOnlyOffice().enabled
+  private async getFileSettings(): Promise<FileSettings | false> {
+    if (this.store.fileSettings() !== null) {
+      return this.store.fileSettings()
     }
     try {
-      const status = await firstValueFrom(this.http.get<{ enabled: boolean }>(API_FILES_ONLY_OFFICE_STATUS))
-      this.store.filesOnlyOffice.set(status)
-      return status.enabled
+      const settings = await firstValueFrom(this.http.get<FileSettings>(API_FILES_SETTINGS))
+      this.store.fileSettings.set(settings)
+      return settings
     } catch {
-      const fallback = { enabled: false }
-      this.store.filesOnlyOffice.set(fallback)
-      return fallback.enabled
+      this.store.fileSettings.set(null)
+      return false
     }
   }
 

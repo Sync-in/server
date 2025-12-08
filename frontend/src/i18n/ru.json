@@ -565,7 +565,6 @@
   "remote": "удалённый",
   "System requirements": "Системные требования",
   "Feature not enabled": "Функция не включена",
-  "Check the settings": "Проверьте настройки",
   "Website": "Сайт",
   "Documentation": "Документация",
   "Versions": "Версии",
@@ -619,5 +618,11 @@
   "A new update is available": "Доступно новое обновление",
   "Fullscreen": "Полный экран",
   "Dimensions": "Размеры",
-  "Start Slideshow": "Запустить слайд‑шоу"
+  "Start Slideshow": "Запустить слайд‑шоу",
+  "Unable to load OnlyOffice editor": "Не удалось загрузить редактор OnlyOffice",
+  "The document server may be unreachable or the configuration is invalid": "Сервер документов может быть недоступен или конфигурация неверна",
+  "OnlyOffice editor failed to initialize": "Не удалось инициализировать редактор OnlyOffice",
+  "DocsAPI not available": "DocsAPI недоступен",
+  "Unknown OnlyOffice error": "Неизвестная ошибка OnlyOffice",
+  "No editor found": "Редактор не найден"
 }

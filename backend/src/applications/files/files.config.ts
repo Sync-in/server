@@ -5,24 +5,9 @@
  */
 
 import { Type } from 'class-transformer'
-import { IsBoolean, IsInt, IsNotEmpty, IsNotEmptyObject, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator'
-
-export class FilesOnlyOfficeConfig {
-  @IsBoolean()
-  enabled = false
-
-  @IsOptional()
-  @IsString()
-  externalServer: string = null
-
-  @ValidateIf((o: FilesOnlyOfficeConfig) => o.enabled)
-  @IsString()
-  @IsNotEmpty()
-  secret: string
-
-  @IsBoolean()
-  verifySSL: boolean = false
-}
+import { IsBoolean, IsInt, IsNotEmpty, IsNotEmptyObject, IsString, ValidateNested } from 'class-validator'
+import { CollaboraOnlineConfig } from './modules/collabora-online/collabora-online.config'
+import { OnlyOfficeConfig } from './modules/only-office/only-office.config'
 
 export class FilesConfig {
   @IsNotEmpty()
@@ -52,6 +37,11 @@ export class FilesConfig {
 
   @IsNotEmptyObject()
   @ValidateNested()
-  @Type(() => FilesOnlyOfficeConfig)
-  onlyoffice: FilesOnlyOfficeConfig = new FilesOnlyOfficeConfig()
+  @Type(() => OnlyOfficeConfig)
+  onlyoffice: OnlyOfficeConfig = new OnlyOfficeConfig()
+
+  @IsNotEmptyObject()
+  @ValidateNested()
+  @Type(() => CollaboraOnlineConfig)
+  collabora: CollaboraOnlineConfig = new CollaboraOnlineConfig()
 }

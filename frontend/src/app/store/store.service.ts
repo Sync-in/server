@@ -6,6 +6,7 @@
 
 import { computed, Injectable, Signal, signal, WritableSignal } from '@angular/core'
 import type { SearchFilesDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
+import type { FileSettings } from '@sync-in-server/backend/src/applications/files/interfaces/file-settings.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { AppStoreManifest } from '@sync-in-server/backend/src/applications/sync/interfaces/store-manifest.interface'
 import type { ServerConfig } from '@sync-in-server/backend/src/configuration/config.interfaces'
@@ -44,8 +45,8 @@ export class StoreService {
   public filesActiveTasks = new BehaviorSubject<FileTask[]>([])
   public filesEndedTasks = new BehaviorSubject<FileTask[]>([])
   public filesRecents: WritableSignal<FileRecentModel[]> = signal<FileRecentModel[]>([])
-  // OnlyOffice
-  public filesOnlyOffice: WritableSignal<{ enabled: boolean }> = signal({ enabled: null })
+  // File Settings
+  public fileSettings: WritableSignal<FileSettings> = signal(null)
   // Search
   public currentSearch: WritableSignal<SearchFilesDto> = signal<SearchFilesDto>({ content: '', fullText: false })
   public filesSearch: WritableSignal<FileContentModel[]> = signal<FileContentModel[]>([])

@@ -565,7 +565,6 @@
   "remote": "distant",
   "System requirements": "Configuration requise",
   "Feature not enabled": "Fonctionnalité non activée",
-  "Check the settings": "Vérifiez les paramètres",
   "Website": "Site Web",
   "Documentation": "Documentation",
   "Versions": "Versions",
@@ -619,5 +618,11 @@
   "A new update is available": "Une nouvelle mise à jour est disponible",
   "Fullscreen": "Plein écran",
   "Dimensions": "Dimensions",
-  "Start Slideshow": "Démarrer le diaporama"
+  "Start Slideshow": "Démarrer le diaporama",
+  "Unable to load OnlyOffice editor": "Impossible de charger l’éditeur OnlyOffice",
+  "The document server may be unreachable or the configuration is invalid": "Le serveur de documents est peut-être injoignable ou la configuration est invalide",
+  "OnlyOffice editor failed to initialize": "Échec de l’initialisation de l’éditeur OnlyOffice",
+  "DocsAPI not available": "DocsAPI n’est pas disponible",
+  "Unknown OnlyOffice error": "Erreur OnlyOffice inconnue",
+  "No editor found": "Aucun éditeur trouvé"
 }

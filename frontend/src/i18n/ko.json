@@ -565,7 +565,6 @@
   "remote": "원격",
   "System requirements": "시스템 요구 사항",
   "Feature not enabled": "기능이 활성화되어 있지 않습니다",
-  "Check the settings": "설정을 확인하세요",
   "Website": "웹사이트",
   "Documentation": "문서",
   "Versions": "버전",
@@ -619,5 +618,11 @@
   "A new update is available": "새로운 업데이트가 이용 가능합니다",
   "Fullscreen": "전체 화면",
   "Dimensions": "크기",
-  "Start Slideshow": "슬라이드 쇼 시작"
+  "Start Slideshow": "슬라이드 쇼 시작",
+  "Unable to load OnlyOffice editor": "OnlyOffice 편집기를 불러올 수 없습니다",
+  "The document server may be unreachable or the configuration is invalid": "문서 서버에 연결할 수 없거나 설정이 잘못되었습니다",
+  "OnlyOffice editor failed to initialize": "OnlyOffice 편집기 초기화에 실패했습니다",
+  "DocsAPI not available": "DocsAPI 를 사용할 수 없습니다",
+  "Unknown OnlyOffice error": "알 수 없는 OnlyOffice 오류",
+  "No editor found": "편집기를 찾을 수 없습니다"
 }

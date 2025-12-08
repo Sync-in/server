@@ -23,7 +23,7 @@ import { dirName, fileName } from '../utils/files'
 @Injectable()
 export class FilesLockManager {
   /* Philosophy
-  Currently this manager only handle conflicting locks between multiple users, not between clients
+  Currently this manager only handles conflicting locks between multiple users, not between clients
   - The locks created from api
       * They do not contain a token key or a davLock property
       * They are exclusive only
@@ -32,7 +32,7 @@ export class FilesLockManager {
       * They must have a depth of 'infinity' (all children) or '0' (root and root members)
       * They can be exclusive (WebDAV) or shared (OnlyOffice)
       * If created with WebDAV, they are stored with a token and a davLock property
-      * If created with OnlyOffice, they are stored with no token and a davLock property whose `locktoken` & `lockroot` properties are null
+      * If created with OnlyOffice, they are stored with no token and a davLock property whose `locktoken` & `lockroot` properties are `null`
   Cache token key format = `flock|token?:${uuid}|path:${path}|ownerId?:${number}|spaceId?:${number}|...props` => FileLock
   */
   private readonly logger = new Logger(FilesLockManager.name)
@@ -43,8 +43,8 @@ export class FilesLockManager {
     let token: string
     let lockscope: LOCK_SCOPE
     if (davLock) {
-      // webdav context
-      davLock.locktoken = this.genDAVToken()
+      // webdav | onlyoffice | collabora online context
+      davLock.locktoken = davLock.locktoken || this.genDAVToken()
       token = davLock.locktoken
       lockscope = davLock.lockscope
     } else {
@@ -126,7 +126,7 @@ export class FilesLockManager {
   }
 
   async isLockedWithToken(token: string, dbFilePath: string): Promise<FileLock> {
-    // check if url (or any of its parents) is locked by the token
+    // check if the url (or any of its parents) is locked by the token
     const lock = await this.getLockByToken(token)
     return lock ? (dbFilePath.startsWith(lock.dbFilePath) ? lock : null) : null
   }
@@ -185,12 +185,12 @@ export class FilesLockManager {
     options?: { userId?: number; lockScope?: LOCK_SCOPE; lockTokens?: string[] }
   ): Promise<void> {
     /* Checks if a file could be modified, created, moved, or deleted
-       Throws an `LockConflict` error when there are parent locks (depth: 0) or child locks (depth: infinite) that prevent modification
+       Throws a `LockConflict` error when there are parent locks (depth: 0) or child locks (depth: infinite) that prevent modification
        Returns on the first conflict (compliant with the RFC 4918)
     */
     for await (const l of this.searchParentLocks(dbFile, { includeRoot: true, depth: DEPTH.INFINITY })) {
       if (options?.lockScope && options?.lockScope === LOCK_SCOPE.SHARED && l.davLock.lockscope === LOCK_SCOPE.SHARED) {
-        // Only compatible with shared locks (even by same owner)
+        // Only compatible with shared locks (even by the same owner)
         continue
       }
       if (options?.userId === l.owner.id && (!l.davLock || (options?.lockTokens?.length && options.lockTokens.indexOf(l.davLock.locktoken) > -1))) {

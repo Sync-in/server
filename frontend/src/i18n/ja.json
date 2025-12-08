@@ -565,7 +565,6 @@
   "remote": "リモート",
   "System requirements": "システム要件",
   "Feature not enabled": "機能が有効ではありません",
-  "Check the settings": "設定を確認",
   "Website": "ウェブサイト",
   "Documentation": "ドキュメント",
   "Versions": "バージョン",
@@ -619,5 +618,11 @@
   "A new update is available": "新しいアップデートが利用可能です",
   "Fullscreen": "全画面表示",
   "Dimensions": "サイズ",
-  "Start Slideshow": "スライドショーを開始"
+  "Start Slideshow": "スライドショーを開始",
+  "Unable to load OnlyOffice editor": "OnlyOffice エディタを読み込めませんでした",
+  "The document server may be unreachable or the configuration is invalid": "ドキュメントサーバーに接続できないか、設定が無効です",
+  "OnlyOffice editor failed to initialize": "OnlyOffice エディタの初期化に失敗しました",
+  "DocsAPI not available": "DocsAPI を利用できません",
+  "Unknown OnlyOffice error": "不明な OnlyOffice エラーです",
+  "No editor found": "エディタが見つかりません"
 }

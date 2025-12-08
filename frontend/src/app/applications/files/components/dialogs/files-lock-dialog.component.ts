@@ -46,7 +46,7 @@ export class FilesLockDialogComponent implements OnInit {
 
   @HostListener('document:keyup.enter')
   async onEnter() {
-    if (this.isLockOwner) {
+    if (this.isLockOwner || this.isFileOwner) {
       await this.onUnlock()
     } else {
       this.onSendUnLockRequest()
@@ -61,8 +61,8 @@ export class FilesLockDialogComponent implements OnInit {
   async onUnlock() {
     try {
       this.submitted = true
-      await firstValueFrom(this.filesService.unlock(this.file, !this.isLockOwner))
-      delete this.file.lock
+      await firstValueFrom(this.filesService.unlock(this.file, this.isFileOwner))
+      this.file.removeLock()
       this.layout.closeDialog()
     } catch (e: any) {
       this.submitted = false

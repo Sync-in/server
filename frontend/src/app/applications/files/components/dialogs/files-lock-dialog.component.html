@@ -25,7 +25,7 @@
       <b>{{ file?.lock?.owner }}</b>
     }
   </div>
-  @if (!isLockOwner && isFileOwner) {
+  @if (hasExclusiveLock && !isLockOwner && isFileOwner) {
     <div class="text-align-center mt-3 mb-1">
       <small l10nTranslate>As the file owner, you can unlock the file or request the current lock owner to release it.</small>
     </div>

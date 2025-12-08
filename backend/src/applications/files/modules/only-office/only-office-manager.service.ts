@@ -12,39 +12,50 @@ import https from 'https'
 import crypto from 'node:crypto'
 import os from 'node:os'
 import path from 'node:path'
-import { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface'
-import { convertHumanTimeToSeconds, generateShortUUID } from '../../../common/functions'
-import { configuration } from '../../../configuration/config.environment'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
-import { HTTP_METHOD } from '../../applications.constants'
-import { SPACE_OPERATION } from '../../spaces/constants/spaces'
-import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface'
-import type { SpaceEnv } from '../../spaces/models/space-env.model'
-import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
-import type { UserModel } from '../../users/models/user.model'
-import { getAvatarBase64 } from '../../users/utils/avatar'
-import { DEPTH, LOCK_SCOPE } from '../../webdav/constants/webdav'
-import { WebDAVLock } from '../../webdav/interfaces/webdav.interface'
-import { CACHE_ONLY_OFFICE } from '../constants/cache'
+import { JwtIdentityPayload } from '../../../../authentication/interfaces/jwt-payload.interface'
+import { convertHumanTimeToSeconds } from '../../../../common/functions'
+import { configuration } from '../../../../configuration/config.environment'
+import { Cache } from '../../../../infrastructure/cache/services/cache.service'
+import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
+import { HTTP_METHOD } from '../../../applications.constants'
+import { SPACE_OPERATION } from '../../../spaces/constants/spaces'
+import { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface'
+import type { SpaceEnv } from '../../../spaces/models/space-env.model'
+import { haveSpaceEnvPermissions } from '../../../spaces/utils/permissions'
+import type { UserModel } from '../../../users/models/user.model'
+import { getAvatarBase64 } from '../../../users/utils/avatar'
+import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
+import { WebDAVLock } from '../../../webdav/interfaces/webdav.interface'
+import { FILE_MODE } from '../../constants/operations'
+import type { FileDBProps } from '../../interfaces/file-db-props.interface'
+import { FilesLockManager } from '../../services/files-lock-manager.service'
 import {
+  copyFileContent,
+  fileSize,
+  genEtag,
+  genUniqHashFromFileDBProps,
+  isPathExists,
+  isPathIsDir,
+  removeFiles,
+  uniqueFilePathFromDir,
+  writeFromStream
+} from '../../utils/files'
+import {
+  ONLY_OFFICE_CACHE_KEY,
   ONLY_OFFICE_CONVERT_ERROR,
   ONLY_OFFICE_CONVERT_EXTENSIONS,
   ONLY_OFFICE_EXTENSIONS,
   ONLY_OFFICE_INTERNAL_URI,
+  ONLY_OFFICE_OWNER_LOCK,
   ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME
-} from '../constants/only-office'
-import { FILE_MODE } from '../constants/operations'
-import { API_FILES_ONLY_OFFICE_CALLBACK, API_FILES_ONLY_OFFICE_DOCUMENT } from '../constants/routes'
-import type { FileProps } from '../interfaces/file-props.interface'
-import { OnlyOfficeCallBack, OnlyOfficeConfig, OnlyOfficeConvertForm, OnlyOfficeReqConfig } from '../interfaces/only-office-config.interface'
-import { copyFileContent, fileSize, getProps, isPathExists, isPathIsDir, removeFiles, uniqueFilePathFromDir, writeFromStream } from '../utils/files'
-import { FilesLockManager } from './files-lock-manager.service'
-import { FilesQueries } from './files-queries.service'
+} from './only-office.constants'
+import { OnlyOfficeReqDto } from './only-office.dtos'
+import { OnlyOfficeCallBack, OnlyOfficeConfig, OnlyOfficeConvertForm } from './only-office.interface'
+import { API_ONLY_OFFICE_CALLBACK, API_ONLY_OFFICE_DOCUMENT } from './only-office.routes'
 
 @Injectable()
-export class FilesOnlyOfficeManager {
-  private logger = new Logger(FilesOnlyOfficeManager.name)
+export class OnlyOfficeManager {
+  private logger = new Logger(OnlyOfficeManager.name)
   private readonly externalOnlyOfficeServer = configuration.applications.files.onlyoffice.externalServer || null
   private readonly rejectUnauthorized: boolean = !configuration.applications.files.onlyoffice?.verifySSL
   private readonly convertUrl = this.externalOnlyOfficeServer ? `${this.externalOnlyOfficeServer}/ConvertService.ashx` : null
@@ -56,15 +67,14 @@ export class FilesOnlyOfficeManager {
     private readonly contextManager: ContextManager,
     private readonly cache: Cache,
     private readonly jwt: JwtService,
-    private readonly filesLockManager: FilesLockManager,
-    private readonly filesQueries: FilesQueries
+    private readonly filesLockManager: FilesLockManager
   ) {}
 
   getStatus(): { enabled: boolean } {
     return { enabled: configuration.applications.files.onlyoffice.enabled }
   }
 
-  async getSettings(user: UserModel, space: SpaceEnv, mode: FILE_MODE, req: FastifySpaceRequest): Promise<OnlyOfficeReqConfig> {
+  async getSettings(user: UserModel, space: SpaceEnv, mode: FILE_MODE, req: FastifySpaceRequest): Promise<OnlyOfficeReqDto> {
     if (!(await isPathExists(space.realPath))) {
       throw new HttpException('Document not found', HttpStatus.NOT_FOUND)
     }
@@ -87,17 +97,15 @@ export class FilesOnlyOfficeManager {
       }
     }
     const isMobile: boolean = this.mobileRegex.test(req.headers['user-agent'])
-    const fileProps: FileProps = await getProps(space.realPath, space.dbFile.path)
-    const fileId: string = ((await this.filesQueries.getSpaceFileId(fileProps, space.dbFile)) || fileProps.id).toString()
-    const userToken: string = await this.genUserToken(user)
-    const fileUrl = this.getDocumentUrl(space, userToken)
-    const callBackUrl = this.getCallBackUrl(space, userToken, fileId)
-    const config: OnlyOfficeReqConfig = await this.genConfiguration(user, space, mode, fileId, fileUrl, fileExtension, callBackUrl, isMobile)
+    const authToken: string = await this.genAuthToken(user)
+    const fileUrl = this.buildUrl(API_ONLY_OFFICE_DOCUMENT, space.url, authToken)
+    const callBackUrl = this.buildUrl(API_ONLY_OFFICE_CALLBACK, space.url, authToken)
+    const config: OnlyOfficeReqDto = await this.genConfiguration(user, space, mode, fileUrl, fileExtension, callBackUrl, isMobile)
     config.config.token = await this.genPayloadToken(config.config)
     return config
   }
 
-  async callBack(user: UserModel, space: SpaceEnv, token: string, fileId: string) {
+  async callBack(user: UserModel, space: SpaceEnv, token: string) {
     const callBackData: OnlyOfficeCallBack = await this.jwt.verifyAsync(token, { secret: configuration.applications.files.onlyoffice.secret })
     try {
       switch (callBackData.status) {
@@ -113,7 +121,7 @@ export class FilesOnlyOfficeManager {
             this.logger.debug(`document was edited but not saved (let's do it) : ${space.url}`)
             await this.saveDocument(space, callBackData.url)
           }
-          await this.removeDocumentKey(fileId, space)
+          await this.removeDocumentKey(space)
           break
         case 3:
           this.logger.error(`document cannot be saved, an error has occurred (try to save it) : ${space.url}`)
@@ -121,7 +129,7 @@ export class FilesOnlyOfficeManager {
           break
         case 4:
           await this.removeFileLock(user.id, space)
-          await this.removeDocumentKey(fileId, space)
+          await this.removeDocumentKey(space)
           this.logger.debug(`document was closed with no changes : ${space.url}`)
           break
         case 6:
@@ -146,12 +154,11 @@ export class FilesOnlyOfficeManager {
     user: UserModel,
     space: SpaceEnv,
     mode: FILE_MODE,
-    fileId: string,
     fileUrl: string,
     fileExtension: string,
     callBackUrl: string,
     isMobile: boolean
-  ): Promise<OnlyOfficeReqConfig> {
+  ): Promise<OnlyOfficeReqDto> {
     const documentType = ONLY_OFFICE_EXTENSIONS.EDITABLE.get(fileExtension) || ONLY_OFFICE_EXTENSIONS.VIEWABLE.get(fileExtension)
     return {
       documentServerUrl: this.externalOnlyOfficeServer || `${this.contextManager.headerOriginUrl()}${ONLY_OFFICE_INTERNAL_URI}`,
@@ -163,7 +170,7 @@ export class FilesOnlyOfficeManager {
         document: {
           title: path.basename(space.relativeUrl),
           fileType: fileExtension,
-          key: await this.getDocumentKey(fileId),
+          key: await this.getDocumentKey(space),
           permissions: {
             download: true,
             edit: mode === FILE_MODE.EDIT,
@@ -205,22 +212,18 @@ export class FilesOnlyOfficeManager {
     }
   }
 
-  private getDocumentUrl(space: SpaceEnv, token: string): string {
-    // user refresh token is used here for long session
-    return `${this.contextManager.headerOriginUrl()}${API_FILES_ONLY_OFFICE_DOCUMENT}/${space.url}?${ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME}=${token}`
-  }
-
-  private getCallBackUrl(space: SpaceEnv, token: string, fileId: string): string {
-    // user refresh token is used here for long session
-    return `${this.contextManager.headerOriginUrl()}${API_FILES_ONLY_OFFICE_CALLBACK}/${space.url}?fid=${fileId}&${ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME}=${token}`
+  private buildUrl(basePath: string, spaceUrl: string, token: string): string {
+    const url = new URL(`${basePath}/${spaceUrl}`, this.contextManager.headerOriginUrl())
+    url.searchParams.set(ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME, token)
+    return url.toString()
   }
 
   private genPayloadToken(payload: OnlyOfficeConfig | OnlyOfficeConvertForm): Promise<string> {
     return this.jwt.signAsync(payload, { secret: configuration.applications.files.onlyoffice.secret, expiresIn: 60 })
   }
 
-  private genUserToken(user: UserModel): Promise<string> {
-    // use refresh expiration to allow long session
+  private genAuthToken(user: UserModel): Promise<string> {
+    // use refresh expiration to allow long sessions
     return this.jwt.signAsync(
       {
         identity: {
@@ -247,12 +250,12 @@ export class FilesOnlyOfficeManager {
         await this.removeFileLock(parseInt(action.userid), space)
       } else if (action.type === 1) {
         // connect
-        await this.genFileLock(user, space)
+        await this.createFileLock(user, space)
       }
     }
   }
 
-  private async genFileLock(user: UserModel, space: SpaceEnv): Promise<void> {
+  private async createFileLock(user: UserModel, space: SpaceEnv): Promise<void> {
     const [ok, _fileLock] = await this.filesLockManager.create(
       user,
       space.dbFile,
@@ -261,12 +264,12 @@ export class FilesOnlyOfficeManager {
         lockroot: null,
         locktoken: null,
         lockscope: LOCK_SCOPE.SHARED,
-        owner: `OnlyOffice - ${user.fullName} (${user.email})`
+        owner: `${ONLY_OFFICE_OWNER_LOCK} - ${user.fullName} (${user.email})`
       } satisfies WebDAVLock,
       this.expiration
     )
     if (!ok) {
-      throw new Error('document is locked')
+      throw new HttpException('The file is locked', HttpStatus.LOCKED)
     }
   }
 
@@ -278,21 +281,21 @@ export class FilesOnlyOfficeManager {
     }
   }
 
-  private async removeDocumentKey(fileId: string, space: SpaceEnv): Promise<void> {
+  private async removeDocumentKey(space: SpaceEnv): Promise<void> {
     if (!(await this.filesLockManager.isPathLocked(space.dbFile))) {
-      const cacheKey = this.getCacheKey(fileId)
+      const cacheKey = this.getCacheKey(space.dbFile)
       const r = await this.cache.del(cacheKey)
       this.logger.debug(`${this.removeDocumentKey.name} - ${cacheKey} ${r ? '' : 'not'} removed`)
     }
   }
 
-  private async getDocumentKey(fileId: string): Promise<string> {
-    const cacheKey = this.getCacheKey(fileId)
+  private async getDocumentKey(space: SpaceEnv): Promise<string> {
+    const cacheKey = this.getCacheKey(space.dbFile)
     const existingDocKey: string = await this.cache.get(cacheKey)
     if (existingDocKey) {
       return existingDocKey
     }
-    const docKey = generateShortUUID(64)
+    const docKey = genEtag(null, space.realPath, false)
     await this.cache.set(cacheKey, docKey, this.expiration)
     this.logger.debug(`${this.getDocumentKey.name} - ${cacheKey} (${docKey}) created`)
     return docKey
@@ -304,11 +307,11 @@ export class FilesOnlyOfficeManager {
       ?md5=duFHKC-5d47s-RRcYn3hAw&expires=1739400549&shardkey=-33120641&filename=output.pptx
      */
     const urlParams = new URLSearchParams(url.split('?').at(-1))
-    // it is not the md5 of the file but a md5 generated by the combination of the elements of the url
+    // it is not the md5 of the file but the md5 generated by the combination of the elements of the url
     const md5: string = urlParams.get('md5')
     const tmpFilePath = await uniqueFilePathFromDir(path.join(os.tmpdir(), `${md5}-${urlParams.get('filename')}`))
 
-    // convert remote file to the local file with the current extension if these extensions aren't equal
+    // convert the remote file to the local file with the current extension if these extensions aren't equal
     const localExtension = path.extname(space.realPath).slice(1)
     const remoteExtension = path.extname(urlParams.get('filename')).slice(1)
 
@@ -339,18 +342,17 @@ export class FilesOnlyOfficeManager {
 
     // try to verify the downloaded size
     const contentLength = parseInt(res.headers['content-length'], 10)
-    if (!isNaN(contentLength)) {
-      if (contentLength === 0) {
-        this.logger.debug(`${this.saveDocument.name} - content length is 0 : ${space.url}`)
-        return
-      }
+    if (!isNaN(contentLength) && contentLength !== 0) {
       const tmpFileSize = await fileSize(tmpFilePath)
       if (tmpFileSize !== contentLength) {
         throw new Error(`document size differs (${tmpFileSize} != ${contentLength})`)
       }
+    } else if (contentLength === 0) {
+      this.logger.warn(`${this.saveDocument.name} - content length is 0 : ${space.url}`)
     }
-    // copy contents to avoid inode changes (fileId in some cases)
+    // copy contents to avoid inode changes (`file.id` in some cases)
     try {
+      // todo: versioning
       await copyFileContent(tmpFilePath, space.realPath)
       await removeFiles(tmpFilePath)
     } catch (e) {
@@ -389,7 +391,7 @@ export class FilesOnlyOfficeManager {
     }
   }
 
-  private getCacheKey(fileId: string): string {
-    return `${CACHE_ONLY_OFFICE}|${fileId}`
+  private getCacheKey(dbFile: FileDBProps): string {
+    return `${ONLY_OFFICE_CACHE_KEY}|${genUniqHashFromFileDBProps(dbFile)}`
   }
 }

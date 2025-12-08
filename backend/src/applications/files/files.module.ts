@@ -5,18 +5,17 @@
  */
 
 import { Module } from '@nestjs/common'
+import { configuration } from '../../configuration/config.environment'
 import { FilesIndexerMySQL } from './adapters/files-indexer-mysql.service'
-import { FilesOnlyOfficeController } from './files-only-office.controller'
 import { FilesTasksController } from './files-tasks.controller'
 import { FilesController } from './files.controller'
-import { FilesOnlyOfficeGuard } from './guards/files-only-office.guard'
-import { FilesOnlyOfficeStrategy } from './guards/files-only-office.strategy'
 import { FilesIndexer } from './models/files-indexer'
+import { CollaboraOnlineModule } from './modules/collabora-online/collabora-online.module'
+import { OnlyOfficeModule } from './modules/only-office/only-office.module'
 import { FilesContentManager } from './services/files-content-manager.service'
 import { FilesLockManager } from './services/files-lock-manager.service'
 import { FilesManager } from './services/files-manager.service'
 import { FilesMethods } from './services/files-methods.service'
-import { FilesOnlyOfficeManager } from './services/files-only-office-manager.service'
 import { FilesParser } from './services/files-parser.service'
 import { FilesQueries } from './services/files-queries.service'
 import { FilesRecents } from './services/files-recents.service'
@@ -25,7 +24,11 @@ import { FilesSearchManager } from './services/files-search-manager.service'
 import { FilesTasksManager } from './services/files-tasks-manager.service'
 
 @Module({
-  controllers: [FilesController, FilesTasksController, FilesOnlyOfficeController],
+  imports: [
+    ...(configuration.applications.files.onlyoffice.enabled ? [OnlyOfficeModule] : []),
+    ...(configuration.applications.files.collabora.enabled ? [CollaboraOnlineModule] : [])
+  ],
+  controllers: [FilesController, FilesTasksController],
   providers: [
     FilesMethods,
     FilesManager,
@@ -34,9 +37,6 @@ import { FilesTasksManager } from './services/files-tasks-manager.service'
     FilesTasksManager,
     FilesScheduler,
     FilesRecents,
-    FilesOnlyOfficeManager,
-    FilesOnlyOfficeGuard,
-    FilesOnlyOfficeStrategy,
     FilesParser,
     FilesContentManager,
     { provide: FilesIndexer, useClass: FilesIndexerMySQL },

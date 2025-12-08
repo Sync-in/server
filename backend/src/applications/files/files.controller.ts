@@ -39,10 +39,11 @@ import { FastifySpaceRequest } from '../spaces/interfaces/space-request.interfac
 import { SpaceEnv } from '../spaces/models/space-env.model'
 import { GetUser } from '../users/decorators/user.decorator'
 import { UserModel } from '../users/models/user.model'
-import { FILE_OPERATION } from './constants/operations'
+import { FILE_OPERATION, FORCE_AS_FILE_OWNER } from './constants/operations'
 import { FILES_ROUTE } from './constants/routes'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto, SearchFilesDto } from './dto/file-operations.dto'
 import { FileLockProps } from './interfaces/file-props.interface'
+import { FileSettings } from './interfaces/file-settings.interface'
 import { FileTask } from './models/file-task'
 import { FileContent } from './schemas/file-content.interface'
 import { FileRecent } from './schemas/file-recent.interface'
@@ -145,9 +146,9 @@ export class FilesController {
   async unlock(
     @GetUser() user: UserModel,
     @GetSpace() space: SpaceEnv,
-    @Query('forceAsOwner', new ParseBoolPipe({ optional: true })) forceAsOwner?: boolean
+    @Query(FORCE_AS_FILE_OWNER, new ParseBoolPipe({ optional: true })) forceAsFileOwner?: boolean
   ): Promise<void> {
-    return this.filesMethods.unlock(user, space, forceAsOwner)
+    return this.filesMethods.unlock(user, space, forceAsFileOwner)
   }
 
   @Unlock(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UNLOCK_REQUEST}/*`)
@@ -196,6 +197,14 @@ export class FilesController {
   @Delete(`${FILES_ROUTE.TASK_OPERATION}/*`)
   async deleteAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<FileTask> {
     return this.filesTasksManager.createTask(FILE_OPERATION.DELETE, user, space, null, this.filesMethods.delete.name)
+  }
+
+  // SETTINGS
+
+  @Get(FILES_ROUTE.SETTINGS)
+  @SkipSpaceGuard()
+  filesSettings(): FileSettings {
+    return this.filesMethods.fileSettings()
   }
 
   // RECENT FILES

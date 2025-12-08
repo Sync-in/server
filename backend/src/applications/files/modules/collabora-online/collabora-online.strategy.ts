@@ -8,19 +8,19 @@ import { Injectable } from '@nestjs/common'
 import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { PinoLogger } from 'nestjs-pino'
 import { ExtractJwt, Strategy } from 'passport-jwt'
-import { AuthTokenAccessStrategy } from '../../../authentication/guards/auth-token-access.strategy'
-import { JwtPayload } from '../../../authentication/interfaces/jwt-payload.interface'
-import { configuration } from '../../../configuration/config.environment'
-import { UserModel } from '../../users/models/user.model'
-import { ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME } from '../constants/only-office'
+import { AuthTokenAccessStrategy } from '../../../../authentication/guards/auth-token-access.strategy'
+import { JwtPayload } from '../../../../authentication/interfaces/jwt-payload.interface'
+import { configuration } from '../../../../configuration/config.environment'
+import { UserModel } from '../../../users/models/user.model'
+import { COLLABORA_TOKEN_QUERY_PARAM_NAME } from './collabora-online.constants'
 
 @Injectable()
-export class FilesOnlyOfficeStrategy extends PassportStrategy(Strategy, 'filesOnlyOfficeToken') implements AbstractStrategy {
+export class CollaboraOnlineStrategy extends PassportStrategy(Strategy, 'filesCollaboraOnlineToken') implements AbstractStrategy {
   constructor(private readonly logger: PinoLogger) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         AuthTokenAccessStrategy.extractJWTFromCookie,
-        ExtractJwt.fromUrlQueryParameter(ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME)
+        ExtractJwt.fromUrlQueryParameter(COLLABORA_TOKEN_QUERY_PARAM_NAME)
       ]),
       secretOrKey: configuration.auth.token.access.secret,
       ignoreExpiration: false,
