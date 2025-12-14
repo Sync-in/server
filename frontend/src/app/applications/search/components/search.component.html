@@ -5,39 +5,41 @@
   -->
 
 <div class="app-top-menu">
-  <div class="input-group" style="width: 45%;">
-    <button (click)="doSearch()" [disabled]="searchContent().length < minCharsToSearch" class="btn btn-sm btn-secondary" role="button" type="button">
-      <fa-icon [icon]="loading ? icons.faSpinner : icons.SEARCH_ICON" [animation]="loading ? 'spin' : null"></fa-icon>
-    </button>
-    <input [value]="searchContent()"
-           (input)="setCurrentSearch($event)"
-           [placeholder]="(this.store.currentSearch().fullText ? 'Search for content' : 'Search for files')|translate:locale.language"
-           (keyup.enter)="doSearch()"
-           (keyup.escape)="clearSearch()"
-           class="flex-fill form-control form-control-sm"
-           name="search"
-           type="text"
-           style="padding-right: 24px"
-           appAutofocus
-           autocomplete>
-    @if (searchContent()) {
-      <span class="cursor-pointer" style="position: absolute; right: 40px; top: 3px; z-index: 1001; font-size: 1rem">
+  <div class="col-12 col-md-6 col-lg-4">
+    <div class="input-group">
+      <button (click)="doSearch()" [disabled]="searchContent().length < minCharsToSearch" class="btn btn-sm btn-secondary" role="button" type="button">
+        <fa-icon [icon]="loading ? icons.faSpinner : icons.SEARCH_ICON" [animation]="loading ? 'spin' : null"></fa-icon>
+      </button>
+      <input [value]="searchContent()"
+             (input)="setCurrentSearch($event)"
+             [placeholder]="(this.store.currentSearch().fullText ? 'Search for content' : 'Search for files')|translate:locale.language"
+             (keyup.enter)="doSearch()"
+             (keyup.escape)="clearSearch()"
+             class="flex-fill form-control form-control-sm"
+             name="search"
+             type="text"
+             style="padding-right: 2rem"
+             appAutofocus
+             autocomplete>
+      @if (searchContent()) {
+        <span class="cursor-pointer" style="position: absolute; right: 40px; top: 3px; z-index: 1001; font-size: 1rem">
         <fa-icon (click)="clearSearch()" [icon]="icons.faTimes" role="button"></fa-icon>
       </span>
-    }
-    <button [ngModel]="this.store.currentSearch().fullText"
-            (ngModelChange)="toggleFullText()"
-            [tooltip]="'Search for content'|translate:locale.language"
-            placement="bottom"
-            class="btn btn-sm btn-outline-secondary-alt fs-xxs"
-            role="button"
-            type="button"
-            btnCheckbox >
-      <fa-icon [icon]="icons.faFont"></fa-icon>
-    </button>
+      }
+      <button [ngModel]="this.store.currentSearch().fullText"
+              (ngModelChange)="toggleFullText()"
+              [tooltip]="'Search for content'|translate:locale.language"
+              placement="bottom"
+              class="btn btn-sm btn-outline-secondary-alt fs-xxs"
+              role="button"
+              type="button"
+              btnCheckbox>
+        <fa-icon [icon]="icons.faFont"></fa-icon>
+      </button>
+    </div>
   </div>
   <!--Start Filter Button-->
-  <app-input-filter class="d-none d-sm-block ms-auto"></app-input-filter>
+  <app-input-filter class="d-none d-sm-none d-md-block d-lg-block ms-auto"></app-input-filter>
   <!--End Filter Button-->
 </div>
 <div appAutoResize class="fs-xs">
