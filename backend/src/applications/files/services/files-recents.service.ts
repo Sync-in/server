@@ -32,6 +32,10 @@ export class FilesRecents {
   }
 
   async updateRecents(user: UserModel, space: SpaceEnv, files: FileProps[]): Promise<void> {
+    if (space.inTrashRepository) {
+      // Ignore trashed files
+      return
+    }
     const timestamp = currentTimeStamp(null, true) - convertHumanTimeToMs(this.keepTime)
     const location = this.getLocation(user, space, files)
     // only store files, ignore dirs
