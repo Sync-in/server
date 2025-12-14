@@ -16,7 +16,7 @@ import { VgOverlayPlayModule } from '@videogular/ngx-videogular/overlay-play'
   imports: [VgCoreModule, VgControlsModule, VgOverlayPlayModule, VgBufferingModule],
   template: `
     <vg-player [style.height.px]="currentHeight()">
-      <video [vgMedia]="$any(media)" #media preload="none" controls>
+      <video [vgMedia]="$any(media)" #media preload="none" autoplay controls>
         <source [src]="fileUrl()" type="video/webm" />
       </video>
     </vg-player>
