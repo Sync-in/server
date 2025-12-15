@@ -164,14 +164,16 @@
   </tabset>
 </div>
 <div class="modal-footer">
-  @if (!tabView && space.id && user.isAdmin) {
-    <button (click)="confirmDeletion = true"
-            [disabled]="confirmDeletion"
-            class="btn btn-sm btn-danger" type="button" l10nTranslate>
-      Remove
-    </button>
+  @if (!tabView && space.id) {
+    @if (user.isAdmin) {
+      <button (click)="confirmDeletion = true"
+              [disabled]="confirmDeletion"
+              class="btn btn-sm btn-danger" type="button" l10nTranslate>
+        Remove
+      </button>
+    }
     @if (!space.enabled) {
-      <div class="text-danger white-space-truncate fs-sm mx-auto">
+      <div class="text-danger white-space-truncate fs-sm {{user.isAdmin ? 'mx-auto' : 'me-auto'}}">
         <span l10nTranslate>Space and data will be deleted in</span>
         <span class="fw-bold">
           @if (space.disabledAt) {
