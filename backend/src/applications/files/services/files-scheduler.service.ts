@@ -36,7 +36,25 @@ export class FilesScheduler {
     private readonly filesContentManager: FilesContentManager
   ) {}
 
-  @Timeout(30000)
+  @Timeout(30_000)
+  async onStartup(): Promise<void> {
+    try {
+      await this.cleanupInterruptedTasks()
+      await this.clearRecentFiles()
+    } catch (e) {
+      this.logger.error(e)
+    }
+  }
+
+  @Timeout(180_000)
+  async afterStartup(): Promise<void> {
+    try {
+      await this.indexContentFiles()
+    } catch (e) {
+      this.logger.error(e)
+    }
+  }
+
   async cleanupInterruptedTasks(): Promise<void> {
     this.logger.log(`${this.cleanupInterruptedTasks.name} - START`)
     try {
@@ -93,7 +111,6 @@ export class FilesScheduler {
     this.logger.log(`${this.cleanupUserTaskFiles.name} - END`)
   }
 
-  @Timeout(30000)
   @Cron(CronExpression.EVERY_8_HOURS)
   async clearRecentFiles(): Promise<void> {
     this.logger.log(`${this.clearRecentFiles.name} - START`)
@@ -120,7 +137,6 @@ export class FilesScheduler {
     this.logger.log(`${this.clearRecentFiles.name} - ${nbCleared} records cleared - END`)
   }
 
-  @Timeout(120000)
   @Cron(CronExpression.EVERY_4_HOURS)
   async indexContentFiles(): Promise<void> {
     // Conditional loading of file content indexing

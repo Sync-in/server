@@ -18,7 +18,11 @@ export class SpacesScheduler {
     private readonly sharesManager: SharesManager
   ) {}
 
-  @Timeout(60000)
+  @Timeout(60_000)
+  async onStartup() {
+    await this.updateQuotas()
+  }
+
   @Cron(CronExpression.EVERY_HOUR)
   async updateQuotas() {
     this.logger.log('Update Personal Quotas - START')
