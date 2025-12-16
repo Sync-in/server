@@ -1,6 +1,5 @@
 
-## [1.9.4](https://github.com/Sync-in/server/compare/v1.9.3...v1.9.4) (2025-12-16)
-
+## [1.9.5](https://github.com/Sync-in/server/compare/v1.9.3...v1.9.5) (2025-12-16)
 
 ### Bug Fixes
 
