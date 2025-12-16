@@ -1,4 +1,17 @@
 
+## [1.9.4](https://github.com/Sync-in/server/compare/v1.9.3...v1.9.4) (2025-12-16)
+
+
+### Bug Fixes
+
+* **backend:files:** skip adding recents for trashed files ([c445196](https://github.com/Sync-in/server/commit/c445196914b2d351fba9218698a24496b1d6036c))
+* **backend:schedulers:** resolve scheduled methods being skipped because of @Timeout decorator overlap ([50f4140](https://github.com/Sync-in/server/commit/50f4140a7b0b478e6b499ea8884b43f13595bb71))
+* **frontend:files:** enable autoplay for video in media viewer component ([20fe25f](https://github.com/Sync-in/server/commit/20fe25fba00987994076d09489febd5593e08cef))
+* **frontend:files:** remove hidden class from buttons for consistent visibility across breakpoints ([a60538a](https://github.com/Sync-in/server/commit/a60538ad01c675dacdac7ed4d80ca2bdf5f369ba))
+* **frontend:files:** update file metadata timestamps on save and align OnlyOffice state change handlers ([db768e1](https://github.com/Sync-in/server/commit/db768e14452f4712df9f443350c214e0700b7270))
+* **frontend:search:** improve search input layout and update filter button visibility for responsiveness ([09ebce6](https://github.com/Sync-in/server/commit/09ebce612fa2d72699a4d60bf9896f8e3c0fc4e4))
+* **frontend:spaces:** show disabled space message to space managers ([f8bcdf7](https://github.com/Sync-in/server/commit/f8bcdf7fdd4b25abc2ba4b74715adbb0ae04a3e3))
+
 ## [1.9.3](https://github.com/Sync-in/server/compare/v1.9.1...v1.9.3) (2025-12-07)
 
 ### Security Fixes
