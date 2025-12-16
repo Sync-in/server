@@ -3,13 +3,14 @@ on:
   push:
     tags:
       - 'v*.*.*'
+
+permissions:
+  contents: write
+  id-token: write
+
 jobs:
   create-release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      id-token: write
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,10 +44,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: 'https://registry.npmjs.org/'
+          registry-url: 'https://registry.npmjs.org'
       - name: Publish to npmjs.org
         working-directory: release/sync-in-server
-        run: npm publish --provenance
+        run: npm publish
 
       - name: Extract changelog for current version
         id: changelog
