@@ -124,7 +124,7 @@ export class FilesScheduler {
           WHERE ${fk} IS NOT NULL
             AND id NOT IN (SELECT id
                            FROM (SELECT id,
-                                        ROW_NUMBER() OVER (PARTITION BY ${fk} ORDER BY ${filesRecents.mtime}) AS rn
+                                        ROW_NUMBER() OVER (PARTITION BY ${fk} ORDER BY ${filesRecents.mtime} DESC) AS rn
                                  FROM ${filesRecents}
                                  WHERE ${fk} IS NOT NULL) AS ranked
                            WHERE ranked.rn <= ${keepNumber})
