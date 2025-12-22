@@ -99,6 +99,7 @@ export class AuthService {
             this.accessExpiration = r.token.access_expiration
             this.refreshExpiration = r.token.refresh_expiration
             this.userService.initUser(r.user)
+            this.setServerConfig(r.server)
             if (r?.client_token_update) {
               // update client token
               this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_UPDATE, r.client_token_update)
