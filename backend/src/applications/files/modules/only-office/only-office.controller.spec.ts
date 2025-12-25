@@ -53,10 +53,10 @@ describe(OnlyOfficeController.name, () => {
       const expected = { config: 'ok', mode: FILE_MODE.VIEW }
       filesOnlyOfficeManagerMock.getSettings.mockResolvedValue(expected)
 
-      const result = await controller.onlyOfficeSettings(undefined as any, req)
+      const result = await controller.onlyOfficeSettings(req)
 
       expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledTimes(1)
-      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, FILE_MODE.VIEW, req)
+      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, req)
       expect(result).toBe(expected)
     })
 
@@ -67,9 +67,9 @@ describe(OnlyOfficeController.name, () => {
       const expected = { config: 'ok', mode: FILE_MODE.EDIT }
       filesOnlyOfficeManagerMock.getSettings.mockResolvedValue(expected)
 
-      const result = await controller.onlyOfficeSettings(FILE_MODE.EDIT, req)
+      const result = await controller.onlyOfficeSettings(req)
 
-      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, FILE_MODE.EDIT, req)
+      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, req)
       expect(result).toBe(expected)
     })
   })

@@ -43,7 +43,7 @@ import { StoreService } from '../../../store/store.service'
 import { FilesLockDialogComponent } from '../components/dialogs/files-lock-dialog.component'
 import { FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
 import { FilesViewerDialogComponent } from '../components/dialogs/files-viewer-dialog.component'
-import { SHORT_MIME } from '../files.constants'
+import { MAX_TEXT_FILE_SIZE, SHORT_MIME } from '../files.constants'
 import { FileContentModel } from '../models/file-content.model'
 import { FileRecentModel } from '../models/file-recent.model'
 import { FileModel } from '../models/file.model'
@@ -266,7 +266,7 @@ export class FilesService {
 
         let hookedShortMime: string
         try {
-          hookedShortMime = await this.viewerHook(mode, file)
+          hookedShortMime = await this.viewerHook(file, isWriteable)
           if (isLockedByOther) {
             this.layout.sendNotification('info', 'The file is locked', file.lock.owner)
           }
@@ -293,19 +293,16 @@ export class FilesService {
     })
   }
 
-  private async viewerHook(mode: FILE_MODE, file: FileModel): Promise<string> {
-    const hasEnabledOfficeEditor =
-      this.store.server().applications.files.collaboraOnline || this.store.server().applications.files.onlyOffice || false
-    if (file.shortMime === SHORT_MIME.DOCUMENT && !hasEnabledOfficeEditor) {
-      if (file.mime.startsWith('text-')) {
+  private async viewerHook(file: FileModel, isWriteable = false): Promise<string> {
+    if (isWriteable && file.shortMime === SHORT_MIME.PDF && file.isEditable) {
+      return SHORT_MIME.DOCUMENT
+    }
+    if (file.shortMime === SHORT_MIME.TEXT) {
+      if (file.size < MAX_TEXT_FILE_SIZE) {
         return SHORT_MIME.TEXT
       }
+      // Download if too large
       throw new Error('No editor found')
-    }
-    if (file.shortMime === SHORT_MIME.PDF) {
-      if (mode === FILE_MODE.EDIT && this.store.server().applications.files.onlyOffice) {
-        return SHORT_MIME.DOCUMENT
-      }
     }
     return file.shortMime
   }

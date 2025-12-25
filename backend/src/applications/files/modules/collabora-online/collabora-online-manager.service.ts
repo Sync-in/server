@@ -38,7 +38,7 @@ import {
   COLLABORA_HEADERS,
   COLLABORA_INTERNAL_URI,
   COLLABORA_LOCK_ACTION,
-  COLLABORA_ONLINE_SUPPORTED_EXTENSIONS,
+  COLLABORA_ONLINE_EXTENSIONS,
   COLLABORA_OWNER_LOCK,
   COLLABORA_TOKEN_QUERY_PARAM_NAME,
   COLLABORA_URI,
@@ -63,12 +63,12 @@ export class CollaboraOnlineManager {
   async getSettings(user: UserModel, space: SpaceEnv): Promise<CollaboraOnlineReqDto> {
     await this.checkSpace(space)
     const fileExtension = path.extname(space.realPath).slice(1)
-    if (!COLLABORA_ONLINE_SUPPORTED_EXTENSIONS.has(fileExtension)) {
+    if (!COLLABORA_ONLINE_EXTENSIONS.has(fileExtension)) {
       throw new HttpException('Document not supported', HttpStatus.BAD_REQUEST)
     }
     const mode: FILE_MODE = haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY) ? FILE_MODE.EDIT : FILE_MODE.VIEW
     if (mode === FILE_MODE.EDIT) {
-      // check lock conflicts
+      // Check lock conflicts
       try {
         await this.filesLockManager.checkConflicts(space.dbFile, DEPTH.RESOURCE, { userId: user.id, lockScope: LOCK_SCOPE.SHARED })
       } catch {

@@ -24,7 +24,7 @@ export enum COLLABORA_LOCK_ACTION {
   REFRESH_LOCK = 'REFRESH_LOCK'
 }
 
-export const COLLABORA_ONLINE_SUPPORTED_EXTENSIONS = new Set<string>([
+export const COLLABORA_ONLINE_EXTENSIONS = new Set<string>([
   // ─────────────
   // WORD (Writer)
   // ─────────────
@@ -37,10 +37,11 @@ export const COLLABORA_ONLINE_SUPPORTED_EXTENSIONS = new Set<string>([
   'odt',
   'ott',
   'rtf',
-  'txt',
-  'html',
-  'htm',
   'fodt',
+
+  // StarOffice / legacy
+  'sxw',
+  'stw',
 
   // ─────────────
   // CELL (Calc)
@@ -55,6 +56,10 @@ export const COLLABORA_ONLINE_SUPPORTED_EXTENSIONS = new Set<string>([
   'csv',
   'fods',
 
+  // StarOffice
+  'sxc',
+  'sdc',
+
   // ─────────────
   // SLIDE (Impress)
   // ─────────────
@@ -67,8 +72,12 @@ export const COLLABORA_ONLINE_SUPPORTED_EXTENSIONS = new Set<string>([
   'otp',
   'fodp',
 
+  // StarOffice
+  'sxi',
+  'sdd',
+
   // ─────────────
-  // PDF (view / annotations)
+  // DRAW / DIAGRAM
   // ─────────────
-  'pdf'
+  'odg'
 ])

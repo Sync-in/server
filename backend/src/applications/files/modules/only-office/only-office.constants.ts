@@ -10,128 +10,95 @@ export const ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME = 'token' as const
 export const ONLY_OFFICE_OWNER_LOCK = 'OnlyOffice' as const
 export const ONLY_OFFICE_CACHE_KEY = 'foffice' as const
 
-export const ONLY_OFFICE_EXTENSIONS = {
-  VIEWABLE: new Map<string, 'word' | 'cell' | 'slide' | 'pdf' | 'diagram'>([
-    // WORD
-    ['doc', 'word'],
-    ['docm', 'word'],
-    ['docx', 'word'],
-    ['dot', 'word'],
-    ['dotm', 'word'],
-    ['dotx', 'word'],
-    ['epub', 'word'],
-    ['fb2', 'word'],
-    ['fodt', 'word'],
-    ['gdoc', 'word'],
-    ['htm', 'word'],
-    ['html', 'word'],
-    ['hwp', 'word'],
-    ['hwpx', 'word'],
-    ['mht', 'word'],
-    ['mhtml', 'word'],
-    ['odt', 'word'],
-    ['ott', 'word'],
-    ['pages', 'word'],
-    ['rtf', 'word'],
-    ['stw', 'word'],
-    ['sxw', 'word'],
-    ['wps', 'word'],
-    ['wpt', 'word'],
+export const ONLY_OFFICE_EXTENSIONS = new Map<string, 'word' | 'cell' | 'slide' | 'pdf' | 'diagram'>([
+  // ─────────────
+  // WORD
+  // ─────────────
+  ['doc', 'word'],
+  ['docm', 'word'],
+  ['docx', 'word'],
+  ['dot', 'word'],
+  ['dotm', 'word'],
+  ['dotx', 'word'],
+  ['epub', 'word'],
+  ['fb2', 'word'],
+  ['fodt', 'word'],
+  ['gdoc', 'word'],
+  ['hwp', 'word'],
+  ['hwpx', 'word'],
+  ['mht', 'word'],
+  ['mhtml', 'word'],
+  ['odt', 'word'],
+  ['ott', 'word'],
+  ['pages', 'word'],
+  ['rtf', 'word'],
+  ['stw', 'word'],
+  ['sxw', 'word'],
+  ['wps', 'word'],
+  ['wpt', 'word'],
 
-    // CELL
-    ['csv', 'cell'],
-    ['et', 'cell'],
-    ['ett', 'cell'],
-    ['fods', 'cell'],
-    ['gsheet', 'cell'],
-    ['numbers', 'cell'],
-    ['ods', 'cell'],
-    ['ots', 'cell'],
-    ['sxc', 'cell'],
-    ['xls', 'cell'],
-    ['xlsm', 'cell'],
-    ['xlsx', 'cell'],
-    ['xlt', 'cell'],
-    ['xltm', 'cell'],
-    ['xltx', 'cell'],
+  // ─────────────
+  // CELL
+  // ─────────────
+  ['csv', 'cell'],
+  ['et', 'cell'],
+  ['ett', 'cell'],
+  ['fods', 'cell'],
+  ['gsheet', 'cell'],
+  ['numbers', 'cell'],
+  ['ods', 'cell'],
+  ['ots', 'cell'],
+  ['sxc', 'cell'],
+  ['xls', 'cell'],
+  ['xlsb', 'cell'],
+  ['xlsm', 'cell'],
+  ['xlsx', 'cell'],
+  ['xlt', 'cell'],
+  ['xltm', 'cell'],
+  ['xltx', 'cell'],
 
-    // SLIDE
-    ['dps', 'slide'],
-    ['dpt', 'slide'],
-    ['fodp', 'slide'],
-    ['gslide', 'slide'],
-    ['key', 'slide'],
-    ['odg', 'slide'],
-    ['odp', 'slide'],
-    ['otp', 'slide'],
-    ['pot', 'slide'],
-    ['potm', 'slide'],
-    ['potx', 'slide'],
-    ['pps', 'slide'],
-    ['ppsm', 'slide'],
-    ['ppsx', 'slide'],
-    ['ppt', 'slide'],
-    ['pptm', 'slide'],
-    ['pptx', 'slide'],
-    ['sxi', 'slide'],
+  // ─────────────
+  // SLIDE
+  // ─────────────
+  ['dps', 'slide'],
+  ['dpt', 'slide'],
+  ['fodp', 'slide'],
+  ['gslide', 'slide'],
+  ['key', 'slide'],
+  ['odg', 'slide'],
+  ['odp', 'slide'],
+  ['otp', 'slide'],
+  ['pot', 'slide'],
+  ['potm', 'slide'],
+  ['potx', 'slide'],
+  ['pps', 'slide'],
+  ['ppsm', 'slide'],
+  ['ppsx', 'slide'],
+  ['ppt', 'slide'],
+  ['pptm', 'slide'],
+  ['pptx', 'slide'],
+  ['sxi', 'slide'],
 
-    // PDF
-    ['djvu', 'pdf'],
-    ['docxf', 'pdf'],
-    ['oform', 'pdf'],
-    ['oxps', 'pdf'],
-    ['pdf', 'pdf'],
-    ['xps', 'pdf'],
+  // ─────────────
+  // PDF
+  // ─────────────
+  ['djvu', 'pdf'],
+  ['docxf', 'pdf'],
+  ['oform', 'pdf'],
+  ['oxps', 'pdf'],
+  ['pdf', 'pdf'],
+  ['xps', 'pdf'],
 
-    // DIAGRAM
-    ['vsdm', 'diagram'],
-    ['vsdx', 'diagram'],
-    ['vssm', 'diagram'],
-    ['vssx', 'diagram'],
-    ['vstm', 'diagram'],
-    ['vstx', 'diagram']
-  ]),
-
-  EDITABLE: new Map<string, 'word' | 'cell' | 'slide' | 'pdf'>([
-    // WORD
-    ['doc', 'word'],
-    ['docm', 'word'],
-    ['docx', 'word'],
-    ['dotm', 'word'],
-    ['dotx', 'word'],
-    ['epub', 'word'],
-    ['fb2', 'word'],
-    ['html', 'word'],
-    ['odt', 'word'],
-    ['ott', 'word'],
-    ['rtf', 'word'],
-
-    // CELL
-    ['xlsb', 'cell'],
-    ['xlsm', 'cell'],
-    ['xls', 'cell'],
-    ['xlsx', 'cell'],
-    ['xltm', 'cell'],
-    ['xltx', 'cell'],
-    ['csv', 'cell'],
-    ['ods', 'cell'],
-    ['ots', 'cell'],
-
-    // SLIDE
-    ['potm', 'slide'],
-    ['potx', 'slide'],
-    ['ppsm', 'slide'],
-    ['ppsx', 'slide'],
-    ['pptm', 'slide'],
-    ['ppt', 'slide'],
-    ['pptx', 'slide'],
-    ['odp', 'slide'],
-    ['otp', 'slide'],
-
-    // PDF
-    ['pdf', 'pdf']
-  ])
-}
+  // ─────────────
+  // DIAGRAM
+  // ─────────────
+  ['vsdm', 'diagram'],
+  ['vsdx', 'diagram'],
+  ['vssm', 'diagram'],
+  ['vssx', 'diagram'],
+  ['vstm', 'diagram'],
+  ['vstx', 'diagram']
+])
 
 export const ONLY_OFFICE_CONVERT_EXTENSIONS = {
   ALLOW_AUTO: new Set(['doc', 'xls', 'ppt']),

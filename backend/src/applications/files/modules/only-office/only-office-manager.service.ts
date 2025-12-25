@@ -78,13 +78,12 @@ export class OnlyOfficeManager {
       throw new HttpException('Document must be a file', HttpStatus.BAD_REQUEST)
     }
     const fileExtension = path.extname(space.realPath).slice(1)
-    if (!ONLY_OFFICE_EXTENSIONS.VIEWABLE.has(fileExtension) && !ONLY_OFFICE_EXTENSIONS.EDITABLE.has(fileExtension)) {
+    if (!ONLY_OFFICE_EXTENSIONS.has(fileExtension)) {
       throw new HttpException('Document not supported', HttpStatus.BAD_REQUEST)
     }
-    const mode: FILE_MODE =
-      ONLY_OFFICE_EXTENSIONS.EDITABLE.has(fileExtension) && haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY) ? FILE_MODE.EDIT : FILE_MODE.VIEW
+    const mode: FILE_MODE = haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY) ? FILE_MODE.EDIT : FILE_MODE.VIEW
     if (mode === FILE_MODE.EDIT) {
-      // check lock conflicts
+      // Check lock conflicts
       try {
         await this.filesLockManager.checkConflicts(space.dbFile, DEPTH.RESOURCE, { userId: user.id, lockScope: LOCK_SCOPE.SHARED })
       } catch {
@@ -154,7 +153,7 @@ export class OnlyOfficeManager {
     callBackUrl: string,
     isMobile: boolean
   ): Promise<OnlyOfficeReqDto> {
-    const documentType = ONLY_OFFICE_EXTENSIONS.EDITABLE.get(fileExtension) || ONLY_OFFICE_EXTENSIONS.VIEWABLE.get(fileExtension)
+    const documentType = ONLY_OFFICE_EXTENSIONS.get(fileExtension)
     return {
       documentServerUrl: this.externalOnlyOfficeServer || `${this.contextManager.headerOriginUrl()}${ONLY_OFFICE_INTERNAL_URI}`,
       config: {

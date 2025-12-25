@@ -23,6 +23,7 @@ export const logoDarkUrl = `${assetsUrl}/logo-dark${mimeExtension}`
 export const logoUrl = `${assetsUrl}/logo${mimeExtension}`
 export const linkProtected = `${assetsUrl}/protected.png`
 export const defaultMimeUrl = getAssetsMimeUrl(mimeFile)
+export const MAX_TEXT_FILE_SIZE = 10485760 // 10 MB
 export const COMPRESSIBLE_MIMES = new Set(['application-gzip', 'application-zip', 'application-x-tar'])
 export const SHORT_MIME = {
   DOCUMENT: 'document',
