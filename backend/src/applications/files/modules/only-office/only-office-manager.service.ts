@@ -70,13 +70,9 @@ export class OnlyOfficeManager {
     private readonly filesLockManager: FilesLockManager
   ) {}
 
-  getStatus(): { enabled: boolean } {
-    return { enabled: configuration.applications.files.onlyoffice.enabled }
-  }
-
-  async getSettings(user: UserModel, space: SpaceEnv, mode: FILE_MODE, req: FastifySpaceRequest): Promise<OnlyOfficeReqDto> {
+  async getSettings(user: UserModel, space: SpaceEnv, req: FastifySpaceRequest): Promise<OnlyOfficeReqDto> {
     if (!(await isPathExists(space.realPath))) {
-      throw new HttpException('Document not found', HttpStatus.NOT_FOUND)
+      throw new HttpException('Document not found', HttpStatus.BAD_REQUEST)
     }
     if (await isPathIsDir(space.realPath)) {
       throw new HttpException('Document must be a file', HttpStatus.BAD_REQUEST)
@@ -85,9 +81,8 @@ export class OnlyOfficeManager {
     if (!ONLY_OFFICE_EXTENSIONS.VIEWABLE.has(fileExtension) && !ONLY_OFFICE_EXTENSIONS.EDITABLE.has(fileExtension)) {
       throw new HttpException('Document not supported', HttpStatus.BAD_REQUEST)
     }
-    if (mode === FILE_MODE.EDIT && (!ONLY_OFFICE_EXTENSIONS.EDITABLE.has(fileExtension) || !haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY))) {
-      mode = FILE_MODE.VIEW
-    }
+    const mode: FILE_MODE =
+      ONLY_OFFICE_EXTENSIONS.EDITABLE.has(fileExtension) && haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY) ? FILE_MODE.EDIT : FILE_MODE.VIEW
     if (mode === FILE_MODE.EDIT) {
       // check lock conflicts
       try {

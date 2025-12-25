@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Request, Res, StreamableFile, UseInterceptors } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request, Res, StreamableFile, UseInterceptors } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor'
 import { SPACE_OPERATION } from '../../../spaces/constants/spaces'
@@ -14,7 +14,6 @@ import { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.in
 import { SpaceEnv } from '../../../spaces/models/space-env.model'
 import { GetUser } from '../../../users/decorators/user.decorator'
 import { UserModel } from '../../../users/models/user.model'
-import { FILE_MODE } from '../../constants/operations'
 import { FilesMethods } from '../../services/files-methods.service'
 import { OnlyOfficeEnvironment } from './only-office-environment.decorator'
 import { OnlyOfficeManager } from './only-office-manager.service'
@@ -31,8 +30,8 @@ export class OnlyOfficeController {
 
   @Get(`${ONLY_OFFICE_ROUTE.SETTINGS}/*`)
   @UseInterceptors(ContextInterceptor)
-  onlyOfficeSettings(@Query('mode') mode: FILE_MODE = FILE_MODE.VIEW, @Request() req: FastifySpaceRequest): Promise<OnlyOfficeReqDto> {
-    return this.filesOnlyOfficeManager.getSettings(req.user, req.space, mode, req)
+  onlyOfficeSettings(@Request() req: FastifySpaceRequest): Promise<OnlyOfficeReqDto> {
+    return this.filesOnlyOfficeManager.getSettings(req.user, req.space, req)
   }
 
   @Get(`${ONLY_OFFICE_ROUTE.DOCUMENT}/*`)

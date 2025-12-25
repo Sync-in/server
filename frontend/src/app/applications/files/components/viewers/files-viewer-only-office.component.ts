@@ -4,8 +4,8 @@
  * See the LICENSE file for licensing details
  */
 
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
-import { Component, inject, input, Input, OnDestroy, OnInit } from '@angular/core'
+import { HttpClient, HttpErrorResponse } from '@angular/common/http'
+import { Component, inject, input, model, OnDestroy, OnInit } from '@angular/core'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { ONLY_OFFICE_OWNER_LOCK } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import type { OnlyOfficeReqDto } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.dtos'
@@ -41,9 +41,9 @@ import { OnlyOfficeComponent } from '../utils/only-office.component'
   `
 })
 export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
-  @Input({ required: true }) file: FileModel
-  @Input({ required: true }) mode: FILE_MODE
-  currentHeight = input<number>()
+  file = input.required<FileModel>()
+  isReadonly = model.required<boolean>()
+  currentHeight = input.required<number>()
   protected docId: string
   protected documentConfig: OnlyOfficeReqDto = null
   private readonly http = inject(HttpClient)
@@ -51,17 +51,18 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
   private readonly store = inject(StoreService)
 
   ngOnInit() {
-    this.docId = `viewer-doc-${this.file.id}`
-    this.http.get<OnlyOfficeReqDto>(`${API_ONLY_OFFICE_SETTINGS}/${this.file.path}`, { params: new HttpParams().set('mode', this.mode) }).subscribe({
+    this.docId = `viewer-doc-${this.file().id}`
+    this.http.get<OnlyOfficeReqDto>(`${API_ONLY_OFFICE_SETTINGS}/${this.file().path}`).subscribe({
       next: (data) => {
         if (!data) {
           this.layout.closeDialog()
           this.layout.sendNotification('error', 'Unable to open document', 'Settings are missing')
           return
         }
-        if (data.config.editorConfig.mode === FILE_MODE.EDIT) {
+        this.isReadonly.set(data.config.editorConfig.mode === FILE_MODE.VIEW)
+        if (!this.isReadonly()) {
           // Set lock on file
-          this.file.createLock({
+          this.file().createLock({
             owner: `${ONLY_OFFICE_OWNER_LOCK} - ${this.store.user.getValue().fullName} (${this.store.user.getValue().email})`,
             ownerLogin: this.store.user.getValue().login,
             isExclusive: false
@@ -73,14 +74,14 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
       },
       error: (e: HttpErrorResponse) => {
         this.layout.closeDialog()
-        this.layout.sendNotification('error', 'Unable to open document', e.error.message)
+        this.layout.sendNotification('error', 'Unable to open document', e.status === 404 ? 'Unable to load OnlyOffice editor' : e.error.message)
       }
     })
   }
 
   ngOnDestroy() {
     // Remove lock
-    this.file.removeLock()
+    this.file().removeLock()
   }
 
   loadError(e: { title: string; message: string }): void {
@@ -89,6 +90,6 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
   }
 
   onSave() {
-    this.file.updateHTimeAgo()
+    this.file().updateHTimeAgo()
   }
 }

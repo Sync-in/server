@@ -4,13 +4,12 @@
  * See the LICENSE file for licensing details
  */
 
-import { Controller, Get, HttpCode, HttpStatus, Post, Query, Request, Res, StreamableFile, UseInterceptors } from '@nestjs/common'
+import { Controller, Get, HttpCode, HttpStatus, Post, Request, Res, StreamableFile, UseInterceptors } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor'
 import { SPACE_OPERATION } from '../../../spaces/constants/spaces'
 import { OverrideSpacePermission } from '../../../spaces/decorators/space-override-permission.decorator'
 import { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface'
-import { FILE_MODE } from '../../constants/operations'
 import { FilesMethods } from '../../services/files-methods.service'
 import { CollaboraOnlineEnvironment } from './collabora-online-environment.decorator'
 import { CollaboraOnlineManager } from './collabora-online-manager.service'
@@ -28,8 +27,8 @@ export class CollaboraOnlineController {
 
   @Get(`${COLLABORA_ONLINE_ROUTE.SETTINGS}/*`)
   @UseInterceptors(ContextInterceptor)
-  collaboraOnlineSettings(@Request() req: FastifySpaceRequest, @Query('mode') mode: FILE_MODE = FILE_MODE.VIEW): Promise<CollaboraOnlineReqDto> {
-    return this.filesCollaboraOnlineService.getSettings(req.user, req.space, mode)
+  collaboraOnlineSettings(@Request() req: FastifySpaceRequest): Promise<CollaboraOnlineReqDto> {
+    return this.filesCollaboraOnlineService.getSettings(req.user, req.space)
   }
 
   @Get(`${COLLABORA_ONLINE_ROUTE.FILES}/:dbFileHash/${COLLABORA_ONLINE_ROUTE.CONTENTS}`)

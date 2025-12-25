@@ -26,9 +26,9 @@
       }
       @case (SHORT_MIME.DOCUMENT) {
         @if (store.fileSettings().editor.collaboraOnline) {
-          <app-files-viewer-collabora-online [currentHeight]="currentHeight" [file]="currentFile" [mode]="mode"></app-files-viewer-collabora-online>
+          <app-files-viewer-collabora-online [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-collabora-online>
         } @else if (store.fileSettings().editor.onlyOffice) {
-          <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile" [mode]="mode"></app-files-viewer-only-office>
+          <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
         } @else {
           <!--This case should never happen-->
           <div [style.height.px]="currentHeight" class="d-flex p-4" l10nTranslate>No editor found</div>

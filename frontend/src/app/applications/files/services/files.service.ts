@@ -258,25 +258,26 @@ export class FilesService {
     })
   }
 
-  async openViewerDialog(mode: FILE_MODE, file: FileModel, directoryFiles: FileModel[], permissions: string) {
+  async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string) {
     this.http.head(file.dataUrl).subscribe({
       next: async () => {
+        // This check is only used for the text viewer; other viewers are read-only or enforce permissions on the backend.
+        const isLockedByOther = file?.lock?.isExclusive && file.lock?.ownerLogin !== this.store.user.getValue().login
+        const isWriteable = !isLockedByOther && permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
+        const mode: FILE_MODE = isWriteable ? FILE_MODE.EDIT : FILE_MODE.VIEW
+
         let hookedShortMime: string
         try {
           hookedShortMime = await this.viewerHook(mode, file)
+          if (isLockedByOther) {
+            this.layout.sendNotification('info', 'The file is locked', file.lock.owner)
+          }
         } catch {
           // No office editors are enabled, falling back to download
           this.download(file)
           return
         }
-        const isLockedByOther = file?.lock?.isExclusive && file.lock?.ownerLogin !== this.store.user.getValue().login
-        if (isLockedByOther) {
-          this.layout.sendNotification('info', 'The file is locked', file.lock.owner)
-        }
-        const isWriteable = !isLockedByOther && permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
-        if (mode === FILE_MODE.EDIT && !isWriteable) {
-          mode = FILE_MODE.VIEW
-        }
+
         this.layout.openDialog(FilesViewerDialogComponent, 'full', {
           id: file.id, // only used to manage the modal
           initialState: {
@@ -296,7 +297,9 @@ export class FilesService {
 
   private async viewerHook(mode: FILE_MODE, file: FileModel): Promise<string> {
     const fileSettings = await this.getFileSettings()
-    const hasEnabledOfficeEditor = fileSettings ? fileSettings.editor.onlyOffice || fileSettings.editor.collaboraOnline : false
+    const onlyOfficeAvailable = fileSettings ? fileSettings.editor.onlyOffice : false
+    const collaboraAvailable = fileSettings ? fileSettings.editor.collaboraOnline : false
+    const hasEnabledOfficeEditor = onlyOfficeAvailable || collaboraAvailable || false
     if (file.shortMime === SHORT_MIME.DOCUMENT && !hasEnabledOfficeEditor) {
       if (file.mime.startsWith('text-')) {
         return SHORT_MIME.TEXT
@@ -304,7 +307,7 @@ export class FilesService {
       throw new Error('No editor found')
     }
     if (file.shortMime === SHORT_MIME.PDF) {
-      if (mode === FILE_MODE.EDIT && hasEnabledOfficeEditor) {
+      if (mode === FILE_MODE.EDIT && onlyOfficeAvailable) {
         return SHORT_MIME.DOCUMENT
       }
     }

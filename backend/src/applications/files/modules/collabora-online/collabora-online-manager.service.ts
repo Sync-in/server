@@ -60,15 +60,13 @@ export class CollaboraOnlineManager {
     private readonly filesLockManager: FilesLockManager
   ) {}
 
-  async getSettings(user: UserModel, space: SpaceEnv, mode: FILE_MODE): Promise<CollaboraOnlineReqDto> {
+  async getSettings(user: UserModel, space: SpaceEnv): Promise<CollaboraOnlineReqDto> {
     await this.checkSpace(space)
     const fileExtension = path.extname(space.realPath).slice(1)
     if (!COLLABORA_ONLINE_SUPPORTED_EXTENSIONS.has(fileExtension)) {
       throw new HttpException('Document not supported', HttpStatus.BAD_REQUEST)
     }
-    if (mode === FILE_MODE.EDIT && !haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY)) {
-      mode = FILE_MODE.VIEW
-    }
+    const mode: FILE_MODE = haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY) ? FILE_MODE.EDIT : FILE_MODE.VIEW
     if (mode === FILE_MODE.EDIT) {
       // check lock conflicts
       try {
