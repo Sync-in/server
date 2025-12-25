@@ -14,7 +14,6 @@ import {
   API_FILES_OPERATION_MAKE,
   API_FILES_RECENTS,
   API_FILES_SEARCH,
-  API_FILES_SETTINGS,
   API_FILES_TASK_OPERATION_COMPRESS,
   API_FILES_TASK_OPERATION_DECOMPRESS,
   API_FILES_TASK_OPERATION_DOWNLOAD,
@@ -28,7 +27,6 @@ import type {
   SearchFilesDto
 } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
-import type { FileSettings } from '@sync-in-server/backend/src/applications/files/interfaces/file-settings.interface'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
@@ -296,10 +294,8 @@ export class FilesService {
   }
 
   private async viewerHook(mode: FILE_MODE, file: FileModel): Promise<string> {
-    const fileSettings = await this.getFileSettings()
-    const onlyOfficeAvailable = fileSettings ? fileSettings.editor.onlyOffice : false
-    const collaboraAvailable = fileSettings ? fileSettings.editor.collaboraOnline : false
-    const hasEnabledOfficeEditor = onlyOfficeAvailable || collaboraAvailable || false
+    const hasEnabledOfficeEditor =
+      this.store.server().applications.files.collaboraOnline || this.store.server().applications.files.onlyOffice || false
     if (file.shortMime === SHORT_MIME.DOCUMENT && !hasEnabledOfficeEditor) {
       if (file.mime.startsWith('text-')) {
         return SHORT_MIME.TEXT
@@ -307,25 +303,11 @@ export class FilesService {
       throw new Error('No editor found')
     }
     if (file.shortMime === SHORT_MIME.PDF) {
-      if (mode === FILE_MODE.EDIT && onlyOfficeAvailable) {
+      if (mode === FILE_MODE.EDIT && this.store.server().applications.files.onlyOffice) {
         return SHORT_MIME.DOCUMENT
       }
     }
     return file.shortMime
-  }
-
-  private async getFileSettings(): Promise<FileSettings | false> {
-    if (this.store.fileSettings() !== null) {
-      return this.store.fileSettings()
-    }
-    try {
-      const settings = await firstValueFrom(this.http.get<FileSettings>(API_FILES_SETTINGS))
-      this.store.fileSettings.set(settings)
-      return settings
-    } catch {
-      this.store.fileSettings.set(null)
-      return false
-    }
   }
 
   private isValidName(fileName: string): boolean {

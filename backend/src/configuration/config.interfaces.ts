@@ -7,4 +7,5 @@
 export interface ServerConfig {
   twoFaEnabled: boolean
   mailServerEnabled: boolean
+  applications: { files: { collaboraOnline: boolean; onlyOffice: boolean } }
 }

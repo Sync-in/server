@@ -43,7 +43,6 @@ import { FILE_OPERATION, FORCE_AS_FILE_OWNER } from './constants/operations'
 import { FILES_ROUTE } from './constants/routes'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto, SearchFilesDto } from './dto/file-operations.dto'
 import { FileLockProps } from './interfaces/file-props.interface'
-import { FileSettings } from './interfaces/file-settings.interface'
 import { FileTask } from './models/file-task'
 import { FileContent } from './schemas/file-content.interface'
 import { FileRecent } from './schemas/file-recent.interface'
@@ -197,14 +196,6 @@ export class FilesController {
   @Delete(`${FILES_ROUTE.TASK_OPERATION}/*`)
   async deleteAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<FileTask> {
     return this.filesTasksManager.createTask(FILE_OPERATION.DELETE, user, space, null, this.filesMethods.delete.name)
-  }
-
-  // SETTINGS
-
-  @Get(FILES_ROUTE.SETTINGS)
-  @SkipSpaceGuard()
-  filesSettings(): FileSettings {
-    return this.filesMethods.fileSettings()
   }
 
   // RECENT FILES

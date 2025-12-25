@@ -14,7 +14,13 @@ import { configLoader } from './config.loader'
 import { GlobalConfig } from './config.validation'
 
 export const configuration: GlobalConfig = loadConfiguration()
-export const serverConfig: ServerConfig = { twoFaEnabled: configuration.auth.mfa.totp.enabled, mailServerEnabled: !!configuration.mail?.host }
+export const serverConfig: ServerConfig = {
+  twoFaEnabled: configuration.auth.mfa.totp.enabled,
+  mailServerEnabled: !!configuration.mail?.host,
+  applications: {
+    files: { collaboraOnline: configuration.applications.files.collabora.enabled, onlyOffice: configuration.applications.files.onlyoffice.enabled }
+  }
+}
 export const exportConfiguration: (reload?: boolean) => GlobalConfig = (reload = false) => (reload ? loadConfiguration() : configuration)
 
 function loadConfiguration(): GlobalConfig {

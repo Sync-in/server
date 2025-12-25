@@ -8,7 +8,6 @@ import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@
 import { FastifyReply } from 'fastify'
 import path from 'node:path'
 import { Readable } from 'node:stream'
-import { configuration } from '../../../configuration/config.environment'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service'
@@ -16,7 +15,6 @@ import { UserModel } from '../../users/models/user.model'
 import { FILE_OPERATION } from '../constants/operations'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto } from '../dto/file-operations.dto'
 import { FileLockProps } from '../interfaces/file-props.interface'
-import { FileSettings } from '../interfaces/file-settings.interface'
 import { FileError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
 import { checkFileName, dirName, fileName, isPathExists, sanitizeName } from '../utils/files'
@@ -205,15 +203,6 @@ export class FilesMethods {
       this.handleError(space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, dstSpace)
     }
     return { path: dirName(dstUrl), name: fileName(dstUrl) }
-  }
-
-  fileSettings(): FileSettings {
-    return {
-      editor: {
-        collaboraOnline: configuration.applications.files.collabora.enabled,
-        onlyOffice: configuration.applications.files.onlyoffice.enabled
-      }
-    }
   }
 
   private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv) {
