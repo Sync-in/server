@@ -201,7 +201,7 @@ export class CollaboraOnlineManager {
     const collaboraBase = this.externalCollaboraOnlineServer || this.contextManager.headerOriginUrl()
     // Example:
     // - external: https://collabora.domain.com
-    // - internal (via nginx proxy): https://domain.com/collabora
+    // - internal (via nginx proxy): https://domain.com/*
 
     const editorUrl = new URL(COLLABORA_URI, collaboraBase)
     // → /browser/dist/cool.html

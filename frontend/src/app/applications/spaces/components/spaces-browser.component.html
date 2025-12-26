@@ -164,7 +164,7 @@
       @if (!hasDisabledItemsInSelection) {
         <li role="menuitem">
           <a (click)="copyMoveFiles()" class="dropdown-item">
-            <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy/Move</span>
+            <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy · Move</span>
           </a>
         </li>
       }
@@ -522,7 +522,7 @@
   }
   @if (!hasDisabledItemsInSelection) {
     <ng-template (execute)="copyMoveFiles()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy/Move</span>
+      <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy · Move</span>
     </ng-template>
   }
   @if (!isTrashRepo && canShare.outside || inSharesList && selection[0]?.canBeReShared) {

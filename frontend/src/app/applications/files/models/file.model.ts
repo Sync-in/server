@@ -15,7 +15,7 @@ import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications
 import type { File } from '@sync-in-server/backend/src/applications/files/schemas/file.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { currentTimeStamp, popFromObject } from '@sync-in-server/backend/src/common/shared'
-import { EditorConfig } from '@sync-in-server/backend/src/configuration/config.interfaces'
+import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import type { Observable } from 'rxjs'
 import { convertBytesToText, getNewly } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'
@@ -89,7 +89,7 @@ export class FileModel implements File {
   canBeReShared = false
   haveThumbnail = false
 
-  constructor(props: FileProps | File, basePath: string, inShare = false, editorConfig: EditorConfig) {
+  constructor(props: FileProps | File, basePath: string, inShare = false, editorConfig: FileEditorProvider) {
     this.setShares(popFromObject('shares', props))
     Object.assign(this, props)
     this.path = `${basePath}/${this.path !== '.' ? `${this.path}/` : ''}${this.root?.alias || this.name}`
@@ -140,11 +140,16 @@ export class FileModel implements File {
     this.lock = null
   }
 
+  getExtension(): string {
+    const dot = this.name.lastIndexOf('.')
+    return dot >= 0 ? this.name.slice(dot + 1).toLowerCase() : ''
+  }
+
   private getType(inShare: boolean): 'directory_share' | 'directory' | 'file' {
     return this.isDir ? (inShare ? mimeDirectoryShare : mimeDirectory) : mimeFile
   }
 
-  private getMime(mime: string, inShare: boolean, editorConfig: EditorConfig): string {
+  private getMime(mime: string, inShare: boolean, editorConfig: FileEditorProvider): string {
     if (this.isDir) {
       this.isViewable = false
       return this.getType(inShare)
@@ -156,21 +161,20 @@ export class FileModel implements File {
       return this.getType(inShare)
     }
 
-    const dot = this.name.lastIndexOf('.')
-    const extension = dot >= 0 ? this.name.slice(dot + 1).toLowerCase() : ''
+    const extension = this.getExtension()
     const dash = mime.indexOf('-')
     const temporaryMime = dash >= 0 ? mime.slice(0, dash) : mime
 
     if (extension === SHORT_MIME.PDF) {
       this.shortMime = SHORT_MIME.PDF
       this.isViewable = true
-      this.isEditable = editorConfig.onlyOffice === true
+      this.isEditable = editorConfig.onlyoffice === true
       return mime
     }
 
     if (
-      (editorConfig.collaboraOnline === true && COLLABORA_ONLINE_EXTENSIONS.has(extension)) ||
-      (editorConfig.onlyOffice === true && ONLY_OFFICE_EXTENSIONS.has(extension))
+      (editorConfig.collabora === true && COLLABORA_ONLINE_EXTENSIONS.has(extension)) ||
+      (editorConfig.onlyoffice === true && ONLY_OFFICE_EXTENSIONS.has(extension))
     ) {
       this.shortMime = SHORT_MIME.DOCUMENT
       this.isEditable = true

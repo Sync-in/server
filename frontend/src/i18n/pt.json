@@ -55,7 +55,6 @@
   "File": "Arquivo",
   "Files": "Arquivos",
   "Personal files": "Arquivos pessoais",
-  "for personal files": "para os arquivos pessoais",
   "Personal": "Pessoais",
   "External": "Externo",
   "Share status": "Status do compartilhamento",
@@ -265,7 +264,7 @@
   "Download failed": "Falha no download",
   "Upload done": "Envio concluído",
   "Upload failed": "Falha no envio",
-  "Copy/Move": "Copiar/Mover",
+  "Copy · Move": "Copiar · Mover",
   "Move": "Mover",
   "Move done": "Movimentação concluída",
   "Move failed": "Falha na movimentação",
@@ -624,5 +623,14 @@
   "OnlyOffice editor failed to initialize": "Falha ao inicializar o editor OnlyOffice",
   "DocsAPI not available": "DocsAPI não está disponível",
   "Unknown OnlyOffice error": "Erro desconhecido do OnlyOffice",
-  "No editor found": "Nenhum editor encontrado"
+  "No editor found": "Nenhum editor encontrado",
+  "Choose which editor you want to use to open this document.": "Escolha qual editor deseja usar para abrir este documento.",
+  "Open-source office suite built on LibreOffice.": "Suíte de escritório de código aberto baseada no LibreOffice.",
+  "Open-source office suite for Microsoft Office.": "Suíte de escritório de código aberto para Microsoft Office.",
+  "Remember my choice for next time": "Lembrar minha escolha para a próxima vez",
+  "Document editor": "Editor de documentos",
+  "Ask Me": "Perguntar sempre",
+  "Used when both editors support the file type.": "Usado quando ambos os editores suportam o tipo de arquivo.",
+  "Enable content indexation for personal files.": "Ativar indexação de conteúdo para ficheiros pessoais.",
+  "Preferences": "Preferências"
 }

@@ -55,7 +55,6 @@
   "File": "Datei",
   "Files": "Dateien",
   "Personal files": "Persönliche Dateien",
-  "for personal files": "für persönliche Dateien",
   "Personal": "Persönlich",
   "External": "Extern",
   "Share status": "Freigabestatus",
@@ -265,7 +264,7 @@
   "Download failed": "Download fehlgeschlagen",
   "Upload done": "Upload abgeschlossen",
   "Upload failed": "Upload fehlgeschlagen",
-  "Copy/Move": "Kopieren/Verschieben",
+  "Copy · Move": "Kopieren · Verschieben",
   "Move": "Verschieben",
   "Move done": "Verschieben abgeschlossen",
   "Move failed": "Verschieben fehlgeschlagen",
@@ -624,5 +623,14 @@
   "OnlyOffice editor failed to initialize": "Initialisierung des OnlyOffice‑Editors ist fehlgeschlagen",
   "DocsAPI not available": "DocsAPI ist nicht verfügbar",
   "Unknown OnlyOffice error": "Unbekannter OnlyOffice‑Fehler",
-  "No editor found": "Kein Editor gefunden"
+  "No editor found": "Kein Editor gefunden",
+  "Choose which editor you want to use to open this document.": "Wählen Sie den Editor aus, mit dem Sie dieses Dokument öffnen möchten.",
+  "Open-source office suite built on LibreOffice.": "Open-Source-Office-Suite basierend auf LibreOffice.",
+  "Open-source office suite for Microsoft Office.": "Open-Source-Office-Suite für Microsoft Office.",
+  "Remember my choice for next time": "Meine Wahl für das nächste Mal merken",
+  "Document editor": "Dokumenteditor",
+  "Ask Me": "Mich fragen",
+  "Used when both editors support the file type.": "Wird verwendet, wenn beide Editoren den Dateityp unterstützen.",
+  "Enable content indexation for personal files.": "Inhaltsindexierung für persönliche Dateien aktivieren.",
+  "Preferences": "Einstellungen"
 }

@@ -55,7 +55,6 @@
   "File": "Dosya",
   "Files": "Dosyalar",
   "Personal files": "Kişisel dosyalar",
-  "for personal files": "kişisel dosyalar için",
   "Personal": "Kişisel",
   "External": "Harici",
   "Share status": "Paylaşım durumu",
@@ -265,7 +264,7 @@
   "Download failed": "İndirme başarısız",
   "Upload done": "Yükleme tamamlandı",
   "Upload failed": "Yükleme başarısız",
-  "Copy/Move": "Kopyala/Taşı",
+  "Copy · Move": "Kopyala · Taşı",
   "Move": "Taşı",
   "Move done": "Taşıma tamamlandı",
   "Move failed": "Taşıma başarısız",
@@ -624,5 +623,14 @@
   "OnlyOffice editor failed to initialize": "OnlyOffice düzenleyici başlatılamadı",
   "DocsAPI not available": "DocsAPI kullanılamıyor",
   "Unknown OnlyOffice error": "Bilinmeyen OnlyOffice hatası",
-  "No editor found": "Düzenleyici bulunamadı"
+  "No editor found": "Düzenleyici bulunamadı",
+  "Choose which editor you want to use to open this document.": "Bu belgeyi açmak için hangi düzenleyiciyi kullanmak istediğinizi seçin.",
+  "Open-source office suite built on LibreOffice.": "LibreOffice tabanlı açık kaynak ofis paketi.",
+  "Open-source office suite for Microsoft Office.": "Microsoft Office için açık kaynak ofis paketi.",
+  "Remember my choice for next time": "Seçimimi bir dahaki sefere hatırla",
+  "Document editor": "Belge düzenleyici",
+  "Ask Me": "Bana sor",
+  "Used when both editors support the file type.": "Her iki editör de dosya türünü desteklediğinde kullanılır.",
+  "Enable content indexation for personal files.": "Kişisel dosyalar için içerik indekslemeyi etkinleştir.",
+  "Preferences": "Tercihler"
 }

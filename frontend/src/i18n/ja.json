@@ -55,7 +55,6 @@
   "File": "ファイル",
   "Files": "ファイル",
   "Personal files": "個人ファイル",
-  "for personal files": "個人ファイル用",
   "Personal": "個人",
   "External": "外部",
   "Share status": "共有状況",
@@ -265,7 +264,7 @@
   "Download failed": "ダウンロード失敗",
   "Upload done": "アップロード完了",
   "Upload failed": "アップロード失敗",
-  "Copy/Move": "コピー/移動",
+  "Copy · Move": "コピー · 移動",
   "Move": "移動",
   "Move done": "移動完了",
   "Move failed": "移動失敗",
@@ -624,5 +623,14 @@
   "OnlyOffice editor failed to initialize": "OnlyOffice エディタの初期化に失敗しました",
   "DocsAPI not available": "DocsAPI を利用できません",
   "Unknown OnlyOffice error": "不明な OnlyOffice エラーです",
-  "No editor found": "エディタが見つかりません"
+  "No editor found": "エディタが見つかりません",
+  "Choose which editor you want to use to open this document.": "このドキュメントを開くために使用するエディタを選択してください。",
+  "Open-source office suite built on LibreOffice.": "LibreOffice をベースにしたオープンソースのオフィススイート。",
+  "Open-source office suite for Microsoft Office.": "Microsoft Office 用のオープンソースのオフィススイート。",
+  "Remember my choice for next time": "次回もこの選択を使用する",
+  "Document editor": "ドキュメントエディタ",
+  "Ask Me": "毎回確認",
+  "Used when both editors support the file type.": "両方のエディタがファイルタイプをサポートしている場合に使用されます。",
+  "Enable content indexation for personal files.": "個人ファイルのコンテンツインデックス作成を有効にする。",
+  "Preferences": "環境設定"
 }

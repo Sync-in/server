@@ -11,6 +11,7 @@
         <div class="col-lg-6 col-sm-12 p-2">
           <div class="box box-primary mb-0">
             <div class="box-body">
+
               <div class="user-header">
                 <div class="d-flex flex-column justify-content-center me-2">
                   <div class="avatar-xl">
@@ -18,42 +19,51 @@
                     <span class="avatar-{{allOnlineStatus[user.onlineStatus]}}"></span>
                   </div>
                 </div>
+
                 <div class="user-details">
                   <div class="mb-1">{{ user.fullName }}</div>
                   <div class="fs-xxs text-nowrap">{{ user.email }}</div>
-                  <div class="text-muted fs-xxs">{{ 'Member since' | translate:locale.language }} {{ user.createdAt | amTimeAgo:true }}</div>
+                  <div class="text-muted fs-xxs">
+                    {{ 'Member since' | translate:locale.language }} {{ user.createdAt | amTimeAgo:true }}
+                  </div>
+
                   <select [(ngModel)]="user.onlineStatus"
                           (ngModelChange)="setOnlineStatus($event)"
                           class="form-select form-select-sm my-auto mt-2">
                     @for (n of allOnlineStatus; track $index) {
-                      <option [ngValue]="allOnlineStatus.indexOf(n)">{{ n | translate:locale.language | capitalize }}</option>
+                      <option [ngValue]="allOnlineStatus.indexOf(n)">
+                        {{ n | translate:locale.language | capitalize }}
+                      </option>
                     }
                   </select>
                 </div>
               </div>
+
               <ul class="list-group my-2">
                 <li class="list-group-item d-flex justify-content-between align-items-center">
                   <span class="me-auto pe-4" l10nTranslate>Login</span>
                   <span>{{ user.login }}</span>
                 </li>
+
                 <li class="list-group-item d-flex align-items-center justify-content-end flex-wrap">
                   <span class="me-auto pe-4" l10nTranslate>IP Addresses</span>
                   <span class="badge bg-warning rounded-pill my-1">{{ user.currentIp }}</span>
                   <span class="badge bg-secondary-alt rounded-pill ms-1 my-1">{{ user.lastIp }}</span>
                 </li>
+
                 <li class="list-group-item d-flex align-items-center justify-content-end flex-wrap">
                   <span class="me-auto pe-4" l10nTranslate>Connections</span>
                   <span class="badge bg-warning rounded-pill my-1">{{ user.currentAccess | amDateFormat }}</span>
                   <span class="badge bg-secondary-alt rounded-pill ms-1 my-1">{{ user.lastAccess | amDateFormat }}</span>
                 </li>
+
                 @if (user.isUser) {
                   <li class="list-group-item d-flex align-items-center justify-content-end flex-wrap">
                     <span class="me-auto pe-4" l10nTranslate>Permissions</span>
                     @if (user.isAdmin) {
                       <span class="badge bg-gray-dark rounded-pill ms-1 my-1">
-                        <fa-icon class="me-1" [icon]="icons.faKey"></fa-icon>
-                        <span l10nTranslate>Administrator</span>
-                      </span>
+                      <fa-icon class="me-1" [icon]="icons.faKey"></fa-icon>
+                      <span l10nTranslate>Administrator</span></span>
                     } @else {
                       @for (app of user.applications; track $index) {
                         <span class="badge bg-gray-dark rounded-pill ms-1 my-1" l10nTranslate>{{ app }}</span>
@@ -62,9 +72,7 @@
                   </li>
                   <li class="list-group-item d-flex align-items-center">
                     <span class="me-auto pe-4" l10nTranslate>Storage Space</span>
-                    <span class="col-5">
-                  <app-storage-usage [item]="user"></app-storage-usage>
-              </span>
+                    <span class="col-5"><app-storage-usage [item]="user"></app-storage-usage></span>
                   </li>
                 }
                 <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -72,9 +80,64 @@
                   <span (click)="clipBoardLink()" class="text-primary text-end cursor-pointer">
                   <fa-icon [icon]="icons.faCopy"></fa-icon>
                     {{ webdavUrl }}
-                </span>
+                  </span>
                 </li>
               </ul>
+              <hr class="mt-4" style="border-width: 1px"/>
+              <div>
+                <span class="fw-500 fs-md" l10nTranslate>Preferences</span>
+                @if (showEditorPreference) {
+                  <!-- Document editor -->
+                  <div class="row mt-3 mb-1">
+                    <span class="col-4 align-self-center text-nowrap" l10nTranslate>Document editor</span>
+                    <div class="col-auto ms-auto">
+                      <div class="d-flex align-items-center justify-content-end gap-3">
+                        <select
+                          class="form-select form-select-sm w-auto"
+                          [ngModel]="userEditorPreference"
+                          (ngModelChange)="updateEditorPreference($event)">
+                          <option [ngValue]="null" l10nTranslate>Ask Me</option>
+                          @for (e of editors | keyvalue: originalOrderKeyValue; track e.key) {
+                            <option [ngValue]="e.value">{{ e.key }}</option>
+                          }
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row mb-4">
+                    <div class="text-muted fs-xxs" l10nTranslate>
+                      Used when both editors support the file type.
+                    </div>
+                  </div>
+                }
+                @if (user.isUser) {
+                  <!-- Full-text search -->
+                  <div class="row mb-1">
+                    <span class="col-4 text-nowrap align-self-center" l10nTranslate>Full-text search</span>
+                    <div class="col-auto ms-auto">
+                      <div class="d-flex align-items-center justify-content-end form-check form-switch cursor-pointer">
+                        <div class="d-flex">
+                          <label class="form-check-label" for="prefSwitchFullText">
+                            <span l10nTranslate>{{ user.storageIndexing ? 'enabled' : 'disabled' }}</span>
+                          </label>
+                          <input
+                            [ngModel]="user.storageIndexing"
+                            (ngModelChange)="updateStorageIndexing($event)"
+                            class="form-check-input ms-2"
+                            id="prefSwitchFullText"
+                            type="checkbox"
+                            role="button">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row mb-4">
+                    <div class="text-muted fs-xxs" l10nTranslate>
+                      Enable content indexation for personal files.
+                    </div>
+                  </div>
+                }
+              </div>
             </div>
           </div>
         </div>
@@ -125,23 +188,6 @@
               </div>
             </div>
             @if (user.isUser) {
-              <div class="row mb-3">
-                <span class="col-4 text-nowrap align-self-start" l10nTranslate>Full-text search</span>
-                <div class="col-auto">
-                  <div class="d-flex align-items-center form-check form-switch cursor-pointer">
-                    <input
-                      [ngModel]="user.storageIndexing"
-                      (ngModelChange)="updateStorageIndexing($event)"
-                      class="form-check-input"
-                      id="switchFullText"
-                      type="checkbox"
-                      role="button">
-                    <label class="form-check-label mb-0 ms-2" for="switchFullText">
-                      <span l10nTranslate>{{ user.storageIndexing ? 'enabled' : 'disabled' }}&nbsp;<span l10nTranslate>for personal files</span></span>
-                    </label>
-                  </div>
-                </div>
-              </div>
               <div class="row mb-3">
                 <span class="col-4 text-nowrap align-self-start " l10nTranslate>Password</span>
                 <div class="col-auto">

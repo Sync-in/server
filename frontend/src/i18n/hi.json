@@ -55,7 +55,6 @@
   "File": "फ़ाइल",
   "Files": "फ़ाइलें",
   "Personal files": "व्यक्तिगत फ़ाइलें",
-  "for personal files": "व्यक्तिगत फ़ाइलों के लिए",
   "Personal": "व्यक्तिगत",
   "External": "बाह्य",
   "Share status": "साझाकरण स्थिति",
@@ -265,7 +264,7 @@
   "Download failed": "डाउनलोड विफल",
   "Upload done": "अपलोड पूर्ण",
   "Upload failed": "अपलोड विफल",
-  "Copy/Move": "कॉपी/स्थानांतरित",
+  "Copy · Move": "कॉपी · स्थानांतरित",
   "Move": "स्थानांतरित करें",
   "Move done": "स्थानांतरण पूर्ण",
   "Move failed": "स्थानांतरण विफल",
@@ -624,5 +623,14 @@
   "OnlyOffice editor failed to initialize": "OnlyOffice संपादक प्रारंभ करने में विफल रहा",
   "DocsAPI not available": "DocsAPI उपलब्ध नहीं है",
   "Unknown OnlyOffice error": "अज्ञात OnlyOffice त्रुटि",
-  "No editor found": "संपादक नहीं मिला"
+  "No editor found": "संपादक नहीं मिला",
+  "Choose which editor you want to use to open this document.": "इस दस्तावेज़ को खोलने के लिए आप कौन सा संपादक उपयोग करना चाहते हैं, चुनें।",
+  "Open-source office suite built on LibreOffice.": "LibreOffice पर आधारित ओपन-सोर्स ऑफिस सुइट।",
+  "Open-source office suite for Microsoft Office.": "Microsoft Office के लिए ओपन-सोर्स ऑफिस सुइट।",
+  "Remember my choice for next time": "अगली बार के लिए मेरी पसंद याद रखें",
+  "Document editor": "दस्तावेज़ संपादक",
+  "Ask Me": "मुझसे पूछें",
+  "Used when both editors support the file type.": "जब दोनों संपादक फ़ाइल प्रकार का समर्थन करते हैं तो उपयोग किया जाता है।",
+  "Enable content indexation for personal files.": "व्यक्तिगत फ़ाइलों के लिए सामग्री अनुक्रमण सक्षम करें।",
+  "Preferences": "वरीयताएँ"
 }

@@ -4,17 +4,21 @@
  * See the LICENSE file for licensing details
  */
 
+import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCopy, faKey } from '@fortawesome/free-solid-svg-icons'
+import { COLLABORA_OWNER_LOCK } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
+import { ONLY_OFFICE_OWNER_LOCK } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
 import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '@sync-in-server/backend/src/authentication/constants/auth'
 import { TwoFaSetup } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
-import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe, L10nTranslationService } from 'angular-l10n'
+import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
+import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { ClipboardService } from 'ngx-clipboard'
 import { Subscription } from 'rxjs'
@@ -27,6 +31,7 @@ import { AutoResizeDirective } from '../../../common/directives/auto-resize.dire
 import { CapitalizePipe } from '../../../common/pipes/capitalize.pipe'
 import { TimeAgoPipe } from '../../../common/pipes/time-ago.pipe'
 import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
+import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
 import { UserType } from '../interfaces/user.interface'
@@ -48,7 +53,8 @@ import { UserAuthManageAppPasswordsDialogComponent } from './dialogs/user-auth-m
     L10nTranslateDirective,
     FaIconComponent,
     StorageUsageComponent,
-    InputPasswordComponent
+    InputPasswordComponent,
+    KeyValuePipe
   ],
   templateUrl: 'user-account.component.html'
 })
@@ -59,6 +65,10 @@ export class UserAccountComponent implements OnDestroy {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
   protected readonly icons = { faCopy, faKey }
+  protected readonly editors: Record<string, keyof FileEditorProvider> = {
+    [COLLABORA_OWNER_LOCK]: 'collabora',
+    [ONLY_OFFICE_OWNER_LOCK]: 'onlyoffice'
+  }
   protected user: UserType
   protected userAvatar: string = null
   protected webdavUrl = `${window.location.origin}/${WEBDAV_BASE_PATH}`
@@ -66,7 +76,9 @@ export class UserAccountComponent implements OnDestroy {
   protected oldPassword: string
   protected newPassword: string
   protected readonly store = inject(StoreService)
-  protected readonly l10nTranslationService = inject(L10nTranslationService)
+  protected showEditorPreference = false
+  protected userEditorPreference: keyof FileEditorProvider
+  protected readonly originalOrderKeyValue = originalOrderKeyValue
   private readonly layout = inject(LayoutService)
   protected languages = this.layout.getLanguages(true)
   private readonly userService = inject(UserService)
@@ -83,6 +95,10 @@ export class UserAccountComponent implements OnDestroy {
       translating: true,
       sameLink: true
     })
+    this.showEditorPreference = this.store.server().fileEditors.collabora && this.store.server().fileEditors.onlyoffice
+    if (this.showEditorPreference) {
+      this.userEditorPreference = this.userService.getEditorProviderPreference()
+    }
   }
 
   get language() {
@@ -170,6 +186,10 @@ export class UserAccountComponent implements OnDestroy {
   clipBoardLink() {
     this.clipBoardService.copyFromContent(this.webdavUrl)
     this.layout.sendNotification('info', 'Link copied', this.webdavUrl)
+  }
+
+  updateEditorPreference(preference: keyof FileEditorProvider | null) {
+    this.userService.setEditorProviderPreference(preference)
   }
 
   async enable2Fa() {

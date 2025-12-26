@@ -35,7 +35,7 @@ export class StoreService {
   public server: WritableSignal<ServerConfig> = signal<ServerConfig>({
     twoFaEnabled: false,
     mailServerEnabled: false,
-    applications: { files: { collaboraOnline: false, onlyOffice: false } }
+    fileEditors: { collabora: false, onlyoffice: false }
   })
   public user = new BehaviorSubject<UserType>(null)
   public userAvatarUrl = new BehaviorSubject<string>(myAvatarUrl())

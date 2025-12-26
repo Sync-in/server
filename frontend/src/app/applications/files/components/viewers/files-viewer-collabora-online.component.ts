@@ -19,14 +19,25 @@ import { FileModel } from '../../models/file.model'
   selector: 'app-files-viewer-collabora-online',
   template: `
     @if (documentServerUrl) {
-      <iframe
-        [src]="documentServerUrl"
-        [style.height.px]="currentHeight()"
-        class="app-viewer-iframe"
-        allow="clipboard-read *; clipboard-write *; fullscreen"
-      ></iframe>
+      <div [style.height.px]="currentHeight()">
+        <iframe
+          [src]="documentServerUrl"
+          class="app-viewer-iframe collabora-scaling"
+          allow="clipboard-read *; clipboard-write *; fullscreen"
+        ></iframe>
+      </div>
     }
-  `
+  `,
+  styles: [
+    `
+      .collabora-scaling {
+        transform: scale(0.85);
+        transform-origin: 0 0;
+        width: calc(100% / 0.85);
+        height: calc(100% / 0.85);
+      }
+    `
+  ]
 })
 export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
   file = input.required<FileModel>()

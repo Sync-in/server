@@ -4,13 +4,13 @@
  * See the LICENSE file for licensing details
  */
 
-export interface EditorConfig {
-  collaboraOnline: boolean
-  onlyOffice: boolean
+export interface FileEditorProvider {
+  collabora: boolean
+  onlyoffice: boolean
 }
 
 export interface ServerConfig {
   twoFaEnabled: boolean
   mailServerEnabled: boolean
-  applications: { files: EditorConfig }
+  fileEditors: FileEditorProvider
 }

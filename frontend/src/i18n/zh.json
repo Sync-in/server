@@ -55,7 +55,6 @@
   "File": "文件",
   "Files": "文件",
   "Personal files": "个人文件",
-  "for personal files": "用于个人文件",
   "Personal": "个人",
   "External": "外部",
   "Share status": "共享状态",
@@ -265,7 +264,7 @@
   "Download failed": "下载失败",
   "Upload done": "上传完成",
   "Upload failed": "上传失败",
-  "Copy/Move": "复制/移动",
+  "Copy · Move": "复制 · 移动",
   "Move": "移动",
   "Move done": "移动完成",
   "Move failed": "移动失败",
@@ -624,5 +623,14 @@
   "OnlyOffice editor failed to initialize": "OnlyOffice 编辑器初始化失败",
   "DocsAPI not available": "DocsAPI 不可用",
   "Unknown OnlyOffice error": "未知的 OnlyOffice 错误",
-  "No editor found": "未找到编辑器"
+  "No editor found": "未找到编辑器",
+  "Choose which editor you want to use to open this document.": "选择您要使用哪个编辑器来打开此文档。",
+  "Open-source office suite built on LibreOffice.": "基于 LibreOffice 的开源办公套件。",
+  "Open-source office suite for Microsoft Office.": "适用于 Microsoft Office 的开源办公套件。",
+  "Remember my choice for next time": "记住我的选择以便下次使用",
+  "Document editor": "文档编辑器",
+  "Ask Me": "询问我",
+  "Used when both editors support the file type.": "当两个编辑器都支持该文件类型时使用。",
+  "Enable content indexation for personal files.": "启用个人文件内容索引。",
+  "Preferences": "偏好设置"
 }

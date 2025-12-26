@@ -17,8 +17,9 @@ export const configuration: GlobalConfig = loadConfiguration()
 export const serverConfig: ServerConfig = {
   twoFaEnabled: configuration.auth.mfa.totp.enabled,
   mailServerEnabled: !!configuration.mail?.host,
-  applications: {
-    files: { collaboraOnline: configuration.applications.files.collabora.enabled, onlyOffice: configuration.applications.files.onlyoffice.enabled }
+  fileEditors: {
+    collabora: configuration.applications.files.collabora.enabled,
+    onlyoffice: configuration.applications.files.onlyoffice.enabled
   }
 }
 export const exportConfiguration: (reload?: boolean) => GlobalConfig = (reload = false) => (reload ? loadConfiguration() : configuration)

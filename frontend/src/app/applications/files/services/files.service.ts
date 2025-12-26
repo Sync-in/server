@@ -29,20 +29,25 @@ import type {
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
+import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
+import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { EMPTY, firstValueFrom, map, Observable, Subject } from 'rxjs'
 import { downloadWithAnchor } from '../../../common/utils/functions'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
+import { UserService } from '../../users/user.service'
 import { FilesLockDialogComponent } from '../components/dialogs/files-lock-dialog.component'
 import { FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
 import { FilesViewerDialogComponent } from '../components/dialogs/files-viewer-dialog.component'
+import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
 import { MAX_TEXT_FILE_SIZE, SHORT_MIME } from '../files.constants'
 import { FileContentModel } from '../models/file-content.model'
 import { FileRecentModel } from '../models/file-recent.model'
@@ -63,6 +68,7 @@ export class FilesService {
   private readonly store = inject(StoreService)
   private readonly sanitizer = inject(DomSanitizer)
   private readonly filesTasksService = inject(FilesTasksService)
+  private readonly userService = inject(UserService)
 
   getTreeNode(nodePath: string, showFiles = false): Promise<FileTree[]> {
     return firstValueFrom(
@@ -245,14 +251,43 @@ export class FilesService {
   }
 
   async openOverwriteDialog(files: File[] | FileModel[], renamedTo?: string): Promise<boolean> {
-    const overwriteDialog: BsModalRef<FilesOverwriteDialogComponent> = this.layout.openDialog(FilesOverwriteDialogComponent, null, {
-      initialState: {
-        files: files,
-        renamedTo: renamedTo
-      } as FilesOverwriteDialogComponent
+    const modalRef: BsModalRef<FilesOverwriteDialogComponent> = this.layout.openDialog(FilesOverwriteDialogComponent, null, {
+      initialState: { files, renamedTo } as FilesOverwriteDialogComponent
     })
     return new Promise<boolean>((resolve) => {
-      overwriteDialog.content.overwrite.subscribe(resolve)
+      let resolved = false
+      const subOverwrite = modalRef.content!.overwrite.subscribe((value: boolean) => {
+        resolved = true
+        cleanup()
+        resolve(value)
+      })
+      // Triggered when the modal is closed (close button, backdrop click, ESC key, or programmatic hide)
+      const subHidden = modalRef.onHidden?.subscribe(() => {
+        if (!resolved) {
+          cleanup()
+          resolve(false)
+        }
+      })
+      const cleanup = () => {
+        subOverwrite.unsubscribe()
+        subHidden?.unsubscribe()
+      }
+    })
+  }
+
+  async openSelectViewerDialog(file: FileModel, editorProvider: FileEditorProvider): Promise<void> {
+    const modalRef: BsModalRef<FilesViewerSelectDialog> = this.layout.openDialog(FilesViewerSelectDialog, null, {
+      initialState: { file, editorProvider } as FilesViewerSelectDialog
+    })
+    return new Promise<void>((resolve) => {
+      // Fired when the modal is closed (button, backdrop, or ESC)
+      const subHidden = modalRef.onHidden?.subscribe(() => {
+        cleanup()
+        resolve(null)
+      })
+      const cleanup = () => {
+        subHidden?.unsubscribe()
+      }
     })
   }
 
@@ -276,6 +311,34 @@ export class FilesService {
           return
         }
 
+        const editorProvider: FileEditorProvider = { collabora: false, onlyoffice: false }
+        if (hookedShortMime === SHORT_MIME.DOCUMENT) {
+          if (this.store.server().fileEditors.collabora && this.store.server().fileEditors.onlyoffice) {
+            // Case with multiple editors
+            const collaboraHasExtension = COLLABORA_ONLINE_EXTENSIONS.has(file.getExtension())
+            const onlyofficeHasExtension = ONLY_OFFICE_EXTENSIONS.has(file.getExtension())
+            if (collaboraHasExtension && onlyofficeHasExtension) {
+              // Get user's saved preference
+              const userEditorPreference = this.userService.getEditorProviderPreference()
+              if (userEditorPreference && userEditorPreference in editorProvider) {
+                editorProvider[userEditorPreference] = true
+              } else {
+                // Both editors support this file extension, let the user choose
+                await this.openSelectViewerDialog(file, editorProvider)
+                if (!editorProvider.onlyoffice && !editorProvider.collabora) return
+              }
+            } else {
+              // Based on the supported extension
+              editorProvider.collabora = collaboraHasExtension
+              editorProvider.onlyoffice = onlyofficeHasExtension
+            }
+          } else {
+            // Based on availability
+            editorProvider.collabora = this.store.server().fileEditors.collabora
+            editorProvider.onlyoffice = this.store.server().fileEditors.onlyoffice
+          }
+        }
+
         this.layout.openDialog(FilesViewerDialogComponent, 'full', {
           id: file.id, // only used to manage the modal
           initialState: {
@@ -283,7 +346,8 @@ export class FilesService {
             directoryFiles: directoryFiles,
             mode: mode,
             isWriteable: isWriteable,
-            hookedShortMime: hookedShortMime
+            hookedShortMime: hookedShortMime,
+            editorProvider: editorProvider
           } satisfies Partial<FilesViewerDialogComponent>
         })
       },

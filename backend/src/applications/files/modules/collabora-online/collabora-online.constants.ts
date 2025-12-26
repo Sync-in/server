@@ -8,7 +8,7 @@ export const COLLABORA_URI = 'browser/dist/cool.html'
 export const COLLABORA_CONTEXT = 'CollaboraOnlineEnvironment' as const
 export const COLLABORA_WOPI_SRC_QUERY_PARAM_NAME = 'WOPISrc' as const
 export const COLLABORA_TOKEN_QUERY_PARAM_NAME = 'access_token' as const
-export const COLLABORA_OWNER_LOCK = 'Collabora Online' as const
+export const COLLABORA_OWNER_LOCK = 'Collabora' as const
 
 export const COLLABORA_HEADERS = {
   Action: 'x-wopi-override',

@@ -52,6 +52,7 @@ import type {
 import { API_TWO_FA_ADMIN_RESET_USER, API_TWO_FA_DISABLE, API_TWO_FA_ENABLE } from '@sync-in-server/backend/src/authentication/constants/routes'
 import type { TwoFaVerifyWithPasswordDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
 import type { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
+import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Socket } from 'ngx-socket-io'
 import { catchError, map, Observable } from 'rxjs'
@@ -283,6 +284,18 @@ export class UserService {
       next: (manifest: AppStoreManifest) => this.store.appStoreManifest.set(manifest),
       error: (e: HttpErrorResponse) => console.error(e)
     })
+  }
+
+  getEditorProviderPreference(): keyof FileEditorProvider {
+    return localStorage.getItem('editorPreference') as keyof FileEditorProvider
+  }
+
+  setEditorProviderPreference(editorProvider: keyof FileEditorProvider) {
+    if (editorProvider === null) {
+      localStorage.removeItem('editorPreference')
+    } else {
+      localStorage.setItem('editorPreference', editorProvider)
+    }
   }
 
   listAppPasswords(twoFaHeaders: HttpHeaders): Observable<Omit<UserAppPassword, 'password'>[]> {

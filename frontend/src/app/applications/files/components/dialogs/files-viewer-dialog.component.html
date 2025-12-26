@@ -25,9 +25,9 @@
         <app-files-viewer-media [currentHeight]="currentHeight" [fileUrl]="currentFile.dataUrl"></app-files-viewer-media>
       }
       @case (SHORT_MIME.DOCUMENT) {
-        @if (store.server().applications.files.collaboraOnline) {
+        @if (editorProvider.collabora) {
           <app-files-viewer-collabora-online [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-collabora-online>
-        } @else if (store.server().applications.files.onlyOffice) {
+        } @else if (editorProvider.onlyoffice) {
           <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
         } @else {
           <!--This case should never happen-->
