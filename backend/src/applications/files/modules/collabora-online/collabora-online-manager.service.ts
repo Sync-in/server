@@ -36,7 +36,6 @@ import {
 } from '../../utils/files'
 import {
   COLLABORA_HEADERS,
-  COLLABORA_INTERNAL_URI,
   COLLABORA_LOCK_ACTION,
   COLLABORA_ONLINE_EXTENSIONS,
   COLLABORA_OWNER_LOCK,
@@ -199,10 +198,10 @@ export class CollaboraOnlineManager {
   }
 
   private getDocumentUrl(dbFileHash: string, token: string): string {
-    const collaboraBase = this.externalCollaboraOnlineServer || `${this.contextManager.headerOriginUrl()}${COLLABORA_INTERNAL_URI}`
+    const collaboraBase = this.externalCollaboraOnlineServer || this.contextManager.headerOriginUrl()
     // Example:
     // - external: https://collabora.domain.com
-    // - internal (via nginx proxy): https://domain.com/collabora-online
+    // - internal (via nginx proxy): https://domain.com/collabora
 
     const editorUrl = new URL(COLLABORA_URI, collaboraBase)
     // → /browser/dist/cool.html
