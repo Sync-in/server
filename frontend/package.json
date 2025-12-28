@@ -44,7 +44,7 @@
     "dayjs": "^1.11.13",
     "ngx-bootstrap": "^20.0.0",
     "ngx-clipboard": "^16.0.0",
-    "ngx-socket-io": "^4.9.3",
+    "ngx-socket-io": "4.9.3",
     "ngx-toastr": "^19.0.0",
     "rxjs": "^7.8.2",
     "tslib": "^2.7.0",

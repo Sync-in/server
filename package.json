@@ -65,7 +65,7 @@
     "!win32"
   ],
   "engines": {
-    "node": ">=22.15.0"
+    "node": ">= 22"
   },
   "workspaces": [
     "backend",
