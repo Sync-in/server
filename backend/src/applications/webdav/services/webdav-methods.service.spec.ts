@@ -22,7 +22,9 @@ import { WebDAVSpaces } from './webdav-spaces.service'
 
 // Mock external dependencies
 jest.mock('../../files/utils/files', () => ({
-  isPathExists: jest.fn(),
+  isPathExists: jest.fn().mockReturnValue(false),
+  isPathIsDir: jest.fn(),
+  fileName: jest.fn().mockReturnValue('fileName'),
   dirName: jest.fn(),
   genEtag: jest.fn().mockReturnValue('W/"etag-123"')
 }))
@@ -77,7 +79,7 @@ describe('WebDAVMethods', () => {
   const createBaseRequest = (overrides: Partial<any> = {}) =>
     ({
       method: 'GET',
-      user: { id: 1, login: 'test-user' },
+      user: { id: 1, login: 'test-user', fullName: 'Test User', email: 'test-user@sync-in.com' },
       dav: {
         url: '/webdav/test/file.txt',
         depth: '0',
@@ -274,6 +276,7 @@ describe('WebDAVMethods', () => {
           return [
             true,
             {
+              owner: { fullName: 'LockOwner', email: 'lock-owner@sync-in.com' },
               dbFilePath: _dbFile?.path,
               options: {
                 lockRoot: options.lockRoot,
@@ -337,6 +340,7 @@ describe('WebDAVMethods', () => {
           return [
             true,
             {
+              owner: { fullName: 'LockOwner', email: 'lock-owner@sync-in.com' },
               dbFilePath: _dbFile?.path,
               options: {
                 lockRoot: options.lockRoot,
@@ -365,6 +369,7 @@ describe('WebDAVMethods', () => {
         filesLockManager.create.mockResolvedValue([
           false,
           {
+            owner: { fullName: 'LockOwner', email: 'lock-owner@sync-in.com' },
             dbFilePath: 'file.txt',
             options: { lockRoot: '/webdav/locked/resource' }
           }
@@ -517,6 +522,7 @@ describe('WebDAVMethods', () => {
 
         filesLockManager.browseLocks.mockResolvedValue({
           'file.txt': {
+            owner: { fullName: 'LockOwner', email: 'lock-owner@sync-in.com' },
             options: { lockRoot: '/webdav/test/file.txt' }
           }
         } as any)
@@ -545,6 +551,7 @@ describe('WebDAVMethods', () => {
 
         filesLockManager.browseParentChildLocks.mockResolvedValue({
           'file.txt': {
+            owner: { fullName: 'LockOwner', email: 'lock-owner@sync-in.com' },
             options: { lockRoot: '/webdav/test/file.txt' }
           }
         } as any)

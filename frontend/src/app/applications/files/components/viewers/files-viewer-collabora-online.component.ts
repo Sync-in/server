@@ -32,10 +32,10 @@ import { fileLockPropsToString } from '../utils/file-lock.utils'
   styles: [
     `
       .collabora-scaling {
-        transform: scale(0.85);
+        transform: scale(0.9);
         transform-origin: 0 0;
-        width: calc(100% / 0.85);
-        height: calc(100% / 0.85);
+        width: calc(100% / 0.9);
+        height: calc(100% / 0.9);
       }
     `
   ]

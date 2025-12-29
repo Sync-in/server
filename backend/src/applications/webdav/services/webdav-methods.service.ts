@@ -12,15 +12,17 @@ import { FileError } from '../../files/models/file-error'
 import { LockConflict } from '../../files/models/file-lock-error'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
 import { FilesManager } from '../../files/services/files-manager.service'
-import { dirName, genEtag, isPathExists } from '../../files/utils/files'
+import { dirName, fileName, genEtag, isPathExists, isPathIsDir } from '../../files/utils/files'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { dbFileFromSpace } from '../../spaces/utils/paths'
 import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
 import {
   DEPTH,
+  HEADER,
   LOCK_DISCOVERY_PROP,
   NS_PREFIX,
+  OPTIONS_HEADERS,
   PRECONDITION,
   PROPPATCH_METHOD,
   PROPPATCH_MODIFIED_PROPS,
@@ -50,6 +52,15 @@ export class WebDAVMethods {
 
   async headOrGet(req: FastifyDAVRequest, res: FastifyReply, repository: string): Promise<StreamableFile> {
     if (repository === SPACE_REPOSITORY.FILES && !req.space.inSharesList) {
+      if ((await isPathExists(req.space.realPath)) && (await isPathIsDir(req.space.realPath))) {
+        // Directory case
+        return res
+          .header('DAV', OPTIONS_HEADERS.DAV)
+          .header('Content-Type', 'httpd/unix-directory')
+          .header('Content-Length', '0')
+          .status(HttpStatus.OK)
+          .send()
+      }
       const sendFile = this.filesManager.sendFileFromSpace(req.space)
       try {
         await sendFile.checks()
@@ -108,13 +119,16 @@ export class WebDAVMethods {
       }
       const lockProp = LOCK_PROP([fileLock])
       return res
-        .header('lock-token', `<${lockOptions.lockToken}>`)
+        .header(HEADER.LOCK_TOKEN, `<${lockOptions.lockToken}>`)
         .type(XML_CONTENT_TYPE)
         .status(rExists ? HttpStatus.OK : HttpStatus.CREATED)
         .send(xmlBuild(lockProp))
-    } else {
-      return DAV_ERROR_RES(HttpStatus.LOCKED, PRECONDITION.LOCK_CONFLICT, res, fileLock.options?.lockRoot || fileLock.dbFilePath)
     }
+    if (fileLock) {
+      const lockProp = LOCK_PROP([fileLock])
+      return res.type(XML_CONTENT_TYPE).status(HttpStatus.LOCKED).send(xmlBuild(lockProp))
+    }
+    return DAV_ERROR_RES(HttpStatus.LOCKED, PRECONDITION.LOCK_CONFLICT, res, fileLock.options?.lockRoot || fileLock.dbFilePath)
   }
 
   @IfHeaderDecorator()
@@ -176,7 +190,19 @@ export class WebDAVMethods {
         for (const p of requestedProps) {
           let fP: any
           if (p === LOCK_DISCOVERY_PROP) {
-            fP = repository === SPACE_REPOSITORY.FILES && f.name in locks ? LOCK_DISCOVERY([locks[f.name]]) : null
+            let lockDiscovery: any[] = null
+            if (repository === SPACE_REPOSITORY.FILES) {
+              if (f.name in locks) {
+                lockDiscovery = LOCK_DISCOVERY([locks[f.name]])
+              } else {
+                // The lock name may correspond to the original file at the space root.
+                const fName = fileName(req.space.dbFile.path)
+                if (fName in locks) {
+                  lockDiscovery = LOCK_DISCOVERY([locks[fName]])
+                }
+              }
+            }
+            fP = lockDiscovery
           } else {
             fP = f[p]
           }
