@@ -170,10 +170,10 @@ export class FilesController {
 
   @Post(`${FILES_ROUTE.TASK_OPERATION}/${FILE_OPERATION.COMPRESS}/*`)
   @SkipSpacePermissionsCheck()
-  // Compression could be used to download files, permission is checked later
+  // Can be used to create or download an archive of files; permissions are checked later
   async compressAsTask(@Req() req: FastifySpaceRequest, @Body() compressFileDto: CompressFileDto): Promise<FileTask> {
     if (compressFileDto.compressInDirectory) {
-      SpaceGuard.checkPermissions(req, this.logger)
+      await SpaceGuard.checkPermissions(req, this.logger)
     }
     return this.filesTasksManager.createTask(FILE_OPERATION.COMPRESS, req.user, req.space, compressFileDto, this.filesMethods.compress.name)
   }

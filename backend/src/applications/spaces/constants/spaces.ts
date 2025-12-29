@@ -36,7 +36,7 @@ export enum SPACE_ROLE {
 
 export const SPACE_ALL_OPERATIONS: string = Object.values(SPACE_OPERATION).sort().join(SPACE_PERMS_SEP)
 
-export const SPACE_HTTP_PERMISSION = {
+export const SPACE_HTTP_PERMISSION: Record<string, SPACE_OPERATION> = {
   GET: null,
   POST: SPACE_OPERATION.ADD,
   PUT: SPACE_OPERATION.ADD,
@@ -54,7 +54,7 @@ export const SPACE_PERSONAL = {
   id: 0,
   alias: SPACE_ALIAS.PERSONAL,
   name: SPACE_ALIAS.PERSONAL,
-  permissions: '' // by default no rights are given on the space unless a resource is targeted
+  permissions: '' // by default, no rights are given on the space unless a resource is targeted
 } as const
 
 export const SPACE_SHARES = {
@@ -62,5 +62,5 @@ export const SPACE_SHARES = {
   id: 0,
   alias: SPACE_REPOSITORY.SHARES,
   name: SPACE_REPOSITORY.SHARES,
-  permissions: '' // by default no rights are given on the share unless a resource is targeted
+  permissions: '' // by default, no rights are given on the share unless a resource is targeted
 } as const

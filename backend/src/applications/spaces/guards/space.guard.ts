@@ -6,8 +6,10 @@
 
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
+import { HTTP_METHOD } from '../../applications.constants'
 import { COLLABORA_CONTEXT } from '../../files/modules/collabora-online/collabora-online.constants'
 import { COLLABORA_ONLINE_TO_SPACE_SEGMENTS } from '../../files/modules/collabora-online/collabora-online.utils'
+import { isPathExists, isPathIsDir } from '../../files/utils/files'
 import { SYNC_CONTEXT } from '../../sync/decorators/sync-context.decorator'
 import { SYNC_PATH_TO_SPACE_SEGMENTS } from '../../sync/utils/routes'
 import { WEB_DAV_CONTEXT } from '../../webdav/decorators/webdav-context.decorator'
@@ -31,8 +33,16 @@ export class SpaceGuard implements CanActivate {
     private readonly spacesManager: SpacesManager
   ) {}
 
-  static checkPermissions(req: FastifySpaceRequest, logger: Logger, overrideSpacePermission?: SPACE_OPERATION) {
-    const permission = overrideSpacePermission || SPACE_HTTP_PERMISSION[req.method]
+  static async checkPermissions(req: FastifySpaceRequest, logger: Logger, overrideSpacePermission?: SPACE_OPERATION) {
+    let permission: SPACE_OPERATION
+    if (req.method === HTTP_METHOD.PUT && (await isPathExists(req.space.realPath)) && !(await isPathIsDir(req.space.realPath))) {
+      // PUT method may either create a new resource or replace an existing one.
+      // Therefore, we must check whether the target resource already exists to apply the appropriate permission rules.
+      permission = SPACE_OPERATION.MODIFY
+    } else {
+      // The override is applied for specific POST methods that update an existing file rather than creating it.
+      permission = overrideSpacePermission || SPACE_HTTP_PERMISSION[req.method]
+    }
     if (!haveSpaceEnvPermissions(req.space, permission)) {
       logger.warn(`is not allowed to ${req.method} on this space path : *${req.space.alias}* (${req.space.id}) : ${req.space.url}`)
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
@@ -81,7 +91,7 @@ export class SpaceGuard implements CanActivate {
     const skipSpacePermissionsCheck = this.reflector.getAllAndOverride(SKIP_SPACE_PERMISSIONS_CHECK, [ctx.getHandler(), ctx.getClass()])
     if (skipSpacePermissionsCheck === undefined) {
       const overrideSpacePermission: SPACE_OPERATION = this.reflector.getAllAndOverride(OverrideSpacePermission, [ctx.getHandler(), ctx.getClass()])
-      SpaceGuard.checkPermissions(req, this.logger, overrideSpacePermission)
+      await SpaceGuard.checkPermissions(req, this.logger, overrideSpacePermission)
     }
     return true
   }
