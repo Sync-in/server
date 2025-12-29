@@ -24,6 +24,7 @@ import {
   faEye,
   faFileAlt,
   faFileArchive,
+  faFolderOpen,
   faGlobe,
   faLink,
   faLock,
@@ -36,7 +37,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { tarExtension } from '@sync-in-server/backend/src/applications/files/constants/compress'
-import { FILE_MODE, FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import type { FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
@@ -70,6 +71,7 @@ import { FilesCompressionDialogComponent } from '../../files/components/dialogs/
 import { FilesNewDialogComponent } from '../../files/components/dialogs/files-new-dialog.component'
 import { FilesTrashDialogComponent } from '../../files/components/dialogs/files-trash-dialog.component'
 import { FilesTrashEmptyDialogComponent } from '../../files/components/dialogs/files-trash-empty-dialog.component'
+import { FileLockFormatPipe } from '../../files/components/utils/file-lock.utils'
 import { FilePermissionsComponent } from '../../files/components/utils/file-permissions.component'
 import { FileEvent } from '../../files/interfaces/file-event.interface'
 import { FileModel } from '../../files/models/file.model'
@@ -106,7 +108,8 @@ import { SpaceAnchorFileDialogComponent } from './dialogs/space-anchor-file-dial
     UserAvatarComponent,
     UploadFilesDirective,
     FilePermissionsComponent,
-    TapDirective
+    TapDirective,
+    FileLockFormatPipe
   ],
   templateUrl: 'spaces-browser.component.html'
 })
@@ -138,6 +141,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     faEllipsis,
     faPen,
     faEye,
+    faFolderOpen,
     faRotate,
     faCommentDots,
     faFileArchive,
@@ -340,7 +344,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         this.sortBy(
           this.sortTable.sortParam.column,
           false,
-          spacesFiles.files.map((f: FileProps) => new FileModel(f, this.baseRepoUrl, this.isSharesRepo))
+          spacesFiles.files.map((f: FileProps) => new FileModel(f, this.baseRepoUrl, this.isSharesRepo, this.store.server().fileEditors))
         )
         this.updateFilesStats(this.files)
         this.loading = false
@@ -418,7 +422,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       if (file.isDir) {
         this.router.navigate([file.root?.alias || file.name], { relativeTo: this.activatedRoute }).catch(console.error)
       } else {
-        this.shortcutView(true)
+        this.shortcutOpen()
       }
     }
   }
@@ -436,20 +440,14 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-  shortcutView(editMode = false) {
+  shortcutOpen() {
     if (this.selection[0].isDir) {
       this.browse(this.selection[0])
-    } else if (editMode && this.selection[0].isEditable) {
-      this.shortcutEdit()
-    } else if (this.selection[0].isViewable) {
-      this.openViewerDialog(FILE_MODE.VIEW)
+    } else if (this.selection[0].isViewable || this.selection[0].isEditable) {
+      this.openViewerDialog()
     } else {
       this.downloadFiles()
     }
-  }
-
-  shortcutEdit() {
-    this.openViewerDialog(FILE_MODE.EDIT)
   }
 
   shortcutUploadFiles() {
@@ -722,7 +720,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     return f
   }
 
-  private openViewerDialog(mode: FILE_MODE) {
+  private openViewerDialog() {
     const f = this.selection[0]
     let permissions: string
     if (this.inSharesList) {
@@ -730,7 +728,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     } else {
       permissions = f?.root ? intersectPermissions(this.spacePermissions, f?.root.permissions) : this.spacePermissions
     }
-    this.filesService.openViewerDialog(mode, f, this.files, permissions).catch(console.error)
+    this.filesService.openViewerDialog(f, this.files, permissions).catch(console.error)
   }
 
   private focusOn(selectName: string) {

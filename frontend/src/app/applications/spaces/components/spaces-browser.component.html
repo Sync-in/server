@@ -120,17 +120,10 @@
     </button>
     <ul *dropdownMenu class="dropdown-menu" role="menu">
       @if (selection.length === 1) {
-        @if (selection[0].isViewable) {
+        @if (selection[0]) {
           <li role="menuitem">
-            <a (click)="shortcutView()" class="dropdown-item">
-              <span l10nTranslate><fa-icon [icon]="icons.faEye"></fa-icon>View</span>
-            </a>
-          </li>
-        }
-        @if (selection[0].isEditable) {
-          <li role="menuitem">
-            <a (click)="shortcutEdit()" class="dropdown-item">
-              <span l10nTranslate><fa-icon [icon]="icons.faPen"></fa-icon>Edit</span>
+            <a (click)="shortcutOpen()" class="dropdown-item">
+              <span l10nTranslate><fa-icon [icon]="selection[0].isDir ? icons.faFolderOpen : icons.faEye"></fa-icon>Open</span>
             </a>
           </li>
         }
@@ -171,7 +164,7 @@
       @if (!hasDisabledItemsInSelection) {
         <li role="menuitem">
           <a (click)="copyMoveFiles()" class="dropdown-item">
-            <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy/Move</span>
+            <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy · Move</span>
           </a>
         </li>
       }
@@ -249,7 +242,7 @@
               <span class="label-bottom-right">
                 @if (f.lock) {
                   <span (click)="openLockDialog(f)"
-                        tooltip="{{f.lock.owner}}"
+                        tooltip="{{f.lock | fileLockFormatPipe}}"
                         placement="auto"
                         [style.font-size.px]="galleryMode.textSize"
                         class="badge rounded-pill bg-maroon cursor-pointer">
@@ -396,7 +389,7 @@
                     @case ('info') {
                       @if (f.lock) {
                         <span (click)="openLockDialog(f)"
-                              tooltip="{{f.lock.owner}}"
+                              tooltip="{{f.lock | fileLockFormatPipe}}"
                               placement="auto"
                               class="badge rounded-pill bg-maroon cursor-pointer me-1">
                           <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
@@ -493,14 +486,9 @@
 <!--Start Context Menu -->
 <context-menu #FileContextMenu>
   @if (selection.length === 1) {
-    @if (selection[0].isViewable) {
-      <ng-template (execute)="shortcutView()" contextMenuItem>
-        <span l10nTranslate><fa-icon [icon]="icons.faEye"></fa-icon>View</span>
-      </ng-template>
-    }
-    @if (selection[0].isEditable) {
-      <ng-template (execute)="shortcutEdit()" contextMenuItem>
-        <span l10nTranslate><fa-icon [icon]="icons.faPen"></fa-icon>Edit</span>
+    @if (selection[0]) {
+      <ng-template (execute)="shortcutOpen()" contextMenuItem>
+        <span l10nTranslate><fa-icon [icon]="selection[0].isDir ? icons.faFolderOpen : icons.faEye"></fa-icon>Open</span>
       </ng-template>
     }
     @if (!inSharesList) {
@@ -517,6 +505,11 @@
       </ng-template>
     }
   }
+  @if (!hasDisabledItemsInSelection) {
+    <ng-template (execute)="downloadFiles()" contextMenuItem>
+      <span l10nTranslate><fa-icon [icon]="icons.faDownload"></fa-icon>Download</span>
+    </ng-template>
+  }
   @if (canCompress) {
     <ng-template (execute)="openCompressionDialog()" contextMenuItem>
       <span l10nTranslate><fa-icon [icon]="icons.faFileArchive"></fa-icon>Compress</span>
@@ -529,7 +522,7 @@
   }
   @if (!hasDisabledItemsInSelection) {
     <ng-template (execute)="copyMoveFiles()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy/Move</span>
+      <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy · Move</span>
     </ng-template>
   }
   @if (!isTrashRepo && canShare.outside || inSharesList && selection[0]?.canBeReShared) {
@@ -540,11 +533,6 @@
   <ng-template (execute)="addToClipboard()" contextMenuItem>
     <span l10nTranslate><fa-icon [icon]="icons.faClipboardList"></fa-icon>Clipboard</span>
   </ng-template>
-  @if (!hasDisabledItemsInSelection) {
-    <ng-template (execute)="downloadFiles()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faDownload"></fa-icon>Download</span>
-    </ng-template>
-  }
   <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
     <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
   </ng-template>

@@ -19,13 +19,9 @@
       <span class="mb-2" l10nTranslate>The file is edited by</span>
     }
     <img class="avatar-img mb-2" [src]="userAvatarUrl" alt="">
-    @if (isLockOwner) {
-      <b l10nTranslate>me</b>
-    } @else {
-      <b>{{ file?.lock?.owner }}</b>
-    }
+    <b>{{ file.lock | fileLockFormatPipe }}</b>
   </div>
-  @if (!isLockOwner && isFileOwner) {
+  @if (hasExclusiveLock && !isLockOwner && isFileOwner) {
     <div class="text-align-center mt-3 mb-1">
       <small l10nTranslate>As the file owner, you can unlock the file or request the current lock owner to release it.</small>
     </div>
@@ -33,7 +29,7 @@
 </div>
 <div class="modal-footer">
   <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary" data-dismiss="modal" type="button" l10nTranslate>
-    {{ hasExclusiveLock ? 'Cancel' : 'Close' | translate:locale.language }}
+    {{ hasExclusiveLock ? 'Cancel' : 'Close' }}
   </button>
   @if (hasExclusiveLock) {
     @if (isLockOwner || isFileOwner) {

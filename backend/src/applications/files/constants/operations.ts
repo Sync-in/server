@@ -25,3 +25,5 @@ export enum FILE_MODE {
   VIEW = 'view',
   EDIT = 'edit'
 }
+
+export const FORCE_AS_FILE_OWNER = 'forceAsFileOwner' as const

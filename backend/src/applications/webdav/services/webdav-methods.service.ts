@@ -7,20 +7,22 @@
 import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { currentTimeStamp, encodeUrl } from '../../../common/shared'
-import { FileLock } from '../../files/interfaces/file-lock.interface'
+import { FileLock, FileLockOptions } from '../../files/interfaces/file-lock.interface'
 import { FileError } from '../../files/models/file-error'
 import { LockConflict } from '../../files/models/file-lock-error'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
 import { FilesManager } from '../../files/services/files-manager.service'
-import { dirName, genEtag, isPathExists } from '../../files/utils/files'
+import { dirName, fileName, genEtag, isPathExists, isPathIsDir } from '../../files/utils/files'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { dbFileFromSpace } from '../../spaces/utils/paths'
 import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
 import {
   DEPTH,
+  HEADER,
   LOCK_DISCOVERY_PROP,
   NS_PREFIX,
+  OPTIONS_HEADERS,
   PRECONDITION,
   PROPPATCH_METHOD,
   PROPPATCH_MODIFIED_PROPS,
@@ -28,10 +30,11 @@ import {
   PROPPATCH_SUPPORTED_PROPS,
   PROPSTAT,
   STANDARD_PROPS,
+  WEBDAV_APP_LOCK,
   XML_CONTENT_TYPE
 } from '../constants/webdav'
 import { IfHeaderDecorator } from '../decorators/if-header.decorator'
-import { FastifyDAVRequest, WebDAVLock } from '../interfaces/webdav.interface'
+import { FastifyDAVRequest } from '../interfaces/webdav.interface'
 import { extractAllTokens, extractOneToken } from '../utils/if-header'
 import { DAV_ERROR_RES, LOCK_DISCOVERY, LOCK_PROP, MULTI_STATUS, PROP, PROP_STAT } from '../utils/webdav'
 import { xmlBuild } from '../utils/xml'
@@ -49,6 +52,15 @@ export class WebDAVMethods {
 
   async headOrGet(req: FastifyDAVRequest, res: FastifyReply, repository: string): Promise<StreamableFile> {
     if (repository === SPACE_REPOSITORY.FILES && !req.space.inSharesList) {
+      if ((await isPathExists(req.space.realPath)) && (await isPathIsDir(req.space.realPath))) {
+        // Directory case
+        return res
+          .header('DAV', OPTIONS_HEADERS.DAV)
+          .header('Content-Type', 'httpd/unix-directory')
+          .header('Content-Length', '0')
+          .status(HttpStatus.OK)
+          .send()
+      }
       const sendFile = this.filesManager.sendFileFromSpace(req.space)
       try {
         await sendFile.checks()
@@ -84,29 +96,39 @@ export class WebDAVMethods {
       }
     }
 
-    const davLock: WebDAVLock = {
-      lockroot: req.dav.url,
-      locktoken: null, // created later
-      lockscope: req.dav.lock.lockscope,
-      owner: req.dav.lock.owner
+    const lockOptions: FileLockOptions = {
+      lockRoot: req.dav.url,
+      lockToken: this.filesLockManager.genDAVToken(),
+      lockScope: req.dav.lock.lockscope,
+      lockInfo: req.dav.lock?.owner
     }
 
-    const [ok, fileLock] = await this.filesLockManager.create(req.user, req.space.dbFile, req.dav.depth, davLock, req.dav.lock.timeout)
+    const [ok, fileLock] = await this.filesLockManager.create(
+      req.user,
+      req.space.dbFile,
+      WEBDAV_APP_LOCK,
+      req.dav.depth,
+      lockOptions,
+      req.dav.lock.timeout
+    )
     if (ok) {
       // Locking unmapped URLs: must create an empty resource (that is not a collection)
       if (!rExists) {
-        // checkLocks set to false because the conflicts are already checked in `filesLockManager.create` method
+        // checkLocks set to false because the conflicts are already checked in the `filesLockManager.create` method
         await this.filesManager.mkFile(req.user, req.space, false, false, false)
       }
       const lockProp = LOCK_PROP([fileLock])
       return res
-        .header('lock-token', `<${davLock.locktoken}>`)
+        .header(HEADER.LOCK_TOKEN, `<${lockOptions.lockToken}>`)
         .type(XML_CONTENT_TYPE)
         .status(rExists ? HttpStatus.OK : HttpStatus.CREATED)
         .send(xmlBuild(lockProp))
-    } else {
-      return DAV_ERROR_RES(HttpStatus.LOCKED, PRECONDITION.LOCK_CONFLICT, res, fileLock.davLock?.lockroot || fileLock.dbFilePath)
     }
+    if (fileLock) {
+      const lockProp = LOCK_PROP([fileLock])
+      return res.type(XML_CONTENT_TYPE).status(HttpStatus.LOCKED).send(xmlBuild(lockProp))
+    }
+    return DAV_ERROR_RES(HttpStatus.LOCKED, PRECONDITION.LOCK_CONFLICT, res, fileLock.options?.lockRoot || fileLock.dbFilePath)
   }
 
   @IfHeaderDecorator()
@@ -168,7 +190,19 @@ export class WebDAVMethods {
         for (const p of requestedProps) {
           let fP: any
           if (p === LOCK_DISCOVERY_PROP) {
-            fP = repository === SPACE_REPOSITORY.FILES && f.name in locks ? LOCK_DISCOVERY([locks[f.name]]) : null
+            let lockDiscovery: any[] = null
+            if (repository === SPACE_REPOSITORY.FILES) {
+              if (f.name in locks) {
+                lockDiscovery = LOCK_DISCOVERY([locks[f.name]])
+              } else {
+                // The lock name may correspond to the original file at the space root.
+                const fName = fileName(req.space.dbFile.path)
+                if (fName in locks) {
+                  lockDiscovery = LOCK_DISCOVERY([locks[fName]])
+                }
+              }
+            }
+            fP = lockDiscovery
           } else {
             fP = f[p]
           }
@@ -341,7 +375,7 @@ export class WebDAVMethods {
       space: dstSpace
     } as FastifyDAVRequest
     if (!(await this.evaluateIfHeaders(fakeDstReq, res))) {
-      // if there is an error the response is generated inside the `evaluateIfHeaders` function
+      // if there is an error, the response is generated inside the `evaluateIfHeaders` function
       return
     }
     try {
@@ -396,12 +430,12 @@ export class WebDAVMethods {
 
       if (condition.token) {
         const token = await this.filesLockManager.getLockByToken(condition.token.value)
-        const match = token && lastPath.startsWith(token.davLock?.lockroot)
+        const match = token && lastPath.startsWith(token.options?.lockRoot)
         if (condition.token.mustMatch !== match) {
           if (!token) {
             errors.push(`lock token not found`)
           } else {
-            errors.push(`lock token url mismatch (${lastPath} is not a child of ${token.davLock?.lockroot})`)
+            errors.push(`lock token url mismatch (${lastPath} is not a child of ${token.options?.lockRoot})`)
           }
           continue
         }
@@ -466,7 +500,7 @@ export class WebDAVMethods {
     // Remove the last part to avoid exposing the path
     const errorMsg = e.message.split(',')[0]
     if (e instanceof LockConflict) {
-      return DAV_ERROR_RES(HttpStatus.LOCKED, PRECONDITION.LOCK_CONFLICT, res, e.lock.davLock?.lockroot || e.lock.dbFilePath)
+      return DAV_ERROR_RES(HttpStatus.LOCKED, PRECONDITION.LOCK_CONFLICT, res, e.lock.options?.lockRoot || e.lock.dbFilePath)
     } else if (e instanceof FileError) {
       return res.status(e.httpCode).send(errorMsg)
     }

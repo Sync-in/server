@@ -4,7 +4,13 @@
  * See the LICENSE file for licensing details
  */
 
+export interface FileEditorProvider {
+  collabora: boolean
+  onlyoffice: boolean
+}
+
 export interface ServerConfig {
   twoFaEnabled: boolean
   mailServerEnabled: boolean
+  fileEditors: FileEditorProvider
 }

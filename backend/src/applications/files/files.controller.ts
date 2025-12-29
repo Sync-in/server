@@ -39,7 +39,7 @@ import { FastifySpaceRequest } from '../spaces/interfaces/space-request.interfac
 import { SpaceEnv } from '../spaces/models/space-env.model'
 import { GetUser } from '../users/decorators/user.decorator'
 import { UserModel } from '../users/models/user.model'
-import { FILE_OPERATION } from './constants/operations'
+import { FILE_OPERATION, FORCE_AS_FILE_OWNER } from './constants/operations'
 import { FILES_ROUTE } from './constants/routes'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto, SearchFilesDto } from './dto/file-operations.dto'
 import { FileLockProps } from './interfaces/file-props.interface'
@@ -145,9 +145,9 @@ export class FilesController {
   async unlock(
     @GetUser() user: UserModel,
     @GetSpace() space: SpaceEnv,
-    @Query('forceAsOwner', new ParseBoolPipe({ optional: true })) forceAsOwner?: boolean
+    @Query(FORCE_AS_FILE_OWNER, new ParseBoolPipe({ optional: true })) forceAsFileOwner?: boolean
   ): Promise<void> {
-    return this.filesMethods.unlock(user, space, forceAsOwner)
+    return this.filesMethods.unlock(user, space, forceAsFileOwner)
   }
 
   @Unlock(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UNLOCK_REQUEST}/*`)
@@ -170,10 +170,10 @@ export class FilesController {
 
   @Post(`${FILES_ROUTE.TASK_OPERATION}/${FILE_OPERATION.COMPRESS}/*`)
   @SkipSpacePermissionsCheck()
-  // Compression could be used to download files, permission is checked later
+  // Can be used to create or download an archive of files; permissions are checked later
   async compressAsTask(@Req() req: FastifySpaceRequest, @Body() compressFileDto: CompressFileDto): Promise<FileTask> {
     if (compressFileDto.compressInDirectory) {
-      SpaceGuard.checkPermissions(req, this.logger)
+      await SpaceGuard.checkPermissions(req, this.logger)
     }
     return this.filesTasksManager.createTask(FILE_OPERATION.COMPRESS, req.user, req.space, compressFileDto, this.filesMethods.compress.name)
   }

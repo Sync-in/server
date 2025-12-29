@@ -32,7 +32,11 @@ import { myAvatarUrl } from '../applications/users/user.functions'
   providedIn: 'root'
 })
 export class StoreService {
-  public server: WritableSignal<ServerConfig> = signal<ServerConfig>({ twoFaEnabled: false, mailServerEnabled: false })
+  public server: WritableSignal<ServerConfig> = signal<ServerConfig>({
+    twoFaEnabled: false,
+    mailServerEnabled: false,
+    fileEditors: { collabora: false, onlyoffice: false }
+  })
   public user = new BehaviorSubject<UserType>(null)
   public userAvatarUrl = new BehaviorSubject<string>(myAvatarUrl())
   public userImpersonate: WritableSignal<boolean> = signal<boolean>(false)
@@ -44,8 +48,6 @@ export class StoreService {
   public filesActiveTasks = new BehaviorSubject<FileTask[]>([])
   public filesEndedTasks = new BehaviorSubject<FileTask[]>([])
   public filesRecents: WritableSignal<FileRecentModel[]> = signal<FileRecentModel[]>([])
-  // OnlyOffice
-  public filesOnlyOffice: WritableSignal<{ enabled: boolean }> = signal({ enabled: null })
   // Search
   public currentSearch: WritableSignal<SearchFilesDto> = signal<SearchFilesDto>({ content: '', fullText: false })
   public filesSearch: WritableSignal<FileContentModel[]> = signal<FileContentModel[]>([])

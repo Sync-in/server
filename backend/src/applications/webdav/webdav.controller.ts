@@ -21,7 +21,7 @@ export class WebDAVController {
 
   @Options()
   serverOptions() {
-    // OPTIONS method is handled in the `DavProtocolGuard`, return empty response with headers
+    // OPTIONS method is handled in the `WebDAVProtocolGuard`, return empty response with headers
     return
   }
 
@@ -32,7 +32,7 @@ export class WebDAVController {
 
   @Options(WEBDAV_BASE_PATH)
   webdavOptions() {
-    // OPTIONS method is handled in the `DavProtocolGuard`, return empty response with headers
+    // OPTIONS method is handled in the `WebDAVProtocolGuard`, return empty response with headers
     return
   }
 
@@ -43,7 +43,7 @@ export class WebDAVController {
 
   @Options(`${WEBDAV_BASE_PATH}/:repository(^(${WEBDAV_NS.SPACES}|${WEBDAV_NS.TRASH})$)`)
   repositoriesOptions() {
-    // OPTIONS method is handled in the `DavProtocolGuard`
+    // OPTIONS method is handled in the `WebDAVProtocolGuard`
     return
   }
 
@@ -55,7 +55,7 @@ export class WebDAVController {
   @All(`${WEBDAV_BASE_PATH}/*`)
   @UseGuards(SpaceGuard)
   async files(@Req() req: FastifyDAVRequest, @Res({ passthrough: true }) res: FastifyReply) {
-    // OPTIONS method is handled in the `DavProtocolGuard`
+    // OPTIONS method is handled in the `WebDAVProtocolGuard`
     switch (req.method) {
       case HTTP_METHOD.PROPFIND:
         return this.webdavMethods.propfind(req, res, SPACE_REPOSITORY.FILES)

@@ -4,16 +4,18 @@
  * See the LICENSE file for licensing details
  */
 
-import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/constants/only-office'
 import {
   API_FILES_OPERATION,
   API_FILES_OPERATION_THUMBNAIL,
   API_FILES_TASK_OPERATION
 } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import type { FileLockProps, FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
+import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
+import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import type { File } from '@sync-in-server/backend/src/applications/files/schemas/file.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { currentTimeStamp, popFromObject } from '@sync-in-server/backend/src/common/shared'
+import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import type { Observable } from 'rxjs'
 import { convertBytesToText, getNewly } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'
@@ -87,11 +89,11 @@ export class FileModel implements File {
   canBeReShared = false
   haveThumbnail = false
 
-  constructor(props: FileProps | File, basePath: string, inShare = false) {
+  constructor(props: FileProps | File, basePath: string, inShare = false, editorConfig: FileEditorProvider) {
     this.setShares(popFromObject('shares', props))
     Object.assign(this, props)
     this.path = `${basePath}/${this.path !== '.' ? `${this.path}/` : ''}${this.root?.alias || this.name}`
-    this.mime = this.getMime(this.mime, inShare)
+    this.mime = this.getMime(this.mime, inShare, editorConfig)
     this.updateHTimeAgo(this.mtime)
     this.setMimeUrl()
     this.setHSize()
@@ -130,52 +132,92 @@ export class FileModel implements File {
     this.newly = getNewly(mtime)
   }
 
-  private getType(inShare: boolean) {
+  createLock(lock: FileLockProps) {
+    this.lock = lock
+  }
+
+  removeLock() {
+    this.lock = null
+  }
+
+  getExtension(): string {
+    const dot = this.name.lastIndexOf('.')
+    return dot >= 0 ? this.name.slice(dot + 1).toLowerCase() : ''
+  }
+
+  private getType(inShare: boolean): 'directory_share' | 'directory' | 'file' {
     return this.isDir ? (inShare ? mimeDirectoryShare : mimeDirectory) : mimeFile
   }
 
-  private getMime(mime: string, inShare: boolean) {
+  private getMime(mime: string, inShare: boolean, editorConfig: FileEditorProvider): string {
     if (this.isDir) {
       this.isViewable = false
       return this.getType(inShare)
-    } else if (mime) {
-      const temporaryMime = mime.split('-')[0]
-      const extension = this.name.split('.').pop().toLowerCase()
-      if (extension === SHORT_MIME.PDF) {
-        this.shortMime = SHORT_MIME.PDF
-        this.isViewable = true
-        this.isEditable = ONLY_OFFICE_EXTENSIONS.EDITABLE.has(extension)
-      } else if (ONLY_OFFICE_EXTENSIONS.EDITABLE.has(extension) || ONLY_OFFICE_EXTENSIONS.VIEWABLE.has(extension)) {
-        this.shortMime = SHORT_MIME.DOCUMENT
-        this.isEditable = ONLY_OFFICE_EXTENSIONS.EDITABLE.has(extension)
-        this.isViewable = this.isEditable || ONLY_OFFICE_EXTENSIONS.VIEWABLE.has(extension)
-      } else if (extension === 'mp4') {
-        this.isViewable = true
-        this.shortMime = SHORT_MIME.MEDIA
-        this.haveThumbnail = true
-      } else if (temporaryMime === SHORT_MIME.IMAGE) {
-        this.shortMime = SHORT_MIME.IMAGE
-        this.isImage = true
-        this.isViewable = true
-        this.haveThumbnail = true
-      } else if (['video', 'audio'].indexOf(temporaryMime) > -1) {
-        this.shortMime = SHORT_MIME.MEDIA
-        this.isViewable = true
-        this.haveThumbnail = true
-      } else if (COMPRESSIBLE_MIMES.has(mime)) {
-        this.isCompressible = false
-        this.isViewable = false
-      } else if (!UNSUPPORTED_VIEW_EXTENSIONS.has(extension)) {
-        this.isViewable = true
-        this.isEditable = true
-        this.shortMime = SHORT_MIME.TEXT
-      }
-      return mime
-    } else {
+    }
+
+    if (!mime || mime === mimeFile) {
       this.isViewable = true
       this.shortMime = SHORT_MIME.TEXT
       return this.getType(inShare)
     }
+
+    const extension = this.getExtension()
+    const dash = mime.indexOf('-')
+    const temporaryMime = dash >= 0 ? mime.slice(0, dash) : mime
+
+    if (extension === SHORT_MIME.PDF) {
+      this.shortMime = SHORT_MIME.PDF
+      this.isViewable = true
+      this.isEditable = editorConfig.onlyoffice === true
+      return mime
+    }
+
+    if (
+      (editorConfig.collabora === true && COLLABORA_ONLINE_EXTENSIONS.has(extension)) ||
+      (editorConfig.onlyoffice === true && ONLY_OFFICE_EXTENSIONS.has(extension))
+    ) {
+      this.shortMime = SHORT_MIME.DOCUMENT
+      this.isEditable = true
+      this.isViewable = true
+      return mime
+    }
+
+    if (extension === 'mp4') {
+      this.isViewable = true
+      this.shortMime = SHORT_MIME.MEDIA
+      this.haveThumbnail = true
+      return mime
+    }
+
+    if (temporaryMime === SHORT_MIME.IMAGE) {
+      this.shortMime = SHORT_MIME.IMAGE
+      this.isImage = true
+      this.isViewable = true
+      this.haveThumbnail = true
+      return mime
+    }
+
+    if (temporaryMime === 'video' || temporaryMime === 'audio') {
+      this.shortMime = SHORT_MIME.MEDIA
+      this.isViewable = true
+      this.haveThumbnail = true
+      return mime
+    }
+
+    if (COMPRESSIBLE_MIMES.has(mime)) {
+      this.isCompressible = false
+      this.isViewable = false
+      return mime
+    }
+
+    if (!UNSUPPORTED_VIEW_EXTENSIONS.has(extension)) {
+      this.shortMime = SHORT_MIME.TEXT
+      this.isViewable = true
+      this.isEditable = true
+      return mime
+    }
+
+    return mime
   }
 
   private setMimeUrl() {

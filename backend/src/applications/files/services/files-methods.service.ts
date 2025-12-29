@@ -161,9 +161,9 @@ export class FilesMethods {
     }
   }
 
-  async unlock(user: UserModel, space: SpaceEnv, forceAsOwner = false): Promise<void> {
+  async unlock(user: UserModel, space: SpaceEnv, forceAsFileOwner = false): Promise<void> {
     try {
-      return await this.filesManager.unlock(user, space, forceAsOwner)
+      return await this.filesManager.unlock(user, space, forceAsFileOwner)
     } catch (e) {
       this.handleError(space, FILE_OPERATION.UNLOCK, e)
     }

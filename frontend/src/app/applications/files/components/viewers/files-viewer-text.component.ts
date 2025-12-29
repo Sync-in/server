@@ -46,6 +46,7 @@ import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
 import { FilesUploadService } from '../../services/files-upload.service'
 import { FilesService } from '../../services/files.service'
+import { fileLockPropsToString } from '../utils/file-lock.utils'
 
 @Component({
   selector: 'app-files-viewer-text',
@@ -104,7 +105,6 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
   private readonly filesServices = inject(FilesService)
   private readonly filesUpload = inject(FilesUploadService)
   private subscription = this.layout.switchTheme.subscribe((layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light'))
-  private readonly maxSize = 5242880 // 5MB
 
   constructor() {
     effect(() => {
@@ -173,15 +173,9 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
 
   async ngOnInit() {
     const language: LanguageDescription = LanguageDescription.matchFilename(languages, this.file().name)
-    if (language?.name || this.file().size <= this.maxSize) {
-      this.currentLanguage = language?.name
-      this.isSupported.set(true)
-      this.loadContent().catch(console.error)
-    } else {
-      this.isReadonly.set(true)
-      this.isSupported.set(false)
-      this.content = this.layout.translateString('This file contains binary data that can not be read')
-    }
+    this.currentLanguage = language?.name
+    this.isSupported.set(true)
+    this.loadContent().catch(console.error)
   }
 
   async toggleReadonly() {
@@ -308,7 +302,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
         f.lock = lock
         return f
       })
-      this.layout.sendNotification('info', 'The file is locked', lock.owner)
+      this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(lock))
     } else {
       this.layout.sendNotification('warning', this.file().name, e.error.message)
     }

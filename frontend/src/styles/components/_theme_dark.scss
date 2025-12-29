@@ -448,7 +448,7 @@
     border-top-color: $sidebar-dark-apps-menu-title-bg;
   }
 
-  .modal-auth-verify-2fa {
+  .modal-auth-verify-2fa, .modal-viewer-select {
     .card {
       color: $gray-light;
       background-color: $sidebar-dark-icons-menu-bg;
@@ -602,6 +602,10 @@
 
   .btn-outline-secondary-alt {
     border-color: lighten($sidebar-dark-icons-menu-bg, 4%)
+  }
+
+  .text-muted {
+    color: #8a8f94 !important;
   }
 
   .text-bg-light {

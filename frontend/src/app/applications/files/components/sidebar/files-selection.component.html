@@ -147,7 +147,7 @@
               <div (click)="openLockDialog(f)"
                    class="badge rounded-pill white-space bg-maroon cursor-pointer mb-2">
                 <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faUnlock"></fa-icon>
-                <span>&nbsp;{{ f.lock.owner }}</span>
+                <span>&nbsp;{{ f.lock | fileLockFormatPipe }}</span>
               </div>
             }
             @for (space of f.spaces; track space.id) {

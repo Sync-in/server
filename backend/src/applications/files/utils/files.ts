@@ -16,7 +16,8 @@ import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { formatDateISOString } from '../../../common/functions'
 import { currentTimeStamp, isValidFileName, regExpPreventPathTraversal } from '../../../common/shared'
-import { DEFAULT_HIGH_WATER_MARK, EXTRA_MIMES_TYPE } from '../constants/files'
+import { DEFAULT_CHECKSUM_ALGORITHM, DEFAULT_HIGH_WATER_MARK, EXTRA_MIMES_TYPE } from '../constants/files'
+import type { FileDBProps } from '../interfaces/file-db-props.interface'
 import type { FileProps } from '../interfaces/file-props.interface'
 import { FileError } from '../models/file-error'
 
@@ -102,13 +103,22 @@ export function getMimeType(fPath: string, isDir: boolean): string {
   return 'file'
 }
 
-export function genEtag(file?: Pick<FileProps, 'size' | 'mtime'>, rPath?: string): string {
+export function genEtag(file?: Pick<FileProps, 'size' | 'mtime'>, rPath?: string, weakPrefix = true): string {
   if (!file) {
     if (!rPath) throw new Error('File or path are missing')
     const stats = statSync(rPath)
     file = { size: stats.size, mtime: stats.mtime.getTime() }
   }
-  return `W/"${file.size.toString(16)}-${file.mtime.toString(16)}"`
+  const etag = `${file.size.toString(16)}-${file.mtime.toString(16)}`
+  return weakPrefix ? `W/"${etag}"` : etag
+}
+
+export function genUniqHashFromFileDBProps(dbFile: FileDBProps) {
+  const dbFileString = `${Object.keys(dbFile)
+    .sort()
+    .map((k) => `${k}=${String(dbFile[k])}`)
+    .join('|')}`
+  return crypto.createHash(DEFAULT_CHECKSUM_ALGORITHM).update(dbFileString, 'utf-8').digest('hex')
 }
 
 export function removeFiles(rPath: string): Promise<void> {

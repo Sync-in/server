@@ -81,7 +81,7 @@
   --bs-backdrop-zindex: 0 !important;
 }
 
-.modal-auth-verify-2fa {
+.modal-auth-verify-2fa, .modal-viewer-select {
   border-bottom-left-radius: var(--bs-modal-inner-border-radius);
   border-bottom-right-radius: var(--bs-modal-inner-border-radius);
 }

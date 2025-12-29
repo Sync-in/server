@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { Component, HostListener, inject, Input, output } from '@angular/core'
+import { Component, inject, Input, output } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFileShield } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -24,16 +24,6 @@ export class FilesOverwriteDialogComponent {
   protected layout = inject(LayoutService)
   protected readonly icons = { faFileShield }
   protected submitted = false
-
-  @HostListener('document:keyup.enter')
-  onEnter() {
-    this.onAction(true)
-  }
-
-  @HostListener('document:keyup.escape')
-  onEsc() {
-    this.onAction(false)
-  }
 
   onAction(overwrite: boolean) {
     this.submitted = overwrite

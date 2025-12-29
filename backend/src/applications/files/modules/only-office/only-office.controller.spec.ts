@@ -5,16 +5,16 @@
  */
 
 import { Test, TestingModule } from '@nestjs/testing'
-import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
-import { ContextManager } from '../../infrastructure/context/services/context-manager.service'
-import { SpacesManager } from '../spaces/services/spaces-manager.service'
-import { FILE_MODE } from './constants/operations'
-import { FilesOnlyOfficeController } from './files-only-office.controller'
-import { FilesMethods } from './services/files-methods.service'
-import { FilesOnlyOfficeManager } from './services/files-only-office-manager.service'
+import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor'
+import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
+import { SpacesManager } from '../../../spaces/services/spaces-manager.service'
+import { FILE_MODE } from '../../constants/operations'
+import { FilesMethods } from '../../services/files-methods.service'
+import { OnlyOfficeManager } from './only-office-manager.service'
+import { OnlyOfficeController } from './only-office.controller'
 
-describe(FilesOnlyOfficeController.name, () => {
-  let controller: FilesOnlyOfficeController
+describe(OnlyOfficeController.name, () => {
+  let controller: OnlyOfficeController
 
   const filesOnlyOfficeManagerMock = {
     getSettings: jest.fn(),
@@ -28,9 +28,9 @@ describe(FilesOnlyOfficeController.name, () => {
   beforeEach(async () => {
     jest.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [FilesOnlyOfficeController],
+      controllers: [OnlyOfficeController],
       providers: [
-        { provide: FilesOnlyOfficeManager, useValue: filesOnlyOfficeManagerMock },
+        { provide: OnlyOfficeManager, useValue: filesOnlyOfficeManagerMock },
         { provide: FilesMethods, useValue: filesMethodsMock },
         { provide: SpacesManager, useValue: {} },
         ContextManager,
@@ -38,7 +38,7 @@ describe(FilesOnlyOfficeController.name, () => {
       ]
     }).compile()
 
-    controller = module.get<FilesOnlyOfficeController>(FilesOnlyOfficeController)
+    controller = module.get<OnlyOfficeController>(OnlyOfficeController)
   })
 
   it('should be defined', () => {
@@ -49,27 +49,27 @@ describe(FilesOnlyOfficeController.name, () => {
     it('should call manager with default mode "view" when mode is undefined', async () => {
       const user: any = { id: 1 }
       const space: any = { id: 'space-1' }
-      const req: any = { headers: {}, params: {}, query: {} }
+      const req: any = { headers: {}, params: {}, query: {}, user, space }
       const expected = { config: 'ok', mode: FILE_MODE.VIEW }
       filesOnlyOfficeManagerMock.getSettings.mockResolvedValue(expected)
 
-      const result = await controller.onlyOfficeSettings(user, space, undefined as any, req)
+      const result = await controller.onlyOfficeSettings(req)
 
       expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledTimes(1)
-      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, FILE_MODE.VIEW, req)
+      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, req)
       expect(result).toBe(expected)
     })
 
     it('should pass provided mode to manager', async () => {
       const user: any = { id: 2 }
       const space: any = { id: 'space-2' }
-      const req: any = { headers: { 'x-test': '1' } }
+      const req: any = { headers: { 'x-test': '1' }, user, space }
       const expected = { config: 'ok', mode: FILE_MODE.EDIT }
       filesOnlyOfficeManagerMock.getSettings.mockResolvedValue(expected)
 
-      const result = await controller.onlyOfficeSettings(user, space, FILE_MODE.EDIT, req)
+      const result = await controller.onlyOfficeSettings(req)
 
-      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, FILE_MODE.EDIT, req)
+      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, req)
       expect(result).toBe(expected)
     })
   })
@@ -94,14 +94,13 @@ describe(FilesOnlyOfficeController.name, () => {
       const user: any = { id: 3 }
       const space: any = { id: 'space-3' }
       const token = 'jwt-token'
-      const fileId = 'file-123'
       const expected = { ok: true }
       filesOnlyOfficeManagerMock.callBack.mockResolvedValue(expected)
 
-      const result = await controller.onlyOfficeCallBack(user, space, token, fileId)
+      const result = await controller.onlyOfficeCallBack(user, space, token)
 
       expect(filesOnlyOfficeManagerMock.callBack).toHaveBeenCalledTimes(1)
-      expect(filesOnlyOfficeManagerMock.callBack).toHaveBeenCalledWith(user, space, token, fileId)
+      expect(filesOnlyOfficeManagerMock.callBack).toHaveBeenCalledWith(user, space, token)
       expect(result).toBe(expected)
     })
   })

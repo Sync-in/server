@@ -5,7 +5,7 @@
  */
 
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core'
-import type { OnlyOfficeConfig } from '@sync-in-server/backend/src/applications/files/interfaces/only-office-config.interface'
+import type { OnlyOfficeConfig } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.interface'
 import loadScript from './only-office.utils'
 
 @Component({
@@ -16,7 +16,7 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
   @Input() id: string
   @Input() documentServerUrl: string
   @Input() config: OnlyOfficeConfig
-  @Output() loadError = new EventEmitter<string>()
+  @Output() loadError = new EventEmitter<{ title: string; message: string }>()
   @Output() wasSaved = new EventEmitter<string>()
   private isFirstOnChanges = true
 
@@ -81,20 +81,19 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private onError(errorCode: number) {
-    let message: string
+    const error = { title: 'Unknown OnlyOffice error', message: `Code: ${errorCode}` }
 
     switch (errorCode) {
       case -2:
-        message = 'Check the settings'
+        error.title = 'Unable to load OnlyOffice editor'
+        error.message = 'The document server may be unreachable or the configuration is invalid'
         break
       case -3:
-        message = 'DocsAPI is not defined'
+        error.title = 'OnlyOffice editor failed to initialize'
+        error.message = 'DocsAPI not available'
         break
-      default:
-        message = 'Unknown error !'
-        errorCode = -1
     }
 
-    this.loadError.emit(message)
+    this.loadError.emit(error)
   }
 }

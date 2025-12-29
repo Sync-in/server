@@ -4,12 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { FILE_MODE } from '../constants/operations'
-
-export interface OnlyOfficeReqConfig {
-  documentServerUrl: string
-  config: OnlyOfficeConfig
-}
+import { FILE_MODE } from '../../constants/operations'
 
 export interface OnlyOfficeConvertForm {
   key: string

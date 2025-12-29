@@ -11,10 +11,9 @@ import { currentTimeStamp } from '../../../common/shared'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { UserModel } from '../../users/models/user.model'
 import { DEPTH, LOCK_DEPTH, LOCK_PREFIX, LOCK_SCOPE } from '../../webdav/constants/webdav'
-import { WebDAVLock } from '../../webdav/interfaces/webdav.interface'
 import { CACHE_LOCK_DEFAULT_TTL, CACHE_LOCK_PREFIX } from '../constants/cache'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
-import { FileLock } from '../interfaces/file-lock.interface'
+import { FileLock, FileLockOptions, LOCK_APP } from '../interfaces/file-lock.interface'
 import { FileLockProps } from '../interfaces/file-props.interface'
 import { LockConflict } from '../models/file-lock-error'
 import { files } from '../schemas/files.schema'
@@ -23,37 +22,33 @@ import { dirName, fileName } from '../utils/files'
 @Injectable()
 export class FilesLockManager {
   /* Philosophy
-  Currently this manager only handle conflicting locks between multiple users, not between clients
+  Currently this manager only handles conflicting locks between multiple users, not between clients
   - The locks created from api
       * They do not contain a token key or a davLock property
       * They are exclusive only
       * They must have a depth of 'infinity' (all children) or '0' (root and root members)
-  - The locks created from WebDAV or OnlyOffice are stored with a token and a davLock property
+  - The locks created from WebDAV or OnlyOffice or CollaboraOnline are stored with a token and a davLock property
       * They must have a depth of 'infinity' (all children) or '0' (root and root members)
-      * They can be exclusive (WebDAV) or shared (OnlyOffice)
+      * They can be exclusive (WebDAV) or shared (OnlyOffice, CollaboraOnline)
       * If created with WebDAV, they are stored with a token and a davLock property
-      * If created with OnlyOffice, they are stored with no token and a davLock property whose `locktoken` & `lockroot` properties are null
+      * If created with OnlyOffice, they are stored with no token and a davLock property whose `locktoken` & `lockroot` properties are `null`
+      * If created with CollaboraOnline, they are stored with token and a davLock property whose `lockroot` property is `null`
   Cache token key format = `flock|token?:${uuid}|path:${path}|ownerId?:${number}|spaceId?:${number}|...props` => FileLock
   */
   private readonly logger = new Logger(FilesLockManager.name)
 
   constructor(private readonly cache: Cache) {}
 
-  async create(user: UserModel, dbFile: FileDBProps, depth: LOCK_DEPTH, davLock?: WebDAVLock, ttl?: number): Promise<[boolean, FileLock]> {
-    let token: string
-    let lockscope: LOCK_SCOPE
-    if (davLock) {
-      // webdav context
-      davLock.locktoken = this.genDAVToken()
-      token = davLock.locktoken
-      lockscope = davLock.lockscope
-    } else {
-      // api context
-      token = null
-      lockscope = null
-    }
+  async create(
+    user: UserModel,
+    dbFile: FileDBProps,
+    app: LOCK_APP,
+    depth: LOCK_DEPTH,
+    options?: FileLockOptions,
+    ttl?: number
+  ): Promise<[boolean, FileLock]> {
     try {
-      await this.checkConflicts(dbFile, depth, { lockScope: lockscope })
+      await this.checkConflicts(dbFile, depth, { app: app, lockScope: options?.lockScope })
     } catch (e) {
       if (e instanceof LockConflict) {
         return [false, e.lock]
@@ -61,22 +56,23 @@ export class FilesLockManager {
       throw new Error(e)
     }
     ttl ??= CACHE_LOCK_DEFAULT_TTL
-    const key = `${CACHE_LOCK_PREFIX}|${this.genSuffixKey(dbFile, { depth: depth, token: token })}`
+    const key = `${CACHE_LOCK_PREFIX}|${this.genSuffixKey(dbFile, { depth: depth, token: options?.lockToken })}`
     const expiration = Math.floor(currentTimeStamp() + ttl)
     const lock: FileLock = {
       owner: user.asOwner(),
       dbFilePath: dbFile.path,
       key: key,
+      app: app,
       depth: depth,
       expiration: expiration,
-      davLock: davLock
+      options: options
     }
     this.logger.verbose(`${this.create.name} - ${key}`)
     await this.cache.set(key, lock, ttl)
     return [true, lock]
   }
 
-  async createOrRefresh(user: UserModel, dbFile: FileDBProps, depth: LOCK_DEPTH, ttl?: number): Promise<[boolean, FileLock]> {
+  async createOrRefresh(user: UserModel, dbFile: FileDBProps, app: LOCK_APP, depth: LOCK_DEPTH, ttl?: number): Promise<[boolean, FileLock]> {
     // Returns: [created, lock]
     ttl ??= CACHE_LOCK_DEFAULT_TTL
     const locks = await this.getLocksByPath(dbFile)
@@ -96,7 +92,7 @@ export class FilesLockManager {
       return [false, locks[0]]
     }
     // Create the lock
-    const [ok, lock] = await this.create(user, dbFile, depth, null, ttl)
+    const [ok, lock] = await this.create(user, dbFile, app, depth, null, ttl)
     if (!ok) {
       throw new LockConflict(lock, 'Conflicting lock')
     }
@@ -126,7 +122,7 @@ export class FilesLockManager {
   }
 
   async isLockedWithToken(token: string, dbFilePath: string): Promise<FileLock> {
-    // check if url (or any of its parents) is locked by the token
+    // check if the url (or any of its parents) is locked by the token
     const lock = await this.getLockByToken(token)
     return lock ? (dbFilePath.startsWith(lock.dbFilePath) ? lock : null) : null
   }
@@ -182,18 +178,18 @@ export class FilesLockManager {
   async checkConflicts(
     dbFile: FileDBProps,
     depth: LOCK_DEPTH,
-    options?: { userId?: number; lockScope?: LOCK_SCOPE; lockTokens?: string[] }
+    options?: { userId?: number; app?: LOCK_APP; lockScope?: LOCK_SCOPE; lockTokens?: string[] }
   ): Promise<void> {
     /* Checks if a file could be modified, created, moved, or deleted
-       Throws an `LockConflict` error when there are parent locks (depth: 0) or child locks (depth: infinite) that prevent modification
+       Throws a `LockConflict` error when there are parent locks (depth: 0) or child locks (depth: infinite) that prevent modification
        Returns on the first conflict (compliant with the RFC 4918)
     */
     for await (const l of this.searchParentLocks(dbFile, { includeRoot: true, depth: DEPTH.INFINITY })) {
-      if (options?.lockScope && options?.lockScope === LOCK_SCOPE.SHARED && l.davLock.lockscope === LOCK_SCOPE.SHARED) {
-        // Only compatible with shared locks (even by same owner)
+      if (options?.lockScope && options?.lockScope === LOCK_SCOPE.SHARED && l.options.lockScope === LOCK_SCOPE.SHARED && options?.app === l.app) {
+        // Only compatible with shared locks (with the same owner and the same application)
         continue
       }
-      if (options?.userId === l.owner.id && (!l.davLock || (options?.lockTokens?.length && options.lockTokens.indexOf(l.davLock.locktoken) > -1))) {
+      if (options?.userId === l.owner.id && (!l.options || (options?.lockTokens?.length && options.lockTokens.indexOf(l.options.lockToken) > -1))) {
         // Owner owns this lock (no davLock if the lock was created from api)
         continue
       }
@@ -203,7 +199,7 @@ export class FilesLockManager {
     }
     if (depth === DEPTH.INFINITY) {
       for await (const l of this.searchChildLocks(dbFile)) {
-        if (options?.userId === l.owner.id && (!l.davLock || (options?.lockTokens?.length && options.lockTokens.indexOf(l.davLock.locktoken) > -1))) {
+        if (options?.userId === l.owner.id && (!l.options || (options?.lockTokens?.length && options.lockTokens.indexOf(l.options.lockToken) > -1))) {
           // Owner owns this lock (no davLock if the lock was created from api)
           continue
         }
@@ -230,10 +226,15 @@ export class FilesLockManager {
   convertLockToFileLockProps(lock: FileLock): FileLockProps {
     if (!lock) return null
     return {
-      owner: lock?.davLock?.owner || `${lock.owner.fullName} (${lock.owner.email})`,
-      ownerLogin: lock.owner.login,
-      isExclusive: lock?.davLock?.lockscope ? lock?.davLock?.lockscope === LOCK_SCOPE.EXCLUSIVE : true
+      owner: lock.owner,
+      app: lock?.app,
+      info: lock?.options?.lockInfo,
+      isExclusive: lock?.options?.lockScope ? lock?.options?.lockScope === LOCK_SCOPE.EXCLUSIVE : true
     }
+  }
+
+  genDAVToken(): string {
+    return `${LOCK_PREFIX}${crypto.randomUUID()}`
   }
 
   private async *searchParentLocks(dbFile: FileDBProps, options: { includeRoot?: boolean; depth?: LOCK_DEPTH } = {}): AsyncGenerator<FileLock> {
@@ -270,10 +271,6 @@ export class FilesLockManager {
 
   private searchKeysByPath(path: string, props = '*', depth?: LOCK_DEPTH): Promise<string[]> {
     return this.cache.keys(`${CACHE_LOCK_PREFIX}*${depth ? `|depth:${depth}` : ''}|path:${path}|${props}`)
-  }
-
-  private genDAVToken(): string {
-    return `${LOCK_PREFIX}${crypto.randomUUID()}`
   }
 
   private genSuffixKey(dbFile: FileDBProps, options: { ignorePath?: boolean; depth?: LOCK_DEPTH; token?: string } = {}): string {

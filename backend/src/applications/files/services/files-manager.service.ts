@@ -14,6 +14,7 @@ import { Readable } from 'node:stream'
 import { extract as extractTar } from 'tar'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { generateThumbnail } from '../../../common/image'
+import { SERVER_NAME } from '../../../common/shared'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { HTTP_METHOD } from '../../applications.constants'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
@@ -100,8 +101,8 @@ export class FilesManager {
     req: FastifyAuthenticatedRequest,
     options?: { dav?: { depth: LOCK_DEPTH; lockTokens: string[] }; checksumAlg?: string; tmpPath?: string }
   ): Promise<boolean | string> {
-    // if tmpPath is used, we lock the final destination during the transfer
-    // space.realPath is replaced by tmpPath (if allowed), if the move operation failed we remove the tmp file
+    // If tmpPath is used, we lock the final destination during the transfer
+    // space.realPath is replaced by tmpPath (if allowed). If the move operation failed, we remove the tmp file
     const fExists = await isPathExists(space.realPath)
     const fTmpExists = options?.tmpPath ? await isPathExists(options.tmpPath) : false
     if (fExists && req.method === HTTP_METHOD.POST) {
@@ -111,7 +112,7 @@ export class FilesManager {
       throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'The location is a directory')
     }
     if (options?.tmpPath) {
-      // ensure tmpPath parent dir exists
+      // Ensure tmpPath parent dir exists
       await makeDir(dirName(options.tmpPath), true)
     } else if (!(await isPathExists(dirName(space.realPath)))) {
       throw new FileError(HttpStatus.CONFLICT, 'Parent must exists')
@@ -119,26 +120,26 @@ export class FilesManager {
     /* File Lock */
     let fileLock: FileLock | undefined
     if (options?.dav) {
-      // check locks
+      // Check locks
       await this.filesLockManager.checkConflicts(space.dbFile, options?.dav?.depth || DEPTH.RESOURCE, {
         userId: user.id,
         lockTokens: options.dav?.lockTokens
       })
     } else {
-      // create lock if there is no webdav context
-      const [ok, lock] = await this.filesLockManager.create(user, space.dbFile, DEPTH.RESOURCE)
+      // Create lock if there is no webdav context
+      const [ok, lock] = await this.filesLockManager.create(user, space.dbFile, SERVER_NAME, DEPTH.RESOURCE)
       if (!ok) {
         throw new LockConflict(lock, 'Conflicting lock')
       }
       fileLock = lock
     }
     try {
-      // check range
+      // Check range
       let startRange = 0
       if ((fExists || fTmpExists) && req.headers['content-range']) {
-        // with PUT method, some webdav clients use the `content-range` header,
+        // With PUT method, some webdav clients use the `content-range` header,
         // which is normally reserved for a response to a request containing the `range` header.
-        // However, for more compatibility let's accept it
+        // However, for more compatibility let's accept it.
         const match = /\d+/.exec(req.headers['content-range'])
         if (!match.length) {
           throw new FileError(HttpStatus.BAD_REQUEST, 'Content-range : header is malformed')
@@ -246,7 +247,7 @@ export class FilesManager {
       const dbFile = { ...space.dbFile, path: path.join(dirName(space.dbFile.path), partFileName) }
       // Use a short TTL for the PATCH method (which is also used for refreshing)
       const ttl = patch ? CACHE_LOCK_FILE_TTL : undefined
-      const [created, fileLock] = await this.filesLockManager.createOrRefresh(user, dbFile, DEPTH.RESOURCE, ttl)
+      const [created, fileLock] = await this.filesLockManager.createOrRefresh(user, dbFile, SERVER_NAME, DEPTH.RESOURCE, ttl)
       // Do
       try {
         await writeFromStream(dstFile, part.file)
@@ -476,7 +477,7 @@ export class FilesManager {
     const rPath = await uniqueFilePathFromDir(space.realPath)
     const dbFile = space.dbFile
     dbFile.path = path.join(dirName(dbFile.path), fileName(space.realPath))
-    const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, DEPTH.RESOURCE)
+    const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.RESOURCE)
     if (!ok) {
       throw new LockConflict(fileLock, 'Conflicting lock')
     }
@@ -542,7 +543,7 @@ export class FilesManager {
     if (dto.compressInDirectory) {
       const dbFile = space.dbFile
       dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
-      const [ok, lock] = await this.filesLockManager.create(user, dbFile, DEPTH.RESOURCE)
+      const [ok, lock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.RESOURCE)
       if (!ok) {
         throw new LockConflict(lock, 'Conflicting lock')
       }
@@ -591,7 +592,7 @@ export class FilesManager {
     // create lock
     const dbFile = space.dbFile
     dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
-    const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, DEPTH.INFINITY)
+    const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.INFINITY)
     if (!ok) {
       throw new LockConflict(fileLock, 'Conflicting lock')
     }
@@ -635,11 +636,11 @@ export class FilesManager {
       this.logger.warn('Lock refresh must specify an existing resource')
       throw new FileError(HttpStatus.BAD_REQUEST, 'Lock refresh must specify an existing resource')
     }
-    const [_created, lock] = await this.filesLockManager.createOrRefresh(user, space.dbFile, DEPTH.RESOURCE, CACHE_LOCK_FILE_TTL)
+    const [_created, lock] = await this.filesLockManager.createOrRefresh(user, space.dbFile, SERVER_NAME, DEPTH.RESOURCE, CACHE_LOCK_FILE_TTL)
     return this.filesLockManager.convertLockToFileLockProps(lock)
   }
 
-  async unlock(user: UserModel, space: SpaceEnv, forceAsOwner = false): Promise<void> {
+  async unlock(user: UserModel, space: SpaceEnv, forceAsFileOwner = false): Promise<void> {
     if (!(await isPathExists(space.realPath))) {
       this.logger.warn(`Unable to unlock: ${space.url} - resource does not exist`)
       throw new FileError(HttpStatus.BAD_REQUEST, 'Unlock must specify an existing resource')
@@ -650,7 +651,7 @@ export class FilesManager {
       return
     }
     for (const lock of fileLocks) {
-      if ((forceAsOwner && space.dbFile?.ownerId === user.id) || lock.owner.id === user.id) {
+      if ((forceAsFileOwner && space.dbFile?.ownerId === user.id) || lock.owner.id === user.id) {
         // Refresh if more than half of the TTL has passed
         await this.filesLockManager.removeLock(lock.key)
       } else {

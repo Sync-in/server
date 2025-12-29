@@ -1,0 +1,88 @@
+.editor-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.5);
+  transition: box-shadow 0.25s ease,
+  border-color 0.25s ease,
+  background-color 0.25s ease;
+  overflow: hidden;
+}
+
+/* Halo générique */
+.editor-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+/* -----------------------------
+   COLLABORA
+------------------------------ */
+
+.editor-choice.is-collabora .editor-card {
+  border: .5px solid rgba(188, 57, 205, 0.35);
+  box-shadow:
+          0 0 0 1px rgba(188, 57, 205, 0.25),
+          0 10px 26px rgba(188, 57, 205, 0.25);
+
+}
+
+.editor-choice.is-collabora .editor-card::before {
+  opacity: .55;
+  background: radial-gradient(
+                  circle at top left,
+                  rgba(188, 57, 205, 0.35),
+                  transparent 65%
+  );
+}
+
+.editor-choice.is-collabora:hover .editor-card {
+  border-color: rgba(188, 57, 205, 0.75);
+  &::before {
+    opacity: 1;
+  }
+}
+
+/* -----------------------------
+   ONLYOFFICE
+------------------------------ */
+
+.editor-choice.is-onlyoffice .editor-card {
+  border: .5px solid rgba(0, 153, 248, 0.35);
+  box-shadow:
+          0 0 0 1px rgba(0, 153, 248, 0.25),
+          0 10px 26px rgba(0, 153, 248, 0.25);
+}
+
+.editor-choice.is-onlyoffice .editor-card::before {
+  opacity: .55;
+  background: radial-gradient(
+                  circle at top left,
+                  rgba(0, 153, 248, 0.35),
+                  transparent 65%
+  );
+}
+
+.editor-choice.is-onlyoffice:hover .editor-card {
+  border-color: rgba(0, 153, 248, 0.75);
+  &::before {
+    opacity: 1;
+  }
+}
+
+/* Badge */
+.editor-badge {
+  min-width: 45px;
+  height: 45px;
+  border-radius: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+}
+
+.editor-badge.collabora {
+  background-color: #e7c3ee;
+  color: #9a4bb4;
+}

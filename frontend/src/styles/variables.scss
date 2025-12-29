@@ -48,7 +48,7 @@ $info: $aqua;
 $warning: $orange;
 $danger: $red;
 $mark-bg: $light-green;
-$muted: #777;
+$muted: #6d7278;
 // Options
 //--------------------------------------------------------
 //Body background (Affects main content background only)
@@ -57,7 +57,7 @@ $body-color: #333;
 $custom-color: #212529;
 $custom-dark-color: #28353b;
 $list-group-color: $custom-color;
-$placeholder-color: #8c8c8c;
+$placeholder-color: $muted;
 // Quickly modify global styling by enabling or disabling optional features.
 $enable-transitions: true;
 $enable-rounded: true;

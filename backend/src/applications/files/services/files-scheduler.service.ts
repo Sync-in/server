@@ -36,7 +36,7 @@ export class FilesScheduler {
     private readonly filesContentManager: FilesContentManager
   ) {}
 
-  @Timeout(30_000)
+  @Timeout(10_000)
   async onStartup(): Promise<void> {
     try {
       await this.cleanupInterruptedTasks()

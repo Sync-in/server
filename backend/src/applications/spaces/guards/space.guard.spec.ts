@@ -11,8 +11,6 @@ import { intersectPermissions } from '../../../common/shared'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
-import { API_FILES_ONLY_OFFICE_CALLBACK } from '../../files/constants/routes'
-import { OnlyOfficeContext } from '../../files/decorators/only-office-environment.decorator'
 import { FilesQueries } from '../../files/services/files-queries.service'
 import { LinksQueries } from '../../links/services/links-queries.service'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
@@ -26,6 +24,7 @@ import { UsersQueries } from '../../users/services/users-queries.service'
 import { generateUserTest } from '../../users/utils/test'
 import { WebDAVContext } from '../../webdav/decorators/webdav-context.decorator'
 import { SPACE_ALIAS, SPACE_ALL_OPERATIONS, SPACE_OPERATION, SPACE_PERMS_SEP, SPACE_REPOSITORY } from '../constants/spaces'
+import { OverrideSpacePermission } from '../decorators/space-override-permission.decorator'
 import { SkipSpaceGuard } from '../decorators/space-skip-guard.decorator'
 import { SkipSpacePermissionsCheck } from '../decorators/space-skip-permissions.decorator'
 import { SpaceEnv } from '../models/space-env.model'
@@ -73,6 +72,9 @@ describe(SpaceGuard.name, () => {
     // mocks
     spacesManager['setQuotaExceeded'] = jest.fn()
     userTest = new UserModel(generateUserTest())
+  })
+
+  beforeEach(() => {
     context = createMock<ExecutionContext>()
   })
 
@@ -333,8 +335,6 @@ describe(SpaceGuard.name, () => {
       params: { '*': 'files/personal' }
     })
     expect(await spacesGuard.canActivate(context)).toBe(true)
-    // reset context
-    context = createMock<ExecutionContext>()
   })
 
   it('should fail with quota exceeded', async () => {
@@ -408,9 +408,8 @@ describe(SpaceGuard.name, () => {
       params: { '*': 'webdav/files' }
     })
     await expect(spacesGuard.canActivate(context)).rejects.toThrow(HttpException)
-    // reset context
+    // reset mock
     spyUrlSegment.mockRestore()
-    context = createMock<ExecutionContext>()
   })
 
   it('should validate (or not) the sync routes', async () => {
@@ -431,31 +430,30 @@ describe(SpaceGuard.name, () => {
     await expect(spacesGuard.canActivate(context)).rejects.toThrow(HttpException)
     // reset context
     spyUrlSegment.mockRestore()
-    context = createMock<ExecutionContext>()
   })
 
-  it('should require the modify permission when using the POST method on the OnlyOffice callback URL', async () => {
+  it('should allow the modify permission when using the POST method with override space permission decorator', async () => {
     userTest.role = USER_ROLE.USER
     spacesManager.spaceEnv = jest.fn().mockReturnValue({ enabled: true, envPermissions: `${SPACE_OPERATION.MODIFY}` })
-    OnlyOfficeContext()(context.getHandler())
+    OverrideSpacePermission(SPACE_OPERATION.MODIFY)(context.getHandler())
     context.switchToHttp().getRequest.mockReturnValue({
       method: 'POST',
       user: userTest,
-      originalUrl: API_FILES_ONLY_OFFICE_CALLBACK,
-      params: { '*': 'files/personal/root' }
-    })
-    expect(await spacesGuard.canActivate(context)).toBe(true)
-    spacesManager.spaceEnv = jest.fn().mockReturnValue({ enabled: true, envPermissions: `${SPACE_OPERATION.ADD}` })
-    await expect(spacesGuard.canActivate(context)).rejects.toThrow(HttpException)
-    context.switchToHttp().getRequest.mockReturnValue({
-      method: 'POST',
-      user: userTest,
-      originalUrl: '',
+      originalUrl: '1',
       params: { '*': 'files/personal/root' }
     })
     expect(await spacesGuard.canActivate(context)).toBe(true)
     // reset context
     context = createMock<ExecutionContext>()
+    spacesManager.spaceEnv = jest.fn().mockReturnValue({ enabled: true, envPermissions: `${SPACE_OPERATION.ADD}` })
+    await expect(spacesGuard.canActivate(context)).rejects.toThrow(HttpException)
+    context.switchToHttp().getRequest.mockReturnValue({
+      method: 'POST',
+      user: userTest,
+      originalUrl: '2',
+      params: { '*': 'files/personal/root' }
+    })
+    expect(await spacesGuard.canActivate(context)).toBe(true)
   })
 
   it('should pass if skipSpaceGuard context is enabled', async () => {
@@ -469,8 +467,6 @@ describe(SpaceGuard.name, () => {
     await expect(spacesGuard.canActivate(context)).rejects.toMatchObject({ status: HttpStatus.FORBIDDEN })
     SkipSpaceGuard()(context.getHandler())
     expect(await spacesGuard.canActivate(context)).toBe(true)
-    // reset context
-    context = createMock<ExecutionContext>()
   })
 
   it('coverage only', async () => {

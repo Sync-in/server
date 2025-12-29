@@ -326,7 +326,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
           this.dstAllowed = true
           return
         }
-        if (f.lock && f.lock.ownerLogin !== this.store.user.getValue().login) {
+        if (f.lock && f.lock.owner.login !== this.store.user.getValue().login) {
           this.errorMsg = 'You can not move a locked file'
           this.srcAllowed = false
           this.dstAllowed = true

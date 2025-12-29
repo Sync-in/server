@@ -8,9 +8,8 @@ import type { TreeNode } from '@ali-hm/angular-tree-component'
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
-import { FILE_MODE, FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_MODE, FILE_OPERATION, FORCE_AS_FILE_OWNER } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import {
-  API_FILES_ONLY_OFFICE_STATUS,
   API_FILES_OPERATION,
   API_FILES_OPERATION_MAKE,
   API_FILES_RECENTS,
@@ -30,21 +29,27 @@ import type {
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
+import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
+import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { EMPTY, firstValueFrom, map, Observable, Subject } from 'rxjs'
 import { downloadWithAnchor } from '../../../common/utils/functions'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
+import { UserService } from '../../users/user.service'
 import { FilesLockDialogComponent } from '../components/dialogs/files-lock-dialog.component'
 import { FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
 import { FilesViewerDialogComponent } from '../components/dialogs/files-viewer-dialog.component'
-import { SHORT_MIME } from '../files.constants'
+import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
+import { fileLockPropsToString } from '../components/utils/file-lock.utils'
+import { MAX_TEXT_FILE_SIZE, SHORT_MIME } from '../files.constants'
 import { FileContentModel } from '../models/file-content.model'
 import { FileRecentModel } from '../models/file-recent.model'
 import { FileModel } from '../models/file.model'
@@ -64,6 +69,7 @@ export class FilesService {
   private readonly store = inject(StoreService)
   private readonly sanitizer = inject(DomSanitizer)
   private readonly filesTasksService = inject(FilesTasksService)
+  private readonly userService = inject(UserService)
 
   getTreeNode(nodePath: string, showFiles = false): Promise<FileTree[]> {
     return firstValueFrom(
@@ -224,8 +230,8 @@ export class FilesService {
     return this.http.request<FileLockProps>(FILE_OPERATION.LOCK, file.dataUrl)
   }
 
-  unlock(file: FileModel, forceAsOwner = false): Observable<void> {
-    const params = forceAsOwner ? new HttpParams().set('forceAsOwner', 'true') : null
+  unlock(file: FileModel, forceAsFileOwner = false): Observable<void> {
+    const params = forceAsFileOwner ? new HttpParams().set(FORCE_AS_FILE_OWNER, 'true') : null
     return this.http.request<void>(FILE_OPERATION.UNLOCK, file.dataUrl, { params: params })
   }
 
@@ -246,36 +252,93 @@ export class FilesService {
   }
 
   async openOverwriteDialog(files: File[] | FileModel[], renamedTo?: string): Promise<boolean> {
-    const overwriteDialog: BsModalRef<FilesOverwriteDialogComponent> = this.layout.openDialog(FilesOverwriteDialogComponent, null, {
-      initialState: {
-        files: files,
-        renamedTo: renamedTo
-      } as FilesOverwriteDialogComponent
+    const modalRef: BsModalRef<FilesOverwriteDialogComponent> = this.layout.openDialog(FilesOverwriteDialogComponent, null, {
+      initialState: { files, renamedTo } as FilesOverwriteDialogComponent
     })
     return new Promise<boolean>((resolve) => {
-      overwriteDialog.content.overwrite.subscribe(resolve)
+      let resolved = false
+      const subOverwrite = modalRef.content!.overwrite.subscribe((value: boolean) => {
+        resolved = true
+        cleanup()
+        resolve(value)
+      })
+      // Triggered when the modal is closed (close button, backdrop click, ESC key, or programmatic hide)
+      const subHidden = modalRef.onHidden?.subscribe(() => {
+        if (!resolved) {
+          cleanup()
+          resolve(false)
+        }
+      })
+      const cleanup = () => {
+        subOverwrite.unsubscribe()
+        subHidden?.unsubscribe()
+      }
     })
   }
 
-  async openViewerDialog(mode: FILE_MODE, file: FileModel, directoryFiles: FileModel[], permissions: string) {
+  async openSelectViewerDialog(file: FileModel, editorProvider: FileEditorProvider): Promise<void> {
+    const modalRef: BsModalRef<FilesViewerSelectDialog> = this.layout.openDialog(FilesViewerSelectDialog, null, {
+      initialState: { file, editorProvider } as FilesViewerSelectDialog
+    })
+    return new Promise<void>((resolve) => {
+      // Fired when the modal is closed (button, backdrop, or ESC)
+      const subHidden = modalRef.onHidden?.subscribe(() => {
+        cleanup()
+        resolve(null)
+      })
+      const cleanup = () => {
+        subHidden?.unsubscribe()
+      }
+    })
+  }
+
+  async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string) {
     this.http.head(file.dataUrl).subscribe({
       next: async () => {
+        // This check is only used for the text viewer; other viewers are read-only or enforce permissions on the backend.
+        const isWriteable = file?.lock?.isExclusive && permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
+        const mode: FILE_MODE = isWriteable ? FILE_MODE.EDIT : FILE_MODE.VIEW
+
         let hookedShortMime: string
         try {
-          hookedShortMime = await this.viewerHook(mode, file)
+          hookedShortMime = await this.viewerHook(file, isWriteable)
+          if (file?.lock?.isExclusive) {
+            this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(file.lock))
+          }
         } catch {
-          // OnlyOffice isn't enabled, falling back to download
+          // No office editors are enabled, falling back to download
           this.download(file)
           return
         }
-        const isLockedByOther = file?.lock?.isExclusive && file.lock?.ownerLogin !== this.store.user.getValue().login
-        if (isLockedByOther) {
-          this.layout.sendNotification('info', 'The file is locked', file.lock.owner)
+
+        const editorProvider: FileEditorProvider = { collabora: false, onlyoffice: false }
+        if (hookedShortMime === SHORT_MIME.DOCUMENT) {
+          if (this.store.server().fileEditors.collabora && this.store.server().fileEditors.onlyoffice) {
+            // Case with multiple editors
+            const collaboraHasExtension = COLLABORA_ONLINE_EXTENSIONS.has(file.getExtension())
+            const onlyofficeHasExtension = ONLY_OFFICE_EXTENSIONS.has(file.getExtension())
+            if (collaboraHasExtension && onlyofficeHasExtension) {
+              // Get user's saved preference
+              const userEditorPreference = this.userService.getEditorProviderPreference()
+              if (userEditorPreference && userEditorPreference in editorProvider) {
+                editorProvider[userEditorPreference] = true
+              } else {
+                // Both editors support this file extension, let the user choose
+                await this.openSelectViewerDialog(file, editorProvider)
+                if (!editorProvider.onlyoffice && !editorProvider.collabora) return
+              }
+            } else {
+              // Based on the supported extension
+              editorProvider.collabora = collaboraHasExtension
+              editorProvider.onlyoffice = onlyofficeHasExtension
+            }
+          } else {
+            // Based on availability
+            editorProvider.collabora = this.store.server().fileEditors.collabora
+            editorProvider.onlyoffice = this.store.server().fileEditors.onlyoffice
+          }
         }
-        const isWriteable = !isLockedByOther && permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
-        if (mode === FILE_MODE.EDIT && !isWriteable) {
-          mode = FILE_MODE.VIEW
-        }
+
         this.layout.openDialog(FilesViewerDialogComponent, 'full', {
           id: file.id, // only used to manage the modal
           initialState: {
@@ -283,7 +346,8 @@ export class FilesService {
             directoryFiles: directoryFiles,
             mode: mode,
             isWriteable: isWriteable,
-            hookedShortMime: hookedShortMime
+            hookedShortMime: hookedShortMime,
+            editorProvider: editorProvider
           } satisfies Partial<FilesViewerDialogComponent>
         })
       },
@@ -293,35 +357,18 @@ export class FilesService {
     })
   }
 
-  private async viewerHook(mode: FILE_MODE, file: FileModel): Promise<string> {
-    const onlyOfficeEnabled = await this.getOnlyOfficeStatus()
-    if (file.shortMime === SHORT_MIME.DOCUMENT && !onlyOfficeEnabled) {
-      if (file.mime.startsWith('text-')) {
+  private async viewerHook(file: FileModel, isWriteable = false): Promise<string> {
+    if (isWriteable && file.shortMime === SHORT_MIME.PDF && file.isEditable) {
+      return SHORT_MIME.DOCUMENT
+    }
+    if (file.shortMime === SHORT_MIME.TEXT) {
+      if (file.size < MAX_TEXT_FILE_SIZE) {
         return SHORT_MIME.TEXT
       }
-      throw new Error('Feature not enabled')
-    }
-    if (file.shortMime === SHORT_MIME.PDF) {
-      if (mode === FILE_MODE.EDIT && onlyOfficeEnabled) {
-        return SHORT_MIME.DOCUMENT
-      }
+      // Download if too large
+      throw new Error('No editor found')
     }
     return file.shortMime
-  }
-
-  private async getOnlyOfficeStatus(): Promise<boolean> {
-    if (this.store.filesOnlyOffice().enabled !== null) {
-      return this.store.filesOnlyOffice().enabled
-    }
-    try {
-      const status = await firstValueFrom(this.http.get<{ enabled: boolean }>(API_FILES_ONLY_OFFICE_STATUS))
-      this.store.filesOnlyOffice.set(status)
-      return status.enabled
-    } catch {
-      const fallback = { enabled: false }
-      this.store.filesOnlyOffice.set(fallback)
-      return fallback.enabled
-    }
   }
 
   private isValidName(fileName: string): boolean {

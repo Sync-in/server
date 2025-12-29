@@ -22,9 +22,9 @@ import { FileModel } from '../../models/file.model'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FilesViewerImageComponent {
-  file = model<FileModel>()
-  directoryImages = input<FileModel[]>()
-  currentHeight = input<number>()
+  file = model.required<FileModel>()
+  directoryImages = input.required<FileModel[]>()
+  currentHeight = input.required<number>()
   currentHeightWithOffset = computed(() => this.currentHeight() - 40)
   protected isInfoboxOpen = signal(false)
   protected isSlideshowActive = signal(false)

@@ -12,4 +12,3 @@ export const CACHE_LOCK_PREFIX = 'flock' as const
 export const CACHE_LOCK_DEFAULT_TTL = 28800 as const // 8 hours in seconds
 export const CACHE_LOCK_FILE_TTL = 3600 as const
 // cache only office = `office|${fileId}` => docKey
-export const CACHE_ONLY_OFFICE = 'foffice' as const

@@ -151,16 +151,26 @@ applications:
       # enable onlyoffice integration
       # default: false
       enabled: false
-      # For an external server (e.g., https://onlyoffice.domain.com), remember the url must be accessible from browser!
-      # If externalServer is empty (case of official docker compose), we use the local instance
-      # default: null
-      externalServer:
       # Secret used for jwt tokens, it must be the same on the onlyoffice server
       # required
       secret: onlyOfficeSecret
+      # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
+      # If an external server is configured, it will be used instead.
+      # Note: when using an external server (e.g. https://onlyoffice.domain.com), make sure it is accessible from the client/browser.
+      # default: null
+      externalServer:
       # If you use https, set to `true`.
-      # default: `false`
+      # default: false
       verifySSL: false
+    collabora:
+      # enable collabora online integration
+      # default: false
+      enabled: false
+      # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
+      # If an external server is configured, it will be used instead.
+      # Note: when using an external server (e.g. https://collabora.domain.com), make sure it is accessible from the client/browser.
+      # default: null
+      externalServer:
   appStore:
     # repository: `public` | `local`
     # default: `public`

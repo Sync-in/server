@@ -1,0 +1,19 @@
+services:
+  collabora:
+    image: collabora/code
+    container_name: collabora
+    restart: always
+    environment:
+      - extra_params=--o:ssl.enable=false --o:ssl.termination=false --o:logging.disable_server_audit=true --o:admin_console.enable=false
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_CHROOT
+      - SYS_ADMIN
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "5"
+    networks:
+      - sync_in_network

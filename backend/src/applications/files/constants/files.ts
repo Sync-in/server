@@ -4,6 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
+export const DEFAULT_CHECKSUM_ALGORITHM = 'sha512-256'
 export const DEFAULT_HIGH_WATER_MARK = 1024 * 1024
 export const DEFAULT_MIME_TYPE = 'application/octet-stream'
 export const EXTRA_MIMES_TYPE = new Map([

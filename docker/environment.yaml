@@ -10,6 +10,8 @@ auth:
 applications:
   files:
     dataPath: /app/data
+    collabora:
+      enabled: false
     onlyoffice:
       enabled: false
       secret: onlyOfficeSecret

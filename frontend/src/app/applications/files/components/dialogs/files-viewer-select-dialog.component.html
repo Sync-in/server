@@ -1,0 +1,78 @@
+<!--
+  ~ Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
+  ~ This file is part of Sync-in | The open source file sync and share solution
+  ~ See the LICENSE file for licensing details
+  -->
+
+<div class="modal-header">
+  <h4 class="modal-title">
+    <fa-icon [icon]="icons.faFile" class="me-1"></fa-icon>
+    <span>{{ file.name }}</span>
+  </h4>
+  <button
+    (click)="layout.closeDialog()"
+    aria-label="Close"
+    class="btn-close btn-close-white"
+    type="button">
+  </button>
+</div>
+<div class="modal-body modal-viewer-select">
+  <p class="text-muted mb-3" l10nTranslate>
+    Choose which editor you want to use to open this document.
+  </p>
+  <div class="row g-3">
+    <!-- Collabora -->
+    <div class="col-12 col-md-6">
+      <button
+        type="button"
+        class="editor-choice is-collabora w-100 btn p-0 border-0 text-start"
+        (click)="selectEditor('collabora')">
+        <div class="card h-100 shadow-sm editor-card editor-collabora">
+          <div class="card-body d-flex align-items-center gap-3 p-3">
+            <div class="editor-badge collabora">
+              <fa-icon [icon]="icons.faFileLines"></fa-icon>
+            </div>
+            <div class="flex-grow-1">
+              <h5 class="mb-1">Collabora</h5>
+              <div class="text-muted small" l10nTranslate>
+                Open-source office suite built on LibreOffice.
+              </div>
+            </div>
+          </div>
+        </div>
+      </button>
+    </div>
+    <!-- OnlyOffice -->
+    <div class="col-12 col-md-6">
+      <button
+        type="button"
+        class="editor-choice is-onlyoffice w-100 btn p-0 border-0 text-start"
+        (click)="selectEditor('onlyoffice')">
+        <div class="card h-100 shadow-sm editor-card">
+          <div class="card-body d-flex align-items-center gap-3 p-3">
+            <div class="editor-badge bg-primary-subtle text-primary">
+              <fa-icon [icon]="icons.faFileWord"></fa-icon>
+            </div>
+            <div class="flex-grow-1">
+              <h5 class="mb-1">OnlyOffice</h5>
+              <div class="text-muted small" l10nTranslate>
+                Open-source office suite for Microsoft Office.
+              </div>
+            </div>
+          </div>
+        </div>
+      </button>
+    </div>
+  </div>
+  <div class="form-check ms-auto mt-3">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      id="rememberEditor"
+      [(ngModel)]="rememberChoice"
+    />
+    <label class="form-check-label" for="rememberEditor" l10nTranslate>
+      Remember my choice for next time
+    </label>
+  </div>
+</div>

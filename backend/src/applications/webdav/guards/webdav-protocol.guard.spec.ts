@@ -248,7 +248,7 @@ describe(WebDAVProtocolGuard.name, () => {
       await expect(guard.canActivate(ctx)).resolves.toBe(true)
       expect(req.dav.lock.timeout).toBe(10)
       expect(req.dav.lock.lockscope).toBe(LOCK_SCOPE.SHARED)
-      expect(req.dav.lock.owner).toMatch(/^WebDAV - /)
+      expect(req.dav.lock.owner).toMatch(/^me/)
       expect(req.dav.depth).toBe(DEPTH.INFINITY)
     })
 
