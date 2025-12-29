@@ -19,8 +19,10 @@ import { haveSpaceEnvPermissions } from '../../../spaces/utils/permissions'
 import type { UserModel } from '../../../users/models/user.model'
 import { getAvatarBase64 } from '../../../users/utils/avatar'
 import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
-import { WebDAVLock } from '../../../webdav/interfaces/webdav.interface'
 import { FILE_MODE } from '../../constants/operations'
+import { FileLockOptions } from '../../interfaces/file-lock.interface'
+import { FileLockProps } from '../../interfaces/file-props.interface'
+import { LockConflict } from '../../models/file-lock-error'
 import { FilesLockManager } from '../../services/files-lock-manager.service'
 import {
   copyFileContent,
@@ -35,10 +37,10 @@ import {
   writeFromStream
 } from '../../utils/files'
 import {
+  COLLABORA_APP_LOCK,
   COLLABORA_HEADERS,
   COLLABORA_LOCK_ACTION,
   COLLABORA_ONLINE_EXTENSIONS,
-  COLLABORA_OWNER_LOCK,
   COLLABORA_TOKEN_QUERY_PARAM_NAME,
   COLLABORA_URI,
   COLLABORA_WOPI_SRC_QUERY_PARAM_NAME
@@ -65,18 +67,29 @@ export class CollaboraOnlineManager {
     if (!COLLABORA_ONLINE_EXTENSIONS.has(fileExtension)) {
       throw new HttpException('Document not supported', HttpStatus.BAD_REQUEST)
     }
-    const mode: FILE_MODE = haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY) ? FILE_MODE.EDIT : FILE_MODE.VIEW
+    let hasLock: false | FileLockProps = false
+    let mode: FILE_MODE = haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY) ? FILE_MODE.EDIT : FILE_MODE.VIEW
     if (mode === FILE_MODE.EDIT) {
       // Check lock conflicts
       try {
-        await this.filesLockManager.checkConflicts(space.dbFile, DEPTH.RESOURCE, { userId: user.id, lockScope: LOCK_SCOPE.SHARED })
-      } catch {
-        throw new HttpException('The file is locked', HttpStatus.LOCKED)
+        await this.filesLockManager.checkConflicts(space.dbFile, DEPTH.RESOURCE, {
+          userId: user.id,
+          app: COLLABORA_APP_LOCK,
+          lockScope: LOCK_SCOPE.SHARED
+        })
+      } catch (e) {
+        if (e instanceof LockConflict) {
+          hasLock = this.filesLockManager.convertLockToFileLockProps(e.lock)
+          mode = FILE_MODE.VIEW
+        } else {
+          this.logger.error(`${this.getSettings.name} - ${e}`)
+          throw new HttpException('Unable to check file lock', HttpStatus.INTERNAL_SERVER_ERROR)
+        }
       }
     }
     const dbFileHash = genUniqHashFromFileDBProps(space.dbFile)
     const authToken: string = await this.genAuthToken(user, space, dbFileHash)
-    return { documentServerUrl: this.getDocumentUrl(dbFileHash, authToken), mode: mode }
+    return { documentServerUrl: this.getDocumentUrl(dbFileHash, authToken), mode: mode, hasLock: hasLock }
   }
 
   async checkFileInfo(req: FastifyCollaboraOnlineSpaceRequest): Promise<CollaboraOnlineCheckFileInfo> {
@@ -149,17 +162,17 @@ export class CollaboraOnlineManager {
         const [ok, fileLock] = await this.filesLockManager.create(
           req.user,
           req.space.dbFile,
+          COLLABORA_APP_LOCK,
           DEPTH.RESOURCE,
           {
-            lockroot: null,
-            locktoken: reqLockToken,
-            lockscope: LOCK_SCOPE.SHARED, // Collabora uses one lock for the session
-            owner: `${COLLABORA_OWNER_LOCK} - ${req.user.fullName} (${req.user.email})`
-          } satisfies WebDAVLock,
+            lockRoot: null,
+            lockToken: reqLockToken,
+            lockScope: LOCK_SCOPE.SHARED // Collabora uses one lock for the session
+          } satisfies FileLockOptions,
           this.expiration
         )
         if (!ok) {
-          this.lockConflict(res, fileLock.davLock.locktoken)
+          this.lockConflict(res, fileLock.options.lockToken)
           return
         }
         break
@@ -177,7 +190,7 @@ export class CollaboraOnlineManager {
       case COLLABORA_LOCK_ACTION.GET_LOCK: {
         const lock = await this.filesLockManager.getLocksByPath(req.space.dbFile)
         if (lock.length) {
-          res.header(COLLABORA_HEADERS.LockToken, lock[0].davLock.locktoken)
+          res.header(COLLABORA_HEADERS.LockToken, lock[0].options.lockToken)
         }
         break
       }

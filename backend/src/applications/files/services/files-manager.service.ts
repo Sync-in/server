@@ -14,6 +14,7 @@ import { Readable } from 'node:stream'
 import { extract as extractTar } from 'tar'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { generateThumbnail } from '../../../common/image'
+import { SERVER_NAME } from '../../../common/shared'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { HTTP_METHOD } from '../../applications.constants'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
@@ -126,7 +127,7 @@ export class FilesManager {
       })
     } else {
       // Create lock if there is no webdav context
-      const [ok, lock] = await this.filesLockManager.create(user, space.dbFile, DEPTH.RESOURCE)
+      const [ok, lock] = await this.filesLockManager.create(user, space.dbFile, SERVER_NAME, DEPTH.RESOURCE)
       if (!ok) {
         throw new LockConflict(lock, 'Conflicting lock')
       }
@@ -246,7 +247,7 @@ export class FilesManager {
       const dbFile = { ...space.dbFile, path: path.join(dirName(space.dbFile.path), partFileName) }
       // Use a short TTL for the PATCH method (which is also used for refreshing)
       const ttl = patch ? CACHE_LOCK_FILE_TTL : undefined
-      const [created, fileLock] = await this.filesLockManager.createOrRefresh(user, dbFile, DEPTH.RESOURCE, ttl)
+      const [created, fileLock] = await this.filesLockManager.createOrRefresh(user, dbFile, SERVER_NAME, DEPTH.RESOURCE, ttl)
       // Do
       try {
         await writeFromStream(dstFile, part.file)
@@ -476,7 +477,7 @@ export class FilesManager {
     const rPath = await uniqueFilePathFromDir(space.realPath)
     const dbFile = space.dbFile
     dbFile.path = path.join(dirName(dbFile.path), fileName(space.realPath))
-    const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, DEPTH.RESOURCE)
+    const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.RESOURCE)
     if (!ok) {
       throw new LockConflict(fileLock, 'Conflicting lock')
     }
@@ -542,7 +543,7 @@ export class FilesManager {
     if (dto.compressInDirectory) {
       const dbFile = space.dbFile
       dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
-      const [ok, lock] = await this.filesLockManager.create(user, dbFile, DEPTH.RESOURCE)
+      const [ok, lock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.RESOURCE)
       if (!ok) {
         throw new LockConflict(lock, 'Conflicting lock')
       }
@@ -591,7 +592,7 @@ export class FilesManager {
     // create lock
     const dbFile = space.dbFile
     dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
-    const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, DEPTH.INFINITY)
+    const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.INFINITY)
     if (!ok) {
       throw new LockConflict(fileLock, 'Conflicting lock')
     }
@@ -635,7 +636,7 @@ export class FilesManager {
       this.logger.warn('Lock refresh must specify an existing resource')
       throw new FileError(HttpStatus.BAD_REQUEST, 'Lock refresh must specify an existing resource')
     }
-    const [_created, lock] = await this.filesLockManager.createOrRefresh(user, space.dbFile, DEPTH.RESOURCE, CACHE_LOCK_FILE_TTL)
+    const [_created, lock] = await this.filesLockManager.createOrRefresh(user, space.dbFile, SERVER_NAME, DEPTH.RESOURCE, CACHE_LOCK_FILE_TTL)
     return this.filesLockManager.convertLockToFileLockProps(lock)
   }
 

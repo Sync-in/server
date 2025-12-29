@@ -7,7 +7,7 @@
 export const ONLY_OFFICE_INTERNAL_URI = '/onlyoffice' // used by nginx as a proxy
 export const ONLY_OFFICE_CONTEXT = 'OnlyOfficeEnvironment' as const
 export const ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME = 'token' as const
-export const ONLY_OFFICE_OWNER_LOCK = 'OnlyOffice' as const
+export const ONLY_OFFICE_APP_LOCK = 'OnlyOffice' as const
 export const ONLY_OFFICE_CACHE_KEY = 'foffice' as const
 
 export const ONLY_OFFICE_EXTENSIONS = new Map<string, 'word' | 'cell' | 'slide' | 'pdf' | 'diagram'>([

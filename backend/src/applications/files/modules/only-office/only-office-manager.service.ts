@@ -25,9 +25,11 @@ import { haveSpaceEnvPermissions } from '../../../spaces/utils/permissions'
 import type { UserModel } from '../../../users/models/user.model'
 import { getAvatarBase64 } from '../../../users/utils/avatar'
 import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
-import { WebDAVLock } from '../../../webdav/interfaces/webdav.interface'
 import { FILE_MODE } from '../../constants/operations'
 import type { FileDBProps } from '../../interfaces/file-db-props.interface'
+import { FileLockOptions } from '../../interfaces/file-lock.interface'
+import { FileLockProps } from '../../interfaces/file-props.interface'
+import { LockConflict } from '../../models/file-lock-error'
 import { FilesLockManager } from '../../services/files-lock-manager.service'
 import {
   copyFileContent,
@@ -41,12 +43,12 @@ import {
   writeFromStream
 } from '../../utils/files'
 import {
+  ONLY_OFFICE_APP_LOCK,
   ONLY_OFFICE_CACHE_KEY,
   ONLY_OFFICE_CONVERT_ERROR,
   ONLY_OFFICE_CONVERT_EXTENSIONS,
   ONLY_OFFICE_EXTENSIONS,
   ONLY_OFFICE_INTERNAL_URI,
-  ONLY_OFFICE_OWNER_LOCK,
   ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME
 } from './only-office.constants'
 import { OnlyOfficeReqDto } from './only-office.dtos'
@@ -81,20 +83,31 @@ export class OnlyOfficeManager {
     if (!ONLY_OFFICE_EXTENSIONS.has(fileExtension)) {
       throw new HttpException('Document not supported', HttpStatus.BAD_REQUEST)
     }
-    const mode: FILE_MODE = haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY) ? FILE_MODE.EDIT : FILE_MODE.VIEW
+    let hasLock: false | FileLockProps = false
+    let mode: FILE_MODE = haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY) ? FILE_MODE.EDIT : FILE_MODE.VIEW
     if (mode === FILE_MODE.EDIT) {
       // Check lock conflicts
       try {
-        await this.filesLockManager.checkConflicts(space.dbFile, DEPTH.RESOURCE, { userId: user.id, lockScope: LOCK_SCOPE.SHARED })
-      } catch {
-        throw new HttpException('The file is locked', HttpStatus.LOCKED)
+        await this.filesLockManager.checkConflicts(space.dbFile, DEPTH.RESOURCE, {
+          userId: user.id,
+          app: ONLY_OFFICE_APP_LOCK,
+          lockScope: LOCK_SCOPE.SHARED
+        })
+      } catch (e) {
+        if (e instanceof LockConflict) {
+          hasLock = this.filesLockManager.convertLockToFileLockProps(e.lock)
+          mode = FILE_MODE.VIEW
+        } else {
+          this.logger.error(`${this.getSettings.name} - ${e}`)
+          throw new HttpException('Unable to check file lock', HttpStatus.INTERNAL_SERVER_ERROR)
+        }
       }
     }
     const isMobile: boolean = this.mobileRegex.test(req.headers['user-agent'])
     const authToken: string = await this.genAuthToken(user)
     const fileUrl = this.buildUrl(API_ONLY_OFFICE_DOCUMENT, space.url, authToken)
     const callBackUrl = this.buildUrl(API_ONLY_OFFICE_CALLBACK, space.url, authToken)
-    const config: OnlyOfficeReqDto = await this.genConfiguration(user, space, mode, fileUrl, fileExtension, callBackUrl, isMobile)
+    const config: OnlyOfficeReqDto = await this.genConfiguration(user, space, mode, fileUrl, fileExtension, callBackUrl, isMobile, hasLock)
     config.config.token = await this.genPayloadToken(config.config)
     return config
   }
@@ -104,17 +117,20 @@ export class OnlyOfficeManager {
     try {
       switch (callBackData.status) {
         case 1:
+          // users connect / disconnect
           await this.checkFileLock(user, space, callBackData)
           this.logger.debug(`document is being edited : ${space.url}`)
           break
         case 2:
+          // No active users on the document
           await this.checkFileLock(user, space, callBackData)
           if (callBackData.notmodified) {
             this.logger.debug(`document was edited but closed with no changes : ${space.url}`)
           } else {
-            this.logger.debug(`document was edited but not saved (let's do it) : ${space.url}`)
+            this.logger.debug(`document was edited and closed but not saved (let's do it) : ${space.url}`)
             await this.saveDocument(space, callBackData.url)
           }
+          await this.removeFileLock(user.id, space)
           await this.removeDocumentKey(space)
           break
         case 3:
@@ -122,6 +138,7 @@ export class OnlyOfficeManager {
           await this.saveDocument(space, callBackData.url)
           break
         case 4:
+          // No active users on the document
           await this.removeFileLock(user.id, space)
           await this.removeDocumentKey(space)
           this.logger.debug(`document was closed with no changes : ${space.url}`)
@@ -151,10 +168,13 @@ export class OnlyOfficeManager {
     fileUrl: string,
     fileExtension: string,
     callBackUrl: string,
-    isMobile: boolean
+    isMobile: boolean,
+    hasLock: false | FileLockProps
   ): Promise<OnlyOfficeReqDto> {
+    const canEdit = mode === FILE_MODE.EDIT
     const documentType = ONLY_OFFICE_EXTENSIONS.get(fileExtension)
     return {
+      hasLock: hasLock,
       documentServerUrl: this.externalOnlyOfficeServer || `${this.contextManager.headerOriginUrl()}${ONLY_OFFICE_INTERNAL_URI}`,
       config: {
         type: isMobile ? 'mobile' : 'desktop',
@@ -167,12 +187,12 @@ export class OnlyOfficeManager {
           key: await this.getDocumentKey(space),
           permissions: {
             download: true,
-            edit: mode === FILE_MODE.EDIT,
+            edit: canEdit,
             changeHistory: false,
-            comment: true,
-            fillForms: true,
+            comment: canEdit,
+            fillForms: canEdit,
             print: true,
-            review: mode === FILE_MODE.EDIT
+            review: canEdit
           },
           url: fileUrl
         },
@@ -240,11 +260,17 @@ export class OnlyOfficeManager {
   private async checkFileLock(user: UserModel, space: SpaceEnv, callBackData: OnlyOfficeCallBack) {
     for (const action of callBackData.actions) {
       if (action.type === 0) {
-        // disconnect
-        await this.removeFileLock(parseInt(action.userid), space)
+        // Disconnect
+        // Remove the lock if no other users are active on the document
+        if (!Array.isArray(callBackData.users)) {
+          await this.removeFileLock(parseInt(action.userid), space)
+        }
       } else if (action.type === 1) {
-        // connect
-        await this.createFileLock(user, space)
+        // Connect
+        // Create the lock if it's the first user to open the document
+        if (Array.isArray(callBackData.users) && callBackData.users.length === 1) {
+          await this.createFileLock(user, space)
+        }
       }
     }
   }
@@ -253,13 +279,13 @@ export class OnlyOfficeManager {
     const [ok, _fileLock] = await this.filesLockManager.create(
       user,
       space.dbFile,
+      ONLY_OFFICE_APP_LOCK,
       DEPTH.RESOURCE,
       {
-        lockroot: null,
-        locktoken: null,
-        lockscope: LOCK_SCOPE.SHARED,
-        owner: `${ONLY_OFFICE_OWNER_LOCK} - ${user.fullName} (${user.email})`
-      } satisfies WebDAVLock,
+        lockRoot: null,
+        lockToken: null,
+        lockScope: LOCK_SCOPE.SHARED
+      } satisfies FileLockOptions,
       this.expiration
     )
     if (!ok) {
@@ -284,6 +310,7 @@ export class OnlyOfficeManager {
   }
 
   private async getDocumentKey(space: SpaceEnv): Promise<string> {
+    // Uniq key to identify the document in OnlyOffice
     const cacheKey = this.getCacheKey(space.dbFile)
     const existingDocKey: string = await this.cache.get(cacheKey)
     if (existingDocKey) {

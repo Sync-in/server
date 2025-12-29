@@ -6,6 +6,7 @@
 
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { FileLock } from '../../files/interfaces/file-lock.interface'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
 import { FilesManager } from '../../files/services/files-manager.service'
 import { dirName, isPathExists } from '../../files/utils/files'
@@ -273,15 +274,14 @@ describe(WebDAVMethods.name, () => {
           true,
           {
             dbFilePath: _dbFile?.path,
-            davLock: {
-              lockroot: davLock.lockroot,
-              locktoken: davLock.locktoken,
-              lockscope: davLock.lockscope,
-              owner: davLock.owner,
-              depth: _depth,
-              timeout: _timeout
+            depth: _depth,
+            options: {
+              lockRoot: davLock.lockroot,
+              lockToken: davLock.locktoken,
+              lockScope: davLock.lockscope,
+              lockInfo: davLock.owner
             }
-          }
+          } satisfies Partial<FileLock>
         ] as any
       })
 

@@ -46,6 +46,7 @@ import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
 import { FilesUploadService } from '../../services/files-upload.service'
 import { FilesService } from '../../services/files.service'
+import { fileLockPropsToString } from '../utils/file-lock.utils'
 
 @Component({
   selector: 'app-files-viewer-text',
@@ -301,7 +302,7 @@ export class FilesViewerTextComponent implements OnInit, OnDestroy {
         f.lock = lock
         return f
       })
-      this.layout.sendNotification('info', 'The file is locked', lock.owner)
+      this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(lock))
     } else {
       this.layout.sendNotification('warning', this.file().name, e.error.message)
     }

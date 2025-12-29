@@ -71,6 +71,7 @@ import { FilesCompressionDialogComponent } from '../../files/components/dialogs/
 import { FilesNewDialogComponent } from '../../files/components/dialogs/files-new-dialog.component'
 import { FilesTrashDialogComponent } from '../../files/components/dialogs/files-trash-dialog.component'
 import { FilesTrashEmptyDialogComponent } from '../../files/components/dialogs/files-trash-empty-dialog.component'
+import { FileLockFormatPipe } from '../../files/components/utils/file-lock.utils'
 import { FilePermissionsComponent } from '../../files/components/utils/file-permissions.component'
 import { FileEvent } from '../../files/interfaces/file-event.interface'
 import { FileModel } from '../../files/models/file.model'
@@ -107,7 +108,8 @@ import { SpaceAnchorFileDialogComponent } from './dialogs/space-anchor-file-dial
     UserAvatarComponent,
     UploadFilesDirective,
     FilePermissionsComponent,
-    TapDirective
+    TapDirective,
+    FileLockFormatPipe
   ],
   templateUrl: 'spaces-browser.component.html'
 })

@@ -12,8 +12,9 @@ import type { Owner } from '../../users/interfaces/owner.interface'
 import type { File } from '../schemas/file.interface'
 
 export interface FileLockProps {
-  owner: string
-  ownerLogin: string
+  owner: Owner
+  app: string
+  info?: string
   isExclusive: boolean
 }
 

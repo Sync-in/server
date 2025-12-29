@@ -10,8 +10,8 @@ import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCopy, faKey } from '@fortawesome/free-solid-svg-icons'
-import { COLLABORA_OWNER_LOCK } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
-import { ONLY_OFFICE_OWNER_LOCK } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
+import { COLLABORA_APP_LOCK } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
+import { ONLY_OFFICE_APP_LOCK } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
@@ -66,8 +66,8 @@ export class UserAccountComponent implements OnDestroy {
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
   protected readonly icons = { faCopy, faKey }
   protected readonly editors: Record<string, keyof FileEditorProvider> = {
-    [COLLABORA_OWNER_LOCK]: 'collabora',
-    [ONLY_OFFICE_OWNER_LOCK]: 'onlyoffice'
+    [COLLABORA_APP_LOCK]: 'collabora',
+    [ONLY_OFFICE_APP_LOCK]: 'onlyoffice'
   }
   protected user: UserType
   protected userAvatar: string = null

@@ -21,16 +21,6 @@ export interface WebDAVContext {
   copyMove?: { overwrite: boolean; destination: string; isMove: boolean }
 }
 
-export interface WebDAVLock {
-  // webdav uri (null if used with OnlyOffice)
-  lockroot: string
-  locktoken: string
-  lockscope: LOCK_SCOPE
-  // owner extra info provided during lock creation
-  owner: string
-  // locktype: 'write' => already handled by default
-}
-
 export interface FastifyDAVRequest extends FastifyAuthenticatedRequest {
   body: any
   dav?: WebDAVContext

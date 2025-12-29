@@ -8,12 +8,13 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { Component, inject, input, model, OnDestroy, OnInit } from '@angular/core'
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
-import { COLLABORA_OWNER_LOCK } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
+import { COLLABORA_APP_LOCK } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
 import type { CollaboraOnlineReqDto } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.dtos'
 import { API_COLLABORA_ONLINE_SETTINGS } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.routes'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
 import { FileModel } from '../../models/file.model'
+import { fileLockPropsToString } from '../utils/file-lock.utils'
 
 @Component({
   selector: 'app-files-viewer-collabora-online',
@@ -57,12 +58,24 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
           this.layout.sendNotification('error', 'Unable to open document', 'Settings are missing')
           return
         }
+        if (data.hasLock) {
+          if (!this.file().lock) {
+            this.file().createLock(data.hasLock)
+          } else if (!this.file().lock.isExclusive) {
+            // If a lock already exists and is exclusive, a notification was previously fired
+            this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(data.hasLock))
+          }
+        }
         this.isReadonly.set(data.mode === FILE_MODE.VIEW)
-        if (!this.isReadonly()) {
+        if (!this.isReadonly() && !this.file().lock) {
           // Set lock on file
           this.file().createLock({
-            owner: `${COLLABORA_OWNER_LOCK} - ${this.store.user.getValue().fullName} (${this.store.user.getValue().email})`,
-            ownerLogin: this.store.user.getValue().login,
+            owner: {
+              login: this.store.user.getValue().login,
+              fullName: this.store.user.getValue().fullName,
+              email: this.store.user.getValue().email
+            },
+            app: COLLABORA_APP_LOCK,
             isExclusive: false
           })
         }
@@ -76,7 +89,9 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    // Remove lock
-    this.file().removeLock()
+    if (!this.isReadonly() && this.file().lock && this.file().lock.owner.login === this.store.user.getValue().login) {
+      // Remove lock
+      this.file().removeLock()
+    }
   }
 }

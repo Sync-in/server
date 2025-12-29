@@ -48,6 +48,7 @@ import { FilesLockDialogComponent } from '../components/dialogs/files-lock-dialo
 import { FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
 import { FilesViewerDialogComponent } from '../components/dialogs/files-viewer-dialog.component'
 import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
+import { fileLockPropsToString } from '../components/utils/file-lock.utils'
 import { MAX_TEXT_FILE_SIZE, SHORT_MIME } from '../files.constants'
 import { FileContentModel } from '../models/file-content.model'
 import { FileRecentModel } from '../models/file-recent.model'
@@ -295,15 +296,14 @@ export class FilesService {
     this.http.head(file.dataUrl).subscribe({
       next: async () => {
         // This check is only used for the text viewer; other viewers are read-only or enforce permissions on the backend.
-        const isLockedByOther = file?.lock?.isExclusive && file.lock?.ownerLogin !== this.store.user.getValue().login
-        const isWriteable = !isLockedByOther && permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
+        const isWriteable = file?.lock?.isExclusive && permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
         const mode: FILE_MODE = isWriteable ? FILE_MODE.EDIT : FILE_MODE.VIEW
 
         let hookedShortMime: string
         try {
           hookedShortMime = await this.viewerHook(file, isWriteable)
-          if (isLockedByOther) {
-            this.layout.sendNotification('info', 'The file is locked', file.lock.owner)
+          if (file?.lock?.isExclusive) {
+            this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(file.lock))
           }
         } catch {
           // No office editors are enabled, falling back to download

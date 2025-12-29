@@ -69,10 +69,10 @@ export function LOCK_DISCOVERY(locks: FileLock[]) {
     activeLocks.push({
       [`${NS_PREFIX}:activelock`]: {
         [`${NS_PREFIX}:locktype`]: { [`${NS_PREFIX}:write`]: null },
-        [`${NS_PREFIX}:lockscope`]: { [`${NS_PREFIX}:${lock.davLock?.lockscope || LOCK_SCOPE.EXCLUSIVE}`]: null },
-        [`${NS_PREFIX}:locktoken`]: { [`${NS_PREFIX}:href`]: lock.davLock?.locktoken || SERVER_NAME },
-        [`${NS_PREFIX}:lockroot`]: { [`${NS_PREFIX}:href`]: encodeUrl(lock.davLock?.lockroot || lock.dbFilePath) },
-        [`${NS_PREFIX}:owner`]: lock.davLock?.owner || 'WebDAV',
+        [`${NS_PREFIX}:lockscope`]: { [`${NS_PREFIX}:${lock.options?.lockScope || LOCK_SCOPE.EXCLUSIVE}`]: null },
+        [`${NS_PREFIX}:locktoken`]: { [`${NS_PREFIX}:href`]: lock.options?.lockToken || SERVER_NAME },
+        [`${NS_PREFIX}:lockroot`]: { [`${NS_PREFIX}:href`]: encodeUrl(lock.options?.lockRoot || lock.dbFilePath) },
+        [`${NS_PREFIX}:owner`]: lock.options?.lockInfo,
         [`${NS_PREFIX}:timeout`]: `Second-${Math.floor(lock.expiration - currentTimeStamp())}`,
         [`${NS_PREFIX}:depth`]: lock.depth
       }

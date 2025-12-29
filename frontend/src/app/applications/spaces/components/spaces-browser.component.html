@@ -242,7 +242,7 @@
               <span class="label-bottom-right">
                 @if (f.lock) {
                   <span (click)="openLockDialog(f)"
-                        tooltip="{{f.lock.owner}}"
+                        tooltip="{{f.lock | fileLockFormatPipe}}"
                         placement="auto"
                         [style.font-size.px]="galleryMode.textSize"
                         class="badge rounded-pill bg-maroon cursor-pointer">
@@ -389,7 +389,7 @@
                     @case ('info') {
                       @if (f.lock) {
                         <span (click)="openLockDialog(f)"
-                              tooltip="{{f.lock.owner}}"
+                              tooltip="{{f.lock | fileLockFormatPipe}}"
                               placement="auto"
                               class="badge rounded-pill bg-maroon cursor-pointer me-1">
                           <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>

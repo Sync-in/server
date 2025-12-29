@@ -7,12 +7,13 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { Component, inject, input, model, OnDestroy, OnInit } from '@angular/core'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
-import { ONLY_OFFICE_OWNER_LOCK } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
+import { ONLY_OFFICE_APP_LOCK } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import type { OnlyOfficeReqDto } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.dtos'
 import { API_ONLY_OFFICE_SETTINGS } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.routes'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
 import { FileModel } from '../../models/file.model'
+import { fileLockPropsToString } from '../utils/file-lock.utils'
 import { OnlyOfficeComponent } from '../utils/only-office.component'
 
 @Component({
@@ -59,12 +60,24 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
           this.layout.sendNotification('error', 'Unable to open document', 'Settings are missing')
           return
         }
+        if (data.hasLock) {
+          if (!this.file().lock) {
+            this.file().createLock(data.hasLock)
+          } else if (!this.file().lock.isExclusive) {
+            // If a lock already exists and is exclusive, a notification was previously fired
+            this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(data.hasLock))
+          }
+        }
         this.isReadonly.set(data.config.editorConfig.mode === FILE_MODE.VIEW)
-        if (!this.isReadonly()) {
+        if (!this.isReadonly() && !this.file().lock) {
           // Set lock on file
           this.file().createLock({
-            owner: `${ONLY_OFFICE_OWNER_LOCK} - ${this.store.user.getValue().fullName} (${this.store.user.getValue().email})`,
-            ownerLogin: this.store.user.getValue().login,
+            owner: {
+              login: this.store.user.getValue().login,
+              fullName: this.store.user.getValue().fullName,
+              email: this.store.user.getValue().email
+            },
+            app: ONLY_OFFICE_APP_LOCK,
             isExclusive: false
           })
         }
@@ -79,11 +92,6 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
     })
   }
 
-  ngOnDestroy() {
-    // Remove lock
-    this.file().removeLock()
-  }
-
   loadError(e: { title: string; message: string }): void {
     this.layout.closeDialog()
     this.layout.sendNotification('error', e.title, e.message)
@@ -91,5 +99,12 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
 
   onSave() {
     this.file().updateHTimeAgo()
+  }
+
+  ngOnDestroy() {
+    if (!this.isReadonly() && this.file().lock && this.file().lock.owner.login === this.store.user.getValue().login) {
+      // Remove lock
+      this.file().removeLock()
+    }
   }
 }

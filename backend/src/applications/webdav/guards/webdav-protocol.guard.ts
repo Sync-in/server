@@ -189,9 +189,7 @@ export class WebDAVProtocolGuard implements CanActivate {
         throw new HttpException('Invalid or undefined lockscope', HttpStatus.BAD_REQUEST)
       }
       if (req.dav.body['lockinfo']['owner'] && typeof req.dav.body['lockinfo']['owner'] === 'string') {
-        req.dav.lock.owner = `${req.dav.body['lockinfo']['owner']} ${req.user.fullName} (${req.user.email})`
-      } else {
-        req.dav.lock.owner = `WebDAV - ${req.user.fullName} (${req.user.email})`
+        req.dav.lock.owner = req.dav.body['lockinfo']['owner'].trim()
       }
       const depth: DEPTH = ((req.headers[HEADER.DEPTH] as any) || '').toLowerCase()
       req.dav.depth = [DEPTH.INFINITY, DEPTH.RESOURCE].indexOf(depth) === -1 ? DEPTH.INFINITY : depth
