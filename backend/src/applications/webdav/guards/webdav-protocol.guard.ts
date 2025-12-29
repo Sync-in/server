@@ -174,22 +174,25 @@ export class WebDAVProtocolGuard implements CanActivate {
     }
     this.parseBody(req)
     if (req.dav.body) {
-      if (!req.dav.body['lockinfo']) {
+      if (!req.dav.body.lockinfo) {
         this.logger.warn(`Missing lockinfo : ${JSON.stringify(req.dav.body)}`)
         throw new HttpException('Missing lockinfo', HttpStatus.BAD_REQUEST)
       }
       try {
-        req.dav.lock.lockscope = Object.keys(req.dav.body['lockinfo']['lockscope'])[0] as LOCK_SCOPE
+        req.dav.lock.lockscope = Object.keys(req.dav.body.lockinfo.lockscope)[0] as LOCK_SCOPE
       } catch (e) {
-        this.logger.warn(`${this.parseBody.name} - invalid or undefined lockscope : ${JSON.stringify(req.dav.body['lockinfo'])} : ${e}`)
+        this.logger.warn(`${this.parseBody.name} - invalid or undefined lockscope : ${JSON.stringify(req.dav.body.lockinfo)} : ${e}`)
         throw new HttpException('Invalid or undefined lockscope', HttpStatus.BAD_REQUEST)
       }
       if (Object.values(LOCK_SCOPE).indexOf(req.dav.lock.lockscope) === -1) {
-        this.logger.warn(`${this.parseBody.name} - invalid or undefined lockscope : ${JSON.stringify(req.dav.body['lockinfo'])}`)
+        this.logger.warn(`${this.parseBody.name} - invalid or undefined lockscope : ${JSON.stringify(req.dav.body.lockinfo)}`)
         throw new HttpException('Invalid or undefined lockscope', HttpStatus.BAD_REQUEST)
       }
-      if (req.dav.body['lockinfo']['owner'] && typeof req.dav.body['lockinfo']['owner'] === 'string') {
-        req.dav.lock.owner = req.dav.body['lockinfo']['owner'].trim()
+      if (req.dav.body.lockinfo.owner) {
+        const owner = typeof req.dav.body?.lockinfo?.owner === 'string' ? req.dav.body.lockinfo.owner : req.dav.body?.lockinfo?.owner?.href
+        if (typeof owner === 'string') {
+          req.dav.lock.owner = owner.trim()
+        }
       }
       const depth: DEPTH = ((req.headers[HEADER.DEPTH] as any) || '').toLowerCase()
       req.dav.depth = [DEPTH.INFINITY, DEPTH.RESOURCE].indexOf(depth) === -1 ? DEPTH.INFINITY : depth

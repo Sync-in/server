@@ -7,22 +7,26 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { FileLock } from '../../files/interfaces/file-lock.interface'
+import { FileError } from '../../files/models/file-error'
+import { LockConflict } from '../../files/models/file-lock-error'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
 import { FilesManager } from '../../files/services/files-manager.service'
-import { dirName, isPathExists } from '../../files/utils/files'
+import { dirName, genEtag, isPathExists } from '../../files/utils/files'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import * as PathsUtils from '../../spaces/utils/paths'
 import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
-import { STANDARD_PROPS } from '../constants/webdav'
+import { DEPTH, LOCK_DISCOVERY_PROP, PROPSTAT, STANDARD_PROPS } from '../constants/webdav'
 import * as IfHeaderUtils from '../utils/if-header'
 import { WebDAVMethods } from './webdav-methods.service'
 import { WebDAVSpaces } from './webdav-spaces.service'
 
+// Mock external dependencies
 jest.mock('../../files/utils/files', () => ({
   isPathExists: jest.fn(),
   dirName: jest.fn(),
-  genEtag: jest.fn().mockReturnValue('W/"etag"')
+  genEtag: jest.fn().mockReturnValue('W/"etag-123"')
 }))
+
 jest.mock('../../spaces/utils/permissions', () => ({
   haveSpaceEnvPermissions: jest.fn()
 }))
@@ -36,30 +40,14 @@ jest.mock('../decorators/if-header.decorator', () => ({
   IfHeaderDecorator: () => (_target?: any, _key?: string, _desc?: any) => undefined
 }))
 
-describe(WebDAVMethods.name, () => {
+describe('WebDAVMethods', () => {
   let service: WebDAVMethods
-  let filesManager: {
-    sendFileFromSpace: jest.Mock
-    mkFile: jest.Mock
-    saveStream: jest.Mock
-    delete: jest.Mock
-    touch: jest.Mock
-    mkDir: jest.Mock
-    copyMove: jest.Mock
-  }
-  let filesLockManager: {
-    create: jest.Mock
-    isLockedWithToken: jest.Mock
-    removeLock: jest.Mock
-    browseLocks: jest.Mock
-    browseParentChildLocks: jest.Mock
-    checkConflicts: jest.Mock
-    getLocksByPath: jest.Mock
-    getLockByToken: jest.Mock
-    refreshLockTimeout: jest.Mock
-  }
-  let webDAVSpaces: { propfind: jest.Mock; spaceEnv: jest.Mock }
-  const makeRes = () => {
+  let filesManager: jest.Mocked<FilesManager>
+  let filesLockManager: jest.Mocked<FilesLockManager>
+  let webDAVSpaces: jest.Mocked<WebDAVSpaces>
+
+  // Helper to create a mocked response object
+  const createMockResponse = () => {
     const res: any = {
       statusCode: undefined,
       body: undefined,
@@ -85,1134 +73,1986 @@ describe(WebDAVMethods.name, () => {
     return res
   }
 
-  const baseReq = (overrides: Partial<any> = {}) =>
+  // Helper to create a base request object
+  const createBaseRequest = (overrides: Partial<any> = {}) =>
     ({
       method: 'GET',
-      user: { id: 1, login: 'user-1' },
+      user: { id: 1, login: 'test-user' },
       dav: {
-        url: '/webdav/url',
+        url: '/webdav/test/file.txt',
         depth: '0',
         httpVersion: 'HTTP/1.1',
-        body: '<lockrequest/>',
-        lock: { timeout: 60, lockscope: 'exclusive', owner: 'user-1', token: 'opaquetoken:abc' }
+        body: '<lockinfo/>',
+        lock: {
+          timeout: 60,
+          lockscope: 'exclusive',
+          owner: 'test-user',
+          token: 'opaquelocktoken:abc123'
+        },
+        ifHeaders: []
       },
       space: {
-        id: 10,
-        alias: 'spaceA',
-        url: '/spaces/spaceA/file.txt',
-        realPath: '/real/path/file.txt',
+        id: 1,
+        alias: 'test-space',
+        url: '/webdav/test/file.txt',
+        realPath: '/real/path/to/file.txt',
         inSharesList: false,
-        dbFile: { path: 'file.txt' }
+        dbFile: { path: 'file.txt', spaceId: 1, inTrash: false }
       },
       ...overrides
     }) as any
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    // Initialize mocks
     filesManager = {
       sendFileFromSpace: jest.fn(),
-      mkFile: jest.fn().mockResolvedValue(undefined),
+      mkFile: jest.fn(),
       saveStream: jest.fn(),
-      delete: jest.fn().mockResolvedValue(undefined),
-      touch: jest.fn().mockResolvedValue(undefined),
-      mkDir: jest.fn().mockResolvedValue(undefined),
-      copyMove: jest.fn().mockResolvedValue(undefined)
-    }
+      delete: jest.fn(),
+      touch: jest.fn(),
+      mkDir: jest.fn(),
+      copyMove: jest.fn()
+    } as any
+
     filesLockManager = {
       create: jest.fn(),
       isLockedWithToken: jest.fn(),
-      removeLock: jest.fn().mockResolvedValue(undefined),
+      removeLock: jest.fn(),
       browseLocks: jest.fn(),
       browseParentChildLocks: jest.fn(),
-      checkConflicts: jest.fn().mockResolvedValue(undefined),
+      checkConflicts: jest.fn(),
       getLocksByPath: jest.fn(),
       getLockByToken: jest.fn(),
-      refreshLockTimeout: jest.fn().mockResolvedValue(undefined)
-    }
+      refreshLockTimeout: jest.fn(),
+      genDAVToken: jest.fn().mockReturnValue('opaquelocktoken:new-token')
+    } as any
+
     webDAVSpaces = {
       propfind: jest.fn(),
       spaceEnv: jest.fn()
-    }
+    } as any
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WebDAVMethods,
         { provide: WebDAVSpaces, useValue: webDAVSpaces },
-        {
-          provide: FilesManager,
-          useValue: filesManager
-        },
+        { provide: FilesManager, useValue: filesManager },
         { provide: FilesLockManager, useValue: filesLockManager }
       ]
     }).compile()
 
     module.useLogger(['fatal'])
     service = module.get<WebDAVMethods>(WebDAVMethods)
-  })
 
-  beforeEach(() => {
+    // Reset global mocks
     jest.clearAllMocks()
-    ;(isPathExists as jest.Mock).mockReset().mockResolvedValue(true)
-    ;(dirName as jest.Mock).mockReturnValue('/real/path')
+    ;(isPathExists as jest.Mock).mockResolvedValue(true)
+    ;(dirName as jest.Mock).mockReturnValue('/real/path/to')
     ;(haveSpaceEnvPermissions as jest.Mock).mockReturnValue(true)
   })
+
   afterEach(() => {
     jest.restoreAllMocks()
   })
 
-  it('should be defined', () => {
-    expect(service).toBeDefined()
+  describe('Service initialization', () => {
+    it('should be defined', () => {
+      expect(service).toBeDefined()
+      expect(service).toBeInstanceOf(WebDAVMethods)
+    })
   })
 
   describe('headOrGet', () => {
-    it('streams the file when repository is FILES and not in shares list', async () => {
-      const req = baseReq()
-      const res = makeRes()
-      const streamable = { stream: 'ok' }
-      const send = {
-        checks: jest.fn().mockResolvedValue(undefined),
-        stream: jest.fn().mockResolvedValue(streamable)
-      }
-      filesManager.sendFileFromSpace.mockReturnValue(send)
+    describe('Success cases', () => {
+      it('should stream file when repository is FILES and not in shares list', async () => {
+        const req = createBaseRequest()
+        const res = createMockResponse()
+        const streamable = { stream: 'file-content' }
+        const sendFile = {
+          checks: jest.fn().mockResolvedValue(undefined),
+          stream: jest.fn().mockResolvedValue(streamable)
+        }
+        filesManager.sendFileFromSpace.mockReturnValue(sendFile as any)
 
-      const result = await service.headOrGet(req, res, SPACE_REPOSITORY.FILES)
+        const result = await service.headOrGet(req, res, SPACE_REPOSITORY.FILES)
 
-      expect(filesManager.sendFileFromSpace).toHaveBeenCalledWith(req.space)
-      expect(send.checks).toHaveBeenCalledTimes(1)
-      expect(send.stream).toHaveBeenCalledWith(req, res)
-      expect(result).toBe(streamable)
+        expect(filesManager.sendFileFromSpace).toHaveBeenCalledWith(req.space)
+        expect(sendFile.checks).toHaveBeenCalledTimes(1)
+        expect(sendFile.stream).toHaveBeenCalledWith(req, res)
+        expect(result).toBe(streamable)
+      })
     })
 
-    it('returns 403 when repository is not allowed', async () => {
-      const req = baseReq({ space: { ...baseReq().space, inSharesList: true } })
-      const res = makeRes()
+    describe('Error cases', () => {
+      it('should return 403 when repository is not FILES', async () => {
+        const req = createBaseRequest()
+        const res = createMockResponse()
 
-      // repository not FILES or inSharesList true => forbidden
-      await service.headOrGet(req, res, 'OTHER')
+        await service.headOrGet(req, res, 'OTHER_REPO')
 
-      expect(res.statusCode).toBe(HttpStatus.FORBIDDEN)
-      expect(res.body).toBe('Not allowed on this resource')
-    })
+        expect(res.statusCode).toBe(HttpStatus.FORBIDDEN)
+        expect(res.body).toBe('Not allowed on this resource')
+      })
 
-    it('handles error thrown by sendFile.checks via handleError', async () => {
-      const req = baseReq()
-      const res = makeRes()
-      const send = {
-        checks: jest.fn().mockRejectedValue(new Error('boom')),
-        stream: jest.fn()
-      }
-      filesManager.sendFileFromSpace.mockReturnValue(send)
-      const handleSpy = jest.spyOn<any, any>(service, 'handleError').mockReturnValue('handled')
+      it('should return 403 when resource is in shares list', async () => {
+        const req = createBaseRequest({ space: { ...createBaseRequest().space, inSharesList: true } })
+        const res = createMockResponse()
 
-      const result = await service.headOrGet(req, res, SPACE_REPOSITORY.FILES)
+        await service.headOrGet(req, res, SPACE_REPOSITORY.FILES)
 
-      expect(handleSpy).toHaveBeenCalled()
-      expect(result).toBe('handled')
+        expect(res.statusCode).toBe(HttpStatus.FORBIDDEN)
+        expect(res.body).toBe('Not allowed on this resource')
+      })
+
+      it('should handle errors from sendFile.checks', async () => {
+        const req = createBaseRequest()
+        const res = createMockResponse()
+        const error = new Error('File check failed')
+        const sendFile = {
+          checks: jest.fn().mockRejectedValue(error),
+          stream: jest.fn()
+        }
+        filesManager.sendFileFromSpace.mockReturnValue(sendFile as any)
+        jest.spyOn<any, any>(service, 'handleError').mockReturnValue('error-handled')
+
+        const result = await service.headOrGet(req, res, SPACE_REPOSITORY.FILES)
+
+        expect(result).toBe('error-handled')
+      })
+
+      it('should handle errors from sendFile.stream', async () => {
+        const req = createBaseRequest()
+        const res = createMockResponse()
+        const error = new Error('Stream failed')
+        const sendFile = {
+          checks: jest.fn().mockResolvedValue(undefined),
+          stream: jest.fn().mockRejectedValue(error)
+        }
+        filesManager.sendFileFromSpace.mockReturnValue(sendFile as any)
+        jest.spyOn<any, any>(service, 'handleError').mockReturnValue('error-handled')
+
+        const result = await service.headOrGet(req, res, SPACE_REPOSITORY.FILES)
+
+        expect(result).toBe('error-handled')
+      })
     })
   })
 
   describe('lock', () => {
-    it('when body is empty: returns 400 if resource does not exist (lock refresh)', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(false)
-      const req = baseReq({ dav: { ...baseReq().dav, body: undefined } })
-      const res = makeRes()
+    describe('Lock refresh (without body)', () => {
+      it('should return 400 if resource does not exist for lock refresh', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        const req = createBaseRequest({ dav: { ...createBaseRequest().dav, body: undefined } })
+        const res = createMockResponse()
 
-      await service.lock(req, res)
+        await service.lock(req, res)
 
-      expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
-      expect(res.body).toBe('Lock refresh must specify an existing resource')
-    })
-
-    it('when body is empty: delegates to lockRefresh if resource exists', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      const req = baseReq({ dav: { ...baseReq().dav, body: undefined } })
-      const res = makeRes()
-      const lockRefreshSpy = jest.spyOn<any, any>(service, 'lockRefresh').mockResolvedValue('ok')
-
-      const result = await service.lock(req, res)
-
-      expect(lockRefreshSpy).toHaveBeenCalledWith(req, res, req.space.dbFile.path)
-      expect(result).toBe('ok')
-    })
-
-    it('returns 403 when creating new lock on non-existing resource without permission', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValueOnce(false) // resource does not exist
-      ;(haveSpaceEnvPermissions as jest.Mock).mockReturnValue(false)
-      const req = baseReq()
-      const res = makeRes()
-
-      await service.lock(req, res)
-
-      expect(res.statusCode).toBe(HttpStatus.FORBIDDEN)
-      expect(res.body).toBe('You are not allowed to do this action')
-      expect(filesLockManager.create).not.toHaveBeenCalled()
-    })
-
-    it('returns 409 when parent does not exist for new lock', async () => {
-      ;(isPathExists as jest.Mock)
-        .mockResolvedValueOnce(false) // resource does not exist
-        .mockResolvedValueOnce(false) // parent does not exist
-      ;(haveSpaceEnvPermissions as jest.Mock).mockReturnValue(true)
-      ;(dirName as jest.Mock).mockReturnValue('/real/path/parent-missing')
-      const req = baseReq()
-      const res = makeRes()
-
-      await service.lock(req, res)
-
-      expect(res.statusCode).toBe(HttpStatus.CONFLICT)
-      expect(res.body).toBe('Parent must exists')
-      expect(filesLockManager.create).not.toHaveBeenCalled()
-    })
-
-    it('creates lock on existing resource and returns 200 with lock-token header', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true) // resource exists
-      const req = baseReq()
-      const res = makeRes()
-
-      filesLockManager.create.mockImplementation(async (_user, _dbFile, _depth, davLock, _timeout) => {
-        davLock.locktoken = 'opaquetoken:1'
-        return [
-          true,
-          {
-            dbFilePath: _dbFile?.path,
-            depth: _depth,
-            options: {
-              lockRoot: davLock.lockroot,
-              lockToken: davLock.locktoken,
-              lockScope: davLock.lockscope,
-              lockInfo: davLock.owner
-            }
-          } satisfies Partial<FileLock>
-        ] as any
+        expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
+        expect(res.body).toBe('Lock refresh must specify an existing resource')
       })
 
-      await service.lock(req, res)
+      it('should delegate to lockRefresh when resource exists and no body', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest({ dav: { ...createBaseRequest().dav, body: undefined } })
+        const res = createMockResponse()
+        const lockRefreshSpy = jest.spyOn<any, any>(service, 'lockRefresh').mockResolvedValue('refresh-ok')
 
-      expect(filesLockManager.create).toHaveBeenCalledTimes(1)
-      expect(res.headers['lock-token']).toBe('<opaquetoken:1>')
-      expect(res.statusCode).toBe(HttpStatus.OK)
-      expect(res.contentType).toBe('application/xml; charset=utf-8')
-      expect(res.body).toBeDefined()
+        const result = await service.lock(req, res)
+
+        expect(lockRefreshSpy).toHaveBeenCalledWith(req, res, req.space.dbFile.path)
+        expect(result).toBe('refresh-ok')
+      })
     })
 
-    it('creates lock on unmapped URL (resource missing), creates empty file and returns 201', async () => {
-      ;(isPathExists as jest.Mock)
-        .mockResolvedValueOnce(false) // resource missing
-        .mockResolvedValueOnce(true) // parent exists
-      const req = baseReq()
-      const res = makeRes()
+    describe('Lock creation on existing resource', () => {
+      it('should create lock successfully and return 200', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest()
+        const res = createMockResponse()
 
-      filesLockManager.create.mockImplementation(async (_user, _dbFile, _depth, davLock, _timeout) => {
-        davLock.locktoken = 'opaquetoken:new'
-        return [
-          true,
-          {
-            dbFilePath: _dbFile?.path,
-            davLock: {
-              lockroot: davLock.lockroot,
-              locktoken: davLock.locktoken,
-              lockscope: davLock.lockscope,
-              owner: davLock.owner,
-              depth: _depth,
-              timeout: _timeout
+        filesLockManager.create.mockImplementation(async (_user, _dbFile, _app, _depth, options, _timeout) => {
+          return [
+            true,
+            {
+              dbFilePath: _dbFile?.path,
+              options: {
+                lockRoot: options.lockRoot,
+                lockToken: options.lockToken,
+                lockScope: options.lockScope,
+                lockInfo: options.lockInfo
+              }
+            } as Partial<FileLock>
+          ] as any
+        })
+
+        await service.lock(req, res)
+
+        expect(filesLockManager.create).toHaveBeenCalledTimes(1)
+        expect(res.statusCode).toBe(HttpStatus.OK)
+        expect(res.contentType).toBe('application/xml; charset=utf-8')
+        expect(res.headers['lock-token']).toContain('opaquelocktoken:new-token')
+        expect(res.body).toBeDefined()
+        expect(typeof res.body).toBe('string')
+      })
+    })
+
+    describe('Lock creation on non-existent resource', () => {
+      it('should return 403 when user lacks ADD permission', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        ;(haveSpaceEnvPermissions as jest.Mock).mockReturnValue(false)
+        const req = createBaseRequest()
+        const res = createMockResponse()
+
+        await service.lock(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.FORBIDDEN)
+        expect(res.body).toBe('You are not allowed to do this action')
+        expect(filesLockManager.create).not.toHaveBeenCalled()
+      })
+
+      it('should return 409 when parent directory does not exist', async () => {
+        ;(isPathExists as jest.Mock)
+          .mockResolvedValueOnce(false) // resource
+          .mockResolvedValueOnce(false) // parent
+        ;(haveSpaceEnvPermissions as jest.Mock).mockReturnValue(true)
+        ;(dirName as jest.Mock).mockReturnValue('/real/path/missing')
+        const req = createBaseRequest()
+        const res = createMockResponse()
+
+        await service.lock(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.CONFLICT)
+        expect(res.body).toBe('Parent must exists')
+        expect(filesLockManager.create).not.toHaveBeenCalled()
+      })
+
+      it('should create empty file and lock, return 201', async () => {
+        ;(isPathExists as jest.Mock)
+          .mockResolvedValueOnce(false) // resource
+          .mockResolvedValueOnce(true) // parent exists
+        const req = createBaseRequest()
+        const res = createMockResponse()
+
+        filesLockManager.create.mockImplementation(async (_user, _dbFile, _app, _depth, options) => {
+          return [
+            true,
+            {
+              dbFilePath: _dbFile?.path,
+              options: {
+                lockRoot: options.lockRoot,
+                lockToken: options.lockToken,
+                lockScope: options.lockScope,
+                lockInfo: options.lockInfo
+              }
             }
+          ] as any
+        })
+
+        await service.lock(req, res)
+
+        expect(filesManager.mkFile).toHaveBeenCalledWith(req.user, req.space, false, false, false)
+        expect(res.statusCode).toBe(HttpStatus.CREATED)
+        expect(res.headers['lock-token']).toContain('opaquelocktoken:new-token')
+      })
+    })
+
+    describe('Lock conflict', () => {
+      it('should return 423 when lock conflict occurs', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest()
+        const res = createMockResponse()
+
+        filesLockManager.create.mockResolvedValue([
+          false,
+          {
+            dbFilePath: 'file.txt',
+            options: { lockRoot: '/webdav/locked/resource' }
           }
-        ] as any
+        ] as any)
+
+        await service.lock(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.LOCKED)
+        expect(res.contentType).toBe('application/xml; charset=utf-8')
       })
-
-      await service.lock(req, res)
-
-      expect(filesManager.mkFile).toHaveBeenCalledTimes(1)
-      expect(res.statusCode).toBe(HttpStatus.CREATED)
-      expect(res.headers['lock-token']).toBe('<opaquetoken:new>')
-    })
-
-    it('returns 423 when a lock conflict occurs', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      const req = baseReq()
-      const res = makeRes()
-
-      filesLockManager.create.mockResolvedValue([false, { davLock: { lockroot: '/locked' }, dbFilePath: 'file.txt' }])
-
-      await service.lock(req, res)
-
-      // DAV_ERROR_RES should have set 423 on the response
-      expect(res.statusCode).toBe(HttpStatus.LOCKED)
     })
   })
 
   describe('unlock', () => {
-    it('returns 404 when resource does not exist', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(false)
-      const req = baseReq()
-      const res = makeRes()
+    describe('Success cases', () => {
+      it('should unlock resource and return 204', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.isLockedWithToken.mockResolvedValue({
+          owner: { id: 1, login: 'test-user' },
+          key: 'lock-key-123'
+        } as any)
+        const req = createBaseRequest()
+        const res = createMockResponse()
 
-      await service.unlock(req, res)
+        await service.unlock(req, res)
 
-      expect(res.statusCode).toBe(HttpStatus.NOT_FOUND)
-      expect(res.body).toBe(req.dav.url)
+        expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-key-123')
+        expect(res.statusCode).toBe(HttpStatus.NO_CONTENT)
+      })
     })
 
-    it('returns 409 when lock token does not exist or does not match URL', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      filesLockManager.isLockedWithToken.mockResolvedValue(null)
-      const req = baseReq()
-      const res = makeRes()
+    describe('Error cases', () => {
+      it('should return 404 when resource does not exist', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        const req = createBaseRequest()
+        const res = createMockResponse()
 
-      await service.unlock(req, res)
+        await service.unlock(req, res)
 
-      expect(filesLockManager.isLockedWithToken).toHaveBeenCalledWith(req.dav.lock.token, req.space.dbFile.path)
-      expect(res.statusCode).toBe(HttpStatus.CONFLICT)
-    })
+        expect(res.statusCode).toBe(HttpStatus.NOT_FOUND)
+        expect(res.body).toBe(req.dav.url)
+      })
 
-    it('returns 403 when the lock owner is a different user', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      filesLockManager.isLockedWithToken.mockResolvedValue({ owner: { id: 2 }, key: 'k1' })
-      const req = baseReq()
-      const res = makeRes()
+      it('should return 409 when lock token does not exist', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.isLockedWithToken.mockResolvedValue(null)
+        const req = createBaseRequest()
+        const res = createMockResponse()
 
-      await service.unlock(req, res)
+        await service.unlock(req, res)
 
-      expect(res.statusCode).toBe(HttpStatus.FORBIDDEN)
-      expect(res.body).toBe('Token was created by another user')
-      expect(filesLockManager.removeLock).not.toHaveBeenCalled()
-    })
+        expect(filesLockManager.isLockedWithToken).toHaveBeenCalledWith(req.dav.lock.token, req.space.dbFile.path)
+        expect(res.statusCode).toBe(HttpStatus.CONFLICT)
+      })
 
-    it('removes lock and returns 204 when owner matches', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      filesLockManager.isLockedWithToken.mockResolvedValue({ owner: { id: 1 }, key: 'k2' })
-      const req = baseReq()
-      const res = makeRes()
+      it('should return 403 when lock owner is different user', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.isLockedWithToken.mockResolvedValue({
+          owner: { id: 999, login: 'other-user' },
+          key: 'lock-key-456'
+        } as any)
+        const req = createBaseRequest()
+        const res = createMockResponse()
 
-      await service.unlock(req, res)
+        await service.unlock(req, res)
 
-      expect(filesLockManager.removeLock).toHaveBeenCalledWith('k2')
-      expect(res.statusCode).toBe(HttpStatus.NO_CONTENT)
+        expect(res.statusCode).toBe(HttpStatus.FORBIDDEN)
+        expect(res.body).toBe('Token was created by another user')
+        expect(filesLockManager.removeLock).not.toHaveBeenCalled()
+      })
     })
   })
 
   describe('propfind', () => {
-    it('returns 404 when repository is FILES and path does not exist', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(false)
-      const req = baseReq({ dav: { ...baseReq().dav, propfindMode: 'prop' } })
-      const res = makeRes()
+    describe('Base cases', () => {
+      it('should return 404 when resource does not exist in FILES repository', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        const req = createBaseRequest({ dav: { ...createBaseRequest().dav, propfindMode: 'prop' } })
+        const res = createMockResponse()
 
-      const result = await service.propfind(req, res, SPACE_REPOSITORY.FILES)
+        const result = await service.propfind(req, res, SPACE_REPOSITORY.FILES)
 
-      expect(result).toBe(res)
-      expect(res.statusCode).toBe(HttpStatus.NOT_FOUND)
-      expect(res.body).toBe(req.dav.url)
+        expect(result).toBe(res)
+        expect(res.statusCode).toBe(HttpStatus.NOT_FOUND)
+        expect(res.body).toBe(req.dav.url)
+      })
+
+      it('should return multistatus with property names in PROPNAME mode', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest({
+          dav: { ...createBaseRequest().dav, propfindMode: 'propname' }
+        })
+        const res = createMockResponse()
+
+        webDAVSpaces.propfind.mockImplementation(async function* () {
+          yield { href: '/webdav/test/file.txt', name: 'file.txt' }
+        } as any)
+
+        await service.propfind(req, res, SPACE_REPOSITORY.FILES)
+
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+        expect(res.contentType).toContain('application/xml')
+        expect(typeof res.body).toBe('string')
+        expect(res.body).toContain('/webdav/test/file.txt')
+      })
+
+      it('should return multistatus with property values in PROP mode', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            propfindMode: 'prop',
+            body: { propfind: { prop: { [STANDARD_PROPS[0]]: '' } } }
+          }
+        })
+        const res = createMockResponse()
+
+        webDAVSpaces.propfind.mockImplementation(async function* () {
+          yield {
+            href: '/webdav/test/file.txt',
+            name: 'file.txt',
+            getlastmodified: 'Mon, 01 Jan 2024 00:00:00 GMT'
+          }
+        } as any)
+
+        await service.propfind(req, res, SPACE_REPOSITORY.FILES)
+
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+        expect(res.contentType).toContain('application/xml')
+        expect(typeof res.body).toBe('string')
+      })
     })
 
-    it('returns multistatus with only property names when PROPNAME mode', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      const req = baseReq({ dav: { ...baseReq().dav, propfindMode: 'propname', httpVersion: 'HTTP/1.1' } })
-      const res = makeRes()
-      const handler = (service as any)['webDAVHandler']
-      jest.spyOn(handler, 'propfind').mockImplementation(async function* () {
-        yield { href: '/a', name: 'file.txt' }
+    describe('Lock discovery', () => {
+      it('should collect locks with depth 0', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            propfindMode: 'prop',
+            depth: DEPTH.RESOURCE,
+            body: { propfind: { prop: { [LOCK_DISCOVERY_PROP]: '' } } }
+          }
+        })
+        const res = createMockResponse()
+
+        webDAVSpaces.propfind.mockImplementation(async function* () {
+          yield { href: '/webdav/test/file.txt', name: 'file.txt' }
+        } as any)
+
+        filesLockManager.browseLocks.mockResolvedValue({
+          'file.txt': {
+            options: { lockRoot: '/webdav/test/file.txt' }
+          }
+        } as any)
+
+        await service.propfind(req, res, SPACE_REPOSITORY.FILES)
+
+        expect(filesLockManager.browseLocks).toHaveBeenCalledWith(req.space.dbFile)
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
       })
 
-      const result = await service.propfind(req, res, SPACE_REPOSITORY.FILES)
+      it('should collect parent and child locks with depth infinity', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            propfindMode: 'prop',
+            depth: 'infinity',
+            body: { propfind: { prop: { [LOCK_DISCOVERY_PROP]: '' } } }
+          }
+        })
+        const res = createMockResponse()
 
-      expect(result).toBe(res)
-      expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
-      expect(res.contentType).toContain('application/xml')
-      expect(typeof res.body).toBe('string')
-      expect(res.body).toContain('/a')
-    })
+        webDAVSpaces.propfind.mockImplementation(async function* () {
+          yield { href: '/webdav/test/file.txt', name: 'file.txt' }
+        } as any)
 
-    it('collects lock discovery based on depth', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      const req0 = baseReq({
-        dav: {
-          ...baseReq().dav,
-          body: { propfind: { prop: { [STANDARD_PROPS[0]]: '' } } },
-          propfindMode: 'prop',
-          httpVersion: 'HTTP/1.1',
-          depth: '0'
-        }
+        filesLockManager.browseParentChildLocks.mockResolvedValue({
+          'file.txt': {
+            options: { lockRoot: '/webdav/test/file.txt' }
+          }
+        } as any)
+
+        await service.propfind(req, res, SPACE_REPOSITORY.FILES)
+
+        expect(filesLockManager.browseParentChildLocks).toHaveBeenCalledWith(req.space.dbFile)
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
       })
-      const reqInf = baseReq({
-        dav: {
-          ...baseReq().dav,
-          body: { propfind: { prop: { [STANDARD_PROPS[0]]: '' } } },
-          propfindMode: 'prop',
-          httpVersion: 'HTTP/1.1',
-          depth: 'infinity'
-        }
-      })
-      const res0 = makeRes()
-      const resInf = makeRes()
-      const handler = (service as any)['webDAVHandler']
-      jest.spyOn(handler, 'propfind').mockImplementation(async function* () {
-        yield { href: '/a', name: 'file.txt', getlastmodified: 'x' }
-      })
-      filesLockManager.browseLocks.mockResolvedValue({ 'file.txt': { davLock: { lockroot: '/dav/url' } } })
-      await service.propfind(req0, res0 as any, SPACE_REPOSITORY.FILES)
-      expect(filesLockManager.browseLocks).toHaveBeenCalledTimes(1)
 
-      filesLockManager.browseParentChildLocks.mockResolvedValue({ 'file.txt': { davLock: { lockroot: '/dav/url' } } })
-      await service.propfind(reqInf, resInf as any, SPACE_REPOSITORY.FILES)
-      expect(filesLockManager.browseParentChildLocks).toHaveBeenCalledTimes(1)
-    })
+      it('should not collect locks for PROPNAME mode', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest({
+          dav: { ...createBaseRequest().dav, propfindMode: PROPSTAT.PROPNAME }
+        })
+        const res = createMockResponse()
 
-    it('includes lockdiscovery when requested', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      const req = baseReq({
-        dav: {
-          ...baseReq().dav,
-          propfindMode: 'prop',
-          httpVersion: 'HTTP/1.1',
-          body: { propfind: { prop: { lockdiscovery: '' } } }
-        }
+        webDAVSpaces.propfind.mockImplementation(async function* () {
+          yield { href: '/webdav/test', name: 'test' }
+        } as any)
+
+        await service.propfind(req, res, SPACE_REPOSITORY.FILES)
+
+        expect(filesLockManager.browseLocks).not.toHaveBeenCalled()
+        expect(filesLockManager.browseParentChildLocks).not.toHaveBeenCalled()
       })
-      const res = makeRes()
-      const handler = (service as any)['webDAVHandler']
-      jest.spyOn(handler, 'propfind').mockImplementation(async function* () {
-        yield { href: '/a', name: 'file.txt' }
+
+      it('should not collect locks for shares list', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest({
+          space: { ...createBaseRequest().space, inSharesList: true },
+          dav: {
+            ...createBaseRequest().dav,
+            propfindMode: 'prop',
+            body: { propfind: { prop: { [LOCK_DISCOVERY_PROP]: '' } } }
+          }
+        })
+        const res = createMockResponse()
+
+        webDAVSpaces.propfind.mockImplementation(async function* () {
+          yield { href: '/webdav/shares', name: 'shares' }
+        } as any)
+
+        await service.propfind(req, res, SPACE_REPOSITORY.FILES)
+
+        expect(filesLockManager.browseLocks).not.toHaveBeenCalled()
       })
-      filesLockManager.browseLocks.mockResolvedValue({ 'file.txt': { davLock: { lockroot: '/dav/url' } } })
-
-      await service.propfind(req, res as any, SPACE_REPOSITORY.FILES)
-
-      expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
-      expect(typeof res.body).toBe('string')
-      expect(res.body).toContain('/dav/url')
     })
   })
 
   describe('put', () => {
-    it.each([
-      { existed: true, expected: HttpStatus.NO_CONTENT, checkEtag: true },
-      { existed: false, expected: HttpStatus.CREATED, checkEtag: false }
-    ])('returns correct status for PUT when existed=%s', async ({ existed, expected, checkEtag }) => {
-      filesManager.saveStream.mockResolvedValue(existed)
-      const req = baseReq({ method: 'PUT' })
-      const res = makeRes()
+    describe('Success cases', () => {
+      it('should return 204 when updating existing file', async () => {
+        filesManager.saveStream.mockResolvedValue(true) // file existed
+        const req = createBaseRequest({ method: 'PUT' })
+        const res = createMockResponse()
 
-      const result = await service.put(req, res)
+        const result = await service.put(req, res)
 
-      if (checkEtag) {
+        expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, expect.objectContaining({ dav: expect.any(Object) }))
+        expect(res.statusCode).toBe(HttpStatus.NO_CONTENT)
         expect(res.headers['etag']).toBeDefined()
         expect(result).toBe(res)
-      }
-      expect(res.statusCode).toBe(expected)
+      })
+
+      it('should return 201 when creating new file', async () => {
+        filesManager.saveStream.mockResolvedValue(false) // file didn't exist
+        const req = createBaseRequest({ method: 'PUT' })
+        const res = createMockResponse()
+
+        const result = await service.put(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.CREATED)
+        expect(res.headers['etag']).toBeDefined()
+        expect(result).toBe(res)
+      })
+
+      it('should extract and pass lock tokens from if-headers', async () => {
+        filesManager.saveStream.mockResolvedValue(true)
+        const req = createBaseRequest({
+          method: 'PUT',
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ token: { value: 'opaquelocktoken:xyz', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+        jest.spyOn(IfHeaderUtils, 'extractAllTokens').mockReturnValue(['opaquelocktoken:xyz'])
+
+        await service.put(req, res)
+
+        expect(filesManager.saveStream).toHaveBeenCalledWith(
+          req.user,
+          req.space,
+          req,
+          expect.objectContaining({
+            dav: expect.objectContaining({
+              lockTokens: ['opaquelocktoken:xyz']
+            })
+          })
+        )
+      })
     })
 
-    it('delegates errors to handleError', async () => {
-      const req = baseReq({ method: 'PUT' })
-      const res = makeRes()
-      const err = new Error('save failed')
-      filesManager.saveStream.mockRejectedValue(err)
-      const spy = jest.spyOn<any, any>(service as any, 'handleError').mockReturnValue('handled')
+    describe('Error handling', () => {
+      it('should handle lock conflict error', async () => {
+        const lockError = new LockConflict(
+          {
+            dbFilePath: 'file.txt',
+            options: { lockRoot: '/webdav/locked' }
+          } as any,
+          'Lock conflict'
+        )
+        filesManager.saveStream.mockRejectedValue(lockError)
+        const req = createBaseRequest({ method: 'PUT' })
+        const res = createMockResponse()
 
-      const result = await service.put(req, res)
+        await service.put(req, res)
 
-      expect(spy).toHaveBeenCalled()
-      expect(result).toBe('handled')
+        expect(res.statusCode).toBe(HttpStatus.LOCKED)
+      })
+
+      it('should handle file error', async () => {
+        const fileError = new FileError(409, 'File conflict')
+        filesManager.saveStream.mockRejectedValue(fileError)
+        const req = createBaseRequest({ method: 'PUT' })
+        const res = createMockResponse()
+
+        await service.put(req, res)
+
+        expect(res.statusCode).toBe(409)
+        expect(res.body).toBe('File conflict')
+      })
+
+      it('should throw HttpException for unexpected errors', async () => {
+        const unexpectedError = new Error('Unexpected error')
+        filesManager.saveStream.mockRejectedValue(unexpectedError)
+        const req = createBaseRequest({ method: 'PUT' })
+        const res = createMockResponse()
+
+        await expect(service.put(req, res)).rejects.toThrow(HttpException)
+      })
     })
   })
 
   describe('delete', () => {
-    it('returns 204 on success', async () => {
-      const req = baseReq({ method: 'DELETE' })
-      const res = makeRes()
+    describe('Success cases', () => {
+      it('should delete resource and return 204', async () => {
+        filesManager.delete.mockResolvedValue(undefined)
+        const req = createBaseRequest({ method: 'DELETE' })
+        const res = createMockResponse()
 
-      const result = await service.delete(req, res)
+        const result = await service.delete(req, res)
 
-      expect(result).toBe(res)
-      expect(res.statusCode).toBe(HttpStatus.NO_CONTENT)
+        expect(filesManager.delete).toHaveBeenCalledWith(req.user, req.space, expect.objectContaining({ lockTokens: expect.any(Array) }))
+        expect(res.statusCode).toBe(HttpStatus.NO_CONTENT)
+        expect(result).toBe(res)
+      })
+
+      it('should extract lock tokens from if-headers', async () => {
+        filesManager.delete.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'DELETE',
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ token: { value: 'opaquelocktoken:abc', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+        jest.spyOn(IfHeaderUtils, 'extractAllTokens').mockReturnValue(['opaquelocktoken:abc'])
+
+        await service.delete(req, res)
+
+        expect(filesManager.delete).toHaveBeenCalledWith(req.user, req.space, expect.objectContaining({ lockTokens: ['opaquelocktoken:abc'] }))
+      })
     })
 
-    it('delegates errors to handleError', async () => {
-      const req = baseReq({ method: 'DELETE' })
-      const res = makeRes()
-      const err = new Error('delete failed')
-      filesManager.delete.mockRejectedValue(err)
-      const spy = jest.spyOn<any, any>(service as any, 'handleError').mockReturnValue('handled')
+    describe('Error handling', () => {
+      it('should handle lock conflict', async () => {
+        const lockError = new LockConflict(
+          {
+            dbFilePath: 'file.txt',
+            options: { lockRoot: '/webdav/locked' }
+          } as any,
+          'Lock conflict'
+        )
+        filesManager.delete.mockRejectedValue(lockError)
+        const req = createBaseRequest({ method: 'DELETE' })
+        const res = createMockResponse()
 
-      const result = await service.delete(req, res)
+        await service.delete(req, res)
 
-      expect(spy).toHaveBeenCalled()
-      expect(result).toBe('handled')
+        expect(res.statusCode).toBe(HttpStatus.LOCKED)
+      })
+
+      it('should handle file errors', async () => {
+        const fileError = new FileError(404, 'File not found')
+        filesManager.delete.mockRejectedValue(fileError)
+        const req = createBaseRequest({ method: 'DELETE' })
+        const res = createMockResponse()
+
+        await service.delete(req, res)
+
+        expect(res.statusCode).toBe(404)
+        expect(res.body).toBe('File not found')
+      })
+
+      it('should throw HttpException for unexpected errors', async () => {
+        const unexpectedError = new Error('Database error')
+        filesManager.delete.mockRejectedValue(unexpectedError)
+        const req = createBaseRequest({ method: 'DELETE' })
+        const res = createMockResponse()
+
+        await expect(service.delete(req, res)).rejects.toThrow(HttpException)
+      })
     })
   })
 
   describe('proppatch', () => {
-    it('returns 404 when target does not exist', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(false)
-      const req = baseReq({ method: 'PROPPATCH', dav: { ...baseReq().dav, url: '/x', body: { propertyupdate: {} } } })
-      const res = makeRes()
-
-      await service.proppatch(req, res)
-
-      expect(res.statusCode).toBe(HttpStatus.NOT_FOUND)
-      expect(res.body).toBe('/x')
-    })
-
-    it('returns 400 for unknown action tag', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      const req = baseReq({ method: 'PROPPATCH', dav: { ...baseReq().dav, body: { propertyupdate: { unknown: {} } } } })
-      const res = makeRes()
-
-      await service.proppatch(req, res)
-
-      expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
-      expect(res.body).toContain('Unknown tag')
-    })
-
-    it('returns 400 when missing prop tag', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      const req = baseReq({ method: 'PROPPATCH', dav: { ...baseReq().dav, body: { propertyupdate: { set: { foo: 'bar' } } } } })
-      const res = makeRes()
-
-      await service.proppatch(req, res)
-
-      expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
-      expect(res.body).toContain('Unknown tag')
-    })
-
-    it('returns 207 with errors when unsupported props are provided', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      filesLockManager.checkConflicts.mockResolvedValue(undefined)
-      const req = baseReq({
-        method: 'PROPPATCH',
-        dav: {
-          ...baseReq().dav,
-          httpVersion: 'HTTP/1.1',
-          body: { propertyupdate: { set: { prop: [{ randomProp: 'x' }] } } }
-        }
-      })
-      const res = makeRes()
-
-      await service.proppatch(req, res)
-
-      expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
-      expect(res.contentType).toContain('application/xml')
-      expect(typeof res.body).toBe('string')
-      expect(res.body).toContain('randomProp')
-      expect(res.body).toContain('403')
-    })
-
-    it('applies modified props and still returns 207; failed dependency if one fails', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      filesLockManager.checkConflicts.mockResolvedValue(undefined)
-      filesManager.touch.mockResolvedValueOnce(undefined)
-      const req = baseReq({
-        method: 'PROPPATCH',
-        dav: {
-          ...baseReq().dav,
-          httpVersion: 'HTTP/1.1',
-          body: { propertyupdate: { set: { prop: [{ lastmodified: '2024-01-01' }, { ['Win32CreationTime']: 'keep' }] } } }
-        }
-      })
-      const res = makeRes()
-
-      await service.proppatch(req, res)
-
-      expect(filesManager.touch).toHaveBeenCalled()
-      expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
-      expect(typeof res.body).toBe('string')
-      expect(res.body).toContain('lastmodified')
-      expect(res.body).toContain('200')
-    })
-
-    it('delegates lock conflict to handleError when checkConflicts throws', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      const req = baseReq({ method: 'PROPPATCH', dav: { ...baseReq().dav, body: { propertyupdate: { set: { prop: [{ lastmodified: 'x' }] } } } } })
-      const res = makeRes()
-      const err = new Error('conflict')
-      filesLockManager.checkConflicts.mockRejectedValue(err)
-      const spy = jest.spyOn<any, any>(service as any, 'handleError').mockReturnValue('handled')
-
-      const result = await service.proppatch(req, res)
-
-      expect(spy).toHaveBeenCalled()
-      expect(result).toBe('handled')
-    })
-
-    it('normalizes array of propertyupdate items containing {prop: ...}', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      filesLockManager.checkConflicts.mockResolvedValue(undefined)
-      filesManager.touch.mockResolvedValueOnce(undefined)
-      const req = baseReq({
-        method: 'PROPPATCH',
-        dav: {
-          ...baseReq().dav,
-          httpVersion: 'HTTP/1.1',
-          body: {
-            propertyupdate: {
-              set: [{ prop: { lastmodified: '2024-03-01' } }, { prop: { ['Win32CreationTime']: 'ignore' } }]
-            }
+    describe('Base cases', () => {
+      it('should return 404 when resource does not exist', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            body: { propertyupdate: { set: { prop: [{ lastmodified: '2024-01-01' }] } } }
           }
-        }
+        })
+        const res = createMockResponse()
+
+        await service.proppatch(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.NOT_FOUND)
+        expect(res.body).toBe(req.dav.url)
       })
-      const res = makeRes()
 
-      await service.proppatch(req, res)
+      it('should return 400 for unknown action tag', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            body: { propertyupdate: { invalidaction: {} } }
+          }
+        })
+        const res = createMockResponse()
 
-      expect(filesManager.touch).toHaveBeenCalled()
-      expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
-      expect(res.contentType).toContain('application/xml')
-      expect(typeof res.body).toBe('string')
-      expect(res.body).toContain('lastmodified')
-      expect(res.body).toContain('200')
+        await service.proppatch(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
+        expect(res.body).toContain('Unknown tag')
+      })
+
+      it('should return 400 when missing prop tag', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            body: { propertyupdate: { set: { notprop: {} } } }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.proppatch(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
+        expect(res.body).toContain('Unknown tag')
+      })
     })
 
-    it('wraps single prop object into an array for processing', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      filesLockManager.checkConflicts.mockResolvedValue(undefined)
-      const req = baseReq({
-        method: 'PROPPATCH',
-        dav: {
-          ...baseReq().dav,
-          httpVersion: 'HTTP/1.1',
-          body: {
-            propertyupdate: {
-              set: {
-                prop: { lastmodified: '2024-03-02' }
+    describe('SET action', () => {
+      it('should successfully modify lastmodified property', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.checkConflicts.mockResolvedValue(undefined)
+        filesManager.touch.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            httpVersion: 'HTTP/1.1',
+            body: { propertyupdate: { set: { prop: [{ lastmodified: '2024-01-01' }] } } }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.proppatch(req, res)
+
+        expect(filesManager.touch).toHaveBeenCalled()
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+        expect(res.contentType).toContain('application/xml')
+        expect(typeof res.body).toBe('string')
+        expect(res.body).toContain('lastmodified')
+        expect(res.body).toContain('200')
+      })
+
+      it('should return 207 with 403 for unsupported properties', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.checkConflicts.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            httpVersion: 'HTTP/1.1',
+            body: { propertyupdate: { set: { prop: [{ unsupportedProp: 'value' }] } } }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.proppatch(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+        expect(res.body).toContain('unsupportedProp')
+        expect(res.body).toContain('403')
+      })
+
+      it('should handle Win32 properties correctly', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.checkConflicts.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            httpVersion: 'HTTP/1.1',
+            body: { propertyupdate: { set: { prop: [{ Win32CreationTime: '2024-01-01' }] } } }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.proppatch(req, res)
+
+        expect(filesManager.touch).not.toHaveBeenCalled()
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+        expect(res.body).toContain('Win32CreationTime')
+        expect(res.body).toContain('200')
+      })
+
+      it('should return 424 failed dependency when touch fails', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.checkConflicts.mockResolvedValue(undefined)
+        filesManager.touch.mockRejectedValue(new Error('Touch failed'))
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            httpVersion: 'HTTP/1.1',
+            body: { propertyupdate: { set: { prop: [{ lastmodified: '2024-01-01' }] } } }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.proppatch(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+        expect(res.body).toContain('424')
+      })
+
+      it('should mark supported props as 424 when unsupported prop fails', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.checkConflicts.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            httpVersion: 'HTTP/1.1',
+            body: {
+              propertyupdate: {
+                set: { prop: [{ unsupportedProp: 'fail' }, { Win32CreationTime: 'ok' }] }
               }
             }
           }
-        }
+        })
+        const res = createMockResponse()
+
+        await service.proppatch(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+        expect(res.body).toContain('unsupportedProp')
+        expect(res.body).toContain('403')
+        expect(res.body).toContain('Win32CreationTime')
+        expect(res.body).toContain('424')
       })
-      const res = makeRes()
-
-      await service.proppatch(req, res)
-
-      expect(filesManager.touch).toHaveBeenCalled()
-      expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
-      expect(typeof res.body).toBe('string')
-      expect(res.body).toContain('lastmodified')
-      expect(res.body).toContain('200')
     })
 
-    it('handles REMOVE action on supported property and returns 207', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      filesLockManager.checkConflicts.mockResolvedValue(undefined)
-      const req = baseReq({
-        method: 'PROPPATCH',
-        dav: {
-          ...baseReq().dav,
-          httpVersion: 'HTTP/1.1',
-          body: {
-            propertyupdate: {
-              remove: {
-                prop: [{ ['Win32CreationTime']: '' }]
+    describe('REMOVE action', () => {
+      it('should handle REMOVE action on supported property', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.checkConflicts.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            httpVersion: 'HTTP/1.1',
+            body: {
+              propertyupdate: {
+                remove: { prop: [{ Win32CreationTime: '' }] }
               }
             }
           }
-        }
+        })
+        const res = createMockResponse()
+
+        await service.proppatch(req, res)
+
+        expect(filesManager.touch).not.toHaveBeenCalled()
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+        expect(res.body).toContain('Win32CreationTime')
+        expect(res.body).toContain('200')
       })
-      const res = makeRes()
-
-      await service.proppatch(req, res)
-
-      expect(filesManager.touch).not.toHaveBeenCalled()
-      expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
-      expect(res.contentType).toContain('application/xml')
-      expect(typeof res.body).toBe('string')
-      expect(res.body).toContain('Win32CreationTime')
-      expect(res.body).toContain('200')
     })
 
-    it('returns 207 with 424 Failed Dependency when touching lastmodified fails', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      filesLockManager.checkConflicts.mockResolvedValue(undefined)
-      filesManager.touch.mockRejectedValueOnce(new Error('touch failed'))
-      const req = baseReq({
-        method: 'PROPPATCH',
-        dav: {
-          ...baseReq().dav,
-          httpVersion: 'HTTP/1.1',
-          body: { propertyupdate: { set: { prop: [{ lastmodified: '2024-01-01' }, { ['Win32CreationTime']: 'ok' }] } } }
-        }
-      })
-      const res = makeRes()
-
-      await service.proppatch(req, res)
-
-      expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
-      expect(typeof res.body).toBe('string')
-      expect(res.body).toContain('424')
-      expect(res.body).toContain('lastmodified')
-    })
-
-    it('returns 207 with 403 for unsupported prop and 424 for supported prop as failed dependency', async () => {
-      // Préparation : la ressource existe et pas de conflit de lock
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      filesLockManager.checkConflicts.mockResolvedValue(undefined)
-
-      // On envoie à la fois une prop non supportée ('randomProp') et une prop supportée ('Win32CreationTime')
-      const req = baseReq({
-        method: 'PROPPATCH',
-        dav: {
-          ...baseReq().dav,
-          httpVersion: 'HTTP/1.1',
-          body: {
-            propertyupdate: {
-              set: {
-                prop: [{ randomProp: 'x' }, { Win32CreationTime: 'keep' }]
+    describe('Data normalization', () => {
+      it('should normalize array of propertyupdate items', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.checkConflicts.mockResolvedValue(undefined)
+        filesManager.touch.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            httpVersion: 'HTTP/1.1',
+            body: {
+              propertyupdate: {
+                set: [{ prop: { lastmodified: '2024-01-01' } }, { prop: { Win32CreationTime: 'ok' } }]
               }
             }
           }
-        }
+        })
+        const res = createMockResponse()
+
+        await service.proppatch(req, res)
+
+        expect(filesManager.touch).toHaveBeenCalled()
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+        expect(res.body).toContain('lastmodified')
       })
-      const res = makeRes()
 
-      // Exécution
-      await service.proppatch(req, res)
+      it('should wrap single prop object into array', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.checkConflicts.mockResolvedValue(undefined)
+        filesManager.touch.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            httpVersion: 'HTTP/1.1',
+            body: {
+              propertyupdate: {
+                set: { prop: { lastmodified: '2024-01-01' } }
+              }
+            }
+          }
+        })
+        const res = createMockResponse()
 
-      // Assertions : multistatus, xml, et contenu
-      expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
-      expect(res.contentType).toContain('application/xml')
-      const xml = res.body as string
-      // On doit trouver le nom de la prop non supportée avec status 403
-      expect(xml).toContain('randomProp')
-      expect(xml).toContain('403')
-      // On doit trouver le nom de la prop supportée avec status 424 (failed dependency)
-      expect(xml).toContain('Win32CreationTime')
-      expect(xml).toContain('424')
+        await service.proppatch(req, res)
+
+        expect(filesManager.touch).toHaveBeenCalled()
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+      })
+    })
+
+    describe('Lock handling', () => {
+      it('should check lock conflicts before applying changes', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        filesLockManager.checkConflicts.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            body: { propertyupdate: { set: { prop: [{ Win32CreationTime: 'ok' }] } } }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.proppatch(req, res)
+
+        expect(filesLockManager.checkConflicts).toHaveBeenCalledWith(
+          req.space.dbFile,
+          req.dav.depth,
+          expect.objectContaining({
+            userId: req.user.id,
+            lockTokens: expect.any(Array)
+          })
+        )
+      })
+
+      it('should handle lock conflict error', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const lockError = new LockConflict(
+          {
+            dbFilePath: 'file.txt',
+            options: { lockRoot: '/webdav/locked' }
+          } as any,
+          'Lock conflict'
+        )
+        filesLockManager.checkConflicts.mockRejectedValue(lockError)
+        const req = createBaseRequest({
+          method: 'PROPPATCH',
+          dav: {
+            ...createBaseRequest().dav,
+            body: { propertyupdate: { set: { prop: [{ lastmodified: '2024-01-01' }] } } }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.proppatch(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.LOCKED)
+      })
     })
   })
 
   describe('mkcol', () => {
-    it('returns 201 when directory created', async () => {
-      const req = baseReq({ method: 'MKCOL' })
-      const res = makeRes()
+    describe('Success cases', () => {
+      it('should create directory and return 201', async () => {
+        filesManager.mkDir.mockResolvedValue(undefined)
+        const req = createBaseRequest({ method: 'MKCOL' })
+        const res = createMockResponse()
 
-      await service.mkcol(req, res)
+        await service.mkcol(req, res)
 
-      expect(filesManager.mkDir).toHaveBeenCalled()
-      expect(res.statusCode).toBe(HttpStatus.CREATED)
+        expect(filesManager.mkDir).toHaveBeenCalledWith(
+          req.user,
+          req.space,
+          false,
+          expect.objectContaining({
+            depth: req.dav.depth,
+            lockTokens: expect.any(Array)
+          })
+        )
+        expect(res.statusCode).toBe(HttpStatus.CREATED)
+      })
     })
 
-    it('delegates errors to handleError', async () => {
-      const req = baseReq({ method: 'MKCOL' })
-      const res = makeRes()
-      filesManager.mkDir.mockRejectedValue(new Error('mkdir failed'))
-      const spy = jest.spyOn<any, any>(service as any, 'handleError').mockReturnValue('handled')
+    describe('Error handling', () => {
+      it('should handle lock conflict', async () => {
+        const lockError = new LockConflict(
+          {
+            dbFilePath: 'dir',
+            options: { lockRoot: '/webdav/locked' }
+          } as any,
+          'Lock conflict'
+        )
+        filesManager.mkDir.mockRejectedValue(lockError)
+        const req = createBaseRequest({ method: 'MKCOL' })
+        const res = createMockResponse()
 
-      const result = await service.mkcol(req, res)
+        await service.mkcol(req, res)
 
-      expect(spy).toHaveBeenCalled()
-      expect(result).toBe('handled')
+        expect(res.statusCode).toBe(HttpStatus.LOCKED)
+      })
+
+      it('should handle file errors', async () => {
+        const fileError = new FileError(409, 'Directory already exists')
+        filesManager.mkDir.mockRejectedValue(fileError)
+        const req = createBaseRequest({ method: 'MKCOL' })
+        const res = createMockResponse()
+
+        await service.mkcol(req, res)
+
+        expect(res.statusCode).toBe(409)
+        expect(res.body).toBe('Directory already exists')
+      })
+
+      it('should throw HttpException for unexpected errors', async () => {
+        const unexpectedError = new Error('Filesystem error')
+        filesManager.mkDir.mockRejectedValue(unexpectedError)
+        const req = createBaseRequest({ method: 'MKCOL' })
+        const res = createMockResponse()
+
+        await expect(service.mkcol(req, res)).rejects.toThrow(HttpException)
+      })
     })
   })
 
   describe('copyMove', () => {
-    it('returns 404 when destination space not found', async () => {
-      const req = baseReq({ method: 'MOVE', dav: { ...baseReq().dav, copyMove: { destination: '/unknown', isMove: false, overwrite: false } } })
-      const res = makeRes()
-      const handler = (service as any)['webDAVHandler']
-      jest.spyOn(handler, 'spaceEnv').mockResolvedValue(null)
+    describe('Base cases', () => {
+      it('should return 404 when destination space not found', async () => {
+        webDAVSpaces.spaceEnv.mockResolvedValue(null)
+        const req = createBaseRequest({
+          method: 'MOVE',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/unknown', isMove: true, overwrite: false }
+          }
+        })
+        const res = createMockResponse()
 
-      await service.copyMove(req, res)
+        await service.copyMove(req, res)
 
-      expect(res.statusCode).toBe(HttpStatus.NOT_FOUND)
-      expect(res.body).toBe('/unknown')
-    })
-
-    it('aborts when evaluateIfHeaders fails', async () => {
-      const req = baseReq({
-        method: 'COPY',
-        dav: {
-          ...baseReq().dav,
-          copyMove: { destination: '/dst', isMove: false, overwrite: true },
-          ifHeaders: [{ path: '/dst', token: { value: 'bad', mustMatch: true } }]
-        }
+        expect(res.statusCode).toBe(HttpStatus.NOT_FOUND)
+        expect(res.body).toBe('/webdav/unknown')
       })
-      const res = makeRes()
-      const handler = (service as any)['webDAVHandler']
-      jest.spyOn(handler, 'spaceEnv').mockResolvedValue({ ...req.space, url: '/dst', realPath: '/real/dst', dbFile: { path: 'dst' } })
-      const spy = jest.spyOn<any, any>(service as any, 'evaluateIfHeaders').mockResolvedValue(false)
-
-      const result = await service.copyMove(req, res)
-
-      expect(spy).toHaveBeenCalled()
-      expect(result).toBeUndefined()
     })
 
-    it('aborts with 412 when destination If-Header haveLock mismatches', async () => {
-      const handler = (service as any)['webDAVHandler']
-      const dstSpace = { ...baseReq().space, url: '/dst', realPath: '/real/dst', dbFile: { path: 'dst' } }
-      jest.spyOn(handler, 'spaceEnv').mockResolvedValue(dstSpace)
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      filesLockManager.getLocksByPath.mockResolvedValue([{}]) // there is a lock, but mustMatch=false -> mismatch
-
-      const req = baseReq({
-        method: 'COPY',
-        dav: {
-          ...baseReq().dav,
-          copyMove: { destination: '/dst', isMove: false, overwrite: true },
-          ifHeaders: [{ path: '/dst', haveLock: { mustMatch: false } }]
+    describe('COPY operation', () => {
+      it('should copy file and return 201 when destination does not exist', async () => {
+        const dstSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/test/copy.txt',
+          realPath: '/real/path/to/copy.txt',
+          dbFile: { path: 'copy.txt', spaceId: 1, inTrash: false }
         }
+        webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
+        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        filesManager.copyMove.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'COPY',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/test/copy.txt', isMove: false, overwrite: false }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.copyMove(req, res)
+
+        expect(filesManager.copyMove).toHaveBeenCalledWith(
+          req.user,
+          req.space,
+          dstSpace,
+          false,
+          false,
+          false,
+          expect.objectContaining({
+            depth: req.dav.depth,
+            lockTokens: expect.any(Array)
+          })
+        )
+        expect(res.statusCode).toBe(HttpStatus.CREATED)
       })
-      const res = makeRes()
 
-      const result = await service.copyMove(req, res)
-
-      expect(result).toBeUndefined()
-      expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
-      expect(res.body).toBe('If header condition failed')
-    })
-
-    it('returns 204 when destination existed; 201 when not', async () => {
-      const handler = (service as any)['webDAVHandler']
-      jest.spyOn(handler, 'spaceEnv').mockResolvedValue({ ...baseReq().space, url: '/dst', realPath: '/real/dst', dbFile: { path: 'dst' } })
-      jest.spyOn<any, any>(service as any, 'evaluateIfHeaders').mockResolvedValue(true)
-      ;(isPathExists as jest.Mock).mockResolvedValueOnce(true)
-      const req1 = baseReq({ method: 'MOVE', dav: { ...baseReq().dav, copyMove: { destination: '/dst', isMove: true, overwrite: true } } })
-      const res1 = makeRes()
-      await service.copyMove(req1, res1 as any)
-      expect(res1.statusCode).toBe(HttpStatus.NO_CONTENT)
-      ;(isPathExists as jest.Mock).mockResolvedValueOnce(false)
-      const req2 = baseReq({ method: 'COPY', dav: { ...baseReq().dav, copyMove: { destination: '/dst', isMove: false, overwrite: false } } })
-      const res2 = makeRes()
-      await service.copyMove(req2, res2 as any)
-      expect(res2.statusCode).toBe(HttpStatus.CREATED)
-    })
-
-    it('delegates errors to handleError', async () => {
-      const handler = (service as any)['webDAVHandler']
-      jest.spyOn(handler, 'spaceEnv').mockResolvedValue({ ...baseReq().space, url: '/dst', realPath: '/real/dst', dbFile: { path: 'dst' } })
-      jest.spyOn<any, any>(service as any, 'evaluateIfHeaders').mockResolvedValue(true)
-
-      // Chain 1) LockConflict without lockroot (fallback to dbFilePath) then 2) unexpected error
-      const { LockConflict } = jest.requireActual('../../files/models/file-lock-error')
-      filesManager.copyMove.mockRejectedValueOnce(new LockConflict({ dbFilePath: 'dst' } as any)).mockRejectedValueOnce(new Error('copy failed'))
-
-      const req = baseReq({ method: 'COPY', dav: { ...baseReq().dav, copyMove: { destination: '/dst', isMove: false, overwrite: true } } })
-
-      // 1) LockConflict => DAV_ERROR_RES(423) using e.lock.dbFilePath
-      const res1 = makeRes()
-      const logSpy = jest.spyOn((service as any)['logger'], 'error').mockImplementation(() => undefined as any)
-      const result1 = await service.copyMove(req, res1)
-
-      expect(result1).toBe(res1)
-      expect(res1.statusCode).toBe(HttpStatus.LOCKED)
-
-      // 2) Unexpected error => HttpException 500 and log contains " -> /dst"
-      const res2 = makeRes()
-      try {
-        await service.copyMove(req, res2)
-        expect(true).toBe(false) // should not reach
-      } catch (e: any) {
-        expect(e).toBeInstanceOf(HttpException)
-        expect(e.getStatus()).toBe(HttpStatus.INTERNAL_SERVER_ERROR)
-      }
-
-      // Verify the log message includes an arrow to the destination (toUrl)
-      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(' -> /dst'))
-    })
-
-    it('returns early when evaluateIfHeaders returns false (explicit spy)', async () => {
-      const req = baseReq({
-        method: 'COPY',
-        dav: {
-          ...baseReq().dav,
-          copyMove: { destination: '/dst', isMove: false, overwrite: true },
-          ifHeaders: [{ path: '/dst' }]
+      it('should copy file and return 204 when destination exists', async () => {
+        const dstSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/test/existing.txt',
+          realPath: '/real/path/to/existing.txt',
+          dbFile: { path: 'existing.txt', spaceId: 1, inTrash: false }
         }
+        webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        filesManager.copyMove.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'COPY',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/test/existing.txt', isMove: false, overwrite: true }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.copyMove(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.NO_CONTENT)
       })
-      const res = makeRes()
-      const handler = (service as any)['webDAVHandler']
-      // Ensure destination space resolves so we reach the evaluateIfHeaders call
-      jest.spyOn(handler, 'spaceEnv').mockResolvedValue({ ...req.space, url: '/dst', realPath: '/real/dst', dbFile: { path: 'dst' } })
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      // Decorator is no-op (mocked), so copyMove calls evaluateIfHeaders once for destination: force it to return false
-      const spy = jest.spyOn<any, any>(service as any, 'evaluateIfHeaders').mockResolvedValue(false)
+    })
 
-      const result = await service.copyMove(req, res as any)
+    describe('MOVE operation', () => {
+      it('should move file and return 201 when destination does not exist', async () => {
+        const dstSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/test/moved.txt',
+          realPath: '/real/path/to/moved.txt',
+          dbFile: { path: 'moved.txt', spaceId: 1, inTrash: false }
+        }
+        webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
+        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        filesManager.copyMove.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'MOVE',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/test/moved.txt', isMove: true, overwrite: false }
+          }
+        })
+        const res = createMockResponse()
 
-      expect(spy).toHaveBeenCalledTimes(1)
-      expect(result).toBeUndefined()
-      expect(filesManager.copyMove).not.toHaveBeenCalled()
+        await service.copyMove(req, res)
+
+        expect(filesManager.copyMove).toHaveBeenCalledWith(req.user, req.space, dstSpace, true, false, false, expect.any(Object))
+        expect(res.statusCode).toBe(HttpStatus.CREATED)
+      })
+
+      it('should move file and return 204 when destination exists', async () => {
+        const dstSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/test/existing.txt',
+          realPath: '/real/path/to/existing.txt',
+          dbFile: { path: 'existing.txt', spaceId: 1, inTrash: false }
+        }
+        webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        filesManager.copyMove.mockResolvedValue(undefined)
+        const req = createBaseRequest({
+          method: 'MOVE',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/test/existing.txt', isMove: true, overwrite: true }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.copyMove(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.NO_CONTENT)
+      })
+    })
+
+    describe('If-Headers on destination', () => {
+      it('should return early when evaluateIfHeaders fails for destination', async () => {
+        const dstSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/test/dest.txt',
+          realPath: '/real/path/to/dest.txt',
+          dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
+        }
+        webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
+        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(false)
+        const req = createBaseRequest({
+          method: 'COPY',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/test/dest.txt', isMove: false, overwrite: true },
+            ifHeaders: [{ path: '/webdav/test/dest.txt', etag: { value: 'W/"wrong"', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await service.copyMove(req, res)
+
+        expect(result).toBeUndefined()
+        expect(filesManager.copyMove).not.toHaveBeenCalled()
+      })
+
+      it('should return 412 when destination If-Header haveLock mismatches', async () => {
+        const dstSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/test/dest.txt',
+          realPath: '/real/path/to/dest.txt',
+          dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
+        }
+        webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue(dstSpace.dbFile)
+        filesLockManager.getLocksByPath.mockResolvedValue([{ key: 'lock1' }] as any)
+        const req = createBaseRequest({
+          method: 'COPY',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/test/dest.txt', isMove: false, overwrite: true },
+            ifHeaders: [{ path: '/webdav/test/dest.txt', haveLock: { mustMatch: false } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await service.copyMove(req, res)
+
+        expect(result).toBeUndefined()
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+      })
+    })
+
+    describe('Error handling', () => {
+      it('should handle lock conflict error', async () => {
+        const dstSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/test/dest.txt',
+          realPath: '/real/path/to/dest.txt',
+          dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
+        }
+        webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
+        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        const lockError = new LockConflict(
+          {
+            dbFilePath: 'dest.txt',
+            options: { lockRoot: '/webdav/locked' }
+          } as any,
+          'Lock conflict'
+        )
+        filesManager.copyMove.mockRejectedValue(lockError)
+        const req = createBaseRequest({
+          method: 'COPY',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/test/dest.txt', isMove: false, overwrite: true }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.copyMove(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.LOCKED)
+      })
+
+      it('should handle lock conflict without lockRoot (fallback to dbFilePath)', async () => {
+        const dstSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/test/dest.txt',
+          realPath: '/real/path/to/dest.txt',
+          dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
+        }
+        webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
+        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        const lockError = new LockConflict({ dbFilePath: 'dest.txt' } as any, 'Lock conflict')
+        filesManager.copyMove.mockRejectedValue(lockError)
+        const req = createBaseRequest({
+          method: 'COPY',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/test/dest.txt', isMove: false, overwrite: true }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.copyMove(req, res)
+
+        expect(res.statusCode).toBe(HttpStatus.LOCKED)
+      })
+
+      it('should handle file errors', async () => {
+        const dstSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/test/dest.txt',
+          realPath: '/real/path/to/dest.txt',
+          dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
+        }
+        webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
+        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        const fileError = new FileError(409, 'File conflict')
+        filesManager.copyMove.mockRejectedValue(fileError)
+        const req = createBaseRequest({
+          method: 'MOVE',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/test/dest.txt', isMove: true, overwrite: false }
+          }
+        })
+        const res = createMockResponse()
+
+        await service.copyMove(req, res)
+
+        expect(res.statusCode).toBe(409)
+        expect(res.body).toBe('File conflict')
+      })
+
+      it('should throw HttpException for unexpected errors', async () => {
+        const dstSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/test/dest.txt',
+          realPath: '/real/path/to/dest.txt',
+          dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
+        }
+        webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
+        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        const unexpectedError = new Error('Unexpected filesystem error')
+        filesManager.copyMove.mockRejectedValue(unexpectedError)
+        const req = createBaseRequest({
+          method: 'COPY',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/test/dest.txt', isMove: false, overwrite: true }
+          }
+        })
+        const res = createMockResponse()
+
+        await expect(service.copyMove(req, res)).rejects.toThrow(HttpException)
+      })
+
+      it('should include destination URL in error log', async () => {
+        const dstSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/test/dest.txt',
+          realPath: '/real/path/to/dest.txt',
+          dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
+        }
+        webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
+        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        const logSpy = jest.spyOn((service as any)['logger'], 'error').mockImplementation(() => undefined as any)
+        filesManager.copyMove.mockRejectedValue(new Error('Copy failed'))
+        const req = createBaseRequest({
+          method: 'COPY',
+          dav: {
+            ...createBaseRequest().dav,
+            copyMove: { destination: '/webdav/test/dest.txt', isMove: false, overwrite: true }
+          }
+        })
+        const res = createMockResponse()
+
+        try {
+          await service.copyMove(req, res)
+        } catch {
+          // Expected to throw
+        }
+
+        expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(' -> /webdav/test/dest.txt'))
+      })
     })
   })
 
   describe('evaluateIfHeaders', () => {
-    it('returns true when no headers', async () => {
-      const req = baseReq({ dav: { ...baseReq().dav, ifHeaders: undefined } })
-      const res = makeRes()
+    describe('Base cases', () => {
+      it('should return true when no if-headers present', async () => {
+        const req = createBaseRequest({ dav: { ...createBaseRequest().dav, ifHeaders: undefined } })
+        const res = createMockResponse()
 
-      const ok = await (service as any).evaluateIfHeaders(req, res)
+        const result = await (service as any).evaluateIfHeaders(req, res)
 
-      expect(ok).toBe(true)
-    })
-
-    const negativeIfHeaderCases = [
-      {
-        name: 'haveLock mismatch',
-        dav: { ifHeaders: [{ haveLock: { mustMatch: true } }] },
-        setup: async () => {
-          // No lock present => match=false, mustMatch=true => mismatch
-          ;(PathsUtils.dbFileFromSpace as unknown as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1, inTrash: false })
-          filesLockManager.getLocksByPath.mockResolvedValue([])
-        }
-      },
-      {
-        name: 'haveLock mismatch when locks exist but mustMatch=false',
-        dav: { ifHeaders: [{ haveLock: { mustMatch: false } }] },
-        setup: async () => {
-          // Lock present => match=true, mustMatch=false => mismatch
-          ;(PathsUtils.dbFileFromSpace as unknown as jest.Mock).mockReturnValue({ path: 'dst', spaceId: 1, inTrash: false })
-          filesLockManager.getLocksByPath.mockResolvedValue([{}])
-        }
-      },
-      {
-        name: 'token not found',
-        dav: { ifHeaders: [{ token: { value: 'missing', mustMatch: true } }] },
-        setup: async () => {
-          filesLockManager.getLockByToken.mockResolvedValue(null)
-        }
-      },
-      {
-        name: 'etag mismatch',
-        dav: { ifHeaders: [{ etag: { value: 'W/"bad"', mustMatch: true } }] },
-        setup: async () => {
-          ;(isPathExists as jest.Mock).mockResolvedValue(true)
-        }
-      }
-    ] as const
-
-    it.each(negativeIfHeaderCases)('fails with 412 on %s', async ({ dav, setup }) => {
-      await setup()
-      const req = baseReq({ dav: { ...baseReq().dav, ...dav } })
-      const res = makeRes()
-
-      const ok = await (service as any).evaluateIfHeaders(req, res)
-
-      expect(ok).toBe(false)
-      expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
-    })
-
-    it('returns true when one condition matches', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      const req = baseReq({
-        dav: {
-          ...baseReq().dav,
-          ifHeaders: [
-            { etag: { value: 'W/"bad"', mustMatch: true } },
-            { etag: { value: 'W/"etag"', mustMatch: true } } // this should pass
-          ]
-        }
+        expect(result).toBe(true)
+        expect(res.statusCode).toBeUndefined()
       })
-      const res = makeRes()
 
-      const ok = await (service as any).evaluateIfHeaders(req, res)
+      it('should return true when at least one condition matches', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ etag: { value: 'W/"wrong-etag"', mustMatch: true } }, { etag: { value: 'W/"etag-123"', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
 
-      expect(ok).toBe(true)
-      expect(res.statusCode).toBeUndefined()
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(true)
+        expect(res.statusCode).toBeUndefined()
+      })
+
+      it('should return false when path cannot be resolved', async () => {
+        webDAVSpaces.spaceEnv.mockResolvedValue(null)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ path: '/webdav/unknown/file.txt' }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(false)
+        expect(res.statusCode).toBeUndefined()
+      })
     })
 
-    it('fails with 412 on token url mismatch', async () => {
-      const req = baseReq({
-        dav: {
-          ...baseReq().dav,
-          ifHeaders: [{ path: '/dav/other', token: { value: 'opaquetoken:xyz', mustMatch: true } }]
-        }
+    describe('haveLock condition', () => {
+      it('should return true when haveLock matches (lock exists, mustMatch=true)', async () => {
+        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        filesLockManager.getLocksByPath.mockResolvedValue([{ key: 'lock1' }] as any)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ haveLock: { mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(true)
       })
-      const res = makeRes()
-      // Space for the explicit path
-      const handler = (service as any)['webDAVHandler']
-      jest.spyOn(handler, 'spaceEnv').mockResolvedValue({ ...req.space, url: '/dav/other', realPath: '/real/other', dbFile: { path: 'other' } })
-      filesLockManager.getLockByToken.mockResolvedValue({ davLock: { lockroot: '/dav/url' } }) // not a parent of /dav/other
 
-      const ok = await (service as any).evaluateIfHeaders(req, res)
+      it('should return true when haveLock matches (no lock, mustMatch=false)', async () => {
+        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        filesLockManager.getLocksByPath.mockResolvedValue([])
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ haveLock: { mustMatch: false } }]
+          }
+        })
+        const res = createMockResponse()
 
-      expect(ok).toBe(false)
-      expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(true)
+      })
+
+      it('should return false with 412 when haveLock mismatches (lock exists, mustMatch=false)', async () => {
+        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        filesLockManager.getLocksByPath.mockResolvedValue([{ key: 'lock1' }] as any)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ haveLock: { mustMatch: false } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(false)
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+      })
+
+      it('should return false with 412 when haveLock mismatches (no lock, mustMatch=true)', async () => {
+        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        filesLockManager.getLocksByPath.mockResolvedValue([])
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ haveLock: { mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(false)
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+      })
+
+      it('should return false with 412 when haveLock lookup throws error', async () => {
+        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        filesLockManager.getLocksByPath.mockRejectedValue(new Error('Database error'))
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ haveLock: { mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(false)
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+        expect(res.body).toBe('If header condition failed')
+      })
     })
 
-    it('fails with 412 and logs error when haveLock lookup throws', async () => {
-      const req = baseReq({
-        dav: {
-          ...baseReq().dav,
-          ifHeaders: [{ path: '/dav/url', haveLock: { mustMatch: true } }]
-        }
+    describe('token condition', () => {
+      it('should return true when token exists and path matches lockroot', async () => {
+        filesLockManager.getLockByToken.mockResolvedValue({
+          options: { lockRoot: '/webdav/test/file.txt' }
+        } as any)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ token: { value: 'opaquelocktoken:abc', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(true)
       })
-      const res = makeRes()
-      const handler = (service as any)['webDAVHandler']
-      jest.spyOn(handler, 'spaceEnv').mockResolvedValue(req.space)
-      filesLockManager.getLocksByPath.mockRejectedValue(new Error('boom'))
 
-      const ok = await (service as any).evaluateIfHeaders(req, res)
+      it('should return true when token exists and path is child of lockroot', async () => {
+        filesLockManager.getLockByToken.mockResolvedValue({
+          options: { lockRoot: '/webdav/test' }
+        } as any)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            url: '/webdav/test/subfolder/file.txt',
+            ifHeaders: [{ token: { value: 'opaquelocktoken:abc', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
 
-      expect(ok).toBe(false)
-      expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
-      expect(res.body).toBe('If header condition failed')
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(true)
+      })
+
+      it('should return false with 412 when token not found', async () => {
+        filesLockManager.getLockByToken.mockResolvedValue(null)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ token: { value: 'opaquelocktoken:missing', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(false)
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+      })
+
+      it('should return false with 412 when token exists but path does not match lockroot', async () => {
+        filesLockManager.getLockByToken.mockResolvedValue({
+          options: { lockRoot: '/webdav/other/file.txt' }
+        } as any)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            url: '/webdav/test/file.txt',
+            ifHeaders: [{ token: { value: 'opaquelocktoken:abc', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(false)
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+      })
+
+      it('should evaluate token condition with explicit path in if-header', async () => {
+        const explicitSpace = {
+          ...createBaseRequest().space,
+          url: '/webdav/explicit/path.txt',
+          realPath: '/real/path/to/explicit.txt',
+          dbFile: { path: 'explicit/path.txt', spaceId: 1, inTrash: false }
+        }
+        webDAVSpaces.spaceEnv.mockResolvedValue(explicitSpace)
+        filesLockManager.getLockByToken.mockResolvedValue({
+          options: { lockRoot: '/webdav/explicit' }
+        } as any)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [
+              {
+                path: '/webdav/explicit/path.txt',
+                token: { value: 'opaquelocktoken:xyz', mustMatch: true }
+              }
+            ]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(webDAVSpaces.spaceEnv).toHaveBeenCalledWith(req.user, '/webdav/explicit/path.txt')
+        expect(result).toBe(true)
+      })
     })
 
-    it('returns true when token exists and path matches lockroot', async () => {
-      const req = baseReq({
-        dav: {
-          ...baseReq().dav,
-          ifHeaders: [{ path: '/dav/url', token: { value: 'opaquetoken:good', mustMatch: true } }]
-        }
+    describe('etag condition', () => {
+      it('should return true when etag matches', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        ;(genEtag as jest.Mock).mockReturnValue('W/"etag-123"')
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ etag: { value: 'W/"etag-123"', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(true)
       })
-      const res = makeRes()
-      const handler = (service as any)['webDAVHandler']
-      jest.spyOn(handler, 'spaceEnv').mockResolvedValue(req.space)
-      filesLockManager.getLockByToken.mockResolvedValue({ davLock: { lockroot: '/dav/url' } })
 
-      const ok = await (service as any).evaluateIfHeaders(req, res)
+      it('should return true when etag does not match and mustMatch=false', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        ;(genEtag as jest.Mock).mockReturnValue('W/"etag-123"')
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ etag: { value: 'W/"different"', mustMatch: false } }]
+          }
+        })
+        const res = createMockResponse()
 
-      expect(ok).toBe(true)
-      expect(res.statusCode).toBeUndefined()
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(true)
+      })
+
+      it('should return false with 412 when etag mismatches', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        ;(genEtag as jest.Mock).mockReturnValue('W/"etag-123"')
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ etag: { value: 'W/"wrong-etag"', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(false)
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+      })
+
+      it('should return false with 412 when resource does not exist (null etag)', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ etag: { value: 'W/"etag-123"', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(false)
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+      })
+
+      it('should cache etag for multiple conditions on same path', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        ;(genEtag as jest.Mock).mockReturnValue('W/"etag-123"')
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [{ etag: { value: 'W/"wrong1"', mustMatch: true } }, { etag: { value: 'W/"etag-123"', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(true)
+        expect(genEtag).toHaveBeenCalledTimes(1) // Cached
+      })
     })
 
-    it('returns false without setting status when If-Header path cannot be resolved', async () => {
-      const req = baseReq({
-        dav: {
-          ...baseReq().dav,
-          ifHeaders: [{ path: '/dav/missing' }]
-        }
+    describe('Multiple conditions', () => {
+      it('should evaluate multiple conditions and return true if any matches', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        filesLockManager.getLocksByPath.mockResolvedValue([])
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [
+              { haveLock: { mustMatch: true } }, // Will fail (no lock)
+              { haveLock: { mustMatch: false } } // Will succeed (no lock)
+            ]
+          }
+        })
+        const res = createMockResponse()
+
+        const result = await (service as any).evaluateIfHeaders(req, res)
+
+        expect(result).toBe(true)
       })
-      const res = makeRes()
-      const handler = (service as any)['webDAVHandler']
-      jest.spyOn(handler, 'spaceEnv').mockResolvedValue(null)
 
-      const ok = await (service as any).evaluateIfHeaders(req, res)
+      it('should return false with 412 when all conditions fail', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        ;(genEtag as jest.Mock).mockReturnValue('W/"etag-123"')
+        filesLockManager.getLockByToken.mockResolvedValue(null)
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            ifHeaders: [
+              { etag: { value: 'W/"wrong1"', mustMatch: true } },
+              { etag: { value: 'W/"wrong2"', mustMatch: true } },
+              { token: { value: 'opaquelocktoken:missing', mustMatch: true } }
+            ]
+          }
+        })
+        const res = createMockResponse()
 
-      expect(ok).toBe(false)
-      expect(res.statusCode).toBeUndefined()
-      expect(res.body).toBeUndefined()
-    })
+        const result = await (service as any).evaluateIfHeaders(req, res)
 
-    it('fails with 412 on etag when resource does not exist (null etag)', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(false)
-      const req = baseReq({
-        dav: {
-          ...baseReq().dav,
-          ifHeaders: [{ etag: { value: 'W/"etag"', mustMatch: true } }]
-        }
+        expect(result).toBe(false)
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+        expect(res.body).toBe('If header condition failed')
       })
-      const res = makeRes()
-
-      const ok = await (service as any).evaluateIfHeaders(req, res)
-
-      expect(ok).toBe(false)
-      expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
     })
   })
 
-  describe('lockRefresh', () => {
-    const refresh400Cases = [
-      {
-        name: 'more than one or zero tokens in If header',
-        dav: { body: undefined, ifHeaders: [] },
-        expectMsg: 'Expected a lock token'
-      },
-      {
-        name: 'token extraction fails',
-        dav: { body: undefined, ifHeaders: [{ notAToken: true }] },
-        expectMsg: 'Unable to extract token'
-      }
-    ] as const
+  describe('lockRefresh (private method)', () => {
+    describe('Parameter validation', () => {
+      it('should return 400 when no if-headers present', async () => {
+        const req = createBaseRequest({
+          dav: { ...createBaseRequest().dav, body: undefined, ifHeaders: [] }
+        })
+        const res = createMockResponse()
 
-    it.each(refresh400Cases)('returns 400 when %s', async ({ dav, expectMsg }) => {
-      const req = baseReq({ dav: { ...baseReq().dav, ...dav } })
-      const res = makeRes()
+        await (service as any).lockRefresh(req, res, 'file.txt')
 
-      await (service as any).lockRefresh(req, res, req.space.dbFile.path)
-
-      expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
-      expect(res.body).toContain(expectMsg)
-    })
-
-    it('returns 412 when token not found or not matching URL', async () => {
-      const req = baseReq({
-        dav: { ...baseReq().dav, body: undefined, ifHeaders: [{ token: { value: 'opaquetoken:missing', mustMatch: true } }] }
+        expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
+        expect(res.body).toContain('Expected a lock token')
       })
-      const res = makeRes()
-      filesLockManager.isLockedWithToken.mockResolvedValue(null)
-      jest.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquetoken:missing')
 
-      await (service as any).lockRefresh(req, res, req.space.dbFile.path)
+      it('should return 400 when more than one if-header present', async () => {
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            body: undefined,
+            ifHeaders: [{ token: { value: 'token1', mustMatch: true } }, { token: { value: 'token2', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
 
-      expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
-    })
+        await (service as any).lockRefresh(req, res, 'file.txt')
 
-    it('returns 403 when owner mismatch', async () => {
-      const req = baseReq({
-        dav: { ...baseReq().dav, body: undefined, ifHeaders: [{ token: { value: 'opaquetoken:abc', mustMatch: true } }] }
+        expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
+        expect(res.body).toContain('Expected a lock token')
       })
-      const res = makeRes()
-      jest.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquetoken:abc')
-      filesLockManager.isLockedWithToken.mockResolvedValue({ owner: { id: 2 } })
 
-      await (service as any).lockRefresh(req, res, baseReq().space.dbFile.path)
+      it('should return 400 when token extraction fails', async () => {
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            body: undefined,
+            ifHeaders: [{ notAToken: true }]
+          }
+        })
+        const res = createMockResponse()
+        jest.spyOn(IfHeaderUtils, 'extractOneToken').mockImplementation(() => {
+          throw new Error('No token found')
+        })
 
-      expect(res.statusCode).toBe(HttpStatus.FORBIDDEN)
-      expect(res.body).toBe('Lock token does not match owner')
+        await (service as any).lockRefresh(req, res, 'file.txt')
+
+        expect(res.statusCode).toBe(HttpStatus.BAD_REQUEST)
+        expect(res.body).toContain('Unable to extract token')
+      })
     })
 
-    it('returns 200 and XML body on success', async () => {
-      const req = baseReq({
-        dav: {
-          ...baseReq().dav,
-          body: undefined,
-          lock: { ...baseReq().dav.lock, timeout: 120 },
-          ifHeaders: [{ token: { value: 'opaquetoken:abc', mustMatch: true } }]
+    describe('Token validation', () => {
+      it('should return 412 when token not found or does not match path', async () => {
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            body: undefined,
+            ifHeaders: [{ token: { value: 'opaquelocktoken:missing', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+        jest.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:missing')
+        filesLockManager.isLockedWithToken.mockResolvedValue(null)
+
+        await (service as any).lockRefresh(req, res, 'file.txt')
+
+        expect(filesLockManager.isLockedWithToken).toHaveBeenCalledWith('opaquelocktoken:missing', 'file.txt')
+        expect(res.statusCode).toBe(HttpStatus.PRECONDITION_FAILED)
+      })
+
+      it('should return 403 when lock owner is different user', async () => {
+        const req = createBaseRequest({
+          user: { id: 1, login: 'user1' },
+          dav: {
+            ...createBaseRequest().dav,
+            body: undefined,
+            ifHeaders: [{ token: { value: 'opaquelocktoken:abc', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+        jest.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
+        filesLockManager.isLockedWithToken.mockResolvedValue({
+          owner: { id: 999, login: 'other-user' }
+        } as any)
+
+        await (service as any).lockRefresh(req, res, 'file.txt')
+
+        expect(res.statusCode).toBe(HttpStatus.FORBIDDEN)
+        expect(res.body).toBe('Lock token does not match owner')
+      })
+    })
+
+    describe('Successful refresh', () => {
+      it('should refresh lock and return 200 with XML body', async () => {
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            body: undefined,
+            lock: { ...createBaseRequest().dav.lock, timeout: 180 },
+            ifHeaders: [{ token: { value: 'opaquelocktoken:abc', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+        const mockLock = {
+          owner: { id: 1, login: 'test-user' },
+          options: { lockRoot: '/webdav/test/file.txt', lockToken: 'opaquelocktoken:abc' }
         }
+        jest.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
+        filesLockManager.isLockedWithToken.mockResolvedValue(mockLock as any)
+
+        await (service as any).lockRefresh(req, res, 'file.txt')
+
+        expect(filesLockManager.refreshLockTimeout).toHaveBeenCalledWith(mockLock, 180)
+        expect(res.statusCode).toBe(HttpStatus.OK)
+        expect(res.contentType).toContain('application/xml')
+        expect(typeof res.body).toBe('string')
       })
-      const res = makeRes()
-      jest.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquetoken:abc')
-      filesLockManager.isLockedWithToken.mockResolvedValue({ owner: { id: 1 }, davLock: { lockroot: '/dav/url' } })
 
-      await (service as any).lockRefresh(req, res, req.space.dbFile.path)
+      it('should use default timeout when not specified', async () => {
+        const req = createBaseRequest({
+          dav: {
+            ...createBaseRequest().dav,
+            body: undefined,
+            lock: { ...createBaseRequest().dav.lock, timeout: undefined },
+            ifHeaders: [{ token: { value: 'opaquelocktoken:abc', mustMatch: true } }]
+          }
+        })
+        const res = createMockResponse()
+        const mockLock = {
+          owner: { id: 1, login: 'test-user' },
+          options: { lockRoot: '/webdav/test/file.txt' }
+        }
+        jest.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
+        filesLockManager.isLockedWithToken.mockResolvedValue(mockLock as any)
 
-      expect(filesLockManager.refreshLockTimeout).toHaveBeenCalled()
-      expect(res.statusCode).toBe(HttpStatus.OK)
-      expect(res.contentType).toContain('application/xml')
-      expect(typeof res.body).toBe('string')
+        await (service as any).lockRefresh(req, res, 'file.txt')
+
+        expect(filesLockManager.refreshLockTimeout).toHaveBeenCalledWith(mockLock, undefined)
+      })
     })
   })
 
-  describe('handleError integration', () => {
-    it('maps LockConflict to 423 Locked via DAV_ERROR_RES', async () => {
-      // simulate LockConflict during PUT
-      const { LockConflict } = jest.requireActual('../../files/models/file-lock-error')
-      filesManager.saveStream.mockRejectedValue(new LockConflict({ dbFilePath: 'file.txt', davLock: { lockroot: '/dav/url' } } as any))
+  describe('handleError (private method)', () => {
+    describe('LockConflict errors', () => {
+      it('should handle LockConflict with lockRoot', async () => {
+        const lockError = new LockConflict(
+          {
+            dbFilePath: 'file.txt',
+            options: { lockRoot: '/webdav/locked/resource' }
+          } as any,
+          'Lock conflict'
+        )
+        const req = createBaseRequest({ method: 'PUT' })
+        const res = createMockResponse()
 
-      const req = baseReq({ method: 'PUT' })
-      const res = makeRes()
+        const result = (service as any).handleError(req, res, lockError)
 
-      const result = await service.put(req, res)
+        expect(result).toBe(res)
+        expect(res.statusCode).toBe(HttpStatus.LOCKED)
+        expect(res.contentType).toContain('application/xml')
+      })
 
-      expect(result).toBe(res)
-      expect(res.statusCode).toBe(HttpStatus.LOCKED)
-      expect(typeof res.body).toBe('string')
+      it('should handle LockConflict without lockRoot (fallback to dbFilePath)', async () => {
+        const lockError = new LockConflict({ dbFilePath: 'file.txt' } as any, 'Lock conflict')
+        const req = createBaseRequest({ method: 'DELETE' })
+        const res = createMockResponse()
+
+        const result = (service as any).handleError(req, res, lockError)
+
+        expect(result).toBe(res)
+        expect(res.statusCode).toBe(HttpStatus.LOCKED)
+      })
     })
 
-    it('maps FileError to its httpCode and message', async () => {
-      const { FileError } = jest.requireActual('../../files/models/file-error')
-      filesManager.delete.mockRejectedValue(new FileError(409, 'conflict happened'))
+    describe('FileError errors', () => {
+      it('should handle FileError and return correct status code', async () => {
+        const fileError = new FileError(409, 'Conflict: file already exists')
+        const req = createBaseRequest({ method: 'MKCOL' })
+        const res = createMockResponse()
 
-      const req = baseReq({ method: 'DELETE' })
-      const res = makeRes()
+        const result = (service as any).handleError(req, res, fileError)
 
-      const result = await service.delete(req, res)
+        expect(result).toBe(res)
+        expect(res.statusCode).toBe(409)
+        expect(res.body).toBe('Conflict: file already exists')
+      })
 
-      expect(result).toBe(res)
-      expect(res.statusCode).toBe(409)
-      expect(res.body).toBe('conflict happened')
+      it('should strip additional error information after comma', async () => {
+        const fileError = new FileError(404, 'File not found, /real/path/details')
+        const req = createBaseRequest({ method: 'GET' })
+        const res = createMockResponse()
+
+        const result = (service as any).handleError(req, res, fileError)
+
+        expect(result).toBe(res)
+        expect(res.statusCode).toBe(404)
+        expect(res.body).toBe('File not found')
+      })
     })
 
-    it('throws 500 HttpException for unexpected errors', async () => {
-      const req = baseReq({ method: 'PUT' })
-      const res = makeRes()
-      filesManager.saveStream.mockRejectedValue(new Error('unexpected'))
+    describe('Unexpected errors', () => {
+      it('should throw HttpException for unexpected errors', () => {
+        const unexpectedError = new Error('Database connection failed')
+        const req = createBaseRequest({ method: 'PUT' })
+        const res = createMockResponse()
 
-      try {
-        await service.put(req, res)
-        // If we reach this line, the test should fail
-        expect(true).toBe(false)
-      } catch (e: any) {
-        expect(e).toBeInstanceOf(HttpException)
-        expect(e.getStatus()).toBe(HttpStatus.INTERNAL_SERVER_ERROR)
-      }
+        expect(() => {
+          ;(service as any).handleError(req, res, unexpectedError)
+        }).toThrow(HttpException)
+      })
+
+      it('should log error with method and URL', () => {
+        const logSpy = jest.spyOn((service as any)['logger'], 'error').mockImplementation(() => undefined)
+        const req = createBaseRequest({ method: 'PUT', dav: { ...createBaseRequest().dav, url: '/webdav/test.txt' } })
+        const res = createMockResponse()
+        const error = new Error('Test error')
+
+        try {
+          ;(service as any).handleError(req, res, error)
+        } catch {
+          // Expected to throw
+        }
+
+        expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('PUT'))
+        expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('/webdav/test.txt'))
+      })
+
+      it('should include destination URL in log when provided', () => {
+        const logSpy = jest.spyOn((service as any)['logger'], 'error').mockImplementation(() => undefined)
+        const req = createBaseRequest({ method: 'COPY' })
+        const res = createMockResponse()
+        const error = new Error('Copy error')
+
+        try {
+          ;(service as any).handleError(req, res, error, '/webdav/destination.txt')
+        } catch {
+          // Expected to throw
+        }
+
+        expect(logSpy).toHaveBeenCalledWith(expect.stringContaining(' -> /webdav/destination.txt'))
+      })
     })
   })
 })

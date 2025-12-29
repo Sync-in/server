@@ -65,7 +65,12 @@ describe(FilesMethods.name, () => {
             permissions: () => spaceEnv
           }
         },
-        { provide: FilesManager, useValue: {} }
+        {
+          provide: FilesManager,
+          useValue: {
+            compress: jest.fn()
+          }
+        }
       ]
     }).compile()
 
