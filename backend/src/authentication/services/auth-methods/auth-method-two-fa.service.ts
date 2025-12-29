@@ -111,7 +111,7 @@ export class AuthMethod2FA {
   async loadUser(userId: number, ip: string) {
     const user: UserModel = await this.usersManager.fromUserId(userId)
     if (!user) {
-      this.logger.warn(`User *${user.login}* (${user.id}) not found`)
+      this.logger.warn(`User ${userId} (${ip}) not found`)
       throw new HttpException(`User not found`, HttpStatus.NOT_FOUND)
     }
     this.usersManager.validateUserAccess(user, ip)
