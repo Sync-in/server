@@ -10,6 +10,8 @@ services:
     cap_add:
       - SYS_CHROOT
       - SYS_ADMIN
+      - FOWNER
+      - CHOWN
     logging:
       driver: json-file
       options:
