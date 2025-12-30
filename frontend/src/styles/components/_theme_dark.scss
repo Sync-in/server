@@ -56,10 +56,13 @@
           background-color: darken($sidebar-dark-mini-menu-bg, 5%);
         }
       }
-
     }
 
     .sidebar-apps-menus {
+      .menus-content {
+        border-right: .5px solid $sidebar-dark-icons-menu-border-color;
+      }
+
       .menu {
         border-bottom: .5px solid $sidebar-dark-apps-menu-bg;
 
@@ -404,9 +407,9 @@
     color: $gray-light;
   }
 
-  .content-container {
-    border-left: .5px solid $sidebar-dark-icons-menu-border-color;
-  }
+  //.content-container {
+  //  border-left: .5px solid $sidebar-dark-icons-menu-border-color;
+  //}
 
   .ngx-contextmenu {
     background-color: $sidebar-dark-icons-menu-border-color !important;

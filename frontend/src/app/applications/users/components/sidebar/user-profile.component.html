@@ -5,7 +5,7 @@
   -->
 
 <!-- The user image in the menu -->
-<div class="d-flex flex-column 100vh">
+<div class="d-flex flex-column">
   <div class="sidebar-component-title">
     <div class="d-flex flex-fill justify-content-between">
       @if (!user?.isLink) {
@@ -28,43 +28,46 @@
       }
     </div>
   </div>
-  <div class="user-header">
-    <div class="d-flex flex-column justify-content-center me-2">
-      <div class="avatar-lg">
-        <img class="avatar-img" [src]="userAvatar" alt="">
-        <span class="avatar-{{allOnlineStatus[user?.onlineStatus]}}"></span>
+  <div appAutoResize [useMaxHeight]="false" class="d-flex flex-column">
+    <div class="user-header py-3">
+      <div class="d-flex flex-column justify-content-center me-2">
+        <div class="avatar-lg">
+          <img class="avatar-img" [src]="userAvatar" alt="">
+          <span class="avatar-{{allOnlineStatus[user?.onlineStatus]}}"></span>
+        </div>
       </div>
-    </div>
-    <div class="user-details">
-      @if (user?.isLink) {
-        <div l10nTranslate>Guest Link</div>
-      } @else {
-        <div>{{ user?.fullName }}</div>
-        <div class="small">{{ user?.email }}</div>
-      }
-      <select [ngModel]="user?.onlineStatus"
-              (ngModelChange)="setOnlineStatus($event)"
-              class="form-select form-select-sm mt-1">
-        @for (s of allOnlineStatus; track $index) {
-          <option [ngValue]="allOnlineStatus.indexOf(s)">{{ s | translate:locale.language | capitalize }}</option>
+      <div class="user-details">
+        @if (user?.isLink) {
+          <div l10nTranslate>Guest Link</div>
+        } @else {
+          <div>{{ user?.fullName }}</div>
+          <div class="small">{{ user?.email }}</div>
         }
-      </select>
-    </div>
-  </div>
-  <div class="d-none d-md-block hide-on-small-height position-absolute w-100 fs-xs" style="bottom: 46px">
-    <hr />
-    <div class="d-flex flex-column mx-3">
-      <div class="mb-1">
-        <img alt="" height="30" [src]="this.layout.switchTheme.getValue() === themeLight ? logoUrl: logoDarkUrl">
+        <select [ngModel]="user?.onlineStatus"
+                (ngModelChange)="setOnlineStatus($event)"
+                class="form-select form-select-sm mt-1">
+          @for (s of allOnlineStatus; track $index) {
+            <option [ngValue]="allOnlineStatus.indexOf(s)">{{ s | translate:locale.language | capitalize }}</option>
+          }
+        </select>
       </div>
-      <div>
-        <a class="link-primary cursor-pointer" (click)="openLink('website')" l10nTranslate>Website</a>
-        <span>&nbsp;|&nbsp;</span>
-        <a class="link-primary cursor-pointer" (click)="openLink('docs')" l10nTranslate>Documentation</a>
-        <span>&nbsp;|&nbsp;</span>
-        <a class="link-primary cursor-pointer" (click)="openLink('versions')" l10nTranslate>Versions</a>
-        <span>&nbsp;|&nbsp;</span>
-        <a class="link-primary cursor-pointer" (click)="openLink('support')"> 💛</a>
+    </div>
+    <hr class="my-0 w-100" />
+    <div class="mt-auto">
+      <hr class="my-0 w-100" />
+      <div class="profile-sync-in-footer">
+        <div class="mb-1">
+          <img alt="" height="30" [src]="this.layout.switchTheme.getValue() === themeLight ? logoUrl: logoDarkUrl">
+        </div>
+        <div>
+          <a class="link-primary cursor-pointer" (click)="openLink('website')" l10nTranslate>Website</a>
+          <span>&nbsp;|&nbsp;</span>
+          <a class="link-primary cursor-pointer" (click)="openLink('docs')" l10nTranslate>Documentation</a>
+          <span>&nbsp;|&nbsp;</span>
+          <a class="link-primary cursor-pointer" (click)="openLink('versions')" l10nTranslate>Versions</a>
+          <span>&nbsp;|&nbsp;</span>
+          <a class="link-primary cursor-pointer" (click)="openLink('support')"> 💛</a>
+        </div>
       </div>
     </div>
   </div>

@@ -23,10 +23,6 @@
   @include media-breakpoint-down(sm) {
     right: -$control-sidebar-small-width;
     width: $control-sidebar-small-width;
-
-    &.control-sidebar-open {
-      border-left: none !important;
-    }
   }
 
   .sidebar-title, .sidebar-component-title {

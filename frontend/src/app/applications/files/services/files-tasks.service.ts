@@ -132,7 +132,7 @@ export class FilesTasksService {
 
   private stopWatch() {
     if (this.watcher || !this.watcher.closed) {
-      setTimeout(() => this.layout.hideRSideBarTab(TAB_MENU.TASKS), 3000)
+      this.layout.hideRSideBarTab(TAB_MENU.TASKS, 3000)
       this.watcher.unsubscribe()
     }
   }

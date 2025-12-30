@@ -67,6 +67,10 @@
     }
 
     .sidebar-apps-menus {
+      .menus-content {
+        border-right: .5px solid $sidebar-light-apps-menu-border-color;
+      }
+
       .menu {
         border-bottom: .5px solid $sidebar-light-apps-menu-bg;
 
@@ -420,9 +424,9 @@
     color: $body-color;
   }
 
-  .content-container {
-    border-left: .5px solid $sidebar-light-apps-menu-border-color;
-  }
+  //.content-container {
+  //  border-left: .5px solid $sidebar-light-apps-menu-border-color;
+  //}
 
   .ngx-contextmenu {
     background-color: $gray-light !important;

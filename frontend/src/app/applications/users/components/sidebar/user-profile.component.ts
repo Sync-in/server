@@ -13,6 +13,7 @@ import { APP_URL } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { AuthService } from '../../../../auth/auth.service'
+import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
 import { themeLight } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -25,14 +26,7 @@ import { UserService } from '../../user.service'
 @Component({
   selector: 'app-user-profile',
   templateUrl: 'user-profile.component.html',
-  styles: `
-    @media (max-height: 300px) {
-      .hide-on-small-height {
-        display: none !important;
-      }
-    }
-  `,
-  imports: [FormsModule, RouterLink, CapitalizePipe, FaIconComponent, L10nTranslateDirective, L10nTranslatePipe]
+  imports: [FormsModule, RouterLink, CapitalizePipe, FaIconComponent, L10nTranslateDirective, L10nTranslatePipe, AutoResizeDirective]
 })
 export class UserProfileComponent implements OnDestroy {
   protected readonly logoDarkUrl = logoDarkUrl

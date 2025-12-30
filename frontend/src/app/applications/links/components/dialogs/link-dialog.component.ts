@@ -31,7 +31,7 @@ import { originalOrderKeyValue } from '../../../../common/utils/functions'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../../files/models/file.model'
 import { ShareRepositoryComponent } from '../../../shares/components/utils/share-repository.component'
-import { ShareModel } from '../../../shares/models/share.model'
+import type { ShareModel } from '../../../shares/models/share.model'
 import { SharesService } from '../../../shares/services/shares.service'
 import { SpacesService } from '../../../spaces/services/spaces.service'
 import { SPACES_ICON, SPACES_PERMISSIONS_TEXT } from '../../../spaces/spaces.constants'
@@ -39,7 +39,7 @@ import { setAllowedBooleanPermissions, setStringPermission } from '../../../spac
 import { MemberModel } from '../../../users/models/member.model'
 import { USER_PASSWORD_CHANGE_TEXT } from '../../../users/user.constants'
 import { UserService } from '../../../users/user.service'
-import { ShareLinkModel } from '../../models/share-link.model'
+import type { ShareLinkModel } from '../../models/share-link.model'
 import { LinksService } from '../../services/links.service'
 
 @Component({

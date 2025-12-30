@@ -21,7 +21,7 @@
 .user-header {
   display: flex;
   justify-content: space-between;
-  padding:  0 .8rem .8rem .8rem;
+  padding: 0 .8rem .8rem .8rem;
   text-align: end;
 
   .user-details {
@@ -52,6 +52,14 @@
       }
     }
   }
+}
+
+.profile-sync-in-footer {
+  display: flex;
+  flex-direction: column;
+  margin: 0.4rem 0.6rem 0.2rem;
+  flex: 1 1 auto !important;
+  font-size: $font-size-xs;
 }
 
 .profile-user-img {

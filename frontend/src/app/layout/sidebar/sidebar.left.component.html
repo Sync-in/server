@@ -36,20 +36,22 @@
         <fa-icon (click)="navigateTo('next')" [icon]="icons.faAngleRight" class="sidebar-btn" role="button"></fa-icon>
       </a>
     </div>
-    <div class="menus-group">
-      @for (menu of currentMenu.submenus; track menu.title) {
-        @if (!menu.hide) {
-          <ng-container [ngTemplateOutlet]="MenuApps" [ngTemplateOutletContext]="{menu: menu}"></ng-container>
+    <div class="menus-content">
+      <div class="menus-group">
+        @for (menu of currentMenu.submenus; track menu.title) {
+          @if (!menu.hide) {
+            <ng-container [ngTemplateOutlet]="MenuApps" [ngTemplateOutletContext]="{menu: menu}"></ng-container>
+          }
         }
-      }
-      @if (leftSideBarIsOpen && currentMenu.component) {
-        <div (click)="checkComponentRoute()" appAutoResize [resizeOffset]="40">
-          <ng-container *ngComponentOutlet="currentMenu.component"></ng-container>
-        </div>
-      }
-    </div>
-    <div class="sidebar-apps-footer">
-      <span>{{ appVersion }}</span>
+        @if (leftSideBarIsOpen && currentMenu.component) {
+          <div (click)="checkComponentRoute()" appAutoResize [resizeOffset]="40">
+            <ng-container *ngComponentOutlet="currentMenu.component"></ng-container>
+          </div>
+        }
+      </div>
+      <div class="sidebar-apps-footer">
+        <span>{{ appVersion }}</span>
+      </div>
     </div>
   </div>
 </aside>

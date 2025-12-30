@@ -44,9 +44,7 @@ export class WindowsComponent implements OnDestroy {
     if (modal) {
       modal.content.onClose()
     }
-    if (!this.layout.windows.getValue().length) {
-      this.layout.toggleRSideBar(false)
-    }
+    this.hideIfNoWindows(this.layout.windows.getValue())
   }
 
   onCloseAll() {
@@ -56,15 +54,17 @@ export class WindowsComponent implements OnDestroy {
         modal.content.onClose()
       }
     }
-    if (!this.layout.windows.getValue().length) {
-      this.layout.toggleRSideBar(false)
-    }
+    this.hideIfNoWindows(this.layout.windows.getValue())
   }
 
   private setWindows(windows: AppWindow[]) {
-    if (!windows.length) {
-      this.layout.hideRSideBarTab(TAB_MENU.WINDOWS)
-    }
+    this.hideIfNoWindows(windows)
     this.windows = windows
+  }
+
+  private hideIfNoWindows(windows: AppWindow[]) {
+    if (!windows.length) {
+      this.layout.hideRSideBarTab(TAB_MENU.WINDOWS, 1000)
+    }
   }
 }

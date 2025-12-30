@@ -102,14 +102,16 @@ export class LayoutService {
       this.rightSideBarOpenAndShowTab.next(tabName)
     }
     if (delay > 0) {
-      setTimeout(() => this.hideRSideBarTab(tabName), delay)
+      this.hideRSideBarTab(tabName, delay)
     }
   }
 
-  hideRSideBarTab(tabName: string) {
-    if (this.currentRightSideBarTab === tabName) {
-      this.toggleRSideBar(false)
-    }
+  hideRSideBarTab(tabName: string, delay: number = 0) {
+    setTimeout(() => {
+      if (this.currentRightSideBarTab === tabName) {
+        this.toggleRSideBar(false)
+      }
+    }, delay)
   }
 
   toggleRSideBar(show: boolean) {

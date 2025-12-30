@@ -188,6 +188,12 @@
       }
     }
 
+    .menus-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+    }
+
     .menus-group {
       overflow-y: auto;
       overflow-x: hidden;

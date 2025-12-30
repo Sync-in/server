@@ -5,10 +5,10 @@
  */
 
 import { getAssetsMimeUrl, mimeDirectory, mimeDirectoryShare } from '../files/files.constants'
-import { ShareLinkModel } from '../links/models/share-link.model'
+import type { ShareLinkModel } from '../links/models/share-link.model'
 import { SPACES_PATH } from '../spaces/spaces.constants'
-import { ShareFileModel } from './models/share-file.model'
-import { ShareModel } from './models/share.model'
+import type { ShareFileModel } from './models/share-file.model'
+import type { ShareModel } from './models/share.model'
 
 export function setMimeUrl(share: ShareModel | ShareFileModel | ShareLinkModel | any) {
   if (!share.file?.id) {

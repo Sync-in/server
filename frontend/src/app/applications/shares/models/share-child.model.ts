@@ -7,7 +7,7 @@
 import { SHARE_TYPE } from '@sync-in-server/backend/src/applications/shares/constants/shares'
 import type { ShareChild } from '@sync-in-server/backend/src/applications/shares/models/share-child.model'
 import { defaultMimeUrl, getAssetsMimeUrl, mimeDirectory, mimeDirectoryShare } from '../../files/files.constants'
-import { OwnerType } from '../../users/interfaces/owner.interface'
+import type { OwnerType } from '../../users/interfaces/owner.interface'
 import { userAvatarUrl } from '../../users/user.functions'
 
 export class ShareChildModel implements ShareChild {
