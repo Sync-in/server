@@ -68,7 +68,7 @@
               <div>
                 <label for="switchStatus" l10nTranslate>Space status</label>
                 <div class="d-flex align-items-center form-check form-switch cursor-pointer">
-                  <input class="form-check-input" [(ngModel)]="space.enabled" id="switchStatus" type="checkbox" role="button">
+                  <input class="form-check-input" [ngModel]="space.enabled" (ngModelChange)="setSpaceStatus($event)" id="switchStatus" type="checkbox" role="button">
                   <label class="form-check-label mb-0 ms-2" for="switchStatus" l10nTranslate>
                     {{ space.enabled ? 'enabled' : 'disabled' }}
                   </label>
@@ -103,20 +103,20 @@
           }
           @if (space.id) {
             <div class="d-flex d-none d-lg-flex mt-auto">
-              <div class="d-flex flex-column align-items-start col-4 px-0">
+              <div class="d-flex flex-column align-items-start col-4 px-0 text-danger">
+                @if (space.disabledAt && !space.enabled) {
+                  <label for="disabled" l10nTranslate>Deactivation date</label>
+                  <div id="disabled">{{ space.disabledAt | amDateFormat }}</div>
+                }
+              </div>
+              <div class="d-flex flex-column align-items-center col-4 px-0">
                 <label for="created" l10nTranslate>Creation date</label>
                 <div id="created">{{ space.createdAt | amDateFormat }}</div>
               </div>
-              <div class="d-flex flex-column align-items-center col-4 px-0">
+              <div class="d-flex flex-column align-items-end col-4 px-0">
                 <label for="modified" l10nTranslate>Modification date</label>
                 <div id="modified">{{ space.modifiedAt | amDateFormat }}</div>
               </div>
-              @if (space.disabledAt && !space.enabled) {
-                <div class="d-flex flex-column align-items-end col-4 text-danger px-0">
-                  <label for="disabled" l10nTranslate>Deactivation date</label>
-                  <div id="disabled">{{ space.disabledAt | amDateFormat }}</div>
-                </div>
-              }
             </div>
           }
         </div>

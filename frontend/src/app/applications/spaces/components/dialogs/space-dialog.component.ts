@@ -149,6 +149,11 @@ export class SpaceDialogComponent implements OnInit {
     this.linksService.createLinkDialog(this.space)
   }
 
+  setSpaceStatus(status: boolean) {
+    this.space.enabled = status
+    this.space.disabledAt = status ? null : new Date()
+  }
+
   onCancel() {
     if (this.confirmDeletion) {
       this.confirmDeletion = false
