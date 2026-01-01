@@ -4,7 +4,11 @@ services:
     container_name: collabora
     restart: always
     environment:
-      - extra_params=--o:ssl.enable=false --o:ssl.termination=false --o:logging.disable_server_audit=true --o:admin_console.enable=false
+      extra_params: >-
+        --o:ssl.enable=false
+        --o:ssl.termination=false
+        --o:logging.disable_server_audit=true
+        --o:admin_console.enable=false
     cap_drop:
       - ALL
     cap_add:
