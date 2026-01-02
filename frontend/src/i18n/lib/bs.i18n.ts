@@ -8,7 +8,6 @@ import { i18nLocaleSupported } from '@sync-in-server/backend/src/common/i18n'
 import {
   defineLocale,
   deLocale,
-  enGbLocale,
   esLocale,
   frLocale,
   hiLocale,
@@ -23,9 +22,9 @@ import {
   zhCnLocale
 } from 'ngx-bootstrap/chronos'
 
-const BOOTSTRAP_LOCALES: Record<i18nLocaleSupported, LocaleData> = {
+// Remove explicit 'en' locale definition to prevent translation conflicts
+const BOOTSTRAP_LOCALES: Record<Exclude<i18nLocaleSupported, 'en'>, LocaleData> = {
   de: deLocale,
-  en: enGbLocale,
   es: esLocale,
   fr: frLocale,
   hi: hiLocale,
