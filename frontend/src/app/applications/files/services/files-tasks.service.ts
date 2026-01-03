@@ -18,6 +18,7 @@ import { escapeRegexp } from '../../../common/utils/regexp'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
+import { UserType } from '../../users/interfaces/user.interface'
 import { FileEvent } from '../interfaces/file-event.interface'
 
 @Injectable({ providedIn: 'root' })
@@ -57,11 +58,18 @@ export class FilesTasksService {
       msg: { success: 'Decompression done', failed: 'Decompression failed' }
     }
   }
+  private currentUserId: number
   private watcher: Subscription = null
   private watch = timer(1000, 1000).pipe(tap(() => this.doWatch()))
 
   constructor() {
-    this.loadAll()
+    this.store.user.subscribe((u: UserType) => {
+      if (u && this.currentUserId !== u?.id) {
+        // Load tasks when the user is defined and has changed to prevent interceptor redirects
+        this.loadAll()
+      }
+      this.currentUserId = u?.id
+    })
   }
 
   addTask(task: FileTask) {

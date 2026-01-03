@@ -292,7 +292,7 @@ export class FilesService {
     })
   }
 
-  async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string) {
+  async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<void> {
     this.http.head(file.dataUrl).subscribe({
       next: async () => {
         // This check is only used for the text viewer; other viewers are read-only or enforce permissions on the backend.
