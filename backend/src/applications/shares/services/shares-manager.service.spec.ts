@@ -98,7 +98,8 @@ describe(SharesManager.name, () => {
     updateMember: jest.fn(),
     updateMembers: jest.fn(),
     shareExistsForOwner: jest.fn(),
-    childExistsForShareOwner: jest.fn()
+    childExistsForShareOwner: jest.fn(),
+    clearCachePermissions: jest.fn().mockResolvedValue(true)
   }
 
   const user = { id: 1, isAdmin: false } as any

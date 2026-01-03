@@ -171,6 +171,7 @@ export class SharesQueries {
       const select: ShareLink | SelectedFields<any, any> = {
         id: shares.id,
         ownerId: shares.ownerId,
+        alias: shares.alias,
         name: shares.name,
         externalPath: sql`IF (${shares.externalPath} IS NOT NULL AND ${shares.ownerId} IS NOT NULL, '.', ${shares.externalPath})`,
         description: shares.description,

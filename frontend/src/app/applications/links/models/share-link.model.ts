@@ -18,6 +18,7 @@ export class ShareLinkModel implements ShareLink {
   id: number
   ownerId: number
   name: string
+  alias: string
   externalPath: string
   parent: ShareLink['parent']
   file: FileSpace

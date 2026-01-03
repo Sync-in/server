@@ -632,6 +632,9 @@ export class SharesManager {
               // intersect permissions to ensure that the user does not attempt to exceed his rights
               const shareLink: ShareLink = await this.getShareLink(user, spaceOrShareId)
               updateMember.permissions = intersectPermissions(shareLink.file.permissions, v)
+              this.sharesQueries
+                .clearCachePermissions(shareLink.alias, [link.userId])
+                .catch((e: Error) => this.logger.error(`${this.updateLinkFromSpaceOrShare.name} - ${e}`))
             }
             break
           case 'language':
