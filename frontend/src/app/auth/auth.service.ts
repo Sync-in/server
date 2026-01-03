@@ -23,7 +23,6 @@ import { LoginResponseDto, TwoFaResponseDto } from '@sync-in-server/backend/src/
 import type { TokenResponseDto } from '@sync-in-server/backend/src/authentication/dto/token-response.dto'
 import { TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
-import { ServerConfig } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import { catchError, finalize, map, Observable, of, throwError } from 'rxjs'
 import { switchMap, tap } from 'rxjs/operators'
 import { USER_PATH } from '../applications/users/user.constants'
@@ -98,8 +97,7 @@ export class AuthService {
           map((r: ClientAuthCookieDto) => {
             this.accessExpiration = r.token.access_expiration
             this.refreshExpiration = r.token.refresh_expiration
-            this.userService.initUser(r.user)
-            this.setServerConfig(r.server)
+            this.initUser(r)
             if (r?.client_token_update) {
               // update client token
               this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_UPDATE, r.client_token_update)
@@ -162,8 +160,7 @@ export class AuthService {
     if (r !== null) {
       this.accessExpiration = r.token.access_expiration
       this.refreshExpiration = r.token.refresh_expiration
-      this.userService.initUser(r.user, impersonate)
-      this.setServerConfig(r.server)
+      this.initUser(r, impersonate)
     }
   }
 
@@ -200,10 +197,7 @@ export class AuthService {
       return of(false)
     } else if (!this.store.user.getValue()) {
       return this.http.get<Omit<LoginResponseDto, 'token'>>(API_USERS_ME).pipe(
-        tap((r: Omit<LoginResponseDto, 'token'>) => {
-          this.userService.initUser(r.user)
-          this.setServerConfig(r.server)
-        }),
+        tap((r: Omit<LoginResponseDto, 'token'>) => this.initUser(r)),
         map(() => true),
         catchError((e: HttpErrorResponse) => {
           if (e.status === 401) {
@@ -230,9 +224,11 @@ export class AuthService {
     return this.http.post<TwoFaResponseDto>(API_TWO_FA_LOGIN_VERIFY, verify)
   }
 
-  private setServerConfig(serverConfig: ServerConfig) {
-    if (!serverConfig) return
-    this.store.server.set(serverConfig)
+  initUser(r: Partial<LoginResponseDto>, impersonate = false) {
+    this.userService.initUser(r.user, impersonate)
+    if (r.server) {
+      this.store.server.set(r.server)
+    }
   }
 
   private refreshTokenHasExpired(): boolean {
