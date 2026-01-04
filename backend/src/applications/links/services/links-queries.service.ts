@@ -155,7 +155,10 @@ export class LinksQueries {
           alias: shares.alias,
           hasParent: isNotNull(shares.parentId).mapWith(Boolean),
           isDir: sql`IF (${isNotNull(shares.externalPath)} OR ${isNotNull(shareSpaceRoot.externalPath)}, 1 ,${files.isDir})`.mapWith(Boolean),
-          mime: files.mime
+          mime: files.mime,
+          mtime: files.mtime,
+          size: files.size,
+          permissions: sharesMembers.permissions
         },
         space: { name: spaces.name, alias: spaces.alias },
         owner: { login: shareOwner.login, fullName: userFullNameSQL(shareOwner) }
@@ -176,7 +179,11 @@ export class LinksQueries {
       )
       .where(eq(links.uuid, uuid))
       .limit(1)
-    return r
+    return {
+      ...r,
+      space: r.space?.name ? r.space : null,
+      share: r.share?.name ? r.share : null
+    }
   }
 
   async incrementLinkNbAccess(uuid: string) {

@@ -243,7 +243,7 @@
   "The location is not writeable": "该位置不可写",
   "The location is a directory": "该位置是一个目录",
   "The file is locked": "文件已锁定",
-  "This share is protected by a password": "此共享受密码保护",
+  "This access is protected by a password": "此访问受密码保护",
   "You do not have share permission": "您没有共享权限",
   "You can not share a space": "您不能共享空间",
   "You can not remove an anchored file": "您不能删除已锚定的文件",

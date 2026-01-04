@@ -11,13 +11,29 @@
     </a>
   </div>
   <div class="d-flex flex-column align-content-center">
-    <div (click)="followLink()" class="resource d-flex flex-column align-items-center mt-3 mx-auto cursor-pointer">
-      @if (mimeUrl) {
-        <img [src]="mimeUrl" alt="" height="96" class="no-select-pointer" (error)="fallBackMimeUrl()">
-      } @else {
-        <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false" style="min-width: 128px; min-height: 128px; font-size: 64px"></fa-icon>
+    <div class="d-flex flex-column align-items-center mt-3 mb-1 mx-auto cursor-pointer">
+      <div (click)="followLink()" class="resource">
+        <div class="mime">
+          @if (file?.mimeUrl) {
+            <img [src]="file.mimeUrl" alt="" height="96" class="no-select-pointer" (error)="fallBackMimeUrl()">
+          } @else {
+            <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false" style="width: 96px; height: 96px; font-size: 48px"></fa-icon>
+          }
+        </div>
+        <span class="error-code">{{ link.share?.name || link.space?.name }}</span>
+      </div>
+      @if (file?.isDir === false) {
+        <div class="mt-3 mb-2 fs-lg">
+          @if (file?.isViewable) {
+            <button (click)="openLink()" class="btn btn-lg btn-outline-light me-2" l10nTranslate>
+              <fa-icon [icon]="fileCanBeModified && file.isEditable ? icons.faPen : icons.faEye"></fa-icon>
+            </button>
+          }
+          <button (click)="downloadLink()" class="btn btn-lg btn-outline-light">
+            <fa-icon [icon]="icons.faDownload"></fa-icon>
+          </button>
+        </div>
       }
-      <span class="error-code">{{ link.share?.name || link.space?.name }}</span>
     </div>
   </div>
   <div class="error-text no-select">

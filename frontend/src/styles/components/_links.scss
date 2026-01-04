@@ -14,18 +14,29 @@
 
   .header {
     background: #fff;
-    padding: 15px 0;
+    padding: 10px 0;
     -webkit-box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
     box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
-    margin-bottom: 18px;
-
   }
 
   .resource {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: .3rem;
     &:hover {
       span {
         @extend .text-gray;
       }
+    }
+    .mime {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: .3rem;
+      border-radius: 1rem;
+      margin: .8rem;
     }
   }
 
@@ -34,7 +45,6 @@
     color: #fff;
     font-size: 20px;
     font-weight: 700;
-    margin-top: 10px;
     text-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
     line-height: normal;
   }
@@ -54,7 +64,7 @@
       background: rgba(0, 0, 0, 0.2);
       display: inline-block;
       height: 5px;
-      margin: 25px 0 10px 0;
+      margin: 15px 0 5px 0;
       width: 40px;
     }
 

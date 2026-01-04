@@ -243,7 +243,7 @@
   "The location is not writeable": "Расположение недоступно для записи",
   "The location is a directory": "Расположение — это папка",
   "The file is locked": "Файл заблокирован",
-  "This share is protected by a password": "Этот общий доступ защищён паролем",
+  "This access is protected by a password": "Этот доступ защищён паролем",
   "You do not have share permission": "У вас нет прав на предоставление общего доступа",
   "You can not share a space": "Нельзя предоставить общий доступ к пространству",
   "You can not remove an anchored file": "Нельзя удалить закреплённый файл",

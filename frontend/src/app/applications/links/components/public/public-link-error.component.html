@@ -10,13 +10,14 @@
       <img alt="" height="40" [src]="logoUrl">
     </a>
   </div>
-  <fa-icon class="text-white" [icon]="icons.faExclamationCircle" size="4x"></fa-icon>
-  <div class="error-code mt-2" style="font-size: 24px" l10nTranslate>Link error</div>
+  <div class="d-flex flex-column align-items-center" style="margin-top: 1.2rem; margin-bottom: .6rem">
+    <fa-icon class="text-white" [icon]="icons.faExclamationCircle" size="5x"></fa-icon>
+  </div>
+  <div class="error-code" l10nTranslate>Link error</div>
   <div class="error-text">
     <span class="hr"></span>
-    <br>
-    <span l10nTranslate>{{ error }}</span>
-    <br>
-    <br>
+    <div>
+    <span class="solve" l10nTranslate>{{ error }}</span>
+    </div>
   </div>
 </div>

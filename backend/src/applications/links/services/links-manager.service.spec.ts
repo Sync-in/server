@@ -196,7 +196,6 @@ describe(LinksManager.name, () => {
         share: { isDir: false, name: 'file.txt', alias: 'share-alias' }
       } as any
       linksQueriesMock.spaceLink.mockResolvedValueOnce(spaceLink)
-
       spacesManagerMock.spaceEnv.mockResolvedValueOnce({} as any)
       const streamable: any = { some: 'stream' }
       filesManagerMock.sendFileFromSpace.mockReturnValueOnce({
@@ -208,7 +207,7 @@ describe(LinksManager.name, () => {
       const logErrorSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => undefined as any)
       linksQueriesMock.incrementLinkNbAccess.mockRejectedValueOnce(new Error('increment boom'))
 
-      const result = await service.linkAccess(identity, link.uuid, req, res)
+      const result = await service.linkDownload(identity, link.uuid, req, res)
 
       expect(result).toBe(streamable)
       expect(filesManagerMock.sendFileFromSpace).toHaveBeenCalled()
@@ -270,7 +269,7 @@ describe(LinksManager.name, () => {
 
       const result = await service.linkAccess(sameUserIdentity as any, link.uuid, req, res)
 
-      expect(result).toBeUndefined()
+      expect(result.user.id).toEqual(baseLink.user.id)
       expect(authManagerMock.setCookies).not.toHaveBeenCalled()
       expect(linksQueriesMock.incrementLinkNbAccess).not.toHaveBeenCalled()
     })
@@ -282,6 +281,7 @@ describe(LinksManager.name, () => {
         space: null,
         share: { isDir: false, name: 'bad.txt', alias: 'share' }
       } as any
+      linksQueriesMock.spaceLink.mockReset()
       linksQueriesMock.spaceLink.mockResolvedValueOnce(spaceLink)
 
       spacesManagerMock.spaceEnv.mockResolvedValueOnce({} as any)
@@ -290,7 +290,7 @@ describe(LinksManager.name, () => {
         stream: jest.fn()
       } as any)
 
-      await expect(service.linkAccess(identity, link.uuid, req, res)).rejects.toMatchObject({
+      await expect(service.linkDownload(identity, link.uuid, req, res)).rejects.toMatchObject({
         status: 500
       })
       expect(linksQueriesMock.incrementLinkNbAccess).toHaveBeenCalledWith(link.uuid)

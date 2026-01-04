@@ -18,7 +18,7 @@ import { LinksManager } from './services/links-manager.service'
 @Controller(PUBLIC_LINKS_ROUTE.BASE)
 @AuthTokenOptional()
 export class LinksController {
-  constructor(private readonly linksPublicManager: LinksManager) {}
+  constructor(private readonly linksManager: LinksManager) {}
 
   @Get(`${PUBLIC_LINKS_ROUTE.VALIDATION}/:uuid`)
   linkValidation(
@@ -29,7 +29,7 @@ export class LinksController {
     ok: boolean
     link: SpaceLink
   }> {
-    return this.linksPublicManager.linkValidation(user, uuid)
+    return this.linksManager.linkValidation(user, uuid)
   }
 
   @Get(`${PUBLIC_LINKS_ROUTE.ACCESS}/:uuid`)
@@ -38,8 +38,18 @@ export class LinksController {
     @Param('uuid') uuid: string,
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply
-  ): Promise<StreamableFile | LoginResponseDto> {
-    return this.linksPublicManager.linkAccess(user, uuid, req, res)
+  ): Promise<LoginResponseDto | Omit<LoginResponseDto, 'token'>> {
+    return this.linksManager.linkAccess(user, uuid, req, res)
+  }
+
+  @Get(`${PUBLIC_LINKS_ROUTE.DOWNLOAD}/:uuid`)
+  linkDownload(
+    @GetUser() user: UserModel,
+    @Param('uuid') uuid: string,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) res: FastifyReply
+  ): Promise<StreamableFile> {
+    return this.linksManager.linkDownload(user, uuid, req, res)
   }
 
   @Post(`${PUBLIC_LINKS_ROUTE.AUTH}/:uuid`)
@@ -50,6 +60,6 @@ export class LinksController {
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply
   ): Promise<LoginResponseDto> {
-    return this.linksPublicManager.linkAuthentication(user, uuid, linkPasswordDto, req, res)
+    return this.linksManager.linkAuthentication(user, uuid, linkPasswordDto, req, res)
   }
 }

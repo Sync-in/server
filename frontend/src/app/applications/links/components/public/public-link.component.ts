@@ -7,9 +7,12 @@
 import { Component, inject } from '@angular/core'
 import { ActivatedRoute, Data, Params, RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { SpaceLink } from '@sync-in-server/backend/src/applications/links/interfaces/link-space.interface'
+import { faDownload, faEye, faPen } from '@fortawesome/free-solid-svg-icons'
+import type { SpaceLink } from '@sync-in-server/backend/src/applications/links/interfaces/link-space.interface'
+import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { defaultMimeUrl, getAssetsMimeUrl, logoUrl, mimeDirectory, mimeDirectoryShare } from '../../../files/files.constants'
+import { logoUrl } from '../../../files/files.constants'
+import { FileModel } from '../../../files/models/file.model'
 import { SPACES_ICON } from '../../../spaces/spaces.constants'
 import { LinksService } from '../../services/links.service'
 
@@ -20,9 +23,10 @@ import { LinksService } from '../../services/links.service'
 })
 export class PublicLinkComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly icons = { SPACES: SPACES_ICON.SPACES }
+  protected readonly icons = { SPACES: SPACES_ICON.SPACES, faEye, faDownload, faPen }
   protected readonly logoUrl = logoUrl
-  protected mimeUrl: string = null
+  protected file: FileModel
+  protected fileCanBeModified: boolean
   protected link: SpaceLink
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly linksService = inject(LinksService)
@@ -33,18 +37,41 @@ export class PublicLinkComponent {
     this.activatedRoute.data.subscribe((data: Data) => this.setLink(data.link))
   }
 
-  setLink(link: SpaceLink) {
-    if (!link.space) {
-      this.mimeUrl = getAssetsMimeUrl(link.share.isDir ? (link.share.hasParent ? mimeDirectoryShare : mimeDirectory) : link.share.mime)
-    }
-    this.link = link
+  openLink() {
+    this.linksService.linkAccessOrView(this.linkUUID, this.link, this.file)
+  }
+
+  downloadLink() {
+    this.linksService.linkDownload(this.linkUUID)
   }
 
   followLink() {
-    this.linksService.linkAccess(this.linkUUID, this.link)
+    this.linksService.linkAccessOrView(this.linkUUID, this.link)
   }
 
   fallBackMimeUrl() {
-    this.mimeUrl = defaultMimeUrl
+    this.file.fallBackMimeUrl()
+  }
+
+  private setLink(link: SpaceLink) {
+    if (!link.space) {
+      this.file = new FileModel(
+        {
+          id: -1,
+          name: link.share.name,
+          path: '',
+          isDir: link.share.isDir,
+          size: link.share.size,
+          mime: link.share.mime,
+          mtime: link.share.mtime,
+          root: { alias: link.share.alias }
+        } as FileModel,
+        SPACE_REPOSITORY.SHARES,
+        link.share.hasParent,
+        link.fileEditors
+      )
+      this.fileCanBeModified = link.share.permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
+    }
+    this.link = link
   }
 }

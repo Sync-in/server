@@ -243,7 +243,7 @@
   "The location is not writeable": "La posizione non è scrivibile",
   "The location is a directory": "La posizione è una directory",
   "The file is locked": "Il file è bloccato",
-  "This share is protected by a password": "Questa condivisione è protetta da password",
+  "This access is protected by a password": "Questo accesso è protetto da password",
   "You do not have share permission": "Non hai il permesso di condividere",
   "You can not share a space": "Non puoi condividere uno spazio",
   "You can not remove an anchored file": "Non puoi rimuovere un file ancorato",

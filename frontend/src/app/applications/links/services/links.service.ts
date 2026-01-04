@@ -11,6 +11,7 @@ import { LINK_ERROR, LINK_TYPE } from '@sync-in-server/backend/src/applications/
 import {
   API_PUBLIC_LINK_ACCESS,
   API_PUBLIC_LINK_AUTH,
+  API_PUBLIC_LINK_DOWNLOAD,
   API_PUBLIC_LINK_VALIDATION
 } from '@sync-in-server/backend/src/applications/links/constants/routes'
 import type { CreateOrUpdateLinkDto } from '@sync-in-server/backend/src/applications/links/dto/create-or-update-link.dto'
@@ -33,6 +34,8 @@ import { take } from 'rxjs/operators'
 import { AuthService } from '../../../auth/auth.service'
 import { downloadWithAnchor } from '../../../common/utils/functions'
 import { LayoutService } from '../../../layout/layout.service'
+import { FileModel } from '../../files/models/file.model'
+import { FilesService } from '../../files/services/files.service'
 import type { ShareModel } from '../../shares/models/share.model'
 import type { SpaceModel } from '../../spaces/models/space.model'
 import { SPACES_PATH } from '../../spaces/spaces.constants'
@@ -50,6 +53,7 @@ export class LinksService {
   private readonly layout = inject(LayoutService)
   private readonly authService = inject(AuthService)
   private readonly clipboard = inject(ClipboardService)
+  private readonly filesService = inject(FilesService)
 
   shareLinksList(): Observable<ShareLinkModel[]> {
     return this.http.get<ShareLinkModel[]>(API_SHARES_LINKS_LIST).pipe(map((sls: Partial<ShareLinkModel>[]) => sls.map((s) => new ShareLinkModel(s))))
@@ -91,19 +95,31 @@ export class LinksService {
     )
   }
 
-  linkAccess(uuid: string, link: SpaceLink) {
-    if (link.share?.isDir || link.space?.alias) {
-      this.http.get<LoginResponseDto>(`${API_PUBLIC_LINK_ACCESS}/${uuid}`).subscribe((r) => {
+  linkAccessOrView(uuid: string, link: SpaceLink, fileToView?: FileModel) {
+    this.http.get<LoginResponseDto>(`${API_PUBLIC_LINK_ACCESS}/${uuid}`).subscribe((r) => {
+      if (!r.token) {
+        // Already authenticated
+        this.authService.initUser(r)
+      } else {
+        // First authentication with token
         this.authService.initUserFromResponse(r)
-        if (link.space) {
-          this.router.navigate([SPACES_PATH.SPACES, link.space.alias]).catch(console.error)
-        } else {
+      }
+      if (fileToView) {
+        this.filesService.openViewerDialog(fileToView, [], link.share.permissions).catch(console.error)
+      } else if (link.space) {
+        this.router.navigate([SPACES_PATH.SPACES_FILES, link.space.alias]).catch(console.error)
+      } else {
+        if (link.share.isDir) {
           this.router.navigate([SPACES_PATH.SPACES_SHARES, link.share.alias]).catch(console.error)
+        } else {
+          this.router.navigate([SPACES_PATH.SPACES_SHARES], { queryParams: { select: link.share.alias } }).catch(console.error)
         }
-      })
-    } else {
-      downloadWithAnchor(`${API_PUBLIC_LINK_ACCESS}/${uuid}`)
-    }
+      }
+    })
+  }
+
+  linkDownload(uuid: string) {
+    downloadWithAnchor(`${API_PUBLIC_LINK_DOWNLOAD}/${uuid}`)
   }
 
   linkAuthentication(uuid: string, password: string): Observable<boolean> {
@@ -115,7 +131,7 @@ export class LinksService {
       }),
       catchError((e) => {
         if (e.error.message === LINK_ERROR.UNAUTHORIZED) {
-          this.layout.sendNotification('warning', 'Link', 'Bad password')
+          this.layout.sendNotification('error', 'Link', 'Bad password')
         } else {
           this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${e.error.message}`]).catch(console.error)
         }

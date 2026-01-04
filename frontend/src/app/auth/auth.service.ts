@@ -187,7 +187,7 @@ export class AuthService {
     )
   }
 
-  checkUserAuthAndLoad(returnUrl: string) {
+  checkUserAuthAndLoad(returnUrl: string): Observable<boolean> {
     if (this.refreshTokenHasExpired()) {
       if (this.electron.enabled) {
         return this.loginElectron()

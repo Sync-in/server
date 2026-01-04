@@ -243,7 +243,7 @@
   "The location is not writeable": "Konuma yazılamıyor",
   "The location is a directory": "Konum bir dizin",
   "The file is locked": "Dosya kilitli",
-  "This share is protected by a password": "Bu paylaşım parola ile korunuyor",
+  "This access is protected by a password": "Bu erişim parola ile korunuyor",
   "You do not have share permission": "Paylaşma izniniz yok",
   "You can not share a space": "Bir alanı paylaşamazsınız",
   "You can not remove an anchored file": "Sabitlenmiş bir dosyayı kaldıramazsınız",

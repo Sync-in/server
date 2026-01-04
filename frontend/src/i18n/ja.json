@@ -243,7 +243,7 @@
   "The location is not writeable": "その場所は書き込み不可です",
   "The location is a directory": "その場所はディレクトリです",
   "The file is locked": "ファイルはロックされています",
-  "This share is protected by a password": "この共有はパスワードで保護されています",
+  "This access is protected by a password": "このアクセスはパスワードで保護されています",
   "You do not have share permission": "共有する権限がありません",
   "You can not share a space": "スペースは共有できません",
   "You can not remove an anchored file": "アンカーされたファイルは削除できません",

@@ -243,7 +243,7 @@
   "The location is not writeable": "Lokalizacja nie jest zapisywalna",
   "The location is a directory": "Lokalizacja jest katalogiem",
   "The file is locked": "Plik jest zablokowany",
-  "This share is protected by a password": "To udostępnienie jest chronione hasłem",
+  "This access is protected by a password": "Ten dostęp jest chroniony hasłem",
   "You do not have share permission": "Nie masz uprawnień do udostępniania",
   "You can not share a space": "Nie możesz udostępnić przestrzeni",
   "You can not remove an anchored file": "Nie możesz usunąć zakotwiczonego pliku",

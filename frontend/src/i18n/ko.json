@@ -243,7 +243,7 @@
   "The location is not writeable": "해당 위치는 쓰기 불가입니다",
   "The location is a directory": "해당 위치는 디렉터리입니다",
   "The file is locked": "파일이 잠겨 있습니다",
-  "This share is protected by a password": "이 공유는 비밀번호로 보호됩니다",
+  "This access is protected by a password": "이 액세스는 비밀번호로 보호됩니다",
   "You do not have share permission": "공유할 권한이 없습니다",
   "You can not share a space": "스페이스는 공유할 수 없습니다",
   "You can not remove an anchored file": "고정된 파일은 삭제할 수 없습니다",

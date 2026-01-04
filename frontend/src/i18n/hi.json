@@ -243,7 +243,7 @@
   "The location is not writeable": "स्थान लिखने योग्य नहीं है",
   "The location is a directory": "स्थान एक निर्देशिका है",
   "The file is locked": "फ़ाइल लॉक है",
-  "This share is protected by a password": "यह साझाकरण पासवर्ड से संरक्षित है",
+  "This access is protected by a password": "यह एक्सेस पासवर्ड से संरक्षित है",
   "You do not have share permission": "आपके पास साझा करने की अनुमति नहीं है",
   "You can not share a space": "आप किसी स्पेस को साझा नहीं कर सकते",
   "You can not remove an anchored file": "आप एंकर की गई फ़ाइल नहीं हटा सकते",

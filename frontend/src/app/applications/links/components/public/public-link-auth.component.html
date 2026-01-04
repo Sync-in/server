@@ -10,19 +10,20 @@
       <img alt="" height="40" [src]="logoUrl">
     </a>
   </div>
-  <img (click)="validPassword()" alt="" class="cursor-pointer" [src]="linkProtected" height="96">
-  <div class="d-flex mt-2 ms-auto me-auto" style="width: 250px">
-    <div class="input-group">
-    <span class="input-group-text bg-gray-light">
-      <fa-icon [icon]="icons.faKey"></fa-icon>
-    </span>
+  <div class="d-flex flex-column align-items-center" style="margin: 1.2rem 1rem;">
+    <img (click)="validPassword()" alt="" class="cursor-pointer" [src]="linkProtected" height="96">
+  </div>
+  <div class="d-flex flex-column align-items-center mt-2 ms-auto me-auto">
+    <div class="input-group" style="max-width: 200px">
       <input [(ngModel)]="password"
              (keyup.enter)="validPassword()"
+             [class.is-invalid]="password?.length < passwordMinLength"
              autocomplete="off"
              class="form-control border-0"
              [placeholder]="'Password' | translate:locale.language"
-             type="password">
-      <button [disabled]="!password?.length"
+             type="password"
+             required>
+      <button [disabled]="password?.length < passwordMinLength"
               (click)="validPassword()"
               class="btn btn-default btn-custom border-0"
               type="button">
@@ -33,7 +34,7 @@
   <div class="error-text no-select">
     <span class="hr"></span>
     <div>
-      <span class="solve" l10nTranslate>This share is protected by a password</span>
+      <span class="solve" l10nTranslate>This access is protected by a password</span>
     </div>
   </div>
 </div>
