@@ -296,7 +296,7 @@ export class FilesService {
     this.http.head(file.dataUrl).subscribe({
       next: async () => {
         // This check is only used for the text viewer; other viewers are read-only or enforce permissions on the backend.
-        const isWriteable = file?.lock?.isExclusive && permissions.indexOf(SPACE_OPERATION.MODIFY) > -1
+        const isWriteable = !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
         const mode: FILE_MODE = isWriteable ? FILE_MODE.EDIT : FILE_MODE.VIEW
 
         let hookedShortMime: string
