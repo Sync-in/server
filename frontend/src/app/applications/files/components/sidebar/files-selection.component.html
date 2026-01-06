@@ -145,31 +145,31 @@
           <div class="d-flex flex-wrap align-items-center p-2 fs-xs">
             @if (f.lock) {
               <div (click)="openLockDialog(f)"
-                   class="badge rounded-pill white-space bg-maroon cursor-pointer mb-2">
+                   class="badge rounded-pill white-space-normal bg-maroon cursor-pointer mb-2">
                 <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faUnlock"></fa-icon>
                 <span>&nbsp;{{ f.lock | fileLockFormatPipe }}</span>
               </div>
             }
             @for (space of f.spaces; track space.id) {
-              <div (click)="goToSpace(space)" class="badge rounded-pill bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToSpace(space)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SPACES"></fa-icon>
                 <span>&nbsp;{{ space.name }}</span>
               </div>
             }
             @for (share of f.shares; track share.id) {
-              <div (click)="goToShare(share)" class="badge rounded-pill bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToShare(share)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SHARES"></fa-icon>
                 <span>&nbsp;{{ share.name }}</span>
               </div>
             }
             @for (link of f.links; track link.id) {
-              <div (click)="goToShare(link)" class="badge rounded-pill bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToShare(link)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.LINKS"></fa-icon>
                 <span>&nbsp;{{ link.name }}</span>
               </div>
             }
             @for (sync of f.syncs; track sync.id) {
-              <div (click)="goToSync(sync)" class="badge rounded-pill bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToSync(sync)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SYNC"></fa-icon>
                 <span>&nbsp;{{ sync.clientName }}</span>
               </div>
