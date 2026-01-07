@@ -45,8 +45,8 @@ Sync-in fits seamlessly into any environment — from small teams to large enter
 - 🔑 Advanced User Access Control
   - **Spaces & Shares**: Organize files with fine-grained access permissions
   - Role-based permission system ensuring secure file management
-- 🤝 Collaboration & Integration
-  - **OnlyOffice Integration**: Edit and collaborate on documents in real-time
+- 🤝 Collaboration
+  - **Collabora Online & OnlyOffice Integration**: Real-time document editing and collaboration
   - **Activity Tracking**: Commenting, notifications, and file history for seamless teamwork
 - 🔎 Powerful Full-Text Search
   - **Deep content search** for easy retrieval of files and documents
