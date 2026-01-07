@@ -58,7 +58,7 @@
     "class-validator": "^0.14.1",
     "deepmerge": "^4.3.1",
     "drizzle-kit": "^0.31.0",
-    "drizzle-orm": "^0.44.0",
+    "drizzle-orm": "^0.45.1",
     "fast-xml-parser": "^5.0.7",
     "fs-extra": "^11.2.0",
     "html-to-text": "^9.0.5",
