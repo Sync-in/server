@@ -1,4 +1,33 @@
 
+## [1.10.0](https://github.com/Sync-in/server/compare/v1.9.6...v1.10.0) (2026-01-07)
+
+🔥🚀 Collabora Online integration
+
+### Features
+
+* **backend/frontend:files:** improve file locking logic, enhance compatibility across apps such as WebDAV and Collabora and OnlyOffice ([9eb5a17](https://github.com/Sync-in/server/commit/9eb5a17b26cc6c0928be6a16c71002e9bd4082de))
+* **files:** add Collabora Online integration to Docker setup ([abe4fa4](https://github.com/Sync-in/server/commit/abe4fa4f89edbb79265d3cdb94aa01725a35ddce))
+* **files:** collabora online integration ([dabeff6](https://github.com/Sync-in/server/commit/dabeff62d522cd2af4acb93c20d287221e0f2c30))
+* **files:** Collabora Online integration, multi-editor support, and improved file locking ([e6bedc1](https://github.com/Sync-in/server/commit/e6bedc1bff837ce477ff4e791f78e66e038209b2))
+* **files:** improve editor selection and add editor preference support ([8fea357](https://github.com/Sync-in/server/commit/8fea357925a6671393d4f02b1ff790134ca87912))
+* **frontend/backend:files:** simplify file opening flow and improve readonly handling ([6563f44](https://github.com/Sync-in/server/commit/6563f445441c755f392508d98caa9ba261e5c2d7))
+* **links:** allow direct access to spaces via public links; add file preview/edit/download; improve password validation ([5102e9a](https://github.com/Sync-in/server/commit/5102e9ae6b17b9924969839c69b7cbdc2421c518))
+
+
+### Bug Fixes
+
+* **backend:files-scheduler:** correct ordering of recent files ([aea6bcd](https://github.com/Sync-in/server/commit/aea6bcdf79763bf392b105e1c806bb70da0f00be))
+* **backend:shares:** clear cached permissions when share link permissions are changed ([95a455b](https://github.com/Sync-in/server/commit/95a455b07d44ac4761e1f9583f8be7d90939e614))
+* **backend:spaces:** apply MODIFY permission for PUT requests on existing files instead of ADD when the resource exists ([e73ae93](https://github.com/Sync-in/server/commit/e73ae93251e090f4f9f4aaf455f5098a3ee47a4b))
+* **backend:webdav:** properly handle HEAD requests on directories, match lock source file when the file is a space root and extend lock owner information ([f1f4836](https://github.com/Sync-in/server/commit/f1f4836d4038eb3960a1f08cc8579176d05d1b55))
+* **docker:collabora:** add capabilities for debian based hosts ([9275df6](https://github.com/Sync-in/server/commit/9275df653acde8a8abfa6dad5c92859a064021be))
+* **frontend:auth:** ensure server config is initialized during authentication to prevent OTP prompt from not appearing on desktop ([e0053ae](https://github.com/Sync-in/server/commit/e0053ae608954be7a1a85b7736e150c03ecb43cb))
+* **frontend:files:** adjust badge styles to use `white-space-normal` for consistent text wrapping ([615ea00](https://github.com/Sync-in/server/commit/615ea00bc79efe0cb3afa4e905dc3e0226336b84))
+* **frontend:files:** correct writeable condition ([288193e](https://github.com/Sync-in/server/commit/288193e3d8f0afb95db9212a33579fb33867bb30))
+* **frontend:files:** load tasks only when a user is logged in to prevent interceptor redirects when refreshing a public link URL ([bda58d6](https://github.com/Sync-in/server/commit/bda58d6094659231ead9c7c51878e57ed13b3d87))
+* **frontend:i18n:** remove explicit 'en' locale definition to prevent bs-datepicker translation conflicts ([13529f1](https://github.com/Sync-in/server/commit/13529f1b7c68e468c3aa195c81c4ce20bcd31c66))
+* **frontend:spaces:** display deactivation date when space is disabled ([7df2535](https://github.com/Sync-in/server/commit/7df2535f3f54e3ec6bced3525b16fb90edf1560b))
+
 ## [1.9.6](https://github.com/Sync-in/server/compare/v1.9.5...v1.9.6) (2025-12-16)
 
 ### Bug Fixes
@@ -21,10 +50,6 @@
 * **backend:users:** clear whitelist caches when group visibility changes ([071c3ae](https://github.com/Sync-in/server/commit/071c3aed68d3bdacead571d39a1f4006b2380915))
 * **frontend:files:** fix DataTransfer usage after async operations and delay overwrite until analysis completes to restore overwrite on dropped files ([d9935e5](https://github.com/Sync-in/server/commit/d9935e5a3887448635c30fd49f22657461177610))
 * **frontend:styles:** add min-width on app-auth background class ([dffd5e5](https://github.com/Sync-in/server/commit/dffd5e5c7a1a65994970bedf33a95dd00827aa94))
-
-### Community Highlights ❤️
-
-We would like to thank @x0root for reporting this vulnerability and helping improve the security of the project.
 
 ## [1.9.1](https://github.com/Sync-in/server/compare/v1.8.1...v1.9.1) (2025-11-25)
 
