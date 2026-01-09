@@ -168,16 +168,12 @@ export class CommentsQueries {
         file: {
           name: sql<string>`IF (${files.id} = ${spacesRoots.fileId}, ${spacesRoots.name}, ${files.name})`.as('name'),
           path: sql<string>`
-          CONCAT_WS('/', IF (${files.inTrash} = 0, '${sql.raw(SPACE_REPOSITORY.FILES)}', '${sql.raw(SPACE_REPOSITORY.TRASH)}'), 
-          IF (${files.ownerId} = ${userId}, '${sql.raw(SPACE_ALIAS.PERSONAL)}', ${spaces.alias}),
+          CONCAT_WS('/', 
+            IF (${files.inTrash} = 0, '${sql.raw(SPACE_REPOSITORY.FILES)}', '${sql.raw(SPACE_REPOSITORY.TRASH)}'), 
+            IF (${files.ownerId} = ${userId}, '${sql.raw(SPACE_ALIAS.PERSONAL)}', ${spaces.alias}),
             IF (${spaceRootFile.id} IS NOT NULL,
-                IF (${files.id} = ${spaceRootFile.id}, NULL, REGEXP_REPLACE(${files.path}, ${filePathSQL(spaceRootFile)}, ${spacesRoots.alias})),
-                NULLIF(
-                  CONCAT_WS('/', 
-                    IF (${files.spaceExternalRootId} = ${spacesRoots.id}, ${spacesRoots.alias}, NULL), 
-                    IF (${files.path} = '.', NULL, ${files.path})
-                  )
-                , '')
+                IF (${files.id} = ${spaceRootFile.id}, NULL, IF (${files.path} = '.', NULL, REGEXP_REPLACE(${files.path}, ${filePathSQL(spaceRootFile)}, ${spacesRoots.alias}))),
+                NULLIF(CONCAT_WS('/', IF (${files.spaceExternalRootId} = ${spacesRoots.id}, ${spacesRoots.alias}, NULL), IF (${files.path} = '.', NULL, ${files.path})), '')
             )
           )`.as('path'),
           mime: files.mime,
