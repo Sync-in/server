@@ -25,10 +25,12 @@ body:
     id: system
     attributes:
       label: System information
-      description: Sync-in version / Server OS / Browser (if applicable).
+      description: Sync-in version / OS / VM Hypervisor / Filesystem / Browser.
       placeholder: |
-        Sync-in:
-        Server OS:
+        Sync-in version:
+        VM Hypervisor:
+        OS:
+        Filesystem:
         Browser:
     validations:
       required: true
