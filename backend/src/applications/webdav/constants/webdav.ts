@@ -14,6 +14,7 @@ export const NS_PREFIX = 'D'
 export const LOCK_PREFIX = 'urn:uuid:'
 export const XML_CONTENT_TYPE = 'application/xml; charset=utf-8'
 export const HTML_CONTENT_TYPE = 'text/html; charset=utf-8'
+export const WEBDAV_CONTENT_TYPES = ['application/xml', 'text/xml']
 export const WEBDAV_APP_LOCK = 'WebDAV' as const
 
 export const ALLOWED_WEBDAV_METHODS: string = [

@@ -10,12 +10,11 @@ import multipart from '@fastify/multipart'
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common'
 import { NestFactory, Reflector } from '@nestjs/core'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
-import { FastifyRequest } from 'fastify'
+import { FastifyInstance, FastifyRequest } from 'fastify'
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino'
 import { CONTENT_SECURITY_POLICY } from './app.constants'
 import { AppModule } from './app.module'
-import { HTTP_WEBDAV_METHOD } from './applications/applications.constants'
-import { WEBDAV_NS, WEBDAV_SPACES } from './applications/webdav/constants/routes'
+import { bootstrapWebDAV } from './applications/webdav/utils/bootstrap'
 import { IS_TEST_ENV, STATIC_PATH } from './configuration/config.constants'
 import { configuration } from './configuration/config.environment'
 import { WebSocketAdapter } from './infrastructure/websocket/adapters/web-socket.adapter'
@@ -39,29 +38,17 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
   app.enableShutdownHooks()
 
   /* Fastify instance */
-  const fastifyInstance = fastifyAdapter.getInstance()
+  const fastifyInstance: FastifyInstance = fastifyAdapter.getInstance()
 
   /* LOGGER */
   app.useLogger(IS_TEST_ENV ? ['fatal'] : app.get(Logger))
 
-  /* PARSER */
-  // xml body parser is used for webdav methods
-  app.useBodyParser(['application/xml', 'text/xml'])
-  // add webdav methods
-  for (const method of Object.values(HTTP_WEBDAV_METHOD)) {
-    fastifyInstance.addHttpMethod(method, { hasBody: true })
-  }
-  // '*' body parser allow binary data as stream (unlimited body size)
-  fastifyInstance.addContentTypeParser('*', { bodyLimit: 0 }, (_req: FastifyRequest, _payload: FastifyRequest['raw'], done) => done(null))
+  /* WEBDAV BOOTSTRAP RULES */
+  bootstrapWebDAV(app, fastifyInstance)
 
-  // Joplin clients send incorrect `Content-Type` headers when syncing over WebDAV (issue: https://github.com/laurent22/joplin/issues/122499)
-  // This hook intercepts matching requests and sets `application/octet-stream` to ensure compatibility and successful sync.
-  // todo: remove it when fixed on Joplin side
-  fastifyInstance.addHook('onRequest', async (req, _reply) => {
-    if ((req.headers['user-agent'] || '').indexOf('Joplin') !== -1 && req.originalUrl.startsWith(WEBDAV_SPACES[WEBDAV_NS.WEBDAV].route)) {
-      req.headers['content-type'] = 'application/octet-stream'
-    }
-  })
+  /* PARSER */
+  // '*' body parser allow binary data as a stream (unlimited body size)
+  fastifyInstance.addContentTypeParser('*', { bodyLimit: 0 }, (_req: FastifyRequest, _payload: FastifyRequest['raw'], done) => done(null))
 
   /* INTERCEPTORS */
   app.useGlobalInterceptors(
@@ -70,6 +57,7 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
       excludePrefixes: ['_']
     })
   )
+
   /* VALIDATION */
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
 

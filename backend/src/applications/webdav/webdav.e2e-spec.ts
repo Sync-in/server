@@ -6,7 +6,6 @@
 
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { appBootstrap } from '../../app.bootstrap'
-import { dbCloseConnection } from '../../infrastructure/database/utils'
 import { XML_CONTENT_TYPE } from './constants/webdav'
 
 const XML_VERSION_STR = '<?xml version="1.0" encoding="utf-8" standalone="yes"?>'
@@ -21,7 +20,6 @@ describe('WebDAV (e2e)', () => {
   })
 
   afterAll(async () => {
-    await dbCloseConnection(app)
     await app.close()
   })
 
@@ -61,5 +59,127 @@ describe('WebDAV (e2e)', () => {
        </D:propfind>`
     } as any)
     expect(res.statusCode).toEqual(207)
+  })
+
+  describe('PUT with non-XML Content-Types (stream preservation)', () => {
+    const testFilePath = '/webdav/personal/test-content-type.txt'
+    const auth = 'Basic am86cGFzc3dvcmQ='
+
+    afterEach(async () => {
+      // Cleanup: delete the test file if it exists
+      await app.inject({
+        method: 'DELETE',
+        url: testFilePath,
+        headers: { authorization: auth }
+      } as any)
+    })
+
+    it('PUT with application/json should preserve stream and create file with content', async () => {
+      const jsonContent = '{"key":"value","number":42}'
+
+      const putRes = await app.inject({
+        method: 'PUT',
+        url: testFilePath,
+        headers: {
+          authorization: auth,
+          'content-type': 'application/json'
+        },
+        body: jsonContent
+      } as any)
+
+      expect([201, 204]).toContain(putRes.statusCode)
+
+      // Verify the file was created with the correct content
+      const getRes = await app.inject({
+        method: 'GET',
+        url: testFilePath,
+        headers: { authorization: auth }
+      } as any)
+
+      expect(getRes.statusCode).toEqual(200)
+      expect(getRes.body).toEqual(jsonContent)
+      expect(getRes.headers['content-length']).toEqual(String(jsonContent.length))
+    })
+
+    it('PUT with text/plain should preserve stream and create file with content', async () => {
+      const textContent = 'This is plain text content with special chars: éàù'
+
+      const putRes = await app.inject({
+        method: 'PUT',
+        url: testFilePath,
+        headers: {
+          authorization: auth,
+          'content-type': 'text/plain'
+        },
+        body: textContent
+      } as any)
+
+      expect([201, 204]).toContain(putRes.statusCode)
+
+      // Verify the file was created with the correct content
+      const getRes = await app.inject({
+        method: 'GET',
+        url: testFilePath,
+        headers: { authorization: auth }
+      } as any)
+
+      expect(getRes.statusCode).toEqual(200)
+      expect(getRes.body).toEqual(textContent)
+      expect(getRes.headers['content-length']).toEqual(String(Buffer.byteLength(textContent, 'utf8')))
+    })
+
+    it('PUT with text/plain; charset=utf-8 should preserve stream and create file with content', async () => {
+      const textContent = 'Text with charset and emoji: 🚀 ✅'
+
+      const putRes = await app.inject({
+        method: 'PUT',
+        url: testFilePath,
+        headers: {
+          authorization: auth,
+          'content-type': 'text/plain; charset=utf-8'
+        },
+        body: textContent
+      } as any)
+
+      expect([201, 204]).toContain(putRes.statusCode)
+
+      // Verify the file was created with the correct content
+      const getRes = await app.inject({
+        method: 'GET',
+        url: testFilePath,
+        headers: { authorization: auth }
+      } as any)
+
+      expect(getRes.statusCode).toEqual(200)
+      expect(getRes.body).toEqual(textContent)
+      expect(getRes.headers['content-length']).toEqual(String(Buffer.byteLength(textContent, 'utf8')))
+    })
+
+    it('PUT with application/octet-stream should work as expected', async () => {
+      const binaryContent = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+
+      const putRes = await app.inject({
+        method: 'PUT',
+        url: testFilePath,
+        headers: {
+          authorization: auth,
+          'content-type': 'application/octet-stream'
+        },
+        body: binaryContent
+      } as any)
+
+      expect([201, 204]).toContain(putRes.statusCode)
+
+      // Verify the file was created with the correct content
+      const getRes = await app.inject({
+        method: 'GET',
+        url: testFilePath,
+        headers: { authorization: auth }
+      } as any)
+
+      expect(getRes.statusCode).toEqual(200)
+      expect(Buffer.from(getRes.rawPayload)).toEqual(binaryContent)
+      expect(getRes.headers['content-length']).toEqual(String(binaryContent.length))
+    })
   })
 })
