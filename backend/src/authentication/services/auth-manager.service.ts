@@ -106,7 +106,7 @@ export class AuthManager {
 
   async clearCookies(res: FastifyReply) {
     for (const [type, path] of Object.entries(TOKEN_PATHS)) {
-      res.clearCookie(configuration.auth.token[type].name, { path: path, httpOnly: type !== TOKEN_TYPE.CSRF })
+      res.clearCookie(configuration.auth.token[type].name, { path: path })
     }
   }
 

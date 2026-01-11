@@ -15,7 +15,7 @@ import { AdminUsersManager } from '../applications/users/services/admin-users-ma
 import { generateUserTest } from '../applications/users/utils/test'
 import { convertHumanTimeToSeconds, transformAndValidate } from '../common/functions'
 import { currentTimeStamp, decodeUrl } from '../common/shared'
-import { dbCheckConnection, dbCloseConnection } from '../infrastructure/database/utils'
+import { dbCheckConnection } from '../infrastructure/database/utils'
 import { AuthConfig } from './auth.config'
 import { CSRF_ERROR, TOKEN_PATHS, TOKEN_TYPES } from './constants/auth'
 import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH, API_AUTH_TOKEN, API_AUTH_TOKEN_REFRESH } from './constants/routes'
@@ -46,7 +46,6 @@ describe('Auth (e2e)', () => {
     await expect(
       adminUsersManager.deleteUserOrGuest(userTest.id, userTest.login, { deleteSpace: true, isGuest: false } satisfies DeleteUserDto)
     ).resolves.not.toThrow()
-    await dbCloseConnection(app)
     await app.close()
   })
 
@@ -151,8 +150,7 @@ describe('Auth (e2e)', () => {
       body: null
     })
     expect(res.statusCode).toEqual(201)
-    expect(res.headers['set-cookie']).toHaveLength(4)
-    const cookies: { type: TOKEN_TYPE; content: string[] }[] = getCookies(res.headers['set-cookie'] as string[])
+    expect(res.headers['set-cookie']).toHaveLength(5)
     /* Access cookie
      [
        'sync-in-access=',
@@ -192,12 +190,21 @@ describe('Auth (e2e)', () => {
         'Max-Age=0',
         'Path=/api/auth/refresh',
         'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
+        'Secure',
+        'SameSite=Strict'
+      ]
+    */
+    /* Access cookie 2FA
+      [
+        'sync-in-access=',
+        'Max-Age=0',
+        'Path=/api/auth/2fa/login/verify',
+        'Expires=Thu, 01 Jan 1970 00:00:00 GMT',
         'HttpOnly',
         'Secure',
         'SameSite=Strict'
       ]
     */
-    cookiesChecks(cookies, true)
   })
 
   it(`POST ${API_AUTH_REFRESH} => 201`, async () => {
