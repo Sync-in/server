@@ -4,7 +4,7 @@
  * See the LICENSE file for licensing details
  */
 
-import { All, Controller, HttpStatus, Options, Param, Propfind, Req, Res, UseGuards } from '@nestjs/common'
+import { All, Controller, HttpStatus, Options, Param, Propfind, Req, Res, StreamableFile, UseGuards } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { HTTP_METHOD } from '../applications.constants'
 import { SPACE_REPOSITORY } from '../spaces/constants/spaces'
@@ -20,41 +20,45 @@ export class WebDAVController {
   constructor(private readonly webdavMethods: WebDAVMethods) {}
 
   @Options()
-  serverOptions() {
+  serverOptions(): void {
     // OPTIONS method is handled in the `WebDAVProtocolGuard`, return empty response with headers
     return
   }
 
   @Propfind()
-  serverPropFind(@Req() req: FastifyDAVRequest, @Res({ passthrough: true }) res: FastifyReply) {
+  serverPropFind(@Req() req: FastifyDAVRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<string> {
     return this.webdavMethods.propfind(req, res, WEBDAV_NS.SERVER)
   }
 
   @Options(WEBDAV_BASE_PATH)
-  webdavOptions() {
+  webdavOptions(): void {
     // OPTIONS method is handled in the `WebDAVProtocolGuard`, return empty response with headers
     return
   }
 
   @Propfind(WEBDAV_BASE_PATH)
-  async webdavPropfind(@Req() req: FastifyDAVRequest, @Res({ passthrough: true }) res: FastifyReply) {
+  async webdavPropfind(@Req() req: FastifyDAVRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<string> {
     return this.webdavMethods.propfind(req, res, WEBDAV_NS.WEBDAV)
   }
 
   @Options(`${WEBDAV_BASE_PATH}/:repository(^(${WEBDAV_NS.SPACES}|${WEBDAV_NS.TRASH})$)`)
-  repositoriesOptions() {
+  repositoriesOptions(): void {
     // OPTIONS method is handled in the `WebDAVProtocolGuard`
     return
   }
 
   @Propfind(`${WEBDAV_BASE_PATH}/:repository(^(${WEBDAV_NS.SPACES}|${WEBDAV_NS.TRASH})$)`)
-  async repositoriesPropfind(@Req() req: FastifyDAVRequest, @Res({ passthrough: true }) res: FastifyReply, @Param('repository') repository: string) {
+  async repositoriesPropfind(
+    @Req() req: FastifyDAVRequest,
+    @Res({ passthrough: true }) res: FastifyReply,
+    @Param('repository') repository: string
+  ): Promise<string> {
     return this.webdavMethods.propfind(req, res, repository)
   }
 
   @All(`${WEBDAV_BASE_PATH}/*`)
   @UseGuards(SpaceGuard)
-  async files(@Req() req: FastifyDAVRequest, @Res({ passthrough: true }) res: FastifyReply) {
+  async files(@Req() req: FastifyDAVRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<string | StreamableFile> {
     // OPTIONS method is handled in the `WebDAVProtocolGuard`
     switch (req.method) {
       case HTTP_METHOD.PROPFIND:

@@ -8,7 +8,7 @@ import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { appBootstrap } from '../../app.bootstrap'
 import { TokenResponseDto } from '../../authentication/dto/token-response.dto'
 import { AuthManager } from '../../authentication/services/auth-manager.service'
-import { dbCheckConnection, dbCloseConnection } from '../../infrastructure/database/utils'
+import { dbCheckConnection } from '../../infrastructure/database/utils'
 import { API_USERS_AVATAR, API_USERS_ME } from './constants/routes'
 import { USER_ROLE } from './constants/user'
 import { DeleteUserDto } from './dto/delete-user.dto'
@@ -36,7 +36,6 @@ describe('Users (e2e)', () => {
     await expect(
       adminUsersManager.deleteUserOrGuest(userTest.id, userTest.login, { deleteSpace: true, isGuest: false } satisfies DeleteUserDto)
     ).resolves.not.toThrow()
-    await dbCloseConnection(app)
     await app.close()
   })
 
