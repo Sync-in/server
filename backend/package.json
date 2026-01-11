@@ -20,6 +20,7 @@
     "debug:circular:image": "madge ../dist/server/main.js --circular --image ../circular-dependencies.png",
     "format": "prettier --write \\\\\\\"src/**/*.ts\\\\\\\" \\\\\\\"test/**/*.ts\\\\\\\"",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "lint:staged": "git diff --cached --name-only -z --diff-filter=ACM --relative -- . | grep -zE '^(src|apps|libs|test)/.*\\.ts$' | xargs -0 eslint",
     "lint:fix": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "start": "nest start",
     "start:debug": "NODE_ENV=development nest start --debug --watch",

@@ -16,6 +16,7 @@
     "build": "ng build",
     "build:dev": "ng build --configuration development",
     "lint": "ng lint",
+    "lint:staged": "if git diff --cached --name-only --diff-filter=ACM --relative -- . | grep -q .; then ng lint; fi",
     "lint:fix": "ng lint --fix",
     "update:angular": "ng update @angular/cli@latest @angular/core@latest --allow-dirty"
   },

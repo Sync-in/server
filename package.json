@@ -72,13 +72,14 @@
     "frontend"
   ],
   "scripts": {
-    "build": "npm run build -ws",
+    "build": "npm run build --ws",
     "release:build": "npm run build && node scripts/build/release.mjs",
     "release:clean": "rm -rf release",
     "bump:version": "npm run test && commit-and-tag-version",
-    "bump:version:dry": "commit-and-tag-version --dry-run",
-    "lint": "npm -ws run lint",
-    "test": "npm -w backend test",
+    "bump:version:dry": "npm run test && commit-and-tag-version --dry-run",
+    "lint": "npm --ws run lint",
+    "lint:staged": "npm --ws run lint:staged",
+    "test": "npm --ws run lint && npm -w backend test",
     "start": "node dist/server/main.js",
     "reset": "rm -Rf frontend/node_modules frontend/.angular backend/node_modules node_modules .angular; npm cache clean --force",
     "docker:build": "docker build -t $npm_package_name .",
