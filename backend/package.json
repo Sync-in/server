@@ -70,7 +70,6 @@
     "nestjs-pino": "^4.3.0",
     "nodemailer": "^7.0.0",
     "passport": "^0.7.0",
-    "passport-http": "^0.3.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pino-pretty": "^13.0.0",
