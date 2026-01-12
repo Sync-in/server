@@ -1,4 +1,13 @@
 
+## [1.10.1](https://github.com/Sync-in/server/compare/v1.10.0...v1.10.1) (2026-01-12)
+
+
+### Bug Fixes
+
+* **auth:** WebDAV basic auth fails with ":" in password ([#104](https://github.com/Sync-in/server/issues/104)) ([9671b71](https://github.com/Sync-in/server/commit/9671b71e5a4fcbfb659b5eb1e2818f55f3df7976))
+* **backend:comments:** refine file path query for better handling of space roots ([5b0c8ff](https://github.com/Sync-in/server/commit/5b0c8fff0aa3eba9d3e0308e2ae012992f1fa91b))
+* **backend:webdav:** treat PUT requests as binary streams to avoid body parsing ([edc291c](https://github.com/Sync-in/server/commit/edc291ccc634e03843c4db9f7000969e6fc9946f))
+
 ## [1.10.0](https://github.com/Sync-in/server/compare/v1.9.6...v1.10.0) (2026-01-07)
 
 🔥🚀 Collabora Online integration
