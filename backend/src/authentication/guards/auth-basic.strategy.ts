@@ -9,15 +9,15 @@ import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { instanceToPlain, plainToInstance } from 'class-transformer'
 import { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
-import { BasicStrategy } from 'passport-http'
 import { UserModel } from '../../applications/users/models/user.model'
 import { SERVER_NAME } from '../../common/shared'
 import { Cache } from '../../infrastructure/cache/services/cache.service'
 import { AUTH_SCOPE } from '../constants/scope'
 import { AuthMethod } from '../models/auth-method'
+import { HttpBasicStrategy } from './implementations/http-basic.strategy'
 
 @Injectable()
-export class AuthBasicStrategy extends PassportStrategy(BasicStrategy, 'basic') implements AbstractStrategy {
+export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basic') implements AbstractStrategy {
   private readonly CACHE_TTL = 900
   private readonly CACHE_KEY_PREFIX = 'auth-webdav'
 
@@ -41,7 +41,7 @@ export class AuthBasicStrategy extends PassportStrategy(BasicStrategy, 'basic') 
     }
     if (userFromCache !== undefined) {
       // cached
-      // warning: plainToInstance do not use constructor to instantiate class
+      // warning: plainToInstance do not use constructor to instantiate the class
       return plainToInstance(UserModel, userFromCache)
     }
     const userFromDB: UserModel = await this.authMethod.validateUser(loginOrEmail, password, req.ip, AUTH_SCOPE.WEBDAV)

@@ -83,6 +83,24 @@ describe(AuthBasicGuard.name, () => {
     expect(userTest.password).toBeUndefined()
   })
 
+  it('should validate the user authentication with password containing colon', async () => {
+    const passwordWithColon = 'pass:word:123'
+    const userWithColonPassword = new UserModel({ ...generateUserTest(), password: passwordWithColon }, false)
+    const encodedAuthWithColon = Buffer.from(`${userWithColonPassword.login}:${passwordWithColon}`).toString('base64')
+
+    authMethod.validateUser = jest.fn().mockImplementation((login: string, password: string) => {
+      expect(login).toBe(userWithColonPassword.login)
+      expect(password).toBe(passwordWithColon)
+      return userWithColonPassword
+    })
+    context.switchToHttp().getRequest.mockReturnValue({
+      raw: { user: '' },
+      headers: { authorization: `Basic ${encodedAuthWithColon}` }
+    })
+    expect(await authBasicGuard.canActivate(context)).toBe(true)
+    expect(userWithColonPassword.password).toBeUndefined()
+  })
+
   it('should validate the user authentication with cache', async () => {
     cache.get = jest.fn().mockReturnValueOnce(userTest)
     context.switchToHttp().getRequest.mockReturnValue({
