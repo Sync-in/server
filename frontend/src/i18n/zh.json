@@ -632,5 +632,6 @@
   "Ask Me": "询问我",
   "Used when both editors support the file type.": "当两个编辑器都支持该文件类型时使用。",
   "Enable content indexation for personal files.": "启用个人文件内容索引。",
-  "Preferences": "偏好设置"
+  "Preferences": "偏好设置",
+  "of": "的"
 }

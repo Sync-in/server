@@ -632,5 +632,6 @@
   "Ask Me": "Спрашивать каждый раз",
   "Used when both editors support the file type.": "Используется, когда оба редактора поддерживают тип файла.",
   "Enable content indexation for personal files.": "Включить индексацию содержимого для личных файлов.",
-  "Preferences": "Настройки"
+  "Preferences": "Настройки",
+  "of": "из"
 }

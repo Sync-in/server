@@ -51,7 +51,7 @@
       <fa-icon [icon]="icons.faExpand"></fa-icon>
     </button>
   </div>
-  <div>{{ imageIndex() + 1 }} of {{ imageCount() }}</div>
+  <div class="px-2">{{ imageIndex() + 1 }}<span class="px-1" l10nTranslate>of</span>{{ imageCount() }}</div>
   <button
     btnCheckbox
     [(ngModel)]="isInfoboxOpen"

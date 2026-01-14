@@ -632,5 +632,6 @@
   "Ask Me": "毎回確認",
   "Used when both editors support the file type.": "両方のエディタがファイルタイプをサポートしている場合に使用されます。",
   "Enable content indexation for personal files.": "個人ファイルのコンテンツインデックス作成を有効にする。",
-  "Preferences": "環境設定"
+  "Preferences": "環境設定",
+  "of": "の"
 }

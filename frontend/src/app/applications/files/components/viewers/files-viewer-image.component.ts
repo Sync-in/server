@@ -9,7 +9,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAngleLeft, faAngleRight, faExpand, faInfo, faPlay, faStop } from '@fortawesome/free-solid-svg-icons'
-import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
+import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { Subscription, timer } from 'rxjs'
@@ -17,7 +17,7 @@ import { FileModel } from '../../models/file.model'
 
 @Component({
   selector: 'app-files-viewer-image',
-  imports: [FormsModule, TooltipModule, FaIconComponent, ButtonCheckboxDirective, L10nTranslatePipe],
+  imports: [FormsModule, TooltipModule, FaIconComponent, ButtonCheckboxDirective, L10nTranslatePipe, L10nTranslateDirective],
   templateUrl: 'files-viewer-image.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })

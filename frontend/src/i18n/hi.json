@@ -632,5 +632,6 @@
   "Ask Me": "मुझसे पूछें",
   "Used when both editors support the file type.": "जब दोनों संपादक फ़ाइल प्रकार का समर्थन करते हैं तो उपयोग किया जाता है।",
   "Enable content indexation for personal files.": "व्यक्तिगत फ़ाइलों के लिए सामग्री अनुक्रमण सक्षम करें।",
-  "Preferences": "वरीयताएँ"
+  "Preferences": "वरीयताएँ",
+  "of": "का"
 }

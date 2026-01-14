@@ -632,5 +632,6 @@
   "Ask Me": "Bana sor",
   "Used when both editors support the file type.": "Her iki editör de dosya türünü desteklediğinde kullanılır.",
   "Enable content indexation for personal files.": "Kişisel dosyalar için içerik indekslemeyi etkinleştir.",
-  "Preferences": "Tercihler"
+  "Preferences": "Tercihler",
+  "of": "/"
 }

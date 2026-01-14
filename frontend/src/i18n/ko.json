@@ -632,5 +632,6 @@
   "Ask Me": "매번 물어보기",
   "Used when both editors support the file type.": "두 편집기 모두 파일 유형을 지원할 때 사용됩니다.",
   "Enable content indexation for personal files.": "개인 파일에 대한 콘텐츠 인덱싱을 활성화합니다.",
-  "Preferences": "환경 설정"
+  "Preferences": "환경 설정",
+  "of": "의"
 }

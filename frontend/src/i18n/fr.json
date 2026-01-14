@@ -632,5 +632,6 @@
   "Ask Me": "Me demander",
   "Used when both editors support the file type.": "Utilisé lorsque les deux éditeurs prennent en charge le type de fichier.",
   "Enable content indexation for personal files.": "Activer l'indexation du contenu pour les fichiers personnels.",
-  "Preferences": "Préférences"
+  "Preferences": "Préférences",
+  "of": "de"
 }
