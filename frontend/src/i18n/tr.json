@@ -565,7 +565,6 @@
   "System requirements": "Sistem gereksinimleri",
   "Feature not enabled": "Özellik etkin değil",
   "Website": "Web sitesi",
-  "Documentation": "Dokümantasyon",
   "Versions": "Sürümler",
   "Security": "Güvenlik",
   "Recovery code": "Kurtarma kodu",
@@ -633,5 +632,7 @@
   "Used when both editors support the file type.": "Her iki editör de dosya türünü desteklediğinde kullanılır.",
   "Enable content indexation for personal files.": "Kişisel dosyalar için içerik indekslemeyi etkinleştir.",
   "Preferences": "Tercihler",
-  "of": "/"
+  "of": "/",
+  "Sidebar auto-hide enabled": "Kenar çubuğu otomatik gizleme etkin",
+  "Sidebar pinned": "Kenar çubuğu sabitlendi"
 }

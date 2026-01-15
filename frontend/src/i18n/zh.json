@@ -565,7 +565,6 @@
   "System requirements": "系统要求",
   "Feature not enabled": "功能未启用",
   "Website": "网站",
-  "Documentation": "文档",
   "Versions": "版本",
   "Security": "安全",
   "Recovery code": "恢复代码",
@@ -633,5 +632,7 @@
   "Used when both editors support the file type.": "当两个编辑器都支持该文件类型时使用。",
   "Enable content indexation for personal files.": "启用个人文件内容索引。",
   "Preferences": "偏好设置",
-  "of": "的"
+  "of": "的",
+  "Sidebar auto-hide enabled": "侧边栏自动隐藏已启用",
+  "Sidebar pinned": "侧边栏已固定"
 }

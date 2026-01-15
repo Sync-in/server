@@ -8,7 +8,7 @@ import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCircleHalfStroke, faCog, faPowerOff, faUserAlt, faUserSecret } from '@fortawesome/free-solid-svg-icons'
+import { faCircleHalfStroke, faCog, faPowerOff, faThumbTack, faThumbTackSlash, faUserAlt, faUserSecret } from '@fortawesome/free-solid-svg-icons'
 import { APP_URL } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { Subscription } from 'rxjs'
@@ -36,11 +36,11 @@ export class UserProfileComponent implements OnDestroy {
   protected readonly USER_PATH = USER_PATH
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected appBaseUrl = `${APP_URL.WEBSITE}`
-  protected readonly icons = { faUserAlt, faCircleHalfStroke, faCog, faPowerOff, faUserSecret }
+  protected readonly icons = { faUserAlt, faCircleHalfStroke, faCog, faPowerOff, faUserSecret, faThumbTack, faThumbTackSlash }
   protected user: UserType
   protected userAvatar: string = null
-  protected readonly layout = inject(LayoutService)
   protected readonly themeLight = themeLight
+  protected readonly layout = inject(LayoutService)
   private readonly authService = inject(AuthService)
   private readonly userService = inject(UserService)
   private subscriptions: Subscription[] = []
@@ -72,7 +72,7 @@ export class UserProfileComponent implements OnDestroy {
     this.layout.toggleRSideBar(false)
   }
 
-  openLink(urlType: 'website' | 'news' | 'docs' | 'versions' | 'support') {
+  openLink(urlType: 'website' | 'news' | 'versions' | 'support') {
     switch (urlType) {
       case 'website':
         this.layout.openUrl(this.appBaseUrl)

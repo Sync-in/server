@@ -565,7 +565,6 @@
   "System requirements": "Wymagania systemowe",
   "Feature not enabled": "Funkcja nie jest włączona",
   "Website": "Strona internetowa",
-  "Documentation": "Dokumentacja",
   "Versions": "Wersje",
   "Security": "Bezpieczeństwo",
   "Recovery code": "Kod odzyskiwania",
@@ -633,5 +632,7 @@
   "Used when both editors support the file type.": "Używane, gdy oba edytory obsługują typ pliku.",
   "Enable content indexation for personal files.": "Włącz indeksowanie treści dla plików osobistych.",
   "Preferences": "Preferencje",
-  "of": "z"
+  "of": "z",
+  "Sidebar auto-hide enabled": "Włączono automatyczne ukrywanie panelu bocznego",
+  "Sidebar pinned": "Panel boczny przypięty"
 }

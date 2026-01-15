@@ -24,7 +24,7 @@ import { UserAvatarComponent } from '../../../users/components/utils/user-avatar
 import { USER_PATH } from '../../../users/user.constants'
 import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
-import { FileLockFormatPipe, fileLockPropsToString } from '../utils/file-lock.utils'
+import { FileLockFormatPipe } from '../utils/file-lock.utils'
 import { FilePermissionsComponent } from '../utils/file-permissions.component'
 import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.component'
 
@@ -63,7 +63,6 @@ export class FilesSelectionComponent {
     faArrowsAlt,
     faSpinner
   }
-  protected readonly fileLockPropsToString = fileLockPropsToString
   private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)
   private readonly filesService = inject(FilesService)

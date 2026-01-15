@@ -5,7 +5,7 @@
  */
 
 import { HttpErrorResponse } from '@angular/common/http'
-import { inject, Injectable, NgZone } from '@angular/core'
+import { inject, Injectable, NgZone, signal, WritableSignal } from '@angular/core'
 import { Title } from '@angular/platform-browser'
 import { FaConfig } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -59,6 +59,7 @@ export class LayoutService {
   // Modal section
   public windows = new BehaviorSubject<AppWindow[]>([]) // minimized modals
   public modalRefs = new Map<number | string, BsModalRef>()
+  public collapseRSideBarPreference: WritableSignal<boolean> = signal(this.getAutoCollapseRSideBarPreference())
   // Services
   private readonly title = inject(Title)
   private readonly ngZone = inject(NgZone)
@@ -71,6 +72,7 @@ export class LayoutService {
   // States
   private readonly screenMediumSize = 767 // px
   private readonly screenSmallSize = 576 // px
+  private collapseRSideBarTimeoutId: ReturnType<typeof setTimeout> | null = null
   // Network events
   private _networkIsOnline = new BehaviorSubject<boolean>(navigator.onLine)
   public networkIsOnline: Observable<boolean> = this._networkIsOnline
@@ -79,6 +81,7 @@ export class LayoutService {
   private preferTheme = fromEvent(window.matchMedia('(prefers-color-scheme: dark)'), 'change').pipe(
     map((e: any) => (e.matches ? themeDark : themeLight))
   )
+  // Modal options
   private readonly modalOptions: ModalOptions = {
     animated: true,
     keyboard: true,
@@ -117,6 +120,20 @@ export class LayoutService {
   toggleRSideBar(show: boolean) {
     this.rightSideBarIsOpen.next(show)
     this.toggleRightSideBar.next(show)
+
+    // Cancel the current timeout if it exists
+    if (this.collapseRSideBarTimeoutId) {
+      clearTimeout(this.collapseRSideBarTimeoutId)
+      this.collapseRSideBarTimeoutId = null
+    }
+    if (show && this.collapseRSideBarPreference()) {
+      this.collapseRSideBarTimeoutId = setTimeout(() => {
+        if (!this.collapseRSideBarPreference()) return
+        this.rightSideBarIsOpen.next(false)
+        this.toggleRightSideBar.next(false)
+        this.collapseRSideBarTimeoutId = null
+      }, 10_000)
+    }
   }
 
   setTabsRSideBar(name: TAB_GROUP, tabs?: TabMenu[]) {
@@ -291,6 +308,14 @@ export class LayoutService {
     this.closeDialog(null, null, true)
   }
 
+  setAutoCollapseRSideBarPreference(preference: boolean) {
+    localStorage.setItem('autoCollapseRSideBar', preference ? 'on' : 'off')
+    this.collapseRSideBarPreference.set(preference)
+    if (preference) {
+      this.toggleRSideBar(true)
+    }
+  }
+
   private openModalWithEffect(modal: ModalComponent) {
     this.bsModal['_renderer'].setAttribute(modal['instance']._element.nativeElement, 'aria-hidden', 'false')
     this.bsModal['_renderer'].setStyle(modal['instance']._element.nativeElement, 'display', 'block')
@@ -345,5 +370,9 @@ export class LayoutService {
     this.electron.send(EVENT.MISC.SWITCH_THEME, theme)
     this.ngZone.run(() => this.switchTheme.next(theme))
     sessionStorage.setItem('themeMode', theme)
+  }
+
+  private getAutoCollapseRSideBarPreference(): boolean {
+    return localStorage.getItem('autoCollapseRSideBar') === 'on'
   }
 }

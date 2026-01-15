@@ -29,7 +29,7 @@
     </div>
   </div>
   <div appAutoResize [useMaxHeight]="false" class="d-flex flex-column">
-    <div class="user-header py-3">
+    <div class="user-header py-3 px-3">
       <div class="d-flex flex-column justify-content-center me-2">
         <div class="avatar-lg">
           <img class="avatar-img" [src]="userAvatar" alt="">
@@ -59,14 +59,17 @@
         <div class="mb-1">
           <img alt="" height="30" [src]="this.layout.switchTheme.getValue() === themeLight ? logoUrl: logoDarkUrl">
         </div>
-        <div>
+        <div class="d-flex">
           <a class="link-primary cursor-pointer" (click)="openLink('website')" l10nTranslate>Website</a>
-          <span>&nbsp;|&nbsp;</span>
-          <a class="link-primary cursor-pointer" (click)="openLink('docs')" l10nTranslate>Documentation</a>
           <span>&nbsp;|&nbsp;</span>
           <a class="link-primary cursor-pointer" (click)="openLink('versions')" l10nTranslate>Versions</a>
           <span>&nbsp;|&nbsp;</span>
           <a class="link-primary cursor-pointer" (click)="openLink('support')"> 💛</a>
+          <fa-icon class="ms-auto fs-xs cursor-pointer"
+                   (click)="layout.setAutoCollapseRSideBarPreference(!layout.collapseRSideBarPreference())"
+                   [title]="(layout.collapseRSideBarPreference() ? 'Sidebar auto-hide enabled' : 'Sidebar pinned') | translate:locale.language"
+                   [icon]="layout.collapseRSideBarPreference() ? icons.faThumbTackSlash : icons.faThumbTack">
+          </fa-icon>
         </div>
       </div>
     </div>

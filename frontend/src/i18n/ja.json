@@ -565,7 +565,6 @@
   "System requirements": "システム要件",
   "Feature not enabled": "機能が有効ではありません",
   "Website": "ウェブサイト",
-  "Documentation": "ドキュメント",
   "Versions": "バージョン",
   "Security": "セキュリティ",
   "Recovery code": "復旧コード",
@@ -633,5 +632,7 @@
   "Used when both editors support the file type.": "両方のエディタがファイルタイプをサポートしている場合に使用されます。",
   "Enable content indexation for personal files.": "個人ファイルのコンテンツインデックス作成を有効にする。",
   "Preferences": "環境設定",
-  "of": "の"
+  "of": "の",
+  "Sidebar auto-hide enabled": "サイドバー自動非表示が有効",
+  "Sidebar pinned": "サイドバー固定"
 }

@@ -565,7 +565,6 @@
   "System requirements": "Systemanforderungen",
   "Feature not enabled": "Funktion nicht aktiviert",
   "Website": "Website",
-  "Documentation": "Dokumentation",
   "Versions": "Versionen",
   "Security": "Sicherheit",
   "Recovery code": "Wiederherstellungscode",
@@ -633,5 +632,7 @@
   "Used when both editors support the file type.": "Wird verwendet, wenn beide Editoren den Dateityp unterstützen.",
   "Enable content indexation for personal files.": "Inhaltsindexierung für persönliche Dateien aktivieren.",
   "Preferences": "Einstellungen",
-  "of": "von"
+  "of": "von",
+  "Sidebar auto-hide enabled": "Automatisches Ausblenden der Seitenleiste aktiviert",
+  "Sidebar pinned": "Seitenleiste angeheftet"
 }

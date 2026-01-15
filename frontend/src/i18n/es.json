@@ -565,7 +565,6 @@
   "System requirements": "Requisitos del sistema",
   "Feature not enabled": "Funcionalidad no habilitada",
   "Website": "Sitio web",
-  "Documentation": "Documentación",
   "Versions": "Versiones",
   "Security": "Seguridad",
   "Recovery code": "Código de recuperación",
@@ -633,5 +632,7 @@
   "Used when both editors support the file type.": "Se usa cuando ambos editores admiten el tipo de archivo.",
   "Enable content indexation for personal files.": "Habilitar la indexación de contenido para archivos personales.",
   "Preferences": "Preferencias",
-  "of": "de"
+  "of": "de",
+  "Sidebar auto-hide enabled": "Ocultación automática de la barra lateral activada",
+  "Sidebar pinned": "Barra lateral fijada"
 }

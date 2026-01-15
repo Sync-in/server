@@ -565,7 +565,6 @@
   "System requirements": "सिस्टम आवश्यकताएँ",
   "Feature not enabled": "विशेषता सक्षम नहीं है",
   "Website": "वेबसाइट",
-  "Documentation": "दस्तावेज़ीकरण",
   "Versions": "संस्करण",
   "Security": "सुरक्षा",
   "Recovery code": "रिकवरी कोड",
@@ -633,5 +632,7 @@
   "Used when both editors support the file type.": "जब दोनों संपादक फ़ाइल प्रकार का समर्थन करते हैं तो उपयोग किया जाता है।",
   "Enable content indexation for personal files.": "व्यक्तिगत फ़ाइलों के लिए सामग्री अनुक्रमण सक्षम करें।",
   "Preferences": "वरीयताएँ",
-  "of": "का"
+  "of": "का",
+  "Sidebar auto-hide enabled": "साइडबार स्वतः छिपाना सक्षम",
+  "Sidebar pinned": "साइडबार पिन किया गया"
 }

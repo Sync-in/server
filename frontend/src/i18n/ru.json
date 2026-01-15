@@ -565,7 +565,6 @@
   "System requirements": "Системные требования",
   "Feature not enabled": "Функция не включена",
   "Website": "Сайт",
-  "Documentation": "Документация",
   "Versions": "Версии",
   "Security": "Безопасность",
   "Recovery code": "Код восстановления",
@@ -633,5 +632,7 @@
   "Used when both editors support the file type.": "Используется, когда оба редактора поддерживают тип файла.",
   "Enable content indexation for personal files.": "Включить индексацию содержимого для личных файлов.",
   "Preferences": "Настройки",
-  "of": "из"
+  "of": "из",
+  "Sidebar auto-hide enabled": "Автоскрытие боковой панели включено",
+  "Sidebar pinned": "Боковая панель закреплена"
 }
