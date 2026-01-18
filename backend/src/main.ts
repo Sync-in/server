@@ -20,6 +20,11 @@ async function bootstrap() {
       port: configuration.server.port
     },
     (error, address) => {
+      if (configuration.server.host === '0.0.0.0') {
+        const url = new URL(address)
+        url.hostname = '0.0.0.0'
+        address = url.toString()
+      }
       if (error) {
         logger.error(`Server listening error at ${address} : ${error}`, 'HTTP')
         process.exit(1)
