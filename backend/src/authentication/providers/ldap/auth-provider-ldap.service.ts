@@ -16,6 +16,7 @@ import { comparePassword, splitFullName } from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
 import type { AUTH_SCOPE } from '../../constants/scope'
 import { AuthProvider } from '../auth-providers.models'
+import type { AuthMethodLDAPConfig } from './auth-ldap.config'
 import { ALL_LDAP_ATTRIBUTES, LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
 
 type LdapUserEntry = Entry & Record<LDAP_LOGIN_ATTR | (typeof LDAP_COMMON_ATTR)[keyof typeof LDAP_COMMON_ATTR], string>
@@ -23,7 +24,7 @@ type LdapUserEntry = Entry & Record<LDAP_LOGIN_ATTR | (typeof LDAP_COMMON_ATTR)[
 @Injectable()
 export class AuthProviderLDAP implements AuthProvider {
   private readonly logger = new Logger(AuthProviderLDAP.name)
-  private readonly ldapConfig = configuration.auth.ldap
+  private readonly ldapConfig: AuthMethodLDAPConfig = configuration.auth.ldap
   private readonly isAD = this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.SAM || this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN
   private clientOptions: ClientOptions = { timeout: 6000, connectTimeout: 6000, url: '' }
 
@@ -36,38 +37,49 @@ export class AuthProviderLDAP implements AuthProvider {
     // Find user from his login or email
     let user: UserModel = await this.usersManager.findUser(this.dbLogin(login), false)
     if (user) {
-      if (user.isGuest) {
-        // Allow guests to be authenticated from db and check if the current user is defined as active
-        return this.usersManager.logUser(user, password, ip)
+      if (user.isGuest || scope) {
+        // Allow local password authentication for guest users and application scopes (app passwords)
+        return this.usersManager.logUser(user, password, ip, scope)
       }
       if (!user.isActive) {
         this.logger.error(`${this.validateUser.name} - user *${user.login}* is locked`)
         throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
       }
     }
-    // If a user was found, use the stored login. This allows logging in with an email.
-    const entry: false | LdapUserEntry = await this.checkAuth(user?.login || login, password)
+    let ldapErrorMessage: string
+    let entry: false | LdapUserEntry = false
+    try {
+      // If a user was found, use the stored login. This allows logging in with an email.
+      entry = await this.checkAuth(user?.login || login, password)
+    } catch (e) {
+      ldapErrorMessage = e.message
+    }
+
+    // LDAP auth failed or exception raised
     if (entry === false) {
-      // LDAP auth failed
-      if (user) {
-        let authSuccess = false
-        if (scope) {
-          // Try user app password
-          authSuccess = await this.usersManager.validateAppPassword(user, password, ip, scope)
-        }
-        this.usersManager.updateAccesses(user, ip, authSuccess).catch((e: Error) => this.logger.error(`${this.validateUser.name} : ${e}`))
-        if (authSuccess) {
-          // Logged with app password
-          return user
-        }
+      // If LDAP is unavailable (connectivity/service error), allow local password fallback.
+      // Allow local password authentication for:
+      // - admin users (break-glass access)
+      // - regular users when password authentication fallback is enabled
+      if (user && Boolean(ldapErrorMessage) && (user.isAdmin || this.ldapConfig.enablePasswordAuthFallback)) {
+        const localUser = await this.usersManager.logUser(user, password, ip)
+        if (localUser) return localUser
       }
+
+      if (ldapErrorMessage) {
+        throw new HttpException(ldapErrorMessage, HttpStatus.SERVICE_UNAVAILABLE)
+      }
+
       return null
-    } else if (!entry[this.ldapConfig.attributes.login] || !entry[this.ldapConfig.attributes.email]) {
+    }
+
+    if (!entry[this.ldapConfig.attributes.login] || !entry[this.ldapConfig.attributes.email]) {
       this.logger.error(`${this.validateUser.name} - required ldap fields are missing : 
       [${this.ldapConfig.attributes.login}, ${this.ldapConfig.attributes.email}] => 
       (${JSON.stringify(entry)})`)
       return null
     }
+
     const identity = this.createIdentity(entry, password)
     user = await this.updateOrCreateUser(identity, user)
     this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error(`${this.validateUser.name} : ${e}`))
@@ -103,8 +115,11 @@ export class AuthProviderLDAP implements AuthProvider {
         await client.unbind()
       }
     }
-    if (error && CONNECT_ERROR_CODE.has(error.code)) {
-      throw new HttpException('Authentication service error', HttpStatus.INTERNAL_SERVER_ERROR)
+    if (error) {
+      this.logger.error(`${this.checkAuth.name} - ${error}`)
+      if (CONNECT_ERROR_CODE.has(error.code)) {
+        throw new Error('Authentication service error')
+      }
     }
     return false
   }

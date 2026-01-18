@@ -109,17 +109,17 @@ export class AuthConfig {
   @Type(() => AuthTokenConfig)
   token: AuthTokenConfig
 
-  @ValidateIf((o: AuthConfig) => o.method === 'ldap')
+  @ValidateIf((o: AuthConfig) => o.method === AUTH_PROVIDER.LDAP)
   @IsDefined()
   @IsObject()
   @ValidateNested()
   @Type(() => AuthMethodLDAPConfig)
   ldap: AuthMethodLDAPConfig
 
-  @ValidateIf((o: AuthConfig) => o.method === 'oidc')
+  @ValidateIf((o: AuthConfig) => o.method === AUTH_PROVIDER.OIDC)
   @IsDefined()
   @IsObject()
   @ValidateNested()
   @Type(() => AuthMethodOIDCConfig)
-  oidc: AuthMethodOIDCConfig = new AuthMethodOIDCConfig()
+  oidc: AuthMethodOIDCConfig
 }

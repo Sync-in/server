@@ -8,6 +8,7 @@ import { Transform, Type } from 'class-transformer'
 import {
   ArrayNotEmpty,
   IsArray,
+  IsBoolean,
   IsDefined,
   IsEnum,
   IsNotEmpty,
@@ -64,4 +65,8 @@ export class AuthMethodLDAPConfig {
   @IsOptional()
   @IsString()
   netbiosName?: string
+
+  @IsOptional()
+  @IsBoolean()
+  enablePasswordAuthFallback? = true
 }

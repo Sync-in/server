@@ -135,6 +135,11 @@ auth:
     upnSuffix:
     # netbiosName: NetBIOS domain name used with `sAMAccountName` to build legacy logins (e.g., `SYNC_IN`\user)
     netbiosName:
+    # enablePasswordAuthFallback: Enable local password authentication as a fallback when the LDAP authentication service is unavailable.
+    # This fallback applies only to existing users and is NOT triggered when credentials are invalid.
+    # Users must have signed in at least once.
+    # default: true
+    enablePasswordAuthFallback: true
   oidc:
     # issuerUrl: The URL of the OIDC provider's discovery endpoint (e.g., https://accounts.google.com, https://login.microsoftonline.com/tenant-id/v2.0)
     # The server will automatically discover the authorization, token, userinfo, and logout endpoints
@@ -167,6 +172,11 @@ auth:
     # When disabled, only existing users are allowed to authenticate via OIDC.
     # default: true
     autoCreateUser: true
+    # enablePasswordAuthentication: Enable local password-based authentication (login or email/password).
+    # When enabled, users can sign in with their Sync-in password in addition to OIDC authentication.
+    # Users must have signed in at least once and have a local password set.
+    # default: true
+    enablePasswordAuth: true
     # skipSubjectCheck: Disable verification that the `sub` claim returned by the UserInfo endpoint
     # matches the `sub` claim from the ID token.
     # Set to true only for non-compliant or legacy OIDC providers.

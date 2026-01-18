@@ -40,6 +40,10 @@ export class AuthMethodOIDCConfig {
 
   @IsOptional()
   @IsBoolean()
+  enablePasswordAuth? = true
+
+  @IsOptional()
+  @IsBoolean()
   skipSubjectCheck? = false
 
   @IsOptional()

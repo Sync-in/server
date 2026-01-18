@@ -71,7 +71,7 @@ export class UsersManager {
     return user ? new UserModel(user, removePassword) : null
   }
 
-  async logUser(user: UserModel, password: string, ip: string, scope?: AUTH_SCOPE): Promise<UserModel> {
+  async logUser(user: UserModel, password: string, ip: string, scope?: AUTH_SCOPE): Promise<UserModel | null> {
     this.validateUserAccess(user, ip)
     let authSuccess: boolean = await comparePassword(password, user.password)
     if (!authSuccess && scope) {

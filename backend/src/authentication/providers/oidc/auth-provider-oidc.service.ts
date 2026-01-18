@@ -35,7 +35,7 @@ import type { AUTH_SCOPE } from '../../constants/scope'
 import { TOKEN_TYPE } from '../../interfaces/token.interface'
 import { AUTH_PROVIDER } from '../auth-providers.constants'
 import { AuthProvider } from '../auth-providers.models'
-import { AuthMethodOIDCConfig } from './auth-oidc.config'
+import type { AuthMethodOIDCConfig } from './auth-oidc.config'
 import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint } from './auth-oidc.constants'
 
 @Injectable()
@@ -160,7 +160,6 @@ export class AuthProviderOIDC implements AuthProvider {
   }
 
   async validateUser(login: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
-    // TODO: should not validate password for OIDC users
     // Find user from login or email
     const user: UserModel = await this.usersManager.findUser(login, false)
 
@@ -168,26 +167,13 @@ export class AuthProviderOIDC implements AuthProvider {
       return null
     }
 
-    if (user.isGuest) {
-      // Allow guests to be authenticated from db
-      return this.usersManager.logUser(user, password, ip)
-    }
-
-    if (!user.isActive) {
-      this.logger.error(`${this.validateUser.name} - user *${user.login}* is locked`)
-      throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
-    }
-
-    // For OIDC users, only allow app password authentication
-    let authSuccess = false
-    if (scope) {
-      authSuccess = await this.usersManager.validateAppPassword(user, password, ip, scope)
-    }
-
-    this.usersManager.updateAccesses(user, ip, authSuccess).catch((e: Error) => this.logger.error(`${this.validateUser.name} : ${e}`))
-
-    if (authSuccess) {
-      return user
+    if (user.isGuest || user.isAdmin || scope || this.oidcConfig.enablePasswordAuth) {
+      // Allow local password authentication for:
+      // - guest users
+      // - admin users (break-glass access)
+      // - application scopes (app passwords)
+      // - regular users when password authentication is enabled
+      return this.usersManager.logUser(user, password, ip, scope)
     }
 
     return null
@@ -199,7 +185,7 @@ export class AuthProviderOIDC implements AuthProvider {
       const apiIndex = url.pathname.indexOf(AUTH_ROUTE.BASE)
       this.frontendBaseUrl = apiIndex >= 0 ? `${url.origin}${url.pathname.slice(0, apiIndex)}` : url.origin
     }
-    const url = new URL('/#/', this.frontendBaseUrl)
+    const url = new URL(this.frontendBaseUrl)
     const params = new URLSearchParams({
       [AUTH_PROVIDER.OIDC]: 'true',
       [`${TOKEN_TYPE.ACCESS}_expiration`]: `${accessExpiration}`,
