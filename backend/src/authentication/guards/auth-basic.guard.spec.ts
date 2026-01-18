@@ -12,14 +12,14 @@ import { UserModel } from '../../applications/users/models/user.model'
 import { generateUserTest } from '../../applications/users/utils/test'
 import { WEBDAV_BASE_PATH } from '../../applications/webdav/constants/routes'
 import { Cache } from '../../infrastructure/cache/services/cache.service'
-import { AuthMethod } from '../models/auth-method'
+import { AuthProvider } from '../providers/auth-providers.models'
 import { AuthBasicGuard } from './auth-basic.guard'
 import { AuthBasicStrategy } from './auth-basic.strategy'
 
 describe(AuthBasicGuard.name, () => {
   let authBasicGuard: AuthBasicGuard
   let authBasicStrategy: AuthBasicStrategy
-  let authMethod: AuthMethod
+  let authMethod: AuthProvider
   let cache: Cache
   let userTest: UserModel
   let encodedAuth: string
@@ -31,7 +31,7 @@ describe(AuthBasicGuard.name, () => {
         AuthBasicGuard,
         AuthBasicStrategy,
         {
-          provide: AuthMethod,
+          provide: AuthProvider,
           useValue: {
             validateUser: async () => null
           }
@@ -56,7 +56,7 @@ describe(AuthBasicGuard.name, () => {
 
     authBasicGuard = module.get<AuthBasicGuard>(AuthBasicGuard)
     authBasicStrategy = module.get<AuthBasicStrategy>(AuthBasicStrategy)
-    authMethod = module.get<AuthMethod>(AuthMethod)
+    authMethod = module.get<AuthProvider>(AuthProvider)
     cache = module.get<Cache>(Cache)
     userTest = new UserModel(generateUserTest(), false)
     encodedAuth = Buffer.from(`${userTest.login}:${userTest.password}`).toString('base64')

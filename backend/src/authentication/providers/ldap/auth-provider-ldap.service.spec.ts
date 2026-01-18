@@ -13,8 +13,8 @@ import { AdminUsersManager } from '../../../applications/users/services/admin-us
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import * as commonFunctions from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
-import { LDAP_LOGIN_ATTR } from '../../constants/auth-ldap'
-import { AuthMethodLdapService } from './auth-method-ldap.service'
+import { LDAP_LOGIN_ATTR } from './auth-ldap.constants'
+import { AuthProviderLDAP } from './auth-provider-ldap.service'
 
 // Mock ldapts Client to simulate LDAP behaviors
 jest.mock('ldapts', () => {
@@ -61,8 +61,8 @@ const buildUser = (overrides: Partial<UserModel> = {}) =>
 
 // --------------------------
 
-describe(AuthMethodLdapService.name, () => {
-  let authMethodLdapService: AuthMethodLdapService
+describe(AuthProviderLDAP.name, () => {
+  let authMethodLdapService: AuthProviderLDAP
   let usersManager: Mocked<UsersManager>
   let adminUsersManager: Mocked<AdminUsersManager>
   const ldapClient = {
@@ -89,7 +89,7 @@ describe(AuthMethodLdapService.name, () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AuthMethodLdapService,
+        AuthProviderLDAP,
         {
           provide: UsersManager,
           useValue: {
@@ -111,7 +111,7 @@ describe(AuthMethodLdapService.name, () => {
     }).compile()
 
     module.useLogger(['fatal'])
-    authMethodLdapService = module.get<AuthMethodLdapService>(AuthMethodLdapService)
+    authMethodLdapService = module.get<AuthProviderLDAP>(AuthProviderLDAP)
     adminUsersManager = module.get<Mocked<AdminUsersManager>>(AdminUsersManager)
     usersManager = module.get<Mocked<UsersManager>>(UsersManager)
   })

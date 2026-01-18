@@ -6,8 +6,8 @@
 
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { appBootstrap } from '../../app.bootstrap'
+import { AuthManager } from '../../authentication/auth.service'
 import { TokenResponseDto } from '../../authentication/dto/token-response.dto'
-import { AuthManager } from '../../authentication/services/auth-manager.service'
 import { dbCheckConnection } from '../../infrastructure/database/utils'
 import { API_USERS_AVATAR, API_USERS_ME } from './constants/routes'
 import { USER_ROLE } from './constants/user'

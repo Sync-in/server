@@ -23,7 +23,7 @@ import {
 import { USER_LOGIN_VALIDATION, USER_PERMISSION, USER_PERMS_SEP, USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { CreateUserDto, UpdateUserDto } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
-import type { TwoFaVerifyResult } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
+import type { TwoFaVerifyResult } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.interfaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TabDirective, TabHeadingDirective, TabsetComponent } from 'ngx-bootstrap/tabs'

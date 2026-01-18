@@ -7,7 +7,7 @@
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
-import { AuthManager } from './auth-manager.service'
+import { AuthManager } from './auth.service'
 
 describe(AuthManager.name, () => {
   let authManager: AuthManager

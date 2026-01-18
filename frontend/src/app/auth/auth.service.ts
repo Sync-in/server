@@ -19,9 +19,9 @@ import {
   API_AUTH_REFRESH,
   API_TWO_FA_LOGIN_VERIFY
 } from '@sync-in-server/backend/src/authentication/constants/routes'
-import { LoginResponseDto, TwoFaResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
+import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import type { TokenResponseDto } from '@sync-in-server/backend/src/authentication/dto/token-response.dto'
-import { TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
+import type { TwoFaResponseDto, TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
 import { catchError, finalize, map, Observable, of, throwError } from 'rxjs'
 import { switchMap, tap } from 'rxjs/operators'
@@ -33,6 +33,7 @@ import { Electron } from '../electron/electron.service'
 import { LayoutService } from '../layout/layout.service'
 import { StoreService } from '../store/store.service'
 import { AUTH_PATHS } from './auth.constants'
+import type { AuthOIDCQueryParams } from './auth.interface'
 
 @Injectable({
   providedIn: 'root'
@@ -187,7 +188,11 @@ export class AuthService {
     )
   }
 
-  checkUserAuthAndLoad(returnUrl: string): Observable<boolean> {
+  checkUserAuthAndLoad(returnUrl: string, authFromOIDC?: AuthOIDCQueryParams): Observable<boolean> {
+    if (authFromOIDC) {
+      this.accessExpiration = parseInt(authFromOIDC.access_expiration)
+      this.refreshExpiration = parseInt(authFromOIDC.refresh_expiration)
+    }
     if (this.refreshTokenHasExpired()) {
       if (this.electron.enabled) {
         return this.loginElectron()
@@ -197,7 +202,12 @@ export class AuthService {
       return of(false)
     } else if (!this.store.user.getValue()) {
       return this.http.get<Omit<LoginResponseDto, 'token'>>(API_USERS_ME).pipe(
-        tap((r: Omit<LoginResponseDto, 'token'>) => this.initUser(r)),
+        tap((r: Omit<LoginResponseDto, 'token'>) => {
+          this.initUser(r)
+          if (authFromOIDC) {
+            this.router.navigate([]).catch(console.error)
+          }
+        }),
         map(() => true),
         catchError((e: HttpErrorResponse) => {
           if (e.status === 401) {

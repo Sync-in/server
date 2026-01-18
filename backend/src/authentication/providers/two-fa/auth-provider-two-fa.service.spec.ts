@@ -11,16 +11,16 @@ import { NotificationsManager } from '../../../applications/notifications/servic
 import { UserModel } from '../../../applications/users/models/user.model'
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
-import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from '../../dto/two-fa-verify.dto'
 import { FastifyAuthenticatedRequest } from '../../interfaces/auth-request.interface'
 import { decryptSecret, encryptSecret } from '../../utils/crypt-secret'
-import { AuthMethod2FA } from './auth-method-two-fa.service'
+import { AuthProvider2FA } from './auth-provider-two-fa.service'
+import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './auth-two-fa.dtos'
 
 jest.mock('../../utils/crypt-secret')
 jest.mock('../../../common/qrcode')
 
-describe(AuthMethod2FA.name, () => {
-  let service: AuthMethod2FA
+describe(AuthProvider2FA.name, () => {
+  let service: AuthProvider2FA
   let cache: jest.Mocked<Cache>
   let usersManager: jest.Mocked<UsersManager>
   let notificationsManager: jest.Mocked<NotificationsManager>
@@ -44,7 +44,7 @@ describe(AuthMethod2FA.name, () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AuthMethod2FA,
+        AuthProvider2FA,
         {
           provide: Cache,
           useValue: {
@@ -72,7 +72,7 @@ describe(AuthMethod2FA.name, () => {
     }).compile()
 
     module.useLogger(['fatal'])
-    service = module.get<AuthMethod2FA>(AuthMethod2FA)
+    service = module.get<AuthProvider2FA>(AuthProvider2FA)
     cache = module.get(Cache)
     usersManager = module.get(UsersManager)
     notificationsManager = module.get(NotificationsManager)

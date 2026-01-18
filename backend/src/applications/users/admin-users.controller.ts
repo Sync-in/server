@@ -7,7 +7,7 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Res, Search, UseGuards } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
-import { AuthTwoFaGuard, AuthTwoFaGuardWithoutPassword } from '../../authentication/guards/auth-two-fa-guard'
+import { AuthTwoFaGuard, AuthTwoFaGuardWithoutPassword } from '../../authentication/providers/two-fa/auth-two-fa-guard'
 import { GROUP_TYPE } from './constants/group'
 import { ADMIN_USERS_ROUTE } from './constants/routes'
 import { USER_ROLE } from './constants/user'

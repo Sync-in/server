@@ -22,16 +22,11 @@ export class LoginResponseDto {
 
 export class LoginVerify2FaDto {
   server: ServerConfig
-  user = { twoFaEnabled: true }
+  user: { twoFaEnabled: boolean } = { twoFaEnabled: true }
   token: TokenResponseDto
 
   constructor(serverConfig: ServerConfig) {
     this.server = serverConfig
     this.token = new TokenResponseDto()
   }
-}
-
-export class TwoFaResponseDto extends LoginResponseDto {
-  success: boolean
-  message: string
 }

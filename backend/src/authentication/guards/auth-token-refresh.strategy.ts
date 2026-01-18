@@ -11,9 +11,9 @@ import { PinoLogger } from 'nestjs-pino'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { UserModel } from '../../applications/users/models/user.model'
 import { configuration } from '../../configuration/config.environment'
+import { AuthManager } from '../auth.service'
 import { JwtPayload } from '../interfaces/jwt-payload.interface'
 import { TOKEN_TYPE } from '../interfaces/token.interface'
-import { AuthManager } from '../services/auth-manager.service'
 
 @Injectable()
 export class AuthTokenRefreshStrategy extends PassportStrategy(Strategy, 'tokenRefresh') implements AbstractStrategy {

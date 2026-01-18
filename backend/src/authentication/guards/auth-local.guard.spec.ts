@@ -10,13 +10,13 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
 import { UserModel } from '../../applications/users/models/user.model'
 import { generateUserTest } from '../../applications/users/utils/test'
-import { AuthMethod } from '../models/auth-method'
+import { AuthProvider } from '../providers/auth-providers.models'
 import { AuthLocalGuard } from './auth-local.guard'
 import { AuthLocalStrategy } from './auth-local.strategy'
 
 describe(AuthLocalGuard.name, () => {
   let authLocalGuard: AuthLocalGuard
-  let authMethod: AuthMethod
+  let authMethod: AuthProvider
   let userTest: UserModel
   let context: DeepMocked<ExecutionContext>
 
@@ -25,7 +25,7 @@ describe(AuthLocalGuard.name, () => {
       providers: [
         AuthLocalGuard,
         AuthLocalStrategy,
-        { provide: AuthMethod, useValue: {} },
+        { provide: AuthProvider, useValue: {} },
         {
           provide: PinoLogger,
           useValue: {
@@ -36,7 +36,7 @@ describe(AuthLocalGuard.name, () => {
     }).compile()
 
     authLocalGuard = module.get<AuthLocalGuard>(AuthLocalGuard)
-    authMethod = module.get<AuthMethod>(AuthMethod)
+    authMethod = module.get<AuthProvider>(AuthProvider)
     userTest = new UserModel(generateUserTest(), false)
     context = createMock<ExecutionContext>()
   })

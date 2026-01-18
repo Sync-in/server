@@ -14,15 +14,15 @@ import { AdminUsersManager } from '../../../applications/users/services/admin-us
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import { comparePassword, splitFullName } from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
-import { ALL_LDAP_ATTRIBUTES, LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from '../../constants/auth-ldap'
 import type { AUTH_SCOPE } from '../../constants/scope'
-import { AuthMethod } from '../../models/auth-method'
+import { AuthProvider } from '../auth-providers.models'
+import { ALL_LDAP_ATTRIBUTES, LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
 
 type LdapUserEntry = Entry & Record<LDAP_LOGIN_ATTR | (typeof LDAP_COMMON_ATTR)[keyof typeof LDAP_COMMON_ATTR], string>
 
 @Injectable()
-export class AuthMethodLdapService implements AuthMethod {
-  private readonly logger = new Logger(AuthMethodLdapService.name)
+export class AuthProviderLDAP implements AuthProvider {
+  private readonly logger = new Logger(AuthProviderLDAP.name)
   private readonly ldapConfig = configuration.auth.ldap
   private readonly isAD = this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.SAM || this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN
   private clientOptions: ClientOptions = { timeout: 6000, connectTimeout: 6000, url: '' }
@@ -148,10 +148,12 @@ export class AuthMethodLdapService implements AuthMethod {
       }
       return freshUser
     }
+
     if (identity.login !== user.login) {
       this.logger.error(`${this.updateOrCreateUser.name} - user login mismatch : ${identity.login} !== ${user.login}`)
       throw new HttpException('Account matching error', HttpStatus.FORBIDDEN)
     }
+
     // Update: check if user information has changed
     const identityHasChanged: UpdateUserDto = Object.fromEntries(
       (
@@ -166,6 +168,7 @@ export class AuthMethodLdapService implements AuthMethod {
         )
       ).filter(Boolean)
     )
+
     if (Object.keys(identityHasChanged).length > 0) {
       try {
         if (identityHasChanged?.role != null) {
@@ -174,13 +177,17 @@ export class AuthMethodLdapService implements AuthMethod {
             delete identityHasChanged.role
           }
         }
+
         // Update user properties
         await this.adminUsersManager.updateUserOrGuest(user.id, identityHasChanged)
+
         // Extra stuff
         if (identityHasChanged?.password) {
           delete identityHasChanged.password
         }
+
         Object.assign(user, identityHasChanged)
+
         if ('lastName' in identityHasChanged || 'firstName' in identityHasChanged) {
           // Force fullName update in the current user model
           user.setFullName(true)

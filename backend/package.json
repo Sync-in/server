@@ -69,6 +69,7 @@
     "mysql2": "^3.11.4",
     "nestjs-pino": "^4.3.0",
     "nodemailer": "^7.0.0",
+    "openid-client": "^6.8.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",

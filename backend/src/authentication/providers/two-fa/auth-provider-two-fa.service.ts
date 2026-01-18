@@ -17,14 +17,14 @@ import { qrcodeToDataURL } from '../../../common/qrcode'
 import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { TWO_FA_CODE_LENGTH } from '../../constants/auth'
-import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from '../../dto/two-fa-verify.dto'
 import { FastifyAuthenticatedRequest } from '../../interfaces/auth-request.interface'
-import { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from '../../interfaces/two-fa-setup.interface'
 import { decryptSecret, encryptSecret } from '../../utils/crypt-secret'
+import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './auth-two-fa.dtos'
+import { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from './auth-two-fa.interfaces'
 
 @Injectable()
-export class AuthMethod2FA {
-  private readonly logger = new Logger(AuthMethod2FA.name)
+export class AuthProvider2FA {
+  private readonly logger = new Logger(AuthProvider2FA.name)
   private readonly cacheKeyPrefix = 'auth-2fa-pending-user-'
 
   constructor(

@@ -10,12 +10,12 @@ import type { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
 import { Strategy } from 'passport-local'
 import type { UserModel } from '../../applications/users/models/user.model'
-import { AuthMethod } from '../models/auth-method'
+import { AuthProvider } from '../providers/auth-providers.models'
 
 @Injectable()
 export class AuthLocalStrategy extends PassportStrategy(Strategy, 'local') implements AbstractStrategy {
   constructor(
-    private readonly authMethod: AuthMethod,
+    private readonly authMethod: AuthProvider,
     private readonly logger: PinoLogger
   ) {
     super({ usernameField: 'login', passwordField: 'password', passReqToCallback: true })

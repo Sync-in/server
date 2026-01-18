@@ -11,9 +11,9 @@ import { FastifyReply } from 'fastify'
 import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { AuthMethod } from '../../../authentication/models/auth-method'
-import { AuthManager } from '../../../authentication/services/auth-manager.service'
-import { AuthMethod2FA } from '../../../authentication/services/auth-methods/auth-method-two-fa.service'
+import { AuthManager } from '../../../authentication/auth.service'
+import { AuthProvider } from '../../../authentication/providers/auth-providers.models'
+import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-provider-two-fa.service'
 import { convertHumanTimeToSeconds } from '../../../common/functions'
 import { currentTimeStamp } from '../../../common/shared'
 import { STATIC_PATH } from '../../../configuration/config.constants'
@@ -42,8 +42,8 @@ export class SyncClientsManager {
   constructor(
     private readonly http: HttpService,
     private readonly authManager: AuthManager,
-    private readonly authMethod: AuthMethod,
-    private readonly authMethod2Fa: AuthMethod2FA,
+    private readonly authMethod: AuthProvider,
+    private readonly authMethod2Fa: AuthProvider2FA,
     private readonly usersManager: UsersManager,
     private readonly syncQueries: SyncQueries
   ) {}

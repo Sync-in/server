@@ -50,8 +50,12 @@ import type {
   UserOnline
 } from '@sync-in-server/backend/src/applications/users/interfaces/websocket.interface'
 import { API_TWO_FA_ADMIN_RESET_USER, API_TWO_FA_DISABLE, API_TWO_FA_ENABLE } from '@sync-in-server/backend/src/authentication/constants/routes'
-import type { TwoFaVerifyWithPasswordDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
-import type { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
+import type { TwoFaVerifyWithPasswordDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
+import type {
+  TwoFaEnableResult,
+  TwoFaSetup,
+  TwoFaVerifyResult
+} from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.interfaces'
 import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Socket } from 'ngx-socket-io'

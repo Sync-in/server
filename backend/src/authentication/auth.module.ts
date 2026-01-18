@@ -11,6 +11,7 @@ import { PassportModule } from '@nestjs/passport'
 import { UsersModule } from '../applications/users/users.module'
 import { configuration } from '../configuration/config.environment'
 import { AuthController } from './auth.controller'
+import { AuthManager } from './auth.service'
 import { AuthAnonymousGuard } from './guards/auth-anonymous.guard'
 import { AuthAnonymousStrategy } from './guards/auth-anonymous.strategy'
 import { AuthBasicGuard } from './guards/auth-basic.guard'
@@ -21,15 +22,20 @@ import { AuthTokenAccessGuard } from './guards/auth-token-access.guard'
 import { AuthTokenAccessStrategy } from './guards/auth-token-access.strategy'
 import { AuthTokenRefreshGuard } from './guards/auth-token-refresh.guard'
 import { AuthTokenRefreshStrategy } from './guards/auth-token-refresh.strategy'
-import { AuthMethod } from './models/auth-method'
-import { AuthManager } from './services/auth-manager.service'
-import { AuthMethodDatabase } from './services/auth-methods/auth-method-database.service'
-import { AuthMethodLdapService } from './services/auth-methods/auth-method-ldap.service'
-import { AuthMethod2FA } from './services/auth-methods/auth-method-two-fa.service'
+import { AUTH_PROVIDER } from './providers/auth-providers.constants'
+import { AuthProvider } from './providers/auth-providers.models'
+import { selectAuthProvider } from './providers/auth-providers.utils'
+import { AuthMethodOIDCModule } from './providers/oidc/auth-method-oidc.module'
+import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service'
 
 @Global()
 @Module({
-  imports: [JwtModule.register({ global: true }), UsersModule, PassportModule],
+  imports: [
+    JwtModule.register({ global: true }),
+    UsersModule,
+    PassportModule,
+    ...(configuration.auth.method === AUTH_PROVIDER.OIDC ? [AuthMethodOIDCModule] : [])
+  ],
   controllers: [AuthController],
   providers: [
     {
@@ -46,9 +52,9 @@ import { AuthMethod2FA } from './services/auth-methods/auth-method-two-fa.servic
     AuthBasicStrategy,
     AuthAnonymousStrategy,
     AuthManager,
-    AuthMethod2FA,
-    { provide: AuthMethod, useClass: configuration.auth.method === 'ldap' ? AuthMethodLdapService : AuthMethodDatabase }
+    AuthProvider2FA,
+    selectAuthProvider(configuration.auth.method)
   ],
-  exports: [AuthManager, AuthMethod, AuthMethod2FA]
+  exports: [AuthManager, AuthProvider, AuthProvider2FA]
 })
 export class AuthModule {}

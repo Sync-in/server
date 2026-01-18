@@ -6,8 +6,8 @@
 
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
+import { AuthManager } from '../../../authentication/auth.service'
 import { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
-import { AuthManager } from '../../../authentication/services/auth-manager.service'
 import { anonymizePassword, hashPassword } from '../../../common/functions'
 import { isPathExists, moveFiles, removeFiles } from '../../files/utils/files'
 import { GROUP_TYPE } from '../constants/group'

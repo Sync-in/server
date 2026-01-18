@@ -10,9 +10,9 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { FastifyReply } from 'fastify'
 import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
-import { AuthMethod } from '../../../authentication/models/auth-method'
-import { AuthManager } from '../../../authentication/services/auth-manager.service'
-import { AuthMethod2FA } from '../../../authentication/services/auth-methods/auth-method-two-fa.service'
+import { AuthManager } from '../../../authentication/auth.service'
+import { AuthProvider } from '../../../authentication/providers/auth-providers.models'
+import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-provider-two-fa.service'
 import * as commonFunctions from '../../../common/functions'
 import * as commonShared from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
@@ -119,8 +119,8 @@ describe(SyncClientsManager.name, () => {
         { provide: SyncQueries, useValue: syncQueries },
         { provide: UsersManager, useValue: usersManager },
         { provide: AuthManager, useValue: authManager },
-        { provide: AuthMethod, useValue: authMethod },
-        { provide: AuthMethod2FA, useValue: {} }
+        { provide: AuthProvider, useValue: authMethod },
+        { provide: AuthProvider2FA, useValue: {} }
       ]
     }).compile()
 

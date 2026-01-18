@@ -4,19 +4,22 @@
  * See the LICENSE file for licensing details
  */
 
-export enum AUTH_ROUTE {
-  BASE = '/api/auth',
-  LOGIN = 'login',
-  LOGOUT = 'logout',
-  REFRESH = 'refresh',
-  TOKEN = 'token',
-  TOKEN_REFRESH = `${AUTH_ROUTE.TOKEN}/refresh`,
-  WS = 'socket.io',
-  TWO_FA_BASE = '2fa',
-  TWO_FA_ENABLE = 'enable',
-  TWO_FA_DISABLE = 'disable',
-  TWO_FA_LOGIN_VERIFY = 'login/verify',
-  TWO_FA_ADMIN_RESET_USER = 'reset/user'
+export const AUTH_ROUTE = {
+  BASE: '/api/auth',
+  LOGIN: 'login',
+  LOGOUT: 'logout',
+  REFRESH: 'refresh',
+  TOKEN: 'token',
+  TOKEN_REFRESH: 'token/refresh',
+  WS: 'socket.io',
+  TWO_FA_BASE: '2fa',
+  TWO_FA_ENABLE: 'enable',
+  TWO_FA_DISABLE: 'disable',
+  TWO_FA_LOGIN_VERIFY: 'login/verify',
+  TWO_FA_ADMIN_RESET_USER: 'reset/user',
+  OIDC_LOGIN: 'oidc/login',
+  OIDC_CALLBACK: 'oidc/callback',
+  OIDC_LOGOUT: 'oidc/logout'
 }
 
 export const API_AUTH_LOGIN = `${AUTH_ROUTE.BASE}/${AUTH_ROUTE.LOGIN}`

@@ -9,11 +9,11 @@ import { CONNECT_ERROR_CODE } from '../../../app.constants'
 import { UserModel } from '../../../applications/users/models/user.model'
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import { AUTH_SCOPE } from '../../constants/scope'
-import { AuthMethod } from '../../models/auth-method'
+import { AuthProvider } from '../auth-providers.models'
 
 @Injectable()
-export class AuthMethodDatabase implements AuthMethod {
-  private readonly logger = new Logger(AuthMethodDatabase.name)
+export class AuthProviderMySQL implements AuthProvider {
+  private readonly logger = new Logger(AuthProviderMySQL.name)
 
   constructor(private readonly usersManager: UsersManager) {}
 

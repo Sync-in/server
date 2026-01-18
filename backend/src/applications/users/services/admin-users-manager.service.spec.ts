@@ -6,7 +6,7 @@
 
 import { HttpException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { AuthManager } from '../../../authentication/services/auth-manager.service'
+import { AuthManager } from '../../../authentication/auth.service'
 import { GROUP_TYPE } from '../constants/group'
 import { USER_GROUP_ROLE, USER_ROLE } from '../constants/user'
 import type { CreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
