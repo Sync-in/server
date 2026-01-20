@@ -23,7 +23,6 @@ export const routes: Routes = [
     path: APP_PATH.BASE,
     component: LayoutComponent,
     canActivate: [authGuard],
-    canActivateChild: [authGuard],
     children: [...recentsRoutes, ...searchRoutes, ...spacesRoutes, ...userRoutes, ...syncRoutes, ...adminRoutes]
   },
   ...authRoutes,
