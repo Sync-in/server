@@ -634,5 +634,6 @@
   "Preferences": "偏好设置",
   "of": "的",
   "Sidebar auto-hide enabled": "侧边栏自动隐藏已启用",
-  "Sidebar pinned": "侧边栏已固定"
+  "Sidebar pinned": "侧边栏已固定",
+  "Continue with OpenID Connect": "使用 OpenID Connect 继续"
 }

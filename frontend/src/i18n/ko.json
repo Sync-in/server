@@ -634,5 +634,6 @@
   "Preferences": "환경 설정",
   "of": "의",
   "Sidebar auto-hide enabled": "사이드바 자동 숨김 활성화",
-  "Sidebar pinned": "사이드바 고정됨"
+  "Sidebar pinned": "사이드바 고정됨",
+  "Continue with OpenID Connect": "OpenID Connect로 계속하기"
 }

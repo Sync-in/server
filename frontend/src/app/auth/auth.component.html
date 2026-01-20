@@ -56,24 +56,38 @@
             </div>
           </form>
         } @else {
-          <form (ngSubmit)="onSubmit()" [formGroup]="loginForm">
-            <p class="fs-sm mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Sign-in to your account' }}</p>
-            <div class="input-group my-2">
+          @if (!oidcSettings || oidcSettings.enablePasswordAuth) {
+            <form (ngSubmit)="onSubmit()" [formGroup]="loginForm">
+              <p class="fs-sm mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Sign-in to your account' }}</p>
+              <div class="input-group my-2">
               <span class="input-group-text">
                 <fa-icon [icon]="icons.faUserAlt"></fa-icon>
               </span>
-              <input appAutofocus class="form-control" formControlName="username" [placeholder]="'Login or Email' | translate:locale.language" type="text" />
-            </div>
-            <div class="input-group mb-4">
+                <input appAutofocus class="form-control" formControlName="username" [placeholder]="'Login or Email' | translate:locale.language" type="text" />
+              </div>
+              <div class="input-group mb-3">
               <span class="input-group-text">
                 <fa-icon [icon]="icons.faLock"></fa-icon>
               </span>
-              <input class="form-control" formControlName="password" [placeholder]="'Password' | translate:locale.language" type="password" />
+                <input class="form-control" formControlName="password" [placeholder]="'Password' | translate:locale.language" type="password" />
+              </div>
+              <div class="d-flex">
+                <button type="submit" [disabled]="loginForm.invalid || submitted" class="btn btn-primary px-4 w-100" l10nTranslate>Sign in</button>
+              </div>
+            </form>
+          }
+          @if (oidcSettings) {
+            <div class="d-flex flex-column">
+              <div class="d-flex mt-3">
+                <button
+                  type="button"
+                  class="btn btn-primary px-4 w-100"
+                  (click)="loginWithOIDC()">
+                  <span l10nTranslate>{{ oidcSettings.buttonText }}</span>
+                </button>
+              </div>
             </div>
-            <div class="d-flex">
-              <button type="submit" [disabled]="loginForm.invalid || submitted" class="btn btn-primary px-4 w-100" l10nTranslate>Sign in</button>
-            </div>
-          </form>
+          }
         }
       </div>
     </div>

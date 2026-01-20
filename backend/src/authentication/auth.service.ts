@@ -14,10 +14,13 @@ import { convertHumanTimeToSeconds } from '../common/functions'
 import { currentTimeStamp } from '../common/shared'
 import { configuration, serverConfig } from '../configuration/config.environment'
 import { CSRF_ERROR, CSRF_KEY, TOKEN_2FA_TYPES, TOKEN_PATHS, TOKEN_TYPES } from './constants/auth'
+import { API_OIDC_LOGIN } from './constants/routes'
 import { LoginResponseDto, LoginVerify2FaDto } from './dto/login-response.dto'
 import { TokenResponseDto } from './dto/token-response.dto'
 import { JwtIdentity2FaPayload, JwtIdentityPayload, JwtPayload } from './interfaces/jwt-payload.interface'
 import { TOKEN_TYPE } from './interfaces/token.interface'
+import { AUTH_PROVIDER } from './providers/auth-providers.constants'
+import type { AuthOIDCSettings } from './providers/oidc/auth-oidc.interfaces'
 
 @Injectable()
 export class AuthManager {
@@ -135,6 +138,18 @@ export class AuthManager {
     if (jwtPayload.csrf !== csrfHeader.value) {
       this.logger.warn(`${this.csrfValidation.name} - ${CSRF_ERROR.MISMATCH}`)
       throw new HttpException(CSRF_ERROR.MISMATCH, HttpStatus.FORBIDDEN)
+    }
+  }
+
+  authSettings(): AuthOIDCSettings | false {
+    if (configuration.auth.method !== AUTH_PROVIDER.OIDC) {
+      return false
+    }
+    return {
+      loginUrl: API_OIDC_LOGIN,
+      autoRedirect: configuration.auth.oidc.options.autoRedirect,
+      enablePasswordAuth: configuration.auth.oidc.options.enablePasswordAuth,
+      buttonText: configuration.auth.oidc.options.buttonText
     }
   }
 

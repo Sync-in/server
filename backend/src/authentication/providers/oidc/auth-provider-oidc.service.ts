@@ -9,6 +9,7 @@ import { FastifyReply, FastifyRequest } from 'fastify'
 import {
   allowInsecureRequests,
   authorizationCodeGrant,
+  AuthorizationResponseError,
   calculatePKCECodeChallenge,
   ClientSecretBasic,
   ClientSecretPost,
@@ -63,24 +64,25 @@ export class AuthProviderOIDC implements AuthProvider {
   async getAuthorizationUrl(res: FastifyReply): Promise<string> {
     const config = await this.getConfig()
 
-    // Generate state and nonce for CSRF protection
+    // state: CSRF protection, nonce: binds the ID Token to this auth request (replay protection)
     const state = randomState()
     const nonce = randomNonce()
 
-    const codeVerifier = randomPKCECodeVerifier()
+    const supportsPKCE = config.serverMetadata().supportsPKCE()
+    const codeVerifier = supportsPKCE ? randomPKCECodeVerifier() : undefined
 
     const authUrl = new URL(config.serverMetadata().authorization_endpoint!)
     authUrl.searchParams.set('client_id', this.oidcConfig.clientId!)
     authUrl.searchParams.set('redirect_uri', this.oidcConfig.redirectUri)
     authUrl.searchParams.set('response_type', 'code')
-    authUrl.searchParams.set('scope', this.oidcConfig.scope || 'openid email profile')
-    if (config.serverMetadata().supportsPKCE()) {
-      const codeChallenge = await calculatePKCECodeChallenge(codeVerifier)
+    authUrl.searchParams.set('scope', this.oidcConfig.security.scope)
+    authUrl.searchParams.set('state', state)
+    authUrl.searchParams.set('nonce', nonce)
+    if (supportsPKCE) {
+      const codeChallenge = await calculatePKCECodeChallenge(codeVerifier!)
       authUrl.searchParams.set('code_challenge', codeChallenge)
       authUrl.searchParams.set('code_challenge_method', 'S256')
     }
-    authUrl.searchParams.set('state', state)
-    authUrl.searchParams.set('nonce', nonce)
 
     // Avoid cache
     res
@@ -90,22 +92,18 @@ export class AuthProviderOIDC implements AuthProvider {
       .header('X-Robots-Tag', 'noindex, nofollow')
       .header('Referrer-Policy', 'no-referrer')
 
-    // Store state, nonce, and codeVerifier in httpOnly cookies (10 minutes expiration)
+    // Store state, nonce, and codeVerifier in httpOnly cookies (expires in 10 minutes)
     res.setCookie(OAuthCookie.State, state, OAuthCookieSettings)
     res.setCookie(OAuthCookie.Nonce, nonce, OAuthCookieSettings)
-    res.setCookie(OAuthCookie.CodeVerifier, codeVerifier, OAuthCookieSettings)
-
+    if (supportsPKCE) {
+      res.setCookie(OAuthCookie.CodeVerifier, codeVerifier, OAuthCookieSettings)
+    }
     return authUrl.toString()
   }
 
   async handleCallback(req: FastifyRequest, res: FastifyReply, query: Record<string, string>): Promise<UserModel> {
     const config = await this.getConfig()
-
-    // Clear temporary OIDC cookies
-    Object.values(OAuthCookie).forEach((value) => {
-      res.clearCookie(value, { path: '/' })
-    })
-
+    const supportsPKCE = config.serverMetadata().supportsPKCE()
     const [expectedState, expectedNonce, codeVerifier] = [
       req.cookies[OAuthCookie.State],
       req.cookies[OAuthCookie.Nonce],
@@ -117,11 +115,11 @@ export class AuthProviderOIDC implements AuthProvider {
         throw new HttpException('OAuth state is missing', HttpStatus.BAD_REQUEST)
       }
 
-      if (!codeVerifier?.length) {
+      if (supportsPKCE && !codeVerifier?.length) {
         throw new HttpException('OAuth code verifier is missing', HttpStatus.BAD_REQUEST)
       }
 
-      const pkceCodeVerifier = config.serverMetadata().supportsPKCE() ? codeVerifier : undefined
+      const pkceCodeVerifier = supportsPKCE ? codeVerifier : undefined
       const callbackParams = new URLSearchParams(query)
 
       // Exchange authorization code for tokens
@@ -142,8 +140,9 @@ export class AuthProviderOIDC implements AuthProvider {
         throw new HttpException('Unexpected profile response, no `sub`', HttpStatus.BAD_REQUEST)
       }
 
-      // Get user info from the userinfo endpoint (requires access token and subject from ID token)
-      const subject = this.oidcConfig.skipSubjectCheck ? skipSubjectCheck : claims.sub
+      // ID token claims may be minimal depending on the IdP; use the UserInfo endpoint to retrieve user details.
+      // Get user info from the userinfo endpoint (requires access token and subject from ID token).
+      const subject = this.oidcConfig.security.skipSubjectCheck ? skipSubjectCheck : claims.sub
       const userInfo: UserInfoResponse = await fetchUserInfo(config, tokens.access_token, subject)
 
       if (!userInfo.sub) {
@@ -152,10 +151,19 @@ export class AuthProviderOIDC implements AuthProvider {
 
       // Process the user info and create/update the user
       return await this.processUserInfo(userInfo, req.ip)
-    } catch (error) {
-      const errorStatus = error?.getStatus() || HttpStatus.UNAUTHORIZED
-      this.logger.error(`${this.handleCallback.name} - OIDC callback error: ${error}`)
-      throw new HttpException('OIDC authentication failed', errorStatus)
+    } catch (error: AuthorizationResponseError | HttpException | any) {
+      if (error instanceof AuthorizationResponseError) {
+        this.logger.error(`${this.handleCallback.name} - OIDC callback error: ${error.code} - ${error.error_description}`)
+        throw new HttpException(error.error_description, HttpStatus.BAD_REQUEST)
+      } else {
+        this.logger.error(`${this.handleCallback.name} - OIDC callback error: ${error}`)
+        throw new HttpException('OIDC authentication failed', error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR)
+      }
+    } finally {
+      // Always clear temporary OIDC cookies (success or failure)
+      Object.values(OAuthCookie).forEach((value) => {
+        res.clearCookie(value, { path: '/' })
+      })
     }
   }
 
@@ -167,7 +175,7 @@ export class AuthProviderOIDC implements AuthProvider {
       return null
     }
 
-    if (user.isGuest || user.isAdmin || scope || this.oidcConfig.enablePasswordAuth) {
+    if (user.isGuest || user.isAdmin || scope || this.oidcConfig.options.enablePasswordAuth) {
       // Allow local password authentication for:
       // - guest users
       // - admin users (break-glass access)
@@ -201,16 +209,22 @@ export class AuthProviderOIDC implements AuthProvider {
       const config: Configuration = await discovery(
         issuerUrl,
         this.oidcConfig.clientId,
-        { client_secret: this.oidcConfig.clientSecret, response_types: ['code'] },
-        this.getTokenAuthMethod(this.oidcConfig.clientAuthMethod, this.oidcConfig.clientSecret),
         {
-          execute: [allowInsecureRequests] // allow HTTP for development
+          client_secret: this.oidcConfig.clientSecret,
+          response_types: ['code'],
+          id_token_signed_response_alg: this.oidcConfig.security.tokenSigningAlg,
+          userinfo_signed_response_alg: this.oidcConfig.security.userInfoSigningAlg
+        },
+        this.getTokenAuthMethod(this.oidcConfig.security.tokenEndpointAuthMethod, this.oidcConfig.clientSecret),
+        {
+          execute: [allowInsecureRequests], // allow HTTP for development
+          timeout: 6000
         }
       )
       this.logger.log(`${this.initializeOIDCClient.name} - OIDC client initialized successfully for issuer: ${this.oidcConfig.issuerUrl}`)
       return config
     } catch (error) {
-      this.logger.error(`${this.initializeOIDCClient.name} - Failed to initialize OIDC client: ${error}`)
+      this.logger.error(`${this.initializeOIDCClient.name} - Failed to initialize OIDC client: ${error?.cause || error}`)
       return null
     }
   }
@@ -242,7 +256,7 @@ export class AuthProviderOIDC implements AuthProvider {
     // Check if user exists
     let user: UserModel = await this.usersManager.findUser(email || login, false)
 
-    if (!user && !this.oidcConfig.autoCreateUser) {
+    if (!user && !this.oidcConfig.options.autoCreateUser) {
       throw new HttpException('User not found and autoCreateUser is disabled', HttpStatus.UNAUTHORIZED)
     }
 
@@ -262,14 +276,14 @@ export class AuthProviderOIDC implements AuthProvider {
   }
 
   private checkAdminRole(userInfo: UserInfoResponse): boolean {
-    if (!this.oidcConfig.adminRoleOrGroup) {
+    if (!this.oidcConfig.options.adminRoleOrGroup) {
       return false
     }
 
     // Check claims
     const claims = [...(Array.isArray(userInfo.groups) ? userInfo.groups : []), ...(Array.isArray(userInfo.roles) ? userInfo.roles : [])]
 
-    return claims.includes(this.oidcConfig.adminRoleOrGroup)
+    return claims.includes(this.oidcConfig.options.adminRoleOrGroup)
   }
 
   private createIdentity(
@@ -301,7 +315,11 @@ export class AuthProviderOIDC implements AuthProvider {
   private async updateOrCreateUser(identity: Omit<CreateUserDto, 'password'> & { password?: string }, user: UserModel | null): Promise<UserModel> {
     if (user === null) {
       // Create new user with a random password (required by the system but not used for OIDC login)
-      const userWithPassword = { ...identity, password: generateShortUUID(24) } as CreateUserDto
+      const userWithPassword = {
+        ...identity,
+        password: generateShortUUID(24),
+        permissions: this.oidcConfig.options.autoCreatePermissions.join(',')
+      } as CreateUserDto
       const createdUser = await this.adminUsersManager.createUserOrGuest(userWithPassword, identity.role)
       const freshUser = await this.usersManager.fromUserId(createdUser.id)
       if (!freshUser) {
@@ -322,7 +340,7 @@ export class AuthProviderOIDC implements AuthProvider {
     if (Object.keys(identityHasChanged).length > 0) {
       try {
         if (identityHasChanged?.role != null) {
-          if (user.role === USER_ROLE.ADMINISTRATOR && !this.oidcConfig.adminRoleOrGroup) {
+          if (user.role === USER_ROLE.ADMINISTRATOR && !this.oidcConfig.options.adminRoleOrGroup) {
             // Prevent removing the admin role when adminGroup was removed or not defined
             delete identityHasChanged.role
           }

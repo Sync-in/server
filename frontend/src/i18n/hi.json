@@ -634,5 +634,6 @@
   "Preferences": "वरीयताएँ",
   "of": "का",
   "Sidebar auto-hide enabled": "साइडबार स्वतः छिपाना सक्षम",
-  "Sidebar pinned": "साइडबार पिन किया गया"
+  "Sidebar pinned": "साइडबार पिन किया गया",
+  "Continue with OpenID Connect": "OpenID Connect के साथ जारी रखें"
 }

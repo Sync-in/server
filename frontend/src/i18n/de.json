@@ -634,5 +634,6 @@
   "Preferences": "Einstellungen",
   "of": "von",
   "Sidebar auto-hide enabled": "Automatisches Ausblenden der Seitenleiste aktiviert",
-  "Sidebar pinned": "Seitenleiste angeheftet"
+  "Sidebar pinned": "Seitenleiste angeheftet",
+  "Continue with OpenID Connect": "Mit OpenID Connect fortfahren"
 }

@@ -21,6 +21,7 @@ import { AuthLocalGuard } from './guards/auth-local.guard'
 import { AuthTokenRefreshGuard } from './guards/auth-token-refresh.guard'
 import { FastifyAuthenticatedRequest } from './interfaces/auth-request.interface'
 import { TOKEN_TYPE } from './interfaces/token.interface'
+import type { AuthOIDCSettings } from './providers/oidc/auth-oidc.interfaces'
 import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service'
 import { AuthTwoFaGuard } from './providers/two-fa/auth-two-fa-guard'
 import { TwoFaResponseDto, TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './providers/two-fa/auth-two-fa.dtos'
@@ -65,6 +66,12 @@ export class AuthController {
   @UseGuards(AuthTokenRefreshGuard)
   refreshToken(@GetUser() user: UserModel): Promise<TokenResponseDto> {
     return this.authManager.getTokens(user, true)
+  }
+
+  @Get(AUTH_ROUTE.SETTINGS)
+  @AuthTokenSkip()
+  authSettings(): AuthOIDCSettings | false {
+    return this.authManager.authSettings()
   }
 
   /* TWO-FA Part */

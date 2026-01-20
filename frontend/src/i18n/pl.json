@@ -634,5 +634,6 @@
   "Preferences": "Preferencje",
   "of": "z",
   "Sidebar auto-hide enabled": "Włączono automatyczne ukrywanie panelu bocznego",
-  "Sidebar pinned": "Panel boczny przypięty"
+  "Sidebar pinned": "Panel boczny przypięty",
+  "Continue with OpenID Connect": "Kontynuuj z OpenID Connect"
 }

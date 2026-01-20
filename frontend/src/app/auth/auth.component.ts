@@ -6,11 +6,12 @@
 
 import { Component, inject } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
-import { Router } from '@angular/router'
+import { ActivatedRoute, Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faKey, faLock, faQrcode, faUserAlt } from '@fortawesome/free-solid-svg-icons'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { TWO_FA_CODE_LENGTH } from '@sync-in-server/backend/src/authentication/constants/auth'
+import type { AuthOIDCSettings } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc.interfaces'
 import type { TwoFaResponseDto, TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { finalize } from 'rxjs/operators'
@@ -32,6 +33,10 @@ export class AuthComponent {
   protected hasError: any = null
   protected submitted = false
   protected twoFaVerify = false
+  private route = inject(ActivatedRoute)
+  protected oidcSettings: AuthOIDCSettings | false = this.route.snapshot.data['authSettings']
+  private readonly router = inject(Router)
+  private readonly auth = inject(AuthService)
   private readonly fb = inject(UntypedFormBuilder)
   protected loginForm: FormGroup = this.fb.group({
     username: this.fb.control('', [Validators.required]),
@@ -42,8 +47,12 @@ export class AuthComponent {
     recoveryCode: this.fb.control('', [Validators.required, Validators.minLength(USER_PASSWORD_MIN_LENGTH)]),
     isRecoveryCode: this.fb.control(false)
   })
-  private readonly router = inject(Router)
-  private readonly auth = inject(AuthService)
+
+  constructor() {
+    if (this.oidcSettings && this.oidcSettings.autoRedirect) {
+      this.loginWithOIDC()
+    }
+  }
 
   onSubmit() {
     this.submitted = true
@@ -106,5 +115,11 @@ export class AuthComponent {
       this.submitted = false
     }
     this.loginForm.patchValue({ password: '' })
+  }
+
+  loginWithOIDC() {
+    if (this.oidcSettings) {
+      window.location.href = this.oidcSettings.loginUrl
+    }
   }
 }

@@ -634,5 +634,6 @@
   "Preferences": "Настройки",
   "of": "из",
   "Sidebar auto-hide enabled": "Автоскрытие боковой панели включено",
-  "Sidebar pinned": "Боковая панель закреплена"
+  "Sidebar pinned": "Боковая панель закреплена",
+  "Continue with OpenID Connect": "Продолжить с OpenID Connect"
 }

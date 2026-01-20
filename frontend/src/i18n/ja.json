@@ -634,5 +634,6 @@
   "Preferences": "環境設定",
   "of": "の",
   "Sidebar auto-hide enabled": "サイドバー自動非表示が有効",
-  "Sidebar pinned": "サイドバー固定"
+  "Sidebar pinned": "サイドバー固定",
+  "Continue with OpenID Connect": "OpenID Connectで続行"
 }

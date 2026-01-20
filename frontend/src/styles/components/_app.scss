@@ -18,15 +18,14 @@
     background: rgba(0, 0, 0, 0.5);
     padding: 2rem 5rem 2rem 5rem;
     border-radius: 8px;
-    min-height: 295px;
-    min-width: 420px;
+    min-width: 400px;
 
     .content {
       display: flex;
       flex-direction: column;
 
       .header {
-        margin-bottom: 1rem;
+        margin-bottom: .6rem;
       }
 
       .body {

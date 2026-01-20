@@ -141,52 +141,85 @@ auth:
     # default: true
     enablePasswordAuthFallback: true
   oidc:
-    # issuerUrl: The URL of the OIDC provider's discovery endpoint (e.g., https://accounts.google.com, https://login.microsoftonline.com/tenant-id/v2.0)
-    # The server will automatically discover the authorization, token, userinfo, and logout endpoints
+    # issuerUrl: The URL of the OIDC provider's discovery endpoint
+    # Examples:
+    # - Keycloak:  https://auth.example.com/realms/my-realm
+    # - Authentik: https://auth.example.com/application/o/my-app/
+    # - Google:    https://accounts.google.com
+    # - Microsoft: https://login.microsoftonline.com/<tenant-id>/v2.0
+    # The server will automatically discover the authorization, token, and userinfo endpoints.
     # required
     issuerUrl:
     # clientId: OAuth 2.0 Client ID obtained from your OIDC provider
     # required
-    clientId:
+    clientId: sync-in
     # clientSecret: OAuth 2.0 Client Secret obtained from your OIDC provider
     # required
-    clientSecret:
-    # OAuth 2.0 / OIDC client authentication method used at the token endpoint.
-    # Possible values:
-    # - client_secret_basic (DEFAULT): HTTP Basic auth using client_id and client_secret.
-    #   Recommended for backend (confidential) clients.
-    # - client_secret_post: client_id and client_secret sent in the request body.
-    # - none: no client authentication (public clients: mobile / SPA with PKCE).
-    # default: `client_secret_basic`
-    # optional
-    clientAuthMethod: client_secret_basic
+    clientSecret: changeClientSecret
     # redirectUri: The callback URL where users are redirected after authentication
     # This URL must be registered in your OIDC provider's allowed redirect URIs
+    # Example (API callback): https://sync-in.domain.com/api/auth/oidc/callback
     # required
-    redirectUri: http://192.168.0.25:8080/api/auth/oidc/callback
-    # scope: OAuth 2.0 scopes to request (space-separated string)
-    # Common scopes: openid (required), email, profile, groups, roles
-    # default: `openid email profile`
-    scope: openid email profile
-    # autoCreateUser: Automatically create a local user account on first successful OIDC login.
-    # When disabled, only existing users are allowed to authenticate via OIDC.
-    # default: true
-    autoCreateUser: true
-    # enablePasswordAuthentication: Enable local password-based authentication (login or email/password).
-    # When enabled, users can sign in with their Sync-in password in addition to OIDC authentication.
-    # Users must have signed in at least once and have a local password set.
-    # default: true
-    enablePasswordAuth: true
-    # skipSubjectCheck: Disable verification that the `sub` claim returned by the UserInfo endpoint
-    # matches the `sub` claim from the ID token.
-    # Set to true only for non-compliant or legacy OIDC providers.
-    # default: false
-    skipSubjectCheck: false
-    # adminRoleOrGroup: Name of the role or group that grants Sync-in administrator access
-    # Users with this value will be granted administrator privileges
-    # The value is matched against the `groups` or `roles` claims returned by the OIDC provider
-    # optional
-    adminRoleOrGroup:
+    redirectUri: https://sync-in.domain.com/api/auth/oidc/callback
+    options:
+      # autoCreateUser: Automatically create a local user account on first successful OIDC login.
+      # When enabled, the user `login` is derived from OIDC claims: preferred_username, then the email local-part, with `sub` as a last-resort fallback.
+      # When disabled, only existing users are allowed to authenticate via OIDC.
+      # default: true
+      autoCreateUser: true
+      # autoCreatePermissions: Permissions assigned to users automatically created via OIDC.
+      # Applied only when autoCreateUser is enabled and only applied at user creation time.
+      # This option has no effect on existing users.
+      # A complete list of permissions is available in the documentation: https://sync-in.com/docs/admin-guide/permissions
+      # e.g.: [personal_space, spaces_access] (array required)
+      # default: []
+      autoCreatePermissions: []
+      # autoRedirect: Automatically redirect users to the OIDC login flow.
+      # When enabled, the login page is skipped and users are sent directly to the OIDC provider.
+      # default: false
+      autoRedirect: false
+      # enablePasswordAuth: Enable local password-based authentication (login or email/password).
+      # When enabled, users can sign in with their Sync-in password in addition to OIDC authentication.
+      # Users must have signed in at least once and have a local password set.
+      # default: true
+      enablePasswordAuth: true
+      # adminRoleOrGroup: Name of the role or group that grants Sync-in administrator access
+      # Users with this value will be granted administrator privileges.
+      # The value is matched against `roles` or `groups` claims provided by the IdP.
+      # Note: depending on the provider (e.g., Keycloak), roles/groups may be exposed only in tokens
+      # and require proper IdP mappers to be included in the ID token or UserInfo response.
+      # optional
+      adminRoleOrGroup:
+      # buttonText: Label displayed on the OIDC login button.
+      # default: Continue with OpenID Connect
+      buttonText: Continue with OpenID Connect
+    security:
+      # scope: OAuth 2.0 scopes to request (space-separated string)
+      # Common scopes: openid (required), email, profile, groups, roles
+      # default: `openid email profile`
+      scope: openid email profile
+      # OAuth 2.0 / OIDC client authentication method used at the token endpoint.
+      # Possible values:
+      # - client_secret_basic (DEFAULT): HTTP Basic auth using client_id and client_secret.
+      #   Recommended for backend (confidential) clients.
+      # - client_secret_post: client_id and client_secret sent in the request body.
+      # - none (or undefined): no client authentication (public clients: mobile / SPA with PKCE).
+      # default: `client_secret_basic`
+      tokenEndpointAuthMethod: client_secret_basic
+      # tokenSigningAlg: Algorithm used to verify the signature of ID tokens (JWT) returned by the OpenID Connect provider.
+      # Common values: RS256, RS384, RS512, ES256, ES384, ES512
+      # default: `RS256`
+      tokenSigningAlg: RS256
+      # userInfoSigningAlg: Algorithm used to request a signed UserInfo response from the OpenID Connect provider.
+      # When not set, the UserInfo endpoint returns a standard JSON response (not signed). This is the most common and recommended configuration.
+      # Common values: (empty), RS256, RS384, RS512, ES256, ES384, ES512
+      # default: empty
+      userInfoSigningAlg:
+      # skipSubjectCheck: Disable verification that the `sub` claim returned by the UserInfo endpoint
+      # matches the `sub` claim from the ID token.
+      # Set to true only for non-compliant or legacy OIDC providers.
+      # default: false
+      skipSubjectCheck: false
 applications:
   files:
     # required

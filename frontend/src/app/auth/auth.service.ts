@@ -17,10 +17,12 @@ import {
   API_AUTH_LOGIN,
   API_AUTH_LOGOUT,
   API_AUTH_REFRESH,
+  API_AUTH_SETTINGS,
   API_TWO_FA_LOGIN_VERIFY
 } from '@sync-in-server/backend/src/authentication/constants/routes'
 import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import type { TokenResponseDto } from '@sync-in-server/backend/src/authentication/dto/token-response.dto'
+import type { AuthOIDCSettings } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc.interfaces'
 import type { TwoFaResponseDto, TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
 import { catchError, finalize, map, Observable, of, throwError } from 'rxjs'
@@ -40,6 +42,7 @@ import type { AuthOIDCQueryParams } from './auth.interface'
 })
 export class AuthService {
   public returnUrl: string
+  private authSettings: AuthOIDCSettings | false = null
   private readonly http = inject(HttpClient)
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
@@ -239,6 +242,22 @@ export class AuthService {
     if (r.server) {
       this.store.server.set(r.server)
     }
+  }
+
+  getAuthSettings(): Observable<AuthOIDCSettings | false> {
+    // If OIDC authentication is not enabled, the route should return a 404.
+    if (this.authSettings !== null) return of(this.authSettings)
+    return this.http.get<AuthOIDCSettings>(API_AUTH_SETTINGS).pipe(
+      map((r): AuthOIDCSettings => {
+        this.authSettings = r
+        return r
+      }),
+      catchError((e: HttpErrorResponse) => {
+        console.error(e)
+        this.authSettings = false
+        return of(false as const)
+      })
+    )
   }
 
   private refreshTokenHasExpired(): boolean {

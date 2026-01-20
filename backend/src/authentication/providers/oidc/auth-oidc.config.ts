@@ -4,9 +4,71 @@
  * See the LICENSE file for licensing details
  */
 
-import { Transform } from 'class-transformer'
-import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { Transform, Type } from 'class-transformer'
+import {
+  IsArray,
+  IsBoolean,
+  IsDefined,
+  IsEnum,
+  IsNotEmpty,
+  IsNotEmptyObject,
+  IsObject,
+  IsOptional,
+  IsString,
+  Matches,
+  ValidateNested
+} from 'class-validator'
+import { USER_PERMISSION } from '../../../applications/users/constants/user'
 import { OAuthTokenEndpoint } from './auth-oidc.constants'
+
+export class AuthMethodOIDCSecurityConfig {
+  @IsString()
+  @Matches(/\bopenid\b/, { message: 'OIDC scope must include "openid"' })
+  scope = 'openid email profile'
+
+  @Transform(({ value }) => value || OAuthTokenEndpoint.ClientSecretBasic)
+  @IsEnum(OAuthTokenEndpoint)
+  tokenEndpointAuthMethod: OAuthTokenEndpoint = OAuthTokenEndpoint.ClientSecretBasic
+
+  @IsString()
+  @IsNotEmpty()
+  tokenSigningAlg = 'RS256'
+
+  @IsOptional()
+  @IsString()
+  userInfoSigningAlg? = undefined
+
+  @IsOptional()
+  @IsBoolean()
+  skipSubjectCheck? = false
+}
+
+export class AuthMethodOIDCOptionsConfig {
+  @IsOptional()
+  @IsBoolean()
+  autoCreateUser? = true
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(USER_PERMISSION, { each: true })
+  autoCreatePermissions?: USER_PERMISSION[] = []
+
+  @IsOptional()
+  @IsBoolean()
+  autoRedirect? = false
+
+  @IsOptional()
+  @IsBoolean()
+  enablePasswordAuth? = true
+
+  @IsOptional()
+  @IsString()
+  adminRoleOrGroup?: string
+
+  @IsString()
+  @IsNotEmpty()
+  buttonText: string = 'Continue with OpenID Connect'
+}
 
 export class AuthMethodOIDCConfig {
   @IsString()
@@ -21,32 +83,21 @@ export class AuthMethodOIDCConfig {
   @IsNotEmpty()
   clientSecret: string
 
-  @IsOptional()
-  @Transform(({ value }) => value || OAuthTokenEndpoint.ClientSecretBasic)
-  @IsEnum(OAuthTokenEndpoint)
-  clientAuthMethod: OAuthTokenEndpoint = OAuthTokenEndpoint.ClientSecretBasic
-
   @IsString()
   @IsNotEmpty()
   redirectUri: string
 
-  @IsOptional()
-  @IsString()
-  scope?: string
+  @IsDefined()
+  @IsNotEmptyObject()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AuthMethodOIDCOptionsConfig)
+  options: AuthMethodOIDCOptionsConfig = new AuthMethodOIDCOptionsConfig()
 
-  @IsOptional()
-  @IsBoolean()
-  autoCreateUser? = true
-
-  @IsOptional()
-  @IsBoolean()
-  enablePasswordAuth? = true
-
-  @IsOptional()
-  @IsBoolean()
-  skipSubjectCheck? = false
-
-  @IsOptional()
-  @IsString()
-  adminRoleOrGroup?: string
+  @IsDefined()
+  @IsNotEmptyObject()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AuthMethodOIDCSecurityConfig)
+  security: AuthMethodOIDCSecurityConfig = new AuthMethodOIDCSecurityConfig()
 }
