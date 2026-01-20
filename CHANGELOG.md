@@ -1,4 +1,14 @@
 
+## [1.11.0](https://github.com/Sync-in/server/compare/v1.10.1...v1.11.0) (2026-01-20)
+
+### Security
+
+* **backend:** upgrade tar to 7.5.4 (GHSA-8qq5-rm4j-mr97) ([a42c1079](https://github.com/Sync-in/server/commit/a42c107904852f32db3ede01b7ee5a0a039bd6bf))
+
+### Features
+
+* **frontend:** add delayed auto-collapse functionality for right sidebar ([315bad2](https://github.com/Sync-in/server/commit/315bad25980d1b7596f86d4cd4f9045137bf7d4d))
+
 ## [1.10.1](https://github.com/Sync-in/server/compare/v1.10.0...v1.10.1) (2026-01-12)
 
 
