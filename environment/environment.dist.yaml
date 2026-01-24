@@ -206,9 +206,14 @@ auth:
       # and require proper IdP mappers to be included in the ID token or UserInfo response.
       # optional
       adminRoleOrGroup:
-      # enablePasswordAuth: Enable local password-based authentication (login or email/password).
-      # When enabled, users can sign in with their Sync-in password in addition to OIDC authentication.
-      # Users must have signed in at least once and have a local password set.
+      # enablePasswordAuth: Allow local password-based authentication when using OIDC.
+      # When enabled, users may authenticate with their Sync-in password instead of OIDC.
+      # Local password authentication is always allowed for:
+      # - guest users
+      # - administrator users (break-glass access)
+      # - application scopes (app passwords)
+      # Regular users are allowed only when this option is enabled.
+      # Users must already exist locally and have a password set.
       # default: true
       enablePasswordAuth: true
       # autoRedirect: Automatically redirect users to the OIDC login flow.

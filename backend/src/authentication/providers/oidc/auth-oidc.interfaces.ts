@@ -7,6 +7,5 @@
 export interface AuthOIDCSettings {
   loginUrl: string
   autoRedirect: boolean
-  enablePasswordAuth: boolean
   buttonText: string
 }

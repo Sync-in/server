@@ -34,7 +34,7 @@ export class AuthComponent {
   protected submitted = false
   protected twoFaVerify = false
   private route = inject(ActivatedRoute)
-  protected oidcSettings: AuthOIDCSettings | false = this.route.snapshot.data['authSettings']
+  protected oidcSettings: AuthOIDCSettings | false = this.route.snapshot.data.authSettings
   private readonly router = inject(Router)
   private readonly auth = inject(AuthService)
   private readonly fb = inject(UntypedFormBuilder)

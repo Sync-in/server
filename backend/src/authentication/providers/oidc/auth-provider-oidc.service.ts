@@ -52,7 +52,7 @@ export class AuthProviderOIDC implements AuthProvider {
   ) {}
 
   async validateUser(login: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
-    // Find user from login or email
+    // Local password authentication path (non-OIDC)
     const user: UserModel = await this.usersManager.findUser(login, false)
 
     if (!user) {

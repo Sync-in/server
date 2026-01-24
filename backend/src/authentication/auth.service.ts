@@ -148,7 +148,6 @@ export class AuthManager {
     return {
       loginUrl: API_OIDC_LOGIN,
       autoRedirect: configuration.auth.oidc.options.autoRedirect,
-      enablePasswordAuth: configuration.auth.oidc.options.enablePasswordAuth,
       buttonText: configuration.auth.oidc.options.buttonText
     }
   }
