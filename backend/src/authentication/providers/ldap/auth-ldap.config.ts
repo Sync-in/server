@@ -18,6 +18,7 @@ import {
   IsString,
   ValidateNested
 } from 'class-validator'
+import { USER_PERMISSION } from '../../../applications/users/constants/user'
 import { LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
 
 export class AuthMethodLDAPAttributesConfig {
@@ -30,6 +31,25 @@ export class AuthMethodLDAPAttributesConfig {
   @IsString()
   @Transform(({ value }) => value || LDAP_COMMON_ATTR.MAIL)
   email: string = LDAP_COMMON_ATTR.MAIL
+}
+
+export class AuthMethodLDAPOptionsConfig {
+  @IsOptional()
+  @IsString()
+  adminGroup?: string
+
+  @IsOptional()
+  @IsBoolean()
+  autoCreateUser? = true
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(USER_PERMISSION, { each: true })
+  autoCreatePermissions?: USER_PERMISSION[] = []
+
+  @IsOptional()
+  @IsBoolean()
+  enablePasswordAuthFallback? = true
 }
 
 export class AuthMethodLDAPConfig {
@@ -56,17 +76,16 @@ export class AuthMethodLDAPConfig {
 
   @IsOptional()
   @IsString()
-  adminGroup?: string
-
-  @IsOptional()
-  @IsString()
   upnSuffix?: string
 
   @IsOptional()
   @IsString()
   netbiosName?: string
 
-  @IsOptional()
-  @IsBoolean()
-  enablePasswordAuthFallback? = true
+  @IsDefined()
+  @IsNotEmptyObject()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AuthMethodLDAPOptionsConfig)
+  options: AuthMethodLDAPOptionsConfig = new AuthMethodLDAPOptionsConfig()
 }

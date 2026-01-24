@@ -47,5 +47,14 @@ function loadConfiguration(): GlobalConfig {
   config.applications.files.usersPath = join(config.applications.files.dataPath, 'users')
   config.applications.files.spacesPath = join(config.applications.files.dataPath, 'spaces')
   config.applications.files.tmpPath = join(config.applications.files.dataPath, 'tmp')
+  // DEPRECATIONS
+  // ldap.adminGroup → ldap.options.adminGroup
+  if (typeof config.auth.ldap['adminGroup'] === 'string' && config.auth.ldap['adminGroup'].length > 0) {
+    config.auth.ldap.options.adminGroup = config.auth.ldap['adminGroup']
+    console.warn(
+      '[DEPRECATED][CONFIGURATION] auth.ldap.adminGroup is deprecated and will be removed in a future version. ' +
+        'Please use auth.ldap.options.adminGroup instead.'
+    )
+  }
   return transformAndValidate(GlobalConfig, config, { exposeDefaultValues: true }, { skipMissingProperties: false })
 }

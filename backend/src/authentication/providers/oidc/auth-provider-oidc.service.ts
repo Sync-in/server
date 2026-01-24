@@ -51,6 +51,26 @@ export class AuthProviderOIDC implements AuthProvider {
     private readonly adminUsersManager: AdminUsersManager
   ) {}
 
+  async validateUser(login: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
+    // Find user from login or email
+    const user: UserModel = await this.usersManager.findUser(login, false)
+
+    if (!user) {
+      return null
+    }
+
+    if (user.isGuest || user.isAdmin || scope || this.oidcConfig.options.enablePasswordAuth) {
+      // Allow local password authentication for:
+      // - guest users
+      // - admin users (break-glass access)
+      // - application scopes (app passwords)
+      // - regular users when password authentication is enabled
+      return this.usersManager.logUser(user, password, ip, scope)
+    }
+
+    return null
+  }
+
   async getConfig(): Promise<Configuration> {
     if (!this.config) {
       this.config = await this.initializeOIDCClient()
@@ -167,26 +187,6 @@ export class AuthProviderOIDC implements AuthProvider {
     }
   }
 
-  async validateUser(login: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
-    // Find user from login or email
-    const user: UserModel = await this.usersManager.findUser(login, false)
-
-    if (!user) {
-      return null
-    }
-
-    if (user.isGuest || user.isAdmin || scope || this.oidcConfig.options.enablePasswordAuth) {
-      // Allow local password authentication for:
-      // - guest users
-      // - admin users (break-glass access)
-      // - application scopes (app passwords)
-      // - regular users when password authentication is enabled
-      return this.usersManager.logUser(user, password, ip, scope)
-    }
-
-    return null
-  }
-
   getRedirectCallbackUrl(accessExpiration: number, refreshExpiration: number) {
     if (!this.frontendBaseUrl) {
       const url = new URL(this.oidcConfig.redirectUri)
@@ -257,7 +257,8 @@ export class AuthProviderOIDC implements AuthProvider {
     let user: UserModel = await this.usersManager.findUser(email || login, false)
 
     if (!user && !this.oidcConfig.options.autoCreateUser) {
-      throw new HttpException('User not found and autoCreateUser is disabled', HttpStatus.UNAUTHORIZED)
+      this.logger.warn(`${this.validateUser.name} - User not found and autoCreateUser is disabled`)
+      throw new HttpException('User not found', HttpStatus.UNAUTHORIZED)
     }
 
     // Determine if user should be admin based on groups/roles

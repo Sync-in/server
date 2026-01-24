@@ -61,7 +61,7 @@ export class AuthProviderLDAP implements AuthProvider {
       // Allow local password authentication for:
       // - admin users (break-glass access)
       // - regular users when password authentication fallback is enabled
-      if (user && Boolean(ldapErrorMessage) && (user.isAdmin || this.ldapConfig.enablePasswordAuthFallback)) {
+      if (user && Boolean(ldapErrorMessage) && (user.isAdmin || this.ldapConfig.options.enablePasswordAuthFallback)) {
         const localUser = await this.usersManager.logUser(user, password, ip)
         if (localUser) return localUser
       }
@@ -80,6 +80,11 @@ export class AuthProviderLDAP implements AuthProvider {
       return null
     }
 
+    if (!user && !this.ldapConfig.options.autoCreateUser) {
+      this.logger.warn(`${this.validateUser.name} - User not found and autoCreateUser is disabled`)
+      throw new HttpException('User not found', HttpStatus.UNAUTHORIZED)
+    }
+
     const identity = this.createIdentity(entry, password)
     user = await this.updateOrCreateUser(identity, user)
     this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error(`${this.validateUser.name} : ${e}`))
@@ -92,7 +97,7 @@ export class AuthProviderLDAP implements AuthProvider {
     // Generic LDAP: build DN from login attribute + baseDN
     const bindUserDN = this.isAD ? ldapLogin : `${this.ldapConfig.attributes.login}=${ldapLogin},${this.ldapConfig.baseDN}`
     let client: Client
-    let error: any
+    let error: InvalidCredentialsError | any
     for (const s of this.ldapConfig.servers) {
       client = new Client({ ...this.clientOptions, url: s })
       try {
@@ -101,12 +106,12 @@ export class AuthProviderLDAP implements AuthProvider {
       } catch (e) {
         if (e.errors?.length) {
           for (const err of e.errors) {
-            this.logger.warn(`${this.checkAuth.name} - ${ldapLogin} : ${err}`)
+            this.logger.warn(`${this.checkAuth.name} - ${bindUserDN} : ${err}`)
             error = err
           }
         } else {
           error = e
-          this.logger.warn(`${this.checkAuth.name} - ${ldapLogin} : ${e}`)
+          this.logger.warn(`${this.checkAuth.name} - ${bindUserDN} : ${e}`)
         }
         if (error instanceof InvalidCredentialsError) {
           return false
@@ -155,6 +160,7 @@ export class AuthProviderLDAP implements AuthProvider {
   private async updateOrCreateUser(identity: CreateUserDto, user: UserModel): Promise<UserModel> {
     if (user === null) {
       // Create
+      identity.permissions = this.ldapConfig.options.autoCreatePermissions.join(',')
       const createdUser = await this.adminUsersManager.createUserOrGuest(identity, identity.role)
       const freshUser = await this.usersManager.fromUserId(createdUser.id)
       if (!freshUser) {
@@ -187,7 +193,7 @@ export class AuthProviderLDAP implements AuthProvider {
     if (Object.keys(identityHasChanged).length > 0) {
       try {
         if (identityHasChanged?.role != null) {
-          if (user.role === USER_ROLE.ADMINISTRATOR && !this.ldapConfig.adminGroup) {
+          if (user.role === USER_ROLE.ADMINISTRATOR && !this.ldapConfig.options.adminGroup) {
             // Prevent removing the admin role when adminGroup was removed or not defined
             delete identityHasChanged.role
           }
@@ -233,9 +239,9 @@ export class AuthProviderLDAP implements AuthProvider {
 
   private createIdentity(entry: LdapUserEntry, password: string): CreateUserDto {
     const isAdmin =
-      typeof this.ldapConfig.adminGroup === 'string' &&
-      this.ldapConfig.adminGroup &&
-      entry[LDAP_COMMON_ATTR.MEMBER_OF]?.includes(this.ldapConfig.adminGroup)
+      typeof this.ldapConfig.options.adminGroup === 'string' &&
+      this.ldapConfig.options.adminGroup &&
+      entry[LDAP_COMMON_ATTR.MEMBER_OF]?.includes(this.ldapConfig.options.adminGroup)
     return {
       login: this.dbLogin(entry[this.ldapConfig.attributes.login]),
       email: entry[this.ldapConfig.attributes.email] as string,

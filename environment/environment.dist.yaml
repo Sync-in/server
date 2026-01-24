@@ -26,7 +26,7 @@ logger:
   filePath:
 mysql:
   # required
-  url: mysql://user:MySQLRootPassword@localhost:3306/database
+  url: mysql://user:MySQLPassword@localhost:3306/database
   # default: `false`
   logQueries: false
 cache:
@@ -84,16 +84,6 @@ auth:
   # Optional but strongly recommended
   # Warning: do not change or remove the encryption key after MFA activation, or the codes will become invalid
   encryptionKey: changeEncryptionKeyWithStrongKey
-  # Multifactor authentication
-  mfa:
-    # TOTP configuration
-    totp:
-      # Enable TOTP authentication
-      # default: true
-      enabled: true
-      # Name displayed in the authentication app (FreeOTP, Proton Authenticator, Aegis Authenticator etc.)
-      # default: Sync-in
-      issuer: Sync-in
   # cookie sameSite setting: `lax` | `strict`
   # default: `strict`
   cookieSameSite: strict
@@ -112,13 +102,33 @@ auth:
       # token expiration = cookie maxAge
       # default: `4h`
       expiration: 4h
+  # Multifactor authentication
+  mfa:
+    # TOTP configuration
+    totp:
+      # Enable TOTP authentication
+      # default: true
+      enabled: true
+      # Name displayed in the authentication app (FreeOTP, Proton Authenticator, Aegis Authenticator etc.)
+      # default: Sync-in
+      issuer: Sync-in
+  # LDAP authentication
   ldap:
     # e.g: [ldap://localhost:389, ldaps://localhost:636] (array required)
+    # required
     servers: []
     # baseDN: distinguished name (e.g., ou=people,dc=ldap,dc=sync-in,dc=com)
-    baseDN:
+    # required
+    baseDN: ou=people,dc=ldap,dc=sync-in,dc=com
     # filter, e.g: (acl=admin)
+    # optional
     filter:
+    # upnSuffix: AD domain suffix used with `userPrincipalName` to build UPN-style logins (e.g., user@`sync-in.com`)
+    # optional
+    upnSuffix:
+    # netbiosName: NetBIOS domain name used with `sAMAccountName` to build legacy logins (e.g., `SYNC_IN`\user)
+    # optional
+    netbiosName:
     attributes:
       # Login attribute used to construct the user's DN for binding.
       # The value of this attribute is used as the naming attribute (first RDN) when forming the Distinguished Name (DN) during authentication
@@ -129,17 +139,32 @@ auth:
       # email: `mail` or `email`
       # default: `mail`
       email: mail
-    # adminGroup: The CN of a group containing Sync-in administrators (e.g., administrators)
-    adminGroup:
-    # upnSuffix: AD domain suffix used with `userPrincipalName` to build UPN-style logins (e.g., user@`sync-in.com`)
-    upnSuffix:
-    # netbiosName: NetBIOS domain name used with `sAMAccountName` to build legacy logins (e.g., `SYNC_IN`\user)
-    netbiosName:
-    # enablePasswordAuthFallback: Enable local password authentication as a fallback when the LDAP authentication service is unavailable.
-    # This fallback applies only to existing users and is NOT triggered when credentials are invalid.
-    # Users must have signed in at least once.
-    # default: true
-    enablePasswordAuthFallback: true
+    options:
+      # autoCreateUser: Automatically create a local user on first successful LDAP authentication.
+      # The local account is created from LDAP attributes:
+      # - login: from the configured LDAP login attribute (e.g. uid, cn, sAMAccountName, userPrincipalName)
+      # - email: from the configured email attribute (required)
+      # - firstName / lastName: from givenName+sn, or displayName, or cn (fallback)
+      # When disabled, only existing users can authenticate via LDAP.
+      # default: true
+      autoCreateUser: true
+      # autoCreatePermissions: Permissions assigned to users automatically created via LDAP.
+      # Applied only at user creation time when autoCreateUser is enabled.
+      # Has no effect on existing users.
+      # A complete list of permissions is available in the documentation: https://sync-in.com/docs/admin-guide/permissions
+      # e.g.: [personal_space, spaces_access] (array required)
+      # default: []
+      autoCreatePermissions: []
+      # adminGroup: Name of the LDAP group (CN) that grants Sync-in administrator privileges.
+      # If set, users whose LDAP `memberOf` contains this group name are assigned the administrator role.
+      # If not set, existing administrator users keep their role and it cannot be removed via LDAP.
+      # optional
+      adminGroup:
+      # enablePasswordAuthFallback: Allow local password authentication when LDAP authentication fails.
+      # When enabled, users can authenticate with their local password if the LDAP service is unavailable.
+      # Always allowed for administrator users (break-glass access).
+      # default: true
+      enablePasswordAuthFallback: true
   oidc:
     # issuerUrl: The URL of the OIDC provider's discovery endpoint
     # Examples:
@@ -152,10 +177,10 @@ auth:
     issuerUrl:
     # clientId: OAuth 2.0 Client ID obtained from your OIDC provider
     # required
-    clientId: sync-in
+    clientId:
     # clientSecret: OAuth 2.0 Client Secret obtained from your OIDC provider
     # required
-    clientSecret: changeClientSecret
+    clientSecret: changeOIDCClientSecret
     # redirectUri: The callback URL where users are redirected after authentication
     # This URL must be registered in your OIDC provider's allowed redirect URIs
     # Example (API callback): https://sync-in.domain.com/api/auth/oidc/callback
@@ -174,15 +199,6 @@ auth:
       # e.g.: [personal_space, spaces_access] (array required)
       # default: []
       autoCreatePermissions: []
-      # autoRedirect: Automatically redirect users to the OIDC login flow.
-      # When enabled, the login page is skipped and users are sent directly to the OIDC provider.
-      # default: false
-      autoRedirect: false
-      # enablePasswordAuth: Enable local password-based authentication (login or email/password).
-      # When enabled, users can sign in with their Sync-in password in addition to OIDC authentication.
-      # Users must have signed in at least once and have a local password set.
-      # default: true
-      enablePasswordAuth: true
       # adminRoleOrGroup: Name of the role or group that grants Sync-in administrator access
       # Users with this value will be granted administrator privileges.
       # The value is matched against `roles` or `groups` claims provided by the IdP.
@@ -190,6 +206,15 @@ auth:
       # and require proper IdP mappers to be included in the ID token or UserInfo response.
       # optional
       adminRoleOrGroup:
+      # enablePasswordAuth: Enable local password-based authentication (login or email/password).
+      # When enabled, users can sign in with their Sync-in password in addition to OIDC authentication.
+      # Users must have signed in at least once and have a local password set.
+      # default: true
+      enablePasswordAuth: true
+      # autoRedirect: Automatically redirect users to the OIDC login flow.
+      # When enabled, the login page is skipped and users are sent directly to the OIDC provider.
+      # default: false
+      autoRedirect: false
       # buttonText: Label displayed on the OIDC login button.
       # default: Continue with OpenID Connect
       buttonText: Continue with OpenID Connect
