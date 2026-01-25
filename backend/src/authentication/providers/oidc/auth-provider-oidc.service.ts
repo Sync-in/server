@@ -74,9 +74,6 @@ export class AuthProviderOIDC implements AuthProvider {
   async getConfig(): Promise<Configuration> {
     if (!this.config) {
       this.config = await this.initializeOIDCClient()
-      if (!this.config) {
-        throw new HttpException('Failed to initialize OIDC client', HttpStatus.INTERNAL_SERVER_ERROR)
-      }
     }
     return this.config
   }
@@ -217,15 +214,25 @@ export class AuthProviderOIDC implements AuthProvider {
         },
         this.getTokenAuthMethod(this.oidcConfig.security.tokenEndpointAuthMethod, this.oidcConfig.clientSecret),
         {
-          execute: [allowInsecureRequests], // allow HTTP for development
+          execute: [allowInsecureRequests],
           timeout: 6000
         }
       )
       this.logger.log(`${this.initializeOIDCClient.name} - OIDC client initialized successfully for issuer: ${this.oidcConfig.issuerUrl}`)
       return config
     } catch (error) {
-      this.logger.error(`${this.initializeOIDCClient.name} - Failed to initialize OIDC client: ${error?.cause || error}`)
-      return null
+      this.logger.error(`${this.initializeOIDCClient.name} - OIDC client initialization failed: ${error?.cause || error}`)
+      switch (error.cause?.code) {
+        case 'ECONNREFUSED':
+        case 'ENOTFOUND':
+          throw new HttpException('OIDC provider unavailable', HttpStatus.SERVICE_UNAVAILABLE)
+
+        case 'ETIMEDOUT':
+          throw new HttpException('OIDC provider timeout', HttpStatus.GATEWAY_TIMEOUT)
+
+        default:
+          throw new HttpException('OIDC client initialization failed', HttpStatus.INTERNAL_SERVER_ERROR)
+      }
     }
   }
 
