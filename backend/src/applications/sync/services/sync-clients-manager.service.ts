@@ -59,15 +59,20 @@ export class SyncClientsManager {
       throw new HttpException('Missing permission', HttpStatus.FORBIDDEN)
     }
     if (configuration.auth.mfa.totp.enabled && user.twoFaEnabled) {
+      // Checking TOTP code and recovery code
       if (!clientRegistrationDto.code) {
         this.logger.warn(`${this.register.name} - missing two-fa code for user *${user.login}* (${user.id})`)
         throw new HttpException('Missing TWO-FA code', HttpStatus.UNAUTHORIZED)
       }
-      const auth = this.authMethod2Fa.validateTwoFactorCode(clientRegistrationDto.code, user.secrets.twoFaSecret)
-      if (!auth.success) {
-        this.logger.warn(`${this.register.name} - wrong two-fa code for user *${user.login}* (${user.id})`)
-        this.usersManager.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.register.name} - ${e}`))
-        throw new HttpException(auth.message, HttpStatus.UNAUTHORIZED)
+      const authCode = this.authMethod2Fa.validateTwoFactorCode(clientRegistrationDto.code, user.secrets.twoFaSecret)
+      if (!authCode.success) {
+        this.logger.warn(`${this.register.name} - two-fa code for *${user.login}* (${user.id}) - ${authCode.message}`)
+        const authRCode = await this.authMethod2Fa.validateRecoveryCode(user.id, clientRegistrationDto.code, user.secrets.recoveryCodes)
+        if (!authRCode.success) {
+          this.logger.warn(`${this.register.name} - two-fa recovery code for *${user.login}* (${user.id}) - ${authRCode.message}`)
+          this.usersManager.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.register.name} - ${e}`))
+          throw new HttpException(authCode.message, HttpStatus.UNAUTHORIZED)
+        }
       }
     }
     try {

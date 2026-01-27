@@ -143,30 +143,31 @@ export class AuthProvider2FA {
     return auth
   }
 
-  private async validateRecoveryCode(userId: number, code: string, encryptedCodes: string[]): Promise<TwoFaVerifyResult> {
+  async validateRecoveryCode(userId: number, code: string, encryptedCodes: string[]): Promise<TwoFaVerifyResult> {
     const auth: TwoFaVerifyResult = { success: false, message: '' }
     if (!encryptedCodes || encryptedCodes.length === 0) {
       auth.message = 'Invalid code'
-    } else {
-      try {
-        for (const encCode of encryptedCodes) {
-          if (code === this.decryptSecret(encCode)) {
-            auth.success = true
-            // removed used code
-            encryptedCodes.splice(encryptedCodes.indexOf(encCode), 1)
-            break
-          }
+      return auth
+    }
+    try {
+      for (const encCode of encryptedCodes) {
+        const decryptedCode = this.decryptSecret(encCode)
+        if (code === decryptedCode) {
+          auth.success = true
+          // removed used code
+          encryptedCodes.splice(encryptedCodes.indexOf(encCode), 1)
+          break
         }
-        if (auth.success) {
-          // update recovery codes
-          await this.usersManager.updateSecrets(userId, { recoveryCodes: encryptedCodes })
-        } else {
-          auth.message = 'Invalid code'
-        }
-      } catch (e) {
-        this.logger.error(`${this.validateRecoveryCode.name} - ${e}`)
-        auth.message = e.message
       }
+      if (auth.success) {
+        // update recovery codes
+        await this.usersManager.updateSecrets(userId, { recoveryCodes: encryptedCodes })
+      } else {
+        auth.message = 'Invalid code'
+      }
+    } catch (e) {
+      this.logger.error(`${this.validateRecoveryCode.name} - ${e}`)
+      auth.message = e.message
     }
     return auth
   }
