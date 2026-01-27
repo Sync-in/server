@@ -35,20 +35,20 @@ import { Electron } from '../electron/electron.service'
 import { LayoutService } from '../layout/layout.service'
 import { StoreService } from '../store/store.service'
 import { AUTH_PATHS } from './auth.constants'
-import type { AuthOIDCQueryParams } from './auth.interface'
+import type { AuthOIDCQueryParams, AuthResult } from './auth.interface'
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   public returnUrl: string
+  public electron = inject(Electron)
   private authSettings: AuthOIDCSettings | false = null
   private readonly http = inject(HttpClient)
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
   private readonly userService = inject(UserService)
   private readonly layout = inject(LayoutService)
-  private readonly electron = inject(Electron)
 
   private _refreshExpiration = parseInt(localStorage.getItem('refresh_expiration') || '0', 10) || 0
 
@@ -74,50 +74,26 @@ export class AuthService {
     localStorage.setItem('access_expiration', value.toString())
   }
 
-  login(login: string, password: string): Observable<{ success: boolean; message: any; twoFaEnabled?: boolean }> {
+  login(login: string, password: string): Observable<AuthResult> {
     return this.http.post<LoginResponseDto>(API_AUTH_LOGIN, { login, password }).pipe(
-      map((r: LoginResponseDto) => {
+      switchMap((r: LoginResponseDto) => {
+        // 2FA - first step (code page)
         if (r.server.twoFaEnabled && r.user.twoFaEnabled) {
-          // check 2FA before logging in the user
           this.accessExpiration = r.token.access_2fa_expiration
           this.refreshExpiration = this.accessExpiration
-          return { success: true, twoFaEnabled: true, message: null }
-        } else {
-          this.initUserFromResponse(r)
+          return of<AuthResult>({ success: true, twoFaEnabled: true, message: null })
         }
-        return { success: true, message: null }
+        // Desktop Client Login
+        if (this.electron.enabled) {
+          return this.electron.register(login, password)
+        }
+        // Web Login
+        this.initUserFromResponse(r)
+        return of<AuthResult>({ success: true, message: null })
       }),
       catchError((e) => {
-        console.warn(e)
-        return of({ success: false, message: e.error.message || e.message })
-      })
-    )
-  }
-
-  loginElectron(): Observable<boolean> {
-    return this.electron.authenticate().pipe(
-      switchMap((auth: SyncClientAuthDto) => {
-        return this.http.post<ClientAuthCookieDto>(API_SYNC_AUTH_COOKIE, auth).pipe(
-          map((r: ClientAuthCookieDto) => {
-            this.accessExpiration = r.token.access_expiration
-            this.refreshExpiration = r.token.refresh_expiration
-            this.initUser(r)
-            if (r?.client_token_update) {
-              // update client token
-              this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_UPDATE, r.client_token_update)
-            }
-            return true
-          }),
-          catchError((e: HttpErrorResponse) => {
-            console.warn(e)
-            if (e.error.message === CLIENT_TOKEN_EXPIRED_ERROR) {
-              this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_EXPIRED)
-            } else {
-              this.electron.send(EVENT.SERVER.AUTHENTICATION_FAILED)
-            }
-            return of(false)
-          })
-        )
+        console.error(e)
+        return of<AuthResult>({ success: false, message: e?.error?.message ?? e?.message })
       })
     )
   }
@@ -146,20 +122,6 @@ export class AuthService {
       .subscribe()
   }
 
-  logoutImpersonateUser() {
-    this.http.post<LoginResponseDto>(API_ADMIN_IMPERSONATE_LOGOUT, null).subscribe({
-      next: (r: LoginResponseDto) => {
-        this.userService.disconnectWebSocket()
-        this.initUserFromResponse(r)
-        this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch(console.error)
-      },
-      error: (e: HttpErrorResponse) => {
-        console.error(e)
-        this.layout.sendNotification('error', 'Impersonate identity', 'logout', e)
-      }
-    })
-  }
-
   initUserFromResponse(r: LoginResponseDto, impersonate = false) {
     if (r !== null) {
       this.accessExpiration = r.token.access_expiration
@@ -183,7 +145,7 @@ export class AuthService {
         console.debug('token has expired')
         if (this.electron.enabled) {
           console.debug('login with app')
-          return this.loginElectron()
+          return this.authenticateDesktopClient()
         }
         this.logout(true, true)
         return throwError(() => e)
@@ -198,7 +160,7 @@ export class AuthService {
     }
     if (this.refreshTokenHasExpired()) {
       if (this.electron.enabled) {
-        return this.loginElectron()
+        return this.authenticateDesktopClient()
       }
       this.returnUrl = returnUrl.length > 1 ? returnUrl : null
       this.logout()
@@ -256,6 +218,54 @@ export class AuthService {
         console.error(e)
         this.authSettings = false
         return of(false as const)
+      })
+    )
+  }
+
+  private logoutImpersonateUser() {
+    this.http.post<LoginResponseDto>(API_ADMIN_IMPERSONATE_LOGOUT, null).subscribe({
+      next: (r: LoginResponseDto) => {
+        this.userService.disconnectWebSocket()
+        this.initUserFromResponse(r)
+        this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch(console.error)
+      },
+      error: (e: HttpErrorResponse) => {
+        console.error(e)
+        this.layout.sendNotification('error', 'Impersonate identity', 'logout', e)
+      }
+    })
+  }
+
+  private authenticateDesktopClient(): Observable<boolean> {
+    return this.electron.authenticate().pipe(
+      switchMap((auth: SyncClientAuthDto) => {
+        if (!auth.clientId) {
+          // No auth was provided, the Sync-in desktop app must be registered
+          this.logout(true)
+          return of(false)
+        }
+        return this.http.post<ClientAuthCookieDto>(API_SYNC_AUTH_COOKIE, auth).pipe(
+          map((r: ClientAuthCookieDto) => {
+            this.accessExpiration = r.token.access_expiration
+            this.refreshExpiration = r.token.refresh_expiration
+            this.initUser(r)
+            if (r?.client_token_update) {
+              // Update the client token
+              this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_UPDATE, r.client_token_update)
+            }
+            return true
+          }),
+          catchError((e: HttpErrorResponse) => {
+            if (e.error.message === CLIENT_TOKEN_EXPIRED_ERROR) {
+              this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_EXPIRED)
+            } else {
+              // In other cases, we consider the server unavailable
+              this.electron.send(EVENT.SERVER.AUTHENTICATION_FAILED)
+            }
+            this.logout(true, e.error.message === CLIENT_TOKEN_EXPIRED_ERROR)
+            return of(false)
+          })
+        )
       })
     )
   }
