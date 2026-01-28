@@ -4,8 +4,8 @@
  * See the LICENSE file for licensing details
  */
 
-import { IsDefined, IsNotEmpty, IsNotEmptyObject, IsObject, IsString, IsUUID } from 'class-validator'
-import { SyncClientInfo } from '../interfaces/sync-client.interface'
+import { IsBoolean, IsDefined, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, IsUUID } from 'class-validator'
+import type { SyncClientInfo } from '../interfaces/sync-client.interface'
 
 export class SyncClientAuthDto {
   @IsNotEmpty()
@@ -22,4 +22,8 @@ export class SyncClientAuthDto {
   @IsNotEmptyObject()
   @IsObject()
   info: SyncClientInfo
+
+  @IsOptional()
+  @IsBoolean()
+  tokenHasExpired?: boolean
 }

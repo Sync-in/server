@@ -8,6 +8,7 @@ import { effect, inject, Injectable, NgZone } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications/sync/dtos/sync-client-auth.dto'
+import type { SyncClientAuthRegistration } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
 import { combineLatest, from, map, Observable } from 'rxjs'
 import { NotificationModel } from '../applications/notifications/models/notification.model'
 import { CLIENT_APP_COUNTER, CLIENT_SCHEDULER_STATE } from '../applications/sync/constants/client'
@@ -71,12 +72,24 @@ export class Electron {
   }
 
   authenticate(): Observable<SyncClientAuthDto> {
+    // Get information about client authentication
     return from(this.invoke(EVENT.SERVER.AUTHENTICATION))
   }
 
   register(login: string, password: string, code?: string): Observable<AuthResult> {
+    // The client handles the registration.
     return from(this.invoke(EVENT.SERVER.REGISTRATION, { login, password, code })).pipe(
       map((e: { ok: boolean; msg?: string }) => ({ success: e.ok, message: e.msg ?? null }) satisfies AuthResult)
+    )
+  }
+
+  externalRegister(externalAuth: SyncClientAuthRegistration): Observable<boolean> {
+    // The registration has already been completed on the server, and the client must be updated accordingly.
+    return from(this.invoke(EVENT.SERVER.REGISTRATION, null, externalAuth)).pipe(
+      map((e: { ok: boolean; msg?: string }) => {
+        if (!e.ok) console.error(`${this.externalRegister.name} - ${e.msg}`)
+        return e.ok
+      })
     )
   }
 

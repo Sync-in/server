@@ -28,5 +28,17 @@ export class SyncClientRegistrationDto {
   @IsDefined()
   @IsNotEmptyObject()
   @IsObject()
-  info: SyncClientInfo
+  info: SyncClientInfo // TODO: create a DTO for validation
+}
+
+export class SyncClientAuthRegistrationDto {
+  @IsOptional()
+  @IsString()
+  @IsUUID()
+  clientId?: string
+
+  @IsDefined()
+  @IsNotEmptyObject()
+  @IsObject()
+  info: SyncClientInfo // TODO: create a DTO for validation
 }

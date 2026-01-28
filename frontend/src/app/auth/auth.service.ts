@@ -8,9 +8,9 @@ import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http
 import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import { CLIENT_TOKEN_EXPIRED_ERROR } from '@sync-in-server/backend/src/applications/sync/constants/auth'
-import { API_SYNC_AUTH_COOKIE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
+import { API_SYNC_AUTH_COOKIE, API_SYNC_REGISTER_AUTH } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications/sync/dtos/sync-client-auth.dto'
-import type { ClientAuthCookieDto } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
+import { SyncClientAuthCookie, SyncClientAuthRegistration } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
 import { API_ADMIN_IMPERSONATE_LOGOUT, API_USERS_ME } from '@sync-in-server/backend/src/applications/users/constants/routes'
 import { CSRF_KEY } from '@sync-in-server/backend/src/authentication/constants/auth'
 import {
@@ -142,10 +142,8 @@ export class AuthService {
         return true
       }),
       catchError((e: HttpErrorResponse) => {
-        console.debug('token has expired')
         if (this.electron.enabled) {
-          console.debug('login with app')
-          return this.authenticateDesktopClient()
+          return this.authDesktopClient()
         }
         this.logout(true, true)
         return throwError(() => e)
@@ -155,12 +153,17 @@ export class AuthService {
 
   checkUserAuthAndLoad(returnUrl: string, authFromOIDC?: AuthOIDCQueryParams): Observable<boolean> {
     if (authFromOIDC) {
+      // At this point, the cookies are stored in the session.
+      console.debug(`${this.checkUserAuthAndLoad.name} - auth from OIDC`)
       this.accessExpiration = parseInt(authFromOIDC.access_expiration)
       this.refreshExpiration = parseInt(authFromOIDC.refresh_expiration)
+      if (this.electron.enabled) {
+        return this.authOIDCDesktopClient()
+      }
     }
     if (this.refreshTokenHasExpired()) {
       if (this.electron.enabled) {
-        return this.authenticateDesktopClient()
+        return this.authDesktopClient()
       }
       this.returnUrl = returnUrl.length > 1 ? returnUrl : null
       this.logout()
@@ -236,16 +239,17 @@ export class AuthService {
     })
   }
 
-  private authenticateDesktopClient(): Observable<boolean> {
+  private authDesktopClient(): Observable<boolean> {
     return this.electron.authenticate().pipe(
       switchMap((auth: SyncClientAuthDto) => {
         if (!auth.clientId) {
           // No auth was provided, the Sync-in desktop app must be registered
+          console.debug(`${this.authDesktopClient.name} - client must be registered`)
           this.logout(true)
           return of(false)
         }
-        return this.http.post<ClientAuthCookieDto>(API_SYNC_AUTH_COOKIE, auth).pipe(
-          map((r: ClientAuthCookieDto) => {
+        return this.http.post<SyncClientAuthCookie>(API_SYNC_AUTH_COOKIE, auth).pipe(
+          map((r: SyncClientAuthCookie) => {
             this.accessExpiration = r.token.access_expiration
             this.refreshExpiration = r.token.refresh_expiration
             this.initUser(r)
@@ -256,6 +260,7 @@ export class AuthService {
             return true
           }),
           catchError((e: HttpErrorResponse) => {
+            console.debug(`${this.authDesktopClient.name} - ${e.error.message}`)
             if (e.error.message === CLIENT_TOKEN_EXPIRED_ERROR) {
               this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_EXPIRED)
             } else {
@@ -266,6 +271,39 @@ export class AuthService {
             return of(false)
           })
         )
+      })
+    )
+  }
+
+  private authOIDCDesktopClient(): Observable<boolean> {
+    return this.electron.authenticate().pipe(
+      switchMap((auth: SyncClientAuthDto) => {
+        if (!auth.clientId || auth.tokenHasExpired) {
+          // The client must be registered, or the token must be renewed
+          return this.http.post<SyncClientAuthRegistration>(API_SYNC_REGISTER_AUTH, auth).pipe(
+            switchMap((externalAuth: SyncClientAuthRegistration) => {
+              return this.electron.externalRegister(externalAuth).pipe(
+                switchMap((success: boolean) => {
+                  if (success) {
+                    console.debug(`${this.authOIDCDesktopClient.name} - ${auth.clientId ? 'client was registered' : 'client token renewed'}`)
+                    return this.authDesktopClient()
+                  } else {
+                    this.logout(true, true)
+                    return of(false)
+                  }
+                })
+              )
+            }),
+            catchError((e: HttpErrorResponse) => {
+              console.error(`${this.authOIDCDesktopClient.name} - ${e}`)
+              this.logout(true)
+              return of(false)
+            })
+          )
+        } else {
+          // The client must be authenticated
+          return this.authDesktopClient()
+        }
       })
     )
   }

@@ -4,15 +4,14 @@
  * See the LICENSE file for licensing details
  */
 
-import { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
-import { TokenResponseDto } from '../../../authentication/dto/token-response.dto'
+import type { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
+import type { TokenResponseDto } from '../../../authentication/dto/token-response.dto'
 
-export class ClientAuthCookieDto extends LoginResponseDto {
-  // send the new client token
-  client_token_update?: string
-}
+// send the new client token
+export type SyncClientAuthCookie = LoginResponseDto & { client_token_update?: string }
+export type SyncClientAuthToken = TokenResponseDto & { client_token_update?: string }
 
-export class ClientAuthTokenDto extends TokenResponseDto {
-  // send the new client token
-  client_token_update?: string
+export interface SyncClientAuthRegistration {
+  clientId: string
+  clientToken: string
 }
