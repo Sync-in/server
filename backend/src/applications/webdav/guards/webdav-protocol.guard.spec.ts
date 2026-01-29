@@ -315,6 +315,27 @@ describe(WebDAVProtocolGuard.name, () => {
       }
     })
 
+    it('decodes If header path with special chars via urlToPath', async () => {
+      ;(urlToPath as jest.Mock).mockImplementation((s: string) =>
+        s
+          .split('/')
+          .map((segment) => decodeURIComponent(segment))
+          .join('/')
+      )
+
+      const encodedPath = '/webdav/base/path/space%20name'
+      const req = baseReq(HTTP_METHOD.LOCK, {
+        headers: { [HEADER.IF]: `<${encodedPath}> (<urn:uuid:abc>)` },
+        body: '<lockinfo xmlns="DAV:"><lockscope><exclusive/></lockscope></lockinfo>'
+      })
+      const res = makeRes()
+      const ctx = makeCtx(req, res)
+
+      await expect(guard.canActivate(ctx)).resolves.toBe(true)
+      expect(urlToPath).toHaveBeenCalledWith(encodedPath)
+      expect(req.dav.ifHeaders?.[0]?.path).toBe('/webdav/base/path/space name')
+    })
+
     it('missing lockinfo -> 400', async () => {
       const req = baseReq(HTTP_METHOD.LOCK, {
         headers: {},
@@ -486,6 +507,29 @@ describe(WebDAVProtocolGuard.name, () => {
       expectIfHeadersParsed(req)
     })
 
+    it('COPY: decodes special chars in Destination via urlToPath', async () => {
+      ;(urlToPath as jest.Mock).mockImplementation((s: string) =>
+        s
+          .split('/')
+          .map((segment) => decodeURIComponent(segment))
+          .join('/')
+      )
+
+      const encodedDestination = '/webdav/base/path/target%20file'
+      const req = baseReq(HTTP_METHOD.COPY, {
+        headers: { [HEADER.DESTINATION]: encodedDestination }
+      })
+      const res = makeRes()
+      const ctx = makeCtx(req, res)
+      await expect(guard.canActivate(ctx)).resolves.toBe(true)
+      expect(urlToPath).toHaveBeenCalledWith(encodedDestination)
+      expect(req.dav.copyMove).toEqual({
+        overwrite: true,
+        destination: '/webdav/base/path/target file',
+        isMove: false
+      })
+    })
+
     it('MOVE: isMove=true and overwrite=false when OVERWRITE header is "f", respects depth header', async () => {
       ;(decodeUrl as jest.Mock).mockImplementation((s: string) => s)
       ;(urlToPath as jest.Mock).mockImplementation((_s: string) => '/webdav/base/path/target2')
@@ -504,6 +548,29 @@ describe(WebDAVProtocolGuard.name, () => {
       expect(req.dav.copyMove).toEqual({
         overwrite: false,
         destination: '/webdav/base/path/target2',
+        isMove: true
+      })
+    })
+
+    it('MOVE: decodes special chars in Destination via urlToPath', async () => {
+      ;(urlToPath as jest.Mock).mockImplementation((s: string) =>
+        s
+          .split('/')
+          .map((segment) => decodeURIComponent(segment))
+          .join('/')
+      )
+
+      const encodedDestination = '/webdav/base/path/target%5B1%5D'
+      const req = baseReq(HTTP_METHOD.MOVE, {
+        headers: { [HEADER.DESTINATION]: encodedDestination }
+      })
+      const res = makeRes()
+      const ctx = makeCtx(req, res)
+      await expect(guard.canActivate(ctx)).resolves.toBe(true)
+      expect(urlToPath).toHaveBeenCalledWith(encodedDestination)
+      expect(req.dav.copyMove).toEqual({
+        overwrite: true,
+        destination: '/webdav/base/path/target[1]',
         isMove: true
       })
     })
