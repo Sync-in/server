@@ -237,7 +237,7 @@ export class WebDAVProtocolGuard implements CanActivate {
     if (!req.headers[HEADER.DESTINATION]) {
       throw new HttpException(`Missing ${HEADER.DESTINATION} header`, HttpStatus.BAD_REQUEST)
     }
-    const destination = decodeUrl(urlToPath(req.headers[HEADER.DESTINATION] as string))
+    const destination = urlToPath(req.headers[HEADER.DESTINATION] as string)
     if (!REGEX_BASE_PATH.test(destination)) {
       this.logger.warn(`The destination does not match the webdav base path : ${destination}`)
       throw new HttpException('The destination does not match', HttpStatus.BAD_REQUEST)

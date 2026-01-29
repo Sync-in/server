@@ -13,6 +13,7 @@ import { ValidatorOptions } from 'class-validator/types/validation/ValidatorOpti
 import crypto from 'node:crypto'
 import { setTimeout } from 'node:timers/promises'
 import { SPACE_PERMS_SEP } from '../applications/spaces/constants/spaces'
+import { decodeUrl } from './shared'
 
 export const regexpEscape = /[.*+?^${}()|[\]\\]/g
 export const regexSpecialChars = /[-[\]{}()*+!<=:?./\\^$|#,]/g
@@ -56,13 +57,15 @@ export function formatDateISOString(date: Date): string {
 
 export function urlToPath(url: string): string {
   // transform https://sync-in.com/webdav/ to /webdav/
+  let path: string
   try {
     // transform https://sync-in.com/webdav/ to /webdav/
-    return new URL(url).pathname
+    path = new URL(url).pathname
   } catch {
     // or allows uri like : /webdav/
-    return url
+    path = url
   }
+  return decodeUrl(path)
 }
 
 export async function hashPassword(password: string): Promise<string> {
