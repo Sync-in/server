@@ -9,7 +9,7 @@ import { ValidationError } from 'fast-xml-parser'
 import { FastifyReply } from 'fastify'
 import { urlToPath } from '../../../common/functions'
 import { decodeUrl } from '../../../common/shared'
-import { HTTP_METHOD } from '../../applications.constants'
+import { HTTP_METHOD, HTTP_VERSION } from '../../applications.constants'
 import { CACHE_LOCK_DEFAULT_TTL } from '../../files/constants/cache'
 import { USER_PERMISSION } from '../../users/constants/user'
 import {
@@ -94,7 +94,7 @@ export class WebDAVProtocolGuard implements CanActivate {
     } else {
       throw new HttpException(`${valid.err.code} : ${valid.err.msg}`, HttpStatus.BAD_REQUEST)
     }
-    req.dav.httpVersion = `${req.protocol.toUpperCase()}/${req.raw['httpVersion']}`
+    req.dav.httpVersion = HTTP_VERSION
     req.dav.body = body
     return true
   }

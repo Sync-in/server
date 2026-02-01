@@ -6,6 +6,7 @@
 
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { HTTP_VERSION } from '../../applications.constants'
 import { FileLock } from '../../files/interfaces/file-lock.interface'
 import { FileError } from '../../files/models/file-error'
 import { LockConflict } from '../../files/models/file-lock-error'
@@ -83,7 +84,7 @@ describe('WebDAVMethods', () => {
       dav: {
         url: '/webdav/test/file.txt',
         depth: '0',
-        httpVersion: 'HTTP/1.1',
+        httpVersion: HTTP_VERSION,
         body: '<lockinfo/>',
         lock: {
           timeout: 60,
@@ -833,7 +834,7 @@ describe('WebDAVMethods', () => {
           method: 'PROPPATCH',
           dav: {
             ...createBaseRequest().dav,
-            httpVersion: 'HTTP/1.1',
+            httpVersion: HTTP_VERSION,
             body: { propertyupdate: { set: { prop: [{ lastmodified: '2024-01-01' }] } } }
           }
         })
@@ -856,7 +857,7 @@ describe('WebDAVMethods', () => {
           method: 'PROPPATCH',
           dav: {
             ...createBaseRequest().dav,
-            httpVersion: 'HTTP/1.1',
+            httpVersion: HTTP_VERSION,
             body: { propertyupdate: { set: { prop: [{ unsupportedProp: 'value' }] } } }
           }
         })
@@ -876,7 +877,7 @@ describe('WebDAVMethods', () => {
           method: 'PROPPATCH',
           dav: {
             ...createBaseRequest().dav,
-            httpVersion: 'HTTP/1.1',
+            httpVersion: HTTP_VERSION,
             body: { propertyupdate: { set: { prop: [{ Win32CreationTime: '2024-01-01' }] } } }
           }
         })
@@ -898,7 +899,7 @@ describe('WebDAVMethods', () => {
           method: 'PROPPATCH',
           dav: {
             ...createBaseRequest().dav,
-            httpVersion: 'HTTP/1.1',
+            httpVersion: HTTP_VERSION,
             body: { propertyupdate: { set: { prop: [{ lastmodified: '2024-01-01' }] } } }
           }
         })
@@ -917,7 +918,7 @@ describe('WebDAVMethods', () => {
           method: 'PROPPATCH',
           dav: {
             ...createBaseRequest().dav,
-            httpVersion: 'HTTP/1.1',
+            httpVersion: HTTP_VERSION,
             body: {
               propertyupdate: {
                 set: { prop: [{ unsupportedProp: 'fail' }, { Win32CreationTime: 'ok' }] }
@@ -945,7 +946,7 @@ describe('WebDAVMethods', () => {
           method: 'PROPPATCH',
           dav: {
             ...createBaseRequest().dav,
-            httpVersion: 'HTTP/1.1',
+            httpVersion: HTTP_VERSION,
             body: {
               propertyupdate: {
                 remove: { prop: [{ Win32CreationTime: '' }] }
@@ -973,7 +974,7 @@ describe('WebDAVMethods', () => {
           method: 'PROPPATCH',
           dav: {
             ...createBaseRequest().dav,
-            httpVersion: 'HTTP/1.1',
+            httpVersion: HTTP_VERSION,
             body: {
               propertyupdate: {
                 set: [{ prop: { lastmodified: '2024-01-01' } }, { prop: { Win32CreationTime: 'ok' } }]
@@ -998,7 +999,7 @@ describe('WebDAVMethods', () => {
           method: 'PROPPATCH',
           dav: {
             ...createBaseRequest().dav,
-            httpVersion: 'HTTP/1.1',
+            httpVersion: HTTP_VERSION,
             body: {
               propertyupdate: {
                 set: { prop: { lastmodified: '2024-01-01' } }

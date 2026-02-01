@@ -37,3 +37,5 @@ export const HTTP_METHOD = {
 } as const
 
 export const HTTP_CSRF_IGNORED_METHODS = new Set<string>([HTTP_METHOD.GET, HTTP_METHOD.HEAD, HTTP_METHOD.OPTIONS, HTTP_METHOD.SEARCH])
+
+export const HTTP_VERSION = 'HTTP/1.1'
