@@ -4,8 +4,9 @@
  * See the LICENSE file for licensing details
  */
 
-import { IsDefined, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, IsUUID } from 'class-validator'
-import { SyncClientInfo } from '../interfaces/sync-client.interface'
+import { Type } from 'class-transformer'
+import { IsDefined, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator'
+import { SyncClientInfoDto } from './sync-client-info.dto'
 
 export class SyncClientRegistrationDto {
   @IsNotEmpty()
@@ -26,9 +27,11 @@ export class SyncClientRegistrationDto {
   clientId: string
 
   @IsDefined()
-  @IsNotEmptyObject()
   @IsObject()
-  info: SyncClientInfo // TODO: create a DTO for validation
+  @IsNotEmptyObject()
+  @ValidateNested()
+  @Type(() => SyncClientInfoDto)
+  info: SyncClientInfoDto
 }
 
 export class SyncClientAuthRegistrationDto {
@@ -38,7 +41,9 @@ export class SyncClientAuthRegistrationDto {
   clientId?: string
 
   @IsDefined()
-  @IsNotEmptyObject()
   @IsObject()
-  info: SyncClientInfo // TODO: create a DTO for validation
+  @IsNotEmptyObject()
+  @ValidateNested()
+  @Type(() => SyncClientInfoDto)
+  info: SyncClientInfoDto
 }

@@ -11,7 +11,13 @@ export const EVENT = {
     AUTHENTICATION: 'server-authentication',
     AUTHENTICATION_FAILED: 'server-authentication-failed',
     AUTHENTICATION_TOKEN_UPDATE: 'server-authentication-token-update',
-    AUTHENTICATION_TOKEN_EXPIRED: 'server-authentication-token-expired'
+    AUTHENTICATION_TOKEN_EXPIRED: 'server-authentication-token-expired',
+    SET_ACTIVE_AND_SHOW: 'server-set-active-and-show'
+  },
+  // oidc authentication
+  OIDC: {
+    START_LOOPBACK: 'oidc-start-loopback',
+    WAIT_CALLBACK: 'oidc-wait-callback'
   },
   // sync
   SYNC: {

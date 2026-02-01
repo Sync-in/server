@@ -11,6 +11,8 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faKey, faLock, faQrcode, faUserAlt } from '@fortawesome/free-solid-svg-icons'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { TWO_FA_CODE_LENGTH } from '@sync-in-server/backend/src/authentication/constants/auth'
+import { API_OIDC_CALLBACK } from '@sync-in-server/backend/src/authentication/constants/routes'
+import { OAuthDesktopPortParam } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc-desktop.constants'
 import type { AuthOIDCSettings } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc.interfaces'
 import type { TwoFaResponseDto, TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -33,6 +35,7 @@ export class AuthComponent {
   protected logoUrl = logoDarkUrl
   protected hasError: any = null
   protected submitted = false
+  protected OIDCSubmitted = false
   protected twoFaVerify = false
   private route = inject(ActivatedRoute)
   protected oidcSettings: AuthOIDCSettings | false = this.route.snapshot.data.authSettings
@@ -51,7 +54,7 @@ export class AuthComponent {
 
   constructor() {
     if (this.oidcSettings && this.oidcSettings.autoRedirect) {
-      this.loginWithOIDC()
+      void this.loginWithOIDC()
     }
   }
 
@@ -91,9 +94,45 @@ export class AuthComponent {
     this.hasError = null
   }
 
-  loginWithOIDC() {
-    if (this.oidcSettings) {
-      window.location.href = this.oidcSettings.loginUrl
+  async loginWithOIDC() {
+    if (!this.oidcSettings) return
+    if (!this.auth.electron.enabled) {
+      window.location.assign(this.oidcSettings.loginUrl)
+      return
+    }
+    this.OIDCSubmitted = true
+    try {
+      const desktopPort = await this.auth.electron.startOIDCDesktopAuth()
+
+      if (!desktopPort) {
+        this.OIDCSubmitted = false
+        console.error('OIDC desktop auth failed')
+        return
+      }
+
+      // Called when the OIDC provider redirects to desktop app
+      this.auth.electron
+        .waitOIDCDesktopCallbackParams()
+        .then((callbackParams: Record<string, string>) => {
+          // Receive callback params from desktop app and send it to backend to be authenticated.
+          const params = new URLSearchParams(callbackParams)
+          // Indicates the desktop app port used to reconstruct the redirect URI expected by the backend
+          params.set(OAuthDesktopPortParam, String(desktopPort))
+          window.location.assign(`${API_OIDC_CALLBACK}?${params.toString()}`)
+          // Show desktop app window
+          this.auth.electron.setActiveAndShow()
+        })
+        .catch((e: Error) => {
+          this.OIDCSubmitted = false
+          console.error('Unavailable OIDC desktop callback params:', e)
+        })
+
+      // With the desktop app, navigation to the OIDC provider is intercepted and opened in the user's browser.
+      // The backend sends the oidc cookies to desktop app before the redirection.
+      window.location.assign(`${this.oidcSettings.loginUrl}?${this.auth.electron.genParamOIDCDesktopPort(desktopPort)}`)
+    } catch (e) {
+      this.OIDCSubmitted = false
+      console.error(e)
     }
   }
 

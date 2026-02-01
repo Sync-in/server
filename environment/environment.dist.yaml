@@ -184,6 +184,15 @@ auth:
     # redirectUri: The callback URL where users are redirected after authentication
     # This URL must be registered in your OIDC provider's allowed redirect URIs
     # Example (API callback): https://sync-in.domain.com/api/auth/oidc/callback
+    #
+    # To allow authentication from the desktop application, the following redirect URLs must also be registered in your OIDC provider:
+    #   - http://127.0.0.1:49152/oidc/callback
+    #   - http://127.0.0.1:49153/oidc/callback
+    #   - http://127.0.0.1:49154/oidc/callback
+    #
+    # If your OIDC provider supports wildcards or regular expressions, you may instead register a single entry such as:
+    #   - http://127.0.0.1/*
+    #
     # required
     redirectUri: https://sync-in.domain.com/api/auth/oidc/callback
     options:

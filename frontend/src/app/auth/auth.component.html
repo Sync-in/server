@@ -80,6 +80,7 @@
                 <button
                   type="button"
                   class="btn btn-primary px-4 w-100"
+                  [disabled]="OIDCSubmitted"
                   (click)="loginWithOIDC()">
                   <span l10nTranslate>{{ oidcSettings.buttonText }}</span>
                 </button>

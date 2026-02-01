@@ -36,6 +36,7 @@ import type { AUTH_SCOPE } from '../../constants/scope'
 import { TOKEN_TYPE } from '../../interfaces/token.interface'
 import { AUTH_PROVIDER } from '../auth-providers.constants'
 import { AuthProvider } from '../auth-providers.models'
+import { OAuthDesktopCallBackURI, OAuthDesktopLoopbackPorts, OAuthDesktopPortParam } from './auth-oidc-desktop.constants'
 import type { AuthMethodOIDCConfig } from './auth-oidc.config'
 import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint } from './auth-oidc.constants'
 
@@ -78,7 +79,8 @@ export class AuthProviderOIDC implements AuthProvider {
     return this.config
   }
 
-  async getAuthorizationUrl(res: FastifyReply): Promise<string> {
+  async getAuthorizationUrl(res: FastifyReply, desktopPort?: number): Promise<string> {
+    const redirectURI = this.getRedirectURI(desktopPort)
     const config = await this.getConfig()
 
     // state: CSRF protection, nonce: binds the ID Token to this auth request (replay protection)
@@ -90,7 +92,7 @@ export class AuthProviderOIDC implements AuthProvider {
 
     const authUrl = new URL(config.serverMetadata().authorization_endpoint!)
     authUrl.searchParams.set('client_id', this.oidcConfig.clientId!)
-    authUrl.searchParams.set('redirect_uri', this.oidcConfig.redirectUri)
+    authUrl.searchParams.set('redirect_uri', redirectURI)
     authUrl.searchParams.set('response_type', 'code')
     authUrl.searchParams.set('scope', this.oidcConfig.security.scope)
     authUrl.searchParams.set('state', state)
@@ -139,8 +141,14 @@ export class AuthProviderOIDC implements AuthProvider {
       const pkceCodeVerifier = supportsPKCE ? codeVerifier : undefined
       const callbackParams = new URLSearchParams(query)
 
+      // Get Desktop Port if defined
+      const desktopPort: string | null = callbackParams.get(OAuthDesktopPortParam)
+      if (desktopPort) {
+        callbackParams.delete(OAuthDesktopPortParam)
+      }
+
       // Exchange authorization code for tokens
-      const callbackUrl = new URL(this.oidcConfig.redirectUri)
+      const callbackUrl = new URL(this.getRedirectURI(desktopPort))
       callbackUrl.search = callbackParams.toString()
       const tokens = await authorizationCodeGrant(config, callbackUrl, {
         expectedState,
@@ -174,7 +182,10 @@ export class AuthProviderOIDC implements AuthProvider {
         throw new HttpException(error.error_description, HttpStatus.BAD_REQUEST)
       } else {
         this.logger.error(`${this.handleCallback.name} - OIDC callback error: ${error}`)
-        throw new HttpException('OIDC authentication failed', error instanceof HttpException ? error.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR)
+        throw new HttpException(
+          error.error_description ?? 'OIDC authentication failed',
+          error instanceof HttpException ? error.getStatus() : (error.status ?? HttpStatus.INTERNAL_SERVER_ERROR)
+        )
       }
     } finally {
       // Always clear temporary OIDC cookies (success or failure)
@@ -198,6 +209,20 @@ export class AuthProviderOIDC implements AuthProvider {
     })
     url.hash = `/?${params.toString()}`
     return url.toString()
+  }
+
+  getRedirectURI(desktopPort?: number | string): string {
+    // web / default callback
+    if (!desktopPort) return this.oidcConfig.redirectUri
+    // desktop app callback
+    if (typeof desktopPort === 'string') {
+      desktopPort = Number(desktopPort)
+    }
+    if (!Number.isInteger(desktopPort) || !OAuthDesktopLoopbackPorts.has(desktopPort)) {
+      throw new HttpException('Invalid desktop_port', HttpStatus.BAD_REQUEST)
+    }
+    // The redirect url must be known from provider
+    return `http://127.0.0.1:${desktopPort}${OAuthDesktopCallBackURI}`
   }
 
   private async initializeOIDCClient(): Promise<Configuration> {

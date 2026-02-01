@@ -11,6 +11,7 @@ import { AuthManager } from '../../auth.service'
 import { AUTH_ROUTE } from '../../constants/routes'
 import { AuthTokenSkip } from '../../decorators/auth-token-skip.decorator'
 import type { LoginResponseDto } from '../../dto/login-response.dto'
+import { OAuthDesktopPortParam } from './auth-oidc-desktop.constants'
 import { AuthProviderOIDC } from './auth-provider-oidc.service'
 
 @Controller(AUTH_ROUTE.BASE)
@@ -22,8 +23,8 @@ export class AuthOIDCController {
 
   @Get(AUTH_ROUTE.OIDC_LOGIN)
   @AuthTokenSkip()
-  async oidcLogin(@Res() res: FastifyReply): Promise<void> {
-    const url = await this.authProviderOIDC.getAuthorizationUrl(res)
+  async oidcLogin(@Query(OAuthDesktopPortParam) desktopPort: number, @Res() res: FastifyReply): Promise<void> {
+    const url = await this.authProviderOIDC.getAuthorizationUrl(res, desktopPort)
     // Redirect to OIDC provider
     return res.redirect(url, HttpStatus.FOUND)
   }

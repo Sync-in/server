@@ -153,8 +153,7 @@ export class AuthService {
 
   checkUserAuthAndLoad(returnUrl: string, authFromOIDC?: AuthOIDCQueryParams): Observable<boolean> {
     if (authFromOIDC) {
-      // At this point, the cookies are stored in the session.
-      console.debug(`${this.checkUserAuthAndLoad.name} - auth from OIDC`)
+      // At this point, the auth cookies are already stored in the session.
       this.accessExpiration = parseInt(authFromOIDC.access_expiration)
       this.refreshExpiration = parseInt(authFromOIDC.refresh_expiration)
       if (this.electron.enabled) {
@@ -276,16 +275,19 @@ export class AuthService {
   }
 
   private authOIDCDesktopClient(): Observable<boolean> {
+    // Retrieve authentication info from the desktop app
     return this.electron.authenticate().pipe(
       switchMap((auth: SyncClientAuthDto) => {
         if (!auth.clientId || auth.tokenHasExpired) {
           // The client must be registered, or the token must be renewed
           return this.http.post<SyncClientAuthRegistration>(API_SYNC_REGISTER_AUTH, auth).pipe(
             switchMap((externalAuth: SyncClientAuthRegistration) => {
+              // Store the clientId and the clientToken on the desktop app
               return this.electron.externalRegister(externalAuth).pipe(
                 switchMap((success: boolean) => {
                   if (success) {
                     console.debug(`${this.authOIDCDesktopClient.name} - ${auth.clientId ? 'client was registered' : 'client token renewed'}`)
+                    // Starts authentication
                     return this.authDesktopClient()
                   } else {
                     this.logout(true, true)
@@ -301,7 +303,7 @@ export class AuthService {
             })
           )
         } else {
-          // The client must be authenticated
+          // The client must be (re)authenticated
           return this.authDesktopClient()
         }
       })

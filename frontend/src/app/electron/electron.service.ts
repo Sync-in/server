@@ -9,6 +9,7 @@ import { toObservable } from '@angular/core/rxjs-interop'
 import { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications/sync/dtos/sync-client-auth.dto'
 import type { SyncClientAuthRegistration } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
+import { OAuthDesktopPortParam } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc-desktop.constants'
 import { combineLatest, from, map, Observable } from 'rxjs'
 import { NotificationModel } from '../applications/notifications/models/notification.model'
 import { CLIENT_APP_COUNTER, CLIENT_SCHEDULER_STATE } from '../applications/sync/constants/client'
@@ -93,12 +94,31 @@ export class Electron {
     )
   }
 
+  async startOIDCDesktopAuth(): Promise<number> {
+    const desktop: { redirectPort: number } = await this.invoke(EVENT.OIDC.START_LOOPBACK)
+    console.debug(`Starting OIDC desktop auth with port ${desktop.redirectPort}`)
+    return desktop.redirectPort
+  }
+
+  async waitOIDCDesktopCallbackParams(): Promise<Record<string, string>> {
+    console.debug('Waiting for OIDC desktop callback parameters')
+    return await this.invoke(EVENT.OIDC.WAIT_CALLBACK)
+  }
+
+  genParamOIDCDesktopPort(desktopPort: number): string {
+    return `${OAuthDesktopPortParam}=${desktopPort}`
+  }
+
   openPath(path: string) {
     this.send(EVENT.MISC.FILE_OPEN, path)
   }
 
   openUrl(url: string) {
     this.send(EVENT.MISC.URL_OPEN, url)
+  }
+
+  setActiveAndShow() {
+    this.send(EVENT.SERVER.SET_ACTIVE_AND_SHOW)
   }
 
   private setSync(sync: SyncStatus) {
