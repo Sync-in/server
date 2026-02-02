@@ -7,7 +7,7 @@
 name: sync-in
 services:
   sync_in:
-    image: syncin/server:1
+    image: syncin/server:2
     container_name: sync-in
     restart: always
     environment:
