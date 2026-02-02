@@ -13,4 +13,4 @@ import { AuthProviderOIDC } from './auth-provider-oidc.service'
   providers: [AuthProviderOIDC],
   exports: [AuthProviderOIDC]
 })
-export class AuthMethodOIDCModule {}
+export class AuthProviderOIDCModule {}

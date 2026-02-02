@@ -8,8 +8,8 @@ import { Exclude, Type } from 'class-transformer'
 import { IsDefined, IsEnum, IsIn, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator'
 import { ACCESS_KEY, CSRF_KEY, REFRESH_KEY, WS_KEY } from './constants/auth'
 import { AUTH_PROVIDER } from './providers/auth-providers.constants'
-import { AuthMethodLDAPConfig } from './providers/ldap/auth-ldap.config'
-import { AuthMethodOIDCConfig } from './providers/oidc/auth-oidc.config'
+import { AuthProviderLDAPConfig } from './providers/ldap/auth-ldap.config'
+import { AuthProviderOIDCConfig } from './providers/oidc/auth-oidc.config'
 import { AuthMFAConfig } from './providers/two-fa/auth-two-fa.config'
 
 export class AuthTokenAccessConfig {
@@ -85,7 +85,7 @@ export class AuthTokenConfig {
 export class AuthConfig {
   @IsString()
   @IsEnum(AUTH_PROVIDER)
-  method: AUTH_PROVIDER = AUTH_PROVIDER.MYSQL
+  provider: AUTH_PROVIDER = AUTH_PROVIDER.MYSQL
 
   @IsOptional()
   @IsString()
@@ -109,17 +109,17 @@ export class AuthConfig {
   @Type(() => AuthTokenConfig)
   token: AuthTokenConfig
 
-  @ValidateIf((o: AuthConfig) => o.method === AUTH_PROVIDER.LDAP)
+  @ValidateIf((o: AuthConfig) => o.provider === AUTH_PROVIDER.LDAP)
   @IsDefined()
   @IsObject()
   @ValidateNested()
-  @Type(() => AuthMethodLDAPConfig)
-  ldap: AuthMethodLDAPConfig
+  @Type(() => AuthProviderLDAPConfig)
+  ldap: AuthProviderLDAPConfig
 
-  @ValidateIf((o: AuthConfig) => o.method === AUTH_PROVIDER.OIDC)
+  @ValidateIf((o: AuthConfig) => o.provider === AUTH_PROVIDER.OIDC)
   @IsDefined()
   @IsObject()
   @ValidateNested()
-  @Type(() => AuthMethodOIDCConfig)
-  oidc: AuthMethodOIDCConfig
+  @Type(() => AuthProviderOIDCConfig)
+  oidc: AuthProviderOIDCConfig
 }

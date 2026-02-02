@@ -16,7 +16,7 @@ import { AuthLocalStrategy } from './auth-local.strategy'
 
 describe(AuthLocalGuard.name, () => {
   let authLocalGuard: AuthLocalGuard
-  let authMethod: AuthProvider
+  let authProvider: AuthProvider
   let userTest: UserModel
   let context: DeepMocked<ExecutionContext>
 
@@ -36,19 +36,19 @@ describe(AuthLocalGuard.name, () => {
     }).compile()
 
     authLocalGuard = module.get<AuthLocalGuard>(AuthLocalGuard)
-    authMethod = module.get<AuthProvider>(AuthProvider)
+    authProvider = module.get<AuthProvider>(AuthProvider)
     userTest = new UserModel(generateUserTest(), false)
     context = createMock<ExecutionContext>()
   })
 
   it('should be defined', () => {
     expect(authLocalGuard).toBeDefined()
-    expect(authMethod).toBeDefined()
+    expect(authProvider).toBeDefined()
     expect(userTest).toBeDefined()
   })
 
   it('should validate the user authentication', async () => {
-    authMethod.validateUser = jest.fn().mockReturnValueOnce(userTest)
+    authProvider.validateUser = jest.fn().mockReturnValueOnce(userTest)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       body: {
@@ -62,7 +62,7 @@ describe(AuthLocalGuard.name, () => {
 
   it('should not validate the user authentication', async () => {
     userTest.password = 'password'
-    authMethod.validateUser = jest.fn().mockReturnValueOnce(null)
+    authProvider.validateUser = jest.fn().mockReturnValueOnce(null)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       body: {
@@ -74,7 +74,7 @@ describe(AuthLocalGuard.name, () => {
   })
 
   it('should throw error due to malformed body', async () => {
-    authMethod.validateUser = jest.fn().mockReturnValueOnce(null)
+    authProvider.validateUser = jest.fn().mockReturnValueOnce(null)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       body: null

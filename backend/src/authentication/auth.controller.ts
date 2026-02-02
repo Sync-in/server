@@ -31,7 +31,7 @@ import { TwoFaSetup, TwoFaVerifyResult } from './providers/two-fa/auth-two-fa.in
 export class AuthController {
   constructor(
     private readonly authManager: AuthManager,
-    private readonly authMethod2FA: AuthProvider2FA
+    private readonly authProvider2FA: AuthProvider2FA
   ) {}
 
   @Post(AUTH_ROUTE.LOGIN)
@@ -80,21 +80,21 @@ export class AuthController {
   @UseGuards(UserRolesGuard)
   @UserHaveRole(USER_ROLE.USER)
   twoFaInit(@GetUser() user: UserModel): Promise<TwoFaSetup> {
-    return this.authMethod2FA.initTwoFactor(user)
+    return this.authProvider2FA.initTwoFactor(user)
   }
 
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_ENABLE}`)
   @UseGuards(UserRolesGuard)
   @UserHaveRole(USER_ROLE.USER)
   twoFaEnable(@Body() body: TwoFaVerifyWithPasswordDto, @Req() req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
-    return this.authMethod2FA.enableTwoFactor(body, req)
+    return this.authProvider2FA.enableTwoFactor(body, req)
   }
 
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_DISABLE}`)
   @UseGuards(UserRolesGuard)
   @UserHaveRole(USER_ROLE.USER)
   twoFaDisable(@Body() body: TwoFaVerifyWithPasswordDto, @Req() req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
-    return this.authMethod2FA.disableTwoFactor(body, req)
+    return this.authProvider2FA.disableTwoFactor(body, req)
   }
 
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_LOGIN_VERIFY}`)
@@ -105,7 +105,7 @@ export class AuthController {
     @Req() req: FastifyAuthenticatedRequest,
     @Res({ passthrough: true }) res: FastifyReply
   ): Promise<TwoFaResponseDto | TwoFaVerifyResult> {
-    const [authStatus, user] = await this.authMethod2FA.verify(body, req, true)
+    const [authStatus, user] = await this.authProvider2FA.verify(body, req, true)
     if (authStatus.success) {
       const loginResponseDto = await this.authManager.setCookies(user, res)
       // clear the temporary 2FA cookie
@@ -119,6 +119,6 @@ export class AuthController {
   @UseGuards(UserRolesGuard, AuthTwoFaGuard)
   @UserHaveRole(USER_ROLE.ADMINISTRATOR)
   twoFaReset(@Param('id', ParseIntPipe) userId: number): Promise<TwoFaVerifyResult> {
-    return this.authMethod2FA.adminResetUserTwoFa(userId)
+    return this.authProvider2FA.adminResetUserTwoFa(userId)
   }
 }

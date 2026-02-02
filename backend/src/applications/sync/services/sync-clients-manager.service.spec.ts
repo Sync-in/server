@@ -54,7 +54,7 @@ describe(SyncClientsManager.name, () => {
   // Mocks
   let http: { axiosRef: jest.Mock }
   let authManager: { setCookies: jest.Mock; getTokens: jest.Mock }
-  let authMethod: { validateUser: jest.Mock }
+  let authProvider: { validateUser: jest.Mock }
   let usersManager: { fromUserId: jest.Mock; updateAccesses: jest.Mock }
   let syncQueries: {
     getOrCreateClient: jest.Mock
@@ -94,7 +94,7 @@ describe(SyncClientsManager.name, () => {
   beforeAll(async () => {
     http = { axiosRef: jest.fn() }
     authManager = { setCookies: jest.fn(), getTokens: jest.fn() }
-    authMethod = { validateUser: jest.fn() }
+    authProvider = { validateUser: jest.fn() }
     usersManager = { fromUserId: jest.fn(), updateAccesses: jest.fn() }
     syncQueries = {
       getOrCreateClient: jest.fn(),
@@ -119,7 +119,7 @@ describe(SyncClientsManager.name, () => {
         { provide: SyncQueries, useValue: syncQueries },
         { provide: UsersManager, useValue: usersManager },
         { provide: AuthManager, useValue: authManager },
-        { provide: AuthProvider, useValue: authMethod },
+        { provide: AuthProvider, useValue: authProvider },
         { provide: AuthProvider2FA, useValue: {} }
       ]
     }).compile()
@@ -162,12 +162,12 @@ describe(SyncClientsManager.name, () => {
       ['Unauthorized when credentials are invalid', null, HttpStatus.UNAUTHORIZED],
       ['Forbidden when user lacks DESKTOP_APP permission', { id: 10, login: 'john', havePermission: () => false }, HttpStatus.FORBIDDEN]
     ])('should throw %s', async (_label, user, status) => {
-      authMethod.validateUser.mockResolvedValue(user)
+      authProvider.validateUser.mockResolvedValue(user)
       await expect(service.register(baseDto as any, '1.2.3.4')).rejects.toMatchObject({ status })
     })
 
     it('should return client token when registration succeeds', async () => {
-      authMethod.validateUser.mockResolvedValue({ id: 10, login: 'john', havePermission: () => true })
+      authProvider.validateUser.mockResolvedValue({ id: 10, login: 'john', havePermission: () => true })
       syncQueries.getOrCreateClient.mockResolvedValue('token-abc')
 
       const r = await service.register(baseDto as any, '1.2.3.4')
@@ -176,7 +176,7 @@ describe(SyncClientsManager.name, () => {
     })
 
     it('should throw Internal Server Error when persistence fails', async () => {
-      authMethod.validateUser.mockResolvedValue({ id: 10, login: 'john', havePermission: () => true })
+      authProvider.validateUser.mockResolvedValue({ id: 10, login: 'john', havePermission: () => true })
       syncQueries.getOrCreateClient.mockRejectedValue(new Error('db error'))
       await expect(service.register(baseDto as any, '1.2.3.4')).rejects.toMatchObject({ status: HttpStatus.INTERNAL_SERVER_ERROR })
     })

@@ -25,7 +25,7 @@ import { AuthTokenRefreshStrategy } from './guards/auth-token-refresh.strategy'
 import { AUTH_PROVIDER } from './providers/auth-providers.constants'
 import { AuthProvider } from './providers/auth-providers.models'
 import { selectAuthProvider } from './providers/auth-providers.utils'
-import { AuthMethodOIDCModule } from './providers/oidc/auth-method-oidc.module'
+import { AuthProviderOIDCModule } from './providers/oidc/auth-provider-oidc.module'
 import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service'
 
 @Global()
@@ -34,7 +34,7 @@ import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service
     JwtModule.register({ global: true }),
     UsersModule,
     PassportModule,
-    ...(configuration.auth.method === AUTH_PROVIDER.OIDC ? [AuthMethodOIDCModule] : [])
+    ...(configuration.auth.provider === AUTH_PROVIDER.OIDC ? [AuthProviderOIDCModule] : [])
   ],
   controllers: [AuthController],
   providers: [
@@ -53,7 +53,7 @@ import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service
     AuthAnonymousStrategy,
     AuthManager,
     AuthProvider2FA,
-    selectAuthProvider(configuration.auth.method)
+    selectAuthProvider(configuration.auth.provider)
   ],
   exports: [AuthManager, AuthProvider, AuthProvider2FA]
 })

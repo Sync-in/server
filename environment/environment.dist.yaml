@@ -77,9 +77,9 @@ mail:
   # default: `false`
   debug: false
 auth:
-  # adapter : `mysql` | `ldap` | `oidc`
+  # provider : `mysql` | `ldap` | `oidc`
   # default: `mysql`
-  method: mysql
+  provider: mysql
   # Key used to encrypt user secret keys in the database
   # Optional but strongly recommended
   # Warning: do not change or remove the encryption key after MFA activation, or the codes will become invalid

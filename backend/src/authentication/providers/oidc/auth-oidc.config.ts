@@ -21,7 +21,7 @@ import {
 import { USER_PERMISSION } from '../../../applications/users/constants/user'
 import { OAuthTokenEndpoint } from './auth-oidc.constants'
 
-export class AuthMethodOIDCSecurityConfig {
+export class AuthProviderOIDCSecurityConfig {
   @IsString()
   @Matches(/\bopenid\b/, { message: 'OIDC scope must include "openid"' })
   scope = 'openid email profile'
@@ -43,7 +43,7 @@ export class AuthMethodOIDCSecurityConfig {
   skipSubjectCheck? = false
 }
 
-export class AuthMethodOIDCOptionsConfig {
+export class AuthProviderOIDCOptionsConfig {
   @IsOptional()
   @IsBoolean()
   autoCreateUser? = true
@@ -70,7 +70,7 @@ export class AuthMethodOIDCOptionsConfig {
   buttonText: string = 'Continue with OpenID Connect'
 }
 
-export class AuthMethodOIDCConfig {
+export class AuthProviderOIDCConfig {
   @IsString()
   @IsNotEmpty()
   issuerUrl: string
@@ -91,13 +91,13 @@ export class AuthMethodOIDCConfig {
   @IsNotEmptyObject()
   @IsObject()
   @ValidateNested()
-  @Type(() => AuthMethodOIDCOptionsConfig)
-  options: AuthMethodOIDCOptionsConfig = new AuthMethodOIDCOptionsConfig()
+  @Type(() => AuthProviderOIDCOptionsConfig)
+  options: AuthProviderOIDCOptionsConfig = new AuthProviderOIDCOptionsConfig()
 
   @IsDefined()
   @IsNotEmptyObject()
   @IsObject()
   @ValidateNested()
-  @Type(() => AuthMethodOIDCSecurityConfig)
-  security: AuthMethodOIDCSecurityConfig = new AuthMethodOIDCSecurityConfig()
+  @Type(() => AuthProviderOIDCSecurityConfig)
+  security: AuthProviderOIDCSecurityConfig = new AuthProviderOIDCSecurityConfig()
 }

@@ -14,7 +14,7 @@ import { AdminUsersManager } from '../../../applications/users/services/admin-us
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import * as commonFunctions from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
-import type { AuthMethodLDAPConfig } from './auth-ldap.config'
+import type { AuthProviderLDAPConfig } from './auth-ldap.config'
 import { LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
 import { AuthProviderLDAP } from './auth-provider-ldap.service'
 
@@ -52,17 +52,17 @@ const ldapClient = {
 ;(Client as Mocked<any>).mockImplementation(() => ldapClient)
 
 describe(AuthProviderLDAP.name, () => {
-  let authMethodLdapService: AuthProviderLDAP
+  let authProviderLDAP: AuthProviderLDAP
   let usersManager: Mocked<UsersManager>
   let adminUsersManager: Mocked<AdminUsersManager>
 
-  type LdapConfigOverrides = Omit<Partial<AuthMethodLDAPConfig>, 'attributes' | 'options'> & {
-    attributes?: Partial<AuthMethodLDAPConfig['attributes']>
-    options?: Partial<AuthMethodLDAPConfig['options']>
+  type LdapConfigOverrides = Omit<Partial<AuthProviderLDAPConfig>, 'attributes' | 'options'> & {
+    attributes?: Partial<AuthProviderLDAPConfig['attributes']>
+    options?: Partial<AuthProviderLDAPConfig['options']>
   }
 
   const setLdapConfig = (overrides: LdapConfigOverrides = {}) => {
-    const base: AuthMethodLDAPConfig = {
+    const base: AuthProviderLDAPConfig = {
       servers: ['ldap://localhost:389'],
       attributes: { login: LDAP_LOGIN_ATTR.UID, email: LDAP_COMMON_ATTR.MAIL },
       baseDN: 'ou=people,dc=example,dc=org',
@@ -73,15 +73,15 @@ describe(AuthProviderLDAP.name, () => {
         enablePasswordAuthFallback: true
       }
     }
-    const next: AuthMethodLDAPConfig = {
+    const next: AuthProviderLDAPConfig = {
       ...base,
       ...overrides,
       attributes: { ...base.attributes, ...(overrides.attributes || {}) },
       options: { ...base.options, ...(overrides.options || {}) }
     }
     configuration.auth.ldap = next
-    ;(authMethodLdapService as any).ldapConfig = next
-    ;(authMethodLdapService as any).isAD = [LDAP_LOGIN_ATTR.SAM, LDAP_LOGIN_ATTR.UPN].includes(next.attributes.login)
+    ;(authProviderLDAP as any).ldapConfig = next
+    ;(authProviderLDAP as any).isAD = [LDAP_LOGIN_ATTR.SAM, LDAP_LOGIN_ATTR.UPN].includes(next.attributes.login)
   }
 
   const mockBindResolve = () => {
@@ -123,7 +123,7 @@ describe(AuthProviderLDAP.name, () => {
     }).compile()
 
     module.useLogger(['fatal'])
-    authMethodLdapService = module.get<AuthProviderLDAP>(AuthProviderLDAP)
+    authProviderLDAP = module.get<AuthProviderLDAP>(AuthProviderLDAP)
     adminUsersManager = module.get<Mocked<AdminUsersManager>>(AdminUsersManager)
     usersManager = module.get<Mocked<UsersManager>>(UsersManager)
   })
@@ -139,7 +139,7 @@ describe(AuthProviderLDAP.name, () => {
   })
 
   it('should be defined', () => {
-    expect(authMethodLdapService).toBeDefined()
+    expect(authProviderLDAP).toBeDefined()
     expect(usersManager).toBeDefined()
     expect(adminUsersManager).toBeDefined()
     expect(ldapClient).toBeDefined()
@@ -151,7 +151,7 @@ describe(AuthProviderLDAP.name, () => {
     const dbAuthResult: any = { ...guestUser, token: 'jwt' }
     usersManager.logUser.mockResolvedValue(dbAuthResult)
 
-    const res = await authMethodLdapService.validateUser('guest1', 'pass', '127.0.0.1')
+    const res = await authProviderLDAP.validateUser('guest1', 'pass', '127.0.0.1')
 
     expect(res).toEqual(dbAuthResult)
     expect(usersManager.logUser).toHaveBeenCalledWith(guestUser, 'pass', '127.0.0.1', undefined)
@@ -163,7 +163,7 @@ describe(AuthProviderLDAP.name, () => {
     usersManager.findUser.mockResolvedValue(user)
     usersManager.logUser.mockResolvedValue(user)
 
-    const res = await authMethodLdapService.validateUser('john', 'app-password', '10.0.0.2', 'webdav' as any)
+    const res = await authProviderLDAP.validateUser('john', 'app-password', '10.0.0.2', 'webdav' as any)
 
     expect(res).toBe(user)
     expect(usersManager.logUser).toHaveBeenCalledWith(user, 'app-password', '10.0.0.2', 'webdav')
@@ -172,9 +172,9 @@ describe(AuthProviderLDAP.name, () => {
 
   it('should throw FORBIDDEN for locked account', async () => {
     usersManager.findUser.mockResolvedValue({ login: 'john', isGuest: false, isActive: false } as UserModel)
-    const loggerErrorSpy = jest.spyOn(authMethodLdapService['logger'], 'error').mockImplementation(() => undefined as any)
+    const loggerErrorSpy = jest.spyOn(authProviderLDAP['logger'], 'error').mockImplementation(() => undefined as any)
 
-    await expect(authMethodLdapService.validateUser('john', 'pwd')).rejects.toThrow(/account locked/i)
+    await expect(authProviderLDAP.validateUser('john', 'pwd')).rejects.toThrow(/account locked/i)
     expect(loggerErrorSpy).toHaveBeenCalled()
   })
 
@@ -183,7 +183,7 @@ describe(AuthProviderLDAP.name, () => {
     usersManager.findUser.mockResolvedValue(existingUser)
     mockBindRejectInvalid('invalid credentials')
 
-    const res = await authMethodLdapService.validateUser('john', 'badpwd', '10.0.0.1')
+    const res = await authProviderLDAP.validateUser('john', 'badpwd', '10.0.0.1')
 
     expect(res).toBeNull()
     expect(usersManager.logUser).not.toHaveBeenCalled()
@@ -196,12 +196,12 @@ describe(AuthProviderLDAP.name, () => {
     mockBindResolve()
     mockSearchEntries([])
 
-    const resA = await authMethodLdapService.validateUser('john', 'pwd')
+    const resA = await authProviderLDAP.validateUser('john', 'pwd')
 
     expect(resA).toBeNull()
 
     ldapClient.search.mockRejectedValue(new Error('search failed'))
-    const resB = await authMethodLdapService.validateUser('john', 'pwd')
+    const resB = await authProviderLDAP.validateUser('john', 'pwd')
 
     expect(resB).toBeNull()
     expect(usersManager.updateAccesses).not.toHaveBeenCalled()
@@ -215,7 +215,7 @@ describe(AuthProviderLDAP.name, () => {
     ldapClient.bind.mockRejectedValue({ errors: [err] })
     ldapClient.unbind.mockResolvedValue(undefined)
 
-    const res = await authMethodLdapService.validateUser('john', 'pwd', '10.0.0.3')
+    const res = await authProviderLDAP.validateUser('john', 'pwd', '10.0.0.3')
 
     expect(res).toBe(existingUser)
     expect(usersManager.logUser).toHaveBeenCalledWith(existingUser, 'pwd', '10.0.0.3')
@@ -229,7 +229,7 @@ describe(AuthProviderLDAP.name, () => {
     ldapClient.bind.mockRejectedValue({ errors: [err] })
     ldapClient.unbind.mockResolvedValue(undefined)
 
-    await expect(authMethodLdapService.validateUser('john', 'pwd')).rejects.toThrow(/authentication service error/i)
+    await expect(authProviderLDAP.validateUser('john', 'pwd')).rejects.toThrow(/authentication service error/i)
   })
 
   it('should allow admin local fallback when LDAP is unavailable even if fallback is disabled', async () => {
@@ -241,7 +241,7 @@ describe(AuthProviderLDAP.name, () => {
     ldapClient.bind.mockRejectedValue({ errors: [err] })
     ldapClient.unbind.mockResolvedValue(undefined)
 
-    const res = await authMethodLdapService.validateUser('john', 'pwd')
+    const res = await authProviderLDAP.validateUser('john', 'pwd')
 
     expect(res).toBe(existingUser)
     expect(usersManager.logUser).toHaveBeenCalledWith(existingUser, 'pwd', undefined)
@@ -251,9 +251,9 @@ describe(AuthProviderLDAP.name, () => {
     usersManager.findUser.mockResolvedValue(null)
     mockBindResolve()
     mockSearchEntries([{ uid: 'jane', cn: 'Jane Doe', mail: undefined }])
-    const loggerErrorSpy = jest.spyOn(authMethodLdapService['logger'], 'error').mockImplementation(() => undefined as any)
+    const loggerErrorSpy = jest.spyOn(authProviderLDAP['logger'], 'error').mockImplementation(() => undefined as any)
 
-    const res = await authMethodLdapService.validateUser('jane', 'pwd')
+    const res = await authProviderLDAP.validateUser('jane', 'pwd')
 
     expect(res).toBeNull()
     expect(adminUsersManager.createUserOrGuest).not.toHaveBeenCalled()
@@ -263,12 +263,12 @@ describe(AuthProviderLDAP.name, () => {
   it('should throw UNAUTHORIZED when autoCreateUser is disabled', async () => {
     setLdapConfig({ options: { autoCreateUser: false } })
     usersManager.findUser.mockResolvedValue(null)
-    const checkAuthSpy = jest.spyOn<any, any>(authMethodLdapService as any, 'checkAuth').mockResolvedValue({
+    const checkAuthSpy = jest.spyOn<any, any>(authProviderLDAP as any, 'checkAuth').mockResolvedValue({
       uid: 'john',
       mail: 'john@example.org'
     })
 
-    await expect(authMethodLdapService.validateUser('john', 'pwd')).rejects.toThrow(/user not found/i)
+    await expect(authProviderLDAP.validateUser('john', 'pwd')).rejects.toThrow(/user not found/i)
     checkAuthSpy.mockRestore()
   })
 
@@ -294,7 +294,7 @@ describe(AuthProviderLDAP.name, () => {
     adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
     usersManager.fromUserId.mockResolvedValue(createdUser)
 
-    const res = await authMethodLdapService.validateUser('john', 'pwd', '192.168.1.10')
+    const res = await authProviderLDAP.validateUser('john', 'pwd', '192.168.1.10')
 
     expect(adminUsersManager.createUserOrGuest).toHaveBeenCalledWith(
       {
@@ -320,7 +320,7 @@ describe(AuthProviderLDAP.name, () => {
     mockSearchEntries([{ uid: 'john', cn: 'John Doe', mail: 'john@example.org' }])
     jest.spyOn(commonFunctions, 'comparePassword').mockResolvedValue(true)
 
-    await authMethodLdapService.validateUser('john', 'pwd')
+    await authProviderLDAP.validateUser('john', 'pwd')
 
     expect(adminUsersManager.updateUserOrGuest).toHaveBeenCalled()
     const updateArgs = adminUsersManager.updateUserOrGuest.mock.calls[0][1]
@@ -336,7 +336,7 @@ describe(AuthProviderLDAP.name, () => {
     const compareSpy = jest.spyOn(commonFunctions, 'comparePassword').mockResolvedValue(false)
     const splitSpy = jest.spyOn(commonFunctions, 'splitFullName').mockReturnValue({ firstName: 'Jane', lastName: 'Doe' })
 
-    const res = await authMethodLdapService.validateUser('john', 'new-plain-password', '127.0.0.2')
+    const res = await authProviderLDAP.validateUser('john', 'new-plain-password', '127.0.0.2')
 
     expect(adminUsersManager.updateUserOrGuest).toHaveBeenCalledWith(
       6,
@@ -362,21 +362,21 @@ describe(AuthProviderLDAP.name, () => {
     mockBindResolve()
     mockSearchEntries([{ uid: 'jane', cn: 'Jane Doe', mail: 'jane@example.org' }])
 
-    await expect(authMethodLdapService.validateUser('john', 'pwd')).rejects.toThrow(/account matching error/i)
+    await expect(authProviderLDAP.validateUser('john', 'pwd')).rejects.toThrow(/account matching error/i)
   })
 
   it('should build LDAP logins and filters for AD and standard LDAP', () => {
     setLdapConfig({ attributes: { login: LDAP_LOGIN_ATTR.UPN }, upnSuffix: 'sync-in.com', filter: '(memberOf=cn=staff)' })
-    const adLogin = (authMethodLdapService as any).buildLdapLogin('john')
+    const adLogin = (authProviderLDAP as any).buildLdapLogin('john')
     expect(adLogin).toBe('john@sync-in.com')
-    const adFilter = (authMethodLdapService as any).buildUserFilter('SYNC-IN\\john', '(memberOf=cn=staff)')
+    const adFilter = (authProviderLDAP as any).buildUserFilter('SYNC-IN\\john', '(memberOf=cn=staff)')
     expect(adFilter).toContain('(sAMAccountName=john)')
     expect(adFilter).toContain('(userPrincipalName=john)')
     expect(adFilter).toContain('(mail=john)')
     expect(adFilter).toContain('(memberOf=cn=staff)')
 
     setLdapConfig({ attributes: { login: LDAP_LOGIN_ATTR.UID }, filter: '(department=IT)' })
-    const ldapFilter = (authMethodLdapService as any).buildUserFilter('john', '(department=IT)')
+    const ldapFilter = (authProviderLDAP as any).buildUserFilter('john', '(department=IT)')
     expect(ldapFilter).toContain('(uid=john)')
     expect(ldapFilter).toContain('(cn=john)')
     expect(ldapFilter).toContain('(mail=john)')
@@ -390,7 +390,7 @@ describe(AuthProviderLDAP.name, () => {
       memberOf: ['CN=Admins,OU=Groups,DC=example,DC=org', 'CN=Staff,OU=Groups,DC=example,DC=org']
     }
 
-    const normalized = (authMethodLdapService as any).convertToLdapUserEntry(entry)
+    const normalized = (authProviderLDAP as any).convertToLdapUserEntry(entry)
 
     expect(normalized.uid).toBe('john')
     expect(normalized.mail).toBe('john@example.org')
@@ -399,7 +399,7 @@ describe(AuthProviderLDAP.name, () => {
 
   it('should build LDAP logins for SAM account name when netbiosName is set', () => {
     setLdapConfig({ attributes: { login: LDAP_LOGIN_ATTR.SAM }, netbiosName: 'SYNC' })
-    const samLogin = (authMethodLdapService as any).buildLdapLogin('john')
+    const samLogin = (authProviderLDAP as any).buildLdapLogin('john')
     expect(samLogin).toBe('SYNC\\john')
   })
 })

@@ -16,7 +16,7 @@ import { comparePassword, splitFullName } from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
 import type { AUTH_SCOPE } from '../../constants/scope'
 import { AuthProvider } from '../auth-providers.models'
-import type { AuthMethodLDAPConfig } from './auth-ldap.config'
+import type { AuthProviderLDAPConfig } from './auth-ldap.config'
 import { ALL_LDAP_ATTRIBUTES, LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
 
 type LdapUserEntry = Entry & Record<LDAP_LOGIN_ATTR | (typeof LDAP_COMMON_ATTR)[keyof typeof LDAP_COMMON_ATTR], string>
@@ -24,7 +24,7 @@ type LdapUserEntry = Entry & Record<LDAP_LOGIN_ATTR | (typeof LDAP_COMMON_ATTR)[
 @Injectable()
 export class AuthProviderLDAP implements AuthProvider {
   private readonly logger = new Logger(AuthProviderLDAP.name)
-  private readonly ldapConfig: AuthMethodLDAPConfig = configuration.auth.ldap
+  private readonly ldapConfig: AuthProviderLDAPConfig = configuration.auth.ldap
   private readonly isAD = this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.SAM || this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN
   private clientOptions: ClientOptions = { timeout: 6000, connectTimeout: 6000, url: '' }
 

@@ -142,7 +142,7 @@ export class AuthManager {
   }
 
   authSettings(): AuthOIDCSettings | false {
-    if (configuration.auth.method !== AUTH_PROVIDER.OIDC) {
+    if (configuration.auth.provider !== AUTH_PROVIDER.OIDC) {
       return false
     }
     return {

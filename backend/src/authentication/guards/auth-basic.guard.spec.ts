@@ -19,7 +19,7 @@ import { AuthBasicStrategy } from './auth-basic.strategy'
 describe(AuthBasicGuard.name, () => {
   let authBasicGuard: AuthBasicGuard
   let authBasicStrategy: AuthBasicStrategy
-  let authMethod: AuthProvider
+  let authProvider: AuthProvider
   let cache: Cache
   let userTest: UserModel
   let encodedAuth: string
@@ -56,7 +56,7 @@ describe(AuthBasicGuard.name, () => {
 
     authBasicGuard = module.get<AuthBasicGuard>(AuthBasicGuard)
     authBasicStrategy = module.get<AuthBasicStrategy>(AuthBasicStrategy)
-    authMethod = module.get<AuthProvider>(AuthProvider)
+    authProvider = module.get<AuthProvider>(AuthProvider)
     cache = module.get<Cache>(Cache)
     userTest = new UserModel(generateUserTest(), false)
     encodedAuth = Buffer.from(`${userTest.login}:${userTest.password}`).toString('base64')
@@ -66,7 +66,7 @@ describe(AuthBasicGuard.name, () => {
   it('should be defined', () => {
     expect(authBasicGuard).toBeDefined()
     expect(authBasicStrategy).toBeDefined()
-    expect(authMethod).toBeDefined()
+    expect(authProvider).toBeDefined()
     expect(cache).toBeDefined()
     expect(encodedAuth).toBeDefined()
     expect(userTest).toBeDefined()
@@ -74,7 +74,7 @@ describe(AuthBasicGuard.name, () => {
   })
 
   it('should validate the user authentication', async () => {
-    authMethod.validateUser = jest.fn().mockReturnValueOnce(userTest)
+    authProvider.validateUser = jest.fn().mockReturnValueOnce(userTest)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       headers: { authorization: `Basic ${encodedAuth}` }
@@ -88,7 +88,7 @@ describe(AuthBasicGuard.name, () => {
     const userWithColonPassword = new UserModel({ ...generateUserTest(), password: passwordWithColon }, false)
     const encodedAuthWithColon = Buffer.from(`${userWithColonPassword.login}:${passwordWithColon}`).toString('base64')
 
-    authMethod.validateUser = jest.fn().mockImplementation((login: string, password: string) => {
+    authProvider.validateUser = jest.fn().mockImplementation((login: string, password: string) => {
       expect(login).toBe(userWithColonPassword.login)
       expect(password).toBe(passwordWithColon)
       return userWithColonPassword
@@ -121,7 +121,7 @@ describe(AuthBasicGuard.name, () => {
 
   it('should not validate the user authentication when cache returns undefined and database return null', async () => {
     cache.get = jest.fn().mockReturnValueOnce(undefined)
-    authMethod.validateUser = jest.fn().mockReturnValueOnce(null)
+    authProvider.validateUser = jest.fn().mockReturnValueOnce(null)
     jest.spyOn(cache, 'set').mockRejectedValueOnce(new Error('cache failed'))
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },

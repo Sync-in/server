@@ -15,7 +15,7 @@ import { AuthProviderOIDC } from './oidc/auth-provider-oidc.service'
 export function selectAuthProvider(provider: AUTH_PROVIDER): Provider {
   switch (provider) {
     case AUTH_PROVIDER.OIDC:
-      // AuthMethodOIDC is already provided by AuthMethodOIDCModule
+      // `AuthProviderOIDC` is already provided by `AuthProviderOIDCModule`
       return { provide: AuthProvider, useExisting: AuthProviderOIDC }
 
     case AUTH_PROVIDER.LDAP:

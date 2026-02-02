@@ -15,7 +15,7 @@ import { AuthProvider } from '../providers/auth-providers.models'
 @Injectable()
 export class AuthLocalStrategy extends PassportStrategy(Strategy, 'local') implements AbstractStrategy {
   constructor(
-    private readonly authMethod: AuthProvider,
+    private readonly authProvider: AuthProvider,
     private readonly logger: PinoLogger
   ) {
     super({ usernameField: 'login', passwordField: 'password', passReqToCallback: true })
@@ -25,7 +25,7 @@ export class AuthLocalStrategy extends PassportStrategy(Strategy, 'local') imple
     loginOrEmail = loginOrEmail.trim()
     password = password.trim()
     this.logger.assign({ user: loginOrEmail })
-    const user: UserModel = await this.authMethod.validateUser(loginOrEmail, password, req.ip)
+    const user: UserModel = await this.authProvider.validateUser(loginOrEmail, password, req.ip)
     if (user) {
       user.removePassword()
       return user

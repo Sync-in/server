@@ -44,14 +44,14 @@ export class SyncClientsManager {
   constructor(
     private readonly http: HttpService,
     private readonly authManager: AuthManager,
-    private readonly authMethod: AuthProvider,
-    private readonly authMethod2Fa: AuthProvider2FA,
+    private readonly authProvider: AuthProvider,
+    private readonly authProvider2FA: AuthProvider2FA,
     private readonly usersManager: UsersManager,
     private readonly syncQueries: SyncQueries
   ) {}
 
   async register(clientRegistrationDto: SyncClientRegistrationDto, ip: string): Promise<SyncClientAuthRegistration> {
-    const user: UserModel = await this.authMethod.validateUser(clientRegistrationDto.login, clientRegistrationDto.password)
+    const user: UserModel = await this.authProvider.validateUser(clientRegistrationDto.login, clientRegistrationDto.password)
     if (!user) {
       this.logger.warn(`${this.register.name} - auth failed for user *${clientRegistrationDto.login}*`)
       throw new HttpException('Wrong login or password', HttpStatus.UNAUTHORIZED)
@@ -66,10 +66,10 @@ export class SyncClientsManager {
         this.logger.warn(`${this.register.name} - missing two-fa code for user *${user.login}* (${user.id})`)
         throw new HttpException('Missing TWO-FA code', HttpStatus.UNAUTHORIZED)
       }
-      const authCode = this.authMethod2Fa.validateTwoFactorCode(clientRegistrationDto.code, user.secrets.twoFaSecret)
+      const authCode = this.authProvider2FA.validateTwoFactorCode(clientRegistrationDto.code, user.secrets.twoFaSecret)
       if (!authCode.success) {
         this.logger.warn(`${this.register.name} - two-fa code for *${user.login}* (${user.id}) - ${authCode.message}`)
-        const authRCode = await this.authMethod2Fa.validateRecoveryCode(user.id, clientRegistrationDto.code, user.secrets.recoveryCodes)
+        const authRCode = await this.authProvider2FA.validateRecoveryCode(user.id, clientRegistrationDto.code, user.secrets.recoveryCodes)
         if (!authRCode.success) {
           this.logger.warn(`${this.register.name} - two-fa recovery code for *${user.login}* (${user.id}) - ${authRCode.message}`)
           this.usersManager.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.register.name} - ${e}`))

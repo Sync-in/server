@@ -37,13 +37,13 @@ import { TOKEN_TYPE } from '../../interfaces/token.interface'
 import { AUTH_PROVIDER } from '../auth-providers.constants'
 import { AuthProvider } from '../auth-providers.models'
 import { OAuthDesktopCallBackURI, OAuthDesktopLoopbackPorts, OAuthDesktopPortParam } from './auth-oidc-desktop.constants'
-import type { AuthMethodOIDCConfig } from './auth-oidc.config'
+import type { AuthProviderOIDCConfig } from './auth-oidc.config'
 import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint } from './auth-oidc.constants'
 
 @Injectable()
 export class AuthProviderOIDC implements AuthProvider {
   private readonly logger = new Logger(AuthProviderOIDC.name)
-  private readonly oidcConfig: AuthMethodOIDCConfig = configuration.auth.oidc
+  private readonly oidcConfig: AuthProviderOIDCConfig = configuration.auth.oidc
   private frontendBaseUrl: string
   private config: Configuration = null
 

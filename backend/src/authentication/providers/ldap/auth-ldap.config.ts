@@ -21,7 +21,7 @@ import {
 import { USER_PERMISSION } from '../../../applications/users/constants/user'
 import { LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
 
-export class AuthMethodLDAPAttributesConfig {
+export class AuthProviderLDAPAttributesConfig {
   @IsOptional()
   @Transform(({ value }) => value || LDAP_LOGIN_ATTR.UID)
   @IsEnum(LDAP_LOGIN_ATTR)
@@ -33,7 +33,7 @@ export class AuthMethodLDAPAttributesConfig {
   email: string = LDAP_COMMON_ATTR.MAIL
 }
 
-export class AuthMethodLDAPOptionsConfig {
+export class AuthProviderLDAPOptionsConfig {
   @IsOptional()
   @IsString()
   adminGroup?: string
@@ -52,7 +52,7 @@ export class AuthMethodLDAPOptionsConfig {
   enablePasswordAuthFallback? = true
 }
 
-export class AuthMethodLDAPConfig {
+export class AuthProviderLDAPConfig {
   @Transform(({ value }) => (Array.isArray(value) ? value.filter((v: string) => Boolean(v)) : value))
   @ArrayNotEmpty()
   @IsArray()
@@ -71,8 +71,8 @@ export class AuthMethodLDAPConfig {
   @IsNotEmptyObject()
   @IsObject()
   @ValidateNested()
-  @Type(() => AuthMethodLDAPAttributesConfig)
-  attributes: AuthMethodLDAPAttributesConfig = new AuthMethodLDAPAttributesConfig()
+  @Type(() => AuthProviderLDAPAttributesConfig)
+  attributes: AuthProviderLDAPAttributesConfig = new AuthProviderLDAPAttributesConfig()
 
   @IsOptional()
   @IsString()
@@ -86,6 +86,6 @@ export class AuthMethodLDAPConfig {
   @IsNotEmptyObject()
   @IsObject()
   @ValidateNested()
-  @Type(() => AuthMethodLDAPOptionsConfig)
-  options: AuthMethodLDAPOptionsConfig = new AuthMethodLDAPOptionsConfig()
+  @Type(() => AuthProviderLDAPOptionsConfig)
+  options: AuthProviderLDAPOptionsConfig = new AuthProviderLDAPOptionsConfig()
 }
