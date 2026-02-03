@@ -17,6 +17,7 @@ import { UsersManager } from '../../users/services/users-manager.service'
 import { CLIENT_AUTH_TYPE, CLIENT_TOKEN_EXPIRED_ERROR } from '../constants/auth'
 import { APP_STORE_DIRNAME, APP_STORE_REPOSITORY } from '../constants/store'
 import { SYNC_CLIENT_TYPE } from '../constants/sync'
+import { SyncClientAuthRegistration } from '../interfaces/sync-client-auth.interface'
 import { SyncClientsManager } from './sync-clients-manager.service'
 import { SyncQueries } from './sync-queries.service'
 
@@ -165,7 +166,7 @@ describe(SyncClientsManager.name, () => {
       syncQueries.getOrCreateClient.mockResolvedValue('token-abc')
 
       const r = await service.register(baseDto as any, '1.2.3.4')
-      expect(r).toEqual({ clientToken: 'token-abc' })
+      expect(r).toEqual({ clientId: 'client-1', clientToken: 'token-abc' } satisfies SyncClientAuthRegistration)
       expect(syncQueries.getOrCreateClient).toHaveBeenCalledWith(10, 'client-1', baseDto.info, '1.2.3.4')
     })
 
