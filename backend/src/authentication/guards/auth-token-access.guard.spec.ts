@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { sign } from '@fastify/cookie'
 import { createMock, DeepMocked } from '@golevelup/ts-jest'
 import { ExecutionContext } from '@nestjs/common'
@@ -18,12 +12,12 @@ import { UsersManager } from '../../applications/users/services/users-manager.se
 import { WEB_DAV_CONTEXT, WebDAVContext } from '../../applications/webdav/decorators/webdav-context.decorator'
 import { exportConfiguration } from '../../configuration/config.environment'
 import { AuthConfig } from '../auth.config'
+import { AuthManager } from '../auth.service'
 import { CSRF_ERROR } from '../constants/auth'
 import { AuthTokenOptional } from '../decorators/auth-token-optional.decorator'
 import { AUTH_TOKEN_SKIP, AuthTokenSkip } from '../decorators/auth-token-skip.decorator'
 import { JwtPayload } from '../interfaces/jwt-payload.interface'
 import { TOKEN_TYPE } from '../interfaces/token.interface'
-import { AuthManager } from '../services/auth-manager.service'
 import { AuthAnonymousGuard } from './auth-anonymous.guard'
 import { AuthAnonymousStrategy } from './auth-anonymous.strategy'
 import { AuthTokenAccessGuard } from './auth-token-access.guard'

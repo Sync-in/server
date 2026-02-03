@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2026 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { FastifyInstance } from 'fastify'
 import { HTTP_METHOD, HTTP_WEBDAV_METHOD } from '../../applications.constants'

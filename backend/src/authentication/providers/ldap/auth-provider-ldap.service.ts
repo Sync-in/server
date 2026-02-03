@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { AndFilter, Client, ClientOptions, Entry, EqualityFilter, InvalidCredentialsError, OrFilter } from 'ldapts'
 import { CONNECT_ERROR_CODE } from '../../../app.constants'
@@ -14,16 +8,17 @@ import { AdminUsersManager } from '../../../applications/users/services/admin-us
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import { comparePassword, splitFullName } from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
-import { ALL_LDAP_ATTRIBUTES, LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from '../../constants/auth-ldap'
 import type { AUTH_SCOPE } from '../../constants/scope'
-import { AuthMethod } from '../../models/auth-method'
+import { AuthProvider } from '../auth-providers.models'
+import type { AuthProviderLDAPConfig } from './auth-ldap.config'
+import { ALL_LDAP_ATTRIBUTES, LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
 
 type LdapUserEntry = Entry & Record<LDAP_LOGIN_ATTR | (typeof LDAP_COMMON_ATTR)[keyof typeof LDAP_COMMON_ATTR], string>
 
 @Injectable()
-export class AuthMethodLdapService implements AuthMethod {
-  private readonly logger = new Logger(AuthMethodLdapService.name)
-  private readonly ldapConfig = configuration.auth.ldap
+export class AuthProviderLDAP implements AuthProvider {
+  private readonly logger = new Logger(AuthProviderLDAP.name)
+  private readonly ldapConfig: AuthProviderLDAPConfig = configuration.auth.ldap
   private readonly isAD = this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.SAM || this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN
   private clientOptions: ClientOptions = { timeout: 6000, connectTimeout: 6000, url: '' }
 
@@ -36,38 +31,54 @@ export class AuthMethodLdapService implements AuthMethod {
     // Find user from his login or email
     let user: UserModel = await this.usersManager.findUser(this.dbLogin(login), false)
     if (user) {
-      if (user.isGuest) {
-        // Allow guests to be authenticated from db and check if the current user is defined as active
-        return this.usersManager.logUser(user, password, ip)
+      if (user.isGuest || scope) {
+        // Allow local password authentication for guest users and application scopes (app passwords)
+        return this.usersManager.logUser(user, password, ip, scope)
       }
       if (!user.isActive) {
         this.logger.error(`${this.validateUser.name} - user *${user.login}* is locked`)
         throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
       }
     }
-    // If a user was found, use the stored login. This allows logging in with an email.
-    const entry: false | LdapUserEntry = await this.checkAuth(user?.login || login, password)
+    let ldapErrorMessage: string
+    let entry: false | LdapUserEntry = false
+    try {
+      // If a user was found, use the stored login. This allows logging in with an email.
+      entry = await this.checkAuth(user?.login || login, password)
+    } catch (e) {
+      ldapErrorMessage = e.message
+    }
+
+    // LDAP auth failed or exception raised
     if (entry === false) {
-      // LDAP auth failed
-      if (user) {
-        let authSuccess = false
-        if (scope) {
-          // Try user app password
-          authSuccess = await this.usersManager.validateAppPassword(user, password, ip, scope)
-        }
-        this.usersManager.updateAccesses(user, ip, authSuccess).catch((e: Error) => this.logger.error(`${this.validateUser.name} : ${e}`))
-        if (authSuccess) {
-          // Logged with app password
-          return user
-        }
+      // If LDAP is unavailable (connectivity/service error), allow local password fallback.
+      // Allow local password authentication for:
+      // - admin users (break-glass access)
+      // - regular users when password authentication fallback is enabled
+      if (user && Boolean(ldapErrorMessage) && (user.isAdmin || this.ldapConfig.options.enablePasswordAuthFallback)) {
+        const localUser = await this.usersManager.logUser(user, password, ip)
+        if (localUser) return localUser
       }
+
+      if (ldapErrorMessage) {
+        throw new HttpException(ldapErrorMessage, HttpStatus.SERVICE_UNAVAILABLE)
+      }
+
       return null
-    } else if (!entry[this.ldapConfig.attributes.login] || !entry[this.ldapConfig.attributes.email]) {
+    }
+
+    if (!entry[this.ldapConfig.attributes.login] || !entry[this.ldapConfig.attributes.email]) {
       this.logger.error(`${this.validateUser.name} - required ldap fields are missing : 
       [${this.ldapConfig.attributes.login}, ${this.ldapConfig.attributes.email}] => 
       (${JSON.stringify(entry)})`)
       return null
     }
+
+    if (!user && !this.ldapConfig.options.autoCreateUser) {
+      this.logger.warn(`${this.validateUser.name} - User not found and autoCreateUser is disabled`)
+      throw new HttpException('User not found', HttpStatus.UNAUTHORIZED)
+    }
+
     const identity = this.createIdentity(entry, password)
     user = await this.updateOrCreateUser(identity, user)
     this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error(`${this.validateUser.name} : ${e}`))
@@ -80,7 +91,7 @@ export class AuthMethodLdapService implements AuthMethod {
     // Generic LDAP: build DN from login attribute + baseDN
     const bindUserDN = this.isAD ? ldapLogin : `${this.ldapConfig.attributes.login}=${ldapLogin},${this.ldapConfig.baseDN}`
     let client: Client
-    let error: any
+    let error: InvalidCredentialsError | any
     for (const s of this.ldapConfig.servers) {
       client = new Client({ ...this.clientOptions, url: s })
       try {
@@ -89,12 +100,12 @@ export class AuthMethodLdapService implements AuthMethod {
       } catch (e) {
         if (e.errors?.length) {
           for (const err of e.errors) {
-            this.logger.warn(`${this.checkAuth.name} - ${ldapLogin} : ${err}`)
+            this.logger.warn(`${this.checkAuth.name} - ${bindUserDN} : ${err}`)
             error = err
           }
         } else {
           error = e
-          this.logger.warn(`${this.checkAuth.name} - ${ldapLogin} : ${e}`)
+          this.logger.warn(`${this.checkAuth.name} - ${bindUserDN} : ${e}`)
         }
         if (error instanceof InvalidCredentialsError) {
           return false
@@ -103,8 +114,11 @@ export class AuthMethodLdapService implements AuthMethod {
         await client.unbind()
       }
     }
-    if (error && CONNECT_ERROR_CODE.has(error.code)) {
-      throw new HttpException('Authentication service error', HttpStatus.INTERNAL_SERVER_ERROR)
+    if (error) {
+      this.logger.error(`${this.checkAuth.name} - ${error}`)
+      if (CONNECT_ERROR_CODE.has(error.code)) {
+        throw new Error('Authentication service error')
+      }
     }
     return false
   }
@@ -140,6 +154,7 @@ export class AuthMethodLdapService implements AuthMethod {
   private async updateOrCreateUser(identity: CreateUserDto, user: UserModel): Promise<UserModel> {
     if (user === null) {
       // Create
+      identity.permissions = this.ldapConfig.options.autoCreatePermissions.join(',')
       const createdUser = await this.adminUsersManager.createUserOrGuest(identity, identity.role)
       const freshUser = await this.usersManager.fromUserId(createdUser.id)
       if (!freshUser) {
@@ -148,10 +163,12 @@ export class AuthMethodLdapService implements AuthMethod {
       }
       return freshUser
     }
+
     if (identity.login !== user.login) {
       this.logger.error(`${this.updateOrCreateUser.name} - user login mismatch : ${identity.login} !== ${user.login}`)
       throw new HttpException('Account matching error', HttpStatus.FORBIDDEN)
     }
+
     // Update: check if user information has changed
     const identityHasChanged: UpdateUserDto = Object.fromEntries(
       (
@@ -166,21 +183,26 @@ export class AuthMethodLdapService implements AuthMethod {
         )
       ).filter(Boolean)
     )
+
     if (Object.keys(identityHasChanged).length > 0) {
       try {
         if (identityHasChanged?.role != null) {
-          if (user.role === USER_ROLE.ADMINISTRATOR && !this.ldapConfig.adminGroup) {
+          if (user.role === USER_ROLE.ADMINISTRATOR && !this.ldapConfig.options.adminGroup) {
             // Prevent removing the admin role when adminGroup was removed or not defined
             delete identityHasChanged.role
           }
         }
+
         // Update user properties
         await this.adminUsersManager.updateUserOrGuest(user.id, identityHasChanged)
+
         // Extra stuff
         if (identityHasChanged?.password) {
           delete identityHasChanged.password
         }
+
         Object.assign(user, identityHasChanged)
+
         if ('lastName' in identityHasChanged || 'firstName' in identityHasChanged) {
           // Force fullName update in the current user model
           user.setFullName(true)
@@ -211,9 +233,9 @@ export class AuthMethodLdapService implements AuthMethod {
 
   private createIdentity(entry: LdapUserEntry, password: string): CreateUserDto {
     const isAdmin =
-      typeof this.ldapConfig.adminGroup === 'string' &&
-      this.ldapConfig.adminGroup &&
-      entry[LDAP_COMMON_ATTR.MEMBER_OF]?.includes(this.ldapConfig.adminGroup)
+      typeof this.ldapConfig.options.adminGroup === 'string' &&
+      this.ldapConfig.options.adminGroup &&
+      entry[LDAP_COMMON_ATTR.MEMBER_OF]?.includes(this.ldapConfig.options.adminGroup)
     return {
       login: this.dbLogin(entry[this.ldapConfig.attributes.login]),
       email: entry[this.ldapConfig.attributes.email] as string,

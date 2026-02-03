@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { intersectPermissions } from '../../../common/shared'
 import { USER_PERMISSION } from '../../users/constants/user'
 import type { UserModel } from '../../users/models/user.model'

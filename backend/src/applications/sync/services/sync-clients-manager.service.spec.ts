@@ -1,18 +1,12 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { HttpService } from '@nestjs/axios'
 import { HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { FastifyReply } from 'fastify'
 import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
-import { AuthMethod } from '../../../authentication/models/auth-method'
-import { AuthManager } from '../../../authentication/services/auth-manager.service'
-import { AuthMethod2FA } from '../../../authentication/services/auth-methods/auth-method-two-fa.service'
+import { AuthManager } from '../../../authentication/auth.service'
+import { AuthProvider } from '../../../authentication/providers/auth-providers.models'
+import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-provider-two-fa.service'
 import * as commonFunctions from '../../../common/functions'
 import * as commonShared from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
@@ -23,6 +17,7 @@ import { UsersManager } from '../../users/services/users-manager.service'
 import { CLIENT_AUTH_TYPE, CLIENT_TOKEN_EXPIRED_ERROR } from '../constants/auth'
 import { APP_STORE_DIRNAME, APP_STORE_REPOSITORY } from '../constants/store'
 import { SYNC_CLIENT_TYPE } from '../constants/sync'
+import { SyncClientAuthRegistration } from '../interfaces/sync-client-auth.interface'
 import { SyncClientsManager } from './sync-clients-manager.service'
 import { SyncQueries } from './sync-queries.service'
 
@@ -54,7 +49,7 @@ describe(SyncClientsManager.name, () => {
   // Mocks
   let http: { axiosRef: jest.Mock }
   let authManager: { setCookies: jest.Mock; getTokens: jest.Mock }
-  let authMethod: { validateUser: jest.Mock }
+  let authProvider: { validateUser: jest.Mock }
   let usersManager: { fromUserId: jest.Mock; updateAccesses: jest.Mock }
   let syncQueries: {
     getOrCreateClient: jest.Mock
@@ -94,7 +89,7 @@ describe(SyncClientsManager.name, () => {
   beforeAll(async () => {
     http = { axiosRef: jest.fn() }
     authManager = { setCookies: jest.fn(), getTokens: jest.fn() }
-    authMethod = { validateUser: jest.fn() }
+    authProvider = { validateUser: jest.fn() }
     usersManager = { fromUserId: jest.fn(), updateAccesses: jest.fn() }
     syncQueries = {
       getOrCreateClient: jest.fn(),
@@ -119,8 +114,8 @@ describe(SyncClientsManager.name, () => {
         { provide: SyncQueries, useValue: syncQueries },
         { provide: UsersManager, useValue: usersManager },
         { provide: AuthManager, useValue: authManager },
-        { provide: AuthMethod, useValue: authMethod },
-        { provide: AuthMethod2FA, useValue: {} }
+        { provide: AuthProvider, useValue: authProvider },
+        { provide: AuthProvider2FA, useValue: {} }
       ]
     }).compile()
 
@@ -162,21 +157,21 @@ describe(SyncClientsManager.name, () => {
       ['Unauthorized when credentials are invalid', null, HttpStatus.UNAUTHORIZED],
       ['Forbidden when user lacks DESKTOP_APP permission', { id: 10, login: 'john', havePermission: () => false }, HttpStatus.FORBIDDEN]
     ])('should throw %s', async (_label, user, status) => {
-      authMethod.validateUser.mockResolvedValue(user)
+      authProvider.validateUser.mockResolvedValue(user)
       await expect(service.register(baseDto as any, '1.2.3.4')).rejects.toMatchObject({ status })
     })
 
     it('should return client token when registration succeeds', async () => {
-      authMethod.validateUser.mockResolvedValue({ id: 10, login: 'john', havePermission: () => true })
+      authProvider.validateUser.mockResolvedValue({ id: 10, login: 'john', havePermission: () => true })
       syncQueries.getOrCreateClient.mockResolvedValue('token-abc')
 
       const r = await service.register(baseDto as any, '1.2.3.4')
-      expect(r).toEqual({ clientToken: 'token-abc' })
+      expect(r).toEqual({ clientId: 'client-1', clientToken: 'token-abc' } satisfies SyncClientAuthRegistration)
       expect(syncQueries.getOrCreateClient).toHaveBeenCalledWith(10, 'client-1', baseDto.info, '1.2.3.4')
     })
 
     it('should throw Internal Server Error when persistence fails', async () => {
-      authMethod.validateUser.mockResolvedValue({ id: 10, login: 'john', havePermission: () => true })
+      authProvider.validateUser.mockResolvedValue({ id: 10, login: 'john', havePermission: () => true })
       syncQueries.getOrCreateClient.mockRejectedValue(new Error('db error'))
       await expect(service.register(baseDto as any, '1.2.3.4')).rejects.toMatchObject({ status: HttpStatus.INTERNAL_SERVER_ERROR })
     })

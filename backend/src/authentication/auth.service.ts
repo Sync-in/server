@@ -1,23 +1,21 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
 import { unsign, UnsignResult } from '@fastify/cookie'
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import crypto from 'node:crypto'
-import { HTTP_CSRF_IGNORED_METHODS } from '../../applications/applications.constants'
-import { UserModel } from '../../applications/users/models/user.model'
-import { convertHumanTimeToSeconds } from '../../common/functions'
-import { currentTimeStamp } from '../../common/shared'
-import { configuration, serverConfig } from '../../configuration/config.environment'
-import { CSRF_ERROR, CSRF_KEY, TOKEN_2FA_TYPES, TOKEN_PATHS, TOKEN_TYPES } from '../constants/auth'
-import { LoginResponseDto, LoginVerify2FaDto } from '../dto/login-response.dto'
-import { TokenResponseDto } from '../dto/token-response.dto'
-import { JwtIdentity2FaPayload, JwtIdentityPayload, JwtPayload } from '../interfaces/jwt-payload.interface'
-import { TOKEN_TYPE } from '../interfaces/token.interface'
+import { HTTP_CSRF_IGNORED_METHODS } from '../applications/applications.constants'
+import { UserModel } from '../applications/users/models/user.model'
+import { convertHumanTimeToSeconds } from '../common/functions'
+import { currentTimeStamp } from '../common/shared'
+import { configuration, serverConfig } from '../configuration/config.environment'
+import { CSRF_ERROR, CSRF_KEY, TOKEN_2FA_TYPES, TOKEN_PATHS, TOKEN_TYPES } from './constants/auth'
+import { API_OIDC_LOGIN } from './constants/routes'
+import { LoginResponseDto, LoginVerify2FaDto } from './dto/login-response.dto'
+import { TokenResponseDto } from './dto/token-response.dto'
+import { JwtIdentity2FaPayload, JwtIdentityPayload, JwtPayload } from './interfaces/jwt-payload.interface'
+import { TOKEN_TYPE } from './interfaces/token.interface'
+import { AUTH_PROVIDER } from './providers/auth-providers.constants'
+import type { AuthOIDCSettings } from './providers/oidc/auth-oidc.interfaces'
 
 @Injectable()
 export class AuthManager {
@@ -135,6 +133,17 @@ export class AuthManager {
     if (jwtPayload.csrf !== csrfHeader.value) {
       this.logger.warn(`${this.csrfValidation.name} - ${CSRF_ERROR.MISMATCH}`)
       throw new HttpException(CSRF_ERROR.MISMATCH, HttpStatus.FORBIDDEN)
+    }
+  }
+
+  authSettings(): AuthOIDCSettings | false {
+    if (configuration.auth.provider !== AUTH_PROVIDER.OIDC) {
+      return false
+    }
+    return {
+      loginUrl: API_OIDC_LOGIN,
+      autoRedirect: configuration.auth.oidc.options.autoRedirect,
+      buttonText: configuration.auth.oidc.options.buttonText
     }
   }
 

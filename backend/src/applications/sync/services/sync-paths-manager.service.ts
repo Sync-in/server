@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { ACTION } from '../../../common/constants'
 import { currentTimeStamp } from '../../../common/shared'
@@ -45,6 +39,10 @@ export class SyncPathsManager {
     if (req.space.quotaIsExceeded) {
       throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)
     }
+
+    // Check DB path
+    const syncDBProps: SyncDBProps = await this.getDBProps(req.space)
+
     if (!(await isPathExists(req.space.realPath))) {
       throw new HttpException(`Remote path not found : ${syncPathDto.remotePath}`, HttpStatus.NOT_FOUND)
     }
@@ -55,9 +53,8 @@ export class SyncPathsManager {
     if (!client) {
       throw new HttpException('Client not found', HttpStatus.NOT_FOUND)
     }
-    const syncDBProps: SyncDBProps = await this.getDBProps(req.space)
 
-    // important : ensures the right remote path is used and stored
+    // important: ensures the right remote path is used and stored
     syncPathDto.remotePath = req.params['*']
     // add permissions (skip end point protection using getEnvPermission)
     syncPathDto.permissions = getEnvPermissions(req.space, req.space.root)
@@ -194,17 +191,17 @@ export class SyncPathsManager {
 
   private async getDBProps(space: SpaceEnv): Promise<SyncDBProps> {
     if (space.inSharesList) {
-      throw new HttpException('Sync all shares is not supported, you must select a sub-directory', HttpStatus.BAD_REQUEST)
+      throw new HttpException('Syncing all shares is not supported. Please select a subdirectory', HttpStatus.BAD_REQUEST)
     } else if (space.inPersonalSpace) {
       if (space.paths.length) {
         return { ownerId: space.dbFile.ownerId, fileId: await this.getOrCreateFileId(space) }
       } else {
-        return { ownerId: space.dbFile.ownerId }
+        throw new HttpException('Syncing all personal files is not supported. Please select a subdirectory', HttpStatus.BAD_REQUEST)
       }
     } else if (space.inFilesRepository) {
       if (!space?.root?.alias) {
         // The synchronization direction should be adapted for each root depending on the permissions, this is not yet supported
-        throw new HttpException('Sync all space is not yet supported, you must select a sub-directory', HttpStatus.BAD_REQUEST)
+        throw new HttpException('Syncing the entire space is not yet supported. Please select a subdirectory', HttpStatus.BAD_REQUEST)
       }
       if (space.root.id && !space.paths.length) {
         return { spaceId: space.id, spaceRootId: space.root.id }

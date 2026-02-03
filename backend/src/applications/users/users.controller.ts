@@ -1,14 +1,8 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Body, Controller, Delete, Get, Header, Param, ParseIntPipe, Patch, Post, Put, Req, Search, StreamableFile, UseGuards } from '@nestjs/common'
 import { createReadStream } from 'fs'
 import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
-import { AuthTwoFaGuardWithoutPassword } from '../../authentication/guards/auth-two-fa-guard'
 import { FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface'
+import { AuthTwoFaGuardWithoutPassword } from '../../authentication/providers/two-fa/auth-two-fa-guard'
 import { makeContentDispositionAttachment } from '../files/utils/send-file'
 import { USERS_ROUTE } from './constants/routes'
 import { USER_PERMISSION, USER_ROLE } from './constants/user'

@@ -634,5 +634,6 @@
   "Preferences": "Tercihler",
   "of": "/",
   "Sidebar auto-hide enabled": "Kenar çubuğu otomatik gizleme etkin",
-  "Sidebar pinned": "Kenar çubuğu sabitlendi"
+  "Sidebar pinned": "Kenar çubuğu sabitlendi",
+  "Continue with OpenID Connect": "OpenID Connect ile devam et"
 }

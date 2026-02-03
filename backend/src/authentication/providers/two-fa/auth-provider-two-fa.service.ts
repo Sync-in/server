@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { Totp } from 'time2fa'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../../applications/notifications/constants/notifications'
@@ -17,14 +11,14 @@ import { qrcodeToDataURL } from '../../../common/qrcode'
 import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { TWO_FA_CODE_LENGTH } from '../../constants/auth'
-import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from '../../dto/two-fa-verify.dto'
 import { FastifyAuthenticatedRequest } from '../../interfaces/auth-request.interface'
-import { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from '../../interfaces/two-fa-setup.interface'
 import { decryptSecret, encryptSecret } from '../../utils/crypt-secret'
+import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './auth-two-fa.dtos'
+import { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from './auth-two-fa.interfaces'
 
 @Injectable()
-export class AuthMethod2FA {
-  private readonly logger = new Logger(AuthMethod2FA.name)
+export class AuthProvider2FA {
+  private readonly logger = new Logger(AuthProvider2FA.name)
   private readonly cacheKeyPrefix = 'auth-2fa-pending-user-'
 
   constructor(
@@ -143,30 +137,31 @@ export class AuthMethod2FA {
     return auth
   }
 
-  private async validateRecoveryCode(userId: number, code: string, encryptedCodes: string[]): Promise<TwoFaVerifyResult> {
+  async validateRecoveryCode(userId: number, code: string, encryptedCodes: string[]): Promise<TwoFaVerifyResult> {
     const auth: TwoFaVerifyResult = { success: false, message: '' }
     if (!encryptedCodes || encryptedCodes.length === 0) {
       auth.message = 'Invalid code'
-    } else {
-      try {
-        for (const encCode of encryptedCodes) {
-          if (code === this.decryptSecret(encCode)) {
-            auth.success = true
-            // removed used code
-            encryptedCodes.splice(encryptedCodes.indexOf(encCode), 1)
-            break
-          }
+      return auth
+    }
+    try {
+      for (const encCode of encryptedCodes) {
+        const decryptedCode = this.decryptSecret(encCode)
+        if (code === decryptedCode) {
+          auth.success = true
+          // removed used code
+          encryptedCodes.splice(encryptedCodes.indexOf(encCode), 1)
+          break
         }
-        if (auth.success) {
-          // update recovery codes
-          await this.usersManager.updateSecrets(userId, { recoveryCodes: encryptedCodes })
-        } else {
-          auth.message = 'Invalid code'
-        }
-      } catch (e) {
-        this.logger.error(`${this.validateRecoveryCode.name} - ${e}`)
-        auth.message = e.message
       }
+      if (auth.success) {
+        // update recovery codes
+        await this.usersManager.updateSecrets(userId, { recoveryCodes: encryptedCodes })
+      } else {
+        auth.message = 'Invalid code'
+      }
+    } catch (e) {
+      this.logger.error(`${this.validateRecoveryCode.name} - ${e}`)
+      auth.message = e.message
     }
     return auth
   }

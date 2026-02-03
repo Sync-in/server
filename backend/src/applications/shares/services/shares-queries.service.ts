@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { and, count, eq, inArray, isNotNull, isNull, ne, or, SelectedFields, SQL, sql } from 'drizzle-orm'
 import { alias, MySqlSelectDynamic, union } from 'drizzle-orm/mysql-core'

@@ -1,45 +1,10 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
-import { Exclude, Transform, Type } from 'class-transformer'
-import {
-  ArrayNotEmpty,
-  IsArray,
-  IsBoolean,
-  IsDefined,
-  IsEnum,
-  IsIn,
-  IsNotEmpty,
-  IsNotEmptyObject,
-  IsObject,
-  IsOptional,
-  IsString,
-  ValidateIf,
-  ValidateNested
-} from 'class-validator'
-import { SERVER_NAME } from '../common/shared'
+import { Exclude, Type } from 'class-transformer'
+import { IsDefined, IsEnum, IsIn, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator'
 import { ACCESS_KEY, CSRF_KEY, REFRESH_KEY, WS_KEY } from './constants/auth'
-import { LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './constants/auth-ldap'
-
-export class AuthMfaTotpConfig {
-  @IsBoolean()
-  enabled = true
-
-  @IsString()
-  issuer = SERVER_NAME
-}
-
-export class AuthMfaConfig {
-  @IsDefined()
-  @IsNotEmptyObject()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => AuthMfaTotpConfig)
-  totp: AuthMfaTotpConfig = new AuthMfaTotpConfig()
-}
+import { AUTH_PROVIDER } from './providers/auth-providers.constants'
+import { AuthProviderLDAPConfig } from './providers/ldap/auth-ldap.config'
+import { AuthProviderOIDCConfig } from './providers/oidc/auth-oidc.config'
+import { AuthMFAConfig } from './providers/two-fa/auth-two-fa.config'
 
 export class AuthTokenAccessConfig {
   @Exclude({ toClassOnly: true })
@@ -111,58 +76,10 @@ export class AuthTokenConfig {
   ws: AuthTokenWSConfig
 }
 
-export class AuthMethodLdapAttributesConfig {
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value || LDAP_LOGIN_ATTR.UID)
-  @IsEnum(LDAP_LOGIN_ATTR)
-  login: LDAP_LOGIN_ATTR = LDAP_LOGIN_ATTR.UID
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value || LDAP_COMMON_ATTR.MAIL)
-  email: string = LDAP_COMMON_ATTR.MAIL
-}
-
-export class AuthMethodLdapConfig {
-  @Transform(({ value }) => (Array.isArray(value) ? value.filter((v: string) => Boolean(v)) : value))
-  @ArrayNotEmpty()
-  @IsArray()
-  @IsString({ each: true })
-  servers: string[]
-
-  @IsString()
-  @IsNotEmpty()
-  baseDN: string
-
-  @IsOptional()
-  @IsString()
-  filter?: string
-
-  @IsDefined()
-  @IsNotEmptyObject()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => AuthMethodLdapAttributesConfig)
-  attributes: AuthMethodLdapAttributesConfig = new AuthMethodLdapAttributesConfig()
-
-  @IsOptional()
-  @IsString()
-  adminGroup?: string
-
-  @IsOptional()
-  @IsString()
-  upnSuffix?: string
-
-  @IsOptional()
-  @IsString()
-  netbiosName?: string
-}
-
 export class AuthConfig {
   @IsString()
-  @IsIn(['mysql', 'ldap'])
-  method: 'mysql' | 'ldap' = 'mysql'
+  @IsEnum(AUTH_PROVIDER)
+  provider: AUTH_PROVIDER = AUTH_PROVIDER.MYSQL
 
   @IsOptional()
   @IsString()
@@ -172,8 +89,8 @@ export class AuthConfig {
   @IsNotEmptyObject()
   @IsObject()
   @ValidateNested()
-  @Type(() => AuthMfaConfig)
-  mfa: AuthMfaConfig = new AuthMfaConfig()
+  @Type(() => AuthMFAConfig)
+  mfa: AuthMFAConfig = new AuthMFAConfig()
 
   @IsString()
   @IsIn(['lax', 'strict'])
@@ -186,10 +103,17 @@ export class AuthConfig {
   @Type(() => AuthTokenConfig)
   token: AuthTokenConfig
 
-  @ValidateIf((o: AuthConfig) => o.method === 'ldap')
+  @ValidateIf((o: AuthConfig) => o.provider === AUTH_PROVIDER.LDAP)
   @IsDefined()
   @IsObject()
   @ValidateNested()
-  @Type(() => AuthMethodLdapConfig)
-  ldap: AuthMethodLdapConfig
+  @Type(() => AuthProviderLDAPConfig)
+  ldap: AuthProviderLDAPConfig
+
+  @ValidateIf((o: AuthConfig) => o.provider === AUTH_PROVIDER.OIDC)
+  @IsDefined()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AuthProviderOIDCConfig)
+  oidc: AuthProviderOIDCConfig
 }

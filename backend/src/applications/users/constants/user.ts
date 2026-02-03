@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 export const USER_PASSWORD_MIN_LENGTH = 8
 export const USER_MAX_PASSWORD_ATTEMPTS = 10
 export const USER_LOGIN_VALIDATION = /^(?! )(?!.* $)[a-zA-Z0-9@\-\\._ ]{2,255}$/

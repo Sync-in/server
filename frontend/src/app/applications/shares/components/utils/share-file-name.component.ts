@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Component, inject, Input, OnChanges, OnInit } from '@angular/core'
 import { L10N_LOCALE, L10nLocale } from 'angular-l10n'
 import { pathSlice } from '../../../../common/utils/functions'

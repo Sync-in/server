@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import type { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto'
 import type { SPACE_ROLE } from '../../spaces/constants/spaces'
 import type { MEMBER_TYPE } from '../constants/member'

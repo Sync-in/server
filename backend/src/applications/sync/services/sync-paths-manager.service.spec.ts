@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { currentTimeStamp } from '../../../common/shared'
@@ -460,18 +454,22 @@ describe(SyncPathsManager.name, () => {
     it('should throw BAD_REQUEST for shares list selection', async () => {
       await expect((service as any).getDBProps({ inSharesList: true } as any)).rejects.toMatchObject({
         status: HttpStatus.BAD_REQUEST,
-        message: 'Sync all shares is not supported, you must select a sub-directory'
+        message: 'Syncing all shares is not supported. Please select a subdirectory'
       })
     })
 
-    it('should return ownerId only for personal space at root', async () => {
-      const res = await (service as any).getDBProps({
-        inSharesList: false,
-        inPersonalSpace: true,
-        paths: [],
-        dbFile: { ownerId: 42 }
-      } as any)
-      expect(res).toEqual({ ownerId: 42 })
+    it('should throw BAD_REQUEST for personal space selection', async () => {
+      await expect(
+        (service as any).getDBProps({
+          inSharesList: false,
+          inPersonalSpace: true,
+          paths: [],
+          dbFile: { ownerId: 42 }
+        } as any)
+      ).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST,
+        message: 'Syncing all personal files is not supported. Please select a subdirectory'
+      })
     })
 
     it('should return ownerId and fileId for personal space subdir', async () => {
@@ -488,7 +486,7 @@ describe(SyncPathsManager.name, () => {
     it('should throw BAD_REQUEST for whole files repository without alias', async () => {
       await expect((service as any).getDBProps({ inFilesRepository: true, root: { alias: null }, paths: [] } as any)).rejects.toMatchObject({
         status: HttpStatus.BAD_REQUEST,
-        message: 'Sync all space is not yet supported, you must select a sub-directory'
+        message: 'Syncing the entire space is not yet supported. Please select a subdirectory'
       })
     })
 

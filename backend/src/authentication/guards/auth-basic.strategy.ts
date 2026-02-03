@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Injectable } from '@nestjs/common'
 import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { instanceToPlain, plainToInstance } from 'class-transformer'
@@ -13,7 +7,7 @@ import { UserModel } from '../../applications/users/models/user.model'
 import { SERVER_NAME } from '../../common/shared'
 import { Cache } from '../../infrastructure/cache/services/cache.service'
 import { AUTH_SCOPE } from '../constants/scope'
-import { AuthMethod } from '../models/auth-method'
+import { AuthProvider } from '../providers/auth-providers.models'
 import { HttpBasicStrategy } from './implementations/http-basic.strategy'
 
 @Injectable()
@@ -22,7 +16,7 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
   private readonly CACHE_KEY_PREFIX = 'auth-webdav'
 
   constructor(
-    private readonly authMethod: AuthMethod,
+    private readonly authProvider: AuthProvider,
     private readonly cache: Cache,
     private readonly logger: PinoLogger
   ) {
@@ -44,7 +38,7 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
       // warning: plainToInstance do not use constructor to instantiate the class
       return plainToInstance(UserModel, userFromCache)
     }
-    const userFromDB: UserModel = await this.authMethod.validateUser(loginOrEmail, password, req.ip, AUTH_SCOPE.WEBDAV)
+    const userFromDB: UserModel = await this.authProvider.validateUser(loginOrEmail, password, req.ip, AUTH_SCOPE.WEBDAV)
     if (userFromDB !== null) {
       userFromDB.removePassword()
     }

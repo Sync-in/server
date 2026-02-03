@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { faker } from '@faker-js/faker'
 import { ResultSetHeader } from 'mysql2/promise'
 import { USER_PERMISSION, USER_ROLE } from '../../../../applications/users/constants/user'

@@ -634,5 +634,6 @@
   "Preferences": "Preferencias",
   "of": "de",
   "Sidebar auto-hide enabled": "Ocultación automática de la barra lateral activada",
-  "Sidebar pinned": "Barra lateral fijada"
+  "Sidebar pinned": "Barra lateral fijada",
+  "Continue with OpenID Connect": "Continuar con OpenID Connect"
 }

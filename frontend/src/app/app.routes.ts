@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Routes } from '@angular/router'
 import { APP_PATH } from './app.constants'
 import { adminRoutes } from './applications/admin/admin.routes'
@@ -23,7 +17,6 @@ export const routes: Routes = [
     path: APP_PATH.BASE,
     component: LayoutComponent,
     canActivate: [authGuard],
-    canActivateChild: [authGuard],
     children: [...recentsRoutes, ...searchRoutes, ...spacesRoutes, ...userRoutes, ...syncRoutes, ...adminRoutes]
   },
   ...authRoutes,

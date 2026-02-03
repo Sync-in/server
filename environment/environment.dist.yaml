@@ -26,7 +26,7 @@ logger:
   filePath:
 mysql:
   # required
-  url: mysql://user:MySQLRootPassword@localhost:3306/database
+  url: mysql://user:MySQLPassword@localhost:3306/database
   # default: `false`
   logQueries: false
 cache:
@@ -77,23 +77,13 @@ mail:
   # default: `false`
   debug: false
 auth:
-  # adapter : `mysql` | `ldap`
+  # provider : `mysql` | `ldap` | `oidc`
   # default: `mysql`
-  method: mysql
+  provider: mysql
   # Key used to encrypt user secret keys in the database
   # Optional but strongly recommended
   # Warning: do not change or remove the encryption key after MFA activation, or the codes will become invalid
   encryptionKey: changeEncryptionKeyWithStrongKey
-  # Multifactor authentication
-  mfa:
-    # TOTP configuration
-    totp:
-      # Enable TOTP authentication
-      # default: true
-      enabled: true
-      # Name displayed in the authentication app (FreeOTP, Proton Authenticator, Aegis Authenticator etc.)
-      # default: Sync-in
-      issuer: Sync-in
   # cookie sameSite setting: `lax` | `strict`
   # default: `strict`
   cookieSameSite: strict
@@ -112,13 +102,33 @@ auth:
       # token expiration = cookie maxAge
       # default: `4h`
       expiration: 4h
+  # Multifactor authentication
+  mfa:
+    # TOTP configuration
+    totp:
+      # Enable TOTP authentication
+      # default: true
+      enabled: true
+      # Name displayed in the authentication app (FreeOTP, Proton Authenticator, Aegis Authenticator etc.)
+      # default: Sync-in
+      issuer: Sync-in
+  # LDAP authentication
   ldap:
     # e.g: [ldap://localhost:389, ldaps://localhost:636] (array required)
+    # required
     servers: []
     # baseDN: distinguished name (e.g., ou=people,dc=ldap,dc=sync-in,dc=com)
-    baseDN:
+    # required
+    baseDN: ou=people,dc=ldap,dc=sync-in,dc=com
     # filter, e.g: (acl=admin)
+    # optional
     filter:
+    # upnSuffix: AD domain suffix used with `userPrincipalName` to build UPN-style logins (e.g., user@`sync-in.com`)
+    # optional
+    upnSuffix:
+    # netbiosName: NetBIOS domain name used with `sAMAccountName` to build legacy logins (e.g., `SYNC_IN`\user)
+    # optional
+    netbiosName:
     attributes:
       # Login attribute used to construct the user's DN for binding.
       # The value of this attribute is used as the naming attribute (first RDN) when forming the Distinguished Name (DN) during authentication
@@ -129,12 +139,126 @@ auth:
       # email: `mail` or `email`
       # default: `mail`
       email: mail
-    # adminGroup: The CN of a group containing Sync-in administrators (e.g., administrators)
-    adminGroup:
-    # upnSuffix: AD domain suffix used with `userPrincipalName` to build UPN-style logins (e.g., user@`sync-in.com`)
-    upnSuffix:
-    # netbiosName: NetBIOS domain name used with `sAMAccountName` to build legacy logins (e.g., `SYNC_IN`\user)
-    netbiosName:
+    options:
+      # autoCreateUser: Automatically create a local user on first successful LDAP authentication.
+      # The local account is created from LDAP attributes:
+      # - login: from the configured LDAP login attribute (e.g. uid, cn, sAMAccountName, userPrincipalName)
+      # - email: from the configured email attribute (required)
+      # - firstName / lastName: from givenName+sn, or displayName, or cn (fallback)
+      # When disabled, only existing users can authenticate via LDAP.
+      # default: true
+      autoCreateUser: true
+      # autoCreatePermissions: Permissions assigned to users automatically created via LDAP.
+      # Applied only at user creation time when autoCreateUser is enabled.
+      # Has no effect on existing users.
+      # A complete list of permissions is available in the documentation: https://sync-in.com/docs/admin-guide/permissions
+      # e.g.: [personal_space, spaces_access] (array required)
+      # default: []
+      autoCreatePermissions: []
+      # adminGroup: Name of the LDAP group (CN) that grants Sync-in administrator privileges.
+      # If set, users whose LDAP `memberOf` contains this group name are assigned the administrator role.
+      # If not set, existing administrator users keep their role and it cannot be removed via LDAP.
+      # optional
+      adminGroup:
+      # enablePasswordAuthFallback: Allow local password authentication when LDAP authentication fails.
+      # When enabled, users can authenticate with their local password if the LDAP service is unavailable.
+      # Always allowed for administrator users (break-glass access).
+      # default: true
+      enablePasswordAuthFallback: true
+  oidc:
+    # issuerUrl: The URL of the OIDC provider's discovery endpoint
+    # Examples:
+    # - Keycloak:  https://auth.example.com/realms/my-realm
+    # - Authentik: https://auth.example.com/application/o/my-app/
+    # - Google:    https://accounts.google.com
+    # - Microsoft: https://login.microsoftonline.com/<tenant-id>/v2.0
+    # The server will automatically discover the authorization, token, and userinfo endpoints.
+    # required
+    issuerUrl:
+    # clientId: OAuth 2.0 Client ID obtained from your OIDC provider
+    # required
+    clientId:
+    # clientSecret: OAuth 2.0 Client Secret obtained from your OIDC provider
+    # required
+    clientSecret: changeOIDCClientSecret
+    # redirectUri: The callback URL where users are redirected after authentication
+    # This URL must be registered in your OIDC provider's allowed redirect URIs
+    # Example (API callback): https://sync-in.domain.com/api/auth/oidc/callback
+    #
+    # To allow authentication from the desktop application, the following redirect URLs must also be registered in your OIDC provider:
+    #   - http://127.0.0.1:49152/oidc/callback
+    #   - http://127.0.0.1:49153/oidc/callback
+    #   - http://127.0.0.1:49154/oidc/callback
+    #
+    # If your OIDC provider supports wildcards or regular expressions, you may instead register a single entry such as:
+    #   - http://127.0.0.1/*
+    #
+    # required
+    redirectUri: https://sync-in.domain.com/api/auth/oidc/callback
+    options:
+      # autoCreateUser: Automatically create a local user account on first successful OIDC login.
+      # When enabled, the user `login` is derived from OIDC claims: preferred_username, then the email local-part, with `sub` as a last-resort fallback.
+      # When disabled, only existing users are allowed to authenticate via OIDC.
+      # default: true
+      autoCreateUser: true
+      # autoCreatePermissions: Permissions assigned to users automatically created via OIDC.
+      # Applied only when autoCreateUser is enabled and only applied at user creation time.
+      # This option has no effect on existing users.
+      # A complete list of permissions is available in the documentation: https://sync-in.com/docs/admin-guide/permissions
+      # e.g.: [personal_space, spaces_access] (array required)
+      # default: []
+      autoCreatePermissions: []
+      # adminRoleOrGroup: Name of the role or group that grants Sync-in administrator access
+      # Users with this value will be granted administrator privileges.
+      # The value is matched against `roles` or `groups` claims provided by the IdP.
+      # Note: depending on the provider (e.g., Keycloak), roles/groups may be exposed only in tokens
+      # and require proper IdP mappers to be included in the ID token or UserInfo response.
+      # optional
+      adminRoleOrGroup:
+      # enablePasswordAuth: Allow local password-based authentication when using OIDC.
+      # When enabled, users may authenticate with their Sync-in password instead of OIDC.
+      # Local password authentication is always allowed for:
+      # - guest users
+      # - administrator users (break-glass access)
+      # - application scopes (app passwords)
+      # Regular users are allowed only when this option is enabled.
+      # Users must already exist locally and have a password set.
+      # default: true
+      enablePasswordAuth: true
+      # autoRedirect: Automatically redirect users to the OIDC login flow.
+      # When enabled, the login page is skipped and users are sent directly to the OIDC provider.
+      # default: false
+      autoRedirect: false
+      # buttonText: Label displayed on the OIDC login button.
+      # default: Continue with OpenID Connect
+      buttonText: Continue with OpenID Connect
+    security:
+      # scope: OAuth 2.0 scopes to request (space-separated string)
+      # Common scopes: openid (required), email, profile, groups, roles
+      # default: `openid email profile`
+      scope: openid email profile
+      # OAuth 2.0 / OIDC client authentication method used at the token endpoint.
+      # Possible values:
+      # - client_secret_basic (DEFAULT): HTTP Basic auth using client_id and client_secret.
+      #   Recommended for backend (confidential) clients.
+      # - client_secret_post: client_id and client_secret sent in the request body.
+      # - none (or undefined): no client authentication (public clients: mobile / SPA with PKCE).
+      # default: `client_secret_basic`
+      tokenEndpointAuthMethod: client_secret_basic
+      # tokenSigningAlg: Algorithm used to verify the signature of ID tokens (JWT) returned by the OpenID Connect provider.
+      # Common values: RS256, RS384, RS512, ES256, ES384, ES512
+      # default: `RS256`
+      tokenSigningAlg: RS256
+      # userInfoSigningAlg: Algorithm used to request a signed UserInfo response from the OpenID Connect provider.
+      # When not set, the UserInfo endpoint returns a standard JSON response (not signed). This is the most common and recommended configuration.
+      # Common values: (empty), RS256, RS384, RS512, ES256, ES384, ES512
+      # default: empty
+      userInfoSigningAlg:
+      # skipSubjectCheck: Disable verification that the `sub` claim returned by the UserInfo endpoint
+      # matches the `sub` claim from the ID token.
+      # Set to true only for non-compliant or legacy OIDC providers.
+      # default: false
+      skipSubjectCheck: false
 applications:
   files:
     # required

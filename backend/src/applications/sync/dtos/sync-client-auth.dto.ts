@@ -1,11 +1,6 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
-import { IsDefined, IsNotEmpty, IsNotEmptyObject, IsObject, IsString, IsUUID } from 'class-validator'
-import { SyncClientInfo } from '../interfaces/sync-client.interface'
+import { Type } from 'class-transformer'
+import { IsBoolean, IsDefined, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator'
+import { SyncClientInfoDto } from './sync-client-info.dto'
 
 export class SyncClientAuthDto {
   @IsNotEmpty()
@@ -19,7 +14,13 @@ export class SyncClientAuthDto {
   token: string
 
   @IsDefined()
-  @IsNotEmptyObject()
   @IsObject()
-  info: SyncClientInfo
+  @IsNotEmptyObject()
+  @ValidateNested()
+  @Type(() => SyncClientInfoDto)
+  info: SyncClientInfoDto
+
+  @IsOptional()
+  @IsBoolean()
+  tokenHasExpired?: boolean
 }

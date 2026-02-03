@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { USER_PERMISSION, USER_PERMS_SEP, USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { AdminUser } from '@sync-in-server/backend/src/applications/users/interfaces/admin-user.interface'
 import type { GuestUser } from '@sync-in-server/backend/src/applications/users/interfaces/guest-user.interface'

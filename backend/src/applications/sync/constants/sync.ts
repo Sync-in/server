@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 
 export const SYNC_IN_SERVER_AGENT = 'sync-in' as const

@@ -1,15 +1,9 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { ConfigModule } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
-import { AuthTwoFaGuard } from '../../authentication/guards/auth-two-fa-guard'
-import { AuthManager } from '../../authentication/services/auth-manager.service'
-import { AuthMethod2FA } from '../../authentication/services/auth-methods/auth-method-two-fa.service'
+import { AuthManager } from '../../authentication/auth.service'
+import { AuthProvider2FA } from '../../authentication/providers/two-fa/auth-provider-two-fa.service'
+import { AuthTwoFaGuard } from '../../authentication/providers/two-fa/auth-two-fa-guard'
 import { exportConfiguration } from '../../configuration/config.environment'
 import { Cache } from '../../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../infrastructure/database/constants'
@@ -33,7 +27,7 @@ describe(AdminUsersController.name, () => {
           provide: Cache,
           useValue: {}
         },
-        { provide: AuthMethod2FA, useValue: {} },
+        { provide: AuthProvider2FA, useValue: {} },
         { provide: AuthTwoFaGuard, useValue: {} },
         { provide: NotificationsManager, useValue: {} },
         JwtService,

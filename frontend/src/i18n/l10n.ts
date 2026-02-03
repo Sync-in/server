@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { inject, Injectable } from '@angular/core'
 import { i18nLocaleSupported, LANG_SUPPORTED, normalizeLanguage } from '@sync-in-server/backend/src/common/i18n'
 import {

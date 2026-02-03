@@ -1,27 +1,23 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import { CLIENT_TOKEN_EXPIRED_ERROR } from '@sync-in-server/backend/src/applications/sync/constants/auth'
-import { API_SYNC_AUTH_COOKIE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
+import { API_SYNC_AUTH_COOKIE, API_SYNC_REGISTER_AUTH } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications/sync/dtos/sync-client-auth.dto'
-import type { ClientAuthCookieDto } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
+import { SyncClientAuthCookie, SyncClientAuthRegistration } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
 import { API_ADMIN_IMPERSONATE_LOGOUT, API_USERS_ME } from '@sync-in-server/backend/src/applications/users/constants/routes'
 import { CSRF_KEY } from '@sync-in-server/backend/src/authentication/constants/auth'
 import {
   API_AUTH_LOGIN,
   API_AUTH_LOGOUT,
   API_AUTH_REFRESH,
+  API_AUTH_SETTINGS,
   API_TWO_FA_LOGIN_VERIFY
 } from '@sync-in-server/backend/src/authentication/constants/routes'
-import { LoginResponseDto, TwoFaResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
+import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import type { TokenResponseDto } from '@sync-in-server/backend/src/authentication/dto/token-response.dto'
-import { TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
+import type { AuthOIDCSettings } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc.interfaces'
+import type { TwoFaResponseDto, TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
 import { catchError, finalize, map, Observable, of, throwError } from 'rxjs'
 import { switchMap, tap } from 'rxjs/operators'
@@ -33,18 +29,20 @@ import { Electron } from '../electron/electron.service'
 import { LayoutService } from '../layout/layout.service'
 import { StoreService } from '../store/store.service'
 import { AUTH_PATHS } from './auth.constants'
+import type { AuthOIDCQueryParams, AuthResult } from './auth.interface'
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   public returnUrl: string
+  public electron = inject(Electron)
+  private authSettings: AuthOIDCSettings | false = null
   private readonly http = inject(HttpClient)
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
   private readonly userService = inject(UserService)
   private readonly layout = inject(LayoutService)
-  private readonly electron = inject(Electron)
 
   private _refreshExpiration = parseInt(localStorage.getItem('refresh_expiration') || '0', 10) || 0
 
@@ -70,50 +68,26 @@ export class AuthService {
     localStorage.setItem('access_expiration', value.toString())
   }
 
-  login(login: string, password: string): Observable<{ success: boolean; message: any; twoFaEnabled?: boolean }> {
+  login(login: string, password: string): Observable<AuthResult> {
     return this.http.post<LoginResponseDto>(API_AUTH_LOGIN, { login, password }).pipe(
-      map((r: LoginResponseDto) => {
+      switchMap((r: LoginResponseDto) => {
+        // 2FA - first step (code page)
         if (r.server.twoFaEnabled && r.user.twoFaEnabled) {
-          // check 2FA before logging in the user
           this.accessExpiration = r.token.access_2fa_expiration
           this.refreshExpiration = this.accessExpiration
-          return { success: true, twoFaEnabled: true, message: null }
-        } else {
-          this.initUserFromResponse(r)
+          return of<AuthResult>({ success: true, twoFaEnabled: true, message: null })
         }
-        return { success: true, message: null }
+        // Desktop Client Login
+        if (this.electron.enabled) {
+          return this.electron.register(login, password)
+        }
+        // Web Login
+        this.initUserFromResponse(r)
+        return of<AuthResult>({ success: true, message: null })
       }),
       catchError((e) => {
-        console.warn(e)
-        return of({ success: false, message: e.error.message || e.message })
-      })
-    )
-  }
-
-  loginElectron(): Observable<boolean> {
-    return this.electron.authenticate().pipe(
-      switchMap((auth: SyncClientAuthDto) => {
-        return this.http.post<ClientAuthCookieDto>(API_SYNC_AUTH_COOKIE, auth).pipe(
-          map((r: ClientAuthCookieDto) => {
-            this.accessExpiration = r.token.access_expiration
-            this.refreshExpiration = r.token.refresh_expiration
-            this.initUser(r)
-            if (r?.client_token_update) {
-              // update client token
-              this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_UPDATE, r.client_token_update)
-            }
-            return true
-          }),
-          catchError((e: HttpErrorResponse) => {
-            console.warn(e)
-            if (e.error.message === CLIENT_TOKEN_EXPIRED_ERROR) {
-              this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_EXPIRED)
-            } else {
-              this.electron.send(EVENT.SERVER.AUTHENTICATION_FAILED)
-            }
-            return of(false)
-          })
-        )
+        console.error(e)
+        return of<AuthResult>({ success: false, message: e?.error?.message ?? e?.message })
       })
     )
   }
@@ -142,20 +116,6 @@ export class AuthService {
       .subscribe()
   }
 
-  logoutImpersonateUser() {
-    this.http.post<LoginResponseDto>(API_ADMIN_IMPERSONATE_LOGOUT, null).subscribe({
-      next: (r: LoginResponseDto) => {
-        this.userService.disconnectWebSocket()
-        this.initUserFromResponse(r)
-        this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch(console.error)
-      },
-      error: (e: HttpErrorResponse) => {
-        console.error(e)
-        this.layout.sendNotification('error', 'Impersonate identity', 'logout', e)
-      }
-    })
-  }
-
   initUserFromResponse(r: LoginResponseDto, impersonate = false) {
     if (r !== null) {
       this.accessExpiration = r.token.access_expiration
@@ -176,10 +136,8 @@ export class AuthService {
         return true
       }),
       catchError((e: HttpErrorResponse) => {
-        console.debug('token has expired')
         if (this.electron.enabled) {
-          console.debug('login with app')
-          return this.loginElectron()
+          return this.authDesktopClient()
         }
         this.logout(true, true)
         return throwError(() => e)
@@ -187,17 +145,30 @@ export class AuthService {
     )
   }
 
-  checkUserAuthAndLoad(returnUrl: string): Observable<boolean> {
+  checkUserAuthAndLoad(returnUrl: string, authFromOIDC?: AuthOIDCQueryParams): Observable<boolean> {
+    if (authFromOIDC) {
+      // At this point, the auth cookies are already stored in the session.
+      this.accessExpiration = parseInt(authFromOIDC.access_expiration)
+      this.refreshExpiration = parseInt(authFromOIDC.refresh_expiration)
+      if (this.electron.enabled) {
+        return this.authOIDCDesktopClient()
+      }
+    }
     if (this.refreshTokenHasExpired()) {
       if (this.electron.enabled) {
-        return this.loginElectron()
+        return this.authDesktopClient()
       }
       this.returnUrl = returnUrl.length > 1 ? returnUrl : null
       this.logout()
       return of(false)
     } else if (!this.store.user.getValue()) {
       return this.http.get<Omit<LoginResponseDto, 'token'>>(API_USERS_ME).pipe(
-        tap((r: Omit<LoginResponseDto, 'token'>) => this.initUser(r)),
+        tap((r: Omit<LoginResponseDto, 'token'>) => {
+          this.initUser(r)
+          if (authFromOIDC) {
+            this.router.navigate([]).catch(console.error)
+          }
+        }),
         map(() => true),
         catchError((e: HttpErrorResponse) => {
           if (e.status === 401) {
@@ -229,6 +200,108 @@ export class AuthService {
     if (r.server) {
       this.store.server.set(r.server)
     }
+  }
+
+  getAuthSettings(): Observable<AuthOIDCSettings | false> {
+    // If OIDC authentication is not enabled, the route should return a 404.
+    if (this.authSettings !== null) return of(this.authSettings)
+    return this.http.get<AuthOIDCSettings>(API_AUTH_SETTINGS).pipe(
+      map((r): AuthOIDCSettings => {
+        this.authSettings = r
+        return r
+      }),
+      catchError((e: HttpErrorResponse) => {
+        console.error(e)
+        this.authSettings = false
+        return of(false as const)
+      })
+    )
+  }
+
+  private logoutImpersonateUser() {
+    this.http.post<LoginResponseDto>(API_ADMIN_IMPERSONATE_LOGOUT, null).subscribe({
+      next: (r: LoginResponseDto) => {
+        this.userService.disconnectWebSocket()
+        this.initUserFromResponse(r)
+        this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch(console.error)
+      },
+      error: (e: HttpErrorResponse) => {
+        console.error(e)
+        this.layout.sendNotification('error', 'Impersonate identity', 'logout', e)
+      }
+    })
+  }
+
+  private authDesktopClient(): Observable<boolean> {
+    return this.electron.authenticate().pipe(
+      switchMap((auth: SyncClientAuthDto) => {
+        if (!auth.clientId) {
+          // No auth was provided, the Sync-in desktop app must be registered
+          console.debug(`${this.authDesktopClient.name} - client must be registered`)
+          this.logout(true)
+          return of(false)
+        }
+        return this.http.post<SyncClientAuthCookie>(API_SYNC_AUTH_COOKIE, auth).pipe(
+          map((r: SyncClientAuthCookie) => {
+            this.accessExpiration = r.token.access_expiration
+            this.refreshExpiration = r.token.refresh_expiration
+            this.initUser(r)
+            if (r?.client_token_update) {
+              // Update the client token
+              this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_UPDATE, r.client_token_update)
+            }
+            return true
+          }),
+          catchError((e: HttpErrorResponse) => {
+            console.debug(`${this.authDesktopClient.name} - ${e.error.message}`)
+            if (e.error.message === CLIENT_TOKEN_EXPIRED_ERROR) {
+              this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_EXPIRED)
+            } else {
+              // In other cases, we consider the server unavailable
+              this.electron.send(EVENT.SERVER.AUTHENTICATION_FAILED)
+            }
+            this.logout(true, e.error.message === CLIENT_TOKEN_EXPIRED_ERROR)
+            return of(false)
+          })
+        )
+      })
+    )
+  }
+
+  private authOIDCDesktopClient(): Observable<boolean> {
+    // Retrieve authentication info from the desktop app
+    return this.electron.authenticate().pipe(
+      switchMap((auth: SyncClientAuthDto) => {
+        if (!auth.clientId || auth.tokenHasExpired) {
+          // The client must be registered, or the token must be renewed
+          return this.http.post<SyncClientAuthRegistration>(API_SYNC_REGISTER_AUTH, auth).pipe(
+            switchMap((externalAuth: SyncClientAuthRegistration) => {
+              // Store the clientId and the clientToken on the desktop app
+              return this.electron.externalRegister(externalAuth).pipe(
+                switchMap((success: boolean) => {
+                  if (success) {
+                    console.debug(`${this.authOIDCDesktopClient.name} - ${auth.clientId ? 'client was registered' : 'client token renewed'}`)
+                    // Starts authentication
+                    return this.authDesktopClient()
+                  } else {
+                    this.logout(true, true)
+                    return of(false)
+                  }
+                })
+              )
+            }),
+            catchError((e: HttpErrorResponse) => {
+              console.error(`${this.authOIDCDesktopClient.name} - ${e}`)
+              this.logout(true)
+              return of(false)
+            })
+          )
+        } else {
+          // The client must be (re)authenticated
+          return this.authDesktopClient()
+        }
+      })
+    )
   }
 
   private refreshTokenHasExpired(): boolean {

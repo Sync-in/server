@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { Component, inject, OnDestroy } from '@angular/core'
@@ -16,7 +10,7 @@ import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applicatio
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
 import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '@sync-in-server/backend/src/authentication/constants/auth'
-import { TwoFaSetup } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
+import type { TwoFaSetup } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.interfaces'
 import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'

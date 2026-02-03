@@ -1,19 +1,13 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { CONNECT_ERROR_CODE } from '../../../app.constants'
 import { UserModel } from '../../../applications/users/models/user.model'
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import { AUTH_SCOPE } from '../../constants/scope'
-import { AuthMethod } from '../../models/auth-method'
+import { AuthProvider } from '../auth-providers.models'
 
 @Injectable()
-export class AuthMethodDatabase implements AuthMethod {
-  private readonly logger = new Logger(AuthMethodDatabase.name)
+export class AuthProviderMySQL implements AuthProvider {
+  private readonly logger = new Logger(AuthProviderMySQL.name)
 
   constructor(private readonly usersManager: UsersManager) {}
 

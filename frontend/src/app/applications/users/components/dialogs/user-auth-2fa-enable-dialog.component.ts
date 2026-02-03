@@ -1,15 +1,9 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCopy, faKey, faLock } from '@fortawesome/free-solid-svg-icons'
 import { TWO_FA_CODE_LENGTH } from '@sync-in-server/backend/src/authentication/constants/auth'
-import { TwoFaEnableResult } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
+import type { TwoFaEnableResult } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.interfaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { ClipboardService } from 'ngx-clipboard'
 import { InputPasswordComponent } from '../../../../common/components/input-password.component'

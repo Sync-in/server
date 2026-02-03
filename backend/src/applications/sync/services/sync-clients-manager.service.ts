@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { HttpService } from '@nestjs/axios'
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { AxiosResponse } from 'axios'
@@ -11,9 +5,10 @@ import { FastifyReply } from 'fastify'
 import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { AuthMethod } from '../../../authentication/models/auth-method'
-import { AuthManager } from '../../../authentication/services/auth-manager.service'
-import { AuthMethod2FA } from '../../../authentication/services/auth-methods/auth-method-two-fa.service'
+import { AuthManager } from '../../../authentication/auth.service'
+import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
+import { AuthProvider } from '../../../authentication/providers/auth-providers.models'
+import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-provider-two-fa.service'
 import { convertHumanTimeToSeconds } from '../../../common/functions'
 import { currentTimeStamp } from '../../../common/shared'
 import { STATIC_PATH } from '../../../configuration/config.constants'
@@ -28,10 +23,11 @@ import { CLIENT_AUTH_TYPE, CLIENT_TOKEN_EXPIRATION_TIME, CLIENT_TOKEN_EXPIRED_ER
 import { APP_STORE_DIRNAME, APP_STORE_MANIFEST_FILE, APP_STORE_REPOSITORY, APP_STORE_URL } from '../constants/store'
 import { SYNC_CLIENT_TYPE } from '../constants/sync'
 import type { SyncClientAuthDto } from '../dtos/sync-client-auth.dto'
-import type { SyncClientRegistrationDto } from '../dtos/sync-client-registration.dto'
+import { SyncClientAuthRegistrationDto, SyncClientRegistrationDto } from '../dtos/sync-client-registration.dto'
 import { AppStoreManifest } from '../interfaces/store-manifest.interface'
-import { ClientAuthCookieDto, ClientAuthTokenDto } from '../interfaces/sync-client-auth.interface'
+import { SyncClientAuthCookie, SyncClientAuthRegistration, SyncClientAuthToken } from '../interfaces/sync-client-auth.interface'
 import { SyncClientPaths } from '../interfaces/sync-client-paths.interface'
+import { SyncClientInfo } from '../interfaces/sync-client.interface'
 import { SyncClient } from '../schemas/sync-client.interface'
 import { SyncQueries } from './sync-queries.service'
 
@@ -42,14 +38,14 @@ export class SyncClientsManager {
   constructor(
     private readonly http: HttpService,
     private readonly authManager: AuthManager,
-    private readonly authMethod: AuthMethod,
-    private readonly authMethod2Fa: AuthMethod2FA,
+    private readonly authProvider: AuthProvider,
+    private readonly authProvider2FA: AuthProvider2FA,
     private readonly usersManager: UsersManager,
     private readonly syncQueries: SyncQueries
   ) {}
 
-  async register(clientRegistrationDto: SyncClientRegistrationDto, ip: string): Promise<{ clientToken: string }> {
-    const user: UserModel = await this.authMethod.validateUser(clientRegistrationDto.login, clientRegistrationDto.password)
+  async register(clientRegistrationDto: SyncClientRegistrationDto, ip: string): Promise<SyncClientAuthRegistration> {
+    const user: UserModel = await this.authProvider.validateUser(clientRegistrationDto.login, clientRegistrationDto.password)
     if (!user) {
       this.logger.warn(`${this.register.name} - auth failed for user *${clientRegistrationDto.login}*`)
       throw new HttpException('Wrong login or password', HttpStatus.UNAUTHORIZED)
@@ -59,25 +55,31 @@ export class SyncClientsManager {
       throw new HttpException('Missing permission', HttpStatus.FORBIDDEN)
     }
     if (configuration.auth.mfa.totp.enabled && user.twoFaEnabled) {
+      // Checking TOTP code and recovery code
       if (!clientRegistrationDto.code) {
         this.logger.warn(`${this.register.name} - missing two-fa code for user *${user.login}* (${user.id})`)
         throw new HttpException('Missing TWO-FA code', HttpStatus.UNAUTHORIZED)
       }
-      const auth = this.authMethod2Fa.validateTwoFactorCode(clientRegistrationDto.code, user.secrets.twoFaSecret)
-      if (!auth.success) {
-        this.logger.warn(`${this.register.name} - wrong two-fa code for user *${user.login}* (${user.id})`)
-        this.usersManager.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.register.name} - ${e}`))
-        throw new HttpException(auth.message, HttpStatus.UNAUTHORIZED)
+      const authCode = this.authProvider2FA.validateTwoFactorCode(clientRegistrationDto.code, user.secrets.twoFaSecret)
+      if (!authCode.success) {
+        this.logger.warn(`${this.register.name} - two-fa code for *${user.login}* (${user.id}) - ${authCode.message}`)
+        const authRCode = await this.authProvider2FA.validateRecoveryCode(user.id, clientRegistrationDto.code, user.secrets.recoveryCodes)
+        if (!authRCode.success) {
+          this.logger.warn(`${this.register.name} - two-fa recovery code for *${user.login}* (${user.id}) - ${authRCode.message}`)
+          this.usersManager.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.register.name} - ${e}`))
+          throw new HttpException(authCode.message, HttpStatus.UNAUTHORIZED)
+        }
       }
     }
-    try {
-      const token = await this.syncQueries.getOrCreateClient(user.id, clientRegistrationDto.clientId, clientRegistrationDto.info, ip)
-      this.logger.log(`${this.register.name} - client *${clientRegistrationDto.info.type}* was registered for user *${user.login}* (${user.id})`)
-      return { clientToken: token }
-    } catch (e) {
-      this.logger.error(`${this.register.name} - ${e}`)
-      throw new HttpException('Error during the client registration', HttpStatus.INTERNAL_SERVER_ERROR)
-    }
+    return this.getOrCreateClient(user, clientRegistrationDto.clientId, clientRegistrationDto.info, ip)
+  }
+
+  async registerWithAuth(
+    clientAuthenticatedRegistrationDto: SyncClientAuthRegistrationDto,
+    req: FastifyAuthenticatedRequest
+  ): Promise<SyncClientAuthRegistration> {
+    const clientId = clientAuthenticatedRegistrationDto.clientId || crypto.randomUUID()
+    return this.getOrCreateClient(req.user, clientId, clientAuthenticatedRegistrationDto.info, req.ip)
   }
 
   async unregister(user: UserModel): Promise<void> {
@@ -94,7 +96,7 @@ export class SyncClientsManager {
     syncClientAuthDto: SyncClientAuthDto,
     ip: string,
     res: FastifyReply
-  ): Promise<ClientAuthTokenDto | ClientAuthCookieDto> {
+  ): Promise<SyncClientAuthToken | SyncClientAuthCookie> {
     const client = await this.syncQueries.getClient(syncClientAuthDto.clientId, null, syncClientAuthDto.token)
     if (!client) {
       throw new HttpException('Client is unknown', HttpStatus.FORBIDDEN)
@@ -121,7 +123,7 @@ export class SyncClientsManager {
     user.clientId = client.id
     // update accesses
     this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error(`${this.authenticate.name} - ${e}`))
-    let r: ClientAuthTokenDto | ClientAuthCookieDto
+    let r: SyncClientAuthToken | SyncClientAuthCookie
     if (authType === CLIENT_AUTH_TYPE.COOKIE) {
       // used by the desktop app to perform the login setup using cookies
       r = await this.authManager.setCookies(user, res)
@@ -203,5 +205,16 @@ export class SyncClientsManager {
       }
     }
     return manifest
+  }
+
+  private async getOrCreateClient(user: UserModel, clientId: string, clientInfo: SyncClientInfo, ip: string): Promise<SyncClientAuthRegistration> {
+    try {
+      const token = await this.syncQueries.getOrCreateClient(user.id, clientId, clientInfo, ip)
+      this.logger.log(`${this.register.name} - client *${clientInfo.type}* was registered for user *${user.login}* (${user.id})`)
+      return { clientId: clientId, clientToken: token } satisfies SyncClientAuthRegistration
+    } catch (e) {
+      this.logger.error(`${this.register.name} - ${e}`)
+      throw new HttpException('Error during the client registration', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
   }
 }

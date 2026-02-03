@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
@@ -19,12 +13,12 @@ import { Cache } from '../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../infrastructure/database/constants'
 import { AuthConfig } from './auth.config'
 import { AuthController } from './auth.controller'
+import { AuthManager } from './auth.service'
 import { TOKEN_PATHS } from './constants/auth'
 import { LoginResponseDto } from './dto/login-response.dto'
-import { AuthTwoFaGuard } from './guards/auth-two-fa-guard'
 import { TOKEN_TYPE } from './interfaces/token.interface'
-import { AuthManager } from './services/auth-manager.service'
-import { AuthMethod2FA } from './services/auth-methods/auth-method-two-fa.service'
+import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service'
+import { AuthTwoFaGuard } from './providers/two-fa/auth-two-fa-guard'
 
 describe(AuthController.name, () => {
   let module: TestingModule
@@ -40,7 +34,7 @@ describe(AuthController.name, () => {
         ConfigService,
         AuthManager,
         JwtService,
-        AuthMethod2FA,
+        AuthProvider2FA,
         AuthTwoFaGuard,
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
         { provide: Cache, useValue: {} },

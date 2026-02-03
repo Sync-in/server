@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { faDesktop, faRightLeft, faRotate, faServer, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { SYNC_BASE_ROUTE, SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'

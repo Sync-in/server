@@ -1,19 +1,16 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { effect, inject, Injectable, NgZone } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications/sync/dtos/sync-client-auth.dto'
-import { combineLatest, from, Observable } from 'rxjs'
+import type { SyncClientAuthRegistration } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
+import { OAuthDesktopPortParam } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc-desktop.constants'
+import { combineLatest, from, map, Observable } from 'rxjs'
 import { NotificationModel } from '../applications/notifications/models/notification.model'
 import { CLIENT_APP_COUNTER, CLIENT_SCHEDULER_STATE } from '../applications/sync/constants/client'
 import { SyncStatus } from '../applications/sync/interfaces/sync-status.interface'
 import { SyncTask } from '../applications/sync/interfaces/sync-task.interface'
 import { SYNC_MENU } from '../applications/sync/sync.constants'
+import type { AuthResult } from '../auth/auth.interface'
 import { StoreService } from '../store/store.service'
 import { EVENT } from './constants/events'
 import { ElectronIpcRenderer } from './interface'
@@ -70,7 +67,40 @@ export class Electron {
   }
 
   authenticate(): Observable<SyncClientAuthDto> {
+    // Get information about client authentication
     return from(this.invoke(EVENT.SERVER.AUTHENTICATION))
+  }
+
+  register(login: string, password: string, code?: string): Observable<AuthResult> {
+    // The client handles the registration.
+    return from(this.invoke(EVENT.SERVER.REGISTRATION, { login, password, code })).pipe(
+      map((e: { ok: boolean; msg?: string }) => ({ success: e.ok, message: e.msg ?? null }) satisfies AuthResult)
+    )
+  }
+
+  externalRegister(externalAuth: SyncClientAuthRegistration): Observable<boolean> {
+    // The registration has already been completed on the server, and the client must be updated accordingly.
+    return from(this.invoke(EVENT.SERVER.REGISTRATION, null, externalAuth)).pipe(
+      map((e: { ok: boolean; msg?: string }) => {
+        if (!e.ok) console.error(`${this.externalRegister.name} - ${e.msg}`)
+        return e.ok
+      })
+    )
+  }
+
+  async startOIDCDesktopAuth(): Promise<number> {
+    const desktop: { redirectPort: number } = await this.invoke(EVENT.OIDC.START_LOOPBACK)
+    console.debug(`Starting OIDC desktop auth with port ${desktop.redirectPort}`)
+    return desktop.redirectPort
+  }
+
+  async waitOIDCDesktopCallbackParams(): Promise<Record<string, string>> {
+    console.debug('Waiting for OIDC desktop callback parameters')
+    return await this.invoke(EVENT.OIDC.WAIT_CALLBACK)
+  }
+
+  genParamOIDCDesktopPort(desktopPort: number): string {
+    return `${OAuthDesktopPortParam}=${desktopPort}`
   }
 
   openPath(path: string) {
@@ -79,6 +109,10 @@ export class Electron {
 
   openUrl(url: string) {
     this.send(EVENT.MISC.URL_OPEN, url)
+  }
+
+  setActiveAndShow() {
+    this.send(EVENT.SERVER.SET_ACTIVE_AND_SHOW)
   }
 
   private setSync(sync: SyncStatus) {

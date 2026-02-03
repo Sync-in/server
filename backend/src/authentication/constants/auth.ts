@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { TOKEN_TYPE } from '../interfaces/token.interface'
 import { API_AUTH_REFRESH, API_AUTH_WS, API_TWO_FA_LOGIN_VERIFY } from './routes'
 

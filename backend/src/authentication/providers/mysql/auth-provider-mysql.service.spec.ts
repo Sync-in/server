@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Test, TestingModule } from '@nestjs/testing'
 import { CONNECT_ERROR_CODE } from '../../../app.constants'
 import { NotificationsManager } from '../../../applications/notifications/services/notifications-manager.service'
@@ -16,18 +10,18 @@ import { generateUserTest } from '../../../applications/users/utils/test'
 import { hashPassword } from '../../../common/functions'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
-import { AuthManager } from '../auth-manager.service'
-import { AuthMethodDatabase } from './auth-method-database.service'
+import { AuthManager } from '../../auth.service'
+import { AuthProviderMySQL } from './auth-provider-mysql.service'
 
-describe(AuthMethodDatabase.name, () => {
-  let authMethodDatabase: AuthMethodDatabase
+describe(AuthProviderMySQL.name, () => {
+  let authProviderMySQL: AuthProviderMySQL
   let usersManager: UsersManager
   let userTest: UserModel
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        AuthMethodDatabase,
+        AuthProviderMySQL,
         UsersManager,
         UsersQueries,
         AdminUsersManager,
@@ -39,7 +33,7 @@ describe(AuthMethodDatabase.name, () => {
       ]
     }).compile()
 
-    authMethodDatabase = module.get<AuthMethodDatabase>(AuthMethodDatabase)
+    authProviderMySQL = module.get<AuthProviderMySQL>(AuthProviderMySQL)
     usersManager = module.get<UsersManager>(UsersManager)
     module.useLogger(['fatal'])
     // mocks
@@ -48,7 +42,7 @@ describe(AuthMethodDatabase.name, () => {
   })
 
   it('should be defined', () => {
-    expect(authMethodDatabase).toBeDefined()
+    expect(authProviderMySQL).toBeDefined()
     expect(usersManager).toBeDefined()
     expect(userTest).toBeDefined()
   })
@@ -56,7 +50,7 @@ describe(AuthMethodDatabase.name, () => {
   it('should validate the user', async () => {
     userTest.makePaths = jest.fn()
     usersManager.findUser = jest.fn().mockReturnValue({ ...userTest, password: await hashPassword(userTest.password) })
-    expect(await authMethodDatabase.validateUser(userTest.login, userTest.password)).toBeDefined()
+    expect(await authProviderMySQL.validateUser(userTest.login, userTest.password)).toBeDefined()
     expect(userTest.makePaths).toHaveBeenCalled()
   })
 
@@ -71,9 +65,9 @@ describe(AuthMethodDatabase.name, () => {
           cause: { code: Array.from(CONNECT_ERROR_CODE)[0] }
         })
       )
-    expect(await authMethodDatabase.validateUser(userTest.login, userTest.password)).toBeNull()
-    expect(await authMethodDatabase.validateUser(userTest.login, userTest.password)).toBeNull()
-    await expect(authMethodDatabase.validateUser(userTest.login, userTest.password)).rejects.toThrow(/db error/i)
-    await expect(authMethodDatabase.validateUser(userTest.login, userTest.password)).rejects.toThrow(/authentication service/i)
+    expect(await authProviderMySQL.validateUser(userTest.login, userTest.password)).toBeNull()
+    expect(await authProviderMySQL.validateUser(userTest.login, userTest.password)).toBeNull()
+    await expect(authProviderMySQL.validateUser(userTest.login, userTest.password)).rejects.toThrow(/db error/i)
+    await expect(authProviderMySQL.validateUser(userTest.login, userTest.password)).rejects.toThrow(/authentication service/i)
   })
 })

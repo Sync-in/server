@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Routes } from '@angular/router'
 import { routeResolver } from '../../common/resolvers/route.resolver'
 import { userHaveDesktopAppPermission } from '../sync/sync.guards'

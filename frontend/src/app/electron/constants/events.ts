@@ -1,16 +1,17 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 export const EVENT = {
-  // authentication
+  // server
   SERVER: {
+    REGISTRATION: 'server-registration',
     AUTHENTICATION: 'server-authentication',
     AUTHENTICATION_FAILED: 'server-authentication-failed',
     AUTHENTICATION_TOKEN_UPDATE: 'server-authentication-token-update',
-    AUTHENTICATION_TOKEN_EXPIRED: 'server-authentication-token-expired'
+    AUTHENTICATION_TOKEN_EXPIRED: 'server-authentication-token-expired',
+    SET_ACTIVE_AND_SHOW: 'server-set-active-and-show'
+  },
+  // oidc authentication
+  OIDC: {
+    START_LOOPBACK: 'oidc-start-loopback',
+    WAIT_CALLBACK: 'oidc-wait-callback'
   },
   // sync
   SYNC: {

@@ -1,7 +1,7 @@
 services:
   sync_in_desktop_releases:
     profiles: [ "releases" ]
-    image: syncin/desktop-releases:1
+    image: syncin/desktop-releases:2
     container_name: sync-in-desktop-releases
     user: "${PUID:-8888}:${PGID:-8888}"
     volumes:

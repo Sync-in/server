@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import {
   Body,
   Controller,
@@ -28,6 +22,7 @@ import {
 } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { AuthTokenSkip } from '../../authentication/decorators/auth-token-skip.decorator'
+import { FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface'
 import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator'
 import { FastifySpaceRequest } from '../spaces/interfaces/space-request.interface'
@@ -41,13 +36,13 @@ import { SYNC_ROUTE } from './constants/routes'
 import { CHECK_SERVER_RESP, SYNC_IN_SERVER_AGENT } from './constants/sync'
 import { SyncEnvironment } from './decorators/sync-environment.decorator'
 import { SyncClientAuthDto } from './dtos/sync-client-auth.dto'
-import type { SyncClientRegistrationDto } from './dtos/sync-client-registration.dto'
+import { SyncClientAuthRegistrationDto, SyncClientRegistrationDto } from './dtos/sync-client-registration.dto'
 import { SyncCopyMoveDto, SyncDiffDto, SyncMakeDto, SyncPropsDto } from './dtos/sync-operations.dto'
 import { SyncPathDto, SyncPathUpdateDto } from './dtos/sync-path.dto'
 import { SyncUploadDto } from './dtos/sync-upload.dto'
 import { SyncDiffGzipBodyInterceptor } from './interceptors/sync-diff-gzip-body.interceptor'
 import { AppStoreManifest } from './interfaces/store-manifest.interface'
-import { ClientAuthCookieDto, ClientAuthTokenDto } from './interfaces/sync-client-auth.interface'
+import { SyncClientAuthCookie, SyncClientAuthRegistration, SyncClientAuthToken } from './interfaces/sync-client-auth.interface'
 import { SyncClientPaths } from './interfaces/sync-client-paths.interface'
 import { SyncPathSettings } from './interfaces/sync-path.interface'
 import { SyncClientsManager } from './services/sync-clients-manager.service'
@@ -75,8 +70,18 @@ export class SyncController {
 
   @Post(SYNC_ROUTE.REGISTER)
   @AuthTokenSkip()
-  register(@Body() syncClientRegistrationDto: SyncClientRegistrationDto, @Req() req: FastifyRequest): Promise<{ clientToken: string }> {
+  register(@Body() syncClientRegistrationDto: SyncClientRegistrationDto, @Req() req: FastifyRequest): Promise<SyncClientAuthRegistration> {
     return this.syncClientsManager.register(syncClientRegistrationDto, req.ip)
+  }
+
+  @Post(SYNC_ROUTE.REGISTER_AUTH)
+  @UserHavePermission(USER_PERMISSION.DESKTOP_APP)
+  @UseGuards(UserPermissionsGuard)
+  registerWithAuth(
+    @Body() clientAuthenticatedRegistrationDto: SyncClientAuthRegistrationDto,
+    @Req() req: FastifyAuthenticatedRequest
+  ): Promise<SyncClientAuthRegistration> {
+    return this.syncClientsManager.registerWithAuth(clientAuthenticatedRegistrationDto, req)
   }
 
   @Post(SYNC_ROUTE.UNREGISTER)
@@ -89,6 +94,7 @@ export class SyncController {
   @Get(SYNC_ROUTE.APP_STORE)
   @AuthTokenSkip()
   checkAppStore(): Promise<AppStoreManifest> {
+    // This route must be public to allow clients to receive updates
     return this.syncClientsManager.checkAppStore()
   }
 
@@ -99,7 +105,7 @@ export class SyncController {
     @Body() clientAuthDto: SyncClientAuthDto,
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply
-  ): Promise<ClientAuthCookieDto | ClientAuthTokenDto> {
+  ): Promise<SyncClientAuthCookie | SyncClientAuthToken> {
     return this.syncClientsManager.authenticate(type, clientAuthDto, req.ip, res)
   }
 

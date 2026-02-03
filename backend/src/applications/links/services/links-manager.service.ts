@@ -1,14 +1,8 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
+import { AuthManager } from '../../../authentication/auth.service'
 import { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
 import { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface'
-import { AuthManager } from '../../../authentication/services/auth-manager.service'
 import { serverConfig } from '../../../configuration/config.environment'
 import { FilesManager } from '../../files/services/files-manager.service'
 import { SendFile } from '../../files/utils/send-file'

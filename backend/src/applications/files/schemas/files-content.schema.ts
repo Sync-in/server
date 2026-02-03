@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 export const FILES_CONTENT_TABLE_PREFIX = 'files_content_' as const
 
 // The utf8mb4_uca1400_ai_ci COLLATE is better for precision but slower

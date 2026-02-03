@@ -1,14 +1,8 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Test, TestingModule } from '@nestjs/testing'
 import bcrypt from 'bcryptjs'
 import path from 'node:path'
 import { Readable } from 'node:stream'
-import { AuthManager } from '../../../authentication/services/auth-manager.service'
+import { AuthManager } from '../../../authentication/auth.service'
 import { comparePassword } from '../../../common/functions'
 import * as imageModule from '../../../common/image'
 import { pngMimeType, svgMimeType } from '../../../common/image'

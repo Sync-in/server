@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression, Timeout } from '@nestjs/schedule'
 import { SharesManager } from '../../shares/services/shares-manager.service'

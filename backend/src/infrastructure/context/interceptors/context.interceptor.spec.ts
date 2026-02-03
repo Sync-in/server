@@ -1,14 +1,8 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
-import { Test, TestingModule } from '@nestjs/testing'
 import { CallHandler, ExecutionContext } from '@nestjs/common'
+import { Test, TestingModule } from '@nestjs/testing'
 import { of } from 'rxjs'
-import { ContextInterceptor } from './context.interceptor'
 import { ContextManager } from '../services/context-manager.service'
+import { ContextInterceptor } from './context.interceptor'
 
 // Helper to create a minimal ExecutionContext with Fastify-like request
 function createHttpExecutionContext(request: any): ExecutionContext {

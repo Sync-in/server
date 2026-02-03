@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { NOTIFICATIONS_WS } from '@sync-in-server/backend/src/applications/notifications/constants/websocket'
@@ -50,8 +44,12 @@ import type {
   UserOnline
 } from '@sync-in-server/backend/src/applications/users/interfaces/websocket.interface'
 import { API_TWO_FA_ADMIN_RESET_USER, API_TWO_FA_DISABLE, API_TWO_FA_ENABLE } from '@sync-in-server/backend/src/authentication/constants/routes'
-import type { TwoFaVerifyWithPasswordDto } from '@sync-in-server/backend/src/authentication/dto/two-fa-verify.dto'
-import type { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from '@sync-in-server/backend/src/authentication/interfaces/two-fa-setup.interface'
+import type { TwoFaVerifyWithPasswordDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
+import type {
+  TwoFaEnableResult,
+  TwoFaSetup,
+  TwoFaVerifyResult
+} from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.interfaces'
 import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Socket } from 'ngx-socket-io'
