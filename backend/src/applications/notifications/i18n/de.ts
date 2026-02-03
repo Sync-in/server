@@ -1,14 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 export const de = {
   'If you no longer wish to receive notifications, change your preferences directly from your user space.':
     'Wenn Sie keine Benachrichtigungen mehr erhalten möchten, ändern Sie Ihre Einstellungen direkt in Ihrem Benutzerbereich.',

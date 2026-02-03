@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, computed, ElementRef, inject, OnDestroy, Signal, ViewChild } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'

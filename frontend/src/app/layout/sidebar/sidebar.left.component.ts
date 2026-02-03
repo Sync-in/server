@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { AsyncPipe, Location, NgComponentOutlet, NgTemplateOutlet } from '@angular/common'
 import { Component, ElementRef, inject, OnDestroy, Renderer2, ViewChild } from '@angular/core'
 import { ResolveEnd, Router, RouterLink } from '@angular/router'

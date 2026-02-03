@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
 import type { LinkGuest } from '@sync-in-server/backend/src/applications/links/interfaces/link-guest.interface'
 import type { ShareLink } from '@sync-in-server/backend/src/applications/shares/interfaces/share-link.interface'

@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 export const SPACE_MAX_DISABLED_DAYS = 30 //days
 
 export const SPACE_PERMS_SEP = ':'

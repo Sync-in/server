@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { SQL, sql } from 'drizzle-orm'
 import { bigint, boolean, datetime, mysqlTable, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
 import { SPACE_PERMS_SEP } from '../constants/spaces'

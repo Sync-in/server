@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { sql } from 'drizzle-orm'
 import { bigint, datetime, index, mysqlTable, tinyint, unique, varchar } from 'drizzle-orm/mysql-core'
 import { links } from '../../links/schemas/links.schema'

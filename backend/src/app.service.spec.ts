@@ -1,10 +1,5 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { Logger } from '@nestjs/common'
+import { setupPrimary } from '@socket.io/cluster-adapter'
 import cluster from 'node:cluster'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -13,10 +8,10 @@ import process from 'node:process'
 import { AppService } from './app.service'
 import { ENVIRONMENT_PREFIX } from './configuration/config.constants'
 import { configuration, exportConfiguration } from './configuration/config.environment'
+
 jest.mock('@socket.io/cluster-adapter', () => ({
   setupPrimary: jest.fn()
 }))
-import { setupPrimary } from '@socket.io/cluster-adapter'
 
 describe(AppService.name, () => {
   let appService: AppService

@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 export const ko = {
   'If you no longer wish to receive notifications, change your preferences directly from your user space.':
     '더 이상 알림을 받고 싶지 않다면, 사용자 공간에서 바로 환경설정을 변경하세요.',

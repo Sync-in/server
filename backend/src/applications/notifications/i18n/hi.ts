@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 export const hi = {
   'If you no longer wish to receive notifications, change your preferences directly from your user space.':
     'यदि आप अब सूचनाएँ प्राप्त नहीं करना चाहते हैं, तो अपने उपयोगकर्ता क्षेत्र से सीधे अपनी प्राथमिकताएँ बदलें।',

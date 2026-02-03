@@ -1,9 +1,3 @@
-/*
- * Copyright (C) 2012-2025 Johan Legrand <johan.legrand@sync-in.com>
- * This file is part of Sync-in | The open source file sync and share solution
- * See the LICENSE file for licensing details
- */
-
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, mixin, Type } from '@nestjs/common'
 import { configuration } from '../../../configuration/config.environment'
 import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '../../constants/auth'
