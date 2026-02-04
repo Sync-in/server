@@ -49,7 +49,6 @@
 }
 
 .newly {
-  color: white;
   border-bottom: .5px solid $gray-light;
 }
 
@@ -60,17 +59,19 @@
 
 .newly-1, .prop-newly-1 {
   @extend .newly-0;
-  background-color: $orange !important;
+  color: white !important;
+  background-color: $purple !important;
 }
 
 .newly-2, .prop-newly-2 {
   @extend .newly-0;
-  background-color: lighten($orange, 15%) !important;
+  color: white !important;
+  background-color: lighten($purple, 15%) !important;
 }
 
 .newly-3, .prop-newly-3 {
   @extend .newly-0;
-  background-color: lighten($orange, 30%) !important;
+  background-color: lighten($purple, 30%) !important;
   color: inherit !important;
 }
 
