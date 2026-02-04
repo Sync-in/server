@@ -15,4 +15,12 @@ export const LDAP_COMMON_ATTR = {
   MEMBER_OF: 'memberOf'
 } as const
 
+export const LDAP_SEARCH_ATTR = {
+  BASE: 'base',
+  SUB: 'sub',
+  GROUP_OF_NAMES: 'groupOfNames',
+  OBJECT_CLASS: 'objectClass',
+  MEMBER: 'member'
+} as const
+
 export const ALL_LDAP_ATTRIBUTES = [...Object.values(LDAP_LOGIN_ATTR), ...Object.values(LDAP_COMMON_ATTR)]

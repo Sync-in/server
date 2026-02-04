@@ -76,6 +76,14 @@ export class AuthProviderLDAPConfig {
   @IsString()
   netbiosName?: string
 
+  @IsOptional()
+  @IsString()
+  serviceBindDN?: string
+
+  @IsOptional()
+  @IsString()
+  serviceBindPassword?: string
+
   @IsDefined()
   @IsNotEmptyObject()
   @IsObject()
