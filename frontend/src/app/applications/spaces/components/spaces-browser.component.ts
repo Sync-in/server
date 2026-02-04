@@ -46,6 +46,7 @@ import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
+import { SERVER_CONNECTION_ERROR } from '../../../app.constants'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
@@ -153,7 +154,8 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   protected loading = false
   protected locationNotFound = false
   protected forbiddenResource = false
-  protected serverError = false
+  protected serverConnectionError = false
+  protected serverConnectionErrorMessage = SERVER_CONNECTION_ERROR
   protected isFilesRepo: boolean
   protected isSharesRepo: boolean
   protected isTrashRepo: boolean
@@ -321,7 +323,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.loading = true
     this.forbiddenResource = false
     this.locationNotFound = false
-    this.serverError = false
+    this.serverConnectionError = false
     this.inputFilter.clear()
     this.resetFilesSelection()
     this.spacesBrowser.loadFiles().subscribe({
@@ -354,8 +356,8 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         if (e.status !== 401) {
           this.forbiddenResource = e.status === 403
           this.locationNotFound = e.status === 404
-          this.serverError = e.status === 0
-          this.layout.sendNotification('error', 'Files', e.error.message)
+          this.serverConnectionError = e.status === 0
+          this.layout.sendNotification('error', 'Files', e.error.message || this.serverConnectionErrorMessage)
         }
         this.loading = false
       }

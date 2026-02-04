@@ -3,6 +3,7 @@ import { inject, Injectable, Injector } from '@angular/core'
 import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH } from '@sync-in-server/backend/src/authentication/constants/routes'
 import { BehaviorSubject, concatMap, delay, Observable, of, retryWhen, throwError } from 'rxjs'
 import { catchError, filter, finalize, switchMap, take } from 'rxjs/operators'
+import { SERVER_CONNECTION_ERROR } from '../app.constants'
 import { hasReservedUrlChars } from '../common/utils/functions'
 import { AuthService } from './auth.service'
 
@@ -69,8 +70,11 @@ export class AuthInterceptor implements HttpInterceptor {
       retryWhen((error) =>
         error.pipe(
           concatMap((error, count) => {
-            if (count < this.retryCount && error.status == 0) {
+            if (count < this.retryCount) {
               return of(error)
+            }
+            if (error.status === 0) {
+              error.message = SERVER_CONNECTION_ERROR
             }
             return throwError(() => error)
           }),

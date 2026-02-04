@@ -459,19 +459,19 @@
 <!--Start Common Messages-->
 <ng-template #CommonMessages>
   @if (forbiddenResource) {
-    <div class="fs-sm text-center text-danger fw-bold no-select">
+    <div class="fs-sm text-center text-danger fw-bold no-select p-4">
       <span l10nTranslate>Forbidden resource</span>
     </div>
   } @else if (locationNotFound) {
-    <div class="fs-sm text-center text-danger fw-bold no-select">
+    <div class="fs-sm text-center text-danger fw-bold no-select p-4">
       <span l10nTranslate>Location not found</span>
     </div>
-  } @else if (serverError) {
-    <div class="fs-sm text-center text-danger fw-bold no-select">
-      <span l10nTranslate>Server Error</span>
+  } @else if (serverConnectionError) {
+    <div class="fs-sm text-center text-danger fw-bold no-select p-4">
+      <span l10nTranslate>{{ serverConnectionErrorMessage }}</span>
     </div>
   } @else if (!isTrashRepo && !loading && !stats.elements) {
-    <div class="fs-sm text-center text-muted fw-bold no-select">
+    <div class="fs-sm text-center text-muted fw-bold no-select p-4">
       <span l10nTranslate>Drag and drop your files here</span>
     </div>
   }

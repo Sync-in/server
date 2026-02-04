@@ -16,3 +16,5 @@ export const APP_MENU: AppMenu = {
   level: 0,
   submenus: []
 } as const
+
+export const SERVER_CONNECTION_ERROR = 'Server connection error'
