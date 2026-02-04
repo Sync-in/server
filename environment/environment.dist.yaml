@@ -114,26 +114,41 @@ auth:
       issuer: Sync-in
   # LDAP authentication
   ldap:
-    # e.g: [ldap://localhost:389, ldaps://localhost:636] (array required)
+    # e.g.: [ldap://localhost:389, ldaps://localhost:636] (array required)
+    # Multiple servers are tried in order until a bind/search succeeds.
     # required
     servers: []
-    # baseDN: distinguished name (e.g., ou=people,dc=ldap,dc=sync-in,dc=com)
+    # baseDN: Distinguished name (e.g.: ou=people,dc=ldap,dc=sync-in,dc=com)
+    # Used as the search base for users, and for groups when adminGroup is a CN.
     # required
     baseDN: ou=people,dc=ldap,dc=sync-in,dc=com
     # filter, e.g: (acl=admin)
+    # Appended as-is to the LDAP search filter (trusted config).
     # optional
     filter:
-    # upnSuffix: AD domain suffix used with `userPrincipalName` to build UPN-style logins (e.g., user@`sync-in.com`)
+    # upnSuffix: AD domain suffix used with `userPrincipalName` to build UPN-style logins (e.g.: user@`sync-in.com`)
+    # Only used when login is set to userPrincipalName.
     # optional
     upnSuffix:
-    # netbiosName: NetBIOS domain name used with `sAMAccountName` to build legacy logins (e.g., `SYNC_IN`\user)
+    # netbiosName: NetBIOS domain name used with `sAMAccountName` to build legacy logins (e.g.: `SYNC_IN`\user)
+    # Only used when login is set to sAMAccountName.
     # optional
     netbiosName:
+    # serviceBindDN: Distinguished Name for a service account used to search users/groups.
+    # When set, searches are performed with this account; user bind is used only to validate the password.
+    # e.g.: cn=syncin,ou=services,dc=ldap,dc=sync-in,dc=com
+    # optional
+    serviceBindDN:
+    # serviceBindPassword: Password for the service account used to search users/groups.
+    # optional
+    serviceBindPassword:
     attributes:
-      # Login attribute used to construct the user's DN for binding.
-      # The value of this attribute is used as the naming attribute (first RDN) when forming the Distinguished Name (DN) during authentication
-      # login: `uid` | `cn` | `mail` | `sAMAccountName` | `userPrincipalName`, used to authenticate the user
-      # default: `uid`
+      # LDAP attribute that matches the login stored in the database.
+      # With a service bind, it is used to locate the user (then bind with the found DN).
+      # Without a service bind, it is used to construct the user's DN for binding (except AD: UPN/DOMAIN\\user).
+      # If you choose mail, local logins should be the user's email address.
+      # e.g.: uid | cn | mail | sAMAccountName | userPrincipalName
+      # default: uid
       login: uid
       # Attribute used to retrieve the user's email address
       # email: `mail` or `email`
@@ -142,7 +157,7 @@ auth:
     options:
       # autoCreateUser: Automatically create a local user on first successful LDAP authentication.
       # The local account is created from LDAP attributes:
-      # - login: from the configured LDAP login attribute (e.g. uid, cn, sAMAccountName, userPrincipalName)
+      # - login: from the configured LDAP login attribute (e.g.: uid, cn, sAMAccountName, userPrincipalName)
       # - email: from the configured email attribute (required)
       # - firstName / lastName: from givenName+sn, or displayName, or cn (fallback)
       # When disabled, only existing users can authenticate via LDAP.
@@ -155,8 +170,11 @@ auth:
       # e.g.: [personal_space, spaces_access] (array required)
       # default: []
       autoCreatePermissions: []
-      # adminGroup: Name of the LDAP group (CN) that grants Sync-in administrator privileges.
-      # If set, users whose LDAP `memberOf` contains this group name are assigned the administrator role.
+      # adminGroup: LDAP group that grants Sync-in administrator privileges.
+      # Accepts either a simple CN (e.g.: "Admins") or a full DN (e.g.: "CN=Admins,OU=Groups,DC=ldap,DC=sync-in,DC=com").
+      # If set, users whose LDAP `memberOf` contains this CN (or whose group DN matches) are assigned the administrator role.
+      # If `memberOf` is missing, Sync-in can also check membership by searching `groupOfNames` groups.
+      # If users cannot read `groupOfNames`, use a service bind account to perform this lookup.
       # If not set, existing administrator users keep their role and it cannot be removed via LDAP.
       # optional
       adminGroup:
@@ -167,7 +185,7 @@ auth:
       enablePasswordAuthFallback: true
   oidc:
     # issuerUrl: The URL of the OIDC provider's discovery endpoint
-    # Examples:
+    # e.g.:
     # - Keycloak:  https://auth.example.com/realms/my-realm
     # - Authentik: https://auth.example.com/application/o/my-app/
     # - Google:    https://accounts.google.com
@@ -183,7 +201,7 @@ auth:
     clientSecret: changeOIDCClientSecret
     # redirectUri: The callback URL where users are redirected after authentication
     # This URL must be registered in your OIDC provider's allowed redirect URIs
-    # Example (API callback): https://sync-in.domain.com/api/auth/oidc/callback
+    # e.g.: (API callback): https://sync-in.domain.com/api/auth/oidc/callback
     #
     # To allow authentication from the desktop application, the following redirect URLs must also be registered in your OIDC provider:
     #   - http://127.0.0.1:49152/oidc/callback
@@ -211,7 +229,7 @@ auth:
       # adminRoleOrGroup: Name of the role or group that grants Sync-in administrator access
       # Users with this value will be granted administrator privileges.
       # The value is matched against `roles` or `groups` claims provided by the IdP.
-      # Note: depending on the provider (e.g., Keycloak), roles/groups may be exposed only in tokens
+      # Note: depending on the provider (e.g.: Keycloak), roles/groups may be exposed only in tokens
       # and require proper IdP mappers to be included in the ID token or UserInfo response.
       # optional
       adminRoleOrGroup:
@@ -280,7 +298,7 @@ applications:
       secret: onlyOfficeSecret
       # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
       # If an external server is configured, it will be used instead.
-      # Note: when using an external server (e.g. https://onlyoffice.domain.com), make sure it is accessible from the client/browser.
+      # Note: when using an external server (e.g.: https://onlyoffice.domain.com), make sure it is accessible from the client/browser.
       # default: null
       externalServer:
       # If you use https, set to `true`.
@@ -292,7 +310,7 @@ applications:
       enabled: false
       # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
       # If an external server is configured, it will be used instead.
-      # Note: when using an external server (e.g. https://collabora.domain.com), make sure it is accessible from the client/browser.
+      # Note: when using an external server (e.g.: https://collabora.domain.com), make sure it is accessible from the client/browser.
       # default: null
       externalServer:
   appStore:

@@ -76,6 +76,7 @@ describe(AuthProviderLDAP.name, () => {
     configuration.auth.ldap = next
     ;(authProviderLDAP as any).ldapConfig = next
     ;(authProviderLDAP as any).isAD = [LDAP_LOGIN_ATTR.SAM, LDAP_LOGIN_ATTR.UPN].includes(next.attributes.login)
+    ;(authProviderLDAP as any).hasServiceBind = Boolean(next.serviceBindDN && next.serviceBindPassword)
   }
 
   const mockBindResolve = () => {
@@ -306,6 +307,120 @@ describe(AuthProviderLDAP.name, () => {
     expect(usersManager.updateAccesses).toHaveBeenCalledWith(createdUser, '192.168.1.10', true)
   })
 
+  it('should accept adminGroup as full DN', async () => {
+    setLdapConfig({
+      options: {
+        adminGroup: 'CN=Admins,OU=Groups,DC=example,DC=org'
+      }
+    })
+    usersManager.findUser.mockResolvedValue(null)
+    mockBindResolve()
+    mockSearchEntries([
+      {
+        uid: 'john',
+        givenName: 'John',
+        sn: 'Doe',
+        mail: 'john@example.org',
+        memberOf: ['CN=Admins,OU=Groups,DC=example,DC=org']
+      }
+    ])
+    const createdUser: any = { id: 9, login: 'john', isGuest: false, isActive: true, makePaths: jest.fn() }
+    adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
+    usersManager.fromUserId.mockResolvedValue(createdUser)
+
+    const res = await authProviderLDAP.validateUser('john', 'pwd')
+
+    expect(adminUsersManager.createUserOrGuest).toHaveBeenCalledWith(
+      expect.objectContaining({ role: USER_ROLE.ADMINISTRATOR }),
+      USER_ROLE.ADMINISTRATOR
+    )
+    expect(res).toBe(createdUser)
+  })
+
+  it('should use groupOfNames to detect admin membership when memberOf is missing', async () => {
+    setLdapConfig({ options: { adminGroup: 'Admins' } })
+    usersManager.findUser.mockResolvedValue(null)
+    mockBindResolve()
+    ldapClient.search
+      .mockResolvedValueOnce({
+        searchEntries: [
+          {
+            uid: 'john',
+            cn: 'John Doe',
+            mail: 'john@example.org',
+            dn: 'uid=john,ou=people,dc=example,dc=org'
+          }
+        ]
+      })
+      .mockResolvedValueOnce({ searchEntries: [{ cn: 'Admins' }] })
+    const createdUser: any = { id: 3, login: 'john', isGuest: false, isActive: true, makePaths: jest.fn() }
+    adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
+    usersManager.fromUserId.mockResolvedValue(createdUser)
+
+    const res = await authProviderLDAP.validateUser('john', 'pwd')
+
+    expect(adminUsersManager.createUserOrGuest).toHaveBeenCalledWith(
+      expect.objectContaining({ role: USER_ROLE.ADMINISTRATOR }),
+      USER_ROLE.ADMINISTRATOR
+    )
+    expect(res).toBe(createdUser)
+  })
+
+  it('should use service bind for LDAP searches when configured', async () => {
+    setLdapConfig({
+      serviceBindDN: 'cn=svc,dc=example,dc=org',
+      serviceBindPassword: 'secret'
+    })
+    usersManager.findUser.mockResolvedValue(null)
+    mockBindResolve()
+    ldapClient.search.mockResolvedValueOnce({
+      searchEntries: [{ uid: 'john', cn: 'John Doe', mail: 'john@example.org', dn: 'uid=john,ou=people,dc=example,dc=org' }]
+    })
+    const createdUser: any = { id: 8, login: 'john', isGuest: false, isActive: true, makePaths: jest.fn() }
+    adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
+    usersManager.fromUserId.mockResolvedValue(createdUser)
+
+    await authProviderLDAP.validateUser('john', 'pwd')
+
+    expect(ldapClient.bind).toHaveBeenCalledWith('cn=svc,dc=example,dc=org', 'secret')
+    expect(ldapClient.bind).toHaveBeenCalledWith('uid=john,ou=people,dc=example,dc=org', 'pwd')
+  })
+
+  it('should return null when service bind is set but user DN is not found', async () => {
+    setLdapConfig({
+      serviceBindDN: 'cn=svc,dc=example,dc=org',
+      serviceBindPassword: 'secret'
+    })
+    usersManager.findUser.mockResolvedValue(null)
+    mockBindResolve()
+    ldapClient.search.mockResolvedValueOnce({ searchEntries: [] })
+
+    const res = await authProviderLDAP.validateUser('john', 'pwd')
+
+    expect(res).toBeNull()
+    expect(ldapClient.bind).toHaveBeenCalledWith('cn=svc,dc=example,dc=org', 'secret')
+    expect(ldapClient.bind).not.toHaveBeenCalledWith('uid=john,ou=people,dc=example,dc=org', 'pwd')
+  })
+
+  it('should return null when user bind fails after service bind', async () => {
+    setLdapConfig({
+      serviceBindDN: 'cn=svc,dc=example,dc=org',
+      serviceBindPassword: 'secret'
+    })
+    usersManager.findUser.mockResolvedValue(null)
+    ldapClient.unbind.mockResolvedValue(undefined)
+    ldapClient.bind.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new InvalidCredentialsError('invalid credentials'))
+    ldapClient.search.mockResolvedValueOnce({
+      searchEntries: [{ dn: 'uid=john,ou=people,dc=example,dc=org', cn: 'John Doe' }]
+    })
+
+    const res = await authProviderLDAP.validateUser('john', 'pwd')
+
+    expect(res).toBeNull()
+    expect(ldapClient.bind).toHaveBeenCalledWith('cn=svc,dc=example,dc=org', 'secret')
+    expect(ldapClient.bind).toHaveBeenCalledWith('uid=john,ou=people,dc=example,dc=org', 'pwd')
+  })
+
   it('should keep admin role when adminGroup is not configured', async () => {
     setLdapConfig({ options: { adminGroup: undefined } })
     const existingUser: any = buildUser({ id: 5, role: USER_ROLE.ADMINISTRATOR })
@@ -388,7 +503,7 @@ describe(AuthProviderLDAP.name, () => {
 
     expect(normalized.uid).toBe('john')
     expect(normalized.mail).toBe('john@example.org')
-    expect(normalized.memberOf).toEqual(['Admins', 'Staff'])
+    expect(normalized.memberOf).toEqual(['CN=Admins,OU=Groups,DC=example,DC=org', 'Admins', 'CN=Staff,OU=Groups,DC=example,DC=org', 'Staff'])
   })
 
   it('should build LDAP logins for SAM account name when netbiosName is set', () => {

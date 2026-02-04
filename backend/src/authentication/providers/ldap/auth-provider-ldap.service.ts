@@ -11,14 +11,18 @@ import { configuration } from '../../../configuration/config.environment'
 import type { AUTH_SCOPE } from '../../constants/scope'
 import { AuthProvider } from '../auth-providers.models'
 import type { AuthProviderLDAPConfig } from './auth-ldap.config'
-import { ALL_LDAP_ATTRIBUTES, LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
+import { ALL_LDAP_ATTRIBUTES, LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR, LDAP_SEARCH_ATTR } from './auth-ldap.constants'
 
-type LdapUserEntry = Entry & Record<LDAP_LOGIN_ATTR | (typeof LDAP_COMMON_ATTR)[keyof typeof LDAP_COMMON_ATTR], string>
+type LdapUserEntry = Entry &
+  Record<LDAP_LOGIN_ATTR | Exclude<(typeof LDAP_COMMON_ATTR)[keyof typeof LDAP_COMMON_ATTR], typeof LDAP_COMMON_ATTR.MEMBER_OF>, string> & {
+    [LDAP_COMMON_ATTR.MEMBER_OF]?: string[]
+  }
 
 @Injectable()
 export class AuthProviderLDAP implements AuthProvider {
   private readonly logger = new Logger(AuthProviderLDAP.name)
   private readonly ldapConfig: AuthProviderLDAPConfig = configuration.auth.ldap
+  private readonly hasServiceBind = Boolean(this.ldapConfig.serviceBindDN && this.ldapConfig.serviceBindPassword)
   private readonly isAD = this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.SAM || this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN
   private clientOptions: ClientOptions = { timeout: 6000, connectTimeout: 6000, url: '' }
 
@@ -27,9 +31,10 @@ export class AuthProviderLDAP implements AuthProvider {
     private readonly adminUsersManager: AdminUsersManager
   ) {}
 
-  async validateUser(login: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
+  async validateUser(loginOrEmail: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
+    // Authenticate user via LDAP and sync local user state.
     // Find user from his login or email
-    let user: UserModel = await this.usersManager.findUser(this.dbLogin(login), false)
+    let user: UserModel = await this.usersManager.findUser(this.dbLogin(loginOrEmail), false)
     if (user) {
       if (user.isGuest || scope) {
         // Allow local password authentication for guest users and application scopes (app passwords)
@@ -44,7 +49,7 @@ export class AuthProviderLDAP implements AuthProvider {
     let entry: false | LdapUserEntry = false
     try {
       // If a user was found, use the stored login. This allows logging in with an email.
-      entry = await this.checkAuth(user?.login || login, password)
+      entry = await this.checkAuth(user?.login || loginOrEmail, password)
     } catch (e) {
       ldapErrorMessage = e.message
     }
@@ -55,7 +60,7 @@ export class AuthProviderLDAP implements AuthProvider {
       // Allow local password authentication for:
       // - admin users (break-glass access)
       // - regular users when password authentication fallback is enabled
-      if (user && Boolean(ldapErrorMessage) && (user.isAdmin || this.ldapConfig.options.enablePasswordAuthFallback)) {
+      if (user && (user.isAdmin || (Boolean(ldapErrorMessage) && this.ldapConfig.options.enablePasswordAuthFallback))) {
         const localUser = await this.usersManager.logUser(user, password, ip)
         if (localUser) return localUser
       }
@@ -86,27 +91,34 @@ export class AuthProviderLDAP implements AuthProvider {
   }
 
   private async checkAuth(login: string, password: string): Promise<LdapUserEntry | false> {
+    // Bind and fetch LDAP entry, optionally via service account.
     const ldapLogin = this.buildLdapLogin(login)
     // AD: bind directly with the user input (UPN or DOMAIN\user)
     // Generic LDAP: build DN from login attribute + baseDN
-    const bindUserDN = this.isAD ? ldapLogin : `${this.ldapConfig.attributes.login}=${ldapLogin},${this.ldapConfig.baseDN}`
-    let client: Client
+    const bindUserDN = this.buildBindUserDN(ldapLogin)
     let error: InvalidCredentialsError | any
     for (const s of this.ldapConfig.servers) {
-      client = new Client({ ...this.clientOptions, url: s })
+      const client = new Client({ ...this.clientOptions, url: s })
+      let attemptedBindDN = bindUserDN
       try {
-        await client.bind(bindUserDN, password)
-        return await this.checkAccess(ldapLogin, client)
-      } catch (e) {
-        if (e.errors?.length) {
-          for (const err of e.errors) {
-            this.logger.warn(`${this.checkAuth.name} - ${bindUserDN} : ${err}`)
-            error = err
+        if (this.hasServiceBind) {
+          attemptedBindDN = this.ldapConfig.serviceBindDN
+          await client.bind(this.ldapConfig.serviceBindDN, this.ldapConfig.serviceBindPassword)
+          const result = await this.findUserEntry(ldapLogin, client)
+          if (!result || !result.userDn) {
+            this.logger.warn(`${this.checkAuth.name} - no LDAP entry found for : ${login}`)
+            return false
           }
-        } else {
-          error = e
-          this.logger.warn(`${this.checkAuth.name} - ${bindUserDN} : ${e}`)
+          const { entry, userDn } = result
+          attemptedBindDN = userDn
+          await client.bind(userDn, password)
+          return entry
         }
+        attemptedBindDN = bindUserDN
+        await client.bind(bindUserDN, password)
+        return await this.checkAccess(ldapLogin, client, bindUserDN)
+      } catch (e) {
+        error = this.handleBindError(e, attemptedBindDN)
         if (error instanceof InvalidCredentialsError) {
           return false
         }
@@ -123,35 +135,53 @@ export class AuthProviderLDAP implements AuthProvider {
     return false
   }
 
-  private async checkAccess(login: string, client: Client): Promise<LdapUserEntry | false> {
+  private async checkAccess(login: string, client: Client, bindUserDN?: string): Promise<LdapUserEntry | false> {
+    // Search for the LDAP entry and normalize attributes.
+    const result = await this.findUserEntry(login, client, bindUserDN)
+    return result ? result.entry : false
+  }
+
+  private async findUserEntry(login: string, client: Client, bindUserDN?: string): Promise<{ entry: LdapUserEntry; userDn?: string } | false> {
     const searchFilter = this.buildUserFilter(login, this.ldapConfig.filter)
     try {
       const { searchEntries } = await client.search(this.ldapConfig.baseDN, {
-        scope: 'sub',
+        scope: LDAP_SEARCH_ATTR.SUB,
         filter: searchFilter,
         attributes: ALL_LDAP_ATTRIBUTES
       })
 
       if (searchEntries.length === 0) {
-        this.logger.debug(`${this.checkAccess.name} - search filter : ${searchFilter}`)
-        this.logger.warn(`${this.checkAccess.name} - no LDAP entry found for : ${login}`)
+        this.logger.debug(`${this.findUserEntry.name} - search filter : ${searchFilter}`)
+        this.logger.warn(`${this.findUserEntry.name} - no LDAP entry found for : ${login}`)
         return false
       }
 
       if (searchEntries.length > 1) {
-        this.logger.warn(`${this.checkAccess.name} - multiple LDAP entries found for : ${login}, using first one`)
+        this.logger.warn(`${this.findUserEntry.name} - multiple LDAP entries found for : ${login}, using first one`)
       }
 
-      // Always return the first valid entry
-      return this.convertToLdapUserEntry(searchEntries[0])
+      const rawEntry = searchEntries[0]
+      const entry: LdapUserEntry = this.convertToLdapUserEntry(rawEntry)
+      const userDn = (rawEntry as { dn?: string }).dn || bindUserDN
+
+      if (this.ldapConfig.options.adminGroup && !this.hasAdminGroup(entry, this.ldapConfig.options.adminGroup)) {
+        if (userDn && (await this.isMemberOfGroupOfNames(this.ldapConfig.options.adminGroup, userDn, client))) {
+          const existing = Array.isArray(entry[LDAP_COMMON_ATTR.MEMBER_OF]) ? entry[LDAP_COMMON_ATTR.MEMBER_OF] : []
+          entry[LDAP_COMMON_ATTR.MEMBER_OF] = [...new Set([...existing, this.ldapConfig.options.adminGroup])]
+        }
+      }
+
+      // Return the first matching entry.
+      return { entry, userDn }
     } catch (e) {
-      this.logger.debug(`${this.checkAccess.name} - search filter : ${searchFilter}`)
-      this.logger.error(`${this.checkAccess.name} - ${login} : ${e}`)
+      this.logger.debug(`${this.findUserEntry.name} - search filter : ${searchFilter}`)
+      this.logger.error(`${this.findUserEntry.name} - ${login} : ${e}`)
       return false
     }
   }
 
   private async updateOrCreateUser(identity: CreateUserDto, user: UserModel): Promise<UserModel> {
+    // Create or update the local user record from LDAP identity.
     if (user === null) {
       // Create
       identity.permissions = this.ldapConfig.options.autoCreatePermissions.join(',')
@@ -215,12 +245,21 @@ export class AuthProviderLDAP implements AuthProvider {
   }
 
   private convertToLdapUserEntry(entry: Entry): LdapUserEntry {
+    // Normalize memberOf and other LDAP attributes for downstream usage.
     for (const attr of ALL_LDAP_ATTRIBUTES) {
       if (attr === LDAP_COMMON_ATTR.MEMBER_OF && entry[attr]) {
-        entry[attr] = (Array.isArray(entry[attr]) ? entry[attr] : entry[attr] ? [entry[attr]] : [])
-          .filter((v: any) => typeof v === 'string')
-          .map((v) => v.match(/cn\s*=\s*([^,]+)/i)?.[1]?.trim())
-          .filter(Boolean)
+        const values = (Array.isArray(entry[attr]) ? entry[attr] : entry[attr] ? [entry[attr]] : []).filter(
+          (v: any) => typeof v === 'string'
+        ) as string[]
+        const normalized = new Set<string>()
+        for (const value of values) {
+          normalized.add(value)
+          const cn = value.match(/cn\s*=\s*([^,]+)/i)?.[1]?.trim()
+          if (cn) {
+            normalized.add(cn)
+          }
+        }
+        entry[attr] = Array.from(normalized)
         continue
       }
       if (Array.isArray(entry[attr])) {
@@ -232,6 +271,7 @@ export class AuthProviderLDAP implements AuthProvider {
   }
 
   private createIdentity(entry: LdapUserEntry, password: string): CreateUserDto {
+    // Build the local identity payload from LDAP entry.
     const isAdmin =
       typeof this.ldapConfig.options.adminGroup === 'string' &&
       this.ldapConfig.options.adminGroup &&
@@ -246,6 +286,7 @@ export class AuthProviderLDAP implements AuthProvider {
   }
 
   private getFirstNameAndLastName(entry: LdapUserEntry): { firstName: string; lastName: string } {
+    // Resolve name fields with structured and fallback attributes.
     // 1) Prefer structured attributes
     if (entry.sn && entry.givenName) {
       return { firstName: entry.givenName, lastName: entry.sn }
@@ -263,6 +304,7 @@ export class AuthProviderLDAP implements AuthProvider {
   }
 
   private dbLogin(login: string): string {
+    // Normalize domain-qualified logins to the user part.
     if (login.includes('\\')) {
       return login.split('\\').slice(-1)[0]
     }
@@ -270,6 +312,7 @@ export class AuthProviderLDAP implements AuthProvider {
   }
 
   private buildLdapLogin(login: string): string {
+    // Build the bind login string based on LDAP config.
     if (this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN) {
       if (this.ldapConfig.upnSuffix && !login.includes('@')) {
         return `${login}@${this.ldapConfig.upnSuffix}`
@@ -282,11 +325,15 @@ export class AuthProviderLDAP implements AuthProvider {
     return login
   }
 
+  private buildBindUserDN(ldapLogin: string): string {
+    return this.isAD ? ldapLogin : `${this.ldapConfig.attributes.login}=${ldapLogin},${this.ldapConfig.baseDN}`
+  }
+
   private buildUserFilter(login: string, extraFilter?: string): string {
-    // Build a safe LDAP filter to search for a user.
+    // Build a safe LDAP filter to search for the user entry.
     // Important: - Values passed to EqualityFilter are auto-escaped by ldapts
     //            - extraFilter is appended as-is (assumed trusted configuration)
-    // Output: (&(|(userPrincipalName=john.doe@sync-in.com)(sAMAccountName=john.doe)(cn=john.doe)(uid=john.doe)(mail=john.doe@sync-in.com))(*extraFilter*))
+    // Note: The OR clause differs between AD and generic LDAP.
 
     // Handle the case where the sAMAccountName is provided in domain-qualified format (e.g., SYNC_IN\\user)
     // Note: sAMAccountName is always stored without the domain in Active Directory.
@@ -314,5 +361,62 @@ export class AuthProviderLDAP implements AuthProvider {
       filterString = `(&${filterString}${extraFilter})`
     }
     return filterString
+  }
+
+  private hasAdminGroup(entry: LdapUserEntry, adminGroup: string): boolean {
+    // Check for the admin group in the normalized `memberOf` list.
+    return Array.isArray(entry[LDAP_COMMON_ATTR.MEMBER_OF]) && entry[LDAP_COMMON_ATTR.MEMBER_OF].includes(adminGroup)
+  }
+
+  private async isMemberOfGroupOfNames(adminGroup: string, userDn: string, client: Client): Promise<boolean> {
+    // Check groupOfNames membership by querying group entries.
+    // When adminGroup is a DN, search at the group DN; otherwise search under baseDN.
+    const { dn, cn } = this.parseAdminGroup(adminGroup)
+    // Build a filter that matches groupOfNames entries containing the user's DN as a member.
+    const filters = [
+      new EqualityFilter({ attribute: LDAP_SEARCH_ATTR.OBJECT_CLASS, value: LDAP_SEARCH_ATTR.GROUP_OF_NAMES }),
+      new EqualityFilter({ attribute: LDAP_SEARCH_ATTR.MEMBER, value: userDn })
+    ]
+    // If a CN is available, narrow the query to that specific group name.
+    if (cn) {
+      filters.splice(1, 0, new EqualityFilter({ attribute: LDAP_COMMON_ATTR.CN, value: cn }))
+    }
+    const filter = new AndFilter({ filters }).toString()
+
+    try {
+      // Use BASE scope for an exact DN lookup, otherwise SUB to scan within baseDN.
+      const { searchEntries } = await client.search(dn || this.ldapConfig.baseDN, {
+        scope: dn ? LDAP_SEARCH_ATTR.BASE : LDAP_SEARCH_ATTR.SUB,
+        filter,
+        attributes: [LDAP_COMMON_ATTR.CN]
+      })
+      // Any matching entry implies membership.
+      return searchEntries.length > 0
+    } catch (e) {
+      this.logger.warn(`${this.isMemberOfGroupOfNames.name} - ${e}`)
+      return false
+    }
+  }
+
+  private parseAdminGroup(adminGroup: string): { dn?: string; cn?: string } {
+    // Accept either full DN or simple CN and extract what we can for lookups.
+    const looksLikeDn = adminGroup.includes('=') && adminGroup.includes(',')
+    if (!looksLikeDn) {
+      return { cn: adminGroup }
+    }
+    const cn = adminGroup.match(/cn\s*=\s*([^,]+)/i)?.[1]?.trim()
+    return { dn: adminGroup, cn }
+  }
+
+  private handleBindError(error: any, attemptedBindDN: string): InvalidCredentialsError | any {
+    // Prefer the most specific LDAP error when multiple errors are returned.
+    if (error?.errors?.length) {
+      for (const err of error.errors) {
+        this.logger.warn(`${this.checkAuth.name} - ${attemptedBindDN} : ${err}`)
+      }
+      return error.errors[error.errors.length - 1]
+    }
+    this.logger.warn(`${this.checkAuth.name} - ${attemptedBindDN} : ${error}`)
+    return error
   }
 }
