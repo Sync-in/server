@@ -90,17 +90,36 @@ export function splitFullName(fullName?: string): { firstName: string; lastName:
   return { firstName, lastName }
 }
 
+function formatValidationErrors(errors: ValidationError[]): string[] {
+  const messages: string[] = []
+  const walk = (items: ValidationError[]) => {
+    for (const error of items) {
+      if (error.constraints) {
+        messages.push(...Object.values(error.constraints))
+      }
+      if (error.children && error.children.length > 0) {
+        walk(error.children)
+      }
+    }
+  }
+  walk(errors)
+  return messages
+}
+
 export function transformAndValidate<T extends object>(
   schema: new () => T,
   object: any,
   transformOptions: ClassTransformOptions = {},
-  validatorOptions: ValidatorOptions = {}
+  validatorOptions: ValidatorOptions = {},
+  context?: string
 ): T {
   // warning: plainToInstance do not use constructor to instantiate class
   const instance: T = plainToInstance(schema, object, transformOptions)
   const errors: ValidationError[] = validateSync(instance, validatorOptions)
   if (errors.length > 0) {
-    throw new Error(errors.toString())
+    const messages = formatValidationErrors(errors)
+    const message = messages.length > 0 ? messages.join('; ') : errors.toString()
+    throw new Error(context ? `${context}: ${message}` : message)
   }
   return instance
 }

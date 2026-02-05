@@ -41,5 +41,11 @@ function loadConfiguration(): GlobalConfig {
   config.applications.files.usersPath = join(config.applications.files.dataPath, 'users')
   config.applications.files.spacesPath = join(config.applications.files.dataPath, 'spaces')
   config.applications.files.tmpPath = join(config.applications.files.dataPath, 'tmp')
-  return transformAndValidate(GlobalConfig, config, { exposeDefaultValues: true }, { skipMissingProperties: false })
+  return transformAndValidate(
+    GlobalConfig,
+    config,
+    { exposeDefaultValues: true },
+    { skipMissingProperties: false },
+    'Invalid configuration in environment.yaml'
+  )
 }
