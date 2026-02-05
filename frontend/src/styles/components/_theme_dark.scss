@@ -552,19 +552,40 @@
   }
 
   .box-transparent {
+    background-color: darken($sidebar-dark-icons-menu-bg, 2%);
+    border-color: $sidebar-dark-icons-menu-border-color;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+
     > .box-header {
-      border-bottom-color: $gray;
+      background: linear-gradient(
+        180deg,
+        darken($sidebar-dark-icons-menu-bg, 2%) 0%,
+        darken($sidebar-dark-icons-menu-bg, 6%) 100%
+      );
+      border-bottom-color: $sidebar-dark-icons-menu-border-color;
+    }
+
+    .product-img {
+      background-color: darken($sidebar-dark-icons-menu-bg, 6%);
+      border: 1px solid $sidebar-dark-icons-menu-border-color;
     }
   }
 
   .products-list > li:hover {
-    background-color: lighten($sidebar-dark-apps-menu-title-bg, 1%);
+    background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%);
   }
 
   .product-list-in-box {
     border-bottom-color: $sidebar-dark-icons-menu-border-color;
   }
 
+  .recents-grid::before {
+    background: linear-gradient(
+      180deg,
+      rgba($sidebar-dark-icons-menu-bg, 0.7) 0%,
+      rgba($sidebar-dark-icons-menu-bg, 0.45) 100%
+    );
+  }
 
   .ui-disabled {
     background-color: $sidebar-dark-icons-menu-bg !important;

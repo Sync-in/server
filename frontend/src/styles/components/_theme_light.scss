@@ -497,17 +497,23 @@
   }
 
   .box-transparent {
+    background-color: $gray-lightest;
+    border-color: $gray-lighter;
+    box-shadow: 0 12px 26px rgba(24, 32, 58, 0.1);
+
     > .box-header {
+      background: linear-gradient(180deg, $white 0%, $gray-lightest 100%);
       border-bottom-color: $gray-lighter;
     }
-  }
 
-  .products-list > li:hover {
-    background-color: $table-bg-hover;
-  }
+    .box-body {
+      background-color: $white;
+    }
 
-  .product-list-in-box {
-    border-bottom-color: $gray-lighter;
+    .product-img {
+      background-color: $gray-lightest;
+      border: 0.5px solid darken($gray-lighter, 4%);
+    }
   }
 
   .bg-theme {
@@ -518,6 +524,48 @@
     background-color: $gray-lightest !important;
   }
 
+  .recents-grid::before {
+    background: linear-gradient(
+      180deg,
+      rgba($gray-light, 0.9) 0%,
+      rgba($gray-lightest, 0.7) 100%
+    );
+  }
+
+  .recents-grid .box-transparent > .box-header {
+    background: linear-gradient(
+      180deg,
+      mix($primary, $white, 12%) 0%,
+      mix($primary, $white, 6%) 100%
+    );
+    border-bottom-color: mix($primary, $white, 20%);
+
+    > fa-icon {
+      color: darken($primary, 15%);
+    }
+
+    .box-title {
+      color: darken($primary, 18%);
+    }
+
+    .btn-link {
+      color: darken($primary, 12%);
+    }
+
+    .btn-link:hover,
+    .btn-link:focus {
+      color: darken($primary, 24%);
+    }
+  }
+
+  .products-list > li:hover {
+    background-color: lighten($table-bg-hover, 2%);
+  }
+
+  .product-list-in-box {
+    border-bottom-color: $gray-lighter;
+  }
+
   .avatar-img {
     background-color: darken($gray-light, 5%);
   }
@@ -526,5 +574,3 @@
     background-color: $white !important;
   }
 }
-
-

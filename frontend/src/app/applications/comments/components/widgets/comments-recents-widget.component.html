@@ -12,7 +12,7 @@
     @for (c of comments(); track c.id; let last = $last) {
       <ul class="products-list product-list-in-box" [class.border-0]="last">
         <li (click)="goToFile(c)" class="item">
-          <div class="product-img">
+          <div style="margin-right: 0.5rem;">
             <app-user-avatar [user]="c.author"></app-user-avatar>
           </div>
           <div class="product-info">
@@ -28,13 +28,13 @@
           </span>
           </div>
           <div class="product-badge">
-            <span class="badge rounded-pill bg-purple">{{ c.modifiedAt | amTimeAgo:true }}</span>
+            <span class="fs-xxxxs text-muted">{{ c.modifiedAt | amTimeAgo }}</span>
           </div>
         </li>
       </ul>
     } @empty {
-      <div class="d-flex flex-column justify-content-center text-align-center text-gray mt-5">
-        <fa-icon [icon]="icons.faCommentDots" size="4x"></fa-icon>
+      <div class="d-flex flex-column justify-content-center text-align-center text-gray p-4" style="min-height: 200px;">
+        <fa-icon [icon]="icons.faCommentDots" size="2x"></fa-icon>
         <div class="mt-4" l10nTranslate>No recent comments</div>
       </div>
     }

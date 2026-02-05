@@ -28,13 +28,13 @@
           </span>
           </div>
           <div class="product-badge">
-            <span class="badge rounded-pill bg-purple">{{ f.mtime | amTimeAgo:true }}</span>
+            <span class="fs-xxxxs text-muted">{{ f.mtime | amTimeAgo }}</span>
           </div>
         </li>
       </ul>
     } @empty {
-      <div class="d-flex flex-column justify-content-center text-align-center text-gray mt-5">
-        <fa-icon [icon]="icons.faFileLines" size="4x"></fa-icon>
+      <div class="d-flex flex-column justify-content-center text-align-center text-gray p-4" style="min-height: 200px;">
+        <fa-icon [icon]="icons.faFileLines" size="2x"></fa-icon>
         <div class="mt-4" l10nTranslate>No recent files</div>
       </div>
     }

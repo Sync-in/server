@@ -70,10 +70,15 @@
 .box-transparent {
   position: relative;
   width: 100%;
+  border: 1px solid;
+  border-radius: $box-border-radius;
+  overflow: hidden;
+  transition: box-shadow .2s ease;
 
   .box-header {
     border-bottom: 1px solid;
-    height: 40px;
+    height: auto;
+    padding: 0.35rem 0.8rem;
 
     > fa-icon {
       font-size: 1rem;
@@ -85,9 +90,20 @@
 
     .box-title {
       font-weight: 500;
+      letter-spacing: 0.02em;
     }
   }
+
+  .box-body {
+    padding: 0.2rem 0.4rem 0.4rem;
+  }
 }
+
+.recents-grid {
+  padding-top: .4rem;
+  row-gap: 16px;
+}
+
 
 .box-header {
   display: flex;
