@@ -33,6 +33,7 @@ export class InputEditDirective implements OnInit {
 
   @HostListener('blur')
   onBlur() {
+    this.validateInput()
     if (this.disableOnBlur) {
       this.disableEdit()
     }
@@ -43,18 +44,7 @@ export class InputEditDirective implements OnInit {
     if (this.disableKeyboard) {
       return
     }
-    if (!this.elementRef.nativeElement.value) {
-      this.setIncorrectForm()
-    } else {
-      if (this.elementRef.nativeElement.value === this.inputObject[this.inputField]) {
-        this.setCorrectForm()
-        this.disableEdit()
-      } else {
-        this.setCorrectForm()
-        this.updateObject.next({ object: this.inputObject, name: this.elementRef.nativeElement.value })
-        this.disableEdit()
-      }
-    }
+    this.validateInput()
   }
 
   @HostListener('keyup.esc')
@@ -91,6 +81,21 @@ export class InputEditDirective implements OnInit {
   private setCorrectForm() {
     this.renderer.removeClass(this.elementRef.nativeElement, 'is-invalid')
     this.renderer.setStyle(this.elementRef.nativeElement, 'border-color', this.primaryColor)
+  }
+
+  private validateInput() {
+    if (!this.elementRef.nativeElement.value) {
+      this.setIncorrectForm()
+    } else {
+      if (this.elementRef.nativeElement.value === this.inputObject[this.inputField]) {
+        this.setCorrectForm()
+        this.disableEdit()
+      } else {
+        this.setCorrectForm()
+        this.updateObject.next({ object: this.inputObject, name: this.elementRef.nativeElement.value })
+        this.disableEdit()
+      }
+    }
   }
 
   private disableEdit() {
