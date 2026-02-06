@@ -5,7 +5,7 @@ interface TapEvent {
   x: number
   y: number
   type: TapKind
-  sourceEvent?: PointerEvent | KeyboardEvent
+  sourceEvent?: PointerEvent
 }
 
 @Directive({
@@ -62,7 +62,6 @@ export class TapDirective implements OnDestroy {
       this.add('pointerup', this.onUp, { passive: false })
       this.add('pointercancel', this.onCancel, { passive: true })
       this.add('pointerleave', this.onCancel, { passive: true })
-      this.add('keydown', this.onKey, { passive: false })
       this.add('contextmenu', this.onContextMenu, { passive: false })
       this.add('click', this.onNativeClick, { passive: false, capture: true })
     })
@@ -142,16 +141,6 @@ export class TapDirective implements OnDestroy {
 
   private onCancel = () => this.resetGesture()
 
-  private onKey = (ev: KeyboardEvent) => {
-    if (this.disabled) return
-    const k = ev.key.toLowerCase()
-    if (k === 'enter' || k === ' ') {
-      ev.preventDefault()
-      if (this.enableDoubleTap && !this.emitSingleWhenNoDouble) return
-      this.emit('single', 0, 0, ev)
-    }
-  }
-
   private onContextMenu = (ev: MouseEvent) => {
     if (this.preventDefault) ev.preventDefault()
   }
@@ -165,7 +154,7 @@ export class TapDirective implements OnDestroy {
     }
   }
 
-  private emit(type: TapKind, x: number, y: number, sourceEvent?: PointerEvent | KeyboardEvent) {
+  private emit(type: TapKind, x: number, y: number, sourceEvent?: PointerEvent) {
     this.lastEmitTs = performance.now()
     this.zone.run(() => this.appTap.emit({ x, y, type, sourceEvent }))
   }

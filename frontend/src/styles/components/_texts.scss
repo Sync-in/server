@@ -24,6 +24,10 @@
   text-overflow: ellipsis;
 }
 
+.text-file-name-preserve {
+  white-space: pre !important;
+}
+
 .text-gray {
   color: $gray !important;
 }

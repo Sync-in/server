@@ -79,7 +79,7 @@
               </span>
             </div>
             <div class="card-footer text-center text-truncate p-1">
-              <span [style.font-size.px]="galleryMode.textSize" class="no-pointer-events" draggable="false">{{ s.name }}</span>
+              <span [style.font-size.px]="galleryMode.textSize" class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
             </div>
           </div>
         }
@@ -131,7 +131,7 @@
                       <div class="d-flex align-items-center">
                         <img [src]="s.mimeUrl" alt="" draggable="false" height="30" width="30" (error)="s.fallBackMimeUrl()">
                         <div class="d-flex flex-column text-truncate">
-                          <span class="no-pointer-events" draggable="false">{{ s.name }}</span>
+                          <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
                           <span class="no-pointer-events text-muted fs-xxxs" draggable="false">{{ s.description }}</span>
                         </div>
                       </div>
