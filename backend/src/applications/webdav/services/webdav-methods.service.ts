@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { currentTimeStamp, encodeUrl } from '../../../common/shared'
+import { HTTP_VERSION } from '../../applications.constants'
 import { FileLock, FileLockOptions } from '../../files/interfaces/file-lock.interface'
 import { FileError } from '../../files/models/file-error'
 import { LockConflict } from '../../files/models/file-lock-error'
@@ -203,7 +204,7 @@ export class WebDAVMethods {
           if (fP !== undefined) prop[`${NS_PREFIX}:${p}`] = fP
         }
       }
-      responses.push(PROP_STAT(f.href, PROP(prop, req.dav.httpVersion, HttpStatus.OK)))
+      responses.push(PROP_STAT(f.href, PROP(prop, HTTP_VERSION, HttpStatus.OK)))
     }
     const propfind = xmlBuild(MULTI_STATUS(responses))
     return res.type(XML_CONTENT_TYPE).status(HttpStatus.MULTI_STATUS).send(propfind)
@@ -292,7 +293,7 @@ export class WebDAVMethods {
             req.dav.proppatch.errors.push(
               PROP(
                 { [`${NS_PREFIX}:${name}`]: null },
-                req.dav.httpVersion,
+                HTTP_VERSION,
                 HttpStatus.FORBIDDEN,
                 STANDARD_PROPS.indexOf(name) > -1 ? PRECONDITION.PROTECTED_PROPERTY : undefined
               )
@@ -307,7 +308,7 @@ export class WebDAVMethods {
     if (req.dav.proppatch.errors.length) {
       // convert all passed props to failed dependency
       for (const name of Object.keys(req.dav.proppatch.props)) {
-        req.dav.proppatch.errors.push(PROP({ [`${NS_PREFIX}:${name}`]: null }, req.dav.httpVersion, HttpStatus.FAILED_DEPENDENCY))
+        req.dav.proppatch.errors.push(PROP({ [`${NS_PREFIX}:${name}`]: null }, HTTP_VERSION, HttpStatus.FAILED_DEPENDENCY))
       }
       const proppatch = xmlBuild(MULTI_STATUS(PROP_STAT(encodeUrl(req.dav.url), req.dav.proppatch.errors)))
       return res.status(HttpStatus.MULTI_STATUS).type(XML_CONTENT_TYPE).send(proppatch)
@@ -335,7 +336,7 @@ export class WebDAVMethods {
       props.push(
         PROP(
           { [`${NS_PREFIX}:${name}`]: null },
-          req.dav.httpVersion,
+          HTTP_VERSION,
           state ? (atLeastOneError ? HttpStatus.FAILED_DEPENDENCY : HttpStatus.OK) : HttpStatus.BAD_REQUEST
         )
       )

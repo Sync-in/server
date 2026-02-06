@@ -6,7 +6,6 @@ import { IfHeader } from './if-header.interface'
 export interface WebDAVContext {
   url: string
   body?: any // xml content
-  httpVersion?: string
   ifHeaders?: IfHeader[]
   depth?: DEPTH | string
   propfindMode?: PROPSTAT
