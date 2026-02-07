@@ -3,11 +3,12 @@
 import { SPACE_PERMS_SEP } from '../applications/spaces/constants/spaces'
 
 export const SERVER_NAME = 'Sync-in' as const
+export const RELEASES_URL = 'https://releases.sync-in.org' as const
 
 export const APP_URL = {
   WEBSITE: 'https://sync-in.com',
   RELEASES: 'https://github.com/Sync-in/server/releases',
-  SERVER_VERSION_MANIFEST: 'https://releases.sync-in.org/sync-in-server/latest.json'
+  SERVER_VERSION_MANIFEST: `${RELEASES_URL}/sync-in-server/latest.json`
 } as const
 
 // eslint-disable-next-line no-control-regex

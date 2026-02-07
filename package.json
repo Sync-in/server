@@ -2,7 +2,7 @@
   "productName": "Sync-in",
   "name": "sync-in-server",
   "version": "1.11.0",
-  "description": "The secure, open-source platform for file storage, sharing, collaboration, and sync",
+  "description": "The secure, open-source platform for file storage, sharing, collaboration, and syncing",
   "keywords": [
     "sync-in",
     "self-hosted",
@@ -51,7 +51,7 @@
     "name": "Johan Legrand",
     "email": "johan.legrand@sync-in.com"
   },
-  "homepage": "https://github.com/Sync-in/server#readme",
+  "homepage": "https://sync-in.com",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Sync-in/server.git"

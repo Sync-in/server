@@ -10,7 +10,7 @@ import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/
 import { AuthProvider } from '../../../authentication/providers/auth-providers.models'
 import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-provider-two-fa.service'
 import { convertHumanTimeToSeconds } from '../../../common/functions'
-import { currentTimeStamp } from '../../../common/shared'
+import { currentTimeStamp, RELEASES_URL } from '../../../common/shared'
 import { STATIC_PATH } from '../../../configuration/config.constants'
 import { configuration } from '../../../configuration/config.environment'
 import { CacheDecorator } from '../../../infrastructure/cache/cache.decorator'
@@ -20,7 +20,7 @@ import { USER_PERMISSION } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { UsersManager } from '../../users/services/users-manager.service'
 import { CLIENT_AUTH_TYPE, CLIENT_TOKEN_EXPIRATION_TIME, CLIENT_TOKEN_EXPIRED_ERROR, CLIENT_TOKEN_RENEW_TIME } from '../constants/auth'
-import { APP_STORE_DIRNAME, APP_STORE_MANIFEST_FILE, APP_STORE_REPOSITORY, APP_STORE_URL } from '../constants/store'
+import { APP_STORE_DIRNAME, APP_STORE_MANIFEST_FILE, APP_STORE_REPOSITORY } from '../constants/store'
 import { SYNC_CLIENT_TYPE } from '../constants/sync'
 import type { SyncClientAuthDto } from '../dtos/sync-client-auth.dto'
 import { SyncClientAuthRegistrationDto, SyncClientRegistrationDto } from '../dtos/sync-client-registration.dto'
@@ -170,7 +170,7 @@ export class SyncClientsManager {
   async checkAppStore(): Promise<AppStoreManifest> {
     let manifest: AppStoreManifest = null
     if (configuration.applications.appStore.repository === APP_STORE_REPOSITORY.PUBLIC) {
-      const url = `${APP_STORE_URL}/${APP_STORE_MANIFEST_FILE}`
+      const url = `${RELEASES_URL}/${APP_STORE_MANIFEST_FILE}`
       try {
         const res: AxiosResponse = await this.http.axiosRef({
           method: HTTP_METHOD.GET,
