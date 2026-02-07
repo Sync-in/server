@@ -1,5 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
+import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/modules/file-editor-providers.interface'
 import { NOTIFICATIONS_WS } from '@sync-in-server/backend/src/applications/notifications/constants/websocket'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
@@ -50,7 +51,6 @@ import type {
   TwoFaSetup,
   TwoFaVerifyResult
 } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.interfaces'
-import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Socket } from 'ngx-socket-io'
 import { catchError, map, Observable } from 'rxjs'
@@ -284,11 +284,11 @@ export class UserService {
     })
   }
 
-  getEditorProviderPreference(): keyof FileEditorProvider {
-    return localStorage.getItem('editorPreference') as keyof FileEditorProvider
+  getEditorProviderPreference(): keyof FileEditorProviders {
+    return localStorage.getItem('editorPreference') as keyof FileEditorProviders
   }
 
-  setEditorProviderPreference(editorProvider: keyof FileEditorProvider) {
+  setEditorProviderPreference(editorProvider: keyof FileEditorProviders) {
     if (editorProvider === null) {
       localStorage.removeItem('editorPreference')
     } else {

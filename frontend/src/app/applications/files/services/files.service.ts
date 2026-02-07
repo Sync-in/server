@@ -24,13 +24,13 @@ import type { FileLockProps } from '@sync-in-server/backend/src/applications/fil
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
+import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/modules/file-editor-providers.interface'
 import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
-import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { EMPTY, firstValueFrom, map, Observable, Subject } from 'rxjs'
 import { downloadWithAnchor } from '../../../common/utils/functions'
@@ -270,7 +270,7 @@ export class FilesService {
     })
   }
 
-  async openSelectViewerDialog(file: FileModel, editorProvider: FileEditorProvider): Promise<void> {
+  async openSelectViewerDialog(file: FileModel, editorProvider: FileEditorProviders): Promise<void> {
     const modalRef: BsModalRef<FilesViewerSelectDialog> = this.layout.openDialog(FilesViewerSelectDialog, null, {
       initialState: { file, editorProvider } as FilesViewerSelectDialog
     })
@@ -305,7 +305,7 @@ export class FilesService {
           return
         }
 
-        const editorProvider: FileEditorProvider = { collabora: false, onlyoffice: false }
+        const editorProvider: FileEditorProviders = { collabora: false, onlyoffice: false }
         if (hookedShortMime === SHORT_MIME.DOCUMENT) {
           if (this.store.server().fileEditors.collabora && this.store.server().fileEditors.onlyoffice) {
             // Case with multiple editors

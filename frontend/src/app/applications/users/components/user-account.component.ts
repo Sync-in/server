@@ -5,13 +5,13 @@ import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCopy, faKey } from '@fortawesome/free-solid-svg-icons'
 import { COLLABORA_APP_LOCK } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
+import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/modules/file-editor-providers.interface'
 import { ONLY_OFFICE_APP_LOCK } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
 import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '@sync-in-server/backend/src/authentication/constants/auth'
 import type { TwoFaSetup } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.interfaces'
-import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { ClipboardService } from 'ngx-clipboard'
@@ -59,7 +59,7 @@ export class UserAccountComponent implements OnDestroy {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
   protected readonly icons = { faCopy, faKey }
-  protected readonly editors: Record<string, keyof FileEditorProvider> = {
+  protected readonly editors: Record<string, keyof FileEditorProviders> = {
     [COLLABORA_APP_LOCK]: 'collabora',
     [ONLY_OFFICE_APP_LOCK]: 'onlyoffice'
   }
@@ -71,7 +71,7 @@ export class UserAccountComponent implements OnDestroy {
   protected newPassword: string
   protected readonly store = inject(StoreService)
   protected showEditorPreference = false
-  protected userEditorPreference: keyof FileEditorProvider
+  protected userEditorPreference: keyof FileEditorProviders
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   private readonly layout = inject(LayoutService)
   protected languages = this.layout.getLanguages(true)
@@ -182,7 +182,7 @@ export class UserAccountComponent implements OnDestroy {
     this.layout.sendNotification('info', 'Link copied', this.webdavUrl)
   }
 
-  updateEditorPreference(preference: keyof FileEditorProvider | null) {
+  updateEditorPreference(preference: keyof FileEditorProviders | null) {
     this.userService.setEditorProviderPreference(preference)
   }
 

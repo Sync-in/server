@@ -2,7 +2,7 @@ import { Component, computed, inject, Input, model, OnDestroy, OnInit, signal } 
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faEye, faPen } from '@fortawesome/free-solid-svg-icons'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
-import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
+import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/modules/file-editor-providers.interface'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -36,7 +36,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) mode: FILE_MODE
   @Input({ required: true }) isWriteable: boolean
   @Input({ required: true }) hookedShortMime: string
-  @Input({ required: true }) editorProvider: FileEditorProvider
+  @Input({ required: true }) editorProvider: FileEditorProviders
   modalClosing = signal<boolean>(false)
   protected isReadonly = model<boolean>(true)
   protected currentHeight: number

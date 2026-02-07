@@ -1,4 +1,4 @@
-import type { FileEditorProvider } from '../../../configuration/config.interfaces'
+import type { FileEditorProviders } from '../../files/modules/file-editor-providers.interface'
 
 export interface SpaceLink {
   share?: {
@@ -13,5 +13,5 @@ export interface SpaceLink {
   } | null
   space?: { name: string; alias: string } | null
   owner?: { login?: string; fullName: string; avatar?: string } | null
-  fileEditors?: FileEditorProvider
+  fileEditors?: FileEditorProviders
 }

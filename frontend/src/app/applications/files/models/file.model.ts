@@ -5,11 +5,11 @@ import {
 } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import type { FileLockProps, FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
+import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/modules/file-editor-providers.interface'
 import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import type { File } from '@sync-in-server/backend/src/applications/files/schemas/file.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { currentTimeStamp, popFromObject } from '@sync-in-server/backend/src/common/shared'
-import type { FileEditorProvider } from '@sync-in-server/backend/src/configuration/config.interfaces'
 import type { Observable } from 'rxjs'
 import { convertBytesToText, getNewly } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'
@@ -83,7 +83,7 @@ export class FileModel implements File {
   canBeReShared = false
   haveThumbnail = false
 
-  constructor(props: FileProps | File, basePath: string, inShare = false, editorConfig: FileEditorProvider) {
+  constructor(props: FileProps | File, basePath: string, inShare = false, editorConfig: FileEditorProviders) {
     this.setShares(popFromObject('shares', props))
     Object.assign(this, props)
     this.path = `${basePath}/${this.path !== '.' ? `${this.path}/` : ''}${this.root?.alias || this.name}`
@@ -143,7 +143,7 @@ export class FileModel implements File {
     return this.isDir ? (inShare ? mimeDirectoryShare : mimeDirectory) : mimeFile
   }
 
-  private getMime(mime: string, inShare: boolean, editorConfig: FileEditorProvider): string {
+  private getMime(mime: string, inShare: boolean, editorConfig: FileEditorProviders): string {
     if (this.isDir) {
       this.isViewable = false
       return this.getType(inShare)
