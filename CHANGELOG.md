@@ -1,4 +1,41 @@
 
+## [2.0.0](https://github.com/Sync-in/server/compare/v1.11.0...v2.0.0) (2026-02-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auth:** rename method to provider in AuthConfig and replace authMethod with authProvider for naming consistency ([9d187e0](https://github.com/Sync-in/server/commit/9d187e06f848b6c56f0dfa6d904f22e71f485012))
+* **backend:auth:ldap:** move adminGroup to options ([96d52c9](https://github.com/Sync-in/server/commit/96d52c95585eef6a6c8498f14a1ba07dce44f6cb))
+
+### Features
+
+* **auth:oidc:** enhance OIDC configuration ([8bcf35d](https://github.com/Sync-in/server/commit/8bcf35d2639c6067d53c13cafb14897155c952c5))
+* **auth:oidc:** revise authentication flow logic ([abb9979](https://github.com/Sync-in/server/commit/abb9979ed8f1d00aa241876b4b0519f013f88bfc))
+* **auth:sync:** introduce `registerWithAuth` to enable desktop client registration from external process (OIDC) ([b6525ec](https://github.com/Sync-in/server/commit/b6525ecd8b5e524ca390decde7c969395a5ad1ba))
+* **auth:** implement OIDC authentication support and refactor auth providers ([28bbf1d](https://github.com/Sync-in/server/commit/28bbf1df2f2ab7e9060cc48b5893708fb83a123e))
+* **auth:** refactor authentication services and add desktop client registration support ([08c6e0f](https://github.com/Sync-in/server/commit/08c6e0faf84d3131ab9462052a60c73ab59b031e))
+* **auth:** support desktop app OIDC authentication flow ([0d6963f](https://github.com/Sync-in/server/commit/0d6963f95a86cae7e9283557a2e5961108ead65e))
+* **backend:auth:ldap:** add service bind support, adminGroup DN/CN handling, optimized search flow, tests, and updated docs ([f7b9d0f](https://github.com/Sync-in/server/commit/f7b9d0f22fa8ddf815fbde1bc25279bee225b792))
+* **backend:auth:ldap:** add autoCreateUser and autoCreatePermissions ([96d52c9](https://github.com/Sync-in/server/commit/96d52c95585eef6a6c8498f14a1ba07dce44f6cb))
+* **backend:auth:** add LDAP/OIDC local password fallback and admin break-glass access ([23a93b5](https://github.com/Sync-in/server/commit/23a93b5ae104e669a58947590959f2f9a06f2d33))
+* **backend:config:** improve error messages for environment config validation ([a5df529](https://github.com/Sync-in/server/commit/a5df5295f0f9047e77fd749bba9a4cb2e523bebe))
+* **backend:sync:** add support for TOTP recovery codes during client registration ([3cb3ea4](https://github.com/Sync-in/server/commit/3cb3ea41eefe7625497a699dd12c55da85007188))
+* **backend:sync:** improve sync path error handling and enforce subdirectory selection ([549ada3](https://github.com/Sync-in/server/commit/549ada3a68dc853ec7e4beb987bcdfba9ebbe033))
+* **backend:** add `jsonOutput` option to logger ([02cbe04](https://github.com/Sync-in/server/commit/02cbe0497d0b973f4b321f1b7d113813eb86e021))
+* **frontend:spaces:** improve server connection error handling and UI feedback ([097b230](https://github.com/Sync-in/server/commit/097b2307a586b4366da026508b592a964adbc30d))
+* **frontend/backend:** add `client` auth scope for password-based apps to register servers across desktop apps and CLI ([5f131bf](https://github.com/Sync-in/server/commit/5f131bff00519264f8513af4f67210c30b7e9234))
+* **frontend:** allow filename rename validation on blur ([da930b8](https://github.com/Sync-in/server/commit/da930b8be9d5a2920ccea8c468a761dce68436f7))
+* **frontend:** restyle recents widget ([9845502](https://github.com/Sync-in/server/commit/9845502df5d71d69b59a3df5fed9a6b3916acd3e))
+* **frontend:** update widget badge styles and color scheme ([10feb97](https://github.com/Sync-in/server/commit/10feb97a2b45cf982ad2c3de12857df5fac3b358))
+
+
+### Bug Fixes
+
+* **backend:webdav:** ensure lock paths in headers are decoded correctly ([ceb2f38](https://github.com/Sync-in/server/commit/ceb2f38803270072c49b887de6be8988b9041f72))
+* **backend:webdav:** set correct http status line ([a651fc3](https://github.com/Sync-in/server/commit/a651fc33d5081a2fdc808dc00468a41699280da6))
+* **frontend:routes:** remove redundant `canActivateChild` guard from app routes ([3b5a80a](https://github.com/Sync-in/server/commit/3b5a80a762373047217234456f347c80e21d77e2))
+* **frontend:spaces:** remove tap directive keyboard handler blocking spaces in edit input and preserve whitespace in displayed file name ([e0b328b](https://github.com/Sync-in/server/commit/e0b328b4222b3aec9b99476f3de170a2a9a5c7ac))
+
 ## [1.11.0](https://github.com/Sync-in/server/compare/v1.10.1...v1.11.0) (2026-01-20)
 
 ### Security
