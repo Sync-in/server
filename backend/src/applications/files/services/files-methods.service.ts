@@ -200,7 +200,7 @@ export class FilesMethods {
   }
 
   private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv) {
-    this.logger.error(`unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}`)
+    this.logger.error({ tag: this.handleError.name, msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}` })
     // Remove the last part to avoid exposing the path
     const errorMsg = e.message.split(',')[0]
     if (e instanceof LockConflict) {

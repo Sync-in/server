@@ -161,7 +161,7 @@ export class SyncManager {
       }
       res.raw.write(SYNC_DIFF_DONE)
     } catch (e) {
-      this.logger.error(`${this.diff.name} : ${e.message}`)
+      this.logger.error({ tag: this.diff.name, msg: `${e.message}` })
       res.raw.write(`${e.message}\n`)
       res.status(HttpStatus.INTERNAL_SERVER_ERROR)
     }
@@ -181,7 +181,7 @@ export class SyncManager {
       for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
         const realPath = path.join(entry.parentPath, entry.name)
         if (!entry.isDirectory() && !entry.isFile()) {
-          this.logger.log(`${this.parseFiles.name} - ignore special file: ${realPath}`)
+          this.logger.log({ tag: this.parseFiles.name, msg: `ignore special file: ${realPath}` })
           continue
         }
         if (entry.isDirectory()) {
@@ -198,7 +198,7 @@ export class SyncManager {
         }
       }
     } catch (e) {
-      this.logger.error(`${this.parseFiles.name} - unable to parse directory : ${dir} : ${e}`)
+      this.logger.error({ tag: this.parseFiles.name, msg: `unable to parse directory : ${dir} : ${e}` })
       throw new Error('Unable to parse path')
     }
   }
@@ -215,12 +215,12 @@ export class SyncManager {
     try {
       stats = await fs.stat(realPath)
     } catch (e) {
-      this.logger.warn(`${this.analyzeFile.name} - unable to get file stats : ${realPath} : ${e}`)
+      this.logger.warn({ tag: this.analyzeFile.name, msg: `unable to get file stats : ${realPath} : ${e}` })
       return { [filePath]: [F_SPECIAL_STAT.ERROR, e.toString()] }
     }
 
     if (ctx.syncDiff.pathFilters && ctx.syncDiff.pathFilters.test(filePath)) {
-      this.logger.verbose(`${this.analyzeFile.name} - ignore filtered file : ${realPath}`)
+      this.logger.verbose({ tag: this.analyzeFile.name, msg: `ignore filtered file : ${realPath}` })
       return { [filePath]: [F_SPECIAL_STAT.FILTERED, stats.isDirectory()] }
     }
 
@@ -235,7 +235,7 @@ export class SyncManager {
       try {
         await this.checkSumFile(ctx, filePath, realPath, fileStats)
       } catch (e) {
-        this.logger.error(`${this.analyzeFile.name} - file error : ${realPath} - ${e}`)
+        this.logger.error({ tag: this.analyzeFile.name, msg: `file error : ${realPath} - ${e}` })
         return { [filePath]: [F_SPECIAL_STAT.ERROR, e.toString()] }
       }
     }
@@ -259,7 +259,7 @@ export class SyncManager {
   }
 
   private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv) {
-    this.logger.error(`unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}`)
+    this.logger.error({ tag: this.handleError.name, msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}` })
     // Remove the last part to avoid exposing the path
     const errorMsg = e.message.split(',')[0]
     if (e instanceof LockConflict) {

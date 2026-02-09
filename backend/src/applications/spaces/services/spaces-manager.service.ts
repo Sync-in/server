@@ -137,7 +137,7 @@ export class SpacesManager {
       await this.setQuotaExceeded(user, space)
       return space
     } catch (e) {
-      this.logger.warn(`${this.spaceEnv.name} - *${space.alias}* : ${e}`)
+      this.logger.warn({ tag: this.spaceEnv.name, msg: `*${space.alias}* : ${e}` })
       throw new HttpException(e.message, e instanceof FileError ? e.httpCode : HttpStatus.BAD_REQUEST)
     }
   }
@@ -183,7 +183,7 @@ export class SpacesManager {
           trashes.push(space)
         }
       } catch (e) {
-        this.logger.error(`${this.listTrashes.name} - ${e}`)
+        this.logger.error({ tag: this.listTrashes.name, msg: `${e}` })
       }
     }
     return trashes
@@ -215,7 +215,7 @@ export class SpacesManager {
     try {
       space.id = await this.spacesQueries.createSpace(space)
     } catch (e) {
-      this.logger.error(`${this.createSpace.name} - unable to create space *${space.alias}* : ${e}`)
+      this.logger.error({ tag: this.createSpace.name, msg: `unable to create space *${space.alias}* : ${e}` })
       throw new HttpException('Unable to create space', e)
     }
     // create space paths
@@ -254,7 +254,7 @@ export class SpacesManager {
       }
     }
     // updates in db
-    this.spacesQueries.updateSpace(spaceId, spaceDiffProps).catch((e: Error) => this.logger.error(`${this.updateSpace.name} - ${e}`))
+    this.spacesQueries.updateSpace(spaceId, spaceDiffProps).catch((e: Error) => this.logger.error({ tag: this.updateSpace.name, msg: `${e}` }))
     // checks & updates members
     const linkMembers: SpaceMemberDto[] = await this.sharesManager.createOrUpdateLinksAsMembers(
       user,
@@ -293,9 +293,9 @@ export class SpacesManager {
         await this.sharesManager.deleteAllLinkMembers(spaceId, LINK_TYPE.SPACE)
       }
       await this.deleteOrDisableSpace(space, deleteNow)
-      this.logger.log(`${this.deleteSpace.name} - *${space.alias}* (${space.id}) was ${deleteNow ? 'deleted' : 'disabled'}`)
+      this.logger.log({ tag: this.deleteSpace.name, msg: `*${space.alias}* (${space.id}) was ${deleteNow ? 'deleted' : 'disabled'}` })
     } catch (e) {
-      this.logger.error(`${this.deleteSpace.name} - *${space.alias}* (${space.id}) was not ${deleteNow ? 'deleted' : 'disabled'} : ${e}`)
+      this.logger.error({ tag: this.deleteSpace.name, msg: `*${space.alias}* (${space.id}) was not ${deleteNow ? 'deleted' : 'disabled'} : ${e}` })
       throw new HttpException('Unable to delete space', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -308,7 +308,7 @@ export class SpacesManager {
   async updateUserRoots(user: UserModel, spaceId: number, userRoots: SpaceRootProps[], addOnly: boolean = false): Promise<SpaceRootProps[]> {
     const space: Partial<SpaceProps> = await this.userCanAccessSpace(user.id, spaceId)
     if (space.role !== SPACE_ROLE.IS_MANAGER && !haveSpacePermission(space, SPACE_OPERATION.SHARE_INSIDE)) {
-      this.logger.warn(`is not allowed to share inside on this space : *${space.alias}* (${space.id})`)
+      this.logger.warn({ tag: this.updateUserRoots.name, msg: `is not allowed to share inside on this space : *${space.alias}* (${space.id})` })
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
     }
     // current states
@@ -330,7 +330,7 @@ export class SpacesManager {
       )
       Object.entries(status).forEach(([action, roots]: [ACTION, SpaceRootProps[]]) =>
         this.clearCachePermissionsAndOrNotify(space, action, user, null, roots).catch((e: Error) =>
-          this.logger.error(`${this.updateUserRoots.name} - ${e}`)
+          this.logger.error({ tag: this.updateUserRoots.name, msg: `${e}` })
         )
       )
       return this.getUserRoots(user, spaceId)
@@ -369,27 +369,26 @@ export class SpacesManager {
     ])) {
       const userPath = UserModel.getHomePath(user.login)
       if (!(await isPathExists(userPath))) {
-        this.logger.warn(`${this.updatePersonalSpacesQuota.name} - *${user.login}* home path does not exist`)
+        this.logger.warn({ tag: this.updatePersonalSpacesQuota.name, msg: `*${user.login}* home path does not exist` })
         continue
       }
       const [size, errors] = await dirSize(userPath)
       for (const [path, error] of Object.entries(errors)) {
-        this.logger.warn(`${this.updatePersonalSpacesQuota.name} - unable to get size for *${user.login}* on ${path} : ${error}`)
+        this.logger.warn({ tag: this.updatePersonalSpacesQuota.name, msg: `unable to get size for *${user.login}* on ${path} : ${error}` })
       }
       const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: user.storageQuota }
       this.spacesQueries.cache
         .set(`${CACHE_QUOTA_USER_PREFIX}-${user.id}`, spaceQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error(`${this.updatePersonalSpacesQuota.name} - user *${user.login}* (${user.id}) : ${e}`))
+        .catch((e: Error) => this.logger.error({ tag: this.updatePersonalSpacesQuota.name, msg: `user *${user.login}* (${user.id}) : ${e}` }))
       if (user.storageUsage !== spaceQuota.storageUsage) {
-        this.usersQueries
-          .updateUserOrGuest(user.id, { storageUsage: spaceQuota.storageUsage })
-          .then(
-            (updated: boolean) =>
-              updated &&
-              this.logger.log(
-                `${this.updatePersonalSpacesQuota.name} - user *${user.login}* (${user.id}) - storage usage updated: ${spaceQuota.storageUsage}`
-              )
-          )
+        this.usersQueries.updateUserOrGuest(user.id, { storageUsage: spaceQuota.storageUsage }).then(
+          (updated: boolean) =>
+            updated &&
+            this.logger.log({
+              tag: this.updatePersonalSpacesQuota.name,
+              msg: `user *${user.login}* (${user.id}) - storage usage updated: ${spaceQuota.storageUsage}`
+            })
+        )
       }
       if (forUser) {
         return spaceQuota
@@ -403,7 +402,7 @@ export class SpacesManager {
     for (const space of await this.spacesQueries.spacesQuotaPaths(spaceId)) {
       const spacePath = SpaceModel.getHomePath(space.alias)
       if (!(await isPathExists(spacePath))) {
-        this.logger.warn(`${this.updateSpacesQuota.name} - *${space.alias}* home path does not exist`)
+        this.logger.warn({ tag: this.updateSpacesQuota.name, msg: `*${space.alias}* home path does not exist` })
         continue
       }
       let size = 0
@@ -411,23 +410,22 @@ export class SpacesManager {
         const [rPathSize, errors] = await dirSize(rPath)
         size += rPathSize
         for (const [path, error] of Object.entries(errors)) {
-          this.logger.warn(`${this.updateSpacesQuota.name} - unable to get size for *${space.alias}* on ${path} : ${error}`)
+          this.logger.warn({ tag: this.updateSpacesQuota.name, msg: `unable to get size for *${space.alias}* on ${path} : ${error}` })
         }
       }
       const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: space.storageQuota }
       this.spacesQueries.cache
         .set(`${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`, spaceQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error(`${this.updateSpacesQuota.name} - space *${space.alias}* (${space.id}) : ${e}`))
+        .catch((e: Error) => this.logger.error({ tag: this.updateSpacesQuota.name, msg: `space *${space.alias}* (${space.id}) : ${e}` }))
       if (space.storageUsage !== spaceQuota.storageUsage) {
-        this.spacesQueries
-          .updateSpace(space.id, { storageUsage: spaceQuota.storageUsage })
-          .then(
-            (updated: boolean) =>
-              updated &&
-              this.logger.log(
-                `${this.updateSpacesQuota.name} - space *${space.alias}* (${space.id}) - storage usage updated : ${spaceQuota.storageUsage}`
-              )
-          )
+        this.spacesQueries.updateSpace(space.id, { storageUsage: spaceQuota.storageUsage }).then(
+          (updated: boolean) =>
+            updated &&
+            this.logger.log({
+              tag: this.updateSpacesQuota.name,
+              msg: `space *${space.alias}* (${space.id}) - storage usage updated : ${spaceQuota.storageUsage}`
+            })
+        )
       }
       if (spaceId) {
         return spaceQuota
@@ -445,9 +443,9 @@ export class SpacesManager {
         try {
           await this.sharesManager.deleteAllLinkMembers(space.id, LINK_TYPE.SPACE)
           await this.deleteOrDisableSpace(space, true)
-          this.logger.log(`${this.deleteExpiredSpaces.name} - space *${space.alias}* (${space.id}) was deleted`)
+          this.logger.log({ tag: this.deleteExpiredSpaces.name, msg: `space *${space.alias}* (${space.id}) was deleted` })
         } catch (e) {
-          this.logger.error(`${this.deleteExpiredSpaces.name} - space *${space.alias}* (${space.id}) was not deleted : ${e}`)
+          this.logger.error({ tag: this.deleteExpiredSpaces.name, msg: `space *${space.alias}* (${space.id}) was not deleted : ${e}` })
         }
       }
     }
@@ -503,9 +501,10 @@ export class SpacesManager {
           ((m.type === MEMBER_TYPE.USER || m.type === MEMBER_TYPE.GUEST) && !m.linkId && userIdsWhitelist.indexOf(m.id) === -1) ||
           ((m.type === MEMBER_TYPE.GROUP || m.type === MEMBER_TYPE.PGROUP) && groupIdsWhitelist.indexOf(m.id) === -1)
         ) {
-          this.logger.warn(
-            `${this.updateMembers.name} - cannot add ${m.type} (${m.id}) to space *${space.alias}* (${space.id}) : not in the members whitelist`
-          )
+          this.logger.warn({
+            tag: this.updateMembers.name,
+            msg: `cannot add ${m.type} (${m.id}) to space *${space.alias}* (${space.id}) : not in the members whitelist`
+          })
           return false
         }
         return true
@@ -515,7 +514,9 @@ export class SpacesManager {
     // filter links
     const toRemove: SpaceMemberDto[] = remove.filter((m) => !m.linkId)
     // do remove links
-    this.sharesManager.deleteLinkMembers(remove.filter((m) => !!m.linkId)).catch((e: Error) => this.logger.error(`${this.updateMembers.name} - ${e}`))
+    this.sharesManager
+      .deleteLinkMembers(remove.filter((m) => !!m.linkId))
+      .catch((e: Error) => this.logger.error({ tag: this.updateMembers.name, msg: `${e}` }))
     // do update members
     const status: Record<
       Exclude<ACTION, ACTION.DELETE_PERMANENTLY>,
@@ -575,13 +576,13 @@ export class SpacesManager {
         }
       }
       // clear cache &|| notify
-      this.onSpaceActionForMembers(space, action, members, user).catch((e: Error) => this.logger.error(`${this.updateMembers.name} - ${e}`))
+      this.onSpaceActionForMembers(space, action, members, user).catch((e: Error) => this.logger.error({ tag: this.updateMembers.name, msg: `${e}` }))
     }
     // do updates
     // remove or update potential shares
     this.sharesManager
       .updateSharesFromSpace(space.id, currentMembers, rmShareOwners, upShareOwners)
-      .catch((e: Error) => this.logger.error(`${this.updateMembers.name} - ${e}`))
+      .catch((e: Error) => this.logger.error({ tag: this.updateMembers.name, msg: `${e}` }))
     // return potential root owner ids
     return rmRootOwners
   }
@@ -616,7 +617,7 @@ export class SpacesManager {
         // remove from space cache permissions
         this.spacesQueries
           .clearCachePermissions(space.alias, [props.alias.old, props.alias.new])
-          .catch((e: Error) => this.logger.error(`${this.updateRoots.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.updateRoots.name, msg: `${e}` }))
         // update aliases list for next roots
         aliases.push(props.alias.new)
       }
@@ -664,7 +665,7 @@ export class SpacesManager {
     )
     Object.entries(status).forEach(([action, roots]: [ACTION, SpaceRootProps[]]) =>
       this.clearCachePermissionsAndOrNotify(space, action, user, null, roots).catch((e: Error) =>
-        this.logger.error(`${this.updateRoots.name} - ${e}`)
+        this.logger.error({ tag: this.updateRoots.name, msg: `${e}` })
       )
     )
   }
@@ -680,12 +681,15 @@ export class SpacesManager {
     const toAdd: SpaceRootProps[] = []
     for (const r of newRoots) {
       if (r.externalPath && !user.isAdmin) {
-        this.logger.warn(`ignore new root *${r.alias}* (${r.externalPath}) : adding an external path requires the admin role`)
+        this.logger.warn({
+          tag: this.validateNewRoots.name,
+          msg: `ignore new root *${r.alias}* (${r.externalPath}) : adding an external path requires the admin role`
+        })
         continue
       }
       const rPath = r.externalPath || path.join(user.filesPath, r.file.path)
       if (!(await isPathExists(rPath))) {
-        this.logger.warn(`ignore new root *${r.alias}* (${r.file.path}) : *${rPath}* does not exist`)
+        this.logger.warn({ tag: this.validateNewRoots.name, msg: `ignore new root *${r.alias}* (${r.file.path}) : *${rPath}* does not exist` })
         continue
       }
       // check if a parent exists for an externalPath or if the file (or parent) is already anchored
@@ -698,7 +702,10 @@ export class SpacesManager {
         )
       }
       if (rExists) {
-        this.logger.warn(`ignore new root *${r.alias}* (${r.externalPath || r.file.path}) (${r.file?.id}) : parent or file already exists in roots`)
+        this.logger.warn({
+          tag: this.validateNewRoots.name,
+          msg: `ignore new root *${r.alias}* (${r.externalPath || r.file.path}) (${r.file?.id}) : parent or file already exists in roots`
+        })
         continue
       }
       // keep the file id (maybe already in db)
@@ -723,7 +730,7 @@ export class SpacesManager {
       // clear cache &|| notify
       const memberIds: { groupIds: number[]; userIds: number[] } = await this.spacesQueries.getSpaceMemberIds(space.id)
       this.onSpaceActionForMembers(space, ACTION.DELETE_PERMANENTLY, memberIds).catch((e: Error) =>
-        this.logger.error(`${this.deleteOrDisableSpace.name} - ${e}`)
+        this.logger.error({ tag: this.deleteOrDisableSpace.name, msg: `${e}` })
       )
       // remove all shares related to the space
       await this.sharesManager.removeSharesFromSpace(space.id)
@@ -732,7 +739,7 @@ export class SpacesManager {
     if (deleteNow) {
       this.spacesQueries.cache
         .del(`${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`)
-        .catch((e: Error) => this.logger.error(`${this.deleteOrDisableSpace.name} - ${e}`))
+        .catch((e: Error) => this.logger.error({ tag: this.deleteOrDisableSpace.name, msg: `${e}` }))
       await this.deleteSpaceLocation(space.alias)
     }
   }
@@ -741,9 +748,9 @@ export class SpacesManager {
     const spaceLocation = SpaceModel.getHomePath(spaceAlias)
     if (await isPathExists(spaceLocation)) {
       await removeFiles(spaceLocation)
-      this.logger.warn(`${this.deleteSpaceLocation.name} - space *${spaceAlias}* location was deleted`)
+      this.logger.warn({ tag: this.deleteSpaceLocation.name, msg: `space *${spaceAlias}* location was deleted` })
     } else {
-      this.logger.warn(`${this.deleteSpaceLocation.name} - space *${spaceAlias}* location does not exist : ${spaceLocation}`)
+      this.logger.warn({ tag: this.deleteSpaceLocation.name, msg: `space *${spaceAlias}* location does not exist : ${spaceLocation}` })
     }
   }
 
@@ -752,7 +759,7 @@ export class SpacesManager {
     if (await isPathExists(currentSpaceLocation)) {
       const newSpaceLocation: string = SpaceModel.getHomePath(newSpaceAlias)
       if (await isPathExists(newSpaceLocation)) {
-        this.logger.warn(`${this.renameSpaceLocation.name} - *${newSpaceAlias}* home path already exists : ${newSpaceLocation}`)
+        this.logger.warn({ tag: this.renameSpaceLocation.name, msg: `*${newSpaceAlias}* home path already exists : ${newSpaceLocation}` })
         return false
       } else {
         try {
@@ -761,14 +768,15 @@ export class SpacesManager {
         } catch (e) {
           // try to restore
           await moveFiles(newSpaceLocation, currentSpaceLocation, true)
-          this.logger.error(
-            `${this.renameSpaceLocation.name} - unable to rename space location from *${currentSpaceLocation}* to *${newSpaceLocation}* : ${e}`
-          )
+          this.logger.error({
+            tag: this.renameSpaceLocation.name,
+            msg: `unable to rename space location from *${currentSpaceLocation}* to *${newSpaceLocation}* : ${e}`
+          })
           return false
         }
       }
     } else {
-      this.logger.warn(`${this.renameSpaceLocation.name} - *${oldSpaceAlias}* space location does not exist : ${currentSpaceLocation}`)
+      this.logger.warn({ tag: this.renameSpaceLocation.name, msg: `*${oldSpaceAlias}* space location does not exist : ${currentSpaceLocation}` })
       return false
     }
   }
@@ -795,14 +803,14 @@ export class SpacesManager {
       // Get all space details if user is a manager
       const space: SpaceProps = await this.spacesQueries.getSpaceAsManager(userId, spaceId)
       if (!space) {
-        this.logger.warn(`space (${spaceId}) not found or not authorized for user (${userId})`)
+        this.logger.warn({ tag: this.userCanAccessSpace.name, msg: `space (${spaceId}) not found or not authorized for user (${userId})` })
         throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
       }
       return space
     } else {
       const [space]: SpaceProps[] = await this.spacesQueries.spaces(userId, true, spaceId)
       if (!space) {
-        this.logger.warn(`space (${spaceId}) not found or not authorized for user (${userId})`)
+        this.logger.warn({ tag: this.userCanAccessSpace.name, msg: `space (${spaceId}) not found or not authorized for user (${userId})` })
         throw new HttpException('Space not found', HttpStatus.NOT_FOUND)
       }
       return space
@@ -811,7 +819,7 @@ export class SpacesManager {
 
   private async userIsSpaceManager(user: UserModel, spaceId: number, shareId?: number): Promise<boolean> {
     if (!(await this.spacesQueries.userIsSpaceManager(user.id, spaceId, shareId))) {
-      this.logger.warn(`space (${spaceId}) not found or not authorized for user (${user.id})`)
+      this.logger.warn({ tag: this.userIsSpaceManager.name, msg: `space (${spaceId}) not found or not authorized for user (${user.id})` })
       throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
     }
     return true
@@ -824,7 +832,7 @@ export class SpacesManager {
     }
     const cacheQuotaKey = quotaKeyFromSpace(user.id, space)
     if (!cacheQuotaKey) {
-      this.logger.verbose(`${this.setQuotaExceeded.name} - quota was ignored for space : *${space.alias}* (${space.id})`)
+      this.logger.verbose({ tag: this.setQuotaExceeded.name, msg: `quota was ignored for space : *${space.alias}* (${space.id})` })
       return
     }
     let quota: StorageQuota = await this.spacesQueries.cache.get(cacheQuotaKey)
@@ -844,7 +852,7 @@ export class SpacesManager {
       space.storageQuota = quota.storageQuota
       space.quotaIsExceeded = quota.storageQuota !== null && quota.storageUsage >= quota.storageQuota
     } else {
-      this.logger.verbose(`${this.setQuotaExceeded.name} - quota not found for space : *${space.alias}* (${space.id})`)
+      this.logger.verbose({ tag: this.setQuotaExceeded.name, msg: `quota not found for space : *${space.alias}* (${space.id})` })
     }
   }
 
@@ -864,7 +872,7 @@ export class SpacesManager {
       Array.from(new Set([...(await this.usersQueries.allUserIdsFromGroupsAndSubGroups(members.groupIds)), ...members.userIds])).filter(
         (uid) => uid !== user?.id
       )
-    ).catch((e: Error) => this.logger.error(`${this.onSpaceActionForMembers.name} - ${e}`))
+    ).catch((e: Error) => this.logger.error({ tag: this.onSpaceActionForMembers.name, msg: `${e}` }))
   }
 
   private async clearCachePermissionsAndOrNotify(
@@ -877,16 +885,19 @@ export class SpacesManager {
     if (memberIds?.length) {
       // clear permissions for space members
       if (action === ACTION.DELETE_PERMANENTLY) {
-        this.logger.verbose(`${this.clearCachePermissionsAndOrNotify.name} - space:${space.alias} ${action}`)
+        this.logger.verbose({ tag: this.clearCachePermissionsAndOrNotify.name, msg: `space:${space.alias} ${action}` })
         this.spacesQueries
           .clearCachePermissions(space.alias)
-          .catch((e: Error) => this.logger.error(`${this.clearCachePermissionsAndOrNotify.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.clearCachePermissionsAndOrNotify.name, msg: `${e}` }))
       } else {
         // update space members cache
-        this.logger.verbose(`${this.clearCachePermissionsAndOrNotify.name} - space:${space.alias} ${action} members:${JSON.stringify(memberIds)}`)
+        this.logger.verbose({
+          tag: this.clearCachePermissionsAndOrNotify.name,
+          msg: `space:${space.alias} ${action} members:${JSON.stringify(memberIds)}`
+        })
         this.spacesQueries
           .clearCachePermissions(space.alias, undefined, memberIds)
-          .catch((e: Error) => this.logger.error(`${this.clearCachePermissionsAndOrNotify.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.clearCachePermissionsAndOrNotify.name, msg: `${e}` }))
       }
       // notify
       if (action !== ACTION.UPDATE) {
@@ -902,16 +913,19 @@ export class SpacesManager {
             currentUrl: this.contextManager.headerOriginUrl(),
             action: action
           })
-          .catch((e: Error) => this.logger.error(`${this.clearCachePermissionsAndOrNotify.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.clearCachePermissionsAndOrNotify.name, msg: `${e}` }))
       }
     } else if (roots?.length) {
       // clear permissions for space roots
       const rootAliases: string[] = roots.map((r) => r.alias)
-      this.logger.verbose(`${this.clearCachePermissionsAndOrNotify.name} - space:${space.alias} ${action} roots:${JSON.stringify(rootAliases)}`)
+      this.logger.verbose({
+        tag: this.clearCachePermissionsAndOrNotify.name,
+        msg: `space:${space.alias} ${action} roots:${JSON.stringify(rootAliases)}`
+      })
       if (action !== ACTION.ADD) {
         this.spacesQueries
           .clearCachePermissions(space.alias, rootAliases)
-          .catch((e: Error) => this.logger.error(`${this.clearCachePermissionsAndOrNotify.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.clearCachePermissionsAndOrNotify.name, msg: `${e}` }))
       }
       // notify
       if (action !== ACTION.UPDATE) {
@@ -936,7 +950,7 @@ export class SpacesManager {
               author: user,
               action: action
             })
-            .catch((e: Error) => this.logger.error(`${this.clearCachePermissionsAndOrNotify.name} - ${e}`))
+            .catch((e: Error) => this.logger.error({ tag: this.clearCachePermissionsAndOrNotify.name, msg: `${e}` }))
         }
       }
     }

@@ -203,10 +203,10 @@ export class AdminUsersQueries {
           ),
           groups.add.length
         )
-        this.logger.log(`${this.updateUserGroups.name} - user (${userId}) groups ${JSON.stringify(groups.add)} was added`)
+        this.logger.log({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.add)} was added` })
         this.usersQueries.clearWhiteListCaches([userId])
       } catch (e) {
-        this.logger.error(`${this.updateUserGroups.name} - user (${userId}) groups ${JSON.stringify(groups.add)} was not added: ${e}`)
+        this.logger.error({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.add)} was not added: ${e}` })
         throw new Error('User groups was not added')
       }
     }
@@ -216,10 +216,10 @@ export class AdminUsersQueries {
           await this.db.delete(usersGroups).where(and(eq(usersGroups.userId, userId), inArray(usersGroups.groupId, groups.delete))),
           groups.delete.length
         )
-        this.logger.log(`${this.updateUserGroups.name} - user (${userId}) groups ${JSON.stringify(groups.delete)} was deleted`)
+        this.logger.log({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.delete)} was deleted` })
         this.usersQueries.clearWhiteListCaches([userId])
       } catch (e) {
-        this.logger.error(`${this.updateUserGroups.name} - user (${userId}) groups ${JSON.stringify(groups.delete)} was not deleted: ${e}`)
+        this.logger.error({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.delete)} was not deleted: ${e}` })
         throw new Error('User groups was not deleted')
       }
     }
@@ -232,10 +232,10 @@ export class AdminUsersQueries {
   async updateGroup(groupId: number, set: Partial<Record<keyof Group, any>>): Promise<boolean> {
     try {
       dbCheckAffectedRows(await this.db.update(groups).set(set).where(eq(groups.id, groupId)), 1)
-      this.logger.log(`${this.updateGroup.name} - group (${groupId}) was updated : ${JSON.stringify(set)}`)
+      this.logger.log({ tag: this.updateGroup.name, msg: `group (${groupId}) was updated : ${JSON.stringify(set)}` })
       return true
     } catch (e) {
-      this.logger.error(`${this.updateGroup.name} - group (${groupId}) was not updated : ${JSON.stringify(set)} : ${e}`)
+      this.logger.error({ tag: this.updateGroup.name, msg: `group (${groupId}) was not updated : ${JSON.stringify(set)} : ${e}` })
       return false
     }
   }
@@ -272,10 +272,10 @@ export class AdminUsersQueries {
         ),
         userIdsWithRequiredRole.length
       )
-      this.logger.log(`${this.addUsersToGroup.name} - users (${userIds}) was added to group (${groupId})`)
+      this.logger.log({ tag: this.addUsersToGroup.name, msg: `users (${userIds}) was added to group (${groupId})` })
       this.usersQueries.clearWhiteListCaches(userIds)
     } catch (e) {
-      this.logger.error(`${this.addUsersToGroup.name} - unable to add users (${userIds}) to group (${groupId}) : ${e}`)
+      this.logger.error({ tag: this.addUsersToGroup.name, msg: `unable to add users (${userIds}) to group (${groupId}) : ${e}` })
       throw new Error('Unable to add users to group')
     }
   }
@@ -290,11 +290,12 @@ export class AdminUsersQueries {
           .limit(1),
         1
       )
-      this.logger.log(`${this.updateUserFromGroup.name} - user (${userId}) was updated on group (${groupId}) as ${USER_GROUP_ROLE[role]}`)
+      this.logger.log({ tag: this.updateUserFromGroup.name, msg: `user (${userId}) was updated on group (${groupId}) as ${USER_GROUP_ROLE[role]}` })
     } catch (e) {
-      this.logger.error(
-        `${this.updateUserFromGroup.name} - user (${userId}) was not updated on group (${groupId}) as ${USER_GROUP_ROLE[role]} : ${e}`
-      )
+      this.logger.error({
+        tag: this.updateUserFromGroup.name,
+        msg: `user (${userId}) was not updated on group (${groupId}) as ${USER_GROUP_ROLE[role]} : ${e}`
+      })
       throw new Error('Unable to update user from group')
     }
   }
@@ -308,10 +309,10 @@ export class AdminUsersQueries {
           .limit(1),
         1
       )
-      this.logger.log(`${this.removeUserFromGroup.name} - user (${userId}) was removed from group (${groupId})`)
+      this.logger.log({ tag: this.removeUserFromGroup.name, msg: `user (${userId}) was removed from group (${groupId})` })
       this.usersQueries.clearWhiteListCaches([userId])
     } catch (e) {
-      this.logger.error(`${this.removeUserFromGroup.name} - user (${userId}) or group (${groupId}) does not exist : ${e}`)
+      this.logger.error({ tag: this.removeUserFromGroup.name, msg: `user (${userId}) or group (${groupId}) does not exist : ${e}` })
       throw new Error('Unable to remove user from group')
     }
   }
@@ -328,9 +329,12 @@ export class AdminUsersQueries {
           ),
           managers.add.length
         )
-        this.logger.log(`${this.updateGuestManagers.name} - guest (${guestId}) managers ${JSON.stringify(managers.add)} was added`)
+        this.logger.log({ tag: this.updateGuestManagers.name, msg: `guest (${guestId}) managers ${JSON.stringify(managers.add)} was added` })
       } catch (e) {
-        this.logger.error(`${this.updateGuestManagers.name} - guest (${guestId}) managers ${JSON.stringify(managers.add)} was not added: ${e}`)
+        this.logger.error({
+          tag: this.updateGuestManagers.name,
+          msg: `guest (${guestId}) managers ${JSON.stringify(managers.add)} was not added: ${e}`
+        })
         throw new Error('Guest managers was not added')
       }
     }
@@ -340,9 +344,12 @@ export class AdminUsersQueries {
           await this.db.delete(usersGuests).where(and(eq(usersGuests.guestId, guestId), inArray(usersGuests.userId, managers.delete))),
           managers.delete.length
         )
-        this.logger.log(`${this.updateGuestManagers.name} - guest (${guestId}) managers ${JSON.stringify(managers.delete)} was deleted`)
+        this.logger.log({ tag: this.updateGuestManagers.name, msg: `guest (${guestId}) managers ${JSON.stringify(managers.delete)} was deleted` })
       } catch (e) {
-        this.logger.error(`${this.updateGuestManagers.name} - guest (${guestId}) managers ${JSON.stringify(managers.delete)} was not deleted: ${e}`)
+        this.logger.error({
+          tag: this.updateGuestManagers.name,
+          msg: `guest (${guestId}) managers ${JSON.stringify(managers.delete)} was not deleted: ${e}`
+        })
         throw new Error('Guest managers was not deleted')
       }
     }

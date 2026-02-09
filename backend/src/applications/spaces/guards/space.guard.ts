@@ -70,11 +70,11 @@ export class SpaceGuard implements CanActivate {
     try {
       space = await this.spacesManager.spaceEnv(req.user, urlSegments)
     } catch (e) {
-      this.logger.warn(`${this.canActivate.name} - ${e}`)
+      this.logger.warn({ tag: this.canActivate.name, msg: `${e}` })
       throw new HttpException('Space path is not valid', HttpStatus.BAD_REQUEST)
     }
     if (!space) {
-      this.logger.warn(`${this.canActivate.name} - space not authorized or not found : ${req.params['*']}`)
+      this.logger.warn({ tag: this.canActivate.name, msg: `space not authorized or not found : ${req.params['*']}` })
       throw new HttpException('Space not found', HttpStatus.NOT_FOUND)
     }
     if (!space.enabled) {
@@ -101,14 +101,14 @@ export class SpaceGuard implements CanActivate {
       }
       return PATH_TO_SPACE_SEGMENTS(req.params['*'])
     } catch (e) {
-      this.logger.warn(`${this.canActivate.name} - ${e}`)
+      this.logger.warn({ tag: this.canActivate.name, msg: `${e}` })
       throw new HttpException(e.message, HttpStatus.NOT_FOUND)
     }
   }
 
   private checkAccessToSpace(req: FastifySpaceRequest, urlSegments: string[]) {
     if (!canAccessToSpaceUrl(req.user, urlSegments)) {
-      this.logger.warn(`is not allowed to access to this space repository : ${req.params['*']}`)
+      this.logger.warn({ tag: this.checkAccessToSpace.name, msg: `is not allowed to access to this space repository : ${req.params['*']}` })
       throw new HttpException('You are not allowed to access to this repository', HttpStatus.FORBIDDEN)
     }
   }

@@ -42,7 +42,7 @@ export class NotificationsManager {
     // store it in db
     const isArrayOfUsers: boolean = typeof toUsers[0] === 'object'
     const toUserIds = isArrayOfUsers ? (toUsers as UserMailNotification[]).map((m) => m.id) : (toUsers as number[])
-    this.storeNotification(toUserIds, content, options?.author?.id).catch((e: Error) => this.logger.error(`${this.create.name} - ${e}`))
+    this.storeNotification(toUserIds, content, options?.author?.id).catch((e: Error) => this.logger.error({ tag: this.create.name, msg: `${e}` }))
 
     // send websocket notification
     this.webSocketNotifications.sendMessageToUsers(toUserIds, NOTIFICATIONS_WS.EVENTS.NOTIFICATION, 'check')
@@ -55,12 +55,14 @@ export class NotificationsManager {
       if (!usersNotifiedByEmail.length) {
         return
       }
-      this.sendEmailNotification(usersNotifiedByEmail, content, options).catch((e: Error) => this.logger.error(`${this.create.name} - ${e}`))
+      this.sendEmailNotification(usersNotifiedByEmail, content, options).catch((e: Error) =>
+        this.logger.error({ tag: this.create.name, msg: `${e}` })
+      )
     }
   }
 
   wasRead(user: UserModel, notificationId?: number): void {
-    this.notificationsQueries.wasRead(user.id, notificationId).catch((e: Error) => this.logger.error(`${this.wasRead.name} - ${e}`))
+    this.notificationsQueries.wasRead(user.id, notificationId).catch((e: Error) => this.logger.error({ tag: this.wasRead.name, msg: `${e}` }))
   }
 
   async delete(user: UserModel, notificationId?: number): Promise<void> {
@@ -87,7 +89,7 @@ export class NotificationsManager {
           })
         )
       )
-      .catch((e: Error) => this.logger.error(`${this.sendEmailNotification.name} - ${e}`))
+      .catch((e: Error) => this.logger.error({ tag: this.sendEmailNotification.name, msg: `${e}` }))
   }
 
   private async storeNotification(toUserIds: number[], content: NotificationContent, authorId?: number): Promise<void> {
@@ -95,7 +97,7 @@ export class NotificationsManager {
     try {
       await this.notificationsQueries.create(authorId || null, toUserIds, content)
     } catch (e) {
-      this.logger.error(`${this.create.name} - ${e}`)
+      this.logger.error({ tag: this.storeNotification.name, msg: `${e}` })
     }
   }
 
@@ -128,7 +130,7 @@ export class NotificationsManager {
       case NOTIFICATION_APP.UPDATE_AVAILABLE:
         return serverUpdateAvailableMail(language, content)
       default:
-        this.logger.error(`${this.genMail.name} - case not handled : ${content.app}`)
+        this.logger.error({ tag: this.genMail.name, msg: `case not handled : ${content.app}` })
     }
   }
 }

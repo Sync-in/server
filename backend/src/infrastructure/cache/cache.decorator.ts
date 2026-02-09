@@ -16,13 +16,13 @@ export function CacheDecorator(TTL = 120, updateCache: boolean = false) {
         if (cacheResult !== undefined) {
           if (updateCache) {
             originalMethod.apply(this, args).then((r: any) => {
-              this.cache.set(cacheKey, r, TTL).catch((e: Error) => this.logger.error(`${memoize.name} - ${e}`))
+              this.cache.set(cacheKey, r, TTL).catch((e: Error) => this.logger.error({ tag: memoize.name, msg: `${e}` }))
             })
           }
           return cacheResult
         }
         const r: any = await originalMethod.apply(this, args)
-        this.cache.set(cacheKey, r, TTL).catch((e: Error) => this.logger.error(`${memoize.name} - ${e}`))
+        this.cache.set(cacheKey, r, TTL).catch((e: Error) => this.logger.error({ tag: memoize.name, msg: `${e}` }))
         return r
       } catch (e) {
         console.error(e)

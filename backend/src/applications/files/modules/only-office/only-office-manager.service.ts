@@ -92,7 +92,7 @@ export class OnlyOfficeManager {
           hasLock = this.filesLockManager.convertLockToFileLockProps(e.lock)
           mode = FILE_MODE.VIEW
         } else {
-          this.logger.error(`${this.getSettings.name} - ${e}`)
+          this.logger.error({ tag: this.getSettings.name, msg: `${e}` })
           throw new HttpException('Unable to check file lock', HttpStatus.INTERNAL_SERVER_ERROR)
         }
       }
@@ -113,43 +113,43 @@ export class OnlyOfficeManager {
         case 1:
           // users connect / disconnect
           await this.checkFileLock(user, space, callBackData)
-          this.logger.debug(`document is being edited : ${space.url}`)
+          this.logger.debug({ tag: this.callBack.name, msg: `document is being edited : ${space.url}` })
           break
         case 2:
           // No active users on the document
           await this.checkFileLock(user, space, callBackData)
           if (callBackData.notmodified) {
-            this.logger.debug(`document was edited but closed with no changes : ${space.url}`)
+            this.logger.debug({ tag: this.callBack.name, msg: `document was edited but closed with no changes : ${space.url}` })
           } else {
-            this.logger.debug(`document was edited and closed but not saved (let's do it) : ${space.url}`)
+            this.logger.debug({ tag: this.callBack.name, msg: `document was edited and closed but not saved (let's do it) : ${space.url}` })
             await this.saveDocument(space, callBackData.url)
           }
           await this.removeFileLock(user.id, space)
           await this.removeDocumentKey(space)
           break
         case 3:
-          this.logger.error(`document cannot be saved, an error has occurred (try to save it) : ${space.url}`)
+          this.logger.error({ tag: this.callBack.name, msg: `document cannot be saved, an error has occurred (try to save it) : ${space.url}` })
           await this.saveDocument(space, callBackData.url)
           break
         case 4:
           // No active users on the document
           await this.removeFileLock(user.id, space)
           await this.removeDocumentKey(space)
-          this.logger.debug(`document was closed with no changes : ${space.url}`)
+          this.logger.debug({ tag: this.callBack.name, msg: `document was closed with no changes : ${space.url}` })
           break
         case 6:
-          this.logger.debug(`document is edited but save was requested : ${space.url}`)
+          this.logger.debug({ tag: this.callBack.name, msg: `document is edited but save was requested : ${space.url}` })
           await this.saveDocument(space, callBackData.url)
           break
         case 7:
-          this.logger.error(`document cannot be force saved, an error has occurred (try to save it) : ${space.url}`)
+          this.logger.error({ tag: this.callBack.name, msg: `document cannot be force saved, an error has occurred (try to save it) : ${space.url}` })
           await this.saveDocument(space, callBackData.url)
           break
         default:
-          this.logger.error('unhandled case')
+          this.logger.error({ tag: this.callBack.name, msg: 'unhandled case' })
       }
     } catch (e) {
-      this.logger.error(`${this.callBack.name} - ${e.message} : ${space.url}`)
+      this.logger.error({ tag: this.callBack.name, msg: `${e.message} : ${space.url}` })
       return { error: e.message }
     }
     return { error: 0 }
@@ -299,7 +299,7 @@ export class OnlyOfficeManager {
     if (!(await this.filesLockManager.isPathLocked(space.dbFile))) {
       const cacheKey = this.getCacheKey(space.dbFile)
       const r = await this.cache.del(cacheKey)
-      this.logger.debug(`${this.removeDocumentKey.name} - ${cacheKey} ${r ? '' : 'not'} removed`)
+      this.logger.debug({ tag: this.removeDocumentKey.name, msg: `${cacheKey} ${r ? '' : 'not'} removed` })
     }
   }
 
@@ -312,7 +312,7 @@ export class OnlyOfficeManager {
     }
     const docKey = genEtag(null, space.realPath, false)
     await this.cache.set(cacheKey, docKey, this.expiration)
-    this.logger.debug(`${this.getDocumentKey.name} - ${cacheKey} (${docKey}) created`)
+    this.logger.debug({ tag: this.getDocumentKey.name, msg: `${cacheKey} (${docKey}) created` })
     return docKey
   }
 
@@ -363,7 +363,7 @@ export class OnlyOfficeManager {
         throw new Error(`document size differs (${tmpFileSize} != ${contentLength})`)
       }
     } else if (contentLength === 0) {
-      this.logger.warn(`${this.saveDocument.name} - content length is 0 : ${space.url}`)
+      this.logger.warn({ tag: this.saveDocument.name, msg: `content length is 0 : ${space.url}` })
     }
     // copy contents to avoid inode changes (`file.id` in some cases)
     try {
@@ -401,7 +401,7 @@ export class OnlyOfficeManager {
       throw new Error(`convert failed with reason : ${ONLY_OFFICE_CONVERT_ERROR.get(result.error)}`)
     }
     if (result.endConvert) {
-      this.logger.log(`${this.convertDocument.name} - ${fileType} -> ${outputType} : ${spaceUrl}`)
+      this.logger.log({ tag: this.convertDocument.name, msg: `${fileType} -> ${outputType} : ${spaceUrl}` })
       return result.fileUrl
     }
   }

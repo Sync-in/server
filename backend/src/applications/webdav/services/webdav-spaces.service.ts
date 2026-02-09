@@ -45,11 +45,11 @@ export class WebDAVSpaces {
         return space
       }
     } catch (e) {
-      this.logger.warn(`${this.spaceEnv.name} : ${e}`)
+      this.logger.warn({ tag: this.spaceEnv.name, msg: `${e}` })
       return null
     }
 
-    this.logger.warn(`Space not authorized or not found : ${path}`)
+    this.logger.warn({ tag: this.spaceEnv.name, msg: `Space not authorized or not found : ${path}` })
     return null
   }
 
@@ -66,7 +66,7 @@ export class WebDAVSpaces {
       case WEBDAV_NS.TRASH:
         return this.listTrashes(req)
       default:
-        this.logger.error(`Unknown space ${space}`)
+        this.logger.error({ tag: this.propfind.name, msg: `Unknown space ${space}` })
         throw new HttpException('Unknown space', HttpStatus.NOT_FOUND)
     }
   }
@@ -148,7 +148,7 @@ export class WebDAVSpaces {
       yield this.roots[WEBDAV_NS.SHARES]
     } else {
       if (!(await isPathExists(space.realPath))) {
-        this.logger.warn(`Location not found : ${space.realPath}`)
+        this.logger.warn({ tag: this.listFiles.name, msg: `Location not found : ${space.realPath}` })
         throw new HttpException('Location not found', HttpStatus.NOT_FOUND)
       }
       yield new WebDAVFile(await getProps(space.realPath, req.dav.url), req.dav.url, true)

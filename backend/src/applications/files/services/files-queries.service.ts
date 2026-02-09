@@ -107,7 +107,7 @@ export class FilesQueries {
       if (searchFileInDB?.id === file.id) {
         return file.id
       } else {
-        this.logger.warn(`${this.getOrCreateUserFile.name} - file mismatch : ${JSON.stringify(searchFileInDB)} !== ${JSON.stringify(file)}`)
+        this.logger.warn({ tag: this.getOrCreateUserFile.name, msg: `file mismatch : ${JSON.stringify(searchFileInDB)} !== ${JSON.stringify(file)}` })
       }
     }
     return dbGetInsertedId(await this.db.insert(files).values({ ...file, id: undefined, ownerId: userId } as File))
@@ -129,7 +129,10 @@ export class FilesQueries {
       if (searchFileInDB?.id === fileId) {
         return fileId
       } else {
-        this.logger.warn(`${this.getOrCreateSpaceFile.name} - file mismatch : ${JSON.stringify(dbFile)} -> ${fileId} !== ${searchFileInDB?.id}`)
+        this.logger.warn({
+          tag: this.getOrCreateSpaceFile.name,
+          msg: `file mismatch : ${JSON.stringify(dbFile)} -> ${fileId} !== ${searchFileInDB?.id}`
+        })
       }
     }
     // order is important, path is replaced by the FileProps.path
@@ -155,7 +158,7 @@ export class FilesQueries {
     try {
       dbCheckAffectedRows(await this.db.update(files).set(file).where(eq(files.id, id)), 1)
     } catch (e) {
-      this.logger.error(`${this.updateFile.name} - file (${id}) properties was not updated : ${e}`)
+      this.logger.error({ tag: this.updateFile.name, msg: `file (${id}) properties was not updated : ${e}` })
     }
   }
 
@@ -259,7 +262,7 @@ export class FilesQueries {
       dbFile.mtime !== fsFile.mtime ||
       dbFile.mime !== fsFile.mime
     ) {
-      this.logger.verbose(`${this.compareAndUpdateFileProps.name} - ${dbFile.path} (${dbFile.id})`)
+      this.logger.verbose({ tag: this.compareAndUpdateFileProps.name, msg: `${dbFile.path} (${dbFile.id})` })
       await this.updateFile(dbFile.id, {
         isDir: fsFile.isDir,
         size: fsFile.size,
@@ -309,7 +312,7 @@ export class FilesQueries {
       try {
         await this.db.insert(filesRecents).values(add as FileRecent[])
       } catch (e) {
-        this.logger.error(`${this.updateRecents.name} - ${e}`)
+        this.logger.error({ tag: this.updateRecents.name, msg: `${e}` })
       }
     }
     // update
@@ -323,7 +326,7 @@ export class FilesQueries {
             .where(and(...where, eq(filesRecents.id, f.id)))
             .limit(1)
         } catch (e) {
-          this.logger.error(`${this.updateRecents.name} - ${e}`)
+          this.logger.error({ tag: this.updateRecents.name, msg: `${e}` })
         }
       }
     }
@@ -332,7 +335,7 @@ export class FilesQueries {
       try {
         await this.db.delete(filesRecents).where(and(...where, inArray(filesRecents.id, remove)))
       } catch (e) {
-        this.logger.error(`${this.updateRecents.name} - ${e}`)
+        this.logger.error({ tag: this.updateRecents.name, msg: `${e}` })
       }
     }
   }

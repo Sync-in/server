@@ -50,7 +50,7 @@ export class FilesScheduler {
   }
 
   async cleanupInterruptedTasks(): Promise<void> {
-    this.logger.log(`${this.cleanupInterruptedTasks.name} - START`)
+    this.logger.log({ tag: this.cleanupInterruptedTasks.name, msg: `START` })
     try {
       let nb = 0
       const keys = await this.cache.keys(`${CACHE_TASK_PREFIX}-*`)
@@ -60,18 +60,18 @@ export class FilesScheduler {
           task.status = FileTaskStatus.ERROR
           task.result = 'Interrupted'
           nb++
-          this.cache.set(key, task).catch((e: Error) => this.logger.error(`${this.cleanupInterruptedTasks.name} - ${e}`))
+          this.cache.set(key, task).catch((e: Error) => this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` }))
         }
       }
-      this.logger.log(`${this.cleanupInterruptedTasks.name} - ${nb} tasks cleaned : END`)
+      this.logger.log({ tag: this.cleanupInterruptedTasks.name, msg: `${nb} tasks cleaned : END` })
     } catch (e) {
-      this.logger.error(`${this.cleanupInterruptedTasks.name} - ${e}`)
+      this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` })
     }
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async cleanupUserTaskFiles(): Promise<void> {
-    this.logger.log(`${this.cleanupUserTaskFiles.name} - START`)
+    this.logger.log({ tag: this.cleanupUserTaskFiles.name, msg: `START` })
     try {
       for (const user of await this.db
         .select({
@@ -92,22 +92,22 @@ export class FilesScheduler {
             .map((task: FileTask) => task.name)
           for (const f of (await fs.readdir(userTasksPath)).filter((f: string) => excludeFiles.indexOf(f) === -1)) {
             try {
-              removeFiles(path.join(userTasksPath, f)).catch((e: Error) => this.logger.error(`${this.cleanupUserTaskFiles.name} - ${e}`))
+              removeFiles(path.join(userTasksPath, f)).catch((e: Error) => this.logger.error({ tag: this.cleanupUserTaskFiles.name, msg: `${e}` }))
             } catch (e) {
-              this.logger.error(`${this.cleanupUserTaskFiles.name} - unable to remove ${path.join(userTasksPath, f)} : ${e}`)
+              this.logger.error({ tag: this.cleanupUserTaskFiles.name, msg: `unable to remove ${path.join(userTasksPath, f)} : ${e}` })
             }
           }
         }
       }
     } catch (e) {
-      this.logger.error(`${this.cleanupUserTaskFiles.name} - ${e}`)
+      this.logger.error({ tag: this.cleanupUserTaskFiles.name, msg: `${e}` })
     }
-    this.logger.log(`${this.cleanupUserTaskFiles.name} - END`)
+    this.logger.log({ tag: this.cleanupUserTaskFiles.name, msg: `END` })
   }
 
   @Cron(CronExpression.EVERY_8_HOURS)
   async clearRecentFiles(): Promise<void> {
-    this.logger.log(`${this.clearRecentFiles.name} - START`)
+    this.logger.log({ tag: this.clearRecentFiles.name, msg: `START` })
     const keepNumber = 100
     let nbCleared = 0
     try {
@@ -126,29 +126,29 @@ export class FilesScheduler {
         nbCleared += r.affectedRows
       }
     } catch (e) {
-      this.logger.error(`${this.clearRecentFiles.name} - ${e}`)
+      this.logger.error({ tag: this.clearRecentFiles.name, msg: `${e}` })
     }
-    this.logger.log(`${this.clearRecentFiles.name} - ${nbCleared} records cleared - END`)
+    this.logger.log({ tag: this.clearRecentFiles.name, msg: `${nbCleared} records cleared - END` })
   }
 
   @Cron(CronExpression.EVERY_4_HOURS)
   async indexContentFiles(): Promise<void> {
     // Conditional loading of file content indexing
     if (!configuration.applications.files.contentIndexing) return
-    this.logger.log(`${this.indexContentFiles.name} - START`)
+    this.logger.log({ tag: this.indexContentFiles.name, msg: `START` })
     await this.filesContentManager.parseAndIndexAllFiles()
-    this.logger.log(`${this.indexContentFiles.name} - END`)
+    this.logger.log({ tag: this.indexContentFiles.name, msg: `END` })
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_4AM)
   async deleteOrphanFiles() {
-    this.logger.log(`${this.deleteOrphanFiles.name} - START`)
+    this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `START` })
     const selects: any[] = []
     for (const table of getTablesWithFileIdColumn()) {
       selects.push(this.db.selectDistinct({ id: table.fileId }).from(table).where(isNotNull(table.fileId)))
     }
     if (selects.length === 0) {
-      this.logger.warn(`${this.deleteOrphanFiles.name} - no tables with fileId column`)
+      this.logger.warn({ tag: this.deleteOrphanFiles.name, msg: `no tables with fileId column` })
       return
     }
     const unionSub = (selects.length === 1 ? selects[0] : unionAll(...(selects as [any, any, ...any[]]))).as('u')
@@ -169,11 +169,11 @@ export class FilesScheduler {
     try {
       await this.db.transaction(async (tx) => {
         const [r] = await tx.execute(deleteQuery)
-        this.logger.log(`${this.deleteOrphanFiles.name} - files: ${r.affectedRows}`)
+        this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `files: ${r.affectedRows}` })
       })
     } catch (e) {
-      this.logger.log(`${this.deleteOrphanFiles.name} - ${e}`)
+      this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `${e}` })
     }
-    this.logger.log(`${this.deleteOrphanFiles.name} - END`)
+    this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `END` })
   }
 }

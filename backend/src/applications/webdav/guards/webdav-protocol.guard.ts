@@ -61,7 +61,7 @@ export class WebDAVProtocolGuard implements CanActivate {
 
   private checkUserPermission(req: FastifyDAVRequest) {
     if (req.method !== HTTP_METHOD.OPTIONS && !req.user.havePermission(USER_PERMISSION.WEBDAV)) {
-      this.logger.warn(`does not have permission : ${USER_PERMISSION.WEBDAV}`)
+      this.logger.warn({ tag: this.checkUserPermission.name, msg: `does not have permission : ${USER_PERMISSION.WEBDAV}` })
       throw new HttpException('Missing permission', HttpStatus.FORBIDDEN)
     }
   }
@@ -95,9 +95,9 @@ export class WebDAVProtocolGuard implements CanActivate {
   private parseIfHeader(req: FastifyDAVRequest) {
     // stores if headers, examine it later
     if (req.headers[HEADER.IF]) {
-      this.logger.verbose(`If header before : ${JSON.stringify(req.headers[HEADER.IF])}`)
+      this.logger.verbose({ tag: this.parseIfHeader.name, msg: `If header before : ${JSON.stringify(req.headers[HEADER.IF])}` })
       const ifHeaders: IfHeader[] = parseIfHeader(req.headers[HEADER.IF] as string)
-      this.logger.verbose(`If header after : ${JSON.stringify(ifHeaders)}`)
+      this.logger.verbose({ tag: this.parseIfHeader.name, msg: `If header after : ${JSON.stringify(ifHeaders)}` })
       if (ifHeaders.length) req.dav.ifHeaders = ifHeaders
     }
   }
@@ -106,11 +106,11 @@ export class WebDAVProtocolGuard implements CanActivate {
     req.dav.depth = (req.headers[HEADER.DEPTH] as string | undefined)?.toLowerCase()
     if (!req.dav.depth || (req.dav.depth !== DEPTH.MEMBERS && req.dav.depth !== DEPTH.RESOURCE)) {
       if (!req.dav.depth) {
-        this.logger.warn('Missing propfind depth, default value 1 was set')
+        this.logger.warn({ tag: this.propfindMethod.name, msg: 'Missing propfind depth, default value 1 was set' })
       } else if (req.dav.depth === DEPTH.INFINITY) {
-        this.logger.warn('Infinite depth is disabled for security reasons, default value 1 was set')
+        this.logger.warn({ tag: this.propfindMethod.name, msg: 'Infinite depth is disabled for security reasons, default value 1 was set' })
       } else {
-        this.logger.warn(`Invalid propfind depth header : ${req.dav.depth}, default value 1 was set`)
+        this.logger.warn({ tag: this.propfindMethod.name, msg: `Invalid propfind depth header : ${req.dav.depth}, default value 1 was set` })
       }
       req.dav.depth = DEPTH.MEMBERS
     }
@@ -123,7 +123,7 @@ export class WebDAVProtocolGuard implements CanActivate {
           }
         }
         if (!req.dav.propfindMode) {
-          this.logger.warn(`Invalid propfind mode : ${JSON.stringify(Object.keys(req.dav.body.propfind))}`)
+          this.logger.warn({ tag: this.propfindMethod.name, msg: `Invalid propfind mode : ${JSON.stringify(Object.keys(req.dav.body.propfind))}` })
           throw new HttpException('Invalid propfind mode', HttpStatus.BAD_REQUEST)
         }
       } else {
@@ -140,7 +140,7 @@ export class WebDAVProtocolGuard implements CanActivate {
     req.dav.depth = ((req.headers[HEADER.DEPTH] as any) || DEPTH.RESOURCE).toLowerCase()
     this.parseBody(req)
     if (!req.dav.body || Object.keys(req.dav.body).indexOf(PROPPATCH_PROP_UPDATE) === -1) {
-      this.logger.debug(`'${PROPPATCH_PROP_UPDATE}' is missing : ${JSON.stringify(req.dav.body)}`)
+      this.logger.debug({ tag: this.proppatchMethod.name, msg: `'${PROPPATCH_PROP_UPDATE}' is missing : ${JSON.stringify(req.dav.body)}` })
       throw new HttpException(`'${PROPPATCH_PROP_UPDATE}' is missing`, HttpStatus.BAD_REQUEST)
     }
     this.parseIfHeader(req)
@@ -160,7 +160,7 @@ export class WebDAVProtocolGuard implements CanActivate {
           const seconds = parseInt(timeoutSplit[timeoutSplit.length - 1], 10)
           req.dav.lock.timeout = seconds > CACHE_LOCK_DEFAULT_TTL ? CACHE_LOCK_DEFAULT_TTL : seconds
         } catch (e) {
-          this.logger.warn(`${this.lockMethod.name} - unable to set timeout, use the default value : ${e}`)
+          this.logger.warn({ tag: this.lockMethod.name, msg: `unable to set timeout, use the default value : ${e}` })
           req.dav.lock.timeout = CACHE_LOCK_DEFAULT_TTL
         }
       }
@@ -168,17 +168,17 @@ export class WebDAVProtocolGuard implements CanActivate {
     this.parseBody(req)
     if (req.dav.body) {
       if (!req.dav.body.lockinfo) {
-        this.logger.warn(`Missing lockinfo : ${JSON.stringify(req.dav.body)}`)
+        this.logger.warn({ tag: this.lockMethod.name, msg: `Missing lockinfo : ${JSON.stringify(req.dav.body)}` })
         throw new HttpException('Missing lockinfo', HttpStatus.BAD_REQUEST)
       }
       try {
         req.dav.lock.lockscope = Object.keys(req.dav.body.lockinfo.lockscope)[0] as LOCK_SCOPE
       } catch (e) {
-        this.logger.warn(`${this.parseBody.name} - invalid or undefined lockscope : ${JSON.stringify(req.dav.body.lockinfo)} : ${e}`)
+        this.logger.warn({ tag: this.lockMethod.name, msg: `invalid or undefined lockscope : ${JSON.stringify(req.dav.body.lockinfo)} : ${e}` })
         throw new HttpException('Invalid or undefined lockscope', HttpStatus.BAD_REQUEST)
       }
       if (Object.values(LOCK_SCOPE).indexOf(req.dav.lock.lockscope) === -1) {
-        this.logger.warn(`${this.parseBody.name} - invalid or undefined lockscope : ${JSON.stringify(req.dav.body.lockinfo)}`)
+        this.logger.warn({ tag: this.lockMethod.name, msg: `invalid or undefined lockscope : ${JSON.stringify(req.dav.body.lockinfo)}` })
         throw new HttpException('Invalid or undefined lockscope', HttpStatus.BAD_REQUEST)
       }
       if (req.dav.body.lockinfo.owner) {
@@ -232,7 +232,7 @@ export class WebDAVProtocolGuard implements CanActivate {
     }
     const destination = urlToPath(req.headers[HEADER.DESTINATION] as string)
     if (!REGEX_BASE_PATH.test(destination)) {
-      this.logger.warn(`The destination does not match the webdav base path : ${destination}`)
+      this.logger.warn({ tag: this.copyMoveMethod.name, msg: `The destination does not match the webdav base path : ${destination}` })
       throw new HttpException('The destination does not match', HttpStatus.BAD_REQUEST)
     }
     req.dav.depth = ((req.headers[HEADER.DEPTH] as any) || DEPTH.INFINITY).toLowerCase()

@@ -87,7 +87,7 @@ export class SharesManager {
       // retrieve space permissions (cached query)
       const spacePermissions: Partial<SpaceEnv> = await this.spacesQueries.permissions(user.id, share.file.space.alias, share.file.space.root?.alias)
       if (!spacePermissions) {
-        this.logger.warn(`${this.setAllowedPermissions.name} - missing space permissions : ${JSON.stringify(share)}`)
+        this.logger.warn({ tag: this.setAllowedPermissions.name, msg: `missing space permissions : ${JSON.stringify(share)}` })
         throw new HttpException('Space not found', HttpStatus.NOT_FOUND)
       }
       // compute permissions
@@ -100,12 +100,12 @@ export class SharesManager {
       const userId = asAdmin ? share.ownerId : user.id
       const sharePermissions: Partial<SpaceEnv> = await this.sharesQueries.permissions(userId, share.parent.alias, +user.isAdmin)
       if (!sharePermissions) {
-        this.logger.warn(`${this.setAllowedPermissions.name} - missing share permissions : ${JSON.stringify(share)}`)
+        this.logger.warn({ tag: this.setAllowedPermissions.name, msg: `missing share permissions : ${JSON.stringify(share)}` })
         throw new HttpException('Share not found', HttpStatus.NOT_FOUND)
       }
       share.file.permissions = sharePermissions.permissions
     } else {
-      this.logger.error(`${this.setAllowedPermissions.name} - case not handled ${JSON.stringify(share)}`)
+      this.logger.error({ tag: this.setAllowedPermissions.name, msg: `case not handled ${JSON.stringify(share)}` })
       throw new HttpException('Missing information', HttpStatus.BAD_REQUEST)
     }
   }
@@ -158,7 +158,7 @@ export class SharesManager {
         }
         const realPath = path.join(user.filesPath, createOrUpdateShareDto.file.path)
         if (!(await isPathExists(realPath))) {
-          this.logger.warn(`${this.createShare.name} - location does not exist : ${realPath}`)
+          this.logger.warn({ tag: this.createShare.name, msg: `location does not exist : ${realPath}` })
           throw new HttpException('The location does not exist', HttpStatus.NOT_FOUND)
         }
         const fileProps: FileProps = { ...(await getProps(realPath, createOrUpdateShareDto.file.path)), id: createOrUpdateShareDto.file.id }
@@ -194,7 +194,7 @@ export class SharesManager {
           throw new HttpException(e.message, HttpStatus.BAD_REQUEST)
         }
         if (!(await isPathExists(space.realPath))) {
-          this.logger.warn(`${this.createShare.name} - space location does not exist : *${space.alias}* (${space.id}) : ${space.realPath}`)
+          this.logger.warn({ tag: this.createShare.name, msg: `space location does not exist : *${space.alias}* (${space.id}) : ${space.realPath}` })
           throw new HttpException('The location does not exist', HttpStatus.NOT_FOUND)
         }
         share.spaceId = space.id
@@ -268,7 +268,7 @@ export class SharesManager {
       await this.deleteAllLinkMembers(shareId, LINK_TYPE.SHARE)
       await this.removeShareFromOwners(shareId, 'all', false, user.id)
     } catch (e) {
-      this.logger.error(`${this.deleteShare.name} - unable to delete share (${shareId}) (asAdmin = ${asAdmin}) : ${e}`)
+      this.logger.error({ tag: this.deleteShare.name, msg: `unable to delete share (${shareId}) (asAdmin = ${asAdmin}) : ${e}` })
       throw new HttpException('Unable to delete share', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -300,15 +300,21 @@ export class SharesManager {
     // check parent share
     const pSharePermissions = await this.sharesQueries.permissions(user.id, createOrUpdateShareDto.parent.alias, +user.isAdmin)
     if (!pSharePermissions) {
-      this.logger.warn(`${this.createChildShare.name} - parent share does not exist or not authorized : ${createOrUpdateShareDto.parent.alias}`)
+      this.logger.warn({
+        tag: this.createChildShare.name,
+        msg: `parent share does not exist or not authorized : ${createOrUpdateShareDto.parent.alias}`
+      })
       throw new HttpException('Parent share not found', HttpStatus.NOT_FOUND)
     }
     if (!haveSpacePermission(pSharePermissions, SPACE_OPERATION.SHARE_OUTSIDE)) {
-      this.logger.warn(`${this.createChildShare.name} - is not allowed to share outside of : *${pSharePermissions.alias}* (${pSharePermissions.id})`)
+      this.logger.warn({
+        tag: this.createChildShare.name,
+        msg: `is not allowed to share outside of : *${pSharePermissions.alias}* (${pSharePermissions.id})`
+      })
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
     }
     if (!pSharePermissions.enabled) {
-      this.logger.warn(`${this.createChildShare.name} - parent share is disabled : ${createOrUpdateShareDto.parent.alias}`)
+      this.logger.warn({ tag: this.createChildShare.name, msg: `parent share is disabled : ${createOrUpdateShareDto.parent.alias}` })
       throw new HttpException('Parent share is disabled', HttpStatus.FORBIDDEN)
     }
 
@@ -317,9 +323,10 @@ export class SharesManager {
     if (pSharePermissions.root.externalPath) {
       const highestParentId = await this.sharesQueries.findHighestParentShare(pSharePermissions.id)
       if (!highestParentId) {
-        this.logger.warn(
-          `${this.createChildShare.name} - unable to find the highest parent of : *${pSharePermissions.alias}* (${pSharePermissions.id})`
-        )
+        this.logger.warn({
+          tag: this.createChildShare.name,
+          msg: `unable to find the highest parent of : *${pSharePermissions.alias}* (${pSharePermissions.id})`
+        })
         throw new HttpException('Parent share not found', HttpStatus.NOT_FOUND)
       }
       pShare = await this.sharesQueries.shareEnv(highestParentId)
@@ -341,9 +348,10 @@ export class SharesManager {
     }
     // check file
     if (!(await isPathExists(pShareEnv.realPath))) {
-      this.logger.warn(
-        `${this.createChildShare.name} - parent share location does not exist : ${pShareEnv.alias} (${pShareEnv.id}) : ${pShareEnv.realPath}`
-      )
+      this.logger.warn({
+        tag: this.createChildShare.name,
+        msg: `parent share location does not exist : ${pShareEnv.alias} (${pShareEnv.id}) : ${pShareEnv.realPath}`
+      })
       throw new HttpException('The location does not exist', HttpStatus.NOT_FOUND)
     }
 
@@ -457,13 +465,16 @@ export class SharesManager {
               }
             ],
             false
-          ).catch((e: Error) => this.logger.error(`${this.updateSharesFromSpace.name} - ${e}`))
+          ).catch((e: Error) => this.logger.error({ tag: this.updateSharesFromSpace.name, msg: `${e}` }))
         } else {
           this.removeShareFromOwners(share.id, [share.ownerId], false).catch((e: Error) =>
-            this.logger.error(`${this.updateSharesFromSpace.name} - ${e}`)
+            this.logger.error({ tag: this.updateSharesFromSpace.name, msg: `${e}` })
           )
         }
-        this.logger.log(`${this.updateSharesFromSpace.name} - ${action.type} share (${share.id}) for owner ${share.ownerId} from space ${spaceId}`)
+        this.logger.log({
+          tag: this.updateSharesFromSpace.name,
+          msg: `${action.type} share (${share.id}) for owner ${share.ownerId} from space ${spaceId}`
+        })
       }
     }
   }
@@ -491,7 +502,7 @@ export class SharesManager {
             }
           ],
           false
-        ).catch((e: Error) => this.logger.error(`${this.updateSharesFromSpaceRoots.name} - ${e}`))
+        ).catch((e: Error) => this.logger.error({ tag: this.updateSharesFromSpaceRoots.name, msg: `${e}` }))
       }
     }
 
@@ -543,7 +554,7 @@ export class SharesManager {
       linkGuest = await this.linksQueries.linkFromShare(user.id, linkId, spaceOrShareId, +user.isAdmin)
     }
     if (!linkGuest) {
-      this.logger.warn(`${this.getLinkFromSpaceOrShare.name} - unable to find link (${linkId}) on ${type} (${spaceOrShareId})`)
+      this.logger.warn({ tag: this.getLinkFromSpaceOrShare.name, msg: `unable to find link (${linkId}) on ${type} (${spaceOrShareId})` })
       throw new HttpException('Link not found', HttpStatus.NOT_FOUND)
     }
     return linkGuest
@@ -566,7 +577,7 @@ export class SharesManager {
         })
         // notify the guest link (if email is specified)
         this.notifyGuestLink(user, link, spaceOrShare.name, type === LINK_TYPE.SHARE ? ACTION.ADD : ACTION.UPDATE).catch((e: Error) =>
-          this.logger.error(`${this.createOrUpdateLinksAsMembers.name} - ${e}`)
+          this.logger.error({ tag: this.createOrUpdateLinksAsMembers.name, msg: `${e}` })
         )
       } else {
         if (link.linkSettings) {
@@ -590,7 +601,10 @@ export class SharesManager {
   ): Promise<LinkGuest> {
     const link: LinkGuest = await this.getLinkFromSpaceOrShare(user, linkId, spaceOrShareId, type)
     if (!link) {
-      this.logger.error(`${this.updateLinkFromSpaceOrShare.name} - (${linkId}) from ${type} (${spaceOrShareId}) and user (${user.id}) was not found`)
+      this.logger.error({
+        tag: this.updateLinkFromSpaceOrShare.name,
+        msg: `(${linkId}) from ${type} (${spaceOrShareId}) and user (${user.id}) was not found`
+      })
       throw new HttpException('Unable to find link', HttpStatus.NOT_FOUND)
     }
     const fieldsWhiteList: (keyof CreateOrUpdateLinkDto)[] = [
@@ -628,7 +642,7 @@ export class SharesManager {
               updateMember.permissions = intersectPermissions(shareLink.file.permissions, v)
               this.sharesQueries
                 .clearCachePermissions(shareLink.alias, [link.userId])
-                .catch((e: Error) => this.logger.error(`${this.updateLinkFromSpaceOrShare.name} - ${e}`))
+                .catch((e: Error) => this.logger.error({ tag: this.updateLinkFromSpaceOrShare.name, msg: `${e}` }))
             }
             break
           case 'language':
@@ -655,21 +669,22 @@ export class SharesManager {
       }
     }
     if (!Object.keys(updateUser).length && !Object.keys(updateLink).length && !Object.keys(updateShare).length && !Object.keys(updateMember).length) {
-      this.logger.warn(`${this.updateLinkFromSpaceOrShare.name} - no diff to update`)
+      this.logger.warn({ tag: this.updateLinkFromSpaceOrShare.name, msg: `no diff to update` })
       return fromAPI ? link : null
     }
     try {
       await this.linksQueries.updateLinkFromSpaceOrShare(link, spaceOrShareId, updateUser, updateLink, updateShare, updateMember)
-      this.logger.debug(
-        `${this.updateLinkFromSpaceOrShare.name} - link (${linkId}) updated : ${JSON.stringify({
+      this.logger.debug({
+        tag: this.updateLinkFromSpaceOrShare.name,
+        msg: `link (${linkId}) updated : ${JSON.stringify({
           ...{ user: anonymizePassword(updateUser) },
           ...{ link: updateLink },
           ...{ share: updateShare },
           ...{ member: updateMember }
         })}`
-      )
+      })
     } catch (e) {
-      this.logger.error(`${this.updateLinkFromSpaceOrShare.name} - ${e}`)
+      this.logger.error({ tag: this.updateLinkFromSpaceOrShare.name, msg: `${e}` })
       throw new HttpException('Unable to update link', HttpStatus.INTERNAL_SERVER_ERROR)
     }
     if (fromAPI) {
@@ -702,7 +717,7 @@ export class SharesManager {
       ;(guestLink as Partial<User>).id = await this.usersQueries.createUserOrGuest(guestLink, USER_ROLE.LINK)
       return guestLink
     } catch (e) {
-      this.logger.error(`${this.createGuestLink.name} - unable to create guest link : ${e}`)
+      this.logger.error({ tag: this.createGuestLink.name, msg: `unable to create guest link : ${e}` })
       throw new HttpException('Unable to create guest link', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -723,27 +738,26 @@ export class SharesManager {
   async updateSharesExternalPathQuota(shareId?: number): Promise<void | StorageQuota> {
     for (const share of await this.sharesQueries.sharesQuotaExternalPaths(shareId)) {
       if (!(await isPathExists(share.externalPath))) {
-        this.logger.warn(`${this.updateSharesExternalPathQuota.name} - *${share.alias}* home path does not exist`)
+        this.logger.warn({ tag: this.updateSharesExternalPathQuota.name, msg: `*${share.alias}* home path does not exist` })
         continue
       }
       const [size, errors] = await dirSize(share.externalPath)
       for (const [path, error] of Object.entries(errors)) {
-        this.logger.warn(`${this.updateSharesExternalPathQuota.name} - unable to get size for *${share.alias}* on ${path} : ${error}`)
+        this.logger.warn({ tag: this.updateSharesExternalPathQuota.name, msg: `unable to get size for *${share.alias}* on ${path} : ${error}` })
       }
       const shareQuota: StorageQuota = { storageUsage: size, storageQuota: share.storageQuota }
       this.sharesQueries.cache
         .set(`${CACHE_QUOTA_SHARE_PREFIX}-${share.id}`, shareQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error(`${this.updateSharesExternalPathQuota.name} - share *${share.alias}* (${share.id}) : ${e}`))
+        .catch((e: Error) => this.logger.error({ tag: this.updateSharesExternalPathQuota.name, msg: `share *${share.alias}* (${share.id}) : ${e}` }))
       if (share.storageUsage !== shareQuota.storageUsage) {
-        this.sharesQueries
-          .updateShare(share.id, { storageUsage: shareQuota.storageUsage })
-          .then(
-            (updated: boolean) =>
-              updated &&
-              this.logger.log(
-                `${this.updateSharesExternalPathQuota.name} - share *${share.alias}* (${share.id}) - storage usage updated : ${shareQuota.storageUsage}`
-              )
-          )
+        this.sharesQueries.updateShare(share.id, { storageUsage: shareQuota.storageUsage }).then(
+          (updated: boolean) =>
+            updated &&
+            this.logger.log({
+              tag: this.updateSharesExternalPathQuota.name,
+              msg: `share *${share.alias}* (${share.id}) - storage usage updated : ${shareQuota.storageUsage}`
+            })
+        )
       }
       if (shareId) {
         return shareQuota
@@ -771,9 +785,10 @@ export class SharesManager {
           ((m.type === MEMBER_TYPE.USER || m.type === MEMBER_TYPE.GUEST) && !m.linkId && userIdsWhitelist.indexOf(m.id) === -1) ||
           ((m.type === MEMBER_TYPE.GROUP || m.type === MEMBER_TYPE.PGROUP) && groupIdsWhitelist.indexOf(m.id) === -1)
         ) {
-          this.logger.warn(
-            `${this.updateMembers.name} cannot add ${m.type} (${m.id}) to share *${share.alias}* (${share.id}) : not in the members whitelist`
-          )
+          this.logger.warn({
+            tag: this.updateMembers.name,
+            msg: `cannot add ${m.type} (${m.id}) to share *${share.alias}* (${share.id}) : not in the members whitelist`
+          })
           return false
         }
         return true
@@ -783,7 +798,7 @@ export class SharesManager {
     // filter links
     const toRemove = remove.filter((m) => !m.linkId)
     // do remove links
-    this.deleteLinkMembers(remove.filter((m) => !!m.linkId)).catch((e: Error) => this.logger.error(`${this.updateMembers.name} - ${e}`))
+    this.deleteLinkMembers(remove.filter((m) => !!m.linkId)).catch((e: Error) => this.logger.error({ tag: this.updateMembers.name, msg: `${e}` }))
     // do update members
     const status: Record<
       Exclude<ACTION, ACTION.DELETE_PERMANENTLY>,
@@ -822,13 +837,13 @@ export class SharesManager {
       }
 
       // clear cache &|| notify
-      this.onShareActionForMembers(share, action, members, user).catch((e: Error) => this.logger.error(`${this.updateMembers.name} - ${e}`))
+      this.onShareActionForMembers(share, action, members, user).catch((e: Error) => this.logger.error({ tag: this.updateMembers.name, msg: `${e}` }))
     }
 
     // do updates
     // remove or update potential child shares
     this.updateMembersChildSharesPermissions(share.id, currentMembers, rmMembersChildShares, upMembersChildShares).catch((e: Error) =>
-      this.logger.error(`${this.updateMembers.name} - ${e}`)
+      this.logger.error({ tag: this.updateMembers.name, msg: `${e}` })
     )
   }
 
@@ -871,9 +886,10 @@ export class SharesManager {
             havePermission(m.permissions, SPACE_OPERATION.SHARE_OUTSIDE)
         )
         if (groupSharePermission) {
-          this.logger.debug(
-            `${this.diffSharesPermissions.name} - ignore user (${m.id}) removal : is a member of the group (${groupSharePermission.id}) with share permission`
-          )
+          this.logger.debug({
+            tag: this.diffSharesPermissions.name,
+            msg: `ignore user (${m.id}) removal : is a member of the group (${groupSharePermission.id}) with share permission`
+          })
           continue
         }
         removeUsersChildShares.push(m.id)
@@ -988,18 +1004,22 @@ export class SharesManager {
         // store current child shares members before delete parent share
         const members: ShareChildMember[] = await this.sharesQueries.membersFromChildSharesPermissions(share.id, [share.ownerId], null, false)
         await this.sharesQueries.deleteShare(share.id)
-        this.logger.log(`${this.removeShareFromOwners.name} - share *${share.alias}* (${share.id}) from owner (${share.ownerId}) was removed`)
+        this.logger.log({
+          tag: this.removeShareFromOwners.name,
+          msg: `share *${share.alias}* (${share.id}) from owner (${share.ownerId}) was removed`
+        })
         // clear cache and notify users
         if (share.ownerId && (!fromUserId || fromUserId !== share.ownerId)) {
           this.clearCachePermissionsAndOrNotify(share, ACTION.DELETE_PERMANENTLY, [share.ownerId]).catch((e: Error) =>
-            this.logger.error(`${this.removeShareFromOwners.name} - ${e}`)
+            this.logger.error({ tag: this.removeShareFromOwners.name, msg: `${e}` })
           )
         }
         members.forEach((m) => this.clearCachePermissionsAndOrNotify({ alias: m.shareAlias, name: m.shareName }, ACTION.DELETE, [m.userId]))
       } catch (e) {
-        this.logger.error(
-          `${this.removeShareFromOwners.name} - share *${share.alias}* (${share.id}) from owner (${share.ownerId}) was not removed : ${e}`
-        )
+        this.logger.error({
+          tag: this.removeShareFromOwners.name,
+          msg: `share *${share.alias}* (${share.id}) from owner (${share.ownerId}) was not removed : ${e}`
+        })
       }
     }
   }
@@ -1032,14 +1052,16 @@ export class SharesManager {
             },
             ACTION.UPDATE,
             [m.userId]
-          ).catch((e: Error) => this.logger.error(`${this.removeChildSharesPermissions.name} - ${e}`))
-          this.logger.log(
-            `${this.removeChildSharesPermissions.name} - user (${m.id}) permissions ${JSON.stringify(userPerm.rmPermissions)} on share : ${m.shareAlias} (${m.shareId}) was removed`
-          )
+          ).catch((e: Error) => this.logger.error({ tag: this.removeChildSharesPermissions.name, msg: `${e}` }))
+          this.logger.log({
+            tag: this.removeChildSharesPermissions.name,
+            msg: `user (${m.id}) permissions ${JSON.stringify(userPerm.rmPermissions)} on share : ${m.shareAlias} (${m.shareId}) was removed`
+          })
         } catch (e) {
-          this.logger.error(
-            `${this.removeChildSharesPermissions.name} - user (${m.id}) permissions on share *${m.shareAlias}* (${m.shareId}) was not removed : ${e}`
-          )
+          this.logger.error({
+            tag: this.removeChildSharesPermissions.name,
+            msg: `user (${m.id}) permissions on share *${m.shareAlias}* (${m.shareId}) was not removed : ${e}`
+          })
         }
       }
     }
@@ -1048,7 +1070,10 @@ export class SharesManager {
   private async checkChildSharePermissions(user: UserModel, shareId: number, childId: number): Promise<boolean> {
     const isOwnerForChildShare: number = await this.sharesQueries.childExistsForShareOwner(user.id, shareId, childId, user.isAdmin)
     if (isOwnerForChildShare !== childId) {
-      this.logger.warn(`${this.checkChildSharePermissions.name} - is not allowed to manage child share (${childId}) from share (${shareId})`)
+      this.logger.warn({
+        tag: this.checkChildSharePermissions.name,
+        msg: `is not allowed to manage child share (${childId}) from share (${shareId})`
+      })
       throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
     }
     return true
@@ -1062,7 +1087,7 @@ export class SharesManager {
         (uid) => uid !== user?.id
       ),
       user
-    ).catch((e: Error) => this.logger.error(`${this.onShareActionForMembers.name} - ${e}`))
+    ).catch((e: Error) => this.logger.error({ tag: this.onShareActionForMembers.name, msg: `${e}` }))
   }
 
   private async createLinkFromSpaceOrShare(
@@ -1074,7 +1099,7 @@ export class SharesManager {
   ): Promise<void> {
     /* only used during the share creation from this manager */
     if (!(await this.linksQueries.isReservedUUID(user.id, uuid))) {
-      this.logger.error(`${this.createLinkFromSpaceOrShare.name} - user attempted to use UUID (${uuid}) was not reserved`)
+      this.logger.error({ tag: this.createLinkFromSpaceOrShare.name, msg: `user attempted to use UUID (${uuid}) was not reserved` })
       throw new HttpException('UUID was not reserved', HttpStatus.BAD_REQUEST)
     }
     const permission = type === LINK_TYPE.SPACE ? GUEST_PERMISSION.SPACES : GUEST_PERMISSION.SHARES
@@ -1084,7 +1109,7 @@ export class SharesManager {
       createOrUpdateLinkDto.language,
       createOrUpdateLinkDto.isActive !== undefined ? createOrUpdateLinkDto.isActive : true
     )
-    this.logger.debug(`${this.createLinkFromSpaceOrShare.name} - guest link (${guestLink.id}) created`)
+    this.logger.debug({ tag: this.createLinkFromSpaceOrShare.name, msg: `guest link (${guestLink.id}) created` })
     let linkId: number
     try {
       linkId = await this.linksQueries.createLinkToSpaceOrShare(guestLink.id, spaceOrShareId, type, {
@@ -1092,11 +1117,12 @@ export class SharesManager {
         uuid: uuid,
         userId: guestLink.id
       })
-      this.logger.debug(
-        `${this.createLinkFromSpaceOrShare.name} - link (${linkId}) for guest link (${guestLink.id}) created : ${JSON.stringify(createOrUpdateLinkDto)}`
-      )
+      this.logger.debug({
+        tag: this.createLinkFromSpaceOrShare.name,
+        msg: `link (${linkId}) for guest link (${guestLink.id}) created : ${JSON.stringify(createOrUpdateLinkDto)}`
+      })
     } catch (e) {
-      this.logger.error(`${this.createLinkFromSpaceOrShare.name} - unable to create link with uuid (${uuid}) : ${e}`)
+      this.logger.error({ tag: this.createLinkFromSpaceOrShare.name, msg: `unable to create link with uuid (${uuid}) : ${e}` })
       throw new HttpException('Unable to update link', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -1105,9 +1131,9 @@ export class SharesManager {
     for (const guestLink of guestLinks) {
       try {
         await this.usersQueries.deleteGuestLink(guestLink.id)
-        this.logger.log(`${this.deleteGuestLinks.name} - guest (${guestLink.id}) (link: ${guestLink.linkId}) was removed`)
+        this.logger.log({ tag: this.deleteGuestLinks.name, msg: `guest (${guestLink.id}) (link: ${guestLink.linkId}) was removed` })
       } catch (e) {
-        this.logger.error(`${this.deleteGuestLinks.name} - guest (${guestLink.id}) (link: ${guestLink.linkId}) was not removed : ${e}`)
+        this.logger.error({ tag: this.deleteGuestLinks.name, msg: `guest (${guestLink.id}) (link: ${guestLink.linkId}) was not removed : ${e}` })
       }
     }
   }
@@ -1118,12 +1144,15 @@ export class SharesManager {
     if (!memberIds?.length) {
       return
     }
-    this.logger.verbose(`${this.clearCachePermissionsAndOrNotify.name} - share:${share.alias} ${action} members:${JSON.stringify(memberIds)}`)
+    this.logger.verbose({
+      tag: this.clearCachePermissionsAndOrNotify.name,
+      msg: `share:${share.alias} ${action} members:${JSON.stringify(memberIds)}`
+    })
     if (action !== ACTION.ADD) {
       // clear permissions for share members
       this.sharesQueries
         .clearCachePermissions(share.alias, memberIds)
-        .catch((e: Error) => this.logger.error(`${this.clearCachePermissionsAndOrNotify.name} - ${e}`))
+        .catch((e: Error) => this.logger.error({ tag: this.clearCachePermissionsAndOrNotify.name, msg: `${e}` }))
     }
     if (action !== ACTION.UPDATE) {
       // notify the members who have joined or left the share
@@ -1139,7 +1168,7 @@ export class SharesManager {
           author: user,
           action: action
         })
-        .catch((e: Error) => this.logger.error(`${this.clearCachePermissionsAndOrNotify.name} - ${e}`))
+        .catch((e: Error) => this.logger.error({ tag: this.clearCachePermissionsAndOrNotify.name, msg: `${e}` }))
     }
   }
 
@@ -1171,6 +1200,6 @@ export class SharesManager {
           action: action
         } satisfies NotificationOptions
       )
-      .catch((e: Error) => this.logger.error(`${this.notifyGuestLink.name} - ${e}`))
+      .catch((e: Error) => this.logger.error({ tag: this.notifyGuestLink.name, msg: `${e}` }))
   }
 }

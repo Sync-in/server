@@ -64,7 +64,7 @@ export class WebDAVMethods {
         return this.handleError(req, res, e)
       }
     }
-    this.logger.warn(`Not allowed on this resource : ${repository}`)
+    this.logger.warn({ tag: this.headOrGet.name, msg: `Not allowed on this resource : ${repository}` })
     return res.status(HttpStatus.FORBIDDEN).send('Not allowed on this resource')
   }
 
@@ -76,14 +76,17 @@ export class WebDAVMethods {
     if (isLockRefresh) {
       // if the body has no content, the request must refresh the lock
       if (!rExists) {
-        this.logger.warn('Lock refresh must specify an existing resource')
+        this.logger.warn({ tag: this.lock.name, msg: 'Lock refresh must specify an existing resource' })
         return res.status(HttpStatus.BAD_REQUEST).send('Lock refresh must specify an existing resource')
       }
       return this.lockRefresh(req, res, req.space.dbFile.path)
     }
     if (!rExists) {
       if (!haveSpaceEnvPermissions(req.space, SPACE_OPERATION.ADD)) {
-        this.logger.warn(`is not allowed to create on this space : *${req.space.alias}* (${req.space.id}) : ${req.space.url}`)
+        this.logger.warn({
+          tag: this.lock.name,
+          msg: `is not allowed to create on this space : *${req.space.alias}* (${req.space.id}) : ${req.space.url}`
+        })
         return res.status(HttpStatus.FORBIDDEN).send('You are not allowed to do this action')
       }
       if (!(await isPathExists(dirName(req.space.realPath)))) {
@@ -129,13 +132,13 @@ export class WebDAVMethods {
   @IfHeaderDecorator()
   async unlock(req: FastifyDAVRequest, res: FastifyReply) {
     if (!(await isPathExists(req.space.realPath))) {
-      this.logger.warn(`Unable to unlock: ${req.dav.url} - resource does not exist`)
+      this.logger.warn({ tag: this.unlock.name, msg: `Unable to unlock: ${req.dav.url} - resource does not exist` })
       return res.status(HttpStatus.NOT_FOUND).send(req.dav.url)
     }
 
     const lock = await this.filesLockManager.isLockedWithToken(req.dav.lock.token, req.space.dbFile.path)
     if (!lock) {
-      this.logger.warn(`Lock token does not exist or not match URL : ${req.dav.lock.token}`)
+      this.logger.warn({ tag: this.unlock.name, msg: `Lock token does not exist or not match URL : ${req.dav.lock.token}` })
       return DAV_ERROR_RES(HttpStatus.CONFLICT, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
     }
     if (req.user.id !== lock.owner.id) {
@@ -261,7 +264,7 @@ export class WebDAVMethods {
     for (const action of Object.keys(req.dav.body[PROPPATCH_PROP_UPDATE])) {
       if (Object.values(PROPPATCH_METHOD).indexOf(action) === -1) {
         const msg = `Unknown tag : expected ${PROPPATCH_METHOD.SET} or ${PROPPATCH_METHOD.REMOVE}`
-        this.logger.debug(msg)
+        this.logger.debug({ tag: this.proppatch.name, msg: msg })
         return res.status(HttpStatus.BAD_REQUEST).send(msg)
       }
 
@@ -275,7 +278,7 @@ export class WebDAVMethods {
 
       if (Object.keys(req.dav.body[PROPPATCH_PROP_UPDATE][action])[0] !== PROPSTAT.PROP) {
         const msg = `Unknown tag : expected ${PROPSTAT.PROP}`
-        this.logger.debug(msg)
+        this.logger.debug({ tag: this.proppatch.name, msg: msg })
         return res.status(HttpStatus.BAD_REQUEST).send(msg)
       }
 
@@ -287,7 +290,7 @@ export class WebDAVMethods {
         for (let [name, value] of Object.entries(prop)) {
           if (action === PROPPATCH_METHOD.REMOVE) {
             value = null
-            this.logger.debug(`Proppatch remove method not handled : ${name} -> ${value}`)
+            this.logger.debug({ tag: this.proppatch.name, msg: `Proppatch remove method not handled : ${name} -> ${value}` })
           }
           if (PROPPATCH_SUPPORTED_PROPS.indexOf(name) === -1) {
             req.dav.proppatch.errors.push(
@@ -322,7 +325,7 @@ export class WebDAVMethods {
         try {
           await this.filesManager.touch(req.user, req.space, currentTimeStamp(new Date(value)), false)
         } catch (e) {
-          this.logger.error(`${this.proppatch.name} - unable to modify mtime on ${req.dav.url} : ${e}`)
+          this.logger.error({ tag: this.proppatch.name, msg: `unable to modify mtime on ${req.dav.url} : ${e}` })
           states[name] = false
           atLeastOneError = true
         }
@@ -359,7 +362,7 @@ export class WebDAVMethods {
   async copyMove(req: FastifyDAVRequest, res: FastifyReply) {
     const dstSpace: SpaceEnv = await this.webDAVHandler.spaceEnv(req.user, req.dav.copyMove.destination)
     if (!dstSpace) {
-      this.logger.warn(`Space not found for destination : ${req.dav.copyMove.destination}`)
+      this.logger.warn({ tag: this.copyMove.name, msg: `Space not found for destination : ${req.dav.copyMove.destination}` })
       return res.status(HttpStatus.NOT_FOUND).send(req.dav.copyMove.destination)
     }
     const dstExisted = await isPathExists(dstSpace.realPath)
@@ -401,7 +404,7 @@ export class WebDAVMethods {
         }
         // the path will be the same across conditions
         if (!lastSpaceEnv) {
-          this.logger.warn(`If Header : path mismatch (${condition.path})`)
+          this.logger.warn({ tag: this.evaluateIfHeaders.name, msg: `If Header : path mismatch (${condition.path})` })
           return false
         }
       } else {
@@ -455,7 +458,7 @@ export class WebDAVMethods {
     }
 
     if (!atLeastOneOk) {
-      this.logger.warn(`If header condition failed : ${errors.join(', ')}`)
+      this.logger.warn({ tag: this.evaluateIfHeaders.name, msg: `If header condition failed : ${errors.join(', ')}` })
       res.status(HttpStatus.PRECONDITION_FAILED).send('If header condition failed')
     }
     return atLeastOneOk
@@ -463,7 +466,7 @@ export class WebDAVMethods {
 
   private async lockRefresh(req: FastifyDAVRequest, res: FastifyReply, dbFilePath: string) {
     if (req.dav?.ifHeaders?.length !== 1) {
-      this.logger.warn('Expected a lock token (only one lock may be refreshed at a time)')
+      this.logger.warn({ tag: this.lockRefresh.name, msg: 'Expected a lock token (only one lock may be refreshed at a time)' })
       return res.status(HttpStatus.BAD_REQUEST).send('Expected a lock token (only one lock may be refreshed at a time)')
     }
 
@@ -471,17 +474,17 @@ export class WebDAVMethods {
     try {
       token = extractOneToken(req.dav.ifHeaders)
     } catch (e) {
-      this.logger.warn(`${this.lockRefresh.name} - unable to extract token : ${JSON.stringify(req.dav.ifHeaders)} (${e})`)
+      this.logger.warn({ tag: this.lockRefresh.name, msg: `unable to extract token : ${JSON.stringify(req.dav.ifHeaders)} (${e})` })
       return res.status(HttpStatus.BAD_REQUEST).send('Unable to extract token')
     }
 
     const lock = await this.filesLockManager.isLockedWithToken(token, dbFilePath)
     if (!lock) {
-      this.logger.warn(`Lock token does not exist or not match URL : ${token}`)
+      this.logger.warn({ tag: this.lockRefresh.name, msg: `Lock token does not exist or not match URL : ${token}` })
       return DAV_ERROR_RES(HttpStatus.PRECONDITION_FAILED, PRECONDITION.LOCK_TOKEN_MISMATCH, res)
     }
     if (lock.owner.id !== req.user.id) {
-      this.logger.warn(`Lock token does not match owner : ${lock.owner.login} != ${req.user.login}`)
+      this.logger.warn({ tag: this.lockRefresh.name, msg: `Lock token does not match owner : ${lock.owner.login} != ${req.user.login}` })
       return res.status(HttpStatus.FORBIDDEN).send('Lock token does not match owner')
     }
 
@@ -491,7 +494,7 @@ export class WebDAVMethods {
   }
 
   private handleError(req: FastifyDAVRequest, res: FastifyReply, e: any, toUrl?: string) {
-    this.logger.error(`Unable to ${req.method} ${req.dav.url}${toUrl ? ` -> ${toUrl}` : ''} : ${e.message}`)
+    this.logger.error({ tag: this.handleError.name, msg: `Unable to ${req.method} ${req.dav.url}${toUrl ? ` -> ${toUrl}` : ''} : ${e.message}` })
     // Remove the last part to avoid exposing the path
     const errorMsg = e.message.split(',')[0]
     if (e instanceof LockConflict) {

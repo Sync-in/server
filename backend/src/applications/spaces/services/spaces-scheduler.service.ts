@@ -19,38 +19,38 @@ export class SpacesScheduler {
 
   @Cron(CronExpression.EVERY_HOUR)
   async updateQuotas() {
-    this.logger.log('Update Personal Quotas - START')
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Personals - START' })
     try {
       await this.spacesManager.updatePersonalSpacesQuota()
     } catch (e) {
-      this.logger.error(`Update Personal Quotas} - ${e}`)
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Personals} - ${e}` })
     }
-    this.logger.log('Update Personal Quotas - END')
-    this.logger.log('Update Space Quotas - START')
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Personals - END' })
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Spaces - START' })
     try {
       await this.spacesManager.updateSpacesQuota()
     } catch (e) {
-      this.logger.error(`Update Space Quotas - ${e}`)
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Spaces - ${e}` })
     }
-    this.logger.log('Update Space Quotas - END')
-    this.logger.log('Update Share External Path Quotas - START')
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Spaces - END' })
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Share External Paths - START' })
     try {
       await this.sharesManager.updateSharesExternalPathQuota()
     } catch (e) {
-      this.logger.error(`Update Share External Path Quotas - ${e}`)
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Share External Paths - ${e}` })
     }
-    this.logger.log('Update Share External Path Quotas - END')
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Share External Paths - END' })
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_2AM)
   async deleteExpiredSpaces() {
     /* Removes spaces that have been disabled for more than 30 days */
-    this.logger.log(`${this.deleteExpiredSpaces.name} - START`)
+    this.logger.log({ tag: this.deleteExpiredSpaces.name, msg: `START` })
     try {
       await this.spacesManager.deleteExpiredSpaces()
     } catch (e) {
-      this.logger.error(`${this.deleteExpiredSpaces.name} - ${e}`)
+      this.logger.error({ tag: this.deleteExpiredSpaces.name, msg: `${e}` })
     }
-    this.logger.log(`${this.deleteExpiredSpaces.name} - DONE`)
+    this.logger.log({ tag: this.deleteExpiredSpaces.name, msg: `DONE` })
   }
 }

@@ -45,12 +45,12 @@ export class FilesTasksManager {
     space.task = { cacheKey: cacheKey, props: {} }
     this.filesMethods[method](user, space, dto)
       .then((data: any) => {
-        this.logger.debug(`${this.createTask.name} - ${newTask.name} : ${method} done`)
-        this.setTaskDone(cacheKey, FileTaskStatus.SUCCESS, data).catch((e: Error) => this.logger.error(`${this.createTask.name} - ${e}`))
+        this.logger.debug({ tag: this.createTask.name, msg: `${newTask.name} : ${method} done` })
+        this.setTaskDone(cacheKey, FileTaskStatus.SUCCESS, data).catch((e: Error) => this.logger.error({ tag: this.createTask.name, msg: `${e}` }))
       })
       .catch((e: HttpException | any) => {
-        this.logger.error(`${this.createTask.name} - ${newTask.name} : ${method} : ${e}`)
-        this.setTaskDone(cacheKey, FileTaskStatus.ERROR, e.message).catch((e: Error) => this.logger.error(`${this.createTask.name} - ${e}`))
+        this.logger.error({ tag: this.createTask.name, msg: `${newTask.name} : ${method} : ${e}` })
+        this.setTaskDone(cacheKey, FileTaskStatus.ERROR, e.message).catch((e: Error) => this.logger.error({ tag: this.createTask.name, msg: `${e}` }))
       })
     return newTask
   }
@@ -82,12 +82,12 @@ export class FilesTasksManager {
       if (task.props.compressInDirectory === false) {
         // delete task file
         const rPath = path.join(user.tasksPath, task.name)
-        removeFiles(rPath).catch((e: Error) => this.logger.error(`${this.deleteTasks.name} - ${e}`))
+        removeFiles(rPath).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
       }
       // clear watcher
-      this.stopWatch(key).catch((e: Error) => this.logger.error(`${this.deleteTasks.name} - ${e}`))
+      this.stopWatch(key).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
       // remove from cache
-      this.cache.del(key).catch((e: Error) => this.logger.error(`${this.deleteTasks.name} - ${e}`))
+      this.cache.del(key).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
     }
   }
 
@@ -113,7 +113,7 @@ export class FilesTasksManager {
     try {
       await this.cache.set(cacheKey, task, CACHE_TASK_TTL)
     } catch (e) {
-      this.logger.error(`${this.storeTask.name} - ${e}`)
+      this.logger.error({ tag: this.storeTask.name, msg: `${e}` })
     }
   }
 
@@ -147,11 +147,11 @@ export class FilesTasksManager {
 
   private async startWatch(space: SpaceEnv, taskType: FILE_OPERATION, rPath: string, taskPath?: string): Promise<void> {
     if (!space.task?.cacheKey || space.task.cacheKey in this.tasksWatcher) return
-    this.logger.verbose(`${this.startWatch.name} - ${space.task.cacheKey}`)
+    this.logger.verbose({ tag: this.startWatch.name, msg: `${space.task.cacheKey}` })
     this.updateTask(space.task.cacheKey, space.task?.props, {
       name: fileName(rPath),
       path: taskPath
-    }).catch((e: Error) => this.logger.error(`${this.startWatch.name} - ${e}`))
+    }).catch((e: Error) => this.logger.error({ tag: this.startWatch.name, msg: `${e}` }))
     switch (taskType) {
       case FILE_OPERATION.COMPRESS:
         this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateCompressTask(space, rPath), this.watchInterval)
@@ -167,7 +167,7 @@ export class FilesTasksManager {
         this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateCopyMoveTask(space, rPath), this.watchInterval)
         return
       default:
-        this.logger.warn(`${this.startWatch.name} - unknown task type ${taskType}`)
+        this.logger.warn({ tag: this.startWatch.name, msg: `unknown task type ${taskType}` })
         return
     }
   }
@@ -182,9 +182,11 @@ export class FilesTasksManager {
   private async updateCompressTask(space: SpaceEnv, rPath: string): Promise<void> {
     try {
       space.task.props.size = await fileSize(rPath)
-      await this.updateTask(space.task.cacheKey, space.task.props).catch((e: Error) => this.logger.error(`${this.updateCompressTask.name} - ${e}`))
+      await this.updateTask(space.task.cacheKey, space.task.props).catch((e: Error) =>
+        this.logger.error({ tag: this.updateCompressTask.name, msg: `${e}` })
+      )
     } catch (e) {
-      this.logger.error(`${this.updateCompressTask.name} - ${e}`)
+      this.logger.error({ tag: this.updateCompressTask.name, msg: `${e}` })
       await this.stopWatch(space.task.cacheKey)
     }
   }
@@ -192,9 +194,11 @@ export class FilesTasksManager {
   private async updateDecompressTask(space: SpaceEnv, rPath: string): Promise<void> {
     try {
       space.task.props = await countDirEntries(rPath)
-      this.updateTask(space.task.cacheKey, space.task.props).catch((e: Error) => this.logger.error(`${this.updateDecompressTask.name} - ${e}`))
+      this.updateTask(space.task.cacheKey, space.task.props).catch((e: Error) =>
+        this.logger.error({ tag: this.updateDecompressTask.name, msg: `${e}` })
+      )
     } catch (e) {
-      this.logger.error(`${this.updateDecompressTask.name} - ${e}`)
+      this.logger.error({ tag: this.updateDecompressTask.name, msg: `${e}` })
       await this.stopWatch(space.task.cacheKey)
     }
   }
@@ -202,9 +206,11 @@ export class FilesTasksManager {
   private async updateDownloadTask(space: SpaceEnv, rPath: string): Promise<void> {
     try {
       await this.calcSizeAndProgressTask(space, rPath)
-      this.updateTask(space.task.cacheKey, space.task.props).catch((e: Error) => this.logger.error(`${this.updateDownloadTask.name} - ${e}`))
+      this.updateTask(space.task.cacheKey, space.task.props).catch((e: Error) =>
+        this.logger.error({ tag: this.updateDownloadTask.name, msg: `${e}` })
+      )
     } catch (e) {
-      this.logger.error(`${this.updateDownloadTask.name} - ${e}`)
+      this.logger.error({ tag: this.updateDownloadTask.name, msg: `${e}` })
       await this.stopWatch(space.task.cacheKey)
     }
   }
@@ -216,9 +222,11 @@ export class FilesTasksManager {
       } else {
         await this.calcSizeAndProgressTask(space, rPath)
       }
-      this.updateTask(space.task.cacheKey, space.task.props).catch((e: Error) => this.logger.error(`${this.updateCopyMoveTask.name} - ${e}`))
+      this.updateTask(space.task.cacheKey, space.task.props).catch((e: Error) =>
+        this.logger.error({ tag: this.updateCopyMoveTask.name, msg: `${e}` })
+      )
     } catch (e) {
-      this.logger.error(`${this.updateCopyMoveTask.name} - ${e}`)
+      this.logger.error({ tag: this.updateCopyMoveTask.name, msg: `${e}` })
       await this.stopWatch(space.task.cacheKey)
     }
   }

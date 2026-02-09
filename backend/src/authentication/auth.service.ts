@@ -26,7 +26,7 @@ export class AuthManager {
   async getTokens(user: UserModel, refresh = false): Promise<TokenResponseDto> {
     const currentTime = currentTimeStamp()
     if (refresh && user.exp < currentTime) {
-      this.logger.error(`${this.getTokens.name} - token refresh has incorrect expiration : *${user.login}*`)
+      this.logger.error({ tag: this.getTokens.name, msg: `token refresh has incorrect expiration : *${user.login}*` })
       throw new HttpException('Token has expired', HttpStatus.FORBIDDEN)
     }
     const accessExpiration = convertHumanTimeToSeconds(configuration.auth.token.access.expiration)
@@ -81,7 +81,7 @@ export class AuthManager {
     if (user.exp && user.exp > currentTime) {
       refreshTokenExpiration = user.exp - currentTime
     } else {
-      this.logger.error(`${this.refreshCookies.name} - token ${TOKEN_TYPE.REFRESH} has incorrect expiration : *${user.login}*`)
+      this.logger.error({ tag: this.refreshCookies.name, msg: `token ${TOKEN_TYPE.REFRESH} has incorrect expiration : *${user.login}*` })
       throw new HttpException('Token has expired', HttpStatus.FORBIDDEN)
     }
     const csrfToken: string = crypto.randomUUID()
@@ -120,18 +120,18 @@ export class AuthManager {
     }
 
     if (!jwtPayload.csrf) {
-      this.logger.warn(`${this.csrfValidation.name} - ${CSRF_ERROR.MISSING_JWT}`)
+      this.logger.warn({ tag: this.csrfValidation.name, msg: `${CSRF_ERROR.MISSING_JWT}` })
       throw new HttpException(CSRF_ERROR.MISSING_JWT, HttpStatus.FORBIDDEN)
     }
 
     if (!req.headers[CSRF_KEY]) {
-      this.logger.warn(`${this.csrfValidation.name} - ${CSRF_ERROR.MISSING_HEADERS}`)
+      this.logger.warn({ tag: this.csrfValidation.name, msg: `${CSRF_ERROR.MISSING_HEADERS}` })
       throw new HttpException(CSRF_ERROR.MISSING_HEADERS, HttpStatus.FORBIDDEN)
     }
 
     const csrfHeader: UnsignResult = unsign(req.headers[CSRF_KEY] as string, configuration.auth.token.csrf.secret)
     if (jwtPayload.csrf !== csrfHeader.value) {
-      this.logger.warn(`${this.csrfValidation.name} - ${CSRF_ERROR.MISMATCH}`)
+      this.logger.warn({ tag: this.csrfValidation.name, msg: `${CSRF_ERROR.MISMATCH}` })
       throw new HttpException(CSRF_ERROR.MISMATCH, HttpStatus.FORBIDDEN)
     }
   }

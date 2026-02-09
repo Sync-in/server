@@ -161,7 +161,7 @@ export class FilesManager {
         } catch (e) {
           // cleanup tmp file
           await removeFiles(options.tmpPath)
-          this.logger.error(`${this.saveStream.name} - unable to move ${options.tmpPath} -> ${space.realPath} : ${e}`)
+          this.logger.error({ tag: this.saveStream.name, msg: `unable to move ${options.tmpPath} -> ${space.realPath} : ${e}` })
           throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Unable to move tmp file to dst file')
         }
       }
@@ -174,7 +174,7 @@ export class FilesManager {
         try {
           await this.filesLockManager.removeLock(fileLock.key)
         } catch (e) {
-          this.logger.warn(`Failed to remove lock ${fileLock.key}: ${e}`)
+          this.logger.warn({ tag: this.saveStream.name, msg: `Failed to remove lock ${fileLock.key}: ${e}` })
         }
       }
     }
@@ -311,15 +311,18 @@ export class FilesManager {
   ): Promise<void> {
     // checks
     if (!canAccessToSpace(user, dstSpace)) {
-      this.logger.warn(`${this.copyMove.name} - is not allowed to access to this space repository : ${dstSpace.repository}`)
+      this.logger.warn({ tag: this.copyMove.name, msg: `is not allowed to access to this space repository : ${dstSpace.repository}` })
       throw new FileError(HttpStatus.FORBIDDEN, 'You are not allowed to access to this repository')
     }
     if (!haveSpaceEnvPermissions(dstSpace, SPACE_OPERATION.ADD)) {
-      this.logger.warn(`${this.copyMove.name} - is not allowed to copy/move on this space : *${dstSpace.alias}* (${dstSpace.id}) : ${dstSpace.url}`)
+      this.logger.warn({
+        tag: this.copyMove.name,
+        msg: `is not allowed to copy/move on this space : *${dstSpace.alias}* (${dstSpace.id}) : ${dstSpace.url}`
+      })
       throw new FileError(HttpStatus.FORBIDDEN, 'You are not allowed to copy/move on the destination')
     }
     if (dstSpace.quotaIsExceeded) {
-      this.logger.warn(`${this.copyMove.name} - quota is exceeded for *${dstSpace.alias}* (${dstSpace.id})`)
+      this.logger.warn({ tag: this.copyMove.name, msg: `quota is exceeded for *${dstSpace.alias}* (${dstSpace.id})` })
       throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, 'Quota is exceeded')
     }
     if (!(await isPathExists(srcSpace.realPath))) {
@@ -330,7 +333,7 @@ export class FilesManager {
         try {
           await makeDir(dirName(dstSpace.realPath), true)
         } catch (e) {
-          this.logger.error(`${this.copyMove.name} - Cannot create parent directory for destination ${dstSpace.realPath} : ${e}`)
+          this.logger.error({ tag: this.copyMove.name, msg: `Cannot create parent directory for destination ${dstSpace.realPath} : ${e}` })
           throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Cannot create parent directory for destination')
         }
       } else {
@@ -370,7 +373,7 @@ export class FilesManager {
       if (!isMove || (isMove && srcSpace.id !== dstSpace.id)) {
         const size = isDir ? (await dirSize(srcSpace.realPath))[0] : await fileSize(srcSpace.realPath)
         if (dstSpace.willExceedQuota(size)) {
-          this.logger.warn(`${this.copyMove.name} - storage quota will be exceeded for *${dstSpace.alias}* (${dstSpace.id})`)
+          this.logger.warn({ tag: this.copyMove.name, msg: `storage quota will be exceeded for *${dstSpace.alias}* (${dstSpace.id})` })
           throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, 'Storage quota will be exceeded')
         }
       }
@@ -449,24 +452,27 @@ export class FilesManager {
         await moveFiles(space.realPath, trashFile, true)
       } else {
         // unsupported case: delete the file (this shouldn't happen)
-        this.logger.error(`Unable to find trash path for space - *${space.alias}* (${space.id}) : delete permanently : ${space.realPath}`)
+        this.logger.error({
+          tag: this.delete.name,
+          msg: `Unable to find trash path for space - *${space.alias}* (${space.id}) : delete permanently : ${space.realPath}`
+        })
         forceDeleteInDB = true
         await removeFiles(space.realPath)
       }
     }
     // remove locks, these locks have already been checked in the `checkConflicts` function
     if (isDir) {
-      this.filesLockManager.removeChildLocks(user, space.dbFile).catch((e: Error) => this.logger.error(`${this.delete.name} - ${e}`))
+      this.filesLockManager.removeChildLocks(user, space.dbFile).catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: `${e}` }))
     }
     for (const lock of await this.filesLockManager.getLocksByPath(space.dbFile)) {
-      this.filesLockManager.removeLock(lock.key).catch((e: Error) => this.logger.error(`${this.delete.name} - ${e}`))
+      this.filesLockManager.removeLock(lock.key).catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: `${e}` }))
     }
     // delete or move to trash the files in db
     return this.filesQueries.deleteFiles(space.dbFile, isDir, forceDeleteInDB)
   }
 
   async downloadFromUrl(user: UserModel, space: SpaceEnv, url: string): Promise<void> {
-    this.logger.log(`${this.downloadFromUrl.name} : ${url}`)
+    this.logger.log({ tag: this.downloadFromUrl.name, msg: `${url}` })
     // create lock
     const rPath = await uniqueFilePathFromDir(space.realPath)
     const dbFile = space.dbFile
@@ -484,7 +490,7 @@ export class FilesManager {
       } catch (e) {
         // release lock
         await this.filesLockManager.removeLock(fileLock.key)
-        this.logger.error(`${this.downloadFromUrl.name} - ${url} : ${e}`)
+        this.logger.error({ tag: this.downloadFromUrl.name, msg: `${url} : ${e}` })
         throw new FileError(HttpStatus.BAD_REQUEST, 'Unable to download file')
       }
 
@@ -501,7 +507,7 @@ export class FilesManager {
           space.task.props.totalSize = parseInt(headRes.headers['content-length'], 10) || null
         }
       } catch (e) {
-        this.logger.debug(`${this.downloadFromUrl.name} - content-length : ${e}`)
+        this.logger.debug({ tag: this.downloadFromUrl.name, msg: `content-length : ${e}` })
       }
       FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DOWNLOAD, rPath)
     }
@@ -619,7 +625,7 @@ export class FilesManager {
     try {
       return generateThumbnail(space.realPath, size)
     } catch (e) {
-      this.logger.warn(e)
+      this.logger.warn({ tag: this.generateThumbnail.name, msg: e })
       throw new FileError(HttpStatus.BAD_REQUEST, 'File is not an image')
     }
   }
@@ -627,7 +633,7 @@ export class FilesManager {
   async lock(user: UserModel, space: SpaceEnv): Promise<FileLockProps> {
     const rExists = await isPathExists(space.realPath)
     if (!rExists) {
-      this.logger.warn('Lock refresh must specify an existing resource')
+      this.logger.warn({ tag: this.lock.name, msg: 'Lock refresh must specify an existing resource' })
       throw new FileError(HttpStatus.BAD_REQUEST, 'Lock refresh must specify an existing resource')
     }
     const [_created, lock] = await this.filesLockManager.createOrRefresh(user, space.dbFile, SERVER_NAME, DEPTH.RESOURCE, CACHE_LOCK_FILE_TTL)
@@ -636,12 +642,12 @@ export class FilesManager {
 
   async unlock(user: UserModel, space: SpaceEnv, forceAsFileOwner = false): Promise<void> {
     if (!(await isPathExists(space.realPath))) {
-      this.logger.warn(`Unable to unlock: ${space.url} - resource does not exist`)
+      this.logger.warn({ tag: this.unlock.name, msg: `Unable to unlock: ${space.url} - resource does not exist` })
       throw new FileError(HttpStatus.BAD_REQUEST, 'Unlock must specify an existing resource')
     }
     const fileLocks = await this.filesLockManager.getLocksByPath(space.dbFile)
     if (fileLocks.length === 0) {
-      this.logger.warn(`Unable to find lock: ${space.url} - resource does not exist`)
+      this.logger.warn({ tag: this.unlock.name, msg: `Unable to find lock: ${space.url} - resource does not exist` })
       return
     }
     for (const lock of fileLocks) {
@@ -657,7 +663,7 @@ export class FilesManager {
   async unlockRequest(user: UserModel, space: SpaceEnv): Promise<void> {
     const fileLocks = await this.filesLockManager.getLocksByPath(space.dbFile)
     if (fileLocks.length === 0) {
-      this.logger.warn(`Unable to find lock: ${space.url} - resource does not exist`)
+      this.logger.warn({ tag: this.unlockRequest.name, msg: `Unable to find lock: ${space.url} - resource does not exist` })
       throw new FileError(HttpStatus.NOT_FOUND, 'Lock not found')
     }
     for (const lock of fileLocks) {
@@ -673,7 +679,7 @@ export class FilesManager {
             author: user,
             currentUrl: this.contextManager.headerOriginUrl()
           })
-          .catch((e: Error) => this.logger.error(`${this.unlockRequest.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.unlockRequest.name, msg: `${e}` }))
       }
     }
   }

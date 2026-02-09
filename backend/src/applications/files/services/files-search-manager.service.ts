@@ -49,7 +49,7 @@ export class FilesSearchManager {
     try {
       return await this.filesIndexer.searchRecords(indexNames, search, limit)
     } catch (e) {
-      this.logger.error(`${this.searchFullText.name} - ${JSON.stringify(indexNames)} - ${search} : ${e}`)
+      this.logger.error({ tag: this.searchFullText.name, msg: `${JSON.stringify(indexNames)} - ${search} : ${e}` })
       let msg: string
       if (/Invalid regular expression/.test(e.message)) {
         msg = 'SyntaxError (check special characters)'
@@ -97,7 +97,7 @@ export class FilesSearchManager {
         }
       }
     } catch (e) {
-      this.logger.warn(`${this.parseFileNames.name} - unable to parse: ${dir} (${e})`)
+      this.logger.warn({ tag: this.parseFileNames.name, msg: `unable to parse: ${dir} (${e})` })
     }
   }
 

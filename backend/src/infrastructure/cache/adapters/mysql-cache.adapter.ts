@@ -111,7 +111,7 @@ export class MysqlCacheAdapter implements Cache {
         })
       return true
     } catch (e) {
-      this.logger.error(`${this.set.name} - ${e}`)
+      this.logger.error({ tag: this.set.name, msg: `${e}` })
       return false
     }
   }
@@ -152,7 +152,7 @@ export class MysqlCacheAdapter implements Cache {
     try {
       await this.db.delete(cache).where(this.whereExpired())
     } catch (e) {
-      this.logger.error(`${this.clearExpiredKeys.name} - ${e?.code || e}`)
+      this.logger.error({ tag: this.clearExpiredKeys.name, msg: `${e?.code || e}` })
     }
   }
 }

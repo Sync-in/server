@@ -50,7 +50,7 @@ export class CommentsManager {
       fileId = await this.getFileId(space, createCommentDto.fileId)
     }
     const commentId: number = await this.commentQueries.createComment(user.id, fileId, createCommentDto.content)
-    this.notify(user, fileId, space, createCommentDto.content).catch((e: Error) => this.logger.error(`${this.createComment.name} - ${e}`))
+    this.notify(user, fileId, space, createCommentDto.content).catch((e: Error) => this.logger.error({ tag: this.createComment.name, msg: `${e}` }))
     return (await this.commentQueries.getComments(user.id, space.dbFile?.ownerId === user.id, null, commentId))[0]
   }
 
@@ -114,6 +114,6 @@ export class CommentsManager {
         currentUrl: this.contextManager.headerOriginUrl(),
         content: comment
       })
-      .catch((e: Error) => this.logger.error(`${this.notify.name} - ${e}`))
+      .catch((e: Error) => this.logger.error({ tag: this.notify.name, msg: `${e}` }))
   }
 }

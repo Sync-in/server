@@ -33,7 +33,7 @@ export class LinksManager {
   async linkValidation(identity: JwtIdentityPayload, uuid: string): Promise<{ ok: boolean; error: string | true; link: SpaceLink }> {
     const [_link, check, ok] = await this.linkEnv(identity, uuid)
     if (!ok) {
-      this.logger.warn(`${this.linkValidation.name} - ${uuid} : ${check}`)
+      this.logger.warn({ tag: this.linkValidation.name, msg: `${uuid} : ${check}` })
     }
     const spaceLink: SpaceLink = ok ? await this.linksQueries.spaceLink(uuid) : null
     if (ok) {
@@ -58,15 +58,15 @@ export class LinksManager {
   ): Promise<LoginResponseDto | Omit<LoginResponseDto, 'token'>> {
     const [link, check, ok] = await this.linkEnv(identity, uuid)
     if (!ok) {
-      this.logger.warn(`${this.linkAccess.name} - *${link.user.login}* (${link.user.id}) : ${check}`)
+      this.logger.warn({ tag: this.linkAccess.name, msg: `*${link.user.login}* (${link.user.id}) : ${check}` })
       throw new HttpException(check as string, HttpStatus.BAD_REQUEST)
     }
     const user = new UserModel(link.user)
     if (link.user.id !== identity.id) {
       // Authenticate user to allow access to the directory
-      this.logger.log(`${this.linkAccess.name} - *${user.login}* (${user.id}) is logged`)
+      this.logger.log({ tag: this.linkAccess.name, msg: `*${user.login}* (${user.id}) is logged` })
       this.incrementLinkNbAccess(link)
-      this.usersManager.updateAccesses(user, req.ip, true).catch((e: Error) => this.logger.error(`${this.linkAccess.name} - ${e}`))
+      this.usersManager.updateAccesses(user, req.ip, true).catch((e: Error) => this.logger.error({ tag: this.linkAccess.name, msg: `${e}` }))
       return this.authManager.setCookies(user, res)
     }
     // Already authenticated
@@ -76,17 +76,17 @@ export class LinksManager {
   async linkDownload(identity: JwtIdentityPayload, uuid: string, req: FastifyRequest, res: FastifyReply): Promise<StreamableFile> {
     const [link, check, ok] = await this.linkEnv(identity, uuid)
     if (!ok) {
-      this.logger.warn(`${this.linkDownload.name} - *${link.user.login}* (${link.user.id}) : ${check}`)
+      this.logger.warn({ tag: this.linkDownload.name, msg: `*${link.user.login}* (${link.user.id}) : ${check}` })
       throw new HttpException(check as string, HttpStatus.BAD_REQUEST)
     }
     const spaceLink: SpaceLink = await this.linksQueries.spaceLink(uuid)
     if (spaceLink.space || spaceLink.share?.isDir) {
-      this.logger.error(`${this.linkDownload.name} - the provided link does not reference a downloadable file`)
+      this.logger.error({ tag: this.linkDownload.name, msg: `the provided link does not reference a downloadable file` })
       throw new HttpException('This link does not allow file download', HttpStatus.BAD_REQUEST)
     }
     const user = new UserModel(link.user)
     // Download the file (authentication has been verified before)
-    this.logger.log(`${this.linkDownload.name} - *${user.login}* (${user.id}) downloading ${spaceLink.share.name}`)
+    this.logger.log({ tag: this.linkDownload.name, msg: `*${user.login}* (${user.id}) downloading ${spaceLink.share.name}` })
     this.incrementLinkNbAccess(link)
     const spaceEnv: SpaceEnv = await this.spaceEnvFromLink(user, spaceLink)
     const sendFile: SendFile = this.filesManager.sendFileFromSpace(spaceEnv, spaceLink.share.name)
@@ -94,7 +94,7 @@ export class LinksManager {
       await sendFile.checks()
       return await sendFile.stream(req, res)
     } catch (e) {
-      this.logger.error(`${this.linkDownload.name} - unable to send file : ${e}`)
+      this.logger.error({ tag: this.linkDownload.name, msg: `unable to send file : ${e}` })
       throw new HttpException('Unable to download file', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -102,18 +102,20 @@ export class LinksManager {
   async linkAuthentication(identity: JwtIdentityPayload, uuid: string, linkPasswordDto: UserPasswordDto, req: FastifyRequest, res: FastifyReply) {
     const [link, check, ok] = await this.linkEnv(identity, uuid, true)
     if (!ok) {
-      this.logger.warn(`${this.linkAuthentication.name} - *${link.user.login}* (${link.user.id}) : ${check}`)
+      this.logger.warn({ tag: this.linkAuthentication.name, msg: `*${link.user.login}* (${link.user.id}) : ${check}` })
       throw new HttpException(check as string, HttpStatus.BAD_REQUEST)
     }
     const authSuccess: boolean = await this.usersManager.compareUserPassword(link.user.id, linkPasswordDto.password)
     const user = new UserModel(link.user)
-    this.usersManager.updateAccesses(user, req.ip, authSuccess).catch((e: Error) => this.logger.error(`${this.linkAuthentication.name} - ${e}`))
+    this.usersManager
+      .updateAccesses(user, req.ip, authSuccess)
+      .catch((e: Error) => this.logger.error({ tag: this.linkAuthentication.name, msg: `${e}` }))
     if (!authSuccess) {
-      this.logger.warn(`${this.linkAuthentication.name} - *${user.login}* (${user.id}) : auth failed`)
+      this.logger.warn({ tag: this.linkAuthentication.name, msg: `*${user.login}* (${user.id}) : auth failed` })
       throw new HttpException(LINK_ERROR.UNAUTHORIZED, HttpStatus.FORBIDDEN)
     }
     // authenticate user to allow access
-    this.logger.log(`${this.linkAuthentication.name} - *${user.login}* (${user.id}) is logged`)
+    this.logger.log({ tag: this.linkAuthentication.name, msg: `*${user.login}* (${user.id}) is logged` })
     return this.authManager.setCookies(user, res)
   }
 
@@ -151,6 +153,6 @@ export class LinksManager {
   }
 
   private incrementLinkNbAccess(link: LinkAsUser) {
-    this.linksQueries.incrementLinkNbAccess(link.uuid).catch((e: Error) => this.logger.error(`${this.incrementLinkNbAccess.name} - ${e}`))
+    this.linksQueries.incrementLinkNbAccess(link.uuid).catch((e: Error) => this.logger.error({ tag: this.incrementLinkNbAccess.name, msg: `${e}` }))
   }
 }

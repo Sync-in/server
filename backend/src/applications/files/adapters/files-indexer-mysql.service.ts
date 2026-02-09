@@ -36,7 +36,7 @@ export class FilesIndexerMySQL implements FilesIndexer {
       await this.db.execute(createTableFilesContent(tableName))
       return true
     } catch (e) {
-      this.logger.error(`${this.createIndex.name} - ${tableName} : ${e}`)
+      this.logger.error({ tag: this.createIndex.name, msg: `${tableName} : ${e}` })
       return false
     }
   }
@@ -46,7 +46,7 @@ export class FilesIndexerMySQL implements FilesIndexer {
       await this.db.execute(sql`DROP TABLE IF EXISTS ${sql.raw(tableName)} `)
       return true
     } catch (e) {
-      this.logger.error(`${this.dropIndex.name} - ${tableName} : ${e}`)
+      this.logger.error({ tag: this.dropIndex.name, msg: `${tableName} : ${e}` })
       return false
     }
   }
@@ -64,7 +64,7 @@ export class FilesIndexerMySQL implements FilesIndexer {
                                   content = VALUES(content)
       `)
     } catch (e) {
-      this.logger.error(`${this.insertRecord.name} - ${tableName} : ${e}`)
+      this.logger.error({ tag: this.insertRecord.name, msg: `${tableName} : ${e}` })
     }
   }
 
@@ -84,16 +84,16 @@ export class FilesIndexerMySQL implements FilesIndexer {
                                             FROM ${sql.raw(tableName)}
                                             WHERE id IN (${sql.raw(ids.join(','))})`)
       if (r.affectedRows !== ids.length) {
-        this.logger.warn(`${this.deleteRecords.name} - ${tableName} - deleted : ${r.affectedRows}/${ids.length}`)
+        this.logger.warn({ tag: this.deleteRecords.name, msg: `${tableName} - deleted : ${r.affectedRows}/${ids.length}` })
       }
     } catch (e) {
-      this.logger.error(`${this.deleteRecords.name} - ${tableName} : ${e}`)
+      this.logger.error({ tag: this.deleteRecords.name, msg: `${tableName} : ${e}` })
     }
   }
 
   async searchRecords(tableNames: string[], search: string, limit: number): Promise<FileContent[]> {
     const terms: string[] = analyzeTerms(search)
-    this.logger.debug(`${this.searchRecords.name} - convert ${search} -> ${JSON.stringify(terms)}`)
+    this.logger.debug({ tag: this.searchRecords.name, msg: `convert ${search} -> ${JSON.stringify(terms)}` })
     if (!terms.length) {
       return []
     }
@@ -141,7 +141,7 @@ export class FilesIndexerMySQL implements FilesIndexer {
     const tableNames = tableSuffixes.map((s) => this.getIndexName(s))
     const tablesToDrop: string[] = (await this.indexesList()).filter((t: string) => tableNames.indexOf(t) === -1)
     for (const t of tablesToDrop) {
-      this.logger.log(`${this.cleanIndexes.name} - drop table : ${t}`)
+      this.logger.log({ tag: this.cleanIndexes.name, msg: `drop table : ${t}` })
       await this.dropIndex(t)
     }
   }

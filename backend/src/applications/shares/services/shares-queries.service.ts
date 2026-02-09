@@ -310,10 +310,10 @@ export class SharesQueries {
   async updateShare(id: number, set: Partial<Record<keyof Share, any>>): Promise<boolean> {
     try {
       dbCheckAffectedRows(await this.db.update(shares).set(set).where(eq(shares.id, id)).limit(1), 1)
-      this.logger.debug(`${this.updateShare.name} - share (${id}) was updated : ${JSON.stringify(set)}`)
+      this.logger.debug({ tag: this.updateShare.name, msg: `share (${id}) was updated : ${JSON.stringify(set)}` })
       return true
     } catch (e) {
-      this.logger.error(`${this.updateShare.name} - share (${id}) was not updated : ${JSON.stringify(set)} : ${e}`)
+      this.logger.error({ tag: this.updateShare.name, msg: `share (${id}) was not updated : ${JSON.stringify(set)} : ${e}` })
       return false
     }
   }
@@ -333,10 +333,10 @@ export class SharesQueries {
           .limit(1),
         1
       )
-      this.logger.debug(`${this.updateMember.name} - ${JSON.stringify(filters)} was updated : ${JSON.stringify(set)}`)
+      this.logger.debug({ tag: this.updateMember.name, msg: `${JSON.stringify(filters)} was updated : ${JSON.stringify(set)}` })
       return true
     } catch (e) {
-      this.logger.error(`${this.updateMember.name} - ${JSON.stringify(filters)} was not updated : ${JSON.stringify(set)} : ${e}`)
+      this.logger.error({ tag: this.updateMember.name, msg: `${JSON.stringify(filters)} was not updated : ${JSON.stringify(set)} : ${e}` })
       return false
     }
   }
@@ -365,9 +365,9 @@ export class SharesQueries {
           1
         )
         status[ACTION.ADD][`${m.type === MEMBER_TYPE.USER || m.type === MEMBER_TYPE.GUEST ? 'userIds' : 'groupIds'}`].push(m.id)
-        this.logger.debug(`${this.updateMembers.name} - ${m.type} (${m.id}) added to the share (${shareId})`)
+        this.logger.debug({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) added to the share (${shareId})` })
       } catch (e) {
-        this.logger.error(`${this.updateMembers.name} - ${m.type} (${m.id}) was not added to the share (${shareId}) ->  : ${e}`)
+        this.logger.error({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) was not added to the share (${shareId}) ->  : ${e}` })
       }
     }
     // update
@@ -388,9 +388,12 @@ export class SharesQueries {
           1
         )
         status[ACTION.UPDATE][`${m.type === MEMBER_TYPE.USER || m.type === MEMBER_TYPE.GUEST ? 'userIds' : 'groupIds'}`].push(m.id)
-        this.logger.debug(`${this.updateMembers.name} - ${m.type} (${m.id}) was updated on share (${shareId}) : ${JSON.stringify(props)}`)
+        this.logger.debug({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) was updated on share (${shareId}) : ${JSON.stringify(props)}` })
       } catch (e) {
-        this.logger.error(`${this.updateMembers.name} - ${m.type} (${m.id}) was not updated on share (${shareId}) : ${JSON.stringify(props)} : ${e}`)
+        this.logger.error({
+          tag: this.updateMembers.name,
+          msg: `${m.type} (${m.id}) was not updated on share (${shareId}) : ${JSON.stringify(props)} : ${e}`
+        })
       }
     }
     // remove
@@ -408,9 +411,9 @@ export class SharesQueries {
           1
         )
         status[ACTION.DELETE][`${m.type === MEMBER_TYPE.USER || m.type === MEMBER_TYPE.GUEST ? 'userIds' : 'groupIds'}`].push(m.id)
-        this.logger.debug(`${this.updateMembers.name} - ${m.type} (${m.id}) removed from share (${shareId})`)
+        this.logger.debug({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) removed from share (${shareId})` })
       } catch (e) {
-        this.logger.error(`${this.updateMembers.name} - ${m.type} (${m.id}) was not removed from share (${shareId}) : ${e}`)
+        this.logger.error({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) was not removed from share (${shareId}) : ${e}` })
       }
     }
     return status
@@ -902,8 +905,8 @@ export class SharesQueries {
       const pattern = this.cache.genSlugKey(this.constructor.name, this.permissions.name, userId, shareAlias, '*')
       const keys = await this.cache.keys(pattern)
       if (keys.length) {
-        this.logger.verbose(`${this.clearCachePermissions.name} - ${JSON.stringify(keys)}`)
-        this.cache.mdel(keys).catch((e: Error) => this.logger.error(`${this.clearCachePermissions.name} - ${e}`))
+        this.logger.verbose({ tag: this.clearCachePermissions.name, msg: `${JSON.stringify(keys)}` })
+        this.cache.mdel(keys).catch((e: Error) => this.logger.error({ tag: this.clearCachePermissions.name, msg: `${e}` }))
       }
     }
   }

@@ -85,7 +85,7 @@ export class AuthProvider2FA {
     const auth = verifyDto.isRecoveryCode
       ? await this.validateRecoveryCode(req.user.id, verifyDto.code, user.secrets.recoveryCodes)
       : this.validateTwoFactorCode(verifyDto.code, secret)
-    this.usersManager.updateAccesses(user, req.ip, auth.success, true).catch((e: Error) => this.logger.error(`${this.verify.name} - ${e}`))
+    this.usersManager.updateAccesses(user, req.ip, auth.success, true).catch((e: Error) => this.logger.error({ tag: this.verify.name, msg: `${e}` }))
     return fromLogin ? [auth, user] : auth
   }
 
@@ -97,7 +97,7 @@ export class AuthProvider2FA {
     } catch (e) {
       auth.success = false
       auth.message = e.message
-      this.logger.error(`${this.adminResetUserTwoFa.name} - ${e}`)
+      this.logger.error({ tag: this.adminResetUserTwoFa.name, msg: `${e}` })
     }
     return auth
   }
@@ -105,7 +105,7 @@ export class AuthProvider2FA {
   async loadUser(userId: number, ip: string) {
     const user: UserModel = await this.usersManager.fromUserId(userId)
     if (!user) {
-      this.logger.warn(`User ${userId} (${ip}) not found`)
+      this.logger.warn({ tag: this.loadUser.name, msg: `User ${userId} (${ip}) not found` })
       throw new HttpException(`User not found`, HttpStatus.NOT_FOUND)
     }
     this.usersManager.validateUserAccess(user, ip)
@@ -116,7 +116,9 @@ export class AuthProvider2FA {
     // This function works with any authentication method, provided that
     // the authentication service implements proper user password updates in the database.
     if (!(await this.usersManager.compareUserPassword(user.id, password))) {
-      this.usersManager.updateAccesses(user, ip, false, true).catch((e: Error) => this.logger.error(`${this.enableTwoFactor.name} - ${e}`))
+      this.usersManager
+        .updateAccesses(user, ip, false, true)
+        .catch((e: Error) => this.logger.error({ tag: this.verifyUserPassword.name, msg: `${e}` }))
       throw new HttpException('Incorrect code or password', HttpStatus.BAD_REQUEST)
     }
   }
@@ -131,7 +133,7 @@ export class AuthProvider2FA {
       auth.success = Totp.validate({ passcode: code, secret: this.decryptSecret(encryptedSecret), drift: 1 })
       if (!auth.success) auth.message = 'Incorrect code or password'
     } catch (e) {
-      this.logger.error(`${this.validateTwoFactorCode.name} - ${e}`)
+      this.logger.error({ tag: this.validateTwoFactorCode.name, msg: `${e}` })
       auth.message = e.message
     }
     return auth
@@ -160,7 +162,7 @@ export class AuthProvider2FA {
         auth.message = 'Invalid code'
       }
     } catch (e) {
-      this.logger.error(`${this.validateRecoveryCode.name} - ${e}`)
+      this.logger.error({ tag: this.validateRecoveryCode.name, msg: `${e}` })
       auth.message = e.message
     }
     return auth
@@ -205,6 +207,6 @@ export class AuthProvider2FA {
     }
     this.notificationsManager
       .sendEmailNotification([req.user], notification)
-      .catch((e: Error) => this.logger.error(`${this.sendEmailNotification.name} - ${e}`))
+      .catch((e: Error) => this.logger.error({ tag: this.sendEmailNotification.name, msg: `${e}` }))
   }
 }

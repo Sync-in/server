@@ -76,7 +76,7 @@ export class CollaboraOnlineManager {
           hasLock = this.filesLockManager.convertLockToFileLockProps(e.lock)
           mode = FILE_MODE.VIEW
         } else {
-          this.logger.error(`${this.getSettings.name} - ${e}`)
+          this.logger.error({ tag: this.getSettings.name, msg: `${e}` })
           throw new HttpException('Unable to check file lock', HttpStatus.INTERNAL_SERVER_ERROR)
         }
       }
@@ -124,11 +124,11 @@ export class CollaboraOnlineManager {
     if (!isNaN(contentLength) && contentLength !== 0) {
       const tmpFileSize = await fileSize(tmpFilePath)
       if (tmpFileSize !== contentLength) {
-        this.logger.error(`${this.saveDocument.name} - document size differs (${tmpFileSize} != ${contentLength})`)
+        this.logger.error({ tag: this.saveDocument.name, msg: `document size differs (${tmpFileSize} != ${contentLength})` })
         throw new HttpException('Size Mismatch', HttpStatus.BAD_REQUEST)
       }
     } else if (contentLength === 0) {
-      this.logger.warn(`${this.saveDocument.name} - content length is 0 : ${req.space.url}`)
+      this.logger.warn({ tag: this.saveDocument.name, msg: `content length is 0 : ${req.space.url}` })
     }
     // copy contents to avoid inode changes (dbFileHash in some cases)
     try {
@@ -138,7 +138,7 @@ export class CollaboraOnlineManager {
       const fStats = await fs.stat(req.space.realPath)
       return { LastModifiedTime: fStats.mtime.toISOString() } satisfies CollaboraSaveDocumentDto
     } catch (e) {
-      this.logger.error(`${this.saveDocument.name} - unable to save document: ${e}`)
+      this.logger.error({ tag: this.saveDocument.name, msg: `unable to save document: ${e}` })
       throw new HttpException('Unable to save document', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -199,7 +199,7 @@ export class CollaboraOnlineManager {
         break
       }
       default:
-        this.logger.warn(`${this.manageLock.name} - Unknown lock action: ${lockAction}`)
+        this.logger.warn({ tag: this.manageLock.name, msg: `Unknown lock action: ${lockAction}` })
         throw new HttpException('Unknown lock action', HttpStatus.BAD_REQUEST)
     }
   }

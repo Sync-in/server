@@ -231,10 +231,10 @@ export class SpacesQueries {
   async updateSpace(id: number, set: Partial<Record<keyof Space, any>>): Promise<boolean> {
     try {
       dbCheckAffectedRows(await this.db.update(spaces).set(set).where(eq(spaces.id, id)), 1)
-      this.logger.debug(`${this.updateSpace.name} - space (${id}) was updated : ${JSON.stringify(set)}`)
+      this.logger.debug({ tag: this.updateSpace.name, msg: `space (${id}) was updated : ${JSON.stringify(set)}` })
       return true
     } catch (e) {
-      this.logger.error(`${this.updateSpace.name} - space (${id}) was not updated : ${JSON.stringify(set)} : ${e}`)
+      this.logger.error({ tag: this.updateSpace.name, msg: `space (${id}) was not updated : ${JSON.stringify(set)} : ${e}` })
       return false
     }
   }
@@ -385,9 +385,9 @@ export class SpacesQueries {
           1
         )
         status[ACTION.ADD][`${m.type === MEMBER_TYPE.USER || m.type === MEMBER_TYPE.GUEST ? 'userIds' : 'groupIds'}`].push(m.id)
-        this.logger.debug(`${this.updateMembers.name} - ${m.type} (${m.id}) added to the space (${spaceId})`)
+        this.logger.debug({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) added to the space (${spaceId})` })
       } catch (e) {
-        this.logger.error(`${this.updateMembers.name} - ${m.type} (${m.id}) was not added to the space ${spaceId} ->  : ${e}`)
+        this.logger.error({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) was not added to the space ${spaceId} ->  : ${e}` })
       }
     }
     // update
@@ -412,9 +412,12 @@ export class SpacesQueries {
           1
         )
         status[ACTION.UPDATE][`${m.type === MEMBER_TYPE.USER || m.type === MEMBER_TYPE.GUEST ? 'userIds' : 'groupIds'}`].push(m.id)
-        this.logger.debug(`${this.updateMembers.name} - ${m.type} (${m.id}) was updated on space (${spaceId}) : ${JSON.stringify(props)}`)
+        this.logger.debug({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) was updated on space (${spaceId}) : ${JSON.stringify(props)}` })
       } catch (e) {
-        this.logger.error(`${this.updateMembers.name} - ${m.type} (${m.id}) was not updated on space (${spaceId}) : ${JSON.stringify(props)} : ${e}`)
+        this.logger.error({
+          tag: this.updateMembers.name,
+          msg: `${m.type} (${m.id}) was not updated on space (${spaceId}) : ${JSON.stringify(props)} : ${e}`
+        })
       }
     }
     // remove
@@ -432,9 +435,9 @@ export class SpacesQueries {
           1
         )
         status[ACTION.DELETE][`${m.type === MEMBER_TYPE.USER || m.type === MEMBER_TYPE.GUEST ? 'userIds' : 'groupIds'}`].push(m.id)
-        this.logger.debug(`${this.updateMembers.name} - ${m.type} (${m.id}) removed from space (${spaceId})`)
+        this.logger.debug({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) removed from space (${spaceId})` })
       } catch (e) {
-        this.logger.error(`${this.updateMembers.name} - ${m.type} (${m.id}) was not removed from space (${spaceId}) : ${e}`)
+        this.logger.error({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) was not removed from space (${spaceId}) : ${e}` })
       }
     }
     return status
@@ -617,10 +620,10 @@ export class SpacesQueries {
     }
     try {
       dbCheckAffectedRows(await this.db.insert(spacesRoots).values(r as SpaceRoot), 1)
-      this.logger.debug(`${this.addRoot.name} - *${root.alias}* (${root.id}) added`)
+      this.logger.debug({ tag: this.addRoot.name, msg: `*${root.alias}* (${root.id}) added` })
       return true
     } catch (e) {
-      this.logger.error(`${this.addRoot.name} - *${root.alias}* (${root.id}) was not added : ${JSON.stringify(root)} : ${e}`)
+      this.logger.error({ tag: this.addRoot.name, msg: `*${root.alias}* (${root.id}) was not added : ${JSON.stringify(root)} : ${e}` })
       return false
     }
   }
@@ -636,10 +639,10 @@ export class SpacesQueries {
           .limit(1),
         1
       )
-      this.logger.debug(`${this.updateRoot.name} - ${JSON.stringify(filters)} was updated : ${JSON.stringify(set)}`)
+      this.logger.debug({ tag: this.updateRoot.name, msg: `${JSON.stringify(filters)} was updated : ${JSON.stringify(set)}` })
       return true
     } catch (e) {
-      this.logger.error(`${this.updateRoot.name} - ${JSON.stringify(filters)} was not updated : ${JSON.stringify(set)} : ${e}`)
+      this.logger.error({ tag: this.updateRoot.name, msg: `${JSON.stringify(filters)} was not updated : ${JSON.stringify(set)} : ${e}` })
       return false
     }
   }
@@ -673,8 +676,8 @@ export class SpacesQueries {
       for (const p of patterns) {
         const keys = await this.cache.keys(p)
         if (keys.length) {
-          this.logger.verbose(`${this.clearCachePermissions.name} - ${JSON.stringify(keys)}`)
-          this.cache.mdel(keys).catch((e: Error) => this.logger.error(`${this.clearCachePermissions.name} - ${e}`))
+          this.logger.verbose({ tag: this.clearCachePermissions.name, msg: `${JSON.stringify(keys)}` })
+          this.cache.mdel(keys).catch((e: Error) => this.logger.error({ tag: this.clearCachePermissions.name, msg: `${e}` }))
         }
       }
     }
@@ -683,10 +686,10 @@ export class SpacesQueries {
   private async removeRoot(id: number): Promise<boolean> {
     try {
       dbCheckAffectedRows(await this.db.delete(spacesRoots).where(eq(spacesRoots.id, id)), 1)
-      this.logger.debug(`${this.removeRoot.name} - root (${id}) removed`)
+      this.logger.debug({ tag: this.removeRoot.name, msg: `root (${id}) removed` })
       return true
     } catch (e) {
-      this.logger.error(`${this.removeRoot.name} - root (${id}) was not deleted : ${e}`)
+      this.logger.error({ tag: this.removeRoot.name, msg: `root (${id}) was not deleted : ${e}` })
       return false
     }
   }

@@ -71,23 +71,23 @@ export class UsersManager {
     if (!authSuccess && scope) {
       authSuccess = await this.validateAppPassword(user, password, ip, scope)
     }
-    this.updateAccesses(user, ip, authSuccess).catch((e: Error) => this.logger.error(`${this.logUser.name} - ${e}`))
+    this.updateAccesses(user, ip, authSuccess).catch((e: Error) => this.logger.error({ tag: this.logUser.name, msg: `${e}` }))
     if (authSuccess) {
       await user.makePaths()
       return user
     }
-    this.logger.warn(`${this.logUser.name} - bad password for *${user.login}*`)
+    this.logger.warn({ tag: this.logUser.name, msg: `bad password for *${user.login}*` })
     return null
   }
 
   validateUserAccess(user: UserModel, ip: string) {
     if (user.role === USER_ROLE.LINK) {
-      this.logger.error(`${this.validateUserAccess.name} - guest link account ${user} is not authorized to login`)
+      this.logger.error({ tag: this.validateUserAccess.name, msg: `guest link account ${user} is not authorized to login` })
       throw new HttpException('Account is not allowed', HttpStatus.FORBIDDEN)
     }
     if (!user.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
-      this.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error(`${this.validateUserAccess.name} - ${e}`))
-      this.logger.error(`${this.validateUserAccess.name} - user account *${user.login}* is locked`)
+      this.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error({ tag: this.validateUserAccess.name, msg: `${e}` }))
+      this.logger.error({ tag: this.validateUserAccess.name, msg: `user account *${user.login}* is locked` })
       this.notifyAccountLocked(user, ip)
       throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
     }
@@ -96,7 +96,7 @@ export class UsersManager {
   async me(authUser: UserModel): Promise<Omit<LoginResponseDto, 'token'>> {
     const user = await this.fromUserId(authUser.id)
     if (!user) {
-      this.logger.warn(`User *${authUser.login} (${authUser.id}) not found`)
+      this.logger.warn({ tag: this.me.name, msg: `User *${authUser.login} (${authUser.id}) not found` })
       throw new HttpException(`User not found`, HttpStatus.NOT_FOUND)
     }
     user.impersonated = !!authUser.impersonatedFromId
@@ -150,17 +150,17 @@ export class UsersManager {
     try {
       await pipeline(part.file, createWriteStream(dstPath))
     } catch (e) {
-      this.logger.error(`${this.updateAvatar.name} - ${e}`)
+      this.logger.error({ tag: this.updateAvatar.name, msg: `${e}` })
       throw new HttpException('Unable to upload avatar', HttpStatus.INTERNAL_SERVER_ERROR)
     }
     if (part.file.truncated) {
-      this.logger.warn(`${this.updateAvatar.name} - image is too large`)
+      this.logger.warn({ tag: this.updateAvatar.name, msg: `image is too large` })
       throw new HttpException('Image is too large (5MB max)', HttpStatus.PAYLOAD_TOO_LARGE)
     }
     try {
       await moveFiles(dstPath, path.join(req.user.homePath, USER_AVATAR_FILE_NAME), true)
     } catch (e) {
-      this.logger.error(`${this.updateAvatar.name} - ${e}`)
+      this.logger.error({ tag: this.updateAvatar.name, msg: `${e}` })
       throw new HttpException('Unable to create avatar', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -214,7 +214,7 @@ export class UsersManager {
     try {
       await pipeline(avatarStream, avatarFile)
     } catch (e) {
-      this.logger.error(`${this.updateAvatar.name} - ${e}`)
+      this.logger.error({ tag: this.getAvatar.name, msg: `${e}` })
       throw new HttpException('Unable to create avatar', HttpStatus.INTERNAL_SERVER_ERROR)
     }
     if (generateIsNotExists) {
@@ -285,7 +285,7 @@ export class UsersManager {
         // update accesses
         this.usersQueries
           .updateUserOrGuest(user.id, { secrets: secrets })
-          .catch((e: Error) => this.logger.error(`${this.validateAppPassword.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.validateAppPassword.name, msg: `${e}` }))
         return true
       }
     }
@@ -293,7 +293,7 @@ export class UsersManager {
   }
 
   setOnlineStatus(user: JwtIdentityPayload, onlineStatus: USER_ONLINE_STATUS) {
-    this.usersQueries.setOnlineStatus(user.id, onlineStatus).catch((e: Error) => this.logger.error(`${this.setOnlineStatus.name} - ${e}`))
+    this.usersQueries.setOnlineStatus(user.id, onlineStatus).catch((e: Error) => this.logger.error({ tag: this.setOnlineStatus.name, msg: `${e}` }))
   }
 
   getOnlineUsers(userIds: number[]): Promise<UserOnline[]> {
@@ -329,7 +329,7 @@ export class UsersManager {
 
   async createPersonalGroup(user: UserModel, userCreateOrUpdateGroupDto: UserCreateOrUpdateGroupDto): Promise<GroupMember> {
     if (!userCreateOrUpdateGroupDto.name) {
-      this.logger.error(`${this.createPersonalGroup.name} - missing group name : ${JSON.stringify(userCreateOrUpdateGroupDto)}`)
+      this.logger.error({ tag: this.createPersonalGroup.name, msg: `missing group name : ${JSON.stringify(userCreateOrUpdateGroupDto)}` })
       throw new HttpException('Group name is missing', HttpStatus.BAD_REQUEST)
     }
     if (await this.usersQueries.checkGroupNameExists(userCreateOrUpdateGroupDto.name)) {
@@ -337,12 +337,12 @@ export class UsersManager {
     }
     try {
       const groupId: number = await this.usersQueries.createPersonalGroup(user.id, userCreateOrUpdateGroupDto)
-      this.logger.log(`${this.createPersonalGroup.name} - group (${groupId}) was created : ${JSON.stringify(userCreateOrUpdateGroupDto)}`)
+      this.logger.log({ tag: this.createPersonalGroup.name, msg: `group (${groupId}) was created : ${JSON.stringify(userCreateOrUpdateGroupDto)}` })
       // clear user whitelists
       this.usersQueries.clearWhiteListCaches([user.id])
       return this.getGroup(user, groupId, false)
     } catch (e) {
-      this.logger.error(`${this.createPersonalGroup.name} - group was not created : ${JSON.stringify(userCreateOrUpdateGroupDto)} : ${e}`)
+      this.logger.error({ tag: this.createPersonalGroup.name, msg: `group was not created : ${JSON.stringify(userCreateOrUpdateGroupDto)} : ${e}` })
       throw new HttpException('Unable to create group', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -434,9 +434,9 @@ export class UsersManager {
     }
     try {
       await this.usersQueries.updateGroupMembers(groupId, { remove: [user.id] })
-      this.logger.log(`${this.leavePersonalGroup.name} - user (${user.id}) has left group (${groupId})`)
+      this.logger.log({ tag: this.leavePersonalGroup.name, msg: `user (${user.id}) has left group (${groupId})` })
     } catch (e) {
-      this.logger.error(`${this.leavePersonalGroup.name} - user (${user.id}) has not left group (${groupId}) : ${e}`)
+      this.logger.error({ tag: this.leavePersonalGroup.name, msg: `user (${user.id}) has not left group (${groupId}) : ${e}` })
       throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -446,9 +446,9 @@ export class UsersManager {
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
     }
     if (await this.usersQueries.deletePersonalGroup(groupId)) {
-      this.logger.log(`${this.deletePersonalGroup.name} - group (${groupId}) was deleted`)
+      this.logger.log({ tag: this.deletePersonalGroup.name, msg: `group (${groupId}) was deleted` })
     } else {
-      this.logger.warn(`${this.deletePersonalGroup.name} - group (${groupId}) does not exist`)
+      this.logger.warn({ tag: this.deletePersonalGroup.name, msg: `group (${groupId}) does not exist` })
       throw new HttpException('Unable to delete group', HttpStatus.BAD_REQUEST)
     }
   }
@@ -516,6 +516,6 @@ export class UsersManager {
         element: null,
         url: ip
       })
-      .catch((e: Error) => this.logger.error(`${this.validateUserAccess.name} - ${e}`))
+      .catch((e: Error) => this.logger.error({ tag: this.notifyAccountLocked.name, msg: `${e}` }))
   }
 }

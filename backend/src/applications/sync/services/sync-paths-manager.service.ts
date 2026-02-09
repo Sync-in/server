@@ -73,7 +73,7 @@ export class SyncPathsManager {
     try {
       await this.syncQueries.deletePath(clientId, pathId)
     } catch (e) {
-      this.logger.error(`${this.deletePath.name} - ${e}`)
+      this.logger.error({ tag: this.deletePath.name, msg: `${e}` })
       throw new HttpException('Unable to remove path', HttpStatus.BAD_REQUEST)
     }
   }
@@ -94,7 +94,7 @@ export class SyncPathsManager {
     try {
       await this.syncQueries.updatePathSettings(clientId, pathId, syncPathSettings)
     } catch (e) {
-      this.logger.error(`${this.updatePath.name} - ${e}`)
+      this.logger.error({ tag: this.updatePath.name, msg: `${e}` })
       throw new HttpException('Unable to update path', HttpStatus.INTERNAL_SERVER_ERROR)
     } finally {
       // clear cache
@@ -171,7 +171,7 @@ export class SyncPathsManager {
       if (clientNewer || hasUpdates || serverPath.settings.lastSync !== clientPath.lastSync) {
         this.syncQueries
           .updatePathSettings(user.clientId, clientPath.id, { ...updatedSettings, lastSync: clientPath.lastSync })
-          .catch((e: Error) => this.logger.error(`${this.updatePaths.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.updatePaths.name, msg: `${e}` }))
       }
 
       if (!clientNewer && hasUpdates) {
@@ -182,7 +182,7 @@ export class SyncPathsManager {
     clientDiff.delete = clientPathIds.filter((cid) => serverPathIds.indexOf(cid) === -1)
     for (const cPathId of clientDiff.delete) {
       const cPath: SyncPathDto = syncPathsDto.find((p) => p.id === cPathId)
-      this.notify(user.id, ACTION.DELETE, cPath.remotePath).catch((e: Error) => this.logger.error(`${this.updatePaths.name} - ${e}`))
+      this.notify(user.id, ACTION.DELETE, cPath.remotePath).catch((e: Error) => this.logger.error({ tag: this.updatePaths.name, msg: `${e}` }))
     }
     // clear cache
     clientDiff.update.forEach((path) => this.syncQueries.clearCachePathSettings(user.clientId, path.id))
@@ -238,6 +238,6 @@ export class SyncPathsManager {
         currentUrl: this.contextManager.headerOriginUrl(),
         action: action
       })
-      .catch((e: Error) => this.logger.error(`${this.notify.name} - ${e}`))
+      .catch((e: Error) => this.logger.error({ tag: this.notify.name, msg: `${e}` }))
   }
 }

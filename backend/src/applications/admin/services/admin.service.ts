@@ -33,11 +33,11 @@ export class AdminService {
       })
       lastVersion = res.data?.tag_name || ''
     } catch (e) {
-      this.logger.warn(`${this.checkServerUpdateAndNotify.name} - unable to check update: ${e}`)
+      this.logger.warn({ tag: this.checkServerUpdateAndNotify.name, msg: `unable to check update: ${e}` })
       return
     }
     if (!lastVersion.startsWith('v')) {
-      this.logger.warn(`${this.checkServerUpdateAndNotify.name} - unable to check version: ${lastVersion}`)
+      this.logger.warn({ tag: this.checkServerUpdateAndNotify.name, msg: `unable to check version: ${lastVersion}` })
       return
     }
     lastVersion = lastVersion.slice(1) // remove 'v' to compare with the current version
@@ -69,6 +69,6 @@ export class AdminService {
     this.notificationsManager
       .create(adminsToNotify, notification)
       .then(() => this.cache.set(this.checkServerUpdateAndNotify.name, { version: lastVersion } satisfies ServerReleaseNotification, 0))
-      .catch((e: Error) => this.logger.error(`${this.checkServerUpdateAndNotify.name} - ${e}`))
+      .catch((e: Error) => this.logger.error({ tag: this.checkServerUpdateAndNotify.name, msg: `${e}` }))
   }
 }

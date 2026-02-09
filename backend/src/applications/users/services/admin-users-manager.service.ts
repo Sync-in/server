@@ -58,9 +58,10 @@ export class AdminUsersManager {
       createUserDto.password = await hashPassword(createUserDto.password)
       const userId: number = await this.adminQueries.usersQueries.createUserOrGuest(createUserDto, userRole)
       const user = new UserModel({ ...createUserDto, id: userId, role: userRole })
-      this.logger.log(
-        `${this.createUserOrGuest.name} - ${USER_ROLE[userRole]} (${userId}) was created : ${JSON.stringify(anonymizePassword(createUserDto))}`
-      )
+      this.logger.log({
+        tag: this.createUserOrGuest.name,
+        msg: `${USER_ROLE[userRole]} (${userId}) was created : ${JSON.stringify(anonymizePassword(createUserDto))}`
+      })
       this.adminQueries.usersQueries.clearWhiteListCaches('*')
       await user.makePaths()
       if (userRole <= USER_ROLE.USER) {
@@ -69,7 +70,7 @@ export class AdminUsersManager {
         return asAdmin ? this.getGuest(user.id) : user
       }
     } catch (e) {
-      this.logger.error(`${this.createUserOrGuest.name} - unable to create user *${createUserDto.login}* : ${e}`)
+      this.logger.error({ tag: this.createUserOrGuest.name, msg: `unable to create user *${createUserDto.login}* : ${e}` })
       throw new HttpException('Unable to create user', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -166,15 +167,15 @@ export class AdminUsersManager {
   async deleteUserOrGuest(userId: number, userLogin: string, deleteUserDto: DeleteUserDto): Promise<void> {
     try {
       if (await this.adminQueries.deleteUser(userId, userLogin)) {
-        this.logger.log(`${this.deleteUserOrGuest.name} - *${userLogin}* (${userId}) was deleted`)
+        this.logger.log({ tag: this.deleteUserOrGuest.name, msg: `*${userLogin}* (${userId}) was deleted` })
       } else {
-        this.logger.error(`${this.deleteUserOrGuest.name} - *${userLogin}* (${userId}) was not deleted : not found`)
+        this.logger.error({ tag: this.deleteUserOrGuest.name, msg: `*${userLogin}* (${userId}) was not deleted : not found` })
       }
       if (deleteUserDto.deleteSpace) {
         await this.deleteUserSpace(userLogin, deleteUserDto.isGuest)
       }
     } catch (e) {
-      this.logger.error(`${this.deleteUserOrGuest.name} - unable to delete *${userLogin}* (${userId}) : ${e}`)
+      this.logger.error({ tag: this.deleteUserOrGuest.name, msg: `unable to delete *${userLogin}* (${userId}) : ${e}` })
       throw new HttpException('Unable to delete user', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -232,16 +233,16 @@ export class AdminUsersManager {
 
   async createGroup(createGroupDto: CreateOrUpdateGroupDto): Promise<AdminGroup> {
     if (!createGroupDto.name) {
-      this.logger.error(`${this.createGroup.name} - missing group name : ${JSON.stringify(createGroupDto)}`)
+      this.logger.error({ tag: this.createGroup.name, msg: `missing group name : ${JSON.stringify(createGroupDto)}` })
       throw new HttpException('Group name is missing', HttpStatus.BAD_REQUEST)
     }
     await this.checkGroupNameExists(createGroupDto.name)
     try {
       const groupId: number = await this.adminQueries.createGroup(createGroupDto)
-      this.logger.log(`${this.createGroup.name} - group (${groupId}) was created : ${JSON.stringify(createGroupDto)}`)
+      this.logger.log({ tag: this.createGroup.name, msg: `group (${groupId}) was created : ${JSON.stringify(createGroupDto)}` })
       return this.adminQueries.groupFromId(groupId)
     } catch (e) {
-      this.logger.error(`${this.createGroup.name} - group was not created : ${JSON.stringify(createGroupDto)} : ${e}`)
+      this.logger.error({ tag: this.createGroup.name, msg: `group was not created : ${JSON.stringify(createGroupDto)} : ${e}` })
       throw new HttpException('Unable to create group', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -262,9 +263,9 @@ export class AdminUsersManager {
 
   async deleteGroup(groupId: number): Promise<void> {
     if (await this.adminQueries.deleteGroup(groupId)) {
-      this.logger.log(`${this.deleteGroup.name} - group (${groupId}) was deleted`)
+      this.logger.log({ tag: this.deleteGroup.name, msg: `group (${groupId}) was deleted` })
     } else {
-      this.logger.warn(`${this.deleteGroup.name} - group (${groupId}) does not exist`)
+      this.logger.warn({ tag: this.deleteGroup.name, msg: `group (${groupId}) does not exist` })
       throw new HttpException('Unable to delete group', HttpStatus.BAD_REQUEST)
     }
   }
@@ -328,12 +329,12 @@ export class AdminUsersManager {
     try {
       if (await isPathExists(userSpace)) {
         await removeFiles(userSpace)
-        this.logger.log(`${this.deleteUserSpace.name} - user space *${userLogin}* was deleted`)
+        this.logger.log({ tag: this.deleteUserSpace.name, msg: `user space *${userLogin}* was deleted` })
       } else {
-        this.logger.warn(`${this.deleteUserSpace.name} - user space *${userLogin}* does not exist : ${userSpace}`)
+        this.logger.warn({ tag: this.deleteUserSpace.name, msg: `user space *${userLogin}* does not exist : ${userSpace}` })
       }
     } catch (e) {
-      this.logger.warn(`${this.deleteUserSpace.name} - user space *${userLogin}* (${userSpace}) was not deleted : ${e}`)
+      this.logger.warn({ tag: this.deleteUserSpace.name, msg: `user space *${userLogin}* (${userSpace}) was not deleted : ${e}` })
       throw new HttpException('Unable to delete user space', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -352,12 +353,12 @@ export class AdminUsersManager {
   private async renameUserSpace(oldLogin: string, newLogin: string): Promise<boolean> {
     const currentUserSpace: string = UserModel.getHomePath(oldLogin)
     if (!(await isPathExists(currentUserSpace))) {
-      this.logger.warn(`${this.renameUserSpace.name} - user space *${oldLogin}* does not exist : ${currentUserSpace}`)
+      this.logger.warn({ tag: this.renameUserSpace.name, msg: `user space *${oldLogin}* does not exist : ${currentUserSpace}` })
       return false
     }
     const newUserSpace: string = UserModel.getHomePath(newLogin)
     if (await isPathExists(newUserSpace)) {
-      this.logger.warn(`${this.renameUserSpace.name} - user space *${newLogin}* already exists : ${newUserSpace}`)
+      this.logger.warn({ tag: this.renameUserSpace.name, msg: `user space *${newLogin}* already exists : ${newUserSpace}` })
       return false
     }
     try {
@@ -366,7 +367,7 @@ export class AdminUsersManager {
     } catch (e) {
       // try to restore
       await moveFiles(newUserSpace, currentUserSpace, true)
-      this.logger.error(`${this.renameUserSpace.name} - unable to rename user space from *${currentUserSpace}* to *${newUserSpace}* : ${e}`)
+      this.logger.error({ tag: this.renameUserSpace.name, msg: `unable to rename user space from *${currentUserSpace}* to *${newUserSpace}* : ${e}` })
       return false
     }
   }

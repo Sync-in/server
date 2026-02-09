@@ -43,7 +43,7 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
       userFromDB.removePassword()
     }
     const userToCache: Record<string, any> | null = userFromDB ? instanceToPlain(userFromDB, { excludePrefixes: ['_'] }) : null
-    this.cache.set(authBasicUser, userToCache, this.CACHE_TTL).catch((e: Error) => this.logger.error(`${this.validate.name} - ${e}`))
+    this.cache.set(authBasicUser, userToCache, this.CACHE_TTL).catch((e: Error) => this.logger.error({ tag: this.validate.name, msg: `${e}` }))
     return userFromDB
   }
 }

@@ -41,7 +41,7 @@ export class AuthProviderLDAP implements AuthProvider {
         return this.usersManager.logUser(user, password, ip, scope)
       }
       if (!user.isActive) {
-        this.logger.error(`${this.validateUser.name} - user *${user.login}* is locked`)
+        this.logger.error({ tag: this.validateUser.name, msg: `user *${user.login}* is locked` })
         throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
       }
     }
@@ -73,20 +73,23 @@ export class AuthProviderLDAP implements AuthProvider {
     }
 
     if (!entry[this.ldapConfig.attributes.login] || !entry[this.ldapConfig.attributes.email]) {
-      this.logger.error(`${this.validateUser.name} - required ldap fields are missing : 
+      this.logger.error({
+        tag: this.validateUser.name,
+        msg: `required ldap fields are missing : 
       [${this.ldapConfig.attributes.login}, ${this.ldapConfig.attributes.email}] => 
-      (${JSON.stringify(entry)})`)
+      (${JSON.stringify(entry)})`
+      })
       return null
     }
 
     if (!user && !this.ldapConfig.options.autoCreateUser) {
-      this.logger.warn(`${this.validateUser.name} - User not found and autoCreateUser is disabled`)
+      this.logger.warn({ tag: this.validateUser.name, msg: `User not found and autoCreateUser is disabled` })
       throw new HttpException('User not found', HttpStatus.UNAUTHORIZED)
     }
 
     const identity = this.createIdentity(entry, password)
     user = await this.updateOrCreateUser(identity, user)
-    this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error(`${this.validateUser.name} : ${e}`))
+    this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error({ tag: this.validateUser.name, msg: `${e}` }))
     return user
   }
 
@@ -106,7 +109,7 @@ export class AuthProviderLDAP implements AuthProvider {
           await client.bind(this.ldapConfig.serviceBindDN, this.ldapConfig.serviceBindPassword)
           const result = await this.findUserEntry(ldapLogin, client)
           if (!result || !result.userDn) {
-            this.logger.warn(`${this.checkAuth.name} - no LDAP entry found for : ${login}`)
+            this.logger.warn({ tag: this.checkAuth.name, msg: `no LDAP entry found for : ${login}` })
             return false
           }
           const { entry, userDn } = result
@@ -127,7 +130,7 @@ export class AuthProviderLDAP implements AuthProvider {
       }
     }
     if (error) {
-      this.logger.error(`${this.checkAuth.name} - ${error}`)
+      this.logger.error({ tag: this.checkAuth.name, msg: `${error}` })
       if (CONNECT_ERROR_CODE.has(error.code)) {
         throw new Error('Authentication service error')
       }
@@ -151,13 +154,13 @@ export class AuthProviderLDAP implements AuthProvider {
       })
 
       if (searchEntries.length === 0) {
-        this.logger.debug(`${this.findUserEntry.name} - search filter : ${searchFilter}`)
-        this.logger.warn(`${this.findUserEntry.name} - no LDAP entry found for : ${login}`)
+        this.logger.debug({ tag: this.findUserEntry.name, msg: `search filter : ${searchFilter}` })
+        this.logger.warn({ tag: this.findUserEntry.name, msg: `no LDAP entry found for : ${login}` })
         return false
       }
 
       if (searchEntries.length > 1) {
-        this.logger.warn(`${this.findUserEntry.name} - multiple LDAP entries found for : ${login}, using first one`)
+        this.logger.warn({ tag: this.findUserEntry.name, msg: `multiple LDAP entries found for : ${login}, using first one` })
       }
 
       const rawEntry = searchEntries[0]
@@ -174,8 +177,8 @@ export class AuthProviderLDAP implements AuthProvider {
       // Return the first matching entry.
       return { entry, userDn }
     } catch (e) {
-      this.logger.debug(`${this.findUserEntry.name} - search filter : ${searchFilter}`)
-      this.logger.error(`${this.findUserEntry.name} - ${login} : ${e}`)
+      this.logger.debug({ tag: this.findUserEntry.name, msg: `search filter : ${searchFilter}` })
+      this.logger.error({ tag: this.findUserEntry.name, msg: `${login} : ${e}` })
       return false
     }
   }
@@ -188,14 +191,14 @@ export class AuthProviderLDAP implements AuthProvider {
       const createdUser = await this.adminUsersManager.createUserOrGuest(identity, identity.role)
       const freshUser = await this.usersManager.fromUserId(createdUser.id)
       if (!freshUser) {
-        this.logger.error(`${this.updateOrCreateUser.name} - user was not found : ${createdUser.login} (${createdUser.id})`)
+        this.logger.error({ tag: this.updateOrCreateUser.name, msg: `user was not found : ${createdUser.login} (${createdUser.id})` })
         throw new HttpException('User not found', HttpStatus.NOT_FOUND)
       }
       return freshUser
     }
 
     if (identity.login !== user.login) {
-      this.logger.error(`${this.updateOrCreateUser.name} - user login mismatch : ${identity.login} !== ${user.login}`)
+      this.logger.error({ tag: this.updateOrCreateUser.name, msg: `user login mismatch : ${identity.login} !== ${user.login}` })
       throw new HttpException('Account matching error', HttpStatus.FORBIDDEN)
     }
 
@@ -238,7 +241,7 @@ export class AuthProviderLDAP implements AuthProvider {
           user.setFullName(true)
         }
       } catch (e) {
-        this.logger.warn(`${this.updateOrCreateUser.name} - unable to update user *${user.login}* : ${e}`)
+        this.logger.warn({ tag: this.updateOrCreateUser.name, msg: `unable to update user *${user.login}* : ${e}` })
       }
     }
     return user
@@ -393,7 +396,7 @@ export class AuthProviderLDAP implements AuthProvider {
       // Any matching entry implies membership.
       return searchEntries.length > 0
     } catch (e) {
-      this.logger.warn(`${this.isMemberOfGroupOfNames.name} - ${e}`)
+      this.logger.warn({ tag: this.isMemberOfGroupOfNames.name, msg: `${e}` })
       return false
     }
   }
@@ -412,11 +415,11 @@ export class AuthProviderLDAP implements AuthProvider {
     // Prefer the most specific LDAP error when multiple errors are returned.
     if (error?.errors?.length) {
       for (const err of error.errors) {
-        this.logger.warn(`${this.checkAuth.name} - ${attemptedBindDN} : ${err}`)
+        this.logger.warn({ tag: this.handleBindError.name, msg: `${attemptedBindDN} : ${err}` })
       }
       return error.errors[error.errors.length - 1]
     }
-    this.logger.warn(`${this.checkAuth.name} - ${attemptedBindDN} : ${error}`)
+    this.logger.warn({ tag: this.handleBindError.name, msg: `${attemptedBindDN} : ${error}` })
     return error
   }
 }

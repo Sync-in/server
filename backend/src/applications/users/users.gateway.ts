@@ -44,21 +44,23 @@ export class WebSocketUsers implements BeforeApplicationShutdown, OnGatewayInit,
     if (this.shuttingDown) return
     socket.join(`${USER_ROOM_PREFIX}${socket.user.id}`)
     this.sendOnlineUser(socket.user, parseInt((socket.handshake.query.onlineStatus as string) || '0')).catch((e: Error) =>
-      this.logger.error(`${this.handleConnection.name} - ${e}`)
+      this.logger.error({ tag: this.handleConnection.name, msg: `${e}` })
     )
-    this.sendAllOnlineUsers(socket.user.id).catch((e: Error) => this.logger.error(`${this.handleConnection.name} - ${e}`))
-    this.logger.log(
-      `Connected: *${socket.user.login}* (${socket.user.id}) [${socket.id}] ${getClientAddress(socket)} ${socket.handshake.headers['user-agent']}`
-    )
+    this.sendAllOnlineUsers(socket.user.id).catch((e: Error) => this.logger.error({ tag: this.handleConnection.name, msg: `${e}` }))
+    this.logger.log({
+      tag: this.handleConnection.name,
+      msg: `Connected: *${socket.user.login}* (${socket.user.id}) [${socket.id}] ${getClientAddress(socket)} ${socket.handshake.headers['user-agent']}`
+    })
   }
 
   async handleDisconnect(socket: AuthenticatedSocketIO): Promise<void> {
     if (this.shuttingDown) return
     socket.leave(`${USER_ROOM_PREFIX}${socket.user.id}`)
-    this.sendOfflineUser(socket.user.id).catch((e: Error) => this.logger.error(`${this.handleDisconnect.name} - ${e}`))
-    this.logger.log(
-      `Disconnected: *${socket.user.login}* (${socket.user.id}) [${socket.id}] ${getClientAddress(socket)} ${socket.handshake.headers['user-agent']}`
-    )
+    this.sendOfflineUser(socket.user.id).catch((e: Error) => this.logger.error({ tag: this.handleDisconnect.name, msg: `${e}` }))
+    this.logger.log({
+      tag: this.handleDisconnect.name,
+      msg: `Disconnected: *${socket.user.login}* (${socket.user.id}) [${socket.id}] ${getClientAddress(socket)} ${socket.handshake.headers['user-agent']}`
+    })
   }
 
   @SubscribeMessage(USERS_WS.EVENTS.ONLINE_STATUS)
@@ -67,7 +69,7 @@ export class WebSocketUsers implements BeforeApplicationShutdown, OnGatewayInit,
       // store in db
       this.usersManager.setOnlineStatus(user, body.status)
     }
-    this.sendOnlineStatus(user.id, body.status).catch((e: Error) => this.logger.error(`${this.setOnlineStatus.name} - ${e}`))
+    this.sendOnlineStatus(user.id, body.status).catch((e: Error) => this.logger.error({ tag: this.setOnlineStatus.name, msg: `${e}` }))
   }
 
   private sendMessageToUsers(userIds: number[], eventName: string, body: any) {
@@ -103,7 +105,9 @@ export class WebSocketUsers implements BeforeApplicationShutdown, OnGatewayInit,
     await sleep(this.waitTime)
     // check if user room is empty before send event
     if ((await this.getOnlineUserIds()).indexOf(userId) === -1) {
-      this.sendOnlineStatus(userId, USER_ONLINE_STATUS.OFFLINE).catch((e: Error) => this.logger.error(`${this.sendOfflineUser.name} - ${e}`))
+      this.sendOnlineStatus(userId, USER_ONLINE_STATUS.OFFLINE).catch((e: Error) =>
+        this.logger.error({ tag: this.sendOfflineUser.name, msg: `${e}` })
+      )
     }
   }
 

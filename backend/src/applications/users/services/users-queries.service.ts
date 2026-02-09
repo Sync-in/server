@@ -166,10 +166,13 @@ export class UsersQueries {
           .where(eq(users.id, userId)),
         1
       )
-      this.logger.verbose(`${this.updateUserOrGuest.name} - user (${userId}) was updated : ${JSON.stringify(anonymizePassword(set))}`)
+      this.logger.verbose({ tag: this.updateUserOrGuest.name, msg: `user (${userId}) was updated : ${JSON.stringify(anonymizePassword(set))}` })
       return true
     } catch (e) {
-      this.logger.error(`${this.updateUserOrGuest.name} - user (${userId}) was not updated : ${JSON.stringify(anonymizePassword(set))} : ${e}`)
+      this.logger.error({
+        tag: this.updateUserOrGuest.name,
+        msg: `user (${userId}) was not updated : ${JSON.stringify(anonymizePassword(set))} : ${e}`
+      })
       return false
     }
   }
@@ -359,9 +362,9 @@ export class UsersQueries {
     if (Object.keys(set).length) {
       try {
         await this.db.update(groups).set(set).where(eq(groups.id, groupId))
-        this.logger.log(`${this.updateGroup.name} - group (${groupId}) was updated : ${JSON.stringify(set)}`)
+        this.logger.log({ tag: this.updateGroup.name, msg: `group (${groupId}) was updated : ${JSON.stringify(set)}` })
       } catch (e) {
-        this.logger.error(`${this.updateGroup.name} - group (${groupId}) was not updated : ${JSON.stringify(set)} : ${e}`)
+        this.logger.error({ tag: this.updateGroup.name, msg: `group (${groupId}) was not updated : ${JSON.stringify(set)} : ${e}` })
         throw new Error('Group was not updated')
       }
     }
@@ -379,11 +382,15 @@ export class UsersQueries {
         await this.db.insert(usersGroups).values(members.add.map((m) => ({ userId: m.id, groupId: groupId, role: m.groupRole })))
         // clear cache
         this.clearWhiteListCaches(members.add.map((m) => m.id))
-        this.logger.log(`${this.updateGroupMembers.name} - users ${JSON.stringify(members.add.map((m) => m.id))} was added to group (${groupId})`)
+        this.logger.log({
+          tag: this.updateGroupMembers.name,
+          msg: `users ${JSON.stringify(members.add.map((m) => m.id))} was added to group (${groupId})`
+        })
       } catch (e) {
-        this.logger.error(
-          `${this.updateGroupMembers.name} - users ${JSON.stringify(members.add.map((m) => m.id))} was not added to group (${groupId}) : ${e}`
-        )
+        this.logger.error({
+          tag: this.updateGroupMembers.name,
+          msg: `users ${JSON.stringify(members.add.map((m) => m.id))} was not added to group (${groupId}) : ${e}`
+        })
         throw new Error('Group members was not added')
       }
     }
@@ -395,9 +402,12 @@ export class UsersQueries {
           .limit(members.remove.length)
         // clear cache
         this.clearWhiteListCaches(members.remove)
-        this.logger.log(`${this.updateGroupMembers.name} - users ${JSON.stringify(members.remove)} was removed from group (${groupId})`)
+        this.logger.log({ tag: this.updateGroupMembers.name, msg: `users ${JSON.stringify(members.remove)} was removed from group (${groupId})` })
       } catch (e) {
-        this.logger.error(`${this.updateGroupMembers.name} - users ${JSON.stringify(members.remove)} was not removed from group (${groupId}) : ${e}`)
+        this.logger.error({
+          tag: this.updateGroupMembers.name,
+          msg: `users ${JSON.stringify(members.remove)} was not removed from group (${groupId}) : ${e}`
+        })
         throw new Error('Group members was not removed')
       }
     }
@@ -555,10 +565,10 @@ export class UsersQueries {
           .keys(pattern)
           .then((keys: string[]) => {
             if (!keys.length) return
-            this.logger.verbose(`${this.clearWhiteListCaches.name} - ${JSON.stringify(keys)}`)
-            this.cache.mdel(keys).catch((e: Error) => this.logger.error(`${this.clearWhiteListCaches.name} - ${e}`))
+            this.logger.verbose({ tag: this.clearWhiteListCaches.name, msg: `${JSON.stringify(keys)}` })
+            this.cache.mdel(keys).catch((e: Error) => this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` }))
           })
-          .catch((e: Error) => this.logger.error(`${this.clearWhiteListCaches.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` }))
       }
     } else {
       this.cache
@@ -566,7 +576,7 @@ export class UsersQueries {
           ...userIds.map((id: number) => this.cache.genSlugKey(this.constructor.name, this.usersWhitelist.name, id)),
           ...userIds.map((id: number) => this.cache.genSlugKey(this.constructor.name, this.groupsWhitelist.name, id))
         ])
-        .catch((e: Error) => this.logger.error(`${this.clearWhiteListCaches.name} - ${e}`))
+        .catch((e: Error) => this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` }))
     }
   }
 

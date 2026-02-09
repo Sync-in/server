@@ -39,7 +39,7 @@ export class FilesParser {
       .where(and(...[eq(users.storageIndexing, true), lte(users.role, USER_ROLE.USER), ...(userId ? [eq(users.id, userId)] : [])]))) {
       const userFilesPath = UserModel.getFilesPath(user.login)
       if (!(await isPathExists(userFilesPath))) {
-        this.logger.warn(`${this.userPaths.name} - user path does not exist : ${userFilesPath}`)
+        this.logger.warn({ tag: this.userPaths.name, msg: `user path does not exist : ${userFilesPath}` })
         continue
       }
       yield [user.id, 'user', [{ realPath: userFilesPath, pathPrefix: `${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}`, isDir: true }]]
@@ -69,7 +69,7 @@ export class FilesParser {
       .groupBy(spaces.id)) {
       const spaceFilesPath = SpaceModel.getFilesPath(space.alias)
       if (!(await isPathExists(spaceFilesPath))) {
-        this.logger.warn(`${this.spacePaths.name} - space path does not exist : ${spaceFilesPath}`)
+        this.logger.warn({ tag: this.spacePaths.name, msg: `space path does not exist : ${spaceFilesPath}` })
         continue
       }
       const spacePath = [{ realPath: spaceFilesPath, pathPrefix: `${SPACE_REPOSITORY.FILES}/${space.alias}`, isDir: true }]
@@ -126,7 +126,7 @@ export class FilesParser {
         continue
       }
       if (!(await isPathExists(shareFilesPath))) {
-        this.logger.warn(`${this.sharePaths.name} - share path does not exist : ${shareFilesPath}`)
+        this.logger.warn({ tag: this.sharePaths.name, msg: `share path does not exist : ${shareFilesPath}` })
         continue
       }
       yield [share.id, 'share', [{ realPath: shareFilesPath, pathPrefix: `${SPACE_REPOSITORY.SHARES}/${share.alias}`, isDir: share.isDir }]]

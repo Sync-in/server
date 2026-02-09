@@ -37,7 +37,7 @@ export class FilesContentManager {
       try {
         await this.indexFiles(indexSuffix, paths)
       } catch (e) {
-        this.logger.error(`${this.parseAndIndexAllFiles.name} : ${e}`)
+        this.logger.error({ tag: this.parseAndIndexAllFiles.name, msg: `${e}` })
       }
       indexSuffixes.push(indexSuffix)
     }
@@ -69,7 +69,7 @@ export class FilesContentManager {
         if (rootFileContent !== null) {
           this.filesIndexer.insertRecord(indexName, rootFileContent).catch((e: Error) => {
             errorRecords++
-            this.logger.error(`${this.indexFiles.name} - ${indexSuffix} | ${rootFileContent.name} : ${e}`)
+            this.logger.error({ tag: this.indexFiles.name, msg: `${indexSuffix} | ${rootFileContent.name} : ${e}` })
           })
           indexedRecords++
         }
@@ -78,7 +78,7 @@ export class FilesContentManager {
       for await (const fileContent of this.parseFiles(p.realPath, context)) {
         this.filesIndexer.insertRecord(indexName, fileContent).catch((e: Error) => {
           errorRecords++
-          this.logger.error(`${this.indexFiles.name} - ${indexSuffix} | ${fileContent.name} : ${e}`)
+          this.logger.error({ tag: this.indexFiles.name, msg: `${indexSuffix} | ${fileContent.name} : ${e}` })
         })
         indexedRecords++
       }
@@ -88,22 +88,23 @@ export class FilesContentManager {
       // case when no data
       this.filesIndexer
         .dropIndex(indexName)
-        .catch((e: Error) => this.logger.error(`${this.indexFiles.name} - ${indexSuffix} - unable to drop index : ${e}`))
-      this.logger.log(`${this.indexFiles.name} - ${indexSuffix} - no data, index not stored`)
+        .catch((e: Error) => this.logger.error({ tag: this.indexFiles.name, msg: `${indexSuffix} - unable to drop index : ${e}` }))
+      this.logger.log({ tag: this.indexFiles.name, msg: `${indexSuffix} - no data, index not stored` })
     } else {
       // clean up old records
       const recordsToDelete: number[] = [...context.db.keys()].filter((key) => !context.fs.has(key))
       if (recordsToDelete.length > 0) {
         this.filesIndexer
           .deleteRecords(indexName, recordsToDelete)
-          .catch((e: Error) => this.logger.error(`${this.indexFiles.name} - ${indexSuffix} - unable to delete records : ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.indexFiles.name, msg: `${indexSuffix} - unable to delete records : ${e}` }))
       }
       if (indexedRecords === 0 && errorRecords === 0 && recordsToDelete.length === 0) {
-        this.logger.log(`${this.indexFiles.name} - ${indexSuffix} - no new data`)
+        this.logger.log({ tag: this.indexFiles.name, msg: `${indexSuffix} - no new data` })
       } else {
-        this.logger.log(
-          `${this.indexFiles.name} - ${indexSuffix} - indexed: ${indexedRecords - errorRecords}, errors: ${errorRecords}, deleted: ${recordsToDelete.length}`
-        )
+        this.logger.log({
+          tag: this.indexFiles.name,
+          msg: `${indexSuffix} - indexed: ${indexedRecords - errorRecords}, errors: ${errorRecords}, deleted: ${recordsToDelete.length}`
+        })
       }
     }
   }
@@ -122,7 +123,7 @@ export class FilesContentManager {
         }
       }
     } catch (e) {
-      this.logger.warn(`${this.parseFiles.name} - ${context.indexSuffix} - unable to parse: ${dir} - ${e}`)
+      this.logger.warn({ tag: this.parseFiles.name, msg: `${context.indexSuffix} - unable to parse: ${dir} - ${e}` })
     }
   }
 
@@ -139,7 +140,7 @@ export class FilesContentManager {
     try {
       stats = await fs.stat(realPath)
     } catch (e) {
-      this.logger.warn(`${this.analyzeFile.name} - unable to stats: ${realPath} - ${e}`)
+      this.logger.warn({ tag: this.analyzeFile.name, msg: `unable to stats: ${realPath} - ${e}` })
       return null
     }
     if (stats.size === 0 || stats.size > this.maxDocumentSize) {
@@ -184,7 +185,7 @@ export class FilesContentManager {
       )
       return content.length ? content : null
     } catch (e) {
-      this.logger.warn(`${this.parseContent.name} - unable to index: ${rPath} - ${e}`)
+      this.logger.warn({ tag: this.parseContent.name, msg: `unable to index: ${rPath} - ${e}` })
     }
     return null
   }

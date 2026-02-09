@@ -172,10 +172,10 @@ export class AuthProviderOIDC implements AuthProvider {
       return await this.processUserInfo(userInfo, req.ip)
     } catch (error: AuthorizationResponseError | HttpException | any) {
       if (error instanceof AuthorizationResponseError) {
-        this.logger.error(`${this.handleCallback.name} - OIDC callback error: ${error.code} - ${error.error_description}`)
+        this.logger.error({ tag: this.handleCallback.name, msg: `OIDC callback error: ${error.code} - ${error.error_description}` })
         throw new HttpException(error.error_description, HttpStatus.BAD_REQUEST)
       } else {
-        this.logger.error(`${this.handleCallback.name} - OIDC callback error: ${error}`)
+        this.logger.error({ tag: this.handleCallback.name, msg: `OIDC callback error: ${error}` })
         throw new HttpException(
           error.error_description ?? 'OIDC authentication failed',
           error instanceof HttpException ? error.getStatus() : (error.status ?? HttpStatus.INTERNAL_SERVER_ERROR)
@@ -237,10 +237,10 @@ export class AuthProviderOIDC implements AuthProvider {
           timeout: 6000
         }
       )
-      this.logger.log(`${this.initializeOIDCClient.name} - OIDC client initialized successfully for issuer: ${this.oidcConfig.issuerUrl}`)
+      this.logger.log({ tag: this.initializeOIDCClient.name, msg: `OIDC client initialized successfully for issuer: ${this.oidcConfig.issuerUrl}` })
       return config
     } catch (error) {
-      this.logger.error(`${this.initializeOIDCClient.name} - OIDC client initialization failed: ${error?.cause || error}`)
+      this.logger.error({ tag: this.initializeOIDCClient.name, msg: `OIDC client initialization failed: ${error?.cause || error}` })
       switch (error.cause?.code) {
         case 'ECONNREFUSED':
         case 'ENOTFOUND':
@@ -283,7 +283,7 @@ export class AuthProviderOIDC implements AuthProvider {
     let user: UserModel = await this.usersManager.findUser(email || login, false)
 
     if (!user && !this.oidcConfig.options.autoCreateUser) {
-      this.logger.warn(`${this.validateUser.name} - User not found and autoCreateUser is disabled`)
+      this.logger.warn({ tag: this.processUserInfo.name, msg: `User not found and autoCreateUser is disabled` })
       throw new HttpException('User not found', HttpStatus.UNAUTHORIZED)
     }
 
@@ -297,7 +297,7 @@ export class AuthProviderOIDC implements AuthProvider {
     user = await this.updateOrCreateUser(identity, user)
 
     // Update user access log
-    this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error(`${this.processUserInfo.name} : ${e}`))
+    this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error({ tag: this.processUserInfo.name, msg: `${e}` }))
 
     return user
   }
@@ -350,7 +350,7 @@ export class AuthProviderOIDC implements AuthProvider {
       const createdUser = await this.adminUsersManager.createUserOrGuest(userWithPassword, identity.role)
       const freshUser = await this.usersManager.fromUserId(createdUser.id)
       if (!freshUser) {
-        this.logger.error(`${this.updateOrCreateUser.name} - user was not found : ${createdUser.login} (${createdUser.id})`)
+        this.logger.error({ tag: this.updateOrCreateUser.name, msg: `user was not found : ${createdUser.login} (${createdUser.id})` })
         throw new HttpException('User not found', HttpStatus.NOT_FOUND)
       }
       return freshUser
@@ -384,7 +384,7 @@ export class AuthProviderOIDC implements AuthProvider {
           user.setFullName(true)
         }
       } catch (e) {
-        this.logger.warn(`${this.updateOrCreateUser.name} - unable to update user *${user.login}* : ${e}`)
+        this.logger.warn({ tag: this.updateOrCreateUser.name, msg: `unable to update user *${user.login}* : ${e}` })
       }
     }
 

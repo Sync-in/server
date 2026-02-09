@@ -67,7 +67,7 @@ export class SpacesBrowser {
       await this.enrichWithLocks(space, spaceFiles.files)
     }
     // update recents files
-    this.filesRecents.updateRecents(user, space, spaceFiles.files).catch((e: Error) => this.logger.error(`${this.browse.name} - ${e}`))
+    this.filesRecents.updateRecents(user, space, spaceFiles.files).catch((e: Error) => this.logger.error({ tag: this.browse.name, msg: `${e}` }))
     return spaceFiles
   }
 
@@ -117,7 +117,7 @@ export class SpacesBrowser {
     try {
       await IsRealPathIsDirAndExists(space.realPath)
     } catch (e) {
-      this.logger.warn(`${this.parseFS.name} - ${space.realPath} : ${e.message}`)
+      this.logger.warn({ tag: this.parseFS.name, msg: `${space.realPath} : ${e.message}` })
       throw new HttpException(e.message, e.httpCode)
     }
     for await (const f of this.parsePath(space)) {
@@ -131,11 +131,11 @@ export class SpacesBrowser {
       for (const element of await fs.readdir(space.realPath, { withFileTypes: true })) {
         const isDir = element.isDirectory()
         if (!isDir && !element.isFile()) {
-          this.logger.log(`${this.parsePath.name} - ignore special file : ${element.name}`)
+          this.logger.log({ tag: this.parsePath.name, msg: `ignore special file : ${element.name}` })
           continue
         }
         if (!configuration.applications.files.showHiddenFiles && element.name[0] === '.') {
-          this.logger.verbose(`${this.parsePath.name} - ignore filtered file : ${element.name}`)
+          this.logger.verbose({ tag: this.parsePath.name, msg: `ignore filtered file : ${element.name}` })
           continue
         }
         const realPath = path.join(space.realPath, element.name)
@@ -143,11 +143,11 @@ export class SpacesBrowser {
         try {
           yield await getProps(realPath, filePath, isDir)
         } catch (e) {
-          this.logger.warn(`${this.parsePath.name} - unable get stats from ${realPath} : ${e}`)
+          this.logger.warn({ tag: this.parsePath.name, msg: `unable get stats from ${realPath} : ${e}` })
         }
       }
     } catch (e) {
-      this.logger.error(`${this.parsePath.name} - unable to parse ${space.realPath} : ${e}`)
+      this.logger.error({ tag: this.parsePath.name, msg: `unable to parse ${space.realPath} : ${e}` })
     }
   }
 
@@ -192,7 +192,9 @@ export class SpacesBrowser {
       // check `f.id`; it can be null for external roots
       if (f.id) {
         // todo: check if a db file referenced under external roots have an id and correctly parsed here
-        this.filesQueries.compareAndUpdateFileProps(f, fileProps).catch((e: Error) => this.logger.error(`${this.updateRootFile.name} - ${e}`))
+        this.filesQueries
+          .compareAndUpdateFileProps(f, fileProps)
+          .catch((e: Error) => this.logger.error({ tag: this.updateRootFile.name, msg: `${e}` }))
         fileProps.id = f.id
       }
       fileProps.root = {
@@ -205,7 +207,7 @@ export class SpacesBrowser {
       }
       return fileProps
     } catch (e) {
-      this.logger.error(`${this.updateRootFile.name} - ${JSON.stringify(f)} - ${e}`)
+      this.logger.error({ tag: this.updateRootFile.name, msg: `${JSON.stringify(f)} - ${e}` })
       return { ...f, name: fileName(f.path), path: dirName(f.path), ...{ root: { ...f.root, enabled: false } } }
     }
   }
@@ -236,33 +238,39 @@ export class SpacesBrowser {
         if (options.withHasComments) {
           fsFile.hasComments = dbFile.hasComments
         }
-        this.filesQueries.compareAndUpdateFileProps(dbFile, fsFile).catch((e: Error) => this.logger.error(`${this.updateDBFiles.name} - ${e}`))
+        this.filesQueries
+          .compareAndUpdateFileProps(dbFile, fsFile)
+          .catch((e: Error) => this.logger.error({ tag: this.updateDBFiles.name, msg: `${e}` }))
       } else {
-        this.logger.warn(`${this.updateDBFiles.name} - missing ${dbFile.path}/${dbFile.name} (${dbFile.id}) from fs, delete it from db`)
+        this.logger.warn({ tag: this.updateDBFiles.name, msg: `missing ${dbFile.path}/${dbFile.name} (${dbFile.id}) from fs, delete it from db` })
         if (options.withSpacesAndShares) {
           if (dbFile.spaces) {
             for (const space of dbFile.spaces) {
-              this.logger.warn(
-                `${this.updateDBFiles.name} - ${dbFile.path}/${dbFile.name} (${dbFile.id}) will be removed from space : *${space.alias}* (${space.id})`
-              )
+              this.logger.warn({
+                tag: this.updateDBFiles.name,
+                msg: `${dbFile.path}/${dbFile.name} (${dbFile.id}) will be removed from space : *${space.alias}* (${space.id})`
+              })
             }
           }
           if (dbFile.shares) {
             for (const share of dbFile.shares) {
-              this.logger.warn(
-                `${this.updateDBFiles.name} - ${dbFile.path}/${dbFile.name} (${dbFile.id}) will be removed from share : *${share.alias}* (${share.id})`
-              )
+              this.logger.warn({
+                tag: this.updateDBFiles.name,
+                msg: `${dbFile.path}/${dbFile.name} (${dbFile.id}) will be removed from share : *${share.alias}* (${share.id})`
+              })
             }
           }
         }
-        this.deleteDBFile(user, space, dbFile).catch((e: Error) => this.logger.error(`${this.updateDBFiles.name} - ${e}`))
+        this.deleteDBFile(user, space, dbFile).catch((e: Error) => this.logger.error({ tag: this.updateDBFiles.name, msg: `${e}` }))
       }
     }
   }
 
   private async deleteDBFile(user: UserModel, space: SpaceEnv, dbFile: FileProps) {
     const spaceEnv = await this.spacesManager.spaceEnv(user, path.join(space.url, dbFile.name).split('/'))
-    this.filesQueries.deleteFiles(spaceEnv.dbFile, dbFile.isDir, true).catch((e: Error) => this.logger.error(`${this.deleteDBFile.name} - ${e}`))
+    this.filesQueries
+      .deleteFiles(spaceEnv.dbFile, dbFile.isDir, true)
+      .catch((e: Error) => this.logger.error({ tag: this.deleteDBFile.name, msg: `${e}` }))
   }
 
   private async mergeSpaceRootFiles(space: SpaceEnv, rootFiles: FileProps[], fsFiles: FileProps[], spaceFiles: SpaceFiles) {
@@ -281,15 +289,15 @@ export class SpacesBrowser {
         true
       )
       if (newAlias) {
-        this.logger.log(`${this.mergeSpaceRootFiles.name} - update space root alias (${f.root.id}) : ${f.root.alias} -> ${newAlias}`)
+        this.logger.log({ tag: this.mergeSpaceRootFiles.name, msg: `update space root alias (${f.root.id}) : ${f.root.alias} -> ${newAlias}` })
         // update in db
         this.spacesQueries
           .updateRoot({ alias: newAlias }, { id: f.root.id })
-          .catch((e: Error) => this.logger.error(`${this.mergeSpaceRootFiles.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.mergeSpaceRootFiles.name, msg: `${e}` }))
         // cleanup cache
         this.spacesQueries
           .clearCachePermissions(space.alias, [f.root.alias, newAlias])
-          .catch((e: Error) => this.logger.error(`${this.mergeSpaceRootFiles.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.mergeSpaceRootFiles.name, msg: `${e}` }))
         // assign
         f.root.alias = newAlias
       }
@@ -300,11 +308,11 @@ export class SpacesBrowser {
         fsFiles.map((f) => f.name)
       )
       if (newName) {
-        this.logger.log(`${this.mergeSpaceRootFiles.name} - update space root name (${f.root.id}) : ${f.name} -> ${newName}`)
+        this.logger.log({ tag: this.mergeSpaceRootFiles.name, msg: `update space root name (${f.root.id}) : ${f.name} -> ${newName}` })
         // update in db
         this.spacesQueries
           .updateRoot({ name: newName }, { id: f.root.id })
-          .catch((e: Error) => this.logger.error(`${this.mergeSpaceRootFiles.name} - ${e}`))
+          .catch((e: Error) => this.logger.error({ tag: this.mergeSpaceRootFiles.name, msg: `${e}` }))
         // assign
         f.name = newName
       }

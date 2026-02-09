@@ -61,7 +61,7 @@ export class FilesLockManager {
       expiration: expiration,
       options: options
     }
-    this.logger.verbose(`${this.create.name} - ${key}`)
+    this.logger.verbose({ tag: this.create.name, msg: `${key}` })
     await this.cache.set(key, lock, ttl)
     return [true, lock]
   }
@@ -77,7 +77,7 @@ export class FilesLockManager {
           // Refresh if more than half of the TTL has passed
           const mustRefresh = lock.expiration - currentTimeStamp() < ttl / 2
           if (mustRefresh) {
-            this.refreshLockTimeout(lock, ttl).catch((e: Error) => this.logger.error(`${this.createOrRefresh.name} - ${e}`))
+            this.refreshLockTimeout(lock, ttl).catch((e: Error) => this.logger.error({ tag: this.createOrRefresh.name, msg: `${e}` }))
           }
         } else {
           throw new LockConflict(lock, 'Conflicting lock')
@@ -94,7 +94,7 @@ export class FilesLockManager {
   }
 
   removeLock(key: string): Promise<boolean> {
-    this.logger.verbose(`${this.removeLock.name} - ${key}`)
+    this.logger.verbose({ tag: this.removeLock.name, msg: `${key}` })
     return this.cache.del(key)
   }
 
@@ -106,11 +106,11 @@ export class FilesLockManager {
         continue
       }
       const conflict = `cannot remove conflicting child lock : ${dbFile.path} (${user.login}) -> ${lock.dbFilePath} (${lock.owner.login})`
-      this.logger.debug(`${this.removeChildLocks.name} - ${conflict}`)
+      this.logger.debug({ tag: this.removeChildLocks.name, msg: `${conflict}` })
       throw new LockConflict(lock, conflict)
     }
     for (const key of ownedLockKeys) {
-      this.logger.verbose(`${this.removeChildLocks.name} - child locks: ${key}`)
+      this.logger.verbose({ tag: this.removeChildLocks.name, msg: `child locks: ${key}` })
       await this.removeLock(key)
     }
   }
@@ -144,7 +144,7 @@ export class FilesLockManager {
 
   async refreshLockTimeout(lock: FileLock, ttl: number) {
     lock.expiration = currentTimeStamp() + ttl
-    this.cache.set(lock.key, lock, ttl).catch((e: Error) => this.logger.error(`${this.refreshLockTimeout.name} - ${e}`))
+    this.cache.set(lock.key, lock, ttl).catch((e: Error) => this.logger.error({ tag: this.refreshLockTimeout.name, msg: `${e}` }))
   }
 
   async getLockByToken(token: string): Promise<FileLock> {
@@ -188,7 +188,7 @@ export class FilesLockManager {
         continue
       }
       const conflict = `conflicting parent lock : ${dbFile.path} -> ${l.dbFilePath} (${l.owner.login})`
-      this.logger.debug(`${this.checkConflicts.name} - ${conflict}`)
+      this.logger.debug({ tag: this.checkConflicts.name, msg: `${conflict}` })
       throw new LockConflict(l, conflict)
     }
     if (depth === DEPTH.INFINITY) {
@@ -198,7 +198,7 @@ export class FilesLockManager {
           continue
         }
         const conflict = `conflicting child lock : ${dbFile.path} -> ${l.dbFilePath} (${l.owner.login})`
-        this.logger.debug(`${this.checkConflicts.name} - ${conflict}`)
+        this.logger.debug({ tag: this.checkConflicts.name, msg: `${conflict}` })
         throw new LockConflict(l, conflict)
       }
     }
@@ -207,11 +207,11 @@ export class FilesLockManager {
   async *searchChildLocks(dbFile: FileDBProps) {
     const props = this.genSuffixKey(dbFile, { ignorePath: true })
     const path = dbFile.path === '.' ? '*' : `${dbFile.path}/*`
-    this.logger.verbose(`${this.searchChildLocks.name} - ${path} (${props})`)
+    this.logger.verbose({ tag: this.searchChildLocks.name, msg: `${path} (${props})` })
     const keys = await this.searchKeysByPath(path, props)
     if (keys.length) {
       for (const l of (await this.cache.mget(keys)).filter(Boolean) as FileLock[]) {
-        this.logger.verbose(`-> ${l.dbFilePath} (owner: ${l.owner.login})`)
+        this.logger.verbose({ tag: this.searchChildLocks.name, msg: `-> ${l.dbFilePath} (owner: ${l.owner.login})` })
         yield l
       }
     }
@@ -235,7 +235,7 @@ export class FilesLockManager {
     const props = this.genSuffixKey(dbFile, { ignorePath: true })
     let path = dbFile.path
     const parentPath = dirName(path)
-    this.logger.verbose(`${this.searchParentLocks.name} - (including root : ${options.includeRoot}) : ${path} (${props})`)
+    this.logger.verbose({ tag: this.searchParentLocks.name, msg: `(including root : ${options.includeRoot}) : ${path} (${props})` })
     if (!options.includeRoot) {
       path = dirName(path)
     }
@@ -245,7 +245,7 @@ export class FilesLockManager {
       const keys = await this.searchKeysByPath(path, props, depth)
       if (keys.length) {
         for (const l of (await this.cache.mget(keys)).filter(Boolean) as FileLock[]) {
-          this.logger.verbose(`-> ${l.dbFilePath}`)
+          this.logger.verbose({ tag: this.searchParentLocks.name, msg: `-> ${l.dbFilePath}` })
           yield l
         }
       }
@@ -258,7 +258,7 @@ export class FilesLockManager {
     if (!keys.length) {
       return null
     } else if (keys.length > 1) {
-      this.logger.warn(`Several keys found for token : ${token} => ${JSON.stringify(keys)}`)
+      this.logger.warn({ tag: this.searchKeyByToken.name, msg: `Several keys found for token : ${token} => ${JSON.stringify(keys)}` })
     }
     return keys[0]
   }
