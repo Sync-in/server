@@ -126,7 +126,7 @@ describe(AuthBasicGuard.name, () => {
       .mockImplementation(() => undefined)
     await expect(authBasicGuard.canActivate(context)).rejects.toThrow()
     expect(loggerSpy).toHaveBeenCalled()
-    expect(loggerSpy.mock.calls[0][0]).toEqual(expect.stringContaining('cache failed'))
+    expect(loggerSpy.mock.calls[0][0]).toEqual(expect.objectContaining({ tag: 'validate', msg: expect.stringContaining('cache failed') }))
   })
 
   it('should not validate the user authentication', async () => {

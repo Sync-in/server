@@ -411,7 +411,7 @@ describe(SyncPathsManager.name, () => {
       await flush()
 
       expect(loggerSpy).toHaveBeenCalled()
-      expect(loggerSpy.mock.calls.some(([msg]) => String(msg).includes('updatePaths'))).toBe(true)
+      expect(loggerSpy.mock.calls.some(([payload]: { tag: string }[]) => payload?.tag === 'updatePaths')).toBe(true)
     })
 
     it('should catch notify failure at updatePaths level when building notification fails', async () => {
@@ -427,7 +427,7 @@ describe(SyncPathsManager.name, () => {
 
       expect(res.delete).toEqual([1])
       expect(loggerSpy).toHaveBeenCalled()
-      expect(loggerSpy.mock.calls.some(([msg]) => String(msg).includes('updatePaths'))).toBe(true)
+      expect(loggerSpy.mock.calls.some(([payload]: { tag: string }[]) => payload?.tag === 'updatePaths')).toBe(true)
       // create not called because we failed before reaching it
       expect(notificationsManager.create).not.toHaveBeenCalled()
     })
@@ -446,7 +446,7 @@ describe(SyncPathsManager.name, () => {
       expect(res.delete).toEqual([2])
       expect(loggerSpy).toHaveBeenCalled()
       // error comes from notify() catch
-      expect(loggerSpy.mock.calls.some(([msg]) => String(msg).includes('notify'))).toBe(true)
+      expect(loggerSpy.mock.calls.some(([payload]: { tag: string }[]) => payload?.tag === 'notify')).toBe(true)
     })
   })
 

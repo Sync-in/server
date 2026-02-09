@@ -39,21 +39,23 @@ export const configLogger = (loggerConfig: LoggerConfig) =>
         return undefined
       }
     },
-    transport: {
-      target: 'pino-pretty',
-      options: {
-        ignore: 'hostname,context,reqId,req,res,user,userAgent,responseTime,tag',
-        hideObject: false,
-        singleLine: false,
-        colorize: loggerConfig.colorize,
-        colorizeObjects: false,
-        translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
-        messageFormat: `[{context}]{if tag} [{tag}] {end}{if user} <{user}> {end} ${
-          loggerConfig.colorize ? '\x1b[37m' : ''
-        }{msg}{if res} ({res.contentLength} bytes in {responseTime}ms) {userAgent}{end}{if reqId} | {reqId}{end}`,
-        destination: loggerConfig.stdout ? 1 : loggerConfig.filePath,
-        mkdir: true,
-        sync: false
-      }
-    }
+    transport: loggerConfig.jsonOutput
+      ? null
+      : {
+          target: 'pino-pretty',
+          options: {
+            ignore: 'hostname,context,reqId,req,res,user,userAgent,responseTime,tag',
+            hideObject: false,
+            singleLine: false,
+            colorize: loggerConfig.colorize,
+            colorizeObjects: false,
+            translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
+            messageFormat: `[{context}]{if tag} [{tag}] {end}{if user} <{user}> {end} ${
+              loggerConfig.colorize ? '\x1b[37m' : ''
+            }{msg}{if res} ({res.contentLength} bytes in {responseTime}ms) {userAgent}{end}{if reqId} | {reqId}{end}`,
+            destination: loggerConfig.stdout ? 1 : loggerConfig.filePath,
+            mkdir: true,
+            sync: false
+          }
+        }
   }) satisfies Options

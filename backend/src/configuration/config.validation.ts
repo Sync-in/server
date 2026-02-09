@@ -59,6 +59,10 @@ export class LoggerConfig {
   @IsString()
   @Transform(({ value }) => value || DEFAULT_LOG_FILE_PATH)
   filePath: string = DEFAULT_LOG_FILE_PATH
+
+  @IsOptional()
+  @IsBoolean()
+  jsonOutput: boolean = false
 }
 
 export class GlobalConfig {

@@ -22,6 +22,9 @@ logger:
   # Colorize output.
   # default: `true`
   colorize: true
+  # JSON output. When enabled, `colorize` is ignored.
+  # default: `false`
+  jsonOutput: false
   # Path to the log file used when stdout is set to false
   filePath:
 mysql:

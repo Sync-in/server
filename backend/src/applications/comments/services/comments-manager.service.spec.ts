@@ -177,7 +177,7 @@ describe(CommentsManager.name, () => {
       expect(notificationsManager.create).not.toHaveBeenCalled()
       expect(res).toEqual({ id: 777, fileId: 555, content: 'hello' })
       // Verify that the catch of createComment logged the error
-      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('createComment'))
+      expect(loggerSpy).toHaveBeenCalledWith(expect.objectContaining({ tag: 'createComment' }))
       loggerSpy.mockRestore()
     })
 
@@ -196,7 +196,7 @@ describe(CommentsManager.name, () => {
 
       expect(notificationsManager.create).toHaveBeenCalledTimes(1)
       notificationsManager.create.mockClear()
-      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('notify'))
+      expect(loggerSpy).toHaveBeenCalledWith(expect.objectContaining({ tag: 'notify' }))
       loggerSpy.mockRestore()
 
       const space = makeSpace()
@@ -235,7 +235,7 @@ describe(CommentsManager.name, () => {
       await new Promise((r) => setImmediate(r))
 
       expect(notificationsManager.create).toHaveBeenCalledTimes(1)
-      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('notify'))
+      expect(loggerSpy).toHaveBeenCalledWith(expect.objectContaining({ tag: 'notify' }))
       loggerSpy.mockRestore()
     })
 

@@ -126,7 +126,7 @@ describe(NotificationsManager.name, () => {
       await service.create([1], { app: NOTIFICATION_APP.LINKS } as any)
       await flushPromises()
       expect(loggerSpy).toHaveBeenCalled()
-      expect(loggerSpy.mock.calls[0]?.[0] as string).toMatch(/create/i)
+      expect(loggerSpy.mock.calls[0]?.[0]).toMatchObject({ tag: 'storeNotification' })
     })
 
     it('logs error when storeNotification promise rejects (create catch)', async () => {
@@ -135,7 +135,7 @@ describe(NotificationsManager.name, () => {
       await service.create([1, 2], { app: NOTIFICATION_APP.SYNC } as any, { author: { id: 5, login: 'xx' } } as any)
       await flushPromises()
       expect(loggerSpy).toHaveBeenCalled()
-      expect(loggerSpy.mock.calls[0]?.[0] as string).toMatch(/create/i)
+      expect(loggerSpy.mock.calls[0]?.[0]).toMatchObject({ tag: 'create' })
     })
 
     it('logs error when sendEmailNotification rejects (create catch)', async () => {
@@ -145,7 +145,7 @@ describe(NotificationsManager.name, () => {
       await service.create([1], { app: NOTIFICATION_APP.COMMENTS } as any)
       await flushPromises()
       expect(loggerSpy).toHaveBeenCalled()
-      expect(loggerSpy.mock.calls[0]?.[0] as string).toMatch(/create/i)
+      expect(loggerSpy.mock.calls[0]?.[0]).toMatchObject({ tag: 'create' })
     })
   })
 
@@ -158,7 +158,7 @@ describe(NotificationsManager.name, () => {
       service.wasRead({ id: 8 } as any, undefined)
       await flushPromises()
       expect(loggerSpy).toHaveBeenCalled()
-      expect(loggerSpy.mock.calls[0]?.[0] as string).toMatch(/wasRead/i)
+      expect(loggerSpy.mock.calls[0]?.[0]).toMatchObject({ tag: 'wasRead' })
     })
   })
 
@@ -206,7 +206,7 @@ describe(NotificationsManager.name, () => {
       const loggerSpy = spyLogger()
       await service.sendEmailNotification([{ id: 1, email: 'a@test', language: 'en' }] as any, { app: NOTIFICATION_APP.SYNC } as any, {} as any)
       expect(loggerSpy).toHaveBeenCalled()
-      expect(loggerSpy.mock.calls[0]?.[0] as string).toMatch(/sendEmailNotification/i)
+      expect(loggerSpy.mock.calls[0]?.[0]).toMatchObject({ tag: 'sendEmailNotification' })
     })
   })
 
@@ -249,7 +249,7 @@ describe(NotificationsManager.name, () => {
       const result = (service as any).genMail('en', { app: 99999 } as any, {} as any)
       expect(result).toBeUndefined()
       expect(loggerSpy).toHaveBeenCalled()
-      expect(loggerSpy.mock.calls[0]?.[0] as string).toMatch(/case not handled/i)
+      expect(loggerSpy.mock.calls[0]?.[0]).toMatchObject({ tag: 'genMail', msg: expect.stringContaining('case not handled') })
     })
   })
 })
