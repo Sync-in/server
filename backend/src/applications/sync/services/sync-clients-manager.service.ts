@@ -6,6 +6,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { AuthManager } from '../../../authentication/auth.service'
+import { AUTH_SCOPE } from '../../../authentication/constants/scope'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { AuthProvider } from '../../../authentication/providers/auth-providers.models'
 import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-provider-two-fa.service'
@@ -45,7 +46,7 @@ export class SyncClientsManager {
   ) {}
 
   async register(clientRegistrationDto: SyncClientRegistrationDto, ip: string): Promise<SyncClientAuthRegistration> {
-    const user: UserModel = await this.authProvider.validateUser(clientRegistrationDto.login, clientRegistrationDto.password)
+    const user: UserModel = await this.authProvider.validateUser(clientRegistrationDto.login, clientRegistrationDto.password, ip, AUTH_SCOPE.CLIENT)
     if (!user) {
       this.logger.warn(`${this.register.name} - auth failed for user *${clientRegistrationDto.login}*`)
       throw new HttpException('Wrong login or password', HttpStatus.UNAUTHORIZED)

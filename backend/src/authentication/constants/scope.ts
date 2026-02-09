@@ -1,3 +1,4 @@
 export enum AUTH_SCOPE {
-  WEBDAV = 'webdav'
+  WEBDAV = 'webdav',
+  CLIENT = 'client'
 }

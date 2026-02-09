@@ -4,7 +4,6 @@ import { FormGroup, FormsModule, ReactiveFormsModule, UntypedFormBuilder, Valida
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCopy, faKey, faPlus } from '@fortawesome/free-solid-svg-icons'
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
-
 import { AUTH_SCOPE } from '@sync-in-server/backend/src/authentication/constants/scope'
 import { createLightSlug, currentDate } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -13,6 +12,7 @@ import { BsDatepickerDirective, BsDatepickerInputDirective } from 'ngx-bootstrap
 import { ClipboardService } from 'ngx-clipboard'
 import { filter } from 'rxjs/operators'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
+import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
 import { LayoutService } from '../../../../layout/layout.service'
 import { UserService } from '../../user.service'
@@ -29,7 +29,8 @@ import { UserService } from '../../user.service'
     BsDatepickerDirective,
     BsDatepickerInputDirective,
     ReactiveFormsModule,
-    ButtonCheckboxDirective
+    ButtonCheckboxDirective,
+    CapitalizePipe
   ],
   templateUrl: './user-auth-manage-app-passwords-dialog.component.html'
 })
