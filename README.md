@@ -22,11 +22,12 @@ _Welcome to the Sync-in server repository!_
 <a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/discord/1391081837849346088?logo=discord&label=Discord" alt="Discord"/></a>
 <a href="https://deepwiki.com/Sync-in/server"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 
-The **Sync-in Server** is designed to run on your own infrastructure, it gives you **full control over your data** while offering a modern,
-intuitive interface for both internal and external users.
+**The Sync-in Server** runs on your own infrastructure, giving you **full ownership of your files and documents** while providing a modern and
+intuitive collaboration platform. It combines collaborative spaces, secure file sharing, and fine-grained access control with strong security
+foundations.
 
-With features like **collaborative spaces**, **secure file sharing**, **granular permission management**,
-Sync-in fits seamlessly into any environment — from small teams to large enterprises, public institutions, or privacy-conscious individuals.
+Built around open standards and interoperability, Sync-in supports multi-editor document collaboration, seamless client integration, and flexible
+deployment models, making it suitable for self-hosted environments, organizations, and privacy-focused users.
 
 <picture>
   <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/server-dark.png" media="(prefers-color-scheme: dark)" />
@@ -38,30 +39,37 @@ Sync-in fits seamlessly into any environment — from small teams to large enter
 ## 🚀 Features
 
 - 🖥️ Modern, Fast, and High-Performance Interface
-  - Sleek and intuitive UI for a seamless user experience
-  - Optimized for speed and efficiency
-- 🔒 Security & Data Ownership
-  - Full control over data security and compliance
-  - Designed to protect sensitive documents and prevent unauthorized access
-  - **Multi-Factor Authentication (MFA)**: TOTP (authenticator apps), recovery codes, app passwords
+    - Intuitive and responsive UI designed for productivity
+    - Optimized experience across devices
+- 🆔 Modern Identity & Authentication
+    - OpenID Connect (OIDC) support for federated authentication and Single Sign-On (SSO)
+    - LDAP integration for enterprise and organizational environments
+    - Multi-Factor Authentication (MFA), recovery codes, and application passwords
+    - Unified authentication across Web, Desktop, and CLI clients
 - 🔑 Advanced User Access Control
-  - **Spaces & Shares**: Organize files with fine-grained access permissions
-  - Role-based permission system ensuring secure file management
-- 🤝 Collaboration
-  - **Collabora Online & OnlyOffice Integration**: Real-time document editing and collaboration
-  - **Activity Tracking**: Commenting, notifications, and file history for seamless teamwork
+    - Spaces & Shares with fine-grained permissions
+    - Role-based access control for secure collaboration
+- 🤝 Collaborative Editing
+    - Collabora Online and OnlyOffice integration
+    - Multi-editor support with automatic editor selection
+    - Comments, notifications, and file activity tracking
 - 🔎 Powerful Full-Text Search
-  - **Deep content search** for easy retrieval of files and documents
-  - Supports various file formats for comprehensive indexing
-- 📂 Document Management & Restrictions
-  - **Quota & Lock Management**: Control file storage and prevent unwanted modifications
-  - **Secure Spaces**: Ensure documents are shared in a protected environment
+    - Deep document content indexing
+    - Multi-format search support
+- 📂 Document Management & File Protection
+    - Storage quotas and file locking
+    - Secure and controlled sharing environments
+- 🌍 Sovereign & Self-Hosted by Design
+    - Full control over infrastructure and data
+    - Deployable on-premise or private cloud
+    - Built on open standards and interoperable technologies
 - 🔗 WebDAV Access
-  - Fully compatible with **WebDAV** for remote file access and synchronization
+    - Native WebDAV support for remote file access and synchronization
+    - Integration with file explorers and third-party tools
 - 🖥️ [Desktop Client](https://github.com/Sync-in/desktop)
-  - Full-featured **desktop application** for enhanced productivity
-  - Supports **file synchronization** across devices
-  - Allows **connection to multiple servers** hosting the solution
+    - Full-featured desktop application for enhanced productivity
+    - Cross-device file synchronization
+    - Multi-server support
 
 ---
 
@@ -74,15 +82,16 @@ If you find it useful, you can:
 - 🐛 Report issues and suggest improvements
 - 🤝 Contribute code, translations, or documentation
 - 💬 Join the community on :
-   - [GitHub Discussions](https://github.com/Sync-in/server/discussions)
-   - [Discord](https://discord.gg/qhJyzwaymT)
+    - [GitHub Discussions](https://github.com/Sync-in/server/discussions)
+    - [Discord](https://discord.gg/qhJyzwaymT)
 - 💖 Support the project !
-  - [GitHub Sponsors](https://github.com/sponsors/Sync-in)
-  - [Other ways to support](https://sync-in.com/support)
+    - [GitHub Sponsors](https://github.com/sponsors/Sync-in)
+    - [Other ways to support](https://sync-in.com/support)
 
 ---
 
 ## 🤝 Contributing
+
 Before submitting your pull request, please confirm the following:
 
 - ✅ I have read and followed the [contribution guide](CONTRIBUTING.md).
@@ -91,6 +100,7 @@ Before submitting your pull request, please confirm the following:
 ---
 
 ## 📜 License
+
 This project is licensed under the **GNU Affero General Public License (AGPL-3.0-or-later)**.  
 See [LICENSE](LICENSE) for the full text.
 
