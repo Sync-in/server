@@ -3,6 +3,7 @@ set -eu
 
 : "${PUID:?PUID is not defined}"
 : "${PGID:?PGID is not defined}"
+: "${FORCE_PERMISSIONS:=false}"
 
 # Create syncin group if needed
 group_name=$(getent group "${PGID}" | cut -d: -f1)
@@ -24,9 +25,11 @@ chown "${PUID}:${PGID}" /app
 CURRENT_UID=$(stat -c '%u' /app/data)
 CURRENT_GID=$(stat -c '%g' /app/data)
 
-if [ "${CURRENT_UID}" != "${PUID}" ] || [ "${CURRENT_GID}" != "${PGID}" ]; then
+if [ "${CURRENT_UID}" != "${PUID}" ] || [ "${CURRENT_GID}" != "${PGID}" ] || [ "${FORCE_PERMISSIONS}" = "true" ]; then
     chown -R "${PUID}:${PGID}" /app/data
 fi
+
+umask 027
 
 # Launch server as syncin user
 exec su-exec "${PUID}:${PGID}" "$@"
