@@ -259,19 +259,23 @@
   border-bottom: .5px solid;
   height: $sidebar-apps-icons-height;
 
+  .btn.me-1, .btn-group.me-1 {
+    // handles space between button
+    margin-right: .4rem !important;
+  }
+
   .btn {
-    height: 30px;
     min-width: 36px;
 
     > fa-icon {
-      font-size: $font-size-md;
+      font-size: .875rem;
     }
 
     span {
       font-size: $font-size-xs;
 
       fa-icon {
-        font-size: $font-size-md;
+        font-size: .875rem;
         margin-right: 0.2rem;
       }
     }

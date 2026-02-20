@@ -4,7 +4,6 @@
   .wrapper, .left-sidebar {
     background-color: $sidebar-light-apps-menu-bg;
   }
-
   .left-sidebar {
     // Side bar Menu apps
     .sidebar-apps-icons {
@@ -75,7 +74,6 @@
         //&.submenu {
         //  background-color: darken($sidebar-light-apps-menu-bg, 3%);
         //}
-
         &:hover, &.active {
           background: $sidebar-light-apps-menu-hover-bg;
 
@@ -118,7 +116,6 @@
       opacity: 1;
     }
   }
-
   .control-sidebar-menu {
     .sidebar-apps-icons {
       background-color: $sidebar-light-icons-menu-color;
@@ -146,15 +143,12 @@
   .chat-border-bottom {
     border-bottom-color: $sidebar-light-apps-menu-border-color;
   }
-
   .chat-input {
     background-color: $sidebar-light-apps-menu-hover-bg;
   }
-
   .chat-container {
     background-color: $gray-lighter;
   }
-
   .chat-button-bottom {
     color: darken(gray, 30%);
 
@@ -162,7 +156,6 @@
       color: black;
     }
   }
-
   .chat-list-sidebar {
     color: $sidebar-light-apps-menu-color;
 
@@ -210,6 +203,104 @@
 }
 
 @mixin skin-light-app() {
+  .btn {
+    --btn-premium-focus: #{rgba($primary, 0.24)};
+
+    &:focus-visible {
+      outline: 2px solid var(--btn-premium-focus, rgba(13, 110, 253, 0.25));
+      outline-offset: 1px;
+      box-shadow: none !important;
+    }
+  }
+  .btn-secondary,
+  .btn-default,
+  .btn-custom,
+  .btn-outline-secondary-alt {
+    --btn-premium-secondary-bg: #{mix($white, $gray-lightest, 94%)};
+    --btn-premium-secondary-bg-hover: #{$table-bg-hover};
+    --btn-premium-secondary-border: #{mix($primary, $gray-light, 14%)};
+    --btn-premium-secondary-border-hover: #{mix($primary, $gray-light, 26%)};
+    --btn-premium-secondary-color: #{darken($gray-dark, 18%)};
+    --btn-premium-secondary-color-hover: #{darken($gray-dark, 28%)};
+    --btn-premium-secondary-disabled-color: #{lighten($gray-dark, 18%)};
+    border-color: var(--btn-premium-secondary-border) !important;
+    color: var(--btn-premium-secondary-color) !important;
+    background-color: var(--btn-premium-secondary-bg) !important;
+
+    &:hover:not(:disabled) {
+      border-color: var(--btn-premium-secondary-border-hover) !important;
+      color: var(--btn-premium-secondary-color-hover) !important;
+      background-color: var(--btn-premium-secondary-bg-hover) !important;
+    }
+
+    &:disabled {
+      border-color: var(--btn-premium-secondary-border) !important;
+      color: var(--btn-premium-secondary-disabled-color) !important;
+      background-color: var(--btn-premium-secondary-bg) !important;
+    }
+  }
+  .btn-custom {
+    fa-icon,
+    span {
+      color: inherit !important;
+    }
+
+    &:is(.active, :active, [aria-pressed='true']):not(:disabled) {
+      background-color: $primary !important;
+      border-color: $primary !important;
+      color: $white !important;
+    }
+  }
+  .btn-check:is(:checked, :active) + .btn-custom:not(:disabled) {
+    background-color: $primary !important;
+    border-color: $primary !important;
+    color: $white !important;
+  }
+  .btn-outline-blue {
+    @include button-outline-variant($primary);
+  }
+  .btn[class*='bg-']:hover {
+    @include box-shadow(inset 0 0 100px rgba(0, 0, 0, 0.2));
+  }
+  .btn-minimize {
+    background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23000'%3e%3cpath d='M32,224c-17.7,0-32,14.3-32,32s14.3,32,32,32h448c17.7,0,32-14.3,32-32s-14.3-32-32-32H32z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+  }
+  .dropdown-menu {
+    --menu-surface-bg: #{mix($white, $gray-lightest, 94%)};
+    --menu-surface-border: #{mix($primary, $gray-light, 14%)};
+    --menu-item-color: #{darken($gray-dark, 18%)};
+    --menu-item-hover-bg: #{lighten($selected-background, 3%)};
+    --menu-item-hover-color: #{darken($gray-dark, 28%)};
+    border: .5px solid var(--menu-surface-border, var(--btn-premium-secondary-border)) !important;
+    background-color: var(--menu-surface-bg, var(--btn-premium-secondary-bg)) !important;
+
+    > li > a {
+      color: var(--menu-item-color, var(--btn-premium-secondary-color));
+      background-color: transparent;
+
+      &:hover {
+        background-color: var(--menu-item-hover-bg, var(--btn-premium-secondary-bg-hover)) !important;
+        color: var(--menu-item-hover-color, var(--btn-premium-secondary-color-hover)) !important;
+      }
+    }
+
+    > .divider {
+      background-color: #eee;
+    }
+  }
+  .dropdown-item {
+    color: var(--menu-item-color, var(--btn-premium-secondary-color));
+
+    &:hover,
+    &.active,
+    &:active {
+      background-color: var(--menu-item-hover-bg, var(--btn-premium-secondary-bg-hover)) !important;
+      color: var(--menu-item-hover-color, var(--btn-premium-secondary-color-hover)) !important;
+    }
+  }
+  .dropdown-divider {
+    border-top-color: var(--menu-surface-border, var(--btn-premium-secondary-border)) !important;
+  }
   .app-table {
     color: $body-color;
     // Bootstrap 5 fix
@@ -218,7 +309,7 @@
     }
 
     thead {
-      background-color: $gray-lightest;
+      background: linear-gradient(170deg, mix($white, $primary, 88%) 0%, mix($white, $gray-lightest, 92%) 100%);;
 
       tr {
         th {
@@ -244,7 +335,6 @@
       color: lighten($gray-dark, 5%);
     }
   }
-
   .app-table-striped {
     > tbody > tr {
       &:nth-of-type(odd) {
@@ -256,31 +346,19 @@
       }
     }
   }
-
   .app-top-menu {
     border-top-color: $gray-light;
     border-bottom-color: $gray-light;
-    background-color: $gray-lightest;
+    background: linear-gradient(170deg, mix($white, $primary, 88%) 0%, mix($white, $gray-lightest, 92%) 100%);
 
     .dropdown-menu {
-      background-color: $gray-light;
-      border-color: darken($gray-light, 10%);
-
-      .dropdown-item {
-        color: $black !important;
-
-        &:hover, &.active {
-          background-color: darken($gray-mid, 5%) !important;
-        }
-      }
+      --menu-surface-bg: #EBF0F5;
     }
   }
-
   .app-foot-menu {
-    background-color: $gray-light;
+    background: #eaf1f8;
     color: $dropdown-link-color;
   }
-
   .app-thumbs {
     background-color: $gray-lighter;
 
@@ -304,7 +382,6 @@
       }
     }
   }
-
   .app-sync-clients {
     .left-panel {
       border-right-color: $gray-light !important;
@@ -315,7 +392,6 @@
       border-bottom-color: $gray-light !important;
     }
   }
-
   .app-div-hovered {
     &:hover {
       background-color: $table-bg-hover !important;
@@ -325,7 +401,6 @@
       background-color: darken($table-bg-hover, 4%) !important;
     }
   }
-
   .app-div-striped {
     &:nth-of-type(even) {
       background-color: lighten($gray-lighter, 2%);
@@ -335,30 +410,25 @@
       background-color: darken($table-bg-hover, 4%) !important;
     }
   }
-
   .app-div-striped-inverse {
     &:nth-of-type(odd) {
       background-color: darken($body-bg, 4%);
     }
   }
-
   .list-group-item {
     background-color: lighten($gray-light, 10%);
     color: $custom-color;
   }
-
   .profile-page {
     .box {
       background-color: $gray-lighter;
     }
   }
-
   .user-groups-page {
     .app-table > tbody {
       background-color: $white;
     }
   }
-
   .user-details {
     color: $black;
 
@@ -368,7 +438,6 @@
       filter: none;
     }
   }
-
   .task-list {
     border-bottom-color: $gray-mid;
 
@@ -376,11 +445,9 @@
       background-color: $table-bg-hover;
     }
   }
-
   .app-small-card {
     background-color: $gray-light;
   }
-
   .wizard {
     background-color: lighten($primary, 50%);
 
@@ -398,7 +465,6 @@
       background-color: $gray-lightest;
     }
   }
-
   .sidebar-item {
     .sidebar-item-container {
       &:hover {
@@ -417,47 +483,44 @@
     background-color: white;
     color: $body-color;
   }
-
   //.content-container {
   //  border-left: .5px solid $sidebar-light-apps-menu-border-color;
   //}
-
   .ngx-contextmenu {
-    background-color: $gray-light !important;
-    border-color: darken($gray-light, 10%) !important;
+    background-color: #EBF0F5 !important;
+    border-color: mix($primary, $gray-light, 14%) !important;
 
-    .ngx-context-menu-item {
-      color: $black !important;
+    > button.ngx-context-menu-item {
+      color: darken($gray-dark, 18%) !important;
+      background-color: transparent !important;
 
-      &:hover, &.active {
-        background-color: darken($gray-mid, 5%) !important;
+      &:hover,
+      &:focus-visible,
+      &.active {
+        background-color: lighten($selected-background, 3%) !important;
+        color: darken($gray-dark, 28%) !important;
       }
     }
-  }
 
-  .dropdown-divider {
-    border-top-color: darken($secondary-light, 15%) !important;
+    > [role='separator'] {
+      border-top-color: mix($primary, $gray-light, 14%) !important;
+    }
   }
-
   .modal-body {
     background-color: $body-bg;
   }
-
   .modal-footer {
     background-color: $gray-lightest;
   }
-
   typeahead-container, .ui-select-choices {
     &.dropdown-menu {
       background-color: $white !important;
     }
   }
-
   .small-box {
     //background: $gray-lightest;
     border-color: $gray-lighter;
   }
-
   .nav-link {
     color: $body-color;
     background-color: lighten($gray-mid, 4%);
@@ -475,7 +538,6 @@
       color: $muted;
     }
   }
-
   .box-default {
     @include box-solid-variant($gray-lighter, $body-color, true);
 
@@ -487,7 +549,6 @@
       border-top: .5px solid darken($gray-lighter, 5%);
     }
   }
-
   .box-footer-default {
     background-color: $gray-lighter;
 
@@ -495,14 +556,13 @@
       background-color: darken($gray-lighter, 5%);
     }
   }
-
   .box-transparent {
     background-color: $gray-lightest;
     border-color: $gray-lighter;
     box-shadow: 0 12px 26px rgba(24, 32, 58, 0.1);
 
     > .box-header {
-      background: linear-gradient(180deg, $white 0%, $gray-lightest 100%);
+      background: #eaf1f8;
       border-bottom-color: $gray-lighter;
     }
 
@@ -515,28 +575,24 @@
       border: 0.5px solid darken($gray-lighter, 4%);
     }
   }
-
   .bg-theme {
     background-color: $gray-light;
   }
-
   .bg-theme-alt {
     background-color: $gray-lightest !important;
   }
-
   .recents-grid::before {
     background: linear-gradient(
-      180deg,
-      rgba($gray-light, 0.9) 0%,
-      rgba($gray-lightest, 0.7) 100%
+                    180deg,
+                    rgba($gray-light, 0.9) 0%,
+                    rgba($gray-lightest, 0.7) 100%
     );
   }
-
   .recents-grid .box-transparent > .box-header {
     background: linear-gradient(
-      180deg,
-      mix($primary, $white, 12%) 0%,
-      mix($primary, $white, 6%) 100%
+                    180deg,
+                    mix($primary, $white, 12%) 0%,
+                    mix($primary, $white, 6%) 100%
     );
     border-bottom-color: mix($primary, $white, 20%);
 
@@ -557,19 +613,15 @@
       color: darken($primary, 24%);
     }
   }
-
   .products-list > li:hover {
     background-color: lighten($table-bg-hover, 2%);
   }
-
   .product-list-in-box {
     border-bottom-color: $gray-lighter;
   }
-
   .avatar-img {
     background-color: darken($gray-light, 5%);
   }
-
   .code-editor {
     background-color: $white !important;
   }

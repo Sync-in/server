@@ -15,3 +15,39 @@
     }
   }
 }
+
+@mixin app-menu-surface-structure($radius: .72rem, $padding: .25rem, $important: false) {
+  @if $important {
+    border-radius: $radius !important;
+    line-height: normal !important;
+    box-shadow: none !important;
+    padding: $padding !important;
+  } @else {
+    border-radius: $radius;
+    line-height: normal;
+    box-shadow: none;
+    padding: $padding;
+  }
+}
+
+@mixin app-menu-item-structure($radius: .55rem, $margin-y: 1px, $important: false) {
+  @if $important {
+    border-radius: $radius !important;
+    margin: $margin-y 0 !important;
+  } @else {
+    border-radius: $radius;
+    margin: $margin-y 0;
+  }
+}
+
+@mixin app-menu-divider-structure($margin: .2rem 0, $width: .5px, $important: false) {
+  @if $important {
+    border-top-width: $width !important;
+    border-top-style: solid !important;
+    margin: $margin !important;
+  } @else {
+    border-top-width: $width;
+    border-top-style: solid;
+    margin: $margin;
+  }
+}

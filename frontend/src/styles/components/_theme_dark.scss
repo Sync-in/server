@@ -1,5 +1,4 @@
 //Dark Sidebar Mixin
-
 @mixin skin-dark-left-sidebar() {
   // Sidebar background color (Both .wrapper is responsible for sidebar bg color)
   .wrapper, .left-sidebar {
@@ -67,7 +66,6 @@
         //&.submenu {
         //  background-color: darken($sidebar-dark-apps-menu-bg, 3%);
         //}
-
         &:hover, &.active {
           background: $sidebar-dark-apps-menu-hover-bg;
 
@@ -114,7 +112,6 @@
       opacity: 1;
     }
   }
-
   .control-sidebar-menu {
     .sidebar-apps-icons {
       background-color: $sidebar-dark-icons-menu-bg;
@@ -139,15 +136,12 @@
   .chat-border-bottom {
     border-bottom-color: $sidebar-dark-apps-menu-bg;
   }
-
   .chat-input {
     background-color: $sidebar-dark-icons-menu-bg;
   }
-
   .chat-container {
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
   }
-
   .chat-button-bottom {
     color: $gray-light;
 
@@ -155,7 +149,6 @@
       color: lighten($gray-light, 30%);
     }
   }
-
   .chat-list-sidebar {
     color: $sidebar-dark-apps-menu-border-color;
 
@@ -207,7 +200,104 @@
     color: $custom-color !important;
     border-bottom: none;
   }
+  .btn {
+    --btn-premium-focus: #{rgba($primary, 0.28)};
 
+    &:focus-visible {
+      outline: 2px solid var(--btn-premium-focus, rgba(13, 110, 253, 0.25));
+      outline-offset: 1px;
+      box-shadow: none !important;
+    }
+  }
+  .btn-secondary,
+  .btn-default,
+  .btn-custom,
+  .btn-outline-secondary-alt {
+    --btn-premium-secondary-bg: #{lighten($sidebar-dark-icons-menu-bg, 5%)};
+    --btn-premium-secondary-bg-hover: #{$sidebar-dark-icons-menu-bg};
+    --btn-premium-secondary-border: #{lighten($sidebar-dark-icons-menu-border-color, 10%)};
+    --btn-premium-secondary-border-hover: #{mix($primary, $sidebar-dark-icons-menu-border-color, 34%)};
+    --btn-premium-secondary-color: #{lighten($gray-light, 8%)};
+    --btn-premium-secondary-color-hover: #{lighten($gray-light, 14%)};
+    --btn-premium-secondary-disabled-color: #{darken($gray-light, 12%)};
+    border-color: var(--btn-premium-secondary-border) !important;
+    color: var(--btn-premium-secondary-color) !important;
+    background-color: var(--btn-premium-secondary-bg) !important;
+
+    &:hover:not(:disabled) {
+      border-color: var(--btn-premium-secondary-border-hover) !important;
+      color: var(--btn-premium-secondary-color-hover) !important;
+      background-color: var(--btn-premium-secondary-bg-hover) !important;
+    }
+
+    &:disabled {
+      border-color: var(--btn-premium-secondary-border) !important;
+      color: var(--btn-premium-secondary-disabled-color) !important;
+      background-color: var(--btn-premium-secondary-bg) !important;
+    }
+  }
+  .btn-custom {
+    fa-icon,
+    span {
+      color: inherit !important;
+    }
+
+    &:is(.active, :active, [aria-pressed='true']):not(:disabled) {
+      background-color: $primary !important;
+      border-color: $primary !important;
+      color: $white !important;
+    }
+  }
+  .btn-check:is(:checked, :active) + .btn-custom:not(:disabled) {
+    background-color: $primary !important;
+    border-color: $primary !important;
+    color: $white !important;
+  }
+  .btn-outline-blue {
+    @include button-outline-variant($primary);
+  }
+  .btn[class*='bg-']:hover {
+    @include box-shadow(inset 0 0 100px rgba(0, 0, 0, 0.2));
+  }
+  .btn-minimize {
+    background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23000'%3e%3cpath d='M32,224c-17.7,0-32,14.3-32,32s14.3,32,32,32h448c17.7,0,32-14.3,32-32s-14.3-32-32-32H32z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+  }
+  .dropdown-menu {
+    --menu-surface-bg: #{lighten($sidebar-dark-icons-menu-bg, 5%)};
+    --menu-surface-border: #{lighten($sidebar-dark-icons-menu-border-color, 10%)};
+    --menu-item-color: #{lighten($gray-light, 8%)};
+    --menu-item-hover-bg: #{$sidebar-dark-icons-menu-bg};
+    --menu-item-hover-color: #{lighten($gray-light, 14%)};
+    border: .5px solid var(--menu-surface-border, var(--btn-premium-secondary-border)) !important;
+    background-color: var(--menu-surface-bg, var(--btn-premium-secondary-bg)) !important;
+
+    > li > a {
+      color: var(--menu-item-color, var(--btn-premium-secondary-color));
+      background-color: transparent;
+
+      &:hover {
+        background-color: var(--menu-item-hover-bg, var(--btn-premium-secondary-bg-hover)) !important;
+        color: var(--menu-item-hover-color, var(--btn-premium-secondary-color-hover)) !important;
+      }
+    }
+
+    > .divider {
+      background-color: #eee;
+    }
+  }
+  .dropdown-item {
+    color: var(--menu-item-color, var(--btn-premium-secondary-color));
+
+    &:hover,
+    &.active,
+    &:active {
+      background-color: var(--menu-item-hover-bg, var(--btn-premium-secondary-bg-hover)) !important;
+      color: var(--menu-item-hover-color, var(--btn-premium-secondary-color-hover)) !important;
+    }
+  }
+  .dropdown-divider {
+    border-top-color: var(--menu-surface-border, var(--btn-premium-secondary-border)) !important;
+  }
   .app-table {
     color: $gray-light;
     // Bootstrap 5 fix
@@ -242,7 +332,6 @@
       color: darken($gray-light, 5%);
     }
   }
-
   .app-table-striped {
     > tbody > tr {
       &:nth-of-type(odd) {
@@ -254,31 +343,19 @@
       }
     }
   }
-
   .app-top-menu {
     border-top-color: $sidebar-dark-icons-menu-border-color;
     border-bottom-color: $sidebar-dark-icons-menu-border-color;
-    background-color: $sidebar-dark-apps-menu-title-bg;
+    background: linear-gradient(170deg, lighten($sidebar-dark-apps-menu-title-bg, 7%) 0%, darken($sidebar-dark-icons-menu-bg, 1%) 100%);
 
     .dropdown-menu {
-      background-color: $sidebar-dark-icons-menu-border-color;
-      border-color: darken($sidebar-dark-icons-menu-border-color, 5%);
-
-      .dropdown-item {
-        color: $gray-mid;
-
-        &:hover, &.active {
-          background-color: $sidebar-dark-icons-menu-hover-bg;
-        }
-      }
+      --menu-item-color: #{$gray-light};
     }
   }
-
   .app-foot-menu {
     background-color: $sidebar-dark-icons-menu-bg;
     color: darken($gray-light, 5%);
   }
-
   .app-div-hovered {
     &:hover {
       background-color: darken($sidebar-dark-apps-menu-bg, 4%) !important;
@@ -288,7 +365,6 @@
       background-color: $sidebar-dark-apps-menu-title-bg !important;
     }
   }
-
   .app-div-striped {
     &.selected {
       background-color: $sidebar-dark-apps-menu-title-bg !important;
@@ -298,13 +374,11 @@
       background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
     }
   }
-
   .app-div-striped-inverse {
     &:nth-of-type(odd) {
       background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
     }
   }
-
   .app-thumbs {
     background-color: inherit !important;
 
@@ -329,7 +403,6 @@
       }
     }
   }
-
   .app-sync-clients {
     .left-panel {
       border-right-color: darken($sidebar-dark-icons-menu-border-color, 4%) !important;
@@ -340,12 +413,10 @@
       border-bottom-color: darken($sidebar-dark-icons-menu-border-color, 4%) !important;
     }
   }
-
   .list-group-item {
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%);
     color: $white;
   }
-
   .profile-page {
     select {
       background-color: transparent;
@@ -353,7 +424,6 @@
       filter: brightness(0) invert(1);
     }
   }
-
   .task-list {
     border-bottom-color: $sidebar-dark-icons-menu-border-color;
 
@@ -361,11 +431,9 @@
       background-color: $sidebar-dark-apps-menu-title-bg;
     }
   }
-
   .app-small-card {
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 2%);
   }
-
   .wizard {
     tbody tr {
       &:hover {
@@ -381,7 +449,6 @@
       background-color: $sidebar-dark-icons-menu-bg;
     }
   }
-
   .sidebar-item {
     .sidebar-item-container {
       &:hover {
@@ -400,36 +467,34 @@
     background-color: lighten($sidebar-dark-apps-menu-bg, 4%);
     color: $gray-light;
   }
-
   //.content-container {
   //  border-left: .5px solid $sidebar-dark-icons-menu-border-color;
   //}
-
   .ngx-contextmenu {
-    background-color: $sidebar-dark-icons-menu-border-color !important;
-    border-color: darken($sidebar-dark-icons-menu-border-color, 5%) !important;
+    background-color: lighten($sidebar-dark-icons-menu-bg, 5%);
+    border-color: lighten($sidebar-dark-icons-menu-border-color, 10%);
 
-    .ngx-context-menu-item {
-      color: $gray-mid !important;
+    > button.ngx-context-menu-item {
+      color: $gray-light !important;
+      background-color: transparent !important;
 
-      &:hover, &.active {
+      &:hover,
+      &:focus-visible,
+      &.active {
         background-color: $sidebar-dark-icons-menu-hover-bg !important;
       }
     }
-  }
 
-  .dropdown-divider {
-    border-top-color: #515f67 !important;
+    > [role='separator'] {
+      border-top-color: lighten($sidebar-dark-icons-menu-border-color, 10%) !important;
+    }
   }
-
   .modal-content {
     background: transparent !important;
   }
-
   .modal-header {
     border-bottom-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
   }
-
   .modal-body {
     color: $gray-light;
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
@@ -438,13 +503,11 @@
       background: transparent;
     }
   }
-
   .modal-footer {
     color: $gray-light;
     background-color: $sidebar-dark-apps-menu-title-bg;
     border-top-color: $sidebar-dark-apps-menu-title-bg;
   }
-
   .modal-auth-verify-2fa, .modal-viewer-select {
     .card {
       color: $gray-light;
@@ -452,7 +515,6 @@
       border-color: $sidebar-dark-icons-menu-border-color;
     }
   }
-
   typeahead-container, .ui-select-choices {
     &.dropdown-menu {
       background-color: $sidebar-dark-icons-menu-border-color;
@@ -475,13 +537,6 @@
       }
     }
   }
-
-  .btn-custom {
-    &:hover:not(.active) {
-      color: $body-color !important;
-    }
-  }
-
   .nav-link {
     color: $gray-light;
     background: lighten($sidebar-dark-icons-menu-bg, 4%);
@@ -500,11 +555,9 @@
       color: $muted;
     }
   }
-
   .form-control-plaintext {
     color: $white;
   }
-
   .form-control, .form-select, .input-group-text {
     background-color: $sidebar-dark-apps-menu-title-bg;
     color: $white;
@@ -518,19 +571,15 @@
       color: $muted;
       background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
     }
-
   }
-
   .small-box {
     color: $gray-light;
     border-color: lighten($sidebar-dark-icons-menu-bg, 4%);
     background-color: $sidebar-dark-icons-menu-bg;
   }
-
   .box:not(.box-background-transparent) {
     background-color: $sidebar-dark-icons-menu-bg;
   }
-
   .box-default {
     @include box-solid-variant($sidebar-dark-apps-menu-title-bg, $gray-light, true);
 
@@ -542,7 +591,6 @@
       border-top: .5px solid $sidebar-dark-apps-menu-title-bg;
     }
   }
-
   .box-footer-default {
     background-color: $sidebar-dark-apps-menu-title-bg;
 
@@ -550,7 +598,6 @@
       background-color: darken($sidebar-dark-apps-menu-title-bg, 5%);
     }
   }
-
   .box-transparent {
     background-color: darken($sidebar-dark-icons-menu-bg, 2%);
     border-color: $sidebar-dark-icons-menu-border-color;
@@ -558,9 +605,9 @@
 
     > .box-header {
       background: linear-gradient(
-        180deg,
-        darken($sidebar-dark-icons-menu-bg, 2%) 0%,
-        darken($sidebar-dark-icons-menu-bg, 6%) 100%
+                      180deg,
+                      darken($sidebar-dark-icons-menu-bg, 2%) 0%,
+                      darken($sidebar-dark-icons-menu-bg, 6%) 100%
       );
       border-bottom-color: $sidebar-dark-icons-menu-border-color;
     }
@@ -570,71 +617,56 @@
       border: 1px solid $sidebar-dark-icons-menu-border-color;
     }
   }
-
   .products-list > li:hover {
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%);
   }
-
   .product-list-in-box {
     border-bottom-color: $sidebar-dark-icons-menu-border-color;
   }
-
   .recents-grid::before {
     background: linear-gradient(
-      180deg,
-      rgba($sidebar-dark-icons-menu-bg, 0.7) 0%,
-      rgba($sidebar-dark-icons-menu-bg, 0.45) 100%
+                    180deg,
+                    rgba($sidebar-dark-icons-menu-bg, 0.7) 0%,
+                    rgba($sidebar-dark-icons-menu-bg, 0.45) 100%
     );
   }
-
   .ui-disabled {
     background-color: $sidebar-dark-icons-menu-bg !important;
     color: $body-color;
   }
-
   .ui-select-toggle {
     ::after {
       color: $gray-light;
     }
   }
-
   .text-purple {
     color: #b366ff !important;
   }
-
   .text-primary {
     color: #2283dd !important;
   }
-
   .bg-theme {
     background-color: darken($sidebar-dark-icons-menu-bg, 4%);
   }
-
   .bg-theme-alt {
     background-color: $sidebar-dark-apps-menu-title-bg !important;
   }
-
   .btn-close {
     filter: var(--bs-btn-close-white-filter)
   }
-
   .btn-outline-secondary-alt {
     border-color: lighten($sidebar-dark-icons-menu-bg, 4%)
   }
-
   .text-muted {
     color: #8a8f94 !important;
   }
-
   .text-bg-light {
     color: $gray-light !important;
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%) !important;
   }
-
   .avatar-img {
     background-color: darken($gray-light, 5%);
   }
-
   // Code Mirror
   .cm-panel.cm-search {
     button[aria-label="close"] {

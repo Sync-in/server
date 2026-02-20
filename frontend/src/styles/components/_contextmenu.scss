@@ -1,6 +1,5 @@
 :root {
   --ngx-contextmenu-font-family: var(--bs-body-font-family) !important;
-  --ngx-contextmenu-border: .5px solid rgba(0, 0, 0, 0.18) !important;
   --ngx-contextmenu-item-separator-width: 100% !important;
   --ngx-contextmenu-outline: none !important;
 }
@@ -10,12 +9,16 @@
 }
 
 .ngx-contextmenu {
-  padding: $dropdown-padding-y 0 !important;;
+  padding: .25rem !important;
   font-size: $font-size-xs !important;
+  border-width: .5px !important;
+  border-style: solid !important;
+  @include app-menu-surface-structure($btn-border-radius, .25rem, true);
 
   > button.ngx-context-menu-item  {
     padding: $dropdown-item-padding-y $dropdown-item-padding-x !important;
     align-items: center !important;
+    @include app-menu-item-structure($btn-border-radius, 0, true);
 
     > span {
       display: flex;
@@ -29,6 +32,6 @@
   }
   > [role='separator'] {
     border-bottom: none !important;
-    @extend .dropdown-divider;
+    @include app-menu-divider-structure(.2rem 0, .5px, true);
   }
 }

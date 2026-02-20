@@ -3,20 +3,20 @@
   <div class="sidebar-component-title">
     <div class="d-flex flex-fill justify-content-between">
       @if (!user?.isLink) {
-        <button class="btn btn-xs btn-secondary" (click)="collapseRSideBar()" type="button" [routerLink]=USER_PATH.BASE>
+        <button class="btn btn-sm btn-secondary" (click)="collapseRSideBar()" type="button" [routerLink]=USER_PATH.BASE>
           <fa-icon [icon]="icons.faUserAlt"></fa-icon>
         </button>
       }
-      <button class="btn btn-xs btn-secondary" (click)="toggleTheme()" type="button">
+      <button class="btn btn-sm  btn-secondary" (click)="toggleTheme()" type="button">
         <fa-icon [icon]="icons.faCircleHalfStroke"></fa-icon>
       </button>
       @if (user?.isAdmin) {
-        <button class="btn btn-xs btn-secondary" (click)="collapseRSideBar()" type="button" routerLink="/admin">
+        <button class="btn btn-sm btn-secondary" (click)="collapseRSideBar()" type="button" routerLink="/admin">
           <fa-icon [icon]="icons.faCog"></fa-icon>
         </button>
       }
       @if (!store.isElectronApp() || store.isElectronApp() && store.userImpersonate()) {
-        <button (click)="logOut()" class="btn btn-xs btn-secondary" type="button">
+        <button (click)="logOut()" class="btn btn-sm btn-secondary" type="button">
           <fa-icon [icon]="store.userImpersonate() ? icons.faUserSecret : icons.faPowerOff"></fa-icon>
         </button>
       }

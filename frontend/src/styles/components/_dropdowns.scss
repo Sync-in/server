@@ -1,26 +1,14 @@
 .dropdown-menu {
   min-width: 0 !important;
   font-size: $font-size-xs;
-  border-color: darken($secondary-light, 10%);
-  border-width: .5px;
-  line-height: normal;
-  box-shadow: none;
+  @include app-menu-surface-structure(.72rem, .25rem);
 
   > li > a {
-    color: $body-color;
-
-    &:hover {
-      background-color: lighten($gray-light, 5%);
-      color: $body-color;
-    }
+    @include app-menu-item-structure(.55rem, 1px);
 
     > .fas, .far {
       margin-right: 10px;
     }
-  }
-
-  > .divider {
-    background-color: #eee;
   }
 
   .dropdown-header {
@@ -30,14 +18,15 @@
 
 .dropdown-item {
   cursor: pointer;
+  @include app-menu-item-structure(.55rem, 1px);
+
   > span {
     display: flex;
   }
 }
 
 .dropdown-divider {
-  border-top: .5px solid !important;
-  margin: .1rem 0 !important;
+  @include app-menu-divider-structure(.2rem 0, .5px);
 }
 
 .dropdown-toggle {

@@ -63,15 +63,16 @@ $btn-close-width: .75em !default;
 $btn-close-padding-x: .5em !default;
 
 // Font, line-height, and color for body text, headings, and more.
-$font-size-base: 0.9rem; // Assumes the browser default, typically `16px`
-$font-size-xl: 1.1rem;
-$font-size-lg: 1rem;
-$font-size-md: .90rem;
-$font-size-sm: .80rem;
-$font-size-xs: .75rem;
-$font-size-xxs: .70rem;
-$font-size-xxxs: .65rem;
-$font-size-xxxxs: .60rem;
+// Base font size (slightly more compact than 1rem while preserving readability)
+$font-size-base: 0.9375rem; // 15px
+$font-size-xl: 1.17rem;  // 18.7px
+$font-size-lg: 1.055rem; // 16.9px
+$font-size-md: $font-size-base; // 15px
+$font-size-sm: 0.82rem;  // 13.1px
+$font-size-xs: 0.7625rem; // 12.2px
+$font-size-xxs: 0.7rem;  // 11.2px
+$font-size-xxxs: 0.645rem; // 10.3px
+$font-size-xxxxs: 0.5875rem; // 9.4px
 
 //LAYOUT
 //--------------------------------------------------------
@@ -92,10 +93,10 @@ $input-focus-box-shadow: none !important;
 $form-group-margin-bottom: 0.6rem;
 $form-check-margin-bottom: 0rem;
 // Table-hover
-$table-bg-hover: lighten($lighter-blue, 12%);
+$table-bg-hover: lighten($lighter-blue, 14%);
 $table-bg: transparent !important;
 $table-color: inherit !important;
-$selected-background: darken($lighter-blue, 6%);
+$selected-background: $lighter-blue;
 // Dropdowns
 $dropdown-link-color: #444;
 $dropdown-link-active-color: $dropdown-link-color;
@@ -129,6 +130,8 @@ $btn-padding-y-xs: .2rem !default;
 $btn-padding-x-xxs: .2rem !default;
 $btn-padding-y-xxs: .1rem !default;
 $btn-disabled-opacity: 0.4;
+$btn-border-radius: .5rem;
+$btn-border-radius-sm: .5rem;
 // Badges
 $badge-font-weight: 500 !default;
 // Pagination
