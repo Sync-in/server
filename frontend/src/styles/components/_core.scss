@@ -1,6 +1,8 @@
 html, body {
+  font-optical-sizing: auto;
+  letter-spacing: -0.012em;
+  text-rendering: optimizeLegibility;
   background-color: $sidebar-dark-icons-menu-bg;
-  -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
   scrollbar-width: thin;
   scrollbar-color: rgba(155, 155, 155, 0.5) transparent;

@@ -65,24 +65,34 @@
       }
 
       .menu {
-        border-bottom: .5px solid $sidebar-light-apps-menu-bg;
+        border-bottom: 0;
 
         > a {
-          color: $sidebar-light-apps-menu-color;
+          color: $sidebar-light-apps-menu-hover-color;
         }
 
         //&.submenu {
         //  background-color: darken($sidebar-light-apps-menu-bg, 3%);
         //}
         &:hover, &.active {
-          background: $sidebar-light-apps-menu-hover-bg;
+          background: transparent;
 
           > a {
-            color: $sidebar-light-apps-menu-hover-color;
-
             > fa-icon:first-child {
-              color: $primary;
+              color: darken($primary, 5%);
             }
+          }
+        }
+
+        &:hover {
+          > a {
+            background: mix($primary, $sidebar-light-apps-menu-bg, 8%);
+          }
+        }
+
+        &.active {
+          > a {
+            background: mix($primary, $sidebar-light-apps-menu-bg, 18%);
           }
         }
       }

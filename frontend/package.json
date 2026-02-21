@@ -33,6 +33,7 @@
     "@angular/platform-browser-dynamic": "^20.1.7",
     "@angular/router": "^20.1.7",
     "@codemirror/language-data": "^6.5.2",
+    "@fontsource-variable/inter": "^5.2.8",
     "@fontsource/inter": "^5.2.8",
     "@fortawesome/angular-fontawesome": "^3.0.0",
     "@fortawesome/fontawesome-svg-core": "^7.0.0",

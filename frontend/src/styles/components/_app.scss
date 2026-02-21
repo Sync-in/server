@@ -317,6 +317,10 @@
   background-color: transparent;
   color: transparent;
 
+  @include media-breakpoint-down(sm) {
+    font-size: $font-size-xxxxs;
+  }
+
   &.pagination-container {
     height: 40px;
   }

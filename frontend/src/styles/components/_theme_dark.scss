@@ -67,9 +67,10 @@
         //  background-color: darken($sidebar-dark-apps-menu-bg, 3%);
         //}
         &:hover, &.active {
-          background: $sidebar-dark-apps-menu-hover-bg;
+          background: transparent;
 
           > a {
+            background: $sidebar-dark-apps-menu-hover-bg;
             color: $sidebar-dark-apps-menu-hover-color;
 
             > fa-icon:first-child {
