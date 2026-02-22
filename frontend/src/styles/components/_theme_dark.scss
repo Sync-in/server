@@ -313,11 +313,12 @@
       border-bottom-color: darken($sidebar-dark-icons-menu-border-color, 3%) !important;
 
       &:hover {
-        background-color: $sidebar-dark-icons-menu-bg !important;
+        background-color: darken($sidebar-dark-icons-menu-bg, 3%) !important;
       }
 
       &.selected {
         background-color: $sidebar-dark-apps-menu-title-bg !important;
+        box-shadow: inset 2px 0 0 $primary;
       }
     }
 
@@ -332,7 +333,7 @@
       }
 
       &:hover {
-        background-color: $sidebar-dark-apps-menu-title-bg;
+        background-color: darken($sidebar-dark-icons-menu-bg, 3%);
       }
     }
   }

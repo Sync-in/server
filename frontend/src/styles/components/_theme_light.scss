@@ -61,7 +61,7 @@
 
     .sidebar-apps-menus {
       .menus-content {
-        background-color: #ebeef5;
+        background-color: #eef2f9;
         border-right: .5px solid $sidebar-light-apps-menu-border-color;
       }
 
@@ -70,6 +70,7 @@
 
         > a {
           color: $sidebar-light-apps-menu-hover-color;
+          border: .5px solid transparent;
         }
 
         //&.submenu {
@@ -85,6 +86,7 @@
         &.active {
           > a {
             background: darken(#d4e1f1, 4%);
+            border-color: mix($primary, $gray-light, 30%);
             font-weight: 500;
             color: $navy;
 
@@ -319,11 +321,12 @@
       border-bottom-color: $gray-lighter !important;
 
       &:hover {
-        background-color: $table-bg-hover !important;
+        background-color: mix($table-bg-hover, $white, 50%) !important;
       }
 
       &.selected {
-        background-color: $selected-background !important;
+        background-color: mix($selected-background, $white, 50%) !important;
+        box-shadow: inset 2px 0 0 darken($primary, 4%);
       }
     }
 
@@ -338,7 +341,7 @@
       }
 
       &:hover {
-        background-color: $table-bg-hover;
+        background-color: mix($table-bg-hover, $white, 55%);
       }
     }
   }
