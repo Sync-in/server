@@ -82,9 +82,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: $sidebar-apps-height;
-        width: 100%;
+        min-height: calc(#{$sidebar-apps-height} - 5px);
+        width: calc(100% - 5px);
+        margin: 4px;
         cursor: pointer;
+        border-radius: $btn-border-radius;
 
         > i {
           font-size: 1rem;
@@ -93,7 +95,7 @@
         .menu-badge {
           position: absolute;
           font-size: .65rem;
-          width: $control-sidebar-menu-width;
+          width: 100%;
 
           .badge {
             position: absolute;
