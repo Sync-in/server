@@ -1,7 +1,7 @@
 .dropdown-menu {
   min-width: 0 !important;
   font-size: $font-size-xs;
-  @include app-menu-surface-structure(.72rem, .25rem);
+  @include app-menu-surface-structure($btn-border-radius, .25rem);
 
   > li > a {
     @include app-menu-item-structure($btn-border-radius, 1px);

@@ -16,7 +16,7 @@
   }
 }
 
-@mixin app-menu-surface-structure($radius: .72rem, $padding: .25rem, $important: false) {
+@mixin app-menu-surface-structure($radius: $btn-border-radius, $padding: .25rem, $important: false) {
   @if $important {
     border-radius: $radius !important;
     line-height: normal !important;
