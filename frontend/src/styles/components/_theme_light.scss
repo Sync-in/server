@@ -61,6 +61,7 @@
 
     .sidebar-apps-menus {
       .menus-content {
+        background-color: #f6f9fb;
         border-right: .5px solid $sidebar-light-apps-menu-border-color;
       }
 
@@ -74,25 +75,20 @@
         //&.submenu {
         //  background-color: darken($sidebar-light-apps-menu-bg, 3%);
         //}
-        &:hover, &.active {
-          background: transparent;
-
-          > a {
-            > fa-icon:first-child {
-              color: darken($primary, 5%);
-            }
-          }
-        }
 
         &:hover {
           > a {
-            background: mix($primary, $sidebar-light-apps-menu-bg, 8%);
+            background: lighten(#d4e1f1, 2%);
           }
         }
 
         &.active {
           > a {
-            background: mix($primary, $sidebar-light-apps-menu-bg, 18%);
+            background: darken(#d4e1f1, 4%);
+            font-weight: 500;
+            > fa-icon:first-child {
+              color: darken($primary, 5%);
+            }
           }
         }
       }
@@ -134,10 +130,6 @@
       .menu {
         > a {
           color: $sidebar-light-apps-menu-color;
-
-          &:not(:first-child) {
-            border-top: .5px solid $gray-lightest;
-          }
 
           &:hover, &.active {
             color: $black;
@@ -311,22 +303,14 @@
   .dropdown-divider {
     border-top-color: var(--menu-surface-border, var(--btn-premium-secondary-border)) !important;
   }
+  .virtual-scroll-border-top {
+    border-top: 0.5px solid $gray-light;
+  }
   .app-table {
     color: $body-color;
     // Bootstrap 5 fix
     > :not(:first-child) {
       border-top: 1px solid $gray-light;
-    }
-
-    thead {
-      background: linear-gradient(170deg, mix($white, $primary, 88%) 0%, mix($white, $gray-lightest, 92%) 100%);;
-
-      tr {
-        th {
-          border-right-color: $gray-light;
-          border-bottom-color: $gray-light;
-        }
-      }
     }
 
     tbody tr {
@@ -342,7 +326,7 @@
     }
 
     tbody td:not(:first-child) {
-      color: lighten($gray-dark, 5%);
+      color: $custom-color;
     }
   }
   .app-table-striped {
@@ -362,12 +346,13 @@
     background: linear-gradient(170deg, mix($white, $primary, 88%) 0%, mix($white, $gray-lightest, 92%) 100%);
 
     .dropdown-menu {
-      --menu-surface-bg: #EBF0F5;
+      --menu-surface-bg: #f6f9fc;
     }
   }
   .app-foot-menu {
+    border-top: 0.5px solid $gray-light;
     background: #eaf1f8;
-    color: $dropdown-link-color;
+    color: $custom-color;
   }
   .app-thumbs {
     background-color: $gray-lighter;
@@ -497,7 +482,7 @@
   //  border-left: .5px solid $sidebar-light-apps-menu-border-color;
   //}
   .ngx-contextmenu {
-    background-color: #EBF0F5 !important;
+    background-color: #f6f9fc !important;
     border-color: mix($primary, $gray-light, 14%) !important;
 
     > button.ngx-context-menu-item {

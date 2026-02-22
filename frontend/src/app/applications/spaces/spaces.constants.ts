@@ -8,10 +8,10 @@ import {
   faFolderClosed,
   faLayerGroup,
   faLink,
-  faReply,
   faShare,
   faShareNodes,
-  faTrashCan
+  faTrashCan,
+  faUser
 } from '@fortawesome/free-solid-svg-icons'
 import { SPACES_BASE_ROUTE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_ALIAS, SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -41,7 +41,7 @@ export const SPACES_ICON = {
   PERSONAL: faFolderClosed,
   SPACES: faLayerGroup,
   SHARES: faShareNodes,
-  SHARED_WITH_ME: faReply,
+  SHARED_WITH_ME: faUser,
   SHARED_WITH_OTHERS: faShare,
   ANCHORED: faAnchor,
   LINKS: faLink,

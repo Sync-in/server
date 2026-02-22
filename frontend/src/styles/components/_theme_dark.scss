@@ -66,9 +66,8 @@
         //&.submenu {
         //  background-color: darken($sidebar-dark-apps-menu-bg, 3%);
         //}
-        &:hover, &.active {
-          background: transparent;
 
+        &:hover, &.active {
           > a {
             background: $sidebar-dark-apps-menu-hover-bg;
             color: $sidebar-dark-apps-menu-hover-color;
@@ -121,7 +120,6 @@
       .menu {
         > a {
           color: $sidebar-dark-icons-menu-color;
-          border-bottom: .5px solid $sidebar-dark-icons-menu-bg;
 
           &:hover, &.active {
             color: $gray-lightest;
@@ -299,22 +297,16 @@
   .dropdown-divider {
     border-top-color: var(--menu-surface-border, var(--btn-premium-secondary-border)) !important;
   }
+
+  .virtual-scroll-border-top {
+    border-top: 0.5px solid darken($sidebar-dark-icons-menu-border-color, 3%) !important;
+  }
+
   .app-table {
     color: $gray-light;
     // Bootstrap 5 fix
     > :not(:first-child) {
       border-top: 1px solid $sidebar-dark-icons-menu-border-color;
-    }
-
-    thead {
-      background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
-
-      tr {
-        th {
-          border-right-color: $sidebar-dark-icons-menu-border-color;
-          border-bottom-color: $sidebar-dark-icons-menu-border-color;
-        }
-      }
     }
 
     tbody tr {
@@ -354,6 +346,7 @@
     }
   }
   .app-foot-menu {
+    border-top: 0.5px solid darken($sidebar-dark-icons-menu-border-color, 3%) !important;
     background-color: $sidebar-dark-icons-menu-bg;
     color: darken($gray-light, 5%);
   }

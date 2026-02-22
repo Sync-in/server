@@ -7,11 +7,11 @@ $application_background: linear-gradient(to bottom right, rgb(2, 0, 36) 0%, rgb(
 // Colors
 $white: #ffffff;
 $gray-dark: #384042;
-$gray: #9faecb;
-$gray-mid: #b9c5da;
-$gray-light: #d4dbe8;
-$gray-lighter: #e1e6ef;
-$gray-lightest: #eef1f6;
+$gray:          #95a8c6;
+$gray-mid:      #b3c2d9;
+$gray-light:    #cfd9e7;
+$gray-lighter:  #dde5f0;
+$gray-lightest: #edf2f8;
 $light-blue: #2e92ce;
 $lighter-blue: #94c7e8;
 $red: #dc3545;
@@ -73,7 +73,7 @@ $font-size-sm: 0.82rem;  // 13.1px
 $font-size-xs: 0.7625rem; // 12.2px
 $font-size-xxs: 0.7rem;  // 11.2px
 $font-size-xxxs: 0.645rem; // 10.3px
-$font-size-xxxxs: 0.5875rem; // 9.4px
+$font-size-xxxxs: 0.6rem; // 9.6px
 
 //LAYOUT
 //--------------------------------------------------------
@@ -103,7 +103,7 @@ $dropdown-link-color: #444;
 $dropdown-link-active-color: $dropdown-link-color;
 $dropdown-link-hover-bg: $table-bg-hover !important;
 $dropdown-link-active-bg: $dropdown-link-hover-bg;
-$dropdown-item-padding-y: .25rem;
+$dropdown-item-padding-y: .2rem;
 $dropdown-item-padding-x: 1rem;
 $dropdown-padding-y: .2rem;
 $dropdown-header-color: #8aa4af;

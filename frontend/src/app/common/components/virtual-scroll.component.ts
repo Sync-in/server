@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   EventEmitter,
+  HostBinding,
   inject,
   Input,
   NgZone,
@@ -88,6 +89,11 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
     skip(1),
     switchMap((state) => of(state).pipe(repeat({ count: 30, delay: 10 })))
   )
+
+  @HostBinding('class.virtual-scroll-border-top')
+  get withBorderTop(): boolean {
+    return !this.galleryMode
+  }
 
   ngOnInit() {
     this.resizeOffsetHeight(true)

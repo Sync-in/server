@@ -1,13 +1,9 @@
-html, body {
-  font-optical-sizing: auto;
-  letter-spacing: -0.012em;
-  text-rendering: optimizeLegibility;
-  background-color: $sidebar-dark-icons-menu-bg;
-  -webkit-font-smoothing: antialiased;
+html {
+  height: 100%;
+  scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
-  font-size: 1rem;
-  height: 100%;
+  -webkit-text-size-adjust: 100%;
 
   ::-webkit-scrollbar {
     width: 8px;
@@ -22,6 +18,18 @@ html, body {
     border-radius: 20px;
     border: transparent;
   }
+}
+
+body {
+  margin: 0;
+  height: 100%;
+  font-optical-sizing: auto;
+  letter-spacing: -0.012em;
+  text-rendering: optimizeLegibility;
+  font-kerning: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: $sidebar-dark-icons-menu-bg;
 }
 
 .wrapper {

@@ -175,16 +175,9 @@
     tr {
       th {
         white-space: nowrap;
-        font-weight: 400;
-        border-top: none;
-        border-left: none;
-        border-right: none;
-        border-bottom: .5px solid;
+        font-weight: 500;
+        border: none;
         padding: .25rem 0.5rem;
-
-        &:last-child {
-          border-right: .5px solid;
-        }
       }
     }
   }

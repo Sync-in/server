@@ -9,7 +9,7 @@
 }
 
 .ngx-contextmenu {
-  padding: .25rem !important;
+  padding: $dropdown-item-padding-y !important;
   font-size: $font-size-xs !important;
   border-width: .5px !important;
   border-style: solid !important;
