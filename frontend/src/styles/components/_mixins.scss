@@ -30,7 +30,7 @@
   }
 }
 
-@mixin app-menu-item-structure($radius: .55rem, $margin-y: 1px, $important: false) {
+@mixin app-menu-item-structure($radius: $btn-border-radius, $margin-y: 1px, $important: false) {
   @if $important {
     border-radius: $radius !important;
     margin: $margin-y 0 !important;

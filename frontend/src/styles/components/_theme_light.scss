@@ -61,7 +61,7 @@
 
     .sidebar-apps-menus {
       .menus-content {
-        background-color: #f6f9fb;
+        background-color: #ebeef5;
         border-right: .5px solid $sidebar-light-apps-menu-border-color;
       }
 
@@ -86,6 +86,8 @@
           > a {
             background: darken(#d4e1f1, 4%);
             font-weight: 500;
+            color: $navy;
+
             > fa-icon:first-child {
               color: darken($primary, 5%);
             }
@@ -102,17 +104,17 @@
 
 @mixin skin-light-right-sidebar() {
   .control-sidebar-theme-light {
-    background: $gray-lightest;
+    background: #fcfdff;
     border-left: .5px solid $sidebar-light-apps-menu-border-color;
 
     .sidebar-component-title {
-      background-color: $secondary-light;
+      background-color: #eaf1fb;
       color: $black;
       border-bottom: .5px solid $secondary;
     }
 
     .sidebar-title {
-      background-color: $secondary-light;
+      background-color: #eaf1fb;
       color: $black;
       border-bottom: .5px solid $secondary;
     }
@@ -124,7 +126,7 @@
   }
   .control-sidebar-menu {
     .sidebar-apps-icons {
-      background-color: $sidebar-light-icons-menu-color;
+      background-color: #f2f6fd;
       border-left: .5px solid $sidebar-light-apps-menu-border-color;
 
       .menu {
@@ -133,7 +135,7 @@
 
           &:hover, &.active {
             color: $black;
-            background: $secondary;
+            background: darken(#d4e1f1, 4%);
           }
         }
       }
@@ -343,10 +345,10 @@
   .app-top-menu {
     border-top-color: $gray-light;
     border-bottom-color: $gray-light;
-    background: linear-gradient(170deg, mix($white, $primary, 88%) 0%, mix($white, $gray-lightest, 92%) 100%);
+    background: linear-gradient(to right, #e1ebf8 0%, #eaf1fb 50%, #f4f8fe 100%);
 
     .dropdown-menu {
-      --menu-surface-bg: #f6f9fc;
+      --menu-surface-bg: #f4f6fa;
     }
   }
   .app-foot-menu {
@@ -441,7 +443,7 @@
     }
   }
   .app-small-card {
-    background-color: $gray-light;
+    background-color: $gray-lighter;
   }
   .wizard {
     background-color: lighten($primary, 50%);
@@ -482,7 +484,7 @@
   //  border-left: .5px solid $sidebar-light-apps-menu-border-color;
   //}
   .ngx-contextmenu {
-    background-color: #f6f9fc !important;
+    background-color: #f4f6fa !important;
     border-color: mix($primary, $gray-light, 14%) !important;
 
     > button.ngx-context-menu-item {
@@ -512,6 +514,14 @@
       background-color: $white !important;
     }
   }
+  .form-control, .form-select, .input-group-text {
+    &:disabled {
+      color: $muted;
+      cursor: not-allowed;
+      background-color: $gray-lighter;
+    }
+  }
+
   .small-box {
     //background: $gray-lightest;
     border-color: $gray-lighter;
@@ -576,36 +586,24 @@
   .bg-theme-alt {
     background-color: $gray-lightest !important;
   }
-  .recents-grid::before {
-    background: linear-gradient(
-                    180deg,
-                    rgba($gray-light, 0.9) 0%,
-                    rgba($gray-lightest, 0.7) 100%
-    );
-  }
   .recents-grid .box-transparent > .box-header {
-    background: linear-gradient(
-                    180deg,
-                    mix($primary, $white, 12%) 0%,
-                    mix($primary, $white, 6%) 100%
-    );
+    background: #e1ebf8;
     border-bottom-color: mix($primary, $white, 20%);
 
     > fa-icon {
-      color: darken($primary, 15%);
+      color: lighten($navy, 8%);
     }
 
     .box-title {
-      color: darken($primary, 18%);
+      color: lighten($navy, 8%);
     }
 
     .btn-link {
-      color: darken($primary, 12%);
-    }
+      color: darken($gray, 24%);
 
-    .btn-link:hover,
-    .btn-link:focus {
-      color: darken($primary, 24%);
+      &:hover, &:focus {
+        color: darken($primary, 8%);
+      }
     }
   }
   .products-list > li:hover {

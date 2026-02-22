@@ -563,7 +563,8 @@
 
     &:disabled {
       color: $muted;
-      background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
+      cursor: not-allowed;
+      background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%);
     }
   }
   .small-box {
@@ -616,13 +617,6 @@
   }
   .product-list-in-box {
     border-bottom-color: $sidebar-dark-icons-menu-border-color;
-  }
-  .recents-grid::before {
-    background: linear-gradient(
-                    180deg,
-                    rgba($sidebar-dark-icons-menu-bg, 0.7) 0%,
-                    rgba($sidebar-dark-icons-menu-bg, 0.45) 100%
-    );
   }
   .ui-disabled {
     background-color: $sidebar-dark-icons-menu-bg !important;

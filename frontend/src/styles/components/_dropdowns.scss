@@ -4,7 +4,7 @@
   @include app-menu-surface-structure(.72rem, .25rem);
 
   > li > a {
-    @include app-menu-item-structure(.55rem, 1px);
+    @include app-menu-item-structure($btn-border-radius, 1px);
 
     > .fas, .far {
       margin-right: 10px;
@@ -18,7 +18,7 @@
 
 .dropdown-item {
   cursor: pointer;
-  @include app-menu-item-structure(.55rem, 1px);
+  @include app-menu-item-structure($btn-border-radius, 1px);
 
   > span {
     display: flex;
