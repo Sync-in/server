@@ -62,7 +62,7 @@
 
         .menu-badge-icon {
           position: absolute;
-          font-size: .65rem;
+          font-size: $font-size-xxxs;
           width: $sidebar-apps-icons-width;
 
           .badge {
@@ -106,7 +106,7 @@
 
           .menu-badge {
             margin-left: auto;
-            font-size: .65rem;
+            font-size: $font-size-xxxs;
           }
         }
       }
@@ -239,7 +239,7 @@
 
           .menu-badge {
             margin-left: auto;
-            font-size: .65rem;
+            font-size: $font-size-xxxs;
           }
         }
 
@@ -274,7 +274,7 @@
 
       span {
         @extend .no-select;
-        font-size: 9px;
+        font-size: $font-size-xxxs;
       }
     }
   }

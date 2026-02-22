@@ -158,7 +158,7 @@
     position: absolute;
     top: -5px;
     left: 20px;
-    font-size: 0.7rem;
+    font-size: $font-size-xxxs;
     cursor: pointer;
   }
 
@@ -194,7 +194,7 @@
     }
 
     .badge {
-      font-size: .65rem !important;
+      font-size: $font-size-xxxs !important;
     }
   }
 }

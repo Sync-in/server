@@ -64,16 +64,16 @@ $btn-close-width: .75em !default;
 $btn-close-padding-x: .5em !default;
 
 // Font, line-height, and color for body text, headings, and more.
-// Base font size (slightly more compact than 1rem while preserving readability)
-$font-size-base: 0.9375rem; // 15px
-$font-size-xl: 1.17rem;  // 18.7px
-$font-size-lg: 1.055rem; // 16.9px
-$font-size-md: $font-size-base; // 15px
-$font-size-sm: 0.82rem;  // 13.1px
-$font-size-xs: 0.7625rem; // 12.2px
-$font-size-xxs: 0.7rem;  // 11.2px
-$font-size-xxxs: 0.645rem; // 10.3px
-$font-size-xxxxs: 0.6rem; // 9.6px
+// Typography scale tuned for dense file-browser UI with balanced readability
+$font-size-base: 0.96875rem; // 15.5px
+$font-size-xl: 1.1875rem; // 19px
+$font-size-lg: 1.0625rem; // 17px
+$font-size-md: $font-size-base; // 15.5px
+$font-size-sm: 0.875rem; // 14px
+$font-size-xs: 0.8125rem; // 13px
+$font-size-xxs: 0.75rem; // 12px
+$font-size-xxxs: 0.71875rem; // 11.5px
+$font-size-xxxxs: 0.6875rem; // 11px
 
 //LAYOUT
 //--------------------------------------------------------

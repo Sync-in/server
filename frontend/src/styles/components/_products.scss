@@ -69,7 +69,7 @@
   .product-description {
     @extend .text-truncate;
     display: block;
-    font-size: 10.5px;
+    font-size: $font-size-xxxs;
     color: #999;
   }
 }
