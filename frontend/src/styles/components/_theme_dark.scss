@@ -309,6 +309,10 @@
       border-top: 1px solid $sidebar-dark-icons-menu-border-color;
     }
 
+    thead {
+      background-color: darken($sidebar-dark-icons-menu-bg, 1.5%);
+    }
+
     tbody tr {
       border-bottom-color: darken($sidebar-dark-icons-menu-border-color, 3%) !important;
 

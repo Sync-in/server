@@ -23,10 +23,10 @@ html {
 body {
   margin: 0;
   height: 100%;
+  //letter-spacing: -0.01em;
   font-optical-sizing: auto;
-  letter-spacing: -0.012em;
-  text-rendering: optimizeLegibility;
   font-kerning: normal;
+  font-feature-settings: "kern" 1, "liga" 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: $sidebar-dark-icons-menu-bg;

@@ -317,6 +317,10 @@
       border-top: 1px solid $gray-light;
     }
 
+    thead {
+      background-color: #F3F7FD;
+    }
+
     tbody tr {
       border-bottom-color: $gray-lighter !important;
 
@@ -590,7 +594,7 @@
     background-color: $gray-lightest !important;
   }
   .recents-grid .box-transparent > .box-header {
-    background: #e1ebf8;
+    background: #e2ecf8;
     border-bottom-color: mix($primary, $white, 20%);
 
     > fa-icon {
