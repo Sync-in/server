@@ -2,7 +2,7 @@ import { AsyncPipe, Location, NgComponentOutlet, NgTemplateOutlet } from '@angul
 import { Component, ElementRef, inject, OnDestroy, Renderer2, ViewChild } from '@angular/core'
 import { ResolveEnd, Router, RouterLink } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faAngleLeft, faAngleRight, faUserSecret } from '@fortawesome/free-solid-svg-icons'
+import { faAngleLeft, faAngleRight, faChevronDown, faUserSecret } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
@@ -29,7 +29,7 @@ import { LayoutService } from '../layout.service'
 export class SideBarLeftComponent implements OnDestroy {
   @ViewChild('sidebar', { static: true }) sidebar: ElementRef
   protected readonly store = inject(StoreService)
-  protected readonly icons = { faAngleLeft, faAngleRight, faUserSecret }
+  protected readonly icons = { faAngleLeft, faAngleRight, faUserSecret, faChevronDown }
   protected logoIconUrl = logoIconUrl
   protected appName: string
   protected appVersion: string

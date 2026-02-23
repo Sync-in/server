@@ -34,7 +34,7 @@
 
   .app-top-menu {
     border: none !important;
-    background: transparent;
+    background: transparent !important;
   }
 
   .area {
@@ -44,12 +44,12 @@
     .dropzone {
       display: flex;
       justify-content: center;
-      border: 2px dashed #bbb;
+      border: 2px dashed $gray;
       border-radius: $border-radius-base;
       padding: 80px;
       font-size: 21px;
       font-weight: bold;
-      color: #bbb;
+      color: $gray;
       height: 100%;
 
       &.active {

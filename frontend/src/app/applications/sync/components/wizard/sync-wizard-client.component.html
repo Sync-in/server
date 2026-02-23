@@ -33,7 +33,10 @@
         <fa-icon [icon]="icons.faTimesCircle"></fa-icon>
         Cancel
       </button>
-      <button (click)="onSelect()" class="btn btn-secondary" type="button" l10nTranslate>Select a folder</button>
+      <button (click)="onSelect()" class="btn btn-secondary" type="button" l10nTranslate>
+        <fa-icon [icon]="icons.faDownload"></fa-icon>
+        Select a folder
+      </button>
       <button (click)="onNext()" [disabled]="!pathIsValid" class="btn btn-secondary ms-auto" type="button" l10nTranslate>
         <fa-icon [icon]="icons.faArrowCircleRight"></fa-icon>
         Next

@@ -54,6 +54,9 @@
   <fa-icon [icon]="menu.icon" [animation]="menu.iconAnimated ? 'spin' : null"></fa-icon>
   @if (!isMenuIcon) {
     <span l10nTranslate>{{ menu.title }}</span>
+    @if (menu?.submenus?.length) {
+      <span class="ms-auto opacity-75"><fa-icon [icon]="icons.faChevronDown" size="sm"></fa-icon></span>
+    }
   }
   @if (menu.count) {
     <span class="{{isMenuIcon ? 'menu-badge-icon' : 'menu-badge'}}">
@@ -70,16 +73,16 @@
      (click)="checkMenuContext(mainMenu)">
     <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: mainMenu, isMenuIcon: true}"></ng-container>
     <!-- start mini menu-->
-    @if (mainMenu.miniOpened) {
+    @if (mainMenu.miniOpened && (mainMenu.submenus?.length || mainMenu.component)) {
       <div class="menu-mini {{mainMenu.level < 9 ? 'align-self-start' : 'align-self-end'}}">
         @for (menu of mainMenu.submenus; track menu.title) {
           @if (!menu.hide) {
             <ng-container [ngTemplateOutlet]="MiniMenuApps" [ngTemplateOutletContext]="{mainMenu: mainMenu, menu: menu}"></ng-container>
           }
         }
-        @if (currentMenu.component) {
+        @if (mainMenu.component) {
           <div (click)="checkComponentRoute(mainMenu)" appAutoResize [resizeOffset]="40">
-            <ng-container *ngComponentOutlet="currentMenu.component"></ng-container>
+            <ng-container *ngComponentOutlet="mainMenu.component"></ng-container>
           </div>
         }
       </div>
@@ -108,13 +111,13 @@
   }
 </ng-template>
 <ng-template #MiniMenuApps let-mainMenu="mainMenu" let-menu="menu">
-  <a (click)="onMiniMenuNavigate($event, [menu.link], mainMenu)" [class.active]="menu.isActive">
+  <a class="mini-menu-item" (click)="onMiniMenuNavigate($event, [menu.link], mainMenu)" [class.active]="menu.isActive">
     <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: menu, isMenuIcon: false}"></ng-container>
   </a>
   @if (menu.submenus?.length) {
     @for (submenu of menu.submenus; track submenu.title) {
       @if (!submenu.hide) {
-        <a (click)="onMiniMenuNavigate($event, [submenu.link], mainMenu)" [class.active]="submenu.isActive">
+        <a class="mini-menu-item mini-submenu-item" (click)="onMiniMenuNavigate($event, [submenu.link], mainMenu)" [class.active]="submenu.isActive">
           <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: submenu, isMenuIcon: false}"></ng-container>
         </a>
       }

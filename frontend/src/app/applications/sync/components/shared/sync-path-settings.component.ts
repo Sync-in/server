@@ -1,16 +1,7 @@
 import { Component, inject, Input } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import {
-  faBug,
-  faClock,
-  faEdit,
-  faExclamationCircle,
-  faGauge,
-  faLongArrowAltDown,
-  faLongArrowAltUp,
-  faRotate
-} from '@fortawesome/free-solid-svg-icons'
+import { faBug, faClock, faEdit, faExclamationCircle, faGauge, faRotate } from '@fortawesome/free-solid-svg-icons'
 import {
   SYNC_PATH_CONFLICT_MODE,
   SYNC_PATH_DIFF_MODE,
@@ -38,8 +29,6 @@ export class SyncPathSettingsComponent {
     CLIENT: SYNC_ICON.CLIENT,
     SERVER: SYNC_ICON.SERVER,
     faExclamationCircle,
-    faLongArrowAltDown,
-    faLongArrowAltUp,
     faGauge,
     faClock,
     faRotate,

@@ -24,9 +24,11 @@
 
   .product-img {
     float: none;
+    min-width: 30px;
     width: 30px;
+    min-height: 30px;
     height: 30px;
-    border-radius: 8px;
+    border-radius: $btn-border-radius;
     display: grid;
     place-items: center;
     margin-right: 0.5rem;

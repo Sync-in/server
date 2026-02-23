@@ -23,37 +23,40 @@
       }
 
       .menu-mini {
-        background-color: $sidebar-light-mini-menu-bg;
+        background-color: #ebeef5;
 
         > a {
-          color: $sidebar-light-mini-menu-color;
+          color: $sidebar-light-apps-menu-hover-color;
+          border: .5px solid transparent;
 
-          &:not(:last-child) {
-            border-bottom: .5px solid $sidebar-light-mini-menu-bg !important;
+          &:hover {
+            background: lighten(#d4e1f1, 2%);
           }
 
-          &:hover, &.active {
-            background: darken($sidebar-light-mini-menu-bg, 10%) !important;
-            color: $sidebar-light-mini-menu-hover-color;
+          &.active {
+            background: darken(#d4e1f1, 4%);
+            border-color: mix($primary, $gray-light, 30%);
+            font-weight: 500;
+            color: $navy;
 
             > fa-icon:first-child {
-              color: $primary;
+              color: darken($primary, 5%);
             }
           }
         }
 
         .chat-item-sidebar {
-          background-color: $sidebar-light-mini-menu-bg;
-          color: $sidebar-light-mini-menu-color;
+          background-color: #ebeef5;
+          color: $sidebar-light-apps-menu-hover-color;
 
           &:not(:last-child) {
-            border-bottom: .5px solid $sidebar-light-mini-menu-bg !important;
+            border-bottom: .5px solid #ebeef5 !important;
           }
 
           &:hover, &.active {
             border-left-color: transparent !important;
-            background: darken($sidebar-light-mini-menu-bg, 5%) !important;
-            color: $sidebar-light-mini-menu-hover-color;
+            background: darken(#d4e1f1, 4%) !important;
+            color: $navy;
           }
         }
       }
@@ -61,7 +64,7 @@
 
     .sidebar-apps-menus {
       .menus-content {
-        background-color: #eef2f9;
+        background-color: #ebeef5;
         border-right: .5px solid $sidebar-light-apps-menu-border-color;
       }
 
@@ -466,7 +469,7 @@
     }
 
     .wizard-nav-content {
-      background-color: $gray-lightest;
+      background-color: white;
     }
   }
   .sidebar-item {

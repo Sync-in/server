@@ -12,10 +12,9 @@
         <span l10nTranslate>Please select the server directory to sync, if it doesn't exist you can create it.</span>
       }
     </div>
-    <div class="app-top-menu px-0 bg-transparent">
+    <div class="app-top-menu px-0">
       <button (click)="onBack()"
               [disabled]="!currentPath"
-              [tooltip]="'Back' | translate:locale.language"
               class="btn btn-sm btn-secondary"
               type="button">
         <fa-icon [icon]="icons.faArrowCircleLeft"></fa-icon>
@@ -30,7 +29,6 @@
           <button (click)="addDirectory()"
                   [hidden]="!canCreateDir"
                   [disabled]="!newDirectoryName"
-                  [tooltip]="'Add' | translate:locale.language"
                   class="btn btn-sm btn-secondary input-group-text"
                   type="button">
             <fa-icon [icon]="icons.faFolderPlus"></fa-icon>

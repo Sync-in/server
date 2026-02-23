@@ -58,7 +58,7 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
   @ViewChild('shim', { read: ElementRef, static: true }) shimElementRef: ElementRef
   @Output() isScrollBottom = new EventEmitter<boolean>()
   @Output() isScrollTop = new EventEmitter<boolean>()
-  @Input() resizeOffset = 132
+  @Input() resizeOffset = 130
   @Input() galleryMode = false
   @Input() selectedChat: any = null
   @Input() items: T[] = []

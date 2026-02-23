@@ -1,6 +1,6 @@
 @for (r of space.roots; track r.alias) {
   <div class="bg-theme mb-1 p-2" style="border-radius: 4px">
-    <div class="d-flex align-items-center text-truncate no-select fs-xs" style="height: 32px">
+    <div class="d-flex align-items-center text-truncate no-select fs-xs" style="max-height: 34px">
       <div class="d-flex align-items-center text-truncate me-auto">
         @if (showUsers) {
           <app-user-avatar [user]="r.owner" tooltipPlacement="bottom"></app-user-avatar>

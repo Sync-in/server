@@ -43,7 +43,7 @@
 <div class="col-12 mt-1">
   @for (member of members; track member.mid) {
     <div class="bg-theme mb-1 p-2" style="border-radius: 4px">
-      <div class="d-flex align-items-center text-truncate no-select fs-xs" style="height: 32px">
+      <div class="d-flex align-items-center text-truncate no-select fs-xs" style="max-height: 34px">
         <div class="d-flex align-items-center text-truncate me-auto">
           @if (member.isUser) {
             <img alt="" class="avatar-base-img" height="30" width="30" [src]="member.avatarUrl" />

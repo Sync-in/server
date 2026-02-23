@@ -24,15 +24,14 @@
       }
 
       .menu-mini {
-        background-color: $sidebar-dark-mini-menu-bg;
+        background-color: $sidebar-dark-apps-menu-bg;
 
         > a {
-          color: $sidebar-dark-mini-menu-color;
-          border-bottom: .5px solid $sidebar-dark-mini-menu-bg !important;
+          color: $sidebar-dark-apps-menu-border-color;
 
           &:hover, &.active {
-            background: darken($sidebar-dark-mini-menu-bg, 5%) !important;
-            color: $sidebar-dark-mini-menu-hover-color;
+            background: $sidebar-dark-apps-menu-hover-bg;
+            color: $sidebar-dark-apps-menu-hover-color;
 
             > fa-icon:first-child {
               color: $primary;
@@ -613,7 +612,7 @@
     }
 
     .product-img {
-      background-color: darken($sidebar-dark-icons-menu-bg, 6%);
+      background-color: darken($sidebar-dark-icons-menu-border-color, 8%);
       border: 1px solid $sidebar-dark-icons-menu-border-color;
     }
   }

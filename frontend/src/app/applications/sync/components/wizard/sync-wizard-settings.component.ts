@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import { faArrowCircleLeft, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import { SYNC_PATH_CONFLICT_MODE, SYNC_PATH_MODE } from '@sync-in-server/backend/src/applications/sync/constants/sync'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
@@ -20,7 +21,7 @@ export class SyncWizardSettingsComponent {
   protected readonly syncService = inject(SyncService)
   protected readonly SYNC_PATH_CONFLICT_MODE = SYNC_PATH_CONFLICT_MODE
   protected readonly SYNC_PATH_MODE = SYNC_PATH_MODE
-  protected readonly icons = { CLIENT: SYNC_ICON.CLIENT, SERVER: SYNC_ICON.SERVER }
+  protected readonly icons = { CLIENT: SYNC_ICON.CLIENT, SERVER: SYNC_ICON.SERVER, faArrowCircleLeft, faCheckCircle }
   protected readonly translatedRemotePath = this.syncService.translateServerPath(this.syncService.wizard.remotePath.serverPath)
   protected syncPath: SyncPathModel
   protected error: string = null

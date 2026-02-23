@@ -70,7 +70,7 @@
       } @else {
         <div>
           <span l10nTranslate>All files created or modified in</span>
-          <span class="fw-bold mx-1" l10nTranslate>{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
+          <span class="fw-bold mx-1">{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
           <span l10nTranslate>will be ignored and deleted</span>
         </div>
       }
@@ -79,11 +79,11 @@
   <div class="mt-auto">
     <div class="d-flex align-items-start">
       <button (click)="onPrevious()" class="btn btn-sm btn-secondary me-auto" translate type="button">
-        <i class="fas fa-arrow-circle-left fa-fw"></i>
+        <fa-icon [icon]="icons.faArrowCircleLeft"></fa-icon>
         Previous
       </button>
       <button (click)="onSubmit()" [disabled]="!syncPath.settings.name" class="btn btn-sm btn-secondary ms-auto" translate type="button">
-        <i class="fas fa-check-circle fa-fw"></i>
+        <fa-icon [icon]="icons.faCheckCircle"></fa-icon>
         Done
       </button>
     </div>

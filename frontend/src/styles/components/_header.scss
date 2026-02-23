@@ -49,6 +49,7 @@
         height: $sidebar-apps-icons-height;
         cursor: pointer;
         padding: 6px;
+        user-select: none;
 
         &:hover {
           background-color: $sidebar-light-icons-menu-hover-bg;
@@ -133,7 +134,7 @@
         }
 
         > fa-icon {
-          font-size: $font-size-xl;
+          font-size: $font-size-lg;
         }
       }
     }

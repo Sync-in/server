@@ -153,6 +153,11 @@ export class ShareDialogComponent implements OnInit {
     this.linksService.createLinkDialog(this.share)
   }
 
+  setShareStatus(status: boolean) {
+    this.share.enabled = status
+    this.share.disabledAt = status ? null : new Date()
+  }
+
   cantSubmit() {
     return this.submitted || (!this.share.externalPath && !this.share.file)
   }

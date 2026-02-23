@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, effect, inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, effect, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -27,8 +27,10 @@ import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { FilterComponent } from '../../../common/components/filter.component'
+import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
+import { CapitalizePipe } from '../../../common/pipes/capitalize.pipe'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { TimeAgoPipe } from '../../../common/pipes/time-ago.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
@@ -55,7 +57,6 @@ import { SyncPathSchedulerComponent } from './utils/sync-path-scheduler.componen
     BsDropdownToggleDirective,
     BsDropdownMenuDirective,
     FilterComponent,
-    AutoResizeDirective,
     ContextMenuModule,
     SearchFilterPipe,
     SyncPathDirectionIconComponent,
@@ -63,12 +64,18 @@ import { SyncPathSchedulerComponent } from './utils/sync-path-scheduler.componen
     TimeAgoPipe,
     KeyValuePipe,
     L10nTranslateDirective,
-    SyncPathSchedulerComponent
+    SyncPathSchedulerComponent,
+    VirtualScrollComponent,
+    CapitalizePipe
   ],
   templateUrl: 'sync-paths.component.html'
 })
 export class SyncPathsComponent implements OnInit, OnDestroy {
-  locale = inject<L10nLocale>(L10N_LOCALE)
+  @ViewChild(VirtualScrollComponent) scrollView: {
+    element: ElementRef
+    viewPortItems: SyncPathModel[]
+    scrollInto: (arg: SyncPathModel | number) => void
+  }
   @ViewChild(AutoResizeDirective, { static: true }) autoResize: AutoResizeDirective
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('SyncPathContextMenu', { static: true }) syncPathContextMenu: ContextMenuComponent<any>
@@ -77,6 +84,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   public syncsInProgress: SyncStatus[] = []
   public syncPathSelected: SyncPathModel = null
   public allSyncsRunning = false
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly store = inject(StoreService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
@@ -198,10 +206,10 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     if (this.focusOnPathId) {
-      const index = this.store.clientSyncPaths().findIndex((s) => s.id === this.focusOnPathId)
-      if (index > -1) {
-        this.onSelect(this.store.clientSyncPaths()[index])
-        this.autoResize.scrollIntoView(Math.max(index, 1) * 35 - 35)
+      const syncPath = this.store.clientSyncPaths().find((s) => s.id === this.focusOnPathId)
+      if (syncPath) {
+        this.onSelect(syncPath)
+        setTimeout(() => this.scrollView.scrollInto(syncPath), 200)
         if (this.focusOnPathSettings) {
           setTimeout(() => this.openSettingsDialog(), 500)
         }

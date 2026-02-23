@@ -27,6 +27,7 @@
         justify-content: center;
         min-height: $sidebar-apps-height;
         width: 100%;
+        position: relative;
 
         &:first-child {
           user-select: none;
@@ -76,38 +77,61 @@
       .menu-mini {
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
         position: absolute;
-        left: $sidebar-apps-icons-width;
-        min-width: 150px;
+        left: 100%;
+        top: 0;
+        width: calc($sidebar-apps-menus-width - 20px);
+        box-sizing: border-box;
+        padding: 3px 2px;
         z-index: $sidebar-z-index;
-        font-size: $font-size-xs;
-        border-top-right-radius: $border-radius-base;
-        border-bottom-right-radius: $border-radius-base;
-        overflow: hidden;
+        font-size: $font-size-xxs;
+        border-top-right-radius: $btn-border-radius;
+        border-bottom-right-radius: $btn-border-radius;
+
+        &.align-self-start {
+          top: 0;
+          bottom: auto;
+        }
+
+        &.align-self-end {
+          top: auto;
+          bottom: 0;
+        }
 
         > a {
           display: flex;
           align-items: center;
+          gap: .5rem;
+          flex: 1 1 auto;
+          width: auto;
+          margin: 2px 2px;
           justify-content: flex-start;
-          height: $sidebar-apps-height;
-          width: 100%;
-          padding-left: 8px;
-          padding-right: 5px;
+          height: calc(#{$sidebar-apps-height} - 6px);
+          padding: 0 8px;
+          border-radius: $btn-border-radius;
+          @extend .text-truncate;
+          @extend .no-select-pointer;
 
           > fa-icon {
-            margin-right: .25rem;
-            font-size: $font-size-lg;
-          }
-
-          > span:first-of-type {
-            margin-right: 15px;
+            font-size: $font-size-md;
+            margin-right: 0;
+            width: .95rem;
+            min-width: .95rem;
+            display: inline-flex;
+            justify-content: center;
+            opacity: .88;
           }
 
           .menu-badge {
             margin-left: auto;
             font-size: $font-size-xxxs;
           }
+        }
+
+        > a.mini-submenu-item {
+          font-size: $font-size-xxxs;
+          padding-left: 20px;
         }
       }
     }
@@ -197,8 +221,8 @@
       .menu {
         display: flex;
         align-items: center;
-        min-height: calc(#{$sidebar-apps-height} - 3px);
-        height: calc(#{$sidebar-apps-height} - 3px);
+        min-height: $sidebar-apps-height;
+        height: $sidebar-apps-height;
         min-width: $sidebar-apps-menus-width;
         font-size: $font-size-xs;
         cursor: pointer;
@@ -218,14 +242,13 @@
           gap: .5rem;
           flex: 1 1 auto;
           width: auto;
-          height: calc(#{$sidebar-apps-height} - 6px);
+          height: calc(#{$sidebar-apps-height} - 5px);
           margin: 0 6px;
           padding: 0 10px;
           border-radius: $btn-border-radius;
           max-height: none;
           @extend .text-truncate;
           @extend .no-select-pointer;
-          transition: color .1s ease-in-out;
 
           > fa-icon {
             font-size: $font-size-md;
