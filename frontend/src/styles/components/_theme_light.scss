@@ -212,6 +212,27 @@
 }
 
 @mixin skin-light-app() {
+  .dialog-tab-card {
+    background: rgba(255, 255, 255, 0.52);
+    border: 1px solid rgba(20, 45, 72, 0.11);
+    box-shadow: 0 12px 24px rgba(31, 56, 86, 0.1);
+  }
+  .dialog-check-card {
+    background: rgba(236, 243, 251, 0.72);
+    border: 1px solid rgba(30, 59, 89, 0.14);
+  }
+  .dialog-check-card--interactive {
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .dialog-check-card--interactive:hover {
+    background: rgba(236, 243, 251, 0.88);
+    border-color: rgba(30, 59, 89, 0.3);
+    box-shadow: 0 6px 14px rgba(31, 56, 86, 0.12);
+  }
+  .dialog-check-card--active {
+    border-color: rgba(52, 94, 146, 0.48);
+  }
   .btn {
     --btn-premium-focus: #{rgba($primary, 0.24)};
 

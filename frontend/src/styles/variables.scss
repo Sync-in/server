@@ -92,7 +92,8 @@ $input-border-width: 1px;
 $input-box-shadow: none !important;
 $input-focus-box-shadow: none !important;
 $form-group-margin-bottom: 0.6rem;
-$form-check-margin-bottom: 0rem;
+$form-check-margin-bottom: 0;
+$form-label-margin-bottom: .2rem;
 // Table-hover
 $table-bg-hover: lighten($lighter-blue, 14%);
 $table-bg: transparent !important;

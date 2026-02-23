@@ -158,6 +158,14 @@ export class ShareDialogComponent implements OnInit {
     this.share.disabledAt = status ? null : new Date()
   }
 
+  toggleShareStatusFromCard() {
+    this.setShareStatus(!this.share.enabled)
+  }
+
+  toggleFullTextSearchFromCard() {
+    this.share.storageIndexing = !this.share.storageIndexing
+  }
+
   cantSubmit() {
     return this.submitted || (!this.share.externalPath && !this.share.file)
   }

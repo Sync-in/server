@@ -194,6 +194,23 @@
 }
 
 @mixin skin-dark-app() {
+  .dialog-tab-card {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
+  }
+  .dialog-check-card {
+    border: 1px solid rgba(132, 157, 185, 0.24);
+  }
+  .dialog-check-card--interactive {
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .dialog-check-card--interactive:hover {
+    border-color: rgba(146, 173, 204, 0.4);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.24);
+  }
+  .dialog-check-card--active {
+    border-color: rgba(92, 141, 202, 0.62);
+  }
   .newly {
     color: $custom-color !important;
     border-bottom: none;
@@ -500,18 +517,17 @@
     .app-top-menu {
       background: transparent;
     }
-  }
-  .modal-footer {
-    color: $gray-light;
-    background-color: $sidebar-dark-apps-menu-title-bg;
-    border-top-color: $sidebar-dark-apps-menu-title-bg;
-  }
-  .modal-auth-verify-2fa, .modal-viewer-select {
+
     .card {
       color: $gray-light;
       background-color: $sidebar-dark-icons-menu-bg;
       border-color: $sidebar-dark-icons-menu-border-color;
     }
+  }
+  .modal-footer {
+    color: $gray-light;
+    background-color: $sidebar-dark-apps-menu-title-bg;
+    border-top-color: $sidebar-dark-apps-menu-title-bg;
   }
   typeahead-container, .ui-select-choices {
     &.dropdown-menu {
