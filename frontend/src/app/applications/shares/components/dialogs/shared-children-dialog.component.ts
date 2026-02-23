@@ -96,7 +96,7 @@ export class SharedChildrenDialogComponent implements OnInit {
       }
       req.subscribe({
         next: (share: ShareLinkModel) => {
-          const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'md', {
+          const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
             initialState: { share: share } as LinkDialogComponent
           })
           modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['update' | 'delete', ShareLinkModel] | ['add', ShareModel]) => {

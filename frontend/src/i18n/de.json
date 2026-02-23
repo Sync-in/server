@@ -58,7 +58,6 @@
   "Personal": "Persönlich",
   "External": "Extern",
   "Share status": "Freigabestatus",
-  "Share description": "Freigabebeschreibung",
   "No recent files": "Keine aktuellen Dateien",
   "Groups": "Gruppen",
   "Group": "Gruppe",
@@ -635,5 +634,9 @@
   "of": "von",
   "Sidebar auto-hide enabled": "Automatisches Ausblenden der Seitenleiste aktiviert",
   "Sidebar pinned": "Seitenleiste angeheftet",
-  "Continue with OpenID Connect": "Mit OpenID Connect fortfahren"
+  "Continue with OpenID Connect": "Mit OpenID Connect fortfahren",
+  "Link identity": "Link-Identität",
+  "Share details": "Freigabedetails",
+  "Access rules": "Zugriffsregeln",
+  "Guest profile": "Gastprofil"
 }

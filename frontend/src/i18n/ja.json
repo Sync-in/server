@@ -58,7 +58,6 @@
   "Personal": "個人",
   "External": "外部",
   "Share status": "共有状況",
-  "Share description": "共有の説明",
   "No recent files": "最近のファイルはありません",
   "Groups": "グループ",
   "Group": "グループ",
@@ -635,5 +634,9 @@
   "of": "の",
   "Sidebar auto-hide enabled": "サイドバー自動非表示が有効",
   "Sidebar pinned": "サイドバー固定",
-  "Continue with OpenID Connect": "OpenID Connectで続行"
+  "Continue with OpenID Connect": "OpenID Connectで続行",
+  "Link identity": "リンク情報",
+  "Share details": "共有の詳細",
+  "Access rules": "アクセスルール",
+  "Guest profile": "ゲストプロフィール"
 }

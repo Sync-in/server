@@ -58,7 +58,6 @@
   "Personal": "Личное",
   "External": "Внешнее",
   "Share status": "Статус общего доступа",
-  "Share description": "Описание общего доступа",
   "No recent files": "Нет недавних файлов",
   "Groups": "Группы",
   "Group": "Группа",
@@ -635,5 +634,9 @@
   "of": "из",
   "Sidebar auto-hide enabled": "Автоскрытие боковой панели включено",
   "Sidebar pinned": "Боковая панель закреплена",
-  "Continue with OpenID Connect": "Продолжить с OpenID Connect"
+  "Continue with OpenID Connect": "Продолжить с OpenID Connect",
+  "Link identity": "Сведения о ссылке",
+  "Share details": "Детали общего доступа",
+  "Access rules": "Правила доступа",
+  "Guest profile": "Профиль гостя"
 }

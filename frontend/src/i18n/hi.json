@@ -58,7 +58,6 @@
   "Personal": "व्यक्तिगत",
   "External": "बाह्य",
   "Share status": "साझाकरण स्थिति",
-  "Share description": "साझाकरण विवरण",
   "No recent files": "कोई हाल की फ़ाइल नहीं",
   "Groups": "समूह",
   "Group": "समूह",
@@ -635,5 +634,9 @@
   "of": "का",
   "Sidebar auto-hide enabled": "साइडबार स्वतः छिपाना सक्षम",
   "Sidebar pinned": "साइडबार पिन किया गया",
-  "Continue with OpenID Connect": "OpenID Connect के साथ जारी रखें"
+  "Continue with OpenID Connect": "OpenID Connect के साथ जारी रखें",
+  "Link identity": "लिंक पहचान",
+  "Share details": "शेयर विवरण",
+  "Access rules": "एक्सेस नियम",
+  "Guest profile": "अतिथि प्रोफ़ाइल"
 }

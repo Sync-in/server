@@ -58,7 +58,6 @@
   "Personal": "Pessoais",
   "External": "Externo",
   "Share status": "Status do compartilhamento",
-  "Share description": "Descrição do compartilhamento",
   "No recent files": "Nenhum arquivo recente",
   "Groups": "Grupos",
   "Group": "Grupo",
@@ -635,5 +634,9 @@
   "of": "de",
   "Sidebar auto-hide enabled": "Ocultação automática da barra lateral ativada",
   "Sidebar pinned": "Barra lateral fixa",
-  "Continue with OpenID Connect": "Continuar com OpenID Connect"
+  "Continue with OpenID Connect": "Continuar com OpenID Connect",
+  "Link identity": "Identidade do link",
+  "Share details": "Detalhes da partilha",
+  "Access rules": "Regras de acesso",
+  "Guest profile": "Perfil do convidado"
 }

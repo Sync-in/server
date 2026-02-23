@@ -58,7 +58,6 @@
   "Personal": "个人",
   "External": "外部",
   "Share status": "共享状态",
-  "Share description": "共享描述",
   "No recent files": "没有最近的文件",
   "Groups": "群组",
   "Group": "群组",
@@ -635,5 +634,9 @@
   "of": "的",
   "Sidebar auto-hide enabled": "侧边栏自动隐藏已启用",
   "Sidebar pinned": "侧边栏已固定",
-  "Continue with OpenID Connect": "使用 OpenID Connect 继续"
+  "Continue with OpenID Connect": "使用 OpenID Connect 继续",
+  "Link identity": "链接标识",
+  "Share details": "共享详情",
+  "Access rules": "访问规则",
+  "Guest profile": "访客资料"
 }

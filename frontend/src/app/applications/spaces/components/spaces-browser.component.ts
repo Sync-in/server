@@ -529,7 +529,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   openShareLinkDialog() {
     const f: Partial<FileSpace> = this.setFilePermissionsAndSpace()
     if (f === null) return
-    const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'md', {
+    const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
       initialState: {
         file: f,
         isSharesRepo: this.isSharesRepo,

@@ -58,7 +58,6 @@
   "Personal": "개인",
   "External": "외부",
   "Share status": "공유 상태",
-  "Share description": "공유 설명",
   "No recent files": "최근 파일이 없습니다",
   "Groups": "그룹",
   "Group": "그룹",
@@ -635,5 +634,9 @@
   "of": "의",
   "Sidebar auto-hide enabled": "사이드바 자동 숨김 활성화",
   "Sidebar pinned": "사이드바 고정됨",
-  "Continue with OpenID Connect": "OpenID Connect로 계속하기"
+  "Continue with OpenID Connect": "OpenID Connect로 계속하기",
+  "Link identity": "링크 정보",
+  "Share details": "공유 세부 정보",
+  "Access rules": "접근 규칙",
+  "Guest profile": "게스트 프로필"
 }

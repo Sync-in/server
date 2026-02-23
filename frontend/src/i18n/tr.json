@@ -58,7 +58,6 @@
   "Personal": "Kişisel",
   "External": "Harici",
   "Share status": "Paylaşım durumu",
-  "Share description": "Paylaşım açıklaması",
   "No recent files": "Son dosya yok",
   "Groups": "Gruplar",
   "Group": "Grup",
@@ -635,5 +634,9 @@
   "of": "/",
   "Sidebar auto-hide enabled": "Kenar çubuğu otomatik gizleme etkin",
   "Sidebar pinned": "Kenar çubuğu sabitlendi",
-  "Continue with OpenID Connect": "OpenID Connect ile devam et"
+  "Continue with OpenID Connect": "OpenID Connect ile devam et",
+  "Link identity": "Bağlantı kimliği",
+  "Share details": "Paylaşım ayrıntıları",
+  "Access rules": "Erişim kuralları",
+  "Guest profile": "Misafir profili"
 }
