@@ -23,39 +23,39 @@
       }
 
       .menu-mini {
-        background-color: #ebeef5;
+        background-color: $light-sidebar-mini-bg;
 
         > a {
           color: $sidebar-light-apps-menu-hover-color;
           border: .5px solid transparent;
 
           &:hover {
-            background: lighten(#d4e1f1, 2%);
+            background: $light-sidebar-mini-hover-bg;
           }
 
           &.active {
-            background: darken(#d4e1f1, 4%);
-            border-color: mix($primary, $gray-light, 30%);
+            background: $light-sidebar-mini-active-bg;
+            border-color: $light-sidebar-mini-active-border;
             font-weight: 500;
             color: $navy;
 
             > fa-icon:first-child {
-              color: darken($primary, 5%);
+              color: $light-sidebar-mini-active-icon;
             }
           }
         }
 
         .chat-item-sidebar {
-          background-color: #ebeef5;
+          background-color: $light-sidebar-mini-bg;
           color: $sidebar-light-apps-menu-hover-color;
 
           &:not(:last-child) {
-            border-bottom: .5px solid #ebeef5 !important;
+            border-bottom: .5px solid $light-sidebar-mini-bg !important;
           }
 
           &:hover, &.active {
             border-left-color: transparent !important;
-            background: darken(#d4e1f1, 4%) !important;
+            background: $light-sidebar-mini-active-bg !important;
             color: $navy;
           }
         }
@@ -64,7 +64,7 @@
 
     .sidebar-apps-menus {
       .menus-content {
-        background-color: #ebeef5;
+        background-color: $light-sidebar-mini-bg;
         border-right: .5px solid $sidebar-light-apps-menu-border-color;
       }
 
@@ -82,19 +82,19 @@
 
         &:hover {
           > a {
-            background: lighten(#d4e1f1, 2%);
+            background: $light-sidebar-mini-hover-bg;
           }
         }
 
         &.active {
           > a {
-            background: darken(#d4e1f1, 4%);
-            border-color: mix($primary, $gray-light, 30%);
+            background: $light-sidebar-mini-active-bg;
+            border-color: $light-sidebar-mini-active-border;
             font-weight: 500;
             color: $navy;
 
             > fa-icon:first-child {
-              color: darken($primary, 5%);
+              color: $light-sidebar-mini-active-icon;
             }
           }
         }
@@ -109,17 +109,12 @@
 
 @mixin skin-light-right-sidebar() {
   .control-sidebar-theme-light {
-    background: #fcfdff;
+    background: $light-sidebar-surface;
     border-left: .5px solid $sidebar-light-apps-menu-border-color;
 
-    .sidebar-component-title {
-      background-color: #eaf1fb;
-      color: $black;
-      border-bottom: .5px solid $secondary;
-    }
-
+    .sidebar-component-title,
     .sidebar-title {
-      background-color: #eaf1fb;
+      background-color: $theme-light-panel-bg;
       color: $black;
       border-bottom: .5px solid $secondary;
     }
@@ -131,7 +126,7 @@
   }
   .control-sidebar-menu {
     .sidebar-apps-icons {
-      background-color: #f2f6fd;
+      background-color: $light-sidebar-icons-bg;
       border-left: .5px solid $sidebar-light-apps-menu-border-color;
 
       .menu {
@@ -140,7 +135,7 @@
 
           &:hover, &.active {
             color: $black;
-            background: darken(#d4e1f1, 4%);
+            background: $light-sidebar-mini-active-bg;
           }
         }
       }
@@ -159,10 +154,10 @@
     background-color: $gray-lighter;
   }
   .chat-button-bottom {
-    color: darken(gray, 30%);
+    color: $light-chat-button-color;
 
     &:hover {
-      color: black;
+      color: $light-chat-button-hover-color;
     }
   }
   .chat-list-sidebar {
@@ -181,63 +176,48 @@
 
 @mixin skin-light-tree() {
   .angular-tree-component {
-    .node-wrapper {
-      &:hover,
-      &:focus,
-      &:active {
-        background-color: $table-bg-hover;
-      }
-
-      &.tree-selected {
-        background-color: $selected-background;
-      }
-    }
-
+    .node-wrapper,
     .node-content-wrapper {
       &:hover,
       &:focus,
       &:active {
-        background-color: $table-bg-hover;
+        background-color: $light-tree-node-hover-bg;
       }
+    }
 
-      &.node-content-wrapper-active {
-        background-color: $selected-background;
-
-        &:hover {
-          background-color: $selected-background;
-        }
-      }
+    .node-wrapper.tree-selected,
+    .node-content-wrapper.node-content-wrapper-active,
+    .node-content-wrapper.node-content-wrapper-active:hover {
+      background-color: $light-tree-node-selected-bg;
     }
   }
 }
 
 @mixin skin-light-app() {
   .dialog-tab-card {
-    background: rgba(255, 255, 255, 0.52);
-    border: 1px solid rgba(20, 45, 72, 0.11);
-    box-shadow: 0 12px 24px rgba(31, 56, 86, 0.1);
+    background: $light-dialog-tab-card-bg;
+    border: 1px solid $light-dialog-tab-card-border-color;
+    box-shadow: 0 12px 24px $light-dialog-tab-card-shadow-color;
   }
   .dialog-check-card {
-    background: rgba(236, 243, 251, 0.72);
-    border: 1px solid rgba(30, 59, 89, 0.14);
+    background: $light-dialog-check-card-bg;
+    border: 1px solid $light-dialog-check-card-border-color;
   }
   .dialog-check-card--interactive {
     cursor: pointer;
     transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .dialog-check-card--interactive:hover {
-    background: rgba(236, 243, 251, 0.88);
-    border-color: rgba(30, 59, 89, 0.3);
-    box-shadow: 0 6px 14px rgba(31, 56, 86, 0.12);
+    background: $light-dialog-check-card-hover-bg;
+    border-color: $light-dialog-check-card-hover-border-color;
+    box-shadow: 0 6px 14px $light-dialog-check-card-hover-shadow-color;
   }
   .dialog-check-card--active {
-    border-color: rgba(52, 94, 146, 0.48);
+    border-color: $light-dialog-check-card-active-border-color;
   }
   .btn {
-    --btn-premium-focus: #{rgba($primary, 0.24)};
-
     &:focus-visible {
-      outline: 2px solid var(--btn-premium-focus, rgba(13, 110, 253, 0.25));
+      outline: 2px solid $light-btn-focus-color;
       outline-offset: 1px;
       box-shadow: none !important;
     }
@@ -246,27 +226,20 @@
   .btn-default,
   .btn-custom,
   .btn-outline-secondary-alt {
-    --btn-premium-secondary-bg: #{mix($white, $gray-lightest, 94%)};
-    --btn-premium-secondary-bg-hover: #{$table-bg-hover};
-    --btn-premium-secondary-border: #{mix($primary, $gray-light, 14%)};
-    --btn-premium-secondary-border-hover: #{mix($primary, $gray-light, 26%)};
-    --btn-premium-secondary-color: #{darken($gray-dark, 18%)};
-    --btn-premium-secondary-color-hover: #{darken($gray-dark, 28%)};
-    --btn-premium-secondary-disabled-color: #{lighten($gray-dark, 18%)};
-    border-color: var(--btn-premium-secondary-border) !important;
-    color: var(--btn-premium-secondary-color) !important;
-    background-color: var(--btn-premium-secondary-bg) !important;
+    border-color: $light-surface-border !important;
+    color: $light-item-color !important;
+    background-color: $light-surface-bg !important;
 
     &:hover:not(:disabled) {
-      border-color: var(--btn-premium-secondary-border-hover) !important;
-      color: var(--btn-premium-secondary-color-hover) !important;
-      background-color: var(--btn-premium-secondary-bg-hover) !important;
+      border-color: mix($primary, $gray-light, 26%) !important;
+      color: $light-item-hover-color !important;
+      background-color: $table-bg-hover !important;
     }
 
     &:disabled {
-      border-color: var(--btn-premium-secondary-border) !important;
-      color: var(--btn-premium-secondary-disabled-color) !important;
-      background-color: var(--btn-premium-secondary-bg) !important;
+      border-color: $light-surface-border !important;
+      color: $light-item-disabled-color !important;
+      background-color: $light-surface-bg !important;
     }
   }
   .btn-custom {
@@ -290,46 +263,42 @@
     @include button-outline-variant($primary);
   }
   .btn[class*='bg-']:hover {
-    @include box-shadow(inset 0 0 100px rgba(0, 0, 0, 0.2));
+    @include box-shadow(inset 0 0 100px $theme-btn-bg-hover-overlay-shadow);
   }
   .btn-minimize {
-    background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23000'%3e%3cpath d='M32,224c-17.7,0-32,14.3-32,32s14.3,32,32,32h448c17.7,0,32-14.3,32-32s-14.3-32-32-32H32z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+    background: transparent url("#{$theme-btn-minimize-icon-svg}") center/1em auto no-repeat;
   }
   .dropdown-menu {
-    --menu-surface-bg: #{mix($white, $gray-lightest, 94%)};
-    --menu-surface-border: #{mix($primary, $gray-light, 14%)};
-    --menu-item-color: #{darken($gray-dark, 18%)};
-    --menu-item-hover-bg: #{lighten($selected-background, 3%)};
-    --menu-item-hover-color: #{darken($gray-dark, 28%)};
-    border: .5px solid var(--menu-surface-border, var(--btn-premium-secondary-border)) !important;
-    background-color: var(--menu-surface-bg, var(--btn-premium-secondary-bg)) !important;
+    border: .5px solid $light-menu-surface-border !important;
+    background-color: $light-menu-surface-bg !important;
+    box-shadow: $light-menu-surface-shadow;
 
     > li > a {
-      color: var(--menu-item-color, var(--btn-premium-secondary-color));
+      color: $light-item-color;
       background-color: transparent;
 
       &:hover {
-        background-color: var(--menu-item-hover-bg, var(--btn-premium-secondary-bg-hover)) !important;
-        color: var(--menu-item-hover-color, var(--btn-premium-secondary-color-hover)) !important;
+        background-color: $light-menu-item-hover-bg !important;
+        color: $light-item-hover-color !important;
       }
     }
 
     > .divider {
-      background-color: #eee;
+      background-color: $light-menu-surface-border;
     }
   }
   .dropdown-item {
-    color: var(--menu-item-color, var(--btn-premium-secondary-color));
+    color: $light-item-color;
 
     &:hover,
     &.active,
     &:active {
-      background-color: var(--menu-item-hover-bg, var(--btn-premium-secondary-bg-hover)) !important;
-      color: var(--menu-item-hover-color, var(--btn-premium-secondary-color-hover)) !important;
+      background-color: $light-menu-item-hover-bg !important;
+      color: $light-item-hover-color !important;
     }
   }
   .dropdown-divider {
-    border-top-color: var(--menu-surface-border, var(--btn-premium-secondary-border)) !important;
+    border-top-color: $light-menu-surface-border !important;
   }
   .virtual-scroll-border-top {
     border-top: 0.5px solid $gray-light;
@@ -342,18 +311,18 @@
     }
 
     thead {
-      background-color: #F3F7FD;
+      background-color: $light-table-head-bg;
     }
 
     tbody tr {
       border-bottom-color: $gray-lighter !important;
 
       &:hover {
-        background-color: mix($table-bg-hover, $white, 50%) !important;
+        background-color: $light-table-row-hover-bg !important;
       }
 
       &.selected {
-        background-color: mix($selected-background, $white, 50%) !important;
+        background-color: $light-table-row-selected-bg !important;
         box-shadow: inset 2px 0 0 darken($primary, 4%);
       }
     }
@@ -369,22 +338,22 @@
       }
 
       &:hover {
-        background-color: mix($table-bg-hover, $white, 55%);
+        background-color: $light-table-striped-hover-bg;
       }
     }
   }
   .app-top-menu {
     border-top-color: $gray-light;
     border-bottom-color: $gray-light;
-    background: linear-gradient(to right, #e1ebf8 0%, #eaf1fb 50%, #f4f8fe 100%);
+    background: linear-gradient(to right, $light-app-top-menu-gradient-start 0%, $light-app-top-menu-gradient-mid 50%, $light-app-top-menu-gradient-end 100%);
 
     .dropdown-menu {
-      --menu-surface-bg: #f4f6fa;
+      background-color: $light-menu-surface-bg !important;
     }
   }
   .app-foot-menu {
     border-top: 0.5px solid $gray-light;
-    background: #eaf1f8;
+    background: $theme-light-panel-alt-bg;
     color: $custom-color;
   }
   .app-thumbs {
@@ -426,7 +395,7 @@
     }
 
     &.selected {
-      background-color: darken($table-bg-hover, 4%) !important;
+      background-color: $light-row-selected-bg !important;
     }
   }
   .app-div-striped {
@@ -435,7 +404,7 @@
     }
 
     &.selected {
-      background-color: darken($table-bg-hover, 4%) !important;
+      background-color: $light-row-selected-bg !important;
     }
   }
   .app-div-striped-inverse {
@@ -464,7 +433,7 @@
 
     select {
       background-color: $white !important;
-      color: black;
+      color: $black;
       filter: none;
     }
   }
@@ -492,7 +461,7 @@
     }
 
     .wizard-nav-content {
-      background-color: white;
+      background-color: $white;
     }
   }
   .sidebar-item {
@@ -510,30 +479,31 @@
 
 @mixin skin-light-miscellaneous() {
   .content-wrapper {
-    background-color: white;
+    background-color: $white;
     color: $body-color;
   }
   //.content-container {
   //  border-left: .5px solid $sidebar-light-apps-menu-border-color;
   //}
   .ngx-contextmenu {
-    background-color: #f4f6fa !important;
-    border-color: mix($primary, $gray-light, 14%) !important;
+    background-color: $light-menu-surface-bg !important;
+    border-color: $light-menu-surface-border !important;
+    box-shadow: $light-menu-surface-shadow !important;
 
     > button.ngx-context-menu-item {
-      color: darken($gray-dark, 18%) !important;
+      color: $light-item-color !important;
       background-color: transparent !important;
 
       &:hover,
       &:focus-visible,
       &.active {
-        background-color: lighten($selected-background, 3%) !important;
-        color: darken($gray-dark, 28%) !important;
+        background-color: $light-menu-item-hover-bg !important;
+        color: $light-item-hover-color !important;
       }
     }
 
     > [role='separator'] {
-      border-top-color: mix($primary, $gray-light, 14%) !important;
+      border-top-color: $light-menu-surface-border !important;
     }
   }
   .modal-body {
@@ -542,12 +512,15 @@
   .modal-footer {
     background-color: $gray-lightest;
   }
-  typeahead-container, .ui-select-choices {
+  typeahead-container,
+  .ui-select-choices {
     &.dropdown-menu {
       background-color: $white !important;
     }
   }
-  .form-control, .form-select, .input-group-text {
+  .form-control,
+  .form-select,
+  .input-group-text {
     &:disabled {
       color: $muted;
       cursor: not-allowed;
@@ -561,10 +534,10 @@
   }
   .nav-link {
     color: $body-color;
-    background-color: lighten($gray-mid, 4%);
+    background-color: $light-nav-bg;
 
     &:hover {
-      background: darken($gray-mid, 2%);
+      background: $light-nav-hover-bg;
     }
 
     &.active {
@@ -580,11 +553,11 @@
     @include box-solid-variant($gray-lighter, $body-color, true);
 
     > .box-header {
-      border-bottom: .5px solid darken($gray-lighter, 5%);
+      border-bottom: .5px solid $light-box-border-strong;
     }
 
     > .box-footer {
-      border-top: .5px solid darken($gray-lighter, 5%);
+      border-top: .5px solid $light-box-border-strong;
     }
   }
   .box-footer-default {
@@ -597,10 +570,10 @@
   .box-transparent {
     background-color: $gray-lightest;
     border-color: $gray-lighter;
-    box-shadow: 0 12px 26px rgba(24, 32, 58, 0.1);
+    box-shadow: 0 12px 26px $light-box-transparent-shadow-color;
 
     > .box-header {
-      background: #eaf1f8;
+      background: $theme-light-panel-alt-bg;
       border-bottom-color: $gray-lighter;
     }
 
@@ -620,7 +593,7 @@
     background-color: $gray-lightest !important;
   }
   .recents-grid .box-transparent > .box-header {
-    background: #e2ecf8;
+    background: $light-recents-box-header-bg;
     border-bottom-color: mix($primary, $white, 20%);
 
     > fa-icon {

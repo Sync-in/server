@@ -90,7 +90,8 @@
     background: $sidebar-dark-apps-menu-bg;
     border-left: .5px solid $sidebar-dark-icons-menu-border-color;
 
-    .sidebar-component-title {
+    .sidebar-component-title,
+    .sidebar-title {
       color: $sidebar-dark-apps-menu-color;
       background: $sidebar-dark-apps-menu-title-bg;
       border-bottom: .5px solid $sidebar-dark-icons-menu-border-color;
@@ -100,14 +101,8 @@
       color: $gray-light;
     }
 
-    .sidebar-title {
-      color: $sidebar-dark-apps-menu-color;
-      background: $sidebar-dark-apps-menu-title-bg;
-      border-bottom: .5px solid $sidebar-dark-icons-menu-border-color;
-    }
-
     hr {
-      border-top-color: rgba(146, 173, 204, 0.4) !important;
+      border-top-color: $dark-control-sidebar-separator-color !important;
       opacity: 1;
     }
   }
@@ -163,63 +158,48 @@
 
 @mixin skin-dark-tree() {
   .angular-tree-component {
-    .node-wrapper {
-      &:hover,
-      &:focus,
-      &:active {
-        background-color: $sidebar-dark-apps-menu-title-bg;
-      }
-
-      &.tree-selected {
-        background-color: darken($sidebar-dark-apps-menu-title-bg, 4%);
-      }
-    }
-
+    .node-wrapper,
     .node-content-wrapper {
       &:hover,
       &:focus,
       &:active {
-        background-color: $sidebar-dark-apps-menu-title-bg;
+        background-color: $dark-tree-node-hover-bg;
       }
+    }
 
-      &.node-content-wrapper-active {
-        background-color: darken($sidebar-dark-apps-menu-title-bg, 4%);
-
-        &:hover {
-          background-color: darken($sidebar-dark-apps-menu-title-bg, 4%);
-        }
-      }
+    .node-wrapper.tree-selected,
+    .node-content-wrapper.node-content-wrapper-active,
+    .node-content-wrapper.node-content-wrapper-active:hover {
+      background-color: $dark-tree-node-selected-bg;
     }
   }
 }
 
 @mixin skin-dark-app() {
   .dialog-tab-card {
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 12px 24px $dark-dialog-tab-card-shadow-color;
   }
   .dialog-check-card {
-    border: 1px solid rgba(132, 157, 185, 0.24);
+    border: 1px solid $dark-dialog-check-card-border-color;
   }
   .dialog-check-card--interactive {
     cursor: pointer;
     transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .dialog-check-card--interactive:hover {
-    border-color: rgba(146, 173, 204, 0.4);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.24);
+    border-color: $dark-dialog-check-card-hover-border-color;
+    box-shadow: 0 6px 14px $dark-dialog-check-card-hover-shadow-color;
   }
   .dialog-check-card--active {
-    border-color: rgba(92, 141, 202, 0.62);
+    border-color: $dark-dialog-check-card-active-border-color;
   }
   .newly {
     color: $custom-color !important;
     border-bottom: none;
   }
   .btn {
-    --btn-premium-focus: #{rgba($primary, 0.28)};
-
     &:focus-visible {
-      outline: 2px solid var(--btn-premium-focus, rgba(13, 110, 253, 0.25));
+      outline: 2px solid $dark-btn-focus-color;
       outline-offset: 1px;
       box-shadow: none !important;
     }
@@ -228,27 +208,20 @@
   .btn-default,
   .btn-custom,
   .btn-outline-secondary-alt {
-    --btn-premium-secondary-bg: #{lighten($sidebar-dark-icons-menu-bg, 5%)};
-    --btn-premium-secondary-bg-hover: #{$sidebar-dark-icons-menu-bg};
-    --btn-premium-secondary-border: #{lighten($sidebar-dark-icons-menu-border-color, 10%)};
-    --btn-premium-secondary-border-hover: #{mix($primary, $sidebar-dark-icons-menu-border-color, 34%)};
-    --btn-premium-secondary-color: #{lighten($gray-light, 8%)};
-    --btn-premium-secondary-color-hover: #{lighten($gray-light, 14%)};
-    --btn-premium-secondary-disabled-color: #{darken($gray-light, 12%)};
-    border-color: var(--btn-premium-secondary-border) !important;
-    color: var(--btn-premium-secondary-color) !important;
-    background-color: var(--btn-premium-secondary-bg) !important;
+    border-color: $dark-surface-border !important;
+    color: $dark-item-color !important;
+    background-color: $dark-surface-bg !important;
 
     &:hover:not(:disabled) {
-      border-color: var(--btn-premium-secondary-border-hover) !important;
-      color: var(--btn-premium-secondary-color-hover) !important;
-      background-color: var(--btn-premium-secondary-bg-hover) !important;
+      border-color: mix($primary, $sidebar-dark-icons-menu-border-color, 34%) !important;
+      color: $dark-item-hover-color !important;
+      background-color: $sidebar-dark-icons-menu-bg !important;
     }
 
     &:disabled {
-      border-color: var(--btn-premium-secondary-border) !important;
-      color: var(--btn-premium-secondary-disabled-color) !important;
-      background-color: var(--btn-premium-secondary-bg) !important;
+      border-color: $dark-surface-border !important;
+      color: $dark-item-disabled-color !important;
+      background-color: $dark-surface-bg !important;
     }
   }
   .btn-custom {
@@ -272,50 +245,46 @@
     @include button-outline-variant($primary);
   }
   .btn[class*='bg-']:hover {
-    @include box-shadow(inset 0 0 100px rgba(0, 0, 0, 0.2));
+    @include box-shadow(inset 0 0 100px $theme-btn-bg-hover-overlay-shadow);
   }
   .btn-minimize {
-    background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23000'%3e%3cpath d='M32,224c-17.7,0-32,14.3-32,32s14.3,32,32,32h448c17.7,0,32-14.3,32-32s-14.3-32-32-32H32z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+    background: transparent url("#{$theme-btn-minimize-icon-svg}") center/1em auto no-repeat;
   }
   .dropdown-menu {
-    --menu-surface-bg: #{lighten($sidebar-dark-icons-menu-bg, 5%)};
-    --menu-surface-border: #{lighten($sidebar-dark-icons-menu-border-color, 10%)};
-    --menu-item-color: #{lighten($gray-light, 8%)};
-    --menu-item-hover-bg: #{$sidebar-dark-icons-menu-bg};
-    --menu-item-hover-color: #{lighten($gray-light, 14%)};
-    border: .5px solid var(--menu-surface-border, var(--btn-premium-secondary-border)) !important;
-    background-color: var(--menu-surface-bg, var(--btn-premium-secondary-bg)) !important;
+    border: .5px solid $dark-surface-border !important;
+    background-color: $dark-surface-bg !important;
+    box-shadow: $dark-menu-surface-shadow;
 
     > li > a {
-      color: var(--menu-item-color, var(--btn-premium-secondary-color));
+      color: $dark-item-color;
       background-color: transparent;
 
       &:hover {
-        background-color: var(--menu-item-hover-bg, var(--btn-premium-secondary-bg-hover)) !important;
-        color: var(--menu-item-hover-color, var(--btn-premium-secondary-color-hover)) !important;
+        background-color: $sidebar-dark-icons-menu-bg !important;
+        color: $dark-item-hover-color !important;
       }
     }
 
     > .divider {
-      background-color: #eee;
+      background-color: $theme-dropdown-divider-bg;
     }
   }
   .dropdown-item {
-    color: var(--menu-item-color, var(--btn-premium-secondary-color));
+    color: $dark-item-color;
 
     &:hover,
     &.active,
     &:active {
-      background-color: var(--menu-item-hover-bg, var(--btn-premium-secondary-bg-hover)) !important;
-      color: var(--menu-item-hover-color, var(--btn-premium-secondary-color-hover)) !important;
+      background-color: $sidebar-dark-icons-menu-bg !important;
+      color: $dark-item-hover-color !important;
     }
   }
   .dropdown-divider {
-    border-top-color: var(--menu-surface-border, var(--btn-premium-secondary-border)) !important;
+    border-top-color: $dark-surface-border !important;
   }
 
   .virtual-scroll-border-top {
-    border-top: 0.5px solid darken($sidebar-dark-icons-menu-border-color, 3%) !important;
+    border-top: 0.5px solid $dark-border-subtle !important;
   }
 
   .app-table {
@@ -330,10 +299,10 @@
     }
 
     tbody tr {
-      border-bottom-color: darken($sidebar-dark-icons-menu-border-color, 3%) !important;
+      border-bottom-color: $dark-border-subtle !important;
 
       &:hover {
-        background-color: darken($sidebar-dark-icons-menu-bg, 3%) !important;
+        background-color: $dark-table-row-hover-bg !important;
       }
 
       &.selected {
@@ -353,7 +322,7 @@
       }
 
       &:hover {
-        background-color: darken($sidebar-dark-icons-menu-bg, 3%);
+        background-color: $dark-table-row-hover-bg;
       }
     }
   }
@@ -363,11 +332,16 @@
     background: linear-gradient(170deg, lighten($sidebar-dark-apps-menu-title-bg, 7%) 0%, darken($sidebar-dark-icons-menu-bg, 1%) 100%);
 
     .dropdown-menu {
-      --menu-item-color: #{$gray-light};
+      > li > a {
+        color: $gray-light;
+      }
+    }
+    .dropdown-item {
+      color: $gray-light;
     }
   }
   .app-foot-menu {
-    border-top: 0.5px solid darken($sidebar-dark-icons-menu-border-color, 3%) !important;
+    border-top: 0.5px solid $dark-border-subtle !important;
     background-color: $sidebar-dark-icons-menu-bg;
     color: darken($gray-light, 5%);
   }
@@ -391,7 +365,7 @@
   }
   .app-div-striped-inverse {
     &:nth-of-type(odd) {
-      background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
+      background-color: $dark-striped-bg;
     }
   }
   .app-thumbs {
@@ -434,7 +408,7 @@
   }
   .border-bottom {
     border-bottom-width: 0.5px !important;
-    border-bottom-color: rgba(146, 173, 204, 0.4) !important;
+    border-bottom-color: $dark-control-sidebar-separator-color !important;
   }
   .profile-page {
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
@@ -492,8 +466,9 @@
   //  border-left: .5px solid $sidebar-dark-icons-menu-border-color;
   //}
   .ngx-contextmenu {
-    background-color: lighten($sidebar-dark-icons-menu-bg, 5%);
-    border-color: lighten($sidebar-dark-icons-menu-border-color, 10%);
+    background-color: $dark-surface-bg !important;
+    border-color: $dark-surface-border !important;
+    box-shadow: $dark-menu-surface-shadow !important;
 
     > button.ngx-context-menu-item {
       color: $gray-light !important;
@@ -507,10 +482,11 @@
     }
 
     > [role='separator'] {
-      border-top-color: lighten($sidebar-dark-icons-menu-border-color, 10%) !important;
+      border-top-color: $dark-surface-border !important;
     }
   }
-  .dialog-tab-card, .dialog-check-card {
+  .dialog-tab-card,
+  .dialog-check-card {
     color: $gray-light;
     background-color: $sidebar-dark-icons-menu-bg;
     border-color: $sidebar-dark-icons-menu-border-color;
@@ -519,18 +495,14 @@
     background: transparent !important;
   }
   .modal-header {
-    border-bottom-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
+    border-bottom-color: $dark-striped-bg;
   }
   .modal-body {
     color: $gray-light;
-    background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
+    background-color: $dark-striped-bg;
 
     .app-top-menu {
       background: transparent;
-    }
-
-    .card {
-      @extend .dialog-tab-card;
     }
   }
   .modal-footer {
@@ -538,7 +510,14 @@
     background-color: $sidebar-dark-apps-menu-title-bg;
     border-top-color: $sidebar-dark-apps-menu-title-bg;
   }
-  typeahead-container, .ui-select-choices {
+  .modal-auth-verify-2fa,
+  .modal-viewer-select {
+    .card {
+      @extend .dialog-tab-card;
+    }
+  }
+  typeahead-container,
+  .ui-select-choices {
     &.dropdown-menu {
       background-color: $sidebar-dark-icons-menu-border-color;
       border-color: $sidebar-dark-apps-menu-title-bg;
@@ -584,7 +563,7 @@
   .form-control, .form-select, .input-group-text {
     background-color: $sidebar-dark-apps-menu-title-bg;
     color: $white;
-    border-color: lighten($sidebar-dark-icons-menu-bg, 4%);
+    border-color: $dark-field-border;
 
     &:focus {
       border-color: $primary;
@@ -598,7 +577,7 @@
   }
   .small-box {
     color: $gray-light;
-    border-color: lighten($sidebar-dark-icons-menu-bg, 4%);
+    border-color: $dark-field-border;
     background-color: $sidebar-dark-icons-menu-bg;
   }
   .box:not(.box-background-transparent) {
@@ -625,7 +604,7 @@
   .box-transparent {
     background-color: darken($sidebar-dark-icons-menu-bg, 2%);
     border-color: $sidebar-dark-icons-menu-border-color;
-    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 10px 24px $dark-box-transparent-shadow-color;
 
     > .box-header {
       background: linear-gradient(
@@ -657,10 +636,10 @@
     }
   }
   .text-purple {
-    color: #b366ff !important;
+    color: $dark-text-purple-color !important;
   }
   .text-primary {
-    color: #2283dd !important;
+    color: $dark-text-primary-color !important;
   }
   .bg-theme {
     background-color: darken($sidebar-dark-icons-menu-bg, 4%);
@@ -669,13 +648,13 @@
     background-color: $sidebar-dark-apps-menu-title-bg !important;
   }
   .btn-close {
-    filter: var(--bs-btn-close-white-filter)
+    filter: $theme-btn-close-white-filter;
   }
   .btn-outline-secondary-alt {
-    border-color: lighten($sidebar-dark-icons-menu-bg, 4%)
+    border-color: $dark-field-border;
   }
   .text-muted {
-    color: #8a8f94 !important;
+    color: $dark-text-muted-color !important;
   }
   .text-bg-light {
     color: $gray-light !important;
