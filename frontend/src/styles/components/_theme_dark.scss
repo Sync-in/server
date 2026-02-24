@@ -107,7 +107,7 @@
     }
 
     hr {
-      border-top-color: $sidebar-dark-icons-menu-hover-bg;
+      border-top-color: rgba(146, 173, 204, 0.4) !important;
       opacity: 1;
     }
   }
@@ -432,7 +432,13 @@
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%);
     color: $white;
   }
+  .border-bottom {
+    border-bottom-width: 0.5px !important;
+    border-bottom-color: rgba(146, 173, 204, 0.4) !important;
+  }
   .profile-page {
+    background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
+
     select {
       background-color: transparent;
       color: $white;
@@ -504,6 +510,11 @@
       border-top-color: lighten($sidebar-dark-icons-menu-border-color, 10%) !important;
     }
   }
+  .dialog-tab-card, .dialog-check-card {
+    color: $gray-light;
+    background-color: $sidebar-dark-icons-menu-bg;
+    border-color: $sidebar-dark-icons-menu-border-color;
+  }
   .modal-content {
     background: transparent !important;
   }
@@ -519,9 +530,7 @@
     }
 
     .card {
-      color: $gray-light;
-      background-color: $sidebar-dark-icons-menu-bg;
-      border-color: $sidebar-dark-icons-menu-border-color;
+      @extend .dialog-tab-card;
     }
   }
   .modal-footer {

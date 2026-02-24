@@ -1,5 +1,4 @@
 .profile-page {
-  @extend .bg-theme;
   height: 100%;
   font-size: $font-size-xs;
 }
@@ -22,7 +21,6 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    color: rgba(255, 255, 255, 0.8);
 
     > div:first-of-type {
       font-weight: 500;

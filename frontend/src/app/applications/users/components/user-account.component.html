@@ -1,12 +1,11 @@
 <div class="profile-page" appAutoResize [resizeOffset]="40">
-  <div class="container-fluid">
-    <div class="row">
-      @if (user) {
-        <div class="col-lg-6 col-sm-12 p-2">
-          <div class="box box-primary mb-0">
-            <div class="box-body">
-
-              <div class="user-header">
+  <div class="container-fluid p-2">
+    @if (user) {
+      <div class="row g-3">
+        <div class="col-12 col-lg-6 d-flex flex-column gap-3">
+          <div class="card dialog-tab-card">
+            <div class="card-body">
+              <div class="user-header p-0">
                 <div class="d-flex flex-column justify-content-center me-2">
                   <div class="avatar-xl">
                     <img [src]="userAvatar" class="avatar-img profile-user-img" alt="">
@@ -16,7 +15,7 @@
 
                 <div class="user-details">
                   <div class="mb-1">{{ user.fullName }}</div>
-                  <div class="fs-xxs text-nowrap">{{ user.email }}</div>
+                  <div class="mb-2 fs-xxs text-nowrap">{{ user.email }}</div>
                   <div class="text-muted fs-xxs">
                     {{ 'Member since' | translate:locale.language }} {{ user.createdAt | amTimeAgo:true }}
                   </div>
@@ -32,215 +31,252 @@
                   </select>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <ul class="list-group my-2">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <span class="me-auto pe-4" l10nTranslate>Login</span>
-                  <span>{{ user.login }}</span>
-                </li>
+          <div class="card dialog-tab-card">
+            <div class="card-body">
+              <div class="text-muted text-uppercase fs-xxxs fw-semibold mb-2" l10nTranslate>Info</div>
 
-                <li class="list-group-item d-flex align-items-center justify-content-end flex-wrap">
-                  <span class="me-auto pe-4" l10nTranslate>IP Addresses</span>
-                  <span class="badge bg-warning rounded-pill my-1">{{ user.currentIp }}</span>
-                  <span class="badge bg-secondary-alt rounded-pill ms-1 my-1">{{ user.lastIp }}</span>
-                </li>
+              <div class="px-1">
+                <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
+                  <label for="" class="col-5 col-sm-4" l10nTranslate>Login</label>
+                  <span class="col-7 col-sm-8 text-end">{{ user.login }}</span>
+                </div>
 
-                <li class="list-group-item d-flex align-items-center justify-content-end flex-wrap">
-                  <span class="me-auto pe-4" l10nTranslate>Connections</span>
-                  <span class="badge bg-warning rounded-pill my-1">{{ user.currentAccess | amDateFormat }}</span>
-                  <span class="badge bg-secondary-alt rounded-pill ms-1 my-1">{{ user.lastAccess | amDateFormat }}</span>
-                </li>
+                <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
+                  <label for="" class="col-5 col-sm-4" l10nTranslate>IP Addresses</label>
+                  <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
+                    <span class="badge bg-warning rounded-pill">{{ user.currentIp }}</span>
+                    <span class="badge bg-secondary-alt rounded-pill ms-1">{{ user.lastIp }}</span>
+                  </div>
+                </div>
+
+                <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
+                  <label for="" class="col-5 col-sm-4" l10nTranslate>Connections</label>
+                  <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
+                    <span class="badge bg-warning rounded-pill">{{ user.currentAccess | amDateFormat }}</span>
+                    <span class="badge bg-secondary-alt rounded-pill ms-1">{{ user.lastAccess | amDateFormat }}</span>
+                  </div>
+                </div>
 
                 @if (user.isUser) {
-                  <li class="list-group-item d-flex align-items-center justify-content-end flex-wrap">
-                    <span class="me-auto pe-4" l10nTranslate>Permissions</span>
-                    @if (user.isAdmin) {
-                      <span class="badge bg-gray-dark rounded-pill ms-1 my-1">
-                      <fa-icon class="me-1" [icon]="icons.faKey"></fa-icon>
-                      <span l10nTranslate>Administrator</span></span>
-                    } @else {
-                      @for (app of user.applications; track $index) {
-                        <span class="badge bg-gray-dark rounded-pill ms-1 my-1" l10nTranslate>{{ app }}</span>
+                  <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
+                    <label for="" class="col-5 col-sm-4" l10nTranslate>Permissions</label>
+                    <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
+                      @if (user.isAdmin) {
+                        <span class="badge bg-gray-dark rounded-pill">
+                          <fa-icon class="me-1" [icon]="icons.faKey"></fa-icon>
+                          <span l10nTranslate>Administrator</span>
+                        </span>
+                      } @else {
+                        @for (app of user.applications; track $index) {
+                          <span class="badge bg-gray-dark rounded-pill m-1" l10nTranslate>{{ app }}</span>
+                        }
                       }
-                    }
-                  </li>
-                  <li class="list-group-item d-flex align-items-center">
-                    <span class="me-auto pe-4" l10nTranslate>Storage Space</span>
-                    <span class="col-5"><app-storage-usage [item]="user"></app-storage-usage></span>
-                  </li>
-                }
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                  <span class="me-auto pe-4">WebDAV</span>
-                  <span (click)="clipBoardLink()" class="text-primary text-end cursor-pointer">
-                  <fa-icon [icon]="icons.faCopy"></fa-icon>
-                    {{ webdavUrl }}
-                  </span>
-                </li>
-              </ul>
-              <hr class="mt-4" style="border-width: 1px"/>
-              <div>
-                <span class="fw-500 fs-md" l10nTranslate>Preferences</span>
-                @if (showEditorPreference) {
-                  <!-- Document editor -->
-                  <div class="row mt-3 mb-1">
-                    <span class="col-4 align-self-center text-nowrap" l10nTranslate>Document editor</span>
-                    <div class="col-auto ms-auto">
-                      <div class="d-flex align-items-center justify-content-end gap-3">
-                        <select
-                          class="form-select form-select-sm w-auto"
-                          [ngModel]="userEditorPreference"
-                          (ngModelChange)="updateEditorPreference($event)">
-                          <option [ngValue]="null" l10nTranslate>Ask Me</option>
-                          @for (e of editors | keyvalue: originalOrderKeyValue; track e.key) {
-                            <option [ngValue]="e.value">{{ e.key }}</option>
-                          }
-                        </select>
-                      </div>
                     </div>
                   </div>
-                  <div class="row mb-4">
-                    <div class="text-muted fs-xxs" l10nTranslate>
-                      Used when both editors support the file type.
+
+                  <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
+                    <label for="" class="col-5 col-sm-4" l10nTranslate>Storage Space</label>
+                    <div class="col-7 col-sm-8">
+                      <app-storage-usage [item]="user"></app-storage-usage>
                     </div>
                   </div>
                 }
-                @if (user.isUser) {
-                  <!-- Full-text search -->
-                  <div class="row mb-1">
-                    <span class="col-4 text-nowrap align-self-center" l10nTranslate>Full-text search</span>
-                    <div class="col-auto ms-auto">
-                      <div class="d-flex align-items-center justify-content-end form-check form-switch cursor-pointer">
-                        <div class="d-flex">
-                          <label class="form-check-label" for="prefSwitchFullText">
-                            <span l10nTranslate>{{ user.storageIndexing ? 'enabled' : 'disabled' }}</span>
-                          </label>
-                          <input
-                            [ngModel]="user.storageIndexing"
-                            (ngModelChange)="updateStorageIndexing($event)"
-                            class="form-check-input ms-2"
-                            id="prefSwitchFullText"
-                            type="checkbox"
-                            role="button">
+
+                <div class="row g-2 align-items-center pt-2">
+                  <label for="" class="col-5 col-sm-4">WebDAV</label>
+                  <div class="col-7 col-sm-8 text-end text-truncate">
+                    <span (click)="clipBoardLink()" class="text-primary cursor-pointer">
+                      <fa-icon [icon]="icons.faCopy"></fa-icon>
+                      {{ webdavUrl }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card dialog-tab-card">
+            <div class="card-body">
+              <div class="text-muted text-uppercase fs-xxxs fw-semibold mb-2" l10nTranslate>Preferences</div>
+
+              @if (showEditorPreference) {
+                <div class="row g-2 align-items-center mb-2">
+                  <span class="col-12 col-sm-5" l10nTranslate>Document editor</span>
+                  <div class="col-12 col-sm-7">
+                    <select
+                      class="form-select form-select-sm"
+                      [ngModel]="userEditorPreference"
+                      (ngModelChange)="updateEditorPreference($event)">
+                      <option [ngValue]="null" l10nTranslate>Ask Me</option>
+                      @for (e of editors | keyvalue: originalOrderKeyValue; track e.key) {
+                        <option [ngValue]="e.value">{{ e.key }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+                <div class="text-muted fs-xxs mb-3" l10nTranslate>
+                  Used when both editors support the file type.
+                </div>
+              }
+
+              @if (user.isUser) {
+                <div class="row g-0">
+                  <div class="col-12 col-md-11 col-xl-9">
+                    <div class="card dialog-check-card dialog-check-card--interactive"
+                         [class.dialog-check-card--active]="user.storageIndexing"
+                         (click)="updateStorageIndexing(!user.storageIndexing)">
+                      <div class="card-body p-2">
+                        <div class="d-flex align-items-center cursor-pointer">
+                          <label for="prefSwitchFullText" class="form-label me-auto text-nowrap" l10nTranslate>Full-text search</label>
+                          <div class="d-flex align-items-center form-check form-switch ps-0 mb-0">
+                            <label class="form-check-label" for="prefSwitchFullText" (click)="$event.stopPropagation()"></label>
+                            <input
+                              [ngModel]="user.storageIndexing"
+                              (ngModelChange)="updateStorageIndexing($event)"
+                              (click)="$event.stopPropagation()"
+                              class="form-check-input ms-2"
+                              id="prefSwitchFullText"
+                              type="checkbox"
+                              role="button">
+                          </div>
+                        </div>
+                        <div class="text-muted fs-xxs mt-2 px-1" l10nTranslate>
+                          Enable content indexation for personal files.
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div class="row mb-4">
-                    <div class="text-muted fs-xxs" l10nTranslate>
-                      Enable content indexation for personal files.
-                    </div>
-                  </div>
-                }
-              </div>
+                </div>
+              }
             </div>
           </div>
         </div>
-      }
-      <div class="col-lg-6 col-sm-12 p-2">
-        <div class="box box-primary box-solid mb-0">
-          <div class="d-flex box-header align-items-center">
-            <h3 class="box-title me-5" l10nTranslate>Configuration</h3>
-            <span class="fs-xxxs">
-              @if (newPassword) {
-                <app-password-strength-bar [passwordToCheck]="newPassword"></app-password-strength-bar>
+
+        <div class="col-12 col-lg-6 d-flex flex-column gap-3">
+          <div class="card dialog-tab-card">
+            <div class="card-body">
+              <div class="text-muted text-uppercase fs-xxxs fw-semibold mb-2" l10nTranslate>Configuration</div>
+              @if (user.isUser) {
+                <div class="row g-2 align-items-center mb-2">
+                  <label for="" class="col-12 col-sm-5 text-nowrap" l10nTranslate>Avatar</label>
+                  <div class="col-12 col-sm-7">
+                    <div class="d-flex flex-wrap gap-2">
+                      <button (click)="genAvatar()" class="btn btn-xs btn-success" type="button" l10nTranslate>Generate</button>
+                      <button class="btn-file-upload btn btn-xs btn-secondary" type="button">
+                        <span l10nTranslate>Import</span>
+                        <input (change)="uploadAvatar($event)" accept="image/*" name="file" role="button" type="file" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
               }
-            </span>
+
+              <div class="row g-2 align-items-center mb-2">
+                <label for="" class="col-12 col-sm-5 text-nowrap" l10nTranslate>Language</label>
+                <div class="col-12 col-sm-7">
+                  <select [(ngModel)]="language" class="form-select form-select-sm">
+                    @for (l of languages; track $index) {
+                      <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              <div class="row g-2 align-items-center">
+                <label for="" class="col-12 col-sm-5 text-nowrap" l10nTranslate>Notification</label>
+                <div class="col-12 col-sm-7">
+                  <select [ngModel]="user.notification"
+                          (ngModelChange)="updateNotification($event)"
+                          class="form-select form-select-sm">
+                    @for (n of allNotifications; track $index) {
+                      <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="box-body">
-            @if (user.isUser) {
-              <div class="row mb-3">
-                <span class="col-4 align-self-start" l10nTranslate>Avatar</span>
-                <div class="col-auto">
-                  <button (click)="genAvatar()" class="btn btn-xs btn-success me-1" type="button" l10nTranslate>Generate</button>
-                  <button class="btn-file-upload btn btn-xs btn-secondary" type="button">
-                    <span l10nTranslate>Import</span>
-                    <input (change)="uploadAvatar($event)" accept="image/*" name="file" role="button" type="file" />
-                  </button>
+
+          @if (user.isUser) {
+            <div class="card dialog-tab-card">
+              <div class="card-body">
+                <div class="text-muted text-uppercase fs-xxxs fw-semibold mb-2" l10nTranslate>Password</div>
+                <div class="row g-0">
+                  <div class="col-12 col-md-9 col-xl-7">
+                    <div class="mb-2">
+                      <app-input-password [(password)]="oldPassword"
+                                          placeholder="current password">
+                      </app-input-password>
+                    </div>
+                    <div class="mb-2">
+                      <app-input-password [(password)]="newPassword"
+                                          [disabled]="!oldPassword?.length"
+                                          [isRequired]="!!oldPassword?.length"
+                                          [passwordMinLength]="passwordMinLength"
+                                          [showGenerator]="true"
+                                          placeholder="new password">
+                      </app-input-password>
+                    </div>
+                    @if (newPassword) {
+                      <div class="mb-2 px-1">
+                        <app-password-strength-bar [passwordToCheck]="newPassword"></app-password-strength-bar>
+                      </div>
+                    }
+                    <button [disabled]="!newPassword || !oldPassword || newPassword.length < passwordMinLength"
+                            (click)="submitPassword()"
+                            class="d-flex btn btn-xs btn-primary text-nowrap"
+                            type="button"
+                            l10nTranslate>
+                      Update
+                    </button>
+                  </div>
                 </div>
               </div>
-            }
-            <div class="row mb-3">
-              <span class="col-4 align-self-start" l10nTranslate>Language</span>
-              <div class="col-auto">
-                <select [(ngModel)]="language" class="form-select form-select-sm">
-                  @for (l of languages; track $index) {
-                    <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
-                  }
-                </select>
-              </div>
             </div>
-            <div class="row mb-3">
-              <span class="col-4 align-self-start" l10nTranslate>Notification</span>
-              <div class="col-auto">
-                <select [ngModel]="user?.notification"
-                        (ngModelChange)="updateNotification($event)"
-                        class="form-select form-select-sm">
-                  @for (n of allNotifications; track $index) {
-                    <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
-                  }
-                </select>
-              </div>
-            </div>
-            @if (user.isUser) {
-              <div class="row mb-3">
-                <span class="col-4 text-nowrap align-self-start " l10nTranslate>Password</span>
-                <div class="col-auto">
-                  <div class="mb-1">
-                    <app-input-password [(password)]="oldPassword"
-                                        placeholder="current password">
-                    </app-input-password>
-                  </div>
-                  <div class="mb-1">
-                    <app-input-password [(password)]="newPassword"
-                                        [disabled]="!oldPassword?.length"
-                                        [isRequired]="!!oldPassword?.length"
-                                        [passwordMinLength]="passwordMinLength"
-                                        [showGenerator]="true"
-                                        placeholder="new password">
-                    </app-input-password>
-                  </div>
-                  <button [disabled]="!newPassword || !oldPassword || newPassword.length < passwordMinLength"
-                          (click)="submitPassword()"
-                          class="d-flex btn btn-xs btn-primary text-nowrap"
-                          type="button" l10nTranslate>
-                    Update
-                  </button>
-                </div>
-              </div>
-              <div class="row mb-3">
-                <span class="col-4 align-self-start text-nowrap" l10nTranslate>Security</span>
-                <div class="col-auto">
-                  <div class="fw-500 mb-2" l10nTranslate>Two-Factor Authentication</div>
+
+            <div class="card dialog-tab-card flex-grow-1">
+              <div class="card-body">
+                <div class="text-muted text-uppercase fs-xxxs fw-semibold mb-2" l10nTranslate>Security</div>
+
+                <div class="fw-500 mb-2" l10nTranslate>Two-Factor Authentication</div>
+                <div class="d-flex flex-wrap gap-2 mb-3">
                   <button (click)="enable2Fa()"
                           [disabled]="!store.server().twoFaEnabled"
                           class="btn btn-xs btn-primary"
-                          type="button" l10nTranslate>
+                          type="button"
+                          l10nTranslate>
                     {{ user.twoFaEnabled ? 'Reset' : 'Enable' }}
                   </button>
                   @if (user.twoFaEnabled) {
                     <button (click)="disable2Fa()"
                             [disabled]="!store.server().twoFaEnabled"
-                            class="btn btn-xs btn-danger ms-2"
-                            type="button" l10nTranslate>
+                            class="btn btn-xs btn-danger"
+                            type="button"
+                            l10nTranslate>
                       Disable
                     </button>
                   }
-                  <div class="fw-500 mt-3 mb-2" l10nTranslate>Application Passwords</div>
-                  <button (click)="manageAppPasswords()"
-                          class="btn btn-xs btn-primary me-1"
-                          type="button" l10nTranslate>
-                    @if (user.appPasswords > 0) {
-                      <span l10nTranslate>Manage</span>&nbsp;<span>({{ user.appPasswords }})</span>
-                    } @else {
-                      <span l10nTranslate>Generate</span>
-                    }
-                  </button>
                 </div>
+
+                <div class="fw-500 mb-2" l10nTranslate>Application Passwords</div>
+                <button (click)="manageAppPasswords()"
+                        class="btn btn-xs btn-primary me-1"
+                        type="button"
+                        l10nTranslate>
+                  @if (user.appPasswords > 0) {
+                    <span l10nTranslate>Manage</span>&nbsp;<span>({{ user.appPasswords }})</span>
+                  } @else {
+                    <span l10nTranslate>Generate</span>
+                  }
+                </button>
               </div>
-            }
-          </div>
+            </div>
+          }
         </div>
       </div>
-    </div>
+    }
   </div>
 </div>
