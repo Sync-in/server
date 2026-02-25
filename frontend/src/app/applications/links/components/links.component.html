@@ -125,7 +125,7 @@
               @if (th.value.show) {
                 <td [style.width.%]="th.value.width"
                     [class.text-align-center]="th.value.textCenter"
-                    class="{{th.value.class}} {{th.value.newly !== undefined ? 'props-newly-' + s[th.value.newly] : ''}}">
+                    class="{{th.value.class}} {{th.value.newly !== undefined ? 'prop-newly-' + s[th.value.newly] : ''}}">
                   @switch (th.key) {
                     @case ('name') {
                       <div class="d-flex align-items-center">

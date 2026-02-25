@@ -216,6 +216,80 @@
     }
   }
 
+  tbody td {
+    &.newly-1,
+    &.newly-2,
+    &.newly-3,
+    &.sync-newly-0,
+    &.sync-newly-1,
+    &.sync-newly-2,
+    &.sync-newly-3,
+    &.sync-newly-4,
+    &.prop-newly-1,
+    &.prop-newly-2,
+    &.prop-newly-3 {
+      position: relative;
+      isolation: isolate;
+      background-color: transparent !important;
+      padding-top: .26rem !important;
+      padding-bottom: .26rem !important;
+      text-align: center;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+      white-space: nowrap;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: .25rem;
+        bottom: .25rem;
+        left: clamp(.5rem, 9%, 1.2rem);
+        right: clamp(.5rem, 9%, 1.2rem);
+        border-radius: 999px;
+        z-index: -1;
+      }
+    }
+
+    &.prop-newly-3 {
+      color: $body-color !important;
+    }
+
+    &.newly-1::before,
+    &.prop-newly-1::before {
+      background-color: $purple !important;
+    }
+
+    &.newly-2::before,
+    &.prop-newly-2::before {
+      background-color: lighten($purple, 15%) !important;
+    }
+
+    &.newly-3::before,
+    &.prop-newly-3::before {
+      background-color: lighten($purple, 30%) !important;
+    }
+
+    &.sync-newly-0::before {
+      background-color: $red !important;
+    }
+
+    &.sync-newly-1::before {
+      background-color: $primary !important;
+    }
+
+    &.sync-newly-2::before {
+      background-color: lighten($primary, 15%) !important;
+    }
+
+    &.sync-newly-3::before {
+      background-color: lighten($primary, 30%) !important;
+    }
+
+    &.sync-newly-4::before {
+      background-color: $orange !important;
+    }
+  }
+
   tbody td:first-child {
     img, fa-icon {
       margin-right: 0.3rem;

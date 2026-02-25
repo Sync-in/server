@@ -227,11 +227,6 @@
       background: $dark-dialog-tab-count-bg;
       color: $dark-dialog-tab-count-color;
     }
-
-  }
-  .newly {
-    color: $custom-color !important;
-    border-bottom: none;
   }
   .btn {
     &:focus-visible {
@@ -298,9 +293,8 @@
 
       &:focus-within {
         border-color: $primary;
-        box-shadow:
-          0 0 0 2px $dark-btn-focus-color,
-          inset 0 1px 1px rgba($black, 0.2);
+        box-shadow: 0 0 0 2px $dark-btn-focus-color,
+        inset 0 1px 1px rgba($black, 0.2);
       }
 
       &.has-value {
@@ -419,6 +413,7 @@
         color: $gray-light;
       }
     }
+
     .dropdown-item {
       color: $gray-light;
     }

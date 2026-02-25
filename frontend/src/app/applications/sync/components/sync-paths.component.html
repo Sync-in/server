@@ -220,13 +220,11 @@
                     {{ s.settings.filters.length }}
                   }
                   @case ('lastSync') {
-                    <div class="sync-newly-{{s.newly}}">
-                      @if (s.newly) {
-                        {{ s.settings.lastSync | amTimeAgo:true }}
-                      } @else {
-                        {{ 'never' | translate:locale.language }}
-                      }
-                    </div>
+                    @if (s.newly) {
+                      {{ s.settings.lastSync | amTimeAgo:true }}
+                    } @else {
+                      {{ 'never' | translate:locale.language }}
+                    }
                   }
                 }
               </td>
@@ -267,7 +265,8 @@
 <context-menu #SyncSchedulerContextMenu>
   @if (store.clientScheduler() !== CLIENT_SCHEDULER_STATE.DISABLED) {
     <ng-template (execute)="setScheduler(CLIENT_SCHEDULER_STATE.DISABLED)" contextMenuItem>
-      <span><fa-icon [icon]="icons.faCalendarXmark"></fa-icon>{{'disabled' | translate:locale.language | capitalize}}</span>
+      <span><fa-icon [icon]="icons.faCalendarXmark"></fa-icon>
+        {{ 'disabled' | translate:locale.language | capitalize }}</span>
     </ng-template>
   }
   <ng-template (execute)="setScheduler(CLIENT_SCHEDULER_STATE.SEQ)" contextMenuItem><span l10nTranslate><fa-icon [icon]="icons.faArrowsSpin"></fa-icon>Sequentially</span>

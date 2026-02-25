@@ -158,7 +158,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
     },
     lastSync: {
       label: 'Synced',
-      width: 10,
+      width: 12,
       textCenter: true,
       class: '',
       newly: 'newly',

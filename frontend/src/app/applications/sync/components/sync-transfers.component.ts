@@ -77,7 +77,7 @@ export class SyncTransfersComponent {
     },
     date: {
       label: 'Date',
-      width: 15,
+      width: 20,
       textCenter: true,
       class: '',
       newly: 'newly',
