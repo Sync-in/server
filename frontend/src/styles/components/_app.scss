@@ -295,6 +295,70 @@
   }
 }
 
+app-input-filter {
+  display: inline-block;
+  width: 150px;
+  min-width: 150px;
+  margin: 0;
+  vertical-align: middle;
+
+  .filter-shell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 30px;
+    border: 1px solid transparent;
+    border-radius: $btn-border-radius-sm;
+
+    input {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      font-size: $font-size-2xs;
+      line-height: 1.5;
+      padding: 0 31px 0 29px;
+
+      &::placeholder {
+        font-size: $font-size-2xs;
+        opacity: 1;
+      }
+    }
+  }
+
+  .filter-icon {
+    position: absolute;
+    left: 9px;
+    pointer-events: none;
+    font-size: .68rem;
+  }
+
+  .clear-btn {
+    position: absolute;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    cursor: pointer;
+
+    fa-icon {
+      font-size: $font-size-2xs;
+    }
+
+    :focus-visible {
+      outline: 2px solid transparent;
+      outline-offset: 1px;
+    }
+  }
+}
+
 .app-foot-menu {
   @extend .no-select;
   display: flex;

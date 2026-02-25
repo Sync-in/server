@@ -106,7 +106,6 @@ $dark-text-primary-color: #6ab8f0;
 $dark-text-muted-color: #b6bcc2;
 
 //Light theme
-$light-bg-theme: #c8d6ea;
 $light-sidebar-mini-bg: #ebeef5;
 $light-sidebar-mini-hover-bg: lighten(#d4e1f1, 2%);
 $light-sidebar-mini-active-bg: darken(#d4e1f1, 4%);
@@ -140,7 +139,7 @@ $light-chat-button-hover-color: $black;
 $light-dialog-tab-card-bg: rgba(255, 255, 255, 0.52);
 $light-dialog-tab-card-border-color: rgba(20, 45, 72, 0.11);
 $light-dialog-tab-card-shadow-color: rgba(31, 56, 86, 0.1);
-$light-dialog-check-card-bg: rgba(236, 243, 251, 0.72);
+$light-dialog-check-card-bg: $light-dialog-tab-card-bg;
 $light-dialog-check-card-border-color: rgba(30, 59, 89, 0.14);
 $light-dialog-check-card-hover-bg: rgba(236, 243, 251, 0.88);
 $light-dialog-check-card-hover-border-color: rgba(52, 94, 146, 0.48);
@@ -148,8 +147,8 @@ $light-dialog-check-card-hover-shadow-color: rgba(31, 56, 86, 0.12);
 $light-dialog-check-card-active-border-color: rgba(30, 59, 89, 0.3);
 $light-dialog-tabs-bar-bg: mix($light-dialog-tab-card-bg, #eaf2fc, 74%);
 $light-dialog-tabs-bar-border-color: rgba(51, 84, 121, 0.24);
-$light-dialog-tab-bg: #b8cbe4;
-$light-dialog-tab-color: #2f3e4e;
+$light-dialog-tab-bg: #b5c8e3;
+$light-dialog-tab-color: $black;
 $light-dialog-tab-hover-bg: mix($primary, $light-dialog-tab-bg, 30%);
 $light-dialog-tab-hover-border-color: mix($primary, $light-dialog-tab-bg, 52%);
 $light-dialog-tab-hover-color: $light-dialog-tab-color;

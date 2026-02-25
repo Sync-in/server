@@ -28,7 +28,7 @@
 
   .modal-body {
     font-size: $font-size-xs;
-    padding: 8px 12px;
+    padding: 10px;
   }
 
   tabset {
@@ -37,10 +37,9 @@
       display: grid;
       grid-auto-flow: column;
       grid-auto-columns: minmax(0, 1fr);
-      gap: $nav-link-padding-y;
-      padding: $nav-link-padding-y;
-      margin: 0 0 .6rem;
-      border-radius: $nav-tabs-border-radius;
+      gap: 0.5rem;
+      padding: 0 0.3rem 0.6rem 0;
+      margin: 0 0 .8rem;
 
       > li {
         min-width: 0;

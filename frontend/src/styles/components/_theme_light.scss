@@ -218,8 +218,8 @@
   tabset {
     > .nav.nav-pills,
     > ul.nav.nav-pills {
-      border: 1px solid $light-dialog-tabs-bar-border-color;
-      background: $light-dialog-tab-card-bg;
+      border-bottom: 1px solid $light-dialog-tabs-bar-border-color;
+      background: transparent;
 
       .nav-link {
         background: $light-dialog-tab-bg;
@@ -305,9 +305,51 @@
   .btn-minimize {
     background: transparent url("#{$theme-btn-minimize-icon-svg}") center/1em auto no-repeat;
   }
+  app-input-filter {
+    .filter-shell {
+      border-color: $light-surface-border;
+      background-color: $light-surface-bg;
+      box-shadow: inset 0 1px 1px rgba($custom-dark-color, 0.12);
+
+      &:hover {
+        border-color: mix($primary, $gray-light, 26%);
+      }
+
+      &:focus-within {
+        border-color: $primary;
+      }
+
+      &.has-value {
+        border-color: mix($primary, $light-surface-border, 48%);
+      }
+
+      input {
+        color: $light-item-color;
+        caret-color: $primary;
+
+        &::placeholder {
+          color: $placeholder-color;
+        }
+      }
+    }
+
+    .filter-icon {
+      color: mix($primary, $light-item-color, 52%);
+    }
+
+    .clear-btn {
+      &:hover {
+        color: $light-item-hover-color;
+      }
+
+      &:focus-visible {
+        outline-color: $light-btn-focus-color;
+      }
+    }
+  }
   .dropdown-menu {
     border: .5px solid $light-menu-surface-border !important;
-    background-color: $light-menu-surface-bg !important;
+    background-color: $gray-lightest !important;
     box-shadow: $light-menu-surface-shadow;
 
     > li > a {
@@ -385,7 +427,7 @@
     background: linear-gradient(to right, $light-app-top-menu-gradient-start 0%, $light-app-top-menu-gradient-mid 50%, $light-app-top-menu-gradient-end 100%);
 
     .dropdown-menu {
-      background-color: $light-menu-surface-bg !important;
+      background-color: $gray-lightest !important;
     }
   }
   .app-foot-menu {
@@ -454,7 +496,7 @@
     color: $custom-color;
   }
   .profile-page {
-    background-color: $body-bg;
+    background-color: $gray-lightest;
 
     .box {
       background-color: $gray-lighter;
@@ -482,7 +524,7 @@
     }
   }
   .app-small-card {
-    background-color: $gray-lighter;
+    background-color: $light-sidebar-mini-bg;
   }
   .wizard {
     background-color: lighten($primary, 50%);
@@ -523,7 +565,7 @@
   //  border-left: .5px solid $sidebar-light-apps-menu-border-color;
   //}
   .ngx-contextmenu {
-    background-color: $light-menu-surface-bg !important;
+    background-color: $gray-lightest !important;
     border-color: $light-menu-surface-border !important;
     box-shadow: $light-menu-surface-shadow !important;
 
@@ -552,7 +594,7 @@
   typeahead-container,
   .ui-select-choices {
     &.dropdown-menu {
-      background-color: $white !important;
+      background-color: $gray-lightest !important;
     }
   }
   .form-control,
@@ -624,10 +666,13 @@
     }
   }
   .bg-theme {
-    background-color: $light-bg-theme;
+    background-color: darken($gray-lighter, 4%);
   }
   .bg-theme-alt {
     background-color: $gray-lightest !important;
+  }
+  .text-bg-light {
+    background-color: $white !important;
   }
   .recents-grid .box-transparent > .box-header {
     background: $light-recents-box-header-bg;

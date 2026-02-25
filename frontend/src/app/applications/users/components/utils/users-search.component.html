@@ -21,28 +21,30 @@
   </div>
 </ng-template>
 @if (!hideInput) {
-  <input
-    #InputTypeHead
-    (typeaheadOnSelect)="onSelect($event)"
-    (typeaheadLoading)="onLoading()"
-    (typeaheadNoResults)="onNoResults()"
-    (typeaheadOnPreview)="onPreview()"
-    [(ngModel)]="selection"
-    [placeholder]="placeHolder | translate: locale.language"
-    [typeaheadItemTemplate]="searchMembers"
-    [typeaheadAsync]="true"
-    [typeaheadMinLength]="0"
-    [typeaheadSingleWords]="true"
-    [typeaheadOptionField]="'name'"
-    [typeaheadWaitMs]="100"
-    [typeaheadHideResultsOnBlur]="true"
-    [typeahead]="asyncSearchUsersOrGroups"
-    class="form-control form-control-sm mb-2"
-  />
+  <div class="form-validation">
+    <input
+      #InputTypeHead
+      (typeaheadOnSelect)="onSelect($event)"
+      (typeaheadLoading)="onLoading()"
+      (typeaheadNoResults)="onNoResults()"
+      (typeaheadOnPreview)="onPreview()"
+      [(ngModel)]="selection"
+      [placeholder]="placeHolder | translate: locale.language"
+      [typeaheadItemTemplate]="searchMembers"
+      [typeaheadAsync]="true"
+      [typeaheadMinLength]="0"
+      [typeaheadSingleWords]="true"
+      [typeaheadOptionField]="'name'"
+      [typeaheadWaitMs]="100"
+      [typeaheadHideResultsOnBlur]="true"
+      [typeahead]="asyncSearchUsersOrGroups"
+      class="form-control form-control-sm mb-3"
+    />
+  </div>
 }
 <div class="col-12 mt-1">
   @for (member of members; track member.mid) {
-    <div class="bg-theme mb-1 p-2" style="border-radius: 4px">
+    <div class="{{rowBackgroundClass}} mb-1 px-3 py-2" style="border-radius: 4px">
       <div class="d-flex align-items-center text-truncate no-select fs-xs" style="max-height: 34px">
         <div class="d-flex align-items-center text-truncate me-auto">
           @if (member.isUser) {

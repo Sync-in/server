@@ -19,7 +19,7 @@
 </div>
 <div class="modal-body">
   <tabset [justified]="true" type="pills">
-    <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
+    <tab (selectTab)="tabView=null" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
           <fa-icon [icon]="icons.faCog"></fa-icon>
@@ -117,6 +117,7 @@
                 [searchFunction]="searchManagers.bind(this)"
                 [editMode]="editManagers"
                 [hideInput]="!editManagers"
+                [rowBackgroundClass]="''"
                 [customPlaceholder]="'Type to search for managers to add'">
               </app-user-search>
               @if (!space.managers.length) {
