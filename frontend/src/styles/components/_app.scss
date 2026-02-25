@@ -317,12 +317,12 @@ app-input-filter {
       border: 0;
       outline: 0;
       background: transparent;
-      font-size: $font-size-2xs;
+      font-size: $font-size-xs;
       line-height: 1.5;
       padding: 0 31px 0 29px;
 
       &::placeholder {
-        font-size: $font-size-2xs;
+        font-size: $font-size-xs;
         opacity: 1;
       }
     }

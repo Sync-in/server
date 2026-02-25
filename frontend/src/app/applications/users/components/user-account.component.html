@@ -159,42 +159,45 @@
           <div class="card dialog-tab-card">
             <div class="card-body">
               <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Configuration</div>
-              @if (user.isUser) {
-                <div class="row g-2 align-items-center mb-2">
-                  <label for="" class="col-12 col-sm-5 text-nowrap" l10nTranslate>Avatar</label>
-                  <div class="col-12 col-sm-7">
-                    <div class="d-flex flex-wrap gap-2">
-                      <button (click)="genAvatar()" class="btn btn-xs btn-success" type="button" l10nTranslate>Generate</button>
-                      <button class="btn-file-upload btn btn-xs btn-secondary" type="button">
-                        <span l10nTranslate>Import</span>
-                        <input (change)="uploadAvatar($event)" accept="image/*" name="file" role="button" type="file" />
-                      </button>
+              <div class="d-flex flex-column gap-2">
+                @if (user.isUser) {
+                  <div class="row g-2 align-items-center">
+                    <label for="" class="form-label col-12 col-md-5 mb-0" l10nTranslate>Avatar</label>
+                    <div class="col-12 col-md-7">
+                      <div class="d-flex flex-wrap gap-2">
+                        <button (click)="genAvatar()" class="btn btn-xs btn-success" type="button" l10nTranslate>Generate</button>
+                        <button class="btn-file-upload btn btn-xs btn-secondary" type="button">
+                          <span l10nTranslate>Import</span>
+                          <input (change)="uploadAvatar($event)" accept="image/*" name="file" role="button" type="file" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              }
+                }
 
-              <div class="row g-2 align-items-center mb-2">
-                <label for="" class="col-12 col-sm-5 text-nowrap" l10nTranslate>Language</label>
-                <div class="col-12 col-sm-7">
-                  <select [(ngModel)]="language" class="form-select form-select-sm">
-                    @for (l of languages; track $index) {
-                      <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
-                    }
-                  </select>
+                <div class="row g-2 align-items-center">
+                  <label class="form-label col-12 col-md-5 mb-0" for="userLanguage" l10nTranslate>Language</label>
+                  <div class="col-12 col-md-7">
+                    <select id="userLanguage" [(ngModel)]="language" class="form-select form-select-sm">
+                      @for (l of languages; track $index) {
+                        <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
+                      }
+                    </select>
+                  </div>
                 </div>
-              </div>
 
-              <div class="row g-2 align-items-center">
-                <label for="" class="col-12 col-sm-5 text-nowrap" l10nTranslate>Notification</label>
-                <div class="col-12 col-sm-7">
-                  <select [ngModel]="user.notification"
-                          (ngModelChange)="updateNotification($event)"
-                          class="form-select form-select-sm">
-                    @for (n of allNotifications; track $index) {
-                      <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
-                    }
-                  </select>
+                <div class="row g-2 align-items-center">
+                  <label class="form-label col-12 col-md-5 mb-0" for="userNotification" l10nTranslate>Notification</label>
+                  <div class="col-12 col-md-7">
+                    <select id="userNotification"
+                            [ngModel]="user.notification"
+                            (ngModelChange)="updateNotification($event)"
+                            class="form-select form-select-sm">
+                      @for (n of allNotifications; track $index) {
+                        <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
+                      }
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -204,34 +207,44 @@
             <div class="card dialog-tab-card">
               <div class="card-body">
                 <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Password</div>
-                <div class="row g-0">
-                  <div class="col-12 col-md-9 col-xl-9">
-                    <div class="mb-2">
-                      <app-input-password [(password)]="oldPassword"
-                                          placeholder="current password">
-                      </app-input-password>
+                <div class="d-flex flex-column gap-2">
+                  <div class="row g-2 align-items-center">
+                    <label for="" class="form-label col-12 col-md-5 mb-0">{{ 'current password' | translate:locale.language | capitalize }}</label>
+                    <div class="col-12 col-md-7">
+                      <app-input-password [(password)]="oldPassword" placeholder="current password"></app-input-password>
                     </div>
-                    <div class="mb-2">
+                  </div>
+
+                  <div class="row g-2 align-items-center">
+                    <label for="" class="form-label col-12 col-md-5 mb-0" l10nTranslate>{{ 'new password' | translate:locale.language | capitalize }}</label>
+                    <div class="col-12 col-md-7">
                       <app-input-password [(password)]="newPassword"
                                           [disabled]="!oldPassword?.length"
                                           [isRequired]="!!oldPassword?.length"
                                           [passwordMinLength]="passwordMinLength"
                                           [showGenerator]="true"
-                                          placeholder="new password">
-                      </app-input-password>
+                                          placeholder="new password"></app-input-password>
                     </div>
-                    @if (newPassword) {
-                      <div class="mb-2 px-1">
+                  </div>
+
+                  @if (newPassword) {
+                    <div class="row g-2">
+                      <div class="col-12 col-md-7 offset-md-5">
                         <app-password-strength-bar [passwordToCheck]="newPassword"></app-password-strength-bar>
                       </div>
-                    }
-                    <button [disabled]="!newPassword || !oldPassword || newPassword.length < passwordMinLength"
-                            (click)="submitPassword()"
-                            class="d-flex btn btn-xs btn-primary text-nowrap"
-                            type="button"
-                            l10nTranslate>
-                      Update
-                    </button>
+                    </div>
+                  }
+
+                  <div class="row g-2">
+                    <div class="col-12 col-md-7 offset-md-5">
+                      <button [disabled]="!newPassword || !oldPassword || newPassword.length < passwordMinLength"
+                              (click)="submitPassword()"
+                              class="btn btn-xs btn-primary text-nowrap"
+                              type="button"
+                              l10nTranslate>
+                        Update
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -240,38 +253,45 @@
             <div class="card dialog-tab-card flex-grow-1">
               <div class="card-body">
                 <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Security</div>
+                <div class="d-flex flex-column gap-3">
+                  <div class="row g-2 align-items-center">
+                    <label for="" class="form-label col-12 col-md-5 mb-0" l10nTranslate>Two-Factor Authentication</label>
+                    <div class="col-12 col-md-7 d-flex flex-wrap align-items-center gap-2">
+                      <button (click)="enable2Fa()"
+                              [disabled]="!store.server().twoFaEnabled"
+                              class="btn btn-xs btn-primary"
+                              type="button"
+                              l10nTranslate>
+                        {{ user.twoFaEnabled ? 'Reset' : 'Enable' }}
+                      </button>
+                      @if (user.twoFaEnabled) {
+                        <button (click)="disable2Fa()"
+                                [disabled]="!store.server().twoFaEnabled"
+                                class="btn btn-xs btn-danger"
+                                type="button"
+                                l10nTranslate>
+                          Disable
+                        </button>
+                      }
+                    </div>
+                  </div>
 
-                <div class="fw-500 mb-2" l10nTranslate>Two-Factor Authentication</div>
-                <div class="d-flex flex-wrap gap-2 mb-3">
-                  <button (click)="enable2Fa()"
-                          [disabled]="!store.server().twoFaEnabled"
-                          class="btn btn-xs btn-primary"
-                          type="button"
-                          l10nTranslate>
-                    {{ user.twoFaEnabled ? 'Reset' : 'Enable' }}
-                  </button>
-                  @if (user.twoFaEnabled) {
-                    <button (click)="disable2Fa()"
-                            [disabled]="!store.server().twoFaEnabled"
-                            class="btn btn-xs btn-danger"
-                            type="button"
-                            l10nTranslate>
-                      Disable
-                    </button>
-                  }
+                  <div class="row g-2 align-items-center">
+                    <label for="" class="form-label col-12 col-md-5 mb-0" l10nTranslate>Application Passwords</label>
+                    <div class="col-12 col-md-7 d-flex align-items-center">
+                      <button (click)="manageAppPasswords()"
+                              class="btn btn-xs btn-primary"
+                              type="button"
+                              l10nTranslate>
+                        @if (user.appPasswords > 0) {
+                          <span l10nTranslate>Manage</span>&nbsp;<span>({{ user.appPasswords }})</span>
+                        } @else {
+                          <span l10nTranslate>Generate</span>
+                        }
+                      </button>
+                    </div>
+                  </div>
                 </div>
-
-                <div class="fw-500 mb-2" l10nTranslate>Application Passwords</div>
-                <button (click)="manageAppPasswords()"
-                        class="btn btn-xs btn-primary me-1"
-                        type="button"
-                        l10nTranslate>
-                  @if (user.appPasswords > 0) {
-                    <span l10nTranslate>Manage</span>&nbsp;<span>({{ user.appPasswords }})</span>
-                  } @else {
-                    <span l10nTranslate>Generate</span>
-                  }
-                </button>
               </div>
             </div>
           }

@@ -230,7 +230,7 @@ export class AdminUsersComponent {
 
   openUserDialog(add = false) {
     if (add) {
-      const modalRef: BsModalRef<AdminUserDialogComponent> = this.layout.openDialog(AdminUserDialogComponent, 'md')
+      const modalRef: BsModalRef<AdminUserDialogComponent> = this.layout.openDialog(AdminUserDialogComponent, 'lg')
       modalRef.content.userChange.pipe(take(1)).subscribe((r: ['add' | string, AdminUserModel]) => {
         const [action, u] = r
         if (action === 'add') {
@@ -241,7 +241,7 @@ export class AdminUsersComponent {
     } else {
       this.adminService.getUser(this.selected.id).subscribe({
         next: (user: AdminUserModel) => {
-          const modalRef: BsModalRef<AdminUserDialogComponent> = this.layout.openDialog(AdminUserDialogComponent, 'md', {
+          const modalRef: BsModalRef<AdminUserDialogComponent> = this.layout.openDialog(AdminUserDialogComponent, 'lg', {
             initialState: { user: user } as AdminUserDialogComponent
           })
           modalRef.content.userChange.pipe(take(1)).subscribe((r: ['add' | 'update' | 'delete', AdminUserModel]) => {
