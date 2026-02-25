@@ -12,10 +12,10 @@
     <div class="d-flex ms-2 pe-5 {{member.description ? 'flex-column align-items-start' : 'align-items-center'}}">
       <div [innerHTML]="member.name | highlight: selection"></div>
       @if (member.description) {
-        <span class="fs-3xs me-4" [innerHTML]="member.description | highlight: selection"></span>
+        <span class="fs-4xs me-4 text-muted" [innerHTML]="member.description | highlight: selection"></span>
       }
     </div>
-    <div class="ms-auto ps-5 me-1 text-muted d-none d-lg-block fs-3xs align-self-center">
+    <div class="ms-auto ps-5 me-1 text-muted d-none d-lg-block fs-4xs align-self-center">
       <span l10nTranslate>{{ member.type }}</span>
     </div>
   </div>
@@ -58,7 +58,7 @@
           }
           <div class="d-flex flex-column text-truncate ms-2">
             <div class="text-truncate">{{ member.name }}</div>
-            <div class="fs-3xs text-truncate">
+            <div class="fs-3xs text-truncate text-muted">
               @if (member.description) {
                 <span class="fs-3xs">{{ member.description }}</span>
               } @else if (!member.linkId) {

@@ -215,6 +215,9 @@
   .dialog-check-card--active {
     border-color: $light-dialog-check-card-active-border-color;
   }
+  .text-muted {
+    color: $light-text-muted-color !important;
+  }
   tabset {
     > .nav.nav-pills,
     > ul.nav.nav-pills {
