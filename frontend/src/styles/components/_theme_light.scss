@@ -470,11 +470,11 @@
   }
   .app-div-hovered {
     &:hover {
-      background-color: $table-bg-hover !important;
+      background-color: $light-menu-item-hover-bg !important;
     }
 
     &.selected {
-      background-color: $light-row-selected-bg !important;
+      background-color: darken($light-menu-item-hover-bg, 4%) !important;
     }
   }
   .app-div-striped {

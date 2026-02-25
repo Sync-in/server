@@ -27,137 +27,173 @@
           <span class="app-tab-label" l10nTranslate>Account</span>
         </span>
       </ng-template>
-      <div class="app-tab-content d-flex flex-column">
-        <div class="d-flex col-12 pb-3">
-          <div class="flex-fill col-6 pe-4">
-            <label for="login" l10nTranslate>Login</label>
-            <input id="login"
-                   appAutofocus
-                   [autoSelect]="false"
-                   formControlName="login"
-                   [class.is-invalid]="userForm.controls['login'].invalid"
-                   class="form-control form-control-sm"
-                   autocomplete="off"
-                   type="text">
-          </div>
-          <div class="flex-fill col-6 ps-4">
-            <label for="email" l10nTranslate>Email</label>
-            <input id="email"
-                   formControlName="email"
-                   [class.is-invalid]="userForm.controls['email'].invalid"
-                   class="form-control form-control-sm"
-                   autocomplete="off"
-                   type="email">
-          </div>
-        </div>
-        <div class="d-flex col-12 pb-3">
-          <div class="flex-fill col-6 pe-4">
-            <label for="firstName" l10nTranslate>First name</label>
-            <input id="firstName"
-                   formControlName="firstName"
-                   [class.is-invalid]="userForm.controls['firstName'].invalid"
-                   class="form-control form-control-sm"
-                   autocomplete="off"
-                   type="text">
-          </div>
-          <div class="flex-fill col-6 ps-4">
-            <label for="lastName" l10nTranslate>Last name</label>
-            <input id="lastName"
-                   formControlName="lastName"
-                   class="form-control form-control-sm"
-                   autocomplete="off"
-                   type="text">
-          </div>
-        </div>
-        <div class="d-flex col-12 pb-3">
-          <div class="flex-fill col-6 pe-4">
-            @if (userForm.value.password !== defaultPassword) {
-              <app-password-strength-bar [passwordToCheck]="userForm.value.password"
-                                         class="position-absolute pe-4"
-                                         style="right: 50%; padding-top: 6px">
-              </app-password-strength-bar>
-            }
-            <app-input-password id="password"
-                                [password]="userForm.value.password"
-                                (passwordChange)="updatePassword($event)"
-                                [showGenerator]="true"
-                                [showLabel]="true"
-                                [isRequired]="true"
-                                placeholder="Set a password">
-            </app-input-password>
-          </div>
-          <div class="flex-fill col-6 ps-4">
-            <label for="language" l10nTranslate>Language</label>
-            <select id="language"
-                    formControlName="language"
-                    class="form-control form-select form-select-sm">
-              @for (l of languages; track $index) {
-                <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
-              }
-            </select>
-          </div>
-        </div>
-        <div class="d-flex col-12 pb-3">
-          <div class="flex-fill col-6 pe-4">
-            <app-storage-quota [quota]="userForm.value.storageQuota" (quotaChange)="updateQuota($event)" [fullWidth]="true"></app-storage-quota>
-          </div>
-          <div class="flex-fill col-6 ps-4">
-            <label for="notification" l10nTranslate>Notification</label>
-            <select id="notification"
-                    formControlName="notification"
-                    class="form-control form-select form-select-sm">
-              @for (n of allNotifications; track $index) {
-                <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
-              }
-            </select>
-          </div>
-        </div>
-        @if (user && user.storageUsage) {
-          <div class="d-flex col-12 pb-3">
-            <div class="flex-fill col-6 pe-4">
-              <label for="storage" l10nTranslate>Storage Usage</label>
-              <app-storage-usage id="storage" [item]="user"></app-storage-usage>
-            </div>
-            <div class="flex-fill col-6 ps-4">
-              <div class="d-flex flex-column">
-                <label for="twoFa" l10nTranslate>Two-Factor Authentication</label>
-                <div id="twoFa" class="pt-1">
-                  <span>
-                    <fa-icon [icon]="user.twoFaEnabled ? icons.faLock : icons.faLockOpen"></fa-icon>
-                    {{ (user.twoFaEnabled ? 'enabled' : 'disabled') | translate:locale.language | titlecase }}
-                  </span>
-                  @if (user.twoFaEnabled) {
-                    <span (click)="reset2Fa()" class="ms-3 link-danger" role="button">
-                      <fa-icon [icon]="icons.faTrash"></fa-icon>
-                      <span class="ms-1" l10nTranslate>Reset</span>
-                    </span>
-                  }
+      <div class="app-tab-content row g-3">
+        <div class="col-12 col-lg-6 d-flex flex-column">
+          <div class="card dialog-tab-card w-100 mb-3">
+            <div class="card-body d-flex flex-column gap-3">
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label" for="login" l10nTranslate>Login</label>
+                  <input id="login"
+                         appAutofocus
+                         [autoSelect]="false"
+                         formControlName="login"
+                         [class.is-invalid]="userForm.controls['login'].invalid"
+                         class="form-control form-control-sm"
+                         autocomplete="off"
+                         type="text">
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="email" l10nTranslate>Email</label>
+                  <input id="email"
+                         formControlName="email"
+                         [class.is-invalid]="userForm.controls['email'].invalid"
+                         class="form-control form-control-sm"
+                         autocomplete="off"
+                         type="email">
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="firstName" l10nTranslate>First name</label>
+                  <input id="firstName"
+                         formControlName="firstName"
+                         [class.is-invalid]="userForm.controls['firstName'].invalid"
+                         class="form-control form-control-sm"
+                         autocomplete="off"
+                         type="text">
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="lastName" l10nTranslate>Last name</label>
+                  <input id="lastName"
+                         formControlName="lastName"
+                         class="form-control form-control-sm"
+                         autocomplete="off"
+                         type="text">
                 </div>
               </div>
             </div>
           </div>
-        }
-        @if (user) {
-          <div class="d-flex col-12 pb-3">
-            <div class="flex-fill col-6 pe-4">
-              <label for="created" l10nTranslate>Creation date</label>
-              <div id="created">{{ user.createdAt | amDateFormat }}</div>
+
+          <div class="card dialog-tab-card w-100">
+            <div class="card-body d-flex flex-column gap-3">
+              <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <label class="form-label mb-0" for="password" l10nTranslate>Password</label>
+                  @if (userForm.value.password !== defaultPassword) {
+                    <div class="d-flex align-items-center ms-auto">
+                      <app-password-strength-bar [passwordToCheck]="userForm.value.password"></app-password-strength-bar>
+                    </div>
+                  }
+                </div>
+                <app-input-password id="password"
+                                    class="w-100"
+                                    [password]="userForm.value.password"
+                                    (passwordChange)="updatePassword($event)"
+                                    [showGenerator]="true"
+                                    [showLabel]="false"
+                                    [isRequired]="true"
+                                    placeholder="Set a password">
+                </app-input-password>
+              </div>
+
+              @if (user && user.storageUsage) {
+                <div>
+                  <label class="form-label" for="twoFa" l10nTranslate>Two-Factor Authentication</label>
+                  <div id="twoFa" class="pt-1 d-flex align-items-center flex-wrap gap-2">
+                    <span>
+                      <fa-icon [icon]="user.twoFaEnabled ? icons.faLock : icons.faLockOpen"></fa-icon>
+                      {{ (user.twoFaEnabled ? 'enabled' : 'disabled') | translate:locale.language | titlecase }}
+                    </span>
+                    @if (user.twoFaEnabled) {
+                      <span (click)="reset2Fa()" class="link-danger" role="button">
+                        <fa-icon [icon]="icons.faTrash"></fa-icon>
+                        <span class="ms-1" l10nTranslate>Reset</span>
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
             </div>
-            <div class="d-flex flex-column align-items-end col-6 ps-4">
-              <label for="access" l10nTranslate>Last accesses</label>
-              <div class="text-align-end" id="access">
-                @if (user.lastAccess) {
-                  <div>{{ user.currentAccess | amDateFormat }}  -  {{ user.currentIp }}</div>
-                  <div>{{ user.lastAccess | amDateFormat }}  -  {{ user.lastIp }}</div>
-                } @else {
-                  <span class="text-danger" l10nTranslate>never</span>
-                }
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-6 d-flex flex-column">
+          <div class="card dialog-tab-card w-100 mb-3">
+            <div class="card-body d-flex flex-column gap-3">
+              <div>
+                <label class="form-label" for="language" l10nTranslate>Language</label>
+                <select id="language"
+                        formControlName="language"
+                        class="form-control form-select form-select-sm">
+                  @for (l of languages; track $index) {
+                    <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
+                  }
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label" for="notification" l10nTranslate>Notification</label>
+                <select id="notification"
+                        formControlName="notification"
+                        class="form-control form-select form-select-sm">
+                  @for (n of allNotifications; track $index) {
+                    <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
+                  }
+                </select>
               </div>
             </div>
           </div>
-        }
+
+          <div class="card dialog-tab-card w-100 mb-3">
+            <div class="card-body d-flex flex-column gap-3">
+              <div>
+                <app-storage-quota [quota]="userForm.value.storageQuota" (quotaChange)="updateQuota($event)" [fullWidth]="true"></app-storage-quota>
+              </div>
+              @if (user && user.storageUsage) {
+                <div>
+                  <label class="form-label" for="storage" l10nTranslate>Storage Usage</label>
+                  <app-storage-usage id="storage" [item]="user"></app-storage-usage>
+                </div>
+              }
+            </div>
+          </div>
+
+          @if (user) {
+            <div class="card dialog-tab-card w-100">
+              <div class="card-body">
+                <div class="row g-3 fs-2xs">
+                  <div class="col-12 col-md-5">
+                    <div class="d-flex flex-column">
+                      <label class="form-label" for="created" l10nTranslate>Creation date</label>
+                      <div id="created">{{ user.createdAt | amDateFormat }}</div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-7">
+                    <div class="d-flex flex-column text-md-end">
+                      <label class="form-label" for="access" l10nTranslate>Last accesses</label>
+                      <div id="access">
+                        @if (user.lastAccess) {
+                          <div class="d-flex flex-column mb-2">
+                            <span>{{ user.currentAccess | amDateFormat }}</span>
+                            <span>{{ user.currentIp }}</span>
+                          </div>
+                          <div class="d-flex flex-column">
+                            <span>{{ user.lastAccess | amDateFormat }}</span>
+                            <span>{{ user.lastIp }}</span>
+                          </div>
+                        } @else {
+                          <span class="text-danger" l10nTranslate>never</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
       </div>
     </tab>
+
     <tab (selectTab)="tabView='permissions'" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
@@ -165,47 +201,69 @@
           <span class="app-tab-label" l10nTranslate>Permissions</span>
         </span>
       </ng-template>
-      <div class="app-tab-content">
-        <div class="d-flex flex-column col-12 pb-3">
-          <label for="account" l10nTranslate>Account status</label>
-          <div id="account" class="form-check form-switch form-check-inline">
-            <div class="d-flex">
-              <label class="form-check-label" for="isActive">
-                <input class="form-check-input" formControlName="isActive" id="isActive" type="checkbox">
-                <span [class.text-danger]="!userForm.value.isActive">
-                  {{ (userForm.value.isActive ? 'active' : 'suspended') | translate:locale.language | titlecase }}
-                </span>
-              </label>
-            </div>
-            <div class="d-flex">
-              <label class="form-check-label" for="isAdmin">
-                <input class="form-check-input" formControlName="isAdmin" id="isAdmin" type="checkbox">
-                <span l10nTranslate>Administrator</span>
-              </label>
+      <div class="app-tab-content row g-3">
+        <div class="col-12 col-lg-5 d-flex flex-column">
+          <div class="card dialog-tab-card w-100 h-100">
+            <div class="card-body d-flex flex-column gap-2">
+              <label for="" class="form-label mb-1" l10nTranslate>Account status</label>
+              <div class="card dialog-check-card dialog-check-card--interactive"
+                   [class.dialog-check-card--active]="userForm.value.isActive">
+                <div class="card-body p-2">
+                  <div class="d-flex align-items-center form-check form-switch cursor-pointer mb-0">
+                    <input class="form-check-input" formControlName="isActive" id="isActive" type="checkbox">
+                    <label class="form-label form-check-label mb-0 ms-2" for="isActive" [class.text-danger]="!userForm.value.isActive">
+                      {{ (userForm.value.isActive ? 'active' : 'suspended') | translate:locale.language | titlecase }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card dialog-check-card dialog-check-card--interactive"
+                   [class.dialog-check-card--active]="userForm.value.isAdmin">
+                <div class="card-body p-2">
+                  <div class="d-flex align-items-center form-check form-switch cursor-pointer mb-0">
+                    <input class="form-check-input" formControlName="isAdmin" id="isAdmin" type="checkbox">
+                    <label class="form-label form-check-label mb-0 ms-2" for="isAdmin" l10nTranslate>Administrator</label>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <app-admin-permissions [permissions]="userForm.value.applications" (permissionsChange)="updateApplications($event)"></app-admin-permissions>
+
+        <div class="col-12 col-lg-7 d-flex flex-column">
+          <div class="card dialog-tab-card w-100 h-100">
+            <div class="card-body">
+              <app-admin-permissions [permissions]="userForm.value.applications" (permissionsChange)="updateApplications($event)"></app-admin-permissions>
+            </div>
+          </div>
+        </div>
+
         @if (userForm.value.groups.length) {
-          <div class="d-flex flex-column col-12 pb-3">
-            <label for="groups_permissions" l10nTranslate>Permissions inherited from groups</label>
-            <div id="groups_permissions">
-              @for (g of userForm.value.groups; track g.id) {
-                @if (g.permissions) {
-                  <div class="d-flex align-items-center mb-1">
-                    <div class="d-flex align-items-center me-5">
-                      <fa-icon [icon]="icons.GROUPS" class="circle-primary-icon me-2"></fa-icon>
-                      <span>{{ g.name }}</span>
-                    </div>
-                    <div class="d-flex fs-2xs ms-auto">{{ g.permissions | split | join:true }}</div>
-                  </div>
-                }
-              }
+          <div class="col-12">
+            <div class="card dialog-tab-card">
+              <div class="card-body">
+                <label class="form-label" for="groups_permissions" l10nTranslate>Permissions inherited from groups</label>
+                <div id="groups_permissions">
+                  @for (g of userForm.value.groups; track g.id) {
+                    @if (g.permissions) {
+                      <div class="d-flex align-items-center mb-1 gap-2">
+                        <div class="d-flex align-items-center me-4">
+                          <fa-icon [icon]="icons.GROUPS" class="circle-primary-icon me-2"></fa-icon>
+                          <span>{{ g.name }}</span>
+                        </div>
+                        <div class="d-flex fs-2xs ms-auto">{{ g.permissions | split | join:true }}</div>
+                      </div>
+                    }
+                  }
+                </div>
+              </div>
             </div>
           </div>
         }
       </div>
     </tab>
+
     <tab (selectTab)="tabView='groups'" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">

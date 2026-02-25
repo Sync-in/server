@@ -11,7 +11,7 @@ import { togglePasswordType } from '../utils/functions'
   selector: 'app-input-password',
   imports: [FormsModule, ReactiveFormsModule, L10nTranslatePipe, FaIconComponent, L10nTranslateDirective],
   template: `@if (showLabel) {
-      <label for="password" l10nTranslate>Password</label>
+      <label for="password" class="form-label" l10nTranslate>Password</label>
     }
     <div id="password" class="input-group input-group-sm" style="min-width: 150px">
       <input

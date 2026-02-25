@@ -400,6 +400,7 @@ app-input-filter {
 }
 
 .app-div-hovered {
+  user-select: none;
   &:hover {
     background-color: transparent;
   }
