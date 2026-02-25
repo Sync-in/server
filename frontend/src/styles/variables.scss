@@ -76,6 +76,15 @@ $link-color: $blue;
 $link-decoration: none;
 $link-hover-color: darken($link-color, 5%);
 $link-hover-decoration: none;
+// Navs
+$nav-link-padding-y: .35rem;
+$nav-link-padding-x: .65rem;
+$nav-link-font-weight: 400;
+$nav-link-transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
+$nav-link-focus-box-shadow: none;
+$nav-tabs-border-width: .5px;
+$nav-tabs-border-radius: .7rem;
+$nav-pills-border-radius: .55rem;
 // Forms
 $input-bg: $white;
 $input-color: $custom-color;

@@ -19,15 +19,16 @@
 </div>
 <div class="modal-body">
   <tabset [justified]="true" type="pills">
-    <hr class="my-3">
     <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
       <ng-template tabHeading>
-        <fa-icon [icon]="icons.faCog"></fa-icon>
-        <span class="ms-2" l10nTranslate>Settings</span>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.faCog"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Settings</span>
+        </span>
       </ng-template>
-      <div class="row g-3">
-        <div class="col-12 col-lg-6 d-flex">
-          <div class="card dialog-tab-card w-100">
+      <div class="app-tab-content row g-3">
+        <div class="col-12 col-lg-6 d-flex flex-column">
+          <div class="card dialog-tab-card w-100 mb-3">
             <div class="card-body d-flex flex-column">
               <div class="mb-3 px-0">
                 <label class="form-label" for="name" l10nTranslate>
@@ -51,8 +52,12 @@
                   [(ngModel)]="space.description"
                   class="form-control form-control-sm">
               </div>
-              <div class="d-flex flex-column align-items-start mb-3">
-                <app-storage-quota [(quota)]="space.storageQuota" [fullWidth]="true" class="w-100"></app-storage-quota>
+            </div>
+          </div>
+          <div class="card dialog-tab-card mb-3">
+            <div class="card-body p-2 d-flex flex-column gap-2">
+              <div class="d-flex flex-column align-items-start">
+                <app-storage-quota [(quota)]="space.storageQuota" [fullWidth]="true" class="w-100 mb-3"></app-storage-quota>
               </div>
               @if (space.storageUsage) {
                 <div class="d-flex flex-column mb-3">
@@ -60,40 +65,40 @@
                   <app-storage-usage id="storage" [item]="space"></app-storage-usage>
                 </div>
               }
-              <div class="d-flex justify-content-between gap-2">
-                <div
-                  class="card dialog-check-card dialog-check-card--interactive flex-fill"
-                  [class.dialog-check-card--active]="space.enabled"
-                  (click)="toggleSpaceStatusFromCard()">
-                  <div class="card-body p-2">
-                  <label class="form-label" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>Space status</label>
-                    <div class="d-flex align-items-center form-check form-switch cursor-pointer">
-                      <input class="form-check-input"
-                             [ngModel]="space.enabled"
-                             (ngModelChange)="setSpaceStatus($event)"
-                             (click)="$event.stopPropagation()"
-                             id="switchStatus"
-                             type="checkbox"
-                             role="button">
-                    <label class="form-label form-check-label mb-0 ms-2" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>
-                      {{ space.enabled ? 'enabled' : 'disabled' }}
-                    </label>
-                    </div>
-                  </div>
+            </div>
+          </div>
+          <div class="d-flex justify-content-between gap-2">
+            <div
+              class="card dialog-check-card dialog-check-card--interactive flex-fill"
+              [class.dialog-check-card--active]="space.enabled"
+              (click)="toggleSpaceStatusFromCard()">
+              <div class="card-body p-2">
+              <label class="form-label" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>Space status</label>
+                <div class="d-flex align-items-center form-check form-switch cursor-pointer">
+                  <input class="form-check-input"
+                         [ngModel]="space.enabled"
+                         (ngModelChange)="setSpaceStatus($event)"
+                         (click)="$event.stopPropagation()"
+                         id="switchStatus"
+                         type="checkbox"
+                         role="button">
+                <label class="form-label form-check-label mb-0 ms-2" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>
+                  {{ space.enabled ? 'enabled' : 'disabled' }}
+                </label>
                 </div>
-                <div
-                  class="card dialog-check-card dialog-check-card--interactive flex-fill"
-                  [class.dialog-check-card--active]="space.storageIndexing"
-                  (click)="toggleFullTextSearchFromCard()">
-                  <div class="card-body p-2">
-                  <label class="form-label" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>Full-text search</label>
-                    <div class="d-flex align-items-center form-check form-switch cursor-pointer">
-                      <input class="form-check-input" [(ngModel)]="space.storageIndexing" (click)="$event.stopPropagation()" id="switchFullText" type="checkbox" role="button">
-                    <label class="form-label form-check-label mb-0 ms-2" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>
-                      {{ space.storageIndexing ? 'enabled' : 'disabled' }}
-                    </label>
-                    </div>
-                  </div>
+              </div>
+            </div>
+            <div
+              class="card dialog-check-card dialog-check-card--interactive flex-fill"
+              [class.dialog-check-card--active]="space.storageIndexing"
+              (click)="toggleFullTextSearchFromCard()">
+              <div class="card-body p-2">
+              <label class="form-label" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>Full-text search</label>
+                <div class="d-flex align-items-center form-check form-switch cursor-pointer">
+                  <input class="form-check-input" [(ngModel)]="space.storageIndexing" (click)="$event.stopPropagation()" id="switchFullText" type="checkbox" role="button">
+                <label class="form-label form-check-label mb-0 ms-2" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>
+                  {{ space.storageIndexing ? 'enabled' : 'disabled' }}
+                </label>
                 </div>
               </div>
             </div>
@@ -147,22 +152,26 @@
 
     <tab (selectTab)="tabView='roots'" customClass="tab-dialog">
       <ng-template tabHeading>
-        <fa-icon [icon]="icons.faAnchor"></fa-icon>
-        <span class="ms-2 me-1" l10nTranslate>Files</span>
-        <span>({{ space.roots?.length || 0 }})</span>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.faAnchor"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Files</span>
+          <span class="app-tab-count">{{ space.roots?.length || 0 }}</span>
+        </span>
       </ng-template>
-      <div class="mt-3">
+      <div class="app-tab-content">
         <app-space-manage-roots [space]="space" [user]="user" [addRootFile]="addRootFileEvent"></app-space-manage-roots>
       </div>
     </tab>
 
     <tab (selectTab)="tabView='members'" customClass="tab-dialog">
       <ng-template tabHeading>
-        <fa-icon [icon]="icons.faUsers"></fa-icon>
-        <span class="ms-2 me-1" l10nTranslate>Members</span>
-        <span>({{ space.members.length }})</span>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.faUsers"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Members</span>
+          <span class="app-tab-count">{{ space.members.length }}</span>
+        </span>
       </ng-template>
-      <div class="mt-3">
+      <div class="app-tab-content">
         <app-user-search [(members)]="space.members"
                          [withPermissions]="true"
                          [searchFunction]="searchMembers.bind(this)">
@@ -172,11 +181,13 @@
 
     <tab (selectTab)="tabView='links'" customClass="tab-dialog">
       <ng-template tabHeading>
-        <fa-icon [icon]="icons.LINKS"></fa-icon>
-        <span class="ms-2 me-1" l10nTranslate>Links</span>
-        <span>({{ space.links.length }})</span>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.LINKS"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Links</span>
+          <span class="app-tab-count">{{ space.links.length }}</span>
+        </span>
       </ng-template>
-      <div class="mt-3">
+      <div class="app-tab-content">
         <app-user-search [(members)]="space.links"
                          [filterPermissions]="true"
                          [allowedPermissions]="allowedLinkPermissions"

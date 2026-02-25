@@ -20,13 +20,14 @@
 </div>
 <div class="modal-body" [formGroup]="guestForm">
   <tabset [justified]="true" type="pills">
-    <hr class="my-3">
     <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
       <ng-template tabHeading>
-        <fa-icon [icon]="icons.faAddressCard"></fa-icon>
-        <span class="ms-2" l10nTranslate>Account</span>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.faAddressCard"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Account</span>
+        </span>
       </ng-template>
-      <div class="d-flex flex-column">
+      <div class="app-tab-content d-flex flex-column">
         <div class="d-flex col-12 pb-3">
           <div class="flex-fill col-6 pe-4">
             <label for="login" l10nTranslate>Login</label>
@@ -142,11 +143,13 @@
     </tab>
     <tab (selectTab)="tabView='managers'" customClass="tab-dialog">
       <ng-template tabHeading>
-        <fa-icon [icon]="icons.faUsersGear"></fa-icon>
-        <span class="ms-2 me-1" l10nTranslate>Managers</span>
-        <span>({{ guestForm.value.managers.length || 0 }})</span>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.faUsersGear"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Managers</span>
+          <span class="app-tab-count">{{ guestForm.value.managers.length || 0 }}</span>
+        </span>
       </ng-template>
-      <div class="my-3">
+      <div class="app-tab-content my-3">
         <app-user-search
           [members]="guestForm.value.managers"
           (membersChange)="updateManagers($event)"

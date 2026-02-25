@@ -19,13 +19,14 @@
 </div>
 <div class="modal-body">
   <tabset [justified]="true" type="pills">
-    <hr class="my-3">
     <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
       <ng-template tabHeading>
-        <fa-icon [icon]="icons.faCog"></fa-icon>
-        <span class="ms-2" l10nTranslate>Settings</span>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.faCog"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Settings</span>
+        </span>
       </ng-template>
-      <div class="row g-3">
+      <div class="app-tab-content row g-3">
         <div class="col-12 col-lg-6 d-flex flex-column">
           <div class="card dialog-tab-card w-100 flex-grow-1 d-flex">
             <div class="card-body d-flex flex-column h-100">
@@ -51,9 +52,13 @@
                   [(ngModel)]="share.description"
                   class="form-control form-control-sm">
               </div>
-              @if (share.externalPath) {
-                <div class="d-flex flex-column align-items-start mb-3">
-                  <app-storage-quota [(quota)]="share.storageQuota" [fullWidth]="true" class="w-100"></app-storage-quota>
+            </div>
+          </div>
+          @if (share.externalPath) {
+            <div class="card dialog-tab-card mt-2">
+              <div class="card-body p-2 d-flex flex-column gap-2">
+                <div class="d-flex flex-column align-items-start">
+                  <app-storage-quota [(quota)]="share.storageQuota" [fullWidth]="true" class="w-100 mb-3"></app-storage-quota>
                 </div>
                 @if (share.storageUsage) {
                   <div class="d-flex flex-column mb-3">
@@ -61,54 +66,53 @@
                     <app-storage-usage id="storage" [item]="share"></app-storage-usage>
                   </div>
                 }
-              }
-
-              <div class="d-flex justify-content-between gap-2 mt-auto">
-                <div
-                  class="card dialog-check-card dialog-check-card--interactive flex-fill"
-                  [class.dialog-check-card--active]="share.enabled"
-                  (click)="toggleShareStatusFromCard()">
-                  <div class="card-body p-2">
-                    <label class="form-label" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>Share status</label>
-                    <div class="d-flex align-items-center form-check form-switch cursor-pointer">
-                      <input class="form-check-input"
-                             [ngModel]="share.enabled"
-                             (ngModelChange)="setShareStatus($event)"
-                             (click)="$event.stopPropagation()"
-                             id="switchStatus"
-                             type="checkbox"
-                             role="button">
-                      <label class="form-label form-check-label mb-0 ms-2" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>
-                        {{ share.enabled ? 'enabled' : 'disabled' }}
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                @if (share.externalPath) {
-                  <div
-                    class="card dialog-check-card dialog-check-card--interactive flex-fill"
-                    [class.dialog-check-card--active]="share.storageIndexing"
-                    (click)="toggleFullTextSearchFromCard()">
-                    <div class="card-body p-2">
-                      <label class="form-label" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>Full-text search</label>
-                      <div class="d-flex align-items-center form-check form-switch cursor-pointer">
-                        <input
-                          class="form-check-input"
-                          [(ngModel)]="share.storageIndexing"
-                          (click)="$event.stopPropagation()"
-                          id="switchFullText"
-                          type="checkbox"
-                          role="button">
-                        <label class="form-label form-check-label mb-0 ms-2" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>
-                          {{ share.storageIndexing ? 'enabled' : 'disabled' }}
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                }
               </div>
             </div>
+          }
+          <div class="d-flex justify-content-between gap-2 mt-2">
+            <div
+              class="card dialog-check-card dialog-check-card--interactive flex-fill"
+              [class.dialog-check-card--active]="share.enabled"
+              (click)="toggleShareStatusFromCard()">
+              <div class="card-body p-2">
+                <label class="form-label" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>Share status</label>
+                <div class="d-flex align-items-center form-check form-switch cursor-pointer">
+                  <input class="form-check-input"
+                         [ngModel]="share.enabled"
+                         (ngModelChange)="setShareStatus($event)"
+                         (click)="$event.stopPropagation()"
+                         id="switchStatus"
+                         type="checkbox"
+                         role="button">
+                  <label class="form-label form-check-label mb-0 ms-2" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>
+                    {{ share.enabled ? 'enabled' : 'disabled' }}
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            @if (share.externalPath) {
+              <div
+                class="card dialog-check-card dialog-check-card--interactive flex-fill"
+                [class.dialog-check-card--active]="share.storageIndexing"
+                (click)="toggleFullTextSearchFromCard()">
+                <div class="card-body p-2">
+                  <label class="form-label" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>Full-text search</label>
+                  <div class="d-flex align-items-center form-check form-switch cursor-pointer">
+                    <input
+                      class="form-check-input"
+                      [(ngModel)]="share.storageIndexing"
+                      (click)="$event.stopPropagation()"
+                      id="switchFullText"
+                      type="checkbox"
+                      role="button">
+                    <label class="form-label form-check-label mb-0 ms-2" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>
+                      {{ share.storageIndexing ? 'enabled' : 'disabled' }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            }
           </div>
         </div>
 
@@ -133,10 +137,8 @@
               </div>
             </div>
           </div>
-        </div>
-        @if (share?.id) {
-          <div class="col-12">
-            <div class="card dialog-tab-card">
+          @if (share?.id) {
+            <div class="card dialog-tab-card mt-2">
               <div class="card-body">
                 <div class="d-flex fs-xxs align-items-end flex-fill justify-content-between gap-3 flex-wrap">
                   @if (share.disabledAt && !share.enabled) {
@@ -156,17 +158,19 @@
                 </div>
               </div>
             </div>
-          </div>
-        }
+          }
+        </div>
       </div>
     </tab>
     <tab (selectTab)="tabView='members'" customClass="tab-dialog">
       <ng-template tabHeading>
-        <fa-icon [icon]="icons.faUsers"></fa-icon>
-        <span class="ms-2 me-1" l10nTranslate>Members</span>
-        <span>({{ share.members.length }})</span>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.faUsers"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Members</span>
+          <span class="app-tab-count">{{ share.members.length }}</span>
+        </span>
       </ng-template>
-      <div class="my-3">
+      <div class="app-tab-content my-3">
         <app-user-search
           [(members)]="share.members"
           [withPermissions]="true"
@@ -178,11 +182,13 @@
     </tab>
     <tab (selectTab)="tabView='links'" customClass="tab-dialog">
       <ng-template tabHeading>
-        <fa-icon [icon]="icons.LINKS"></fa-icon>
-        <span class="ms-2 me-1" l10nTranslate>Links</span>
-        <span>({{ share.links.length }})</span>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.LINKS"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Links</span>
+          <span class="app-tab-count">{{ share.links.length }}</span>
+        </span>
       </ng-template>
-      <div class="my-3">
+      <div class="app-tab-content my-3">
         <app-user-search [(members)]="share.links"
                          [filterPermissions]="true"
                          [allowedPermissions]="allowedPermissions"

@@ -17,13 +17,14 @@
 </div>
 <div class="modal-body form-validation" [formGroup]="groupForm">
   <tabset [justified]="true" type="pills">
-    <hr class="my-3">
     <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
       <ng-template tabHeading>
-        <fa-icon [icon]="icons.faCog"></fa-icon>
-        <span class="ms-2" l10nTranslate>Settings</span>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.faCog"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Settings</span>
+        </span>
       </ng-template>
-      <div class="d-flex flex-column">
+      <div class="app-tab-content d-flex flex-column">
         <div class="d-flex col-12 pb-3">
           <div class="flex-fill col-6 pe-4">
             <label for="name" l10nTranslate>Name</label>
@@ -98,10 +99,12 @@
     </tab>
     <tab (selectTab)="tabView='permissions'" customClass="tab-dialog form-validation">
       <ng-template tabHeading>
-        <fa-icon [icon]="icons.faShieldHalved"></fa-icon>
-        <span class="ms-2" l10nTranslate>Permissions</span>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.faShieldHalved"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Permissions</span>
+        </span>
       </ng-template>
-      <div class="d-flex flex-column">
+      <div class="app-tab-content d-flex flex-column">
         <div class="d-flex col-12 pb-3">
           <app-admin-permissions [permissions]="groupForm.value.applications" (permissionsChange)="updateApplications($event)"></app-admin-permissions>
         </div>

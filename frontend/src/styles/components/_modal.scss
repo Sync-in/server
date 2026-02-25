@@ -31,10 +31,60 @@
     padding: 8px 12px;
   }
 
-  .nav-link {
-    white-space: nowrap;
-    @extend .no-select-pointer;
-    width: 98% !important;
+  tabset {
+    > .nav.nav-pills,
+    > ul.nav.nav-pills {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+      gap: $nav-link-padding-y;
+      padding: $nav-link-padding-y;
+      margin: 0 0 .6rem;
+      border-radius: $nav-tabs-border-radius;
+
+      > li {
+        min-width: 0;
+      }
+
+      .nav-link {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: $nav-link-padding-y $nav-link-padding-x !important;
+        border-radius: $nav-pills-border-radius;
+        border: .5px solid transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: $nav-link-font-weight;
+        letter-spacing: .01em;
+        transition: $nav-link-transition;
+      }
+    }
+
+    .app-tab-heading {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      min-width: 0;
+    }
+
+    .app-tab-label {
+      @extend .text-truncate;
+      max-width: 100%;
+    }
+
+    .app-tab-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.35rem;
+      height: 1.35rem;
+      padding: 0 .35rem;
+      border-radius: 999px;
+      font-size: $font-size-xxxs;
+      font-weight: 600;
+      line-height: 1;
+    }
   }
 
 }

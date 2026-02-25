@@ -7,11 +7,23 @@
 </div>
 <div class="modal-body">
   <tabset [justified]="true" type="pills">
-    <hr style="margin-top: 8px; margin-bottom: 6px">
-    <tab [heading]="'Settings' | translate:locale.language" customClass="tab-dialog">
-      <app-sync-path-settings [showPaths]="true" [syncPath]="syncPath" direction="start" size="large"></app-sync-path-settings>
+    <tab customClass="tab-dialog">
+      <ng-template tabHeading>
+        <span class="app-tab-heading">
+          <span class="app-tab-label">{{ 'Settings' | translate:locale.language }}</span>
+        </span>
+      </ng-template>
+      <div class="app-tab-content">
+        <app-sync-path-settings [showPaths]="true" [syncPath]="syncPath" direction="start" size="large"></app-sync-path-settings>
+      </div>
     </tab>
-    <tab [heading]="'Filters' | translate:locale.language" customClass="tab-dialog">
+    <tab customClass="tab-dialog">
+      <ng-template tabHeading>
+        <span class="app-tab-heading">
+          <span class="app-tab-label">{{ 'Filters' | translate:locale.language }}</span>
+        </span>
+      </ng-template>
+      <div class="app-tab-content">
       <div class="d-flex align-items-center mb-2">
         <div class="d-flex flex-row col-12 px-0">
           <select [(ngModel)]="currentFilterType" class="form-select form-select-sm me-1">
@@ -46,6 +58,7 @@
           </button>
         </div>
       }
+      </div>
     </tab>
   </tabset>
 </div>

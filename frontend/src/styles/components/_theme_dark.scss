@@ -193,6 +193,42 @@
   .dialog-check-card--active {
     border-color: $dark-dialog-check-card-active-border-color;
   }
+  tabset {
+    > .nav.nav-pills,
+    > ul.nav.nav-pills {
+      border: 1px solid $dark-dialog-tabs-bar-border-color;
+      background: $dark-dialog-tabs-bar-bg;
+
+      .nav-link {
+        background: $dark-dialog-tab-bg;
+        color: $dark-dialog-tab-color;
+      }
+
+      .nav-link:hover:not(.active) {
+        background: $dark-dialog-tab-hover-bg;
+        color: $dark-dialog-tab-hover-color;
+        border-color: $dark-dialog-tab-hover-border-color;
+      }
+
+      .nav-link:hover:not(.active) .app-tab-count {
+        background: $dark-dialog-tab-count-hover-bg;
+        color: $dark-dialog-tab-count-hover-color;
+      }
+
+      .nav-link.active {
+        background: $dark-dialog-tab-active-bg;
+        color: $white;
+        border-color: $dark-dialog-tab-active-border-color;
+        box-shadow: $dark-dialog-tab-active-shadow;
+      }
+    }
+
+    .app-tab-count {
+      background: $dark-dialog-tab-count-bg;
+      color: $dark-dialog-tab-count-color;
+    }
+
+  }
   .newly {
     color: $custom-color !important;
     border-bottom: none;
@@ -642,7 +678,7 @@
     color: $dark-text-primary-color !important;
   }
   .bg-theme {
-    background-color: darken($sidebar-dark-icons-menu-bg, 4%);
+    background-color: $dark-bg-theme;
   }
   .bg-theme-alt {
     background-color: $sidebar-dark-apps-menu-title-bg !important;
