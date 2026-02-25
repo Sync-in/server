@@ -1,5 +1,5 @@
 @if (trash()) {
-  <div appAutoResize class="fs-xxs" [resizeOffset]=resizeOffset>
+  <div appAutoResize class="fs-2xs" [resizeOffset]=resizeOffset>
     <div class="card px-1 pt-1">
       <div class="card-body align-self-center p-0 my-1">
         <fa-icon
@@ -16,15 +16,15 @@
     <div class="p-2">
       <div class="d-flex mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Name</div>
-        <div class="d-flex col-sm-7 word-break-all fs-xxs">{{ (trash().isPersonal ? (trash().name | translate:locale.language) : trash().name) }}</div>
+        <div class="d-flex col-sm-7 word-break-all fs-2xs">{{ (trash().isPersonal ? (trash().name | translate:locale.language) : trash().name) }}</div>
       </div>
       <div class="d-flex mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Created</div>
-        <div class="d-flex col-sm-7 fs-xxs">{{ trash().ctime | amDateFormat }}</div>
+        <div class="d-flex col-sm-7 fs-2xs">{{ trash().ctime | amDateFormat }}</div>
       </div>
       <div class="d-flex mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Modified</div>
-        <div class="d-flex col-sm-7 fs-xxs">{{ trash().mtime | amDateFormat }}</div>
+        <div class="d-flex col-sm-7 fs-2xs">{{ trash().mtime | amDateFormat }}</div>
       </div>
       <div class="d-flex align-items-center mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Elements</div>

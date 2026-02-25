@@ -169,7 +169,7 @@
 
   thead {
     background-color: transparent;
-    font-size: $font-size-xxs;
+    font-size: $font-size-2xs;
     line-height: 16px;
 
     tr {
@@ -224,11 +224,11 @@
 
   tbody td:not(:first-child) {
     color: transparent;
-    font-size: $font-size-xxxxs;
+    font-size: $font-size-4xs;
     border-top: none;
 
     .badge {
-      font-size: $font-size-xxxs;
+      font-size: $font-size-3xs;
       display: inline;
       line-height: normal;
     }
@@ -303,7 +303,7 @@
   position: absolute;
   bottom: 0;
   width: 100%;
-  font-size: $font-size-xxs;
+  font-size: $font-size-2xs;
   height: 25px;
   padding-left: 5px;
   padding-right: 5px;
@@ -311,7 +311,7 @@
   color: transparent;
 
   @include media-breakpoint-down(sm) {
-    font-size: $font-size-xxxxs;
+    font-size: $font-size-4xs;
   }
 
   &.pagination-container {

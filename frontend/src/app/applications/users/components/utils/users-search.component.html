@@ -12,10 +12,10 @@
     <div class="d-flex ms-2 pe-5 {{member.description ? 'flex-column align-items-start' : 'align-items-center'}}">
       <div [innerHTML]="member.name | highlight: selection"></div>
       @if (member.description) {
-        <span class="fs-xxxs me-4" [innerHTML]="member.description | highlight: selection"></span>
+        <span class="fs-3xs me-4" [innerHTML]="member.description | highlight: selection"></span>
       }
     </div>
-    <div class="ms-auto ps-5 me-1 text-muted d-none d-lg-block fs-xxxs align-self-center">
+    <div class="ms-auto ps-5 me-1 text-muted d-none d-lg-block fs-3xs align-self-center">
       <span l10nTranslate>{{ member.type }}</span>
     </div>
   </div>
@@ -56,16 +56,16 @@
           }
           <div class="d-flex flex-column text-truncate ms-2">
             <div class="text-truncate">{{ member.name }}</div>
-            <div class="fs-xxxs text-truncate">
+            <div class="fs-3xs text-truncate">
               @if (member.description) {
-                <span class="fs-xxxs">{{ member.description }}</span>
+                <span class="fs-3xs">{{ member.description }}</span>
               } @else if (!member.linkId) {
-                <span class="fs-xxxs" l10nTranslate>{{ member.type }}</span>
+                <span class="fs-3xs" l10nTranslate>{{ member.type }}</span>
               }
             </div>
           </div>
         </div>
-        <div class="d-flex flex-column fs-xxxs text-muted d-none d-lg-block ms-3">
+        <div class="d-flex flex-column fs-3xs text-muted d-none d-lg-block ms-3">
           <div class="d-flex justify-content-end" l10nTranslate>{{ member.isLink ? MEMBER_TYPE.LINK : member.type }}</div>
           <div class="d-flex justify-content-end">{{ member.createdAt | amTimeAgo }}</div>
         </div>

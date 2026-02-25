@@ -22,7 +22,7 @@
 }
 
 .btn-xxs {
-  @include button-size($btn-padding-y-xs, $btn-padding-x-xs, $font-size-xxxs, $btn-border-radius-sm);
+  @include button-size($btn-padding-y-xs, $btn-padding-x-xs, $font-size-3xs, $btn-border-radius-sm);
 }
 
 .btn-group-xs > .btn {

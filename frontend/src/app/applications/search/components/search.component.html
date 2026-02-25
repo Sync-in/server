@@ -24,7 +24,7 @@
               (ngModelChange)="toggleFullText()"
               [tooltip]="'Search for content'|translate:locale.language"
               placement="bottom"
-              class="btn btn-sm btn-outline-secondary-alt fs-xxs"
+              class="btn btn-sm btn-outline-secondary-alt fs-2xs"
               role="button"
               type="button"
               btnCheckbox>
@@ -45,10 +45,10 @@
       <div class="d-flex align-items-center text-truncate px-2 py-1">
         <img [src]="f.mimeUrl" (error)="f.fallBackMimeUrl()" alt="" draggable="false" height="28">
         <div class="d-flex flex-column text-truncate ms-2" style="height: 34px">
-          <span class="fs-xxs text-truncate">{{ f.name }}</span>
+          <span class="fs-2xs text-truncate">{{ f.name }}</span>
           <div class="d-flex align-items-center text-{{f.iconClass}}">
             <fa-icon [icon]="f.icon" class="me-1"></fa-icon>
-            <span class="fs-xxxs text-truncate">
+            <span class="fs-3xs text-truncate">
               <span>{{ f.showedPath }}</span>
             </span>
           </div>
@@ -60,7 +60,7 @@
           @for (match of f.matches; track $index) {
             <div>
               <span>...</span>
-              <span class="fs-xxxs" [innerHTML]="match"></span>
+              <span class="fs-3xs" [innerHTML]="match"></span>
               <span>...</span>
             </div>
           }

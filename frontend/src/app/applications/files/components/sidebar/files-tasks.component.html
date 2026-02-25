@@ -37,7 +37,7 @@
             <span>&nbsp;:&nbsp;{{ task.result | translate:locale.language }}</span>
           }
         </span>
-        <div class="fs-xxxs">
+        <div class="fs-3xs">
           <progressbar [max]="100"
                        [value]="task.status > 0 ? 100 : task.props.progress || 100"
                        [type]="task.status < 1 ? 'warning' : task.status === 2 ? 'danger' : null"

@@ -1,5 +1,5 @@
 @if (link()) {
-  <div appAutoResize class="fs-xxs" [resizeOffset]=resizeOffset>
+  <div appAutoResize class="fs-2xs" [resizeOffset]=resizeOffset>
     <div class="card px-1 pt-1">
       <div class="card-body align-self-center p-0 my-1">
         <img [src]="link().mimeUrl" alt="" draggable="false" [style.height.px]="cardImageSize" (error)="link().fallBackMimeUrl()">
@@ -9,15 +9,15 @@
     <div class="p-2">
       <div class="d-flex mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Name</div>
-        <div class="word-break-all fs-xxs">{{ link().name }}</div>
+        <div class="word-break-all fs-2xs">{{ link().name }}</div>
       </div>
       <div class="d-flex mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Created</div>
-        <div class="fs-xxs">{{ link().link.createdAt | amDateFormat }}</div>
+        <div class="fs-2xs">{{ link().link.createdAt | amDateFormat }}</div>
       </div>
       <div class="d-flex mb-1" (mouseover)="accessHover = true" (mouseleave)="accessHover = false" (focus)="accessHover = true">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Accessed</div>
-        <div class="fs-xxs">
+        <div class="fs-2xs">
           @if (accessHover) {
             {{ link().link.currentIp }}
           } @else {
@@ -27,7 +27,7 @@
       </div>
       <div class="d-flex mb-1" (mouseover)="lastAccessHover = true" (mouseleave)="lastAccessHover = false" (focus)="accessHover = true">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Last access</div>
-        <div class="fs-xxs">
+        <div class="fs-2xs">
           @if (lastAccessHover) {
             {{ link().link.lastIp }}
           } @else {

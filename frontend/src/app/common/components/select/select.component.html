@@ -49,7 +49,7 @@
       <fa-icon [icon]="itemIcon" [fixedWidth]="false"></fa-icon>
     </span>
     <span>{{ active.name }}</span>
-    <div class="d-flex ms-auto me-4 fs-xxxs text-muted">{{ active.description }}</div>
+    <div class="d-flex ms-auto me-4 fs-3xs text-muted">{{ active.description }}</div>
   </div>
 </ng-template>
 <ng-template #DefaultOptions let-i="i" let-o="o">
@@ -59,7 +59,7 @@
         <fa-icon [icon]="itemIcon" [fixedWidth]="false"></fa-icon>
       </span>
       <span [innerHtml]="sanitize(o.name | highlight:i)"></span>
-      <span class="d-flex ms-auto fs-xxxs text-muted" [innerHtml]="sanitize(o.description | highlight:i)"></span>
+      <span class="d-flex ms-auto fs-3xs text-muted" [innerHtml]="sanitize(o.description | highlight:i)"></span>
     </div>
   </a>
 </ng-template>

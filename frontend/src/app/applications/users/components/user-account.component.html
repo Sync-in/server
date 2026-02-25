@@ -15,8 +15,8 @@
 
                 <div class="user-details">
                   <div class="mb-1">{{ user.fullName }}</div>
-                  <div class="mb-2 fs-xxs text-nowrap">{{ user.email }}</div>
-                  <div class="text-muted fs-xxs">
+                  <div class="mb-2 fs-2xs text-nowrap">{{ user.email }}</div>
+                  <div class="text-muted fs-2xs">
                     {{ 'Member since' | translate:locale.language }} {{ user.createdAt | amTimeAgo:true }}
                   </div>
 
@@ -36,7 +36,7 @@
 
           <div class="card dialog-tab-card">
             <div class="card-body">
-              <div class="text-muted text-uppercase fs-xxxs fw-semibold mb-2" l10nTranslate>Info</div>
+              <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Info</div>
 
               <div class="px-1">
                 <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
@@ -100,7 +100,7 @@
 
           <div class="card dialog-tab-card">
             <div class="card-body">
-              <div class="text-muted text-uppercase fs-xxxs fw-semibold mb-2" l10nTranslate>Preferences</div>
+              <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Preferences</div>
 
               @if (showEditorPreference) {
                 <div class="row g-2 align-items-center mb-2">
@@ -117,14 +117,14 @@
                     </select>
                   </div>
                 </div>
-                <div class="text-muted fs-xxs mb-3" l10nTranslate>
+                <div class="text-muted fs-2xs mb-3" l10nTranslate>
                   Used when both editors support the file type.
                 </div>
               }
 
               @if (user.isUser) {
                 <div class="row g-0">
-                  <div class="col-12 col-md-11 col-xl-9">
+                  <div class="col-12">
                     <div class="card dialog-check-card dialog-check-card--interactive"
                          [class.dialog-check-card--active]="user.storageIndexing"
                          (click)="updateStorageIndexing(!user.storageIndexing)">
@@ -143,7 +143,7 @@
                               role="button">
                           </div>
                         </div>
-                        <div class="text-muted fs-xxs mt-2 px-1" l10nTranslate>
+                        <div class="text-muted fs-2xs mt-2 px-1" l10nTranslate>
                           Enable content indexation for personal files.
                         </div>
                       </div>
@@ -158,7 +158,7 @@
         <div class="col-12 col-lg-6 d-flex flex-column gap-3">
           <div class="card dialog-tab-card">
             <div class="card-body">
-              <div class="text-muted text-uppercase fs-xxxs fw-semibold mb-2" l10nTranslate>Configuration</div>
+              <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Configuration</div>
               @if (user.isUser) {
                 <div class="row g-2 align-items-center mb-2">
                   <label for="" class="col-12 col-sm-5 text-nowrap" l10nTranslate>Avatar</label>
@@ -203,9 +203,9 @@
           @if (user.isUser) {
             <div class="card dialog-tab-card">
               <div class="card-body">
-                <div class="text-muted text-uppercase fs-xxxs fw-semibold mb-2" l10nTranslate>Password</div>
+                <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Password</div>
                 <div class="row g-0">
-                  <div class="col-12 col-md-9 col-xl-7">
+                  <div class="col-12 col-md-9 col-xl-9">
                     <div class="mb-2">
                       <app-input-password [(password)]="oldPassword"
                                           placeholder="current password">
@@ -239,7 +239,7 @@
 
             <div class="card dialog-tab-card flex-grow-1">
               <div class="card-body">
-                <div class="text-muted text-uppercase fs-xxxs fw-semibold mb-2" l10nTranslate>Security</div>
+                <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Security</div>
 
                 <div class="fw-500 mb-2" l10nTranslate>Two-Factor Authentication</div>
                 <div class="d-flex flex-wrap gap-2 mb-3">

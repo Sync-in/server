@@ -19,7 +19,7 @@
         <fa-icon [icon]="icons.faSpinner" animation="spin" class="me-2"></fa-icon>
       }
       @if (transfers().length) {
-        <span class="fs-xxs">{{ 'nb_actions' | translate:locale.language:{ nb: count.actions } }}</span>
+        <span class="fs-2xs">{{ 'nb_actions' | translate:locale.language:{ nb: count.actions } }}</span>
       }
     </div>
 
@@ -109,16 +109,16 @@
                         <span class="d-flex align-items-center" style="font-size: 14px">
                         <fa-icon [icon]="s.sideIcon" class="{{s.sideIconClass}}"></fa-icon>
                         <fa-icon [icon]="s.actionIcon" class="circle-gray-icon-sm" size="sm"></fa-icon>
-                        <span class="fs-xxxs" l10nTranslate>{{ s.actionText }}</span>
+                        <span class="fs-3xs" l10nTranslate>{{ s.actionText }}</span>
                       </span>
                       }
                       @case ('file') {
-                        <div class="d-flex align-items-center fs-xxs">
+                        <div class="d-flex align-items-center fs-2xs">
                           <img [src]="s.mimeUrl" (error)="s.fallBackMimeUrl()" class="me-2" alt="" width="24">
-                          <span class="d-flex flex-column fs-xxs">
+                          <span class="d-flex flex-column fs-2xs">
                         @if (s.fileDst) {
                           <span class="{{s.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ s.fileDst }}</span>
-                          <span class="{{s.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} fs-xxxs"><b l10nTranslate>Source</b>:&nbsp;{{ s.file }}</span>
+                          <span class="{{s.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} fs-3xs"><b l10nTranslate>Source</b>:&nbsp;{{ s.file }}</span>
                         } @else {
                           <span class="{{s.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ s.file }}</span>
                         }

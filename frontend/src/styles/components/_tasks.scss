@@ -1,7 +1,7 @@
 .task-list {
   @extend .no-select-pointer;
   border-bottom: .5px solid transparent;
-  font-size: $font-size-xxs;
+  font-size: $font-size-2xs;
 
   &:hover {
     background-color: transparent;
@@ -14,7 +14,7 @@
 
 .custom-progress-bar {
   background-color: black;
-  font-size: $font-size-xxs;
+  font-size: $font-size-2xs;
 
   &.progress {
     height: 18px !important;

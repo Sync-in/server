@@ -11,7 +11,7 @@
     <div class="sidebar-item-container" (click)="onMaximize(modal)">
       <div class="sidebar-item-content">
         <img [ngSrc]="modal.element.mimeUrl" alt="" width="28" height="28">
-        <div class="text-truncate fs-xxs ms-2">{{ modal.element.name }}</div>
+        <div class="text-truncate fs-2xs ms-2">{{ modal.element.name }}</div>
         <button (click)="onClose($event, modal)" class="btn btn-xs btn-danger ms-auto">
           <fa-icon [icon]="icons.faTimes"></fa-icon>
         </button>

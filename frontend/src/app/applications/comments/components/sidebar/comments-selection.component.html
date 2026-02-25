@@ -17,7 +17,7 @@
   </div>
 </div>
 @if (comments.length) {
-  <div appAutoResize class="fs-xxs p-2">
+  <div appAutoResize class="fs-2xs p-2">
     @for (comment of comments; track comment.id) {
       <div class="mb-1 app-small-card app-comment rounded">
         <div class="d-flex px-2 pt-2 pb-1">
@@ -65,7 +65,7 @@
             <span (mouseleave)="comment.isHover = false"
                   (mouseover)="comment.isHover = true"
                   (focus)="comment.isHover = true"
-                  class="text-muted no-select pt-1 fs-xxxs">
+                  class="text-muted no-select pt-1 fs-3xs">
             @if (comment.isHover) {
               <span>{{ comment.dateToShow | amDateFormat }}</span>
             } @else {

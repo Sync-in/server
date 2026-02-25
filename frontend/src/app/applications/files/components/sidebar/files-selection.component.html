@@ -1,6 +1,6 @@
 @if (files().length) {
   @if (multiple()) {
-    <div class="px-2 pt-2 pb-0 fs-xxs">
+    <div class="px-2 pt-2 pb-0 fs-2xs">
       <div class="d-flex justify-content-center mt-2">
         <button (click)="addToClipboard()" class="btn btn-xs btn-primary me-1" type="button" l10nTranslate>
           <fa-icon [icon]="icons.faClipboardCheck"></fa-icon>
@@ -10,7 +10,7 @@
     </div>
     <hr class="mx-0 mt-2 mb-0">
   }
-  <div appAutoResize class="fs-xxs" [resizeOffset]=resizeOffset()>
+  <div appAutoResize class="fs-2xs" [resizeOffset]=resizeOffset()>
     @if (multiple()) {
       <div class="flex-column p-2 w-100">
         @for (f of files(); track f.id) {
@@ -43,11 +43,11 @@
         <div class="p-2">
           <div class="d-flex mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Name</div>
-            <div class="word-break-all fs-xxs">{{ f.name }}</div>
+            <div class="word-break-all fs-2xs">{{ f.name }}</div>
           </div>
           <div class="d-flex mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Size</div>
-            <div class="fs-xxs">
+            <div class="fs-2xs">
               @let size = (getSizeLazy(f) | async);
               @if (size === null) {
                 <fa-icon [icon]="icons.faSpinner" animation="spin-pulse"></fa-icon>
@@ -58,11 +58,11 @@
           </div>
           <div class="d-flex mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Created</div>
-            <div class="fs-xxs">{{ f.ctime | amDateFormat }}</div>
+            <div class="fs-2xs">{{ f.ctime | amDateFormat }}</div>
           </div>
           <div class="d-flex mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Modified</div>
-            <div class="fs-xxs">{{ f.mtime | amDateFormat }}</div>
+            <div class="fs-2xs">{{ f.mtime | amDateFormat }}</div>
           </div>
           <div class="d-flex align-items-center mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Lock</div>

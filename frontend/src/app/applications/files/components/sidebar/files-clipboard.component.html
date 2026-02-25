@@ -27,7 +27,7 @@
       <div class="sidebar-item-container">
         <div class="sidebar-item-content" [tooltip]="f.path">
           <img [src]="f.mimeUrl" alt="" class="me-1" height="28" width="auto" (error)="f.fallBackMimeUrl()">
-          <div class="text-truncate fs-xxs">{{ f.name }}</div>
+          <div class="text-truncate fs-2xs">{{ f.name }}</div>
           <button (click)="remove(f)" class="btn btn-xxs btn-danger ms-auto">
             <fa-icon [icon]="icons.faTimes"></fa-icon>
           </button>

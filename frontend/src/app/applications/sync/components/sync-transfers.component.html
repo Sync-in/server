@@ -72,26 +72,26 @@
                     <span class="d-flex align-items-center">
                       <fa-icon [icon]="t.sideIcon" class="{{t.ok ? t.sideIconClass : 'circle-error-icon-sm'}}"></fa-icon>
                       <fa-icon [icon]="t.actionIcon" [class.text-danger]="!t.ok" class="circle-gray-icon-sm" size="sm"></fa-icon>
-                      <span [class.text-danger]="!t.ok" class="fs-xxxs" l10nTranslate>{{ t.actionText }}</span>
+                      <span [class.text-danger]="!t.ok" class="fs-3xs" l10nTranslate>{{ t.actionText }}</span>
                     </span>
                   }
                   @case ('sync') {
                     <span class="d-flex align-items-center">
-                      <span class="fs-xxs ms-1">{{ t.syncPathName }}</span>
+                      <span class="fs-2xs ms-1">{{ t.syncPathName }}</span>
                     </span>
                   }
                   @case ('file') {
                     <div class="d-flex align-items-center">
                       <img [src]=t.mimeUrl (error)="t.fallBackMimeUrl()" alt="" class="me-2" width="24">
-                      <span class="d-flex flex-column fs-xxs">
+                      <span class="d-flex flex-column fs-2xs">
                         @if (t.fileDst) {
                           <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ t.fileDst }}</span>
-                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} fs-xxxs"><b l10nTranslate>Source</b>:&nbsp;{{ t.file }}</span>
+                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} fs-3xs"><b l10nTranslate>Source</b>:&nbsp;{{ t.file }}</span>
                         } @else {
                           <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ t.file }}</span>
                         }
                         @if (!t.ok) {
-                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} text-danger fs-xxxs">{{ t.error }}</span>
+                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} text-danger fs-3xs">{{ t.error }}</span>
                         }
                       </span>
                     </div>

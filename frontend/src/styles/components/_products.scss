@@ -61,7 +61,7 @@
     align-self: center;
     position: absolute;
     right: 10px;
-    font-size: $font-size-xxs;
+    font-size: $font-size-2xs;
 
     > span {
       display: flex;
@@ -71,7 +71,7 @@
   .product-description {
     @extend .text-truncate;
     display: block;
-    font-size: $font-size-xxxs;
+    font-size: $font-size-3xs;
     color: #999;
   }
 }

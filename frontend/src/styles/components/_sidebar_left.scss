@@ -63,7 +63,7 @@
 
         .menu-badge-icon {
           position: absolute;
-          font-size: $font-size-xxxs;
+          font-size: $font-size-3xs;
           width: $sidebar-apps-icons-width;
 
           .badge {
@@ -85,7 +85,7 @@
         box-sizing: border-box;
         padding: 3px 2px;
         z-index: $sidebar-z-index;
-        font-size: $font-size-xxs;
+        font-size: $font-size-2xs;
         border-top-right-radius: $btn-border-radius;
         border-bottom-right-radius: $btn-border-radius;
 
@@ -125,12 +125,12 @@
 
           .menu-badge {
             margin-left: auto;
-            font-size: $font-size-xxxs;
+            font-size: $font-size-3xs;
           }
         }
 
         > a.mini-submenu-item {
-          font-size: $font-size-xxxs;
+          font-size: $font-size-3xs;
           padding-left: 20px;
         }
       }
@@ -177,7 +177,7 @@
         @extend .text-truncate;
         text-transform: uppercase;
         margin-right: auto;
-        font-size: $font-size-xxs;
+        font-size: $font-size-2xs;
 
         > span {
           @extend .text-truncate;
@@ -229,7 +229,7 @@
 
         &.submenu {
           padding-left: 10px;
-          font-size: $font-size-xxs;
+          font-size: $font-size-2xs;
 
           fa-icon {
             font-size: $font-size-sm
@@ -262,7 +262,7 @@
 
           .menu-badge {
             margin-left: auto;
-            font-size: $font-size-xxxs;
+            font-size: $font-size-3xs;
           }
         }
 
@@ -297,7 +297,7 @@
 
       span {
         @extend .no-select;
-        font-size: $font-size-xxxs;
+        font-size: $font-size-3xs;
       }
     }
   }

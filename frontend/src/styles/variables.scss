@@ -64,9 +64,9 @@ $font-size-lg: 1.0625rem; // 17px
 $font-size-md: $font-size-base; // 15.5px
 $font-size-sm: 0.875rem; // 14px
 $font-size-xs: 0.8125rem; // 13px
-$font-size-xxs: 0.75rem; // 12px
-$font-size-xxxs: 0.7125rem; // 11.4px
-$font-size-xxxxs: 0.65rem; // 10.4px
+$font-size-2xs: 0.75rem; // 12px
+$font-size-3xs: 0.7125rem; // 11.4px
+$font-size-4xs: 0.65rem; // 10.4px
 
 //LAYOUT
 //--------------------------------------------------------
@@ -139,7 +139,7 @@ $btn-border-radius-sm: .375rem;
 // Badges
 $badge-font-weight: 500 !default;
 // Pagination
-$pagination-font-size: $font-size-xxs !important;
+$pagination-font-size: $font-size-2xs !important;
 $pagination-color: $body-color;
 $pagination-hover-color: darken($body-color, 4%);
 
