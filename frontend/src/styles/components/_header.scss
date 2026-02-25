@@ -10,6 +10,8 @@
   transition: margin-left $transition-speed $transition-fn;
 
   .navbar {
+    display: flex;
+    width: 100%;
     margin-bottom: 0;
     margin-left: 0;
     max-height: $navbar-height;

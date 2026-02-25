@@ -25,10 +25,6 @@
   @include button-size($btn-padding-y-xs, $btn-padding-x-xs, $font-size-3xs, $btn-border-radius-sm);
 }
 
-.btn-group-xs > .btn {
-  @extend .btn-xs;
-}
-
 .btn-outline-secondary-alt {
   @extend .btn-outline-secondary;
 }

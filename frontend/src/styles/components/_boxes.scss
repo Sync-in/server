@@ -5,66 +5,6 @@
   margin-bottom: 10px;
   width: 100%;
   box-shadow: $box-boxshadow;
-
-  &.box-primary {
-    border-top-color: $primary;
-  }
-
-  &.box-info {
-    border-top-color: $aqua;
-  }
-
-  &.box-purple {
-    border-top-color: $purple;
-  }
-
-  &.box-danger {
-    border-top-color: $red;
-  }
-
-  &.box-warning {
-    border-top-color: $yellow;
-  }
-
-  &.box-success {
-    border-top-color: $green;
-  }
-
-  &.box-default {
-    border-top-color: $black;
-  }
-
-  &.box-solid {
-    border-top: 0;
-
-    &.box-primary {
-      @include box-solid-variant($primary);
-    }
-
-    &.box-purple {
-      @include box-solid-variant($purple);
-    }
-
-    &.box-info {
-      @include box-solid-variant($aqua);
-    }
-
-    &.box-dark {
-      @include box-solid-variant($black)
-    }
-
-    &.box-danger {
-      @include box-solid-variant($red);
-    }
-
-    &.box-warning {
-      @include box-solid-variant($orange);
-    }
-
-    &.box-success {
-      @include box-solid-variant($green);
-    }
-  }
 }
 
 .box-transparent {
@@ -147,42 +87,6 @@
   &:hover {
     outline: none;
     cursor: pointer;
-  }
-
-  &.box-footer-success {
-    background-color: $success;
-    color: $white;
-
-    &:hover {
-      background-color: darken($success, 5%);
-    }
-  }
-
-  &.box-footer-warning {
-    background-color: $warning;
-    color: $white;
-
-    &:hover {
-      background-color: darken($warning, 5%);
-    }
-  }
-
-  &.box-footer-primary {
-    background-color: $primary;
-    color: $white;
-
-    &:hover {
-      background-color: darken($primary, 5%);
-    }
-  }
-
-  &.box-footer-purple {
-    background-color: $purple;
-    color: $white;
-
-    &:hover {
-      background-color: darken($purple, 5%);
-    }
   }
 }
 

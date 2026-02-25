@@ -2,8 +2,8 @@
 @import '@fontsource-variable/inter';
 // Overload bootstrap variables
 @import 'variables';
-// Load Bootstrap 5
-@import 'bootstrap/scss/bootstrap';
+// Load Bootstrap 5 (modular import to reduce bundle size)
+@import 'bootstrap-custom';
 @import 'components';
 // used for ngx-toastr
 @import 'ngx-toastr/toastr-bs5-alert';
