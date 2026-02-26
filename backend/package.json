@@ -92,7 +92,7 @@
     "@nestjs/cli": "^11.0.6",
     "@nestjs/schematics": "^11.0.5",
     "@nestjs/testing": "^11.0.15",
-    "@swc/cli": "^0.7.7",
+    "@swc/cli": "^0.7.10",
     "@swc/core": "^1.10.7",
     "@types/archiver": "^7.0.0",
     "@types/bcryptjs": "^2.4.6",
