@@ -471,14 +471,21 @@
     }
   }
   .app-sync-clients {
-    .left-panel {
-      border-right-color: darken($sidebar-dark-icons-menu-border-color, 4%) !important;
-      border-bottom-color: darken($sidebar-dark-icons-menu-border-color, 4%) !important;
-    }
-
-    .right-panel {
-      border-bottom-color: darken($sidebar-dark-icons-menu-border-color, 4%) !important;
-    }
+    --sync-client-card-shadow: 0 4px 4px #{$dark-dialog-tab-card-shadow-color};
+    --sync-client-card-selected-border: #{$dark-dialog-check-card-active-border-color};
+    --sync-client-details-border: #{$dark-dialog-check-card-border-color};
+    --sync-client-details-bg: linear-gradient(
+        158deg,
+        #{mix($dark-dialog-tab-bg, $sidebar-dark-apps-menu-bg, 68%)} 0%,
+        #{mix($sidebar-dark-apps-menu-title-bg, $dark-dialog-tab-bg, 62%)} 100%
+    );
+    --sync-client-subtle-color: #{$dark-item-color};
+    --sync-client-paths-count-fg: #{$white};
+    --sync-client-paths-count-bg: #{lighten($primary, 6%)};
+    --sync-client-path-empty-border: #{$dark-dialog-check-card-hover-border-color};
+    --sync-client-path-empty-bg: #{mix($dark-dialog-tab-bg, $sidebar-dark-apps-menu-title-bg, 70%)};
+    --sync-path-actions-separator: #{$dark-dialog-check-card-border-color};
+    --sync-path-hover-bg: #{$sidebar-dark-icons-menu-bg};
   }
   .list-group-item {
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%);

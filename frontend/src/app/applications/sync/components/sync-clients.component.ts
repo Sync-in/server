@@ -56,7 +56,6 @@ export class SyncClientsComponent {
     faPen,
     faKey
   }
-  protected loading = false
   protected selected: SyncClientModel
   protected selectedPath: SyncPathModel
   protected clients: SyncClientModel[] = []
@@ -83,7 +82,6 @@ export class SyncClientsComponent {
   }
 
   loadClients() {
-    this.loading = true
     this.onSelectClient()
     this.onSelectPath()
     this.syncService.getClients().subscribe({
@@ -100,7 +98,6 @@ export class SyncClientsComponent {
       },
       error: (e: HttpErrorResponse) => {
         console.error(e)
-        this.loading = false
         this.layout.sendNotification('error', 'Clients', e.error.message)
       }
     })
@@ -123,27 +120,41 @@ export class SyncClientsComponent {
     modalRef.content.wasDeleted.pipe(take(1)).subscribe(() => this.loadClients())
   }
 
-  gotoPath(path: SyncPathModel) {
+  gotoPath(path?: SyncPathModel, client?: SyncClientModel) {
+    if (!path) {
+      return
+    }
+    if (client) {
+      this.onSelectClient(client)
+    }
+    this.onSelectPath(path)
     this.syncService.goToPath(path, false)
   }
 
-  onEditPath() {
-    if (this.selected.isCurrentClient) {
+  onEditPath(path?: SyncPathModel, client?: SyncClientModel) {
+    const selectedClient = client || this.selected
+    const selectedPath = path || this.selectedPath
+    if (!selectedClient || !selectedPath) {
+      return
+    }
+    this.onSelectClient(selectedClient)
+    this.onSelectPath(selectedPath)
+    if (selectedClient.isCurrentClient) {
       this.router
         .navigate([SYNC_PATH.BASE, SYNC_PATH.PATHS], {
           state: {
-            id: this.selectedPath.id,
+            id: selectedPath.id,
             withSettings: true
           }
         })
         .catch(console.error)
     } else {
       const modalRef: BsModalRef<SyncPathSettingsDialogComponent> = this.layout.openDialog(SyncPathSettingsDialogComponent, 'md', {
-        initialState: { syncPathSelected: this.selectedPath, syncClientSelected: this.selected } as SyncPathSettingsDialogComponent
+        initialState: { syncPathSelected: selectedPath, syncClientSelected: selectedClient } as SyncPathSettingsDialogComponent
       })
       modalRef.content.mustRefresh.pipe(take(1)).subscribe(() => {
-        this.focusOnSelectId = this.selected.id
-        this.focusOnSelectPathId = this.selectedPath.id
+        this.focusOnSelectId = selectedClient.id
+        this.focusOnSelectPathId = selectedPath.id
         this.loadClients()
       })
     }

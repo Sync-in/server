@@ -1,37 +1,232 @@
+$sync-clients-panel-padding-y: 0.85rem;
+$sync-clients-panel-padding-x: 0.95rem;
+$sync-clients-icon-col-width: 1rem;
+$sync-clients-icon-col-gap: 0.45rem;
+$sync-path-rail-padding: 0.45rem;
+
 .app-sync-clients {
-  font-size: 0.75rem;
+  --sync-client-card-shadow: none;
+  --sync-client-card-selected-border: transparent;
+  --sync-client-details-border: transparent;
+  --sync-client-details-bg: transparent;
+  --sync-client-subtle-color: inherit;
+  --sync-client-paths-count-fg: inherit;
+  --sync-client-paths-count-bg: transparent;
+  --sync-client-path-empty-border: transparent;
+  --sync-client-path-empty-bg: transparent;
+  --sync-path-actions-separator: transparent;
+  --sync-path-hover-bg: transparent;
+
+  font-size: 0.78rem;
   display: flex;
   flex-direction: column;
+  gap: 0.75rem;
   flex: 1 1 auto !important;
+  padding: 0.6rem;
+  overflow: auto;
 
-  .left-panel {
+  .sync-client-card {
+    margin: 0;
+    border-radius: 0.9rem;
+    overflow: hidden;
+    cursor: default;
+    transition: box-shadow 0.16s ease, border-color 0.16s ease;
+    box-shadow: var(--sync-client-card-shadow);
+  }
+
+  .sync-client-card--selected {
+    border-color: var(--sync-client-card-selected-border);
+  }
+
+  .sync-client-layout {
+    display: grid;
+    grid-template-columns: minmax(280px, 350px) minmax(0, 1fr);
+    min-width: 0;
+  }
+
+  .sync-client-details {
+    padding: $sync-clients-panel-padding-y $sync-clients-panel-padding-x;
+    border-right: 1px solid var(--sync-client-details-border);
+    background: var(--sync-client-details-bg);
+    border-top-left-radius: inherit;
+    border-bottom-left-radius: inherit;
+    min-width: 0;
+  }
+
+  .sync-client-header {
     display: flex;
-    flex-direction: column;
-    cursor: pointer;
-    border-right: solid 1px;
-    border-bottom: solid 1px;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.65rem;
+    margin-bottom: 0.8rem;
+  }
 
-    .left-panel-content {
-      .osIcon {
-        font-size: 1.2rem;
-        margin-right: .4rem;
-        margin-left: -2px;
-      }
+  .sync-client-title {
+    font-size: 0.98rem;
+    font-weight: 600;
+    line-height: 1.2;
+  }
 
-      fa-icon:first-child:not(.osIcon) {
-        font-size: 1rem;
-        margin-right: .4rem;
-      }
+  .sync-client-subtitle {
+    font-size: 0.63rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
 
-      > div {
-        height: 26px;
-      }
+  .sync-client-subtitle,
+  .sync-client-paths-header {
+    color: var(--sync-client-subtle-color);
+  }
+
+  .sync-client-meta-line {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    font-size: 0.75rem;
+
+    > fa-icon:first-child:not(.osIcon) {
+      width: $sync-clients-icon-col-width;
+      min-width: $sync-clients-icon-col-width;
+      flex: 0 0 $sync-clients-icon-col-width;
+      font-size: 0.96rem;
+      margin-right: $sync-clients-icon-col-gap;
+      text-align: center;
     }
   }
 
-  .right-panel {
+  .sync-client-meta-line + .sync-client-meta-line {
+    margin-top: 0.2rem;
+  }
+
+  .osIcon {
+    font-size: 1.08rem;
+    margin-right: $sync-clients-icon-col-gap;
+    width: $sync-clients-icon-col-width;
+    min-width: $sync-clients-icon-col-width;
+    flex: 0 0 $sync-clients-icon-col-width;
+    text-align: center;
+  }
+
+  .sync-client-paths {
     display: flex;
     flex-direction: column;
-    border-bottom: solid 1px;
+    gap: 0.45rem;
+    padding: $sync-clients-panel-padding-y $sync-clients-panel-padding-x;
+    min-width: 0;
+  }
+
+  .sync-client-paths-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.64rem;
+    font-weight: 600;
+    padding: 0 0.15rem;
+  }
+
+  .sync-client-paths-count {
+    min-width: 1.2rem;
+    line-height: 1.15;
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: var(--sync-client-paths-count-fg);
+    background: var(--sync-client-paths-count-bg);
+  }
+
+  .sync-path-card {
+    cursor: default;
+    margin: 0;
+    border-radius: 0.7rem;
+  }
+
+  .sync-path-card.dialog-check-card--interactive:hover {
+    background: var(--sync-path-hover-bg);
+  }
+
+  .sync-path-image {
+    height: 30px;
+    width: 30px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .sync-path-row {
+    min-height: 58px;
+  }
+
+  .sync-path-main {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .sync-path-badges {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.5rem;
+    padding-right: $sync-path-rail-padding;
+    height: 100%;
+    flex-shrink: 0;
+    font-size: 0.7125rem;
+  }
+
+  .sync-path-side {
+    display: flex;
+    align-items: stretch;
+    margin-left: 0.4rem;
+    align-self: stretch;
+    flex-shrink: 0;
+  }
+
+  .sync-path-actions {
+    display: flex;
+    align-self: stretch;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+    padding-left: $sync-path-rail-padding;
+    border-left: 1px solid var(--sync-path-actions-separator);
+  }
+
+  .sync-client-path-empty {
+    padding: 0.7rem 0.35rem;
+    text-align: center;
+    font-size: 0.72rem;
+    border-radius: 0.65rem;
+    border: 1px dashed var(--sync-client-path-empty-border);
+    background: var(--sync-client-path-empty-bg);
+  }
+
+  @media (max-width: 991.98px) {
+    .sync-client-layout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .sync-client-details {
+      border-right: 0;
+      border-bottom: 1px solid var(--sync-client-details-border);
+      border-bottom-left-radius: 0;
+      border-top-right-radius: inherit;
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .sync-path-side {
+      margin-left: 0.25rem;
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .sync-client-details,
+    .sync-client-paths {
+      padding: 0.75rem;
+    }
+
+    .sync-client-title {
+      font-size: 0.9rem;
+    }
   }
 }

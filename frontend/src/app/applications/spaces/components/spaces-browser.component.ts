@@ -178,7 +178,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   protected tableHeaders: Record<'name' | 'anchored' | 'info' | 'permissions' | 'size' | 'mtime', TableHeaderConfig> = {
     name: {
       label: 'Name',
-      width: 45,
+      width: 40,
       textCenter: false,
       class: '',
       show: true,

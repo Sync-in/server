@@ -14,97 +14,117 @@
           type="button">
     <fa-icon [icon]="icons.faTrashCan"></fa-icon>
   </button>
-  <button (click)="gotoPath(selectedPath)"
-          [disabled]="!selectedPath"
-          [tooltip]="'Go to' | translate:locale.language"
-          placement="auto"
-          class="btn btn-sm btn-secondary ms-auto me-1"
-          type="button">
-    <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
-  </button>
-  <button (click)="onEditPath()"
-          [disabled]="!selectedPath"
-          [tooltip]="'Edit' | translate:locale.language"
-          placement="auto"
-          class="btn btn-sm btn-secondary"
-          type="button">
-    <fa-icon [icon]="icons.faPen"></fa-icon>
-  </button>
 </div>
 <div class="app-sync-clients" appAutoResize>
   @for (client of clients; track client.id) {
-    <div (click)="onSelectClient(client)" class="d-flex">
-      <div [class.selected]="selected && selected.id === client.id" class="left-panel app-div-hovered col-md-5 col-lg-4 col-sm-12">
-        <div class="left-panel-content p-2">
-          <div class="d-flex align-items-center">
-            <fa-icon [icon]="icons.CLIENT"></fa-icon>
-            <div class="me-auto fw-semibold">{{ client.info.node }}</div>
-            @if (client.isCurrentClient) {
-              <fa-icon [icon]="icons.faCircle"
-                       [tooltip]="'This client' | translate:locale.language"
-                       class="text-light-green cursor-pointer">
-              </fa-icon>
-            }
-          </div>
-          <div class="d-flex align-items-center {{client.expiration.reached ? 'fw-bold text-danger' : client.expiration.approaching ? 'fw-bold text-warning' : ''}}">
-            <fa-icon [icon]="icons.faKey"></fa-icon>
-            <div>
-              <span l10nTranslate>{{ client.expiration.reached ? 'The access has expired' : 'The access expires' }}</span>&nbsp;{{ client.expiration.value | amTimeAgo }}
-            </div>
-          </div>
-          <div class="d-flex align-items-center">
-            <fa-icon class="osIcon" [icon]="client.icon"></fa-icon>
-            <div>{{ client.osName }} {{ client.info.osRelease }}</div>
-          </div>
-          <div class="d-flex align-items-center">
-            <fa-icon [icon]="icons.faCircleUser"></fa-icon>
-            <div>{{ client.info.user }}</div>
-          </div>
-          <div class="d-flex align-items-center">
-            <fa-icon [icon]="icons.faCodeBranch"></fa-icon>
-            <div class="me-2">{{ client.info.type }}</div>
-            <div class="badge rounded-pill bg-primary">{{ client.info.version }}</div>
-          </div>
-          <div class="d-flex align-items-center">
-            <fa-icon [icon]="icons.faAt"></fa-icon>
-            <div>{{ client.currentIp }}&nbsp;-&nbsp;{{ client.lastIp }}</div>
-          </div>
-          <div class="d-flex align-items-center">
-            <fa-icon [icon]="icons.faClock"></fa-icon>
-            <div>{{ client.currentAccess | amDateFormat:'L HH:mm:ss' }}&nbsp;-&nbsp;{{ client.lastAccess | amDateFormat:'L HH:mm:ss' }}</div>
-          </div>
-        </div>
-      </div>
-      <div class="right-panel d-none d-md-flex d-lg-flex col-md-7 col-lg-8 p-0">
-        @for (path of client.paths; track path.id) {
-          <div (click)="onSelectPath(path)" (dblclick)="onEditPath()" [class.selected]="selectedPath && selectedPath.id === path.id"
-               class="d-flex align-items-center cursor-pointer app-div-hovered py-1 ps-2 pe-4">
-            <div class="d-flex align-items-center text-truncate px-2 py-1 me-auto">
-              <img [src]="path.mimeUrl" alt="" draggable="false" height="30">
-              <div class="d-flex flex-column text-truncate ms-2" style="height: 34px">
-                <span class="fs-2xs text-truncate user-select-none">{{ path.settings.name }}</span>
-                <div class="d-flex align-items-center text-{{path.iconClass}}">
-                  <fa-icon [icon]="path.icon" class="me-1"></fa-icon>
-                  <span class="fs-3xs text-truncate user-select-none">
-                    <span>{{ path.showedPath }}</span>
-                  </span>
+    <div (click)="onSelectClient(client)"
+         [class.sync-client-card--selected]="selected && selected.id === client.id"
+         class="card dialog-tab-card sync-client-card">
+      <div class="card-body p-0">
+        <div class="sync-client-layout">
+          <div class="sync-client-details">
+            <div class="sync-client-header">
+              <div class="d-flex align-items-center min-width-0">
+                <fa-icon [icon]="icons.CLIENT" class="circle-primary-icon me-2"></fa-icon>
+                <div class="d-flex flex-column text-truncate">
+                  <span class="sync-client-title text-truncate">{{ client.info.node }}</span>
+                  <span class="sync-client-subtitle text-truncate">{{ client.info.type }}</span>
                 </div>
               </div>
+              <div class="d-flex align-items-center flex-nowrap ms-2">
+                <div class="badge rounded-pill bg-primary">{{ client.info.version }}</div>
+                @if (client.isCurrentClient) {
+                  <fa-icon [icon]="icons.faCircle"
+                           [container]="'body'"
+                           [tooltip]="'This client' | translate:locale.language"
+                           class="text-light-green cursor-pointer ms-2">
+                  </fa-icon>
+                }
+              </div>
             </div>
-            <div class="badge rounded-pill bg-dark me-1">
-              <fa-icon [icon]="icons.faPlusCircle"></fa-icon>
-              {{ path.createdAt | amTimeAgo:true }}
+            <div class="sync-client-meta-line {{client.expiration.reached ? 'fw-bold text-danger' : client.expiration.approaching ? 'fw-bold text-warning' : ''}}">
+              <fa-icon [icon]="icons.faKey"></fa-icon>
+              <span l10nTranslate>{{ client.expiration.reached ? 'The access has expired' : 'The access expires' }}</span>&nbsp;{{ client.expiration.value | amTimeAgo }}
             </div>
-            <div class="badge rounded-pill sync-newly-{{path.newly}}">
-              <fa-icon [icon]="icons.faRotate"></fa-icon>
-              @if (path.newly) {
-                {{ path.settings.lastSync | amTimeAgo:true }}
-              } @else {
-                {{ 'never' | translate:locale.language }}
-              }
+            <div class="sync-client-meta-line">
+              <fa-icon class="osIcon" [icon]="client.icon"></fa-icon>
+              <span class="text-truncate">{{ client.osName }} {{ client.info.osRelease }}</span>
+            </div>
+            <div class="sync-client-meta-line">
+              <fa-icon [icon]="icons.faCircleUser"></fa-icon>
+              <span class="text-truncate">{{ client.info.user }}</span>
+            </div>
+            <div class="sync-client-meta-line">
+              <fa-icon [icon]="icons.faAt"></fa-icon>
+              <span class="text-truncate">{{ client.currentIp }}&nbsp;-&nbsp;{{ client.lastIp }}</span>
+            </div>
+            <div class="sync-client-meta-line">
+              <fa-icon [icon]="icons.faClock"></fa-icon>
+              <span class="text-truncate">{{ client.currentAccess | amDateFormat:'L HH:mm:ss' }}&nbsp;-&nbsp;{{ client.lastAccess | amDateFormat:'L HH:mm:ss' }}</span>
             </div>
           </div>
-        }
+          <div class="sync-client-paths">
+            <div class="sync-client-paths-header">
+              <span l10nTranslate>Synchronizations</span>
+              <span class="badge rounded-pill sync-client-paths-count">{{ client.paths.length }}</span>
+            </div>
+            @if (client.paths.length) {
+              @for (path of client.paths; track path.id) {
+                <div (click)="onSelectPath(path)"
+                     (dblclick)="onEditPath(path, client)"
+                     [class.dialog-check-card--active]="selectedPath && selectedPath.id === path.id"
+                     class="card dialog-check-card dialog-check-card--interactive sync-path-card">
+                  <div class="card-body p-2">
+                    <div class="d-flex align-items-stretch text-truncate sync-path-row">
+                      <div class="sync-path-main d-flex align-items-center text-truncate me-auto">
+                        <img [src]="path.mimeUrl" alt="" class="sync-path-image" draggable="false">
+                        <div class="d-flex flex-column text-truncate ms-2">
+                          <span class="fs-2xs text-truncate user-select-none fw-semibold">{{ path.settings.name }}</span>
+                          <div class="d-flex align-items-center text-{{path.iconClass}}">
+                            <fa-icon [icon]="path.icon" class="me-1"></fa-icon>
+                            <span class="fs-3xs text-truncate user-select-none">{{ path.showedPath }}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="sync-path-side">
+                        <div class="sync-path-badges">
+                          <div class="badge rounded-pill bg-dark">
+                            <fa-icon [icon]="icons.faPlusCircle"></fa-icon>
+                            {{ path.createdAt | amTimeAgo:true }}
+                          </div>
+                          <div class="badge rounded-pill sync-newly-{{path.newly}}">
+                            <fa-icon [icon]="icons.faRotate"></fa-icon>
+                            @if (path.newly) {
+                              {{ path.settings.lastSync | amTimeAgo:true }}
+                            } @else {
+                              {{ 'never' | translate:locale.language }}
+                            }
+                          </div>
+                        </div>
+                        <div class="sync-path-actions">
+                          <button (click)="$event.stopPropagation(); gotoPath(path, client)"
+                                  [tooltip]="'Go to' | translate:locale.language"
+                                  class="btn btn-sm btn-secondary"
+                                  type="button">
+                            <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
+                          </button>
+                          <button (click)="$event.stopPropagation(); onEditPath(path, client)"
+                                  [tooltip]="'Edit' | translate:locale.language"
+                                  class="btn btn-sm btn-secondary"
+                                  type="button">
+                            <fa-icon [icon]="icons.faPen"></fa-icon>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+            } @else {
+              <div class="sync-client-path-empty text-muted" l10nTranslate>No synchronized folder</div>
+            }
+          </div>
+        </div>
       </div>
     </div>
   }

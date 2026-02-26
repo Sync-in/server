@@ -462,14 +462,21 @@
     }
   }
   .app-sync-clients {
-    .left-panel {
-      border-right-color: $gray-light !important;
-      border-bottom-color: $gray-light !important;
-    }
-
-    .right-panel {
-      border-bottom-color: $gray-light !important;
-    }
+    --sync-client-card-shadow: 0 4px 4px #{$light-dialog-tab-card-shadow-color};
+    --sync-client-card-selected-border: #{$light-dialog-check-card-hover-border-color};
+    --sync-client-details-border: #{$light-dialog-check-card-border-color};
+    --sync-client-details-bg: linear-gradient(
+        158deg,
+        #{mix($theme-light-panel-bg, $white, 74%)} 0%,
+        #{mix($light-dialog-tab-card-bg, $theme-light-panel-bg, 68%)} 100%
+    );
+    --sync-client-subtle-color: #{$light-text-muted-color};
+    --sync-client-paths-count-fg: #{$white};
+    --sync-client-paths-count-bg: #{$primary};
+    --sync-client-path-empty-border: #{$light-dialog-check-card-hover-border-color};
+    --sync-client-path-empty-bg: #{mix($light-dialog-check-card-hover-bg, $white, 72%)};
+    --sync-path-actions-separator: #{$light-dialog-check-card-border-color};
+    --sync-path-hover-bg: #{$light-dialog-check-card-bg};
   }
   .app-div-hovered {
     &:hover {
