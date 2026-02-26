@@ -77,7 +77,7 @@
               <img [src]="s.mimeUrl" [height]="galleryMode.image" [width]="galleryMode.image" alt="" draggable="true" (error)="s.fallBackMimeUrl()">
               <span class="label-top-right">
                 @if (s.newly) {
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-warning">{{ s.hTimeAgo }}</span>
+                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-purple">{{ s.hTimeAgo }}</span>
                 }
               </span>
               @if (s.counts.shares) {
@@ -139,7 +139,7 @@
               @if (th.value.show) {
                 <td [style.width.%]="th.value.width"
                     [class.text-align-center]="th.value.textCenter"
-                    class="{{th.value.class}} {{th.value.newly ? 'prop-newly-' + s[th.value.newly] : ''}}">
+                    class="{{th.value.class}}">
                   @switch (th.key) {
                     @case ('name') {
                       <div class="d-flex align-items-center">
@@ -170,7 +170,9 @@
                       }
                     }
                     @case ('created') {
-                      {{ s.hTimeAgo }}
+                      <span class="{{th.value.newly && s[th.value.newly] ? 'badge prop-newly-' + s[th.value.newly] : ''}}">
+                        {{ s.hTimeAgo }}
+                      </span>
                     }
                   }
                 </td>

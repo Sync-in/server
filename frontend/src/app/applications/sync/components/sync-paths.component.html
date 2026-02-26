@@ -180,7 +180,7 @@
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
                   [class.text-align-center]="th.value.textCenter"
-                  class="{{th.value.class}} {{th.value.newly ? 'sync-newly-' + s[th.value.newly] : ''}}">
+                  class="{{th.value.class}}">
                 @switch (th.key) {
                   @case ('name') {
                     <div class="d-flex align-items-center">
@@ -220,11 +220,13 @@
                     {{ s.settings.filters.length }}
                   }
                   @case ('lastSync') {
-                    @if (s.newly) {
-                      {{ s.settings.lastSync | amTimeAgo:true }}
-                    } @else {
-                      {{ 'never' | translate:locale.language }}
-                    }
+                    <span class="{{th.value.newly ? 'badge sync-newly-' + s[th.value.newly] : ''}}">
+                      @if (s.newly) {
+                        {{ s.settings.lastSync | amTimeAgo:true }}
+                      } @else {
+                        {{ 'never' | translate:locale.language }}
+                      }
+                    </span>
                   }
                 }
               </td>

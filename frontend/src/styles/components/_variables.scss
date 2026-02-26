@@ -75,7 +75,7 @@ $dark-item-color: lighten($gray-light, 8%);
 $dark-item-hover-color: lighten($gray-light, 14%);
 $dark-item-disabled-color: darken($gray-light, 12%);
 $dark-border-subtle: darken($sidebar-dark-icons-menu-border-color, 3%);
-$dark-table-row-hover-bg: darken($sidebar-dark-icons-menu-bg, 3%);
+$dark-table-row-hover-bg: $sidebar-dark-icons-menu-bg;
 $dark-striped-bg: lighten($sidebar-dark-apps-menu-title-bg, 4%);
 $dark-field-border: $dark-bg-theme;
 $dark-btn-focus-color: rgba($primary, 0.28);

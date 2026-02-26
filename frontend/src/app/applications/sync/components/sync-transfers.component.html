@@ -66,7 +66,7 @@
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
                   [class.text-align-center]="th.value.textCenter"
-                  class="{{th.value.class}} {{th.value.newly ? 'prop-newly-' + t[th.value.newly] : ''}}">
+                  class="{{th.value.class}}">
                 @switch (th.key) {
                   @case ('action') {
                     <span class="d-flex align-items-center">
@@ -97,7 +97,9 @@
                     </div>
                   }
                   @case ('date') {
-                    <div (mouseenter)="t.hovered = true" (mouseleave)="t.hovered = false">
+                    <div class="{{th.value.newly && t[th.value.newly] ? 'badge prop-newly-' + t[th.value.newly] : ''}}"
+                         (mouseenter)="t.hovered = true"
+                         (mouseleave)="t.hovered = false">
                       <span>{{ t.hovered ? t.timestamp : t.hTimeAgo }}</span>
                     </div>
                   }

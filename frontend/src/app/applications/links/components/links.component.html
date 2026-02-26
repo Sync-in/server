@@ -69,7 +69,7 @@
               <img [src]="s.mimeUrl" [height]="galleryMode.image" [width]="galleryMode.image" alt="" draggable="true" (error)="s.fallBackMimeUrl()">
               <span class="label-top-right">
                 @if (s.newly) {
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-warning">
+                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-purple">
                     {{ s.hTimeAccessAgo }}
                   </span>
                 }
@@ -125,7 +125,7 @@
               @if (th.value.show) {
                 <td [style.width.%]="th.value.width"
                     [class.text-align-center]="th.value.textCenter"
-                    class="{{th.value.class}} {{th.value.newly !== undefined ? 'prop-newly-' + s[th.value.newly] : ''}}">
+                    class="{{th.value.class}}">
                   @switch (th.key) {
                     @case ('name') {
                       <div class="d-flex align-items-center">
@@ -175,11 +175,13 @@
                       }
                     }
                     @case ('accessed') {
-                      @if (s.link.currentAccess) {
-                        {{ s.hTimeAccessAgo }}
-                      } @else {
-                        <span l10nTranslate>never</span>
-                      }
+                      <span class="{{th.value.newly !== undefined && s[th.value.newly] ? 'badge prop-newly-' + s[th.value.newly] : ''}}">
+                        @if (s.link.currentAccess) {
+                          {{ s.hTimeAccessAgo }}
+                        } @else {
+                          <span class="badge sync-newly-0" l10nTranslate>never</span>
+                        }
+                      </span>
                     }
                   }
                 </td>

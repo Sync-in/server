@@ -372,7 +372,7 @@
     }
 
     thead {
-      background-color: darken($sidebar-dark-icons-menu-bg, 1.5%);
+      background-color: $sidebar-dark-icons-menu-bg;
     }
 
     tbody tr {
@@ -406,7 +406,7 @@
   .app-top-menu {
     border-top-color: $sidebar-dark-icons-menu-border-color;
     border-bottom-color: $sidebar-dark-icons-menu-border-color;
-    background: linear-gradient(170deg, lighten($sidebar-dark-apps-menu-title-bg, 7%) 0%, darken($sidebar-dark-icons-menu-bg, 1%) 100%);
+    background-color: darken($sidebar-dark-icons-menu-bg, 1.5%);
 
     .dropdown-menu {
       > li > a {

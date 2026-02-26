@@ -94,7 +94,7 @@
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
                   [class.text-align-center]="th.value.textCenter"
-                  class="{{th.value.class}} {{th.value.newly ? 'prop-newly-' + m[th.value.newly] : ''}}">
+                  class="{{th.value.class}}">
                 @switch (th.key) {
                   @case ('name') {
                     <div class="d-flex align-items-center avatar">
@@ -136,7 +136,9 @@
                     {{ m.createdAt | amTimeAgo }}
                   }
                   @case ('modifiedAt') {
-                    {{ m.modifiedAt | amTimeAgo }}
+                    <span class="{{th.value.newly && m[th.value.newly] ? 'badge prop-newly-' + m[th.value.newly] : ''}}">
+                      {{ m.modifiedAt | amTimeAgo }}
+                    </span>
                   }
                 }
               </td>

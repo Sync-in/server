@@ -50,7 +50,7 @@
               </fa-icon>
               <span class="label-top-right">
                 @if (t.newly) {
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-warning">{{ t.hTimeAgo }}</span>
+                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-purple">{{ t.hTimeAgo }}</span>
                 }
               </span>
               <span class="label-bottom-right">
@@ -109,7 +109,7 @@
               @if (th.value.show) {
                 <td [style.width.%]="th.value.width"
                     [class.text-align-center]="th.value.textCenter"
-                    class="{{th.value.class}} {{th.value.newly ? 'prop-newly-' + t[th.value.newly] : ''}}">
+                    class="{{th.value.class}}">
                   @switch (th.key) {
                     @case ('name') {
                       <div class="d-flex align-items-center">
@@ -127,7 +127,9 @@
                       <span class="badge rounded-pill bg-danger">{{ t.nb }}</span>
                     }
                     @case ('modified') {
-                      {{ t.hTimeAgo }}
+                      <span class="{{th.value.newly && t[th.value.newly] ? 'badge prop-newly-' + t[th.value.newly] : ''}}">
+                        {{ t.hTimeAgo }}
+                      </span>
                     }
                   }
                 </td>

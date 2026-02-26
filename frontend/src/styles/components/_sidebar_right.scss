@@ -99,6 +99,8 @@
           width: 100%;
 
           .badge {
+            @extend .badge-small;
+            @extend .badge-color-full;
             position: absolute;
             right: 3px;
             bottom: 1px;

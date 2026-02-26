@@ -16,7 +16,7 @@
 </div>
 <div class="fs-2xs p-2" appAutoResize>
   @for (n of store.notifications(); track n.id) {
-    <div class="mb-1 app-small-card rounded no-select" [class.newly-1]="n.soonRead" #notificationsHtml>
+    <div class="mb-1 app-small-card rounded no-select" [class.bg-purple]="n.soonRead" #notificationsHtml>
       <div class="d-flex px-2 pt-2 pb-1">
         <app-user-avatar [user]="n.fromUser" [width]="24" [height]="24" [unknownUserAsInfo]="n.fromUser.id === -1"></app-user-avatar>
         <div class="align-self-center ms-1">

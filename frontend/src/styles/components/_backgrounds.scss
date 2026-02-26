@@ -23,39 +23,3 @@
   background-color: $secondary !important;
   color: black !important;
 }
-
-.newly-1,
-.newly-2,
-.prop-newly-1,
-.prop-newly-2,
-.sync-newly-0,
-.sync-newly-1,
-.sync-newly-2,
-.sync-newly-3,
-.sync-newly-4 {
-  color: white !important;
-}
-
-.newly-1 {
-  background-color: $purple !important;
-}
-
-.sync-newly-0 {
-  background-color: $red !important;
-}
-
-.sync-newly-1 {
-  background-color: $primary !important;
-}
-
-.sync-newly-2 {
-  background-color: lighten($primary, 15%) !important;
-}
-
-.sync-newly-3 {
-  background-color: lighten($primary, 30%) !important;
-}
-
-.sync-newly-4 {
-  background-color: $orange !important;
-}
