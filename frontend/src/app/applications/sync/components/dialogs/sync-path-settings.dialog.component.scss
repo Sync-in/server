@@ -1,0 +1,53 @@
+.sync-filters-tab {
+  .sync-filters-card {
+    border-radius: 0.7rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .sync-filters-field .form-label {
+    font-weight: 500;
+  }
+
+  .sync-filters-entry-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sync-filters-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .sync-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .sync-filter-item + .sync-filter-item {
+    margin-top: 0.4rem;
+  }
+
+  .sync-filter-empty {
+    font-size: 0.74rem;
+    padding: 0.3rem 0.4rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .sync-filters-tab {
+    .sync-filters-entry-row {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .sync-filters-actions {
+      width: 100%;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+  }
+}

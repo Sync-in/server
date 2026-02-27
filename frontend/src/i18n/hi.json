@@ -639,5 +639,8 @@
   "Share details": "शेयर विवरण",
   "Access rules": "एक्सेस नियम",
   "Guest profile": "अतिथि प्रोफ़ाइल",
-  "Version": "संस्करण"
+  "Version": "संस्करण",
+  "Filter type": "फ़िल्टर प्रकार",
+  "Filter value": "फ़िल्टर मान",
+  "No filter configured": "कोई फ़िल्टर कॉन्फ़िगर नहीं है"
 }

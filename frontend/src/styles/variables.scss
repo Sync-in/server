@@ -144,14 +144,20 @@ $badge-padding-y: .35rem !default;
 $pagination-font-size: $font-size-2xs !important;
 $pagination-color: $body-color;
 $pagination-hover-color: darken($body-color, 4%);
+$pagination-focus-color: $pagination-hover-color;
 
-$pagination-bg: $secondary-light;
-$pagination-hover-bg: darken($secondary-light, 8%);
-$pagination-disabled-bg: $secondary;
+$pagination-bg: $white;
+$pagination-hover-bg: darken($gray-mid, 2%);
+$pagination-focus-bg: $pagination-hover-bg;
+$pagination-active-color: $white;
+$pagination-active-bg: $primary;
+$pagination-active-border-color: darken($primary, 7%);
+$pagination-disabled-color: lighten($muted, 12%);
+$pagination-disabled-bg: $white;
 
-$pagination-border-color: darken($secondary, 10%);
-$pagination-hover-border-color: darken($secondary, 10%);
-$pagination-disabled-border-color: darken($secondary-light, 10%);
+$pagination-border-color: $gray-mid;
+$pagination-hover-border-color: darken($gray-mid, 10%);
+$pagination-disabled-border-color: lighten($gray-mid, 2%);
 
 $pagination-focus-box-shadow: none;
 // List group

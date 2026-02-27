@@ -143,7 +143,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
     },
     scheduler: {
       label: 'Scheduler',
-      width: 8,
+      width: 12,
       textCenter: true,
       class: '',
       show: true

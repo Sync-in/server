@@ -597,6 +597,23 @@
     background-color: $sidebar-dark-apps-menu-title-bg;
     border-top-color: $sidebar-dark-apps-menu-title-bg;
   }
+  .pagination {
+    --bs-pagination-color: #{$gray-light};
+    --bs-pagination-bg: #{lighten($sidebar-dark-icons-menu-bg, 6%)};
+    --bs-pagination-border-color: #{$sidebar-dark-icons-menu-border-color};
+    --bs-pagination-hover-color: #{$white};
+    --bs-pagination-hover-bg: #{lighten($sidebar-dark-icons-menu-bg, 10%)};
+    --bs-pagination-hover-border-color: #{lighten($sidebar-dark-icons-menu-border-color, 8%)};
+    --bs-pagination-focus-color: #{$white};
+    --bs-pagination-focus-bg: #{lighten($sidebar-dark-icons-menu-bg, 10%)};
+    --bs-pagination-focus-box-shadow: none;
+    --bs-pagination-active-color: #{$white};
+    --bs-pagination-active-bg: #{$primary};
+    --bs-pagination-active-border-color: #{darken($primary, 8%)};
+    --bs-pagination-disabled-color: #{$dark-item-disabled-color};
+    --bs-pagination-disabled-bg: #{$sidebar-dark-icons-menu-bg};
+    --bs-pagination-disabled-border-color: #{$sidebar-dark-icons-menu-border-color};
+  }
   .modal-auth-verify-2fa,
   .modal-viewer-select {
     .card {
@@ -733,6 +750,9 @@
   }
   .bg-theme-alt {
     background-color: $sidebar-dark-apps-menu-title-bg !important;
+  }
+  .bg-white {
+    background-color: lighten($sidebar-dark-apps-menu-bg, 4%) !important;
   }
   .btn-close {
     filter: $theme-btn-close-white-filter;

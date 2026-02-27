@@ -4,7 +4,7 @@
   justify-content: center;
   min-width: 30px;
   min-height: 30px;
-  font-size: $font-size-lg;
+  font-size: $font-size-md;
   border-radius: 50%;
 }
 
@@ -12,7 +12,7 @@
   @extend .circle-icon;
   min-width: 23px;
   min-height: 23px;
-  font-size: $font-size-md;
+  font-size: $font-size-sm;
 }
 
 .circle-gray-icon {

@@ -23,41 +23,66 @@
           <span class="app-tab-label">{{ 'Filters' | translate:locale.language }}</span>
         </span>
       </ng-template>
-      <div class="app-tab-content">
-      <div class="d-flex align-items-center mb-2">
-        <div class="d-flex flex-row col-12 px-0">
-          <select [(ngModel)]="currentFilterType" class="form-select form-select-sm me-1">
-            @if (store.isElectronApp()) {
-              <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.FILE">Select a file</option>
-              <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.FOLDER">Select a folder</option>
+      <div class="app-tab-content sync-filters-tab">
+        <div class="card dialog-tab-card sync-filters-card">
+          <div class="card-body p-3">
+            <div class="sync-filters-field mb-2">
+              <label class="form-label mb-1" for="sync-filter-type" l10nTranslate>Filter type</label>
+              <select id="sync-filter-type" [(ngModel)]="currentFilterType" class="form-select form-select-sm">
+                @if (store.isElectronApp()) {
+                  <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.FILE">Select a file</option>
+                  <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.FOLDER">Select a folder</option>
+                }
+                <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.START">The files starting</option>
+                <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.IN">The files containing</option>
+                <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.END">The files ending</option>
+                <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.EXPERT">Expert (Regexp)</option>
+              </select>
+            </div>
+
+            <div class="sync-filters-field">
+              <label class="form-label mb-1" for="sync-filter-value" l10nTranslate>Filter value</label>
+              <div class="sync-filters-entry-row">
+                <input
+                  id="sync-filter-value"
+                  [(ngModel)]="currentFilter"
+                  [disabled]="currentFilterType === SYNC_PATH_FILTER_TYPE.FILE || currentFilterType === SYNC_PATH_FILTER_TYPE.FOLDER"
+                  [placeholder]="filterTypePlaceholder[currentFilterType] | translate:locale.language"
+                  class="form-control form-select-sm"
+                  type="text">
+                <div class="sync-filters-actions">
+                  @if (currentFilterType === SYNC_PATH_FILTER_TYPE.FILE) {
+                    <button (click)="onSelect()" class="btn btn-xs btn-default" l10nTranslate type="button">Browse</button>
+                  }
+                  @if (currentFilterType === SYNC_PATH_FILTER_TYPE.FOLDER) {
+                    <button (click)="onSelect(ELECTRON_DIALOG.DIRECTORY)" class="btn btn-xs btn-default" l10nTranslate type="button">Browse</button>
+                  }
+                  <button (click)="addFilter()" [disabled]="!currentFilter" class="btn btn-xs btn-success" l10nTranslate type="button">Add</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card dialog-tab-card sync-filters-card">
+          <div class="card-body p-2">
+            @if (syncPath.settings.filters.length) {
+              @for (f of syncPath.settings.filters; track $index; let i = $index) {
+                <div class="sync-filter-item">
+                  <input [ngModel]="f"
+                         (ngModelChange)="syncPath.settings.filters[i] = $event"
+                         class="form-control form-control-sm"
+                         type="text">
+                  <button (click)="onRemoveFilter(i)" class="btn btn-xs btn-danger" data-dismiss="modal" type="button">
+                    <fa-icon [icon]="icons.faTimes"></fa-icon>
+                  </button>
+                </div>
+              }
+            } @else {
+              <div class="sync-filter-empty text-muted" l10nTranslate>No filter configured</div>
             }
-            <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.START">The files starting</option>
-            <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.IN">The files containing</option>
-            <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.END">The files ending</option>
-            <option l10nTranslate [value]="SYNC_PATH_FILTER_TYPE.EXPERT">Expert (Regexp)</option>
-          </select>
-          <input [(ngModel)]="currentFilter"
-                 [disabled]="currentFilterType === SYNC_PATH_FILTER_TYPE.FILE || currentFilterType === SYNC_PATH_FILTER_TYPE.FOLDER"
-                 [placeholder]="filterTypePlaceholder[currentFilterType] | translate:locale.language"
-                 class="form-control form-select-sm me-1" type="text">
-          <button (click)="addFilter()" [disabled]="!currentFilter" class="btn btn-xs btn-default me-1" l10nTranslate type="button">Add</button>
-          @if (currentFilterType === SYNC_PATH_FILTER_TYPE.FILE) {
-            <button (click)="onSelect()" class="btn btn-xs btn-default" l10nTranslate type="button">Browse</button>
-          }
-          @if (currentFilterType === SYNC_PATH_FILTER_TYPE.FOLDER) {
-            <button (click)="onSelect(ELECTRON_DIALOG.DIRECTORY)" class="btn btn-xs btn-default" l10nTranslate type="button">Browse</button>
-          }
+          </div>
         </div>
-      </div>
-      <hr class="my-1">
-      @for (f of syncPath.settings.filters; track i; let i = $index) {
-        <div class="d-flex mb-1">
-          <input [(ngModel)]="syncPath.settings.filters[i]" class="form-control form-control-sm me-1" type="text">
-          <button (click)="onRemoveFilter(i)" class="btn btn-xs btn-danger" data-dismiss="modal" type="button">
-            <fa-icon [icon]="icons.faTimes"></fa-icon>
-          </button>
-        </div>
-      }
       </div>
     </tab>
   </tabset>

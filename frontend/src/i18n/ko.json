@@ -639,5 +639,8 @@
   "Share details": "공유 세부 정보",
   "Access rules": "접근 규칙",
   "Guest profile": "게스트 프로필",
-  "Version": "버전"
+  "Version": "버전",
+  "Filter type": "필터 유형",
+  "Filter value": "필터 값",
+  "No filter configured": "구성된 필터가 없습니다"
 }

@@ -26,7 +26,8 @@ import { SyncPathSettingsComponent } from '../shared/sync-path-settings.componen
     L10nTranslateDirective,
     TabHeadingDirective
   ],
-  templateUrl: 'sync-path-settings.dialog.component.html'
+  templateUrl: 'sync-path-settings.dialog.component.html',
+  styleUrl: './sync-path-settings.dialog.component.scss'
 })
 export class SyncPathSettingsDialogComponent implements OnInit {
   @Input({ required: true }) syncPathSelected: SyncPathModel

@@ -639,5 +639,8 @@
   "Share details": "Детали общего доступа",
   "Access rules": "Правила доступа",
   "Guest profile": "Профиль гостя",
-  "Version": "Версия"
+  "Version": "Версия",
+  "Filter type": "Тип фильтра",
+  "Filter value": "Значение фильтра",
+  "No filter configured": "Фильтры не настроены"
 }

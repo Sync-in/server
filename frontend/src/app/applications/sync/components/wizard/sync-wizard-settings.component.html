@@ -2,7 +2,7 @@
   <div class="d-flex flex-row justify-content-center mb-3">
     <div class="d-flex flex-column align-items-end">
       <div class="d-flex flex-column align-items-end">
-        <div class="fw-bold mb-1 me-1">
+        <div class="fw-500 mb-1 me-1">
           <fa-icon [icon]="icons.CLIENT"></fa-icon>
           <span class="ms-2" l10nTranslate>Client</span>
         </div>
@@ -17,7 +17,7 @@
     </div>
     <div class="d-flex flex-column align-items-start">
       <div class="d-flex flex-column align-items-start">
-        <div class="fw-bold mb-1 ms-1">
+        <div class="fw-500 mb-1 ms-1">
           <fa-icon [icon]="icons.SERVER"></fa-icon>
           <span class="ms-2" l10nTranslate>Server</span>
         </div>
@@ -32,50 +32,50 @@
       </div>
     </div>
   </div>
-  <hr class="mt-auto">
-  <app-sync-path-settings [syncPath]="syncPath"></app-sync-path-settings>
-  <hr class="mb-auto">
-  @if (error) {
-    <div class="text-center text-warning" l10nTranslate>{{ error }}</div>
-  } @else {
-    <div class="text-center">
-      <span l10nTranslate>The data will be synchronized from</span>
-      <span class="mx-1" l10nTranslate>{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? 'the server folder' : 'the client folder' }}</span>
-      @if (syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
-        <span l10nTranslate>and from</span>
-      } @else {
-        <span class="fw-bold" l10nTranslate>to</span>
-      }
-      <span class="mx-1" l10nTranslate>{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? 'the client folder' : 'the server folder' }}</span>
-      @if (syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
-        <span l10nTranslate>(Two-Way)</span>
-      } @else {
-        <span l10nTranslate>(One-Way)</span>
-      }
-    </div>
-    <br>
-    <div class="text-center">
-      @if (syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
-        <div>
-          <span l10nTranslate>In case of conflict,</span>
-          <span>&nbsp;</span>
-          @if (syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.RECENT) {
-            <span class="fw-bold" l10nTranslate>the most recent files will be kept</span>
-          } @else {
-            <span l10nTranslate>the files in</span>
-            <span class="fw-bold mx-1">{{ syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.LOCAL ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
-            <span l10nTranslate>will be preferred</span>
-          }
-        </div>
-      } @else {
-        <div>
-          <span l10nTranslate>All files created or modified in</span>
-          <span class="fw-bold mx-1">{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
-          <span l10nTranslate>will be ignored and deleted</span>
-        </div>
-      }
-    </div>
-  }
+  <app-sync-path-settings class="my-auto" [syncPath]="syncPath"></app-sync-path-settings>
+  <div class="fs-xs">
+    @if (error) {
+      <div class="text-center text-warning" l10nTranslate>{{ error }}</div>
+    } @else {
+      <div class="text-center">
+        <span l10nTranslate>The data will be synchronized from</span>
+        <span class="mx-1" l10nTranslate>{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? 'the server folder' : 'the client folder' }}</span>
+        @if (syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
+          <span l10nTranslate>and from</span>
+        } @else {
+          <span class="fw-bold" l10nTranslate>to</span>
+        }
+        <span class="mx-1" l10nTranslate>{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? 'the client folder' : 'the server folder' }}</span>
+        @if (syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
+          <span l10nTranslate>(Two-Way)</span>
+        } @else {
+          <span l10nTranslate>(One-Way)</span>
+        }
+      </div>
+      <br>
+      <div class="text-center">
+        @if (syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
+          <div>
+            <span l10nTranslate>In case of conflict,</span>
+            <span>&nbsp;</span>
+            @if (syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.RECENT) {
+              <span class="fw-bold" l10nTranslate>the most recent files will be kept</span>
+            } @else {
+              <span l10nTranslate>the files in</span>
+              <span class="fw-bold mx-1">{{ syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.LOCAL ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
+              <span l10nTranslate>will be preferred</span>
+            }
+          </div>
+        } @else {
+          <div>
+            <span l10nTranslate>All files created or modified in</span>
+            <span class="fw-bold mx-1">{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
+            <span l10nTranslate>will be ignored and deleted</span>
+          </div>
+        }
+      </div>
+    }
+  </div>
   <div class="mt-auto">
     <div class="d-flex align-items-start">
       <button (click)="onPrevious()" class="btn btn-sm btn-default me-auto" translate type="button">

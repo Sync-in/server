@@ -1,114 +1,132 @@
-<div class="d-flex flex-column justify-content-{{direction}}">
+<div class="sync-settings-panel sync-settings-panel--{{size}} sync-settings-panel--{{direction}}">
   @if (showPaths) {
-    <div class="d-flex justify-content-{{direction}} align-items-center mb-2">
-      <div class="col-{{colSize[size][0]}}">
-        <fa-icon [icon]="icons.CLIENT"></fa-icon>
-        <span class="ms-2" l10nTranslate>Client</span>
-      </div>
-      <div class="col-8">
-        <span class="form-control-sm form-control-plaintext">{{ syncPath.settings.localPath }}</span>
-      </div>
-    </div>
-    <div class="d-flex justify-content-{{direction}} align-items-center mb-2">
-      <div class="col-{{colSize[size][0]}}">
-        <fa-icon [icon]="icons.SERVER"></fa-icon>
-        <span class="ms-2" l10nTranslate>Server</span>
-      </div>
-      <div class="col-8">
-        <span class="form-control-sm form-control-plaintext">
-          <div class="d-flex align-items-center">
-            <fa-icon [icon]="syncPath.icon" class="me-1"></fa-icon>
-            {{ syncPath.showedPath }}
+    <div class="card dialog-tab-card sync-settings-section sync-settings-section--paths">
+      <div class="card-body">
+        <div class="sync-settings-row">
+          <div class="sync-settings-label">
+            <fa-icon [icon]="icons.CLIENT"></fa-icon>
+            <span class="ms-2" l10nTranslate>Client</span>
           </div>
-        </span>
+          <div class="sync-settings-value text-truncate">{{ syncPath.settings.localPath }}</div>
+        </div>
+        <div class="sync-settings-row">
+          <div class="sync-settings-label">
+            <fa-icon [icon]="icons.SERVER"></fa-icon>
+            <span class="ms-2" l10nTranslate>Server</span>
+          </div>
+          <div class="sync-settings-value sync-settings-value--server text-truncate">
+            <fa-icon [icon]="syncPath.icon" class="me-1"></fa-icon>
+            <span class="text-truncate">{{ syncPath.showedPath }}</span>
+          </div>
+        </div>
       </div>
     </div>
   }
-  <div class="d-flex justify-content-{{direction}} align-items-center mb-2">
-    <div class="col-{{colSize[size][0]}}">
-      <fa-icon [icon]="icons.faEdit"></fa-icon>
-      <span class="ms-2" l10nTranslate>Name</span>
-    </div>
-    <div class="col-{{colSize[size][1]}}">
-      <input [(ngModel)]="syncPath.settings.name" class="form-control form-select-sm {{syncPath.settings.name ? '' : 'is-invalid'}}" type="text">
-    </div>
-  </div>
-  <div class="d-flex justify-content-{{direction}} align-items-center mb-2">
-    <div class="d-flex align-items-center col-{{colSize[size][0]}}">
-      <app-sync-path-direction-icon [syncPath]="syncPath" [small]="true"></app-sync-path-direction-icon>
-      <span class="ms-2" l10nTranslate>Direction</span>
-      @if (!syncPath.isWriteable) {
-        <span class="ms-2 fs-lg cursor-pointer">
-          <fa-icon [icon]="icons.faExclamationCircle"
-                   [tooltip]="'You must have permission to modify the server folder to choose a different sync mode' | translate:locale.language"
-                   class="text-warning">
-          </fa-icon>
-        </span>
-      }
-    </div>
-    <div class="col-{{colSize[size][1]}}">
-      <select [(ngModel)]="syncPath.settings.mode" class="form-select form-select-sm">
-        <option [disabled]="!syncPath.isWriteable" [ngValue]="SYNC_PATH_MODE.UPLOAD" l10nTranslate>upload only</option>
-        <option [ngValue]="SYNC_PATH_MODE.DOWNLOAD" l10nTranslate>download only</option>
-        <option [disabled]="!syncPath.isWriteable" [ngValue]="SYNC_PATH_MODE.BOTH" l10nTranslate>both</option>
-      </select>
-    </div>
-  </div>
-  <div class="d-flex justify-content-{{direction}} align-items-center mb-2">
-    <div class="col-{{colSize[size][0]}}">
-      <fa-icon [icon]="icons.faBug"></fa-icon>
-      <span class="ms-2" l10nTranslate>Conflict</span>
-    </div>
-    <div class="col-{{colSize[size][1]}}">
-      <select [(ngModel)]="syncPath.settings.conflictMode" [disabled]="syncPath.settings.mode !== 'both'" class="form-select form-select-sm">
-        <option [ngValue]="SYNC_PATH_CONFLICT_MODE.LOCAL" l10nTranslate>the client’s files take precedence</option>
-        <option [ngValue]="SYNC_PATH_CONFLICT_MODE.REMOTE" l10nTranslate>the server’s files take precedence</option>
-        <option [ngValue]="SYNC_PATH_CONFLICT_MODE.RECENT" l10nTranslate>the most recent files will be kept</option>
-      </select>
-    </div>
-  </div>
-  <div class="d-flex justify-content-{{direction}} align-items-center mb-2">
-    <div class="col-{{colSize[size][0]}}">
-      <fa-icon [icon]="icons.faGauge"></fa-icon>
-      <span class="ms-2" l10nTranslate>Mode</span>
-    </div>
-    <div class="col-{{colSize[size][1]}}">
-      <select [(ngModel)]="syncPath.settings.diffMode" class="form-select form-select-sm">
-        <option [ngValue]="SYNC_PATH_DIFF_MODE.FAST" l10nTranslate>{{ SYNC_PATH_DIFF_MODE.FAST }}</option>
-        <option [ngValue]="SYNC_PATH_DIFF_MODE.SECURE" l10nTranslate>{{ SYNC_PATH_DIFF_MODE.SECURE }}</option>
-      </select>
-    </div>
-  </div>
-  <div class="d-flex justify-content-{{direction}} align-items-center mb-2">
-    <div class="col-{{colSize[size][0]}}">
-      <fa-icon [icon]="icons.faClock"></fa-icon>
-      <span class="ms-2" l10nTranslate>Scheduler</span>
-    </div>
-    <div class="d-flex flex-row col-{{colSize[size][1]}}">
-      <input [(ngModel)]="syncPath.settings.scheduler.value"
-             [disabled]="syncPath.settings.scheduler.unit === SYNC_PATH_SCHEDULER_UNIT.DISABLED"
-             class="form-control form-select-sm pe-1 me-2"
-             min="1"
-             style="width: 70px"
-             type="number">
-      <select [(ngModel)]="syncPath.settings.scheduler.unit" class="form-select form-select-sm">
-        <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.DISABLED" l10nTranslate>disabled</option>
-        <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.MINUTE" l10nTranslate>scheduler_unit_minute</option>
-        <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.HOUR" l10nTranslate>scheduler_unit_hour</option>
-        <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.DAY" l10nTranslate>scheduler_unit_day</option>
-      </select>
-    </div>
-  </div>
-  <div class="d-flex justify-content-{{direction}} align-items-center">
-    <div class="col-{{colSize[size][0]}}">
-      <fa-icon [icon]="icons.faRotate"></fa-icon>
-      <span class="ms-2" l10nTranslate>Status</span>
-    </div>
-    <div class="col-{{colSize[size][1]}}">
-      <select [(ngModel)]="syncPath.settings.enabled" class="form-select form-select-sm" [class.text-danger]="!syncPath.settings.enabled">
-        <option [ngValue]="true" l10nTranslate>enabled</option>
-        <option [ngValue]="false" l10nTranslate>disabled</option>
-      </select>
+
+  <div class="card dialog-tab-card sync-settings-section sync-settings-section--form">
+    <div class="card-body">
+      <div class="sync-settings-row">
+        <label class="sync-settings-label form-label mb-0" for="sync-path-name">
+          <fa-icon [icon]="icons.faEdit"></fa-icon>
+          <span class="ms-2" l10nTranslate>Name</span>
+        </label>
+        <div class="sync-settings-control">
+          <input
+            id="sync-path-name"
+            [(ngModel)]="syncPath.settings.name"
+            class="form-control form-select-sm {{syncPath.settings.name ? '' : 'is-invalid'}}"
+            type="text">
+        </div>
+      </div>
+
+      <div class="sync-settings-row">
+        <label class="sync-settings-label form-label mb-0" for="sync-path-mode">
+          <app-sync-path-direction-icon [syncPath]="syncPath" [small]="true"></app-sync-path-direction-icon>
+          <span class="ms-2" l10nTranslate>Direction</span>
+          @if (!syncPath.isWriteable) {
+            <span class="ms-2 fs-lg cursor-pointer">
+              <fa-icon
+                [icon]="icons.faExclamationCircle"
+                [tooltip]="'You must have permission to modify the server folder to choose a different sync mode' | translate:locale.language"
+                class="text-warning">
+              </fa-icon>
+            </span>
+          }
+        </label>
+        <div class="sync-settings-control">
+          <select id="sync-path-mode" [(ngModel)]="syncPath.settings.mode" class="form-select form-select-sm">
+            <option [disabled]="!syncPath.isWriteable" [ngValue]="SYNC_PATH_MODE.UPLOAD" l10nTranslate>upload only</option>
+            <option [ngValue]="SYNC_PATH_MODE.DOWNLOAD" l10nTranslate>download only</option>
+            <option [disabled]="!syncPath.isWriteable" [ngValue]="SYNC_PATH_MODE.BOTH" l10nTranslate>both</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sync-settings-row">
+        <label class="sync-settings-label form-label mb-0" for="sync-path-conflict">
+          <fa-icon [icon]="icons.faBug"></fa-icon>
+          <span class="ms-2" l10nTranslate>Conflict</span>
+        </label>
+        <div class="sync-settings-control">
+          <select
+            id="sync-path-conflict"
+            [(ngModel)]="syncPath.settings.conflictMode"
+            [disabled]="syncPath.settings.mode !== 'both'"
+            class="form-select form-select-sm">
+            <option [ngValue]="SYNC_PATH_CONFLICT_MODE.LOCAL" l10nTranslate>the client’s files take precedence</option>
+            <option [ngValue]="SYNC_PATH_CONFLICT_MODE.REMOTE" l10nTranslate>the server’s files take precedence</option>
+            <option [ngValue]="SYNC_PATH_CONFLICT_MODE.RECENT" l10nTranslate>the most recent files will be kept</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sync-settings-row">
+        <label class="sync-settings-label form-label mb-0" for="sync-path-diff">
+          <fa-icon [icon]="icons.faGauge"></fa-icon>
+          <span class="ms-2" l10nTranslate>Mode</span>
+        </label>
+        <div class="sync-settings-control">
+          <select id="sync-path-diff" [(ngModel)]="syncPath.settings.diffMode" class="form-select form-select-sm">
+            <option [ngValue]="SYNC_PATH_DIFF_MODE.FAST" l10nTranslate>{{ SYNC_PATH_DIFF_MODE.FAST }}</option>
+            <option [ngValue]="SYNC_PATH_DIFF_MODE.SECURE" l10nTranslate>{{ SYNC_PATH_DIFF_MODE.SECURE }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sync-settings-row">
+        <label class="sync-settings-label form-label mb-0" for="sync-path-scheduler-value">
+          <fa-icon [icon]="icons.faClock"></fa-icon>
+          <span class="ms-2" l10nTranslate>Scheduler</span>
+        </label>
+        <div class="sync-settings-control sync-settings-control--scheduler">
+          <input
+            id="sync-path-scheduler-value"
+            [(ngModel)]="syncPath.settings.scheduler.value"
+            [disabled]="syncPath.settings.scheduler.unit === SYNC_PATH_SCHEDULER_UNIT.DISABLED"
+            class="form-control form-select-sm pe-1"
+            min="1"
+            type="number">
+          <select [(ngModel)]="syncPath.settings.scheduler.unit" class="form-select form-select-sm">
+            <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.DISABLED" l10nTranslate>disabled</option>
+            <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.MINUTE" l10nTranslate>scheduler_unit_minute</option>
+            <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.HOUR" l10nTranslate>scheduler_unit_hour</option>
+            <option [ngValue]="SYNC_PATH_SCHEDULER_UNIT.DAY" l10nTranslate>scheduler_unit_day</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sync-settings-row">
+        <label class="sync-settings-label form-label mb-0" for="sync-path-status">
+          <fa-icon [icon]="icons.faRotate"></fa-icon>
+          <span class="ms-2" l10nTranslate>Status</span>
+        </label>
+        <div class="sync-settings-control">
+          <select id="sync-path-status" [(ngModel)]="syncPath.settings.enabled" class="form-select form-select-sm" [class.text-danger]="!syncPath.settings.enabled">
+            <option [ngValue]="true" l10nTranslate>enabled</option>
+            <option [ngValue]="false" l10nTranslate>disabled</option>
+          </select>
+        </div>
+      </div>
     </div>
   </div>
 </div>

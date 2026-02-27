@@ -639,5 +639,8 @@
   "Share details": "共享详情",
   "Access rules": "访问规则",
   "Guest profile": "访客资料",
-  "Version": "版本"
+  "Version": "版本",
+  "Filter type": "过滤器类型",
+  "Filter value": "过滤器值",
+  "No filter configured": "未配置过滤器"
 }

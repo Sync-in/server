@@ -639,5 +639,8 @@
   "Share details": "Freigabedetails",
   "Access rules": "Zugriffsregeln",
   "Guest profile": "Gastprofil",
-  "Version": "Version"
+  "Version": "Version",
+  "Filter type": "Filtertyp",
+  "Filter value": "Filterwert",
+  "No filter configured": "Kein Filter konfiguriert"
 }

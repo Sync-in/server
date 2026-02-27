@@ -4,6 +4,6 @@ export function getToolTipConfig(): TooltipConfig {
   return Object.assign(new TooltipConfig(), {
     adaptivePosition: false,
     triggers: 'hover',
-    delay: 500
+    delay: 600
   })
 }

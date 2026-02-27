@@ -11,14 +11,13 @@ import { SyncPathModel } from '../../models/sync-path.model'
   template: `
     <span class="d-flex justify-content-center">
       @if (small && syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
-        <fa-icon [icon]="SYNC_TRANSFER_BOTH_ICON"> </fa-icon>
+        <fa-icon [icon]="SYNC_TRANSFER_BOTH_ICON"></fa-icon>
       } @else {
         @if (syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD || syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
           <fa-icon
             [icon]="SYNC_TRANSFER_SIDE_ICON[SYNC_TRANSFER_SIDE.LOCAL]"
             class="{{ small ? '' : SYNC_TRANSFER_SIDE_CLASS[SYNC_TRANSFER_SIDE.LOCAL] }}"
-          >
-          </fa-icon>
+          ></fa-icon>
         }
         @if (syncPath.settings.mode === SYNC_PATH_MODE.UPLOAD || syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
           <fa-icon

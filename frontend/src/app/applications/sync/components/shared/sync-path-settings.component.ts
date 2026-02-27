@@ -17,7 +17,8 @@ import { SyncPathDirectionIconComponent } from '../utils/sync-path-direction-ico
 @Component({
   selector: 'app-sync-path-settings',
   imports: [L10nTranslateDirective, FaIconComponent, FormsModule, TooltipDirective, L10nTranslatePipe, SyncPathDirectionIconComponent],
-  templateUrl: './sync-path-settings.component.html'
+  templateUrl: './sync-path-settings.component.html',
+  styleUrl: './sync-path-settings.component.scss'
 })
 export class SyncPathSettingsComponent {
   @Input() syncPath: SyncPathModel
@@ -35,7 +36,6 @@ export class SyncPathSettingsComponent {
     faEdit,
     faBug
   }
-  protected colSize = { small: [2, 5], large: [3, 6] }
   protected readonly SYNC_PATH_CONFLICT_MODE = SYNC_PATH_CONFLICT_MODE
   protected readonly SYNC_PATH_MODE = SYNC_PATH_MODE
   protected readonly SYNC_PATH_DIFF_MODE = SYNC_PATH_DIFF_MODE

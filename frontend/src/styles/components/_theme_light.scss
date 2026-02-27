@@ -603,6 +603,23 @@
   .modal-footer {
     background-color: $gray-lightest;
   }
+  .pagination {
+    --bs-pagination-color: #{$pagination-color};
+    --bs-pagination-bg: #{$pagination-bg};
+    --bs-pagination-border-color: #{$pagination-border-color};
+    --bs-pagination-hover-color: #{$pagination-hover-color};
+    --bs-pagination-hover-bg: #{$pagination-hover-bg};
+    --bs-pagination-hover-border-color: #{$pagination-hover-border-color};
+    --bs-pagination-focus-color: #{$pagination-focus-color};
+    --bs-pagination-focus-bg: #{$pagination-focus-bg};
+    --bs-pagination-focus-box-shadow: #{$pagination-focus-box-shadow};
+    --bs-pagination-active-color: #{$pagination-active-color};
+    --bs-pagination-active-bg: #{$pagination-active-bg};
+    --bs-pagination-active-border-color: #{$pagination-active-border-color};
+    --bs-pagination-disabled-color: #{$pagination-disabled-color};
+    --bs-pagination-disabled-bg: #{$pagination-disabled-bg};
+    --bs-pagination-disabled-border-color: #{$pagination-disabled-border-color};
+  }
   typeahead-container,
   .ui-select-choices {
     &.dropdown-menu {

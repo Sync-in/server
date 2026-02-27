@@ -69,10 +69,9 @@
                   class="{{th.value.class}}">
                 @switch (th.key) {
                   @case ('action') {
-                    <span class="d-flex align-items-center">
-                      <fa-icon [icon]="t.sideIcon" class="{{t.ok ? t.sideIconClass : 'circle-error-icon-sm'}}"></fa-icon>
-                      <fa-icon [icon]="t.actionIcon" [class.text-danger]="!t.ok" class="circle-gray-icon-sm" size="sm"></fa-icon>
-                      <span [class.text-danger]="!t.ok" class="fs-3xs" l10nTranslate>{{ t.actionText }}</span>
+                    <span class="d-flex align-items-center" [title]="t.actionText | translate:locale.language">
+                      <fa-icon [icon]="t.sideIcon" class="{{t.ok ? t.sideIconClass : 'circle-error-icon-sm'}} me-1"></fa-icon>
+                      <fa-icon [icon]="t.actionIcon" [class.text-danger]="!t.ok" class="circle-gray-icon-sm cursor-pointer" size="sm"></fa-icon>
                     </span>
                   }
                   @case ('sync') {
@@ -91,7 +90,7 @@
                           <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ t.file }}</span>
                         }
                         @if (!t.ok) {
-                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} text-danger fs-3xs">{{ t.error }}</span>
+                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} text-danger fs-3xs" l10nTranslate>{{ t.error }}</span>
                         }
                       </span>
                     </div>

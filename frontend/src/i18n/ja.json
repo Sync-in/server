@@ -639,5 +639,8 @@
   "Share details": "共有の詳細",
   "Access rules": "アクセスルール",
   "Guest profile": "ゲストプロフィール",
-  "Version": "バージョン"
+  "Version": "バージョン",
+  "Filter type": "フィルタータイプ",
+  "Filter value": "フィルター値",
+  "No filter configured": "フィルターが設定されていません"
 }

@@ -12,9 +12,9 @@ import { SyncPathModel } from '../../models/sync-path.model'
     class="{{
       s.settings.scheduler.unit !== SYNC_PATH_SCHEDULER_UNIT.DISABLED
         ? store.clientScheduler() === CLIENT_SCHEDULER_STATE.DISABLED
-          ? 'text-warning text-failed'
-          : 'text-success'
-        : 'text-danger'
+          ? 'badge bg-warning text-failed'
+          : 'badge bg-success'
+        : 'badge bg-danger'
     }}"
   >
     @if (s.settings.scheduler.unit === SYNC_PATH_SCHEDULER_UNIT.DISABLED) {

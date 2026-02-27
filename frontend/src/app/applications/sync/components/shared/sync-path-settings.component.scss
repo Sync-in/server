@@ -1,0 +1,99 @@
+.sync-settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sync-settings-panel--center .sync-settings-section {
+  max-width: 42rem;
+  margin-inline: auto;
+  width: 100%;
+}
+
+.sync-settings-section {
+  border-radius: 0.7rem;
+
+  .card-body {
+    padding: 0.65rem 0.75rem;
+  }
+}
+
+.sync-settings-panel--small .sync-settings-section {
+  background: transparent !important;
+  max-width: 34rem;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.sync-settings-row {
+  display: grid;
+  grid-template-columns: minmax(0, 8.9rem) minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.7rem;
+  row-gap: 0.4rem;
+  padding: 0.35rem 0;
+}
+
+.sync-settings-panel--large .sync-settings-row {
+  grid-template-columns: minmax(0, 10.3rem) minmax(0, 1fr);
+}
+
+.sync-settings-row + .sync-settings-row {
+  border-top: 1px solid rgba(var(--bs-body-color-rgb), 0.14);
+}
+
+.sync-settings-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.sync-settings-section--paths .sync-settings-label {
+  font-weight: 500;
+}
+
+.sync-settings-section--paths .sync-settings-row + .sync-settings-row {
+  border-top-color: rgba(var(--bs-body-color-rgb), 0.11);
+}
+
+.sync-settings-value {
+  min-width: 0;
+}
+
+.sync-settings-value--server {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+
+.sync-settings-control {
+  width: 100%;
+
+  .form-control,
+  .form-select {
+    width: 100%;
+  }
+}
+
+.sync-settings-control--scheduler {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  > input {
+    width: 5rem !important;
+    flex: 0 0 5rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .sync-settings-panel--small .sync-settings-section {
+    max-width: 100%;
+  }
+
+  .sync-settings-row {
+    grid-template-columns: 1fr;
+  }
+}

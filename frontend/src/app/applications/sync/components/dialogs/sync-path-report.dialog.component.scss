@@ -1,0 +1,43 @@
+.sync-report-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.sync-report-toolbar,
+.sync-report-results {
+  border-radius: 0.7rem;
+}
+
+.sync-report-results {
+  overflow: hidden;
+  background-clip: padding-box;
+  .card-body {
+    padding: 0;
+  }
+}
+
+.sync-report-top-menu {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 0.55rem;
+}
+
+.sync-report-summary {
+  font-weight: 500;
+}
+
+.sync-report-empty {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.sync-report-results b {
+  font-weight: 500;
+}
+
+.sync-report-table-scroll {
+  min-height: 11rem;
+}
