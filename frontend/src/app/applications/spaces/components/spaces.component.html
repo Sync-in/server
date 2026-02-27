@@ -84,7 +84,7 @@
               </fa-icon>
               <span class="label-top-right">
                 @if (s.newly) {
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-purple">{{ s.hTimeAgo }}</span>
+                  <span [style.font-size.px]="galleryMode.textSize" class="badge bg-purple">{{ s.hTimeAgo }}</span>
                 }
               </span>
               @if (s.managers.length) {
@@ -163,13 +163,13 @@
                     }
                     @case ('info') {
                       @if (s.counts?.roots) {
-                        <span (click)="openSpaceRootsDialog()" class="badge rounded-pill bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.faAnchor"></fa-icon>&nbsp;{{ s.counts.roots }}
+                        <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1">
+                          <fa-icon [icon]="icons.faAnchor"></fa-icon>{{ s.counts.roots }}
                         </span>
                       }
                       @if (s.role === SPACE_ROLE.IS_MANAGER && s.counts.shares) {
-                        <span (click)="openChildShareDialog(s)" class="badge rounded-pill bg-purple cursor-pointer me-1">
-                          <fa-icon class="me-1" [icon]="icons.SHARED"></fa-icon>
+                        <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
+                          <fa-icon [icon]="icons.SHARED"></fa-icon>
                           <span>{{ s.counts.shares }}</span>
                         </span>
                       }

@@ -37,36 +37,34 @@
       </div>
       <div class="d-flex align-items-center mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Authentication</div>
-        <span class="badge rounded-pill {{link().link.requireAuth ? 'bg-success' : 'bg-warning'}}">
+        <span class="badge {{link().link.requireAuth ? 'bg-success' : 'bg-warning'}}">
           {{ (link().link.requireAuth ? 'yes' : 'no') | translate:locale.language }}
         </span>
       </div>
       <div class="d-flex align-items-center mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Expired</div>
         @if (link().link.expiresAt) {
-          <span class="badge rounded-pill bg-{{link().hTimeExpirationAgo >= 1 ? 'warning': 'danger'}}">
+          <span class="badge bg-{{link().hTimeExpirationAgo >= 1 ? 'warning': 'danger'}}">
             <span>{{ link().hTimeExpirationAgo >= 1 ? link().hTimeExpirationAgo + '&nbsp;' + ('days' | translate:locale.language) : 'expired' | translate:locale.language }}</span>
           </span>
         } @else {
-          <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>
-            no
-          </span>
+          <span class="badge bg-secondary-alt" l10nTranslate>no</span>
         }
       </div>
       <div class="d-flex align-items-center mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Active</div>
-        <span class="badge rounded-pill {{link().link.isActive ? 'bg-primary' : 'bg-danger'}}">
+        <span class="badge {{link().link.isActive ? 'bg-primary' : 'bg-danger'}}">
           {{ (link().link.isActive ? 'yes' : 'no') | translate:locale.language }}
         </span>
       </div>
       <div class="d-flex align-items-center mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Access</div>
         @if (link().link.limitAccess !== 0) {
-          <span class="badge rounded-pill {{link().link.nbAccess >= link().link.limitAccess  ? 'bg-danger': 'bg-success'}}">
+          <span class="badge {{link().link.nbAccess >= link().link.limitAccess  ? 'bg-danger': 'bg-success'}}">
             {{ link().link.nbAccess }}/{{ link().link.limitAccess }}
           </span>
         } @else {
-          <span class="badge rounded-pill bg-success">{{ link().link.nbAccess }}</span>
+          <span class="badge bg-success">{{ link().link.nbAccess }}</span>
         }
       </div>
     </div>
@@ -81,7 +79,7 @@
         @if (link().link.permissions) {
           <app-file-permissions [permissions]="link().hPerms"></app-file-permissions>
         } @else {
-          <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+          <span class="badge bg-secondary-alt" l10nTranslate>no</span>
         }
       </div>
     </div>

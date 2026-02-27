@@ -188,15 +188,15 @@
                       <span>{{ s.settings.name }}</span>
                       <span class="d-flex align-items-center ms-auto">
                         @if (s.nbSyncTasks) {
-                          <span class="badge rounded-pill bg-maroon">{{ s._nbTasks }}</span>
+                          <span class="badge bg-maroon">{{ s._nbTasks }}</span>
                         }
                         @if (s.mainError) {
-                          <span [tooltip]="s.mainError | translate:locale.language" class="badge rounded-pill bg-danger cursor-pointer ms-1" placement="right">
+                          <span [tooltip]="s.mainError | translate:locale.language" class="badge bg-danger cursor-pointer ms-1" placement="right">
                             <fa-icon [icon]="icons.faExclamationTriangle" class="m-0"></fa-icon>
                           </span>
                         }
                         @if (s.lastErrors.length) {
-                          <span (click)="showErrors(s)" class="badge rounded-pill bg-danger cursor-pointer ms-1">
+                          <span (click)="showErrors(s)" class="badge bg-danger cursor-pointer ms-1">
                             <fa-icon [icon]="icons.faExclamationTriangle" class="me-1"></fa-icon>
                             <span>{{ s.lastErrors.length }}</span>
                           </span>

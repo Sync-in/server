@@ -24,23 +24,23 @@
         @if (share().counts.users || share().counts.groups) {
           <span>{{ share().counts | joinCounts:['shares'] }}</span>
         } @else {
-          <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+          <span class="badge bg-secondary-alt" l10nTranslate>no</span>
         }
       </div>
       <div class="d-flex align-items-center mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Child shares</div>
         @if (share().counts.shares) {
-          <span (click)="childShareDialog(share())" class="badge rounded-pill bg-purple cursor-pointer me-1">
-            <fa-icon class="me-1" [icon]="iconShared"></fa-icon>
+          <span (click)="childShareDialog(share())" class="badge bg-purple cursor-pointer me-1">
+            <fa-icon [icon]="iconShared"></fa-icon>
             <span>{{ share().counts.shares }}</span>
           </span>
         } @else {
-          <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+          <span class="badge bg-secondary-alt" l10nTranslate>no</span>
         }
       </div>
       <div class="d-flex align-items-center mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Comments</div>
-        <span (click)="goToComments()" class="badge rounded-pill {{share().hasComments ? 'bg-success' : 'bg-secondary-alt'}} cursor-pointer">
+        <span (click)="goToComments()" class="badge {{share().hasComments ? 'bg-success' : 'bg-secondary-alt'}} cursor-pointer">
           {{ (share().hasComments ? 'yes' : 'no') | translate:locale.language }}
         </span>
       </div>

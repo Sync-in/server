@@ -68,49 +68,49 @@
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Lock</div>
             @if (f.lock) {
               @if (f.lock.isExclusive) {
-                <span class="badge rounded-pill bg-maroon" l10nTranslate>
+                <span class="badge bg-maroon" l10nTranslate>
                   <fa-icon [icon]="icons.faLock"></fa-icon>
-                  <span class="ms-1" l10nTranslate>Exclusive</span>
+                  <span l10nTranslate>Exclusive</span>
                 </span>
               } @else {
-                <span class="badge rounded-pill bg-maroon" l10nTranslate>
+                <span class="badge bg-maroon" l10nTranslate>
                   <fa-icon [icon]="icons.faUnlock"></fa-icon>
-                  <span class="ms-1" l10nTranslate>Shared</span>
+                  <span l10nTranslate>Shared</span>
                 </span>
               }
             } @else {
-              <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+              <span class="badge bg-secondary-alt" l10nTranslate>no</span>
             }
           </div>
           <div class="d-flex align-items-center mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Shared</div>
             <div class="d-flex col-sm-7">
               @if (f.shares.length || f.links.length) {
-                <span class="badge rounded-pill bg-primary">
-                  <fa-icon [icon]="icons.SHARES"></fa-icon>&nbsp;{{ f.shares.length + f.links.length }}
+                <span class="badge bg-primary">
+                  <fa-icon [icon]="icons.SHARES"></fa-icon>{{ f.shares.length + f.links.length }}
                 </span>
               } @else {
-                <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+                <span class="badge bg-secondary-alt" l10nTranslate>no</span>
               }
             </div>
           </div>
           <div class="d-flex align-items-center mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Anchored</div>
             @if (f.spaces.length) {
-              <span class="badge rounded-pill bg-primary"><fa-icon [icon]="icons.SPACES"></fa-icon>&nbsp;{{ f.spaces.length }}</span>
+              <span class="badge bg-primary"><fa-icon [icon]="icons.SPACES"></fa-icon>{{ f.spaces.length }}</span>
             } @else {
-              <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+              <span class="badge bg-secondary-alt" l10nTranslate>no</span>
             }
           </div>
           <div class="d-flex align-items-center mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Synced</div>
-            <span class="badge rounded-pill {{f.syncs.length ? 'bg-primary' : 'bg-secondary-alt'}}">
+            <span class="badge {{f.syncs.length ? 'bg-primary' : 'bg-secondary-alt'}}">
               {{ (f.syncs.length ? 'yes' : 'no') | translate:locale.language }}
             </span>
           </div>
           <div class="d-flex align-items-center mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Comments</div>
-            <span (click)="goToComments()" class="badge rounded-pill {{f.hasComments ? 'bg-success' : 'bg-secondary-alt'}} cursor-pointer">
+            <span (click)="goToComments()" class="badge {{f.hasComments ? 'bg-success' : 'bg-secondary-alt'}} cursor-pointer">
               {{ (f.hasComments ? 'yes' : 'no') | translate:locale.language }}
             </span>
           </div>
@@ -129,7 +129,7 @@
               @if (f.root.permissions) {
                 <app-file-permissions [permissions]="f.root.hPerms"></app-file-permissions>
               } @else {
-                <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+                <span class="badge bg-secondary-alt" l10nTranslate>no</span>
               }
             </div>
           </div>
@@ -139,33 +139,33 @@
           <div class="d-flex flex-wrap align-items-center p-2 fs-xs">
             @if (f.lock) {
               <div (click)="openLockDialog(f)"
-                   class="badge rounded-pill white-space-normal bg-maroon cursor-pointer mb-2">
+                   class="badge white-space-normal bg-maroon cursor-pointer mb-2">
                 <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faUnlock"></fa-icon>
-                <span>&nbsp;{{ f.lock | fileLockFormatPipe }}</span>
+                <span>{{ f.lock | fileLockFormatPipe }}</span>
               </div>
             }
             @for (space of f.spaces; track space.id) {
-              <div (click)="goToSpace(space)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToSpace(space)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SPACES"></fa-icon>
-                <span>&nbsp;{{ space.name }}</span>
+                <span>{{ space.name }}</span>
               </div>
             }
             @for (share of f.shares; track share.id) {
-              <div (click)="goToShare(share)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToShare(share)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SHARES"></fa-icon>
-                <span>&nbsp;{{ share.name }}</span>
+                <span>{{ share.name }}</span>
               </div>
             }
             @for (link of f.links; track link.id) {
-              <div (click)="goToShare(link)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToShare(link)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.LINKS"></fa-icon>
-                <span>&nbsp;{{ link.name }}</span>
+                <span>{{ link.name }}</span>
               </div>
             }
             @for (sync of f.syncs; track sync.id) {
-              <div (click)="goToSync(sync)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToSync(sync)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SYNC"></fa-icon>
-                <span>&nbsp;{{ sync.clientName }}</span>
+                <span>{{ sync.clientName }}</span>
               </div>
             }
           </div>

@@ -111,11 +111,11 @@
               <span class="form-label mb-0" l10nTranslate>Current access count</span>
               <span id="access" class="ms-auto">
                 @if (linkForm.value.limitAccess) {
-                  <span class="badge rounded-pill {{(share ? share.link.nbAccess : link.nbAccess) >= linkForm.value.limitAccess ? 'bg-danger': 'bg-success'}}">
+                  <span class="badge {{(share ? share.link.nbAccess : link.nbAccess) >= linkForm.value.limitAccess ? 'bg-danger': 'bg-success'}}">
                     {{ (share ? share.link.nbAccess : link.nbAccess) }}/{{ linkForm.value.limitAccess }}
                   </span>
                 } @else {
-                  <span class="badge rounded-pill bg-success">{{ share ? share.link.nbAccess : link.nbAccess }}</span>
+                  <span class="badge bg-success">{{ share ? share.link.nbAccess : link.nbAccess }}</span>
                 }
               </span>
             </div>

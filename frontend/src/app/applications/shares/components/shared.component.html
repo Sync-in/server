@@ -74,17 +74,22 @@
                [style.width.px]="galleryMode.dimensions"
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
-              <img [src]="s.mimeUrl" [height]="galleryMode.image" [width]="galleryMode.image" alt="" draggable="true" (error)="s.fallBackMimeUrl()">
+              <img [src]="s.mimeUrl"
+                   [height]="galleryMode.image"
+                   [width]="galleryMode.image"
+                   alt=""
+                   draggable="true"
+                   (error)="s.fallBackMimeUrl()">
               <span class="label-top-right">
                 @if (s.newly) {
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-purple">{{ s.hTimeAgo }}</span>
+                  <span [style.font-size.px]="galleryMode.textSize" class="badge bg-purple">{{ s.hTimeAgo }}</span>
                 }
               </span>
               @if (s.counts.shares) {
                 <div (click)="openChildShareDialog(s)"
                      [style.font-size.px]="galleryMode.textSize"
-                     class="label-bottom-right badge rounded-pill bg-purple cursor-pointer me-1">
-                  <fa-icon class="me-1" [icon]="icons.SHARED"></fa-icon>
+                     class="label-bottom-right badge bg-purple cursor-pointer me-1">
+                  <fa-icon [icon]="icons.SHARED"></fa-icon>
                   <span>{{ s.counts.shares }}</span>
                 </div>
               }
@@ -158,13 +163,13 @@
                     }
                     @case ('info') {
                       @if (s.counts.shares) {
-                        <span (click)="openChildShareDialog(s)" class="badge rounded-pill bg-purple cursor-pointer me-1">
-                          <fa-icon class="me-1" [icon]="icons.SHARED"></fa-icon>
+                        <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
+                          <fa-icon [icon]="icons.SHARED"></fa-icon>
                           <span>{{ s.counts.shares }}</span>
                         </span>
                       }
                       @if (s.hasComments) {
-                        <span (click)="goToComments(s)" class="badge rounded-pill bg-success cursor-pointer">
+                        <span (click)="goToComments(s)" class="badge bg-success cursor-pointer">
                           <fa-icon [icon]="icons.faCommentDots"></fa-icon>
                         </span>
                       }

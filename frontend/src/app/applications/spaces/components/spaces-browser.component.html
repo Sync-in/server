@@ -239,42 +239,46 @@
                         tooltip="{{f.lock | fileLockFormatPipe}}"
                         placement="auto"
                         [style.font-size.px]="galleryMode.textSize"
-                        class="badge rounded-pill bg-maroon cursor-pointer">
+                        class="badge bg-maroon cursor-pointer">
                     <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
                   </span>
                 }
                 @if (f.shares.length) {
                   <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                         [style.font-size.px]="galleryMode.textSize"
-                        class="badge rounded-pill bg-primary cursor-pointer">
-                    <fa-icon [icon]="icons.SHARES"></fa-icon>&nbsp;{{ f.shares.length }}
+                        class="badge bg-primary cursor-pointer">
+                    <fa-icon [icon]="icons.SHARES"></fa-icon>
+                    <span>{{ f.shares.length }}</span>
                   </span>
                 }
                 @if (f.spaces.length) {
                   <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                         [style.font-size.px]="galleryMode.textSize"
-                        class="badge rounded-pill bg-primary cursor-pointer ms-1">
-                      <fa-icon [icon]="icons.SPACES"></fa-icon>&nbsp;{{ f.spaces.length }}
-                    </span>
+                        class="badge bg-primary cursor-pointer ms-1">
+                    <fa-icon [icon]="icons.SPACES"></fa-icon>
+                    <span>{{ f.spaces.length }}</span>
+                  </span>
                 }
                 @if (f.links.length) {
                   <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                         [style.font-size.px]="galleryMode.textSize"
-                        class="badge rounded-pill bg-primary cursor-pointer me-1">
-                        <fa-icon [icon]="icons.LINKS"></fa-icon>&nbsp;{{ f.links.length }}
+                        class="badge bg-primary cursor-pointer me-1">
+                    <fa-icon [icon]="icons.LINKS"></fa-icon>
+                    <span>{{ f.links.length }}</span>
                   </span>
                 }
                 @if (f.syncs.length) {
                   <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                         [style.font-size.px]="galleryMode.textSize"
-                        class="badge rounded-pill bg-primary cursor-pointer me-1">
-                        <fa-icon [icon]="icons.SYNC"></fa-icon>&nbsp;{{ f.syncs.length }}
+                        class="badge bg-primary cursor-pointer me-1">
+                    <fa-icon [icon]="icons.SYNC"></fa-icon>
+                    <span>{{ f.syncs.length }}</span>
                   </span>
                 }
                 @if (f.hasComments) {
                   <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
                         [style.font-size.px]="galleryMode.textSize"
-                        class="badge rounded-pill bg-success cursor-pointer">
+                        class="badge bg-success cursor-pointer">
                   <fa-icon [icon]="icons.faCommentDots"></fa-icon>
                 </span>
                 }
@@ -286,7 +290,7 @@
               }
               @if (f.newly) {
                 <span class="label-top-right">
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-purple">{{ f.hTimeAgo }}</span>
+                  <span [style.font-size.px]="galleryMode.textSize" class="badge bg-purple">{{ f.hTimeAgo }}</span>
                 </span>
               }
             </div>
@@ -385,36 +389,40 @@
                         <span (click)="openLockDialog(f)"
                               tooltip="{{f.lock | fileLockFormatPipe}}"
                               placement="auto"
-                              class="badge rounded-pill bg-maroon cursor-pointer me-1">
+                              class="badge bg-maroon cursor-pointer me-1">
                           <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
                         </span>
                       }
                       @if (f.shares.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge rounded-pill bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.SHARES"></fa-icon>&nbsp;{{ f.shares.length }}
+                              class="badge bg-primary cursor-pointer me-1">
+                          <fa-icon [icon]="icons.SHARES"></fa-icon>
+                          <span>{{ f.shares.length }}</span>
                         </span>
                       }
                       @if (f.links.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge rounded-pill bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.LINKS"></fa-icon>&nbsp;{{ f.links.length }}
+                              class="badge bg-primary cursor-pointer me-1">
+                          <fa-icon [icon]="icons.LINKS"></fa-icon>
+                          <span>{{ f.links.length }}</span>
                         </span>
                       }
                       @if (f.spaces.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge rounded-pill bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.SPACES"></fa-icon>&nbsp;{{ f.spaces.length }}
+                              class="badge bg-primary cursor-pointer me-1">
+                          <fa-icon [icon]="icons.SPACES"></fa-icon>
+                          {{ f.spaces.length }}
                         </span>
                       }
                       @if (f.syncs.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge rounded-pill bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.SYNC"></fa-icon>&nbsp;{{ f.syncs.length }}
+                              class="badge bg-primary cursor-pointer me-1">
+                          <fa-icon [icon]="icons.SYNC"></fa-icon>
+                          <span>{{ f.syncs.length }}</span>
                         </span>
                       }
                       @if (f.hasComments) {
-                        <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" class="badge rounded-pill bg-success cursor-pointer">
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" class="badge bg-success cursor-pointer">
                           <fa-icon [icon]="icons.faCommentDots"></fa-icon>
                         </span>
                       }

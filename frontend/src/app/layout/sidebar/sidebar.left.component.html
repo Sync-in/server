@@ -61,7 +61,7 @@
   @if (menu.count) {
     <span class="{{isMenuIcon ? 'menu-badge-icon' : 'menu-badge'}}">
     @if (menu.count.value | async; as count) {
-      <span class="badge bg-{{menu.count.level}} rounded-pill">{{ count }}</span>
+      <span class="badge bg-{{menu.count.level}}">{{ count }}</span>
     }
     </span>
   }

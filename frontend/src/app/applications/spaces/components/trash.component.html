@@ -50,11 +50,11 @@
               </fa-icon>
               <span class="label-top-right">
                 @if (t.newly) {
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-purple">{{ t.hTimeAgo }}</span>
+                  <span [style.font-size.px]="galleryMode.textSize" class="badge bg-purple">{{ t.hTimeAgo }}</span>
                 }
               </span>
               <span class="label-bottom-right">
-                <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-danger">{{ t.nb }}</span>
+                <span [style.font-size.px]="galleryMode.textSize" class="badge bg-danger">{{ t.nb }}</span>
               </span>
             </div>
             <div class="card-footer text-center text-truncate p-1">
@@ -124,7 +124,7 @@
                       </div>
                     }
                     @case ('nb') {
-                      <span class="badge rounded-pill bg-danger">{{ t.nb }}</span>
+                      <span class="badge bg-danger">{{ t.nb }}</span>
                     }
                     @case ('modified') {
                       <span class="{{th.value.newly && t[th.value.newly] ? 'badge prop-newly-' + t[th.value.newly] : ''}}">

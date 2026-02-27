@@ -47,16 +47,16 @@
                 <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
                   <label for="" class="col-5 col-sm-4" l10nTranslate>IP Addresses</label>
                   <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
-                    <span class="badge bg-purple rounded-pill">{{ user.currentIp }}</span>
-                    <span class="badge bg-secondary-alt rounded-pill ms-1">{{ user.lastIp }}</span>
+                    <span class="badge bg-purple">{{ user.currentIp }}</span>
+                    <span class="badge bg-secondary-alt ms-1">{{ user.lastIp }}</span>
                   </div>
                 </div>
 
                 <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
                   <label for="" class="col-5 col-sm-4" l10nTranslate>Connections</label>
                   <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
-                    <span class="badge bg-purple rounded-pill">{{ user.currentAccess | amDateFormat }}</span>
-                    <span class="badge bg-secondary-alt rounded-pill ms-1">{{ user.lastAccess | amDateFormat }}</span>
+                    <span class="badge bg-purple">{{ user.currentAccess | amDateFormat }}</span>
+                    <span class="badge bg-secondary-alt ms-1">{{ user.lastAccess | amDateFormat }}</span>
                   </div>
                 </div>
 
@@ -65,13 +65,13 @@
                     <label for="" class="col-5 col-sm-4" l10nTranslate>Permissions</label>
                     <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
                       @if (user.isAdmin) {
-                        <span class="badge bg-gray-dark rounded-pill">
-                          <fa-icon class="me-1" [icon]="icons.faKey"></fa-icon>
+                        <span class="badge bg-gray-dark">
+                          <fa-icon [icon]="icons.faKey"></fa-icon>
                           <span l10nTranslate>Administrator</span>
                         </span>
                       } @else {
                         @for (app of user.applications; track $index) {
-                          <span class="badge bg-gray-dark rounded-pill m-1" l10nTranslate>{{ app }}</span>
+                          <span class="badge bg-gray-dark m-1" l10nTranslate>{{ app }}</span>
                         }
                       }
                     </div>

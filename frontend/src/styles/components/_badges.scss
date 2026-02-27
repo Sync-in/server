@@ -77,11 +77,6 @@
     display: none;
   }
 
-  &.rounded-pill {
-    border-radius: 9999px !important;
-  }
-
-
   &.badge-small {
     gap: 0.15rem;
     padding: calc(#{$badge-padding-y} * 0.55) calc(#{$badge-padding-x} * 0.55);
@@ -92,6 +87,10 @@
     background-color: var(--badge-bg-full) !important;
     border-color: var(--badge-border-full) !important;
     color: white !important;
+  }
+
+  fa-icon {
+    font-size: $font-size-2xs;
   }
 
 }

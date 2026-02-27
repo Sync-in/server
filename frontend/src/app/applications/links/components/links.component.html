@@ -69,7 +69,7 @@
               <img [src]="s.mimeUrl" [height]="galleryMode.image" [width]="galleryMode.image" alt="" draggable="true" (error)="s.fallBackMimeUrl()">
               <span class="label-top-right">
                 @if (s.newly) {
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-purple">
+                  <span [style.font-size.px]="galleryMode.textSize" class="badge bg-purple">
                     {{ s.hTimeAccessAgo }}
                   </span>
                 }
@@ -149,22 +149,22 @@
                     }
                     @case ('info') {
                       @if (s.link.limitAccess) {
-                        <span class="badge rounded-pill {{s.link.nbAccess >= s.link.limitAccess ? 'bg-danger': 'bg-success'}}">
+                        <span class="badge {{s.link.nbAccess >= s.link.limitAccess ? 'bg-danger': 'bg-success'}}">
                           {{ s.link.nbAccess }}/{{ s.link.limitAccess }}
                         </span>
                       } @else {
-                        <span class="badge rounded-pill bg-success">{{ s.link.nbAccess }}</span>
+                        <span class="badge bg-success">{{ s.link.nbAccess }}</span>
                       }
                       @if (s.link.expiresAt) {
-                        <span class="badge rounded-pill bg-{{s.hTimeExpirationAgo >= 1 ? 'warning': 'danger'}} ms-1">
+                        <span class="badge bg-{{s.hTimeExpirationAgo >= 1 ? 'warning': 'danger'}} ms-1">
                           <fa-icon [icon]="icons.faClock" [fixedWidth]="false"></fa-icon>
                           @if (s.hTimeExpirationAgo >= 1) {
-                            <span class="ms-2">{{ s.hTimeExpirationAgo }}&nbsp;{{ (s.hTimeExpirationAgo === 1 ? 'day' : 'days') | translate:locale.language }}</span>
+                            <span>{{ s.hTimeExpirationAgo }}&nbsp;{{ (s.hTimeExpirationAgo === 1 ? 'day' : 'days') | translate:locale.language }}</span>
                           }
                         </span>
                       }
                       @if (s.link.requireAuth) {
-                        <span class="badge rounded-pill bg-gray-dark ms-1">
+                        <span class="badge bg-gray-dark ms-1">
                           <fa-icon [icon]="icons.faLock"></fa-icon>
                         </span>
                       }

@@ -32,7 +32,7 @@
             <fa-icon [icon]="tab.icon"></fa-icon>
             @if (tab.count && tab.count.value | async; as count) {
               <span class="menu-badge">
-                <span class="badge bg-{{tab.count.level}} rounded-pill">{{ count }}</span>
+                <span class="badge bg-{{tab.count.level}}">{{ count }}</span>
               </span>
             }
           </a>
