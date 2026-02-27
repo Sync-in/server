@@ -29,6 +29,13 @@
         width: 100%;
         position: relative;
 
+        &:not(:first-child) {
+          box-sizing: border-box;
+          padding: 3px;
+          border-radius: $nav-pills-border-radius;
+          background-clip: content-box !important;
+        }
+
         &:first-child {
           user-select: none;
           background-color: $sidebar-light-apps-menu-title-bg;

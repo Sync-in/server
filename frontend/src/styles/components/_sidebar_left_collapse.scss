@@ -3,6 +3,14 @@
     margin-left: $sidebar-apps-icons-width !important;
   }
 
+  &.theme-dark {
+    .content-container {
+      border-left: 0.5px solid $sidebar-dark-icons-menu-border-color !important;
+    }
+  }
+
+
+
   .left-sidebar {
     z-index: $content-z-index;
 
