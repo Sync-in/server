@@ -1,9 +1,12 @@
 // Bootstrap is imported in modules to avoid shipping unused components.
+// Required for ngx-toastr
 @import 'bootstrap/scss/functions';
 
 // variables.scss is loaded before this file from index.scss to override Bootstrap defaults.
+// Required for ngx-toastr
 @import 'bootstrap/scss/variables';
 @import 'bootstrap/scss/maps';
+// Required for ngx-toastr
 @import 'bootstrap/scss/mixins';
 @import 'bootstrap/scss/utilities';
 

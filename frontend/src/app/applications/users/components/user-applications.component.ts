@@ -15,13 +15,14 @@ import { UserService } from '../user.service'
 @Component({
   selector: 'app-user-applications',
   imports: [FaIconComponent, L10nTranslateDirective, AutoResizeDirective, TimeDateFormatPipe],
-  templateUrl: './user-applications.component.html'
+  templateUrl: './user-applications.component.html',
+  styleUrl: './user-applications.component.scss'
 })
 export class UserApplicationsComponent {
   protected readonly store = inject(StoreService)
   protected readonly icons = { faWindows, faApple, faLinux, faDownload, faTerminal }
   protected readonly APP_STORE_OS = APP_STORE_PLATFORM
-  protected readonly APP_STORE_PLATFORM_LIST = Object.values(APP_STORE_PLATFORM)
+  protected readonly APP_STORE_PLATFORM_LIST: APP_STORE_PLATFORM[] = Object.values(APP_STORE_PLATFORM) as APP_STORE_PLATFORM[]
   private readonly layout = inject(LayoutService)
   private readonly userService = inject(UserService)
 

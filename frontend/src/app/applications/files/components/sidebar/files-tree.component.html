@@ -1,6 +1,6 @@
 @if (sideBarHeader) {
   <div class="sidebar-component-title">
-    <button (click)="onRefresh()" class="btn btn-xs btn-secondary">
+    <button (click)="onRefresh()" class="btn btn-xs btn-default">
       <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
     </button>
     @if (errorMsg) {
@@ -45,7 +45,7 @@
         <fa-icon [icon]="icons.faClone"></fa-icon>
         Copy
       </button>
-      <button (click)="actionCancel()" class="btn btn-xxs btn-secondary" type="button" l10nTranslate>
+      <button (click)="actionCancel()" class="btn btn-xxs btn-default" type="button" l10nTranslate>
         <fa-icon [icon]="icons.faTimes"></fa-icon>
         Cancel
       </button>

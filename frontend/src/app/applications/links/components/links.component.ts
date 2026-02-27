@@ -122,7 +122,7 @@ export class LinksComponent implements OnInit {
     info: { label: 'Info', width: 15, textCenter: true, class: 'd-none d-lg-table-cell', show: true, sortable: true },
     permissions: {
       label: 'Permissions',
-      width: 10,
+      width: 12,
       textCenter: true,
       class: 'd-none d-lg-table-cell',
       show: true,

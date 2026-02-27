@@ -1,7 +1,7 @@
 <div class="app-top-menu">
   <div class="col-12 col-md-6 col-lg-4">
     <div class="input-group">
-      <button (click)="doSearch()" [disabled]="searchContent().length < minCharsToSearch" class="btn btn-sm btn-secondary" role="button" type="button">
+      <button (click)="doSearch()" [disabled]="searchContent().length < minCharsToSearch" class="btn btn-sm btn-default" role="button" type="button">
         <fa-icon [icon]="loading ? icons.faSpinner : icons.SEARCH_ICON" [animation]="loading ? 'spin' : null"></fa-icon>
       </button>
       <input [value]="searchContent()"

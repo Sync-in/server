@@ -1,14 +1,14 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadUsersOrGuests()"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
     <fa-icon [icon]="icons.faRotate" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
   <button (click)="openDialog(true)"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="(guestsView ? 'New guest' : 'New user') | translate:locale.language"
           container="body"
           type="button">
@@ -16,7 +16,7 @@
   </button>
   <button (click)="openDialog()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="(guestsView ? 'Edit guest' : 'Edit user') | translate:locale.language"
           container="body"
           type="button">
@@ -24,7 +24,7 @@
   </button>
   <button (click)="impersonateIdentity()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Impersonate identity' | translate:locale.language"
           container="body"
           type="button">

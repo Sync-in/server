@@ -40,12 +40,12 @@
                  [disabled]="currentFilterType === SYNC_PATH_FILTER_TYPE.FILE || currentFilterType === SYNC_PATH_FILTER_TYPE.FOLDER"
                  [placeholder]="filterTypePlaceholder[currentFilterType] | translate:locale.language"
                  class="form-control form-select-sm me-1" type="text">
-          <button (click)="addFilter()" [disabled]="!currentFilter" class="btn btn-xs btn-secondary me-1" l10nTranslate type="button">Add</button>
+          <button (click)="addFilter()" [disabled]="!currentFilter" class="btn btn-xs btn-default me-1" l10nTranslate type="button">Add</button>
           @if (currentFilterType === SYNC_PATH_FILTER_TYPE.FILE) {
-            <button (click)="onSelect()" class="btn btn-xs btn-secondary" l10nTranslate type="button">Browse</button>
+            <button (click)="onSelect()" class="btn btn-xs btn-default" l10nTranslate type="button">Browse</button>
           }
           @if (currentFilterType === SYNC_PATH_FILTER_TYPE.FOLDER) {
-            <button (click)="onSelect(ELECTRON_DIALOG.DIRECTORY)" class="btn btn-xs btn-secondary" l10nTranslate type="button">Browse</button>
+            <button (click)="onSelect(ELECTRON_DIALOG.DIRECTORY)" class="btn btn-xs btn-default" l10nTranslate type="button">Browse</button>
           }
         </div>
       </div>

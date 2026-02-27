@@ -1,14 +1,14 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadShares()"
-          class="d-none d-sm-block btn btn-sm btn-secondary me-1"
+          class="d-none d-sm-block btn btn-sm btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
     <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
   <button (click)="openShareDialog(true)"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'New share' | translate:locale.language"
           container="body"
           type="button">
@@ -16,7 +16,7 @@
   </button>
   <button (click)="openShareDialog()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Edit share' | translate:locale.language"
           container="body"
           type="button">
@@ -24,7 +24,7 @@
   </button>
   <button (click)="openChildShareDialog()"
           [disabled]="!selected?.counts.shares"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Edit children shares' | translate:locale.language"
           container="body"
           type="button">
@@ -32,7 +32,7 @@
   </button>
   <button (click)="goTo()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Go to' | translate:locale.language"
           container="body"
           type="button">
@@ -165,7 +165,7 @@
                       @if (s.counts.shares) {
                         <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
                           <fa-icon [icon]="icons.SHARED"></fa-icon>
-                          <span>{{ s.counts.shares }}</span>
+                          {{ s.counts.shares }}
                         </span>
                       }
                       @if (s.hasComments) {

@@ -1,7 +1,7 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadGuests()"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
@@ -9,7 +9,7 @@
   </button>
   <button (click)="openGuestDialog(true)"
           [disabled]="!canCreateGuest"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'New guest' | translate:locale.language"
           container="body"
           type="button">
@@ -17,7 +17,7 @@
   </button>
   <button (click)="openGuestDialog()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Edit guest' | translate:locale.language"
           container="body"
           type="button">

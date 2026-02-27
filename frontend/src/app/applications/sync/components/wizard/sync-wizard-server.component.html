@@ -15,7 +15,7 @@
     <div class="app-top-menu px-0">
       <button (click)="onBack()"
               [disabled]="!currentPath"
-              class="btn btn-sm btn-secondary"
+              class="btn btn-sm btn-default"
               type="button">
         <fa-icon [icon]="icons.faArrowCircleLeft"></fa-icon>
       </button>
@@ -29,7 +29,7 @@
           <button (click)="addDirectory()"
                   [hidden]="!canCreateDir"
                   [disabled]="!newDirectoryName"
-                  class="btn btn-sm btn-secondary input-group-text"
+                  class="btn btn-sm btn-default input-group-text"
                   type="button">
             <fa-icon [icon]="icons.faFolderPlus"></fa-icon>
           </button>
@@ -78,11 +78,11 @@
   </div>
   <div class="mt-auto">
     <div class="d-flex align-items-start">
-      <button (click)="onPrevious()" class="btn btn-secondary me-auto" type="button" l10nTranslate>
+      <button (click)="onPrevious()" class="btn btn-default me-auto" type="button" l10nTranslate>
         <fa-icon [icon]="icons.faArrowCircleLeft"></fa-icon>
         Previous
       </button>
-      <button (click)="onNext()" [disabled]="!selectedPath" class="btn btn-secondary ms-auto" type="button" l10nTranslate>
+      <button (click)="onNext()" [disabled]="!selectedPath" class="btn btn-default ms-auto" type="button" l10nTranslate>
         <fa-icon [icon]="icons.faArrowCircleRight"></fa-icon>
         Next
       </button>

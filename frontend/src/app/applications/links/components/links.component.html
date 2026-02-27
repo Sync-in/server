@@ -1,14 +1,14 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadShareLinks()"
-          class="d-none d-sm-block btn btn-sm btn-secondary me-1"
+          class="d-none d-sm-block btn btn-sm btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
     <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
   <button (click)="openLinkDialog()"
-          [disabled]="!selected" class="btn btn-sm btn-secondary me-1"
+          [disabled]="!selected" class="btn btn-sm btn-default me-1"
           [tooltip]="'Edit link' | translate:locale.language"
           container="body"
           type="button">
@@ -16,7 +16,7 @@
   </button>
   <button (click)="copyToClipboard()"
           [disabled]="!selected"
-          class="btn btn-sm me-1 {{linkWasCopied ? 'btn-info' : 'btn-secondary'}}"
+          class="btn btn-sm me-1 {{linkWasCopied ? 'btn-info' : 'btn-default'}}"
           [tooltip]="'Copy link' | translate:locale.language"
           container="body"
           type="button">
@@ -24,7 +24,7 @@
   </button>
   <button (click)="goTo()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary"
+          class="btn btn-sm btn-default"
           [tooltip]="'Go to' | translate:locale.language"
           container="body"
           type="button">
@@ -159,7 +159,7 @@
                         <span class="badge bg-{{s.hTimeExpirationAgo >= 1 ? 'warning': 'danger'}} ms-1">
                           <fa-icon [icon]="icons.faClock" [fixedWidth]="false"></fa-icon>
                           @if (s.hTimeExpirationAgo >= 1) {
-                            <span>{{ s.hTimeExpirationAgo }}&nbsp;{{ (s.hTimeExpirationAgo === 1 ? 'day' : 'days') | translate:locale.language }}</span>
+                            {{ s.hTimeExpirationAgo }}&nbsp;{{ (s.hTimeExpirationAgo === 1 ? 'day' : 'days') | translate:locale.language }}
                           }
                         </span>
                       }

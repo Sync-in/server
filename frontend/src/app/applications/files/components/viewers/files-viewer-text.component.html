@@ -4,7 +4,7 @@
       (click)="toggleReadonly()"
       [tooltip]="(isReadonly() || !isWriteable() ? 'Read-only' : 'Read-write') | translate:locale.language"
       [adaptivePosition]="true"
-      class="btn btn-sm btn-secondary me-1"
+      class="btn btn-sm btn-default me-1"
       type="button"
       [disabled]="!isSupported() || !isWriteable()">
       <fa-icon [icon]="isReadonly() ? icons.faLock : icons.faLockOpen"></fa-icon>
@@ -13,7 +13,7 @@
       (click)="save()"
       [tooltip]="(isReadonly() || !isWriteable() || !isModified() ? undefined : 'Save') | translate:locale.language"
       [isDisabled]="isReadonly() || !isWriteable() || !isModified()"
-      class="btn btn-sm btn-secondary me-1"
+      class="btn btn-sm btn-default me-1"
       type="button"
       [disabled]="isReadonly() || !isWriteable() || !isModified()">
       @if (isSaving()) {
@@ -68,7 +68,7 @@
               l10nTranslate>Close Without Saving
       </button>
       <button (click)="warnOnUnsavedChanges.set(false)"
-              class="d-none d-sm-block btn btn-sm btn-secondary"
+              class="d-none d-sm-block btn btn-sm btn-default"
               data-dismiss="modal" type="button"
               l10nTranslate>Cancel
       </button>

@@ -1,7 +1,7 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadFiles()"
-          class="d-none d-sm-block btn btn-sm btn-secondary me-1"
+          class="d-none d-sm-block btn btn-sm btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
@@ -11,7 +11,7 @@
   @if (!isTrashRepo && !inSharesList) {
     <div (onShown)="initUpload()" class="btn-group btn-group-sm me-1" dropdown>
       <button dropdownToggle
-              class="btn btn-sm btn-secondary dropdown-toggle"
+              class="btn btn-sm btn-default dropdown-toggle"
               [tooltip]="'New' | translate:locale.language"
               container="body"
               type="button">
@@ -49,7 +49,7 @@
   <!--End New Button-->
   <button (click)="downloadFiles()"
           [disabled]="!hasSelection || hasDisabledItemsInSelection"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Download' | translate:locale.language"
           container="body"
           type="button">
@@ -59,7 +59,7 @@
   @if (!isTrashRepo && canShare.outside || inSharesList) {
     <div class="btn-group btn-group-sm me-1" [isDisabled]="!hasSelection || inSharesList && !selection[0].canBeReShared" dropdown>
       <button dropdownToggle
-              class="btn btn-sm btn-secondary dropdown-toggle"
+              class="btn btn-sm btn-default dropdown-toggle"
               [tooltip]="'Share' | translate:locale.language"
               container="body"
               type="button">
@@ -90,7 +90,7 @@
   @if (isTrashRepo) {
     <button (click)="openTrashDialog(true)"
             [disabled]="!hasSelection"
-            class="btn btn-sm btn-secondary me-1"
+            class="btn btn-sm btn-default me-1"
             [tooltip]="'Remove' | translate:locale.language"
             container="body"
             type="button">
@@ -99,7 +99,7 @@
     @if (inRootSpace) {
       <button (click)="openEmptyTrashDialog()"
               [disabled]="!stats.elements"
-              class="btn btn-sm btn-secondary me-1"
+              class="btn btn-sm btn-default me-1"
               [tooltip]="'Empty' | translate:locale.language"
               container="body"
               type="button">
@@ -109,7 +109,7 @@
   }
   <!--Start Actions Button-->
   <div [isDisabled]="!hasSelection" class="btn-group btn-group-sm me-1" dropdown>
-    <button class="btn btn-sm btn-secondary dropdown-toggle" dropdownToggle type="button">
+    <button class="btn btn-sm btn-default dropdown-toggle" dropdownToggle type="button">
       <fa-icon [icon]="icons.faEllipsis"></fa-icon>
     </button>
     <ul *dropdownMenu class="dropdown-menu" role="menu">
@@ -248,7 +248,7 @@
                         [style.font-size.px]="galleryMode.textSize"
                         class="badge bg-primary cursor-pointer">
                     <fa-icon [icon]="icons.SHARES"></fa-icon>
-                    <span>{{ f.shares.length }}</span>
+                    {{ f.shares.length }}
                   </span>
                 }
                 @if (f.spaces.length) {
@@ -256,7 +256,7 @@
                         [style.font-size.px]="galleryMode.textSize"
                         class="badge bg-primary cursor-pointer ms-1">
                     <fa-icon [icon]="icons.SPACES"></fa-icon>
-                    <span>{{ f.spaces.length }}</span>
+                    {{ f.spaces.length }}
                   </span>
                 }
                 @if (f.links.length) {
@@ -264,7 +264,7 @@
                         [style.font-size.px]="galleryMode.textSize"
                         class="badge bg-primary cursor-pointer me-1">
                     <fa-icon [icon]="icons.LINKS"></fa-icon>
-                    <span>{{ f.links.length }}</span>
+                    {{ f.links.length }}
                   </span>
                 }
                 @if (f.syncs.length) {
@@ -272,7 +272,7 @@
                         [style.font-size.px]="galleryMode.textSize"
                         class="badge bg-primary cursor-pointer me-1">
                     <fa-icon [icon]="icons.SYNC"></fa-icon>
-                    <span>{{ f.syncs.length }}</span>
+                    {{ f.syncs.length }}
                   </span>
                 }
                 @if (f.hasComments) {
@@ -397,14 +397,14 @@
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer me-1">
                           <fa-icon [icon]="icons.SHARES"></fa-icon>
-                          <span>{{ f.shares.length }}</span>
+                          {{ f.shares.length }}
                         </span>
                       }
                       @if (f.links.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer me-1">
                           <fa-icon [icon]="icons.LINKS"></fa-icon>
-                          <span>{{ f.links.length }}</span>
+                          {{ f.links.length }}
                         </span>
                       }
                       @if (f.spaces.length) {
@@ -418,11 +418,12 @@
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer me-1">
                           <fa-icon [icon]="icons.SYNC"></fa-icon>
-                          <span>{{ f.syncs.length }}</span>
+                          {{ f.syncs.length }}
                         </span>
                       }
                       @if (f.hasComments) {
-                        <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" class="badge bg-success cursor-pointer">
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
+                              class="badge bg-success cursor-pointer">
                           <fa-icon [icon]="icons.faCommentDots"></fa-icon>
                         </span>
                       }

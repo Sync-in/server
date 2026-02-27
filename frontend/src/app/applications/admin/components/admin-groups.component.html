@@ -1,14 +1,14 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="refresh()"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
     <fa-icon [icon]="icons.faRotate" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
   <div class="btn-group btn-group-sm me-1" dropdown>
-    <button class="btn btn-sm btn-secondary dropdown-toggle"
+    <button class="btn btn-sm btn-default dropdown-toggle"
             dropdownToggle
             [tooltip]="'New' | translate:locale.language"
             container="body"
@@ -30,7 +30,7 @@
     </ul>
   </div>
   <button (click)="openDialog(false, true)"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [disabled]="!selected"
           [tooltip]="(selected?.isUser ? 'Remove from group' : 'Delete group') | translate:locale.language"
           container="body"
@@ -39,7 +39,7 @@
   </button>
   <button (click)="openDialog()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="(selected?.isGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
           container="body"
           type="button">

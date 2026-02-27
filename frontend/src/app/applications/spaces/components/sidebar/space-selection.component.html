@@ -40,7 +40,7 @@
         @if (space().counts.roots) {
           <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1">
             <fa-icon [icon]="icons.ANCHORED"></fa-icon>
-            <span>{{ space().counts.roots }}</span>
+            {{ space().counts.roots }}
           </span>
         } @else {
           <span class="badge bg-secondary-alt" l10nTranslate>no</span>
@@ -52,7 +52,7 @@
           @if (space().counts.shares) {
             <span (click)="openChildShareDialog(space())" class="badge bg-purple cursor-pointer me-1">
             <fa-icon [icon]="icons.SHARED"></fa-icon>
-            <span>{{ space().counts.shares }}</span>
+            {{ space().counts.shares }}
           </span>
           } @else {
             <span class="badge bg-secondary-alt" l10nTranslate>no</span>

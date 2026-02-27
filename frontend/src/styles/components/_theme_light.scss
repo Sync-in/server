@@ -24,6 +24,9 @@
 
       .menu-mini {
         background-color: $light-sidebar-mini-bg;
+        border-top: .5px solid $sidebar-light-apps-menu-border-color;
+        border-right: .5px solid $sidebar-light-apps-menu-border-color;
+        border-bottom: .5px solid $sidebar-light-apps-menu-border-color;
 
         > a {
           color: $sidebar-light-apps-menu-hover-color;
@@ -262,7 +265,6 @@
       box-shadow: none !important;
     }
   }
-  .btn-secondary,
   .btn-default,
   .btn-custom,
   .btn-outline-secondary-alt {

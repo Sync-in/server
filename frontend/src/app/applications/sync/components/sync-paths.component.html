@@ -2,27 +2,27 @@
   <button (click)="onRefresh()"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
-          class="d-none d-sm-block btn btn-sm btn-secondary me-1" type="button">
+          class="d-none d-sm-block btn btn-sm btn-default me-1" type="button">
     <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
   </button>
   <button (click)="addToSync()"
           [tooltip]="'Add' | translate:locale.language"
           container="body"
-          class="btn btn-sm btn-secondary me-1" type="button">
+          class="btn btn-sm btn-default me-1" type="button">
     <fa-icon [icon]="icons.faPlus"></fa-icon>
   </button>
   <button (click)="openSettingsDialog()"
           [disabled]="!syncPathSelected"
           [tooltip]="'Edit' | translate:locale.language"
           container="body"
-          class="btn btn-sm btn-secondary me-1" type="button">
+          class="btn btn-sm btn-default me-1" type="button">
     <fa-icon [icon]="icons.faPencilAlt"></fa-icon>
   </button>
   <button (click)="openReportDialog()"
           [disabled]="!syncPathSelected || !syncPathSelected.settings.enabled"
           [tooltip]="'Simulate' | translate:locale.language"
           container="body"
-          class="btn btn-sm btn-secondary me-1" type="button">
+          class="btn btn-sm btn-default me-1" type="button">
     <fa-icon [icon]="icons.faFlask"></fa-icon>
   </button>
   <!--Start Sync Buttons-->
@@ -30,7 +30,7 @@
     <button (click)="doSync(false)"
             [tooltip]="'Stop synchronization' | translate:locale.language"
             container="body"
-            class="btn btn-sm btn-secondary me-1" type="button">
+            class="btn btn-sm btn-default me-1" type="button">
       <fa-icon [icon]="icons.faStop"></fa-icon>
     </button>
   } @else {
@@ -38,7 +38,7 @@
             [disabled]="!syncPathSelected || !syncPathSelected.settings.enabled"
             [tooltip]="'Synchronize' | translate:locale.language"
             container="body"
-            class="btn btn-sm btn-secondary me-1" type="button">
+            class="btn btn-sm btn-default me-1" type="button">
       <fa-icon [icon]="icons.faPlay"></fa-icon>
     </button>
   }
@@ -46,13 +46,13 @@
     <button (click)="doAllSyncs(false)"
             [tooltip]="'Stop synchronizations' | translate:locale.language"
             container="body"
-            class="btn btn-sm btn-secondary me-1" type="button">
+            class="btn btn-sm btn-default me-1" type="button">
       <fa-icon [icon]="icons.faStop"></fa-icon>
     </button>
   } @else {
     <div [tooltip]="'Synchronize all' | translate:locale.language" container="body">
       <div class="btn-group btn-group-sm me-1" dropdown [isDisabled]="!store.clientSyncPaths().length">
-        <button class="btn btn-sm btn-secondary dropdown-toggle" dropdownToggle type="button">
+        <button class="btn btn-sm btn-default dropdown-toggle" dropdownToggle type="button">
           <fa-icon [icon]="icons.faForward"></fa-icon>
         </button>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
@@ -118,7 +118,7 @@
   <!--End Sync Buttons-->
   <div [tooltip]="'Go to' | translate:locale.language" container="body">
     <div [isDisabled]="!syncPathSelected" class="btn-group btn-group-sm me-1" dropdown>
-      <button class="btn btn-sm btn-secondary dropdown-toggle" dropdownToggle type="button">
+      <button class="btn btn-sm btn-default dropdown-toggle" dropdownToggle type="button">
         <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
       </button>
       <ul *dropdownMenu class="dropdown-menu" role="menu">
@@ -198,7 +198,7 @@
                         @if (s.lastErrors.length) {
                           <span (click)="showErrors(s)" class="badge bg-danger cursor-pointer ms-1">
                             <fa-icon [icon]="icons.faExclamationTriangle" class="me-1"></fa-icon>
-                            <span>{{ s.lastErrors.length }}</span>
+                            {{ s.lastErrors.length }}
                           </span>
                         }
                       </span>

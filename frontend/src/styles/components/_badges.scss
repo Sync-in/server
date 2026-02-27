@@ -1,4 +1,4 @@
-@mixin badge-tailwind-vars(
+@mixin badge-vars(
   $tone,
   $light-text: null,
   $light-bg-mix: 84%,
@@ -17,7 +17,7 @@
   --badge-border-full: #{$light-border-full};
 }
 
-@mixin badge-tailwind-dark-vars($bg, $border, $fg) {
+@mixin badge-dark-vars($bg, $border, $fg) {
   --badge-bg: #{$bg};
   --badge-border: #{$border};
   --badge-fg: #{$fg};
@@ -25,7 +25,7 @@
   --badge-border-full: #{opacify($border, 1)};
 }
 
-@mixin badge-tailwind-variant(
+@mixin badge-variant(
   $selector,
   $tone,
   $light-text: null,
@@ -34,16 +34,16 @@
 ) {
 
   .badge.#{$selector} {
-    @include badge-tailwind-vars($tone, $light-text, $light-bg-mix, $light-border-mix);
+    @include badge-vars($tone, $light-text, $light-bg-mix, $light-border-mix);
     background-color: var(--badge-bg) !important;
     border-color: var(--badge-border) !important;
     color: var(--badge-fg) !important;
   }
 }
 
-@mixin badge-tailwind-dark-variant($selector, $bg, $border, $fg) {
+@mixin badge-dark-variant($selector, $bg, $border, $fg) {
   body.theme-dark .badge.#{$selector} {
-    @include badge-tailwind-dark-vars($bg, $border, $fg);
+    @include badge-dark-vars($bg, $border, $fg);
     background-color: var(--badge-bg) !important;
     border-color: var(--badge-border) !important;
     color: var(--badge-fg) !important;
@@ -72,6 +72,7 @@
   border: 1px solid var(--badge-border) !important;
   background-color: var(--badge-bg) !important;
   color: var(--badge-fg) !important;
+  user-select: none;
 
   &:empty {
     display: none;
@@ -103,44 +104,44 @@ body.theme-dark .badge {
   --badge-border-full: #64748b;
 }
 
-@include badge-tailwind-variant('bg-primary', $primary, mix($primary, $black, 86%));
-@include badge-tailwind-variant('bg-secondary', darken($secondary, 22%), mix($gray-dark, $black, 94%), 62%, 34%);
-@include badge-tailwind-variant('bg-success', $success);
-@include badge-tailwind-variant('bg-danger', $danger);
-@include badge-tailwind-variant('bg-warning', $warning, #a35400);
-@include badge-tailwind-variant('bg-info', $info, mix($info, $black, 88%));
-@include badge-tailwind-variant('bg-light', $gray-lightest, mix($gray-dark, $black, 82%), 80%, 60%);
-@include badge-tailwind-variant('bg-dark', $gray-dark, mix($gray-dark, $black, 88%), 82%, 62%);
-@include badge-tailwind-variant('bg-purple', $purple, mix($purple, $black, 88%));
-@include badge-tailwind-variant('bg-maroon', $maroon, mix($maroon, $black, 90%));
-@include badge-tailwind-variant('bg-gray-dark', $gray-dark, mix($gray-dark, $black, 88%), 82%, 62%);
-@include badge-tailwind-variant('bg-secondary-alt', darken($secondary, 22%), mix($gray-dark, $black, 94%), 62%, 34%);
-@include badge-tailwind-variant('sync-newly-0', $red);
-@include badge-tailwind-variant('sync-newly-1', $primary);
-@include badge-tailwind-variant('sync-newly-2', lighten($primary, 15%), mix($primary, $black, 84%));
-@include badge-tailwind-variant('sync-newly-3', lighten($primary, 30%), mix($primary, $black, 82%));
-@include badge-tailwind-variant('sync-newly-4', $orange, #a35400);
-@include badge-tailwind-variant('prop-newly-1', $purple, mix($purple, $black, 88%));
-@include badge-tailwind-variant('prop-newly-2', lighten($purple, 15%), mix($purple, $black, 84%));
-@include badge-tailwind-variant('prop-newly-3', lighten($purple, 30%), mix($purple, $black, 82%));
+@include badge-variant('bg-primary', $primary, mix($primary, $black, 86%));
+@include badge-variant('bg-secondary', darken($secondary, 22%), mix($gray-dark, $black, 94%), 62%, 34%);
+@include badge-variant('bg-success', $success);
+@include badge-variant('bg-danger', $danger);
+@include badge-variant('bg-warning', $warning, #a35400);
+@include badge-variant('bg-info', $info, mix($info, $black, 88%));
+@include badge-variant('bg-light', $gray-lightest, mix($gray-dark, $black, 82%), 80%, 60%);
+@include badge-variant('bg-dark', $gray-dark, mix($gray-dark, $black, 88%), 82%, 62%);
+@include badge-variant('bg-purple', $purple, mix($purple, $black, 88%));
+@include badge-variant('bg-maroon', $maroon, mix($maroon, $black, 90%));
+@include badge-variant('bg-gray-dark', $gray-dark, mix($gray-dark, $black, 88%), 82%, 62%);
+@include badge-variant('bg-secondary-alt', darken($secondary, 22%), mix($gray-dark, $black, 94%), 62%, 34%);
+@include badge-variant('sync-newly-0', $red);
+@include badge-variant('sync-newly-1', $primary);
+@include badge-variant('sync-newly-2', lighten($primary, 15%), mix($primary, $black, 84%));
+@include badge-variant('sync-newly-3', lighten($primary, 30%), mix($primary, $black, 82%));
+@include badge-variant('sync-newly-4', $orange, #a35400);
+@include badge-variant('prop-newly-1', $purple, mix($purple, $black, 88%));
+@include badge-variant('prop-newly-2', lighten($purple, 15%), mix($purple, $black, 84%));
+@include badge-variant('prop-newly-3', lighten($purple, 30%), mix($purple, $black, 82%));
 
-@include badge-tailwind-dark-variant('bg-secondary', #33415566, #64748b80, #e2e8f0);
-@include badge-tailwind-dark-variant('bg-secondary-alt', #ffffff14, #cbd5e14d, #f8fafc);
-@include badge-tailwind-dark-variant('bg-primary', #1d4ed833, #60a5fa66, #bfdbfe);
-@include badge-tailwind-dark-variant('bg-success', #16a34a33, #4ade8080, #bbf7d0);
-@include badge-tailwind-dark-variant('bg-danger', #dc262633, #f8717180, #fecaca);
-@include badge-tailwind-dark-variant('bg-warning', #f59e0b33, #fbbf2480, #fde68a);
-@include badge-tailwind-dark-variant('bg-info', #4f46e533, #818cf880, #c7d2fe);
-@include badge-tailwind-dark-variant('bg-purple', #7e22ce33, #c084fc80, #e9d5ff);
-@include badge-tailwind-dark-variant('bg-maroon', #be185d33, #f472b680, #fbcfe8);
-@include badge-tailwind-dark-variant('bg-light', #e2e8f014, #cbd5e14d, #f1f5f9);
-@include badge-tailwind-dark-variant('bg-dark', #33415559, #94a3b866, #e2e8f0);
-@include badge-tailwind-dark-variant('bg-gray-dark', #33415559, #94a3b866, #e2e8f0);
-@include badge-tailwind-dark-variant('sync-newly-0', #dc262633, #f8717180, #fecaca);
-@include badge-tailwind-dark-variant('sync-newly-1', #1d4ed833, #60a5fa66, #bfdbfe);
-@include badge-tailwind-dark-variant('sync-newly-2', #1e40af33, #93c5fd80, #dbeafe);
-@include badge-tailwind-dark-variant('sync-newly-3', #0369a133, #67e8f980, #cffafe);
-@include badge-tailwind-dark-variant('sync-newly-4', #f59e0b33, #fbbf2480, #fde68a);
-@include badge-tailwind-dark-variant('prop-newly-1', #7e22ce33, #c084fc80, #e9d5ff);
-@include badge-tailwind-dark-variant('prop-newly-2', #9333ea33, #d8b4fe80, #f3e8ff);
-@include badge-tailwind-dark-variant('prop-newly-3', #a855f733, #e9d5ff80, #faf5ff);
+@include badge-dark-variant('bg-secondary', #33415566, #64748b80, #e2e8f0);
+@include badge-dark-variant('bg-secondary-alt', #ffffff14, #cbd5e14d, #f8fafc);
+@include badge-dark-variant('bg-primary', #1d4ed833, #60a5fa66, #bfdbfe);
+@include badge-dark-variant('bg-success', #16a34a33, #4ade8080, #bbf7d0);
+@include badge-dark-variant('bg-danger', #dc262633, #f8717180, #fecaca);
+@include badge-dark-variant('bg-warning', #f59e0b33, #fbbf2480, #fde68a);
+@include badge-dark-variant('bg-info', #4f46e533, #818cf880, #c7d2fe);
+@include badge-dark-variant('bg-purple', #7e22ce33, #c084fc80, #e9d5ff);
+@include badge-dark-variant('bg-maroon', #be185d33, #f472b680, #fbcfe8);
+@include badge-dark-variant('bg-light', #e2e8f014, #cbd5e14d, #f1f5f9);
+@include badge-dark-variant('bg-dark', #33415559, #94a3b866, #e2e8f0);
+@include badge-dark-variant('bg-gray-dark', #33415559, #94a3b866, #e2e8f0);
+@include badge-dark-variant('sync-newly-0', #dc262633, #f8717180, #fecaca);
+@include badge-dark-variant('sync-newly-1', #1d4ed833, #60a5fa66, #bfdbfe);
+@include badge-dark-variant('sync-newly-2', #1e40af33, #93c5fd80, #dbeafe);
+@include badge-dark-variant('sync-newly-3', #0369a133, #67e8f980, #cffafe);
+@include badge-dark-variant('sync-newly-4', #f59e0b33, #fbbf2480, #fde68a);
+@include badge-dark-variant('prop-newly-1', #7e22ce33, #c084fc80, #e9d5ff);
+@include badge-dark-variant('prop-newly-2', #9333ea33, #d8b4fe80, #f3e8ff);
+@include badge-dark-variant('prop-newly-3', #a855f733, #e9d5ff80, #faf5ff);

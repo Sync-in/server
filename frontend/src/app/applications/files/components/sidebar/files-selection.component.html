@@ -87,7 +87,8 @@
             <div class="d-flex col-sm-7">
               @if (f.shares.length || f.links.length) {
                 <span class="badge bg-primary">
-                  <fa-icon [icon]="icons.SHARES"></fa-icon>{{ f.shares.length + f.links.length }}
+                  <fa-icon [icon]="icons.SHARES"></fa-icon>
+                  {{ f.shares.length + f.links.length }}
                 </span>
               } @else {
                 <span class="badge bg-secondary-alt" l10nTranslate>no</span>
@@ -97,7 +98,9 @@
           <div class="d-flex align-items-center mb-1">
             <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Anchored</div>
             @if (f.spaces.length) {
-              <span class="badge bg-primary"><fa-icon [icon]="icons.SPACES"></fa-icon>{{ f.spaces.length }}</span>
+              <span class="badge bg-primary">
+                <fa-icon [icon]="icons.SPACES"></fa-icon>
+                {{ f.spaces.length }}</span>
             } @else {
               <span class="badge bg-secondary-alt" l10nTranslate>no</span>
             }
@@ -141,31 +144,31 @@
               <div (click)="openLockDialog(f)"
                    class="badge white-space-normal bg-maroon cursor-pointer mb-2">
                 <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faUnlock"></fa-icon>
-                <span>{{ f.lock | fileLockFormatPipe }}</span>
+                {{ f.lock | fileLockFormatPipe }}
               </div>
             }
             @for (space of f.spaces; track space.id) {
               <div (click)="goToSpace(space)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SPACES"></fa-icon>
-                <span>{{ space.name }}</span>
+                {{ space.name }}
               </div>
             }
             @for (share of f.shares; track share.id) {
               <div (click)="goToShare(share)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SHARES"></fa-icon>
-                <span>{{ share.name }}</span>
+                {{ share.name }}
               </div>
             }
             @for (link of f.links; track link.id) {
               <div (click)="goToShare(link)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.LINKS"></fa-icon>
-                <span>{{ link.name }}</span>
+                {{ link.name }}
               </div>
             }
             @for (sync of f.syncs; track sync.id) {
               <div (click)="goToSync(sync)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SYNC"></fa-icon>
-                <span>{{ sync.clientName }}</span>
+                {{ sync.clientName }}
               </div>
             }
           </div>

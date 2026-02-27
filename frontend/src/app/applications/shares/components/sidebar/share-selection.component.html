@@ -32,7 +32,7 @@
         @if (share().counts.shares) {
           <span (click)="childShareDialog(share())" class="badge bg-purple cursor-pointer me-1">
             <fa-icon [icon]="iconShared"></fa-icon>
-            <span>{{ share().counts.shares }}</span>
+            {{ share().counts.shares }}
           </span>
         } @else {
           <span class="badge bg-secondary-alt" l10nTranslate>no</span>

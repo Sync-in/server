@@ -78,11 +78,11 @@
   }
   <div class="mt-auto">
     <div class="d-flex align-items-start">
-      <button (click)="onPrevious()" class="btn btn-sm btn-secondary me-auto" translate type="button">
+      <button (click)="onPrevious()" class="btn btn-sm btn-default me-auto" translate type="button">
         <fa-icon [icon]="icons.faArrowCircleLeft"></fa-icon>
         Previous
       </button>
-      <button (click)="onSubmit()" [disabled]="!syncPath.settings.name" class="btn btn-sm btn-secondary ms-auto" translate type="button">
+      <button (click)="onSubmit()" [disabled]="!syncPath.settings.name" class="btn btn-sm btn-default ms-auto" translate type="button">
         <fa-icon [icon]="icons.faCheckCircle"></fa-icon>
         Done
       </button>

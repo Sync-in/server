@@ -1,7 +1,7 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadSpaces()"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
@@ -9,7 +9,7 @@
   </button>
   @if (canCreateSpace) {
     <button (click)="openSpaceDialog(true)"
-            class="btn btn-sm btn-secondary me-1"
+            class="btn btn-sm btn-default me-1"
             [tooltip]="'New space' | translate:locale.language"
             container="body"
             type="button">
@@ -18,7 +18,7 @@
   }
   <button (click)="openSpaceDialog()"
           [disabled]="!canEditSpace"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Edit space' | translate:locale.language"
           container="body"
           type="button">
@@ -26,7 +26,7 @@
   </button>
   <button (click)="openChildShareDialog()"
           [disabled]="!canEditSpace || !selected?.counts.shares"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Edit children shares' | translate:locale.language"
           container="body"
           type="button">
@@ -34,7 +34,7 @@
   </button>
   <button (click)="openSpaceRootsDialog()"
           [disabled]="!canManageRoots"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Manage my anchored files' | translate:locale.language"
           container="body"
           type="button">
@@ -164,13 +164,14 @@
                     @case ('info') {
                       @if (s.counts?.roots) {
                         <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.faAnchor"></fa-icon>{{ s.counts.roots }}
+                          <fa-icon [icon]="icons.faAnchor"></fa-icon>
+                          {{ s.counts.roots }}
                         </span>
                       }
                       @if (s.role === SPACE_ROLE.IS_MANAGER && s.counts.shares) {
                         <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
                           <fa-icon [icon]="icons.SHARED"></fa-icon>
-                          <span>{{ s.counts.shares }}</span>
+                          {{ s.counts.shares }}
                         </span>
                       }
                     }

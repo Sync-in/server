@@ -45,7 +45,7 @@
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Expired</div>
         @if (link().link.expiresAt) {
           <span class="badge bg-{{link().hTimeExpirationAgo >= 1 ? 'warning': 'danger'}}">
-            <span>{{ link().hTimeExpirationAgo >= 1 ? link().hTimeExpirationAgo + '&nbsp;' + ('days' | translate:locale.language) : 'expired' | translate:locale.language }}</span>
+            {{ link().hTimeExpirationAgo >= 1 ? link().hTimeExpirationAgo + '&nbsp;' + ('days' | translate:locale.language) : 'expired' | translate:locale.language }}
           </span>
         } @else {
           <span class="badge bg-secondary-alt" l10nTranslate>no</span>

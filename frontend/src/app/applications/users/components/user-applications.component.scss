@@ -1,0 +1,68 @@
+.user-applications-page {
+  overflow: auto;
+
+  .app-download-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 0.9rem;
+  }
+
+  .app-download-card.dialog-check-card--interactive {
+    cursor: default;
+  }
+
+  .app-download-card .card-body {
+    min-height: 235px;
+  }
+
+  .app-download-card-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.2rem;
+  }
+
+  .app-download-card-title {
+    margin: 0.75rem 0 0.35rem;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+  }
+
+  .app-download-card-btn {
+    margin: 0.35rem 0 0.55rem;
+  }
+
+  .app-download-card-details {
+    margin-top: 0.15rem;
+  }
+
+  .app-download-card-meta {
+    font-size: 0.76rem;
+    line-height: 1.35;
+    margin-bottom: 0.25rem;
+  }
+
+  .app-download-card-link {
+    display: inline-block;
+    line-height: 1.35;
+    text-underline-offset: 0.18rem;
+  }
+}
+
+:host-context(body.theme-light) {
+  .user-applications-page .app-download-card.dialog-check-card--interactive:hover {
+    background: rgba(255, 255, 255, 0.52);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .user-applications-page {
+    .app-download-card .card-body {
+      min-height: 205px;
+    }
+  }
+}

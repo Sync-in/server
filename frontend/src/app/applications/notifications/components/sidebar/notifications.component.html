@@ -7,7 +7,7 @@
     }
   </span>
   @if (store.notifications().length) {
-    <button (click)="removeAll()" class="btn btn-xs btn-secondary">
+    <button (click)="removeAll()" class="btn btn-xs btn-default">
       <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
     </button>
   } @else {
@@ -16,7 +16,7 @@
 </div>
 <div class="fs-2xs p-2" appAutoResize>
   @for (n of store.notifications(); track n.id) {
-    <div class="mb-1 app-small-card rounded no-select" [class.bg-purple]="n.soonRead" #notificationsHtml>
+    <div class="mb-1 app-small-card rounded no-select" [class.bg-soft-warning]="n.soonRead" #notificationsHtml>
       <div class="d-flex px-2 pt-2 pb-1">
         <app-user-avatar [user]="n.fromUser" [width]="24" [height]="24" [unknownUserAsInfo]="n.fromUser.id === -1"></app-user-avatar>
         <div class="align-self-center ms-1">

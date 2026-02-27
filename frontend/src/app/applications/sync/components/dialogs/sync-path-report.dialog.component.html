@@ -8,7 +8,7 @@
 </div>
 <div class="modal-body p-0">
   <div class="app-top-menu bg-theme-alt">
-    <button (click)="manageReport(!running)" class="btn btn-sm btn-secondary ms-1" type="button">
+    <button (click)="manageReport(!running)" class="btn btn-sm btn-default ms-1" type="button">
       <div class="d-flex align-items-center">
         <fa-icon [icon]="running ? icons.faStop : icons.faFlask"></fa-icon>
         <span class="ms-1" l10nTranslate>Simulate</span>
@@ -38,7 +38,7 @@
       }
       <div [tooltip]="'Go to' | translate:locale.language">
         <div [isDisabled]="!transferSelected" class="btn-group btn-group-sm me-1" dropdown>
-          <button class="btn btn-sm btn-secondary dropdown-toggle" dropdownToggle type="button">
+          <button class="btn btn-sm btn-default dropdown-toggle" dropdownToggle type="button">
             <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
           </button>
           <ul *dropdownMenu class="dropdown-menu" role="menu">

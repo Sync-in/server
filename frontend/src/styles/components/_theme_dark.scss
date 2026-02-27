@@ -25,6 +25,9 @@
 
       .menu-mini {
         background-color: $sidebar-dark-apps-menu-bg;
+        border-top: .5px solid $sidebar-dark-icons-menu-border-color;
+        border-right: .5px solid $sidebar-dark-icons-menu-border-color;
+        border-bottom: .5px solid $sidebar-dark-icons-menu-border-color;
 
         > a {
           color: $sidebar-dark-apps-menu-border-color;
@@ -235,7 +238,6 @@
       box-shadow: none !important;
     }
   }
-  .btn-secondary,
   .btn-default,
   .btn-custom,
   .btn-outline-secondary-alt {

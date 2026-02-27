@@ -31,67 +31,66 @@
                   </select>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div class="card dialog-tab-card">
-            <div class="card-body">
-              <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Info</div>
-
-              <div class="px-1">
-                <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                  <label for="" class="col-5 col-sm-4" l10nTranslate>Login</label>
-                  <span class="col-7 col-sm-8 text-end">{{ user.login }}</span>
-                </div>
-
-                <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                  <label for="" class="col-5 col-sm-4" l10nTranslate>IP Addresses</label>
-                  <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
-                    <span class="badge bg-purple">{{ user.currentIp }}</span>
-                    <span class="badge bg-secondary-alt ms-1">{{ user.lastIp }}</span>
-                  </div>
-                </div>
-
-                <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                  <label for="" class="col-5 col-sm-4" l10nTranslate>Connections</label>
-                  <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
-                    <span class="badge bg-purple">{{ user.currentAccess | amDateFormat }}</span>
-                    <span class="badge bg-secondary-alt ms-1">{{ user.lastAccess | amDateFormat }}</span>
-                  </div>
-                </div>
-
-                @if (user.isUser) {
+              <div>
+                <div class="px-1 mt-4">
                   <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                    <label for="" class="col-5 col-sm-4" l10nTranslate>Permissions</label>
+                    <label for="" class="col-5 col-sm-4" l10nTranslate>Login</label>
+                    <span class="col-7 col-sm-8 text-end">{{ user.login }}</span>
+                  </div>
+
+                  <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
+                    <label for="" class="col-5 col-sm-4" l10nTranslate>IP Addresses</label>
                     <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
-                      @if (user.isAdmin) {
-                        <span class="badge bg-gray-dark">
-                          <fa-icon [icon]="icons.faKey"></fa-icon>
-                          <span l10nTranslate>Administrator</span>
-                        </span>
-                      } @else {
-                        @for (app of user.applications; track $index) {
-                          <span class="badge bg-gray-dark m-1" l10nTranslate>{{ app }}</span>
-                        }
-                      }
+                      <span class="badge bg-purple">{{ user.currentIp }}</span>
+                      <span class="badge bg-secondary-alt ms-1">{{ user.lastIp }}</span>
                     </div>
                   </div>
 
                   <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                    <label for="" class="col-5 col-sm-4" l10nTranslate>Storage Space</label>
-                    <div class="col-7 col-sm-8">
-                      <app-storage-usage [item]="user"></app-storage-usage>
+                    <label for="" class="col-5 col-sm-4" l10nTranslate>Connections</label>
+                    <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
+                      <span class="badge bg-purple">{{ user.currentAccess | amDateFormat }}</span>
+                      <span class="badge bg-secondary-alt ms-1">{{ user.lastAccess | amDateFormat }}</span>
                     </div>
                   </div>
-                }
 
-                <div class="row g-2 align-items-center pt-2">
-                  <label for="" class="col-5 col-sm-4">WebDAV</label>
-                  <div class="col-7 col-sm-8 text-end text-truncate">
-                    <span (click)="clipBoardLink()" class="text-primary cursor-pointer">
-                      <fa-icon [icon]="icons.faCopy"></fa-icon>
-                      {{ webdavUrl }}
-                    </span>
+                  @if (user.isUser) {
+                    <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
+                      <label for="" class="col-5 col-sm-4" l10nTranslate>Permissions</label>
+                      <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
+                        @if (user.isAdmin) {
+                          <span class="badge bg-gray-dark">
+                            <fa-icon [icon]="icons.faKey"></fa-icon>
+                            <span l10nTranslate>Administrator</span>
+                          </span>
+                        } @else {
+                          @for (app of user.applications; track $index) {
+                            <span class="badge bg-gray-dark m-1" l10nTranslate>{{ app }}</span>
+                          }
+                        }
+                      </div>
+                    </div>
+
+                    <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
+                      <label for="" class="col-5 col-sm-4" l10nTranslate>Storage Space</label>
+                      <div class="col-7 col-sm-8 d-flex justify-content-end">
+                        <app-storage-usage class="w-100" style="max-width: 18rem;" [item]="user"></app-storage-usage>
+                      </div>
+                    </div>
+                  }
+
+                  <div class="row g-2 align-items-center pt-2">
+                    <label for="" class="col-5 col-sm-4">WebDAV</label>
+                    <div class="col-7 col-sm-8 text-end text-truncate">
+                      <span
+                        (click)="clipBoardLink()"
+                        [title]="webdavUrl"
+                        class="badge bg-primary d-inline-flex align-items-center gap-1 cursor-pointer">
+                        <fa-icon [icon]="icons.faCopy"></fa-icon>
+                        {{ webdavUrl }}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -166,7 +165,7 @@
                     <div class="col-12 col-md-6">
                       <div class="d-flex flex-wrap gap-2">
                         <button (click)="genAvatar()" class="btn btn-xs btn-success" type="button" l10nTranslate>Generate</button>
-                        <button class="btn-file-upload btn btn-xs btn-secondary" type="button">
+                        <button class="btn-file-upload btn btn-xs btn-default" type="button">
                           <span l10nTranslate>Import</span>
                           <input (change)="uploadAvatar($event)" accept="image/*" name="file" role="button" type="file" />
                         </button>

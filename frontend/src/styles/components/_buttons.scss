@@ -1,6 +1,109 @@
+@mixin btn-badge-vars(
+  $tone,
+  $light-text: null,
+  $light-bg-mix: 84%,
+  $light-border-mix: 66%
+) {
+  $bg: rgba(mix(rgba($white, 0.92), mix($white, $tone, $light-bg-mix), 68%), 0.95);
+  $border: mix($white, $tone, $light-border-mix - 4%);
+  $fg: if($light-text != null, $light-text, mix($tone, $black, 90%));
+  $hover-bg: rgba(mix(rgba($white, 0.96), mix($white, $tone, $light-bg-mix - 8%), 62%), 0.98);
+  $hover-border: mix($white, $tone, $light-border-mix - 16%);
+  $hover-fg: mix($fg, $black, 88%);
+  $active-bg: rgba(mix($white, $tone, 52%), 1);
+  $active-border: mix($tone, $black, 86%);
+  $active-fg: mix($fg, $black, 92%);
+
+  --btn-chip-bg: #{$bg};
+  --btn-chip-border: #{$border};
+  --btn-chip-fg: #{$fg};
+  --btn-chip-hover-bg: #{$hover-bg};
+  --btn-chip-hover-border: #{$hover-border};
+  --btn-chip-hover-fg: #{$hover-fg};
+  --btn-chip-active-bg: #{$active-bg};
+  --btn-chip-active-border: #{$active-border};
+  --btn-chip-active-fg: #{$active-fg};
+}
+
+@mixin btn-badge-dark-vars($bg, $border, $fg) {
+  --btn-chip-bg: #{$bg};
+  --btn-chip-border: #{$border};
+  --btn-chip-fg: #{$fg};
+  --btn-chip-hover-bg: #{mix($bg, $border, 74%)};
+  --btn-chip-hover-border: #{opacify($border, 0.12)};
+  --btn-chip-hover-fg: #{mix($fg, $white, 82%)};
+  --btn-chip-active-bg: #{mix($bg, $border, 58%)};
+  --btn-chip-active-border: #{opacify($border, 0.2)};
+  --btn-chip-active-fg: #{mix($fg, $white, 90%)};
+}
+
+@mixin btn-badge-variant(
+  $selector,
+  $tone,
+  $light-text: null,
+  $light-bg-mix: 84%,
+  $light-border-mix: 66%
+) {
+  .btn.#{$selector} {
+    @include btn-badge-vars($tone, $light-text, $light-bg-mix, $light-border-mix);
+  }
+}
+
+@mixin btn-badge-dark-variant($selector, $bg, $border, $fg) {
+  body.theme-dark .btn.#{$selector} {
+    @include btn-badge-dark-vars($bg, $border, $fg);
+  }
+}
+
 .btn {
   transition: background-color .2s ease, border-color .2s ease, color .2s ease;
   box-shadow: none !important;
+}
+
+.btn.btn-primary,
+.btn.btn-secondary,
+.btn.btn-success,
+.btn.btn-danger,
+.btn.btn-warning,
+.btn.btn-info {
+  border-color: var(--btn-chip-border) !important;
+  background-color: var(--btn-chip-bg) !important;
+  color: var(--btn-chip-fg) !important;
+
+  &:hover:not(:disabled) {
+    border-color: var(--btn-chip-hover-border) !important;
+    background-color: var(--btn-chip-hover-bg) !important;
+    color: var(--btn-chip-hover-fg) !important;
+  }
+
+  &:is(.active, :active):not(:disabled) {
+    border-color: var(--btn-chip-active-border) !important;
+    background-color: var(--btn-chip-active-bg) !important;
+    color: var(--btn-chip-active-fg) !important;
+  }
+
+  &:disabled {
+    border-color: var(--btn-chip-border) !important;
+    background-color: var(--btn-chip-bg) !important;
+    color: var(--btn-chip-fg) !important;
+  }
+}
+
+.btn-check:checked + .btn.btn-primary,
+.btn-check:active + .btn.btn-primary,
+.btn-check:checked + .btn.btn-secondary,
+.btn-check:active + .btn.btn-secondary,
+.btn-check:checked + .btn.btn-success,
+.btn-check:active + .btn.btn-success,
+.btn-check:checked + .btn.btn-danger,
+.btn-check:active + .btn.btn-danger,
+.btn-check:checked + .btn.btn-warning,
+.btn-check:active + .btn.btn-warning,
+.btn-check:checked + .btn.btn-info,
+.btn-check:active + .btn.btn-info {
+  border-color: var(--btn-chip-active-border) !important;
+  background-color: var(--btn-chip-active-bg) !important;
+  color: var(--btn-chip-active-fg) !important;
 }
 
 .btn-link {
@@ -52,3 +155,17 @@
 .btn-minimize-white {
   @extend .btn-close-white;
 }
+
+@include btn-badge-variant('btn-primary', $primary, mix($primary, $black, 88%), 70%, 48%);
+@include btn-badge-variant('btn-secondary', darken($secondary, 22%), mix($gray-dark, $black, 94%), 62%, 34%);
+@include btn-badge-variant('btn-success', $success, mix($success, $black, 90%), 68%, 46%);
+@include btn-badge-variant('btn-danger', $danger);
+@include btn-badge-variant('btn-warning', $warning, #a35400, 54%, 34%);
+@include btn-badge-variant('btn-info', mix($info, $gray-dark, 16%), mix($gray-dark, $black, 90%), 68%, 48%);
+
+@include btn-badge-dark-variant('btn-primary', #1d4ed833, #60a5fa66, #bfdbfe);
+@include btn-badge-dark-variant('btn-secondary', #33415566, #64748b80, #e2e8f0);
+@include btn-badge-dark-variant('btn-success', #16a34a33, #4ade8080, #bbf7d0);
+@include btn-badge-dark-variant('btn-danger', #dc262633, #f8717180, #fecaca);
+@include btn-badge-dark-variant('btn-warning', #f59e0b33, #fbbf2480, #fde68a);
+@include btn-badge-dark-variant('btn-info', #0f4c5a33, #67a8ba80, #cfeaf1);

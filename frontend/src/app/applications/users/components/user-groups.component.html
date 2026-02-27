@@ -1,7 +1,7 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="refresh()"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
@@ -9,14 +9,14 @@
   </button>
   <button (click)="openDialog(true)"
           [disabled]="!allowedAction.addGroup && !allowedAction.addUsers"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="(allowedAction.addGroup ? 'New personal group': 'Add members') | translate:locale.language"
           container="body"
           type="button">
     <fa-icon [icon]="icons.faPlus"></fa-icon>
   </button>
   <button (click)="openDialog(false, true)"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [disabled]="!allowedAction.removeGroup && !allowedAction.removeUser"
           [tooltip]="(allowedAction.removeGroup ? 'Delete group' : 'Remove from group') | translate:locale.language"
           container="body"
@@ -25,7 +25,7 @@
   </button>
   <button (click)="openDialog()"
           [disabled]="!allowedAction.editGroup && !allowedAction.editUser"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-sm btn-default me-1"
           [tooltip]="(allowedAction.editGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
           container="body"
           type="button">
@@ -35,7 +35,7 @@
     <div class="btn-group btn-group-sm me-1" dropdown>
       <button dropdownToggle
               [class.disabled]="!selected"
-              class="btn btn-sm btn-secondary dropdown-toggle"
+              class="btn btn-sm btn-default dropdown-toggle"
               type="button">
         <fa-icon [icon]="icons.faEllipsis"></fa-icon>
       </button>

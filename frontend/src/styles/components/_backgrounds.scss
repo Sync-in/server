@@ -19,6 +19,10 @@
   color: black;
 }
 
+.bg-soft-warning {
+  background-color: rgba($warning, 0.6) !important;
+}
+
 .drag-over {
   background-color: $secondary !important;
   color: black !important;

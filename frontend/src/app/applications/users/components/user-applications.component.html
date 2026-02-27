@@ -1,67 +1,79 @@
-<div class="app-top-menu px-4">
+<div class="app-top-menu px-4 user-applications-topbar">
   @if (store.appStoreManifest()) {
-    <div class="d-flex flex-fill align-items-center fs-xs">
-      <span><span l10nTranslate>Repository</span>:&nbsp;<span class="fw-bold" l10nTranslate>{{ store.appStoreManifest().repository }}</span></span>
-      <span class="mx-auto">Version:&nbsp;<b>{{ store.appStoreManifest().version }}</b></span>
-      <span>{{ store.appStoreManifest().date | amDateFormat:'L' }}</span>
+    <div class="d-flex flex-fill align-items-center fs-xs flex-wrap gap-2">
+      <span class="badge bg-secondary-alt text-nowrap">
+        <span l10nTranslate>Repository</span>:&nbsp;<span class="fw-bold" l10nTranslate>{{ store.appStoreManifest().repository }}</span>
+      </span>
+      <span class="badge bg-secondary-alt mx-auto text-nowrap">
+        <span l10nTranslate>Version</span>:&nbsp;<span class="fw-bold">{{ store.appStoreManifest().version }}</span>
+       </span>
+      <span class="badge bg-secondary-alt text-nowrap">{{ store.appStoreManifest().date | amDateFormat:'L' }}</span>
     </div>
   }
 </div>
 @if (store.appStoreManifest()) {
-  <div class="d-flex flex-column fs-sm bg-theme" appAutoResize [resizeOffset]="80" style="height: 100%">
-    <div class="d-flex">
-      <div class="col-12 p-4">
-        <div class="container p-0">
-          <div class="row">
-            @for (app of APP_STORE_PLATFORM_LIST; track $index) {
-              <div class="col-md-4">
-                <div class="card text-bg-light text-center mb-3">
-                  <div class="card-body">
-                    @switch (app) {
-                      @case (APP_STORE_OS.WIN) {
-                        <fa-icon [icon]="icons.faWindows" size="3x" style="height: 36px"></fa-icon>
-                        <h5 class="card-title mt-3 mb-2">Windows</h5>
-                      }
-                      @case (APP_STORE_OS.MAC) {
-                        <fa-icon [icon]="icons.faApple" size="3x" style="height: 36px"></fa-icon>
-                        <h5 class="card-title mt-3 mb-2">Mac</h5>
-                      }
-                      @case (APP_STORE_OS.LINUX) {
-                        <fa-icon [icon]="icons.faLinux" size="3x" style="height: 36px"></fa-icon>
-                        <h5 class="card-title mt-3 mb-2">Linux</h5>
-                      }
-                      @case (APP_STORE_OS.NODE) {
-                        <fa-icon [icon]="icons.faTerminal" size="3x" style="height: 36px"></fa-icon>
-                        <h5 class="card-title mt-3 mb-2">Command Line</h5>
-                      }
+  <div class="profile-page user-applications-page d-flex flex-column fs-sm" appAutoResize [resizeOffset]="80" style="height: 100%">
+    <div class="container-fluid p-3 p-xl-4">
+      <div class="row g-3">
+        @for (app of APP_STORE_PLATFORM_LIST; track $index) {
+          <div class="col-12 col-md-6 col-xl-4 d-flex">
+            <div class="card dialog-tab-card dialog-check-card--interactive app-download-card text-center w-100 h-100">
+              <div class="card-body d-flex flex-column align-items-center justify-content-center p-3 p-xl-4">
+                <div class="app-download-card-icon dialog-check-card">
+                  @switch (app) {
+                    @case (APP_STORE_OS.WIN) {
+                      <fa-icon [icon]="icons.faWindows" size="2x" style="height: 32px"></fa-icon>
                     }
-                    <a (click)="download(app)" class="btn btn-sm btn-primary mt-3 mb-2">
-                      <fa-icon [icon]="icons.faDownload" class="me-2"></fa-icon>
-                      <span l10nTranslate>Download</span>
-                    </a>
-                    <div>
-                      @if (app === APP_STORE_OS.NODE) {
-                        <div class="small text-muted mb-1">
-                          <span l10nTranslate>System requirements</span>
-                          <span>:&nbsp;Node.js 22+</span>
-                        </div>
-                        <a role="button" (click)="download(app, true)" class="small" l10nTranslate>
-                          <span l10nTranslate>Download tar.gz version</span>&nbsp;
-                        </a>
-                      } @else {
-                        <div class="small text-muted mb-1">
-                          <span l10nTranslate>System requirements</span>
-                          <span>:&nbsp;{{ app === APP_STORE_OS.MAC ? 'Intel 64bit' : '64bit' }}</span>
-                        </div>
-                        <a role="button" (click)="download(app, true)" class="small" l10nTranslate>{{ app === APP_STORE_OS.MAC ? 'Download Apple Silicon ARM64 version' : 'Download ARM64 version' }}</a>
-                      }
+                    @case (APP_STORE_OS.MAC) {
+                      <fa-icon [icon]="icons.faApple" size="2x" style="height: 32px"></fa-icon>
+                    }
+                    @case (APP_STORE_OS.LINUX) {
+                      <fa-icon [icon]="icons.faLinux" size="2x" style="height: 32px"></fa-icon>
+                    }
+                    @case (APP_STORE_OS.NODE) {
+                      <fa-icon [icon]="icons.faTerminal" size="2x" style="height: 32px"></fa-icon>
+                    }
+                  }
+                </div>
+                @switch (app) {
+                  @case (APP_STORE_OS.WIN) {
+                    <h5 class="app-download-card-title">Windows</h5>
+                  }
+                  @case (APP_STORE_OS.MAC) {
+                    <h5 class="app-download-card-title">Mac</h5>
+                  }
+                  @case (APP_STORE_OS.LINUX) {
+                    <h5 class="app-download-card-title">Linux</h5>
+                  }
+                  @case (APP_STORE_OS.NODE) {
+                    <h5 class="app-download-card-title">Command Line</h5>
+                  }
+                }
+                <a (click)="download(app)" class="btn btn-sm btn-primary app-download-card-btn">
+                  <fa-icon [icon]="icons.faDownload" class="me-2"></fa-icon>
+                  <span l10nTranslate>Download</span>
+                </a>
+                <div class="app-download-card-details">
+                  @if (app === APP_STORE_OS.NODE) {
+                    <div class="app-download-card-meta small text-muted">
+                      <span l10nTranslate>System requirements</span>
+                      <span>:&nbsp;Node.js 22+</span>
                     </div>
-                  </div>
+                    <a role="button" (click)="download(app, true)" class="app-download-card-link small" l10nTranslate>
+                      <span l10nTranslate>Download tar.gz version</span>&nbsp;
+                    </a>
+                  } @else {
+                    <div class="app-download-card-meta small text-muted">
+                      <span l10nTranslate>System requirements</span>
+                      <span>:&nbsp;{{ app === APP_STORE_OS.MAC ? 'Intel 64bit' : '64bit' }}</span>
+                    </div>
+                    <a role="button" (click)="download(app, true)" class="app-download-card-link small" l10nTranslate>{{ app === APP_STORE_OS.MAC ? 'Download Apple Silicon ARM64 version' : 'Download ARM64 version' }}</a>
+                  }
                 </div>
               </div>
-            }
+            </div>
           </div>
-        </div>
+        }
       </div>
     </div>
   </div>
