@@ -25,13 +25,21 @@
 
       .body {
         .btn.btn-primary {
-          @include btn-badge-dark-vars(#1d4ed833, #60a5fa66, #bfdbfe);
+          @include btn-dark-vars(
+            semantic-dark('primary', bg),
+            semantic-dark('primary', border),
+            semantic-dark('primary', fg)
+          );
           --btn-chip-bg: #203255;
           --btn-chip-active-bg: white;
           border-width: .5px !important;
         }
         .btn.btn-secondary {
-          @include btn-badge-dark-vars(#33415566, #64748b80, #e2e8f0);
+          @include btn-dark-vars(
+            semantic-dark('secondary', bg),
+            semantic-dark('secondary', border),
+            semantic-dark('secondary', fg)
+          );
           border-width: .5px !important;
         }
 

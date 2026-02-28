@@ -1,4 +1,4 @@
-@mixin btn-badge-vars(
+@mixin btn-vars(
   $tone,
   $light-text: null,
   $light-bg-mix: 84%,
@@ -25,7 +25,7 @@
   --btn-chip-active-fg: #{$active-fg};
 }
 
-@mixin btn-badge-dark-vars($bg, $border, $fg) {
+@mixin btn-dark-vars($bg, $border, $fg) {
   --btn-chip-bg: #{$bg};
   --btn-chip-border: #{$border};
   --btn-chip-fg: #{$fg};
@@ -37,7 +37,7 @@
   --btn-chip-active-fg: #{mix($fg, $white, 90%)};
 }
 
-@mixin btn-badge-variant(
+@mixin btn-variant(
   $selector,
   $tone,
   $light-text: null,
@@ -45,13 +45,13 @@
   $light-border-mix: 66%
 ) {
   .btn.#{$selector} {
-    @include btn-badge-vars($tone, $light-text, $light-bg-mix, $light-border-mix);
+    @include btn-vars($tone, $light-text, $light-bg-mix, $light-border-mix);
   }
 }
 
-@mixin btn-badge-dark-variant($selector, $bg, $border, $fg) {
+@mixin btn-dark-variant($selector, $bg, $border, $fg) {
   body.theme-dark .btn.#{$selector} {
-    @include btn-badge-dark-vars($bg, $border, $fg);
+    @include btn-dark-vars($bg, $border, $fg);
   }
 }
 
@@ -156,16 +156,42 @@
   @extend .btn-close-white;
 }
 
-@include btn-badge-variant('btn-primary', $primary, mix($primary, $black, 88%), 70%, 48%);
-@include btn-badge-variant('btn-secondary', darken($secondary, 22%), mix($gray-dark, $black, 94%), 62%, 34%);
-@include btn-badge-variant('btn-success', $success, mix($success, $black, 90%), 68%, 46%);
-@include btn-badge-variant('btn-danger', $danger);
-@include btn-badge-variant('btn-warning', $warning, #a35400, 54%, 34%);
-@include btn-badge-variant('btn-info', mix($info, $gray-dark, 16%), mix($gray-dark, $black, 90%), 68%, 48%);
+$button-variants: (
+  'btn-primary': (tone: 'primary', text: semantic-ink('primary', 88%), bg-mix: 70%, border-mix: 48%),
+  'btn-secondary': (tone: 'secondary', text: semantic-ink('gray-dark', 94%), bg-mix: 62%, border-mix: 34%),
+  'btn-success': (tone: 'success', text: semantic-ink('success', 90%), bg-mix: 68%, border-mix: 46%),
+  'btn-danger': (tone: 'danger'),
+  'btn-warning': (tone: 'warning', text: #a35400, bg-mix: 54%, border-mix: 34%),
+  'btn-info': (tone: 'info-btn', text: semantic-ink('gray-dark', 90%), bg-mix: 68%, border-mix: 48%)
+);
 
-@include btn-badge-dark-variant('btn-primary', #1d4ed833, #60a5fa66, #bfdbfe);
-@include btn-badge-dark-variant('btn-secondary', #33415566, #64748b80, #e2e8f0);
-@include btn-badge-dark-variant('btn-success', #16a34a33, #4ade8080, #bbf7d0);
-@include btn-badge-dark-variant('btn-danger', #dc262633, #f8717180, #fecaca);
-@include btn-badge-dark-variant('btn-warning', #f59e0b33, #fbbf2480, #fde68a);
-@include btn-badge-dark-variant('btn-info', #0f4c5a33, #67a8ba80, #cfeaf1);
+$button-dark-variants: (
+  'btn-primary': 'primary',
+  'btn-secondary': 'secondary',
+  'btn-success': 'success',
+  'btn-danger': 'danger',
+  'btn-warning': 'warning',
+  'btn-info': 'btn-info'
+);
+
+@each $selector, $config in $button-variants {
+  $bg-mix: map-get($config, bg-mix);
+  $border-mix: map-get($config, border-mix);
+
+  @include btn-variant(
+    $selector,
+    semantic-tone(map-get($config, tone)),
+    map-get($config, text),
+    if($bg-mix == null, 84%, $bg-mix),
+    if($border-mix == null, 66%, $border-mix)
+  );
+}
+
+@each $selector, $dark-key in $button-dark-variants {
+  @include btn-dark-variant(
+    $selector,
+    semantic-dark($dark-key, bg),
+    semantic-dark($dark-key, border),
+    semantic-dark($dark-key, fg)
+  );
+}

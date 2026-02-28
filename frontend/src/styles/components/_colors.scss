@@ -1,0 +1,62 @@
+$semantic-tones: (
+  'primary': $primary,
+  'secondary': darken($secondary, 22%),
+  'secondary-alt-bg': $secondary,
+  'gray-light': $gray-light,
+  'success': $success,
+  'danger': $danger,
+  'warning': $warning,
+  'info': $info,
+  'info-btn': mix($info, $gray-dark, 16%),
+  'light': $gray-lightest,
+  'dark': $gray-dark,
+  'purple': $purple,
+  'maroon': $maroon,
+  'gray-dark': $gray-dark,
+  'gray-dark-bg': $gray-700,
+  'sync-newly-0': $red,
+  'sync-newly-1': $primary,
+  'sync-newly-2': lighten($primary, 15%),
+  'sync-newly-3': lighten($primary, 30%),
+  'sync-newly-4': $orange,
+  'prop-newly-1': $purple,
+  'prop-newly-2': lighten($purple, 15%),
+  'prop-newly-3': lighten($purple, 30%)
+);
+
+$semantic-dark-triplets: (
+  'secondary': (bg: #33415566, border: #64748b80, fg: #e2e8f0),
+  'secondary-alt': (bg: #ffffff14, border: #cbd5e14d, fg: #f8fafc),
+  'primary': (bg: #1d4ed833, border: #60a5fa66, fg: #bfdbfe),
+  'success': (bg: #16a34a33, border: #4ade8080, fg: #bbf7d0),
+  'danger': (bg: #dc262633, border: #f8717180, fg: #fecaca),
+  'warning': (bg: #f59e0b33, border: #fbbf2480, fg: #fde68a),
+  'info': (bg: #4f46e533, border: #818cf880, fg: #c7d2fe),
+  'btn-info': (bg: #0f4c5a33, border: #67a8ba80, fg: #cfeaf1),
+  'purple': (bg: #7e22ce33, border: #c084fc80, fg: #e9d5ff),
+  'maroon': (bg: #be185d33, border: #f472b680, fg: #fbcfe8),
+  'light': (bg: #e2e8f014, border: #cbd5e14d, fg: #f1f5f9),
+  'dark': (bg: #33415559, border: #94a3b866, fg: #e2e8f0),
+  'gray-dark': (bg: #33415559, border: #94a3b866, fg: #e2e8f0),
+  'sync-newly-0': (bg: #dc262633, border: #f8717180, fg: #fecaca),
+  'sync-newly-1': (bg: #1d4ed833, border: #60a5fa66, fg: #bfdbfe),
+  'sync-newly-2': (bg: #1e40af33, border: #93c5fd80, fg: #dbeafe),
+  'sync-newly-3': (bg: #0369a133, border: #67e8f980, fg: #cffafe),
+  'sync-newly-4': (bg: #f59e0b33, border: #fbbf2480, fg: #fde68a),
+  'prop-newly-1': (bg: #7e22ce33, border: #c084fc80, fg: #e9d5ff),
+  'prop-newly-2': (bg: #9333ea33, border: #d8b4fe80, fg: #f3e8ff),
+  'prop-newly-3': (bg: #a855f733, border: #e9d5ff80, fg: #faf5ff)
+);
+
+@function semantic-tone($name) {
+  @return map-get($semantic-tones, $name);
+}
+
+@function semantic-dark($name, $field) {
+  $triplet: map-get($semantic-dark-triplets, $name);
+  @return if($triplet == null, null, map-get($triplet, $field));
+}
+
+@function semantic-ink($tone, $mix-amount: 90%) {
+  @return mix(semantic-tone($tone), $black, $mix-amount);
+}

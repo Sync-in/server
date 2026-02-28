@@ -1,29 +1,30 @@
-.bg-gray-dark {
-  background-color: $gray-700;
-}
+$background-variants: (
+  'bg-gray-dark': (tone: 'gray-dark-bg'),
+  'bg-purple': (tone: 'purple', important: true),
+  'bg-maroon': (tone: 'maroon'),
+  'bg-secondary-alt': (tone: 'secondary-alt-bg', text: black),
+  'bg-gray-light-important': (tone: 'gray-light', important: true)
+);
 
-.bg-gray-light-important {
-  background-color: $gray-light !important;
-}
+@each $selector, $config in $background-variants {
+  .#{$selector} {
+    @if map-get($config, important) == true {
+      background-color: semantic-tone(map-get($config, tone)) !important;
+    } @else {
+      background-color: semantic-tone(map-get($config, tone));
+    }
 
-.bg-purple {
-  background-color: $purple !important;
-}
-
-.bg-maroon {
-  background-color: $maroon;
-}
-
-.bg-secondary-alt {
-  background-color: $secondary;
-  color: black;
+    @if map-get($config, text) != null {
+      color: map-get($config, text);
+    }
+  }
 }
 
 .bg-soft-warning {
-  background-color: rgba($warning, 0.6) !important;
+  background-color: rgba(semantic-tone('warning'), 0.6) !important;
 }
 
 .drag-over {
-  background-color: $secondary !important;
+  background-color: semantic-tone('secondary-alt-bg') !important;
   color: black !important;
 }
