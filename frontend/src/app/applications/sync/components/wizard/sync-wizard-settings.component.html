@@ -43,7 +43,7 @@
         @if (syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
           <span l10nTranslate>and from</span>
         } @else {
-          <span class="fw-bold" l10nTranslate>to</span>
+          <span class="fw-semibold" l10nTranslate>to</span>
         }
         <span class="mx-1" l10nTranslate>{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? 'the client folder' : 'the server folder' }}</span>
         @if (syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
@@ -59,17 +59,17 @@
             <span l10nTranslate>In case of conflict,</span>
             <span>&nbsp;</span>
             @if (syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.RECENT) {
-              <span class="fw-bold" l10nTranslate>the most recent files will be kept</span>
+              <span class="fw-semibold" l10nTranslate>the most recent files will be kept</span>
             } @else {
               <span l10nTranslate>the files in</span>
-              <span class="fw-bold mx-1">{{ syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.LOCAL ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
+              <span class="fw-semibold mx-1">{{ syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.LOCAL ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
               <span l10nTranslate>will be preferred</span>
             }
           </div>
         } @else {
           <div>
             <span l10nTranslate>All files created or modified in</span>
-            <span class="fw-bold mx-1">{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
+            <span class="fw-semibold mx-1">{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
             <span l10nTranslate>will be ignored and deleted</span>
           </div>
         }

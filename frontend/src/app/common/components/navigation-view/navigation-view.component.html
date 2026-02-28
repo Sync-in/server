@@ -3,7 +3,7 @@
     <fa-icon [icon]="icons.faCog"></fa-icon>
   </button>
   <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
-    <li class="dropdown-header fw-bold" l10nTranslate>Display</li>
+    <li class="dropdown-header fw-semibold" l10nTranslate>Display</li>
     @for (view of viewsMode | keyvalue: originalOrderKeyValue; track view.key) {
       <li role="menuitem">
         <a (click)="setView(view.key)" class="dropdown-item">
@@ -12,7 +12,7 @@
         </a>
       </li>
     }
-    <li class="dropdown-header fw-bold mt-1" l10nTranslate>Sort by</li>
+    <li class="dropdown-header fw-semibold mt-1" l10nTranslate>Sort by</li>
     @for (field of sortFields | keyvalue: originalOrderKeyValue; track field.key) {
       <li role="menuitem">
         <a (click)="sortBy.emit(field.key)" class="dropdown-item">

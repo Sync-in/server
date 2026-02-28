@@ -576,6 +576,8 @@
   "Application Passwords": "애플리케이션 비밀번호",
   "Generate a new app password": "새 앱 비밀번호 생성",
   "Generated password": "생성된 비밀번호",
+  "Password generated": "비밀번호 생성됨",
+  "Existing passwords": "기존 비밀번호",
   "This password will only be shown once after it is generated": "이 비밀번호는 생성 후 한 번만 표시됩니다",
   "Password name": "비밀번호 이름",
   "Manage": "관리",

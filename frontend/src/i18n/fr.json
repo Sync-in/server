@@ -576,6 +576,8 @@
   "Application Passwords": "Mots de passe d'application",
   "Generate a new app password": "Générer un nouveau mot de passe d’application",
   "Generated password": "Mot de passe généré",
+  "Password generated": "Mot de passe généré",
+  "Existing passwords": "Mots de passe existants",
   "This password will only be shown once after it is generated": "Ce mot de passe ne sera affiché qu’une seule fois après sa génération",
   "Password name": "Nom du mot de passe",
   "Manage": "Gérer",

@@ -52,9 +52,9 @@
             />
           </div>
         }
-        <div class="d-grid gap-2">
-          <button type="submit" [disabled]="twoFaForm.invalid || submitted" class="btn btn-primary" l10nTranslate>Confirm</button>
-          <button type="button" (click)="onClose()" class="btn btn-secondary" l10nTranslate>Cancel</button>
+        <div class="d-flex gap-2 pt-1 w-100">
+          <button type="submit" [disabled]="twoFaForm.invalid || submitted" class="btn btn-primary flex-fill" l10nTranslate>Confirm</button>
+          <button type="button" (click)="onClose()" class="btn btn-secondary flex-fill" l10nTranslate>Cancel</button>
         </div>
       </form>
     </div>

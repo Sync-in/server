@@ -576,6 +576,8 @@
   "Application Passwords": "Senhas de aplicativo",
   "Generate a new app password": "Gerar nova senha de aplicativo",
   "Generated password": "Senha gerada",
+  "Password generated": "Senha gerada",
+  "Existing passwords": "Senhas existentes",
   "This password will only be shown once after it is generated": "Esta senha será exibida apenas uma vez após ser gerada",
   "Password name": "Nome da senha",
   "Manage": "Gerenciar",

@@ -63,15 +63,15 @@
        alt="" />
   <div class="info-box p-2 m-2 d-flex flex-column app-small-card rounded opacity-75" [class.d-none]="!isInfoboxOpen()">
     <div class="d-flex mb-1">
-      <div class="d-flex col-sm fw-bold">{{ 'Type' | translate:locale.language }}</div>
+      <div class="d-flex col-sm fw-semibold">{{ 'Type' | translate:locale.language }}</div>
       <div>{{ file().mime }}</div>
     </div>
     <div class="d-flex mb-1">
-      <div class="d-flex col-sm fw-bold">{{ 'Dimensions' | translate:locale.language }}</div>
+      <div class="d-flex col-sm fw-semibold">{{ 'Dimensions' | translate:locale.language }}</div>
       <div>{{ imageResolution() }}</div>
     </div>
     <div class="d-flex mb-1">
-      <div class="d-flex col-sm fw-bold">{{ 'Size' | translate:locale.language }}</div>
+      <div class="d-flex col-sm fw-semibold">{{ 'Size' | translate:locale.language }}</div>
       <div>{{ file().hSize }}</div>
     </div>
   </div>

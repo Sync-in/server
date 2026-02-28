@@ -42,7 +42,7 @@
                   <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
                     <label for="" class="col-5 col-sm-4" l10nTranslate>IP Addresses</label>
                     <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
-                      <span class="badge bg-purple">{{ user.currentIp }}</span>
+                      <span class="badge bg-success">{{ user.currentIp }}</span>
                       <span class="badge bg-secondary-alt ms-1">{{ user.lastIp }}</span>
                     </div>
                   </div>
@@ -50,7 +50,7 @@
                   <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
                     <label for="" class="col-5 col-sm-4" l10nTranslate>Connections</label>
                     <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
-                      <span class="badge bg-purple">{{ user.currentAccess | amDateFormat }}</span>
+                      <span class="badge bg-success">{{ user.currentAccess | amDateFormat }}</span>
                       <span class="badge bg-secondary-alt ms-1">{{ user.lastAccess | amDateFormat }}</span>
                     </div>
                   </div>
@@ -60,13 +60,13 @@
                       <label for="" class="col-5 col-sm-4" l10nTranslate>Permissions</label>
                       <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
                         @if (user.isAdmin) {
-                          <span class="badge bg-gray-dark">
+                          <span class="badge bg-purple">
                             <fa-icon [icon]="icons.faKey"></fa-icon>
                             <span l10nTranslate>Administrator</span>
                           </span>
                         } @else {
                           @for (app of user.applications; track $index) {
-                            <span class="badge bg-gray-dark m-1" l10nTranslate>{{ app }}</span>
+                            <span class="badge bg-purple m-1" l10nTranslate>{{ app }}</span>
                           }
                         }
                       </div>
@@ -283,7 +283,10 @@
                               type="button"
                               l10nTranslate>
                         @if (user.appPasswords > 0) {
-                          <span l10nTranslate>Manage</span>&nbsp;<span>({{ user.appPasswords }})</span>
+                          <div class="d-flex align-items-center gap-2">
+                            <span l10nTranslate>Manage</span>
+                            <span class="badge badge-small bg-primary">{{ user.appPasswords }}</span>
+                          </div>
                         } @else {
                           <span l10nTranslate>Generate</span>
                         }

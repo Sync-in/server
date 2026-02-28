@@ -212,7 +212,7 @@
     @if (!space.enabled) {
       <div class="text-danger white-space-truncate fs-sm {{user.isAdmin ? 'mx-auto' : 'me-auto'}}">
         <span l10nTranslate>Space and data will be deleted in</span>
-        <span class="fw-bold">
+        <span class="fw-semibold">
           @if (space.disabledAt) {
             <span>&nbsp;{{ space.disabledAt | amAdd: SPACE_MAX_DISABLED_DAYS : 'days'| amTimeAgo:true }}</span>
           } @else {

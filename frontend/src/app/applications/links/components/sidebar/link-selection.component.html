@@ -8,15 +8,15 @@
     <hr class="my-1" />
     <div class="p-2">
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Name</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Name</div>
         <div class="word-break-all fs-2xs">{{ link().name }}</div>
       </div>
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Created</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Created</div>
         <div class="fs-2xs">{{ link().link.createdAt | amDateFormat }}</div>
       </div>
       <div class="d-flex mb-1" (mouseover)="accessHover = true" (mouseleave)="accessHover = false" (focus)="accessHover = true">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Accessed</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Accessed</div>
         <div class="fs-2xs">
           @if (accessHover) {
             {{ link().link.currentIp }}
@@ -26,7 +26,7 @@
         </div>
       </div>
       <div class="d-flex mb-1" (mouseover)="lastAccessHover = true" (mouseleave)="lastAccessHover = false" (focus)="accessHover = true">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Last access</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Last access</div>
         <div class="fs-2xs">
           @if (lastAccessHover) {
             {{ link().link.lastIp }}
@@ -36,13 +36,13 @@
         </div>
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Authentication</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Authentication</div>
         <span class="badge {{link().link.requireAuth ? 'bg-success' : 'bg-warning'}}">
           {{ (link().link.requireAuth ? 'yes' : 'no') | translate:locale.language }}
         </span>
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Expired</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Expired</div>
         @if (link().link.expiresAt) {
           <span class="badge bg-{{link().hTimeExpirationAgo >= 1 ? 'warning': 'danger'}}">
             {{ link().hTimeExpirationAgo >= 1 ? link().hTimeExpirationAgo + '&nbsp;' + ('days' | translate:locale.language) : 'expired' | translate:locale.language }}
@@ -52,13 +52,13 @@
         }
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Active</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Active</div>
         <span class="badge {{link().link.isActive ? 'bg-primary' : 'bg-danger'}}">
           {{ (link().link.isActive ? 'yes' : 'no') | translate:locale.language }}
         </span>
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Access</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Access</div>
         @if (link().link.limitAccess !== 0) {
           <span class="badge {{link().link.nbAccess >= link().link.limitAccess  ? 'bg-danger': 'bg-success'}}">
             {{ link().link.nbAccess }}/{{ link().link.limitAccess }}
@@ -71,11 +71,11 @@
     <hr class="my-1" />
     <div class="p-2">
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Shared from</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Shared from</div>
         <app-share-repository [share]="link()" [showIcon]="false"></app-share-repository>
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Permissions</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Permissions</div>
         @if (link().link.permissions) {
           <app-file-permissions [permissions]="link().hPerms"></app-file-permissions>
         } @else {

@@ -15,20 +15,20 @@
     <hr class="my-1" />
     <div class="p-2">
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Name</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Name</div>
         <div class="word-break-all fs-2xs">{{ space().name }}</div>
       </div>
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Created</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Created</div>
         <div class="fs-2xs">{{ space().createdAt | amDateFormat }}</div>
       </div>
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Modified</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Modified</div>
         <div class="fs-2xs">{{ space().modifiedAt | amDateFormat }}</div>
       </div>
 
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Members</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Members</div>
         @if (space().counts.users || space().counts.groups) {
           <span>{{ space().counts | joinCounts:['roots'] }}</span>
         } @else {
@@ -36,7 +36,7 @@
         }
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Anchored</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Anchored</div>
         @if (space().counts.roots) {
           <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1">
             <fa-icon [icon]="icons.ANCHORED"></fa-icon>
@@ -48,7 +48,7 @@
       </div>
       @if (space().role === SPACE_ROLE.IS_MANAGER) {
         <div class="d-flex align-items-center mb-1">
-          <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Child shares</div>
+          <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Child shares</div>
           @if (space().counts.shares) {
             <span (click)="openChildShareDialog(space())" class="badge bg-purple cursor-pointer me-1">
             <fa-icon [icon]="icons.SHARED"></fa-icon>
@@ -63,13 +63,13 @@
     <hr class="my-1" />
     <div class="p-2">
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Managers</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Managers</div>
         @for (m of space().managers; track m.id) {
           <app-user-avatar [user]="m" [isMember]="true" [height]="26" [width]="26" tooltipPlacement="bottom"></app-user-avatar>
         }
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Permissions</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Permissions</div>
         @if (space().permissions) {
           <app-file-permissions [permissions]="space().hPerms"></app-file-permissions>
         } @else {

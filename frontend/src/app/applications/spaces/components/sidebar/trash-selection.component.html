@@ -15,19 +15,19 @@
     <hr class="my-1" />
     <div class="p-2">
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Name</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Name</div>
         <div class="d-flex col-sm-7 word-break-all fs-2xs">{{ (trash().isPersonal ? (trash().name | translate:locale.language) : trash().name) }}</div>
       </div>
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Created</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Created</div>
         <div class="d-flex col-sm-7 fs-2xs">{{ trash().ctime | amDateFormat }}</div>
       </div>
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Modified</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Modified</div>
         <div class="d-flex col-sm-7 fs-2xs">{{ trash().mtime | amDateFormat }}</div>
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Elements</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Elements</div>
         @if (trash().nb) {
           <span class="badge bg-danger">{{ trash().nb }}</span>
         } @else {

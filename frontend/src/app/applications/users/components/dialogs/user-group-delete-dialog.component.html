@@ -17,12 +17,12 @@
         <fa-icon [icon]="icons.GROUPS" class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}"></fa-icon>
       }
     </div>
-    <span class="fw-bold me-1">{{ member.name | capitalize }}</span>
+    <span class="fw-semibold me-1">{{ member.name | capitalize }}</span>
     <span translate>will be removed</span>
     @if (member.isUser) {
       <div class="d-flex align-items-center">
         <span class="mx-1" translate>from the group</span>
-        <span class="fw-bold me-1">{{ parentGroup.name | capitalize }}</span>
+        <span class="fw-semibold me-1">{{ parentGroup.name | capitalize }}</span>
       </div>
     }
   </div>

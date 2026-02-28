@@ -576,6 +576,8 @@
   "Application Passwords": "Uygulama Parolaları",
   "Generate a new app password": "Yeni uygulama parolası oluştur",
   "Generated password": "Oluşturulan parola",
+  "Password generated": "Parola oluşturuldu",
+  "Existing passwords": "Mevcut parolalar",
   "This password will only be shown once after it is generated": "Bu parola yalnızca oluşturulduktan sonra bir kez gösterilecektir",
   "Password name": "Parola adı",
   "Manage": "Yönet",

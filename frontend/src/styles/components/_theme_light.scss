@@ -559,7 +559,7 @@
     }
   }
   .modal-body {
-    background-color: $body-bg;
+    background-color: lighten($body-bg, 2%);
   }
   .modal-footer {
     background-color: $gray-lightest;
@@ -638,7 +638,7 @@
     }
   }
   .bg-theme {
-    background-color: darken($gray-lighter, 4%);
+    background-color: darken($gray-lighter, 3%);
   }
   .bg-theme-alt {
     background-color: $gray-lightest !important;

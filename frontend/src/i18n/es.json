@@ -576,6 +576,8 @@
   "Application Passwords": "Contraseñas de aplicación",
   "Generate a new app password": "Generar una nueva contraseña de aplicación",
   "Generated password": "Contraseña generada",
+  "Password generated": "Contraseña generada",
+  "Existing passwords": "Contraseñas existentes",
   "This password will only be shown once after it is generated": "Esta contraseña solo se mostrará una vez después de generarse",
   "Password name": "Nombre de la contraseña",
   "Manage": "Gestionar",

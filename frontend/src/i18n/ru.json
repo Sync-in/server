@@ -576,6 +576,8 @@
   "Application Passwords": "Пароли приложений",
   "Generate a new app password": "Создать новый пароль приложения",
   "Generated password": "Сгенерированный пароль",
+  "Password generated": "Пароль сгенерирован",
+  "Existing passwords": "Существующие пароли",
   "This password will only be shown once after it is generated": "Этот пароль будет показан только один раз после генерации",
   "Password name": "Имя пароля",
   "Manage": "Управление",

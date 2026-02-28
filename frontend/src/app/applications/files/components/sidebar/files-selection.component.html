@@ -42,11 +42,11 @@
         <hr class="my-1" />
         <div class="p-2">
           <div class="d-flex mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Name</div>
+            <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Name</div>
             <div class="word-break-all fs-2xs">{{ f.name }}</div>
           </div>
           <div class="d-flex mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Size</div>
+            <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Size</div>
             <div class="fs-2xs">
               @let size = (getSizeLazy(f) | async);
               @if (size === null) {
@@ -57,15 +57,15 @@
             </div>
           </div>
           <div class="d-flex mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Created</div>
+            <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Created</div>
             <div class="fs-2xs">{{ f.ctime | amDateFormat }}</div>
           </div>
           <div class="d-flex mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Modified</div>
+            <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Modified</div>
             <div class="fs-2xs">{{ f.mtime | amDateFormat }}</div>
           </div>
           <div class="d-flex align-items-center mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Lock</div>
+            <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Lock</div>
             @if (f.lock) {
               @if (f.lock.isExclusive) {
                 <span class="badge bg-maroon" l10nTranslate>
@@ -83,7 +83,7 @@
             }
           </div>
           <div class="d-flex align-items-center mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Shared</div>
+            <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Shared</div>
             <div class="d-flex col-sm-7">
               @if (f.shares.length || f.links.length) {
                 <span class="badge bg-primary">
@@ -96,7 +96,7 @@
             </div>
           </div>
           <div class="d-flex align-items-center mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Anchored</div>
+            <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Anchored</div>
             @if (f.spaces.length) {
               <span class="badge bg-primary">
                 <fa-icon [icon]="icons.SPACES"></fa-icon>
@@ -106,13 +106,13 @@
             }
           </div>
           <div class="d-flex align-items-center mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Synced</div>
+            <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Synced</div>
             <span class="badge {{f.syncs.length ? 'bg-primary' : 'bg-secondary-alt'}}">
               {{ (f.syncs.length ? 'yes' : 'no') | translate:locale.language }}
             </span>
           </div>
           <div class="d-flex align-items-center mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Comments</div>
+            <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Comments</div>
             <span (click)="goToComments()" class="badge {{f.hasComments ? 'bg-success' : 'bg-secondary-alt'}} cursor-pointer">
               {{ (f.hasComments ? 'yes' : 'no') | translate:locale.language }}
             </span>
@@ -123,12 +123,12 @@
           <div class="p-2">
             @if (f.root.owner) {
               <div class="d-flex align-items-center mb-1">
-                <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Owner</div>
+                <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Owner</div>
                 <app-user-avatar [user]="f.root.owner" [height]="26" [width]="26" tooltipPlacement="bottom"></app-user-avatar>
               </div>
             }
             <div class="d-flex align-items-center">
-              <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Permissions</div>
+              <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Permissions</div>
               @if (f.root.permissions) {
                 <app-file-permissions [permissions]="f.root.hPerms"></app-file-permissions>
               } @else {

@@ -8,19 +8,19 @@
     <hr class="my-1" />
     <div class="p-2">
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Name</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Name</div>
         <div class="word-break-all fs-2xs">{{ share().name }}</div>
       </div>
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Created</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Created</div>
         <div class="fs-2xs">{{ share().createdAt | amDateFormat }}</div>
       </div>
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Modified</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Modified</div>
         <div class="fs-2xs">{{ share().modifiedAt | amDateFormat }}</div>
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Members</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Members</div>
         @if (share().counts.users || share().counts.groups) {
           <span>{{ share().counts | joinCounts:['shares'] }}</span>
         } @else {
@@ -28,7 +28,7 @@
         }
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Child shares</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Child shares</div>
         @if (share().counts.shares) {
           <span (click)="childShareDialog(share())" class="badge bg-purple cursor-pointer me-1">
             <fa-icon [icon]="iconShared"></fa-icon>
@@ -39,7 +39,7 @@
         }
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Comments</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Comments</div>
         <span (click)="goToComments()" class="badge {{share().hasComments ? 'bg-success' : 'bg-secondary-alt'}} cursor-pointer">
           {{ (share().hasComments ? 'yes' : 'no') | translate:locale.language }}
         </span>
@@ -48,7 +48,7 @@
     <hr class="my-1" />
     <div class="p-2">
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Shared from</div>
+        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Shared from</div>
         <app-share-repository [share]="share()" [showIcon]="false"></app-share-repository>
       </div>
     </div>

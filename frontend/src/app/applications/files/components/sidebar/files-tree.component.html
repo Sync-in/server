@@ -13,7 +13,7 @@
 @if (copyMoveOn) {
   <div class="px-2 pt-2 pb-0 fs-xs">
     <div class="text-start text-truncate">
-      <span class="fs-xs fw-bold me-2" l10nTranslate><span l10nTranslate>Source</span>:</span>
+      <span class="fs-xs fw-semibold me-2" l10nTranslate><span l10nTranslate>Source</span>:</span>
       @switch (store.filesSelection().length) {
         @case (1) {
           <span>
@@ -22,7 +22,7 @@
         }
         @case (0) {
           <span>
-            <fa-icon [icon]="icons.faQuestion" class="fw-bold me-1"></fa-icon>
+            <fa-icon [icon]="icons.faQuestion" class="fw-semibold me-1"></fa-icon>
           </span>
         }
         @default {
@@ -33,7 +33,7 @@
       }
     </div>
     <div class="text-start text-truncate mt-1">
-      <span class="fs-xs fw-bold me-2" l10nTranslate><span l10nTranslate>Destination</span>:</span>
+      <span class="fs-xs fw-semibold me-2" l10nTranslate><span l10nTranslate>Destination</span>:</span>
       <span>{{ selection?.data.name || '' }}</span>
     </div>
     <div class="d-flex justify-content-between mt-2">
@@ -73,7 +73,7 @@
     </ng-template>
     <ng-template #loadingTemplate>
       <span>
-        <fa-icon [icon]="icons.faSpinner" animation="spin" class="fw-bold"></fa-icon>
+        <fa-icon [icon]="icons.faSpinner" animation="spin" class="fw-semibold"></fa-icon>
       </span>
     </ng-template>
   </tree-root>

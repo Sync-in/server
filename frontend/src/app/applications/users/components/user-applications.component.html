@@ -1,13 +1,13 @@
 <div class="app-top-menu px-4 user-applications-topbar">
   @if (store.appStoreManifest()) {
     <div class="d-flex flex-fill align-items-center fs-xs flex-wrap gap-2">
-      <span class="badge bg-secondary-alt text-nowrap">
-        <span l10nTranslate>Repository</span>:&nbsp;<span class="fw-bold" l10nTranslate>{{ store.appStoreManifest().repository }}</span>
+      <span class="badge bg-default text-nowrap">
+        <span l10nTranslate>Repository</span>:&nbsp;<span class="fw-semibold" l10nTranslate>{{ store.appStoreManifest().repository }}</span>
       </span>
-      <span class="badge bg-secondary-alt mx-auto text-nowrap">
-        <span l10nTranslate>Version</span>:&nbsp;<span class="fw-bold">{{ store.appStoreManifest().version }}</span>
+      <span class="badge bg-default mx-auto text-nowrap">
+        <span l10nTranslate>Version</span>:&nbsp;<span class="fw-semibold">{{ store.appStoreManifest().version }}</span>
        </span>
-      <span class="badge bg-secondary-alt text-nowrap">{{ store.appStoreManifest().date | amDateFormat:'L' }}</span>
+      <span class="badge bg-default text-nowrap">{{ store.appStoreManifest().date | amDateFormat:'L' }}</span>
     </div>
   }
 </div>

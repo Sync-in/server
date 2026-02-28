@@ -576,6 +576,8 @@
   "Application Passwords": "एप्लिकेशन पासवर्ड",
   "Generate a new app password": "नया ऐप पासवर्ड जनरेट करें",
   "Generated password": "उत्पन्न पासवर्ड",
+  "Password generated": "पासवर्ड जनरेट किया गया",
+  "Existing passwords": "मौजूदा पासवर्ड",
   "This password will only be shown once after it is generated": "यह पासवर्ड जनरेट होने के बाद केवल एक बार दिखाया जाएगा",
   "Password name": "पासवर्ड का नाम",
   "Manage": "प्रबंधित करें",

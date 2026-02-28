@@ -4,73 +4,91 @@
     <span l10nTranslate>Two-Factor Authentication</span>
   </h4>
 </div>
-<div class="modal-body modal-auth-verify-2fa">
+<div class="modal-body modal-auth-verify-2fa d-flex flex-column gap-3">
   @if (wasEnabled) {
-    <p class="text-align-center" l10nTranslate>
+    <div class="alert alert-primary text-align-center mb-0" l10nTranslate>
       Keep these codes in a safe place. They will allow you to access your account if you lose access to your two-factor authentication.
-    </p>
-    <p class="text-align-center font-italic text-warning" l10nTranslate>
+    </div>
+    <div class="alert alert-warning text-center mb-0" l10nTranslate>
       These recovery codes are for one-time use only and will only be displayed here once.
-    </p>
-    <ul class="list-group text-align-center my-3">
+    </div>
+    <ul class="list-group text-align-center fs-2xs">
       @for (code of recoveryCodes; track $index) {
         <li class="list-group-item font-monospace">{{ code }}</li>
       }
     </ul>
-    <div class="d-grid gap-2">
-      <button type="button" (click)="downloadRecoveryCodes()" class="btn btn-primary" l10nTranslate>Download</button>
-      <button type="button" (click)="clipBoardRecoveryCodes()" class="btn btn-success" l10nTranslate>Copy</button>
-      <button type="button" (click)="onClose(true)" class="btn btn-secondary" l10nTranslate>Close</button>
+    <div class="d-flex w-100 pt-1 gap-2">
+      <button type="button" (click)="downloadRecoveryCodes()" class="btn btn-primary flex-fill" l10nTranslate>Download</button>
+      <button type="button" (click)="clipBoardRecoveryCodes()" class="btn btn-success flex-fill" l10nTranslate>Copy</button>
+      <button type="button" (click)="onClose(true)" class="btn btn-secondary flex-fill" l10nTranslate>Close</button>
     </div>
   } @else {
-    <div class="d-flex flex-column text-align-center justify-content-center align-items-center fs-xs mt-2 mb-4" style="height: 45px">
-      @if (hasError) {
-        <div class="text-danger" l10nTranslate>{{ hasError }}</div>
-      } @else {
-        <span l10nTranslate>Scan this QR code using your authenticator app.</span>
-        <small class="text-muted">&nbsp;<i l10nTranslate>(Such as FreeOTP, Proton Authenticator etc.)</i></small>
-      }
-    </div>
-    <div class="text-center my-3">
-      <img [src]="qrDataUrl" alt="QR Code" class="img-fluid border p-2 rounded" style="max-width: 150px;">
-    </div>
-    <div class="text-muted small text-center mb-3">
-      <div class="mb-2" l10nTranslate>Or enter this secret manually</div>
-      <div>
-        <fa-icon [icon]="icons.faCopy"></fa-icon>
-        <strong (click)="clipBoardSecret()" role="button" class="ms-1 font-monospace link-primary">{{ secret }}</strong>
+    <div class="card dialog-tab-card">
+      <div class="card-body p-3">
+        <div class="text-center mb-3">
+          <div l10nTranslate>Scan this QR code using your authenticator app.</div>
+          <small class="text-muted" l10nTranslate>(Such as FreeOTP, Proton Authenticator etc.)</small>
+        </div>
+
+        <div class="text-center mb-3">
+          <img [src]="qrDataUrl" alt="QR Code" class="img-fluid border rounded p-2" style="max-width: 150px;">
+        </div>
+
+        <div class="card dialog-check-card">
+          <div class="card-body py-2 px-3 d-flex align-items-center gap-2 flex-wrap">
+            <div class="text-muted text-uppercase fs-4xs" l10nTranslate>Or enter this secret manually</div>
+            <div class="font-monospace fs-xs text-truncate flex-grow-1 text-center text-primary">{{ secret }}</div>
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="clipBoardSecret()">
+              <fa-icon [icon]="icons.faCopy" class="me-1"></fa-icon>
+              <span l10nTranslate>Copy</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-    <hr style="border-width: 1px">
-    <form (ngSubmit)="onSubmit()" [formGroup]="twoFaForm">
-      <div class="text-align-center mb-3" l10nTranslate>Enter your password</div>
-      <div class="mb-3">
-        <app-input-password id="password"
-                            [password]="twoFaForm.value.password"
-                            (passwordChange)="twoFaForm.controls.password.setValue($event)"
-                            [focus]="true"
-                            [centered]="true"
-                            placeholder="••••••">
-        </app-input-password>
+
+    <div class="card dialog-check-card">
+      <div class="card-body p-3">
+        <form (ngSubmit)="onSubmit()" [formGroup]="twoFaForm" class="d-flex flex-column gap-3 align-items-center">
+          <div>
+            <label class="form-label text-muted text-uppercase fs-3xs d-block text-center mb-2" for="password" l10nTranslate>Enter your password</label>
+            <app-input-password id="password"
+                                class="d-block mx-auto"
+                                style="max-width: 340px; width: 100%;"
+                                [password]="twoFaForm.value.password"
+                                (passwordChange)="twoFaForm.controls.password.setValue($event)"
+                                [focus]="true"
+                                [centered]="true"
+                                placeholder="••••••">
+            </app-input-password>
+          </div>
+
+          <div>
+            <label class="form-label text-muted text-uppercase fs-3xs d-block text-center mb-2" for="totp" l10nTranslate>Valid with your TOTP code</label>
+            <input
+              id="totp"
+              type="text"
+              [maxlength]="twoFaCodelength"
+              class="form-control text-center fs-4 font-monospace mx-auto"
+              style="max-width: 340px; width: 100%;"
+              formControlName="totpCode"
+              placeholder="••••••"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              name="totp"
+            />
+          </div>
+
+          @if (hasError) {
+            <div class="alert alert-danger py-2 mb-0 text-center" l10nTranslate>{{ hasError }}</div>
+          }
+
+          <div class="d-flex gap-2 pt-1 w-100">
+            <button type="button" (click)="onClose()" class="btn btn-sm btn-secondary flex-fill" l10nTranslate>Cancel</button>
+            <button type="submit" [disabled]="twoFaForm.invalid || submitted" class="btn btn-sm btn-primary flex-fill" l10nTranslate>Confirm</button>
+          </div>
+        </form>
       </div>
-      <div class="text-align-center mb-3" l10nTranslate>Valid with your TOTP code</div>
-      <div class="mb-3">
-        <input
-          type="text"
-          [maxlength]=twoFaCodelength
-          class="form-control text-center fs-4"
-          formControlName="totpCode"
-          placeholder="••••••"
-          inputmode="numeric"
-          autocomplete="one-time-code"
-          name="totp"
-        />
-      </div>
-      <div class="d-grid gap-2">
-        <button type="submit" [disabled]="twoFaForm.invalid || submitted" class="btn btn-primary" l10nTranslate>Confirm</button>
-        <button type="button" (click)="onClose()" class="btn btn-secondary" l10nTranslate>Cancel</button>
-      </div>
-    </form>
+    </div>
   }
 </div>
-

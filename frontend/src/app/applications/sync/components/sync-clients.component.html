@@ -42,7 +42,7 @@
                 }
               </div>
             </div>
-            <div class="sync-client-meta-line {{client.expiration.reached ? 'fw-bold text-danger' : client.expiration.approaching ? 'fw-bold text-warning' : ''}}">
+            <div class="sync-client-meta-line {{client.expiration.reached ? 'fw-semibold text-danger' : client.expiration.approaching ? 'fw-semibold text-warning' : ''}}">
               <fa-icon [icon]="icons.faKey"></fa-icon>
               <span l10nTranslate>{{ client.expiration.reached ? 'The access has expired' : 'The access expires' }}</span>&nbsp;{{ client.expiration.value | amTimeAgo }}
             </div>

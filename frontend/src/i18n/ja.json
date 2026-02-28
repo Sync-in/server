@@ -576,6 +576,8 @@
   "Application Passwords": "アプリケーションパスワード",
   "Generate a new app password": "新しいアプリパスワードを生成",
   "Generated password": "生成されたパスワード",
+  "Password generated": "パスワードを生成しました",
+  "Existing passwords": "既存のパスワード",
   "This password will only be shown once after it is generated": "このパスワードは生成後一度だけ表示されます",
   "Password name": "パスワード名",
   "Manage": "管理",

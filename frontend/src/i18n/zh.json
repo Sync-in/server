@@ -576,6 +576,8 @@
   "Application Passwords": "应用专用密码",
   "Generate a new app password": "生成新的应用专用密码",
   "Generated password": "已生成的密码",
+  "Password generated": "密码已生成",
+  "Existing passwords": "现有密码",
   "This password will only be shown once after it is generated": "该密码仅在生成后显示一次",
   "Password name": "密码名称",
   "Manage": "管理",
