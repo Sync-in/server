@@ -4,6 +4,9 @@
 @import 'variables';
 // Load Bootstrap 5 (modular import to reduce bundle size)
 @import 'bootstrap-custom';
+// used for date picker
+@import 'ngx-bootstrap/datepicker/bs-datepicker.scss';
+// local components
 @import 'components';
 // used for ngx-toastr
 @import 'ngx-toastr/toastr-bs5-alert';
@@ -12,5 +15,3 @@
 @import '@perfectmemory/ngx-contextmenu/src/assets/stylesheets/base.scss';
 // used for videogular
 @import '@videogular/ngx-videogular/fonts/videogular.css';
-// used for date picker
-@import 'ngx-bootstrap/datepicker/bs-datepicker.scss';

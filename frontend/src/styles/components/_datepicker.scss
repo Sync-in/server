@@ -1,0 +1,122 @@
+/* Flatten datepicker shell in all themes (light + dark). */
+.bs-datepicker {
+  box-shadow: none;
+}
+
+.bs-datepicker > .bs-datepicker-container {
+  padding: 0;
+}
+
+body.theme-light {
+  .bs-datepicker.theme-dark-blue {
+    border-radius: 6px;
+    overflow: hidden;
+  }
+}
+
+body.theme-dark {
+  /* Apply a true dark surface only for datepickers using containerClass: 'theme-dark-blue'. */
+  .bs-datepicker.theme-dark-blue {
+    background: $dark-surface-bg;
+    border-radius: 6px;
+    overflow: hidden;
+
+    .bs-datepicker-head {
+      background-color: $dark-dialog-tab-hover-bg;
+
+      button {
+        color: $dark-dialog-tab-hover-color;
+
+        &:hover {
+          background-color: rgba($white, 0.14);
+        }
+
+        &:active {
+          background-color: rgba($white, 0.22);
+        }
+      }
+    }
+
+    .bs-datepicker-body {
+      background: $dark-surface-bg;
+      border-color: $dark-surface-border;
+
+      table {
+        th {
+          color: $sidebar-dark-icons-menu-color;
+        }
+
+        td {
+          color: $dark-item-hover-color;
+
+          span:hover:not(.disabled):not(.selected):not(.is-other-month) {
+            background-color: rgba($primary, 0.16);
+          }
+
+          span.is-other-month,
+          &.is-other-month span {
+            color: rgba($dark-item-hover-color, 0.35);
+          }
+
+          span.disabled,
+          &.disabled span {
+            color: rgba($dark-item-disabled-color, 0.55);
+          }
+
+          &.is-highlighted:not(.disabled):not(.selected) span,
+          span.is-highlighted:not(.disabled):not(.selected),
+          &.is-active-other-month:not(.disabled):not(.selected) span,
+          span.is-active-other-month:not(.disabled):not(.selected),
+          &.active:not(.select-start):not(.disabled):before,
+          &.in-range:not(.select-start):not(.disabled):before,
+          span.active:not(.select-start):not(.disabled):before,
+          span.in-range:not(.select-start):not(.disabled):before {
+            background: rgba($primary, 0.2);
+          }
+        }
+
+        &.days td {
+          &.select-start + td.select-end:before,
+          &.select-start + td.is-highlighted:before,
+          &.active + td.is-highlighted:before,
+          &.active + td.select-end:before,
+          &.in-range + td.is-highlighted:before,
+          &.in-range + td.select-end:before {
+            background: rgba($primary, 0.2);
+          }
+        }
+      }
+    }
+
+    .bs-datepicker-buttons {
+      border-top-color: $dark-surface-border;
+    }
+
+    .bs-datepicker-predefined-btns button {
+      background-color: $dark-dialog-tab-bg;
+
+      &:hover {
+        background-color: $dark-dialog-tab-hover-bg;
+      }
+    }
+
+    .current-timedate {
+      background-color: $dark-bg-theme;
+      border-color: $dark-surface-border;
+      color: $dark-item-hover-color;
+    }
+
+    .bs-timepicker-label {
+      color: $dark-item-hover-color;
+    }
+
+    .bs-timepicker {
+      input,
+      .switch-time-format {
+        background: $dark-bg-theme;
+        border-color: $dark-surface-border;
+        color: $dark-item-hover-color;
+      }
+    }
+  }
+}
