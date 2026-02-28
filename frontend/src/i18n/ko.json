@@ -642,5 +642,7 @@
   "Version": "버전",
   "Filter type": "필터 유형",
   "Filter value": "필터 값",
-  "No filter configured": "구성된 필터가 없습니다"
+  "No filter configured": "구성된 필터가 없습니다",
+  "checksums are not identical": "체크섬이 동일하지 않습니다",
+  "size has changed since parsing": "파싱 이후 크기가 변경되었습니다"
 }

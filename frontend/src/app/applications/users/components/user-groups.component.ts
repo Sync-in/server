@@ -299,7 +299,7 @@ export class UserGroupsComponent {
     if (add) {
       if (!this.currentGroup) {
         // add group
-        const modalRef: BsModalRef<UserGroupDialogComponent> = this.layout.openDialog(UserGroupDialogComponent, 'md')
+        const modalRef: BsModalRef<UserGroupDialogComponent> = this.layout.openDialog(UserGroupDialogComponent, 'sm')
         modalRef.content.groupChange.pipe(take(1)).subscribe((r: ['add' | string, MemberModel]) => {
           const [action, g] = r
           if (action === 'add') {
@@ -345,7 +345,7 @@ export class UserGroupsComponent {
     } else {
       // edit group or user
       if (this.selected.isGroup) {
-        const modalRef: BsModalRef<UserGroupDialogComponent> = this.layout.openDialog(UserGroupDialogComponent, 'md', {
+        const modalRef: BsModalRef<UserGroupDialogComponent> = this.layout.openDialog(UserGroupDialogComponent, 'sm', {
           initialState: { originalGroup: this.selected } as UserGroupDialogComponent
         })
         modalRef.content.groupChange.pipe(take(1)).subscribe((r: ['update' | string, MemberModel]) => {

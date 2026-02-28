@@ -10,7 +10,7 @@
 </div>
 <div class="modal-body">
   <div><b><fa-icon [icon]="client.icon" class="me-2" size="lg" [fixedWidth]="false"></fa-icon>{{client.info.node}}</b><span class="ms-1" l10nTranslate>will be removed</span></div>
-  <small translate>The client will no longer have permission to access your account and will no longer be able to synchronize.</small>
+  <div class="small mt-2" translate>The client will no longer have permission to access your account and will no longer be able to synchronize.</div>
 </div>
 <div class="modal-footer">
   <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary" data-dismiss="modal" l10nTranslate type="button">Cancel</button>

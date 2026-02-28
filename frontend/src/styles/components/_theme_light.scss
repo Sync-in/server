@@ -219,7 +219,7 @@
     border-color: $light-dialog-check-card-active-border-color;
   }
   .text-muted {
-    color: $light-text-muted-color !important;
+    color: darken($light-text-muted-color, 12%) !important;
   }
   tabset {
     > .nav.nav-pills,
@@ -230,7 +230,7 @@
       .nav-link {
         background: $light-dialog-tab-bg;
         color: $light-dialog-tab-color;
-        border-color: $light-dialog-tab-bg;
+        border-color: $light-surface-border;
       }
 
       .nav-link:hover:not(.active) {
@@ -242,6 +242,7 @@
       .nav-link:hover:not(.active) .app-tab-count {
         background: $light-dialog-tab-count-hover-bg;
         color: $light-dialog-tab-count-hover-color;
+        border-color: mix($primary, $white, 34%);
       }
 
       .nav-link.active {
@@ -250,11 +251,18 @@
         border-color: $light-dialog-tab-active-border-color;
         box-shadow: $light-dialog-tab-active-shadow;
       }
+
+      .nav-link.active .app-tab-count {
+        background: rgba($white, 0.24);
+        color: $white;
+        border-color: rgba($white, 0.42);
+      }
     }
 
     .app-tab-count {
       background: $light-dialog-tab-count-bg;
       color: $light-dialog-tab-count-color;
+      border: 1px solid mix($primary, $white, 26%);
     }
 
   }

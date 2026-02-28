@@ -205,6 +205,7 @@
       .nav-link {
         background: $dark-dialog-tab-bg;
         color: $dark-dialog-tab-color;
+        border-color: $dark-surface-border;
       }
 
       .nav-link:hover:not(.active) {
@@ -725,7 +726,7 @@
     }
   }
   .products-list > li:hover {
-    background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%);
+    background-color: darken($sidebar-dark-apps-menu-title-bg, 2%);
   }
   .product-list-in-box {
     border-bottom-color: $sidebar-dark-icons-menu-border-color;

@@ -642,5 +642,7 @@
   "Version": "Versão",
   "Filter type": "Tipo de filtro",
   "Filter value": "Valor do filtro",
-  "No filter configured": "Nenhum filtro configurado"
+  "No filter configured": "Nenhum filtro configurado",
+  "checksums are not identical": "As somas de verificação não são idênticas",
+  "size has changed since parsing": "O tamanho mudou desde a análise"
 }

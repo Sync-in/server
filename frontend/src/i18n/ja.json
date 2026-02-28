@@ -642,5 +642,7 @@
   "Version": "バージョン",
   "Filter type": "フィルタータイプ",
   "Filter value": "フィルター値",
-  "No filter configured": "フィルターが設定されていません"
+  "No filter configured": "フィルターが設定されていません",
+  "checksums are not identical": "チェックサムが一致しません",
+  "size has changed since parsing": "解析後にサイズが変更されました"
 }

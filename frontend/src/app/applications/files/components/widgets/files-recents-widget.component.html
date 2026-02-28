@@ -8,7 +8,7 @@
              role="button">
     </fa-icon>
   </div>
-  <div class="box-body px-0 py-0">
+  <div class="box-body p-0">
     @for (f of files(); track f.id; let last = $last) {
       <ul class="products-list product-list-in-box" [class.border-0]="last">
         <li (click)="goToFile(f)" class="item">

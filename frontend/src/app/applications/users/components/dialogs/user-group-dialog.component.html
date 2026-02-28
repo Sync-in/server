@@ -22,27 +22,53 @@
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white {{group.id ? 'ms-2' : 'ms-auto'}} ms-2" type="button"></button>
 </div>
 <div class="modal-body">
-  <div class="d-flex col-12 pb-3">
-    <div class="flex-fill col-6 pe-4">
-      <label for="name" l10nTranslate>Name</label>
-      <input id="name"
-             appAutofocus
-             [disabled]="!isPersonalGroup"
-             [autoSelect]="false"
-             [(ngModel)]="group.name"
-             [class.is-invalid]="!group.name"
-             class="form-control form-control-sm"
-             autocomplete="off"
-             type="text">
-    </div>
-    <div class="flex-fill col-6 ps-4">
-      <label for="description" l10nTranslate>Description</label>
-      <input id="description"
-             [(ngModel)]="group.description"
-             [disabled]="!isPersonalGroup"
-             class="form-control form-control-sm"
-             autocomplete="off"
-             type="text">
+  <div class="app-tab-content row g-3">
+    <div class="col-12 d-flex flex-column">
+      <div class="card dialog-tab-card w-100">
+        <div class="card-body d-flex flex-column gap-3">
+          <div>
+            <label class="form-label" for="name" l10nTranslate>Name</label>
+            <input id="name"
+                   appAutofocus
+                   [disabled]="!isPersonalGroup"
+                   [autoSelect]="false"
+                   [(ngModel)]="group.name"
+                   [class.is-invalid]="!group.name"
+                   class="form-control form-control-sm"
+                   autocomplete="off"
+                   type="text">
+          </div>
+          <div>
+            <label class="form-label" for="description" l10nTranslate>Description</label>
+            <input id="description"
+                   [(ngModel)]="group.description"
+                   [disabled]="!isPersonalGroup"
+                   class="form-control form-control-sm"
+                   autocomplete="off"
+                   type="text">
+          </div>
+        </div>
+      </div>
+      @if (group.id) {
+        <div class="card dialog-tab-card w-100 mt-3">
+          <div class="card-body">
+            <div class="row g-3 fs-2xs">
+              <div class="col-12 col-md-6">
+                <div class="d-flex flex-column">
+                  <label class="form-label" for="created" l10nTranslate>Creation date</label>
+                  <div id="created">{{ group.createdAt | amDateFormat }}</div>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <div class="d-flex flex-column text-md-end">
+                  <label class="form-label" for="modified" l10nTranslate>Modification date</label>
+                  <div id="modified">{{ group.modifiedAt | amDateFormat }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   </div>
 </div>

@@ -642,5 +642,7 @@
   "Version": "Sürüm",
   "Filter type": "Filtre türü",
   "Filter value": "Filtre değeri",
-  "No filter configured": "Yapılandırılmış filtre yok"
+  "No filter configured": "Yapılandırılmış filtre yok",
+  "checksums are not identical": "Sağlama toplamları aynı değil",
+  "size has changed since parsing": "Boyut ayrıştırmadan beri değişti"
 }

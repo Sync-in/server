@@ -27,118 +27,155 @@
           <span class="app-tab-label" l10nTranslate>Account</span>
         </span>
       </ng-template>
-      <div class="app-tab-content d-flex flex-column">
-        <div class="d-flex col-12 pb-3">
-          <div class="flex-fill col-6 pe-4">
-            <label for="login" l10nTranslate>Login</label>
-            <input id="login"
-                   appAutofocus
-                   [autoSelect]="false"
-                   formControlName="login"
-                   [class.is-invalid]="guestForm.controls['login'].invalid"
-                   class="form-control form-control-sm"
-                   autocomplete="off"
-                   type="text">
-          </div>
-          <div class="flex-fill col-6 ps-4">
-            <label for="email" l10nTranslate>Email</label>
-            <input id="email"
-                   formControlName="email"
-                   [class.is-invalid]="guestForm.controls['email'].invalid"
-                   class="form-control form-control-sm"
-                   autocomplete="off"
-                   type="email">
-          </div>
-        </div>
-        <div class="d-flex col-12 pb-3">
-          <div class="flex-fill col-6 pe-4">
-            <label for="firstName" l10nTranslate>First name</label>
-            <input id="firstName"
-                   formControlName="firstName"
-                   [class.is-invalid]="guestForm.controls['firstName'].invalid"
-                   class="form-control form-control-sm"
-                   autocomplete="off"
-                   type="text">
-          </div>
-          <div class="flex-fill col-6 ps-4">
-            <label for="lastName" l10nTranslate>Last name</label>
-            <input id="lastName"
-                   formControlName="lastName"
-                   class="form-control form-control-sm"
-                   autocomplete="off"
-                   type="text">
-          </div>
-        </div>
-        <div class="d-flex col-12 pb-3">
-          <div class="flex-fill col-6 pe-4">
-            @if (guestForm.value.password !== defaultPassword) {
-              <app-password-strength-bar [passwordToCheck]="guestForm.value.password"
-                                         class="position-absolute pe-4"
-                                         style="right: 50%; padding-top: 8px">
-              </app-password-strength-bar>
-            }
-            <app-input-password id="password"
-                                [password]="guestForm.value.password"
-                                (passwordChange)="updatePassword($event)"
-                                [showGenerator]="true"
-                                [showLabel]="true"
-                                [isRequired]="true"
-                                placeholder="Set a password">
-            </app-input-password>
-          </div>
-          <div class="flex-fill col-6 ps-4">
-            <label for="language" l10nTranslate>Language</label>
-            <select id="language"
-                    formControlName="language"
-                    class="form-control form-select form-select-sm">
-              @for (l of languages; track $index) {
-                <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
-              }
-            </select>
-          </div>
-        </div>
-        <div class="d-flex col-12 pb-3">
-          <div class="d-flex flex-column col-6 pe-4">
-            <label for="account" l10nTranslate>Account status</label>
-            <div id="account" class="form-check form-switch form-check-inline">
-              <label class="form-check-label" for="isActive">
-                <input class="form-check-input" formControlName="isActive" id="isActive" type="checkbox">
-                <span [class.text-danger]="!guestForm.value.isActive">
-              {{ (guestForm.value.isActive ? 'active' : 'suspended') | translate:locale.language | titlecase }}
-            </span>
-              </label>
-            </div>
-          </div>
-          <div class="flex-fill col-6 ps-4">
-            <label for="notification" l10nTranslate>Notification</label>
-            <select id="notification"
-                    formControlName="notification"
-                    class="form-control form-select form-select-sm">
-              @for (n of allNotifications; track $index) {
-                <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
-              }
-            </select>
-          </div>
-        </div>
-        @if (guest) {
-          <div class="d-flex col-12 pb-3">
-            <div class="flex-fill col-6 pe-4">
-              <label for="created" l10nTranslate>Creation date</label>
-              <div id="created">{{ guest.createdAt | amDateFormat }}</div>
-            </div>
-            <div class="d-flex flex-column align-items-end col-6 ps-4">
-              <label for="access" l10nTranslate>Last accesses</label>
-              <div class="text-align-end" id="access">
-                @if (guest.lastAccess) {
-                  <div>{{ guest.currentAccess | amDateFormat }}  -  {{ guest.currentIp }}</div>
-                  <div>{{ guest.lastAccess | amDateFormat }}  -  {{ guest.lastIp }}</div>
-                } @else {
-                  <span class="text-danger" l10nTranslate>never</span>
-                }
+      <div class="app-tab-content row g-3">
+        <div class="col-12 col-lg-6 d-flex flex-column">
+          <div class="card dialog-tab-card w-100 mb-3">
+            <div class="card-body d-flex flex-column gap-3">
+              <div class="row g-3">
+                <div class="col-12">
+                  <label class="form-label" for="login" l10nTranslate>Login</label>
+                  <input id="login"
+                         appAutofocus
+                         [autoSelect]="false"
+                         formControlName="login"
+                         [class.is-invalid]="guestForm.controls['login'].invalid"
+                         class="form-control form-control-sm"
+                         autocomplete="off"
+                         type="text">
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="email" l10nTranslate>Email</label>
+                  <input id="email"
+                         formControlName="email"
+                         [class.is-invalid]="guestForm.controls['email'].invalid"
+                         class="form-control form-control-sm"
+                         autocomplete="off"
+                         type="email">
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="firstName" l10nTranslate>First name</label>
+                  <input id="firstName"
+                         formControlName="firstName"
+                         [class.is-invalid]="guestForm.controls['firstName'].invalid"
+                         class="form-control form-control-sm"
+                         autocomplete="off"
+                         type="text">
+                </div>
+                <div class="col-12">
+                  <label class="form-label" for="lastName" l10nTranslate>Last name</label>
+                  <input id="lastName"
+                         formControlName="lastName"
+                         class="form-control form-control-sm"
+                         autocomplete="off"
+                         type="text">
+                </div>
               </div>
             </div>
           </div>
-        }
+
+          <div class="card dialog-tab-card w-100">
+            <div class="card-body d-flex flex-column gap-3">
+              <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <label class="form-label mb-0" for="password" l10nTranslate>Password</label>
+                  @if (guestForm.value.password !== defaultPassword) {
+                    <div class="d-flex align-items-center ms-auto">
+                      <app-password-strength-bar [passwordToCheck]="guestForm.value.password"></app-password-strength-bar>
+                    </div>
+                  }
+                </div>
+                <app-input-password id="password"
+                                    class="w-100"
+                                    [password]="guestForm.value.password"
+                                    (passwordChange)="updatePassword($event)"
+                                    [showGenerator]="true"
+                                    [showLabel]="false"
+                                    [isRequired]="true"
+                                    placeholder="Set a password">
+                </app-input-password>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 col-lg-6 d-flex flex-column">
+          <div class="card dialog-tab-card w-100 mb-3">
+            <div class="card-body d-flex flex-column gap-3">
+              <div>
+                <label class="form-label" for="language" l10nTranslate>Language</label>
+                <select id="language"
+                        formControlName="language"
+                        class="form-control form-select form-select-sm">
+                  @for (l of languages; track $index) {
+                    <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
+                  }
+                </select>
+              </div>
+
+              <div>
+                <label class="form-label" for="notification" l10nTranslate>Notification</label>
+                <select id="notification"
+                        formControlName="notification"
+                        class="form-control form-select form-select-sm">
+                  @for (n of allNotifications; track $index) {
+                    <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
+                  }
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card dialog-tab-card w-100 mb-3">
+            <div class="card-body d-flex flex-column gap-2">
+              <label class="form-label mb-1" for="isActive" l10nTranslate>Account status</label>
+              <div class="card dialog-check-card dialog-check-card--interactive"
+                   [class.dialog-check-card--active]="guestForm.value.isActive">
+                <div class="card-body p-2">
+                  <div class="d-flex align-items-center form-check form-switch cursor-pointer mb-0">
+                    <input class="form-check-input" formControlName="isActive" id="isActive" type="checkbox">
+                    <label class="form-label form-check-label mb-0 ms-2" for="isActive" [class.text-danger]="!guestForm.value.isActive">
+                      {{ (guestForm.value.isActive ? 'active' : 'suspended') | translate:locale.language | titlecase }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          @if (guest) {
+            <div class="card dialog-tab-card w-100">
+              <div class="card-body">
+                <div class="row g-3 fs-2xs">
+                  <div class="col-12 col-md-5">
+                    <div class="d-flex flex-column">
+                      <label class="form-label" for="created" l10nTranslate>Creation date</label>
+                      <div id="created">{{ guest.createdAt | amDateFormat }}</div>
+                    </div>
+                  </div>
+                  <div class="col-12 col-md-7">
+                    <div class="d-flex flex-column text-md-end">
+                      <label class="form-label" for="access" l10nTranslate>Last accesses</label>
+                      <div id="access">
+                        @if (guest.lastAccess) {
+                          <div class="d-flex flex-column mb-2">
+                            <span>{{ guest.currentAccess | amDateFormat }}</span>
+                            <span>{{ guest.currentIp }}</span>
+                          </div>
+                          <div class="d-flex flex-column">
+                            <span>{{ guest.lastAccess | amDateFormat }}</span>
+                            <span>{{ guest.lastIp }}</span>
+                          </div>
+                        } @else {
+                          <span class="text-danger" l10nTranslate>never</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
       </div>
     </tab>
     <tab (selectTab)="tabView='managers'" customClass="tab-dialog">
