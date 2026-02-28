@@ -45,6 +45,9 @@ export class AuthComponent {
     recoveryCode: this.fb.control('', [Validators.required, Validators.minLength(USER_PASSWORD_MIN_LENGTH)]),
     isRecoveryCode: this.fb.control(false)
   })
+  protected get isRecoveryCode(): boolean {
+    return Boolean(this.twoFaForm.get('isRecoveryCode')?.value)
+  }
 
   constructor() {
     if (this.oidcSettings && this.oidcSettings.autoRedirect) {
@@ -65,7 +68,7 @@ export class AuthComponent {
 
   async onSubmit2Fa() {
     this.submitted = true
-    const code = this.twoFaForm.value.isRecoveryCode ? this.twoFaForm.value.recoveryCode : this.twoFaForm.value.totpCode
+    const code = this.isRecoveryCode ? this.twoFaForm.value.recoveryCode : this.twoFaForm.value.totpCode
 
     if (this.auth.electron.enabled) {
       this.auth.electron.register(this.loginForm.value.username, this.loginForm.value.password, code).subscribe({
@@ -73,7 +76,7 @@ export class AuthComponent {
         error: (e) => this.is2FaVerified({ success: false, message: e.error ? e.error.message : e } as TwoFaResponseDto)
       })
     } else {
-      this.auth.loginWith2Fa({ code: code, isRecoveryCode: this.twoFaForm.value.isRecoveryCode } satisfies TwoFaVerifyDto).subscribe({
+      this.auth.loginWith2Fa({ code: code, isRecoveryCode: this.isRecoveryCode } satisfies TwoFaVerifyDto).subscribe({
         next: (res: TwoFaResponseDto) => this.is2FaVerified(res),
         error: (e) => this.is2FaVerified({ success: false, message: e.error ? e.error.message : e } as TwoFaResponseDto)
       })

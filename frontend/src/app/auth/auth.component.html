@@ -6,10 +6,10 @@
       </div>
       <div class="body">
         @if (twoFaVerify) {
-          <p class="fs-sm mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Two-Factor Authentication' }}</p>
+          <p class="fs-xs mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Two-Factor Authentication' }}</p>
           <form (ngSubmit)="onSubmit2Fa()" [formGroup]="twoFaForm">
             <div class="input-group mt-2 mb-4">
-              @if (twoFaForm.value.isRecoveryCode) {
+              @if (isRecoveryCode) {
                 <span class="input-group-text">
                   <fa-icon [icon]="icons.faKey"></fa-icon>
                 </span>
@@ -43,7 +43,7 @@
             <div class="d-flex mt-4">
               <button type="button" (click)="onCancel2Fa()" class="btn btn-secondary px-4 w-50 me-3" l10nTranslate>Cancel</button>
               <button type="submit"
-                      [disabled]="twoFaForm.value.isRecoveryCode ? twoFaForm.controls.recoveryCode.invalid : twoFaForm.controls.totpCode.invalid || submitted"
+                      [disabled]="isRecoveryCode ? twoFaForm.controls.recoveryCode.invalid : twoFaForm.controls.totpCode.invalid || submitted"
                       class="btn btn-primary px-4 w-50" l10nTranslate>
                 Confirm
               </button>

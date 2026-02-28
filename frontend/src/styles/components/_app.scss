@@ -24,6 +24,17 @@
       }
 
       .body {
+        .btn.btn-primary {
+          @include btn-badge-dark-vars(#1d4ed833, #60a5fa66, #bfdbfe);
+          --btn-chip-bg: #203255;
+          --btn-chip-active-bg: white;
+          border-width: .5px !important;
+        }
+        .btn.btn-secondary {
+          @include btn-badge-dark-vars(#33415566, #64748b80, #e2e8f0);
+          border-width: .5px !important;
+        }
+
         .input-group-text {
           background: rgba(0, 0, 0, 0.3);
           color: rgba(255, 255, 255, 0.8);
