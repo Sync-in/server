@@ -7,7 +7,6 @@ body {
     @include skin-light-app();
     @include skin-light-left-sidebar();
     @include skin-light-right-sidebar();
-    @include skin-light-chat();
     @include skin-light-tree();
     @include skin-light-miscellaneous();
   }
@@ -16,7 +15,6 @@ body {
     @include skin-dark-app();
     @include skin-dark-left-sidebar();
     @include skin-dark-right-sidebar();
-    @include skin-dark-chat();
     @include skin-dark-tree();
     @include skin-dark-miscellaneous();
   }

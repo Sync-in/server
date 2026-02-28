@@ -254,12 +254,6 @@
   }
 }
 
-.app-table-striped {
-  @extend .app-table;
-  user-select: auto !important;
-  cursor: auto !important;
-}
-
 .app-top-menu {
   display: flex;
   justify-content: flex-start;
@@ -408,12 +402,6 @@ app-input-filter {
   }
 
   &.selected {
-    background-color: transparent;
-  }
-}
-
-.app-div-striped-inverse {
-  &:nth-of-type(odd) {
     background-color: transparent;
   }
 }

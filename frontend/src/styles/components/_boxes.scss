@@ -1,12 +1,3 @@
-.box {
-  position: relative;
-  @include border-radius($box-border-radius);
-  border-top: 3px solid $box-default-border-top-color;
-  margin-bottom: 10px;
-  width: 100%;
-  box-shadow: $box-boxshadow;
-}
-
 .box-transparent {
   position: relative;
   width: 100%;
@@ -68,31 +59,13 @@
   border-radius: 0 0 $box-border-radius, $box-border-radius;
   padding: $box-padding;
 
-  .no-header & {
-    @include border-top-radius($box-border-radius);
-  }
-
   > .table {
     margin-bottom: 0;
   }
 }
 
-.box-footer {
-  border-top: .5px solid $box-border-color;
-  padding: $box-padding;
-  background-color: $box-footer-bg;
-  font-size: $font-size-xs;
-  text-align: center;
-
-  &:hover {
-    outline: none;
-    cursor: pointer;
-  }
-}
-
 .box-header,
-.box-body,
-.box-footer {
+.box-body {
   @include clearfix;
 }
 
@@ -109,24 +82,6 @@
     display: flex;
     align-items: center;
     padding-left: 10px;
-  }
-
-  > .small-box-footer {
-    position: relative;
-    text-align: center;
-    padding: 3px 0;
-    color: #fff;
-    color: rgba(255, 255, 255, 0.8);
-    display: block;
-    z-index: 10;
-    background: rgba(0, 0, 0, 0);
-    text-decoration: none;
-
-    &:hover {
-      cursor: pointer;
-      color: #fff;
-      background: rgba(0, 0, 0, 0.15);
-    }
   }
 
   h4 {

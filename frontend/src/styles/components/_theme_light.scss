@@ -146,37 +146,6 @@
   }
 }
 
-@mixin skin-light-chat() {
-  .chat-border-bottom {
-    border-bottom-color: $sidebar-light-apps-menu-border-color;
-  }
-  .chat-input {
-    background-color: $sidebar-light-apps-menu-hover-bg;
-  }
-  .chat-container {
-    background-color: $gray-lighter;
-  }
-  .chat-button-bottom {
-    color: $light-chat-button-color;
-
-    &:hover {
-      color: $light-chat-button-hover-color;
-    }
-  }
-  .chat-list-sidebar {
-    color: $sidebar-light-apps-menu-color;
-
-    .chat-item-sidebar {
-      border-bottom: .5px solid $sidebar-light-apps-menu-bg;
-
-      &:hover, &.active {
-        color: $sidebar-light-apps-menu-hover-color;
-        background-color: $sidebar-light-apps-menu-hover-bg;
-      }
-    }
-  }
-}
-
 @mixin skin-light-tree() {
   .angular-tree-component {
     .node-wrapper,
@@ -423,17 +392,6 @@
       color: $custom-dark-color;
     }
   }
-  .app-table-striped {
-    > tbody > tr {
-      &:nth-of-type(odd) {
-        background-color: $gray-lightest;
-      }
-
-      &:hover {
-        background-color: $light-table-striped-hover-bg;
-      }
-    }
-  }
   .app-top-menu {
     border-top-color: $gray-light;
     border-bottom-color: $gray-light;
@@ -504,11 +462,6 @@
 
     &.selected {
       background-color: $light-row-selected-bg !important;
-    }
-  }
-  .app-div-striped-inverse {
-    &:nth-of-type(odd) {
-      background-color: darken($body-bg, 4%);
     }
   }
   .list-group-item {
@@ -663,24 +616,6 @@
 
     &:not(.active).disabled {
       color: $muted;
-    }
-  }
-  .box-default {
-    @include box-solid-variant($gray-lighter, $body-color, true);
-
-    > .box-header {
-      border-bottom: .5px solid $light-box-border-strong;
-    }
-
-    > .box-footer {
-      border-top: .5px solid $light-box-border-strong;
-    }
-  }
-  .box-footer-default {
-    background-color: $gray-lighter;
-
-    &:hover {
-      background-color: darken($gray-lighter, 5%);
     }
   }
   .box-transparent {

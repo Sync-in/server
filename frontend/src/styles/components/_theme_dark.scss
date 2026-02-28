@@ -128,37 +128,6 @@
   }
 }
 
-@mixin skin-dark-chat() {
-  .chat-border-bottom {
-    border-bottom-color: $sidebar-dark-apps-menu-bg;
-  }
-  .chat-input {
-    background-color: $sidebar-dark-icons-menu-bg;
-  }
-  .chat-container {
-    background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
-  }
-  .chat-button-bottom {
-    color: $gray-light;
-
-    &:hover {
-      color: lighten($gray-light, 30%);
-    }
-  }
-  .chat-list-sidebar {
-    color: $sidebar-dark-apps-menu-border-color;
-
-    .chat-item-sidebar {
-      border-bottom: .5px solid $sidebar-dark-apps-menu-bg;
-
-      &:hover, &.active {
-        color: $sidebar-dark-apps-menu-hover-color;
-        background-color: $sidebar-dark-apps-menu-hover-bg;
-      }
-    }
-  }
-}
-
 @mixin skin-dark-tree() {
   .angular-tree-component {
     .node-wrapper,
@@ -395,17 +364,6 @@
       color: darken($gray-light, 5%);
     }
   }
-  .app-table-striped {
-    > tbody > tr {
-      &:nth-of-type(odd) {
-        background-color: $sidebar-dark-icons-menu-border-color;
-      }
-
-      &:hover {
-        background-color: $dark-table-row-hover-bg;
-      }
-    }
-  }
   .app-top-menu {
     border-top-color: $sidebar-dark-icons-menu-border-color;
     border-bottom-color: $sidebar-dark-icons-menu-border-color;
@@ -442,11 +400,6 @@
 
     &:nth-of-type(even) {
       background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
-    }
-  }
-  .app-div-striped-inverse {
-    &:nth-of-type(odd) {
-      background-color: $dark-striped-bg;
     }
   }
   .app-thumbs {
@@ -684,27 +637,6 @@
     color: $gray-light;
     border-color: $dark-field-border;
     background-color: $sidebar-dark-icons-menu-bg;
-  }
-  .box:not(.box-background-transparent) {
-    background-color: $sidebar-dark-icons-menu-bg;
-  }
-  .box-default {
-    @include box-solid-variant($sidebar-dark-apps-menu-title-bg, $gray-light, true);
-
-    > .box-header {
-      border-bottom: .5px solid $sidebar-dark-apps-menu-title-bg;
-    }
-
-    > .box-footer {
-      border-top: .5px solid $sidebar-dark-apps-menu-title-bg;
-    }
-  }
-  .box-footer-default {
-    background-color: $sidebar-dark-apps-menu-title-bg;
-
-    &:hover {
-      background-color: darken($sidebar-dark-apps-menu-title-bg, 5%);
-    }
   }
   .box-transparent {
     background-color: darken($sidebar-dark-icons-menu-bg, 2%);
