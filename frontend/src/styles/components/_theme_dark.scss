@@ -453,12 +453,6 @@
   }
   .profile-page {
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
-
-    select {
-      background-color: transparent;
-      color: $white;
-      filter: brightness(0) invert(1);
-    }
   }
   .task-list {
     border-bottom-color: $sidebar-dark-icons-menu-border-color;

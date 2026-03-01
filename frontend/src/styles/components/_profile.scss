@@ -30,19 +30,6 @@
     .small {
       font-size: $font-size-4xs;
     }
-
-    select {
-      cursor: pointer;
-      background-color: transparent !important;
-      color: $white;
-      filter: brightness(0) invert(1);
-      min-width: 110px;
-      max-width: 135px;
-
-      option {
-        color: black;
-      }
-    }
   }
 }
 

@@ -228,5 +228,43 @@ $sync-path-rail-padding: 0.45rem;
     .sync-client-title {
       font-size: 0.9rem;
     }
+
+    .sync-path-row {
+      flex-wrap: wrap;
+      align-items: flex-start !important;
+      gap: 0.45rem;
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: clip !important;
+    }
+
+    .sync-path-main {
+      flex: 1 1 100%;
+    }
+
+    .sync-path-side {
+      width: 100%;
+      margin-left: 0;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.35rem;
+
+      .sync-path-badges {
+        align-items: flex-start;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        padding-right: 0;
+        height: auto;
+        justify-content: flex-start;
+      }
+
+      .sync-path-actions {
+        border-left: 0;
+        padding-left: 0;
+        width: 100%;
+        justify-content: flex-end;
+      }
+    }
   }
 }
