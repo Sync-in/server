@@ -85,17 +85,27 @@
                   <span [style.font-size.px]="galleryMode.textSize" class="badge bg-purple">{{ s.hTimeAgo }}</span>
                 }
               </span>
-              @if (s.counts.shares) {
-                <div (click)="openChildShareDialog(s)"
-                     [style.font-size.px]="galleryMode.textSize"
-                     class="label-bottom-right badge bg-purple cursor-pointer me-1">
-                  <fa-icon [icon]="icons.SHARED"></fa-icon>
-                  <span>{{ s.counts.shares }}</span>
-                </div>
-              }
+              <span class="label-bottom-right">
+                @if (s.hasComments) {
+                  <span (click)="goToComments(s)"
+                        [style.font-size.px]="galleryMode.textSize"
+                        class="badge bg-success cursor-pointer">
+                    <fa-icon [icon]="icons.faCommentDots"></fa-icon>
+                  </span>
+                }
+                @if (s.counts.shares) {
+                  <div (click)="openChildShareDialog(s)"
+                       [style.font-size.px]="galleryMode.textSize"
+                       class="badge bg-purple cursor-pointer">
+                    <fa-icon [icon]="icons.SHARED"></fa-icon>
+                    {{ s.counts.shares }}
+                  </div>
+                }
+              </span>
               <span class="label-bottom-left">
                 <app-share-repository [share]="s" [galleryMode]="galleryMode"></app-share-repository>
               </span>
+
             </div>
             <div class="card-footer text-center text-truncate p-1">
               <span [style.font-size.px]="galleryMode.textSize" class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>

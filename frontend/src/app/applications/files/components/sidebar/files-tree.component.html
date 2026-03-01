@@ -4,16 +4,16 @@
       <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
     </button>
     @if (errorMsg) {
-      <span class="text-danger fs-2xs p-2" l10nTranslate>{{ errorMsg }}</span>
+      <span class="text-danger fs-3xs p-1" l10nTranslate>{{ errorMsg }}</span>
     } @else {
       <span l10nTranslate>Navigation Tree</span>
     }
   </div>
 }
 @if (copyMoveOn) {
-  <div class="px-2 pt-2 pb-0 fs-xs">
+  <div class="bg-white px-2 pt-2 pb-0 fs-2xs">
     <div class="text-start text-truncate">
-      <span class="fs-xs fw-semibold me-2" l10nTranslate><span l10nTranslate>Source</span>:</span>
+      <span class="fs-2xs fw-semibold me-2" l10nTranslate><span l10nTranslate>Source</span>:</span>
       @switch (store.filesSelection().length) {
         @case (1) {
           <span>
@@ -33,19 +33,30 @@
       }
     </div>
     <div class="text-start text-truncate mt-1">
-      <span class="fs-xs fw-semibold me-2" l10nTranslate><span l10nTranslate>Destination</span>:</span>
+      <span class="fs-2xs fw-semibold me-2" l10nTranslate><span l10nTranslate>Destination</span>:</span>
       <span>{{ selection?.data.name || '' }}</span>
     </div>
-    <div class="d-flex justify-content-between mt-2">
-      <button (click)="actionMove()" [disabled]="!selection || !store.filesSelection().length || !srcAllowed || !dstAllowed" class="btn btn-xxs btn-primary" type="button" l10nTranslate>
+    <div class="d-flex gap-2 pt-1 w-100 mt-2">
+      <button (click)="actionMove()"
+              [disabled]="!selection || !store.filesSelection().length || !srcAllowed || !dstAllowed"
+              class="btn btn-xxs btn-warning flex-fill"
+              type="button"
+              l10nTranslate>
         <fa-icon [icon]="icons.faArrowsAlt"></fa-icon>
         Move
       </button>
-      <button (click)="actionCopy()" [disabled]="!selection || !store.filesSelection().length || !dstAllowed" class="btn btn-xxs btn-primary" type="button" l10nTranslate>
+      <button (click)="actionCopy()"
+              [disabled]="!selection || !store.filesSelection().length || !dstAllowed"
+              class="btn btn-xxs btn-primary flex-fill"
+              type="button"
+              l10nTranslate>
         <fa-icon [icon]="icons.faClone"></fa-icon>
         Copy
       </button>
-      <button (click)="actionCancel()" class="btn btn-xxs btn-default" type="button" l10nTranslate>
+      <button (click)="actionCancel()"
+              class="btn btn-xxs btn-secondary flex-fill"
+              type="button"
+              l10nTranslate>
         <fa-icon [icon]="icons.faTimes"></fa-icon>
         Cancel
       </button>

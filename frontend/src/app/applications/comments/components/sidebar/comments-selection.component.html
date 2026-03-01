@@ -36,24 +36,24 @@
         <div class="pb-2 px-2">
           @if (comment.isEdited) {
             <textarea #CommentUpdate [ngModel]="comment.content" [disabled]="!comment.author.isAuthor && comment.isFileOwner" class="form-control form-control-sm mt-1 mb-2" required></textarea>
-            <div class="d-flex">
+            <div class="d-flex gap-2 w-100">
               <button (click)="updateComment(comment, CommentUpdate.value)"
                       [disabled]="!CommentUpdate.value || comment.content === CommentUpdate.value"
-                      class="btn btn-xxs btn-primary me-auto"
+                      class="btn btn-xxs btn-primary flex-fill"
                       role="button"
                       type="button"
                       l10nTranslate>
                 Update
               </button>
               <button (click)="onEditComment(comment)"
-                      class="btn btn-xxs btn-default align-content-around"
+                      class="btn btn-xxs btn-default flex-fill"
                       role="button"
                       type="button"
                       l10nTranslate>
                 Cancel
               </button>
               <button (click)="removeComment(comment)"
-                      class="btn btn-xxs btn-danger ms-auto"
+                      class="btn btn-xxs btn-danger flex-fill"
                       role="button"
                       type="button"
                       l10nTranslate>

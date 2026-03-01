@@ -234,58 +234,79 @@
                 <img [src]="f.mimeUrl" [height]="galleryMode.image" [width]="galleryMode.image" alt="" draggable="true" (error)="f.fallBackMimeUrl()">
               }
               <span class="label-bottom-right">
-                @if (f.lock) {
-                  <span (click)="openLockDialog(f)"
-                        tooltip="{{f.lock | fileLockFormatPipe}}"
-                        placement="auto"
-                        [style.font-size.px]="galleryMode.textSize"
-                        class="badge bg-maroon cursor-pointer">
-                    <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
-                  </span>
+                @let maxBadges = galleryMode.maxBadges || 0;
+                @let hiddenBadges = f.nbBadges - maxBadges;
+                @for (badge of f.galleryBadges; track badge; let i = $index) {
+                  @if (i < maxBadges) {
+                    @switch (badge) {
+                      @case ('lock') {
+                        <span (click)="openLockDialog(f)"
+                              tooltip="{{f.lock | fileLockFormatPipe}}"
+                              placement="auto"
+                              [style.font-size.px]="galleryMode.textSize"
+                              class="badge bg-maroon cursor-pointer">
+                          <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
+                        </span>
+                      }
+                      @case ('comments') {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
+                              [style.font-size.px]="galleryMode.textSize"
+                              class="badge bg-success cursor-pointer">
+                          <fa-icon [icon]="icons.faCommentDots"></fa-icon>
+                        </span>
+                      }
+                      @case ('shares') {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                              [style.font-size.px]="galleryMode.textSize"
+                              class="badge bg-primary cursor-pointer">
+                          <fa-icon [icon]="icons.SHARES"></fa-icon>
+                          {{ f.shares.length }}
+                        </span>
+                      }
+                      @case ('spaces') {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                              [style.font-size.px]="galleryMode.textSize"
+                              class="badge bg-primary cursor-pointer">
+                          <fa-icon [icon]="icons.SPACES"></fa-icon>
+                          {{ f.spaces.length }}
+                        </span>
+                      }
+                      @case ('links') {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                              [style.font-size.px]="galleryMode.textSize"
+                              class="badge bg-primary cursor-pointer">
+                          <fa-icon [icon]="icons.LINKS"></fa-icon>
+                          {{ f.links.length }}
+                        </span>
+                      }
+                      @case ('syncs') {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                              [style.font-size.px]="galleryMode.textSize"
+                              class="badge bg-primary cursor-pointer">
+                          <fa-icon [icon]="icons.SYNC"></fa-icon>
+                          {{ f.syncs.length }}
+                        </span>
+                      }
+                    }
+                  }
                 }
-                @if (f.shares.length) {
+                @if (hiddenBadges > 0) {
                   <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                         [style.font-size.px]="galleryMode.textSize"
                         class="badge bg-primary cursor-pointer">
-                    <fa-icon [icon]="icons.SHARES"></fa-icon>
-                    {{ f.shares.length }}
+                    <fa-icon [icon]="icons.faCirclePlus"></fa-icon>
+                    {{ hiddenBadges }}
                   </span>
-                }
-                @if (f.spaces.length) {
-                  <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                        [style.font-size.px]="galleryMode.textSize"
-                        class="badge bg-primary cursor-pointer ms-1">
-                    <fa-icon [icon]="icons.SPACES"></fa-icon>
-                    {{ f.spaces.length }}
-                  </span>
-                }
-                @if (f.links.length) {
-                  <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                        [style.font-size.px]="galleryMode.textSize"
-                        class="badge bg-primary cursor-pointer me-1">
-                    <fa-icon [icon]="icons.LINKS"></fa-icon>
-                    {{ f.links.length }}
-                  </span>
-                }
-                @if (f.syncs.length) {
-                  <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                        [style.font-size.px]="galleryMode.textSize"
-                        class="badge bg-primary cursor-pointer me-1">
-                    <fa-icon [icon]="icons.SYNC"></fa-icon>
-                    {{ f.syncs.length }}
-                  </span>
-                }
-                @if (f.hasComments) {
-                  <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
-                        [style.font-size.px]="galleryMode.textSize"
-                        class="badge bg-success cursor-pointer">
-                  <fa-icon [icon]="icons.faCommentDots"></fa-icon>
-                </span>
                 }
               </span>
               @if (f.root) {
                 <span class="label-bottom-left">
-                    <app-user-avatar [user]="f.root.owner" [height]="galleryMode.dimensions / 3" [width]="galleryMode.dimensions / 3" [fontSize]="galleryMode.faSize / 2"></app-user-avatar>
+                    <app-user-avatar
+                      [user]="f.root.owner"
+                      [height]="galleryMode.dimensions / 3.5"
+                      [width]="galleryMode.dimensions / 3.5"
+                      [fontSize]="galleryMode.faSize / 2.5">
+                    </app-user-avatar>
                 </span>
               }
               @if (f.newly) {
@@ -385,48 +406,48 @@
                       }
                     }
                     @case ('info') {
-                      @if (f.lock) {
-                        <span (click)="openLockDialog(f)"
-                              tooltip="{{f.lock | fileLockFormatPipe}}"
-                              placement="auto"
-                              class="badge bg-maroon cursor-pointer me-1">
+                        @if (f.lock) {
+                          <span (click)="openLockDialog(f)"
+                                tooltip="{{f.lock | fileLockFormatPipe}}"
+                                placement="auto"
+                                class="badge bg-maroon cursor-pointer me-1">
                           <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
                         </span>
-                      }
-                      @if (f.shares.length) {
-                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.SHARES"></fa-icon>
-                          {{ f.shares.length }}
-                        </span>
-                      }
-                      @if (f.links.length) {
-                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.LINKS"></fa-icon>
-                          {{ f.links.length }}
-                        </span>
-                      }
-                      @if (f.spaces.length) {
-                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.SPACES"></fa-icon>
-                          {{ f.spaces.length }}
-                        </span>
-                      }
-                      @if (f.syncs.length) {
-                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.SYNC"></fa-icon>
-                          {{ f.syncs.length }}
-                        </span>
-                      }
-                      @if (f.hasComments) {
-                        <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
-                              class="badge bg-success cursor-pointer">
+                        }
+                        @if (f.hasComments) {
+                          <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
+                                class="badge bg-success cursor-pointer me-1">
                           <fa-icon [icon]="icons.faCommentDots"></fa-icon>
                         </span>
-                      }
+                        }
+                        @if (f.shares.length) {
+                          <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                                class="badge bg-primary cursor-pointer me-1">
+                          <fa-icon [icon]="icons.SHARES"></fa-icon>
+                            {{ f.shares.length }}
+                        </span>
+                        }
+                        @if (f.links.length) {
+                          <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                                class="badge bg-primary cursor-pointer me-1">
+                          <fa-icon [icon]="icons.LINKS"></fa-icon>
+                            {{ f.links.length }}
+                        </span>
+                        }
+                        @if (f.spaces.length) {
+                          <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                                class="badge bg-primary cursor-pointer me-1">
+                          <fa-icon [icon]="icons.SPACES"></fa-icon>
+                            {{ f.spaces.length }}
+                        </span>
+                        }
+                        @if (f.syncs.length) {
+                          <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                                class="badge bg-primary cursor-pointer">
+                          <fa-icon [icon]="icons.SYNC"></fa-icon>
+                            {{ f.syncs.length }}
+                        </span>
+                        }
                     }
                     @case ('permissions') {
                       @if (f.root && f.root.permissions) {

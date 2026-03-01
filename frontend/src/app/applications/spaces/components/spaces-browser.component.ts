@@ -11,6 +11,7 @@ import {
   faArrowUp,
   faBan,
   faCircleInfo,
+  faCirclePlus,
   faClipboardList,
   faCommentDots,
   faDownload,
@@ -127,6 +128,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     SYNC: SYNC_ICON.SYNC,
     faArrowRotateRight,
     faPlus,
+    faCirclePlus,
     faFileAlt,
     faGlobe,
     faUpload,
@@ -523,6 +525,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       const s = r[1]
       if (this.selection[0].id < 0) this.selection[0].id = s.file.id
       this.selection[0].shares.push({ id: s.id, alias: s.alias, name: s.name, type: SHARE_TYPE.COMMON })
+      this.selection[0].updateNbBadges()
     })
   }
 
@@ -541,6 +544,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       if (action === 'add') {
         if (this.selection[0].id < 0) this.selection[0].id = s.file.id
         this.selection[0].links.push({ id: s.id, alias: s.alias, name: s.name, type: SHARE_TYPE.LINK })
+        this.selection[0].updateNbBadges()
       }
     })
   }
@@ -555,6 +559,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         if (rootFile && f.spaces.map((s: Partial<SpaceModel>) => s.id).indexOf(up.space.id) === -1) {
           if (f.id < 0) f.id = rootFile.id
           f.spaces.push(up.space)
+          f.updateNbBadges()
         }
       }
     })

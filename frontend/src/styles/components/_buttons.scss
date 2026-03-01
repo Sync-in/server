@@ -121,7 +121,7 @@
 }
 
 .btn-xs {
-  @include button-size($btn-padding-y-xs, $btn-padding-x-xs, $font-size-xs, $btn-border-radius-sm);
+  @include button-size($btn-padding-y-xs, $btn-padding-x-xs, $font-size-2xs, $btn-border-radius-sm);
 }
 
 .btn-xxs {

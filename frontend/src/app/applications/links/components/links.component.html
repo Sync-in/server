@@ -74,6 +74,23 @@
                   </span>
                 }
               </span>
+              <span class="label-bottom-right">
+                @if (s.link.limitAccess) {
+                  <span class="badge {{s.link.nbAccess >= s.link.limitAccess ? 'bg-danger': 'bg-success'}}">
+                          {{ s.link.nbAccess }}/{{ s.link.limitAccess }}
+                        </span>
+                } @else {
+                  <span class="badge bg-success">{{ s.link.nbAccess }}</span>
+                }
+                @if (s.link.expiresAt) {
+                  <span class="badge bg-{{s.hTimeExpirationAgo >= 1 ? 'warning': 'danger'}} ms-1">
+                          <fa-icon [icon]="icons.faClock" [fixedWidth]="false"></fa-icon>
+                    @if (s.hTimeExpirationAgo >= 1) {
+                      {{ s.hTimeExpirationAgo }}&nbsp;{{ (s.hTimeExpirationAgo === 1 ? 'day' : 'days') | translate:locale.language }}
+                    }
+                  </span>
+                }
+              </span>
               <span class="label-bottom-left">
                 <app-share-repository [share]="s" [galleryMode]="galleryMode"></app-share-repository>
               </span>

@@ -90,10 +90,30 @@
               @if (s.managers.length) {
                 <span class="label-bottom-left">
                 @for (m of s.managers; track m.mid) {
-                  <app-user-avatar [user]="m" [isMember]="true" [height]="galleryMode.dimensions / 3" [width]="galleryMode.dimensions / 3"></app-user-avatar>
+                  <app-user-avatar
+                    [user]="m"
+                    [isMember]="true"
+                    [height]="galleryMode.dimensions / 3.5"
+                    [width]="galleryMode.dimensions / 3.5"
+                    [fontSize]="galleryMode.faSize / 2.5">
+                  </app-user-avatar>
                 }
                 </span>
               }
+              <span class="label-bottom-right">
+                @if (s.counts?.roots) {
+                  <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1">
+                          <fa-icon [icon]="icons.faAnchor"></fa-icon>
+                    {{ s.counts.roots }}
+                        </span>
+                }
+                @if (s.role === SPACE_ROLE.IS_MANAGER && s.counts.shares) {
+                  <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
+                          <fa-icon [icon]="icons.SHARED"></fa-icon>
+                    {{ s.counts.shares }}
+                        </span>
+                }
+              </span>
             </div>
             <div class="card-footer text-center text-truncate p-1">
               <span [style.font-size.px]="galleryMode.textSize" class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
