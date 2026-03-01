@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, input, InputSignal } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
+import { BadgeMembersComponent } from '../../../../common/components/badge-members.component'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
-import { JoinCountsPipe } from '../../../../common/pipes/join-counts.pipe'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
 import { defaultCardImageSize, defaultResizeOffset } from '../../../../layout/layout.constants'
 import { TAB_MENU } from '../../../../layout/layout.interfaces'
@@ -24,7 +24,7 @@ import { ShareRepositoryComponent } from '../utils/share-repository.component'
     TimeDateFormatPipe,
     FaIconComponent,
     ShareRepositoryComponent,
-    JoinCountsPipe
+    BadgeMembersComponent
   ],
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })

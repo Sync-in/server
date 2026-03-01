@@ -100,7 +100,7 @@ export class AdminUsersComponent {
     fullName: {
       label: 'Full name',
       width: 15,
-      class: '',
+      class: 'd-none d-md-table-cell',
       textCenter: false,
       show: true,
       sortable: true

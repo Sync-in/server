@@ -174,9 +174,11 @@
                       </div>
                     }
                     @case ('managers') {
-                      @for (m of s.managers; track m.mid) {
-                        <app-user-avatar [user]="m" [isMember]="true"></app-user-avatar>
-                      }
+                      <div class="avatar-stack">
+                        @for (m of s.managers; track m.mid) {
+                          <app-user-avatar [user]="m" [isMember]="true" [container]="'body'"></app-user-avatar>
+                        }
+                      </div>
                     }
                     @case ('members') {
                       <app-badge-members [members]="s.counts"></app-badge-members>

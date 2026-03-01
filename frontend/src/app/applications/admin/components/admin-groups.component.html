@@ -1,7 +1,7 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="refresh()"
-          class="btn btn-sm btn-default me-1"
+          class="d-none d-sm-block btn btn-sm btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
@@ -30,7 +30,7 @@
     </ul>
   </div>
   <button (click)="openDialog(false, true)"
-          class="btn btn-sm btn-default me-1"
+          class="d-none d-sm-block btn btn-sm btn-default me-1"
           [disabled]="!selected"
           [tooltip]="(selected?.isUser ? 'Remove from group' : 'Delete group') | translate:locale.language"
           container="body"
@@ -122,7 +122,7 @@
                   }
                   @case ('members') {
                     @if (m.isGroup) {
-                      <span>{{ m.counts | joinCounts }}</span>
+                      <app-badge-members [members]="m.counts"></app-badge-members>
                     }
                   }
                   @case ('type') {

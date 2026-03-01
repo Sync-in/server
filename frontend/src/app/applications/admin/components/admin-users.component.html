@@ -1,7 +1,7 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadUsersOrGuests()"
-          class="btn btn-sm btn-default me-1"
+          class="d-none d-sm-block btn btn-sm btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
@@ -24,7 +24,7 @@
   </button>
   <button (click)="impersonateIdentity()"
           [disabled]="!selected"
-          class="btn btn-sm btn-default me-1"
+          class="d-none d-sm-block btn btn-sm btn-default me-1"
           [tooltip]="'Impersonate identity' | translate:locale.language"
           container="body"
           type="button">
@@ -111,9 +111,11 @@
                     </div>
                   }
                   @case ('managers') {
-                    @for (m of u.managers; track m.mid) {
-                      <app-user-avatar [user]="m" [isMember]="true"></app-user-avatar>
-                    }
+                    <div class="avatar-stack">
+                      @for (m of u.managers; track m.mid) {
+                        <app-user-avatar [user]="m" [isMember]="true"></app-user-avatar>
+                      }
+                    </div>
                   }
                   @case ('storage') {
                     @if (u.storageUsage) {
@@ -135,12 +137,12 @@
                       }
                   </span>
                   }
-                    @case ('currentAccess') {
-                      @if (u.currentAccess) {
-                        <div class="d-flex justify-content-center {{th.value.newly && u[th.value.newly] ? 'badge prop-newly-' + u[th.value.newly] : ''}}"
-                             (mouseover)="u.currentAccessHover = true"
-                             (focus)="u.currentAccessHover = true"
-                             (mouseleave)="u.currentAccessHover = false">
+                  @case ('currentAccess') {
+                    @if (u.currentAccess) {
+                      <div class="d-flex justify-content-center {{th.value.newly && u[th.value.newly] ? 'badge prop-newly-' + u[th.value.newly] : ''}}"
+                           (mouseover)="u.currentAccessHover = true"
+                           (focus)="u.currentAccessHover = true"
+                           (mouseleave)="u.currentAccessHover = false">
                         @if (u.currentAccessHover) {
                           <div class="d-flex flex-column fs-4xs">
                             <div>{{ u.currentAccess | amDateFormat }}</div>

@@ -17,13 +17,13 @@
 
 .circle-gray-icon {
   @extend .circle-icon;
-  background-color: darken($gray-light, 5%);
+  background-color: darken($gray-light, 2%);
   color: black;
 }
 
 .circle-gray-icon-sm {
   @extend .circle-icon-sm;
-  background-color: darken($gray-light, 5%);
+  background-color: darken($gray-light, 2%);
   color: black;
 }
 

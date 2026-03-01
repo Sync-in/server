@@ -22,7 +22,7 @@
       <div class="d-flex align-items-center mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Members</div>
         @if (share().counts.users || share().counts.groups) {
-          <span>{{ share().counts | joinCounts:['shares'] }}</span>
+          <app-badge-members [members]="share().counts"></app-badge-members>
         } @else {
           <span class="badge bg-secondary-alt" l10nTranslate>no</span>
         }

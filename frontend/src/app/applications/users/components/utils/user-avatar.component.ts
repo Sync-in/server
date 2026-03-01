@@ -20,7 +20,7 @@ import { MemberModel } from '../../models/member.model'
           [height]="height"
           [width]="width"
           [src]="user.avatarUrl"
-          tooltip="{{ user.name }} ({{ user.description }})"
+          tooltip="{{ user.name }} - {{ user.description }}"
           [placement]="tooltipPlacement"
           [container]="container"
         />
@@ -28,7 +28,7 @@ import { MemberModel } from '../../models/member.model'
         <fa-icon
           [icon]="icons.faUsers"
           class="circle-primary-icon cursor-pointer me-1"
-          tooltip="{{ user.name }} ({{ user.type | translate: locale.language }})"
+          tooltip="{{ user.name }} - {{ user.type | translate: locale.language }}"
           [placement]="tooltipPlacement"
           [container]="container"
           [style.min-width.px]="width"
@@ -45,7 +45,7 @@ import { MemberModel } from '../../models/member.model'
           [height]="height"
           [width]="width"
           [src]="user.avatarUrl"
-          tooltip="{{ user.fullName }} ({{ user.email }})"
+          tooltip="{{ user.fullName }} - {{ user.email }}"
           [placement]="tooltipPlacement"
           [container]="container"
         />

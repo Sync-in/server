@@ -3,9 +3,9 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faLink, faUser, faUsers } from '@fortawesome/free-solid-svg-icons'
 
 export interface BadgeMembersCounts {
-  users: number
-  groups: number
-  links: number
+  users?: number
+  groups?: number
+  links?: number
 }
 
 interface BadgeEntry {
@@ -40,10 +40,11 @@ export class BadgeMembersComponent implements OnChanges {
   }
 
   private buildEntries(): BadgeEntry[] {
+    const members = this.members ?? {}
     const entries: BadgeEntry[] = [
-      { key: 'users', icon: faUser, value: this.members.users },
-      { key: 'groups', icon: faUsers, value: this.members.groups },
-      { key: 'links', icon: faLink, value: this.members.links }
+      { key: 'users', icon: faUser, value: members.users ?? 0 },
+      { key: 'groups', icon: faUsers, value: members.groups ?? 0 },
+      { key: 'links', icon: faLink, value: members.links ?? 0 }
     ]
 
     return entries.filter((entry) => entry.value > 0)

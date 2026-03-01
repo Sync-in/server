@@ -84,9 +84,11 @@
                     </div>
                   }
                   @case ('managers') {
-                    @for (m of u.managers; track m.mid) {
-                      <app-user-avatar [user]="m" [isMember]="true"></app-user-avatar>
-                    }
+                    <div class="avatar-stack">
+                      @for (m of u.managers; track m.mid) {
+                        <app-user-avatar [user]="m" [isMember]="true" [container]="'body'"></app-user-avatar>
+                      }
+                    </div>
                   }
                   @case ('isActive') {
                     <span class="{{u.isActive ? 'text-success' : 'text-danger'}}" l10nTranslate>
@@ -98,7 +100,7 @@
                   </span>
                   }
                   @case ('createdAt') {
-                    {{ u.createdAt | amDateFormat }}
+                    {{ u.createdAt | amTimeAgo:true }}
                   }
                   @case ('currentAccess') {
                     @if (u.currentAccess) {

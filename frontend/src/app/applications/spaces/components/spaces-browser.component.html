@@ -475,17 +475,15 @@
 }
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <span>
+  <div>
     @if (stats.dirs) {
-      <span class="me-1">{{ stats.dirs }} {{ (stats.dirs > 1 ? 'directories' : 'directory') | translate:locale.language }}</span>
+      <span class="me-2">{{ stats.dirs }} {{ (stats.dirs > 1 ? 'directories' : 'directory') | translate:locale.language }}</span>
     }
     @if (stats.files) {
       <span>{{ stats.files }} {{ (stats.files > 1 ? 'files' : 'file') | translate:locale.language }}</span>
     }
-  </span>
-  <span
-    class="mx-auto">{{ (!hasSelection ? 'no_selection' : selection.length > 1 ? 'nb_selections' : 'one_selection') | translate:locale.language:{ nb: selection.length } }}</span>
-  <span><span l10nTranslate>Total</span>&nbsp;{{ stats.size | toBytes }}</span>
+  </div>
+  <div class="ms-auto"><span l10nTranslate>Total</span>&nbsp;{{ stats.size | toBytes }}</div>
 </div>
 <!--End Foot Content-->
 <!--Start Common Messages-->

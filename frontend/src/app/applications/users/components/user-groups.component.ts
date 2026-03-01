@@ -24,11 +24,11 @@ import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { filter, take } from 'rxjs/operators'
+import { BadgeMembersComponent } from '../../../common/components/badge-members.component'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
-import { JoinCountsPipe } from '../../../common/pipes/join-counts.pipe'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { TimeAgoPipe } from '../../../common/pipes/time-ago.pipe'
 import { originalOrderKeyValue, pathFromRoutes } from '../../../common/utils/functions'
@@ -56,12 +56,12 @@ import { UserPersonalGroupLeaveDialogComponent } from './dialogs/user-personal-g
     SearchFilterPipe,
     VirtualScrollComponent,
     TooltipDirective,
-    JoinCountsPipe,
     TimeAgoPipe,
     BsDropdownDirective,
     BsDropdownToggleDirective,
     BsDropdownMenuDirective,
-    TapDirective
+    TapDirective,
+    BadgeMembersComponent
   ],
   templateUrl: 'user-groups.component.html'
 })
@@ -104,7 +104,7 @@ export class UserGroupsComponent {
       label: 'Type',
       width: 10,
       textCenter: true,
-      class: '',
+      class: 'd-none d-md-table-cell',
       show: true,
       sortable: true
     },
@@ -119,7 +119,7 @@ export class UserGroupsComponent {
     members: {
       label: 'Members',
       width: 10,
-      class: '',
+      class: 'd-none d-md-table-cell',
       textCenter: true,
       show: true
     },

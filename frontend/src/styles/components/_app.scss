@@ -256,6 +256,20 @@
   }
 }
 
+.avatar-stack {
+  --avatar-overlap: 14px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.avatar-stack > * + * {
+  margin-left: calc(var(--avatar-overlap) * -1);
+}
+
+.avatar-stack > * {
+  position: relative;
+}
+
 .app-top-menu {
   display: flex;
   justify-content: flex-start;

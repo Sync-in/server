@@ -122,22 +122,26 @@
                     }
                   }
                   @case ('role') {
-                    <span l10nTranslate>{{ m.isGroupManager ? 'Manager' : 'Member' }}</span>
+                    @if (m.isGroupManager) {
+                      <span class="badge bg-primary" l10nTranslate>Manager</span>
+                    } @else {
+                      <span l10nTranslate>Member</span>
+                    }
                   }
                   @case ('members') {
                     @if (m.isGroup) {
-                      <span>{{ m.counts | joinCounts }}</span>
+                      <app-badge-members [members]="m.counts"></app-badge-members>
                     }
                   }
                   @case ('memberSince') {
                     {{ m.createdAt | amTimeAgo:true }}
                   }
                   @case ('createdAt') {
-                    {{ m.createdAt | amTimeAgo }}
+                    {{ m.createdAt | amTimeAgo: true }}
                   }
                   @case ('modifiedAt') {
                     <span class="{{th.value.newly && m[th.value.newly] ? 'badge prop-newly-' + m[th.value.newly] : ''}}">
-                      {{ m.modifiedAt | amTimeAgo }}
+                      {{ m.modifiedAt | amTimeAgo: true }}
                     </span>
                   }
                 }

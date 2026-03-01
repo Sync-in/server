@@ -14,6 +14,7 @@ import { VirtualScrollComponent } from '../../../common/components/virtual-scrol
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
+import { TimeAgoPipe } from '../../../common/pipes/time-ago.pipe'
 import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
@@ -38,7 +39,8 @@ import { UserAvatarComponent } from './utils/user-avatar.component'
     TimeDateFormatPipe,
     ContextMenuModule,
     UserAvatarComponent,
-    TapDirective
+    TapDirective,
+    TimeAgoPipe
   ],
   templateUrl: 'user-guests.component.html'
 })
@@ -67,7 +69,7 @@ export class UserGuestsComponent {
     fullName: {
       label: 'Full name',
       width: 15,
-      class: '',
+      class: 'd-none d-md-table-cell',
       textCenter: false,
       show: true,
       sortable: true

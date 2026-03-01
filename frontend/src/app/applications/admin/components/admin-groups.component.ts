@@ -28,11 +28,11 @@ import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { filter, take } from 'rxjs/operators'
+import { BadgeMembersComponent } from '../../../common/components/badge-members.component'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
-import { JoinCountsPipe } from '../../../common/pipes/join-counts.pipe'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 import { originalOrderKeyValue, pathFromRoutes } from '../../../common/utils/functions'
@@ -62,14 +62,14 @@ import { AdminGroupEditUserDialogComponent } from './dialogs/admin-group-edit-us
     SearchFilterPipe,
     VirtualScrollComponent,
     TooltipDirective,
-    JoinCountsPipe,
     TimeDateFormatPipe,
     BsDropdownDirective,
     BsDropdownToggleDirective,
     BsDropdownMenuDirective,
     ButtonCheckboxDirective,
     FormsModule,
-    TapDirective
+    TapDirective,
+    BadgeMembersComponent
   ],
   templateUrl: 'admin-groups.component.html'
 })
@@ -113,14 +113,14 @@ export class AdminGroupsComponent {
       label: 'Type',
       width: 10,
       textCenter: true,
-      class: '',
+      class: 'd-none d-md-table-cell',
       show: true,
       sortable: true
     },
     members: {
       label: 'Members',
       width: 10,
-      class: '',
+      class: 'd-none d-lg-table-cell',
       textCenter: true,
       show: true
     },

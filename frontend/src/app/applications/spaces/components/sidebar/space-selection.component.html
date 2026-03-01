@@ -30,7 +30,7 @@
       <div class="d-flex align-items-center mb-1">
         <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Members</div>
         @if (space().counts.users || space().counts.groups) {
-          <span>{{ space().counts | joinCounts:['roots'] }}</span>
+          <app-badge-members [members]="space().counts"></app-badge-members>
         } @else {
           <span class="badge bg-secondary-alt" l10nTranslate>no</span>
         }
