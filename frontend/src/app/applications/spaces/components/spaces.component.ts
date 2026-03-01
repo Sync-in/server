@@ -22,19 +22,19 @@ import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } fr
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
+import { BadgeMembersComponent } from '../../../common/components/badge-members.component'
+import { BadgePermissionsComponent } from '../../../common/components/badge-permissions.component'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
-import { JoinCountsPipe } from '../../../common/pipes/join-counts.pipe'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
-import { FilePermissionsComponent } from '../../files/components/utils/file-permissions.component'
 import { SharedChildrenDialogComponent } from '../../shares/components/dialogs/shared-children-dialog.component'
 import { UserAvatarComponent } from '../../users/components/utils/user-avatar.component'
 import { UserService } from '../../users/user.service'
@@ -52,15 +52,15 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
     FaIconComponent,
     UserAvatarComponent,
     VirtualScrollComponent,
-    JoinCountsPipe,
     TooltipModule,
     L10nTranslatePipe,
     ContextMenuModule,
     NavigationViewComponent,
     FilterComponent,
     SearchFilterPipe,
-    FilePermissionsComponent,
-    TapDirective
+    BadgePermissionsComponent,
+    TapDirective,
+    BadgeMembersComponent
   ],
   templateUrl: 'spaces.component.html'
 })
@@ -109,7 +109,7 @@ export class SpacesComponent implements OnInit {
     },
     members: {
       label: 'Members',
-      width: 20,
+      width: 16,
       class: 'd-none d-md-table-cell',
       textCenter: false,
       show: true

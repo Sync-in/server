@@ -6,6 +6,7 @@ import { faArrowsAlt, faClipboardCheck, faLock, faSpinner, faUnlock } from '@for
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { catchError, of, shareReplay } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { BadgePermissionsComponent } from '../../../../common/components/badge-permissions.component'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
 import { convertBytesToText } from '../../../../common/utils/functions'
@@ -19,7 +20,6 @@ import { USER_PATH } from '../../../users/user.constants'
 import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 import { FileLockFormatPipe } from '../utils/file-lock.utils'
-import { FilePermissionsComponent } from '../utils/file-permissions.component'
 import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.component'
 
 @Component({
@@ -34,7 +34,7 @@ import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.compone
     FaIconComponent,
     FilesViewerMediaComponent,
     UserAvatarComponent,
-    FilePermissionsComponent,
+    BadgePermissionsComponent,
     AsyncPipe,
     FileLockFormatPipe
   ],

@@ -169,7 +169,7 @@
                       <app-share-repository [share]="s"></app-share-repository>
                     }
                     @case ('members') {
-                      <span>{{ s.counts | joinCounts:['shares'] }}</span>
+                      <app-badge-members [members]="s.counts"></app-badge-members>
                     }
                     @case ('info') {
                       @if (s.counts.shares) {

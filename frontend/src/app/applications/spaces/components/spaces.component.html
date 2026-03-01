@@ -179,7 +179,7 @@
                       }
                     }
                     @case ('members') {
-                      <span>{{ s.counts | joinCounts:['roots', 'shares'] }}</span>
+                      <app-badge-members [members]="s.counts"></app-badge-members>
                     }
                     @case ('info') {
                       @if (s.counts?.roots) {
@@ -197,7 +197,7 @@
                     }
                     @case ('permissions') {
                       @if (s.permissions) {
-                        <app-file-permissions [permissions]="s.hPerms" tooltipPlacement="auto"></app-file-permissions>
+                        <app-badge-permissions [permissions]="s.hPerms" tooltipPlacement="auto"></app-badge-permissions>
                       }
                     }
                     @case ('modified') {

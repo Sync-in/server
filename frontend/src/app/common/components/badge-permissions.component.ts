@@ -3,7 +3,7 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AvailableBSPositions } from 'ngx-bootstrap/positioning'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
-import { SPACES_PERMISSIONS_TEXT } from '../../../spaces/spaces.constants'
+import { SPACES_PERMISSIONS_TEXT } from '../../applications/spaces/spaces.constants'
 
 interface FilePermissionEntry {
   key: string
@@ -11,7 +11,7 @@ interface FilePermissionEntry {
 }
 
 @Component({
-  selector: 'app-file-permissions',
+  selector: 'app-badge-permissions',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TooltipModule, L10nTranslateDirective, FaIconComponent, L10nTranslatePipe],
   template: `
@@ -69,18 +69,13 @@ interface FilePermissionEntry {
       .permission-icon fa-icon {
         display: inline-block;
         color: var(--permission-icon-color);
-        transition: color 0.2s ease;
         vertical-align: 0;
         font-size: 0.8125rem;
-      }
-
-      .permission-icon:hover fa-icon {
-        color: var(--permission-icon-hover-color);
       }
     `
   ]
 })
-export class FilePermissionsComponent implements OnChanges {
+export class BadgePermissionsComponent implements OnChanges {
   @Input({ required: true }) permissions: Partial<typeof SPACES_PERMISSIONS_TEXT> = {}
   @Input() tooltipPlacement: AvailableBSPositions = 'top'
   @Input() replaceEmptyPermissions = false

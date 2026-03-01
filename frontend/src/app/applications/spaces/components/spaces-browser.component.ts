@@ -48,6 +48,7 @@ import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { SERVER_CONNECTION_ERROR } from '../../../app.constants'
+import { BadgePermissionsComponent } from '../../../common/components/badge-permissions.component'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
@@ -68,7 +69,6 @@ import { FilesNewDialogComponent } from '../../files/components/dialogs/files-ne
 import { FilesTrashDialogComponent } from '../../files/components/dialogs/files-trash-dialog.component'
 import { FilesTrashEmptyDialogComponent } from '../../files/components/dialogs/files-trash-empty-dialog.component'
 import { FileLockFormatPipe } from '../../files/components/utils/file-lock.utils'
-import { FilePermissionsComponent } from '../../files/components/utils/file-permissions.component'
 import { FileEvent } from '../../files/interfaces/file-event.interface'
 import { FileModel } from '../../files/models/file.model'
 import { FilesUploadService } from '../../files/services/files-upload.service'
@@ -103,7 +103,7 @@ import { SpaceAnchorFileDialogComponent } from './dialogs/space-anchor-file-dial
     SearchFilterPipe,
     UserAvatarComponent,
     UploadFilesDirective,
-    FilePermissionsComponent,
+    BadgePermissionsComponent,
     TapDirective,
     FileLockFormatPipe
   ],

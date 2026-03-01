@@ -12,6 +12,7 @@ import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TabsModule } from 'ngx-bootstrap/tabs'
 import { Observable } from 'rxjs'
 import { take } from 'rxjs/operators'
+import { BadgePermissionsComponent } from '../../../../common/components/badge-permissions.component'
 import { StorageQuotaComponent } from '../../../../common/components/storage-quota.component'
 import { StorageUsageComponent } from '../../../../common/components/storage-usage.component'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
@@ -19,7 +20,6 @@ import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pi
 import { pathSlice } from '../../../../common/utils/functions'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FilesTreeDialogComponent, FileTreeEvent } from '../../../files/components/dialogs/files-tree-dialog.component'
-import { FilePermissionsComponent } from '../../../files/components/utils/file-permissions.component'
 import { mimeDirectory } from '../../../files/files.constants'
 import { FileModel } from '../../../files/models/file.model'
 import { LinksService } from '../../../links/services/links.service'
@@ -47,7 +47,7 @@ import { ShareRepositoryComponent } from '../utils/share-repository.component'
     UserSearchComponent,
     ShareRepositoryComponent,
     ShareFileNameComponent,
-    FilePermissionsComponent,
+    BadgePermissionsComponent,
     StorageQuotaComponent,
     StorageUsageComponent
   ],

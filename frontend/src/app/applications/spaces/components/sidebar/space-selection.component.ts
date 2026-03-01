@@ -2,12 +2,12 @@ import { ChangeDetectionStrategy, Component, inject, input, InputSignal } from '
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { SPACE_ROLE } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
+import { BadgePermissionsComponent } from '../../../../common/components/badge-permissions.component'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { JoinCountsPipe } from '../../../../common/pipes/join-counts.pipe'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
 import { defaultCardImageSize, defaultResizeOffset } from '../../../../layout/layout.constants'
 import { LayoutService } from '../../../../layout/layout.service'
-import { FilePermissionsComponent } from '../../../files/components/utils/file-permissions.component'
 import { SharedChildrenDialogComponent } from '../../../shares/components/dialogs/shared-children-dialog.component'
 import { UserAvatarComponent } from '../../../users/components/utils/user-avatar.component'
 import { UserService } from '../../../users/user.service'
@@ -25,7 +25,7 @@ import { SpaceUserAnchorsDialogComponent } from '../dialogs/space-user-anchors-d
     L10nTranslateDirective,
     JoinCountsPipe,
     TimeDateFormatPipe,
-    FilePermissionsComponent,
+    BadgePermissionsComponent,
     UserAvatarComponent
   ],
   styles: ['.card {width: 100%; background: transparent; border: none}']

@@ -451,7 +451,7 @@
                     }
                     @case ('permissions') {
                       @if (f.root && f.root.permissions) {
-                        <app-file-permissions [permissions]="f.root.hPerms" tooltipPlacement="auto"></app-file-permissions>
+                        <app-badge-permissions [permissions]="f.root.hPerms" tooltipPlacement="auto"></app-badge-permissions>
                       }
                     }
                     @case ('size') {

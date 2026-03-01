@@ -23,12 +23,12 @@ import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
+import { BadgeMembersComponent } from '../../../common/components/badge-members.component'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
-import { JoinCountsPipe } from '../../../common/pipes/join-counts.pipe'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
@@ -55,11 +55,11 @@ import { ShareRepositoryComponent } from './utils/share-repository.component'
     SearchFilterPipe,
     TooltipModule,
     VirtualScrollComponent,
-    JoinCountsPipe,
     BsDropdownModule,
     ContextMenuModule,
     ShareRepositoryComponent,
-    TapDirective
+    TapDirective,
+    BadgeMembersComponent
   ],
   templateUrl: 'shared.component.html'
 })

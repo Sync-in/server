@@ -130,7 +130,7 @@
             <div class="d-flex align-items-center">
               <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Permissions</div>
               @if (f.root.permissions) {
-                <app-file-permissions [permissions]="f.root.hPerms"></app-file-permissions>
+                <app-badge-permissions [permissions]="f.root.hPerms"></app-badge-permissions>
               } @else {
                 <span class="badge bg-secondary-alt" l10nTranslate>no</span>
               }
