@@ -139,19 +139,19 @@
                   }
                   @case ('currentAccess') {
                     @if (u.currentAccess) {
-                      <div class="d-flex justify-content-center {{th.value.newly && u[th.value.newly] ? 'badge prop-newly-' + u[th.value.newly] : ''}}"
+                      <span class="d-flex justify-content-center {{th.value.newly && u[th.value.newly] ? 'badge prop-newly-' + u[th.value.newly] : ''}}"
                            (mouseover)="u.currentAccessHover = true"
                            (focus)="u.currentAccessHover = true"
                            (mouseleave)="u.currentAccessHover = false">
                         @if (u.currentAccessHover) {
-                          <div class="d-flex flex-column fs-4xs">
-                            <div>{{ u.currentAccess | amDateFormat }}</div>
-                            <div>{{ u.lastAccess | amDateFormat }}</div>
-                          </div>
+                          <span class="d-flex flex-column fs-4xs">
+                            <span>{{ u.currentAccess | amDateFormat }}</span>
+                            <span>{{ u.lastAccess | amDateFormat }}</span>
+                          </span>
                         } @else {
-                          {{ u.hTimeAgo }}
+                          <span>{{ u.hTimeAgo }}</span>
                         }
-                      </div>
+                      </span>
                     } @else {
                       <span class="{{th.value.newly && u[th.value.newly] ? 'badge prop-newly-' + u[th.value.newly] : ''}}" l10nTranslate>never</span>
                     }

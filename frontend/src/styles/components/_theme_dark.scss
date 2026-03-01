@@ -417,6 +417,10 @@
             background-color: $sidebar-dark-apps-menu-title-bg;
           }
         }
+
+        .badge {
+          box-shadow: inset 0 0 0 9999px rgba($sidebar-dark-apps-menu-bg, 0.8);
+        }
       }
 
       .card-footer {

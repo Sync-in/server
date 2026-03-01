@@ -58,7 +58,7 @@ interface FilePermissionEntry {
 
       .permission-icon {
         display: inline-block;
-        margin-right: 0.25rem;
+        margin-right: 0.1rem;
         vertical-align: middle;
       }
 
