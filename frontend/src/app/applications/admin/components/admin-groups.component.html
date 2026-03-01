@@ -133,12 +133,12 @@
                     }
                   }
                   @case ('createdAndModified') {
-                    <div class="d-flex flex-column {{th.value.newly && m[th.value.newly] ? 'badge prop-newly-' + m[th.value.newly] : ''}}">
-                      <div>{{ m.createdAt | amDateFormat }}</div>
+                    <span class="d-flex flex-column {{th.value.newly && m[th.value.newly] ? 'badge prop-newly-' + m[th.value.newly] : ''}}">
+                      <span>{{ m.createdAt | amDateFormat }}</span>
                       @if (m.modifiedAt) {
-                        <div>{{ m.modifiedAt | amDateFormat }}</div>
+                        <span>{{ m.modifiedAt | amDateFormat }}</span>
                       }
-                    </div>
+                    </span>
                   }
                 }
               </td>

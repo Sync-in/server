@@ -48,12 +48,12 @@
         .input-group-text {
           background: rgba(0, 0, 0, 0.3);
           color: rgba(255, 255, 255, 0.8);
-          border: .5px solid lighten(#202a2f, 5%);
+          border: .5px solid lighten($dark-dialog-tabs-bar-bg, 5%);
         }
 
         .form-control {
           background: rgba(0, 0, 0, 0.3);
-          border: .5px solid lighten(#202a2f, 5%);
+          border: .5px solid lighten($dark-dialog-tabs-bar-bg, 5%);
           color: whitesmoke;
 
           &::placeholder {

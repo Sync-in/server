@@ -96,11 +96,11 @@
                     </div>
                   }
                   @case ('date') {
-                    <div class="{{th.value.newly && t[th.value.newly] ? 'badge prop-newly-' + t[th.value.newly] : ''}}"
+                    <span class="{{th.value.newly && t[th.value.newly] ? 'badge prop-newly-' + t[th.value.newly] : ''}}"
                          (mouseenter)="t.hovered = true"
                          (mouseleave)="t.hovered = false">
                       <span>{{ t.hovered ? t.timestamp : t.hTimeAgo }}</span>
-                    </div>
+                    </span>
                   }
                 }
               </td>

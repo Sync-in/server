@@ -30,7 +30,7 @@ export const appConfig: ApplicationConfig = {
     provideL10nIntl(),
     provideAnimations(),
     provideToastr({
-      positionClass: 'toast-top-right',
+      positionClass: 'toast-top-center',
       preventDuplicates: false,
       maxOpened: 6,
       autoDismiss: true,
