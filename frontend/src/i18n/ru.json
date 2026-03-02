@@ -147,6 +147,7 @@
   "Applications": "Приложения",
   "applications": "приложения",
   "Permissions inherited from groups": "Права, унаследованные от групп",
+  "Permissions inherited from the file": "Права, унаследованные от файла",
   "Only the group will be deleted, the members will no longer be part of it.": "Будет удалена только группа, участники больше не будут в ней состоять.",
   "Avatar": "Аватар",
   "Update": "Обновить",

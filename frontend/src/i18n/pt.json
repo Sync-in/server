@@ -147,6 +147,7 @@
   "Applications": "Aplicativos",
   "applications": "aplicativos",
   "Permissions inherited from groups": "Permissões herdadas dos grupos",
+  "Permissions inherited from the file": "Permissões herdadas do arquivo",
   "Only the group will be deleted, the members will no longer be part of it.": "Somente o grupo será excluído, os membros não farão mais parte dele.",
   "Avatar": "Avatar",
   "Update": "Atualizar",

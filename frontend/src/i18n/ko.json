@@ -147,6 +147,7 @@
   "Applications": "애플리케이션",
   "applications": "애플리케이션",
   "Permissions inherited from groups": "그룹에서 상속된 권한",
+  "Permissions inherited from the file": "파일에서 상속된 권한",
   "Only the group will be deleted, the members will no longer be part of it.": "그룹만 삭제되며 구성원은 더 이상 소속되지 않습니다.",
   "Avatar": "아바타",
   "Update": "업데이트",

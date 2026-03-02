@@ -147,6 +147,7 @@
   "Applications": "Anwendungen",
   "applications": "anwendungen",
   "Permissions inherited from groups": "Berechtigungen von Gruppen geerbt",
+  "Permissions inherited from the file": "Von der Datei geerbte Berechtigungen",
   "Only the group will be deleted, the members will no longer be part of it.": "Nur die Gruppe wird gelöscht, die Mitglieder gehören ihr nicht mehr an.",
   "Avatar": "Avatar",
   "Update": "Aktualisieren",

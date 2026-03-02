@@ -147,6 +147,7 @@
   "Applications": "Uygulamalar",
   "applications": "uygulamalar",
   "Permissions inherited from groups": "Gruplardan devralınan izinler",
+  "Permissions inherited from the file": "Dosyadan devralınan izinler",
   "Only the group will be deleted, the members will no longer be part of it.": "Yalnızca grup silinecek; üyeler artık onun parçası olmayacak.",
   "Avatar": "Avatar",
   "Update": "Güncelle",

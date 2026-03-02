@@ -147,6 +147,7 @@
   "Applications": "एप्लिकेशन",
   "applications": "एप्लिकेशन",
   "Permissions inherited from groups": "समूहों से विरासत में मिली अनुमतियाँ",
+  "Permissions inherited from the file": "फ़ाइल से विरासत में मिली अनुमतियाँ",
   "Only the group will be deleted, the members will no longer be part of it.": "केवल समूह हटाया जाएगा, सदस्य अब उसका हिस्सा नहीं रहेंगे।",
   "Avatar": "अवतार",
   "Update": "अपडेट करें",

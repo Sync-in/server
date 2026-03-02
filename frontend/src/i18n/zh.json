@@ -147,6 +147,7 @@
   "Applications": "应用",
   "applications": "应用",
   "Permissions inherited from groups": "从群组继承的权限",
+  "Permissions inherited from the file": "从文件继承的权限",
   "Only the group will be deleted, the members will no longer be part of it.": "仅删除群组，成员将不再属于该群组。",
   "Avatar": "头像",
   "Update": "更新",

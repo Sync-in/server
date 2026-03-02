@@ -147,6 +147,7 @@
   "Applications": "アプリケーション",
   "applications": "アプリケーション",
   "Permissions inherited from groups": "グループから継承された権限",
+  "Permissions inherited from the file": "ファイルから継承された権限",
   "Only the group will be deleted, the members will no longer be part of it.": "グループのみが削除され、メンバーはその一員ではなくなります。",
   "Avatar": "アバター",
   "Update": "更新",
