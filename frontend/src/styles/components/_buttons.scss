@@ -150,6 +150,7 @@
 
 .btn-minimize {
   @extend .btn-close;
+  background: transparent url("#{$theme-btn-minimize-icon-svg}") center/1em auto no-repeat;
 }
 
 .btn-minimize-white {
@@ -194,4 +195,12 @@ $button-dark-variants: (
     semantic-dark($dark-key, border),
     semantic-dark($dark-key, fg)
   );
+}
+
+.btn-outline-blue {
+  @include button-outline-variant($primary);
+}
+
+.btn[class*='bg-']:hover {
+  @include box-shadow(inset 0 0 100px $theme-btn-bg-hover-overlay-shadow);
 }

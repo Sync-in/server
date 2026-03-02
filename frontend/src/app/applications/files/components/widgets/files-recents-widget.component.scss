@@ -1,0 +1,11 @@
+.recent-item-card__media {
+  border-radius: 0.55rem;
+  display: grid;
+  place-items: center;
+}
+
+.recent-item-card__media img {
+  width: 1.1rem;
+  height: 1.1rem;
+  object-fit: contain;
+}

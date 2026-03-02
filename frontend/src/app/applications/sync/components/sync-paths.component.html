@@ -188,7 +188,7 @@
                       <span>{{ s.settings.name }}</span>
                       <span class="d-flex align-items-center ms-auto">
                         @if (s.nbSyncTasks) {
-                          <span class="badge bg-maroon">{{ s._nbTasks }}</span>
+                          <span class="badge bg-maroon">{{ s.nbSyncTasks }}</span>
                         }
                         @if (s.mainError) {
                           <span [tooltip]="s.mainError | translate:locale.language" class="badge bg-danger cursor-pointer ms-1" placement="right">

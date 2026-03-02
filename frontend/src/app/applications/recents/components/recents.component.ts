@@ -8,7 +8,8 @@ import { RECENTS_ICON, RECENTS_PATH, RECENTS_TITLE } from '../recents.constants'
 @Component({
   selector: 'app-recents',
   imports: [AutoResizeDirective, FilesRecentsWidgetComponent, CommentsRecentsWidgetComponent],
-  templateUrl: './recents.component.html'
+  templateUrl: './recents.component.html',
+  styleUrl: './recents.component.scss'
 })
 export class RecentsComponent {
   private readonly layout = inject(LayoutService)

@@ -175,10 +175,6 @@
     background: $light-dialog-check-card-bg;
     border: 1px solid $light-dialog-check-card-border-color;
   }
-  .dialog-check-card--interactive {
-    cursor: pointer;
-    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-  }
   .dialog-check-card--interactive:hover {
     background: $light-dialog-check-card-hover-bg;
     border-color: $light-dialog-check-card-hover-border-color;
@@ -277,15 +273,6 @@
     background-color: $primary !important;
     border-color: $primary !important;
     color: $white !important;
-  }
-  .btn-outline-blue {
-    @include button-outline-variant($primary);
-  }
-  .btn[class*='bg-']:hover {
-    @include box-shadow(inset 0 0 100px $theme-btn-bg-hover-overlay-shadow);
-  }
-  .btn-minimize {
-    background: transparent url("#{$theme-btn-minimize-icon-svg}") center/1em auto no-repeat;
   }
   app-input-filter {
     .filter-shell {
@@ -469,7 +456,7 @@
     color: $custom-color;
   }
   .profile-page {
-    background-color: $gray-lightest;
+    background-color: $white;
 
     .box {
       background-color: $gray-lighter;
@@ -646,24 +633,72 @@
   .text-bg-light {
     background-color: $white !important;
   }
-  .recents-grid .box-transparent > .box-header {
-    background: $light-recents-box-header-bg;
-    border-bottom-color: mix($primary, $white, 20%);
+  app-files-recents-widget,
+  app-comments-recents-widget {
+    .recents-widget-card {
+      border-color: rgba($light-surface-border, 0.5);
+      box-shadow: 0 14px 34px $light-box-transparent-shadow-color;
+      background: linear-gradient(160deg, $light-app-top-menu-gradient-end 0%, $light-menu-surface-bg 100%);
+    }
 
-    > fa-icon {
+    .recents-widget-card__header {
+      border-bottom-color: rgba($light-surface-border, 0.5);
+      background: linear-gradient(125deg, $light-app-top-menu-gradient-start 0%, $theme-light-panel-bg 100%);
+    }
+
+    .recents-widget-card__title {
       color: lighten($navy, 8%);
     }
 
-    .box-title {
-      color: lighten($navy, 8%);
+    .recents-widget-card__title-icon {
+      color: darken($primary, 11%);
+      background: rgba($white, 0.7);
+      border: 1px solid rgba($light-surface-border, 0.4);
     }
 
-    .btn-link {
-      color: darken($gray, 24%);
+    .recents-widget-card__toggle {
+      color: mix($navy, $primary, 40%);
+      background: rgba($white, 0.72);
+      border-color: rgba($light-surface-border, 0.48);
+    }
 
-      &:hover, &:focus {
-        color: darken($primary, 8%);
-      }
+    .recents-widget-card__toggle:hover {
+      color: darken($primary, 8%);
+      background: $white;
+    }
+
+    .recents-widget-card__body {
+      background: linear-gradient(180deg, $white 0%, $light-surface-bg 100%);
+    }
+
+    .recent-item-card {
+      background: $white;
+      border-color: rgba($light-surface-border, 0.5);
+      box-shadow: 0 5px 14px $light-dialog-tab-card-shadow-color;
+    }
+
+    .recent-item-card:hover {
+      border-color: $light-dialog-check-card-hover-border-color;
+      box-shadow: 0 10px 22px $light-dialog-check-card-hover-shadow-color;
+    }
+
+    .recent-item-card__title {
+      color: $light-item-color;
+    }
+
+    .recent-item-card__media {
+      background: $gray-lightest;
+      border: 1px solid rgba($light-surface-border, 0.42);
+    }
+
+    .recent-item-card__time {
+      color: $light-text-muted-color;
+    }
+
+    .recent-empty-state {
+      background: rgba($light-menu-surface-bg, 0.8);
+      color: $light-text-muted-color;
+      border: 1px dashed rgba($light-surface-border, 0.52);
     }
   }
   .products-list > li:hover {

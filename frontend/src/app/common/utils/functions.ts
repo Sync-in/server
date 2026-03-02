@@ -149,7 +149,7 @@ export function titleCase(input: string) {
 
 export const originalOrderKeyValue = () => 0
 
-export function filterArray(search: string, collection: any[], field?: string) {
+export function filterArray<T>(search: string, collection: T[], field?: string): T[] {
   const searchRegexp = new RegExp(search, 'i')
   if (field) {
     return collection.filter((obj) => searchRegexp.test(obj[field].normalize()))

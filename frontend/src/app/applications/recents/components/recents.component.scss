@@ -1,0 +1,14 @@
+.recents-dashboard {
+  padding: 0.05rem 0.2rem 0.25rem;
+}
+
+.recents-grid {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+@media (max-width: 1199.98px) {
+  .recents-dashboard {
+    padding-inline: 0.1rem;
+  }
+}
