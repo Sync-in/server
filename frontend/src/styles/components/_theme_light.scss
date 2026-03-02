@@ -444,11 +444,53 @@
   }
   .app-div-striped {
     &:nth-of-type(even) {
-      background-color: lighten($gray-lighter, 2%);
+      background-color: $light-table-row-hover-bg;
     }
 
     &.selected {
       background-color: $light-row-selected-bg !important;
+    }
+  }
+  .search-results-list {
+    .search-result-item {
+      background-color: $white;
+      border-color: $gray-light;
+    }
+
+    .search-result-item.app-div-striped:nth-of-type(odd) {
+      background-color: $white;
+    }
+
+    .search-result-item.app-div-striped:nth-of-type(even) {
+      background-color: lighten($light-table-row-hover-bg, 2%);
+    }
+
+    .search-result-item:hover,
+    .search-result-item.app-div-striped:hover {
+      background-color: lighten($light-table-row-hover-bg, 2%);
+      border-color: $light-surface-border;
+    }
+
+    .search-result-item.selected {
+      background-color: $light-row-selected-bg !important;
+      border-color: $primary;
+    }
+
+    .search-result-name {
+      color: $custom-dark-color;
+    }
+
+    .search-result-matches {
+      border-top-color: $gray-mid;
+    }
+
+    .search-result-match {
+      color: $custom-dark-color;
+    }
+
+    .search-result-match mark {
+      color: $custom-dark-color;
+      background: $light-green;
     }
   }
   .list-group-item {

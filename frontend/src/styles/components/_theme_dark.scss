@@ -386,7 +386,49 @@
     }
 
     &:nth-of-type(even) {
-      background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
+      background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%);
+    }
+  }
+  .search-results-list {
+    .search-result-item {
+      background-color: $sidebar-dark-icons-menu-bg;
+      border-color: lighten($sidebar-dark-icons-menu-border-color, 8%);
+    }
+
+    .search-result-item.app-div-striped:nth-of-type(odd) {
+      background-color: darken($sidebar-dark-icons-menu-bg, 2%);
+    }
+
+    .search-result-item.app-div-striped:nth-of-type(even) {
+      background-color: $dark-surface-bg;
+    }
+
+    .search-result-item:hover,
+    .search-result-item.app-div-striped:hover {
+      background-color: $sidebar-dark-apps-menu-title-bg;
+      border-color: $primary;
+    }
+
+    .search-result-item.selected {
+      background-color: $dark-tree-node-selected-bg !important;
+      border-color: $primary;
+    }
+
+    .search-result-name {
+      color: $gray-lightest;
+    }
+
+    .search-result-matches {
+      border-top-color: $dark-control-sidebar-separator-color;
+    }
+
+    .search-result-match {
+      color: $dark-item-hover-color;
+    }
+
+    .search-result-match mark {
+      color: $white;
+      background: $success;
     }
   }
   .app-thumbs {
@@ -606,7 +648,7 @@
   .form-control, .form-select, .input-group-text {
     background-color: $sidebar-dark-apps-menu-title-bg;
     color: $white;
-    border-color: $dark-field-border;
+    border-color: $dark-surface-border;
 
     &:focus {
       border-color: $primary;
