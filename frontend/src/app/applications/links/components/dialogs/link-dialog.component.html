@@ -1,6 +1,6 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.links" class="me-2"></fa-icon>
+    <fa-icon [icon]="icons.links"></fa-icon>
     <span>{{ linkForm.value.name || linkForm.value.shareName }}</span>
   </h4>
   <h4 class="modal-title ms-auto">
@@ -22,7 +22,7 @@
               <fa-icon [icon]="icons.links" class="circle-primary-icon me-2"></fa-icon>
               <div class="d-flex flex-column text-truncate">
                 <span class="text-truncate">{{ linkForm.value.name || linkForm.value.shareName }}</span>
-                <span class="fs-3xs text-truncate">{{ linkForm.value.email }}</span>
+                <span class="fs-sm text-truncate">{{ linkForm.value.email }}</span>
               </div>
             </div>
             @if (share) {
@@ -48,7 +48,7 @@
               }
             }
             <button (click)="copyToClipboard()"
-                    class="btn btn-sm {{linkWasCopied ? 'bg-info' : 'btn-default'}}"
+                    class="btn btn-sm {{linkWasCopied ? 'btn-primary' : 'btn-default'}}"
                     [tooltip]="'Copy link' | translate:locale.language"
                     container="body"
                     type="button">
@@ -64,7 +64,7 @@
       <div class="col-12 col-lg-6 d-flex flex-column gap-3">
         <div class="card dialog-tab-card">
           <div class="card-body d-flex flex-column">
-            <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Link identity</div>
+            <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Link identity</div>
 
             <div class="d-flex align-items-center cursor-pointer border-bottom py-2"
                  (mouseover)="linkIsHovered = true"
@@ -105,7 +105,7 @@
         </div>
         <div class="card dialog-tab-card">
           <div class="card-body d-flex flex-column">
-            <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Access rules</div>
+            <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Access rules</div>
 
             <div class="d-flex align-items-center border-bottom py-2">
               <span class="form-label mb-0" l10nTranslate>Current access count</span>
@@ -126,7 +126,7 @@
                        formControlName="limitAccess"
                        min="1"
                        type="number"
-                       class="form-control form-control-sm"
+                       class="form-control"
                        [placeholder]="'Unlimited' | translate:locale.language">
               </div>
             </div>
@@ -139,7 +139,7 @@
                   formControlName="expiresAt"
                   placement="left"
                   type="text"
-                  class="form-control form-control-sm"
+                  class="form-control"
                   [class.text-danger]="linkIsExpired"
                   [placeholder]="'Never expires' | translate:locale.language"
                   [bsConfig]="{
@@ -155,7 +155,7 @@
         </div>
         <div class="card dialog-tab-card">
           <div class="card-body d-flex flex-column">
-            <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Security</div>
+            <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Security</div>
             <div class="card dialog-check-card dialog-check-card--interactive"
                  [class.dialog-check-card--active]="linkForm.value.requireAuth"
                  (click)="toggleRequireAuth()">
@@ -198,14 +198,14 @@
         @if (share) {
           <div class="card dialog-tab-card">
             <div class="card-body d-flex flex-column">
-              <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Share details</div>
+              <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Share details</div>
               <div class="row g-2 align-items-center mb-2">
                 <label class="form-label col-5 mb-0" for="shareName" l10nTranslate>Share name</label>
                 <div class="col-7">
                   <input id="shareName"
                          formControlName="shareName"
                          type="text"
-                         class="form-control form-control-sm"
+                         class="form-control"
                          [class.is-invalid]="linkForm.controls.shareName.invalid"
                          [placeholder]="'Share name' | translate:locale.language">
                 </div>
@@ -216,7 +216,7 @@
                   <input id="shareDescription"
                          formControlName="shareDescription"
                          type="text"
-                         class="form-control form-control-sm">
+                         class="form-control">
                 </div>
               </div>
             </div>
@@ -224,14 +224,14 @@
         }
         <div class="card dialog-tab-card flex-grow-1">
           <div class="card-body d-flex flex-column">
-            <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Guest profile</div>
+            <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Guest profile</div>
             <div class="row g-2 align-items-center mb-2">
               <label class="form-label col-5 mb-0" for="guestName" l10nTranslate>Guest name</label>
               <div class="col-7">
                 <input id="guestName"
                        formControlName="name"
                        type="text"
-                       class="form-control form-control-sm"
+                       class="form-control"
                        [placeholder]="'Guest name' | translate:locale.language">
               </div>
             </div>
@@ -243,7 +243,7 @@
                        formControlName="email"
                        [class.is-invalid]="linkForm.controls.email.invalid"
                        type="email"
-                       class="form-control form-control-sm"
+                       class="form-control"
                        [placeholder]="'Guest email' | translate:locale.language">
               </div>
             </div>
@@ -252,7 +252,7 @@
               <div class="col-7">
                 <select id="guestLanguage"
                         formControlName="language"
-                        class="form-control form-select form-select-sm">
+                        class="form-control form-select">
                   @for (l of languages; track $index) {
                     <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
                   }
@@ -269,14 +269,14 @@
   @if (share?.id) {
     <button (click)="confirmDeletion = true"
             [disabled]="confirmDeletion"
-            class="btn btn-sm btn-danger" type="button" l10nTranslate>
+            class="btn btn-danger" type="button" l10nTranslate>
       Remove
     </button>
   }
-  <button (click)="onCancel()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
           [disabled]="linkForm.invalid || linkForm.controls.requireAuth.value && password.length < passwordMinLength || submitted"
-          class="btn btn-sm {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
+          class="btn {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
           type="button"
           l10nTranslate>
     {{ confirmDeletion ? 'Confirm deletion' : 'Confirm' }}

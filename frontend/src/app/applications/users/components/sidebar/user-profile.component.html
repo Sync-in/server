@@ -3,20 +3,20 @@
   <div class="sidebar-component-title">
     <div class="d-flex flex-fill justify-content-between">
       @if (!user?.isLink) {
-        <button class="btn btn-sm btn-default" (click)="collapseRSideBar()" type="button" [routerLink]=USER_PATH.BASE>
+        <button class="btn btn-default" (click)="collapseRSideBar()" type="button" [routerLink]=USER_PATH.BASE>
           <fa-icon [icon]="icons.faUserAlt"></fa-icon>
         </button>
       }
-      <button class="btn btn-sm  btn-default" (click)="toggleTheme()" type="button">
+      <button class="btn btn-default" (click)="toggleTheme()" type="button">
         <fa-icon [icon]="icons.faCircleHalfStroke"></fa-icon>
       </button>
       @if (user?.isAdmin) {
-        <button class="btn btn-sm btn-default" (click)="collapseRSideBar()" type="button" routerLink="/admin">
+        <button class="btn btn-default" (click)="collapseRSideBar()" type="button" routerLink="/admin">
           <fa-icon [icon]="icons.faCog"></fa-icon>
         </button>
       }
       @if (!store.isElectronApp() || store.isElectronApp() && store.userImpersonate()) {
-        <button (click)="logOut()" class="btn btn-sm btn-default" type="button">
+        <button (click)="logOut()" class="btn btn-default" type="button">
           <fa-icon [icon]="store.userImpersonate() ? icons.faUserSecret : icons.faPowerOff"></fa-icon>
         </button>
       }
@@ -35,11 +35,11 @@
           <div l10nTranslate>Guest Link</div>
         } @else {
           <div>{{ user?.fullName }}</div>
-          <div class="small">{{ user?.email }}</div>
+          <div class="fs-xs mt-1">{{ user?.email }}</div>
         }
         <select [ngModel]="user?.onlineStatus"
                 (ngModelChange)="setOnlineStatus($event)"
-                class="form-select form-select-sm mt-3">
+                class="form-select form-select-sm mt-2">
           @for (s of allOnlineStatus; track $index) {
             <option [ngValue]="allOnlineStatus.indexOf(s)">{{ s | translate:locale.language | capitalize }}</option>
           }

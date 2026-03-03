@@ -1,7 +1,7 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadGuests()"
-          class="btn btn-sm btn-default me-1"
+          class="btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
@@ -9,7 +9,7 @@
   </button>
   <button (click)="openGuestDialog(true)"
           [disabled]="!canCreateGuest"
-          class="btn btn-sm btn-default me-1"
+          class="btn btn-default me-1"
           [tooltip]="'New guest' | translate:locale.language"
           container="body"
           type="button">
@@ -17,7 +17,7 @@
   </button>
   <button (click)="openGuestDialog()"
           [disabled]="!selected"
-          class="btn btn-sm btn-default me-1"
+          class="btn btn-default me-1"
           [tooltip]="'Edit guest' | translate:locale.language"
           container="body"
           type="button">
@@ -74,7 +74,7 @@
                         <span class="no-pointer-events" draggable="false">
                           {{ u.login }}
                         </span>
-                        <span class="no-pointer-events text-muted fs-3xs" draggable="false">{{ u.email }}</span>
+                        <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ u.email }}</span>
                       </div>
                     </div>
                   }
@@ -118,7 +118,7 @@
                         }
                       </span>
                     } @else {
-                      <span class="{{th.value.newly && u[th.value.newly] ? 'badge prop-newly-' + u[th.value.newly] : ''}}" l10nTranslate>never</span>
+                      <span class="badge bg-danger" l10nTranslate>never</span>
                     }
                   }
                 }

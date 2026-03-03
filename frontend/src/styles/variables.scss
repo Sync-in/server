@@ -1,16 +1,27 @@
+// --------------------------------------------------------
 // Custom variables
+// --------------------------------------------------------
+
 $font-family-sans-serif: 'Inter Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 $application_title: 'Sync-in';
-$application_background: linear-gradient(to bottom right, rgb(2, 0, 36) 0%, rgb(28, 104, 176) 35%, rgb(152, 92, 160) 100%);
+$application_background: linear-gradient(
+                to bottom right,
+                rgb(2, 0, 36) 0%,
+                rgb(28, 104, 176) 35%,
+                rgb(152, 92, 160) 100%
+);
 
+// --------------------------------------------------------
 // Bootstrap overrides
 // Colors
+// --------------------------------------------------------
+
 $white: #ffffff;
 $gray-dark: #384042;
-$gray:          #95a8c6;
-$gray-mid:      #b3c2d9;
-$gray-light:    #cfd9e7;
-$gray-lighter:  #dde5f0;
+$gray: #95a8c6;
+$gray-mid: #b3c2d9;
+$gray-light: #cfd9e7;
+$gray-lighter: #dde5f0;
 $gray-lightest: #edf2f8;
 $lighter-blue: #94c7e8;
 $red: #dc3545;
@@ -27,7 +38,6 @@ $yellow: #ffc107;
 $purple: #9b59b6;
 $maroon: #b33c00;
 $black: #111;
-
 $primary: #1c68b0;
 $success: $green;
 $secondary: #c3cee0;
@@ -37,80 +47,147 @@ $warning: $orange;
 $danger: $red;
 $mark-bg: $light-green;
 $muted: #6d7278;
-// Options
-//--------------------------------------------------------
-//Body background (Affects main content background only)
+
+// --------------------------------------------------------
+// TYPOGRAPHY SCALE (base UI = 15.5px)
+// --------------------------------------------------------
+
+$font-size-root: 16px;
+$font-size-3xl: 1.25rem;     // 20px
+$font-size-2xl: 1.125rem;  // 18px
+$font-size-xl: 1rem;       // 16px
+$font-size-lg: 0.9375rem;  // 15px
+$font-size-md: 0.875rem;   // 14px
+$font-size-base: 0.8125rem;// 13px
+$font-size-sm: 0.75rem;    // 12px
+$font-size-xs: 0.7125rem;  // 11px
+$font-size-2xs: 0.65rem;     // 10.4px
+
+$small-font-size: $font-size-sm;
+
+// --------------------------------------------------------
+// HEADINGS
+// --------------------------------------------------------
+
+$h1-font-size: $font-size-3xl;
+$h2-font-size: $font-size-2xl;
+$h3-font-size: $font-size-xl;
+$h4-font-size: $font-size-lg;
+$h5-font-size: $font-size-md;
+$h6-font-size: $font-size-base;
+
+// --------------------------------------------------------
+// Body
+// --------------------------------------------------------
+
 $body-bg: $gray-lighter;
 $body-color: #333;
 $custom-color: #212529;
 $custom-dark-color: #28353b;
 $list-group-color: $custom-color;
 $placeholder-color: $muted;
-// Quickly modify global styling by enabling or disabling optional features.
+
+// --------------------------------------------------------
+// Options
+// --------------------------------------------------------
+
 $enable-transitions: true;
 $enable-rounded: true;
 $enable-grid-classes: true;
 $enable-sidebar-nav-rounded: false;
 $border-color: $gray-lighter;
 $hr-color: $secondary;
-$btn-close-width: .75em !default;
-$btn-close-padding-x: .5em !default;
 
-// Font, line-height, and color for body text, headings, and more.
-// Typography scale tuned for dense file-browser UI with balanced readability
-$font-size-base: 0.96875rem; // 15.5px
-$font-size-xl: 1.1875rem; // 19px
-$font-size-lg: 1.0625rem; // 17px
-$font-size-md: $font-size-base; // 15.5px
-$font-size-sm: 0.875rem; // 14px
-$font-size-xs: 0.8125rem; // 13px
-$font-size-2xs: 0.75rem; // 12px
-$font-size-3xs: 0.7125rem; // 11.4px
-$font-size-4xs: 0.65rem; // 10.4px
+// --------------------------------------------------------
+// LAYOUT
+// --------------------------------------------------------
 
-//LAYOUT
-//--------------------------------------------------------
 $spacer: 0.6rem;
+$border-radius-base: .375rem !default;
+$border-radius: .375rem !default;
+
+// --------------------------------------------------------
 // Links
+// --------------------------------------------------------
+
 $link-color: $blue;
 $link-decoration: none;
 $link-hover-color: darken($link-color, 5%);
 $link-hover-decoration: none;
+
+// --------------------------------------------------------
 // Navs
+// --------------------------------------------------------
+
+$nav-link-font-size: $font-size-base;
 $nav-link-padding-y: .35rem;
 $nav-link-padding-x: .65rem;
 $nav-link-font-weight: 400;
-$nav-link-transition: background-color .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease;
+$nav-link-transition: background-color .2s ease,
+color .2s ease,
+border-color .2s ease,
+box-shadow .2s ease;
 $nav-link-focus-box-shadow: none;
 $nav-tabs-border-width: .5px;
 $nav-tabs-border-radius: .7rem;
 $nav-pills-border-radius: .55rem;
+
+// --------------------------------------------------------
 // Forms
+// --------------------------------------------------------
+
 $input-bg: $white;
 $input-color: $custom-color;
 $input-border-color: $gray-light;
-$input-font-size-sm: $font-size-xs;
+$input-font-size: $font-size-base;
+$input-font-size-sm: $font-size-sm;
+$input-font-size-lg: $font-size-md;
 $input-border-width: 1px;
 $input-box-shadow: none !important;
 $input-focus-box-shadow: none !important;
+$input-group-addon-padding-x: .5rem !default;
+$input-group-addon-padding-y: .3rem !default;
+$input-padding-x: .5rem !default;
+$input-padding-y: .3rem !default;
+$input-font-size: $font-size-base !default;
+$input-font-size-lg: $font-size-lg !default;
+
 $form-group-margin-bottom: 0.6rem;
 $form-check-margin-bottom: 0;
+//$form-label-font-size: $font-size-xs;
 $form-label-margin-bottom: 0.25rem;
+//$form-text-font-size: $font-size-xs;
+$form-select-padding-x: .5rem !default;
+$form-select-padding-y: .3rem !default;
+$form-select-font-size: $font-size-base;
+
+// --------------------------------------------------------
 // Table-hover
+// --------------------------------------------------------
+
 $table-bg-hover: lighten($lighter-blue, 14%);
 $table-bg: transparent !important;
 $table-color: inherit !important;
 $selected-background: $lighter-blue;
+
+// --------------------------------------------------------
 // Dropdowns
+// --------------------------------------------------------
+
+$dropdown-font-size: $font-size-base;
 $dropdown-link-color: #444;
 $dropdown-link-active-color: $dropdown-link-color;
 $dropdown-link-hover-bg: $table-bg-hover !important;
 $dropdown-link-active-bg: $dropdown-link-hover-bg;
-$dropdown-item-padding-y: .2rem;
-$dropdown-item-padding-x: 1rem;
+$dropdown-item-padding-y: .25rem;
+$dropdown-item-padding-x: .8rem;
 $dropdown-padding-y: .2rem;
 $dropdown-header-color: #8aa4af;
+
+// --------------------------------------------------------
 // Modals
+// --------------------------------------------------------
+
 $modal-inner-padding: .4rem;
 $modal-header-padding-x: .8rem;
 $modal-header-padding-y: .5rem;
@@ -120,32 +197,49 @@ $modal-md: 650px;
 $modal-lg: 768px;
 $modal-xl: 1000px;
 $modal-content-border-width: .5px;
+
+// --------------------------------------------------------
 // Progress-bar
+// --------------------------------------------------------
+
 $progress-height: 20px;
-// Others
-$border-radius-base: 4px;
+$progress-font-size: $font-size-xs;
+
+// --------------------------------------------------------
 // Buttons
-$btn-font-size: $font-size-xs !default;
-$btn-font-size-sm: $font-size-xs;
+// --------------------------------------------------------
+
+$btn-font-size: $font-size-base !default;
+$btn-font-size-sm: $font-size-sm;
+$btn-font-size-lg: $font-size-base;
+
+$btn-padding-y: .25rem;
+$btn-padding-x: .5rem;
 $btn-padding-x-xs: .5rem !default;
 $btn-padding-y-xs: .2rem !default;
 $btn-padding-x-xxs: .2rem !default;
 $btn-padding-y-xxs: .1rem !default;
+$btn-padding-y-lg: .4rem !default;
+$btn-padding-x-lg: .9rem !default;
 $btn-disabled-opacity: 0.4;
-$btn-border-radius: .375rem;
-$btn-border-radius-sm: .375rem;
+
+// --------------------------------------------------------
 // Badges
-$badge-font-size: 89%;
+// --------------------------------------------------------
+
+$badge-font-size: $font-size-2xs;
 $badge-font-weight: 500 !default;
 $badge-padding-x: .5rem !default;
 $badge-padding-y: .35rem !default;
-//$badge-padding-y: .25rem !default;
+
+// --------------------------------------------------------
 // Pagination
+// --------------------------------------------------------
+
 $pagination-font-size: $font-size-2xs !important;
 $pagination-color: $body-color;
 $pagination-hover-color: darken($body-color, 4%);
 $pagination-focus-color: $pagination-hover-color;
-
 $pagination-bg: $white;
 $pagination-hover-bg: darken($gray-mid, 2%);
 $pagination-focus-bg: $pagination-hover-bg;
@@ -154,11 +248,14 @@ $pagination-active-bg: $primary;
 $pagination-active-border-color: darken($primary, 7%);
 $pagination-disabled-color: lighten($muted, 12%);
 $pagination-disabled-bg: $white;
-
 $pagination-border-color: $gray-mid;
 $pagination-hover-border-color: darken($gray-mid, 10%);
 $pagination-disabled-border-color: lighten($gray-mid, 2%);
-
 $pagination-focus-box-shadow: none;
+
+// --------------------------------------------------------
 // List group
+// --------------------------------------------------------
+
 $list-group-border-width: .5px;
+$list-group-font-size: $font-size-xs;

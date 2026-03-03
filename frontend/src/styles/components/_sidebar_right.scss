@@ -26,7 +26,7 @@
     justify-content: center;
     font-weight: 500;
     height: $sidebar-apps-height;
-    font-size: $font-size-xs;
+    font-size: $font-size-base;
     padding: .3rem .6rem;
   }
 
@@ -46,7 +46,7 @@
         display: flex;
         align-items: center;
         width: 100%;
-        height: $sidebar-apps-height;
+        height: 45px;
         padding: .2rem .4rem .2rem .4rem;
         border-bottom: .5px solid transparent;
       }
@@ -83,19 +83,23 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: calc(#{$sidebar-apps-height} - 5px);
-        width: calc(100% - 5px);
-        margin: 4px;
+        min-height: $sidebar-apps-height;
+        width: 100%;
+        position: relative;
+        box-sizing: border-box;
+        $icon-item-inset: 3px;
+        padding: $icon-item-inset;
         cursor: pointer;
-        border-radius: $btn-border-radius;
+        border-radius: calc(#{$border-radius-base} + #{$icon-item-inset});
+        background-clip: content-box !important;
 
-        > i {
-          font-size: 1rem;
+        > fa-icon {
+          font-size: $font-size-xl;
         }
 
         .menu-badge {
           position: absolute;
-          font-size: $font-size-3xs;
+          font-size: $font-size-xs;
           width: 100%;
 
           .badge {

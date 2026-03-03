@@ -11,7 +11,7 @@
           @if (file?.mimeUrl) {
             <img [src]="file.mimeUrl" alt="" height="96" class="no-select-pointer" (error)="fallBackMimeUrl()">
           } @else {
-            <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false" style="width: 96px; height: 96px; font-size: 48px"></fa-icon>
+            <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false" style="width: 96px; height: 96px; font-size: calc(var(--font-size-md) * 3)"></fa-icon>
           }
         </div>
         <span class="error-code">{{ link.share?.name || link.space?.name }}</span>

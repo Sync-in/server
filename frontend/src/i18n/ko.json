@@ -589,7 +589,7 @@
   "Two-Factor Authentication is disabled": "2단계 인증이 비활성화되었습니다",
   "Scan this QR code using your authenticator app.": "인증 앱으로 이 QR 코드를 스캔하세요.",
   "(Such as FreeOTP, Proton Authenticator etc.)": "(FreeOTP, Proton Authenticator 등)",
-  "Or enter this secret manually": "이 시크릿을 수동으로 입력",
+  "Or enter this secret manually:": "이 시크릿을 수동으로 입력:",
   "Valid with your TOTP code": "TOTP 코드로 확인",
   "The secret has expired": "시크릿이 만료되었습니다",
   "Keep these codes in a safe place. They will allow you to access your account if you lose access to your two-factor authentication.": "이 코드는 안전한 곳에 보관하세요. 2단계 인증에 접근할 수 없게 되어도 계정에 접근할 수 있습니다.",

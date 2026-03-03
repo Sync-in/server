@@ -59,7 +59,6 @@ export class InputEditDirective implements OnInit {
     this.renderer.setStyle(this.elementRef.nativeElement, 'height', '100%')
     this.renderer.setStyle(this.elementRef.nativeElement, 'min-height', '20px')
     this.renderer.addClass(this.elementRef.nativeElement, 'form-control')
-    this.renderer.addClass(this.elementRef.nativeElement, 'form-control-sm')
     if (this.textCenter) {
       this.renderer.addClass(this.elementRef.nativeElement, 'text-center')
       this.renderer.setStyle(this.elementRef.nativeElement, 'padding', '0')

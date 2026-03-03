@@ -17,7 +17,7 @@ $sync-path-rail-padding: 0.45rem;
   --sync-path-actions-separator: transparent;
   --sync-path-hover-bg: transparent;
 
-  font-size: 0.78rem;
+  font-size: calc(var(--font-size-base) * 0.832);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -62,13 +62,13 @@ $sync-path-rail-padding: 0.45rem;
   }
 
   .sync-client-title {
-    font-size: 0.98rem;
+    font-size: calc(var(--font-size-base) * 1.0453333);
     font-weight: 600;
     line-height: 1.2;
   }
 
   .sync-client-subtitle {
-    font-size: 0.63rem;
+    font-size: var(--font-size-sm);
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
@@ -82,13 +82,13 @@ $sync-path-rail-padding: 0.45rem;
     display: flex;
     align-items: center;
     min-width: 0;
-    font-size: 0.75rem;
+    font-size: var(--font-size-sm);
 
     > fa-icon:first-child:not(.osIcon) {
       width: $sync-clients-icon-col-width;
       min-width: $sync-clients-icon-col-width;
       flex: 0 0 $sync-clients-icon-col-width;
-      font-size: 0.96rem;
+      font-size: calc(var(--font-size-base) * 1.024);
       margin-right: $sync-clients-icon-col-gap;
       text-align: center;
     }
@@ -99,7 +99,7 @@ $sync-path-rail-padding: 0.45rem;
   }
 
   .osIcon {
-    font-size: 1.08rem;
+    font-size: calc(var(--font-size-base) * 1.152);
     margin-right: $sync-clients-icon-col-gap;
     width: $sync-clients-icon-col-width;
     min-width: $sync-clients-icon-col-width;
@@ -121,7 +121,7 @@ $sync-path-rail-padding: 0.45rem;
     justify-content: space-between;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    font-size: 0.64rem;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     padding: 0 0.15rem;
   }
@@ -129,7 +129,7 @@ $sync-path-rail-padding: 0.45rem;
   .sync-client-paths-count {
     min-width: 1.2rem;
     line-height: 1.15;
-    font-size: 0.66rem;
+    font-size: var(--font-size-sm);
     font-weight: 600;
     color: var(--sync-client-paths-count-fg);
     background: var(--sync-client-paths-count-bg);
@@ -146,8 +146,8 @@ $sync-path-rail-padding: 0.45rem;
   }
 
   .sync-path-image {
-    height: 30px;
-    width: 30px;
+    height: 40px;
+    width: 40px;
     object-fit: contain;
     flex-shrink: 0;
   }
@@ -170,7 +170,6 @@ $sync-path-rail-padding: 0.45rem;
     padding-right: $sync-path-rail-padding;
     height: 100%;
     flex-shrink: 0;
-    font-size: 0.7125rem;
   }
 
   .sync-path-side {
@@ -194,7 +193,7 @@ $sync-path-rail-padding: 0.45rem;
   .sync-client-path-empty {
     padding: 0.7rem 0.35rem;
     text-align: center;
-    font-size: 0.72rem;
+    font-size: var(--font-size-sm);
     border-radius: 0.65rem;
     border: 1px dashed var(--sync-client-path-empty-border);
     background: var(--sync-client-path-empty-bg);
@@ -226,7 +225,7 @@ $sync-path-rail-padding: 0.45rem;
     }
 
     .sync-client-title {
-      font-size: 0.9rem;
+      font-size: calc(var(--font-size-base) * 0.96);
     }
 
     .sync-path-row {

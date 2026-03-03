@@ -13,8 +13,6 @@
         color: $sidebar-dark-icons-menu-color;
 
         &:not(:first-child) {
-          border-bottom: .5px solid $sidebar-dark-icons-menu-bg;
-
           &:hover, &.active {
             color: $sidebar-dark-icons-menu-hover-color;
             background: $sidebar-dark-icons-menu-hover-bg;
@@ -59,15 +57,9 @@
       }
 
       .menu {
-        border-bottom: .5px solid $sidebar-dark-apps-menu-bg;
-
         > a {
           color: $sidebar-dark-apps-menu-border-color;
         }
-
-        //&.submenu {
-        //  background-color: darken($sidebar-dark-apps-menu-bg, 3%);
-        //}
 
         &:hover, &.active {
           > a {
@@ -687,14 +679,14 @@
   app-files-recents-widget,
   app-comments-recents-widget {
     .recents-widget-card {
-      border-color: rgba($dark-surface-border, 0.6);
-      box-shadow: 0 16px 34px $dark-box-transparent-shadow-color;
-      background: linear-gradient(175deg, rgba($dark-surface-bg, 0.96) 0%, rgba($dark-bg-theme, 0.97) 100%);
+      border-color: rgba($dark-surface-border, 0.82);
+      box-shadow: 0 12px 26px rgba($black, 0.3);
+      background: linear-gradient(180deg, rgba(lighten($dark-surface-bg, 4%), 0.98) 0%, rgba($dark-bg-theme, 0.97) 100%);
     }
 
     .recents-widget-card__header {
-      border-bottom-color: rgba($dark-surface-border, 0.5);
-      background: $sidebar-dark-apps-menu-title-bg;
+      border-bottom-color: rgba($dark-surface-border, 0.7);
+      background: lighten($sidebar-dark-apps-menu-title-bg, 4%);
     }
 
     .recents-widget-card__title {
@@ -703,34 +695,34 @@
 
     .recents-widget-card__title-icon {
       color: $dark-item-hover-color;
-      background: rgba($dark-bg-theme, 0.45);
-      border: 1px solid rgba($dark-surface-border, 0.4);
+      background: rgba(lighten($dark-bg-theme, 4%), 0.78);
+      border: 1px solid rgba($dark-surface-border, 0.58);
     }
 
     .recents-widget-card__toggle {
       color: $dark-item-color;
-      background: rgba($dark-bg-theme, 0.65);
-      border-color: rgba($dark-surface-border, 0.46);
+      background: rgba(lighten($dark-bg-theme, 5%), 0.8);
+      border-color: rgba($dark-surface-border, 0.62);
     }
 
     .recents-widget-card__toggle:hover {
-      background: rgba(lighten($sidebar-dark-apps-menu-title-bg, 7%), 0.82);
+      background: rgba(lighten($sidebar-dark-apps-menu-title-bg, 10%), 0.9);
       color: $dark-item-hover-color;
     }
 
     .recents-widget-card__body {
-      background: linear-gradient(180deg, rgba($dark-bg-theme, 0.7) 0%, rgba(darken($dark-bg-theme, 3%), 0.82) 100%);
+      background: linear-gradient(180deg, rgba(darken($dark-bg-theme, 1%), 0.8) 0%, rgba(darken($dark-bg-theme, 4%), 0.9) 100%);
     }
 
     .recent-item-card {
-      background: rgba($sidebar-dark-apps-menu-title-bg, 0.72);
-      border-color: rgba($dark-surface-border, 0.52);
-      box-shadow: 0 8px 20px rgba($black, 0.26);
+      background: rgba(lighten($sidebar-dark-apps-menu-title-bg, 5%), 0.92);
+      border-color: rgba($dark-surface-border, 0.7);
+      box-shadow: 0 6px 14px rgba($black, 0.24);
     }
 
     .recent-item-card:hover {
-      border-color: mix($primary, $dark-surface-border, 58%);
-      background: rgba(lighten($sidebar-dark-apps-menu-title-bg, 6%), 0.88);
+      border-color: mix($primary, $dark-item-hover-color, 50%);
+      background: rgba(lighten($sidebar-dark-apps-menu-title-bg, 8%), 0.96);
     }
 
     .recent-item-card__title {
@@ -738,8 +730,8 @@
     }
 
     .recent-item-card__media {
-      background: rgba($dark-bg-theme, 0.72);
-      border: 1px solid rgba($dark-surface-border, 0.42);
+      background: rgba(lighten($dark-bg-theme, 2%), 0.78);
+      border: 1px solid rgba($dark-surface-border, 0.56);
     }
 
     .recent-item-card__time {
@@ -747,9 +739,9 @@
     }
 
     .recent-empty-state {
-      background: rgba($sidebar-dark-apps-menu-title-bg, 0.75);
+      background: rgba(lighten($sidebar-dark-apps-menu-title-bg, 4%), 0.8);
       color: $dark-item-color;
-      border: 1px dashed rgba($dark-surface-border, 0.5);
+      border: 1px dashed rgba($dark-surface-border, 0.62);
     }
   }
   .products-list > li:hover {
@@ -781,9 +773,6 @@
   }
   .bg-white {
     background-color: lighten($sidebar-dark-apps-menu-bg, 4%) !important;
-  }
-  .btn-close {
-    filter: $theme-btn-close-white-filter;
   }
   .btn-outline-secondary-alt {
     border-color: $dark-field-border;

@@ -1,7 +1,7 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadSpaces()"
-          class="btn btn-sm btn-default me-1"
+          class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
@@ -9,7 +9,7 @@
   </button>
   @if (canCreateSpace) {
     <button (click)="openSpaceDialog(true)"
-            class="btn btn-sm btn-default me-1"
+            class="btn btn-default me-1"
             [tooltip]="'New space' | translate:locale.language"
             container="body"
             type="button">
@@ -18,7 +18,7 @@
   }
   <button (click)="openSpaceDialog()"
           [disabled]="!canEditSpace"
-          class="btn btn-sm btn-default me-1"
+          class="btn btn-default me-1"
           [tooltip]="'Edit space' | translate:locale.language"
           container="body"
           type="button">
@@ -26,7 +26,7 @@
   </button>
   <button (click)="openChildShareDialog()"
           [disabled]="!canEditSpace || !selected?.counts.shares"
-          class="btn btn-sm btn-default me-1"
+          class="btn btn-default me-1"
           [tooltip]="'Edit children shares' | translate:locale.language"
           container="body"
           type="button">
@@ -34,7 +34,7 @@
   </button>
   <button (click)="openSpaceRootsDialog()"
           [disabled]="!canManageRoots"
-          class="btn btn-sm btn-default me-1"
+          class="btn btn-default me-1"
           [tooltip]="'Manage my anchored files' | translate:locale.language"
           container="body"
           type="button">
@@ -42,7 +42,7 @@
   </button>
   <div class="ms-auto">
     <!--Start Filter Button-->
-    <div class="btn-group btn-group-sm me-1">
+    <div class="btn-group me-1">
       <app-input-filter class="d-none d-sm-block"></app-input-filter>
     </div>
     <!--End Filter Button-->
@@ -169,7 +169,7 @@
                         <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false"></fa-icon>
                         <div class="d-flex flex-column text-truncate">
                           <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
-                          <span class="no-pointer-events text-muted fs-3xs" draggable="false">{{ s.description }}</span>
+                          <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ s.description }}</span>
                         </div>
                       </div>
                     }

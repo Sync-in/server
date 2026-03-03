@@ -232,7 +232,7 @@ export class AdminGroupsComponent {
           }
         })
       } else {
-        const modalRef: BsModalRef<AdminGroupDialogComponent> = this.layout.openDialog(AdminGroupDialogComponent, 'md', {
+        const modalRef: BsModalRef<AdminGroupDialogComponent> = this.layout.openDialog(AdminGroupDialogComponent, 'lg', {
           initialState: { parentGroup: this.currentGroup } as AdminGroupDialogComponent
         })
         modalRef.content.groupChange.pipe(take(1)).subscribe((r: ['add' | 'update', AdminGroupModel]) => {
@@ -293,7 +293,7 @@ export class AdminGroupsComponent {
         } else {
           this.adminService.getGroup(this.selected.id).subscribe({
             next: (group: AdminGroupModel) => {
-              const modalRef: BsModalRef<AdminGroupDialogComponent> = this.layout.openDialog(AdminGroupDialogComponent, 'md', {
+              const modalRef: BsModalRef<AdminGroupDialogComponent> = this.layout.openDialog(AdminGroupDialogComponent, 'lg', {
                 initialState: { group: group, parentGroup: this.currentGroup } as AdminGroupDialogComponent
               })
               modalRef.content.groupChange.pipe(take(1)).subscribe((r: ['add' | 'update', AdminGroupModel]) => {

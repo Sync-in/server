@@ -63,7 +63,7 @@
   gap: 0.2rem;
   padding: $badge-padding-y $badge-padding-x;
   border-radius: 9999px;
-  font-size: $font-size-3xs;
+  font-size: $font-size-xs;
   font-weight: 500;
   line-height: 1;
   letter-spacing: 0.01em;
@@ -79,9 +79,8 @@
   }
 
   &.badge-small {
-    gap: 0.15rem;
-    padding: calc(#{$badge-padding-y} * 0.55) calc(#{$badge-padding-x} * 0.55);
-    font-size: calc(#{$font-size-3xs} * 0.80);
+    padding: calc(#{$badge-padding-y} * 0.6) calc(#{$badge-padding-x} * 0.8);
+    font-size: calc(#{$font-size-xs} * 0.8);
   }
 
   &.badge-color-full {
@@ -91,7 +90,7 @@
   }
 
   fa-icon {
-    font-size: $font-size-xs;
+    font-size: $font-size-base;
   }
 
 }

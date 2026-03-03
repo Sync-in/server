@@ -4,7 +4,7 @@
       (click)="toggleReadonly()"
       [tooltip]="(isReadonly() || !isWriteable() ? 'Read-only' : 'Read-write') | translate:locale.language"
       [adaptivePosition]="true"
-      class="btn btn-sm btn-default me-1"
+      class="btn btn-default me-1"
       type="button"
       [disabled]="!isSupported() || !isWriteable()">
       <fa-icon [icon]="isReadonly() ? icons.faLock : icons.faLockOpen"></fa-icon>
@@ -13,7 +13,7 @@
       (click)="save()"
       [tooltip]="(isReadonly() || !isWriteable() || !isModified() ? undefined : 'Save') | translate:locale.language"
       [isDisabled]="isReadonly() || !isWriteable() || !isModified()"
-      class="btn btn-sm btn-default me-1"
+      class="btn btn-default me-1"
       type="button"
       [disabled]="isReadonly() || !isWriteable() || !isModified()">
       @if (isSaving()) {
@@ -26,7 +26,7 @@
       (click)="onUndo()"
       [disabled]="!canUndo()"
       [tooltip]="'Undo' | translate:locale.language"
-      class="d-none d-sm-block btn btn-sm btn-custom me-1"
+      class="d-none d-sm-block btn btn-custom me-1"
       type="button">
       <fa-icon [icon]="icons.faReply"></fa-icon>
     </button>
@@ -34,7 +34,7 @@
       (click)="onRedo()"
       [disabled]="!canRedo()"
       [tooltip]="'Redo' | translate:locale.language"
-      class="d-none d-sm-block btn btn-sm btn-custom me-1"
+      class="d-none d-sm-block btn btn-custom me-1"
       type="button">
       <fa-icon [icon]="icons.faShare"></fa-icon>
     </button>
@@ -43,7 +43,7 @@
       [ngModel]="lineWrapping()"
       (ngModelChange)="lineWrapping.set($event)"
       [tooltip]="'Line Wrap' | translate:locale.language"
-      class="d-none d-sm-block btn btn-sm btn-custom me-1"
+      class="btn btn-custom me-1"
       type="button">
       <fa-icon [icon]="icons.faArrowsLeftRightToLine"></fa-icon>
     </button>
@@ -52,23 +52,23 @@
       [ngModel]="isSearchPanelOpen()"
       (ngModelChange)="toggleSearch()"
       [tooltip]="'Search' | translate:locale.language"
-      class="d-none d-sm-block btn btn-sm btn-custom"
+      class="d-none d-sm-block btn btn-custom"
       type="button">
       <fa-icon [icon]="icons.faMagnifyingGlass"></fa-icon>
     </button>
     @if (warnOnUnsavedChanges()) {
       <button (click)="save(true)"
-              class="btn btn-sm btn-primary me-2 ms-auto"
+              class="btn btn-primary me-2 ms-auto"
               type="button"
               l10nTranslate>Save And Exit
       </button>
       <button (click)="onClose()"
-              class="btn btn-sm btn-danger me-2"
+              class="btn btn-danger me-2"
               data-dismiss="modal" type="button"
               l10nTranslate>Close Without Saving
       </button>
       <button (click)="warnOnUnsavedChanges.set(false)"
-              class="d-none d-sm-block btn btn-sm btn-default"
+              class="d-none d-sm-block btn btn-default"
               data-dismiss="modal" type="button"
               l10nTranslate>Cancel
       </button>

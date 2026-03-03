@@ -2,6 +2,7 @@
   --ngx-contextmenu-font-family: var(--bs-body-font-family) !important;
   --ngx-contextmenu-item-separator-width: 100% !important;
   --ngx-contextmenu-outline: none !important;
+  --ngx-contextmenu-border-radius: var(--bs-border-radius) !important;
 }
 
 .ngx-contextmenu, .cdk-overlay-container {
@@ -10,10 +11,9 @@
 
 .ngx-contextmenu {
   padding: $dropdown-item-padding-y !important;
-  font-size: $font-size-xs !important;
+  font-size: $dropdown-font-size !important;
   border-width: .5px !important;
   border-style: solid !important;
-  @include app-menu-surface-structure($btn-border-radius, .25rem, true);
 
   > button.ngx-context-menu-item  {
     padding: $dropdown-item-padding-y $dropdown-item-padding-x !important;

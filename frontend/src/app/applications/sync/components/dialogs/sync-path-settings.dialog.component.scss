@@ -32,7 +32,7 @@
   }
 
   .sync-filter-empty {
-    font-size: 0.74rem;
+    font-size: var(--font-size-base);
     padding: 0.3rem 0.4rem;
   }
 }

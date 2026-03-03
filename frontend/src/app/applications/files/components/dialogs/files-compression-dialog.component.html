@@ -6,13 +6,15 @@
     } @else {
       <span l10nTranslate>Compress and Download</span>
     }
-    <span class="fs-xs ms-1">({{ archiveProps.files.length }} {{ (archiveProps.files.length > 1 ? 'items' : 'item') | translate:locale.language }})</span>
   </h4>
-  <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
+  <h4 class="modal-title ms-auto">
+    <span class="fs-sm">{{ archiveProps.files.length }} {{ (archiveProps.files.length > 1 ? 'items' : 'item') | translate:locale.language }}</span>
+  </h4>
+  <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white ms-2" type="button"></button>
 </div>
 <div class="modal-body">
-  <div class="input-group input-group-sm">
-    <input [(ngModel)]="archiveProps.name" appAutofocus class="form-control form-control-sm fs-xs" [placeholder]="'Archive name' | translate:locale.language" type="text">
+  <div class="input-group">
+    <input [(ngModel)]="archiveProps.name" appAutofocus class="form-control" [placeholder]="'Archive name' | translate:locale.language" type="text">
     <div class="input-group-text">
       <span style="min-width: 40px">.{{ archiveProps.extension }}</span>
     </div>
@@ -22,7 +24,7 @@
       <input [(ngModel)]="compression"
              (ngModelChange)="setCompression($event)"
              type="checkbox">
-      <span class="fs-xs me-1" l10nTranslate>Enable compression</span>
+      <span class="me-1" l10nTranslate>Enable compression</span>
       <small l10nTranslate>(this may take longer)</small>
     </label>
   </div>
@@ -30,12 +32,12 @@
     <div class="form-check mb-0 mt-1 ps-0">
       <label class="form-check-label ps-1">
         <input [(ngModel)]="archiveProps.compressInDirectory" type="checkbox">
-        <span class="fs-xs" l10nTranslate>Save in the current directory</span>
+        <span l10nTranslate>Save in the current directory</span>
       </label>
     </div>
   }
 </div>
 <div class="modal-footer">
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()" [disabled]="!archiveProps.name || submitted" class="btn btn-sm btn-primary" l10nTranslate type="button">Confirm</button>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onSubmit()" [disabled]="!archiveProps.name || submitted" class="btn btn-primary" l10nTranslate type="button">Confirm</button>
 </div>

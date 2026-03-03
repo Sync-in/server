@@ -1,0 +1,115 @@
+.wizard {
+  .wizard-settings-cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .wizard-settings-card {
+    margin: 0;
+    border-radius: 0.8rem;
+    min-width: 0;
+  }
+
+  .wizard-settings-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    padding: 0.6rem 0.8rem;
+    font-size: calc(var(--font-size-base) * 1.02);
+    font-weight: 600;
+    line-height: 1.2;
+    border-bottom: 0.5px solid darkgray;
+    background-color: transparent !important;
+
+    fa-icon {
+      width: 1.05rem;
+      text-align: center;
+    }
+  }
+
+  .wizard-settings-card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.3rem;
+    min-height: 100%;
+  }
+
+  .wizard-settings-card-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: fit-content;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .wizard-settings-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 2rem;
+    width: 2rem;
+    height: 2rem;
+
+    img {
+      width: auto;
+      height: 1.85rem;
+      object-fit: contain;
+    }
+  }
+
+  .wizard-settings-card-remote-icon {
+    width: 2rem;
+    height: 2rem;
+    font-size: var(--font-size-md);
+  }
+
+  .wizard-settings-card-name {
+    min-width: 0;
+    max-width: 100%;
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .wizard-settings-card-path {
+    width: 100%;
+    font-size: var(--font-size-2xs);
+    color: var(--bs-body-color-rgb);
+    text-align: center;
+  }
+
+  .wizard-settings-direction {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5rem;
+    padding-inline: 0.1rem;
+  }
+
+  @media (max-width: 767.98px) {
+    .wizard-settings-cards {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.6rem;
+    }
+
+    .wizard-settings-card-header {
+      padding-inline: 0.7rem;
+    }
+
+    .wizard-settings-card-body {
+      padding: 0.6rem 0.7rem;
+    }
+
+    .wizard-settings-direction {
+      min-height: 2.2rem;
+      padding-inline: 0;
+    }
+  }
+}

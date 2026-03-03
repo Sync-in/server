@@ -1,39 +1,46 @@
-<div class="wizard fs-sm">
-  <div class="d-flex flex-row justify-content-center mb-3">
-    <div class="d-flex flex-column align-items-end">
-      <div class="d-flex flex-column align-items-end">
-        <div class="fw-500 mb-1 me-1">
-          <fa-icon [icon]="icons.CLIENT"></fa-icon>
-          <span class="ms-2" l10nTranslate>Client</span>
+<div class="wizard fs-md">
+  <div class="wizard-settings-cards mb-3">
+    <div class="card dialog-tab-card wizard-settings-card">
+      <div class="card-header wizard-settings-card-header">
+        <fa-icon [icon]="icons.CLIENT"></fa-icon>
+        <span l10nTranslate>Client</span>
+      </div>
+      <div class="card-body wizard-settings-card-body">
+        <div class="wizard-settings-card-main cursor-pointer" placement="left" [tooltip]="syncService.wizard.localPath.path">
+          <div class="wizard-settings-card-icon">
+            <img [src]="syncService.wizard.localPath.mimeUrl" alt="">
+          </div>
+          <div class="wizard-settings-card-name text-truncate">{{ syncService.wizard.localPath.name }}</div>
         </div>
-        <div class="cursor-pointer" placement="left" [tooltip]="syncService.wizard.localPath.path">
-          <img [src]="syncService.wizard.localPath.mimeUrl" alt="" height="35">
-        </div>
-        <div class="position-absolute text-truncate pe-2" style="top: 110px">{{ syncService.wizard.localPath.name }}</div>
+        <div class="wizard-settings-card-path text-truncate">{{ syncService.wizard.localPath.path }}</div>
       </div>
     </div>
-    <div class="d-flex align-items-end mb-2 mx-5">
+    <div class="wizard-settings-direction d-none d-md-flex">
       <app-sync-path-direction-icon [syncPath]="syncPath"></app-sync-path-direction-icon>
     </div>
-    <div class="d-flex flex-column align-items-start">
-      <div class="d-flex flex-column align-items-start">
-        <div class="fw-500 mb-1 ms-1">
-          <fa-icon [icon]="icons.SERVER"></fa-icon>
-          <span class="ms-2" l10nTranslate>Server</span>
+    <div class="card dialog-tab-card wizard-settings-card">
+      <div class="card-header wizard-settings-card-header">
+        <fa-icon [icon]="icons.SERVER"></fa-icon>
+        <span l10nTranslate>Server</span>
+      </div>
+      <div class="card-body wizard-settings-card-body">
+        <div class="wizard-settings-card-main cursor-pointer" placement="right" [tooltip]="translatedRemotePath">
+          <div class="wizard-settings-card-icon">
+            @if (syncService.wizard.remotePath.icon) {
+              <fa-icon [icon]="syncService.wizard.remotePath.icon"
+                       class="circle-{{syncService.wizard.remotePath.iconClass}}-icon wizard-settings-card-remote-icon"></fa-icon>
+            } @else {
+              <img [src]="syncService.wizard.remotePath.mimeUrl" alt="">
+            }
+          </div>
+          <div class="wizard-settings-card-name text-truncate">{{ syncService.wizard.remotePath.name }}</div>
         </div>
-        <div class="cursor-pointer" placement="right" [tooltip]="translatedRemotePath">
-          @if (syncService.wizard.remotePath.icon) {
-            <fa-icon [icon]="syncService.wizard.remotePath.icon" class="circle-{{syncService.wizard.remotePath.iconClass}}-icon" style="width: 32px; height: 32px; font-size: 16px"></fa-icon>
-          } @else {
-            <img [src]="syncService.wizard.remotePath.mimeUrl" alt="" height="35">
-          }
-        </div>
-        <div class="position-absolute text-truncate ps-2" style="top: 110px">{{ syncService.wizard.remotePath.name }}</div>
+        <div class="wizard-settings-card-path text-truncate">{{ translatedRemotePath }}</div>
       </div>
     </div>
   </div>
   <app-sync-path-settings class="my-auto" [syncPath]="syncPath"></app-sync-path-settings>
-  <div class="fs-xs">
+  <div class="fs-md d-none d-md-block">
     @if (error) {
       <div class="text-center text-warning" l10nTranslate>{{ error }}</div>
     } @else {
@@ -43,7 +50,7 @@
         @if (syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
           <span l10nTranslate>and from</span>
         } @else {
-          <span class="fw-semibold" l10nTranslate>to</span>
+          <span class="fw-bold" l10nTranslate>to</span>
         }
         <span class="mx-1" l10nTranslate>{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? 'the client folder' : 'the server folder' }}</span>
         @if (syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
@@ -59,17 +66,17 @@
             <span l10nTranslate>In case of conflict,</span>
             <span>&nbsp;</span>
             @if (syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.RECENT) {
-              <span class="fw-semibold" l10nTranslate>the most recent files will be kept</span>
+              <span class="fw-bold" l10nTranslate>the most recent files will be kept</span>
             } @else {
               <span l10nTranslate>the files in</span>
-              <span class="fw-semibold mx-1">{{ syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.LOCAL ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
+              <span class="fw-bold mx-1">{{ syncPath.settings.conflictMode === SYNC_PATH_CONFLICT_MODE.LOCAL ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
               <span l10nTranslate>will be preferred</span>
             }
           </div>
         } @else {
           <div>
             <span l10nTranslate>All files created or modified in</span>
-            <span class="fw-semibold mx-1">{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
+            <span class="fw-bold mx-1">{{ syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD ? syncService.wizard.localPath.name : syncService.wizard.remotePath.name }}</span>
             <span l10nTranslate>will be ignored and deleted</span>
           </div>
         }
@@ -78,16 +85,14 @@
   </div>
   <div class="mt-auto">
     <div class="d-flex align-items-start">
-      <button (click)="onPrevious()" class="btn btn-sm btn-default me-auto" translate type="button">
+      <button (click)="onPrevious()" class="btn btn-default me-auto" translate type="button">
         <fa-icon [icon]="icons.faArrowCircleLeft"></fa-icon>
         Previous
       </button>
-      <button (click)="onSubmit()" [disabled]="!syncPath.settings.name" class="btn btn-sm btn-default ms-auto" translate type="button">
+      <button (click)="onSubmit()" [disabled]="!syncPath.settings.name" class="btn btn-default ms-auto" translate type="button">
         <fa-icon [icon]="icons.faCheckCircle"></fa-icon>
         Done
       </button>
     </div>
   </div>
 </div>
-
-

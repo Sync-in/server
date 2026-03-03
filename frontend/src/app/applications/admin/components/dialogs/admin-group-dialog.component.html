@@ -1,10 +1,10 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
     @if (group) {
-      <fa-icon [icon]="icons.faPen" class="me-2"></fa-icon>
+      <fa-icon [icon]="icons.faPen"></fa-icon>
       <span>{{ group.name }}</span>
     } @else {
-      <fa-icon [icon]="icons.faPlus" class="me-2"></fa-icon>
+      <fa-icon [icon]="icons.faPlus"></fa-icon>
       <span l10nTranslate>New group</span>
     }
   </h4>
@@ -35,7 +35,7 @@
                        [autoSelect]="false"
                        formControlName="name"
                        [class.is-invalid]="groupForm.controls.name.invalid"
-                       class="form-control form-control-sm"
+                       class="form-control"
                        autocomplete="off"
                        type="text">
               </div>
@@ -43,7 +43,7 @@
                 <label class="form-label" for="description" l10nTranslate>Description</label>
                 <input id="description"
                        formControlName="description"
-                       class="form-control form-control-sm"
+                       class="form-control"
                        autocomplete="off"
                        type="text">
               </div>
@@ -56,13 +56,13 @@
                 <label class="form-label" for="visibility" l10nTranslate>Visibility</label>
                 <select id="visibility"
                         formControlName="visibility"
-                        class="form-control form-select form-select-sm">
+                        class="form-control form-select">
                   @for (v of allVisibilities | keyvalue: originalOrderKeyValue; track v.value) {
                     <option [ngValue]="v.value" l10nTranslate>{{ v.key }}</option>
                   }
                 </select>
               </div>
-              <div class="fst-italic fs-2xs">
+              <div class="fst-italic fs-sm">
                 @switch (groupForm.value.visibility) {
                   @case (allVisibilities.Visible) {
                     <span l10nTranslate>All users can see this group.</span>
@@ -96,17 +96,17 @@
           @if (group) {
             <div class="card dialog-tab-card w-100">
               <div class="card-body">
-                <div class="row g-3 fs-2xs">
+                <div class="row g-3">
                   <div class="col-12 col-md-6">
                     <div class="d-flex flex-column">
                       <label class="form-label" for="created" l10nTranslate>Creation date</label>
-                      <div id="created">{{ group.createdAt | amDateFormat }}</div>
+                      <div class="fs-sm" id="created">{{ group.createdAt | amDateFormat }}</div>
                     </div>
                   </div>
                   <div class="col-12 col-md-6">
                     <div class="d-flex flex-column text-md-end">
                       <label class="form-label" for="modified" l10nTranslate>Modification date</label>
-                      <div id="modified">{{ group.modifiedAt | amDateFormat }}</div>
+                      <div class="fs-sm" id="modified">{{ group.modifiedAt | amDateFormat }}</div>
                     </div>
                   </div>
                 </div>
@@ -134,9 +134,9 @@
   </tabset>
 </div>
 <div class="modal-footer">
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="submitted || groupForm.invalid" class="btn btn-sm btn-primary"
+          [disabled]="submitted || groupForm.invalid" class="btn btn-primary"
           type="button"
           l10nTranslate>
     Confirm

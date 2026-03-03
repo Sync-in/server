@@ -8,10 +8,10 @@
 
 .search-clear-btn {
   position: absolute;
-  top: 0.25rem;
-  right: 2.8125rem;
+  top: 6px;
+  right: 45px;
   z-index: 1001;
-  font-size: 1rem;
+  font-size: $font-size-md;
   cursor: pointer;
 }
 
@@ -47,7 +47,7 @@
 }
 
 .search-result-name {
-  font-size: $font-size-xs;
+  font-size: $font-size-base;
   font-weight: 500;
   line-height: 1.2;
 }
@@ -58,13 +58,13 @@
 }
 
 .search-result-path-icon {
-  font-size: $font-size-2xs;
+  font-size: $font-size-sm;
   flex: 0 0 auto;
   margin-right: 0.25rem;
 }
 
 .search-result-path-text {
-  font-size: $font-size-2xs;
+  font-size: $font-size-sm;
   min-width: 0;
   user-select: none;
 }
@@ -85,7 +85,7 @@
   line-height: 1.32;
   overflow-wrap: anywhere;
   font-family: inherit;
-  font-size: $font-size-3xs;
+  font-size: $font-size-sm;
   background: transparent;
 }
 

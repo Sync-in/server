@@ -1,6 +1,6 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.SPACES" class="me-2"></fa-icon>
+    <fa-icon [icon]="icons.SPACES"></fa-icon>
     @if (space.id) {
       <span>{{ space.name }}</span>
     } @else {
@@ -39,7 +39,7 @@
                   type="text"
                   [(ngModel)]="space.name"
                   appAutofocus
-                  class="form-control form-control-sm {{ !space.name ? 'is-invalid' : '' }}"
+                  class="form-control {{ !space.name ? 'is-invalid' : '' }}"
                   required>
               </div>
               <div class="mb-3 px-0">
@@ -50,7 +50,7 @@
                   id="description"
                   type="text"
                   [(ngModel)]="space.description"
-                  class="form-control form-control-sm">
+                  class="form-control">
               </div>
             </div>
           </div>
@@ -128,7 +128,7 @@
           @if (space.id) {
             <div class="card dialog-tab-card">
               <div class="card-body">
-                <div class="d-flex fs-2xs align-items-end flex-fill justify-content-between gap-2 flex-wrap">
+                <div class="d-flex align-items-end flex-fill justify-content-between gap-2 flex-wrap">
                   @if (space.disabledAt && !space.enabled) {
                     <div class="d-flex flex-column text-danger">
                       <label class="form-label" for="disabled" l10nTranslate>Deactivation date</label>
@@ -137,11 +137,11 @@
                   }
                   <div class="d-flex flex-column">
                     <label class="form-label" for="created" l10nTranslate>Creation date</label>
-                    <div id="created">{{ space.createdAt | amDateFormat }}</div>
+                    <div class="fs-sm" id="created">{{ space.createdAt | amDateFormat }}</div>
                   </div>
                   <div class="d-flex flex-column">
                     <label class="form-label" for="modified" l10nTranslate>Modification date</label>
-                    <div id="modified">{{ space.modifiedAt | amDateFormat }}</div>
+                    <div class="fs-sm" id="modified">{{ space.modifiedAt | amDateFormat }}</div>
                   </div>
                 </div>
               </div>
@@ -205,14 +205,14 @@
     @if (user.isAdmin) {
       <button (click)="confirmDeletion = true"
               [disabled]="confirmDeletion"
-              class="btn btn-sm btn-danger" type="button" l10nTranslate>
+              class="btn btn-danger" type="button" l10nTranslate>
         Remove
       </button>
     }
     @if (!space.enabled) {
       <div class="text-danger white-space-truncate fs-sm {{user.isAdmin ? 'mx-auto' : 'me-auto'}}">
         <span l10nTranslate>Space and data will be deleted in</span>
-        <span class="fw-semibold">
+        <span class="text-bold">
           @if (space.disabledAt) {
             <span>&nbsp;{{ space.disabledAt | amAdd: SPACE_MAX_DISABLED_DAYS : 'days'| amTimeAgo:true }}</span>
           } @else {
@@ -224,7 +224,7 @@
   }
   @if (tabView === 'links') {
     <button (click)="openCreateLinkDialog()"
-            class="btn btn-sm btn-success" type="button" l10nTranslate>
+            class="btn btn-success" type="button" l10nTranslate>
       <fa-icon [icon]="icons.faPlus"></fa-icon>
       <fa-icon [icon]="icons.LINKS"></fa-icon>
       Link
@@ -232,23 +232,23 @@
   }
   @if (tabView === 'roots') {
     <button (click)="openSelectRootDialog()"
-            class="btn btn-sm btn-success" type="button" l10nTranslate>
+            class="btn btn-success" type="button" l10nTranslate>
       <fa-icon [icon]="icons.faPlus"></fa-icon>
       <fa-icon [icon]="icons.faAnchor"></fa-icon>
       File
     </button>
     @if (user.isAdmin) {
       <button (click)="openAdminRootDialog()"
-              class="btn btn-sm btn-warning" type="button" l10nTranslate>
+              class="btn btn-warning" type="button" l10nTranslate>
         <fa-icon [icon]="icons.faPlus"></fa-icon>
         <fa-icon [icon]="icons.faUserShield"></fa-icon>
         External location
       </button>
     }
   }
-  <button (click)="onCancel()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="cantSubmit()" class="btn btn-sm {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
+          [disabled]="cantSubmit()" class="btn {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
           type="button"
           l10nTranslate>
     {{ confirmDeletion ? 'Confirm permanent deletion of data' : 'Confirm' }}

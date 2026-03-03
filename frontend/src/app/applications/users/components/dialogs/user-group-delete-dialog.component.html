@@ -1,6 +1,6 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="member.isUser ? icons.faUserMinus : icons.faMinus" class="me-2"></fa-icon>
+    <fa-icon [icon]="member.isUser ? icons.faUserMinus : icons.faMinus"></fa-icon>
     <span>{{ member.name }}</span>
   </h4>
   <h4 class="modal-title ms-auto">
@@ -17,12 +17,12 @@
         <fa-icon [icon]="icons.GROUPS" class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}"></fa-icon>
       }
     </div>
-    <span class="fw-semibold me-1">{{ member.name | capitalize }}</span>
+    <span class="text-bold me-1">{{ member.name | capitalize }}</span>
     <span translate>will be removed</span>
     @if (member.isUser) {
       <div class="d-flex align-items-center">
         <span class="mx-1" translate>from the group</span>
-        <span class="fw-semibold me-1">{{ parentGroup.name | capitalize }}</span>
+        <span class="text-bold me-1">{{ parentGroup.name | capitalize }}</span>
       </div>
     }
   </div>
@@ -31,9 +31,9 @@
   }
 </div>
 <div class="modal-footer">
-  <button (click)="onClose()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onClose()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="submitted" class="btn btn-sm btn-danger"
+          [disabled]="submitted" class="btn btn-danger"
           type="button"
           l10nTranslate>
     Remove

@@ -10,7 +10,7 @@ import { BadgePermissionsComponent } from '../../../../common/components/badge-p
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
 import { convertBytesToText } from '../../../../common/utils/functions'
-import { defaultCardImageSize } from '../../../../layout/layout.constants'
+import { defaultCardImageSize, defaultResizeOffset } from '../../../../layout/layout.constants'
 import { TAB_MENU } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { SPACES_ICON, SPACES_PATH } from '../../../spaces/spaces.constants'
@@ -44,7 +44,7 @@ export class FilesSelectionComponent {
   files: InputSignal<FileModel[]> = input.required<FileModel[]>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected multiple: Signal<boolean> = computed(() => this.files().length > 1)
-  protected resizeOffset: Signal<number> = computed(() => (this.multiple() ? 120 : 80))
+  protected resizeOffset: Signal<number> = computed(() => defaultResizeOffset + (this.multiple() ? 40 : 0))
   protected readonly cardImageSize = defaultCardImageSize
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,

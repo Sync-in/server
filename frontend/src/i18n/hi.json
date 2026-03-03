@@ -589,7 +589,7 @@
   "Two-Factor Authentication is disabled": "द्वि-कारक प्रमाणीकरण अक्षम है",
   "Scan this QR code using your authenticator app.": "अपने ऑथेंटिकेटर ऐप से इस QR कोड को स्कैन करें।",
   "(Such as FreeOTP, Proton Authenticator etc.)": "(जैसे FreeOTP, Proton Authenticator आदि)",
-  "Or enter this secret manually": "या इस सीक्रेट को मैन्युअल रूप से दर्ज करें",
+  "Or enter this secret manually:": "या इस सीक्रेट को मैन्युअल रूप से दर्ज करें:",
   "Valid with your TOTP code": "अपने TOTP कोड से सत्यापित करें",
   "The secret has expired": "सीक्रेट समाप्त हो गया है",
   "Keep these codes in a safe place. They will allow you to access your account if you lose access to your two-factor authentication.": "इन कोडों को सुरक्षित स्थान पर रखें। यदि आप द्वि-कारक प्रमाणीकरण की पहुँच खो देते हैं, तो ये आपके खाते तक पहुँचने में मदद करेंगे।",

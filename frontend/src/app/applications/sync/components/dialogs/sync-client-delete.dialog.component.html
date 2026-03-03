@@ -1,7 +1,7 @@
 <div class="modal-header">
   <h4 class="modal-title" translate>
     <fa-icon [icon]="icons.faTrashCan"></fa-icon>
-    <span class="ms-2" l10nTranslate>Client</span>
+    <span l10nTranslate>Client</span>
     @if (submitted) {
       <fa-icon [icon]="icons.faSpinner" animation="spin" class="ms-2"></fa-icon>
     }
@@ -13,6 +13,6 @@
   <div class="small mt-2" translate>The client will no longer have permission to access your account and will no longer be able to synchronize.</div>
 </div>
 <div class="modal-footer">
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary" data-dismiss="modal" l10nTranslate type="button">Cancel</button>
-  <button (click)="onSubmit()" [disabled]="submitted" class="btn btn-sm btn-danger" l10nTranslate type="button">Confirm</button>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" l10nTranslate type="button">Cancel</button>
+  <button (click)="onSubmit()" [disabled]="submitted" class="btn btn-danger" l10nTranslate type="button">Confirm</button>
 </div>

@@ -15,7 +15,8 @@ import { SyncPathDirectionIconComponent } from '../utils/sync-path-direction-ico
 @Component({
   selector: 'app-sync-wizard-settings',
   imports: [L10nTranslateDirective, FaIconComponent, TooltipDirective, SyncPathDirectionIconComponent, SyncPathSettingsComponent],
-  templateUrl: './sync-wizard-settings.component.html'
+  templateUrl: './sync-wizard-settings.component.html',
+  styleUrl: './sync-wizard-settings.component.scss'
 })
 export class SyncWizardSettingsComponent {
   protected readonly syncService = inject(SyncService)

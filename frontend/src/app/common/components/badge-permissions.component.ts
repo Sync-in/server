@@ -70,7 +70,7 @@ interface FilePermissionEntry {
         display: inline-block;
         color: var(--permission-icon-color);
         vertical-align: 0;
-        font-size: 0.8125rem;
+        font-size: var(--font-size-base);
       }
     `
   ]

@@ -11,9 +11,9 @@
     </div>
     <div class="navbar-right-side">
       <div (click)="openSidebarUser()" class="menu">
-        <div class="avatar">
+        <div class="d-flex">
           @if (userAvatar) {
-            <img class="avatar-img bg-gray-light-important" [src]="userAvatar" [width]="28" [height]="28" alt="">
+            <img class="avatar-img bg-gray-light-important" [src]="userAvatar" alt="">
           }
           <span class="avatar-{{allOnlineStatus[user?.onlineStatus]}}"></span>
         </div>

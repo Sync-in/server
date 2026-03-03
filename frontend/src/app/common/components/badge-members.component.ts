@@ -58,7 +58,7 @@ interface BadgeEntry {
         align-items: center;
         gap: 0.5rem;
         color: var(--members-breakdown-color);
-        font-size: 0.8125rem;
+        font-size: var(--font-size-base);
       }
 
       .members-part {
@@ -72,7 +72,7 @@ interface BadgeEntry {
       }
 
       .members-value {
-        font-size: 0.765rem;
+        font-size: var(--font-size-sm);
         line-height: 1;
       }
     `

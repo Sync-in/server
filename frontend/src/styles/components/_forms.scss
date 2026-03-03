@@ -1,12 +1,11 @@
 .form-control {
-  @include border-radius($border-radius-base);
-
   &:focus {
     border-color: $primary;
     box-shadow: none;
   }
 
   &::placeholder {
+    font-size: $font-size-base !important;
     color: $placeholder-color;
     opacity: 1;
   }
@@ -17,7 +16,9 @@
 }
 
 .form-control-sm {
-  font-size: $font-size-xs;
+  &::placeholder {
+    font-size: $font-size-sm !important;
+  }
 }
 
 .form-validation {
@@ -43,5 +44,4 @@
 .form-check-input {
   margin-right: 0 !important;
 }
-
 

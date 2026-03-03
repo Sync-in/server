@@ -1,27 +1,20 @@
 .task-list {
   @extend .no-select-pointer;
   border-bottom: .5px solid transparent;
-  font-size: $font-size-2xs;
+  font-size: $font-size-sm;
 
   &:hover {
     background-color: transparent;
   }
 
   > div {
-    height: $sidebar-apps-height;
+    padding: 0.3rem;
+    //max-height: 50px;
   }
 }
 
 .custom-progress-bar {
   background-color: black;
-  font-size: $font-size-2xs;
-
-  &.progress {
-    height: 18px !important;
-  }
-
-  .progress-bar {
-    height: 18px !important;
-  }
+  font-size: $font-size-xs;
 
 }

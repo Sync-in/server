@@ -47,10 +47,12 @@
       .menu {
         display: flex;
         justify-content: center;
+        align-content: center;
         width: $sidebar-apps-icons-width;
         height: $sidebar-apps-icons-height;
         cursor: pointer;
         padding: 6px;
+        margin: auto;
         user-select: none;
 
         &:hover {
@@ -58,8 +60,12 @@
         }
 
         .avatar-img {
+          display: flex;
+          align-self: center;
           width: 30px;
           height: 30px;
+          object-fit: cover;
+          border-radius: 50%;
         }
       }
     }
@@ -92,7 +98,7 @@
   justify-content: flex-start;
   height: $navbar-height;
   background: transparent;
-  font-size: $font-size-xs;
+  font-size: $font-size-sm;
   padding: 10px 8px;
   margin: 0;
   color: $sidebar-light-icons-menu-color;
@@ -136,7 +142,7 @@
         }
 
         > fa-icon {
-          font-size: $font-size-lg;
+          font-size: $font-size-xl;
         }
       }
     }

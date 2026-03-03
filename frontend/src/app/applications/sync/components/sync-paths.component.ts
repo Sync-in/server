@@ -111,7 +111,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   protected tableHeaders: Record<'name' | 'mode' | 'conflictMode' | 'diffMode' | 'scheduler' | 'filters' | 'lastSync', TableHeaderConfig> = {
     name: {
       label: 'Name',
-      width: 30,
+      width: 25,
       textCenter: false,
       class: '',
       show: true,
@@ -119,7 +119,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
     },
     mode: {
       label: 'Direction',
-      width: 8,
+      width: 10,
       textCenter: true,
       class: '',
       show: true,

@@ -27,8 +27,8 @@
   @if (errorSelection) {
     <span class="me-auto fs-sm text-danger text-truncate">{{ errorSelection }}</span>
   }
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()" [disabled]="!selection" class="btn btn-sm btn-primary" type="button" l10nTranslate>Confirm</button>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onSubmit()" [disabled]="!selection" class="btn btn-primary" type="button" l10nTranslate>Confirm</button>
 </div>
 
 

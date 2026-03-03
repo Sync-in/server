@@ -589,7 +589,7 @@
   "Two-Factor Authentication is disabled": "已禁用双重身份验证",
   "Scan this QR code using your authenticator app.": "使用您的认证器应用扫描此二维码。",
   "(Such as FreeOTP, Proton Authenticator etc.)": "（如 FreeOTP、Proton Authenticator 等）",
-  "Or enter this secret manually": "或手动输入此密钥",
+  "Or enter this secret manually:": "或手动输入此密钥：",
   "Valid with your TOTP code": "使用您的 TOTP 代码验证",
   "The secret has expired": "密钥已过期",
   "Keep these codes in a safe place. They will allow you to access your account if you lose access to your two-factor authentication.": "请将这些代码保存在安全的地方。如果您无法使用双重身份验证，它们可帮助您访问账户。",

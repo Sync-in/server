@@ -121,11 +121,7 @@
 }
 
 .btn-xs {
-  @include button-size($btn-padding-y-xs, $btn-padding-x-xs, $font-size-2xs, $btn-border-radius-sm);
-}
-
-.btn-xxs {
-  @include button-size($btn-padding-y-xs, $btn-padding-x-xs, $font-size-3xs, $btn-border-radius-sm);
+  @include button-size($btn-padding-y-xs, $btn-padding-x-xs, $font-size-xs, $btn-border-radius-sm);
 }
 
 .btn-outline-secondary-alt {
@@ -147,10 +143,10 @@
   }
 }
 
-
 .btn-minimize {
   @extend .btn-close;
-  background: transparent url("#{$theme-btn-minimize-icon-svg}") center/1em auto no-repeat;
+  $btn-minimize-icon-svg: "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23000'%3e%3cpath d='M32,224c-17.7,0-32,14.3-32,32s14.3,32,32,32h448c17.7,0,32-14.3,32-32s-14.3-32-32-32H32z'/%3e%3c/svg%3e";
+  background: transparent url("#{$btn-minimize-icon-svg}") center/1em auto no-repeat;
 }
 
 .btn-minimize-white {

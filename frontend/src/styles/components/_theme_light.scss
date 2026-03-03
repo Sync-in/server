@@ -13,8 +13,6 @@
         color: $sidebar-light-icons-menu-color;
 
         &:not(:first-child) {
-          border-bottom: .5px solid $sidebar-light-icons-menu-bg;
-
           &:hover, &.active {
             color: $sidebar-light-icons-menu-hover-color;
             background: $sidebar-light-icons-menu-hover-bg;
@@ -72,16 +70,10 @@
       }
 
       .menu {
-        border-bottom: 0;
-
         > a {
           color: $sidebar-light-apps-menu-hover-color;
           border: .5px solid transparent;
         }
-
-        //&.submenu {
-        //  background-color: darken($sidebar-light-apps-menu-bg, 3%);
-        //}
 
         &:hover {
           > a {
@@ -185,6 +177,9 @@
   }
   .text-muted {
     color: darken($light-text-muted-color, 12%) !important;
+  }
+  .text-muted.text-uppercase.text-bold {
+    color: $light-text-muted-color !important;
   }
   tabset {
     > .nav.nav-pills,
@@ -358,9 +353,9 @@
       border-top: 1px solid $gray-light;
     }
 
-    thead {
-      background-color: $light-table-head-bg;
-    }
+    //thead {
+    //  background-color: $light-table-head-bg;
+    //}
 
     tbody tr {
       border-bottom-color: $gray-lighter !important;
@@ -498,7 +493,7 @@
     color: $custom-color;
   }
   .profile-page {
-    background-color: $white;
+    background-color: $gray-lightest;
 
     .box {
       background-color: $gray-lighter;

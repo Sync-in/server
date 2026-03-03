@@ -17,7 +17,7 @@
     }
   </div>
   @if (nbTotalTasks) {
-    <button (click)="removeTasks()" class="btn btn-xs btn-default">
+    <button (click)="removeTasks()" class="btn btn-default">
       <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
     </button>
   } @else {
@@ -28,8 +28,8 @@
 <div appAutoResize>
   @for (task of tasks; track task.id) {
     <div class="task-list">
-      <div (click)="goToFile(task)" [tooltip]="task.result | translate:locale.language" class="px-2 py-1 text-truncate" placement="bottom">
-        <span [class.text-gray-dark]="task.status < 2" [class.text-danger]="task.status >= 2">
+      <div (click)="goToFile(task)" [tooltip]="task.result | translate:locale.language" class="text-truncate" placement="bottom">
+        <span [class.text-danger]="task.status >= 2">
           <fa-icon [icon]="iconsStatus[task.status]" [animation]="task.status === 0 ? 'spin-pulse' : null"></fa-icon>
           <b><fa-icon [icon]="iconsOperation[task.type]" class="me-1"></fa-icon></b>
           <span>{{ task.name }}</span>
@@ -37,7 +37,7 @@
             <span>&nbsp;:&nbsp;{{ task.result | translate:locale.language }}</span>
           }
         </span>
-        <div class="fs-3xs">
+        <div class="mt-1 fs-sm">
           <progressbar [max]="100"
                        [value]="task.status > 0 ? 100 : task.props.progress || 100"
                        [type]="task.status < 1 ? 'warning' : task.status === 2 ? 'danger' : null"

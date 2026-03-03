@@ -1,6 +1,6 @@
 <div class="modal-header">
-  <h4 class="modal-title" l10nTranslate>
-    <fa-icon [icon]="icons.faFileShield" class="me-1"></fa-icon>
+  <h4 class="modal-title">
+    <fa-icon [icon]="icons.faFileShield"></fa-icon>
     @if (renamedTo) {
       <span l10nTranslate>Replace Existing File</span>
     } @else {
@@ -13,7 +13,7 @@
   @if (renamedTo) {
     <div [innerHTML]="'RenameFileToExisting' | translate:locale.language:{ old: files[0].name, new: renamedTo }"></div>
   } @else {
-    <div class="fw-semibold mb-3" l10nTranslate>Do you want to replace the existing file(s)?</div>
+    <div class="text-bold mb-3" l10nTranslate>Do you want to replace the existing file(s)?</div>
     @for (f of files; track $index) {
       <div class="d-flex align-items-center mb-1" draggable="true">
         <img [src]="f.mimeUrl" alt="" height="24" width="24" (error)="f.fallBackMimeUrl()">
@@ -25,6 +25,6 @@
   }
 </div>
 <div class="modal-footer">
-  <button (click)="onAction(false)" class="btn btn-sm btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onAction(true)" [disabled]="submitted" class="btn btn-sm btn-danger" type="button" l10nTranslate>Confirm</button>
+  <button (click)="onAction(false)" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onAction(true)" [disabled]="submitted" class="btn btn-danger" type="button" l10nTranslate>Confirm</button>
 </div>

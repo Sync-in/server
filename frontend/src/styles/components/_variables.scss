@@ -59,8 +59,6 @@ $sidebar-light-apps-menu-border-color: $gray-mid;
 $theme-btn-focus-outline-fallback: rgba(13, 110, 253, 0.25);
 $theme-btn-bg-hover-overlay-shadow: rgba(0, 0, 0, 0.2);
 $theme-dropdown-divider-bg: #eee;
-$theme-btn-close-white-filter: $btn-close-white-filter;
-$theme-btn-minimize-icon-svg: "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' fill='%23000'%3e%3cpath d='M32,224c-17.7,0-32,14.3-32,32s14.3,32,32,32h448c17.7,0,32-14.3,32-32s-14.3-32-32-32H32z'/%3e%3c/svg%3e";
 $theme-dialog-tab-active-bg: $primary;
 $theme-dialog-tab-active-border-color: darken($primary, 7%);
 $theme-dialog-tab-count-color: inherit;

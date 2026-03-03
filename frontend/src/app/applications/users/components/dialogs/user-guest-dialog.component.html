@@ -1,10 +1,10 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
     @if (guest) {
-      <fa-icon [icon]="icons.faPen" class="me-2"></fa-icon>
+      <fa-icon [icon]="icons.faPen"></fa-icon>
       <span>{{ guest.fullName }}</span>
     } @else {
-      <fa-icon [icon]="icons.faPlus" class="me-2"></fa-icon>
+      <fa-icon [icon]="icons.faPlus"></fa-icon>
       <span l10nTranslate>New guest</span>
     }
     @if (loading) {
@@ -39,7 +39,7 @@
                          [autoSelect]="false"
                          formControlName="login"
                          [class.is-invalid]="guestForm.controls['login'].invalid"
-                         class="form-control form-control-sm"
+                         class="form-control"
                          autocomplete="off"
                          type="text">
                 </div>
@@ -48,7 +48,7 @@
                   <input id="email"
                          formControlName="email"
                          [class.is-invalid]="guestForm.controls['email'].invalid"
-                         class="form-control form-control-sm"
+                         class="form-control"
                          autocomplete="off"
                          type="email">
                 </div>
@@ -57,7 +57,7 @@
                   <input id="firstName"
                          formControlName="firstName"
                          [class.is-invalid]="guestForm.controls['firstName'].invalid"
-                         class="form-control form-control-sm"
+                         class="form-control"
                          autocomplete="off"
                          type="text">
                 </div>
@@ -65,7 +65,7 @@
                   <label class="form-label" for="lastName" l10nTranslate>Last name</label>
                   <input id="lastName"
                          formControlName="lastName"
-                         class="form-control form-control-sm"
+                         class="form-control"
                          autocomplete="off"
                          type="text">
                 </div>
@@ -105,7 +105,7 @@
                 <label class="form-label" for="language" l10nTranslate>Language</label>
                 <select id="language"
                         formControlName="language"
-                        class="form-control form-select form-select-sm">
+                        class="form-control form-select">
                   @for (l of languages; track $index) {
                     <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
                   }
@@ -116,7 +116,7 @@
                 <label class="form-label" for="notification" l10nTranslate>Notification</label>
                 <select id="notification"
                         formControlName="notification"
-                        class="form-control form-select form-select-sm">
+                        class="form-control form-select">
                   @for (n of allNotifications; track $index) {
                     <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
                   }
@@ -145,17 +145,17 @@
           @if (guest) {
             <div class="card dialog-tab-card w-100">
               <div class="card-body">
-                <div class="row g-3 fs-2xs">
-                  <div class="col-12 col-md-5">
+                <div class="row g-3">
+                  <div class="col-12">
                     <div class="d-flex flex-column">
                       <label class="form-label" for="created" l10nTranslate>Creation date</label>
-                      <div id="created">{{ guest.createdAt | amDateFormat }}</div>
+                      <div class="fs-sm" id="created">{{ guest.createdAt | amDateFormat }}</div>
                     </div>
                   </div>
-                  <div class="col-12 col-md-7">
-                    <div class="d-flex flex-column text-md-end">
+                  <div class="col-12">
+                    <div class="d-flex flex-column">
                       <label class="form-label" for="access" l10nTranslate>Last accesses</label>
-                      <div id="access">
+                      <div class="fs-sm" id="access">
                         @if (guest.lastAccess) {
                           <div class="d-flex flex-column mb-2">
                             <span>{{ guest.currentAccess | amDateFormat }}</span>
@@ -166,7 +166,7 @@
                             <span>{{ guest.lastIp }}</span>
                           </div>
                         } @else {
-                          <span class="text-danger" l10nTranslate>never</span>
+                          <span class="badge bg-danger" l10nTranslate>never</span>
                         }
                       </div>
                     </div>
@@ -205,13 +205,13 @@
   @if (guest?.id) {
     <button (click)="confirmDeletion = true"
             [disabled]="confirmDeletion"
-            class="btn btn-sm btn-danger" type="button" l10nTranslate>
+            class="btn btn-danger" type="button" l10nTranslate>
       Remove
     </button>
   }
-  <button (click)="onCancel()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="guestForm.invalid || submitted" class="btn btn-sm {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
+          [disabled]="guestForm.invalid || submitted" class="btn {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
           type="button"
           l10nTranslate>
     {{ confirmDeletion ? 'Confirm deletion' : 'Confirm' }}

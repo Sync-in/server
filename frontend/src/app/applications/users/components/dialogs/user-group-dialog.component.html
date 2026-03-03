@@ -1,6 +1,6 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.GROUPS" class="me-2"></fa-icon>
+    <fa-icon [icon]="icons.GROUPS"></fa-icon>
     @if (group.id) {
       <span>{{ group.name }}</span>
     } @else {
@@ -34,7 +34,7 @@
                    [autoSelect]="false"
                    [(ngModel)]="group.name"
                    [class.is-invalid]="!group.name"
-                   class="form-control form-control-sm"
+                   class="form-control"
                    autocomplete="off"
                    type="text">
           </div>
@@ -43,7 +43,7 @@
             <input id="description"
                    [(ngModel)]="group.description"
                    [disabled]="!isPersonalGroup"
-                   class="form-control form-control-sm"
+                   class="form-control"
                    autocomplete="off"
                    type="text">
           </div>
@@ -52,17 +52,17 @@
       @if (group.id) {
         <div class="card dialog-tab-card w-100 mt-3">
           <div class="card-body">
-            <div class="row g-3 fs-2xs">
+            <div class="row g-3">
               <div class="col-12 col-md-6">
                 <div class="d-flex flex-column">
                   <label class="form-label" for="created" l10nTranslate>Creation date</label>
-                  <div id="created">{{ group.createdAt | amDateFormat }}</div>
+                  <div class="fs-sm" id="created">{{ group.createdAt | amDateFormat }}</div>
                 </div>
               </div>
               <div class="col-12 col-md-6">
                 <div class="d-flex flex-column text-md-end">
                   <label class="form-label" for="modified" l10nTranslate>Modification date</label>
-                  <div id="modified">{{ group.modifiedAt | amDateFormat }}</div>
+                  <div class="fs-sm" id="modified">{{ group.modifiedAt | amDateFormat }}</div>
                 </div>
               </div>
             </div>
@@ -73,10 +73,10 @@
   </div>
 </div>
 <div class="modal-footer">
-  <button (click)="onCancel()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
           [disabled]="!this.group.name || submitted"
-          class="btn btn-sm btn-primary"
+          class="btn btn-primary"
           type="button"
           l10nTranslate>
     Confirm

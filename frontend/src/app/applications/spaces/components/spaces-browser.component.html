@@ -1,7 +1,7 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadFiles()"
-          class="d-none d-sm-block btn btn-sm btn-default me-1"
+          class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
@@ -9,9 +9,9 @@
   </button>
   <!--Start New Button-->
   @if (!isTrashRepo && !inSharesList) {
-    <div (onShown)="initUpload()" class="btn-group btn-group-sm me-1" dropdown>
+    <div (onShown)="initUpload()" class="btn-group me-1" dropdown>
       <button dropdownToggle
-              class="btn btn-sm btn-default dropdown-toggle"
+              class="btn btn-default dropdown-toggle"
               [tooltip]="'New' | translate:locale.language"
               container="body"
               type="button">
@@ -49,7 +49,7 @@
   <!--End New Button-->
   <button (click)="downloadFiles()"
           [disabled]="!hasSelection || hasDisabledItemsInSelection"
-          class="btn btn-sm btn-default me-1"
+          class="btn btn-default me-1"
           [tooltip]="'Download' | translate:locale.language"
           container="body"
           type="button">
@@ -57,9 +57,9 @@
   </button>
   <!--Start Share Button-->
   @if (!isTrashRepo && canShare.outside || inSharesList) {
-    <div class="btn-group btn-group-sm me-1" [isDisabled]="!hasSelection || inSharesList && !selection[0].canBeReShared" dropdown>
+    <div class="d-none d-sm-block btn-group me-1" [isDisabled]="!hasSelection || inSharesList && !selection[0].canBeReShared" dropdown>
       <button dropdownToggle
-              class="btn btn-sm btn-default dropdown-toggle"
+              class="btn btn-default dropdown-toggle"
               [tooltip]="'Share' | translate:locale.language"
               container="body"
               type="button">
@@ -90,7 +90,7 @@
   @if (isTrashRepo) {
     <button (click)="openTrashDialog(true)"
             [disabled]="!hasSelection"
-            class="btn btn-sm btn-default me-1"
+            class="btn btn-default me-1"
             [tooltip]="'Remove' | translate:locale.language"
             container="body"
             type="button">
@@ -99,7 +99,7 @@
     @if (inRootSpace) {
       <button (click)="openEmptyTrashDialog()"
               [disabled]="!stats.elements"
-              class="btn btn-sm btn-default me-1"
+              class="btn btn-default me-1"
               [tooltip]="'Empty' | translate:locale.language"
               container="body"
               type="button">
@@ -108,8 +108,8 @@
     }
   }
   <!--Start Actions Button-->
-  <div [isDisabled]="!hasSelection" class="btn-group btn-group-sm me-1" dropdown>
-    <button class="btn btn-sm btn-default dropdown-toggle" dropdownToggle type="button">
+  <div [isDisabled]="!hasSelection" class="btn-group me-1" dropdown>
+    <button class="btn btn-default dropdown-toggle" dropdownToggle type="button">
       <fa-icon [icon]="icons.faEllipsis"></fa-icon>
     </button>
     <ul *dropdownMenu class="dropdown-menu" role="menu">
@@ -191,7 +191,7 @@
   <!--End Actions Button-->
   <div class="ms-auto">
     <!--Start Filter Button-->
-    <div class="btn-group btn-group-sm me-1">
+    <div class="btn-group me-1">
       <app-input-filter class="d-none d-sm-block"></app-input-filter>
     </div>
     <!--End Filter Button-->
@@ -228,10 +228,19 @@
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
               @if (f.isImage) {
-                <img (error)="f.isImage = false" [style.max-height.px]="galleryMode.image" alt="" class="img-fluid"
-                     draggable="true" src="{{f.thumbnailUrl}}?size={{galleryMode.imageRes}}">
+                <img src="{{f.thumbnailUrl}}?size={{galleryMode.imageRes}}"
+                     [style.max-height.px]="galleryMode.image"
+                     alt=""
+                     class="img-fluid"
+                     draggable="true"
+                     (error)="f.isImage = false">
               } @else {
-                <img [src]="f.mimeUrl" [height]="galleryMode.image" [width]="galleryMode.image" alt="" draggable="true" (error)="f.fallBackMimeUrl()">
+                <img [src]="f.mimeUrl"
+                     [height]="galleryMode.image"
+                     [width]="galleryMode.image"
+                     alt=""
+                     draggable="true"
+                     (error)="f.fallBackMimeUrl()">
               }
               <span class="label-bottom-right">
                 @let maxBadges = galleryMode.maxBadges || 0;
@@ -380,7 +389,12 @@
                   @switch (th.key) {
                     @case ('name') {
                       <div class="d-flex align-items-center" draggable="true">
-                        <img [src]="f.mimeUrl" alt="" draggable="false" height="30" width="30" (error)="f.fallBackMimeUrl()">
+                        <img [src]="f.mimeUrl"
+                             alt=""
+                             draggable="false"
+                             height="30"
+                             width="30"
+                             (error)="f.fallBackMimeUrl()">
                         @if (f.isRenamed) {
                           <input appInputEdit
                                  (renamingInProgress)="setRenamingInProgress($event)"
@@ -392,7 +406,7 @@
                           <div class="d-flex flex-column text-truncate">
                             <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ f.name }}</span>
                             @if (inSharesList && f.root?.description) {
-                              <span class="no-pointer-events text-muted fs-3xs" draggable="false">{{ f.root.description }}</span>
+                              <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ f.root.description }}</span>
                             }
                           </div>
                         }
@@ -489,19 +503,19 @@
 <!--Start Common Messages-->
 <ng-template #CommonMessages>
   @if (forbiddenResource) {
-    <div class="fs-sm text-center text-danger fw-semibold no-select p-4">
+    <div class="fs-sm text-center text-danger text-bold no-select p-4">
       <span l10nTranslate>Forbidden resource</span>
     </div>
   } @else if (locationNotFound) {
-    <div class="fs-sm text-center text-danger fw-semibold no-select p-4">
+    <div class="fs-sm text-center text-danger text-bold no-select p-4">
       <span l10nTranslate>Location not found</span>
     </div>
   } @else if (serverConnectionError) {
-    <div class="fs-sm text-center text-danger fw-semibold no-select p-4">
+    <div class="fs-sm text-center text-danger text-bold no-select p-4">
       <span l10nTranslate>{{ serverConnectionErrorMessage }}</span>
     </div>
   } @else if (!isTrashRepo && !loading && !stats.elements) {
-    <div class="fs-sm text-center text-muted fw-semibold no-select p-4">
+    <div class="fs-sm text-center text-muted text-bold no-select p-4">
       <span l10nTranslate>Drag and drop your files here</span>
     </div>
   }
@@ -556,9 +570,6 @@
   }
   <ng-template (execute)="addToClipboard()" contextMenuItem>
     <span l10nTranslate><fa-icon [icon]="icons.faClipboardList"></fa-icon>Clipboard</span>
-  </ng-template>
-  <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
   </ng-template>
   @if (!inSharesList) {
     <ng-template [divider]="true" contextMenuItem></ng-template>

@@ -1,13 +1,12 @@
 .profile-page {
   height: 100%;
-  font-size: $font-size-xs;
 }
 
 .user-groups-page {
   display: flex;
   flex-direction: column;
   height: 100%;
-  font-size: $font-size-xs;
+  font-size: $font-size-sm;
   padding: 0.4rem;
 }
 
@@ -23,12 +22,13 @@
     align-items: flex-end;
 
     > div:first-of-type {
+      // fullname
       font-weight: 500;
-      font-size: 1rem;
+      font-size: $font-size-lg;
     }
 
     .small {
-      font-size: $font-size-4xs;
+      font-size: $font-size-xs;
     }
   }
 }

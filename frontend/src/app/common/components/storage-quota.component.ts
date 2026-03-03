@@ -17,7 +17,7 @@ import { quotaRegexp } from '../utils/regexp'
         (ngModelChange)="onQuotaInput($event)"
         (blur)="onQuotaBlur()"
         [placeholder]="'Unlimited' | translate: locale.language"
-        class="form-control form-control-sm {{ invalid() ? 'is-invalid' : '' }}"
+        class="form-control{{ invalid() ? 'is-invalid' : '' }}"
         [class.w-100]="fullWidth()"
         [style.max-width.%]="displayMaxWidth()"
         placement="top"

@@ -5,36 +5,36 @@
 @mixin directory($color) {
   content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#{hexToRGBString($color)}" d="M64 480H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H288c-10.1 0-19.6-4.7-25.6-12.8L243.2 57.6C231.1 41.5 212.1 32 192 32H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64z"/></svg>');
   display: inline-block;
-  width: 20px;
+  width: 22px;
 }
 
 @mixin caret($color) {
   content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="#{hexToRGBString($color)}" d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg>');
   display: inline-block;
-  width: 8px;
+  width: 10px;
   position: absolute;
-  left: 2px;
-  top: 4px;
+  left: 3px;
+  top: 5px;
 }
 
 @mixin file($color) {
   content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#{hexToRGBString($color)}" d="M 384 442.876 C 392.8 442.876 400 436.406 400 428.5 L 400 169.751 L 320 169.751 C 302.3 169.751 288 156.902 288 141 L 288 69.125 L 128 69.125 C 119.2 69.125 112 75.594 112 83.5 L 112 428.5 C 112 436.406 119.2 442.876 128 442.876 L 384 442.876 Z M 64 83.5 C 64 51.785 92.7 26 128 26 L 293.5 26 C 310.5 26 326.8 32.019 338.8 42.801 L 429.3 124.109 C 441.3 134.891 448 149.534 448 164.808 L 448 428.5 C 448 460.215 419.3 486 384 486 L 128 486 C 92.7 486 64 460.215 64 428.5 L 64 83.5 Z"/></svg>');
   display: inline-block;
-  width: 20px;
+  width: 22px;
 }
 
 .angular-tree-component {
   display: grid !important;
   white-space: nowrap;
   margin-bottom: 15px;
-  font-size: $font-size-xs;
+  font-size: $font-size-sm;
 
   .node-wrapper {
     cursor: default;
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    padding: 5px;
+    padding: 4px;
     line-height: 0;
     width: 100%;
 

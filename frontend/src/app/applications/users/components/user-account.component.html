@@ -6,7 +6,7 @@
           <div class="card dialog-tab-card">
             <div class="card-body">
               <div class="user-header p-0">
-                <div class="d-flex flex-column justify-content-center me-2">
+                <div class="d-flex flex-column justify-content-center">
                   <div class="avatar-xl">
                     <img [src]="userAvatar" class="avatar-img profile-user-img" alt="">
                     <span class="avatar-{{allOnlineStatus[user.onlineStatus]}}"></span>
@@ -15,14 +15,14 @@
 
                 <div class="user-details">
                   <div class="mb-1">{{ user.fullName }}</div>
-                  <div class="mb-2 fs-2xs text-nowrap">{{ user.email }}</div>
-                  <div class="text-muted fs-2xs">
+                  <div class="mb-2 fs-sm text-nowrap">{{ user.email }}</div>
+                  <div class="text-muted fs-sm">
                     {{ 'Member since' | translate:locale.language }} {{ user.createdAt | amTimeAgo:true }}
                   </div>
 
                   <select [(ngModel)]="user.onlineStatus"
                           (ngModelChange)="setOnlineStatus($event)"
-                          class="form-select form-select-sm my-auto mt-2">
+                          class="form-select my-auto mt-2">
                     @for (n of allOnlineStatus; track $index) {
                       <option [ngValue]="allOnlineStatus.indexOf(n)">
                         {{ n | translate:locale.language | capitalize }}
@@ -99,14 +99,14 @@
 
           <div class="card dialog-tab-card">
             <div class="card-body">
-              <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Preferences</div>
+              <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Preferences</div>
 
               @if (showEditorPreference) {
                 <div class="row g-2 align-items-center mb-2">
-                  <span class="col-12 col-sm-5" l10nTranslate>Document editor</span>
-                  <div class="col-12 col-sm-7">
+                  <label for="" class="col-12 col-sm-6" l10nTranslate>Document editor</label>
+                  <div class="col-12 col-sm-6">
                     <select
-                      class="form-select form-select-sm"
+                      class="form-select"
                       [ngModel]="userEditorPreference"
                       (ngModelChange)="updateEditorPreference($event)">
                       <option [ngValue]="null" l10nTranslate>Ask Me</option>
@@ -116,7 +116,7 @@
                     </select>
                   </div>
                 </div>
-                <div class="text-muted fs-2xs mb-3" l10nTranslate>
+                <div class="text-muted fs-sm mb-3" l10nTranslate>
                   Used when both editors support the file type.
                 </div>
               }
@@ -142,7 +142,7 @@
                               role="button">
                           </div>
                         </div>
-                        <div class="text-muted fs-2xs mt-2 px-1" l10nTranslate>
+                        <div class="text-muted fs-sm mt-2 px-1" l10nTranslate>
                           Enable content indexation for personal files.
                         </div>
                       </div>
@@ -157,15 +157,15 @@
         <div class="col-12 col-lg-6 d-flex flex-column gap-3">
           <div class="card dialog-tab-card">
             <div class="card-body">
-              <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Configuration</div>
+              <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Configuration</div>
               <div class="d-flex flex-column gap-2">
                 @if (user.isUser) {
                   <div class="row g-2 align-items-center">
                     <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Avatar</label>
                     <div class="col-12 col-md-6">
                       <div class="d-flex flex-wrap gap-2">
-                        <button (click)="genAvatar()" class="btn btn-xs btn-success" type="button" l10nTranslate>Generate</button>
-                        <button class="btn-file-upload btn btn-xs btn-default" type="button">
+                        <button (click)="genAvatar()" class="btn btn-success" type="button" l10nTranslate>Generate</button>
+                        <button class="btn-file-upload btn btn-default" type="button">
                           <span l10nTranslate>Import</span>
                           <input (change)="uploadAvatar($event)" accept="image/*" name="file" role="button" type="file" />
                         </button>
@@ -177,7 +177,7 @@
                 <div class="row g-2 align-items-center">
                   <label class="form-label col-12 col-md-6 mb-0" for="userLanguage" l10nTranslate>Language</label>
                   <div class="col-12 col-md-6">
-                    <select id="userLanguage" [(ngModel)]="language" class="form-select form-select-sm">
+                    <select id="userLanguage" [(ngModel)]="language" class="form-select">
                       @for (l of languages; track $index) {
                         <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
                       }
@@ -191,7 +191,7 @@
                     <select id="userNotification"
                             [ngModel]="user.notification"
                             (ngModelChange)="updateNotification($event)"
-                            class="form-select form-select-sm">
+                            class="form-select">
                       @for (n of allNotifications; track $index) {
                         <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
                       }
@@ -205,12 +205,19 @@
           @if (user.isUser) {
             <div class="card dialog-tab-card">
               <div class="card-body">
-                <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Password</div>
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                  <div class="text-muted text-uppercase text-nowrap fs-sm text-bold" l10nTranslate>Password</div>
+                  @if (newPassword) {
+                    <div class="ms-auto d-flex justify-content-end">
+                      <app-password-strength-bar [passwordToCheck]="newPassword"></app-password-strength-bar>
+                    </div>
+                  }
+                </div>
                 <div class="d-flex flex-column gap-2">
                   <div class="row g-2 align-items-center">
                     <label for="" class="form-label col-12 col-md-6 mb-0">{{ 'current password' | translate:locale.language | capitalize }}</label>
                     <div class="col-12 col-md-6">
-                      <app-input-password [(password)]="oldPassword" placeholder="current password"></app-input-password>
+                      <app-input-password [(password)]="oldPassword"></app-input-password>
                     </div>
                   </div>
 
@@ -221,24 +228,16 @@
                                           [disabled]="!oldPassword?.length"
                                           [isRequired]="!!oldPassword?.length"
                                           [passwordMinLength]="passwordMinLength"
-                                          [showGenerator]="true"
-                                          placeholder="new password"></app-input-password>
+                                          [showGenerator]="true">
+                      </app-input-password>
                     </div>
                   </div>
-
-                  @if (newPassword) {
-                    <div class="row g-2">
-                      <div class="col-12 col-md-6 offset-md-6">
-                        <app-password-strength-bar [passwordToCheck]="newPassword"></app-password-strength-bar>
-                      </div>
-                    </div>
-                  }
 
                   <div class="row g-2">
                     <div class="col-12 col-md-6 offset-md-6">
                       <button [disabled]="!newPassword || !oldPassword || newPassword.length < passwordMinLength"
                               (click)="submitPassword()"
-                              class="btn btn-xs btn-primary text-nowrap"
+                              class="btn btn-primary text-nowrap"
                               type="button"
                               l10nTranslate>
                         Update
@@ -251,14 +250,14 @@
 
             <div class="card dialog-tab-card flex-grow-1">
               <div class="card-body">
-                <div class="text-muted text-uppercase fs-3xs fw-semibold mb-2" l10nTranslate>Security</div>
+                <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Security</div>
                 <div class="d-flex flex-column gap-3">
                   <div class="row g-2 align-items-center">
                     <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Two-Factor Authentication</label>
                     <div class="col-12 col-md-6 d-flex flex-wrap align-items-center gap-2">
                       <button (click)="enable2Fa()"
                               [disabled]="!store.server().twoFaEnabled"
-                              class="btn btn-xs btn-primary"
+                              class="btn btn-primary"
                               type="button"
                               l10nTranslate>
                         {{ user.twoFaEnabled ? 'Reset' : 'Enable' }}
@@ -266,7 +265,7 @@
                       @if (user.twoFaEnabled) {
                         <button (click)="disable2Fa()"
                                 [disabled]="!store.server().twoFaEnabled"
-                                class="btn btn-xs btn-danger"
+                                class="btn btn-danger"
                                 type="button"
                                 l10nTranslate>
                           Disable
@@ -279,7 +278,7 @@
                     <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Application Passwords</label>
                     <div class="col-12 col-md-6 d-flex align-items-center">
                       <button (click)="manageAppPasswords()"
-                              class="btn btn-xs btn-primary"
+                              class="btn btn-primary"
                               type="button"
                               l10nTranslate>
                         @if (user.appPasswords > 0) {

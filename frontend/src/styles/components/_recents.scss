@@ -2,7 +2,7 @@
   position: relative;
   width: 100%;
   border: 1px solid;
-  border-radius: 12px;
+  border-radius: 14px;
   overflow: hidden;
   transition: box-shadow 0.14s ease;
 }
@@ -11,8 +11,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.45rem 0.6rem;
+  gap: 0.78rem;
+  padding: 0.34rem 0.66rem;
   border-bottom: 1px solid;
 }
 
@@ -20,31 +20,31 @@
   display: flex;
   align-items: center;
   min-width: 0;
-  gap: 0.55rem;
+  gap: 0.58rem;
 }
 
 .recents-widget-card__title-icon {
-  width: 1.55rem;
-  height: 1.55rem;
-  border-radius: 0.55rem;
+  width: 2.05rem;
+  height: 2.05rem;
+  border-radius: 0.6rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.78rem;
+  font-size: $font-size-base;
 }
 
 .recents-widget-card__title {
   display: inline-block;
-  line-height: 1;
-  font-size: $font-size-sm;
-  font-weight: 450;
+  line-height: 1.05;
+  font-size: $font-size-base;
+  font-weight: 500;
   user-select: none;
 }
 
 .recents-widget-card__toggle {
-  width: 1.65rem;
-  height: 1.65rem;
-  border-radius: 0.55rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.6rem;
   border: 1px solid transparent;
   background: transparent;
   color: inherit;
@@ -54,33 +54,33 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  font-size: $font-size-base;
 }
 
 .recents-widget-card__body {
-  padding: 0.4rem;
+  padding: 0.48rem 0.48rem 0.52rem;
 }
 
 .recent-item-card {
   width: 100%;
   border: 1px solid transparent;
-  border-radius: 0.65rem;
+  border-radius: 0.68rem;
   background: transparent;
   color: inherit;
   font: inherit;
   appearance: none;
-  padding: 0.32rem 0.42rem;
+  padding: 0.42rem 0.5rem;
   display: grid;
-  grid-template-columns: 1.9rem minmax(0, 1fr) auto;
+  grid-template-columns: 2rem minmax(0, 1fr) max-content;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.54rem;
   text-align: left;
   cursor: pointer;
   animation: recent-card-enter 0.26s ease both;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
 
   + .recent-item-card {
-    margin-top: 0.28rem;
+    margin-top: 0.34rem;
   }
 }
 
@@ -89,21 +89,21 @@
 }
 
 .recent-item-card__media {
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 2rem;
+  height: 2rem;
 }
 
 .recent-item-card__content {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.05rem;
+  gap: 0.1rem;
 }
 
 .recent-item-card__title {
   line-height: 1.2;
-  font-size: $font-size-xs;
-  font-weight: 450;
+  font-size: $font-size-base;
+  font-weight: 400;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -111,7 +111,7 @@
 
 .recent-item-card__path {
   line-height: 1.15;
-  font-size: $font-size-3xs;
+  font-size: $font-size-sm;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -119,12 +119,16 @@
 
 .recent-item-card__time {
   white-space: nowrap;
-  font-size: $font-size-4xs;
-  margin-left: 0.25rem;
+  font-size: $font-size-xs;
+  line-height: 1;
+  margin-left: 0.38rem;
+  min-width: 5.05rem;
+  text-align: right;
+  padding-top: 0.04rem;
 }
 
 .recent-empty-state {
-  min-height: 150px;
+  min-height: 142px;
   border-radius: 0.65rem;
   display: flex;
   flex-direction: column;

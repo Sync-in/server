@@ -23,13 +23,16 @@
     align-items: center;
     justify-content: center;
     margin-bottom: 0.2rem;
+
+    fa-icon {
+      font-size: calc(var(--font-size-3xl) * 1.5)
+    }
   }
 
   .app-download-card-title {
     margin: 0.75rem 0 0.35rem;
     font-weight: 500;
     line-height: 1.2;
-    letter-spacing: 0.01em;
   }
 
   .app-download-card-btn {
@@ -41,7 +44,7 @@
   }
 
   .app-download-card-meta {
-    font-size: 0.76rem;
+    font-size: var(--font-size-sm);
     line-height: 1.35;
     margin-bottom: 0.25rem;
   }
@@ -50,6 +53,7 @@
     display: inline-block;
     line-height: 1.35;
     text-underline-offset: 0.18rem;
+    font-size: var(--font-size-sm);
   }
 }
 

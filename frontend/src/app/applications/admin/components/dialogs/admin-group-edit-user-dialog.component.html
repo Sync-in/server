@@ -1,6 +1,6 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faUserPen" class="me-2"></fa-icon>
+    <fa-icon [icon]="icons.faUserPen"></fa-icon>
     <span>{{ user.name }}</span>
   </h4>
   <h4 class="modal-title ms-auto">
@@ -27,9 +27,9 @@
   <small l10nTranslate>As a manager, the user will be able to manage group members but not group properties.</small>
 </div>
 <div class="modal-footer">
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="submitted" class="btn btn-sm btn-primary"
+          [disabled]="submitted" class="btn btn-primary"
           type="button"
           l10nTranslate>
     Confirm

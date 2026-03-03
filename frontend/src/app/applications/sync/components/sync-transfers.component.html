@@ -1,12 +1,12 @@
 <div class="app-top-menu">
-  <div class="btn-group btn-group-sm">
-    <select (ngModelChange)="onSelectPath($event)" [ngModel]="syncPathSelected" class="form-select form-select-sm font-size-xs" style="min-width: 210px">
+  <div class="btn-group">
+    <select (ngModelChange)="onSelectPath($event)" [ngModel]="syncPathSelected" class="form-select" style="min-width: 210px">
       <option [ngValue]="null" l10nTranslate>All syncs</option>
       @for (p of store.clientSyncPaths(); track p.id) {
         <option [ngValue]="p">{{ p.settings.name }}</option>
       }
     </select>
-    <select (ngModelChange)="onSelectAction($event)" [ngModel]="action" class="form-select form-select-sm font-size-xs ms-1" style="min-width: 170px">
+    <select (ngModelChange)="onSelectAction($event)" [ngModel]="action" class="form-select ms-1" style="min-width: 170px">
       <option [ngValue]="null" l10nTranslate>All events</option>
       <option l10nTranslate value="NEW|MKFILE|MKDIR">Added</option>
       <option l10nTranslate value="DIFF">Modified</option>
@@ -20,14 +20,14 @@
     <button (click)="refresh()"
             [tooltip]="'Refresh' | translate:locale.language"
             container="body"
-            class="btn btn-sm btn-default me-1"
+            class="btn btn-default me-1"
             type="button">
       <fa-icon [icon]="icons.faRedo"></fa-icon>
     </button>
     <button (click)="openClearDialog()"
             [tooltip]="'Clear events' | translate:locale.language"
             placement="bottom"
-            class="btn btn-sm btn-default me-1"
+            class="btn btn-default me-1"
             type="button">
       <fa-icon [icon]="icons.faTrashCan"></fa-icon>
     </button>
@@ -76,21 +76,21 @@
                   }
                   @case ('sync') {
                     <span class="d-flex align-items-center">
-                      <span class="fs-2xs ms-1">{{ t.syncPathName }}</span>
+                      <span class="fs-sm ms-1">{{ t.syncPathName }}</span>
                     </span>
                   }
                   @case ('file') {
                     <div class="d-flex align-items-center">
                       <img [src]=t.mimeUrl (error)="t.fallBackMimeUrl()" alt="" class="me-2" width="24">
-                      <span class="d-flex flex-column fs-2xs">
+                      <span class="d-flex flex-column fs-sm">
                         @if (t.fileDst) {
                           <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ t.fileDst }}</span>
-                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} fs-3xs"><b l10nTranslate>Source</b>:&nbsp;{{ t.file }}</span>
+                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} fs-sm"><b l10nTranslate>Source</b>:&nbsp;{{ t.file }}</span>
                         } @else {
                           <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ t.file }}</span>
                         }
                         @if (!t.ok) {
-                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} text-danger fs-3xs" l10nTranslate>{{ t.error }}</span>
+                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} text-danger fs-sm" l10nTranslate>{{ t.error }}</span>
                         }
                       </span>
                     </div>

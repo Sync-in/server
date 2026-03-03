@@ -7,7 +7,7 @@
   --toast-message: #{mix($gray-dark, $black, 64%)};
 
   position: relative;
-  padding: 0.56rem 1rem 0.54rem 1.6rem !important;
+  padding: 0.66rem 1.1rem 0.64rem 1.7rem !important;
   border: 0.5px solid var(--toast-border, #{$gray-light}) !important;
   background-color: var(--toast-bg, #{$white}) !important;
   background-image: none !important;
@@ -26,7 +26,7 @@
   }
 
   .toast-title {
-    font-size: $font-size-sm;
+    font-size: $font-size-md;
     margin-top: 0 !important;
     margin-bottom: 0.5rem !important;
     line-height: 1.15;
@@ -34,7 +34,7 @@
   }
 
   .toast-message {
-    font-size: $font-size-xs;
+    font-size: $font-size-base;
     line-height: 1.2;
     color: var(--toast-message) !important;
   }
@@ -45,7 +45,7 @@
 }
 
 .ngx-toastr {
-  //min-width: 250px;
+  min-width: 320px !important;
   //width: auto !important
 }
 

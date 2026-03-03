@@ -8,26 +8,25 @@
 
   .modal-header {
     max-height: 41.5px;
+    height: 41.5px;
     line-height: 1;
     @extend .no-select;
 
     .modal-title {
+      font-size: $font-size-base;
       @extend .text-truncate;
-      font-size: $font-size-sm;
-      line-height: 2;
 
-      i {
-        margin-right: 5px;
+      > fa-icon {
+        margin-right: 0.3rem;
       }
 
       &.ms-auto {
-        font-size: $font-size-xs;
+        font-size: $font-size-sm;
       }
     }
   }
 
   .modal-body {
-    font-size: $font-size-xs;
     padding: 10px;
   }
 
@@ -80,7 +79,7 @@
       height: 1.35rem;
       padding: 0 .35rem;
       border-radius: 999px;
-      font-size: $font-size-3xs;
+      font-size: $font-size-xs;
       font-weight: 600;
       line-height: 1;
     }

@@ -589,7 +589,7 @@
   "Two-Factor Authentication is disabled": "L’autenticazione a due fattori è disabilitata",
   "Scan this QR code using your authenticator app.": "Scansiona questo codice QR con la tua app di autenticazione.",
   "(Such as FreeOTP, Proton Authenticator etc.)": "(Come FreeOTP, Proton Authenticator, ecc.)",
-  "Or enter this secret manually": "Oppure inserisci questo segreto manualmente",
+  "Or enter this secret manually:": "Oppure inserisci questo segreto manualmente:",
   "Valid with your TOTP code": "Conferma con il tuo codice TOTP",
   "The secret has expired": "Il segreto è scaduto",
   "Keep these codes in a safe place. They will allow you to access your account if you lose access to your two-factor authentication.": "Conserva questi codici in un luogo sicuro. Ti permetteranno di accedere al tuo account se perdi l’accesso alla tua autenticazione a due fattori.",

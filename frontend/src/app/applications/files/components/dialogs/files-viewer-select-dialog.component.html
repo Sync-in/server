@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faFile" class="me-1"></fa-icon>
+    <fa-icon [icon]="icons.faFile"></fa-icon>
     <span>{{ file.name }}</span>
   </h4>
   <button
@@ -27,8 +27,8 @@
               <fa-icon [icon]="icons.faFileLines"></fa-icon>
             </div>
             <div class="flex-grow-1">
-              <h5 class="mb-1">Collabora</h5>
-              <div class="text-muted small" l10nTranslate>
+              <h3 class="text-bold mb-1">Collabora</h3>
+              <div class="text-muted fs-2xs" l10nTranslate>
                 Open-source office suite built on LibreOffice.
               </div>
             </div>
@@ -48,8 +48,8 @@
               <fa-icon [icon]="icons.faFileWord"></fa-icon>
             </div>
             <div class="flex-grow-1">
-              <h5 class="mb-1">OnlyOffice</h5>
-              <div class="text-muted small" l10nTranslate>
+              <h3 class="text-bold mb-1">OnlyOffice</h3>
+              <div class="text-muted fs-2xs" l10nTranslate>
                 Open-source office suite for Microsoft Office.
               </div>
             </div>
@@ -65,7 +65,7 @@
       id="rememberEditor"
       [(ngModel)]="rememberChoice"
     />
-    <label class="form-check-label" for="rememberEditor" l10nTranslate>
+    <label class="form-check-label fs-sm" for="rememberEditor" l10nTranslate>
       Remember my choice for next time
     </label>
   </div>

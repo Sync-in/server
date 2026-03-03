@@ -1,6 +1,6 @@
 <div class="modal-header align-items-center justify-content-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faLock" class="me-2"></fa-icon>
+    <fa-icon [icon]="icons.faLock"></fa-icon>
     <span l10nTranslate>Two-Factor Authentication</span>
   </h4>
 </div>
@@ -12,7 +12,7 @@
     <div class="alert alert-warning text-center mb-0" l10nTranslate>
       These recovery codes are for one-time use only and will only be displayed here once.
     </div>
-    <ul class="list-group text-align-center fs-2xs">
+    <ul class="list-group text-align-center fs-sm">
       @for (code of recoveryCodes; track $index) {
         <li class="list-group-item font-monospace">{{ code }}</li>
       }
@@ -34,14 +34,17 @@
           <img [src]="qrDataUrl" alt="QR Code" class="img-fluid border rounded p-2" style="max-width: 150px;">
         </div>
 
+        <div class="text-center mb-2" l10nTranslate>Or enter this secret manually:</div>
         <div class="card dialog-check-card">
-          <div class="card-body py-2 px-3 d-flex align-items-center gap-2 flex-wrap">
-            <div class="text-muted text-uppercase fs-4xs" l10nTranslate>Or enter this secret manually</div>
-            <div class="font-monospace fs-xs text-truncate flex-grow-1 text-center text-primary">{{ secret }}</div>
-            <button type="button" class="btn btn-sm btn-outline-primary" (click)="clipBoardSecret()">
-              <fa-icon [icon]="icons.faCopy" class="me-1"></fa-icon>
-              <span l10nTranslate>Copy</span>
-            </button>
+          <div class="card-body py-2 px-3">
+            <div class="d-flex justify-content-center">
+              <a class="link-primary text-decoration-none font-monospace fs-sm cursor-pointer"
+                 role="button"
+                 (click)="clipBoardSecret()">
+                <fa-icon [icon]="icons.faCopy"></fa-icon>
+                {{ secret }}
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -50,11 +53,10 @@
     <div class="card dialog-check-card">
       <div class="card-body p-3">
         <form (ngSubmit)="onSubmit()" [formGroup]="twoFaForm" class="d-flex flex-column gap-3 align-items-center">
-          <div>
-            <label class="form-label text-muted text-uppercase fs-3xs d-block text-center mb-2" for="password" l10nTranslate>Enter your password</label>
+          <div class="w-100" style="max-width: 360px;">
+            <label class="form-label text-muted text-uppercase fs-sm d-block text-center mb-2" for="password" l10nTranslate>Enter your password</label>
             <app-input-password id="password"
-                                class="d-block mx-auto"
-                                style="max-width: 340px; width: 100%;"
+                                class="d-block w-100"
                                 [password]="twoFaForm.value.password"
                                 (passwordChange)="twoFaForm.controls.password.setValue($event)"
                                 [focus]="true"
@@ -63,14 +65,13 @@
             </app-input-password>
           </div>
 
-          <div>
-            <label class="form-label text-muted text-uppercase fs-3xs d-block text-center mb-2" for="totp" l10nTranslate>Valid with your TOTP code</label>
+          <div class="w-100" style="max-width: 360px;">
+            <label class="form-label text-muted text-uppercase fs-sm d-block text-center mb-2" for="totp" l10nTranslate>Valid with your TOTP code</label>
             <input
               id="totp"
               type="text"
               [maxlength]="twoFaCodelength"
-              class="form-control text-center fs-4 font-monospace mx-auto"
-              style="max-width: 340px; width: 100%;"
+              class="form-control text-center text-bold font-monospace w-100"
               formControlName="totpCode"
               placeholder="••••••"
               inputmode="numeric"
@@ -84,8 +85,8 @@
           }
 
           <div class="d-flex gap-2 pt-1 w-100">
-            <button type="button" (click)="onClose()" class="btn btn-sm btn-secondary flex-fill" l10nTranslate>Cancel</button>
-            <button type="submit" [disabled]="twoFaForm.invalid || submitted" class="btn btn-sm btn-primary flex-fill" l10nTranslate>Confirm</button>
+            <button type="button" (click)="onClose()" class="btn btn-secondary flex-fill" l10nTranslate>Cancel</button>
+            <button type="submit" [disabled]="twoFaForm.invalid || submitted" class="btn btn-primary flex-fill" l10nTranslate>Confirm</button>
           </div>
         </form>
       </div>

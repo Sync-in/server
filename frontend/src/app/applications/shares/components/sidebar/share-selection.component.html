@@ -1,5 +1,5 @@
 @if (share()) {
-  <div appAutoResize class="fs-2xs" [resizeOffset]=resizeOffset>
+  <div appAutoResize class="fs-sm" [resizeOffset]=resizeOffset>
     <div class="card px-1 pt-1">
       <div class="card-body align-self-center p-0 my-1">
         <img [src]="share().mimeUrl" alt="" draggable="false" [style.height.px]="cardImageSize" (error)="share().fallBackMimeUrl()">
@@ -8,19 +8,19 @@
     <hr class="my-1" />
     <div class="p-2">
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Name</div>
-        <div class="word-break-all fs-2xs">{{ share().name }}</div>
+        <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Name</div>
+        <div class="word-break-all fs-sm">{{ share().name }}</div>
       </div>
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Created</div>
-        <div class="fs-2xs">{{ share().createdAt | amDateFormat }}</div>
+        <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Created</div>
+        <div class="fs-sm">{{ share().createdAt | amDateFormat }}</div>
       </div>
       <div class="d-flex mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Modified</div>
-        <div class="fs-2xs">{{ share().modifiedAt | amDateFormat }}</div>
+        <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Modified</div>
+        <div class="fs-sm">{{ share().modifiedAt | amDateFormat }}</div>
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Members</div>
+        <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Members</div>
         @if (share().counts.users || share().counts.groups) {
           <app-badge-members [members]="share().counts"></app-badge-members>
         } @else {
@@ -28,7 +28,7 @@
         }
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Child shares</div>
+        <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Child shares</div>
         @if (share().counts.shares) {
           <span (click)="childShareDialog(share())" class="badge bg-purple cursor-pointer me-1">
             <fa-icon [icon]="iconShared"></fa-icon>
@@ -39,7 +39,7 @@
         }
       </div>
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Comments</div>
+        <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Comments</div>
         <span (click)="goToComments()" class="badge {{share().hasComments ? 'bg-success' : 'bg-secondary-alt'}} cursor-pointer">
           {{ (share().hasComments ? 'yes' : 'no') | translate:locale.language }}
         </span>
@@ -48,7 +48,7 @@
     <hr class="my-1" />
     <div class="p-2">
       <div class="d-flex align-items-center mb-1">
-        <div class="d-flex col-sm-5 ps-1 pb-1 fw-semibold" l10nTranslate>Shared from</div>
+        <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Shared from</div>
         <app-share-repository [share]="share()" [showIcon]="false"></app-share-repository>
       </div>
     </div>

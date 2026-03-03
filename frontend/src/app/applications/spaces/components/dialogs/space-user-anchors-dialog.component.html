@@ -1,6 +1,6 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.SPACES" class="me-2"></fa-icon>
+    <fa-icon [icon]="icons.SPACES"></fa-icon>
     <span>{{ space.name }}</span>
   </h4>
   @if (loading) {
@@ -19,13 +19,13 @@
 </div>
 <div class="modal-footer">
   <button (click)="openSelectRootDialog()"
-          class="btn btn-sm btn-success" type="button" l10nTranslate>
+          class="btn btn-success" type="button" l10nTranslate>
     <fa-icon [icon]="icons.faPlus"></fa-icon>
     <fa-icon [icon]="icons.faAnchor"></fa-icon>
     File
   </button>
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()" [disabled]="submitted" class="btn btn-sm btn-primary" type="button" l10nTranslate>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onSubmit()" [disabled]="submitted" class="btn btn-primary" type="button" l10nTranslate>
     Confirm
   </button>
 </div>

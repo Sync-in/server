@@ -1,6 +1,6 @@
 <div class="sidebar-component-title">
   @if (windows.length) {
-    <button (click)="onCloseAll()" class="btn btn-sm btn-default">
+    <button (click)="onCloseAll()" class="btn btn-default">
       <fa-icon [icon]="icons.faXmark"></fa-icon>
     </button>
   }
@@ -11,8 +11,8 @@
     <div class="sidebar-item-container" (click)="onMaximize(modal)">
       <div class="sidebar-item-content">
         <img [ngSrc]="modal.element.mimeUrl" alt="" width="28" height="28">
-        <div class="text-truncate fs-2xs ms-2">{{ modal.element.name }}</div>
-        <button (click)="onClose($event, modal)" class="btn btn-xs btn-danger ms-auto">
+        <div class="text-truncate fs-sm mx-1">{{ modal.element.name }}</div>
+        <button (click)="onClose($event, modal)" class="btn btn-sm btn-danger ms-auto">
           <fa-icon [icon]="icons.faTimes"></fa-icon>
         </button>
       </div>

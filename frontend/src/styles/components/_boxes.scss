@@ -12,7 +12,7 @@
     padding: 0.3rem 0.8rem;
 
     > fa-icon {
-      font-size: 1rem;
+      font-size: $font-size-base;
 
       &:first-child {
         margin-right: 10px;
@@ -50,7 +50,7 @@
 
   > fa-icon {
     color: $gray;
-    font-size: $font-size-md;
+    font-size: $font-size-base;
   }
 }
 
@@ -114,7 +114,7 @@
     margin-left: auto;
     padding-right: 10px;
     z-index: 0;
-    font-size: 24px;
+    font-size: $font-size-2xl;
     color: rgba(0, 0, 0, 0.15);
   }
 

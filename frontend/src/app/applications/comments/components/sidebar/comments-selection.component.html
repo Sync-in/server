@@ -1,5 +1,5 @@
 <div class="sidebar-component-title">
-  <div class="input-group mb-0">
+  <div class="input-group input-group-sm mb-0">
     <input #CommentCreate
            (keyup.enter)="postComment()"
            [disabled]="!file()"
@@ -17,17 +17,17 @@
   </div>
 </div>
 @if (comments.length) {
-  <div appAutoResize class="fs-2xs p-2">
+  <div class="fs-sm p-2" appAutoResize>
     @for (comment of comments; track comment.id) {
       <div class="mb-1 app-small-card app-comment rounded">
         <div class="d-flex px-2 pt-2 pb-1">
-          <app-user-avatar [user]="comment.author" [width]="24" [height]="24"></app-user-avatar>
-          <div class="align-self-center ms-1">
+          <app-user-avatar class="me-1" [user]="comment.author" [width]="24" [height]="24"></app-user-avatar>
+          <div class="align-self-center">
             <b>{{ comment.author.isAuthor ? ('Me' | translate:locale.language) : comment.author.fullName }}</b>
           </div>
-          <div class="ms-auto align-self-center" style="font-size: 14px">
+          <div class="ms-auto align-self-center">
             @if (comment.author.isAuthor || comment.isFileOwner) {
-              <i (click)="onEditComment(comment)" class="cursor-pointer">
+              <i (click)="onEditComment(comment)" role="button" class="fs-md">
                 <fa-icon [icon]="icons.faEdit"></fa-icon>
               </i>
             }
@@ -35,25 +35,29 @@
         </div>
         <div class="pb-2 px-2">
           @if (comment.isEdited) {
-            <textarea #CommentUpdate [ngModel]="comment.content" [disabled]="!comment.author.isAuthor && comment.isFileOwner" class="form-control form-control-sm mt-1 mb-2" required></textarea>
+            <textarea #CommentUpdate
+                      [ngModel]="comment.content"
+                      [disabled]="!comment.author.isAuthor && comment.isFileOwner"
+                      class="form-control mt-1 mb-2" required>
+            </textarea>
             <div class="d-flex gap-2 w-100">
               <button (click)="updateComment(comment, CommentUpdate.value)"
                       [disabled]="!CommentUpdate.value || comment.content === CommentUpdate.value"
-                      class="btn btn-xxs btn-primary flex-fill"
+                      class="btn btn-xs btn-primary flex-fill"
                       role="button"
                       type="button"
                       l10nTranslate>
                 Update
               </button>
               <button (click)="onEditComment(comment)"
-                      class="btn btn-xxs btn-default flex-fill"
+                      class="btn btn-xs btn-default flex-fill"
                       role="button"
                       type="button"
                       l10nTranslate>
                 Cancel
               </button>
               <button (click)="removeComment(comment)"
-                      class="btn btn-xxs btn-danger flex-fill"
+                      class="btn btn-xs btn-danger flex-fill"
                       role="button"
                       type="button"
                       l10nTranslate>
@@ -65,7 +69,7 @@
             <span (mouseleave)="comment.isHover = false"
                   (mouseover)="comment.isHover = true"
                   (focus)="comment.isHover = true"
-                  class="text-muted no-select pt-1 fs-3xs">
+                  class="text-muted no-select pt-1 fs-2xs">
             @if (comment.isHover) {
               <span>{{ comment.dateToShow | amDateFormat }}</span>
             } @else {
@@ -81,4 +85,3 @@
     }
   </div>
 }
-

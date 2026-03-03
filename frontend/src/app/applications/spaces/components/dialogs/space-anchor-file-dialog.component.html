@@ -1,6 +1,6 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faAnchor" class="me-2"></fa-icon>
+    <fa-icon [icon]="icons.faAnchor"></fa-icon>
     <span l10nTranslate>Anchor files to a space</span>
   </h4>
   @if (loading) {
@@ -25,8 +25,8 @@
   </div>
 </div>
 <div class="modal-footer">
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()" [disabled]="submitted || !selectedSpace || !space.roots.length" class="btn btn-sm btn-primary" type="button" l10nTranslate>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onSubmit()" [disabled]="submitted || !selectedSpace || !space.roots.length" class="btn btn-primary" type="button" l10nTranslate>
     Confirm
   </button>
 </div>

@@ -1,13 +1,13 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faFolderClosed" class="me-2"></fa-icon>
+    <fa-icon [icon]="icons.faFolderClosed"></fa-icon>
     <span l10nTranslate>Add an external location</span>
   </h4>
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
 </div>
 <div class="modal-body form-validation">
   @if (withRootName) {
-    <input class="form-control form-control-sm my-2"
+    <input class="form-control my-2"
            appAutofocus
            [ngModel]="newSpaceRoot.name"
            (ngModelChange)="checkInput($event, true)"
@@ -16,7 +16,7 @@
            type="text"
            required>
   }
-  <input class="form-control form-control-sm my-4"
+  <input class="form-control my-4"
          appAutofocus
          [autoFocus]="!withRootName"
          [ngModel]="newSpaceRoot.externalPath"
@@ -31,8 +31,8 @@
     <span class="me-auto fs-sm text-danger text-truncate" l10nTranslate>{{ error }}</span>
   }
   @if (rootIsValid) {
-    <button (click)="onSubmit()" class="btn btn-sm btn-primary" type="button" l10nTranslate>Confirm</button>
+    <button (click)="onSubmit()" class="btn btn-primary" type="button" l10nTranslate>Confirm</button>
   } @else {
-    <button (click)="onValidRoot()" class="btn btn-sm btn-success" type="button" l10nTranslate>Check the location</button>
+    <button (click)="onValidRoot()" class="btn btn-success" type="button" l10nTranslate>Check the location</button>
   }
 </div>

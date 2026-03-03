@@ -1,7 +1,7 @@
 <div class="modal-header">
-  <h4 class="modal-title" translate>
+  <h4 class="modal-title">
     <fa-icon [icon]="icons.faTrashCan"></fa-icon>
-    <span class="ms-2" l10nTranslate>Clear events</span>
+    <span l10nTranslate>Clear events</span>
   </h4>
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
 </div>
@@ -15,7 +15,7 @@
   <span l10nTranslate>will be cleared</span>
 </div>
 <div class="modal-footer">
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="doClear()" class="btn btn-sm btn-danger" type="submit" l10nTranslate>Confirm</button>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="doClear()" class="btn btn-danger" type="submit" l10nTranslate>Confirm</button>
 </div>
 

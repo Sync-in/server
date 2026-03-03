@@ -1,7 +1,7 @@
 <div class="modal-header">
   <h4 class="modal-title">
     <fa-icon [icon]="icons.faRotate"></fa-icon>
-    <span class="ms-2">{{ syncPath.settings.name }}</span>
+    <span>{{ syncPath.settings.name }}</span>
   </h4>
   <button (click)="onMinimize()" aria-label="Minimize" class="btn-minimize btn-minimize-white" type="button"></button>
   <button (click)="onClose()" aria-label="Close" class="btn-close btn-close-white ms-3" type="button"></button>
@@ -10,7 +10,7 @@
   <div class="sync-report-layout">
     <div class="card dialog-tab-card sync-report-toolbar">
         <div class="sync-report-top-menu">
-          <button (click)="manageReport(!running)" class="btn btn-sm btn-default ms-1" type="button">
+          <button (click)="manageReport(!running)" class="btn btn-default ms-1" type="button">
             <div class="d-flex align-items-center">
               <fa-icon [icon]="running ? icons.faStop : icons.faFlask"></fa-icon>
               <span class="ms-1" l10nTranslate>Simulate</span>
@@ -30,7 +30,7 @@
               <button [(ngModel)]="this.showFiltered"
                       [tooltip]="'Show filtered files'|translate:locale.language"
                       placement="top"
-                      class="btn btn-sm btn-custom me-2"
+                      class="btn btn-custom me-2"
                       role="button"
                       type="button"
                       btnCheckbox>
@@ -39,8 +39,8 @@
               </button>
             }
             <div [tooltip]="'Go to' | translate:locale.language">
-              <div [isDisabled]="!transferSelected" class="btn-group btn-group-sm me-2" dropdown>
-                <button class="btn btn-sm btn-default dropdown-toggle" dropdownToggle type="button">
+              <div [isDisabled]="!transferSelected" class="btn-group me-2" dropdown>
+                <button class="btn btn-default dropdown-toggle" dropdownToggle type="button">
                   <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
                 </button>
                 <ul *dropdownMenu class="dropdown-menu" role="menu">
@@ -111,19 +111,19 @@
                             class="{{th.value.class}}">
                           @switch (th.key) {
                             @case ('action') {
-                              <span class="d-flex align-items-center" style="font-size: 14px">
+                              <span class="d-flex align-items-center" style="font-size: var(--font-size-sm)">
                               <fa-icon [icon]="s.sideIcon" class="{{s.sideIconClass}}"></fa-icon>
                               <fa-icon [icon]="s.actionIcon" class="circle-gray-icon-sm" size="sm"></fa-icon>
-                              <span class="fs-4xs" l10nTranslate>{{ s.actionText }}</span>
+                              <span class="fs-sm" l10nTranslate>{{ s.actionText }}</span>
                             </span>
                             }
                             @case ('file') {
-                              <div class="d-flex align-items-center fs-2xs">
+                              <div class="d-flex align-items-center fs-sm">
                                 <img [src]="s.mimeUrl" (error)="s.fallBackMimeUrl()" class="me-2" alt="" width="24">
-                                <span class="d-flex flex-column fs-2xs">
+                                <span class="d-flex flex-column fs-sm">
                               @if (s.fileDst) {
                                 <span class="{{s.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ s.fileDst }}</span>
-                                <span class="{{s.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} fs-3xs"><b l10nTranslate>Source</b>:&nbsp;{{ s.file }}</span>
+                                <span class="{{s.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} fs-sm"><b l10nTranslate>Source</b>:&nbsp;{{ s.file }}</span>
                               } @else {
                                 <span class="{{s.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ s.file }}</span>
                               }

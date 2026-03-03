@@ -1,5 +1,5 @@
 <div class="wizard">
-  <div class="d-flex flex-column text-center fs-sm">
+  <div class="d-flex flex-column text-center fs-md">
     <div class="mb-2" l10nTranslate>This wizard will help you synchronize a directory on your computer with a Sync-in directory.</div>
     <div>
       <div l10nTranslate>To begin, select a folder on your computer.</div>
@@ -8,14 +8,14 @@
   </div>
   <div class="d-flex flex-column h-100">
     @if (syncService.wizard.localPath) {
-      <div class="d-flex flex-column my-auto fs-sm">
+      <div class="d-flex flex-column my-auto">
         <fa-icon (click)="onReset()" [icon]="icons.faTimesCircle" size="2x" class="position-absolute align-self-center cursor-pointer" style="margin-left: 85px"></fa-icon>
         <img [src]="syncService.wizard.localPath.mimeUrl" alt="" class="align-self-center mb-2" height="96">
-        <div class="align-self-center mt-2 font-size-md word-break-all fw-500">{{ syncService.wizard.localPath.path }}</div>
+        <div class="align-self-center mt-2 fs-md word-break-all fw-500">{{ syncService.wizard.localPath.path }}</div>
         @if (infoMsg) {
           <div class="align-self-center text-warning mt-4">
             <span l10nTranslate>{{ infoMsg }}</span>
-            <span class="fw-semibold ms-1">:&nbsp;{{ syncService.wizard.localPath.origin }}</span>
+            <span class="text-bold ms-1">:&nbsp;{{ syncService.wizard.localPath.origin }}</span>
           </div>
         }
       </div>

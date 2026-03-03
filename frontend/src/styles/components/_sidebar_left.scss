@@ -30,9 +30,10 @@
         position: relative;
 
         &:not(:first-child) {
+          $icon-item-inset: 3px;
           box-sizing: border-box;
-          padding: 3px;
-          border-radius: $nav-pills-border-radius;
+          padding: $icon-item-inset;
+          border-radius: calc(#{$border-radius-base} + #{$icon-item-inset});
           background-clip: content-box !important;
         }
 
@@ -50,35 +51,49 @@
         }
 
         > fa-icon {
-          font-size: 1rem;
+          font-size: $font-size-xl;
         }
 
         > .logo-container {
           display: flex;
           justify-content: center;
-          align-items: center;
-          width: 30px;
-          height: 30px;
+          align-self: center;
+          width: 32px;
+          height: 32px;
           object-fit: cover;
           border-radius: 50%;
 
           > img {
-            height: 24px;
+            display: flex;
+            justify-content: center;
+            align-self: center;
+            height: 26px;
+            width: 26px;
           }
         }
 
 
         .menu-badge-icon {
           position: absolute;
-          font-size: $font-size-3xs;
+          font-size: $font-size-xs;
           width: $sidebar-apps-icons-width;
+          inset: 0;
+          pointer-events: none;
 
           .badge {
-            @extend .badge-small;
             @extend .badge-color-full;
             position: absolute;
-            right: 3px;
-            bottom: 1px;
+            top: 2px;
+            right: 2px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 5px;
+            border-radius: 9999px;
+            font-size: $font-size-2xs;
+            line-height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
           }
         }
       }
@@ -94,7 +109,7 @@
         box-sizing: border-box;
         padding: 3px 2px;
         z-index: $sidebar-z-index;
-        font-size: $font-size-2xs;
+        font-size: $font-size-sm;
         border-top-right-radius: $btn-border-radius;
         border-bottom-right-radius: $btn-border-radius;
 
@@ -123,7 +138,7 @@
           @extend .no-select-pointer;
 
           > fa-icon {
-            font-size: $font-size-md;
+            font-size: $font-size-base;
             margin-right: 0;
             width: .95rem;
             min-width: .95rem;
@@ -134,13 +149,17 @@
 
           .menu-badge {
             margin-left: auto;
-            font-size: $font-size-3xs;
+            font-size: $font-size-xs;
           }
         }
 
         > a.mini-submenu-item {
-          font-size: $font-size-3xs;
+          font-size: $font-size-xs;
           padding-left: 20px;
+
+          fa-icon {
+            font-size: $font-size-xs;
+          }
         }
       }
     }
@@ -186,7 +205,7 @@
         @extend .text-truncate;
         text-transform: uppercase;
         margin-right: auto;
-        font-size: $font-size-3xs;
+        font-size: $font-size-xs;
 
         > span {
           @extend .text-truncate;
@@ -204,7 +223,7 @@
         justify-content: center;
         min-height: $navbar-height;
         min-width: 30px;
-        font-size: $font-size-lg;
+        font-size: $font-size-xl;
         margin: 0;
         color: inherit;
 
@@ -219,7 +238,7 @@
       display: flex;
       flex-direction: column;
       flex: 1 1 auto;
-      padding-top: 3px;
+      padding-top: 2px;
     }
 
     .menus-group {
@@ -233,15 +252,14 @@
         min-height: $sidebar-apps-height;
         height: $sidebar-apps-height;
         min-width: $sidebar-apps-menus-width;
-        font-size: $font-size-xs;
         cursor: pointer;
 
         &.submenu {
           padding-left: 10px;
-          font-size: $font-size-2xs;
+          font-size: $font-size-sm;
 
           fa-icon {
-            font-size: $font-size-sm
+            font-size: $font-size-base;
           }
         }
 
@@ -260,7 +278,7 @@
           @extend .no-select-pointer;
 
           > fa-icon {
-            font-size: $font-size-md;
+            font-size: $font-size-lg;
             margin-right: 0;
             width: .95rem;
             min-width: .95rem;
@@ -271,7 +289,7 @@
 
           .menu-badge {
             margin-left: auto;
-            font-size: $font-size-3xs;
+            font-size: $font-size-xs;
           }
         }
 
@@ -300,13 +318,13 @@
         display: none !important;
       }
       display: flex;
-      padding: 5px;
+      padding: 4px;
       margin-left: auto;
       margin-top: auto;
 
       span {
         @extend .no-select;
-        font-size: $font-size-3xs;
+        font-size: $font-size-2xs;
       }
     }
   }

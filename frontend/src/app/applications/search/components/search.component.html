@@ -1,7 +1,7 @@
 <div class="app-top-menu">
   <div class="col-12 col-md-6 col-lg-4">
     <div class="input-group">
-      <button (click)="doSearch()" [disabled]="searchContent().length < minCharsToSearch" class="btn btn-sm btn-default" role="button" type="button">
+      <button (click)="doSearch()" [disabled]="searchContent().length < minCharsToSearch" class="btn btn-default" role="button" type="button">
         <fa-icon [icon]="loading ? icons.faSpinner : icons.SEARCH_ICON" [animation]="loading ? 'spin' : null"></fa-icon>
       </button>
       <input [value]="searchContent()"
@@ -9,7 +9,7 @@
              [placeholder]="(this.store.currentSearch().fullText ? 'Search for content' : 'Search for files')|translate:locale.language"
              (keyup.enter)="doSearch()"
              (keyup.escape)="clearSearch()"
-             class="search-input flex-fill form-control form-control-sm"
+             class="search-input flex-fill form-control"
              name="search"
              type="text"
              appAutofocus
@@ -24,7 +24,7 @@
               [tooltip]="'Search for content'|translate:locale.language"
               container="body"
               placement="bottom"
-              class="btn btn-sm btn-custom"
+              class="btn btn-custom"
               role="button"
               type="button"
               btnCheckbox>
@@ -35,7 +35,7 @@
   </div>
   <button (click)="goTo(null, selectedId)"
           [disabled]="selectedId === null"
-          class="search-go-to-btn d-none d-md-block btn btn-sm btn-default"
+          class="search-go-to-btn d-none d-md-block btn btn-default"
           [tooltip]="'Go to' | translate:locale.language"
           container="body"
           type="button">
