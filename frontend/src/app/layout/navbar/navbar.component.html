@@ -1,9 +1,24 @@
 <header class="main-header">
   <nav class="navbar navbar-content">
-    <a (click)="navigateTo('back')" class="d-sm-none navbar-button" role="button">
+    @if (!leftSideBarIsOpen) {
+      <a (click)="toggleLeftSideBar()" class="navbar-button navbar-logo-button navbar-logo-button--delayed" role="button">
+        <span class="logo-container">
+          <img alt="" class="logo-spin-in" [src]="logoIconUrl">
+        </span>
+      </a>
+    }
+    @if (leftSideBarIsOpen) {
+      <a (click)="navigateTo('back')" class="d-none d-sm-flex navbar-button navbar-history-button navbar-history-button-left" role="button">
+        <fa-icon [icon]="icons.faAngleLeft"></fa-icon>
+      </a>
+      <a (click)="navigateTo('next')" class="d-none d-sm-flex navbar-button navbar-history-button navbar-history-button-right" role="button">
+        <fa-icon [icon]="icons.faAngleRight"></fa-icon>
+      </a>
+    }
+    <a (click)="navigateTo('back')" class="d-sm-none navbar-button navbar-history-button navbar-history-button-left" role="button">
       <fa-icon [icon]="icons.faAngleLeft"></fa-icon>
     </a>
-    <a (click)="navigateTo('next')" class="d-sm-none navbar-button" role="button">
+    <a (click)="navigateTo('next')" class="d-sm-none navbar-button navbar-history-button navbar-history-button-right" role="button">
       <fa-icon [icon]="icons.faAngleRight"></fa-icon>
     </a>
     <div class="navbar-breadcrumb">

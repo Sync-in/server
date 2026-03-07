@@ -1,8 +1,17 @@
+.recents-dashboard {
+  padding: .4rem;
+}
+
+.recents-grid {
+  margin-left: 0;
+  margin-right: 0;
+}
+
 .recents-widget-card {
   position: relative;
   width: 100%;
   border: 1px solid;
-  border-radius: 14px;
+  border-radius: $border-radius;
   overflow: hidden;
   transition: box-shadow 0.14s ease;
 }

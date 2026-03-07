@@ -44,7 +44,7 @@ body {
 .content-wrapper {
   display: flex;
   position: relative;
-  margin-left: $sidebar-apps-menus-width + $sidebar-apps-icons-width;
+  margin-left: $sidebar-apps-menus-width;
   margin-right: $control-sidebar-menu-width;
   padding-top: $navbar-height;
   flex: 1 1 auto;

@@ -6,165 +6,6 @@
   height: 100%;
   z-index: $sidebar-z-index;
 
-  .sidebar-apps-icons {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    height: 100%;
-    width: $sidebar-apps-icons-width;
-
-    .menu {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100%;
-      width: $sidebar-apps-icons-width;
-      cursor: pointer;
-
-      > a {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: $sidebar-apps-height;
-        width: 100%;
-        position: relative;
-
-        &:not(:first-child) {
-          $icon-item-inset: 3px;
-          box-sizing: border-box;
-          padding: $icon-item-inset;
-          border-radius: calc(#{$border-radius-base} + #{$icon-item-inset});
-          background-clip: content-box !important;
-        }
-
-        &:first-child {
-          user-select: none;
-          background-color: $sidebar-light-apps-menu-title-bg;
-
-          &:hover {
-            background: $sidebar-light-icons-menu-hover-bg;
-          }
-
-          .logo-container {
-            background: $sidebar-light-apps-menu-hover-color;
-          }
-        }
-
-        > fa-icon {
-          font-size: $font-size-xl;
-        }
-
-        > .logo-container {
-          display: flex;
-          justify-content: center;
-          align-self: center;
-          width: 32px;
-          height: 32px;
-          object-fit: cover;
-          border-radius: 50%;
-
-          > img {
-            display: flex;
-            justify-content: center;
-            align-self: center;
-            height: 26px;
-            width: 26px;
-          }
-        }
-
-
-        .menu-badge-icon {
-          position: absolute;
-          font-size: $font-size-xs;
-          width: $sidebar-apps-icons-width;
-          inset: 0;
-          pointer-events: none;
-
-          .badge {
-            @extend .badge-color-full;
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            min-width: 16px;
-            height: 16px;
-            padding: 0 5px;
-            border-radius: 9999px;
-            font-size: $font-size-2xs;
-            line-height: 16px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-          }
-        }
-      }
-
-      .menu-mini {
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        position: absolute;
-        left: 100%;
-        top: 0;
-        width: calc($sidebar-apps-menus-width - 20px);
-        box-sizing: border-box;
-        padding: 3px 2px;
-        z-index: $sidebar-z-index;
-        font-size: $font-size-sm;
-        border-top-right-radius: $btn-border-radius;
-        border-bottom-right-radius: $btn-border-radius;
-
-        &.align-self-start {
-          top: 0;
-          bottom: auto;
-        }
-
-        &.align-self-end {
-          top: auto;
-          bottom: 0;
-        }
-
-        > a {
-          display: flex;
-          align-items: center;
-          gap: .5rem;
-          flex: 1 1 auto;
-          width: auto;
-          margin: 2px 2px;
-          justify-content: flex-start;
-          height: calc(#{$sidebar-apps-height} - 6px);
-          padding: 0 8px;
-          border-radius: $btn-border-radius;
-          @extend .text-truncate;
-          @extend .no-select-pointer;
-
-          > fa-icon {
-            font-size: $font-size-base;
-            margin-right: 0;
-            width: .95rem;
-            min-width: .95rem;
-            display: inline-flex;
-            justify-content: center;
-            opacity: .88;
-          }
-
-          .menu-badge {
-            margin-left: auto;
-            font-size: $font-size-xs;
-          }
-        }
-
-        > a.mini-submenu-item {
-          font-size: $font-size-xs;
-          padding-left: 20px;
-
-          fa-icon {
-            font-size: $font-size-xs;
-          }
-        }
-      }
-    }
-  }
-
   .sidebar-apps-menus {
     display: flex;
     flex-direction: column;
@@ -182,11 +23,11 @@
       background: $sidebar-light-apps-menu-title-bg;
       border-bottom: .5px solid $sidebar-light-apps-menu-title-bg;
 
-      > a {
+      .menu-title-content {
         @extend .text-truncate;
         display: flex;
         align-items: center;
-        padding-left: 8px;
+        padding-left: 6px;
         padding-right: 0;
         max-height: $sidebar-apps-height;
         width: 100%;
@@ -196,8 +37,28 @@
       &:hover, &.active {
         background: $sidebar-light-apps-menu-title-bg;
 
-        > a {
+        .menu-title-content {
           color: $sidebar-light-apps-menu-title-color;
+        }
+      }
+
+      .logo-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: $layout-logo-container-size;
+        width: $layout-logo-container-size;
+        height: $layout-logo-container-size;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        margin-right: .5rem;
+        background: $black;
+        cursor: pointer;
+
+        > img {
+          width: $layout-logo-image-size;
+          height: $layout-logo-image-size;
         }
       }
 
@@ -216,20 +77,58 @@
           font-size: $font-size-lg;
         }
       }
+    }
 
-      .sidebar-btn {
+    .apps-shortcuts {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.2rem 0;
+      padding: 0 6px 0 6px;
+      min-height: 40px;
+      max-height: 40px;
+      border-bottom: .5px solid transparent;
+      border-right: .5px solid transparent;
+
+      .app-shortcut {
+        flex: 0 0 calc(#{$sidebar-apps-height} - 8px);
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: $navbar-height;
-        min-width: 30px;
-        font-size: $font-size-xl;
-        margin: 0;
-        color: inherit;
+        width: calc(#{$sidebar-apps-height} - 8px);
+        height: calc(#{$sidebar-apps-height} - 8px);
+        border: .5px solid transparent;
+        border-radius: $btn-border-radius;
+        background: transparent;
+        cursor: pointer;
 
-        &:hover {
-          color: $white;
-          background: $sidebar-light-icons-menu-hover-bg;
+        > fa-icon {
+          font-size: $font-size-lg;
+        }
+
+        .menu-badge-icon {
+          position: absolute;
+          font-size: $font-size-xs;
+          width: 100%;
+          inset: 0;
+          pointer-events: none;
+
+          .badge {
+            @extend .badge-color-full;
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 5px;
+            border-radius: 9999px;
+            font-size: $font-size-2xs;
+            line-height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
         }
       }
     }
@@ -293,23 +192,6 @@
           }
         }
 
-        // Auto collapse on submenus
-
-        //&.collapse-hide {
-        //  min-height: 0 !important;
-        //  height: 0 !important;
-        //  overflow: hidden;
-        //  opacity: 0;
-        //  transition: all .2s ease-in-out;
-        //  border-bottom: none !important;
-        //}
-        //
-        //&.collapse-show {
-        //  min-height: $sidebar-apps-height;
-        //  height: $sidebar-apps-height;
-        //  opacity: 1;
-        //  transition: min-height .25s, height .25s, opacity .4s ease-in-out;
-        //}
       }
     }
 

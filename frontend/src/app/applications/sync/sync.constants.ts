@@ -41,7 +41,6 @@ export const SYNC_MENU: AppMenu = {
   checks: [{ prop: 'user', value: 'clientId' }],
   count: { value: new BehaviorSubject<number>(0), level: 'warning' },
   matchLink: new RegExp(`^${SYNC_PATH.BASE}`),
-  level: 3,
   submenus: [
     {
       title: SYNC_TITLE.SYNCS,

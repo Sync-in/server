@@ -13,7 +13,6 @@ export const APP_MENU: AppMenu = {
   title: 'NAVIGATION',
   icon: faCircleHalfStroke,
   link: '',
-  level: 0,
   submenus: []
 } as const
 

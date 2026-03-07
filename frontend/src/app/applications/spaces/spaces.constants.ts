@@ -86,7 +86,6 @@ export const SPACES_MENU: AppMenu = {
   icon: faFolderClosed,
   link: SPACES_PATH.PERSONAL_FILES,
   matchLink: new RegExp(`^${SPACES_PATH.SPACES}|^${SPACES_PATH.TRASH}|^${SPACES_PATH.SHARES}|^${SPACES_PATH.SHARED}|^${SPACES_PATH.LINKS}`),
-  level: 1,
   submenus: [
     {
       title: RECENTS_TITLE,

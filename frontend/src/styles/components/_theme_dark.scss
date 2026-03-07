@@ -1,33 +1,27 @@
 //Dark Sidebar Mixin
 @mixin skin-dark-left-sidebar() {
+  .main-header {
+    .navbar-content {
+      .navbar-logo-button {
+        .logo-container {
+          background: $sidebar-dark-icons-menu-bg;
+        }
+      }
+    }
+  }
+
   // Sidebar background color (Both .wrapper is responsible for sidebar bg color)
   .wrapper, .left-sidebar {
     background-color: $sidebar-dark-apps-menu-bg;
   }
   .left-sidebar {
-    // Side bar Menu apps
-    .sidebar-apps-icons {
-      background-color: $sidebar-dark-icons-menu-bg;
-
-      .menu > a {
-        color: $sidebar-dark-icons-menu-color;
-
-        &:not(:first-child) {
-          &:hover, &.active {
-            color: $sidebar-dark-icons-menu-hover-color;
-            background: $sidebar-dark-icons-menu-hover-bg;
-            border-right: .5px solid $sidebar-dark-icons-menu-bg;
-          }
-        }
-      }
-
-      .menu-mini {
+    .sidebar-apps-menus {
+      .apps-shortcuts {
         background-color: $sidebar-dark-apps-menu-bg;
-        border-top: .5px solid $sidebar-dark-icons-menu-border-color;
-        border-right: .5px solid $sidebar-dark-icons-menu-border-color;
-        border-bottom: .5px solid $sidebar-dark-icons-menu-border-color;
+        border-bottom-color: $dark-surface-border;
+        border-right-color: $sidebar-dark-icons-menu-border-color;
 
-        > a {
+        .app-shortcut {
           color: $sidebar-dark-apps-menu-border-color;
 
           &:hover, &.active {
@@ -41,17 +35,6 @@
         }
       }
 
-      .chat-item-sidebar {
-        color: $sidebar-dark-apps-menu-border-color;
-        border-bottom: .5px solid $sidebar-dark-mini-menu-bg;
-
-        &:hover, &.active {
-          background-color: darken($sidebar-dark-mini-menu-bg, 5%);
-        }
-      }
-    }
-
-    .sidebar-apps-menus {
       .menus-content {
         border-right: .5px solid $sidebar-dark-icons-menu-border-color;
       }
@@ -456,9 +439,9 @@
     --sync-client-card-selected-border: #{$dark-dialog-check-card-active-border-color};
     --sync-client-details-border: #{$dark-dialog-check-card-border-color};
     --sync-client-details-bg: linear-gradient(
-        158deg,
-        #{mix($dark-dialog-tab-bg, $sidebar-dark-apps-menu-bg, 68%)} 0%,
-        #{mix($sidebar-dark-apps-menu-title-bg, $dark-dialog-tab-bg, 62%)} 100%
+                    158deg,
+                    #{mix($dark-dialog-tab-bg, $sidebar-dark-apps-menu-bg, 68%)} 0%,
+                    #{mix($sidebar-dark-apps-menu-title-bg, $dark-dialog-tab-bg, 62%)} 100%
     );
     --sync-client-subtle-color: #{$dark-item-color};
     --sync-client-paths-count-fg: #{$white};

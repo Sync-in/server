@@ -3,7 +3,7 @@
   top: 0;
   right: 0;
   left: 0;
-  margin-left: $sidebar-apps-icons-width + $sidebar-apps-menus-width;
+  margin-left: $sidebar-apps-menus-width;
   max-height: $navbar-height;
   z-index: $sidebar-z-index;
   transform: translate3d(0, 0, 0);
@@ -29,11 +29,71 @@
 
     > a {
       padding: $nav-link-padding;
-      width: $sidebar-apps-icons-width;
+      min-width: $sidebar-apps-icons-width;
       justify-content: center;
     }
 
+    .navbar-logo-button {
+      padding: 0 .4rem 0 .4rem;
+
+      &.navbar-logo-button--delayed {
+        opacity: 0;
+        visibility: hidden;
+        animation: navbar-logo-show .01s linear $transition-speed forwards;
+      }
+
+      &:hover,
+      &:focus,
+      &:active {
+        background: transparent;
+      }
+
+      .logo-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: $layout-logo-container-size;
+        height: $layout-logo-container-size;
+        margin: auto;
+        border-radius: 50%;
+        background: $sidebar-light-apps-menu-hover-color;
+        transition: background-color $transition-speed $transition-fn;
+
+        > img {
+          width: $layout-logo-image-size;
+          height: $layout-logo-image-size;
+
+          &.logo-spin-in {
+            animation: logo-spin-in .45s $transition-fn $transition-speed both;
+            transform-origin: 50% 50%;
+          }
+        }
+      }
+    }
+
+    .navbar-history-button {
+      font-size: $font-size-lg;
+      color: $sidebar-light-apps-menu-title-color;
+
+      &:hover,
+      &:focus,
+      &:active {
+        background-color: $sidebar-light-icons-menu-hover-bg;
+        color: $white;
+      }
+    }
+
+    .navbar-history-button-left {
+      margin-left: -.5px;
+      border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 45%);
+    }
+
+    .navbar-history-button-right {
+      border-right: none;
+    }
+
     .navbar-breadcrumb {
+      border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 45%);
       max-width: 93%;
       @include media-breakpoint-down(sm) {
         display: none;
@@ -91,6 +151,28 @@
   }
 }
 
+@keyframes navbar-logo-show {
+  from {
+    opacity: 0;
+    visibility: hidden;
+  }
+  to {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+@keyframes logo-spin-in {
+  from {
+    transform: rotate(220deg);
+    opacity: .25;
+  }
+  to {
+    transform: rotate(0);
+    opacity: 1;
+  }
+}
+
 .breadcrumb {
   display: flex;
   align-items: center;
@@ -99,7 +181,7 @@
   height: $navbar-height;
   background: transparent;
   font-size: $font-size-sm;
-  padding: 10px 8px;
+  padding: .5rem;
   margin: 0;
   color: $sidebar-light-icons-menu-color;
 

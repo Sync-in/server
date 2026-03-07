@@ -13,6 +13,5 @@ export const SEARCH_MENU: AppMenu = {
   title: SEARCH_TITLE,
   link: SEARCH_PATH.BASE,
   icon: SEARCH_ICON,
-  level: 2,
   submenus: []
 } as const

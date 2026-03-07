@@ -1,34 +1,28 @@
 //Light Sidebar Mixins
 @mixin skin-light-left-sidebar() {
+  .main-header {
+    .navbar-content {
+      .navbar-logo-button {
+        .logo-container {
+          background: $sidebar-light-apps-menu-hover-color;
+        }
+      }
+    }
+  }
+
   // Sidebar background color (Both .wrapper is responsible for sidebar bg color)
   .wrapper, .left-sidebar {
     background-color: $sidebar-light-apps-menu-bg;
   }
   .left-sidebar {
-    // Side bar Menu apps
-    .sidebar-apps-icons {
-      background-color: $sidebar-light-icons-menu-bg;
-
-      .menu > a {
-        color: $sidebar-light-icons-menu-color;
-
-        &:not(:first-child) {
-          &:hover, &.active {
-            color: $sidebar-light-icons-menu-hover-color;
-            background: $sidebar-light-icons-menu-hover-bg;
-          }
-        }
-      }
-
-      .menu-mini {
+    .sidebar-apps-menus {
+      .apps-shortcuts {
         background-color: $light-sidebar-mini-bg;
-        border-top: .5px solid $sidebar-light-apps-menu-border-color;
-        border-right: .5px solid $sidebar-light-apps-menu-border-color;
-        border-bottom: .5px solid $sidebar-light-apps-menu-border-color;
+        border-bottom-color: $sidebar-light-apps-menu-border-color;
+        border-right-color: $sidebar-light-apps-menu-border-color;
 
-        > a {
+        .app-shortcut {
           color: $sidebar-light-apps-menu-hover-color;
-          border: .5px solid transparent;
 
           &:hover {
             background: $light-sidebar-mini-hover-bg;
@@ -37,7 +31,6 @@
           &.active {
             background: $light-sidebar-mini-active-bg;
             border-color: $light-sidebar-mini-active-border;
-            font-weight: 500;
             color: $navy;
 
             > fa-icon:first-child {
@@ -45,25 +38,8 @@
             }
           }
         }
-
-        .chat-item-sidebar {
-          background-color: $light-sidebar-mini-bg;
-          color: $sidebar-light-apps-menu-hover-color;
-
-          &:not(:last-child) {
-            border-bottom: .5px solid $light-sidebar-mini-bg !important;
-          }
-
-          &:hover, &.active {
-            border-left-color: transparent !important;
-            background: $light-sidebar-mini-active-bg !important;
-            color: $navy;
-          }
-        }
       }
-    }
 
-    .sidebar-apps-menus {
       .menus-content {
         background-color: $light-sidebar-mini-bg;
         border-right: .5px solid $sidebar-light-apps-menu-border-color;
@@ -416,9 +392,9 @@
     --sync-client-card-selected-border: #{$light-dialog-check-card-hover-border-color};
     --sync-client-details-border: #{$light-dialog-check-card-border-color};
     --sync-client-details-bg: linear-gradient(
-        158deg,
-        #{mix($theme-light-panel-bg, $white, 74%)} 0%,
-        #{mix($light-dialog-tab-card-bg, $theme-light-panel-bg, 68%)} 100%
+                    158deg,
+                    #{mix($theme-light-panel-bg, $white, 74%)} 0%,
+                    #{mix($light-dialog-tab-card-bg, $theme-light-panel-bg, 68%)} 100%
     );
     --sync-client-subtle-color: #{$light-text-muted-color};
     --sync-client-paths-count-fg: #{$white};

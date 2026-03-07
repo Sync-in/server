@@ -30,14 +30,11 @@ export interface AppMenu {
   link: string
   matchLink?: RegExp
   isActive?: boolean
-  miniOpened?: boolean
-  level?: number
   hide?: boolean
   count?: { value: Observable<any> & BehaviorSubject<any>; level: string }
   // prop must be an attribute of the userService
   checks?: { negate?: boolean; prop: 'user'; value: UserStatus }[]
   submenus?: AppMenu[]
-  component?: any
 }
 
 export interface TabMenu {

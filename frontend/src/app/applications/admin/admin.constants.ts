@@ -28,7 +28,6 @@ export const ADMIN_MENU: AppMenu = {
   link: `${ADMIN_PATH.BASE}/${ADMIN_PATH.USERS}`,
   icon: ADMIN_ICON.BASE,
   matchLink: new RegExp(`^${ADMIN_PATH.BASE}`),
-  level: 12,
   checks: [{ prop: 'user', value: 'isAdmin' }],
   submenus: [
     {
