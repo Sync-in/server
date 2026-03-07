@@ -49,7 +49,7 @@ body {
   padding-top: $navbar-height;
   flex: 1 1 auto;
   z-index: $content-z-index;
-  transition: margin-left $transition-speed $transition-fn;
+  transition: margin-left $transition-speed $transition-fn, margin-right $transition-speed $transition-fn;
 
   .content-container {
     padding-left: 0;

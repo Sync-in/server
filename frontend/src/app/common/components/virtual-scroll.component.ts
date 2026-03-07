@@ -89,6 +89,7 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
     skip(1),
     switchMap((state) => of(state).pipe(repeat({ count: 30, delay: 10 })))
   )
+  private toggleRightSidebar = this.layout.toggleRightSideBar.pipe(switchMap((state) => of(state).pipe(repeat({ count: 30, delay: 10 }))))
 
   @HostBinding('class.virtual-scroll-border-top')
   get withBorderTop(): boolean {
@@ -103,6 +104,7 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
       this.subscriptions.push(this.scrollChat.subscribe(() => this.checkScrollChat()))
     } else if (!this.galleryMode) {
       this.subscriptions.push(this.toggleLeftSidebar.subscribe(() => this.resizeTableHeader()))
+      this.subscriptions.push(this.toggleRightSidebar.subscribe(() => this.resizeTableHeader()))
     }
   }
 

@@ -115,15 +115,10 @@
   }
 }
 
-//Open without slide over content
-//.control-sidebar-open {
-//  .control-sidebar {
-//    right: $control-sidebar-menu-width;
-//  }
-//
-//  @include media-breakpoint-up(lg) {
-//    .content-wrapper {
-//      margin-right: $control-sidebar-width + $control-sidebar-menu-width;
-//    }
-//  }
-//}
+.control-sidebar-open {
+  @include media-breakpoint-up(md) {
+    .content-wrapper {
+      margin-right: $control-sidebar-width + $control-sidebar-menu-width;
+    }
+  }
+}
