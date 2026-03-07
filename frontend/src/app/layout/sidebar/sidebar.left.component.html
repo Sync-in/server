@@ -2,8 +2,8 @@
   <div class="sidebar-apps-icons">
     <div class="menu">
       <a (click)="toggleSideBar()"
-         (mouseenter)="onHoverIconsMenu(true, {title: appName}, true)"
-         (mouseleave)="onHoverIconsMenu(false, {title: appName}, true)">
+         (mouseenter)="onHoverIconsMenuMouse(true, {title: appName}, true)"
+         (mouseleave)="onHoverIconsMenuMouse(false, {title: appName}, true)">
         <div class="logo-container">
           <img alt="" [src]="logoIconUrl">
         </div>
@@ -15,8 +15,8 @@
       }
       @if (store.userImpersonate()) {
         <a (click)="logOut()"
-           (mouseenter)="onHoverIconsMenu(true, {title: 'logout'})"
-           (mouseleave)="onHoverIconsMenu(false, {title: 'logout'})">
+           (mouseenter)="onHoverIconsMenuMouse(true, {title: 'logout'})"
+           (mouseleave)="onHoverIconsMenuMouse(false, {title: 'logout'})">
           <fa-icon [icon]="icons.faUserSecret"></fa-icon>
         </a>
       }
@@ -68,8 +68,8 @@
 </ng-template>
 <ng-template #sidebarMenuIcons let-mainMenu="menu" let-previousLevel="previousLevel">
   <a [class.mt-auto]="previousLevel < 9 && mainMenu.level > 9" [class.active]="mainMenu.isActive"
-     (mouseenter)="onHoverIconsMenu(true, mainMenu)"
-     (mouseleave)="onHoverIconsMenu(false, mainMenu)"
+     (mouseenter)="onHoverIconsMenuMouse(true, mainMenu)"
+     (mouseleave)="onHoverIconsMenuMouse(false, mainMenu)"
      (click)="checkMenuContext(mainMenu)">
     <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: mainMenu, isMenuIcon: true}"></ng-container>
     <!-- start mini menu-->

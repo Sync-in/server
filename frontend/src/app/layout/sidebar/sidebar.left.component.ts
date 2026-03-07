@@ -101,6 +101,13 @@ export class SideBarLeftComponent implements OnDestroy {
     }
   }
 
+  onHoverIconsMenuMouse(state: boolean, menu: AppMenu | any, ignoreCollapse = false) {
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      return
+    }
+    this.onHoverIconsMenu(state, menu, ignoreCollapse)
+  }
+
   onMiniMenuNavigate(ev: MouseEvent, url: string[], menu: AppMenu = null) {
     ev.stopPropagation()
     this.navigateToUrl(url, menu)

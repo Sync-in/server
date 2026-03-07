@@ -1,4 +1,4 @@
-import { Component, DOCUMENT, HostListener, inject, OnDestroy, Renderer2 } from '@angular/core'
+import { Component, DOCUMENT, HostListener, inject, OnDestroy, OnInit, Renderer2 } from '@angular/core'
 import { RouterOutlet } from '@angular/router'
 import { Subscription } from 'rxjs'
 import { themeLight } from './layout.interfaces'
@@ -12,7 +12,7 @@ import { SideBarRightComponent } from './sidebar/sidebar.right.component'
   templateUrl: 'layout.component.html',
   imports: [RouterOutlet, NavBarComponent, SideBarLeftComponent, SideBarRightComponent]
 })
-export class LayoutComponent implements OnDestroy {
+export class LayoutComponent implements OnDestroy, OnInit {
   protected themeMode = themeLight
   private readonly document = inject<Document>(DOCUMENT)
   private readonly layout = inject(LayoutService)
@@ -29,6 +29,11 @@ export class LayoutComponent implements OnDestroy {
     this.subscriptions.push(this.layout.toggleLeftSideBar.subscribe((status) => this.toggleLeftSideBar(status)))
   }
 
+  ngOnInit() {
+    this.isSmallerThanMediumScreen = this.layout.isSmallerMediumScreen()
+    this.checkLeftSideBarCollapse()
+  }
+
   ngOnDestroy() {
     this.subscriptions.forEach((s) => s.unsubscribe())
   }
@@ -36,8 +41,9 @@ export class LayoutComponent implements OnDestroy {
   @HostListener('window:resize')
   onResize() {
     this.layout.resizeEvent.next()
-    if (this.isSmallerThanMediumScreen !== this.layout.isSmallerMediumScreen()) {
-      this.isSmallerThanMediumScreen = !this.isSmallerThanMediumScreen
+    const isSmallerThanMediumScreen = this.layout.isSmallerMediumScreen()
+    if (this.isSmallerThanMediumScreen !== isSmallerThanMediumScreen) {
+      this.isSmallerThanMediumScreen = isSmallerThanMediumScreen
       this.checkLeftSideBarCollapse()
     }
   }
