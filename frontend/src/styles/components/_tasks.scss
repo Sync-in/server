@@ -1,5 +1,5 @@
 .task-list {
-  @extend .no-select-pointer;
+  @include no-select-pointer-utility;
   border-bottom: .5px solid transparent;
   font-size: $font-size-sm;
 

@@ -99,7 +99,8 @@ export class LayoutComponent implements OnDestroy, OnInit {
     if (this.isSmallerThanMediumScreen) {
       this.toggleLeftSideBar(2)
     } else {
-      this.toggleLeftSideBar(this.layout.saveLeftSideBarIsOpen.getValue() ? 1 : 2)
+      this.layout.saveLeftSideBarIsOpen.next(true)
+      this.toggleLeftSideBar(1)
     }
   }
 

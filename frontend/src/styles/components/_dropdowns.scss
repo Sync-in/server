@@ -4,10 +4,6 @@
 
   > li > a {
     @include app-menu-item-structure($btn-border-radius, 1px);
-
-    > .fas, .far {
-      margin-right: 10px;
-    }
   }
 
   .dropdown-header {

@@ -10,11 +10,11 @@
     max-height: 41.5px;
     height: 41.5px;
     line-height: 1;
-    @extend .no-select;
+    @include no-select-utility;
 
     .modal-title {
       font-size: $font-size-base;
-      @extend .text-truncate;
+      @include text-truncate-utility;
 
       > fa-icon {
         margin-right: 0.3rem;
@@ -67,7 +67,7 @@
     }
 
     .app-tab-label {
-      @extend .text-truncate;
+      @include text-truncate-utility;
       max-width: 100%;
     }
 

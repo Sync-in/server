@@ -2,20 +2,20 @@
   @if (multiple()) {
     <div class="fs-sm">
       <div class="d-flex justify-content-center mt-2">
-        <button (click)="addToClipboard()" class="btn btn-sm btn-primary me-1" type="button" l10nTranslate>
+        <button (click)="addToClipboard()" class="btn btn-primary me-1" type="button" l10nTranslate>
           <fa-icon [icon]="icons.faClipboardCheck"></fa-icon>
           Send to Clipboard
         </button>
       </div>
     </div>
-    <hr class="mx-0 mt-2 mb-0">
+    <hr class="mx-0 mt-3 mb-1">
   }
   <div appAutoResize class="fs-sm" [resizeOffset]=resizeOffset()>
     @if (multiple()) {
       <div class="flex-column p-2 w-100">
         @for (f of files(); track f.id) {
           <div class="d-inline-flex w-100 align-content-center align-items-center mx-1">
-            <img [src]="f.mimeUrl" alt="" class="me-1" height="30" width="auto" (error)="f.fallBackMimeUrl()">
+            <img [src]="f.mimeUrl" alt="" class="me-1" height="28" width="auto" (error)="f.fallBackMimeUrl()">
             <span class="text-truncate">{{ f.name }}</span>
           </div>
         }

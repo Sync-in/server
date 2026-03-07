@@ -1,76 +1,67 @@
 .circle-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  min-height: 30px;
-  font-size: $font-size-lg;
-  border-radius: 50%;
+  @include circle-icon-utility;
 }
 
 .circle-icon-sm {
-  @extend .circle-icon;
-  min-width: 23px;
-  min-height: 23px;
-  font-size: $font-size-sm;
+  @include circle-icon-sm-utility;
 }
 
 .circle-gray-icon {
-  @extend .circle-icon;
+  @include circle-icon-utility;
   background-color: darken($gray-light, 2%);
   color: black;
 }
 
 .circle-gray-icon-sm {
-  @extend .circle-icon-sm;
+  @include circle-icon-sm-utility;
   background-color: darken($gray-light, 2%);
   color: black;
 }
 
 .circle-primary-icon, .circle-enabled-icon {
-  @extend .circle-icon;
+  @include circle-icon-utility;
   background: linear-gradient(#0086d7, #00456f);
   color: whitesmoke;
 }
 
 .circle-primary-icon-sm {
-  @extend .circle-icon-sm;
+  @include circle-icon-sm-utility;
   background: linear-gradient(#0086d7, #00456f);
   color: whitesmoke;
 }
 
 .circle-purple-icon {
-  @extend .circle-icon;
+  @include circle-icon-utility;
   background: linear-gradient(#965ab4, #5a3778);
   color: whitesmoke;
 }
 
 .circle-purple-icon-sm {
-  @extend .circle-icon-sm;
+  @include circle-icon-sm-utility;
   background: linear-gradient(#965ab4, #5a3778);
   color: whitesmoke;
 }
 
 .circle-sync-icon {
-  @extend .circle-icon;
+  @include circle-icon-utility;
   background: linear-gradient(#f06400, #962800);
   color: whitesmoke;
 }
 
 .circle-error-icon {
-  @extend .circle-icon;
+  @include circle-icon-utility;
   background: linear-gradient(#e63228, #c80f0a);
   color: whitesmoke;
 }
 
 .circle-error-icon-sm {
-  @extend .circle-icon-sm;
+  @include circle-icon-sm-utility;
   background: linear-gradient(#e63228, #c80f0a);
   color: whitesmoke;
 }
 
 .circle-disabled-icon {
-  @extend .circle-icon;
+  @include circle-icon-utility;
   background: linear-gradient(#818181, #434343);
   color: whitesmoke;
 }

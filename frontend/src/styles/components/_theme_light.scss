@@ -1,15 +1,5 @@
 //Light Sidebar Mixins
 @mixin skin-light-left-sidebar() {
-  .main-header {
-    .navbar-content {
-      .navbar-logo-button {
-        .logo-container {
-          background: $sidebar-light-apps-menu-hover-color;
-        }
-      }
-    }
-  }
-
   // Sidebar background color (Both .wrapper is responsible for sidebar bg color)
   .wrapper, .left-sidebar {
     background-color: $sidebar-light-apps-menu-bg;
@@ -470,10 +460,6 @@
   }
   .profile-page {
     background-color: $gray-lightest;
-
-    .box {
-      background-color: $gray-lighter;
-    }
   }
   .user-groups-page {
     .app-table > tbody {
@@ -632,10 +618,6 @@
       background-color: $white;
     }
 
-    .product-img {
-      background-color: $gray-lightest;
-      border: 0.5px solid darken($gray-lighter, 4%);
-    }
   }
   .bg-theme {
     background-color: darken($gray-lighter, 3%);
@@ -713,12 +695,6 @@
       color: $light-text-muted-color;
       border: 1px dashed rgba($light-surface-border, 0.52);
     }
-  }
-  .products-list > li:hover {
-    background-color: lighten($table-bg-hover, 2%);
-  }
-  .product-list-in-box {
-    border-bottom-color: $gray-lighter;
   }
   .avatar-img {
     background-color: darken($gray-light, 5%);

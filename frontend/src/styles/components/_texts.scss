@@ -31,9 +31,7 @@
 }
 
 .text-truncate {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  @include text-truncate-utility;
 }
 
 .text-file-name-preserve {
@@ -69,7 +67,7 @@
 }
 
 .text-bold {
-  font-weight: 550;
+  font-weight: 500;
 }
 
 .fs-lg {

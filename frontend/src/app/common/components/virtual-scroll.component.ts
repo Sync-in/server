@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  EventEmitter,
   HostBinding,
   inject,
   Input,
@@ -10,13 +9,11 @@ import {
   OnChanges,
   OnDestroy,
   OnInit,
-  Output,
   Renderer2,
   SimpleChanges,
   ViewChild
 } from '@angular/core'
-import { of, repeat, skip, Subject, Subscription } from 'rxjs'
-import { debounceTime, switchMap } from 'rxjs/operators'
+import { Subscription } from 'rxjs'
 import { LayoutService } from '../../layout/layout.service'
 
 @Component({
@@ -56,11 +53,8 @@ import { LayoutService } from '../../layout/layout.service'
 export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
   @ViewChild('content', { read: ElementRef, static: true }) contentElementRef: ElementRef
   @ViewChild('shim', { read: ElementRef, static: true }) shimElementRef: ElementRef
-  @Output() isScrollBottom = new EventEmitter<boolean>()
-  @Output() isScrollTop = new EventEmitter<boolean>()
   @Input() resizeOffset = 134
   @Input() galleryMode = false
-  @Input() selectedChat: any = null
   @Input() items: T[] = []
   @Input() childHeight = 35
   @Input() childWidth: number
@@ -72,24 +66,20 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
   private readonly layout = inject(LayoutService)
   private subscriptions: Subscription[] = []
   private scrollbarWidth = 0
-  private _scrollChat = new Subject<void>()
-  private scrollChat = this._scrollChat.asObservable().pipe(debounceTime(50))
+  private lastHeaderWidth = -1
   private previousStart: number
   private previousEnd: number
   private startupLoop = true
   private dimensionsView: any
-  private scrollTimer: any = null
+  private scrollTimer: ReturnType<typeof setTimeout> | null = null
   private eventScrollHandler: () => void | undefined
+  private resizeObserver: ResizeObserver | null = null
+  private resizeTableHeaderRafId: number | null = null
+  private calculateItemsRafId: number | null = null
   /** Cache of the last scroll height to prevent setting CSS when not needed. */
   private lastScrollHeight = -1
   /** Cache of the last top padding to prevent setting CSS when not needed. */
   private lastTopPadding = -1
-  // Watch sidebars actions to adapt layout
-  private toggleLeftSidebar = this.layout.toggleLeftSideBar.pipe(
-    skip(1),
-    switchMap((state) => of(state).pipe(repeat({ count: 30, delay: 10 })))
-  )
-  private toggleRightSidebar = this.layout.toggleRightSideBar.pipe(switchMap((state) => of(state).pipe(repeat({ count: 30, delay: 10 }))))
 
   @HostBinding('class.virtual-scroll-border-top')
   get withBorderTop(): boolean {
@@ -99,12 +89,8 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
   ngOnInit() {
     this.resizeOffsetHeight(true)
     this.addParentEventHandlers()
-    if (this.selectedChat) {
-      this.childHeight = 1
-      this.subscriptions.push(this.scrollChat.subscribe(() => this.checkScrollChat()))
-    } else if (!this.galleryMode) {
-      this.subscriptions.push(this.toggleLeftSidebar.subscribe(() => this.resizeTableHeader()))
-      this.subscriptions.push(this.toggleRightSidebar.subscribe(() => this.resizeTableHeader()))
+    if (!this.galleryMode) {
+      this.observeTableHeaderWidth()
     }
   }
 
@@ -112,6 +98,22 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
     if (this.eventScrollHandler) {
       this.eventScrollHandler()
       this.eventScrollHandler = undefined
+    }
+    if (this.scrollTimer) {
+      clearTimeout(this.scrollTimer)
+      this.scrollTimer = null
+    }
+    if (this.resizeTableHeaderRafId !== null) {
+      cancelAnimationFrame(this.resizeTableHeaderRafId)
+      this.resizeTableHeaderRafId = null
+    }
+    if (this.calculateItemsRafId !== null) {
+      cancelAnimationFrame(this.calculateItemsRafId)
+      this.calculateItemsRafId = null
+    }
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect()
+      this.resizeObserver = null
     }
     this.subscriptions.forEach((s) => s.unsubscribe())
   }
@@ -131,7 +133,6 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
       }
     }
     this.refresh(true)
-    this.checkChangesOnChat(changes)
   }
 
   refresh(updateDimensions = false) {
@@ -139,9 +140,16 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
       if (updateDimensions || !this.dimensionsView) {
         this.calculateDimensions()
       }
-      requestAnimationFrame(() => this.calculateItems())
+      if (this.calculateItemsRafId === null) {
+        this.calculateItemsRafId = requestAnimationFrame(() => {
+          this.calculateItemsRafId = null
+          this.calculateItems()
+        })
+      }
     })
-    this.resizeTableHeader()
+    if (!this.galleryMode && updateDimensions) {
+      this.resizeTableHeader()
+    }
   }
 
   scrollInto(item: any) {
@@ -168,69 +176,6 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
     this.refresh()
   }
 
-  private checkChangesOnChat(changes) {
-    if (this.selectedChat) {
-      if ((changes as any).selectedChat) {
-        this.renderer.setStyle(this.element.nativeElement, 'visibility', 'hidden')
-        setTimeout(() => {
-          if (this.selectedChat.lastScrollPosition === null) {
-            this.saveChatScrollPosition(this.element.nativeElement.scrollHeight)
-          }
-          this.element.nativeElement.scrollTo({ left: 0, top: this.selectedChat.lastScrollPosition, behavior: 'auto' })
-          this.checkScrollChat()
-          this.renderer.setStyle(this.element.nativeElement, 'visibility', 'visible')
-        }, 50)
-      } else if (this.chatIsScrolledToBottom()) {
-        this.restoreBottomScrollChat()
-      } else if (this.chatIsScrolledToTop()) {
-        this.restoreTopScrollChat()
-      }
-    }
-  }
-
-  private checkScrollChat() {
-    const isOnBottom = this.chatIsScrolledToBottom()
-    const isOnTop = this.chatIsScrolledToTop()
-    if (isOnTop) {
-      this.saveChatScrollPosition(this.element.nativeElement.scrollHeight - this.element.nativeElement.scrollTop)
-    } else if (isOnBottom) {
-      this.saveChatScrollPosition(this.element.nativeElement.scrollHeight)
-    } else {
-      this.saveChatScrollPosition()
-    }
-    this.ngZone.run(() => {
-      this.isScrollBottom.next(isOnBottom)
-      this.isScrollTop.next(isOnTop)
-    })
-  }
-
-  private saveChatScrollPosition(value = null) {
-    this.selectedChat.lastScrollPosition = value ? value : this.element.nativeElement.scrollTop
-  }
-
-  private chatIsScrolledToBottom() {
-    return (
-      Math.ceil(this.element.nativeElement.clientHeight / 10) * 10 ===
-      Math.ceil((this.element.nativeElement.scrollHeight - this.element.nativeElement.scrollTop) / 10) * 10
-    )
-  }
-
-  private chatIsScrolledToTop() {
-    return this.element.nativeElement.scrollTop <= 300
-  }
-
-  private restoreBottomScrollChat() {
-    setTimeout(() => {
-      this.element.nativeElement.scrollTo({ left: 0, top: this.element.nativeElement.scrollHeight, behavior: 'smooth' })
-    }, 50)
-  }
-
-  private restoreTopScrollChat() {
-    setTimeout(() => {
-      this.element.nativeElement.scrollTop = this.element.nativeElement.scrollHeight - this.selectedChat.lastScrollPosition
-    }, 50)
-  }
-
   private tableScrollHovering = () => {
     clearTimeout(this.scrollTimer)
     if (!this.contentElementRef.nativeElement.classList.contains('table-disable-hover')) {
@@ -251,60 +196,53 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
     this.refresh()
   }
 
-  private refreshChatWithoutDimensions = () => {
-    if (this.chatIsScrolledToTop() && !this.selectedChat.allHistoryLoaded) {
-      this.element.nativeElement.scrollTo({ left: 0, top: this.element.nativeElement.scrollTop, behavior: 'auto' })
-    } else {
-      this.refreshWithoutDimensions()
-      this._scrollChat.next()
-    }
-  }
-
-  private refreshChatWithDimensions = () => {
-    this.resizeOffsetHeight()
-    this.refresh(true)
-    if (this.selectedChat.isScrolledToBottom) {
-      this.scrollInto(-2)
-    } else {
-      this._scrollChat.next()
-    }
-  }
-
   private resizeOffsetHeight(force = false) {
-    const offset = window.innerHeight - this.resizeOffset
-    if (force || this.element.nativeElement.offsetHeight !== offset) {
-      this.renderer.setStyle(this.element.nativeElement, 'height', `${offset - 1}px`)
+    const targetHeight = window.innerHeight - this.resizeOffset - 1
+    if (force || this.element.nativeElement.offsetHeight !== targetHeight) {
+      this.renderer.setStyle(this.element.nativeElement, 'height', `${targetHeight}px`)
     }
   }
 
-  private resizeTableHeader() {
+  private resizeTableHeader(force = false) {
     if (
-      !this.selectedChat &&
       !this.galleryMode &&
       this.element.nativeElement.previousElementSibling &&
       this.element.nativeElement.previousElementSibling.classList.contains('app-table')
     ) {
-      setTimeout(
-        () => this.renderer.setStyle(this.element.nativeElement.previousElementSibling, 'width', `${this.element.nativeElement.clientWidth}px`),
-        50
-      )
+      const tableHeader = this.element.nativeElement.previousElementSibling
+      const width = this.element.nativeElement.clientWidth
+      if (!force && width === this.lastHeaderWidth) {
+        return
+      }
+      this.lastHeaderWidth = width
+      if (this.resizeTableHeaderRafId !== null) {
+        cancelAnimationFrame(this.resizeTableHeaderRafId)
+      }
+      this.resizeTableHeaderRafId = requestAnimationFrame(() => {
+        this.renderer.setStyle(tableHeader, 'width', `${width}px`)
+        this.resizeTableHeaderRafId = null
+      })
     }
+  }
+
+  private observeTableHeaderWidth() {
+    if (typeof ResizeObserver === 'undefined') {
+      return
+    }
+    this.ngZone.runOutsideAngular(() => {
+      this.resizeObserver = new ResizeObserver(() => this.resizeTableHeader())
+      this.resizeObserver.observe(this.element.nativeElement)
+    })
   }
 
   private addParentEventHandlers() {
     this.ngZone.runOutsideAngular(() => {
       if (this.galleryMode) {
         this.eventScrollHandler = this.renderer.listen(this.element.nativeElement, 'scroll', this.refreshWithoutDimensions)
-      } else if (this.selectedChat) {
-        this.eventScrollHandler = this.renderer.listen(this.element.nativeElement, 'scroll', this.refreshChatWithoutDimensions)
       } else {
         this.eventScrollHandler = this.renderer.listen(this.element.nativeElement, 'scroll', this.tableScrollHovering)
       }
-      if (this.selectedChat) {
-        this.subscriptions.push(this.layout.resizeEvent.subscribe(() => this.refreshChatWithDimensions()))
-      } else {
-        this.subscriptions.push(this.layout.resizeEvent.subscribe(() => this.refreshWithDimensions()))
-      }
+      this.subscriptions.push(this.layout.resizeEvent.subscribe(() => this.refreshWithDimensions()))
     })
   }
 

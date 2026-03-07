@@ -35,12 +35,7 @@
 
     .navbar-logo-button {
       padding: 0 .4rem 0 .4rem;
-
-      &.navbar-logo-button--delayed {
-        opacity: 0;
-        visibility: hidden;
-        animation: navbar-logo-show .01s linear $transition-speed forwards;
-      }
+      flex-shrink: 0;
 
       &:hover,
       &:focus,
@@ -48,15 +43,30 @@
         background: transparent;
       }
 
+      &.navbar-logo-button--delayed {
+        opacity: 0;
+        visibility: hidden;
+        animation: navbar-logo-show .12s $transition-fn calc(#{$transition-speed} - .09s) forwards;
+
+        @include media-breakpoint-down(md) {
+          opacity: 1;
+          visibility: visible;
+          animation: none;
+        }
+      }
+
       .logo-container {
         display: flex;
         align-items: center;
         justify-content: center;
+        flex: 0 0 $layout-logo-container-size;
+        min-width: $layout-logo-container-size;
+        min-height: $layout-logo-container-size;
         width: $layout-logo-container-size;
         height: $layout-logo-container-size;
         margin: auto;
         border-radius: 50%;
-        background: $sidebar-light-apps-menu-hover-color;
+        background: $black;
         transition: background-color $transition-speed $transition-fn;
 
         > img {
@@ -64,7 +74,7 @@
           height: $layout-logo-image-size;
 
           &.logo-spin-in {
-            animation: logo-spin-in .45s $transition-fn $transition-speed both;
+            animation: logo-spin-in .45s $transition-fn calc(#{$transition-speed} - .09s) both;
             transform-origin: 50% 50%;
           }
         }
@@ -85,7 +95,9 @@
 
     .navbar-history-button-left {
       margin-left: -.5px;
-      border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 45%);
+      @include media-breakpoint-up(sm) {
+        border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
+      }
     }
 
     .navbar-history-button-right {
@@ -93,8 +105,11 @@
     }
 
     .navbar-breadcrumb {
-      border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 45%);
-      max-width: 93%;
+      border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: none;
+      overflow: hidden;
       @include media-breakpoint-down(sm) {
         display: none;
       }
@@ -103,6 +118,8 @@
     .navbar-right-side {
       display: flex;
       margin-left: auto;
+      flex: 0 0 auto;
+      min-width: $sidebar-apps-icons-width;
 
       .menu {
         display: flex;
@@ -165,11 +182,9 @@
 @keyframes logo-spin-in {
   from {
     transform: rotate(220deg);
-    opacity: .25;
   }
   to {
     transform: rotate(0);
-    opacity: 1;
   }
 }
 
@@ -178,6 +193,7 @@
   align-items: center;
   align-content: center;
   justify-content: flex-start;
+  min-width: 0;
   height: $navbar-height;
   background: transparent;
   font-size: $font-size-sm;
@@ -188,13 +204,15 @@
   .breadcrumb-content {
     display: flex;
     align-items: center;
-    justify-content: center;
-    @extend .text-truncate;
-    @extend .no-select-pointer;
+    justify-content: flex-start;
+    width: 100%;
+    min-width: 0;
+    @include text-truncate-utility;
+    @include no-select-pointer-utility;
 
     > li {
       &:not(:first-child) {
-        @extend .text-truncate;
+        @include text-truncate-utility;
       }
 
       display: inline;

@@ -73,7 +73,7 @@
       position: relative;
 
       span {
-        @extend .no-select;
+        @include no-select-utility;
       }
     }
   }

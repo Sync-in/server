@@ -2,7 +2,7 @@ import { KeyValuePipe } from '@angular/common'
 import { ChangeDetectionStrategy, Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faArrowDown, faArrowUp, faCog, faTh, faThLarge, faThList } from '@fortawesome/free-solid-svg-icons'
+import { faArrowDown, faArrowUp, faSliders, faTh, faThLarge, faThList } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { LayoutService } from '../../../layout/layout.service'
@@ -33,7 +33,7 @@ export class NavigationViewComponent {
   @Output() switchView = new EventEmitter<ViewMode>()
   @Output() sortBy = new EventEmitter()
   protected readonly originalOrderKeyValue = originalOrderKeyValue
-  protected readonly icons = { faCog, faArrowDown, faArrowUp }
+  protected readonly icons = { faSliders, faArrowDown, faArrowUp }
   protected viewsMode: Record<string, ViewMode> = {
     tl: { enabled: false, text: 'List', icon: faThList },
     th: { enabled: true, text: 'S', icon: faTh, maxBadges: 0, dimensions: 96, image: 56, imageRes: 128, faSize: 30, textSize: 11, margins: 18 },

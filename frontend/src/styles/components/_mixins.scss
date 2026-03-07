@@ -51,3 +51,36 @@
     margin: $margin;
   }
 }
+
+@mixin text-truncate-utility {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@mixin no-select-utility {
+  cursor: default;
+  user-select: none;
+}
+
+@mixin no-select-pointer-utility {
+  @include no-select-utility;
+  cursor: pointer;
+}
+
+@mixin circle-icon-utility {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  min-height: 30px;
+  font-size: $font-size-lg;
+  border-radius: 50%;
+}
+
+@mixin circle-icon-sm-utility {
+  @include circle-icon-utility;
+  min-width: 23px;
+  min-height: 23px;
+  font-size: $font-size-sm;
+}

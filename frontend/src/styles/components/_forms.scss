@@ -34,7 +34,7 @@
 .form-check-label {
   font-weight: inherit;
   cursor: pointer !important;
-  @extend .no-select;
+  @include no-select-utility;
 
   input {
     margin-right: 0.25rem;

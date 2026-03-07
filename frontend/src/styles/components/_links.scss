@@ -35,7 +35,7 @@
   }
 
   .error-code {
-    @extend .no-select-pointer;
+    @include no-select-pointer-utility;
     color: #fff;
     font-size: $font-size-xl;
     font-weight: 600;

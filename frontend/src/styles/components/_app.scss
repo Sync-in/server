@@ -226,7 +226,7 @@
 
 .app-table {
   @extend .table;
-  @extend .no-select;
+  @include no-select-utility;
   table-layout: fixed;
   width: 100%;
   background-color: transparent;
@@ -270,7 +270,7 @@
   }
 
   tbody tr td {
-    @extend .text-truncate;
+    @include text-truncate-utility;
     border: none !important;
     vertical-align: middle;
     max-width: 0;
@@ -278,7 +278,7 @@
     padding-top: 1px;
 
     span {
-      @extend .text-truncate;
+      @include text-truncate-utility;
     }
 
     .badge {
@@ -438,7 +438,7 @@ app-input-filter {
 }
 
 .app-foot-menu {
-  @extend .no-select;
+  @include no-select-utility;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -454,10 +454,6 @@ app-input-filter {
 
   @include media-breakpoint-down(sm) {
     font-size: $font-size-2xs;
-  }
-
-  &.pagination-container {
-    height: 40px;
   }
 }
 
@@ -486,7 +482,7 @@ app-input-filter {
   display: flex;
   padding: .4rem;
   @extend .app-div-hovered;
-  @extend .no-select-pointer;
+  @include no-select-pointer-utility;
   height: $sidebar-apps-height;
 }
 

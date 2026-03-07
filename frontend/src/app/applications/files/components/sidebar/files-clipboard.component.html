@@ -13,7 +13,7 @@
 @if (files.length) {
   <div class="px-2 pt-2 pb-2 fs-xs">
     <div class="d-flex justify-content-between mt-2">
-      <select [(ngModel)]="selectedAction" class="form-select my-auto">
+      <select [(ngModel)]="selectedAction" class="form-select form-select-sm">
         @for (item of operations| keyvalue: originalOrderKeyValue; track item.key) {
           <option [ngValue]="item.key" l10nTranslate>{{ item.value.text }}</option>
         }
@@ -21,7 +21,7 @@
       <button (click)="doAction()" class="btn btn-xs btn-primary ms-1" type="button" l10nTranslate>Confirm</button>
     </div>
   </div>
-  <hr class="mx-0 mt-2 mb-0">
+  <hr class="mx-0 my-2">
   <div appAutoResize class="sidebar-item" [resizeOffset]=120>
     @for (f of files; track f.id) {
       <div class="sidebar-item-container">

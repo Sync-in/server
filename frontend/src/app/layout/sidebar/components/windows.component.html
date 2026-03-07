@@ -12,7 +12,7 @@
       <div class="sidebar-item-content">
         <img [ngSrc]="modal.element.mimeUrl" alt="" width="28" height="28">
         <div class="text-truncate fs-sm mx-1">{{ modal.element.name }}</div>
-        <button (click)="onClose($event, modal)" class="btn btn-sm btn-danger ms-auto">
+        <button (click)="onClose($event, modal)" class="btn btn-xs btn-danger ms-auto">
           <fa-icon [icon]="icons.faTimes"></fa-icon>
         </button>
       </div>

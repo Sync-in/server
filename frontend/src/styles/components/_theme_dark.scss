@@ -1,15 +1,5 @@
 //Dark Sidebar Mixin
 @mixin skin-dark-left-sidebar() {
-  .main-header {
-    .navbar-content {
-      .navbar-logo-button {
-        .logo-container {
-          background: $sidebar-dark-icons-menu-bg;
-        }
-      }
-    }
-  }
-
   // Sidebar background color (Both .wrapper is responsible for sidebar bg color)
   .wrapper, .left-sidebar {
     background-color: $sidebar-dark-apps-menu-bg;
@@ -654,10 +644,6 @@
       border-bottom-color: $sidebar-dark-icons-menu-border-color;
     }
 
-    .product-img {
-      background-color: darken($sidebar-dark-icons-menu-border-color, 8%);
-      border: 1px solid $sidebar-dark-icons-menu-border-color;
-    }
   }
   app-files-recents-widget,
   app-comments-recents-widget {
@@ -726,12 +712,6 @@
       color: $dark-item-color;
       border: 1px dashed rgba($dark-surface-border, 0.62);
     }
-  }
-  .products-list > li:hover {
-    background-color: darken($sidebar-dark-apps-menu-title-bg, 2%);
-  }
-  .product-list-in-box {
-    border-bottom-color: $sidebar-dark-icons-menu-border-color;
   }
   .ui-disabled {
     background-color: $sidebar-dark-icons-menu-bg !important;

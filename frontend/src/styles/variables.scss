@@ -233,7 +233,7 @@ $badge-padding-y: .35rem !default;
 // Pagination
 // --------------------------------------------------------
 
-$pagination-font-size: $font-size-2xs !important;
+$pagination-font-size: $font-size-sm !important;
 $pagination-color: $body-color;
 $pagination-hover-color: darken($body-color, 4%);
 $pagination-focus-color: $pagination-hover-color;

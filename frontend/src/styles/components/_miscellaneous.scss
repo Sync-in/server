@@ -26,13 +26,11 @@ mark, .mark {
 }
 
 .no-select {
-  cursor: default;
-  user-select: none;
+  @include no-select-utility;
 }
 
 .no-select-pointer {
-  @extend .no-select;
-  cursor: pointer;
+  @include no-select-pointer-utility;
 }
 
 .overflow-wrap-and-whitespace {
@@ -60,6 +58,6 @@ mark, .mark {
 }
 
 label {
-  @extend .no-select;
+  @include no-select-utility;
   font-weight: 500;
 }

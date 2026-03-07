@@ -14,7 +14,7 @@
 @if (store.appStoreManifest()) {
   <div class="profile-page user-applications-page d-flex flex-column fs-sm" appAutoResize [resizeOffset]="80" style="height: 100%">
     <div class="container-fluid p-2">
-      <div class="row g-3">
+      <div class="row g-4">
         @for (app of APP_STORE_PLATFORM_LIST; track $index) {
           <div class="col-12 col-md-6 col-xl-4 d-flex">
             <div class="card dialog-tab-card dialog-check-card--interactive app-download-card text-center w-100 h-100">

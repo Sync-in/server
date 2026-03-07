@@ -41,7 +41,7 @@
   padding: $box-padding;
 
   .box-title {
-    @extend .no-select;
+    @include no-select-utility;
     display: inline-block;
     font-size: $font-size-xs;
     margin: 0;
