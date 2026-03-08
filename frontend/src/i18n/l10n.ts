@@ -39,8 +39,14 @@ export const i18nLanguageText: Record<i18nLocaleSupported | typeof USER_LANGUAGE
   zh: '中文（简体) '
 }
 
+type L10nSchema = { locale: { language: i18nLocaleSupported }; dir: 'ltr' | 'rtl' }[]
+
+const LANG_SCHEMA: L10nSchema = (Object.keys(i18nLanguageText) as (keyof typeof i18nLanguageText)[])
+  .filter((language): language is i18nLocaleSupported => language !== USER_LANGUAGE_AUTO)
+  .map((language) => ({ locale: { language }, dir: 'ltr' as const }))
+
 export const l10nConfig: L10nConfig & {
-  schema: { locale: { language: i18nLocaleSupported }; dir: 'ltr' | 'rtl' }[]
+  schema: L10nSchema
 } = {
   format: LANG_FORMAT,
   // Provider without static asset: resources will be loaded through TranslationLoader
@@ -49,22 +55,7 @@ export const l10nConfig: L10nConfig & {
   cache: true,
   keySeparator: '|',
   defaultLocale: { language: LANG_DEFAULT },
-  schema: [
-    { locale: { language: 'de' }, dir: 'ltr' },
-    { locale: { language: 'en' }, dir: 'ltr' },
-    { locale: { language: 'es' }, dir: 'ltr' },
-    { locale: { language: 'fr' }, dir: 'ltr' },
-    { locale: { language: 'hi' }, dir: 'ltr' },
-    { locale: { language: 'it' }, dir: 'ltr' },
-    { locale: { language: 'ja' }, dir: 'ltr' },
-    { locale: { language: 'ko' }, dir: 'ltr' },
-    { locale: { language: 'pl' }, dir: 'ltr' },
-    { locale: { language: 'pt' }, dir: 'ltr' },
-    { locale: { language: 'pt-BR' }, dir: 'ltr' },
-    { locale: { language: 'ru' }, dir: 'ltr' },
-    { locale: { language: 'tr' }, dir: 'ltr' },
-    { locale: { language: 'zh' }, dir: 'ltr' }
-  ]
+  schema: LANG_SCHEMA
 }
 
 export function getBrowserL10nLocale(): L10nLocale {

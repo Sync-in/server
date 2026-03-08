@@ -139,6 +139,46 @@ npm -w backend run start:dev
 - Prefer clear naming and documentation within your code
 - Document significant architectural changes and updates
 
+## i18n Translations
+
+All translation files follow the same structure:
+
+- **Key**: the original text in **English** (used as the reference in the code)
+- **Value**: the translated text in the target language
+
+### Translation Locations
+
+Translations must be added or updated in the following directories.
+
+#### Backend
+
+Used for **notifications** and **emails**.
+
+To declare a new language:
+
+1. Edit `backend/src/common/i18n.ts` and add the language code to the `LANG_SUPPORTED` constant.
+2. Create a new language file in `backend/src/applications/notifications/i18n/` named `language_region.ts` (lowercase, with an underscore separating
+   the region).
+3. Import the new file in `backend/src/applications/notifications/i18n/index.ts`, like the other languages, and add it to the `translations` variable.
+
+#### Frontend
+
+Used for the **web user interface**.
+
+To declare a new language:
+
+1. Edit `frontend/src/i18n/l10n.ts` and add the language code and language name to the `i18nLanguageText` variable.
+2. Create a new language file in `frontend/src/i18n` named `language-region.json`, using the same language code declared previously.
+3. Import the *ngx-bootstrap* locale in `frontend/src/i18n/lib/bs.i18n.ts`. Check if the locale exists in:  
+   https://github.com/valor-software/ngx-bootstrap/tree/development/src/chronos/i18n
+4. Import *day.js* locale in `frontend/src/i18n/lib/dayjs.i18n.ts`. Check if the locale exists in:  
+   https://github.com/iamkun/dayjs/tree/dev/src/locale
+
+> [!TIP]
+> English is the default language used in the codebase.  
+> Since translation keys are written in English, the English translation file may be missing or incomplete. This is expected.  
+> Any other translation file can be used as a reference for the structure.
+
 ## Troubleshooting
 
 - **Backend:** Check API logs for errors. Use your browser to test endpoints.
