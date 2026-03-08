@@ -25,6 +25,7 @@ jest.mock('../../../configuration/config.environment', () => ({
         redirectUri: 'https://api.example.test/auth/oidc/callback',
         security: {
           scope: 'openid profile email',
+          supportPKCE: true,
           tokenSigningAlg: 'RS256',
           userInfoSigningAlg: 'RS256',
           tokenEndpointAuthMethod: 'client_secret_basic',
@@ -161,6 +162,23 @@ describe(AuthProviderOIDC.name, () => {
     const url = new URL(authUrl)
     expect(url.searchParams.get('code_challenge')).toBe('challenge-1')
     expect(url.searchParams.get('client_id')).toBe('client-id')
+  })
+
+  it('does not use PKCE when supportPKCE is false', async () => {
+    ;(service as any).oidcConfig.security.supportPKCE = false
+    jest.spyOn(service, 'getConfig').mockResolvedValue(makeConfig(true) as any)
+    ;(randomState as jest.Mock).mockReturnValue('state-1')
+    ;(randomNonce as jest.Mock).mockReturnValue('nonce-1')
+    const reply = makeReply()
+
+    const authUrl = await service.getAuthorizationUrl(reply as any)
+
+    expect(randomPKCECodeVerifier).not.toHaveBeenCalled()
+    expect(calculatePKCECodeChallenge).not.toHaveBeenCalled()
+    expect(reply.setCookie).not.toHaveBeenCalledWith(OAuthCookie.CodeVerifier, expect.anything(), expect.any(Object))
+    const url = new URL(authUrl)
+    expect(url.searchParams.get('code_challenge')).toBeNull()
+    ;(service as any).oidcConfig.security.supportPKCE = true
   })
 
   it('handles callback success and clears cookies', async () => {

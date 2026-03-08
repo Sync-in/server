@@ -20,6 +20,10 @@ export class AuthProviderOIDCSecurityConfig {
   @Matches(/\bopenid\b/, { message: 'OIDC scope must include "openid"' })
   scope = 'openid email profile'
 
+  @IsOptional()
+  @IsBoolean()
+  supportPKCE? = true
+
   @Transform(({ value }) => value || OAuthTokenEndpoint.ClientSecretBasic)
   @IsEnum(OAuthTokenEndpoint)
   tokenEndpointAuthMethod: OAuthTokenEndpoint = OAuthTokenEndpoint.ClientSecretBasic

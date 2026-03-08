@@ -81,8 +81,8 @@ export class AuthProviderOIDC implements AuthProvider {
     const state = randomState()
     const nonce = randomNonce()
 
-    const supportsPKCE = config.serverMetadata().supportsPKCE()
-    const codeVerifier = supportsPKCE ? randomPKCECodeVerifier() : undefined
+    const isPKCEEnabled = this.isPKCEEnabled(config)
+    const codeVerifier = isPKCEEnabled ? randomPKCECodeVerifier() : undefined
 
     const authUrl = new URL(config.serverMetadata().authorization_endpoint!)
     authUrl.searchParams.set('client_id', this.oidcConfig.clientId!)
@@ -91,7 +91,7 @@ export class AuthProviderOIDC implements AuthProvider {
     authUrl.searchParams.set('scope', this.oidcConfig.security.scope)
     authUrl.searchParams.set('state', state)
     authUrl.searchParams.set('nonce', nonce)
-    if (supportsPKCE) {
+    if (isPKCEEnabled) {
       const codeChallenge = await calculatePKCECodeChallenge(codeVerifier!)
       authUrl.searchParams.set('code_challenge', codeChallenge)
       authUrl.searchParams.set('code_challenge_method', 'S256')
@@ -108,7 +108,7 @@ export class AuthProviderOIDC implements AuthProvider {
     // Store state, nonce, and codeVerifier in httpOnly cookies (expires in 10 minutes)
     res.setCookie(OAuthCookie.State, state, OAuthCookieSettings)
     res.setCookie(OAuthCookie.Nonce, nonce, OAuthCookieSettings)
-    if (supportsPKCE) {
+    if (isPKCEEnabled) {
       res.setCookie(OAuthCookie.CodeVerifier, codeVerifier, OAuthCookieSettings)
     }
     return authUrl.toString()
@@ -116,7 +116,7 @@ export class AuthProviderOIDC implements AuthProvider {
 
   async handleCallback(req: FastifyRequest, res: FastifyReply, query: Record<string, string>): Promise<UserModel> {
     const config = await this.getConfig()
-    const supportsPKCE = config.serverMetadata().supportsPKCE()
+    const isPKCEEnabled = this.isPKCEEnabled(config)
     const [expectedState, expectedNonce, codeVerifier] = [
       req.cookies[OAuthCookie.State],
       req.cookies[OAuthCookie.Nonce],
@@ -128,11 +128,11 @@ export class AuthProviderOIDC implements AuthProvider {
         throw new HttpException('OAuth state is missing', HttpStatus.BAD_REQUEST)
       }
 
-      if (supportsPKCE && !codeVerifier?.length) {
+      if (isPKCEEnabled && !codeVerifier?.length) {
         throw new HttpException('OAuth code verifier is missing', HttpStatus.BAD_REQUEST)
       }
 
-      const pkceCodeVerifier = supportsPKCE ? codeVerifier : undefined
+      const pkceCodeVerifier = isPKCEEnabled ? codeVerifier : undefined
       const callbackParams = new URLSearchParams(query)
 
       // Get Desktop Port if defined
@@ -273,6 +273,10 @@ export class AuthProviderOIDC implements AuthProvider {
         return None()
       }
     }
+  }
+
+  private isPKCEEnabled(config: Configuration): boolean {
+    return (this.oidcConfig.security.supportPKCE ?? true) && config.serverMetadata().supportsPKCE()
   }
 
   private async processUserInfo(userInfo: UserInfoResponse, ip?: string): Promise<UserModel> {

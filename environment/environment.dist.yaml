@@ -258,6 +258,10 @@ auth:
       # Common scopes: openid (required), email, profile, groups, roles
       # default: `openid email profile`
       scope: openid email profile
+      # supportPKCE: Enable PKCE (Proof Key for Code Exchange) in the authorization code flow.
+      # When true, PKCE is used if supported by the OIDC provider.
+      # default: true
+      supportPKCE: true
       # OAuth 2.0 / OIDC client authentication method used at the token endpoint.
       # Possible values:
       # - client_secret_basic (DEFAULT): HTTP Basic auth using client_id and client_secret.
