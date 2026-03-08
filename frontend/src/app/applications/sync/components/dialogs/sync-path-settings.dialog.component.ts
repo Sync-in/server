@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faRotate, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { TabDirective, TabsetComponent } from 'ngx-bootstrap/tabs'
+import { TabDirective, TabHeadingDirective, TabsetComponent } from 'ngx-bootstrap/tabs'
 import { ELECTRON_DIALOG } from '../../../../electron/constants/dialogs'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
@@ -16,8 +16,18 @@ import { SyncPathSettingsComponent } from '../shared/sync-path-settings.componen
 
 @Component({
   selector: 'app-sync-path-settings-dialog',
-  imports: [TabsetComponent, L10nTranslatePipe, TabDirective, SyncPathSettingsComponent, FormsModule, FaIconComponent, L10nTranslateDirective],
-  templateUrl: 'sync-path-settings.dialog.component.html'
+  imports: [
+    TabsetComponent,
+    L10nTranslatePipe,
+    TabDirective,
+    SyncPathSettingsComponent,
+    FormsModule,
+    FaIconComponent,
+    L10nTranslateDirective,
+    TabHeadingDirective
+  ],
+  templateUrl: 'sync-path-settings.dialog.component.html',
+  styleUrl: 'sync-path-settings.dialog.component.scss'
 })
 export class SyncPathSettingsDialogComponent implements OnInit {
   @Input({ required: true }) syncPathSelected: SyncPathModel

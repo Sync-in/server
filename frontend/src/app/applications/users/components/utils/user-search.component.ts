@@ -47,6 +47,7 @@ export class UserSearchComponent implements OnInit {
   @Input() searchFunction: (search: string) => any
   @Input() editFunction: (member: MemberModel) => void = null
   @Input() customPlaceholder: string
+  @Input() rowBackgroundClass = 'bg-theme'
   protected locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly MEMBER_TYPE = MEMBER_TYPE
   protected readonly originalOrderKeyValue = originalOrderKeyValue

@@ -1,13 +1,12 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
-import { FormGroup, FormsModule, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
+import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
+import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCopy, faKey, faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faCopy, faKey } from '@fortawesome/free-solid-svg-icons'
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { AUTH_SCOPE } from '@sync-in-server/backend/src/authentication/constants/scope'
 import { createLightSlug, currentDate } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { BsDatepickerDirective, BsDatepickerInputDirective } from 'ngx-bootstrap/datepicker'
 import { ClipboardService } from 'ngx-clipboard'
 import { filter } from 'rxjs/operators'
@@ -23,28 +22,25 @@ import { UserService } from '../../user.service'
     FaIconComponent,
     L10nTranslateDirective,
     TimeDateFormatPipe,
-    FormsModule,
     AutofocusDirective,
     L10nTranslatePipe,
     BsDatepickerDirective,
     BsDatepickerInputDirective,
     ReactiveFormsModule,
-    ButtonCheckboxDirective,
     CapitalizePipe
   ],
   templateUrl: './user-auth-manage-app-passwords-dialog.component.html'
 })
-export class UserAuthManageAppPasswordsDialogComponent implements OnInit {
+export class UserAuthManageAppPasswordsDialogComponent {
   @Input({ required: true }) appPasswords: Omit<UserAppPassword, 'password'>[] = []
   @Output() nbAppPasswords = new EventEmitter<number>()
   protected locale = inject<L10nLocale>(L10N_LOCALE)
   protected availableApps: AUTH_SCOPE[] = Object.values(AUTH_SCOPE)
-  protected allowGeneration = false
   protected generatedPassword: UserAppPassword
   protected readonly minDate: Date = currentDate()
   protected hasError: string
   protected submitted = false
-  protected readonly icons = { faKey, faCopy, faPlus }
+  protected readonly icons = { faKey, faCopy }
   private readonly fb = inject(UntypedFormBuilder)
   protected appPasswordForm: FormGroup = this.fb.group({
     name: this.fb.control('', [Validators.required]),
@@ -62,12 +58,6 @@ export class UserAuthManageAppPasswordsDialogComponent implements OnInit {
       this.hasError = undefined
       this.appPasswordForm.controls.name.setValue(createLightSlug(value), { emitEvent: false })
     })
-  }
-
-  ngOnInit() {
-    if (this.appPasswords.length === 0) {
-      this.allowGeneration = true
-    }
   }
 
   onClose() {
@@ -108,15 +98,6 @@ export class UserAuthManageAppPasswordsDialogComponent implements OnInit {
 
   clipBoardPassword() {
     this.clipBoardService.copyFromContent(this.generatedPassword.password)
-    this.layout.sendNotification('info', 'Generated password', 'Copied')
-  }
-
-  onAllowGenerationChange() {
-    if (this.generatedPassword) {
-      this.generatedPassword = null
-      this.allowGeneration = true
-    } else {
-      this.allowGeneration = !this.allowGeneration
-    }
+    this.layout.sendNotification('success', 'Generated password', 'Copied')
   }
 }

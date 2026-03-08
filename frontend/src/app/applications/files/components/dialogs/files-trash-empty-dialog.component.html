@@ -1,6 +1,6 @@
 <div class="modal-header">
-  <h4 class="modal-title" l10nTranslate>
-    <fa-icon [icon]="icons.faTrashCan" class="me-1"></fa-icon>
+  <h4 class="modal-title">
+    <fa-icon [icon]="icons.faTrashCan"></fa-icon>
     <span l10nTranslate>Trash</span>
     @if (submitted) {
       <fa-icon [icon]="icons.faSpinner" animation="spin" class="ms-2"></fa-icon>
@@ -9,10 +9,10 @@
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
 </div>
 <div class="modal-body">
-  <div l10nTranslate>Would you like to empty the trash ?</div>
+  <div class="mb-3" l10nTranslate>Would you like to empty the trash ?</div>
   <small l10nTranslate>All items will be permanently deleted</small>
 </div>
 <div class="modal-footer">
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()" [disabled]="submitted" class="btn btn-sm btn-danger" type="button" l10nTranslate>Confirm</button>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onSubmit()" [disabled]="submitted" class="btn btn-danger" type="button" l10nTranslate>Confirm</button>
 </div>

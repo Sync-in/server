@@ -1,131 +1,30 @@
-.bg-gray-dark {
-  background-color: $gray-700;
+$background-variants: (
+  'bg-gray-dark': (tone: 'gray-dark-bg'),
+  'bg-purple': (tone: 'purple', important: true),
+  'bg-maroon': (tone: 'maroon'),
+  'bg-secondary-alt': (tone: 'secondary-alt-bg', text: black),
+  'bg-gray-light-important': (tone: 'gray-light', important: true)
+);
+
+@each $selector, $config in $background-variants {
+  .#{$selector} {
+    @if map-get($config, important) == true {
+      background-color: semantic-tone(map-get($config, tone)) !important;
+    } @else {
+      background-color: semantic-tone(map-get($config, tone));
+    }
+
+    @if map-get($config, text) != null {
+      color: map-get($config, text);
+    }
+  }
 }
 
-.bg-gray-light {
-  background-color: $gray-light;
-}
-
-.bg-gray-light-important {
-  background-color: $gray-light !important;
-}
-
-.bg-gray-lighter {
-  background-color: $gray-lighter;
-}
-
-.bg-primary-purple {
-  background: linear-gradient(110deg, $primary 50%, $purple 50%);
-}
-
-.bg-purple {
-  background-color: $purple !important;
-}
-
-.bg-maroon {
-  background-color: $maroon;
-}
-
-.bg-green-active {
-  background-color: lighten($green, 5%) !important;
-}
-
-.bg-white {
-  background-color: white;
-}
-
-.bg-body {
-  background-color: $body-bg;
-}
-
-.bg-secondary-alt {
-  background-color: $secondary;
-  color: black;
+.bg-soft-warning {
+  background-color: rgba(semantic-tone('warning'), 0.6) !important;
 }
 
 .drag-over {
-  background-color: $secondary !important;
+  background-color: semantic-tone('secondary-alt-bg') !important;
   color: black !important;
-}
-
-.newly {
-  border-bottom: .5px solid $gray-light;
-}
-
-.newly-0 {
-  @extend .newly;
-  background-color: transparent !important;
-}
-
-.newly-1, .prop-newly-1 {
-  @extend .newly-0;
-  color: white !important;
-  background-color: $purple !important;
-}
-
-.newly-2, .prop-newly-2 {
-  @extend .newly-0;
-  color: white !important;
-  background-color: lighten($purple, 15%) !important;
-}
-
-.newly-3, .prop-newly-3 {
-  @extend .newly-0;
-  background-color: lighten($purple, 30%) !important;
-  color: inherit !important;
-}
-
-.prop-newly-0 {
-  color: inherit;
-  background-color: inherit;
-}
-
-.prop-newly-4 {
-  @extend .text-danger
-}
-
-.sync-newly-0 {
-  color: white;
-  background-color: $red !important;
-}
-
-.sync-newly-1 {
-  @extend .sync-newly-0;
-  background-color: $primary !important;
-}
-
-.sync-newly-2 {
-  @extend .sync-newly-0;
-  background-color: lighten($primary, 15%) !important;
-}
-
-.sync-newly-3 {
-  @extend .sync-newly-0;
-  background-color: lighten($primary, 30%) !important;
-}
-
-.sync-newly-4 {
-  @extend .sync-newly-0;
-  background-color: $orange !important;
-}
-
-.comment-newly-0 {
-  border-bottom: .5px solid $gray-light;
-}
-
-.comment-newly-1 {
-  @extend .comment-newly-0;
-  color: white !important;
-  background-color: $green !important;
-}
-
-.comment-newly-2 {
-  @extend .comment-newly-1;
-  background-color: lighten($green, 5%) !important;
-}
-
-.comment-newly-3 {
-  @extend .comment-newly-1;
-  background-color: lighten($green, 12%) !important;
-  color: inherit !important;
 }

@@ -148,6 +148,14 @@ export class SpaceDialogComponent implements OnInit {
     this.space.disabledAt = status ? null : new Date()
   }
 
+  toggleSpaceStatusFromCard() {
+    this.setSpaceStatus(!this.space.enabled)
+  }
+
+  toggleFullTextSearchFromCard() {
+    this.space.storageIndexing = !this.space.storageIndexing
+  }
+
   onCancel() {
     if (this.confirmDeletion) {
       this.confirmDeletion = false

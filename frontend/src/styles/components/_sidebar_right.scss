@@ -20,12 +20,13 @@
   }
 
   .sidebar-title, .sidebar-component-title {
-    @extend .no-select;
+    @include no-select-utility;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 500;
     height: $sidebar-apps-height;
-    font-size: $font-size-xs;
+    font-size: $font-size-base;
     padding: .3rem .6rem;
   }
 
@@ -45,7 +46,7 @@
         display: flex;
         align-items: center;
         width: 100%;
-        height: $sidebar-apps-height;
+        height: 35px;
         padding: .2rem .4rem .2rem .4rem;
         border-bottom: .5px solid transparent;
       }
@@ -84,18 +85,26 @@
         justify-content: center;
         min-height: $sidebar-apps-height;
         width: 100%;
+        position: relative;
+        box-sizing: border-box;
+        $icon-item-inset: 3px;
+        padding: $icon-item-inset;
         cursor: pointer;
+        border-radius: calc(#{$border-radius-base} + #{$icon-item-inset});
+        background-clip: content-box !important;
 
-        > i {
-          font-size: 1rem;
+        > fa-icon {
+          font-size: $font-size-xl;
         }
 
         .menu-badge {
           position: absolute;
-          font-size: .65rem;
-          width: $control-sidebar-menu-width;
+          font-size: $font-size-xs;
+          width: 100%;
 
           .badge {
+            @extend .badge-small;
+            @extend .badge-color-full;
             position: absolute;
             right: 3px;
             bottom: 1px;
@@ -106,15 +115,10 @@
   }
 }
 
-//Open without slide over content
-//.control-sidebar-open {
-//  .control-sidebar {
-//    right: $control-sidebar-menu-width;
-//  }
-//
-//  @include media-breakpoint-up(lg) {
-//    .content-wrapper {
-//      margin-right: $control-sidebar-width + $control-sidebar-menu-width;
-//    }
-//  }
-//}
+.control-sidebar-open {
+  @include media-breakpoint-up(lg) {
+    .content-wrapper {
+      margin-right: $control-sidebar-width + $control-sidebar-menu-width;
+    }
+  }
+}

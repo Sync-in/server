@@ -7,6 +7,7 @@ import { MEMBER_TYPE } from '@sync-in-server/backend/src/applications/users/cons
 import type { UserCreateOrUpdateGroupDto } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-group.dto'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
+import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
 import { LayoutService } from '../../../../layout/layout.service'
 import { UserType } from '../../interfaces/user.interface'
 import { MemberModel } from '../../models/member.model'
@@ -15,7 +16,7 @@ import { UserService } from '../../user.service'
 
 @Component({
   selector: 'app-user-group-dialog',
-  imports: [ReactiveFormsModule, FormsModule, FaIconComponent, L10nTranslateDirective, AutofocusDirective],
+  imports: [ReactiveFormsModule, FormsModule, FaIconComponent, L10nTranslateDirective, AutofocusDirective, TimeDateFormatPipe],
   templateUrl: 'user-group-dialog.component.html'
 })
 export class UserGroupDialogComponent implements OnInit {

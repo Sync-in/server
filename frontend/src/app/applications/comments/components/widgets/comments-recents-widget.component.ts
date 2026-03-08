@@ -16,7 +16,8 @@ import { CommentsService } from '../../services/comments.service'
 @Component({
   selector: 'app-comments-recents-widget',
   imports: [L10nTranslateDirective, FaIconComponent, TimeAgoPipe, UserAvatarComponent],
-  templateUrl: './comments-recents-widget.component.html'
+  templateUrl: './comments-recents-widget.component.html',
+  styleUrl: './comments-recents-widget.component.scss'
 })
 export class CommentsRecentsWidgetComponent {
   protected moreElements = false

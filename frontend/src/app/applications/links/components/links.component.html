@@ -1,14 +1,14 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadShareLinks()"
-          class="d-none d-sm-block btn btn-sm btn-secondary me-1"
+          class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
     <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
   <button (click)="openLinkDialog()"
-          [disabled]="!selected" class="btn btn-sm btn-secondary me-1"
+          [disabled]="!selected" class="btn btn-default me-1"
           [tooltip]="'Edit link' | translate:locale.language"
           container="body"
           type="button">
@@ -16,7 +16,7 @@
   </button>
   <button (click)="copyToClipboard()"
           [disabled]="!selected"
-          class="btn btn-sm me-1 {{linkWasCopied ? 'btn-info' : 'btn-secondary'}}"
+          class="btn me-1 {{linkWasCopied ? 'btn-primary' : 'btn-default'}}"
           [tooltip]="'Copy link' | translate:locale.language"
           container="body"
           type="button">
@@ -24,7 +24,7 @@
   </button>
   <button (click)="goTo()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary"
+          class="btn btn-default"
           [tooltip]="'Go to' | translate:locale.language"
           container="body"
           type="button">
@@ -32,7 +32,7 @@
   </button>
   <div class="ms-auto">
     <!--Start Filter Button-->
-    <div class="btn-group btn-group-sm me-1">
+    <div class="btn-group me-1">
       <app-input-filter class="d-none d-sm-block"></app-input-filter>
     </div>
     <!--End Filter Button-->
@@ -69,8 +69,25 @@
               <img [src]="s.mimeUrl" [height]="galleryMode.image" [width]="galleryMode.image" alt="" draggable="true" (error)="s.fallBackMimeUrl()">
               <span class="label-top-right">
                 @if (s.newly) {
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-warning">
+                  <span [style.font-size.px]="galleryMode.textSize" class="badge bg-purple">
                     {{ s.hTimeAccessAgo }}
+                  </span>
+                }
+              </span>
+              <span class="label-bottom-right">
+                @if (s.link.limitAccess) {
+                  <span class="badge {{s.link.nbAccess >= s.link.limitAccess ? 'bg-danger': 'bg-success'}}">
+                          {{ s.link.nbAccess }}/{{ s.link.limitAccess }}
+                        </span>
+                } @else {
+                  <span class="badge bg-success">{{ s.link.nbAccess }}</span>
+                }
+                @if (s.link.expiresAt) {
+                  <span class="badge bg-{{s.hTimeExpirationAgo >= 1 ? 'warning': 'danger'}} ms-1">
+                          <fa-icon [icon]="icons.faClock" [fixedWidth]="false"></fa-icon>
+                    @if (s.hTimeExpirationAgo >= 1) {
+                      {{ s.hTimeExpirationAgo }}&nbsp;{{ (s.hTimeExpirationAgo === 1 ? 'day' : 'days') | translate:locale.language }}
+                    }
                   </span>
                 }
               </span>
@@ -125,14 +142,14 @@
               @if (th.value.show) {
                 <td [style.width.%]="th.value.width"
                     [class.text-align-center]="th.value.textCenter"
-                    class="{{th.value.class}} {{th.value.newly !== undefined ? 'props-newly-' + s[th.value.newly] : ''}}">
+                    class="{{th.value.class}}">
                   @switch (th.key) {
                     @case ('name') {
                       <div class="d-flex align-items-center">
                         <img [src]="s.mimeUrl" alt="" draggable="false" height="30" width="30" (error)="s.fallBackMimeUrl()">
                         <div class="d-flex flex-column text-truncate">
                           <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
-                          <span class="no-pointer-events text-muted fs-xxxs" draggable="false">{{ s.description }}</span>
+                          <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ s.description }}</span>
                         </div>
                       </div>
                     }
@@ -149,37 +166,39 @@
                     }
                     @case ('info') {
                       @if (s.link.limitAccess) {
-                        <span class="badge rounded-pill {{s.link.nbAccess >= s.link.limitAccess ? 'bg-danger': 'bg-success'}}">
+                        <span class="badge {{s.link.nbAccess >= s.link.limitAccess ? 'bg-danger': 'bg-success'}}">
                           {{ s.link.nbAccess }}/{{ s.link.limitAccess }}
                         </span>
                       } @else {
-                        <span class="badge rounded-pill bg-success">{{ s.link.nbAccess }}</span>
+                        <span class="badge bg-success">{{ s.link.nbAccess }}</span>
                       }
                       @if (s.link.expiresAt) {
-                        <span class="badge rounded-pill bg-{{s.hTimeExpirationAgo >= 1 ? 'warning': 'danger'}} ms-1">
+                        <span class="badge bg-{{s.hTimeExpirationAgo >= 1 ? 'warning': 'danger'}} ms-1">
                           <fa-icon [icon]="icons.faClock" [fixedWidth]="false"></fa-icon>
                           @if (s.hTimeExpirationAgo >= 1) {
-                            <span class="ms-2">{{ s.hTimeExpirationAgo }}&nbsp;{{ (s.hTimeExpirationAgo === 1 ? 'day' : 'days') | translate:locale.language }}</span>
+                            {{ s.hTimeExpirationAgo }}&nbsp;{{ (s.hTimeExpirationAgo === 1 ? 'day' : 'days') | translate:locale.language }}
                           }
                         </span>
                       }
                       @if (s.link.requireAuth) {
-                        <span class="badge rounded-pill bg-gray-dark ms-1">
+                        <span class="badge bg-gray-dark ms-1">
                           <fa-icon [icon]="icons.faLock"></fa-icon>
                         </span>
                       }
                     }
                     @case ('permissions') {
                       @if (s.link.permissions) {
-                        <app-file-permissions [permissions]="s.hPerms" tooltipPlacement="auto"></app-file-permissions>
+                        <app-badge-permissions [permissions]="s.hPerms" tooltipPlacement="auto"></app-badge-permissions>
                       }
                     }
                     @case ('accessed') {
-                      @if (s.link.currentAccess) {
-                        {{ s.hTimeAccessAgo }}
-                      } @else {
-                        <span l10nTranslate>never</span>
-                      }
+                      <span class="{{th.value.newly !== undefined && s[th.value.newly] ? 'badge prop-newly-' + s[th.value.newly] : ''}}">
+                        @if (s.link.currentAccess) {
+                          {{ s.hTimeAccessAgo }}
+                        } @else {
+                          <span class="badge sync-newly-0" l10nTranslate>never</span>
+                        }
+                      </span>
                     }
                   }
                 </td>

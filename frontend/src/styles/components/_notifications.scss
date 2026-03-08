@@ -1,21 +1,102 @@
-/* based on angular-toastr css https://github.com/Foxandxss/angular-toastr/blob/cb508fe6801d6b288d3afc525bb40fee1b101650/dist/angular-toastr.css */
-.toast-title {
-  font-size: $font-size-sm;
-}
+.toast-container .ngx-toastr {
+  --toast-accent: #{$gray};
+  --toast-bg: #{rgba($white, 0.94)};
+  --toast-bg-hover: #{rgba($white, 0.98)};
+  --toast-border: #{rgba(mix($gray-dark, $gray-mid, 42%), 0.5)};
+  --toast-title: #{$custom-color};
+  --toast-message: #{mix($gray-dark, $black, 64%)};
 
-.toast-message {
-  font-size: $font-size-xs;
+  position: relative;
+  padding: 0.66rem 1.1rem 0.64rem 1.7rem !important;
+  border: 0.5px solid var(--toast-border, #{$gray-light}) !important;
+  background-color: var(--toast-bg, #{$white}) !important;
+  background-image: none !important;
+  color: var(--toast-title, #{$custom-color}) !important;
+  backdrop-filter: saturate(120%) blur(2px);
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0.58rem;
+    top: 0.52rem;
+    bottom: 0.52rem;
+    width: 0.34rem;
+    border-radius: 999px;
+    background: var(--toast-accent, #{$gray});
+  }
+
+  .toast-title {
+    font-size: $font-size-md;
+    margin-top: 0 !important;
+    margin-bottom: 0.5rem !important;
+    line-height: 1.15;
+    color: var(--toast-title) !important;
+  }
+
+  .toast-message {
+    font-size: $font-size-base;
+    line-height: 1.2;
+    color: var(--toast-message) !important;
+  }
+
+  &:hover {
+    background-color: var(--toast-bg-hover, var(--toast-bg, #{$white})) !important;
+  }
 }
 
 .ngx-toastr {
-  background-color: rgba(0, 0, 0, .9);
-  min-width: 250px;
-  width: auto !important;
+  min-width: 320px !important;
+  //width: auto !important
 }
 
-.toast-online {
-  display: flex;
-  align-items: center;
-  color: white;
-  margin-left: -40px;
+//.toast-top-right {
+//  top: 5px !important;
+//  right: calc($sidebar-apps-icons-width + 5px) !important;
+//}
+
+.toast-container .ngx-toastr.toast-success {
+  --toast-accent: #{$success};
+  --toast-title: #{$success};
+}
+
+.toast-container .ngx-toastr.toast-info {
+  --toast-accent: #{$purple};
+  --toast-title: #{$purple};
+}
+
+.toast-container .ngx-toastr.toast-warning {
+  --toast-accent: #{$warning};
+  --toast-title: #{$warning};
+}
+
+.toast-container .ngx-toastr.toast-error {
+  --toast-accent: #{$danger};
+  --toast-title: #{$danger};
+}
+
+body.theme-dark .toast-container .ngx-toastr {
+  --toast-bg: #{rgba($dark-dialog-tabs-bar-bg, 0.85)};
+  --toast-bg-hover: #{rgba($dark-dialog-tabs-bar-bg, 0.95)};
+  --toast-border: #{rgba(mix($gray-dark, $gray-light, 12%), 0.2)};
+  --toast-message: #{$white};
+}
+
+body.theme-dark .toast-container .ngx-toastr.toast-success {
+  --toast-accent: #{mix($success, $gray-light, 80%)};
+  --toast-title: #{mix($success, $gray-light, 80%)};
+}
+
+body.theme-dark .toast-container .ngx-toastr.toast-info {
+  --toast-accent: #{mix($purple, $gray-light, 80%)};
+  --toast-title: #{mix($purple, $gray-light, 80%)};
+}
+
+body.theme-dark .toast-container .ngx-toastr.toast-warning {
+  --toast-accent: #{mix($warning, $gray-light, 80%)};
+  --toast-title: #{mix($warning, $gray-light, 80%)};
+}
+
+body.theme-dark .toast-container .ngx-toastr.toast-error {
+  --toast-accent: #{mix($danger, $gray-light, 80%)};
+  --toast-title: #{mix($danger, $gray-light, 80%)};
 }

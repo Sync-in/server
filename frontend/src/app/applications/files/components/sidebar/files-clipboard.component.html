@@ -6,29 +6,29 @@
            placement="left">
   </fa-icon>
   <span l10nTranslate>Clipboard</span>
-  <button (click)="clearAll()" class="btn btn-xs btn-secondary">
+  <button (click)="clearAll()" class="btn btn-default">
     <fa-icon [icon]="icons.faTrashCan"></fa-icon>
   </button>
 </div>
 @if (files.length) {
   <div class="px-2 pt-2 pb-2 fs-xs">
     <div class="d-flex justify-content-between mt-2">
-      <select [(ngModel)]="selectedAction" class="form-select form-select-sm my-auto">
+      <select [(ngModel)]="selectedAction" class="form-select form-select-sm">
         @for (item of operations| keyvalue: originalOrderKeyValue; track item.key) {
           <option [ngValue]="item.key" l10nTranslate>{{ item.value.text }}</option>
         }
       </select>
-      <button (click)="doAction()" class="btn btn-xxs btn-primary ms-1" type="button" l10nTranslate>Confirm</button>
+      <button (click)="doAction()" class="btn btn-xs btn-primary ms-1" type="button" l10nTranslate>Confirm</button>
     </div>
   </div>
-  <hr class="mx-0 mt-2 mb-0">
+  <hr class="mx-0 my-2">
   <div appAutoResize class="sidebar-item" [resizeOffset]=120>
     @for (f of files; track f.id) {
       <div class="sidebar-item-container">
         <div class="sidebar-item-content" [tooltip]="f.path">
           <img [src]="f.mimeUrl" alt="" class="me-1" height="28" width="auto" (error)="f.fallBackMimeUrl()">
-          <div class="text-truncate fs-xxs">{{ f.name }}</div>
-          <button (click)="remove(f)" class="btn btn-xxs btn-danger ms-auto">
+          <div class="text-truncate fs-sm">{{ f.name }}</div>
+          <button (click)="remove(f)" class="btn btn-xs btn-danger ms-auto">
             <fa-icon [icon]="icons.faTimes"></fa-icon>
           </button>
         </div>

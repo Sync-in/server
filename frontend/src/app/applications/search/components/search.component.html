@@ -1,7 +1,7 @@
 <div class="app-top-menu">
   <div class="col-12 col-md-6 col-lg-4">
     <div class="input-group">
-      <button (click)="doSearch()" [disabled]="searchContent().length < minCharsToSearch" class="btn btn-sm btn-secondary" role="button" type="button">
+      <button (click)="doSearch()" [disabled]="searchContent().length < minCharsToSearch" class="btn btn-default" role="button" type="button">
         <fa-icon [icon]="loading ? icons.faSpinner : icons.SEARCH_ICON" [animation]="loading ? 'spin' : null"></fa-icon>
       </button>
       <input [value]="searchContent()"
@@ -9,63 +9,68 @@
              [placeholder]="(this.store.currentSearch().fullText ? 'Search for content' : 'Search for files')|translate:locale.language"
              (keyup.enter)="doSearch()"
              (keyup.escape)="clearSearch()"
-             class="flex-fill form-control form-control-sm"
+             class="search-input flex-fill form-control"
              name="search"
              type="text"
-             style="padding-right: 2rem"
              appAutofocus
              autocomplete>
       @if (searchContent()) {
-        <span class="cursor-pointer" style="position: absolute; right: 40px; top: 3px; z-index: 1001; font-size: 1rem">
+        <span class="search-clear-btn">
         <fa-icon (click)="clearSearch()" [icon]="icons.faTimes" role="button"></fa-icon>
       </span>
       }
       <button [ngModel]="this.store.currentSearch().fullText"
               (ngModelChange)="toggleFullText()"
               [tooltip]="'Search for content'|translate:locale.language"
+              container="body"
               placement="bottom"
-              class="btn btn-sm btn-outline-secondary-alt fs-xxs"
+              class="btn btn-custom"
               role="button"
               type="button"
               btnCheckbox>
         <fa-icon [icon]="icons.faFont"></fa-icon>
       </button>
     </div>
+
   </div>
+  <button (click)="goTo(null, selectedId)"
+          [disabled]="selectedId === null"
+          class="search-go-to-btn d-none d-md-block btn btn-default"
+          [tooltip]="'Go to' | translate:locale.language"
+          container="body"
+          type="button">
+    <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
+  </button>
   <!--Start Filter Button-->
-  <app-input-filter class="d-none d-sm-none d-md-block d-lg-block ms-auto"></app-input-filter>
+  <app-input-filter class="d-none d-md-block ms-auto"></app-input-filter>
   <!--End Filter Button-->
 </div>
-<div appAutoResize class="fs-xs">
+<div appAutoResize class="search-results-list" role="list">
   @if (errorMessage) {
     <div class="p-3 text-danger fw-500" l10nTranslate>{{ errorMessage }}</div>
   }
   @for (f of this.store.filesSearch() | searchFilter:inputFilter.search(); track $index) {
-    <div class="app-div-striped py-2" (click)="selectedId = $index" (appTap)="goTo(f)" [class.selected]="$index === selectedId">
-      <div class="d-flex align-items-center text-truncate px-2 py-1">
-        <img [src]="f.mimeUrl" (error)="f.fallBackMimeUrl()" alt="" draggable="false" height="28">
-        <div class="d-flex flex-column text-truncate ms-2" style="height: 34px">
-          <span class="fs-xxs text-truncate">{{ f.name }}</span>
-          <div class="d-flex align-items-center text-{{f.iconClass}}">
-            <fa-icon [icon]="f.icon" class="me-1"></fa-icon>
-            <span class="fs-xxxs text-truncate">
-              <span>{{ f.showedPath }}</span>
-            </span>
+    <article class="app-div-striped search-result-item"
+             (click)="selectedId = $index"
+             (appTap)="goTo(f)"
+             [class.selected]="$index === selectedId">
+      <div class="search-result-header d-flex align-items-start">
+        <img [src]="f.mimeUrl" (error)="f.fallBackMimeUrl()" alt="" draggable="false" class="search-result-mime">
+        <div class="search-result-meta d-flex flex-column">
+          <span class="search-result-name text-truncate">{{ f.name }}</span>
+          <div class="search-result-path d-flex align-items-center text-{{f.iconClass}}">
+            <fa-icon [icon]="f.icon" class="search-result-path-icon"></fa-icon>
+            <span class="text-truncate search-result-path-text">{{ f.showedPath }}</span>
           </div>
         </div>
       </div>
       @if (f.matches?.length) {
-        <hr class="m-0">
-        <div class="d-flex flex-column px-2 py-1">
+        <div class="search-result-matches">
           @for (match of f.matches; track $index) {
-            <div>
-              <span>...</span>
-              <span class="fs-xxxs" [innerHTML]="match"></span>
-              <span>...</span>
-            </div>
+            <p class="search-result-match" [innerHTML]="match"></p>
           }
         </div>
       }
-    </div>
+    </article>
   }
 </div>

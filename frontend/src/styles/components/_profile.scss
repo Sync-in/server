@@ -1,14 +1,13 @@
 .profile-page {
-  @extend .bg-theme;
   height: 100%;
-  font-size: $font-size-xs;
+  padding: 0.5rem;
 }
 
 .user-groups-page {
   display: flex;
   flex-direction: column;
   height: 100%;
-  font-size: $font-size-xs;
+  font-size: $font-size-sm;
   padding: 0.4rem;
 }
 
@@ -22,28 +21,15 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    color: rgba(255, 255, 255, 0.8);
 
     > div:first-of-type {
+      // fullname
       font-weight: 500;
-      font-size: 1rem;
+      font-size: $font-size-lg;
     }
 
     .small {
-      font-size: $font-size-xxxxs;
-    }
-
-    select {
-      cursor: pointer;
-      background-color: transparent !important;
-      color: $white;
-      filter: brightness(0) invert(1);
-      min-width: 110px;
-      max-width: 135px;
-
-      option {
-        color: black;
-      }
+      font-size: $font-size-xs;
     }
   }
 }
@@ -61,9 +47,4 @@
   width: 100px;
   padding: 3px;
   border: 3px solid $gray;
-}
-
-.profile-username {
-  font-size: $font-size-lg;
-  margin-top: 5px;
 }

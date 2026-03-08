@@ -1,6 +1,6 @@
 @for (r of space.roots; track r.alias) {
-  <div class="bg-theme mb-1 p-2" style="border-radius: 4px">
-    <div class="d-flex align-items-center text-truncate no-select fs-xs" style="height: 32px">
+  <div class="bg-theme mb-1 px-3 py-2" style="border-radius: 4px">
+    <div class="d-flex align-items-center text-truncate no-select fs-sm" style="max-height: 38px">
       <div class="d-flex align-items-center text-truncate me-auto">
         @if (showUsers) {
           <app-user-avatar [user]="r.owner" tooltipPlacement="bottom"></app-user-avatar>
@@ -11,8 +11,8 @@
           [class.cursor-pointer]="!!r.file.path"
           [tooltip]="r.file.path"
           draggable="false"
-          height="30"
-          width="30"
+          height="35"
+          width="35"
           alt="">
         <div class="d-flex flex-column text-truncate ms-2">
           @if (r.isRenamed) {
@@ -21,7 +21,7 @@
             <div class="text-truncate">
               <span>{{ r.name }}</span>
             </div>
-            <div class="d-none d-lg-block fs-xxxs text-truncate">
+            <div class="d-none d-lg-block fs-xs text-truncate text-muted">
               @if (user.isAdmin && r.externalPath) {
                 <span>{{ r.externalPath }}</span>
               } @else {
@@ -32,7 +32,7 @@
         </div>
       </div>
       @if (showInfo) {
-        <div class="d-flex flex-column fs-xxxs text-muted d-none d-lg-block ms-3">
+        <div class="d-flex flex-column fs-2xs text-muted d-none d-lg-block ms-3">
           <div class="d-flex justify-content-end">{{ r.alias }}</div>
           <div class="d-flex justify-content-end">{{ r.createdAt | amTimeAgo }}</div>
         </div>
@@ -62,7 +62,7 @@
         <button
           (click)="setRenamed(r)"
           [tooltip]="'Rename' | translate:locale.language"
-          class="btn btn-sm {{r.isRenamed ? 'btn-success' : 'btn-custom'}} me-2"
+          class="btn btn-sm {{r.isRenamed ? 'btn-success' : 'btn-secondary'}} me-2"
           type="button">
           <fa-icon [icon]="icons.faPen"></fa-icon>
         </button>

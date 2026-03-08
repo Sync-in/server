@@ -44,7 +44,6 @@ export const USER_MENU: AppMenu = {
   link: `${USER_PATH.BASE}/${USER_PATH.ACCOUNT}`,
   icon: USER_ICON.ACCOUNT,
   matchLink: new RegExp(`^${USER_PATH.BASE}`),
-  level: 11,
   checks: [{ negate: true, prop: 'user', value: 'isLink' }],
   submenus: [
     {

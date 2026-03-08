@@ -2,27 +2,27 @@
   <button (click)="onRefresh()"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
-          class="d-none d-sm-block btn btn-sm btn-secondary me-1" type="button">
+          class="d-none d-sm-block btn btn-default me-1" type="button">
     <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
   </button>
   <button (click)="addToSync()"
           [tooltip]="'Add' | translate:locale.language"
           container="body"
-          class="btn btn-sm btn-secondary me-1" type="button">
+          class="btn btn-default me-1" type="button">
     <fa-icon [icon]="icons.faPlus"></fa-icon>
   </button>
   <button (click)="openSettingsDialog()"
           [disabled]="!syncPathSelected"
           [tooltip]="'Edit' | translate:locale.language"
           container="body"
-          class="btn btn-sm btn-secondary me-1" type="button">
+          class="btn btn-default me-1" type="button">
     <fa-icon [icon]="icons.faPencilAlt"></fa-icon>
   </button>
   <button (click)="openReportDialog()"
           [disabled]="!syncPathSelected || !syncPathSelected.settings.enabled"
           [tooltip]="'Simulate' | translate:locale.language"
           container="body"
-          class="btn btn-sm btn-secondary me-1" type="button">
+          class="btn btn-default me-1" type="button">
     <fa-icon [icon]="icons.faFlask"></fa-icon>
   </button>
   <!--Start Sync Buttons-->
@@ -30,7 +30,7 @@
     <button (click)="doSync(false)"
             [tooltip]="'Stop synchronization' | translate:locale.language"
             container="body"
-            class="btn btn-sm btn-secondary me-1" type="button">
+            class="btn btn-default me-1" type="button">
       <fa-icon [icon]="icons.faStop"></fa-icon>
     </button>
   } @else {
@@ -38,7 +38,7 @@
             [disabled]="!syncPathSelected || !syncPathSelected.settings.enabled"
             [tooltip]="'Synchronize' | translate:locale.language"
             container="body"
-            class="btn btn-sm btn-secondary me-1" type="button">
+            class="btn btn-default me-1" type="button">
       <fa-icon [icon]="icons.faPlay"></fa-icon>
     </button>
   }
@@ -46,13 +46,13 @@
     <button (click)="doAllSyncs(false)"
             [tooltip]="'Stop synchronizations' | translate:locale.language"
             container="body"
-            class="btn btn-sm btn-secondary me-1" type="button">
+            class="btn btn-default me-1" type="button">
       <fa-icon [icon]="icons.faStop"></fa-icon>
     </button>
   } @else {
     <div [tooltip]="'Synchronize all' | translate:locale.language" container="body">
-      <div class="btn-group btn-group-sm me-1" dropdown>
-        <button class="btn btn-sm btn-secondary dropdown-toggle" dropdownToggle type="button">
+      <div class="btn-group me-1" dropdown [isDisabled]="!store.clientSyncPaths().length">
+        <button class="btn btn-default dropdown-toggle" dropdownToggle type="button">
           <fa-icon [icon]="icons.faForward"></fa-icon>
         </button>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
@@ -77,8 +77,8 @@
     </div>
   }
   <div [tooltip]="(('Scheduler' | translate:locale.language) + ': ' + (store.clientScheduler() | translate:locale.language))" container="body">
-    <div class="btn-group btn-group-sm me-1" dropdown>
-      <button class="btn btn-sm {{store.clientScheduler() === CLIENT_SCHEDULER_STATE.DISABLED ? 'btn-warning' : 'btn-success'}} dropdown-toggle" dropdownToggle type="button">
+    <div class="btn-group me-1" dropdown>
+      <button class="btn {{store.clientScheduler() === CLIENT_SCHEDULER_STATE.DISABLED ? 'btn-warning' : 'btn-success'}} dropdown-toggle" dropdownToggle type="button">
         @if (store.clientScheduler() === CLIENT_SCHEDULER_STATE.DISABLED) {
           <fa-icon [icon]="icons.faCalendarXmark"></fa-icon>
         } @else {
@@ -117,8 +117,8 @@
   </div>
   <!--End Sync Buttons-->
   <div [tooltip]="'Go to' | translate:locale.language" container="body">
-    <div [isDisabled]="!syncPathSelected" class="btn-group btn-group-sm me-1" dropdown>
-      <button class="btn btn-sm btn-secondary dropdown-toggle" dropdownToggle type="button">
+    <div [isDisabled]="!syncPathSelected" class="btn-group me-1" dropdown>
+      <button class="btn btn-default dropdown-toggle" dropdownToggle type="button">
         <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
       </button>
       <ul *dropdownMenu class="dropdown-menu" role="menu">
@@ -166,7 +166,9 @@
   </tr>
   </thead>
 </table>
-<div (contextmenu)="onContextMenu($event)" appAutoResize [resizeOffset]="105">
+<app-virtual-scroll (contextmenu)="onContextMenu($event)"
+                    [bufferAmount]="5"
+                    [items]="store.clientSyncPaths() | searchFilter:inputFilter.search():'name'">
   <table class="app-table">
     <tbody tabindex="-1">
       @for (s of store.clientSyncPaths() | searchFilter:inputFilter.search(); track s.id) {
@@ -178,7 +180,7 @@
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
                   [class.text-align-center]="th.value.textCenter"
-                  class="{{th.value.class}} {{th.value.newly ? 'sync-newly-' + s[th.value.newly] : ''}}">
+                  class="{{th.value.class}}">
                 @switch (th.key) {
                   @case ('name') {
                     <div class="d-flex align-items-center">
@@ -186,17 +188,17 @@
                       <span>{{ s.settings.name }}</span>
                       <span class="d-flex align-items-center ms-auto">
                         @if (s.nbSyncTasks) {
-                          <span class="badge rounded-pill bg-maroon">{{ s._nbTasks }}</span>
+                          <span class="badge bg-maroon">{{ s.nbSyncTasks }}</span>
                         }
                         @if (s.mainError) {
-                          <span [tooltip]="s.mainError | translate:locale.language" class="badge rounded-pill bg-danger cursor-pointer ms-1" placement="right">
+                          <span [tooltip]="s.mainError | translate:locale.language" class="badge bg-danger cursor-pointer ms-1" placement="right">
                             <fa-icon [icon]="icons.faExclamationTriangle" class="m-0"></fa-icon>
                           </span>
                         }
                         @if (s.lastErrors.length) {
-                          <span (click)="showErrors(s)" class="badge rounded-pill bg-danger cursor-pointer ms-1">
+                          <span (click)="showErrors(s)" class="badge bg-danger cursor-pointer ms-1">
                             <fa-icon [icon]="icons.faExclamationTriangle" class="me-1"></fa-icon>
-                            <span>{{ s.lastErrors.length }}</span>
+                            {{ s.lastErrors.length }}
                           </span>
                         }
                       </span>
@@ -218,13 +220,13 @@
                     {{ s.settings.filters.length }}
                   }
                   @case ('lastSync') {
-                    <div class="sync-newly-{{s.newly}}">
+                    <span class="{{th.value.newly ? 'badge sync-newly-' + s[th.value.newly] : ''}}">
                       @if (s.newly) {
                         {{ s.settings.lastSync | amTimeAgo:true }}
                       } @else {
                         {{ 'never' | translate:locale.language }}
                       }
-                    </div>
+                    </span>
                   }
                 }
               </td>
@@ -234,7 +236,7 @@
       }
     </tbody>
   </table>
-</div>
+</app-virtual-scroll>
 <!--Start Context Menu -->
 <context-menu #SyncPathContextMenu>
   @if (syncPathSelected && syncPathSelected.inSync) {
@@ -265,7 +267,8 @@
 <context-menu #SyncSchedulerContextMenu>
   @if (store.clientScheduler() !== CLIENT_SCHEDULER_STATE.DISABLED) {
     <ng-template (execute)="setScheduler(CLIENT_SCHEDULER_STATE.DISABLED)" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faCalendarXmark"></fa-icon>Disabled</span>
+      <span><fa-icon [icon]="icons.faCalendarXmark"></fa-icon>
+        {{ 'disabled' | translate:locale.language | capitalize }}</span>
     </ng-template>
   }
   <ng-template (execute)="setScheduler(CLIENT_SCHEDULER_STATE.SEQ)" contextMenuItem><span l10nTranslate><fa-icon [icon]="icons.faArrowsSpin"></fa-icon>Sequentially</span>
@@ -277,7 +280,7 @@
   @if (allSyncsRunning) {
     <ng-template (execute)="doAllSyncs(false)" contextMenuItem><span l10nTranslate><fa-icon [icon]="icons.faStop"></fa-icon>Stop synchronizations</span>
     </ng-template>
-  } @else {
+  } @else if (store.clientSyncPaths().length) {
     <ng-template [subMenu]="SyncAllContextMenu" contextMenuItem>
       <span l10nTranslate><fa-icon [icon]="icons.faForward"></fa-icon>Synchronize</span>
     </ng-template>

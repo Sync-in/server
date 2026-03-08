@@ -5,9 +5,9 @@ import { filterArray } from '../utils/functions'
   name: 'searchFilter'
 })
 export class SearchFilterPipe implements PipeTransform {
-  transform(collection: any[], search: string, field?: string): any[] {
+  transform<T>(collection: T[] | null | undefined, search: string, field?: string): T[] {
     if (!collection?.length || !search) {
-      return collection
+      return collection ?? []
     }
     return filterArray(search, collection, field)
   }

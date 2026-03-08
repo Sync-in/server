@@ -1,14 +1,14 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="refresh()"
-          class="btn btn-sm btn-secondary me-1"
+          class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
     <fa-icon [icon]="icons.faRotate" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
-  <div class="btn-group btn-group-sm me-1" dropdown>
-    <button class="btn btn-sm btn-secondary dropdown-toggle"
+  <div class="btn-group me-1" dropdown>
+    <button class="btn btn-default dropdown-toggle"
             dropdownToggle
             [tooltip]="'New' | translate:locale.language"
             container="body"
@@ -30,7 +30,7 @@
     </ul>
   </div>
   <button (click)="openDialog(false, true)"
-          class="btn btn-sm btn-secondary me-1"
+          class="d-none d-sm-block btn btn-default me-1"
           [disabled]="!selected"
           [tooltip]="(selected?.isUser ? 'Remove from group' : 'Delete group') | translate:locale.language"
           container="body"
@@ -39,7 +39,7 @@
   </button>
   <button (click)="openDialog()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-default me-1"
           [tooltip]="(selected?.isGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
           container="body"
           type="button">
@@ -50,14 +50,14 @@
             [ngModel]="personalGroupsView"
             (ngModelChange)="onPersonalGroupsView($event)"
             type="button"
-            class="btn btn-sm btn-custom me-1">
+            class="btn btn-custom me-1">
       <div class="d-flex align-items-center">
         <fa-icon [icon]="personalGroupsView ? icons.faToggleOn : icons.faToggleOff" class="me-2"></fa-icon>
         <span l10nTranslate>Personal groups</span>
       </div>
     </button>
     <!--Start Filter Button-->
-    <div class="btn-group btn-group-sm">
+    <div class="btn-group">
       <app-input-filter class="d-none d-sm-block"></app-input-filter>
     </div>
     <!--End Filter Button-->
@@ -100,7 +100,7 @@
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
                   [class.text-align-center]="th.value.textCenter"
-                  class="{{th.value.class}} {{th.value.newly ? 'prop-newly-' + m[th.value.newly] : ''}}">
+                  class="{{th.value.class}}">
                 @switch (th.key) {
                   @case ('name') {
                     <div class="d-flex align-items-center avatar">
@@ -116,13 +116,13 @@
                             <fa-icon class="m-0" [icon]="icons.faKey"></fa-icon>
                           }
                         </span>
-                        <span class="no-pointer-events text-muted fs-xxxs" draggable="false">{{ m.description }}</span>
+                        <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ m.description }}</span>
                       </div>
                     </div>
                   }
                   @case ('members') {
                     @if (m.isGroup) {
-                      <span>{{ m.counts | joinCounts }}</span>
+                      <app-badge-members [members]="m.counts"></app-badge-members>
                     }
                   }
                   @case ('type') {
@@ -133,12 +133,12 @@
                     }
                   }
                   @case ('createdAndModified') {
-                    <div class="d-flex flex-column">
-                      <div>{{ m.createdAt | amDateFormat }}</div>
+                    <span class="d-flex flex-column {{th.value.newly && m[th.value.newly] ? 'badge prop-newly-' + m[th.value.newly] : ''}}">
+                      <span>{{ m.createdAt | amDateFormat }}</span>
                       @if (m.modifiedAt) {
-                        <div>{{ m.modifiedAt | amDateFormat }}</div>
+                        <span>{{ m.modifiedAt | amDateFormat }}</span>
                       }
-                    </div>
+                    </span>
                   }
                 }
               </td>

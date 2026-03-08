@@ -5,11 +5,11 @@
            (keyup)="inputEvent($event, true)"
            [disabled]="disabled"
            autocomplete="false"
-           class="form-control form-control-sm ui-select-search"
+           class="form-control ui-select-search"
            tabindex="-1"
            type="text">
   } @else {
-    <div class="ui-select-match form-control form-control-sm">
+    <div class="ui-select-match form-control">
       <span (click)="matchClick($event)" class="ui-select-toggle no-select" style="outline: 0" tabindex="-1">
         @if (active) {
           <span [class.ui-select-allow-clear]="allowClear && active" class="ui-select-match-text w-100">
@@ -49,7 +49,7 @@
       <fa-icon [icon]="itemIcon" [fixedWidth]="false"></fa-icon>
     </span>
     <span>{{ active.name }}</span>
-    <div class="d-flex ms-auto me-4 fs-xxxs text-muted">{{ active.description }}</div>
+    <div class="d-flex ms-auto me-4 fs-xs text-muted">{{ active.description }}</div>
   </div>
 </ng-template>
 <ng-template #DefaultOptions let-i="i" let-o="o">
@@ -59,7 +59,7 @@
         <fa-icon [icon]="itemIcon" [fixedWidth]="false"></fa-icon>
       </span>
       <span [innerHtml]="sanitize(o.name | highlight:i)"></span>
-      <span class="d-flex ms-auto fs-xxxs text-muted" [innerHtml]="sanitize(o.description | highlight:i)"></span>
+      <span class="d-flex ms-auto fs-xs text-muted" [innerHtml]="sanitize(o.description | highlight:i)"></span>
     </div>
   </a>
 </ng-template>

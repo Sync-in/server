@@ -7,31 +7,89 @@
   }
 
   .modal-header {
+    max-height: 41.5px;
+    height: 41.5px;
     line-height: 1;
-    @extend .no-select;
+    @include no-select-utility;
 
     .modal-title {
-      @extend .text-truncate;
-      font-size: $font-size-sm;
-      line-height: 2;
+      font-size: $font-size-base;
+      @include text-truncate-utility;
 
-      i {
-        margin-right: 5px;
+      > fa-icon {
+        margin-right: 0.3rem;
+      }
+
+      &.ms-auto {
+        font-size: $font-size-sm;
       }
     }
   }
 
   .modal-body {
-    font-size: $font-size-xs;
-    padding: 8px 12px;
+    padding: 10px;
   }
 
-  .nav-link {
-    white-space: nowrap;
-    @extend .no-select-pointer;
-    width: 98% !important;
+  tabset {
+    > .nav.nav-pills,
+    > ul.nav.nav-pills {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: minmax(0, 1fr);
+      gap: 0.5rem;
+      padding: 0 0.3rem 0.75rem 0;
+      margin: 0 0 .75rem;
+
+      > li {
+        min-width: 0;
+      }
+
+      .nav-link {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: $nav-link-padding-y $nav-link-padding-x !important;
+        border-radius: $nav-pills-border-radius;
+        border: .5px solid transparent;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: $nav-link-font-weight;
+        letter-spacing: .01em;
+        transition: $nav-link-transition;
+      }
+    }
+
+    .app-tab-heading {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      min-width: 0;
+    }
+
+    .app-tab-label {
+      @include text-truncate-utility;
+      max-width: 100%;
+    }
+
+    .app-tab-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.35rem;
+      height: 1.35rem;
+      padding: 0 .35rem;
+      border-radius: 999px;
+      font-size: $font-size-xs;
+      font-weight: 600;
+      line-height: 1;
+    }
   }
 
+}
+
+.dialog-check-card--interactive {
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .modal-xs {

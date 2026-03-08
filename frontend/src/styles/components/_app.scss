@@ -2,18 +2,23 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   min-height: 100vh;
+  padding: 1rem;
   background: $application_background;
 
-  .background {
+  @supports (height: 100dvh) {
+    min-height: 100dvh;
+  }
+
+  .auth-card {
     display: flex;
     flex-direction: column;
-    align-self: center;
     background: rgba(0, 0, 0, 0.5);
-    padding: 2rem 5rem 2rem 5rem;
+    padding: clamp(2.125rem, 3.5vw, 2.625rem) clamp(1.875rem, 5vw, 3.625rem);
     border-radius: 8px;
-    min-width: 400px;
-    max-width: 425px;
+    width: min(100%, 400px);
+    min-width: 0;
 
     .content {
       display: flex;
@@ -21,25 +26,87 @@
 
       .header {
         margin-bottom: .6rem;
+        text-align: left;
+
+        .auth-logo {
+          display: block;
+          height: clamp(54px, 5.8vw, 58px);
+          width: auto;
+        }
       }
 
       .body {
+        form > p.text-white-50 {
+          color: rgba(255, 255, 255, 0.72) !important;
+        }
+
+        form .input-group:first-of-type {
+          margin-top: .75rem !important;
+        }
+
+        .auth-actions {
+          .auth-action-btn {
+            flex: 1 1 0;
+          }
+        }
+
+        .btn.btn-primary {
+          @include btn-dark-vars(
+            semantic-dark('primary', bg),
+            semantic-dark('primary', border),
+            semantic-dark('primary', fg)
+          );
+          --btn-chip-bg: #203255;
+          --btn-chip-active-bg: white;
+          --btn-chip-fg: white;
+          --btn-chip-hover-fg: white;
+          border-width: .5px !important;
+        }
+        .btn.btn-secondary {
+          @include btn-dark-vars(
+            semantic-dark('secondary', bg),
+            semantic-dark('secondary', border),
+            semantic-dark('secondary', fg)
+          );
+          border-width: .5px !important;
+        }
+
         .input-group-text {
           background: rgba(0, 0, 0, 0.3);
           color: rgba(255, 255, 255, 0.8);
-          border: .5px solid lighten(#202a2f, 5%);
+          border: .5px solid lighten($dark-dialog-tabs-bar-bg, 5%);
         }
 
         .form-control {
           background: rgba(0, 0, 0, 0.3);
-          border: .5px solid lighten(#202a2f, 5%);
+          border: .5px solid lighten($dark-dialog-tabs-bar-bg, 5%);
           color: whitesmoke;
 
           &::placeholder {
-            font-size: .8rem;
+            font-size: $font-size-xs;
             color: $placeholder-color;
           }
         }
+      }
+    }
+  }
+
+  @include media-breakpoint-up(md) {
+    .auth-card {
+      margin-top: clamp(-3.5rem, -5vh, -1.5rem);
+    }
+  }
+
+  @include media-breakpoint-down(sm) {
+    padding: .75rem;
+
+    .auth-card {
+      margin-top: 0;
+      padding: 1.875rem;
+      border-radius: 8px;
+
+      .content .header .auth-logo {
+        height: 54px;
       }
     }
   }
@@ -60,7 +127,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  background: $application_background;
+  background: var(--application-background);
   color: white;
 
   &:after {
@@ -159,32 +226,24 @@
 
 .app-table {
   @extend .table;
-  @extend .no-select;
+  @include no-select-utility;
   table-layout: fixed;
   width: 100%;
   background-color: transparent;
   color: transparent;
-  font-size: $font-size-xs;
   margin-bottom: 0;
 
   thead {
     background-color: transparent;
-    font-size: $font-size-xxs;
-    line-height: 16.5px;
+    font-size: $font-size-sm;
+    line-height: 20px;
 
     tr {
       th {
         white-space: nowrap;
-        font-weight: 400;
-        border-top: none;
-        border-left: none;
-        border-right: none;
-        border-bottom: .5px solid;
+        font-weight: 500;
+        border: none;
         padding: .25rem 0.5rem;
-
-        &:last-child {
-          border-right: .5px solid;
-        }
       }
     }
   }
@@ -211,7 +270,7 @@
   }
 
   tbody tr td {
-    @extend .text-truncate;
+    @include text-truncate-utility;
     border: none !important;
     vertical-align: middle;
     max-width: 0;
@@ -219,8 +278,19 @@
     padding-top: 1px;
 
     span {
-      @extend .text-truncate;
+      @include text-truncate-utility;
     }
+
+    .badge {
+      display: inline-block;
+      max-width: 100%;
+      vertical-align: middle;
+    }
+  }
+
+  tbody td img {
+    width: 30px;
+    height: 30px;
   }
 
   tbody td:first-child {
@@ -231,21 +301,23 @@
 
   tbody td:not(:first-child) {
     color: transparent;
-    font-size: $font-size-xxxxs;
+    font-size: $font-size-xs;
     border-top: none;
-
-    .badge {
-      font-size: $font-size-xxs;
-      display: inline;
-      line-height: normal;
-    }
   }
 }
 
-.app-table-striped {
-  @extend .app-table;
-  user-select: auto !important;
-  cursor: auto !important;
+.avatar-stack {
+  --avatar-overlap: 14px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.avatar-stack > * + * {
+  margin-left: calc(var(--avatar-overlap) * -1);
+}
+
+.avatar-stack > * {
+  position: relative;
 }
 
 .app-top-menu {
@@ -254,17 +326,20 @@
   align-items: center;
   align-content: center;
   flex: 1 1 auto !important;
-  padding: 5px;
+  padding: .5rem;
   border-top: .5px solid;
   border-bottom: .5px solid;
   height: $sidebar-apps-icons-height;
 
+  .btn.me-1, .btn-group.me-1 {
+    // handles space between button
+    margin-right: .4rem !important;
+  }
+
   .btn {
-    height: 30px;
-    min-width: 36px;
 
     > fa-icon {
-      font-size: $font-size-md;
+      font-size: .875rem;
     }
 
     span {
@@ -291,30 +366,94 @@
 
         fa-icon {
           margin-right: 0.4rem;
-          font-size: $font-size-md;
+          font-size: $font-size-base;
         }
       }
     }
   }
 }
 
+app-input-filter {
+  display: inline-block;
+  width: 150px;
+  min-width: 150px;
+  margin: 0;
+  vertical-align: middle;
+
+  .filter-shell {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 30px;
+    border: 1px solid transparent;
+    border-radius: $border-radius-base;
+
+    input {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      font-size: $font-size-sm;
+      line-height: 1.5;
+      padding: 0 31px 0 29px;
+
+      &::placeholder {
+        font-size: $font-size-sm;
+        opacity: 1;
+      }
+    }
+  }
+
+  .filter-icon {
+    position: absolute;
+    left: 9px;
+    pointer-events: none;
+    font-size: $font-size-xs;
+  }
+
+  .clear-btn {
+    position: absolute;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    padding: 0;
+    border: 0;
+    background-color: transparent;
+    cursor: pointer;
+
+    fa-icon {
+      font-size: $font-size-xs;
+    }
+
+    :focus-visible {
+      outline: 2px solid transparent;
+      outline-offset: 1px;
+    }
+  }
+}
+
 .app-foot-menu {
-  @extend .no-select;
+  @include no-select-utility;
   display: flex;
   flex-direction: row;
   align-items: center;
   position: absolute;
   bottom: 0;
   width: 100%;
-  font-size: $font-size-xxs;
-  height: 25px;
+  font-size: $font-size-xs;
+  height: 24px;
   padding-left: 5px;
   padding-right: 5px;
   background-color: transparent;
   color: transparent;
 
-  &.pagination-container {
-    height: 40px;
+  @include media-breakpoint-down(sm) {
+    font-size: $font-size-2xs;
   }
 }
 
@@ -328,13 +467,8 @@
   }
 }
 
-.app-div-striped-inverse {
-  &:nth-of-type(odd) {
-    background-color: transparent;
-  }
-}
-
 .app-div-hovered {
+  user-select: none;
   &:hover {
     background-color: transparent;
   }
@@ -348,7 +482,7 @@
   display: flex;
   padding: .4rem;
   @extend .app-div-hovered;
-  @extend .no-select-pointer;
+  @include no-select-pointer-utility;
   height: $sidebar-apps-height;
 }
 

@@ -1,14 +1,14 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadUsersOrGuests()"
-          class="btn btn-sm btn-secondary me-1"
+          class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
     <fa-icon [icon]="icons.faRotate" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
   <button (click)="openDialog(true)"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-default me-1"
           [tooltip]="(guestsView ? 'New guest' : 'New user') | translate:locale.language"
           container="body"
           type="button">
@@ -16,7 +16,7 @@
   </button>
   <button (click)="openDialog()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-default me-1"
           [tooltip]="(guestsView ? 'Edit guest' : 'Edit user') | translate:locale.language"
           container="body"
           type="button">
@@ -24,7 +24,7 @@
   </button>
   <button (click)="impersonateIdentity()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary me-1"
+          class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Impersonate identity' | translate:locale.language"
           container="body"
           type="button">
@@ -36,13 +36,13 @@
             [ngModel]="guestsView"
             (ngModelChange)="onGuestsView($event)"
             type="button"
-            class="btn btn-sm btn-custom me-1">
+            class="btn btn-custom me-1">
       <div class="d-flex align-items-center">
         <fa-icon [icon]="guestsView ? icons.faToggleOn : icons.faToggleOff" class="me-2"></fa-icon>
         <span l10nTranslate>Guests</span>
       </div>
     </button>
-    <div class="btn-group btn-group-sm">
+    <div class="btn-group">
       <app-input-filter class="d-none d-sm-block"></app-input-filter>
     </div>
     <!--End Filter Button-->
@@ -86,7 +86,7 @@
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
                   [class.text-align-center]="th.value.textCenter"
-                  class="{{th.value.class}} {{th.value.newly ? 'prop-newly-' + u[th.value.newly] : ''}}">
+                  class="{{th.value.class}}">
                 @switch (th.key) {
                   @case ('login') {
                     <div class="d-flex align-items-center avatar">
@@ -98,7 +98,7 @@
                             <fa-icon class="m-0" [icon]="icons.faKey"></fa-icon>
                           }
                         </span>
-                        <span class="no-pointer-events text-muted fs-xxxs" draggable="false">{{ u.email }}</span>
+                        <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ u.email }}</span>
                       </div>
                     </div>
                   }
@@ -106,14 +106,16 @@
                     <div class="d-flex flex-column">
                       <span class="no-pointer-events" draggable="false">{{ u.fullName }}</span>
                       @if (u.isAdmin) {
-                        <span class="no-pointer-events text-muted fs-xxxs" draggable="false" l10nTranslate>{{ u.userRoleText }}</span>
+                        <span class="no-pointer-events text-muted" draggable="false" l10nTranslate>{{ u.userRoleText }}</span>
                       }
                     </div>
                   }
                   @case ('managers') {
-                    @for (m of u.managers; track m.mid) {
-                      <app-user-avatar [user]="m" [isMember]="true"></app-user-avatar>
-                    }
+                    <div class="avatar-stack">
+                      @for (m of u.managers; track m.mid) {
+                        <app-user-avatar [user]="m" [isMember]="true"></app-user-avatar>
+                      }
+                    </div>
                   }
                   @case ('storage') {
                     @if (u.storageUsage) {
@@ -137,21 +139,21 @@
                   }
                   @case ('currentAccess') {
                     @if (u.currentAccess) {
-                      <div class="d-flex justify-content-center"
+                      <span class="d-flex justify-content-center {{th.value.newly && u[th.value.newly] ? 'badge prop-newly-' + u[th.value.newly] : ''}}"
                            (mouseover)="u.currentAccessHover = true"
                            (focus)="u.currentAccessHover = true"
                            (mouseleave)="u.currentAccessHover = false">
                         @if (u.currentAccessHover) {
-                          <div class="d-flex flex-column">
-                            <div>{{ u.currentAccess | amDateFormat }}</div>
-                            <div>{{ u.lastAccess | amDateFormat }}</div>
-                          </div>
+                          <span class="d-flex flex-column fs-xs">
+                            <span>{{ u.currentAccess | amDateFormat }}</span>
+                            <span>{{ u.lastAccess | amDateFormat }}</span>
+                          </span>
                         } @else {
-                          {{ u.hTimeAgo }}
+                          <span>{{ u.hTimeAgo }}</span>
                         }
-                      </div>
+                      </span>
                     } @else {
-                      <span l10nTranslate>never</span>
+                      <span class="{{th.value.newly && u[th.value.newly] ? 'badge prop-newly-' + u[th.value.newly] : ''}}" l10nTranslate>never</span>
                     }
                   }
                 }

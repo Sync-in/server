@@ -1,21 +1,21 @@
 @if (files().length) {
   @if (multiple()) {
-    <div class="px-2 pt-2 pb-0 fs-xxs">
+    <div class="fs-sm">
       <div class="d-flex justify-content-center mt-2">
-        <button (click)="addToClipboard()" class="btn btn-xs btn-primary me-1" type="button" l10nTranslate>
+        <button (click)="addToClipboard()" class="btn btn-primary me-1" type="button" l10nTranslate>
           <fa-icon [icon]="icons.faClipboardCheck"></fa-icon>
           Send to Clipboard
         </button>
       </div>
     </div>
-    <hr class="mx-0 mt-2 mb-0">
+    <hr class="mx-0 mt-3 mb-1">
   }
-  <div appAutoResize class="fs-xxs" [resizeOffset]=resizeOffset()>
+  <div appAutoResize class="fs-sm" [resizeOffset]=resizeOffset()>
     @if (multiple()) {
       <div class="flex-column p-2 w-100">
         @for (f of files(); track f.id) {
           <div class="d-inline-flex w-100 align-content-center align-items-center mx-1">
-            <img [src]="f.mimeUrl" alt="" class="me-1" height="30" width="auto" (error)="f.fallBackMimeUrl()">
+            <img [src]="f.mimeUrl" alt="" class="me-1" height="28" width="auto" (error)="f.fallBackMimeUrl()">
             <span class="text-truncate">{{ f.name }}</span>
           </div>
         }
@@ -40,77 +40,78 @@
           </div>
         </div>
         <hr class="my-1" />
-        <div class="p-2">
+        <div class="fs-sm p-2">
           <div class="d-flex mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Name</div>
-            <div class="word-break-all fs-xxs">{{ f.name }}</div>
+            <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Name</div>
+            <div class="word-break-all">{{ f.name }}</div>
           </div>
           <div class="d-flex mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Size</div>
-            <div class="fs-xxs">
+            <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Size</div>
               @let size = (getSizeLazy(f) | async);
               @if (size === null) {
                 <fa-icon [icon]="icons.faSpinner" animation="spin-pulse"></fa-icon>
               } @else {
                 {{ size }}
               }
-            </div>
           </div>
           <div class="d-flex mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Created</div>
-            <div class="fs-xxs">{{ f.ctime | amDateFormat }}</div>
+            <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Created</div>
+            <div>{{ f.ctime | amDateFormat }}</div>
           </div>
           <div class="d-flex mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Modified</div>
-            <div class="fs-xxs">{{ f.mtime | amDateFormat }}</div>
+            <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Modified</div>
+            <div>{{ f.mtime | amDateFormat }}</div>
           </div>
           <div class="d-flex align-items-center mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Lock</div>
+            <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Lock</div>
             @if (f.lock) {
               @if (f.lock.isExclusive) {
-                <span class="badge rounded-pill bg-maroon" l10nTranslate>
+                <span class="badge bg-maroon" l10nTranslate>
                   <fa-icon [icon]="icons.faLock"></fa-icon>
-                  <span class="ms-1" l10nTranslate>Exclusive</span>
+                  <span l10nTranslate>Exclusive</span>
                 </span>
               } @else {
-                <span class="badge rounded-pill bg-maroon" l10nTranslate>
+                <span class="badge bg-maroon" l10nTranslate>
                   <fa-icon [icon]="icons.faUnlock"></fa-icon>
-                  <span class="ms-1" l10nTranslate>Shared</span>
+                  <span l10nTranslate>Shared</span>
                 </span>
               }
             } @else {
-              <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+              <span class="badge bg-secondary-alt" l10nTranslate>no</span>
             }
           </div>
           <div class="d-flex align-items-center mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Shared</div>
-            <div class="d-flex col-sm-7">
+            <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Shared</div>
+            <div class="d-flex col-7 col-sm-7">
               @if (f.shares.length || f.links.length) {
-                <span class="badge rounded-pill bg-primary">
-                  <fa-icon [icon]="icons.SHARES"></fa-icon>&nbsp;{{ f.shares.length + f.links.length }}
+                <span class="badge bg-primary">
+                  <fa-icon [icon]="icons.SHARES"></fa-icon>
+                  {{ f.shares.length + f.links.length }}
                 </span>
               } @else {
-                <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+                <span class="badge bg-secondary-alt" l10nTranslate>no</span>
               }
             </div>
           </div>
           <div class="d-flex align-items-center mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Anchored</div>
+            <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Anchored</div>
             @if (f.spaces.length) {
-              <span class="badge rounded-pill bg-primary"><fa-icon [icon]="icons.SPACES"></fa-icon>&nbsp;{{ f.spaces.length }}</span>
+              <span class="badge bg-primary">
+                <fa-icon [icon]="icons.SPACES"></fa-icon>
+                {{ f.spaces.length }}</span>
             } @else {
-              <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+              <span class="badge bg-secondary-alt" l10nTranslate>no</span>
             }
           </div>
           <div class="d-flex align-items-center mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Synced</div>
-            <span class="badge rounded-pill {{f.syncs.length ? 'bg-primary' : 'bg-secondary-alt'}}">
+            <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Synced</div>
+            <span class="badge {{f.syncs.length ? 'bg-primary' : 'bg-secondary-alt'}}">
               {{ (f.syncs.length ? 'yes' : 'no') | translate:locale.language }}
             </span>
           </div>
           <div class="d-flex align-items-center mb-1">
-            <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Comments</div>
-            <span (click)="goToComments()" class="badge rounded-pill {{f.hasComments ? 'bg-success' : 'bg-secondary-alt'}} cursor-pointer">
+            <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Comments</div>
+            <span (click)="goToComments()" class="badge {{f.hasComments ? 'bg-success' : 'bg-secondary-alt'}} cursor-pointer">
               {{ (f.hasComments ? 'yes' : 'no') | translate:locale.language }}
             </span>
           </div>
@@ -120,52 +121,52 @@
           <div class="p-2">
             @if (f.root.owner) {
               <div class="d-flex align-items-center mb-1">
-                <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Owner</div>
+                <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Owner</div>
                 <app-user-avatar [user]="f.root.owner" [height]="26" [width]="26" tooltipPlacement="bottom"></app-user-avatar>
               </div>
             }
             <div class="d-flex align-items-center">
-              <div class="d-flex col-sm-5 ps-1 pb-1 fw-bold" l10nTranslate>Permissions</div>
+              <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Permissions</div>
               @if (f.root.permissions) {
-                <app-file-permissions [permissions]="f.root.hPerms"></app-file-permissions>
+                <app-badge-permissions [permissions]="f.root.hPerms"></app-badge-permissions>
               } @else {
-                <span class="badge rounded-pill bg-secondary-alt" l10nTranslate>no</span>
+                <span class="badge bg-secondary-alt" l10nTranslate>no</span>
               }
             </div>
           </div>
         }
         @if (f.lock || f.spaces.length || f.shares.length || f.links.length || f.syncs.length) {
           <hr class="mt-1 mb-2" />
-          <div class="d-flex flex-wrap align-items-center p-2 fs-xs">
+          <div class="d-flex flex-wrap align-items-center p-2 fs-sm">
             @if (f.lock) {
               <div (click)="openLockDialog(f)"
-                   class="badge rounded-pill white-space-normal bg-maroon cursor-pointer mb-2">
+                   class="badge white-space-normal bg-maroon cursor-pointer mb-2">
                 <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faUnlock"></fa-icon>
-                <span>&nbsp;{{ f.lock | fileLockFormatPipe }}</span>
+                {{ f.lock | fileLockFormatPipe }}
               </div>
             }
             @for (space of f.spaces; track space.id) {
-              <div (click)="goToSpace(space)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToSpace(space)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SPACES"></fa-icon>
-                <span>&nbsp;{{ space.name }}</span>
+                {{ space.name }}
               </div>
             }
             @for (share of f.shares; track share.id) {
-              <div (click)="goToShare(share)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToShare(share)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SHARES"></fa-icon>
-                <span>&nbsp;{{ share.name }}</span>
+                {{ share.name }}
               </div>
             }
             @for (link of f.links; track link.id) {
-              <div (click)="goToShare(link)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToShare(link)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.LINKS"></fa-icon>
-                <span>&nbsp;{{ link.name }}</span>
+                {{ link.name }}
               </div>
             }
             @for (sync of f.syncs; track sync.id) {
-              <div (click)="goToSync(sync)" class="badge rounded-pill white-space-normal bg-primary cursor-pointer me-1 mb-2">
+              <div (click)="goToSync(sync)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
                 <fa-icon [icon]="icons.SYNC"></fa-icon>
-                <span>&nbsp;{{ sync.clientName }}</span>
+                {{ sync.clientName }}
               </div>
             }
           </div>
@@ -174,7 +175,4 @@
     }
   </div>
 }
-
-
-
 

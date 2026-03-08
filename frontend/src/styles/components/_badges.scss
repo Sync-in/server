@@ -1,0 +1,173 @@
+@mixin badge-vars(
+  $tone,
+  $light-text: null,
+  $light-bg-mix: 84%,
+  $light-border-mix: 66%
+) {
+  $light-bg: mix(rgba($white, 0.92), mix($white, $tone, $light-bg-mix), 72%);
+  $light-border: mix($white, $tone, $light-border-mix);
+  $light-fg: if($light-text != null, $light-text, mix($tone, $black, 90%));
+  $light-bg-full: $tone;
+  $light-border-full: $tone;
+
+  --badge-bg: #{$light-bg};
+  --badge-border: #{$light-border};
+  --badge-fg: #{$light-fg};
+  --badge-bg-full: #{$light-bg-full};
+  --badge-border-full: #{$light-border-full};
+}
+
+@mixin badge-dark-vars($bg, $border, $fg) {
+  --badge-bg: #{$bg};
+  --badge-border: #{$border};
+  --badge-fg: #{$fg};
+  --badge-bg-full: #{opacify($bg, 1)};
+  --badge-border-full: #{opacify($border, 1)};
+}
+
+@mixin badge-variant(
+  $selector,
+  $tone,
+  $light-text: null,
+  $light-bg-mix: 84%,
+  $light-border-mix: 66%
+) {
+
+  .badge.#{$selector} {
+    @include badge-vars($tone, $light-text, $light-bg-mix, $light-border-mix);
+    background-color: var(--badge-bg) !important;
+    border-color: var(--badge-border) !important;
+    color: var(--badge-fg) !important;
+  }
+}
+
+@mixin badge-dark-variant($selector, $bg, $border, $fg) {
+  body.theme-dark .badge.#{$selector} {
+    @include badge-dark-vars($bg, $border, $fg);
+    background-color: var(--badge-bg) !important;
+    border-color: var(--badge-border) !important;
+    color: var(--badge-fg) !important;
+  }
+}
+
+.badge {
+  --badge-bg: #{mix(rgba($white, 0.92), mix($white, $gray, 87%), 72%)};
+  --badge-border: #{mix($white, $gray, 66%)};
+  --badge-fg: #{mix($gray-dark, $black, 76%)};
+  --badge-bg-full: #{$gray};
+  --badge-border-full: #{$gray};
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  padding: $badge-padding-y $badge-padding-x;
+  border-radius: 9999px;
+  font-size: $font-size-xs;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  vertical-align: middle;
+  border: 1px solid var(--badge-border) !important;
+  background-color: var(--badge-bg) !important;
+  color: var(--badge-fg) !important;
+  user-select: none;
+
+  &:empty {
+    display: none;
+  }
+
+  &.badge-small {
+    padding: calc(#{$badge-padding-y} * 0.6) calc(#{$badge-padding-x} * 0.8);
+    font-size: calc(#{$font-size-xs} * 0.8);
+  }
+
+  &.badge-color-full {
+    background-color: var(--badge-bg-full) !important;
+    border-color: var(--badge-border-full) !important;
+    color: white !important;
+  }
+
+  fa-icon {
+    font-size: $font-size-base;
+  }
+
+}
+
+body.theme-dark .badge {
+  --badge-bg: #ffffff12;
+  --badge-border: #cbd5e14a;
+  --badge-fg: #e2e8f0;
+  --badge-bg-full: #475569;
+  --badge-border-full: #64748b;
+  //box-shadow: inset 0 0 0 9999px rgba($sidebar-dark-apps-menu-bg, 0.8);
+}
+
+$badge-variants: (
+  'bg-primary': (tone: 'primary', text: semantic-ink('primary', 86%)),
+  'bg-secondary': (tone: 'secondary', text: semantic-ink('gray-dark', 94%), bg-mix: 62%, border-mix: 34%),
+  'bg-success': (tone: 'success'),
+  'bg-danger': (tone: 'danger'),
+  'bg-warning': (tone: 'warning', text: #a35400),
+  'bg-info': (tone: 'info', text: semantic-ink('info', 88%)),
+  'bg-light': (tone: 'light', text: semantic-ink('gray-dark', 82%), bg-mix: 80%, border-mix: 60%),
+  'bg-dark': (tone: 'dark', text: semantic-ink('gray-dark', 88%), bg-mix: 82%, border-mix: 62%),
+  'bg-purple': (tone: 'purple', text: semantic-ink('purple', 88%)),
+  'bg-maroon': (tone: 'maroon', text: semantic-ink('maroon', 90%)),
+  'bg-gray-dark': (tone: 'gray-dark', text: semantic-ink('gray-dark', 88%), bg-mix: 82%, border-mix: 62%),
+  'bg-secondary-alt': (tone: 'secondary', text: semantic-ink('gray-dark', 94%), bg-mix: 62%, border-mix: 34%),
+  'sync-newly-0': (tone: 'sync-newly-0'),
+  'sync-newly-1': (tone: 'sync-newly-1'),
+  'sync-newly-2': (tone: 'sync-newly-2', text: semantic-ink('primary', 84%)),
+  'sync-newly-3': (tone: 'sync-newly-3', text: semantic-ink('primary', 82%)),
+  'sync-newly-4': (tone: 'sync-newly-4', text: #a35400),
+  'prop-newly-1': (tone: 'prop-newly-1', text: semantic-ink('purple', 88%)),
+  'prop-newly-2': (tone: 'prop-newly-2', text: semantic-ink('purple', 84%)),
+  'prop-newly-3': (tone: 'prop-newly-3', text: semantic-ink('purple', 82%))
+);
+
+$badge-dark-variants: (
+  'bg-secondary': 'secondary',
+  'bg-secondary-alt': 'secondary-alt',
+  'bg-primary': 'primary',
+  'bg-success': 'success',
+  'bg-danger': 'danger',
+  'bg-warning': 'warning',
+  'bg-info': 'info',
+  'bg-purple': 'purple',
+  'bg-maroon': 'maroon',
+  'bg-light': 'light',
+  'bg-dark': 'dark',
+  'bg-gray-dark': 'gray-dark',
+  'sync-newly-0': 'sync-newly-0',
+  'sync-newly-1': 'sync-newly-1',
+  'sync-newly-2': 'sync-newly-2',
+  'sync-newly-3': 'sync-newly-3',
+  'sync-newly-4': 'sync-newly-4',
+  'prop-newly-1': 'prop-newly-1',
+  'prop-newly-2': 'prop-newly-2',
+  'prop-newly-3': 'prop-newly-3'
+);
+
+@each $selector, $config in $badge-variants {
+  $bg-mix: map-get($config, bg-mix);
+  $border-mix: map-get($config, border-mix);
+
+  @include badge-variant(
+    $selector,
+    semantic-tone(map-get($config, tone)),
+    map-get($config, text),
+    if($bg-mix == null, 84%, $bg-mix),
+    if($border-mix == null, 66%, $border-mix)
+  );
+}
+
+@each $selector, $dark-key in $badge-dark-variants {
+  @include badge-dark-variant(
+    $selector,
+    semantic-dark($dark-key, bg),
+    semantic-dark($dark-key, border),
+    semantic-dark($dark-key, fg)
+  );
+}

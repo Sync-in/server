@@ -79,7 +79,7 @@
   border-radius: 16px;
   display: grid;
   place-items: center;
-  font-size: 22px;
+  font-size: calc(var(--font-size-base) * 1.4666667);
 }
 
 .editor-badge.collabora {

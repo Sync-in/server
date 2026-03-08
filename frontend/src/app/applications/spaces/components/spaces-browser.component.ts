@@ -11,6 +11,7 @@ import {
   faArrowUp,
   faBan,
   faCircleInfo,
+  faCirclePlus,
   faClipboardList,
   faCommentDots,
   faDownload,
@@ -47,6 +48,7 @@ import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { SERVER_CONNECTION_ERROR } from '../../../app.constants'
+import { BadgePermissionsComponent } from '../../../common/components/badge-permissions.component'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
@@ -67,7 +69,6 @@ import { FilesNewDialogComponent } from '../../files/components/dialogs/files-ne
 import { FilesTrashDialogComponent } from '../../files/components/dialogs/files-trash-dialog.component'
 import { FilesTrashEmptyDialogComponent } from '../../files/components/dialogs/files-trash-empty-dialog.component'
 import { FileLockFormatPipe } from '../../files/components/utils/file-lock.utils'
-import { FilePermissionsComponent } from '../../files/components/utils/file-permissions.component'
 import { FileEvent } from '../../files/interfaces/file-event.interface'
 import { FileModel } from '../../files/models/file.model'
 import { FilesUploadService } from '../../files/services/files-upload.service'
@@ -102,7 +103,7 @@ import { SpaceAnchorFileDialogComponent } from './dialogs/space-anchor-file-dial
     SearchFilterPipe,
     UserAvatarComponent,
     UploadFilesDirective,
-    FilePermissionsComponent,
+    BadgePermissionsComponent,
     TapDirective,
     FileLockFormatPipe
   ],
@@ -127,6 +128,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     SYNC: SYNC_ICON.SYNC,
     faArrowRotateRight,
     faPlus,
+    faCirclePlus,
     faFileAlt,
     faGlobe,
     faUpload,
@@ -178,7 +180,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   protected tableHeaders: Record<'name' | 'anchored' | 'info' | 'permissions' | 'size' | 'mtime', TableHeaderConfig> = {
     name: {
       label: 'Name',
-      width: 45,
+      width: 40,
       textCenter: false,
       class: '',
       show: true,
@@ -195,7 +197,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     info: { label: 'Info', width: 15, textCenter: true, class: 'd-none d-md-table-cell', show: true },
     permissions: {
       label: 'Permissions',
-      width: 10,
+      width: 12,
       textCenter: true,
       class: 'd-none d-lg-table-cell',
       show: this.hasRoots
@@ -523,13 +525,14 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       const s = r[1]
       if (this.selection[0].id < 0) this.selection[0].id = s.file.id
       this.selection[0].shares.push({ id: s.id, alias: s.alias, name: s.name, type: SHARE_TYPE.COMMON })
+      this.selection[0].updateNbBadges()
     })
   }
 
   openShareLinkDialog() {
     const f: Partial<FileSpace> = this.setFilePermissionsAndSpace()
     if (f === null) return
-    const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'md', {
+    const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
       initialState: {
         file: f,
         isSharesRepo: this.isSharesRepo,
@@ -541,6 +544,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       if (action === 'add') {
         if (this.selection[0].id < 0) this.selection[0].id = s.file.id
         this.selection[0].links.push({ id: s.id, alias: s.alias, name: s.name, type: SHARE_TYPE.LINK })
+        this.selection[0].updateNbBadges()
       }
     })
   }
@@ -555,6 +559,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         if (rootFile && f.spaces.map((s: Partial<SpaceModel>) => s.id).indexOf(up.space.id) === -1) {
           if (f.id < 0) f.id = rootFile.id
           f.spaces.push(up.space)
+          f.updateNbBadges()
         }
       }
     })

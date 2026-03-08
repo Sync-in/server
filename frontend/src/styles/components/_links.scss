@@ -35,10 +35,10 @@
   }
 
   .error-code {
-    @extend .no-select-pointer;
+    @include no-select-pointer-utility;
     color: #fff;
-    font-size: 20px;
-    font-weight: 700;
+    font-size: $font-size-xl;
+    font-weight: 600;
     text-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
     line-height: normal;
   }
@@ -50,7 +50,7 @@
     padding: 0 20px;
 
     .oops {
-      font-size: 18px;
+      font-size: $font-size-lg;
     }
 
     .hr {
@@ -64,13 +64,8 @@
 
     .solve {
       display: inline-block;
-      font-size: 18px;
+      font-size: $font-size-lg;
       font-weight: 400;
-    }
-
-    .search-form {
-      display: inline-block;
-      margin: 50px 0 80px 0;
     }
   }
 }

@@ -1,12 +1,12 @@
 <div class="app-top-menu">
-  <div class="btn-group btn-group-sm">
-    <select (ngModelChange)="onSelectPath($event)" [ngModel]="syncPathSelected" class="form-select form-select-sm font-size-xs" style="min-width: 210px">
+  <div class="btn-group">
+    <select (ngModelChange)="onSelectPath($event)" [ngModel]="syncPathSelected" class="form-select" style="min-width: 210px">
       <option [ngValue]="null" l10nTranslate>All syncs</option>
       @for (p of store.clientSyncPaths(); track p.id) {
         <option [ngValue]="p">{{ p.settings.name }}</option>
       }
     </select>
-    <select (ngModelChange)="onSelectAction($event)" [ngModel]="action" class="form-select form-select-sm font-size-xs ms-1" style="min-width: 170px">
+    <select (ngModelChange)="onSelectAction($event)" [ngModel]="action" class="form-select ms-1" style="min-width: 170px">
       <option [ngValue]="null" l10nTranslate>All events</option>
       <option l10nTranslate value="NEW|MKFILE|MKDIR">Added</option>
       <option l10nTranslate value="DIFF">Modified</option>
@@ -20,14 +20,14 @@
     <button (click)="refresh()"
             [tooltip]="'Refresh' | translate:locale.language"
             container="body"
-            class="btn btn-sm btn-secondary me-1"
+            class="btn btn-default me-1"
             type="button">
       <fa-icon [icon]="icons.faRedo"></fa-icon>
     </button>
     <button (click)="openClearDialog()"
             [tooltip]="'Clear events' | translate:locale.language"
             placement="bottom"
-            class="btn btn-sm btn-secondary me-1"
+            class="btn btn-default me-1"
             type="button">
       <fa-icon [icon]="icons.faTrashCan"></fa-icon>
     </button>
@@ -66,40 +66,41 @@
             @if (th.value.show) {
               <td [style.width.%]="th.value.width"
                   [class.text-align-center]="th.value.textCenter"
-                  class="{{th.value.class}} {{th.value.newly ? 'prop-newly-' + t[th.value.newly] : ''}}">
+                  class="{{th.value.class}}">
                 @switch (th.key) {
                   @case ('action') {
-                    <span class="d-flex align-items-center">
-                      <fa-icon [icon]="t.sideIcon" class="{{t.ok ? t.sideIconClass : 'circle-error-icon-sm'}}"></fa-icon>
-                      <fa-icon [icon]="t.actionIcon" [class.text-danger]="!t.ok" class="circle-gray-icon-sm" size="sm"></fa-icon>
-                      <span [class.text-danger]="!t.ok" class="fs-xxxs" l10nTranslate>{{ t.actionText }}</span>
+                    <span class="d-flex align-items-center" [title]="t.actionText | translate:locale.language">
+                      <fa-icon [icon]="t.sideIcon" class="{{t.ok ? t.sideIconClass : 'circle-error-icon-sm'}} me-1"></fa-icon>
+                      <fa-icon [icon]="t.actionIcon" [class.text-danger]="!t.ok" class="circle-gray-icon-sm cursor-pointer" size="sm"></fa-icon>
                     </span>
                   }
                   @case ('sync') {
                     <span class="d-flex align-items-center">
-                      <span class="fs-xxs ms-1">{{ t.syncPathName }}</span>
+                      <span class="fs-sm ms-1">{{ t.syncPathName }}</span>
                     </span>
                   }
                   @case ('file') {
                     <div class="d-flex align-items-center">
                       <img [src]=t.mimeUrl (error)="t.fallBackMimeUrl()" alt="" class="me-2" width="24">
-                      <span class="d-flex flex-column fs-xxs">
+                      <span class="d-flex flex-column fs-sm">
                         @if (t.fileDst) {
                           <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ t.fileDst }}</span>
-                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} fs-xxxs"><b l10nTranslate>Source</b>:&nbsp;{{ t.file }}</span>
+                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} fs-sm"><b l10nTranslate>Source</b>:&nbsp;{{ t.file }}</span>
                         } @else {
                           <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}}">{{ t.file }}</span>
                         }
                         @if (!t.ok) {
-                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} text-danger fs-xxxs">{{ t.error }}</span>
+                          <span class="{{t.selected ? 'overflow-wrap-and-whitespace' : 'truncate'}} text-danger fs-sm" l10nTranslate>{{ t.error }}</span>
                         }
                       </span>
                     </div>
                   }
                   @case ('date') {
-                    <div (mouseenter)="t.hovered = true" (mouseleave)="t.hovered = false">
+                    <span class="{{th.value.newly && t[th.value.newly] ? 'badge prop-newly-' + t[th.value.newly] : ''}}"
+                         (mouseenter)="t.hovered = true"
+                         (mouseleave)="t.hovered = false">
                       <span>{{ t.hovered ? t.timestamp : t.hTimeAgo }}</span>
-                    </div>
+                    </span>
                   }
                 }
               </td>

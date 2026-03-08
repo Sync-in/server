@@ -1,9 +1,9 @@
 <div class="wizard">
   <div class="my-2">
-    <div class="d-flex align-items-center justify-content-center fs-sm" style="min-height: 40px">
+    <div class="d-flex align-items-center justify-content-center fs-md" style="min-height: 40px">
       @if (selectedPath) {
         @if (selectedPath.icon) {
-          <fa-icon [icon]="selectedPath.icon" class="circle-{{selectedPath.iconClass}}-icon" style="width: 32px; height: 32px; font-size: 16px"></fa-icon>
+          <fa-icon [icon]="selectedPath.icon" class="circle-{{selectedPath.iconClass}}-icon" style="width: 32px; height: 32px; font-size: var(--font-size-md)"></fa-icon>
         } @else {
           <img [src]="selectedPath.mimeUrl" alt="" height="30">
         }
@@ -12,11 +12,10 @@
         <span l10nTranslate>Please select the server directory to sync, if it doesn't exist you can create it.</span>
       }
     </div>
-    <div class="app-top-menu px-0 bg-transparent">
+    <div class="app-top-menu px-0">
       <button (click)="onBack()"
               [disabled]="!currentPath"
-              [tooltip]="'Back' | translate:locale.language"
-              class="btn btn-sm btn-secondary"
+              class="btn btn-default"
               type="button">
         <fa-icon [icon]="icons.faArrowCircleLeft"></fa-icon>
       </button>
@@ -30,8 +29,7 @@
           <button (click)="addDirectory()"
                   [hidden]="!canCreateDir"
                   [disabled]="!newDirectoryName"
-                  [tooltip]="'Add' | translate:locale.language"
-                  class="btn btn-sm btn-secondary input-group-text"
+                  class="btn btn-default input-group-text"
                   type="button">
             <fa-icon [icon]="icons.faFolderPlus"></fa-icon>
           </button>
@@ -39,7 +37,7 @@
                  [(ngModel)]="newDirectoryName"
                  [hidden]="!canCreateDir"
                  [ngModelOptions]="{standalone: true}"
-                 class="form-control form-control-sm me-1"
+                 class="form-control me-1"
                  [placeholder]="'New folder' | translate:locale.language" type="text">
         </div>
       </form>
@@ -55,7 +53,7 @@
       </tr>
       </thead>
     </table>
-    <div [resizeOffset]="230" appAutoResize [useMaxHeight]="false" class="wizard-nav-content">
+    <div [resizeOffset]="250" appAutoResize [useMaxHeight]="false" class="wizard-nav-content">
       <table class="app-table">
         <tbody tabindex="-1">
           @for (p of currentPaths(); track p.id) {
@@ -65,7 +63,7 @@
               <td>
                 <div class="d-flex align-items-center">
                   @if (p.icon) {
-                    <fa-icon [icon]="p.icon" class="circle-{{p.iconClass}}-icon" style="width: 32px; height: 32px; font-size: 16px"></fa-icon>
+                    <fa-icon [icon]="p.icon" class="circle-{{p.iconClass}}-icon" style="width: 32px; height: 32px; font-size: var(--font-size-md)"></fa-icon>
                   } @else {
                     <img [src]="p.mimeUrl" alt="" height="30">
                   }
@@ -80,11 +78,11 @@
   </div>
   <div class="mt-auto">
     <div class="d-flex align-items-start">
-      <button (click)="onPrevious()" class="btn btn-secondary me-auto" type="button" l10nTranslate>
+      <button (click)="onPrevious()" class="btn btn-default me-auto" type="button" l10nTranslate>
         <fa-icon [icon]="icons.faArrowCircleLeft"></fa-icon>
         Previous
       </button>
-      <button (click)="onNext()" [disabled]="!selectedPath" class="btn btn-secondary ms-auto" type="button" l10nTranslate>
+      <button (click)="onNext()" [disabled]="!selectedPath" class="btn btn-default ms-auto" type="button" l10nTranslate>
         <fa-icon [icon]="icons.faArrowCircleRight"></fa-icon>
         Next
       </button>

@@ -1,41 +1,37 @@
-<div class="box-transparent">
-  <div class="box-header">
-    <fa-icon [icon]="icons.faFileLines"></fa-icon>
-    <span class="box-title" l10nTranslate>Files</span>
-    <fa-icon [icon]="moreElements ? icons.faMagnifyingGlassMinus : icons.faMagnifyingGlassPlus"
-             (click)="switchMore()"
-             class="ms-auto btn-link"
-             role="button">
-    </fa-icon>
+<div class="recents-widget-card">
+  <div class="recents-widget-card__header">
+    <div class="recents-widget-card__title-wrap">
+      <span class="recents-widget-card__title-icon">
+        <fa-icon [icon]="icons.faFileLines"></fa-icon>
+      </span>
+      <span class="recents-widget-card__title" l10nTranslate>Files</span>
+    </div>
+    <button type="button" class="recents-widget-card__toggle" (click)="switchMore()">
+      <fa-icon [icon]="moreElements ? icons.faMagnifyingGlassMinus : icons.faMagnifyingGlassPlus"></fa-icon>
+    </button>
   </div>
-  <div class="box-body px-0 py-0">
-    @for (f of files(); track f.id; let last = $last) {
-      <ul class="products-list product-list-in-box" [class.border-0]="last">
-        <li (click)="goToFile(f)" class="item">
-          <div class="product-img">
-            <img [src]="f.mimeUrl" alt="" (error)="f.fallBackMimeUrl()">
-          </div>
-          <div class="product-info">
-          <span class="product-title">
-            <span>{{ f.name }}</span>
+  <div class="recents-widget-card__body">
+    @for (f of files(); track f.id; let i = $index) {
+      <button type="button" class="recent-item-card" [style.animation-delay.ms]="i * 22" (click)="goToFile(f)">
+        <span class="recent-item-card__media">
+          <img [src]="f.mimeUrl" alt="" (error)="f.fallBackMimeUrl()">
+        </span>
+        <span class="recent-item-card__content">
+          <span class="recent-item-card__title">{{ f.name }}</span>
+          <span class="recent-item-card__path text-{{f.iconClass}}">
+            @if (f.inTrash) {
+              <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
+            }
+            <fa-icon [icon]="f.icon" class="me-1"></fa-icon>
+            <span>{{ f.showedPath }}</span>
           </span>
-            <span class="product-description text-{{f.iconClass}}">
-              @if (f.inTrash) {
-                <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
-              }
-              <fa-icon [icon]="f.icon" class="me-1"></fa-icon>
-              <span>{{ f.showedPath }}</span>
-          </span>
-          </div>
-          <div class="product-badge">
-            <span class="fs-xxxxs text-muted">{{ f.mtime | amTimeAgo }}</span>
-          </div>
-        </li>
-      </ul>
+        </span>
+        <span class="recent-item-card__time">{{ f.mtime | amTimeAgo }}</span>
+      </button>
     } @empty {
-      <div class="d-flex flex-column justify-content-center text-align-center text-gray p-4" style="min-height: 200px;">
+      <div class="recent-empty-state">
         <fa-icon [icon]="icons.faFileLines" size="2x"></fa-icon>
-        <div class="mt-4" l10nTranslate>No recent files</div>
+        <div class="mt-3" l10nTranslate>No recent files</div>
       </div>
     }
   </div>

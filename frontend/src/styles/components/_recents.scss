@@ -1,0 +1,159 @@
+.recents-dashboard {
+  padding: .4rem;
+}
+
+.recents-grid {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.recents-widget-card {
+  position: relative;
+  width: 100%;
+  border: 1px solid;
+  border-radius: $border-radius;
+  overflow: hidden;
+  transition: box-shadow 0.14s ease;
+}
+
+.recents-widget-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.78rem;
+  padding: 0.34rem 0.66rem;
+  border-bottom: 1px solid;
+}
+
+.recents-widget-card__title-wrap {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 0.58rem;
+}
+
+.recents-widget-card__title-icon {
+  width: 2.05rem;
+  height: 2.05rem;
+  border-radius: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-base;
+}
+
+.recents-widget-card__title {
+  display: inline-block;
+  line-height: 1.05;
+  font-size: $font-size-base;
+  font-weight: 500;
+  user-select: none;
+}
+
+.recents-widget-card__toggle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.6rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: $font-size-base;
+}
+
+.recents-widget-card__body {
+  padding: 0.48rem 0.48rem 0.52rem;
+}
+
+.recent-item-card {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 0.68rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  appearance: none;
+  padding: 0.42rem 0.5rem;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 0.54rem;
+  text-align: left;
+  cursor: pointer;
+  animation: recent-card-enter 0.26s ease both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+
+  + .recent-item-card {
+    margin-top: 0.34rem;
+  }
+}
+
+.recent-item-card:hover {
+  transform: translateY(-1px);
+}
+
+.recent-item-card__media {
+  width: 2rem;
+  height: 2rem;
+}
+
+.recent-item-card__content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.recent-item-card__title {
+  line-height: 1.2;
+  font-size: $font-size-base;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-item-card__path {
+  line-height: 1.15;
+  font-size: $font-size-sm;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recent-item-card__time {
+  white-space: nowrap;
+  font-size: $font-size-xs;
+  line-height: 1;
+  margin-left: 0.38rem;
+  min-width: 5.05rem;
+  text-align: right;
+  padding-top: 0.04rem;
+}
+
+.recent-empty-state {
+  min-height: 142px;
+  border-radius: 0.65rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 0.85rem;
+}
+
+@keyframes recent-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -13,7 +13,8 @@ import { FilesService } from '../../services/files.service'
 @Component({
   selector: 'app-files-recents-widget',
   imports: [L10nTranslateDirective, FaIconComponent, TimeAgoPipe],
-  templateUrl: './files-recents-widget.component.html'
+  templateUrl: './files-recents-widget.component.html',
+  styleUrl: './files-recents-widget.component.scss'
 })
 export class FilesRecentsWidgetComponent {
   protected moreElements = false

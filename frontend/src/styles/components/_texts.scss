@@ -1,3 +1,15 @@
+:root {
+  --font-size-3xl: #{$font-size-3xl};
+  --font-size-2xl: #{$font-size-2xl};
+  --font-size-xl: #{$font-size-xl};
+  --font-size-lg: #{$font-size-lg};
+  --font-size-md: #{$font-size-md};
+  --font-size-base: #{$font-size-base};
+  --font-size-sm: #{$font-size-sm};
+  --font-size-xs: #{$font-size-xs};
+  --font-size-2xs: #{$font-size-2xs};
+}
+
 .white-space-normal {
   white-space: normal !important;
 }
@@ -19,9 +31,7 @@
 }
 
 .text-truncate {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  @include text-truncate-utility;
 }
 
 .text-file-name-preserve {
@@ -56,32 +66,32 @@
   text-decoration: line-through;
 }
 
+.text-bold {
+  font-weight: 500;
+}
+
 .fs-lg {
-  font-size: $font-size-lg;
+  font-size: var(--font-size-lg, #{$font-size-lg});
+}
+
+.fs-base {
+  font-size: var(--font-size-base, #{$font-size-base});
 }
 
 .fs-md {
-  font-size: $font-size-md;
+  font-size: var(--font-size-md, #{$font-size-md});
 }
 
 .fs-sm {
-  font-size: $font-size-sm !important;
+  font-size: var(--font-size-sm, #{$font-size-sm}) !important;
 }
 
 .fs-xs {
-  font-size: $font-size-xs !important;
+  font-size: var(--font-size-xs, #{$font-size-xs}) !important;
 }
 
-.fs-xxs {
-  font-size: $font-size-xxs !important;
-}
-
-.fs-xxxs {
-  font-size: $font-size-xxxs !important;
-}
-
-.fs-xxxxs {
-  font-size: $font-size-xxxxs !important;
+.fs-2xs {
+  font-size: var(--font-size-2xs, #{$font-size-2xs}) !important;
 }
 
 .fw-500 {

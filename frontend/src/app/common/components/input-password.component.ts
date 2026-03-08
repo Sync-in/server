@@ -11,9 +11,9 @@ import { togglePasswordType } from '../utils/functions'
   selector: 'app-input-password',
   imports: [FormsModule, ReactiveFormsModule, L10nTranslatePipe, FaIconComponent, L10nTranslateDirective],
   template: `@if (showLabel) {
-      <label for="password" l10nTranslate>Password</label>
+      <label for="password" class="form-label" l10nTranslate>Password</label>
     }
-    <div id="password" class="input-group input-group-sm" style="min-width: 150px">
+    <div id="password" class="input-group" style="min-width: 150px">
       <input
         #Password
         autocomplete="off"
@@ -22,10 +22,10 @@ import { togglePasswordType } from '../utils/functions'
         [class.is-invalid]="isRequired && password?.length < passwordMinLength"
         (keyup)="passwordChange.emit(password)"
         type="password"
-        class="form-control form-control-sm pe-0"
+        class="form-control pe-0"
         [class.text-center]="centered"
         [style.padding-left]="centered ? '2rem' : ''"
-        [placeholder]="placeholder | translate: locale.language"
+        [attr.placeholder]="placeholder ? (placeholder | translate: locale.language) : null"
         [required]="isRequired"
       />
       @if (showGenerator) {
@@ -47,7 +47,7 @@ export class InputPasswordComponent implements OnInit {
   @Input() password: string
   @Output() passwordChange = new EventEmitter<string>()
   @Input() passwordMinLength = USER_PASSWORD_MIN_LENGTH
-  @Input() placeholder: string
+  @Input() placeholder: string | null = null
   @Input() showGenerator = false
   @Input() showLabel = false
   @Input() disabled = false

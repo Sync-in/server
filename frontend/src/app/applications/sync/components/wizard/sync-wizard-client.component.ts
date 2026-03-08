@@ -1,7 +1,7 @@
 import { Component, inject, Renderer2 } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faArrowCircleRight, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
+import { faArrowCircleRight, faDownload, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { ELECTRON_DIALOG } from '../../../../electron/constants/dialogs'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -21,7 +21,7 @@ export class SyncWizardClientComponent {
   public pathIsValid = false
   public infoMsg: string = null
   protected readonly syncService = inject(SyncService)
-  protected readonly icons = { faTimesCircle, faArrowCircleRight }
+  protected readonly icons = { faTimesCircle, faArrowCircleRight, faDownload }
   private readonly router = inject(Router)
   private readonly renderer = inject(Renderer2)
   private readonly store = inject(StoreService)

@@ -3,6 +3,7 @@ import { Component, inject, OnDestroy } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons'
 import { Subscription } from 'rxjs'
+import { logoIconUrl } from '../../applications/files/files.constants'
 import { UserType } from '../../applications/users/interfaces/user.interface'
 import { USER_ONLINE_STATUS_LIST } from '../../applications/users/user.constants'
 import { StoreService } from '../../store/store.service'
@@ -18,6 +19,8 @@ import { LayoutService } from '../layout.service'
 export class NavBarComponent implements OnDestroy {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly icons = { faAngleLeft, faAngleRight }
+  protected logoIconUrl = logoIconUrl
+  protected leftSideBarIsOpen = true
   protected user: UserType
   protected userAvatar: string = null
   private readonly location = inject(Location)
@@ -28,6 +31,7 @@ export class NavBarComponent implements OnDestroy {
   constructor() {
     this.subscriptions.push(this.store.user.subscribe((user: UserType) => (this.user = user)))
     this.subscriptions.push(this.store.userAvatarUrl.subscribe((avatarUrl) => (this.userAvatar = avatarUrl)))
+    this.subscriptions.push(this.layout.leftSideBarIsOpen.subscribe((isOpen) => (this.leftSideBarIsOpen = isOpen)))
   }
 
   ngOnDestroy() {
@@ -36,6 +40,10 @@ export class NavBarComponent implements OnDestroy {
 
   openSidebarUser() {
     this.layout.showRSideBarTab(TAB_MENU.PROFILE)
+  }
+
+  toggleLeftSideBar() {
+    this.layout.toggleLSideBar()
   }
 
   navigateTo(action: string) {

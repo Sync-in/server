@@ -142,6 +142,11 @@ export class LinkDialogComponent implements OnInit {
     this.linkForm.controls.requireAuth.markAsDirty()
   }
 
+  toggleIsActiveFromCard() {
+    this.linkForm.controls.isActive.setValue(!this.linkForm.controls.isActive.value)
+    this.linkForm.controls.isActive.markAsDirty()
+  }
+
   copyToClipboard() {
     this.linksService.copyLinkToClipboard(this.share ? this.share.link.uuid : this.link.uuid)
     this.linkWasCopied = true

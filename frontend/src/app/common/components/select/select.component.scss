@@ -15,7 +15,7 @@
   .ui-icon {
     min-width: 26px;
     min-height: 26px;
-    font-size: .85rem;
+    font-size: calc(var(--font-size-base) * 0.9066667);
   }
 
   .ui-disabled {
@@ -49,7 +49,7 @@
     }
 
     .close {
-      font-size: 1.6em;
+      font-size: calc(var(--font-size-base) * 1.6);
       line-height: 0.75;
     }
 

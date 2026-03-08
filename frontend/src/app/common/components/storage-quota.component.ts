@@ -9,7 +9,7 @@ import { quotaRegexp } from '../utils/regexp'
   selector: 'app-storage-quota',
   imports: [L10nTranslatePipe, TooltipModule, FormsModule, L10nTranslateDirective],
   template: `
-    <label for="storageQuota" l10nTranslate>Storage Quota</label>
+    <label for="storageQuota" class="form-label" l10nTranslate>Storage Quota</label>
     <div id="storageQuota">
       <input
         id="quota"
@@ -17,7 +17,7 @@ import { quotaRegexp } from '../utils/regexp'
         (ngModelChange)="onQuotaInput($event)"
         (blur)="onQuotaBlur()"
         [placeholder]="'Unlimited' | translate: locale.language"
-        class="form-control form-control-sm {{ invalid() ? 'is-invalid' : '' }}"
+        class="form-control{{ invalid() ? 'is-invalid' : '' }}"
         [class.w-100]="fullWidth()"
         [style.max-width.%]="displayMaxWidth()"
         placement="top"

@@ -68,7 +68,7 @@ export class TrashComponent implements OnInit {
       label: 'Elements',
       width: 10,
       textCenter: true,
-      class: '',
+      class: 'd-none d-md-table-cell',
       show: true,
       sortable: true
     },

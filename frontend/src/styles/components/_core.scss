@@ -1,11 +1,9 @@
-html, body {
-  background-color: $sidebar-dark-icons-menu-bg;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-font-smoothing: antialiased;
+html {
+  height: 100%;
+  scroll-behavior: smooth;
   scrollbar-width: thin;
   scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
-  font-size: 1rem;
-  height: 100%;
+  -webkit-text-size-adjust: 100%;
 
   ::-webkit-scrollbar {
     width: 8px;
@@ -22,6 +20,18 @@ html, body {
   }
 }
 
+body {
+  margin: 0;
+  height: 100%;
+  //letter-spacing: -0.01em;
+  font-optical-sizing: auto;
+  font-kerning: normal;
+  font-feature-settings: "kern" 1, "liga" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: $sidebar-dark-icons-menu-bg;
+}
+
 .wrapper {
   display: flex;
   flex-direction: column;
@@ -34,12 +44,12 @@ html, body {
 .content-wrapper {
   display: flex;
   position: relative;
-  margin-left: $sidebar-apps-menus-width + $sidebar-apps-icons-width;
+  margin-left: $sidebar-apps-menus-width;
   margin-right: $control-sidebar-menu-width;
   padding-top: $navbar-height;
   flex: 1 1 auto;
   z-index: $content-z-index;
-  transition: margin-left $transition-speed $transition-fn;
+  transition: margin-left $transition-speed $transition-fn, margin-right $transition-speed $transition-fn;
 
   .content-container {
     padding-left: 0;

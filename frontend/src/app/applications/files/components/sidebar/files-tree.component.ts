@@ -267,7 +267,9 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
 
   private collapseChildren(node: TreeNode, children: TreeNode[]) {
     for (const child of children) {
-      if ([0, -1, -2].indexOf(child.id) === -1 && child.id !== node.id) {
+      // ignore auto collapse
+      // if ([0, -1, -2].indexOf(child.id) === -1 && child.id !== node.id)
+      if (child.id !== node.id) {
         child.data.isExpanded = false
         child.collapse()
       }

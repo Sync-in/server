@@ -22,6 +22,7 @@ import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } fr
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
+import { BadgePermissionsComponent } from '../../../common/components/badge-permissions.component'
 import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
@@ -33,7 +34,6 @@ import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
-import { FilePermissionsComponent } from '../../files/components/utils/file-permissions.component'
 import { ShareRepositoryComponent } from '../../shares/components/utils/share-repository.component'
 import { ShareModel } from '../../shares/models/share.model'
 import { SharesService } from '../../shares/services/shares.service'
@@ -56,7 +56,7 @@ import { LinkDialogComponent } from './dialogs/link-dialog.component'
     VirtualScrollComponent,
     SearchFilterPipe,
     ShareRepositoryComponent,
-    FilePermissionsComponent,
+    BadgePermissionsComponent,
     TapDirective
   ],
   templateUrl: 'links.component.html'
@@ -122,7 +122,7 @@ export class LinksComponent implements OnInit {
     info: { label: 'Info', width: 15, textCenter: true, class: 'd-none d-lg-table-cell', show: true, sortable: true },
     permissions: {
       label: 'Permissions',
-      width: 10,
+      width: 12,
       textCenter: true,
       class: 'd-none d-lg-table-cell',
       show: true,
@@ -197,7 +197,7 @@ export class LinksComponent implements OnInit {
 
   openLinkDialog() {
     this.linksService.shareLink(this.selected.id).subscribe((share: ShareLinkModel) => {
-      const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'md', {
+      const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
         initialState: { share: share } as LinkDialogComponent
       })
       modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['update' | 'delete', ShareLinkModel] | ['add', ShareModel]) => {

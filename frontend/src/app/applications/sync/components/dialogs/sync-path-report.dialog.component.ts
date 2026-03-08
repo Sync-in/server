@@ -46,7 +46,8 @@ import { SYNC_ICON } from '../../sync.constants'
     SearchFilterPipe,
     ButtonCheckboxDirective
   ],
-  templateUrl: 'sync-path-report.dialog.component.html'
+  templateUrl: 'sync-path-report.dialog.component.html',
+  styleUrl: './sync-path-report.dialog.component.scss'
 })
 export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
   locale = inject<L10nLocale>(L10N_LOCALE)
@@ -71,7 +72,7 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
   protected tableHeaders: Record<'action' | 'file', TableHeaderConfig> = {
     action: {
       label: 'Action',
-      width: 16,
+      width: 20,
       textCenter: false,
       class: '',
       show: true,
@@ -79,7 +80,7 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
     },
     file: {
       label: 'File',
-      width: 84,
+      width: 80,
       textCenter: false,
       class: '',
       show: true,

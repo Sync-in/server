@@ -1,14 +1,14 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
   <button (click)="loadShares()"
-          class="d-none d-sm-block btn btn-sm btn-secondary me-1"
+          class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           container="body"
           type="button">
     <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
   <button (click)="openShareDialog(true)"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-default me-1"
           [tooltip]="'New share' | translate:locale.language"
           container="body"
           type="button">
@@ -16,7 +16,7 @@
   </button>
   <button (click)="openShareDialog()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-default me-1"
           [tooltip]="'Edit share' | translate:locale.language"
           container="body"
           type="button">
@@ -24,7 +24,7 @@
   </button>
   <button (click)="openChildShareDialog()"
           [disabled]="!selected?.counts.shares"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-default me-1"
           [tooltip]="'Edit children shares' | translate:locale.language"
           container="body"
           type="button">
@@ -32,7 +32,7 @@
   </button>
   <button (click)="goTo()"
           [disabled]="!selected"
-          class="btn btn-sm btn-secondary me-1"
+          class="btn btn-default me-1"
           [tooltip]="'Go to' | translate:locale.language"
           container="body"
           type="button">
@@ -40,7 +40,7 @@
   </button>
   <div class="ms-auto">
     <!--Start Filter Button-->
-    <div class="btn-group btn-group-sm me-1">
+    <div class="btn-group me-1">
       <app-input-filter class="d-none d-sm-block"></app-input-filter>
     </div>
     <!--End Filter Button-->
@@ -74,23 +74,38 @@
                [style.width.px]="galleryMode.dimensions"
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
-              <img [src]="s.mimeUrl" [height]="galleryMode.image" [width]="galleryMode.image" alt="" draggable="true" (error)="s.fallBackMimeUrl()">
+              <img [src]="s.mimeUrl"
+                   [height]="galleryMode.image"
+                   [width]="galleryMode.image"
+                   alt=""
+                   draggable="true"
+                   (error)="s.fallBackMimeUrl()">
               <span class="label-top-right">
                 @if (s.newly) {
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge rounded-pill bg-warning">{{ s.hTimeAgo }}</span>
+                  <span [style.font-size.px]="galleryMode.textSize" class="badge bg-purple">{{ s.hTimeAgo }}</span>
                 }
               </span>
-              @if (s.counts.shares) {
-                <div (click)="openChildShareDialog(s)"
-                     [style.font-size.px]="galleryMode.textSize"
-                     class="label-bottom-right badge rounded-pill bg-purple cursor-pointer me-1">
-                  <fa-icon class="me-1" [icon]="icons.SHARED"></fa-icon>
-                  <span>{{ s.counts.shares }}</span>
-                </div>
-              }
+              <span class="label-bottom-right">
+                @if (s.hasComments) {
+                  <span (click)="goToComments(s)"
+                        [style.font-size.px]="galleryMode.textSize"
+                        class="badge bg-success cursor-pointer">
+                    <fa-icon [icon]="icons.faCommentDots"></fa-icon>
+                  </span>
+                }
+                @if (s.counts.shares) {
+                  <div (click)="openChildShareDialog(s)"
+                       [style.font-size.px]="galleryMode.textSize"
+                       class="badge bg-purple cursor-pointer">
+                    <fa-icon [icon]="icons.SHARED"></fa-icon>
+                    {{ s.counts.shares }}
+                  </div>
+                }
+              </span>
               <span class="label-bottom-left">
                 <app-share-repository [share]="s" [galleryMode]="galleryMode"></app-share-repository>
               </span>
+
             </div>
             <div class="card-footer text-center text-truncate p-1">
               <span [style.font-size.px]="galleryMode.textSize" class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
@@ -139,14 +154,14 @@
               @if (th.value.show) {
                 <td [style.width.%]="th.value.width"
                     [class.text-align-center]="th.value.textCenter"
-                    class="{{th.value.class}} {{th.value.newly ? 'prop-newly-' + s[th.value.newly] : ''}}">
+                    class="{{th.value.class}}">
                   @switch (th.key) {
                     @case ('name') {
                       <div class="d-flex align-items-center">
                         <img [src]="s.mimeUrl" alt="" draggable="false" height="30" width="30" (error)="s.fallBackMimeUrl()">
                         <div class="d-flex flex-column text-truncate">
                           <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
-                          <span class="no-pointer-events text-muted fs-xxxs" draggable="false">{{ s.description }}</span>
+                          <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ s.description }}</span>
                         </div>
                       </div>
                     }
@@ -154,23 +169,25 @@
                       <app-share-repository [share]="s"></app-share-repository>
                     }
                     @case ('members') {
-                      <span>{{ s.counts | joinCounts:['shares'] }}</span>
+                      <app-badge-members [members]="s.counts"></app-badge-members>
                     }
                     @case ('info') {
                       @if (s.counts.shares) {
-                        <span (click)="openChildShareDialog(s)" class="badge rounded-pill bg-purple cursor-pointer me-1">
-                          <fa-icon class="me-1" [icon]="icons.SHARED"></fa-icon>
-                          <span>{{ s.counts.shares }}</span>
+                        <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
+                          <fa-icon [icon]="icons.SHARED"></fa-icon>
+                          {{ s.counts.shares }}
                         </span>
                       }
                       @if (s.hasComments) {
-                        <span (click)="goToComments(s)" class="badge rounded-pill bg-success cursor-pointer">
+                        <span (click)="goToComments(s)" class="badge bg-success cursor-pointer">
                           <fa-icon [icon]="icons.faCommentDots"></fa-icon>
                         </span>
                       }
                     }
                     @case ('created') {
-                      {{ s.hTimeAgo }}
+                      <span class="{{th.value.newly && s[th.value.newly] ? 'badge prop-newly-' + s[th.value.newly] : ''}}">
+                        {{ s.hTimeAgo }}
+                      </span>
                     }
                   }
                 </td>

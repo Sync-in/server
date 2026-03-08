@@ -1,72 +1,3 @@
-.box {
-  position: relative;
-  @include border-radius($box-border-radius);
-  border-top: 3px solid $box-default-border-top-color;
-  margin-bottom: 10px;
-  width: 100%;
-  box-shadow: $box-boxshadow;
-
-  &.box-primary {
-    border-top-color: $primary;
-  }
-
-  &.box-info {
-    border-top-color: $aqua;
-  }
-
-  &.box-purple {
-    border-top-color: $purple;
-  }
-
-  &.box-danger {
-    border-top-color: $red;
-  }
-
-  &.box-warning {
-    border-top-color: $yellow;
-  }
-
-  &.box-success {
-    border-top-color: $green;
-  }
-
-  &.box-default {
-    border-top-color: $black;
-  }
-
-  &.box-solid {
-    border-top: 0;
-
-    &.box-primary {
-      @include box-solid-variant($primary);
-    }
-
-    &.box-purple {
-      @include box-solid-variant($purple);
-    }
-
-    &.box-info {
-      @include box-solid-variant($aqua);
-    }
-
-    &.box-dark {
-      @include box-solid-variant($black)
-    }
-
-    &.box-danger {
-      @include box-solid-variant($red);
-    }
-
-    &.box-warning {
-      @include box-solid-variant($orange);
-    }
-
-    &.box-success {
-      @include box-solid-variant($green);
-    }
-  }
-}
-
 .box-transparent {
   position: relative;
   width: 100%;
@@ -78,10 +9,10 @@
   .box-header {
     border-bottom: 1px solid;
     height: auto;
-    padding: 0.35rem 0.8rem;
+    padding: 0.3rem 0.8rem;
 
     > fa-icon {
-      font-size: 1rem;
+      font-size: $font-size-base;
 
       &:first-child {
         margin-right: 10px;
@@ -90,7 +21,6 @@
 
     .box-title {
       font-weight: 500;
-      letter-spacing: 0.02em;
     }
   }
 
@@ -100,7 +30,7 @@
 }
 
 .recents-grid {
-  padding-top: .4rem;
+  padding: 5px;
   row-gap: 16px;
 }
 
@@ -111,17 +41,16 @@
   padding: $box-padding;
 
   .box-title {
-    @extend .no-select;
+    @include no-select-utility;
     display: inline-block;
     font-size: $font-size-xs;
     margin: 0;
     line-height: 1;
-    user-select: none;
   }
 
   > fa-icon {
     color: $gray;
-    font-size: $font-size-md;
+    font-size: $font-size-base;
   }
 }
 
@@ -130,67 +59,13 @@
   border-radius: 0 0 $box-border-radius, $box-border-radius;
   padding: $box-padding;
 
-  .no-header & {
-    @include border-top-radius($box-border-radius);
-  }
-
   > .table {
     margin-bottom: 0;
   }
 }
 
-.box-footer {
-  border-top: .5px solid $box-border-color;
-  padding: $box-padding;
-  background-color: $box-footer-bg;
-  font-size: $font-size-xs;
-  text-align: center;
-
-  &:hover {
-    outline: none;
-    cursor: pointer;
-  }
-
-  &.box-footer-success {
-    background-color: $success;
-    color: $white;
-
-    &:hover {
-      background-color: darken($success, 5%);
-    }
-  }
-
-  &.box-footer-warning {
-    background-color: $warning;
-    color: $white;
-
-    &:hover {
-      background-color: darken($warning, 5%);
-    }
-  }
-
-  &.box-footer-primary {
-    background-color: $primary;
-    color: $white;
-
-    &:hover {
-      background-color: darken($primary, 5%);
-    }
-  }
-
-  &.box-footer-purple {
-    background-color: $purple;
-    color: $white;
-
-    &:hover {
-      background-color: darken($purple, 5%);
-    }
-  }
-}
-
 .box-header,
-.box-body,
-.box-footer {
+.box-body {
   @include clearfix;
 }
 
@@ -209,26 +84,8 @@
     padding-left: 10px;
   }
 
-  > .small-box-footer {
-    position: relative;
-    text-align: center;
-    padding: 3px 0;
-    color: #fff;
-    color: rgba(255, 255, 255, 0.8);
-    display: block;
-    z-index: 10;
-    background: rgba(0, 0, 0, 0);
-    text-decoration: none;
-
-    &:hover {
-      cursor: pointer;
-      color: #fff;
-      background: rgba(0, 0, 0, 0.15);
-    }
-  }
-
   h4 {
-    font-weight: bold;
+    font-weight: 600;
     margin: 0;
     white-space: nowrap;
     padding: 0;
@@ -257,7 +114,7 @@
     margin-left: auto;
     padding-right: 10px;
     z-index: 0;
-    font-size: 24px;
+    font-size: $font-size-2xl;
     color: rgba(0, 0, 0, 0.15);
   }
 

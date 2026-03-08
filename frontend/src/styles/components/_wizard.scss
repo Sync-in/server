@@ -1,7 +1,7 @@
 .wizard {
   display: flex;
   flex-direction: column;
-  font-size: $font-size-md;
+  font-size: $font-size-base;
   height: 100%;
   padding: 10px;
 
@@ -12,7 +12,7 @@
   }
 
   thead {
-    font-size: 0.8rem !important;
+    font-size: $font-size-base !important;
   }
 
   tbody tr {
@@ -34,7 +34,7 @@
 
   .app-top-menu {
     border: none !important;
-    background: transparent;
+    background: transparent !important;
   }
 
   .area {
@@ -44,16 +44,16 @@
     .dropzone {
       display: flex;
       justify-content: center;
-      border: 2px dashed #bbb;
+      border: 2px dashed $gray;
       border-radius: $border-radius-base;
       padding: 80px;
-      font-size: 21px;
-      font-weight: bold;
-      color: #bbb;
+      font-size: 1.875rem;
+      font-weight: 600;
+      color: $gray;
       height: 100%;
 
       &.active {
-        border: 2px dashed $dark-blue;;
+        border: 2px dashed $dark-blue;
         color: $dark-blue;
       }
     }

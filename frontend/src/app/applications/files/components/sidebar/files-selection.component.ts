@@ -6,10 +6,11 @@ import { faArrowsAlt, faClipboardCheck, faLock, faSpinner, faUnlock } from '@for
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { catchError, of, shareReplay } from 'rxjs'
 import { map } from 'rxjs/operators'
+import { BadgePermissionsComponent } from '../../../../common/components/badge-permissions.component'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
 import { convertBytesToText } from '../../../../common/utils/functions'
-import { defaultCardImageSize } from '../../../../layout/layout.constants'
+import { defaultCardImageSize, defaultResizeOffset } from '../../../../layout/layout.constants'
 import { TAB_MENU } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { SPACES_ICON, SPACES_PATH } from '../../../spaces/spaces.constants'
@@ -19,7 +20,6 @@ import { USER_PATH } from '../../../users/user.constants'
 import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 import { FileLockFormatPipe } from '../utils/file-lock.utils'
-import { FilePermissionsComponent } from '../utils/file-permissions.component'
 import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.component'
 
 @Component({
@@ -34,7 +34,7 @@ import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.compone
     FaIconComponent,
     FilesViewerMediaComponent,
     UserAvatarComponent,
-    FilePermissionsComponent,
+    BadgePermissionsComponent,
     AsyncPipe,
     FileLockFormatPipe
   ],
@@ -44,7 +44,7 @@ export class FilesSelectionComponent {
   files: InputSignal<FileModel[]> = input.required<FileModel[]>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected multiple: Signal<boolean> = computed(() => this.files().length > 1)
-  protected resizeOffset: Signal<number> = computed(() => (this.multiple() ? 120 : 80))
+  protected resizeOffset: Signal<number> = computed(() => defaultResizeOffset + (this.multiple() ? 40 : 0))
   protected readonly cardImageSize = defaultCardImageSize
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,

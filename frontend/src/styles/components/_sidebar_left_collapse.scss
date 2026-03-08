@@ -1,7 +1,15 @@
 .sidebar-collapse {
   .main-header, .content-wrapper {
-    margin-left: $sidebar-apps-icons-width !important;
+    margin-left: 0 !important;
   }
+
+  &.theme-dark {
+    .content-container {
+      border-left: 0.5px solid $sidebar-dark-icons-menu-border-color !important;
+    }
+  }
+
+
 
   .left-sidebar {
     z-index: $content-z-index;
@@ -17,6 +25,19 @@
 }
 
 .sidebar-open {
+  .left-sidebar {
+    .sidebar-apps-menus {
+      .menu-title {
+        .logo-toggle {
+          > img.logo-toggle-spin-in {
+            animation: logo-toggle-spin-in .45s $transition-fn both;
+            transform-origin: 50% 50%;
+          }
+        }
+      }
+    }
+  }
+
   @include media-breakpoint-up(md) {
     .left-sidebar {
       transition-delay: $transition-speed;
@@ -26,33 +47,18 @@
   }
   @include media-breakpoint-down(md) {
     .main-header, .content-wrapper {
-      margin-left: $sidebar-apps-icons-width;
+      margin-left: 0;
     }
   }
 }
 
-
-// Method using the width (this allow to use popup menus on sidebar app icons)
-
-//.sidebar-collapse {
-//  .content-wrapper, .main-header {
-//    margin-left: $sidebar-apps-icons-width !important;
-//  }
-//
-//  .left-sidebar {
-//    .sidebar-apps-menus {
-//      @include transition(width $transition-speed $transition-fn);
-//      border-right: none !important;
-//      overflow: hidden;
-//      width: 0;
-//    }
-//  }
-//}
-//
-//.sidebar-open {
-//  .left-sidebar {
-//      z-index: $content-z-index;
-//    }
-//}
-
-
+@keyframes logo-toggle-spin-in {
+  from {
+    transform: rotate(220deg);
+    opacity: .25;
+  }
+  to {
+    transform: rotate(0);
+    opacity: 1;
+  }
+}

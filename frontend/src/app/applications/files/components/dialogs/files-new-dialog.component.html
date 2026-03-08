@@ -11,13 +11,13 @@
         <fa-icon [icon]="icons.faFileAlt"></fa-icon>
       }
     }
-    <span class="ms-1" l10nTranslate>{{ fileProp.title }}</span>
+    <span l10nTranslate>{{ fileProp.title }}</span>
   </h4>
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
 </div>
 <div class="modal-body">
   @if (inputType === 'file') {
-    <div class="btn-group btn-group-sm mb-3" dropdown>
+    <div class="btn-group mb-3" dropdown>
       <button aria-controls="dropdown-animated" class="btn btn-primary dropdown-toggle" dropdownToggle id="button-animated" type="button">
         <span l10nTranslate>{{ selectedDocType }}</span>
         <fa-icon [icon]="icons.faCaretDown" class="ms-3"></fa-icon>
@@ -30,7 +30,7 @@
     </div>
   }
   @if (inputType === 'download') {
-    <div class="input-group input-group-sm my-2">
+    <div class="input-group my-2">
       <span class="input-group-text">
         <fa-icon [icon]="icons.faGlobe"></fa-icon>
       </span>
@@ -38,12 +38,12 @@
              (keydown.control.v)="pasteUrl()"
              (keydown.meta.v)="pasteUrl()"
              [placeholder]="downloadProp.placeholder|translate:locale.language"
-             class="form-control fs-xs"
+             class="form-control"
              type="text"
              appAutofocus>
     </div>
   }
-  <div class="input-group input-group-sm my-2">
+  <div class="input-group my-2">
        <span class="input-group-text">
          @if (inputType === 'directory') {
            <fa-icon [icon]="icons.faFolderClosed"></fa-icon>
@@ -54,19 +54,19 @@
     <input #InputText
            [(ngModel)]="fileProp.name"
            [placeholder]="fileProp.placeholder|translate:locale.language"
-           class="form-control fs-xs"
+           class="form-control"
            type="text"
            appAutofocus>
   </div>
 </div>
 <div class="modal-footer">
   @if (error) {
-    <span class="me-auto fs-xs text-danger" l10nTranslate>{{ error }}</span>
+    <span class="me-auto fs-sm text-danger" l10nTranslate>{{ error }}</span>
   }
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
           [disabled]="!fileProp.name || inputType === 'download' && !downloadProp.url || submitted"
-          class="btn btn-sm btn-primary"
+          class="btn btn-primary"
           type="button"
           l10nTranslate>Confirm
   </button>

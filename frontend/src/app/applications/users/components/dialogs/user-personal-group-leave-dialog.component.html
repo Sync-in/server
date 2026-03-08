@@ -1,6 +1,6 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faRightFromBracket" class="me-2"></fa-icon>
+    <fa-icon [icon]="icons.faRightFromBracket"></fa-icon>
     <span l10nTranslate>Leave group</span>
   </h4>
   <button (click)="onClose()" aria-label="Close" class="btn-close btn-close-white ms-auto" type="button"></button>
@@ -10,14 +10,14 @@
     <div class="d-flex align-items-center avatar me-2">
       <fa-icon [icon]="icons.GROUPS" class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}"></fa-icon>
     </div>
-    <span class="fw-bold me-1">{{ member.name }}</span>
+    <span class="text-bold me-1">{{ member.name }}</span>
     <span l10nTranslate>will be left, you will no longer be a member of this group</span>
   </div>
 </div>
 <div class="modal-footer">
-  <button (click)="onClose()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="onClose()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="submitted" class="btn btn-sm btn-primary"
+          [disabled]="submitted" class="btn btn-primary"
           type="button"
           l10nTranslate>
     Confirm

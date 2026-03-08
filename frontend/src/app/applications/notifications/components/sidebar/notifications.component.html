@@ -1,33 +1,32 @@
-<div class="sidebar-component-title justify-content-between">
-  <div style="width: 35px"></div>
-  <span>
-    <span l10nTranslate>Notifications</span>
+<div class="sidebar-component-title justify-content-between position-relative">
+  <div class="d-flex align-items-center justify-content-start" style="min-width: 35px">
     @if (store.notifications().length) {
-      <span class="ps-1">({{ store.notifications().length }})</span>
+      <div class="badge bg-warning">{{ store.notifications().length }}</div>
     }
-  </span>
-  @if (store.notifications().length) {
-    <button (click)="removeAll()" class="btn btn-xs btn-secondary">
-      <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
-    </button>
-  } @else {
-    <div style="width: 35px"></div>
-  }
+  </div>
+  <div class="position-absolute start-50 translate-middle-x" l10nTranslate>Notifications</div>
+  <div class="d-flex align-items-center justify-content-end" style="min-width: 35px">
+    @if (store.notifications().length) {
+      <button (click)="removeAll()" class="btn btn-sm btn-default">
+        <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
+      </button>
+    }
+  </div>
 </div>
-<div class="fs-xxs p-2" appAutoResize>
+<div class="fs-sm p-2" appAutoResize>
   @for (n of store.notifications(); track n.id) {
-    <div class="mb-1 app-small-card rounded no-select" [class.newly-1]="n.soonRead" #notificationsHtml>
+    <div class="mb-1 app-small-card rounded no-select" [class.bg-soft-warning]="n.soonRead" #notificationsHtml>
       <div class="d-flex px-2 pt-2 pb-1">
-        <app-user-avatar [user]="n.fromUser" [width]="24" [height]="24" [unknownUserAsInfo]="n.fromUser.id === -1"></app-user-avatar>
-        <div class="align-self-center ms-1">
+        <app-user-avatar class="me-1" [user]="n.fromUser" [width]="24" [height]="24" [unknownUserAsInfo]="n.fromUser.id === -1"></app-user-avatar>
+        <div class="align-self-center">
           @if (n.fromUser.id === -1) {
             <b l10nTranslate>{{ n.fromUser.fullName }}</b>
           } @else {
             <b>{{ n.fromUser.fullName }}</b>
           }
         </div>
-        <div class="ms-auto align-self-center" style="font-size: 14px">
-          <i (click)="remove(n)" role="button">
+        <div class="ms-auto align-self-center">
+          <i (click)="remove(n)" role="button" class="fs-sm">
             <fa-icon [icon]="icons.faTimes"></fa-icon>
           </i>
         </div>
@@ -35,7 +34,7 @@
       <div class="pb-2 px-2">
         <div><span l10nTranslate>{{ n.content.event }}</span>:&nbsp;<b class="cursor-pointer btn-link" (click)="goto(n)">{{ n.content.element }}</b>
         </div>
-        <div class="d-flex fs-xxxs pt-1" [class.text-muted]="!n.soonRead">
+        <div class="d-flex fs-xs pt-1" [class.text-muted]="!n.soonRead">
           <div>{{ n.createdAt | amTimeAgo }}</div>
           <div class="ms-auto">
             @if (n.appIcon) {
@@ -50,4 +49,3 @@
     </div>
   }
 </div>
-

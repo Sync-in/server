@@ -1,6 +1,6 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faUserMinus" class="me-2"></fa-icon>
+    <fa-icon [icon]="icons.faUserMinus"></fa-icon>
     <span>{{ user.fullName }}</span>
   </h4>
   @if (user) {
@@ -29,14 +29,14 @@
 </div>
 <div class="modal-footer">
   <button (click)="onClose()"
-          class="btn btn-sm btn-secondary ms-auto"
+          class="btn btn-secondary ms-auto"
           data-dismiss="modal"
           type="button"
           l10nTranslate>
     Cancel
   </button>
   <button (click)="onSubmit()"
-          [disabled]="submitted" class="btn btn-sm btn-danger"
+          [disabled]="submitted" class="btn btn-danger"
           type="button"
           l10nTranslate>
     Confirm

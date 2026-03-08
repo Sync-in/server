@@ -1,6 +1,6 @@
 <div class="modal-header align-items-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faUserPlus" class="me-2"></fa-icon>
+    <fa-icon [icon]="icons.faUserPlus"></fa-icon>
     <span>{{ parentGroup.name }}</span>
   </h4>
   <h4 class="modal-title ms-auto">
@@ -17,9 +17,9 @@
   </app-user-search>
 </div>
 <div class="modal-footer">
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="submitted || !newMembers.length" class="btn btn-sm btn-primary"
+          [disabled]="submitted || !newMembers.length" class="btn btn-primary"
           type="button"
           l10nTranslate>
     Confirm

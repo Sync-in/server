@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="hasExclusiveLock ? icons.faLock : icons.faUnlock" class="me-1"></fa-icon>
+    <fa-icon [icon]="hasExclusiveLock ? icons.faLock : icons.faUnlock"></fa-icon>
     <span>{{ file.name }}</span>
   </h4>
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
@@ -22,15 +22,15 @@
   }
 </div>
 <div class="modal-footer">
-  <button (click)="layout.closeDialog()" class="btn btn-sm btn-secondary" data-dismiss="modal" type="button" l10nTranslate>
+  <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>
     {{ hasExclusiveLock ? 'Cancel' : 'Close' }}
   </button>
   @if (hasExclusiveLock) {
     @if (isLockOwner || isFileOwner) {
-      <button (click)="onUnlock()" [disabled]="submitted" class="btn btn-sm btn-primary" type="button" l10nTranslate>Unlock</button>
+      <button (click)="onUnlock()" [disabled]="submitted" class="btn btn-primary" type="button" l10nTranslate>Unlock</button>
     }
     @if (!isLockOwner) {
-      <button (click)="onSendUnLockRequest()" [disabled]="submitted" class="btn btn-sm btn-success" type="button" l10nTranslate>Send an unlock request</button>
+      <button (click)="onSendUnLockRequest()" [disabled]="submitted" class="btn btn-success" type="button" l10nTranslate>Send an unlock request</button>
     }
   }
 </div>

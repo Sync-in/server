@@ -69,6 +69,8 @@ export class FileModel implements File {
   hSize: string
   hTimeAgo: string
   hDirSize: Observable<string>
+  nbBadges = 0
+  galleryBadges: ('lock' | 'shares' | 'spaces' | 'links' | 'syncs' | 'comments')[] = []
 
   // States
   newly = 0
@@ -92,6 +94,7 @@ export class FileModel implements File {
     this.setMimeUrl()
     this.setHSize()
     this.setRoot(inShare)
+    this.updateNbBadges()
   }
 
   get dataUrl(): string {
@@ -244,6 +247,18 @@ export class FileModel implements File {
           this.links.push(s)
         }
       }
+      this.updateNbBadges()
     }
+  }
+
+  updateNbBadges() {
+    this.galleryBadges = []
+    if (this.lock) this.galleryBadges.push('lock')
+    if (this.shares.length) this.galleryBadges.push('shares')
+    if (this.spaces.length) this.galleryBadges.push('spaces')
+    if (this.links.length) this.galleryBadges.push('links')
+    if (this.syncs.length) this.galleryBadges.push('syncs')
+    if (this.hasComments) this.galleryBadges.push('comments')
+    this.nbBadges = this.galleryBadges.length
   }
 }

@@ -1,34 +1,42 @@
-<aside #sidebar class="left-sidebar">
-  <div class="sidebar-apps-icons">
-    <div class="menu">
-      <a (click)="toggleSideBar()"
-         (mouseenter)="onHoverIconsMenu(true, {title: appName}, true)"
-         (mouseleave)="onHoverIconsMenu(false, {title: appName}, true)">
-        <div class="logo-container">
-          <img alt="" [src]="logoIconUrl">
-        </div>
-      </a>
+<aside class="left-sidebar">
+  <div class="sidebar-apps-menus">
+    <div class="menu-title">
+      <div class="menu-title-content">
+        <button (click)="toggleSideBar()" class="logo-toggle" type="button">
+          <img alt="" class="logo-toggle-spin-in" [src]="logoIconUrl">
+        </button>
+        <span class="sidebar-title">{{ dynamicTitle }}</span>
+      </div>
+    </div>
+    <div class="apps-shortcuts">
       @for (menu of appsMenu.submenus; track menu.title) {
         @if (!menu.hide) {
-          <ng-container [ngTemplateOutlet]="sidebarMenuIcons" [ngTemplateOutletContext]="{menu: menu, previousLevel:$index === 0 ? 0 : appsMenu.submenus[$index-1].level}"></ng-container>
+          <button (click)="navigateToMenu(menu)"
+                  (mouseenter)="previewMenuTitle(menu.title)"
+                  (mouseleave)="restoreMenuTitle()"
+                  [class.active]="menu.isActive"
+                  class="app-shortcut"
+                  type="button">
+            <fa-icon [animation]="menu.iconAnimated ? 'spin' : null" [icon]="menu.icon"></fa-icon>
+            @if (menu.count) {
+              <span class="menu-badge-icon">
+              @if (menu.count.value | async; as count) {
+                <span class="badge bg-{{menu.count.level}}">{{ count }}</span>
+              }
+              </span>
+            }
+          </button>
         }
       }
       @if (store.userImpersonate()) {
-        <a (click)="logOut()"
-           (mouseenter)="onHoverIconsMenu(true, {title: 'logout'})"
-           (mouseleave)="onHoverIconsMenu(false, {title: 'logout'})">
+        <button (click)="logOut()"
+                (mouseenter)="previewMenuTitle('logout')"
+                (mouseleave)="restoreMenuTitle()"
+                class="app-shortcut"
+                type="button">
           <fa-icon [icon]="icons.faUserSecret"></fa-icon>
-        </a>
+        </button>
       }
-    </div>
-  </div>
-  <div class="sidebar-apps-menus" (mouseenter)="onHoverAppsMenu(true)" (mouseleave)="onHoverAppsMenu(false)">
-    <div class="menu-title" (mouseenter)="onHoverAppsMenu(false)">
-      <a>
-        <span class="sidebar-title">{{ dynamicTitle }}</span>
-        <fa-icon (click)="navigateTo('back')" [icon]="icons.faAngleLeft" class="sidebar-btn" role="button"></fa-icon>
-        <fa-icon (click)="navigateTo('next')" [icon]="icons.faAngleRight" class="sidebar-btn" role="button"></fa-icon>
-      </a>
     </div>
     <div class="menus-content">
       <div class="menus-group">
@@ -36,11 +44,6 @@
           @if (!menu.hide) {
             <ng-container [ngTemplateOutlet]="MenuApps" [ngTemplateOutletContext]="{menu: menu}"></ng-container>
           }
-        }
-        @if (leftSideBarIsOpen && currentMenu.component) {
-          <div (click)="checkComponentRoute()" appAutoResize [resizeOffset]="40">
-            <ng-container *ngComponentOutlet="currentMenu.component"></ng-container>
-          </div>
         }
       </div>
       <div class="sidebar-apps-footer">
@@ -50,73 +53,35 @@
   </div>
 </aside>
 <!--Start Templates-->
-<ng-template #MenuTemplate let-menu="menu" let-isMenuIcon="isMenuIcon">
+<ng-template #MenuTemplate let-menu="menu">
   <fa-icon [icon]="menu.icon" [animation]="menu.iconAnimated ? 'spin' : null"></fa-icon>
-  @if (!isMenuIcon) {
-    <span l10nTranslate>{{ menu.title }}</span>
+  <span l10nTranslate>{{ menu.title }}</span>
+  @if (menu?.submenus?.length) {
+    <span class="ms-auto opacity-75"><fa-icon [icon]="icons.faChevronDown" size="sm"></fa-icon></span>
   }
   @if (menu.count) {
-    <span class="{{isMenuIcon ? 'menu-badge-icon' : 'menu-badge'}}">
+    <span class="menu-badge">
     @if (menu.count.value | async; as count) {
-      <span class="badge bg-{{menu.count.level}} rounded-pill">{{ count }}</span>
+      <span class="badge bg-{{menu.count.level}}">{{ count }}</span>
     }
     </span>
   }
 </ng-template>
-<ng-template #sidebarMenuIcons let-mainMenu="menu" let-previousLevel="previousLevel">
-  <a [class.mt-auto]="previousLevel < 9 && mainMenu.level > 9" [class.active]="mainMenu.isActive"
-     (mouseenter)="onHoverIconsMenu(true, mainMenu)"
-     (mouseleave)="onHoverIconsMenu(false, mainMenu)"
-     (click)="checkMenuContext(mainMenu)">
-    <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: mainMenu, isMenuIcon: true}"></ng-container>
-    <!-- start mini menu-->
-    @if (mainMenu.miniOpened) {
-      <div class="menu-mini {{mainMenu.level < 9 ? 'align-self-start' : 'align-self-end'}}">
-        @for (menu of mainMenu.submenus; track menu.title) {
-          @if (!menu.hide) {
-            <ng-container [ngTemplateOutlet]="MiniMenuApps" [ngTemplateOutletContext]="{mainMenu: mainMenu, menu: menu}"></ng-container>
-          }
-        }
-        @if (currentMenu.component) {
-          <div (click)="checkComponentRoute(mainMenu)" appAutoResize [resizeOffset]="40">
-            <ng-container *ngComponentOutlet="currentMenu.component"></ng-container>
-          </div>
-        }
-      </div>
-    }
-    <!-- end mini menu-->
-  </a>
-</ng-template>
-<!--End Apps Icon Template-->
 <!--Start Apps Menu Template-->
 <ng-template #MenuApps let-menu="menu">
   <div class="menu" [class.active]="menu.isActive">
     <a [routerLink]="menu.link">
-      <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: menu, isMenuIcon: false}"></ng-container>
+      <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: menu}"></ng-container>
     </a>
   </div>
   @if (menu.submenus?.length) {
     @for (submenu of menu.submenus; track submenu.title) {
       @if (!submenu.hide) {
-        <div class="menu submenu" [class.active]="submenu.isActive" [class]="menu.isActive ? 'collapse-show': 'collapse-hide'">
+        <div class="menu submenu" [class.active]="submenu.isActive">
           <a [routerLink]="submenu.link">
-            <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: submenu, isMenuIcon: false}"></ng-container>
+            <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: submenu}"></ng-container>
           </a>
         </div>
-      }
-    }
-  }
-</ng-template>
-<ng-template #MiniMenuApps let-mainMenu="mainMenu" let-menu="menu">
-  <a (click)="onMiniMenuNavigate($event, [menu.link], mainMenu)" [class.active]="menu.isActive">
-    <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: menu, isMenuIcon: false}"></ng-container>
-  </a>
-  @if (menu.submenus?.length) {
-    @for (submenu of menu.submenus; track submenu.title) {
-      @if (!submenu.hide) {
-        <a (click)="onMiniMenuNavigate($event, [submenu.link], mainMenu)" [class.active]="submenu.isActive">
-          <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: submenu, isMenuIcon: false}"></ng-container>
-        </a>
       }
     }
   }

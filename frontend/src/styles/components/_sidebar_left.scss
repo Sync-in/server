@@ -6,120 +6,13 @@
   height: 100%;
   z-index: $sidebar-z-index;
 
-  .sidebar-apps-icons {
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    height: 100%;
-    width: $sidebar-apps-icons-width;
-
-    .menu {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100%;
-      width: $sidebar-apps-icons-width;
-      cursor: pointer;
-
-      > a {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: $sidebar-apps-height;
-        width: 100%;
-
-        &:first-child {
-          user-select: none;
-          background-color: $sidebar-light-apps-menu-title-bg;
-
-          &:hover {
-            background: $sidebar-light-icons-menu-hover-bg;
-          }
-
-          .logo-container {
-            background: $sidebar-light-apps-menu-hover-color;
-          }
-        }
-
-        > fa-icon {
-          font-size: 1rem;
-        }
-
-        > .logo-container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          width: 30px;
-          height: 30px;
-          object-fit: cover;
-          border-radius: 50%;
-
-          > img {
-            height: 24px;
-          }
-        }
-
-
-        .menu-badge-icon {
-          position: absolute;
-          font-size: .65rem;
-          width: $sidebar-apps-icons-width;
-
-          .badge {
-            position: absolute;
-            right: 3px;
-            bottom: 1px;
-          }
-        }
-      }
-
-      .menu-mini {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        position: absolute;
-        left: $sidebar-apps-icons-width;
-        min-width: 150px;
-        z-index: $sidebar-z-index;
-        font-size: $font-size-xs;
-        border-top-right-radius: $border-radius-base;
-        border-bottom-right-radius: $border-radius-base;
-        overflow: hidden;
-
-        > a {
-          display: flex;
-          align-items: center;
-          justify-content: flex-start;
-          height: $sidebar-apps-height;
-          width: 100%;
-          padding-left: 8px;
-          padding-right: 5px;
-
-          > fa-icon {
-            margin-right: .25rem;
-            font-size: $font-size-lg;
-          }
-
-          > span:first-of-type {
-            margin-right: 15px;
-          }
-
-          .menu-badge {
-            margin-left: auto;
-            font-size: .65rem;
-          }
-        }
-      }
-    }
-  }
-
   .sidebar-apps-menus {
     display: flex;
     flex-direction: column;
     width: $sidebar-apps-menus-width;
 
     .menu-title {
-      @extend .no-select;
+      @include no-select-utility;
       display: flex;
       align-items: center;
       min-height: $sidebar-apps-height;
@@ -130,13 +23,13 @@
       background: $sidebar-light-apps-menu-title-bg;
       border-bottom: .5px solid $sidebar-light-apps-menu-title-bg;
 
-      > a {
-        @extend .text-truncate;
+      .menu-title-content {
+        @include text-truncate-utility;
         display: flex;
         align-items: center;
-        padding-left: 8px;
+        padding-left: 6px;
         padding-right: 0;
-        height: $sidebar-apps-height;
+        max-height: $sidebar-apps-height;
         width: 100%;
         color: $sidebar-light-apps-menu-title-color;
       }
@@ -144,19 +37,39 @@
       &:hover, &.active {
         background: $sidebar-light-apps-menu-title-bg;
 
-        > a {
+        .menu-title-content {
           color: $sidebar-light-apps-menu-title-color;
         }
       }
 
+      .logo-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: $layout-logo-container-size;
+        width: $layout-logo-container-size;
+        height: $layout-logo-container-size;
+        padding: 0;
+        border: none;
+        border-radius: 50%;
+        margin-right: .5rem;
+        background: $black;
+        cursor: pointer;
+
+        > img {
+          width: $layout-logo-image-size;
+          height: $layout-logo-image-size;
+        }
+      }
+
       .sidebar-title {
-        @extend .text-truncate;
+        @include text-truncate-utility;
         text-transform: uppercase;
         margin-right: auto;
-        font-size: $font-size-xxs;
+        font-size: $font-size-xs;
 
         > span {
-          @extend .text-truncate;
+          @include text-truncate-utility;
         }
 
         > fa-icon {
@@ -164,20 +77,60 @@
           font-size: $font-size-lg;
         }
       }
+    }
 
-      .sidebar-btn {
+    .apps-shortcuts {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.2rem 0;
+      padding: 0 6px 0 6px;
+      min-height: 40px;
+      max-height: 40px;
+      border-bottom: .5px solid transparent;
+      border-right: .5px solid transparent;
+
+      .app-shortcut {
+        flex: 0 0 calc(#{$sidebar-apps-height} - 8px);
+        position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: $navbar-height;
-        min-width: 30px;
-        font-size: $font-size-lg;
-        margin: 0;
-        color: inherit;
+        width: calc(#{$sidebar-apps-height} - 8px);
+        height: calc(#{$sidebar-apps-height} - 8px);
+        border: .5px solid transparent;
+        border-radius: $btn-border-radius;
+        background: transparent;
+        cursor: pointer;
 
-        &:hover {
-          color: $white;
-          background: $sidebar-light-icons-menu-hover-bg;
+        > fa-icon {
+          font-size: $font-size-lg;
+        }
+
+        .menu-badge-icon {
+          position: absolute;
+          font-size: $font-size-xs;
+          width: 100%;
+          inset: 0;
+          pointer-events: none;
+
+          .badge {
+            @extend .badge-color-full;
+            position: absolute;
+            top: 0;
+            right: 0;
+            transform: translate(15%, -15%);
+            z-index: 1;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 5px;
+            border-radius: 9999px;
+            font-size: $font-size-2xs;
+            line-height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
         }
       }
     }
@@ -186,6 +139,7 @@
       display: flex;
       flex-direction: column;
       flex: 1 1 auto;
+      padding-top: 2px;
     }
 
     .menus-group {
@@ -199,57 +153,47 @@
         min-height: $sidebar-apps-height;
         height: $sidebar-apps-height;
         min-width: $sidebar-apps-menus-width;
-        font-size: $font-size-xs;
         cursor: pointer;
 
         &.submenu {
           padding-left: 10px;
-          font-size: $font-size-xxs;
+          font-size: $font-size-sm;
 
           fa-icon {
-            font-size: $font-size-sm
+            font-size: $font-size-base;
           }
         }
 
         > a {
           display: flex;
           align-items: center;
-          padding-left: 8px;
-          padding-right: 5px;
-          height: $sidebar-apps-height;
-          width: 100%;
-          @extend .text-truncate;
-          @extend .no-select-pointer;
+          gap: .5rem;
+          flex: 1 1 auto;
+          width: auto;
+          height: calc(#{$sidebar-apps-height} - 5px);
+          margin: 0 6px;
+          padding: 0 10px;
+          border-radius: $btn-border-radius;
+          max-height: none;
+          @include text-truncate-utility;
+          @include no-select-pointer-utility;
 
           > fa-icon {
-            color: inherit;
             font-size: $font-size-lg;
-            margin-right: .25rem;
+            margin-right: 0;
+            width: .95rem;
+            min-width: .95rem;
+            display: inline-flex;
+            justify-content: center;
+            opacity: .88;
           }
 
           .menu-badge {
             margin-left: auto;
-            font-size: .65rem;
+            font-size: $font-size-xs;
           }
         }
 
-        // Auto collapse on submenus
-
-        //&.collapse-hide {
-        //  min-height: 0 !important;
-        //  height: 0 !important;
-        //  overflow: hidden;
-        //  opacity: 0;
-        //  transition: all .2s ease-in-out;
-        //  border-bottom: none !important;
-        //}
-        //
-        //&.collapse-show {
-        //  min-height: $sidebar-apps-height;
-        //  height: $sidebar-apps-height;
-        //  opacity: 1;
-        //  transition: min-height .25s, height .25s, opacity .4s ease-in-out;
-        //}
       }
     }
 
@@ -258,13 +202,13 @@
         display: none !important;
       }
       display: flex;
-      padding: 5px;
+      padding: 4px;
       margin-left: auto;
       margin-top: auto;
 
       span {
-        @extend .no-select;
-        font-size: 9px;
+        @include no-select-utility;
+        font-size: $font-size-2xs;
       }
     }
   }

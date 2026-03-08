@@ -4,86 +4,58 @@
   .wrapper, .left-sidebar {
     background-color: $sidebar-light-apps-menu-bg;
   }
-
   .left-sidebar {
-    // Side bar Menu apps
-    .sidebar-apps-icons {
-      background-color: $sidebar-light-icons-menu-bg;
+    .sidebar-apps-menus {
+      .apps-shortcuts {
+        background-color: $light-sidebar-mini-bg;
+        border-bottom-color: $sidebar-light-apps-menu-border-color;
+        border-right-color: $sidebar-light-apps-menu-border-color;
 
-      .menu > a {
-        color: $sidebar-light-icons-menu-color;
+        .app-shortcut {
+          color: $sidebar-light-apps-menu-hover-color;
 
-        &:not(:first-child) {
-          border-bottom: .5px solid $sidebar-light-icons-menu-bg;
-
-          &:hover, &.active {
-            color: $sidebar-light-icons-menu-hover-color;
-            background: $sidebar-light-icons-menu-hover-bg;
-          }
-        }
-      }
-
-      .menu-mini {
-        background-color: $sidebar-light-mini-menu-bg;
-
-        > a {
-          color: $sidebar-light-mini-menu-color;
-
-          &:not(:last-child) {
-            border-bottom: .5px solid $sidebar-light-mini-menu-bg !important;
+          &:hover {
+            background: $light-sidebar-mini-hover-bg;
           }
 
-          &:hover, &.active {
-            background: darken($sidebar-light-mini-menu-bg, 10%) !important;
-            color: $sidebar-light-mini-menu-hover-color;
+          &.active {
+            background: $light-sidebar-mini-active-bg;
+            border-color: $light-sidebar-mini-active-border;
+            color: $navy;
 
             > fa-icon:first-child {
-              color: $primary;
+              color: $light-sidebar-mini-active-icon;
             }
           }
         }
-
-        .chat-item-sidebar {
-          background-color: $sidebar-light-mini-menu-bg;
-          color: $sidebar-light-mini-menu-color;
-
-          &:not(:last-child) {
-            border-bottom: .5px solid $sidebar-light-mini-menu-bg !important;
-          }
-
-          &:hover, &.active {
-            border-left-color: transparent !important;
-            background: darken($sidebar-light-mini-menu-bg, 5%) !important;
-            color: $sidebar-light-mini-menu-hover-color;
-          }
-        }
       }
-    }
 
-    .sidebar-apps-menus {
       .menus-content {
+        background-color: $light-sidebar-mini-bg;
         border-right: .5px solid $sidebar-light-apps-menu-border-color;
       }
 
       .menu {
-        border-bottom: .5px solid $sidebar-light-apps-menu-bg;
-
         > a {
-          color: $sidebar-light-apps-menu-color;
+          color: $sidebar-light-apps-menu-hover-color;
+          border: .5px solid transparent;
         }
 
-        //&.submenu {
-        //  background-color: darken($sidebar-light-apps-menu-bg, 3%);
-        //}
-
-        &:hover, &.active {
-          background: $sidebar-light-apps-menu-hover-bg;
-
+        &:hover {
           > a {
-            color: $sidebar-light-apps-menu-hover-color;
+            background: $light-sidebar-mini-hover-bg;
+          }
+        }
+
+        &.active {
+          > a {
+            background: $light-sidebar-mini-active-bg;
+            border-color: $light-sidebar-mini-active-border;
+            font-weight: 500;
+            color: $navy;
 
             > fa-icon:first-child {
-              color: $primary;
+              color: $light-sidebar-mini-active-icon;
             }
           }
         }
@@ -98,17 +70,12 @@
 
 @mixin skin-light-right-sidebar() {
   .control-sidebar-theme-light {
-    background: $gray-lightest;
+    background: $light-sidebar-surface;
     border-left: .5px solid $sidebar-light-apps-menu-border-color;
 
-    .sidebar-component-title {
-      background-color: $secondary-light;
-      color: $black;
-      border-bottom: .5px solid $secondary;
-    }
-
+    .sidebar-component-title,
     .sidebar-title {
-      background-color: $secondary-light;
+      background-color: $theme-light-panel-bg;
       color: $black;
       border-bottom: .5px solid $secondary;
     }
@@ -118,60 +85,20 @@
       opacity: 1;
     }
   }
-
   .control-sidebar-menu {
     .sidebar-apps-icons {
-      background-color: $sidebar-light-icons-menu-color;
+      background-color: $light-sidebar-icons-bg;
       border-left: .5px solid $sidebar-light-apps-menu-border-color;
 
       .menu {
         > a {
           color: $sidebar-light-apps-menu-color;
 
-          &:not(:first-child) {
-            border-top: .5px solid $gray-lightest;
-          }
-
           &:hover, &.active {
             color: $black;
-            background: $secondary;
+            background: $light-sidebar-mini-active-bg;
           }
         }
-      }
-    }
-  }
-}
-
-@mixin skin-light-chat() {
-  .chat-border-bottom {
-    border-bottom-color: $sidebar-light-apps-menu-border-color;
-  }
-
-  .chat-input {
-    background-color: $sidebar-light-apps-menu-hover-bg;
-  }
-
-  .chat-container {
-    background-color: $gray-lighter;
-  }
-
-  .chat-button-bottom {
-    color: darken(gray, 30%);
-
-    &:hover {
-      color: black;
-    }
-  }
-
-  .chat-list-sidebar {
-    color: $sidebar-light-apps-menu-color;
-
-    .chat-item-sidebar {
-      border-bottom: .5px solid $sidebar-light-apps-menu-bg;
-
-      &:hover, &.active {
-        color: $sidebar-light-apps-menu-hover-color;
-        background-color: $sidebar-light-apps-menu-hover-bg;
       }
     }
   }
@@ -179,37 +106,212 @@
 
 @mixin skin-light-tree() {
   .angular-tree-component {
-    .node-wrapper {
-      &:hover,
-      &:focus,
-      &:active {
-        background-color: $table-bg-hover;
-      }
-
-      &.tree-selected {
-        background-color: $selected-background;
-      }
-    }
-
+    .node-wrapper,
     .node-content-wrapper {
       &:hover,
       &:focus,
       &:active {
-        background-color: $table-bg-hover;
+        background-color: $light-tree-node-hover-bg;
       }
+    }
 
-      &.node-content-wrapper-active {
-        background-color: $selected-background;
-
-        &:hover {
-          background-color: $selected-background;
-        }
-      }
+    .node-wrapper.tree-selected,
+    .node-content-wrapper.node-content-wrapper-active,
+    .node-content-wrapper.node-content-wrapper-active:hover {
+      background-color: $light-tree-node-selected-bg;
     }
   }
 }
 
 @mixin skin-light-app() {
+  .dialog-tab-card {
+    background: $light-dialog-tab-card-bg;
+    border: 1px solid $light-dialog-tab-card-border-color;
+    box-shadow: 0 12px 24px $light-dialog-tab-card-shadow-color;
+  }
+  .dialog-check-card {
+    background: $light-dialog-check-card-bg;
+    border: 1px solid $light-dialog-check-card-border-color;
+  }
+  .dialog-check-card--interactive:hover {
+    background: $light-dialog-check-card-hover-bg;
+    border-color: $light-dialog-check-card-hover-border-color;
+    box-shadow: 0 6px 14px $light-dialog-check-card-hover-shadow-color;
+  }
+  .dialog-check-card--active {
+    border-color: $light-dialog-check-card-active-border-color;
+  }
+  .text-muted {
+    color: darken($light-text-muted-color, 12%) !important;
+  }
+  .text-muted.text-uppercase.text-bold {
+    color: $light-text-muted-color !important;
+  }
+  tabset {
+    > .nav.nav-pills,
+    > ul.nav.nav-pills {
+      border-bottom: 1px solid $light-dialog-tabs-bar-border-color;
+      background: transparent;
+
+      .nav-link {
+        background: $light-dialog-tab-bg;
+        color: $light-dialog-tab-color;
+        border-color: $light-surface-border;
+      }
+
+      .nav-link:hover:not(.active) {
+        background: $light-dialog-tab-hover-bg;
+        color: $light-dialog-tab-hover-color;
+        border-color: $light-dialog-tab-hover-border-color;
+      }
+
+      .nav-link:hover:not(.active) .app-tab-count {
+        background: $light-dialog-tab-count-hover-bg;
+        color: $light-dialog-tab-count-hover-color;
+        border-color: mix($primary, $white, 34%);
+      }
+
+      .nav-link.active {
+        background: $light-dialog-tab-active-bg;
+        color: $white;
+        border-color: $light-dialog-tab-active-border-color;
+        box-shadow: $light-dialog-tab-active-shadow;
+      }
+
+      .nav-link.active .app-tab-count {
+        background: rgba($white, 0.24);
+        color: $white;
+        border-color: rgba($white, 0.42);
+      }
+    }
+
+    .app-tab-count {
+      background: $light-dialog-tab-count-bg;
+      color: $light-dialog-tab-count-color;
+      border: 1px solid mix($primary, $white, 26%);
+    }
+
+  }
+  .btn {
+    &:focus-visible {
+      outline: 2px solid $light-btn-focus-color;
+      outline-offset: 1px;
+      box-shadow: none !important;
+    }
+  }
+  .btn-default,
+  .btn-custom,
+  .btn-outline-secondary-alt {
+    border-color: $light-surface-border !important;
+    color: $light-item-color !important;
+    background-color: $light-surface-bg !important;
+
+    &:hover:not(:disabled) {
+      border-color: mix($primary, $gray-light, 26%) !important;
+      color: $light-item-hover-color !important;
+      background-color: $table-bg-hover !important;
+    }
+
+    &:disabled {
+      border-color: $light-surface-border !important;
+      color: $light-item-disabled-color !important;
+      background-color: $light-surface-bg !important;
+    }
+  }
+  .btn-custom {
+    fa-icon,
+    span {
+      color: inherit !important;
+    }
+
+    &:is(.active, :active, [aria-pressed='true']):not(:disabled) {
+      background-color: $primary !important;
+      border-color: $primary !important;
+      color: $white !important;
+    }
+  }
+  .btn-check:is(:checked, :active) + .btn-custom:not(:disabled) {
+    background-color: $primary !important;
+    border-color: $primary !important;
+    color: $white !important;
+  }
+  app-input-filter {
+    .filter-shell {
+      border-color: $light-surface-border;
+      background-color: $light-surface-bg;
+      box-shadow: inset 0 1px 1px rgba($custom-dark-color, 0.12);
+
+      &:hover {
+        border-color: mix($primary, $gray-light, 26%);
+      }
+
+      &:focus-within {
+        border-color: $primary;
+      }
+
+      &.has-value {
+        border-color: mix($primary, $light-surface-border, 48%);
+      }
+
+      input {
+        color: $light-item-color;
+        caret-color: $primary;
+
+        &::placeholder {
+          color: $placeholder-color;
+        }
+      }
+    }
+
+    .filter-icon {
+      color: mix($primary, $light-item-color, 52%);
+    }
+
+    .clear-btn {
+      &:hover {
+        color: $light-item-hover-color;
+      }
+
+      &:focus-visible {
+        outline-color: $light-btn-focus-color;
+      }
+    }
+  }
+  .dropdown-menu {
+    border: .5px solid $light-menu-surface-border !important;
+    background-color: $gray-lightest !important;
+    box-shadow: $light-menu-surface-shadow;
+
+    > li > a {
+      color: $light-item-color;
+      background-color: transparent;
+
+      &:hover {
+        background-color: $light-menu-item-hover-bg !important;
+        color: $light-item-hover-color !important;
+      }
+    }
+
+    > .divider {
+      background-color: $light-menu-surface-border;
+    }
+  }
+  .dropdown-item {
+    color: $light-item-color;
+
+    &:hover,
+    &.active,
+    &:active {
+      background-color: $light-menu-item-hover-bg !important;
+      color: $light-item-hover-color !important;
+    }
+  }
+  .dropdown-divider {
+    border-top-color: $light-menu-surface-border !important;
+  }
+  .virtual-scroll-border-top {
+    border-top: 0.5px solid $gray-light;
+  }
   .app-table {
     color: $body-color;
     // Bootstrap 5 fix
@@ -217,70 +319,41 @@
       border-top: 1px solid $gray-light;
     }
 
-    thead {
-      background-color: $gray-lightest;
-
-      tr {
-        th {
-          border-right-color: $gray-light;
-          border-bottom-color: $gray-light;
-        }
-      }
-    }
+    //thead {
+    //  background-color: $light-table-head-bg;
+    //}
 
     tbody tr {
       border-bottom-color: $gray-lighter !important;
 
       &:hover {
-        background-color: $table-bg-hover !important;
+        background-color: $light-table-row-hover-bg !important;
       }
 
       &.selected {
-        background-color: $selected-background !important;
+        background-color: $light-table-row-selected-bg !important;
+        box-shadow: inset 2px 0 0 darken($primary, 4%);
       }
     }
 
     tbody td:not(:first-child) {
-      color: lighten($gray-dark, 5%);
+      color: $custom-dark-color;
     }
   }
-
-  .app-table-striped {
-    > tbody > tr {
-      &:nth-of-type(odd) {
-        background-color: $gray-lightest;
-      }
-
-      &:hover {
-        background-color: $table-bg-hover;
-      }
-    }
-  }
-
   .app-top-menu {
     border-top-color: $gray-light;
     border-bottom-color: $gray-light;
-    background-color: $gray-lightest;
+    background: linear-gradient(to right, $light-app-top-menu-gradient-start 0%, $light-app-top-menu-gradient-mid 50%, $light-app-top-menu-gradient-end 100%);
 
     .dropdown-menu {
-      background-color: $gray-light;
-      border-color: darken($gray-light, 10%);
-
-      .dropdown-item {
-        color: $black !important;
-
-        &:hover, &.active {
-          background-color: darken($gray-mid, 5%) !important;
-        }
-      }
+      background-color: $gray-lightest !important;
     }
   }
-
   .app-foot-menu {
-    background-color: $gray-light;
-    color: $dropdown-link-color;
+    border-top: 0.5px solid $gray-light;
+    background: $theme-light-panel-alt-bg;
+    color: $custom-color;
   }
-
   .app-thumbs {
     background-color: $gray-lighter;
 
@@ -304,71 +377,104 @@
       }
     }
   }
-
   .app-sync-clients {
-    .left-panel {
-      border-right-color: $gray-light !important;
-      border-bottom-color: $gray-light !important;
-    }
-
-    .right-panel {
-      border-bottom-color: $gray-light !important;
-    }
+    --sync-client-card-shadow: 0 4px 4px #{$light-dialog-tab-card-shadow-color};
+    --sync-client-card-selected-border: #{$light-dialog-check-card-hover-border-color};
+    --sync-client-details-border: #{$light-dialog-check-card-border-color};
+    --sync-client-details-bg: linear-gradient(
+                    158deg,
+                    #{mix($theme-light-panel-bg, $white, 74%)} 0%,
+                    #{mix($light-dialog-tab-card-bg, $theme-light-panel-bg, 68%)} 100%
+    );
+    --sync-client-subtle-color: #{$light-text-muted-color};
+    --sync-client-paths-count-fg: #{$white};
+    --sync-client-paths-count-bg: #{$primary};
+    --sync-client-path-empty-border: #{$light-dialog-check-card-hover-border-color};
+    --sync-client-path-empty-bg: #{mix($light-dialog-check-card-hover-bg, $white, 72%)};
+    --sync-path-actions-separator: #{$light-dialog-check-card-border-color};
+    --sync-path-hover-bg: #{$light-dialog-check-card-bg};
   }
-
   .app-div-hovered {
     &:hover {
-      background-color: $table-bg-hover !important;
+      background-color: $light-menu-item-hover-bg !important;
     }
 
     &.selected {
-      background-color: darken($table-bg-hover, 4%) !important;
+      background-color: darken($light-menu-item-hover-bg, 4%) !important;
     }
   }
-
   .app-div-striped {
     &:nth-of-type(even) {
-      background-color: lighten($gray-lighter, 2%);
+      background-color: $light-table-row-hover-bg;
     }
 
     &.selected {
-      background-color: darken($table-bg-hover, 4%) !important;
+      background-color: $light-row-selected-bg !important;
     }
   }
+  .search-results-list {
+    .search-result-item {
+      background-color: $white;
+      border-color: $gray-light;
+    }
 
-  .app-div-striped-inverse {
-    &:nth-of-type(odd) {
-      background-color: darken($body-bg, 4%);
+    .search-result-item.app-div-striped:nth-of-type(odd) {
+      background-color: $white;
+    }
+
+    .search-result-item.app-div-striped:nth-of-type(even) {
+      background-color: lighten($light-table-row-hover-bg, 2%);
+    }
+
+    .search-result-item:hover,
+    .search-result-item.app-div-striped:hover {
+      background-color: lighten($light-table-row-hover-bg, 2%);
+      border-color: $light-surface-border;
+    }
+
+    .search-result-item.selected {
+      background-color: $light-row-selected-bg !important;
+      border-color: $primary;
+    }
+
+    .search-result-name {
+      color: $custom-dark-color;
+    }
+
+    .search-result-matches {
+      border-top-color: $gray-mid;
+    }
+
+    .search-result-match {
+      color: $custom-dark-color;
+    }
+
+    .search-result-match mark {
+      color: $custom-dark-color;
+      background: $light-green;
     }
   }
-
   .list-group-item {
     background-color: lighten($gray-light, 10%);
     color: $custom-color;
   }
-
   .profile-page {
-    .box {
-      background-color: $gray-lighter;
-    }
+    background-color: $gray-lightest;
   }
-
   .user-groups-page {
     .app-table > tbody {
       background-color: $white;
     }
   }
-
   .user-details {
     color: $black;
 
     select {
       background-color: $white !important;
-      color: black;
+      color: $black;
       filter: none;
     }
   }
-
   .task-list {
     border-bottom-color: $gray-mid;
 
@@ -376,11 +482,9 @@
       background-color: $table-bg-hover;
     }
   }
-
   .app-small-card {
-    background-color: $gray-light;
+    background-color: $light-sidebar-mini-bg;
   }
-
   .wizard {
     background-color: lighten($primary, 50%);
 
@@ -395,10 +499,9 @@
     }
 
     .wizard-nav-content {
-      background-color: $gray-lightest;
+      background-color: $white;
     }
   }
-
   .sidebar-item {
     .sidebar-item-container {
       &:hover {
@@ -414,42 +517,69 @@
 
 @mixin skin-light-miscellaneous() {
   .content-wrapper {
-    background-color: white;
+    background-color: $white;
     color: $body-color;
   }
-
   //.content-container {
   //  border-left: .5px solid $sidebar-light-apps-menu-border-color;
   //}
-
   .ngx-contextmenu {
-    background-color: $gray-light !important;
-    border-color: darken($gray-light, 10%) !important;
+    background-color: $gray-lightest !important;
+    border-color: $light-menu-surface-border !important;
+    box-shadow: $light-menu-surface-shadow !important;
 
-    .ngx-context-menu-item {
-      color: $black !important;
+    > button.ngx-context-menu-item {
+      color: $light-item-color !important;
+      background-color: transparent !important;
 
-      &:hover, &.active {
-        background-color: darken($gray-mid, 5%) !important;
+      &:hover,
+      &:focus-visible,
+      &.active {
+        background-color: $light-menu-item-hover-bg !important;
+        color: $light-item-hover-color !important;
       }
     }
-  }
 
-  .dropdown-divider {
-    border-top-color: darken($secondary-light, 15%) !important;
+    > [role='separator'] {
+      border-top-color: $light-menu-surface-border !important;
+    }
   }
-
   .modal-body {
-    background-color: $body-bg;
+    background-color: lighten($body-bg, 2%);
   }
-
   .modal-footer {
     background-color: $gray-lightest;
   }
-
-  typeahead-container, .ui-select-choices {
+  .pagination {
+    --bs-pagination-color: #{$pagination-color};
+    --bs-pagination-bg: #{$pagination-bg};
+    --bs-pagination-border-color: #{$pagination-border-color};
+    --bs-pagination-hover-color: #{$pagination-hover-color};
+    --bs-pagination-hover-bg: #{$pagination-hover-bg};
+    --bs-pagination-hover-border-color: #{$pagination-hover-border-color};
+    --bs-pagination-focus-color: #{$pagination-focus-color};
+    --bs-pagination-focus-bg: #{$pagination-focus-bg};
+    --bs-pagination-focus-box-shadow: #{$pagination-focus-box-shadow};
+    --bs-pagination-active-color: #{$pagination-active-color};
+    --bs-pagination-active-bg: #{$pagination-active-bg};
+    --bs-pagination-active-border-color: #{$pagination-active-border-color};
+    --bs-pagination-disabled-color: #{$pagination-disabled-color};
+    --bs-pagination-disabled-bg: #{$pagination-disabled-bg};
+    --bs-pagination-disabled-border-color: #{$pagination-disabled-border-color};
+  }
+  typeahead-container,
+  .ui-select-choices {
     &.dropdown-menu {
-      background-color: $white !important;
+      background-color: $gray-lightest !important;
+    }
+  }
+  .form-control,
+  .form-select,
+  .input-group-text {
+    &:disabled {
+      color: $muted;
+      cursor: not-allowed;
+      background-color: $gray-lighter;
     }
   }
 
@@ -457,13 +587,12 @@
     //background: $gray-lightest;
     border-color: $gray-lighter;
   }
-
   .nav-link {
     color: $body-color;
-    background-color: lighten($gray-mid, 4%);
+    background-color: $light-nav-bg;
 
     &:hover {
-      background: darken($gray-mid, 2%);
+      background: $light-nav-hover-bg;
     }
 
     &.active {
@@ -475,34 +604,13 @@
       color: $muted;
     }
   }
-
-  .box-default {
-    @include box-solid-variant($gray-lighter, $body-color, true);
-
-    > .box-header {
-      border-bottom: .5px solid darken($gray-lighter, 5%);
-    }
-
-    > .box-footer {
-      border-top: .5px solid darken($gray-lighter, 5%);
-    }
-  }
-
-  .box-footer-default {
-    background-color: $gray-lighter;
-
-    &:hover {
-      background-color: darken($gray-lighter, 5%);
-    }
-  }
-
   .box-transparent {
     background-color: $gray-lightest;
     border-color: $gray-lighter;
-    box-shadow: 0 12px 26px rgba(24, 32, 58, 0.1);
+    box-shadow: 0 12px 26px $light-box-transparent-shadow-color;
 
     > .box-header {
-      background: linear-gradient(180deg, $white 0%, $gray-lightest 100%);
+      background: $theme-light-panel-alt-bg;
       border-bottom-color: $gray-lighter;
     }
 
@@ -510,66 +618,87 @@
       background-color: $white;
     }
 
-    .product-img {
-      background-color: $gray-lightest;
-      border: 0.5px solid darken($gray-lighter, 4%);
-    }
   }
-
   .bg-theme {
-    background-color: $gray-light;
+    background-color: darken($gray-lighter, 3%);
   }
-
   .bg-theme-alt {
     background-color: $gray-lightest !important;
   }
-
-  .recents-grid::before {
-    background: linear-gradient(
-      180deg,
-      rgba($gray-light, 0.9) 0%,
-      rgba($gray-lightest, 0.7) 100%
-    );
+  .text-bg-light {
+    background-color: $white !important;
   }
-
-  .recents-grid .box-transparent > .box-header {
-    background: linear-gradient(
-      180deg,
-      mix($primary, $white, 12%) 0%,
-      mix($primary, $white, 6%) 100%
-    );
-    border-bottom-color: mix($primary, $white, 20%);
-
-    > fa-icon {
-      color: darken($primary, 15%);
+  app-files-recents-widget,
+  app-comments-recents-widget {
+    .recents-widget-card {
+      border-color: rgba($light-surface-border, 0.5);
+      box-shadow: 0 14px 34px $light-box-transparent-shadow-color;
+      background: linear-gradient(160deg, $light-app-top-menu-gradient-end 0%, $light-menu-surface-bg 100%);
     }
 
-    .box-title {
-      color: darken($primary, 18%);
+    .recents-widget-card__header {
+      border-bottom-color: rgba($light-surface-border, 0.5);
+      background: linear-gradient(125deg, $light-app-top-menu-gradient-start 0%, $theme-light-panel-bg 100%);
     }
 
-    .btn-link {
-      color: darken($primary, 12%);
+    .recents-widget-card__title {
+      color: lighten($navy, 8%);
     }
 
-    .btn-link:hover,
-    .btn-link:focus {
-      color: darken($primary, 24%);
+    .recents-widget-card__title-icon {
+      color: darken($primary, 11%);
+      background: rgba($white, 0.7);
+      border: 1px solid rgba($light-surface-border, 0.4);
+    }
+
+    .recents-widget-card__toggle {
+      color: mix($navy, $primary, 40%);
+      background: rgba($white, 0.72);
+      border-color: rgba($light-surface-border, 0.48);
+    }
+
+    .recents-widget-card__toggle:hover {
+      color: darken($primary, 8%);
+      background: $white;
+    }
+
+    .recents-widget-card__body {
+      background: linear-gradient(180deg, $white 0%, $light-surface-bg 100%);
+    }
+
+    .recent-item-card {
+      background: $white;
+      border-color: rgba($light-surface-border, 0.5);
+      box-shadow: 0 5px 14px $light-dialog-tab-card-shadow-color;
+    }
+
+    .recent-item-card:hover {
+      border-color: $light-dialog-check-card-hover-border-color;
+      box-shadow: 0 10px 22px $light-dialog-check-card-hover-shadow-color;
+    }
+
+    .recent-item-card__title {
+      color: $light-item-color;
+    }
+
+    .recent-item-card__media {
+      background: $gray-lightest;
+      border: 1px solid rgba($light-surface-border, 0.42);
+    }
+
+    .recent-item-card__time {
+      color: $light-text-muted-color;
+    }
+
+    .recent-empty-state {
+      background: rgba($light-menu-surface-bg, 0.8);
+      color: $light-text-muted-color;
+      border: 1px dashed rgba($light-surface-border, 0.52);
     }
   }
-
-  .products-list > li:hover {
-    background-color: lighten($table-bg-hover, 2%);
-  }
-
-  .product-list-in-box {
-    border-bottom-color: $gray-lighter;
-  }
-
   .avatar-img {
     background-color: darken($gray-light, 5%);
   }
-
   .code-editor {
     background-color: $white !important;
   }

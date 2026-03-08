@@ -145,7 +145,7 @@ export class LinksService {
   createLinkDialog(obj: ShareModel | SpaceModel) {
     /* create link when space/share is submitted */
     this.genUUID().subscribe((uuid: string) => {
-      const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'md', {
+      const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
         initialState: { link: { name: obj.name, uuid: uuid, isActive: true, nbAccess: 0 } } as LinkDialogComponent
       })
       this.subscribeToSubmitLinkModal(modalRef, obj)
@@ -165,7 +165,7 @@ export class LinksService {
     /* update link when space/share is submitted */
     if (obj.id === 0 || member?.linkSettings?.uuid) {
       // update link on a new share
-      const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'md', {
+      const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
         initialState: { link: member.linkSettings } as LinkDialogComponent
       })
       this.subscribeToSubmitLinkModal(modalRef, obj, member)
@@ -173,7 +173,7 @@ export class LinksService {
       // update link on an existing share
       this.linkFromSpaceOrShare(member.linkId, obj.id, type).subscribe({
         next: (l: LinkGuest) => {
-          const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'md', {
+          const modalRef: BsModalRef<LinkDialogComponent> = this.layout.openDialog(LinkDialogComponent, 'lg', {
             initialState: { link: { ...l, permissions: member.permissions } } as LinkDialogComponent
           })
           this.subscribeToSubmitLinkModal(modalRef, obj, member)

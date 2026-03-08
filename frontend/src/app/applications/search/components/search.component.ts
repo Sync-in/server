@@ -3,7 +3,7 @@ import { Component, computed, inject, Signal, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faFont, faSpinner, faTimes, faTrashCan } from '@fortawesome/free-solid-svg-icons'
+import { faFont, faMapMarkerAlt, faSpinner, faTimes, faTrashCan } from '@fortawesome/free-solid-svg-icons'
 import { minCharsToSearch } from '@sync-in-server/backend/src/applications/files/constants/indexing'
 import type { SearchFilesDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -14,6 +14,7 @@ import { AutofocusDirective } from '../../../common/directives/auto-focus.direct
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
+import { filterArray } from '../../../common/utils/functions'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
 import { FileContentModel } from '../../files/models/file-content.model'
@@ -33,8 +34,8 @@ import { SEARCH_ICON, SEARCH_PATH } from '../search.constants'
     AutoResizeDirective,
     TooltipDirective,
     SearchFilterPipe,
-    TapDirective,
-    L10nTranslateDirective
+    L10nTranslateDirective,
+    TapDirective
   ],
   templateUrl: './search.component.html'
 })
@@ -43,7 +44,7 @@ export class SearchComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly store = inject(StoreService)
   public searchContent: Signal<string> = computed(() => this.store.currentSearch().content)
-  protected readonly icons = { SEARCH_ICON, faSpinner, faTrashCan, faTimes, faFont }
+  protected readonly icons = { SEARCH_ICON, faSpinner, faTrashCan, faTimes, faFont, faMapMarkerAlt }
   protected minCharsToSearch = minCharsToSearch
   protected loading = false
   protected errorMessage: string = null
@@ -90,7 +91,16 @@ export class SearchComponent {
     this.store.filesSearch.set([])
   }
 
-  goTo(f: FileContentModel) {
+  goTo(f?: FileContentModel, index?: number) {
+    if (!f) {
+      const files = this.store.filesSearch()
+      const query = this.inputFilter?.search?.() ?? ''
+      const visibleFiles = query ? filterArray(query, files) : files
+      f = visibleFiles.find((_, i) => i === index)
+    }
+    if (!f) {
+      return
+    }
     this.router.navigate([SPACES_PATH.SPACES, ...f.path.split('/')], { queryParams: { select: f.name } }).catch(console.error)
   }
 }

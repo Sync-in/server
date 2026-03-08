@@ -171,8 +171,8 @@ export class Electron {
           SYNC_MENU.count.value.next('!')
           SYNC_MENU.iconAnimated = false
         } else if (scheduler === CLIENT_SCHEDULER_STATE.DISABLED) {
-          SYNC_MENU.count.level = 'secondary-alt'
-          SYNC_MENU.count.value.next('off')
+          SYNC_MENU.count.level = 'warning'
+          SYNC_MENU.count.value.next('!')
           SYNC_MENU.iconAnimated = false
         } else {
           SYNC_MENU.count.value.next(0)

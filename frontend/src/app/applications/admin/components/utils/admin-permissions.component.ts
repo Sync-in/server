@@ -7,7 +7,7 @@ import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
   selector: 'app-admin-permissions',
   imports: [CapitalizePipe, L10nTranslateDirective, L10nTranslatePipe],
   template: ` <div class="d-flex flex-column col-12 pb-3">
-    <label for="permissions" l10nTranslate>Permissions</label>
+    <label for="permissions" class="form-label" l10nTranslate>Permissions</label>
     <div id="permissions" class="form-check form-switch form-check-inline">
       @for (app of allApplications; track $index) {
         <div class="d-flex">
@@ -30,10 +30,11 @@ export class AdminPermissionsComponent {
   @Input() permissions: USER_PERMISSION[] = []
   @Output() permissionsChange = new EventEmitter<USER_PERMISSION[]>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly allApplications = Object.values(USER_PERMISSION)
+  protected readonly allApplications: USER_PERMISSION[] = Object.values(USER_PERMISSION) as USER_PERMISSION[]
 
-  updatePermissions(app: USER_PERMISSION, event: any) {
-    if (event.target.checked) {
+  updatePermissions(app: USER_PERMISSION, event: Event) {
+    const target = event.target as HTMLInputElement
+    if (target.checked) {
       this.permissions.push(app)
     } else {
       this.permissions.splice(this.permissions.indexOf(app), 1)
