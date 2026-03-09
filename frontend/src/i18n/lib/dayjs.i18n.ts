@@ -10,6 +10,7 @@ const DAYJS_LOADER: Record<i18nLocaleSupported, () => Promise<ILocale>> = {
   it: () => import('dayjs/esm/locale/it'),
   ja: () => import('dayjs/esm/locale/ja'),
   ko: () => import('dayjs/esm/locale/ko'),
+  nl: () => import('dayjs/esm/locale/nl'),
   pl: () => import('dayjs/esm/locale/pl'),
   pt: () => import('dayjs/esm/locale/pt'),
   'pt-BR': () => import('dayjs/esm/locale/pt-br'),
