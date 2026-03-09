@@ -6,6 +6,7 @@ import { hi } from './hi'
 import { it } from './it'
 import { ja } from './ja'
 import { ko } from './ko'
+import { nl } from './nl'
 import { pl } from './pl'
 import { pt } from './pt'
 import { pt_BR } from './pt_br'
@@ -21,6 +22,7 @@ export const translations = new Map<i18nLocale, Record<string, string>>([
   ['it', it],
   ['ja', ja],
   ['ko', ko],
+  ['nl', nl],
   ['pl', pl],
   ['pt', pt],
   ['pt-BR', pt_BR],
