@@ -245,6 +245,7 @@
   "The file is locked": "फ़ाइल लॉक है",
   "This access is protected by a password": "यह एक्सेस पासवर्ड से संरक्षित है",
   "You do not have share permission": "आपके पास साझा करने की अनुमति नहीं है",
+  "Desktop app permission required": "डेस्कटॉप ऐप की अनुमति आवश्यक है",
   "You can not share a space": "आप किसी स्पेस को साझा नहीं कर सकते",
   "You can not remove an anchored file": "आप एंकर की गई फ़ाइल नहीं हटा सकते",
   "You are not allowed to write here": "आपको यहाँ लिखने की अनुमति नहीं है",
@@ -647,5 +648,6 @@
   "Filter value": "फ़िल्टर मान",
   "No filter configured": "कोई फ़िल्टर कॉन्फ़िगर नहीं है",
   "checksums are not identical": "चेकसम एक जैसे नहीं हैं",
-  "size has changed since parsing": "पार्सिंग के बाद से आकार बदल गया है"
+  "size has changed since parsing": "पार्सिंग के बाद से आकार बदल गया है",
+  "No synchronized folder": "कोई सिंक्रोनाइज़्ड फ़ोल्डर नहीं"
 }

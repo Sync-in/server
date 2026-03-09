@@ -245,6 +245,7 @@
   "The file is locked": "文件已锁定",
   "This access is protected by a password": "此访问受密码保护",
   "You do not have share permission": "您没有共享权限",
+  "Desktop app permission required": "需要桌面应用权限",
   "You can not share a space": "您不能共享空间",
   "You can not remove an anchored file": "您不能删除已锚定的文件",
   "You are not allowed to write here": "您无权在此写入",
@@ -647,5 +648,6 @@
   "Filter value": "过滤器值",
   "No filter configured": "未配置过滤器",
   "checksums are not identical": "校验和不一致",
-  "size has changed since parsing": "自解析后大小已更改"
+  "size has changed since parsing": "自解析后大小已更改",
+  "No synchronized folder": "没有同步文件夹"
 }

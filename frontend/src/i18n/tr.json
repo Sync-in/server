@@ -245,6 +245,7 @@
   "The file is locked": "Dosya kilitli",
   "This access is protected by a password": "Bu erişim parola ile korunuyor",
   "You do not have share permission": "Paylaşma izniniz yok",
+  "Desktop app permission required": "Masaüstü uygulaması izni gerekli",
   "You can not share a space": "Bir alanı paylaşamazsınız",
   "You can not remove an anchored file": "Sabitlenmiş bir dosyayı kaldıramazsınız",
   "You are not allowed to write here": "Buraya yazma izniniz yok",
@@ -647,5 +648,6 @@
   "Filter value": "Filtre değeri",
   "No filter configured": "Yapılandırılmış filtre yok",
   "checksums are not identical": "Sağlama toplamları aynı değil",
-  "size has changed since parsing": "Boyut ayrıştırmadan beri değişti"
+  "size has changed since parsing": "Boyut ayrıştırmadan beri değişti",
+  "No synchronized folder": "Senkronize edilmiş klasör yok"
 }

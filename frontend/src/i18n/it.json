@@ -245,6 +245,7 @@
   "The file is locked": "Il file è bloccato",
   "This access is protected by a password": "Questo accesso è protetto da password",
   "You do not have share permission": "Non hai il permesso di condividere",
+  "Desktop app permission required": "Autorizzazione per l'app desktop richiesta",
   "You can not share a space": "Non puoi condividere uno spazio",
   "You can not remove an anchored file": "Non puoi rimuovere un file ancorato",
   "You are not allowed to write here": "Non sei autorizzato a scrivere qui",
@@ -647,5 +648,6 @@
   "Filter value": "Valore del filtro",
   "No filter configured": "Nessun filtro configurato",
   "checksums are not identical": "I checksum non sono identici",
-  "size has changed since parsing": "La dimensione è cambiata dall'analisi"
+  "size has changed since parsing": "La dimensione è cambiata dall'analisi",
+  "No synchronized folder": "Nessuna cartella sincronizzata"
 }

@@ -245,6 +245,7 @@
   "The file is locked": "Файл заблокирован",
   "This access is protected by a password": "Этот доступ защищён паролем",
   "You do not have share permission": "У вас нет прав на предоставление общего доступа",
+  "Desktop app permission required": "Требуется разрешение для настольного приложения",
   "You can not share a space": "Нельзя предоставить общий доступ к пространству",
   "You can not remove an anchored file": "Нельзя удалить закреплённый файл",
   "You are not allowed to write here": "Вам запрещено писать сюда",
@@ -647,5 +648,6 @@
   "Filter value": "Значение фильтра",
   "No filter configured": "Фильтры не настроены",
   "checksums are not identical": "Контрольные суммы не совпадают",
-  "size has changed since parsing": "Размер изменился с момента разбора"
+  "size has changed since parsing": "Размер изменился с момента разбора",
+  "No synchronized folder": "Нет синхронизированной папки"
 }

@@ -245,6 +245,7 @@
   "The file is locked": "Het bestand is vergrendeld",
   "This access is protected by a password": "Deze toegang is beveiligd met een wachtwoord",
   "You do not have share permission": "U heeft geen machtiging tot deze share",
+  "Desktop app permission required": "Machtiging voor desktop-app vereist",
   "You can not share a space": "U kunt een ruimte niet delen",
   "You can not remove an anchored file": "U kunt een gekoppeld bestand niet verwijderen",
   "You are not allowed to write here": "U heeft geen toestemming om hier te schrijven",
@@ -647,5 +648,6 @@
   "Filter value": "Filterwaarde",
   "No filter configured": "Geen filter ingesteld",
   "checksums are not identical": "controlesommen komen niet overeen",
-  "size has changed since parsing": "grootte is gewijzigd sinds verwerking"
+  "size has changed since parsing": "grootte is gewijzigd sinds verwerking",
+  "No synchronized folder": "Geen gesynchroniseerde map"
 }

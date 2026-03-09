@@ -245,6 +245,7 @@
   "The file is locked": "ファイルはロックされています",
   "This access is protected by a password": "このアクセスはパスワードで保護されています",
   "You do not have share permission": "共有する権限がありません",
+  "Desktop app permission required": "デスクトップアプリの権限が必要です",
   "You can not share a space": "スペースは共有できません",
   "You can not remove an anchored file": "アンカーされたファイルは削除できません",
   "You are not allowed to write here": "ここに書き込む権限がありません",
@@ -647,5 +648,6 @@
   "Filter value": "フィルター値",
   "No filter configured": "フィルターが設定されていません",
   "checksums are not identical": "チェックサムが一致しません",
-  "size has changed since parsing": "解析後にサイズが変更されました"
+  "size has changed since parsing": "解析後にサイズが変更されました",
+  "No synchronized folder": "同期されたフォルダーはありません"
 }

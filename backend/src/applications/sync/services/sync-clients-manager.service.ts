@@ -56,7 +56,7 @@ export class SyncClientsManager {
         tag: this.register.name,
         msg: `user *${user.login}* (${user.id}) does not have permission : ${USER_PERMISSION.DESKTOP_APP}`
       })
-      throw new HttpException('Missing permission', HttpStatus.FORBIDDEN)
+      throw new HttpException('Desktop app permission required', HttpStatus.FORBIDDEN)
     }
     if (configuration.auth.mfa.totp.enabled && user.twoFaEnabled) {
       // Checking TOTP code and recovery code

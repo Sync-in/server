@@ -15,9 +15,9 @@
     display: flex;
     flex-direction: column;
     background: rgba(0, 0, 0, 0.5);
-    padding: clamp(2.125rem, 3.5vw, 2.625rem) clamp(1.875rem, 5vw, 3.625rem);
+    padding: clamp(2.125rem, 3.5vw, 1.625rem) clamp(1.25rem, 4vw, 1.875rem);
     border-radius: 8px;
-    width: min(100%, 400px);
+    width: min(100%, 380px);
     min-width: 0;
 
     .content {
