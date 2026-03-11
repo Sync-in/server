@@ -16,12 +16,12 @@ const ignorePdfBadFormat = new Set([0x0000, 0x0001])
 
 /** Parse PDF files */
 export async function parsePdf(filePath: string, options: DocTextifyOptions): Promise<string> {
-  let doc: PDFDocumentProxy
+  let doc: PDFDocumentProxy | undefined
   const buffer = await readFile(filePath)
 
   try {
     // Load the document, allowing system fonts as fallback
-    const doc = await getDocumentProxy(new Uint8Array(buffer), {
+    doc = await getDocumentProxy(new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength), {
       disableFontFace: true,
       verbosity: 0
     })
