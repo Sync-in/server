@@ -515,3 +515,7 @@ app-input-filter {
     padding: .15rem .3rem;
   }
 }
+
+.app-collabora-online-border {
+  border-top: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
+}

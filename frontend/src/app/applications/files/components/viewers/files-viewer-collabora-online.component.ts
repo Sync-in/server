@@ -14,7 +14,7 @@ import { fileLockPropsToString } from '../utils/file-lock.utils'
   selector: 'app-files-viewer-collabora-online',
   template: `
     @if (documentServerUrl) {
-      <div [style.height.px]="currentHeight()">
+      <div class="app-collabora-online-border" [style.height.px]="currentHeight()">
         <iframe
           [src]="documentServerUrl"
           class="app-viewer-iframe collabora-scaling"
