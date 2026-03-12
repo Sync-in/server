@@ -201,19 +201,46 @@ export function copyFileContent(srcPath: string, dstPath: string): Promise<void>
   return writeFromStream(dstPath, srcStream)
 }
 
+async function walkDir(
+  rPath: string,
+  onEntry: (entry: Dirent, entryPath: string) => Promise<void> | void,
+  errors?: Record<string, string>
+): Promise<void> {
+  let entries: Dirent[]
+
+  try {
+    entries = await fs.readdir(rPath, { withFileTypes: true })
+  } catch (e: any) {
+    if (!errors) throw e
+    errors[rPath] = e.message
+    return
+  }
+
+  for (const entry of entries) {
+    const entryPath = path.join(rPath, entry.name)
+    await onEntry(entry, entryPath)
+    if (entry.isDirectory()) {
+      await walkDir(entryPath, onEntry, errors)
+    }
+  }
+}
+
 export async function dirSize(rPath: string): Promise<[number, any]> {
   let size = 0
   const errors: Record<string, string> = {}
-  for (const f of await fs.readdir(rPath, { withFileTypes: true, recursive: true })) {
-    if (f.isFile()) {
-      const p = path.join(f.parentPath, f.name)
+
+  await walkDir(
+    rPath,
+    async (entry, entryPath) => {
+      if (!entry.isFile()) return
       try {
-        size += (await fs.stat(p)).size
+        size += (await fs.stat(entryPath)).size
       } catch (e: any) {
-        errors[p] = e.message
+        errors[entryPath] = e.message
       }
-    }
-  }
+    },
+    errors
+  )
   return [size, errors]
 }
 
@@ -222,17 +249,22 @@ export async function dirListFileNames(rPath: string): Promise<string[]> {
 }
 
 export async function countDirEntries(rPath: string): Promise<{ files: number; directories: number }> {
-  return (await fs.readdir(rPath, { withFileTypes: true, recursive: true })).reduce(
-    (acc, f: Dirent) => {
-      if (f.isDirectory()) {
-        acc.directories++
+  const entriesCount = { files: 0, directories: 0 }
+  const ignoredErrors: Record<string, string> = {}
+
+  await walkDir(
+    rPath,
+    (entry: Dirent) => {
+      if (entry.isDirectory()) {
+        entriesCount.directories++
       } else {
-        acc.files++
+        entriesCount.files++
       }
-      return acc
     },
-    { files: 0, directories: 0 }
+    ignoredErrors
   )
+
+  return entriesCount
 }
 
 export async function dirHasChildren(rPath: string, mustContainsDirs = true): Promise<boolean> {
