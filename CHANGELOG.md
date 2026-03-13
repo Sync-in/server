@@ -1,4 +1,22 @@
 
+## [2.1.0](https://github.com/Sync-in/server/compare/v2.0.0...v2.1.0) (2026-03-13)
+
+
+### Features
+
+* **frontend** refresh UI ([#127](https://github.com/Sync-in/server/pull/127))
+* **backend:auth:** add toggle for security.supportPKCE in OIDC provider ([d90cbf7](https://github.com/Sync-in/server/commit/d90cbf73e63336865c7aee91f3d8c7e727522cc1))
+* **docker:** add FORCE_PERMISSIONS variable to set permissions on data files ([1eb57d6](https://github.com/Sync-in/server/commit/1eb57d60d1937be3261b0f4a3aad3082092d40a2))
+* **frontend:i18n:** add nl ([4c3a0cb](https://github.com/Sync-in/server/commit/4c3a0cb8695d6387259ee48273b66faba938f8ce))
+
+
+### Bug Fixes
+
+* **backend:database:** ensure MySQL connection uses UTC timezone ([e7d2ed9](https://github.com/Sync-in/server/commit/e7d2ed9d2a09ad8374f61f6d33b7fec60592e428))
+* **backend:files:** avoid buffer copy and ensure PDF document cleanup ([f28c71b](https://github.com/Sync-in/server/commit/f28c71bdf53ba524d6745746b805cd741776324f))
+* **backend:files:** skip unreadable directories when walking for size and entry counts ([6b0a6a7](https://github.com/Sync-in/server/commit/6b0a6a70e70425ae2d0df2fdbb3b19c41ac8bd95))
+* **frontend:recents:** move user avatar tooltip container to body to fix overlap with card ([5029911](https://github.com/Sync-in/server/commit/50299116b627817233021069a641a4514258f37b))
+
 ## [2.0.0](https://github.com/Sync-in/server/compare/v1.11.0...v2.0.0) (2026-02-10)
 
 
