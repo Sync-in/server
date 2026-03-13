@@ -61,7 +61,7 @@ export class StoreService {
   // Events
   public filesOnEvent: Subject<FileEvent> = new Subject<FileEvent>()
   // Client
-  public clientScheduler: WritableSignal<CLIENT_SCHEDULER_STATE> = signal<CLIENT_SCHEDULER_STATE>(CLIENT_SCHEDULER_STATE.DISABLED)
+  public clientScheduler: WritableSignal<CLIENT_SCHEDULER_STATE> = signal<CLIENT_SCHEDULER_STATE>(CLIENT_SCHEDULER_STATE.ASYNC)
   public clientSyncPaths: WritableSignal<SyncPathModel[]> = signal([])
   public clientSyncs = new BehaviorSubject<SyncStatus[]>([])
   public clientSyncsWithErrors = new BehaviorSubject<SyncStatus[]>([])
@@ -93,7 +93,7 @@ export class StoreService {
     this.spaceSelection.set(null)
     this.trashSelection.set(null)
     // Client
-    this.clientScheduler.set(CLIENT_SCHEDULER_STATE.DISABLED)
+    this.clientScheduler.set(CLIENT_SCHEDULER_STATE.ASYNC)
     this.clientSyncPaths.set([])
     this.clientSyncs.next([])
     this.clientSyncsWithErrors.next([])
