@@ -27,8 +27,6 @@
         @include text-truncate-utility;
         display: flex;
         align-items: center;
-        padding-left: 6px;
-        padding-right: 0;
         max-height: $sidebar-apps-height;
         width: 100%;
         color: $sidebar-light-apps-menu-title-color;
@@ -52,7 +50,8 @@
         padding: 0;
         border: none;
         border-radius: 50%;
-        margin-right: .5rem;
+        margin-right: .4rem;
+        margin-left: .4rem;
         background: $black;
         cursor: pointer;
 
