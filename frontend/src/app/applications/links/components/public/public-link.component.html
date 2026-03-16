@@ -9,15 +9,15 @@
       <div (click)="followLink()" class="resource">
         <div class="mime">
           @if (file?.mimeUrl) {
-            <img [src]="file.mimeUrl" alt="" height="96" class="no-select-pointer" (error)="fallBackMimeUrl()">
+            <img [src]="file.mimeUrl" alt="" class="no-select-pointer" (error)="fallBackMimeUrl()">
           } @else {
-            <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false" style="width: 96px; height: 96px; font-size: calc(var(--font-size-md) * 3)"></fa-icon>
+            <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false"></fa-icon>
           }
         </div>
-        <span class="error-code">{{ link.share?.name || link.space?.name }}</span>
+        <span class="mime-text">{{ link.share?.name || link.space?.name }}</span>
       </div>
       @if (file?.isDir === false) {
-        <div class="mt-3 mb-2 fs-lg">
+        <div class="btn-group-action">
           @if (file?.isViewable) {
             <button (click)="openLink()" class="btn btn-lg btn-outline-light me-2" l10nTranslate>
               <fa-icon [icon]="fileCanBeModified && file.isEditable ? icons.faPen : icons.faEye"></fa-icon>
@@ -30,14 +30,14 @@
       }
     </div>
   </div>
-  <div class="error-text no-select">
+  <div class="link-text">
     <span class="hr"></span>
     <div class="d-flex justify-content-center align-items-center">
       @if (link.owner) {
         <img [src]="link.owner.avatar" alt="" class="avatar-base-img me-3" width="42" height="42">
-        <span class="oops me-2">{{ link.owner.fullName }}</span>
+        <span class="owner-text me-2">{{ link.owner.fullName }}</span>
       }
-      <span class="solve">
+      <span class="info">
       @if (link.space) {
         <span l10nTranslate>You have been invited to join this space</span>
       } @else if (link.owner) {

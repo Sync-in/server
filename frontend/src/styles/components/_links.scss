@@ -18,11 +18,17 @@
     flex-direction: column;
     align-items: center;
     margin-bottom: .3rem;
+
     &:hover {
       span {
         @extend .text-gray;
       }
     }
+
+    img {
+      height: 80px;
+    }
+
     .mime {
       display: flex;
       flex-direction: column;
@@ -31,26 +37,42 @@
       padding: .3rem;
       border-radius: 1rem;
       margin: .8rem;
+
+      fa-icon {
+        width: 80px;
+        height: 80px;
+        font-size: 2.5rem;
+      }
     }
   }
 
-  .error-code {
+  .btn-group-action {
+    margin-bottom: 0.3rem;
+    margin-top: 0.6rem;
+
+    fa-icon {
+      font-size: $font-size-xl;
+    }
+  }
+
+  .mime-text {
     @include no-select-pointer-utility;
     color: #fff;
-    font-size: $font-size-xl;
+    font-size: $font-size-2xl;
     font-weight: 600;
     text-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
     line-height: normal;
   }
 
-  .error-text {
+  .link-text {
+    @include no-select-utility;
     color: #fff;
     color: rgba(0, 0, 0, 0.8);
     font-weight: 600;
     padding: 0 20px;
 
-    .oops {
-      font-size: $font-size-lg;
+    .owner-text {
+      font-size: $font-size-xl;
     }
 
     .hr {
@@ -62,9 +84,9 @@
       width: 40px;
     }
 
-    .solve {
+    .info {
       display: inline-block;
-      font-size: $font-size-lg;
+      font-size: $font-size-xl;
       font-weight: 400;
     }
   }
