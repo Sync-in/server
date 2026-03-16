@@ -27,10 +27,6 @@
       font-weight: 500;
       font-size: $font-size-lg;
     }
-
-    .small {
-      font-size: $font-size-xs;
-    }
   }
 }
 
@@ -39,7 +35,7 @@
   flex-direction: column;
   margin: 0.4rem 0.6rem 0.2rem;
   flex: 1 1 auto !important;
-  font-size: $font-size-xs;
+  font-size: $font-size-sm;
 }
 
 .profile-user-img {
