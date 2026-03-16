@@ -1,8 +1,8 @@
 @if (files().length) {
   @if (multiple()) {
     <div class="fs-sm">
-      <div class="d-flex justify-content-center mt-2">
-        <button (click)="addToClipboard()" class="btn btn-primary me-1" type="button" l10nTranslate>
+      <div class="d-flex justify-content-center mt-3">
+        <button (click)="addToClipboard()" class="btn btn-sm btn-primary me-1" type="button" l10nTranslate>
           <fa-icon [icon]="icons.faClipboardCheck"></fa-icon>
           Send to Clipboard
         </button>
