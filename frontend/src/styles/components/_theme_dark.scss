@@ -296,7 +296,7 @@
     }
 
     thead {
-      background-color: $sidebar-dark-icons-menu-bg;
+      background-color: lighten($sidebar-dark-icons-menu-bg, 3%);
     }
 
     tbody tr {
