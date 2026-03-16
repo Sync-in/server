@@ -1,13 +1,16 @@
 @if (sideBarHeader) {
-  <div class="sidebar-component-title">
-    <button (click)="onRefresh()" class="btn btn-default">
+  <div class="sidebar-component-title justify-content-between">
+    <div style="width: 25px"></div>
+    <div>
+      @if (errorMsg) {
+        <span class="text-danger fs-sm p-1" l10nTranslate>{{ errorMsg }}</span>
+      } @else {
+        <span l10nTranslate>Navigation Tree</span>
+      }
+    </div>
+    <button (click)="onRefresh()" class="btn btn-sm btn-default">
       <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
     </button>
-    @if (errorMsg) {
-      <span class="text-danger fs-sm p-1" l10nTranslate>{{ errorMsg }}</span>
-    } @else {
-      <span l10nTranslate>Navigation Tree</span>
-    }
   </div>
 }
 @if (copyMoveOn) {

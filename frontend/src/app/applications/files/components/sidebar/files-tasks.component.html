@@ -1,5 +1,5 @@
 <div class="sidebar-component-title justify-content-between">
-  <div style="width: 35px"></div>
+  <div style="width: 25px"></div>
   <div>
     @switch (nbActiveTasks) {
       @case (0) {
@@ -17,7 +17,7 @@
     }
   </div>
   @if (nbTotalTasks) {
-    <button (click)="removeTasks()" class="btn btn-default">
+    <button (click)="removeTasks()" class="btn btn-sm btn-default">
       <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
     </button>
   } @else {

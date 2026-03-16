@@ -1,12 +1,12 @@
-<div class="sidebar-component-title">
+<div class="sidebar-component-title  justify-content-between">
   <fa-icon class="cursor-pointer"
            [icon]="icons.faQuestion"
            [tooltip]="'Actions will be performed in the current folder' | translate:locale.language"
            container="body"
            placement="left">
   </fa-icon>
-  <span l10nTranslate>Clipboard</span>
-  <button (click)="clearAll()" class="btn btn-default">
+  <div l10nTranslate>Clipboard</div>
+  <button (click)="clearAll()" class="btn btn-sm btn-default">
     <fa-icon [icon]="icons.faTrashCan"></fa-icon>
   </button>
 </div>
