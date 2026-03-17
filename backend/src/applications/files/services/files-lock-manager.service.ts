@@ -179,7 +179,7 @@ export class FilesLockManager {
        Returns on the first conflict (compliant with the RFC 4918)
     */
     for await (const l of this.searchParentLocks(dbFile, { includeRoot: true, depth: DEPTH.INFINITY })) {
-      if (options?.lockScope && options?.lockScope === LOCK_SCOPE.SHARED && l.options.lockScope === LOCK_SCOPE.SHARED && options?.app === l.app) {
+      if (options?.lockScope && options?.lockScope === LOCK_SCOPE.SHARED && l.options?.lockScope === LOCK_SCOPE.SHARED && options?.app === l.app) {
         // Only compatible with shared locks (with the same owner and the same application)
         continue
       }
