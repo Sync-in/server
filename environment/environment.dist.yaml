@@ -121,9 +121,16 @@ auth:
     # Multiple servers are tried in order until a bind/search succeeds.
     # required
     servers: []
-    # baseDN: Distinguished name (e.g.: ou=people,dc=ldap,dc=sync-in,dc=com)
-    # Used as the search base for users, and for groups when adminGroup is a CN.
-    # required
+    # tlsOptions: Node.js TLS options used for the LDAP secure connection.
+    # Supports standard TLS options such as `ca`, `rejectUnauthorized`, etc.
+    # See: https://nodejs.org/api/tls.html
+    #      https://nodejs.org/api/tls.html#tlscreatesecurecontextoptions
+    # Example:
+    #   tlsOptions:
+    #     rejectUnauthorized: true
+    #     ca: [/app/certs/ca.pem]
+    # optional
+    tlsOptions:
     baseDN: ou=people,dc=ldap,dc=sync-in,dc=com
     # filter, e.g: (acl=admin)
     # Appended as-is to the LDAP search filter (trusted config).

@@ -1,6 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { Mocked } from 'jest-mock'
 import { Client, InvalidCredentialsError } from 'ldapts'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
 import { CONNECT_ERROR_CODE } from '../../../app.constants'
 import { USER_PERMISSION, USER_ROLE } from '../../../applications/users/constants/user'
 import { UserModel } from '../../../applications/users/models/user.model'
@@ -77,6 +80,7 @@ describe(AuthProviderLDAP.name, () => {
     ;(authProviderLDAP as any).ldapConfig = next
     ;(authProviderLDAP as any).isAD = [LDAP_LOGIN_ATTR.SAM, LDAP_LOGIN_ATTR.UPN].includes(next.attributes.login)
     ;(authProviderLDAP as any).hasServiceBind = Boolean(next.serviceBindDN && next.serviceBindPassword)
+    ;(authProviderLDAP as any).clientOptionsPromise = (authProviderLDAP as any).buildClientOptions()
   }
 
   const mockBindResolve = () => {
@@ -510,5 +514,38 @@ describe(AuthProviderLDAP.name, () => {
     setLdapConfig({ attributes: { login: LDAP_LOGIN_ATTR.SAM }, netbiosName: 'SYNC' })
     const samLogin = (authProviderLDAP as any).buildLdapLogin('john')
     expect(samLogin).toBe('SYNC\\john')
+  })
+
+  it('should load CA from file and keep inline CA values', async () => {
+    const tmpPath = await mkdtemp(path.join(tmpdir(), 'ldap-tls-'))
+    const caPath = path.join(tmpPath, 'ca.pem')
+    await writeFile(caPath, 'CA_PEM')
+
+    setLdapConfig({ tlsOptions: { ca: [caPath, 'INLINE_CA'] } })
+
+    const initialClientOptions = await (authProviderLDAP as any).clientOptionsPromise
+    expect(initialClientOptions.tlsOptions).toEqual({
+      ca: ['CA_PEM', 'INLINE_CA']
+    })
+
+    const initialCa = initialClientOptions.tlsOptions.ca
+    ;(authProviderLDAP as any).ldapConfig.tlsOptions.ca = 'CHANGED_INLINE'
+    expect((await (authProviderLDAP as any).clientOptionsPromise).tlsOptions.ca).toBe(initialCa)
+
+    await rm(tmpPath, { recursive: true, force: true })
+  })
+
+  it('should warn and fallback when ca path is not readable', async () => {
+    const warnSpy = jest.spyOn(authProviderLDAP['logger'], 'warn').mockImplementation(() => undefined)
+    const unreadableCaPath = '/definitely/missing/ca.pem'
+
+    const ca = await (authProviderLDAP as any).readTlsCa(unreadableCaPath)
+
+    expect(ca).toBe(unreadableCaPath)
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        msg: expect.stringContaining('unable to read ca path, assume inline PEM content')
+      })
+    )
   })
 })
