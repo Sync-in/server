@@ -53,6 +53,10 @@ export class AuthProviderLDAPConfig {
   @IsString({ each: true })
   servers: string[]
 
+  @IsOptional()
+  @IsObject()
+  tlsOptions?: Record<string, any> & { ca: string | string[] | Buffer }
+
   @IsString()
   @IsNotEmpty()
   baseDN: string

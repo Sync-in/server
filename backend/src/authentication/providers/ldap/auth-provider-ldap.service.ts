@@ -1,6 +1,8 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { AndFilter, Client, ClientOptions, Entry, EqualityFilter, InvalidCredentialsError, OrFilter } from 'ldapts'
+import { readFile } from 'node:fs/promises'
 import { CONNECT_ERROR_CODE } from '../../../app.constants'
+import { isPathIsReadable } from '../../../applications/files/utils/files'
 import { USER_ROLE } from '../../../applications/users/constants/user'
 import type { CreateUserDto, UpdateUserDto } from '../../../applications/users/dto/create-or-update-user.dto'
 import { UserModel } from '../../../applications/users/models/user.model'
@@ -12,11 +14,7 @@ import type { AUTH_SCOPE } from '../../constants/scope'
 import { AuthProvider } from '../auth-providers.models'
 import type { AuthProviderLDAPConfig } from './auth-ldap.config'
 import { ALL_LDAP_ATTRIBUTES, LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR, LDAP_SEARCH_ATTR } from './auth-ldap.constants'
-
-type LdapUserEntry = Entry &
-  Record<LDAP_LOGIN_ATTR | Exclude<(typeof LDAP_COMMON_ATTR)[keyof typeof LDAP_COMMON_ATTR], typeof LDAP_COMMON_ATTR.MEMBER_OF>, string> & {
-    [LDAP_COMMON_ATTR.MEMBER_OF]?: string[]
-  }
+import type { LdapCa, LdapUserEntry } from './auth-ldap.interface'
 
 @Injectable()
 export class AuthProviderLDAP implements AuthProvider {
@@ -24,7 +22,7 @@ export class AuthProviderLDAP implements AuthProvider {
   private readonly ldapConfig: AuthProviderLDAPConfig = configuration.auth.ldap
   private readonly hasServiceBind = Boolean(this.ldapConfig.serviceBindDN && this.ldapConfig.serviceBindPassword)
   private readonly isAD = this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.SAM || this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN
-  private clientOptions: ClientOptions = { timeout: 6000, connectTimeout: 6000, url: '' }
+  private readonly clientOptionsPromise: Promise<ClientOptions> = this.buildClientOptions()
 
   constructor(
     private readonly usersManager: UsersManager,
@@ -100,8 +98,9 @@ export class AuthProviderLDAP implements AuthProvider {
     // Generic LDAP: build DN from login attribute + baseDN
     const bindUserDN = this.buildBindUserDN(ldapLogin)
     let error: InvalidCredentialsError | any
+    const clientOptions = await this.clientOptionsPromise
     for (const s of this.ldapConfig.servers) {
-      const client = new Client({ ...this.clientOptions, url: s })
+      const client = new Client({ ...clientOptions, url: s })
       let attemptedBindDN = bindUserDN
       try {
         if (this.hasServiceBind) {
@@ -136,6 +135,48 @@ export class AuthProviderLDAP implements AuthProvider {
       }
     }
     return false
+  }
+
+  private async buildClientOptions(): Promise<ClientOptions> {
+    const ca = await this.readTlsCa(this.ldapConfig.tlsOptions?.ca)
+    const tlsOptions =
+      this.ldapConfig.tlsOptions && typeof this.ldapConfig.tlsOptions === 'object'
+        ? {
+            ...this.ldapConfig.tlsOptions,
+            ...(ca !== undefined ? { ca } : {})
+          }
+        : undefined
+
+    return {
+      timeout: 6000,
+      connectTimeout: 6000,
+      url: '',
+      ...(tlsOptions ? { tlsOptions } : {})
+    }
+  }
+
+  private async readTlsCa(ca: LdapCa): Promise<LdapCa> {
+    if (Buffer.isBuffer(ca)) {
+      return ca
+    }
+    if (Array.isArray(ca)) {
+      const values = await Promise.all(ca.map((v) => this.readTlsCa(v)))
+      return values.flat().filter((v): v is string | Buffer => typeof v === 'string' || Buffer.isBuffer(v))
+    }
+    if (typeof ca !== 'string') {
+      this.logger.debug({ tag: this.readTlsCa.name, msg: 'ca file is not string or buffer' })
+      return undefined
+    }
+    if (!(await isPathIsReadable(ca))) {
+      this.logger.warn({ tag: this.readTlsCa.name, msg: 'unable to read ca path, assume inline PEM content' })
+      return ca
+    }
+    try {
+      return await readFile(ca, 'utf8')
+    } catch (e) {
+      this.logger.error({ tag: this.readTlsCa.name, msg: `unable to read ca path: ${e}` })
+      return ca
+    }
   }
 
   private async checkAccess(login: string, client: Client, bindUserDN?: string): Promise<LdapUserEntry | false> {
