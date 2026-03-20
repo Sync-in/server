@@ -1,4 +1,5 @@
 import { join } from 'node:path'
+import { FilesContentIndexingConfig } from '../applications/files/files.config'
 import { AuthTokenAccessConfig, AuthTokenRefreshConfig } from '../authentication/auth.config'
 import { ACCESS_KEY, CSRF_KEY, TWO_FA_VERIFY_EXPIRATION, WS_KEY } from '../authentication/constants/auth'
 import { TOKEN_TYPE } from '../authentication/interfaces/token.interface'
@@ -41,6 +42,18 @@ function loadConfiguration(): GlobalConfig {
   config.applications.files.usersPath = join(config.applications.files.dataPath, 'users')
   config.applications.files.spacesPath = join(config.applications.files.dataPath, 'spaces')
   config.applications.files.tmpPath = join(config.applications.files.dataPath, 'tmp')
+  // DEPRECATIONS
+  // applications.files.contentIndexing → applications.files.contentIndexing.enabled
+  if (typeof config.applications.files.contentIndexing === 'boolean') {
+    const filesContentIndexingConfig = new FilesContentIndexingConfig()
+    filesContentIndexingConfig.enabled = config.applications.files.contentIndexing
+    config.applications.files.contentIndexing = filesContentIndexingConfig
+    console.warn(
+      '[DEPRECATED][CONFIGURATION] applications.files.contentIndexing is deprecated and will be removed in a future version. ' +
+        'Please use applications.files.contentIndexing.enabled instead.'
+    )
+  }
+
   return transformAndValidate(
     GlobalConfig,
     config,

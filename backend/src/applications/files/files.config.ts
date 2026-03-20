@@ -1,7 +1,32 @@
 import { Type } from 'class-transformer'
-import { IsBoolean, IsInt, IsNotEmpty, IsNotEmptyObject, IsString, ValidateNested } from 'class-validator'
+import { ArrayNotEmpty, IsArray, IsBoolean, IsInt, IsNotEmpty, IsNotEmptyObject, IsString, ValidateIf, ValidateNested } from 'class-validator'
 import { CollaboraOnlineConfig } from './modules/collabora-online/collabora-online.config'
 import { OnlyOfficeConfig } from './modules/only-office/only-office.config'
+
+export class FilesContentIndexingOCRConfig {
+  @IsBoolean()
+  enabled: boolean = true
+
+  @ValidateIf((o: FilesContentIndexingOCRConfig) => o.enabled)
+  @ArrayNotEmpty()
+  @IsArray()
+  @IsString({ each: true })
+  languages: string[] = ['eng']
+
+  @IsBoolean()
+  offline: boolean = false
+}
+
+export class FilesContentIndexingConfig {
+  @IsBoolean()
+  enabled: boolean = true
+
+  @ValidateIf((o: FilesContentIndexingConfig) => o.enabled)
+  @IsNotEmptyObject()
+  @ValidateNested()
+  @Type(() => FilesContentIndexingOCRConfig)
+  ocr: FilesContentIndexingOCRConfig = new FilesContentIndexingOCRConfig()
+}
 
 export class FilesConfig {
   @IsNotEmpty()
@@ -23,8 +48,10 @@ export class FilesConfig {
   @IsInt()
   maxUploadSize: number = 5368709120 // 5 GB
 
-  @IsBoolean()
-  contentIndexing: boolean = true
+  @IsNotEmptyObject()
+  @ValidateNested()
+  @Type(() => FilesContentIndexingConfig)
+  contentIndexing: FilesContentIndexingConfig = new FilesContentIndexingConfig()
 
   @IsBoolean()
   showHiddenFiles: boolean = false

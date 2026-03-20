@@ -19,7 +19,6 @@ export async function docTextify(
   options = {
     newlineDelimiter: '\n',
     minCharsToExtract: 10,
-    outputErrorToConsole: false,
     ...options
   }
 
@@ -33,32 +32,25 @@ export async function docTextify(
 
   const ext = fileProperties?.extension || path.extname(filePath).slice(1).toLowerCase()
 
-  try {
-    switch (ext) {
-      case 'docx':
-        return cleanContent(await parseWord(filePath, options), options)
-      case 'pptx':
-        return cleanContent(await parsePowerPoint(filePath, options), options)
-      case 'xlsx':
-        return cleanContent(await parseExcel(filePath, options), options)
-      case 'odt':
-      case 'odp':
-      case 'ods':
-        return cleanContent(await parseOpenOffice(filePath, options), options)
-      case 'pdf':
-        return cleanContent(await parsePdf(filePath, options), options)
-      case 'txt':
-        return cleanContent(await parseText(filePath), options)
-      case 'html':
-      case 'htm':
-        return cleanContent(await parseHtml(filePath), options)
-      default:
-        throw new Error('currently only supports docx, pptx, xlsx, odt, odp, ods, pdf files')
-    }
-  } catch (e) {
-    if (options.outputErrorToConsole) {
-      console.error(e.message)
-    }
-    throw e
+  switch (ext) {
+    case 'docx':
+      return cleanContent(await parseWord(filePath, options), options)
+    case 'pptx':
+      return cleanContent(await parsePowerPoint(filePath, options), options)
+    case 'xlsx':
+      return cleanContent(await parseExcel(filePath, options), options)
+    case 'odt':
+    case 'odp':
+    case 'ods':
+      return cleanContent(await parseOpenOffice(filePath, options), options)
+    case 'pdf':
+      return cleanContent(await parsePdf(filePath, options), options)
+    case 'txt':
+      return cleanContent(await parseText(filePath), options)
+    case 'html':
+    case 'htm':
+      return cleanContent(await parseHtml(filePath), options)
+    default:
+      throw new Error('currently only supports docx, pptx, xlsx, odt, odp, ods, pdf files')
   }
 }

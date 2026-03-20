@@ -15,5 +15,5 @@ frontend/tmp
 frontend/out-tsc
 frontend/bazel-out
 /frontend/src/assets/pdfjs/
-circular-dependencies.png!
+circular-dependencies.png
 backend/src/applications/files/assets/ocr-languages/*.traineddata
