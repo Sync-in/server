@@ -3,7 +3,7 @@ import { SchedulerRegistry } from '@nestjs/schedule'
 import { CronJob } from 'cron'
 import { and, between, eq, exists, inArray, like, notBetween, SQL } from 'drizzle-orm'
 import cluster from 'node:cluster'
-import { createSlug, currentTimeStamp } from '../../../common/shared'
+import { createCacheKeySlug, currentTimeStamp } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
 import { DB_TOKEN_PROVIDER } from '../../database/constants'
 import { DBSchema } from '../../database/interfaces/database.interface'
@@ -125,7 +125,7 @@ export class MysqlCacheAdapter implements Cache {
   }
 
   genSlugKey(...args: any[]): string {
-    return createSlug(args.join(' '))
+    return createCacheKeySlug(args)
   }
 
   private readonly whereNotExpired: () => SQL = () => notBetween(cache.expiration, 0, currentTimeStamp())
