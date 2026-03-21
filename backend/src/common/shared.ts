@@ -43,6 +43,10 @@ export function createSlug(input: string, replaceCount = false): string {
   return r
 }
 
+export function createCacheKeySlug(args: unknown[]) {
+  return createSlug(args.map((arg) => (arg == null ? 'null' : String(arg))).join(' '))
+}
+
 export function createLightSlug(input: string) {
   return input
     .toLowerCase()

@@ -48,12 +48,22 @@ export class AdminGuestDialogComponent extends UserGuestDialogComponent {
     super()
   }
 
-  override searchMembers(query: string): Observable<MemberModel[]> {
+  override searchManagers(query: string): Observable<MemberModel[]> {
     const search: SearchMembersDto = {
       search: query,
       ignoreUserIds: this.guestForm.value.managers.map((m: MemberModel) => m.id),
       usersRole: USER_ROLE.USER,
       onlyUsers: true
+    }
+    return this.adminService.searchMembers(search)
+  }
+
+  override searchGroups(query: string): Observable<MemberModel[]> {
+    const search: SearchMembersDto = {
+      search: query,
+      onlyGroups: true,
+      onlyPersonalGroups: true,
+      ignoreGroupIds: this.guestForm.value.groups.map((m: MemberModel) => m.id)
     }
     return this.adminService.searchMembers(search)
   }

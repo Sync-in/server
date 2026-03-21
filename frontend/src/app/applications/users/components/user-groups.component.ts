@@ -1,4 +1,4 @@
-import { KeyValuePipe } from '@angular/common'
+import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, ViewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
@@ -61,7 +61,8 @@ import { UserPersonalGroupLeaveDialogComponent } from './dialogs/user-personal-g
     BsDropdownToggleDirective,
     BsDropdownMenuDirective,
     TapDirective,
-    BadgeMembersComponent
+    BadgeMembersComponent,
+    NgTemplateOutlet
   ],
   templateUrl: 'user-groups.component.html'
 })
@@ -232,6 +233,7 @@ export class UserGroupsComponent {
         if (this.focusOnSelect) {
           this.focusOn(this.focusOnSelect)
         } else {
+          this.onSelect()
           this.scrollView.scrollInto(-1)
         }
         this.loading = false

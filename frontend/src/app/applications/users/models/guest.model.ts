@@ -1,4 +1,4 @@
-import { GuestUser } from '@sync-in-server/backend/src/applications/users/interfaces/guest-user.interface'
+import type { GuestUser } from '@sync-in-server/backend/src/applications/users/interfaces/guest-user.interface'
 import { getNewly } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'
 import { userAvatarUrl } from '../user.functions'
@@ -22,6 +22,7 @@ export class GuestUserModel implements GuestUser {
   lastIp: string
   createdAt: Date
   managers: MemberModel[]
+  groups: MemberModel[]
 
   // extra properties
   userIsActiveText: string
@@ -34,6 +35,7 @@ export class GuestUserModel implements GuestUser {
 
   constructor(guest: GuestUser) {
     this.setManagers(guest)
+    this.setGroups(guest)
     Object.assign(this, guest)
     this.avatarUrl = userAvatarUrl(guest.login)
     this.userIsActiveText = this.isActive ? 'active' : 'suspended'
@@ -44,6 +46,12 @@ export class GuestUserModel implements GuestUser {
   private setManagers(guest: GuestUser) {
     if (guest?.managers) {
       guest.managers = guest.managers.map((g) => new MemberModel(g))
+    }
+  }
+
+  private setGroups(guest: GuestUser) {
+    if (guest?.groups) {
+      guest.groups = guest.groups.map((g) => new MemberModel(g))
     }
   }
 }

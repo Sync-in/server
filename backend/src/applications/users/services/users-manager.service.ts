@@ -17,6 +17,7 @@ import { configuration, serverConfig } from '../../../configuration/config.envir
 import { isPathExists, moveFiles } from '../../files/utils/files'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
+import { GROUP_TYPE } from '../constants/group'
 import { MEMBER_TYPE } from '../constants/member'
 import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_ONLINE_STATUS, USER_ROLE } from '../constants/user'
 import type { UserCreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
@@ -339,7 +340,7 @@ export class UsersManager {
       const groupId: number = await this.usersQueries.createPersonalGroup(user.id, userCreateOrUpdateGroupDto)
       this.logger.log({ tag: this.createPersonalGroup.name, msg: `group (${groupId}) was created : ${JSON.stringify(userCreateOrUpdateGroupDto)}` })
       // clear user whitelists
-      this.usersQueries.clearWhiteListCaches([user.id])
+      void this.usersQueries.clearWhiteListCaches([user.id])
       return this.getGroup(user, groupId, false)
     } catch (e) {
       this.logger.error({ tag: this.createPersonalGroup.name, msg: `group was not created : ${JSON.stringify(userCreateOrUpdateGroupDto)} : ${e}` })
@@ -390,6 +391,9 @@ export class UsersManager {
     const userToUpdate = currentGroup.members.find((m) => m.id === userId)
     if (!userToUpdate) {
       throw new HttpException('User was not found', HttpStatus.BAD_REQUEST)
+    }
+    if (userToUpdate.type === MEMBER_TYPE.GUEST && updateUserFromGroupDto.role === USER_GROUP_ROLE.MANAGER) {
+      throw new HttpException('Guest cannot be a group manager', HttpStatus.FORBIDDEN)
     }
     if (userToUpdate.groupRole !== updateUserFromGroupDto.role) {
       if (userToUpdate.groupRole === USER_GROUP_ROLE.MANAGER) {
@@ -464,15 +468,22 @@ export class UsersManager {
   }
 
   async createGuest(user: UserModel, createGuestDto: CreateUserDto): Promise<GuestUser> {
-    // filter managers that are allowed for current user
+    // only allow managers visible to the current user
     const userWhiteList = await this.usersQueries.usersWhitelist(user.id, USER_ROLE.USER)
     createGuestDto.managers = createGuestDto.managers.filter((id) => userWhiteList.indexOf(id) > -1)
     if (createGuestDto.managers.indexOf(user.id) === -1) {
       // force user as manager during creation
       createGuestDto.managers.push(user.id)
     }
-    // clear user whitelists
-    this.usersQueries.clearWhiteListCaches([user.id])
+    if (createGuestDto?.groups?.length) {
+      // only allow personal groups where the current user is a manager
+      const groupWhiteList = await this.usersQueries.groupsWhitelist(user.id, GROUP_TYPE.PERSONAL, USER_GROUP_ROLE.MANAGER)
+      const nbGroups = createGuestDto.groups.length
+      createGuestDto.groups = createGuestDto.groups.filter((id) => groupWhiteList.indexOf(id) > -1)
+      if (nbGroups !== createGuestDto.groups.length) {
+        this.logger.warn({ tag: this.createGuest.name, msg: 'Some groups were not allowed' })
+      }
+    }
     return this.adminUsersManager.createUserOrGuest(createGuestDto, USER_ROLE.GUEST, true)
   }
 
@@ -480,16 +491,25 @@ export class UsersManager {
     if (!Object.keys(updateGuestDto).length) {
       throw new HttpException('No changes to update', HttpStatus.BAD_REQUEST)
     }
+    if (!(await this.usersQueries.isGuestManager(user.id, guestId))) {
+      throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
+    }
     if (updateGuestDto.managers) {
-      // filter managers that are allowed for current user
+      // only allow managers visible to the current user
       const userWhiteList = await this.usersQueries.usersWhitelist(user.id, USER_ROLE.USER)
       updateGuestDto.managers = updateGuestDto.managers.filter((id) => userWhiteList.indexOf(id) > -1)
       if (!updateGuestDto.managers.length) {
         throw new HttpException('Guest must have at least one manager', HttpStatus.BAD_REQUEST)
       }
     }
-    if (!(await this.usersQueries.isGuestManager(user.id, guestId))) {
-      throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
+    if (updateGuestDto.groups) {
+      // only allow personal groups where the current user is a manager
+      const groupWhiteList = await this.usersQueries.groupsWhitelist(user.id, GROUP_TYPE.PERSONAL, USER_GROUP_ROLE.MANAGER)
+      const nbGroups = updateGuestDto.groups.length
+      updateGuestDto.groups = updateGuestDto.groups.filter((id) => groupWhiteList.indexOf(id) > -1)
+      if (nbGroups !== updateGuestDto.groups.length) {
+        this.logger.warn({ tag: this.updateGuest.name, msg: 'Some groups were not allowed' })
+      }
     }
     const guest = await this.adminUsersManager.updateUserOrGuest(guestId, updateGuestDto, USER_ROLE.GUEST)
     return guest.managers.find((m) => m.id === user.id) ? guest : null

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { RedisClientOptions } from '@redis/client'
 import { createClient, RedisClientType } from 'redis'
-import { createSlug } from '../../../common/shared'
+import { createCacheKeySlug } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../services/cache.service'
 
@@ -71,7 +71,7 @@ export class RedisCacheAdapter implements Cache {
   }
 
   genSlugKey(...args: any[]): string {
-    return createSlug(args.join(' '))
+    return createCacheKeySlug(args)
   }
 
   private readonly reconnectStrategy = (attempts: number): number => {

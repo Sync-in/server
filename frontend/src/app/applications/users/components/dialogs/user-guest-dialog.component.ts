@@ -61,7 +61,7 @@ export class UserGuestDialogComponent implements OnInit {
   protected submitted = false
   protected loading = false
   protected confirmDeletion = false
-  protected tabView: undefined | 'managers'
+  protected tabView: undefined | 'managers' | 'groups'
   // form
   protected guestForm: FormGroup<{
     login: FormControl<string>
@@ -73,6 +73,7 @@ export class UserGuestDialogComponent implements OnInit {
     notification: FormControl<number>
     isActive: FormControl<boolean>
     managers: FormControl<MemberModel[]>
+    groups: FormControl<MemberModel[]>
   }>
   protected readonly i18nLanguageText = i18nLanguageText
 
@@ -88,7 +89,8 @@ export class UserGuestDialogComponent implements OnInit {
         this.guest?.notification || Object.values(USER_NOTIFICATION_TEXT).indexOf(USER_NOTIFICATION_TEXT.APPLICATION_EMAIL)
       ),
       isActive: new FormControl<boolean>(this.guest ? this.guest.isActive : true),
-      managers: new FormControl<MemberModel[]>(this.guest?.managers || [ownerToMember(this.user)])
+      managers: new FormControl<MemberModel[]>(this.guest?.managers || [ownerToMember(this.user)]),
+      groups: new FormControl<MemberModel[]>(this.guest?.groups || [])
     })
   }
 
@@ -103,7 +105,7 @@ export class UserGuestDialogComponent implements OnInit {
     this.guestForm.controls.managers.setErrors(managers.length ? null : { incorrect: true })
   }
 
-  searchMembers(query: string): Observable<MemberModel[]> {
+  searchManagers(query: string): Observable<MemberModel[]> {
     const search: SearchMembersDto = {
       search: query,
       ignoreUserIds: this.guestForm.value.managers.map((m: MemberModel) => m.id),
@@ -111,6 +113,22 @@ export class UserGuestDialogComponent implements OnInit {
       onlyUsers: true
     }
     return this.userService.searchMembers(search)
+  }
+
+  searchGroups(query: string): Observable<MemberModel[]> {
+    const search: SearchMembersDto = {
+      search: query,
+      onlyGroups: true,
+      onlyPersonalGroups: true,
+      isGroupManager: true,
+      ignoreGroupIds: this.guestForm.value.groups.map((m: MemberModel) => m.id)
+    }
+    return this.userService.searchMembers(search)
+  }
+
+  updateGroups(groups: MemberModel[]) {
+    this.guestForm.controls.groups.setValue(groups)
+    this.guestForm.controls.groups.markAsDirty()
   }
 
   onCancel() {
@@ -167,9 +185,7 @@ export class UserGuestDialogComponent implements OnInit {
   }
 
   protected makeDto(create: true): CreateUserDto
-
   protected makeDto(create?: false): UpdateUserDto
-
   protected makeDto(create = false): CreateUserDto | UpdateUserDto {
     let dto = {}
     if (create) {
@@ -186,6 +202,7 @@ export class UserGuestDialogComponent implements OnInit {
         case 'language':
           dto[k] = dto[k] === USER_LANGUAGE_AUTO ? null : dto[k]
           break
+        case 'groups':
         case 'managers':
           dto[k] = dto[k].map((m: MemberModel) => m.id)
           break

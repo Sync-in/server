@@ -148,7 +148,7 @@ export class UsersQueries {
 
   async createUserOrGuest(createUserDto: CreateUserDto, userRole: USER_ROLE): Promise<User['id']> {
     const userId: number = dbGetInsertedId(await this.db.insert(users).values({ ...createUserDto, role: userRole } as User))
-    if (userRole === USER_ROLE.USER && createUserDto.groups?.length) {
+    if (createUserDto.groups?.length) {
       await this.db.insert(usersGroups).values(createUserDto.groups.map((gid: number) => ({ userId: userId, groupId: gid })))
     }
     if (userRole === USER_ROLE.GUEST && createUserDto.managers?.length) {
@@ -182,6 +182,7 @@ export class UsersQueries {
   }
 
   async searchUsersOrGroups(searchMembersDto: SearchMembersDto, userId?: number): Promise<Member[]> {
+    // `userId` is required for user routes to avoid searching across all users and groups
     const limit = searchMembersDto.onlyUsers || searchMembersDto.onlyGroups ? 6 : 3
     const members: Member[] = []
     if (!searchMembersDto.onlyGroups) {
@@ -252,7 +253,7 @@ export class UsersQueries {
         name: userFullNameSQL(users).as('name'),
         description: users.email,
         createdAt: usersGroups.createdAt,
-        type: sql<MEMBER_TYPE>`${MEMBER_TYPE.USER}`,
+        type: sql<MEMBER_TYPE>`IF(${users.role} = ${USER_ROLE.GUEST}, ${sql.raw(`'${MEMBER_TYPE.GUEST}'`)}, ${sql.raw(`'${MEMBER_TYPE.USER}'`)})`,
         groupRole: sql<USER_GROUP_ROLE>`${usersGroups.role}`
       } satisfies Member | SelectedFields<any, any>)
       .from(groups)
@@ -315,7 +316,7 @@ export class UsersQueries {
           login: users.login,
           name: userFullNameSQL(users),
           description: users.email,
-          type: sql.raw(`'${MEMBER_TYPE.USER}'`),
+          type: sql<MEMBER_TYPE>`IF(${users.role} = ${USER_ROLE.GUEST}, ${sql.raw(`'${MEMBER_TYPE.GUEST}'`)}, ${sql.raw(`'${MEMBER_TYPE.USER}'`)})`,
           groupRole: usersGroupsAlias.role,
           createdAt: dateTimeUTC(usersGroupsAlias.createdAt)
         } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'login' | 'description' | 'type' | 'groupRole' | 'createdAt'>, any>)
@@ -381,7 +382,7 @@ export class UsersQueries {
       try {
         await this.db.insert(usersGroups).values(members.add.map((m) => ({ userId: m.id, groupId: groupId, role: m.groupRole })))
         // clear cache
-        this.clearWhiteListCaches(members.add.map((m) => m.id))
+        void this.clearWhiteListCaches(members.add.map((m) => m.id))
         this.logger.log({
           tag: this.updateGroupMembers.name,
           msg: `users ${JSON.stringify(members.add.map((m) => m.id))} was added to group (${groupId})`
@@ -401,7 +402,7 @@ export class UsersQueries {
           .where(and(eq(usersGroups.groupId, groupId), inArray(usersGroups.userId, members.remove)))
           .limit(members.remove.length)
         // clear cache
-        this.clearWhiteListCaches(members.remove)
+        void this.clearWhiteListCaches(members.remove)
         this.logger.log({ tag: this.updateGroupMembers.name, msg: `users ${JSON.stringify(members.remove)} was removed from group (${groupId})` })
       } catch (e) {
         this.logger.error({
@@ -419,7 +420,7 @@ export class UsersQueries {
     const where: SQL[] = [...(guestId ? [eq(usersGuests.guestId, guestId)] : []), ...(asAdmin ? [] : [eq(usersGuests.userId, managerId)])]
     const managersGuestAlias: any = alias(usersGuests, 'managersGuestAlias')
     const managersAlias: any = alias(users, 'managersAlias')
-    const guests = await this.db
+    const q = this.db
       .select({
         id: users.id,
         login: users.login,
@@ -444,15 +445,30 @@ export class UsersQueries {
           type: sql.raw(`'${MEMBER_TYPE.USER}'`),
           description: managersAlias.email,
           createdAt: dateTimeUTC(managersGuestAlias.createdAt)
-        } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'login' | 'description' | 'type' | 'createdAt'>, any>)
+        } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'login' | 'description' | 'type' | 'createdAt'>, any>),
+        ...(guestId && {
+          groups: concatDistinctObjectsInArray(groups.id, {
+            id: groups.id,
+            name: groups.name,
+            description: groups.description,
+            type: sql.raw(`'${MEMBER_TYPE.PGROUP}'`),
+            permissions: groups.permissions,
+            createdAt: dateTimeUTC(usersGroups.createdAt)
+          } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'description' | 'type' | 'permissions' | 'createdAt'>, any>)
+        })
       } satisfies GuestUser | SelectedFields<any, any>)
       .from(usersGuests)
-      .innerJoin(users, and(eq(users.id, usersGuests.guestId), eq(users.role, USER_ROLE.GUEST)))
-      .leftJoin(managersGuestAlias, eq(managersGuestAlias.guestId, users.id))
-      .leftJoin(managersAlias, eq(managersAlias.id, managersGuestAlias.userId))
-      .where(and(...where))
-      .groupBy(users.id)
-      .limit(guestId ? 1 : undefined)
+    q.innerJoin(users, and(eq(users.id, usersGuests.guestId), eq(users.role, USER_ROLE.GUEST)))
+    q.leftJoin(managersGuestAlias, eq(managersGuestAlias.guestId, users.id))
+    q.leftJoin(managersAlias, eq(managersAlias.id, managersGuestAlias.userId))
+    if (guestId) {
+      q.leftJoin(usersGroups, eq(usersGroups.userId, users.id))
+      q.leftJoin(groups, and(eq(groups.id, usersGroups.groupId), eq(groups.type, GROUP_TYPE.PERSONAL)))
+    }
+    q.where(and(...where))
+    q.groupBy(users.id)
+    q.limit(guestId ? 1 : undefined)
+    const guests = await q
     return guestId ? guests[0] : guests
   }
 
@@ -533,19 +549,24 @@ export class UsersQueries {
   }
 
   @CacheDecorator(900)
-  async groupsWhitelist(userId: number): Promise<number[]> {
+  async groupsWhitelist(userId: number, groupType?: GROUP_TYPE, userGroupRole?: USER_GROUP_ROLE): Promise<number[]> {
     /* Get the list of group IDs the current user is allowed to see.
        - A group marked VISIBLE is always included.
        - A group marked ISOLATED is always excluded.
        - A PRIVATE group is included only if the user is a direct member of it.
        - Visibility does not inherit from parent or child groups.
     */
+    const optionalFilters: SQL[] = [
+      ...(groupType != null ? [eq(groups.type, groupType)] : []),
+      ...(userGroupRole != null ? [eq(usersGroups.role, userGroupRole)] : [])
+    ]
     const q = this.db
       .select({ id: sql`JSON_ARRAYAGG(${groups.id}) as ids` })
       .from(groups)
       .leftJoin(usersGroups, and(eq(usersGroups.groupId, groups.id), eq(usersGroups.userId, userId)))
       .where(
         and(
+          ...optionalFilters,
           ne(groups.visibility, GROUP_VISIBILITY.ISOLATED),
           or(eq(groups.visibility, GROUP_VISIBILITY.VISIBLE), and(eq(groups.visibility, GROUP_VISIBILITY.PRIVATE), isNotNull(usersGroups.userId)))
         )
@@ -554,29 +575,29 @@ export class UsersQueries {
     return JSON.parse(r[0].ids) || []
   }
 
-  clearWhiteListCaches(userIds: number[] | '*') {
-    if (userIds === '*') {
-      // Means all entries
-      for (const pattern of [
-        this.cache.genSlugKey(this.constructor.name, this.usersWhitelist.name, userIds),
-        this.cache.genSlugKey(this.constructor.name, this.groupsWhitelist.name, userIds)
-      ]) {
-        this.cache
-          .keys(pattern)
-          .then((keys: string[]) => {
-            if (!keys.length) return
-            this.logger.verbose({ tag: this.clearWhiteListCaches.name, msg: `${JSON.stringify(keys)}` })
-            this.cache.mdel(keys).catch((e: Error) => this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` }))
-          })
-          .catch((e: Error) => this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` }))
+  async clearWhiteListCaches(userIds: number[] | '*'): Promise<void> {
+    try {
+      // '*' -> Means all entries
+      const whitelists = [this.usersWhitelist.name, this.groupsWhitelist.name]
+      const keysToDelete: string[] = []
+      if (userIds === '*') {
+        const patterns = whitelists.map((whitelist) => this.cache.genSlugKey(this.constructor.name, whitelist, userIds))
+        for (const pattern of patterns) {
+          keysToDelete.push(...(await this.cache.keys(pattern)))
+        }
+      } else {
+        // exact keys for 1-arg cache calls
+        keysToDelete.push(...whitelists.flatMap((whitelist) => userIds.map((id) => this.cache.genSlugKey(this.constructor.name, whitelist, id))))
+        // dynamic keys for optional-args cache calls
+        const patterns = whitelists.flatMap((whitelist) => userIds.map((id) => this.cache.genSlugKey(this.constructor.name, whitelist, id, '*')))
+        for (const pattern of patterns) {
+          keysToDelete.push(...(await this.cache.keys(pattern)))
+        }
       }
-    } else {
-      this.cache
-        .mdel([
-          ...userIds.map((id: number) => this.cache.genSlugKey(this.constructor.name, this.usersWhitelist.name, id)),
-          ...userIds.map((id: number) => this.cache.genSlugKey(this.constructor.name, this.groupsWhitelist.name, id))
-        ])
-        .catch((e: Error) => this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` }))
+      this.logger.verbose({ tag: this.clearWhiteListCaches.name, msg: JSON.stringify(keysToDelete) })
+      await this.cache.mdel(keysToDelete)
+    } catch (e) {
+      this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` })
     }
   }
 
@@ -609,7 +630,8 @@ export class UsersQueries {
     /* Search for groups */
     const where: SQL[] = [like(groups.name, `%${searchMembersDto.search}%`)]
     if (userId) {
-      let idsWhitelist: number[] = await this.groupsWhitelist(userId)
+      const userRole = searchMembersDto.isGroupManager ? USER_GROUP_ROLE.MANAGER : undefined
+      let idsWhitelist: number[] = await this.groupsWhitelist(userId, undefined, userRole)
       if (searchMembersDto.ignoreGroupIds?.length) {
         idsWhitelist = idsWhitelist.filter((id) => searchMembersDto.ignoreGroupIds.indexOf(id) === -1)
       }
@@ -617,9 +639,13 @@ export class UsersQueries {
     } else if (searchMembersDto.ignoreGroupIds?.length) {
       where.unshift(notInArray(groups.id, searchMembersDto.ignoreGroupIds))
     }
+
     if (searchMembersDto.excludePersonalGroups) {
       where.unshift(eq(groups.type, GROUP_TYPE.USER))
+    } else if (searchMembersDto.onlyPersonalGroups) {
+      where.unshift(eq(groups.type, GROUP_TYPE.PERSONAL))
     }
+
     return this.db
       .select({ id: groups.id, name: groups.name, description: groups.description, type: groups.type, permissions: groups.permissions })
       .from(groups)

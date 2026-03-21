@@ -292,9 +292,39 @@ describe(AdminUsersManager.name, () => {
       expect(res).toEqual(updatedGuest)
     })
 
+    it('update guest + groups diff', async () => {
+      const guest = {
+        id: 33,
+        login: 'g',
+        email: 'g@x',
+        managers: [{ id: 2 }],
+        groups: [{ id: 1 }, { id: 3 }],
+        role: USER_ROLE.GUEST
+      }
+      setGuest(guest as any)
+      const updatedGuest = { ...guest, groups: [{ id: 3 }, { id: 5 }] }
+      setGuest(updatedGuest as any)
+
+      adminQueriesMock.updateUserGroups.mockResolvedValueOnce(undefined)
+
+      const res = await service.updateUserOrGuest(guest.id, { groups: [3, 5] } as UpdateUserDto, USER_ROLE.GUEST)
+      expect(adminQueriesMock.usersQueries.updateUserOrGuest).not.toHaveBeenCalled()
+      expect(adminQueriesMock.updateUserGroups).toHaveBeenCalledWith(guest.id, { add: [5], delete: [1] })
+      expect(adminQueriesMock.updateGuestManagers).not.toHaveBeenCalled()
+      expect(res).toEqual(updatedGuest)
+    })
+
     it('validations updateGuest', async () => {
       expect(() => service.updateGuest(1, {} as any)).toThrow(/no changes to update/i)
       expect(() => service.updateGuest(1, { managers: [] } as any)).toThrow(/guest must have at least one manager/i)
+    })
+
+    it('updateUserGroups échoue pour guest', async () => {
+      const guest = { id: 33, login: 'g', email: 'g@x', managers: [{ id: 2 }], groups: [{ id: 1 }], role: USER_ROLE.GUEST }
+      setGuest(guest as any)
+      adminQueriesMock.updateUserGroups.mockRejectedValueOnce(new Error('group error'))
+      await expect(service.updateUserOrGuest(guest.id, { groups: [2] } as any, USER_ROLE.GUEST)).rejects.toThrow('Unable to update user groups')
+      expect(adminQueriesMock.updateGuestManagers).not.toHaveBeenCalled()
     })
 
     it('updateGuestManagers échoue', async () => {
