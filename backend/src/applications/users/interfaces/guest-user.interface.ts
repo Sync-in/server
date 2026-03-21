@@ -4,4 +4,5 @@ import type { Member } from './member.interface'
 export type GuestUser = Partial<User> & {
   fullName: string
   managers?: Member[]
+  groups?: Member[]
 }

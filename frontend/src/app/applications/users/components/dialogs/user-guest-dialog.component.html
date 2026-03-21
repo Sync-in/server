@@ -20,6 +20,7 @@
 </div>
 <div class="modal-body" [formGroup]="guestForm">
   <tabset [justified]="true" type="pills">
+
     <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
       <ng-template tabHeading>
         <span class="app-tab-heading">
@@ -178,6 +179,7 @@
         </div>
       </div>
     </tab>
+
     <tab (selectTab)="tabView='managers'" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
@@ -192,11 +194,30 @@
           (membersChange)="updateManagers($event)"
           [withPermissions]="false"
           [customPlaceholder]="'Type to search for managers to add'"
-          [searchFunction]="searchMembers.bind(this)">
+          [searchFunction]="searchManagers.bind(this)">
         </app-user-search>
         @if (!guestForm.value.managers.length) {
           <small class="text-danger" l10nTranslate>At least one manager is required</small>
         }
+      </div>
+    </tab>
+
+    <tab (selectTab)="tabView='groups'" customClass="tab-dialog">
+      <ng-template tabHeading>
+        <span class="app-tab-heading">
+          <fa-icon [icon]="icons.faUsers"></fa-icon>
+          <span class="app-tab-label" l10nTranslate>Groups</span>
+          <span class="app-tab-count">{{ guestForm.value.groups.length || 0 }}</span>
+        </span>
+      </ng-template>
+      <div class="app-tab-content my-3">
+        <app-user-search
+          [members]="guestForm.value.groups"
+          (membersChange)="updateGroups($event)"
+          [withPermissions]="false"
+          [customPlaceholder]="'Type to search for groups to add'"
+          [searchFunction]="searchGroups.bind(this)">
+        </app-user-search>
       </div>
     </tab>
   </tabset>

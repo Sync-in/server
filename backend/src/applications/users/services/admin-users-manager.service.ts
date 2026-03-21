@@ -62,7 +62,7 @@ export class AdminUsersManager {
         tag: this.createUserOrGuest.name,
         msg: `${USER_ROLE[userRole]} (${userId}) was created : ${JSON.stringify(anonymizePassword(createUserDto))}`
       })
-      this.adminQueries.usersQueries.clearWhiteListCaches('*')
+      void this.adminQueries.usersQueries.clearWhiteListCaches('*')
       await user.makePaths()
       if (userRole <= USER_ROLE.USER) {
         return asAdmin ? this.getUser(user.id) : user
@@ -86,6 +86,7 @@ export class AdminUsersManager {
     const updateUser: Partial<User> = {}
     const updateUserGroups: { add: number[]; delete: number[] } = { add: [], delete: [] }
     const updateGuestManagers: { add: number[]; delete: number[] } = { add: [], delete: [] }
+
     for (const [k, v] of Object.entries(updateUserDto)) {
       switch (k as keyof UpdateUserDto) {
         case 'login':
@@ -120,13 +121,13 @@ export class AdminUsersManager {
         case 'password':
           updateUser.password = await hashPassword(updateUserDto.password)
           break
-        case 'groups':
-          if (userRole === USER_ROLE.USER) {
-            const currentGroups: number[] = user.groups?.length ? user.groups.map((g) => g.id) : []
-            updateUserGroups.add = v.filter((id: number) => currentGroups.indexOf(id) === -1)
-            updateUserGroups.delete = currentGroups.filter((id: number) => v.indexOf(id) === -1)
-          }
+        case 'groups': {
+          // allowed for users and guests
+          const currentGroups: number[] = user.groups?.length ? user.groups.map((g) => g.id) : []
+          updateUserGroups.add = v.filter((id: number) => currentGroups.indexOf(id) === -1)
+          updateUserGroups.delete = currentGroups.filter((id: number) => v.indexOf(id) === -1)
           break
+        }
         case 'managers':
           if (userRole === USER_ROLE.GUEST) {
             const currentManagers: number[] = user.managers?.length ? user.managers.map((m) => m.id) : []
@@ -138,6 +139,7 @@ export class AdminUsersManager {
           updateUser[k] = v
       }
     }
+
     if (Object.keys(updateUser).length) {
       // force the type for security reason
       const forceRole = userRole === USER_ROLE.GUEST ? USER_ROLE.GUEST : undefined
@@ -145,25 +147,24 @@ export class AdminUsersManager {
         throw new HttpException('Unable to update user', HttpStatus.INTERNAL_SERVER_ERROR)
       }
     }
-    if (userRole === USER_ROLE.USER) {
-      if (updateUserGroups.add.length || updateUserGroups.delete.length) {
-        try {
-          await this.adminQueries.updateUserGroups(user.id, updateUserGroups)
-        } catch {
-          throw new HttpException('Unable to update user groups', HttpStatus.INTERNAL_SERVER_ERROR)
-        }
+
+    if (updateUserGroups.add.length || updateUserGroups.delete.length) {
+      try {
+        await this.adminQueries.updateUserGroups(user.id, updateUserGroups)
+      } catch {
+        throw new HttpException('Unable to update user groups', HttpStatus.INTERNAL_SERVER_ERROR)
       }
-      return this.getUser(userId)
-    } else {
-      if (updateGuestManagers.add.length || updateGuestManagers.delete.length) {
-        try {
-          await this.adminQueries.updateGuestManagers(user.id, updateGuestManagers)
-        } catch {
-          throw new HttpException('Unable to update guest managers', HttpStatus.INTERNAL_SERVER_ERROR)
-        }
-      }
-      return this.getGuest(userId)
     }
+
+    if (userRole === USER_ROLE.GUEST && (updateGuestManagers.add.length || updateGuestManagers.delete.length)) {
+      try {
+        await this.adminQueries.updateGuestManagers(user.id, updateGuestManagers)
+      } catch {
+        throw new HttpException('Unable to update guest managers', HttpStatus.INTERNAL_SERVER_ERROR)
+      }
+    }
+
+    return userRole === USER_ROLE.USER ? this.getUser(userId) : this.getGuest(userId)
   }
 
   async deleteUserOrGuest(userId: number, userLogin: string, deleteUserDto: DeleteUserDto): Promise<void> {
@@ -258,7 +259,7 @@ export class AdminUsersManager {
     }
     // Clear whitelist caches when the group’s visibility is changed
     if (updateGroupDto.visibility !== undefined) {
-      this.adminQueries.usersQueries.clearWhiteListCaches('*')
+      void this.adminQueries.usersQueries.clearWhiteListCaches('*')
     }
     return this.adminQueries.groupFromId(groupId)
   }

@@ -47,7 +47,7 @@ export class OptionalUserDto {
   @IsInt()
   storageQuota?: number
 
-  // for users
+  // for users and guests
   @IsOptional()
   @IsArray()
   @IsInt({ each: true })

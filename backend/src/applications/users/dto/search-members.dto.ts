@@ -27,6 +27,14 @@ export class SearchMembersDto {
   excludePersonalGroups?: boolean = false
 
   @IsOptional()
+  @IsBoolean()
+  onlyPersonalGroups?: boolean = false
+
+  @IsOptional()
+  @IsBoolean()
+  isGroupManager?: boolean = false
+
+  @IsOptional()
   @IsInt()
   usersRole?: number
 

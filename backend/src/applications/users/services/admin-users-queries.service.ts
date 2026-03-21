@@ -204,7 +204,7 @@ export class AdminUsersQueries {
           groups.add.length
         )
         this.logger.log({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.add)} was added` })
-        this.usersQueries.clearWhiteListCaches([userId])
+        void this.usersQueries.clearWhiteListCaches([userId])
       } catch (e) {
         this.logger.error({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.add)} was not added: ${e}` })
         throw new Error('User groups was not added')
@@ -217,7 +217,7 @@ export class AdminUsersQueries {
           groups.delete.length
         )
         this.logger.log({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.delete)} was deleted` })
-        this.usersQueries.clearWhiteListCaches([userId])
+        void this.usersQueries.clearWhiteListCaches([userId])
       } catch (e) {
         this.logger.error({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.delete)} was not deleted: ${e}` })
         throw new Error('User groups was not deleted')
@@ -273,7 +273,7 @@ export class AdminUsersQueries {
         userIdsWithRequiredRole.length
       )
       this.logger.log({ tag: this.addUsersToGroup.name, msg: `users (${userIds}) was added to group (${groupId})` })
-      this.usersQueries.clearWhiteListCaches(userIds)
+      void this.usersQueries.clearWhiteListCaches(userIds)
     } catch (e) {
       this.logger.error({ tag: this.addUsersToGroup.name, msg: `unable to add users (${userIds}) to group (${groupId}) : ${e}` })
       throw new Error('Unable to add users to group')
@@ -310,7 +310,7 @@ export class AdminUsersQueries {
         1
       )
       this.logger.log({ tag: this.removeUserFromGroup.name, msg: `user (${userId}) was removed from group (${groupId})` })
-      this.usersQueries.clearWhiteListCaches([userId])
+      void this.usersQueries.clearWhiteListCaches([userId])
     } catch (e) {
       this.logger.error({ tag: this.removeUserFromGroup.name, msg: `user (${userId}) or group (${groupId}) does not exist : ${e}` })
       throw new Error('Unable to remove user from group')

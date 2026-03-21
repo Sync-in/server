@@ -11,6 +11,7 @@ import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import * as filesUtilsModule from '../../files/utils/files'
 import { fileName, isPathExists } from '../../files/utils/files'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
+import { GROUP_TYPE } from '../constants/group'
 import { MEMBER_TYPE } from '../constants/member'
 import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_ROLE } from '../constants/user'
 import { CreateUserDto } from '../dto/create-or-update-user.dto'
@@ -514,21 +515,23 @@ describe(UsersManager.name, () => {
     expect(lgSpy).toHaveBeenCalledWith(expect.objectContaining({ msg: expect.stringMatching(/was deleted/) }))
   })
 
-  it('guests + proxies', async () => {
+  it('guests list + get', async () => {
     usersQueriesService.listGuests = jest.fn().mockResolvedValue([{ id: 1 }])
     await expect(usersManager.listGuests(userTest)).resolves.toEqual([{ id: 1 }])
+
     const checkSpy = jest.spyOn(adminUsersManager, 'checkUser').mockImplementation(() => undefined)
     usersQueriesService.listGuests = jest.fn().mockResolvedValue({ id: 9 })
     await expect(usersManager.getGuest(userTest, 9)).resolves.toEqual({ id: 9 })
     expect(checkSpy).toHaveBeenCalled()
+  })
 
+  it('createGuest adds current user as manager only once', async () => {
     usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([userTest.id, 100])
-    usersQueriesService.clearWhiteListCaches = jest.fn()
     const createSpy = jest.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
+
     const dto1: CreateUserDto = { ...userTest, managers: [100], password: 'x' }
     const r = await usersManager.createGuest(userTest, dto1)
     expect(createSpy).toHaveBeenCalled()
-    expect(usersQueriesService.clearWhiteListCaches).toHaveBeenCalledWith([userTest.id])
     expect(r).toEqual({ id: 55 })
     const args1 = (createSpy as jest.Mock).mock.calls[0][0]
     expect(args1.managers).toEqual(expect.arrayContaining([userTest.id]))
@@ -537,9 +540,40 @@ describe(UsersManager.name, () => {
     await usersManager.createGuest(userTest, dto2)
     const args2 = (createSpy as jest.Mock).mock.calls[0][0]
     expect((args2.managers as number[]).filter((m: number) => m === userTest.id)).toHaveLength(1)
+  })
 
+  it('createGuest groups filtering keeps only allowed groups and logs warning', async () => {
+    const warnSpy = jest.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
+    usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([userTest.id, 100])
+    usersQueriesService.groupsWhitelist = jest.fn().mockResolvedValue([10])
+    const createSpy = jest.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
+
+    const dto: CreateUserDto = { ...userTest, managers: [100], groups: [10, 11], password: 'x' }
+    await expect(usersManager.createGuest(userTest, dto)).resolves.toEqual({ id: 55 })
+    expect(usersQueriesService.groupsWhitelist).toHaveBeenCalledWith(userTest.id, GROUP_TYPE.PERSONAL, USER_GROUP_ROLE.MANAGER)
+    const args = (createSpy as jest.Mock).mock.calls[0][0]
+    expect(args.groups).toEqual([10])
+    expect(warnSpy).toHaveBeenCalledWith(expect.objectContaining({ msg: 'Some groups were not allowed' }))
+  })
+
+  it('createGuest groups keeps all allowed groups without warning', async () => {
+    const warnSpy = jest.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
+    usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([userTest.id, 100])
+    usersQueriesService.groupsWhitelist = jest.fn().mockResolvedValue([10, 11])
+    const createSpy = jest.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
+
+    const dto: CreateUserDto = { ...userTest, managers: [100], groups: [10, 11], password: 'x' }
+    await expect(usersManager.createGuest(userTest, dto)).resolves.toEqual({ id: 55 })
+    expect(usersQueriesService.groupsWhitelist).toHaveBeenCalledWith(userTest.id, GROUP_TYPE.PERSONAL, USER_GROUP_ROLE.MANAGER)
+    const args = (createSpy as jest.Mock).mock.calls[0][0]
+    expect(args.groups).toEqual([10, 11])
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  it('updateGuest checks ownership and manager whitelist', async () => {
     await expect(usersManager.updateGuest(userTest, 9, {} as any)).rejects.toThrow('No changes to update')
     usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([1])
+    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(true)
     await expect(usersManager.updateGuest(userTest, 9, { managers: [2] } as any)).rejects.toThrow('Guest must have at least one manager')
     usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(false)
     await expect(usersManager.updateGuest(userTest, 9, { email: 'a' } as any)).rejects.toThrow('You are not allowed to do this action')
@@ -554,14 +588,58 @@ describe(UsersManager.name, () => {
     await expect(usersManager.updateGuest(userTest, 9, { managers: [userTest.id, 77] } as any)).resolves.toEqual({
       managers: [{ id: userTest.id }, { id: 77 }]
     })
+  })
 
+  it('updateGuest groups forbidden when current user is not manager', async () => {
+    const updateSpy = jest.spyOn(adminUsersManager, 'updateUserOrGuest')
+    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(false)
+    usersQueriesService.groupsWhitelist = jest.fn()
+    await expect(usersManager.updateGuest(userTest, 9, { groups: [10] } as any)).rejects.toThrow('You are not allowed to do this action')
+    expect(usersQueriesService.groupsWhitelist).not.toHaveBeenCalled()
+    expect(updateSpy).not.toHaveBeenCalled()
+  })
+
+  it('updateGuest groups filtering logs warning when some groups are rejected', async () => {
+    const warnSpy = jest.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
+    const updateSpy = jest.spyOn(adminUsersManager, 'updateUserOrGuest')
+    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(true)
+    usersQueriesService.groupsWhitelist = jest.fn().mockResolvedValue([10])
+    updateSpy.mockResolvedValue({ managers: [{ id: userTest.id }], groups: [{ id: 10 }] } as any)
+
+    await expect(usersManager.updateGuest(userTest, 9, { groups: [10, 11] } as any)).resolves.toEqual({
+      managers: [{ id: userTest.id }],
+      groups: [{ id: 10 }]
+    })
+    expect(usersQueriesService.groupsWhitelist).toHaveBeenCalledWith(userTest.id, GROUP_TYPE.PERSONAL, USER_GROUP_ROLE.MANAGER)
+    expect(updateSpy).toHaveBeenLastCalledWith(9, { groups: [10] }, USER_ROLE.GUEST)
+    expect(warnSpy).toHaveBeenCalledWith(expect.objectContaining({ msg: 'Some groups were not allowed' }))
+  })
+
+  it('updateGuest groups does not log warning when all groups are allowed', async () => {
+    const warnSpy = jest.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
+    const updateSpy = jest.spyOn(adminUsersManager, 'updateUserOrGuest')
+    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(true)
+    usersQueriesService.groupsWhitelist = jest.fn().mockResolvedValue([10, 11])
+    updateSpy.mockResolvedValue({ managers: [{ id: userTest.id }], groups: [{ id: 10 }, { id: 11 }] } as any)
+
+    await expect(usersManager.updateGuest(userTest, 9, { groups: [10, 11] } as any)).resolves.toEqual({
+      managers: [{ id: userTest.id }],
+      groups: [{ id: 10 }, { id: 11 }]
+    })
+    expect(updateSpy).toHaveBeenLastCalledWith(9, { groups: [10, 11] }, USER_ROLE.GUEST)
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  it('deleteGuest checks ownership then deletes guest', async () => {
     usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(null)
     await expect(usersManager.deleteGuest(userTest, 9)).rejects.toThrow('You are not allowed to do this action')
     usersQueriesService.isGuestManager = jest.fn().mockResolvedValue({ id: 9, login: 'guest' })
     const delSpy = jest.spyOn(adminUsersManager, 'deleteUserOrGuest').mockResolvedValue(undefined)
     await expect(usersManager.deleteGuest(userTest, 9)).resolves.toBeUndefined()
     expect(delSpy).toHaveBeenCalledWith(9, 'guest', { deleteSpace: true, isGuest: true })
+  })
 
+  it('proxies forward search + online + whitelist', async () => {
     usersQueriesService.searchUsersOrGroups = jest.fn().mockResolvedValue([{ id: 1 }])
     await expect(usersManager.searchMembers(userTest, { search: '' } as any)).resolves.toEqual([{ id: 1 }])
 
