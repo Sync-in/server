@@ -391,6 +391,9 @@ export class UsersManager {
     if (!userToUpdate) {
       throw new HttpException('User was not found', HttpStatus.BAD_REQUEST)
     }
+    if (userToUpdate.type === MEMBER_TYPE.GUEST && updateUserFromGroupDto.role === USER_GROUP_ROLE.MANAGER) {
+      throw new HttpException('Guest cannot be a group manager', HttpStatus.FORBIDDEN)
+    }
     if (userToUpdate.groupRole !== updateUserFromGroupDto.role) {
       if (userToUpdate.groupRole === USER_GROUP_ROLE.MANAGER) {
         if (currentGroup.members.filter((m) => m.groupRole === USER_GROUP_ROLE.MANAGER).length === 1) {

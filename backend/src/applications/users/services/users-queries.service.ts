@@ -252,7 +252,7 @@ export class UsersQueries {
         name: userFullNameSQL(users).as('name'),
         description: users.email,
         createdAt: usersGroups.createdAt,
-        type: sql<MEMBER_TYPE>`${MEMBER_TYPE.USER}`,
+        type: sql<MEMBER_TYPE>`IF(${users.role} = ${USER_ROLE.GUEST}, ${sql.raw(`'${MEMBER_TYPE.GUEST}'`)}, ${sql.raw(`'${MEMBER_TYPE.USER}'`)})`,
         groupRole: sql<USER_GROUP_ROLE>`${usersGroups.role}`
       } satisfies Member | SelectedFields<any, any>)
       .from(groups)
@@ -315,7 +315,7 @@ export class UsersQueries {
           login: users.login,
           name: userFullNameSQL(users),
           description: users.email,
-          type: sql.raw(`'${MEMBER_TYPE.USER}'`),
+          type: sql<MEMBER_TYPE>`IF(${users.role} = ${USER_ROLE.GUEST}, ${sql.raw(`'${MEMBER_TYPE.GUEST}'`)}, ${sql.raw(`'${MEMBER_TYPE.USER}'`)})`,
           groupRole: usersGroupsAlias.role,
           createdAt: dateTimeUTC(usersGroupsAlias.createdAt)
         } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'login' | 'description' | 'type' | 'groupRole' | 'createdAt'>, any>)

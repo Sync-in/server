@@ -118,15 +118,17 @@
                     @if (m.isGroup) {
                       <span l10nTranslate>{{ m.type }}</span>
                     } @else {
-                      <span l10nTranslate>{{ m.isGroupManager ? 'Manager' : 'Member' }}</span>
+                      <ng-container
+                        [ngTemplateOutlet]="userRoleTemplate"
+                        [ngTemplateOutletContext]="{ $implicit: m }">
+                      </ng-container>
                     }
                   }
                   @case ('role') {
-                    @if (m.isGroupManager) {
-                      <span class="badge bg-primary" l10nTranslate>Manager</span>
-                    } @else {
-                      <span l10nTranslate>Member</span>
-                    }
+                    <ng-container
+                      [ngTemplateOutlet]="userRoleTemplate"
+                      [ngTemplateOutletContext]="{ $implicit: m }">
+                    </ng-container>
                   }
                   @case ('members') {
                     @if (m.isGroup) {
@@ -159,6 +161,17 @@
   <span class="mx-auto">{{ members.length }} {{ 'groups' | translate:locale.language }}</span>
 </div>
 <!--End Foot Content-->
+<!--Start Member Template -->
+<ng-template #userRoleTemplate let-m>
+  @if (m.isGroupManager) {
+    <span class="badge bg-primary" l10nTranslate>Manager</span>
+  } @else if (m.isGuest) {
+    <span l10nTranslate>Guest</span>
+  } @else {
+    <span l10nTranslate>Member</span>
+  }
+</ng-template>
+<!--End Member Template -->
 <!--Start Context Menu -->
 <context-menu #MainContextMenu>
   @if (allowedAction.addGroup || allowedAction.addUsers) {
