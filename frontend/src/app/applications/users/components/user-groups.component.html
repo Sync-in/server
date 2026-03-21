@@ -10,7 +10,7 @@
   <button (click)="openDialog(true)"
           [disabled]="!allowedAction.addGroup && !allowedAction.addUsers"
           class="btn btn-default me-1"
-          [tooltip]="(allowedAction.addGroup ? 'New personal group': 'Add members') | translate:locale.language"
+          [tooltip]="(!currentGroup && allowedAction.addGroup ? 'New personal group': 'Add members') | translate:locale.language"
           container="body"
           type="button">
     <fa-icon [icon]="icons.faPlus"></fa-icon>

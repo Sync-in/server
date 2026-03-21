@@ -232,6 +232,7 @@ export class UserGroupsComponent {
         if (this.focusOnSelect) {
           this.focusOn(this.focusOnSelect)
         } else {
+          this.onSelect()
           this.scrollView.scrollInto(-1)
         }
         this.loading = false
