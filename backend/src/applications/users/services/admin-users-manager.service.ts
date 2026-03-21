@@ -95,8 +95,10 @@ export class AdminUsersManager {
           if (await this.adminQueries.usersQueries.checkUserExists(v)) {
             throw new HttpException('Login already used', HttpStatus.FORBIDDEN)
           }
-          if (!(await this.renameUserSpace(user.login, v))) {
-            throw new HttpException('Unable to rename user space', HttpStatus.INTERNAL_SERVER_ERROR)
+          if (userRole === USER_ROLE.USER) {
+            if (!(await this.renameUserSpace(user.login, v))) {
+              throw new HttpException('Unable to rename user space', HttpStatus.INTERNAL_SERVER_ERROR)
+            }
           }
           updateUser.login = v
           break
