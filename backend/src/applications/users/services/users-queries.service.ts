@@ -555,29 +555,28 @@ export class UsersQueries {
   }
 
   clearWhiteListCaches(userIds: number[] | '*') {
-    if (userIds === '*') {
-      // Means all entries
-      for (const pattern of [
-        this.cache.genSlugKey(this.constructor.name, this.usersWhitelist.name, userIds),
-        this.cache.genSlugKey(this.constructor.name, this.groupsWhitelist.name, userIds)
-      ]) {
-        this.cache
-          .keys(pattern)
-          .then((keys: string[]) => {
-            if (!keys.length) return
-            this.logger.verbose({ tag: this.clearWhiteListCaches.name, msg: `${JSON.stringify(keys)}` })
-            this.cache.mdel(keys).catch((e: Error) => this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` }))
-          })
-          .catch((e: Error) => this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` }))
-      }
-    } else {
-      this.cache
-        .mdel([
-          ...userIds.map((id: number) => this.cache.genSlugKey(this.constructor.name, this.usersWhitelist.name, id)),
-          ...userIds.map((id: number) => this.cache.genSlugKey(this.constructor.name, this.groupsWhitelist.name, id))
-        ])
-        .catch((e: Error) => this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` }))
-    }
+    // '*' -> Means all entries
+    const whitelists = [this.usersWhitelist.name, this.groupsWhitelist.name]
+    const keysPromise =
+      userIds === '*'
+        ? Promise.all(whitelists.map((whitelist) => this.cache.keys(this.cache.genSlugKey(this.constructor.name, whitelist, userIds)))).then(
+            (keyLists: string[][]) => keyLists.flat()
+          )
+        : Promise.resolve(
+            whitelists.flatMap((whitelist) =>
+              userIds.flatMap((id) => [
+                this.cache.genSlugKey(this.constructor.name, whitelist, id),
+                this.cache.genSlugKey(this.constructor.name, whitelist, id, '*')
+              ])
+            )
+          )
+    keysPromise
+      .then((keys: string[]) => {
+        if (!keys.length) return
+        this.logger.verbose({ tag: this.clearWhiteListCaches.name, msg: JSON.stringify(keys) })
+        return this.cache.mdel(keys)
+      })
+      .catch((e: Error) => this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` }))
   }
 
   async allUserIdsFromGroupsAndSubGroups(groupIds: number[]): Promise<number[]> {
