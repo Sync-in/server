@@ -1,8 +1,8 @@
 import type { Logger } from '@nestjs/common'
-import { mkdir } from 'node:fs/promises'
 import path from 'node:path'
 import Tesseract from 'tesseract.js'
 import { configuration } from '../../../../../configuration/config.environment'
+import { makeDir } from '../../files'
 
 export type PdfOCRWorker = Awaited<ReturnType<typeof Tesseract.createWorker>>
 type PdfOCRWorkerOptions = NonNullable<Parameters<typeof Tesseract.createWorker>[2]>
@@ -12,6 +12,8 @@ export class PdfOCRWorkerManager {
   public worker: PdfOCRWorker | null
   private readonly ocrLanguagesPath = path.resolve(__dirname, '../../../assets/ocr-languages')
   private readonly ocrUserDefinedDpi = '300'
+  private readonly ocrTrainedDataExtension = '.traineddata'
+  private readonly ocrTrainedDataGzipExtension = '.traineddata.gz'
   private logger: Logger
   private workerInitializationPromise: Promise<PdfOCRWorker | null> | null
 
@@ -53,7 +55,7 @@ export class PdfOCRWorkerManager {
       await this.workerInitializationPromise.catch((e) =>
         this.logger.error({
           tag: this.constructor.name,
-          msg: `Worker promise: ${e}`
+          msg: `Initialization: ${e}`
         })
       )
     }
@@ -65,7 +67,7 @@ export class PdfOCRWorkerManager {
     await worker.terminate().catch((e) =>
       this.logger.error({
         tag: this.constructor.name,
-        msg: `Worker stop: ${e}`
+        msg: `${e}`
       })
     )
   }
@@ -73,10 +75,10 @@ export class PdfOCRWorkerManager {
   private async createConfiguredWorker(languages: string[], options: PdfOCRWorkerOptions): Promise<PdfOCRWorker> {
     const worker = await Tesseract.createWorker(languages, Tesseract.OEM.LSTM_ONLY, {
       ...options,
-      errorHandler: (err: unknown) =>
+      errorHandler: (e: unknown) =>
         this.logger.error({
           tag: this.constructor.name,
-          msg: `Tesseract worker error: ${err}`
+          msg: `${e}`
         }),
       logger: () => {
         // intentionally disabled
@@ -94,7 +96,7 @@ export class PdfOCRWorkerManager {
       return null
     }
     try {
-      await mkdir(this.ocrLanguagesPath, { recursive: true })
+      await makeDir(this.ocrLanguagesPath, true)
     } catch (e) {
       this.logger.error({
         tag: this.constructor.name,
@@ -115,7 +117,7 @@ export class PdfOCRWorkerManager {
       } catch (error) {
         this.logger.warn({
           tag: this.constructor.name,
-          msg: `unable to load offline OCR languages as .traineddata, retrying with .traineddata.gz: ${error}`
+          msg: `unable to load offline OCR languages as ${this.ocrTrainedDataGzipExtension}, retrying with ${this.ocrTrainedDataExtension}: ${error}`
         })
         // Fallback for non-gz files: <lang>.traineddata
         return this.createConfiguredWorker(ocrOptions.languages, {
