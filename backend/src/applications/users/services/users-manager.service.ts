@@ -14,7 +14,7 @@ import { comparePassword, hashPassword } from '../../../common/functions'
 import { generateAvatar, pngMimeType, svgMimeType } from '../../../common/image'
 import { createLightSlug, genPassword } from '../../../common/shared'
 import { configuration, serverConfig } from '../../../configuration/config.environment'
-import { isPathExists, moveFiles } from '../../files/utils/files'
+import { isPathExists, moveFiles, sanitizeName } from '../../files/utils/files'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { GROUP_TYPE } from '../constants/group'
@@ -234,14 +234,15 @@ export class UsersManager {
 
   async generateAppPassword(user: UserModel, userAppPasswordDto: UserAppPasswordDto): Promise<UserAppPassword> {
     const secrets = await this.usersQueries.getUserSecrets(user.id)
-    const slugName = createLightSlug(userAppPasswordDto.name)
+    const slugName = createLightSlug(sanitizeName(userAppPasswordDto.name))
+    if (!slugName) throw new HttpException('Invalid name', HttpStatus.BAD_REQUEST)
     if (Array.isArray(secrets.appPasswords) && secrets.appPasswords.find((p: UserAppPassword) => p.name === slugName)) {
       throw new HttpException('Name already used', HttpStatus.BAD_REQUEST)
     }
     secrets.appPasswords = Array.isArray(secrets.appPasswords) ? secrets.appPasswords : []
     const clearPassword = genPassword(24)
     const appPassword: UserAppPassword = {
-      name: createLightSlug(userAppPasswordDto.name),
+      name: slugName,
       app: userAppPasswordDto.app,
       expiration: userAppPasswordDto.expiration,
       password: await hashPassword(clearPassword),
