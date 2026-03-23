@@ -13,10 +13,10 @@
         <app-files-viewer-image [currentHeight]="currentHeight" [(file)]="currentFile" [directoryImages]="directoryImages()"></app-files-viewer-image>
       }
       @case (SHORT_MIME.PDF) {
-        <app-files-viewer-pdf [currentHeight]="currentHeight" [fileUrl]="currentFile.dataUrl"></app-files-viewer-pdf>
+        <app-files-viewer-pdf [currentHeight]="currentHeight" [file]="currentFile"></app-files-viewer-pdf>
       }
       @case (SHORT_MIME.MEDIA) {
-        <app-files-viewer-media [currentHeight]="currentHeight" [fileUrl]="currentFile.dataUrl"></app-files-viewer-media>
+        <app-files-viewer-media [currentHeight]="currentHeight" [file]="currentFile"></app-files-viewer-media>
       }
       @case (SHORT_MIME.DOCUMENT) {
         @if (editorProvider.collabora) {
