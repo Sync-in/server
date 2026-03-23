@@ -8,6 +8,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { JwtIdentityPayload } from '../../../../authentication/interfaces/jwt-payload.interface'
 import { convertHumanTimeToSeconds } from '../../../../common/functions'
+import { encodeUrl } from '../../../../common/shared'
 import { configuration } from '../../../../configuration/config.environment'
 import { Cache } from '../../../../infrastructure/cache/services/cache.service'
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
@@ -99,8 +100,8 @@ export class OnlyOfficeManager {
     }
     const isMobile: boolean = this.mobileRegex.test(req.headers['user-agent'])
     const authToken: string = await this.genAuthToken(user)
-    const fileUrl = this.buildUrl(API_ONLY_OFFICE_DOCUMENT, space.url, authToken)
-    const callBackUrl = this.buildUrl(API_ONLY_OFFICE_CALLBACK, space.url, authToken)
+    const fileUrl = this.buildUrl(API_ONLY_OFFICE_DOCUMENT, encodeUrl(space.url), authToken)
+    const callBackUrl = this.buildUrl(API_ONLY_OFFICE_CALLBACK, encodeUrl(space.url), authToken)
     const config: OnlyOfficeReqDto = await this.genConfiguration(user, space, mode, fileUrl, fileExtension, callBackUrl, isMobile, hasLock)
     config.config.token = await this.genPayloadToken(config.config)
     return config

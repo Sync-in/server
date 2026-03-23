@@ -9,7 +9,7 @@ import type { FileEditorProviders } from '@sync-in-server/backend/src/applicatio
 import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import type { File } from '@sync-in-server/backend/src/applications/files/schemas/file.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
-import { currentTimeStamp, popFromObject } from '@sync-in-server/backend/src/common/shared'
+import { currentTimeStamp, encodeUrl, popFromObject } from '@sync-in-server/backend/src/common/shared'
 import type { Observable } from 'rxjs'
 import { convertBytesToText, getNewly } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'
@@ -97,16 +97,20 @@ export class FileModel implements File {
     this.updateNbBadges()
   }
 
+  get encodedPath(): string {
+    return encodeUrl(this.path)
+  }
+
   get dataUrl(): string {
-    return `${API_FILES_OPERATION}/${this.path}`
+    return `${API_FILES_OPERATION}/${this.encodedPath}`
   }
 
   get taskUrl(): string {
-    return `${API_FILES_TASK_OPERATION}/${this.path}`
+    return `${API_FILES_TASK_OPERATION}/${this.encodedPath}`
   }
 
   get thumbnailUrl(): string {
-    return `${API_FILES_OPERATION_THUMBNAIL}/${this.path}`
+    return `${API_FILES_OPERATION_THUMBNAIL}/${this.encodedPath}`
   }
 
   fallBackMimeUrl() {
@@ -140,6 +144,17 @@ export class FileModel implements File {
   getExtension(): string {
     const dot = this.name.lastIndexOf('.')
     return dot >= 0 ? this.name.slice(dot + 1).toLowerCase() : ''
+  }
+
+  updateNbBadges() {
+    this.galleryBadges = []
+    if (this.lock) this.galleryBadges.push('lock')
+    if (this.shares.length) this.galleryBadges.push('shares')
+    if (this.spaces.length) this.galleryBadges.push('spaces')
+    if (this.links.length) this.galleryBadges.push('links')
+    if (this.syncs.length) this.galleryBadges.push('syncs')
+    if (this.hasComments) this.galleryBadges.push('comments')
+    this.nbBadges = this.galleryBadges.length
   }
 
   private getType(inShare: boolean): 'directory_share' | 'directory' | 'file' {
@@ -249,16 +264,5 @@ export class FileModel implements File {
       }
       this.updateNbBadges()
     }
-  }
-
-  updateNbBadges() {
-    this.galleryBadges = []
-    if (this.lock) this.galleryBadges.push('lock')
-    if (this.shares.length) this.galleryBadges.push('shares')
-    if (this.spaces.length) this.galleryBadges.push('spaces')
-    if (this.links.length) this.galleryBadges.push('links')
-    if (this.syncs.length) this.galleryBadges.push('syncs')
-    if (this.hasComments) this.galleryBadges.push('comments')
-    this.nbBadges = this.galleryBadges.length
   }
 }
