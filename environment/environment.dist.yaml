@@ -297,9 +297,23 @@ applications:
     dataPath: /home/sync-in
     # default: 5368709120 (5 GB)
     maxUploadSize: 5368709120
-    # Enable indexing of file contents for search (disabling this turns off full-text search)
-    # default: true
-    contentIndexing: true
+    contentIndexing:
+      # Enable indexing of file contents for search (disabling this turns off full-text search)
+      # default: true
+      enabled: true
+      ocr:
+        # Enable OCR on PDF
+        # default: true
+        enabled: true
+        # OCR languages used by tesseract.js
+        # Supports ISO 639-2/T three-letter codes: 'eng', 'spa', 'fra', 'deu', etc.
+        # examples: `[eng,fra]`, `[fra]`
+        # default: [eng]
+        languages: [eng]
+        # Offline mode: do not download OCR languages, only use local language files from the built-in OCR folder
+        # To download languages, use this scheme: https://cdn.jsdelivr.net/npm/@tesseract.js-data/<lang>@1.0.0/4.0.0_best_int/<lang>.traineddata.gz
+        # default: false
+        offline: false
     # Show files starting with a dot in the file explorer
     # default: false
     showHiddenFiles: false

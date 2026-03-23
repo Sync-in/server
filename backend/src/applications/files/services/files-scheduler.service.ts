@@ -23,6 +23,7 @@ import { FilesTasksManager } from './files-tasks-manager.service'
 @Injectable()
 export class FilesScheduler {
   private readonly logger = new Logger(FilesScheduler.name)
+  private isIndexContentFilesRunning = false
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
@@ -134,10 +135,19 @@ export class FilesScheduler {
   @Cron(CronExpression.EVERY_4_HOURS)
   async indexContentFiles(): Promise<void> {
     // Conditional loading of file content indexing
-    if (!configuration.applications.files.contentIndexing) return
+    if (!configuration.applications.files.contentIndexing.enabled) return
+    if (this.isIndexContentFilesRunning) {
+      this.logger.warn({ tag: this.indexContentFiles.name, msg: `SKIP (already running)` })
+      return
+    }
+    this.isIndexContentFilesRunning = true
     this.logger.log({ tag: this.indexContentFiles.name, msg: `START` })
-    await this.filesContentManager.parseAndIndexAllFiles()
-    this.logger.log({ tag: this.indexContentFiles.name, msg: `END` })
+    try {
+      await this.filesContentManager.parseAndIndexAllFiles()
+      this.logger.log({ tag: this.indexContentFiles.name, msg: `END` })
+    } finally {
+      this.isIndexContentFilesRunning = false
+    }
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_4AM)

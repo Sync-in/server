@@ -7,6 +7,7 @@ import { FileIndexContext, FileParseContext } from '../interfaces/file-parse-ind
 import { FilesIndexer } from '../models/files-indexer'
 import { FileContent } from '../schemas/file-content.interface'
 import { docTextify } from '../utils/doc-textify/doc-textify'
+import { PdfOCRWorkerManager } from '../utils/doc-textify/utils/pdf-ocr'
 import { getMimeType } from '../utils/files'
 import { FilesParser } from './files-parser.service'
 
@@ -14,6 +15,7 @@ import { FilesParser } from './files-parser.service'
 export class FilesContentManager {
   private readonly maxDocumentSize = 150 * 1_000_000
   private readonly logger = new Logger(FilesContentManager.name)
+  private pdfOcrWorkerManager: PdfOCRWorkerManager | null = null
 
   constructor(
     private readonly filesIndexer: FilesIndexer,
@@ -21,28 +23,39 @@ export class FilesContentManager {
   ) {}
 
   async parseAndIndexAllFiles(): Promise<void> {
-    const indexSuffixes: string[] = []
-    for await (const [id, type, paths] of this.filesParser.allPaths()) {
-      let indexSuffix: string
-      switch (type) {
-        case 'user':
-          indexSuffix = `${userIndexPrefix}${id}`
-          break
-        case 'space':
-          indexSuffix = `${spaceIndexPrefix}${id}`
-          break
-        case 'share':
-          indexSuffix = `${shareIndexPrefix}${id}`
-      }
-      try {
-        await this.indexFiles(indexSuffix, paths)
-      } catch (e) {
-        this.logger.error({ tag: this.parseAndIndexAllFiles.name, msg: `${e}` })
-      }
-      indexSuffixes.push(indexSuffix)
+    this.pdfOcrWorkerManager = PdfOCRWorkerManager.getInstance(this.logger)
+    try {
+      await this.pdfOcrWorkerManager.start()
+    } catch (e) {
+      this.logger.warn({ tag: this.parseAndIndexAllFiles.name, msg: `unable to initialize OCR worker: ${e}` })
     }
-    // clean up old tables
-    await this.filesIndexer.cleanIndexes(indexSuffixes)
+    try {
+      const indexSuffixes: string[] = []
+      for await (const [id, type, paths] of this.filesParser.allPaths()) {
+        let indexSuffix: string
+        switch (type) {
+          case 'user':
+            indexSuffix = `${userIndexPrefix}${id}`
+            break
+          case 'space':
+            indexSuffix = `${spaceIndexPrefix}${id}`
+            break
+          case 'share':
+            indexSuffix = `${shareIndexPrefix}${id}`
+        }
+        try {
+          await this.indexFiles(indexSuffix, paths)
+        } catch (e) {
+          this.logger.error({ tag: this.parseAndIndexAllFiles.name, msg: `${e}` })
+        }
+        indexSuffixes.push(indexSuffix)
+      }
+      // clean up old tables
+      await this.filesIndexer.cleanIndexes(indexSuffixes)
+    } finally {
+      await this.pdfOcrWorkerManager?.stop()
+      this.pdfOcrWorkerManager = null
+    }
   }
 
   private async indexFiles(indexSuffix: string, paths: FileParseContext[]): Promise<void> {
@@ -117,7 +130,7 @@ export class FilesContentManager {
           yield* this.parseFiles(realPath, context)
           continue
         }
-        const fileContent = await this.analyzeFile(realPath, context)
+        const fileContent = await this.analyzeFile(realPath, context, false)
         if (fileContent !== null) {
           yield fileContent
         }
@@ -177,7 +190,11 @@ export class FilesContentManager {
     try {
       const content = await docTextify(
         rPath,
-        { newlineDelimiter: ' ', minCharsToExtract: 10 },
+        {
+          newlineDelimiter: ' ',
+          minCharsToExtract: 10,
+          ocrWorker: this.pdfOcrWorkerManager?.worker
+        },
         {
           extension: extension,
           verified: true
