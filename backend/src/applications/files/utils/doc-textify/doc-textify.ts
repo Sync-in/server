@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { parseExcel } from './adapters/excel'
 import { parseHtml } from './adapters/html'
+import { parseMarkdown } from './adapters/markdown'
 import { parseOpenOffice } from './adapters/open-office'
 import { parsePdf } from './adapters/pdf'
 import { parsePowerPoint } from './adapters/power-point'
@@ -47,10 +48,12 @@ export async function docTextify(
       return cleanContent(await parsePdf(filePath, options), options)
     case 'txt':
       return cleanContent(await parseText(filePath), options)
+    case 'md':
+      return cleanContent(await parseMarkdown(filePath), options)
     case 'html':
     case 'htm':
       return cleanContent(await parseHtml(filePath), options)
     default:
-      throw new Error('currently only supports docx, pptx, xlsx, odt, odp, ods, pdf files')
+      throw new Error('currently only supports docx, pptx, xlsx, odt, odp, ods, pdf, txt, md, html files')
   }
 }
