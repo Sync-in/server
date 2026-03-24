@@ -43,7 +43,7 @@
                     <label for="" class="col-5 col-sm-4" l10nTranslate>IP Addresses</label>
                     <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
                       <span class="badge bg-warning">{{ user.currentIp }}</span>
-                      <span class="badge bg-secondary-alt ms-1">{{ user.lastIp }}</span>
+                      <span class="badge bg-default ms-1">{{ user.lastIp }}</span>
                     </div>
                   </div>
 
@@ -51,7 +51,7 @@
                     <label for="" class="col-5 col-sm-4" l10nTranslate>Connections</label>
                     <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
                       <span class="badge bg-warning">{{ user.currentAccess | amDateFormat }}</span>
-                      <span class="badge bg-secondary-alt ms-1">{{ user.lastAccess | amDateFormat }}</span>
+                      <span class="badge bg-default ms-1">{{ user.lastAccess | amDateFormat }}</span>
                     </div>
                   </div>
 

@@ -282,9 +282,7 @@
     }
 
     .badge {
-      display: inline-block;
       max-width: 100%;
-      vertical-align: middle;
     }
   }
 
@@ -301,7 +299,7 @@
 
   tbody td:not(:first-child) {
     color: transparent;
-    font-size: $font-size-xs;
+    font-size: 0.7rem !important;
     border-top: none;
   }
 }

@@ -32,7 +32,7 @@
         @if (space().counts.users || space().counts.groups) {
           <app-badge-members [members]="space().counts"></app-badge-members>
         } @else {
-          <span class="badge bg-secondary-alt" l10nTranslate>no</span>
+          <span class="badge bg-default" l10nTranslate>no</span>
         }
       </div>
       <div class="d-flex align-items-center mb-1">
@@ -43,7 +43,7 @@
             {{ space().counts.roots }}
           </span>
         } @else {
-          <span class="badge bg-secondary-alt" l10nTranslate>no</span>
+          <span class="badge bg-default" l10nTranslate>no</span>
         }
       </div>
       @if (space().role === SPACE_ROLE.IS_MANAGER) {
@@ -55,7 +55,7 @@
             {{ space().counts.shares }}
           </span>
           } @else {
-            <span class="badge bg-secondary-alt" l10nTranslate>no</span>
+            <span class="badge bg-default" l10nTranslate>no</span>
           }
         </div>
       }
@@ -73,7 +73,7 @@
         @if (space().permissions) {
           <app-badge-permissions [permissions]="space().hPerms"></app-badge-permissions>
         } @else {
-          <span class="badge bg-secondary-alt" l10nTranslate>no</span>
+          <span class="badge bg-default" l10nTranslate>no</span>
         }
       </div>
     </div>

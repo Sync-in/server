@@ -48,7 +48,7 @@
             {{ link().hTimeExpirationAgo >= 1 ? link().hTimeExpirationAgo + '&nbsp;' + ('days' | translate:locale.language) : 'expired' | translate:locale.language }}
           </span>
         } @else {
-          <span class="badge bg-secondary-alt" l10nTranslate>no</span>
+          <span class="badge bg-default" l10nTranslate>no</span>
         }
       </div>
       <div class="d-flex align-items-center mb-1">
@@ -79,7 +79,7 @@
         @if (link().link.permissions) {
           <app-badge-permissions [permissions]="link().hPerms"></app-badge-permissions>
         } @else {
-          <span class="badge bg-secondary-alt" l10nTranslate>no</span>
+          <span class="badge bg-default" l10nTranslate>no</span>
         }
       </div>
     </div>

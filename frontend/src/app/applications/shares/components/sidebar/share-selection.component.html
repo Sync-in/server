@@ -24,7 +24,7 @@
         @if (share().counts.users || share().counts.groups) {
           <app-badge-members [members]="share().counts"></app-badge-members>
         } @else {
-          <span class="badge bg-secondary-alt" l10nTranslate>no</span>
+          <span class="badge bg-default" l10nTranslate>no</span>
         }
       </div>
       <div class="d-flex align-items-center mb-1">
@@ -35,12 +35,12 @@
             {{ share().counts.shares }}
           </span>
         } @else {
-          <span class="badge bg-secondary-alt" l10nTranslate>no</span>
+          <span class="badge bg-default" l10nTranslate>no</span>
         }
       </div>
       <div class="d-flex align-items-center mb-1">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Comments</div>
-        <span (click)="goToComments()" class="badge {{share().hasComments ? 'bg-success' : 'bg-secondary-alt'}} cursor-pointer">
+        <span (click)="goToComments()" class="badge {{share().hasComments ? 'bg-success' : 'bg-default'}} cursor-pointer">
           {{ (share().hasComments ? 'yes' : 'no') | translate:locale.language }}
         </span>
       </div>
