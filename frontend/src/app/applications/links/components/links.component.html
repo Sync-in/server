@@ -3,14 +3,12 @@
   <button (click)="loadShareLinks()"
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
   <button (click)="openLinkDialog()"
           [disabled]="!selected" class="btn btn-default me-1"
           [tooltip]="'Edit link' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faPen"></fa-icon>
   </button>
@@ -18,7 +16,6 @@
           [disabled]="!selected"
           class="btn me-1 {{linkWasCopied ? 'btn-primary' : 'btn-default'}}"
           [tooltip]="'Copy link' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="linkWasCopied? icons.faClipboardCheck : icons.faClipboard"></fa-icon>
   </button>
@@ -26,7 +23,6 @@
           [disabled]="!selected"
           class="btn btn-default"
           [tooltip]="'Go to' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
   </button>

@@ -3,7 +3,6 @@
   <button (click)="loadSpaces()"
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
@@ -11,7 +10,6 @@
     <button (click)="openSpaceDialog(true)"
             class="btn btn-default me-1"
             [tooltip]="'New space' | translate:locale.language"
-            container="body"
             type="button">
       <fa-icon [icon]="icons.faPlus"></fa-icon>
     </button>
@@ -20,7 +18,6 @@
           [disabled]="!canEditSpace"
           class="btn btn-default me-1"
           [tooltip]="'Edit space' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faPen"></fa-icon>
   </button>
@@ -28,7 +25,6 @@
           [disabled]="!canEditSpace || !selected?.counts.shares"
           class="btn btn-default me-1"
           [tooltip]="'Edit children shares' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.SHARED"></fa-icon>
   </button>
@@ -36,7 +32,6 @@
           [disabled]="!canManageRoots"
           class="btn btn-default me-1"
           [tooltip]="'Manage my anchored files' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faAnchor"></fa-icon>
   </button>

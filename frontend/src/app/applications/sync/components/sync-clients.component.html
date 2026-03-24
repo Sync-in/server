@@ -1,7 +1,6 @@
 <div class="app-top-menu">
   <button (click)="loadClients()"
           [tooltip]="'Refresh' | translate:locale.language"
-          container="body"
           class="d-none d-sm-block btn btn-default me-1"
           type="button">
     <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
@@ -9,7 +8,6 @@
   <button (click)="onDeleteClient()"
           [disabled]="!selected"
           [tooltip]="'Remove' | translate:locale.language"
-          container="body"
           class="btn btn-default me-1"
           type="button">
     <fa-icon [icon]="icons.faTrashCan"></fa-icon>

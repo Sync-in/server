@@ -3,7 +3,6 @@
   <button (click)="refresh()"
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faRotate" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
@@ -11,7 +10,6 @@
     <button class="btn btn-default dropdown-toggle"
             dropdownToggle
             [tooltip]="'New' | translate:locale.language"
-            container="body"
             type="button">
       <fa-icon [icon]="icons.faPlus"></fa-icon>
     </button>
@@ -33,7 +31,6 @@
           class="d-none d-sm-block btn btn-default me-1"
           [disabled]="!selected"
           [tooltip]="(selected?.isUser ? 'Remove from group' : 'Delete group') | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faMinus"></fa-icon>
   </button>
@@ -41,7 +38,6 @@
           [disabled]="!selected"
           class="btn btn-default me-1"
           [tooltip]="(selected?.isGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faPen"></fa-icon>
   </button>

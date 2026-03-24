@@ -3,14 +3,12 @@
   <button (click)="loadUsersOrGuests()"
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faRotate" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
   <button (click)="openDialog(true)"
           class="btn btn-default me-1"
           [tooltip]="(guestsView ? 'New guest' : 'New user') | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faUserPlus"></fa-icon>
   </button>
@@ -18,7 +16,6 @@
           [disabled]="!selected"
           class="btn btn-default me-1"
           [tooltip]="(guestsView ? 'Edit guest' : 'Edit user') | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faUserPen"></fa-icon>
   </button>
@@ -26,7 +23,6 @@
           [disabled]="!selected"
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Impersonate identity' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faUserSecret"></fa-icon>
   </button>

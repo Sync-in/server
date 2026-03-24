@@ -3,7 +3,6 @@
   <button (click)="loadGuests()"
           class="btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faRotate" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
@@ -11,7 +10,6 @@
           [disabled]="!canCreateGuest"
           class="btn btn-default me-1"
           [tooltip]="'New guest' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faPlus"></fa-icon>
   </button>
@@ -19,7 +17,6 @@
           [disabled]="!selected"
           class="btn btn-default me-1"
           [tooltip]="'Edit guest' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faPen"></fa-icon>
   </button>

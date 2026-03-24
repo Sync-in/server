@@ -3,7 +3,6 @@
   <button (click)="loadFiles()"
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
@@ -13,7 +12,6 @@
       <button dropdownToggle
               class="btn btn-default dropdown-toggle"
               [tooltip]="'New' | translate:locale.language"
-              container="body"
               type="button">
         <fa-icon [icon]="icons.faPlus"></fa-icon>
       </button>
@@ -51,7 +49,6 @@
           [disabled]="!hasSelection || hasDisabledItemsInSelection"
           class="btn btn-default me-1"
           [tooltip]="'Download' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faDownload"></fa-icon>
   </button>
@@ -61,7 +58,6 @@
       <button dropdownToggle
               class="btn btn-default dropdown-toggle"
               [tooltip]="'Share' | translate:locale.language"
-              container="body"
               type="button">
         <fa-icon [icon]="icons.SHARES"></fa-icon>
       </button>
@@ -92,7 +88,6 @@
             [disabled]="!hasSelection"
             class="btn btn-default me-1"
             [tooltip]="'Remove' | translate:locale.language"
-            container="body"
             type="button">
       <fa-icon [icon]="icons.faBan"></fa-icon>
     </button>
@@ -101,7 +96,6 @@
               [disabled]="!stats.elements"
               class="btn btn-default me-1"
               [tooltip]="'Empty' | translate:locale.language"
-              container="body"
               type="button">
         <fa-icon [icon]="icons.TRASH"></fa-icon>
       </button>

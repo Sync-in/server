@@ -22,7 +22,6 @@
       <button [ngModel]="this.store.currentSearch().fullText"
               (ngModelChange)="toggleFullText()"
               [tooltip]="'Search for content'|translate:locale.language"
-              container="body"
               placement="bottom"
               class="btn btn-custom"
               role="button"
@@ -37,7 +36,6 @@
           [disabled]="selectedId === null"
           class="search-go-to-btn d-none d-md-block btn btn-default"
           [tooltip]="'Go to' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
   </button>

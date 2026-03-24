@@ -3,14 +3,12 @@
   <button (click)="loadShares()"
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
   </button>
   <button (click)="openShareDialog(true)"
           class="btn btn-default me-1"
           [tooltip]="'New share' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faPlus"></fa-icon>
   </button>
@@ -18,7 +16,6 @@
           [disabled]="!selected"
           class="btn btn-default me-1"
           [tooltip]="'Edit share' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faPen"></fa-icon>
   </button>
@@ -26,7 +23,6 @@
           [disabled]="!selected?.counts.shares"
           class="btn btn-default me-1"
           [tooltip]="'Edit children shares' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.SHARED"></fa-icon>
   </button>
@@ -34,7 +30,6 @@
           [disabled]="!selected"
           class="btn btn-default me-1"
           [tooltip]="'Go to' | translate:locale.language"
-          container="body"
           type="button">
     <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
   </button>
