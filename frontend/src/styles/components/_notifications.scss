@@ -44,9 +44,11 @@
   }
 }
 
-.ngx-toastr {
-  min-width: 320px !important;
-  //width: auto !important
+.toast-container.toast-top-center .ngx-toastr,
+.toast-container.toast-bottom-center .ngx-toastr {
+  width: fit-content !important;
+  max-width: min(60ch, calc(100vw - 2rem)) !important;
+  min-width: 240px;
 }
 
 //.toast-top-right {

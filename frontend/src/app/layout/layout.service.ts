@@ -241,10 +241,14 @@ export class LayoutService {
       if (this.electron.enabled) {
         this.electron.sendMessage(this.translateString(title), `${this.translateString(message)} - ${errorMessage}`)
       } else {
-        return this.toastr[type](`${this.translateString(message)}<br>${errorMessage}`, this.translateString(title), {
-          ...override,
-          enableHtml: true
-        })
+        return this.toastr[type](
+          `<div class="fw-bold">${this.translateString(message)}</div><div class="mt-2">${errorMessage}</div>`,
+          this.translateString(title),
+          {
+            ...override,
+            enableHtml: true
+          }
+        )
       }
     }
     if (this.electron.enabled) {
