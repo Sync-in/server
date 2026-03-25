@@ -90,8 +90,7 @@ export class UsersQueries {
 
   async compareUserPassword(userId: number, password: string): Promise<boolean> {
     const [hash] = (await this.selectUsers(['password'], [eq(users.id, userId)])) as { password: string }[]
-    if (!hash) return false
-    return comparePassword(password, hash.password)
+    return comparePassword(password, hash?.password)
   }
 
   async from(userId?: number, loginOrEmail?: string): Promise<User> {
