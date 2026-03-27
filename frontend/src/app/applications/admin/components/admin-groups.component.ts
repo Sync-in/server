@@ -148,8 +148,8 @@ export class AdminGroupsComponent {
     name: [{ prop: 'name', type: 'string' }],
     type: [{ prop: 'type', type: 'string' }],
     createdAndModified: [
-      { prop: 'modifiedAt', type: 'date' },
-      { prop: 'createdAt', type: 'date' }
+      { prop: 'createdAt', type: 'date' },
+      { prop: 'modifiedAt', type: 'date' }
     ]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
