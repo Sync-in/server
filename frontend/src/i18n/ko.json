@@ -4,6 +4,7 @@
   "Authentication service error": "인증 서비스 오류",
   "Account locked": "계정이 잠겼습니다",
   "Account is not allowed": "계정이 허용되지 않습니다",
+  "Not authorized": "권한이 없습니다",
   "Account matching error": "계정 매칭 오류",
   "Authentication": "인증",
   "Sign in": "로그인",

@@ -4,6 +4,7 @@
   "Authentication service error": "Erreur du service d’authentification",
   "Account locked": "Compte verrouillé",
   "Account is not allowed": "Compte non autorisé",
+  "Not authorized": "Non autorisé",
   "Account matching error": "Erreur de correspondance de compte",
   "Authentication": "Authentification",
   "Sign in": "Se connecter",

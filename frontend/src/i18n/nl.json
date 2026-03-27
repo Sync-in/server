@@ -4,6 +4,7 @@
   "Authentication service error": "Fout bij de authenticatie",
   "Account locked": "Account vergrendeld",
   "Account is not allowed": "Account is niet toegestaan",
+  "Not authorized": "Niet geautoriseerd",
   "Account matching error": "Geen overeenkomstig account",
   "Authentication": "Authenticatie",
   "Sign in": "Aanmelden",

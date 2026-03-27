@@ -4,6 +4,7 @@
   "Authentication service error": "认证服务错误",
   "Account locked": "账户已锁定",
   "Account is not allowed": "账户未被允许",
+  "Not authorized": "未授权",
   "Account matching error": "账户匹配错误",
   "Authentication": "身份验证",
   "Sign in": "登录",

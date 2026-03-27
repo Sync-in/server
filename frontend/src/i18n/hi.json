@@ -4,6 +4,7 @@
   "Authentication service error": "प्रमाणीकरण सेवा त्रुटि",
   "Account locked": "खाता लॉक है",
   "Account is not allowed": "खाते की अनुमति नहीं है",
+  "Not authorized": "अनधिकृत",
   "Account matching error": "खाते के मिलान में त्रुटि",
   "Authentication": "प्रमाणीकरण",
   "Sign in": "साइन इन",

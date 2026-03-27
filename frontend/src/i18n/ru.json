@@ -4,6 +4,7 @@
   "Authentication service error": "Ошибка службы аутентификации",
   "Account locked": "Аккаунт заблокирован",
   "Account is not allowed": "Аккаунт не разрешён",
+  "Not authorized": "Не авторизован",
   "Account matching error": "Ошибка сопоставления аккаунта",
   "Authentication": "Аутентификация",
   "Sign in": "Войти",

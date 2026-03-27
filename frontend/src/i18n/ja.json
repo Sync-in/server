@@ -4,6 +4,7 @@
   "Authentication service error": "認証サービスエラー",
   "Account locked": "アカウントがロックされています",
   "Account is not allowed": "アカウントは許可されていません",
+  "Not authorized": "許可されていません",
   "Account matching error": "アカウント照合エラー",
   "Authentication": "認証",
   "Sign in": "サインイン",

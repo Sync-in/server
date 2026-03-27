@@ -4,6 +4,7 @@
   "Authentication service error": "Kimlik doğrulama hizmeti hatası",
   "Account locked": "Hesap kilitlendi",
   "Account is not allowed": "Hesaba izin verilmiyor",
+  "Not authorized": "Yetkisiz",
   "Account matching error": "Hesap eşleştirme hatası",
   "Authentication": "Kimlik doğrulama",
   "Sign in": "Giriş yap",

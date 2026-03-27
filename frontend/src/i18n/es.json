@@ -4,6 +4,7 @@
   "Authentication service error": "Error del servicio de autenticación",
   "Account locked": "Cuenta bloqueada",
   "Account is not allowed": "Cuenta no autorizada",
+  "Not authorized": "No autorizado",
   "Account matching error": "Error de correspondencia de cuenta",
   "Authentication": "Autenticación",
   "Sign in": "Iniciar sesión",
