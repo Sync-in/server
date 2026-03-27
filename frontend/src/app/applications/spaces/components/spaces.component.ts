@@ -150,7 +150,7 @@ export class SpacesComponent implements OnInit {
     name: [{ prop: 'name', type: 'string' }],
     managers: [{ prop: 'managers', type: 'length' }],
     permissions: [{ prop: 'permissions', type: 'length' }],
-    modified: [{ prop: 'modified', type: 'date' }]
+    modified: [{ prop: 'modifiedAt', type: 'date' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
   // States
