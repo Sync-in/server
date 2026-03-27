@@ -495,7 +495,7 @@ export class SpacesQueries {
       pQuery = this.spacesQuery
     }
     if (!pQuery) {
-      const selectUnion: Space | SelectedFields<any, any> = {
+      const selectUnion: SpaceProps | SelectedFields<any, any> = {
         id: spaces.id,
         alias: spaces.alias,
         name: spaces.name,
@@ -506,7 +506,7 @@ export class SpacesQueries {
         ...(withPermissions && { permissions: spacesMembers.permissions, role: spacesMembers.role })
       }
       const unionAlias = this.fromUserAndGroups(selectUnion)
-      const select: Space | SelectedFields<any, any> = {
+      const select: SpaceProps | SelectedFields<any, any> = {
         id: unionAlias.id,
         alias: unionAlias.alias,
         name: unionAlias.name,
@@ -543,7 +543,7 @@ export class SpacesQueries {
 
   async spacesWithDetails(userId: number): Promise<SpaceProps[]> {
     if (!this.spacesWithDetailsQuery) {
-      const selectUnion: Space | SelectedFields<any, any> = {
+      const selectUnion: SpaceProps | SelectedFields<any, any> = {
         id: spaces.id,
         alias: spaces.alias,
         name: spaces.name,
@@ -557,7 +557,7 @@ export class SpacesQueries {
       }
       const unionAlias = this.fromUserAndGroups(selectUnion)
       const managers: any = alias(users, 'managers')
-      const select: Space | SelectedFields<any, any> = {
+      const select: SpaceProps | SelectedFields<any, any> = {
         id: unionAlias.id,
         alias: unionAlias.alias,
         name: unionAlias.name,
