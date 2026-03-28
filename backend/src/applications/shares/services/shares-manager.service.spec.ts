@@ -117,6 +117,7 @@ describe(SharesManager.name, () => {
   })
 
   beforeEach(() => {
+    jest.restoreAllMocks()
     jest.clearAllMocks()
   })
 
@@ -201,7 +202,7 @@ describe(SharesManager.name, () => {
 
       const result = await service.getShareLink(user, 5)
 
-      expect(spy).toHaveBeenCalledWith(user, shareLink)
+      expect(spy).toHaveBeenCalledWith(user, shareLink, false)
       expect(result).toBe(shareLink)
       expect(result.file.permissions).toBe('trimmed')
       expect((permissionsUtils.removePermissions as jest.Mock).mock.calls[0][0]).toBe('ORIG')
@@ -237,7 +238,7 @@ describe(SharesManager.name, () => {
         isActive: false
       }
 
-      const result = await service.updateLinkFromSpaceOrShare(user, 7, 55, 1 as any, dto, true)
+      const result = await service.updateLinkFromSpaceOrShare(user, 7, 55, LINK_TYPE.SHARE, dto, true)
 
       expect(linksQueriesMock.updateLinkFromSpaceOrShare).toHaveBeenCalled()
       expect(result.permissions).toBe('INTERSECTED')
@@ -285,7 +286,7 @@ describe(SharesManager.name, () => {
       const res = await service.getLinkFromSpaceOrShare(user, 11, 22, LINK_TYPE.SPACE)
 
       expect(res).toBe(lg)
-      expect(linksQueriesMock.linkFromSpace).toHaveBeenCalledWith(user.id, 11, 22)
+      expect(linksQueriesMock.linkFromSpace).toHaveBeenCalledWith(user, 11, 22)
       expect(linksQueriesMock.linkFromShare).not.toHaveBeenCalled()
     })
 
@@ -296,7 +297,7 @@ describe(SharesManager.name, () => {
       const res = await service.getLinkFromSpaceOrShare(user, 33, 44, LINK_TYPE.SHARE)
 
       expect(res).toBe(lg)
-      expect(linksQueriesMock.linkFromShare).toHaveBeenCalledWith(user.id, 33, 44, +user.isAdmin)
+      expect(linksQueriesMock.linkFromShare).toHaveBeenCalledWith(user, 33, 44)
       expect(linksQueriesMock.linkFromSpace).not.toHaveBeenCalled()
     })
 
@@ -369,6 +370,27 @@ describe(SharesManager.name, () => {
       })
       expect(updateLink.expiresAt).toBeUndefined()
     })
+
+    it('ignores API permissions updates for SPACE links', async () => {
+      const link: any = {
+        id: 1,
+        permissions: 'OLD',
+        name: 'n',
+        email: 'e',
+        requireAuth: false,
+        limitAccess: null,
+        expiresAt: null
+      }
+      jest.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(link)
+      const getShareLinkSpy = jest.spyOn(service, 'getShareLink')
+
+      const result = await service.updateLinkFromSpaceOrShare(user, 1, 2, LINK_TYPE.SPACE, { permissions: 'NEW' } as any, true)
+
+      expect(getShareLinkSpy).not.toHaveBeenCalled()
+      expect(linksQueriesMock.updateLinkFromSpaceOrShare).not.toHaveBeenCalled()
+      expect(result).toBe(link)
+      expect(result.permissions).toBe('OLD')
+    })
   })
 
   describe('setAllowedPermissions (additional branches)', () => {
@@ -403,6 +425,21 @@ describe(SharesManager.name, () => {
       expect(sharesQueriesMock.permissions).toHaveBeenCalledWith(77, 'pa', +asAdminUser.isAdmin)
       expect(share.file.permissions).toBe('ADMIN_PARENT')
     })
+
+    it('uses owner permissions on space when asAdmin is true', async () => {
+      const asAdminUser = { id: 3, isAdmin: false } as any
+      spacesQueriesMock.permissions.mockResolvedValueOnce({ any: 'thing' })
+      const share: any = {
+        ownerId: 88,
+        file: { ownerId: 999, space: { alias: 'space-1', root: { alias: 'root' } }, permissions: undefined }
+      }
+
+      await service.setAllowedPermissions(asAdminUser, share, true)
+
+      expect(spacesQueriesMock.permissions).toHaveBeenCalledWith(88, 'space-1', 'root')
+      expect(share.file.ownerId).toBeNull()
+      expect(share.file.permissions).toBe('ENV_PERMS')
+    })
   })
 
   describe('getShareLink (additional branch)', () => {
@@ -413,7 +450,7 @@ describe(SharesManager.name, () => {
 
       const res = await service.getShareLink(user, 7)
 
-      expect(spy).toHaveBeenCalled()
+      expect(spy).toHaveBeenCalledWith(user, shareLink, false)
       expect(res).toBe(shareLink)
       expect(permissionsUtils.removePermissions).not.toHaveBeenCalled()
     })
