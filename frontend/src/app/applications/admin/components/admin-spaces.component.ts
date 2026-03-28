@@ -82,7 +82,7 @@ export class AdminSpacesComponent {
     managers: {
       label: 'Managers',
       width: 12,
-      class: 'd-none d-md-table-cell',
+      class: 'd-none d-lg-table-cell',
       textCenter: true,
       show: true,
       sortable: true
@@ -102,10 +102,10 @@ export class AdminSpacesComponent {
       textCenter: true,
       show: true
     },
-    info: { label: 'Info', width: 8, textCenter: true, class: 'd-none d-md-table-cell', show: true },
+    info: { label: 'Info', width: 8, textCenter: true, class: 'd-none d-lg-table-cell', show: true },
     modified: {
       label: 'Modified',
-      width: 8,
+      width: 10,
       textCenter: true,
       class: 'd-none d-lg-table-cell',
       newly: 'newly',

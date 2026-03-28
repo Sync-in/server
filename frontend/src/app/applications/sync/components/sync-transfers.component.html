@@ -99,7 +99,7 @@
                     <span class="{{th.value.newly && t[th.value.newly] ? 'badge prop-newly-' + t[th.value.newly] : ''}}"
                          (mouseenter)="t.hovered = true"
                          (mouseleave)="t.hovered = false">
-                      {{ t.hovered ? t.timestamp : t.hTimeAgo }}
+                      <span>{{ t.hovered ? t.timestamp : t.hTimeAgo }}</span>
                     </span>
                   }
                 }

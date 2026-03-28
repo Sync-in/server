@@ -100,17 +100,15 @@
                   @case ('info') {
                     @if (s.counts.shares) {
                       <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
-                          <fa-icon [icon]="icons.SHARED"></fa-icon>
+                        <fa-icon [icon]="icons.SHARED"></fa-icon>
                         {{ s.counts.shares }}
-                        </span>
+                      </span>
                     }
                   }
                   @case ('modified') {
                     <span class="{{th.value.newly && s[th.value.newly] ? 'badge prop-newly-' + s[th.value.newly] : ''}}">
-                      <span>
-                        {{ s.hTimeAgo }}
-                      </span>
-                      </span>
+                      <span>{{ s.hTimeAgo }}</span>
+                    </span>
                   }
                 }
               </td>

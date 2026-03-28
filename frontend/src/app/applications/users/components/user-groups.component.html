@@ -139,7 +139,7 @@
                   }
                   @case ('modifiedAt') {
                     <span class="{{th.value.newly && m[th.value.newly] ? 'badge prop-newly-' + m[th.value.newly] : ''}}">
-                      {{ m.modifiedAt | amTimeAgo: true }}
+                      <span>{{ m.modifiedAt | amTimeAgo: true }}</span>
                     </span>
                   }
                 }
