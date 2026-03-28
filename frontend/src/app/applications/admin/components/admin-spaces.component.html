@@ -1,0 +1,153 @@
+<!--Start Top Menu-->
+<div class="app-top-menu">
+  <button (click)="loadSpaces()"
+          class="d-none d-sm-block btn btn-default me-1"
+          [tooltip]="'Refresh' | translate:locale.language"
+          type="button">
+    <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
+  </button>
+  <button (click)="openSpaceDialog(true)"
+          class="btn btn-default me-1"
+          [tooltip]="'New space' | translate:locale.language"
+          type="button">
+    <fa-icon [icon]="icons.faPlus"></fa-icon>
+  </button>
+  <button (click)="openSpaceDialog()"
+          [disabled]="!selected"
+          class="btn btn-default me-1"
+          [tooltip]="'Edit space' | translate:locale.language"
+          type="button">
+    <fa-icon [icon]="icons.faPen"></fa-icon>
+  </button>
+  <button (click)="openChildShareDialog()"
+          [disabled]="!selected?.counts.shares"
+          class="btn btn-default me-1"
+          [tooltip]="'Edit children shares' | translate:locale.language"
+          type="button">
+    <fa-icon [icon]="icons.SHARED"></fa-icon>
+  </button>
+  <div class="ms-auto">
+    <!--Start Filter Button-->
+    <div class="btn-group">
+      <app-input-filter class="d-none d-sm-block"></app-input-filter>
+    </div>
+    <!--End Filter Button-->
+  </div>
+</div>
+<!--End Top Menu-->
+<table class="app-table">
+  <thead>
+  <tr>
+    @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
+      @if (th.value.show) {
+        <th (click)="sortBy(th.key)"
+            [style.width.%]="th.value.width"
+            [class.text-align-center]="th.value.textCenter"
+            [class.cursor-pointer]="th.value.sortable"
+            class="{{th.value.class}}"
+            l10nTranslate>
+          {{ th.value.label }}
+          @if (sortTable.sortParam.column === th.key) {
+            <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp" [fixedWidth]="false"></fa-icon>
+          }
+        </th>
+      }
+    }
+  </tr>
+  </thead>
+</table>
+<app-virtual-scroll (contextmenu)="onContextMenu($event)"
+                    [bufferAmount]="5"
+                    [items]="spaces | searchFilter:inputFilter.search()">
+  <table class="app-table">
+    <tbody tabindex="-1">
+      @for (s of scrollView?.viewPortItems; track s.id) {
+        <tr (click)="onSelect(s)"
+            (contextmenu)="onTargetContextMenu($event, s)"
+            (appTap)="openSpaceDialog()"
+            [class.disabled]="!s.enabled"
+            [class.selected]="s.id === selected?.id">
+          @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
+            @if (th.value.show) {
+              <td [style.width.%]="th.value.width"
+                  [class.text-align-center]="th.value.textCenter"
+                  class="{{th.value.class}}">
+                @switch (th.key) {
+                  @case ('name') {
+                    <div class="d-flex align-items-center">
+                      <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false"></fa-icon>
+                      <div class="d-flex flex-column text-truncate">
+                        <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
+                        <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ s.description }}</span>
+                      </div>
+                    </div>
+                  }
+                  @case ('managers') {
+                    <div class="avatar-stack">
+                      @for (m of s.managers; track m.mid) {
+                        <app-user-avatar [user]="m" [isMember]="true" [container]="'body'"></app-user-avatar>
+                      }
+                    </div>
+                  }
+                  @case ('storage') {
+                    @if (s.storageUsage || s.storageQuota) {
+                      <app-storage-usage [item]="s"></app-storage-usage>
+                    }
+                  }
+                  @case ('members') {
+                    <app-badge-members [members]="s.counts"></app-badge-members>
+                  }
+                  @case ('info') {
+                    @if (s.counts.shares) {
+                      <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
+                        <fa-icon [icon]="icons.SHARED"></fa-icon>
+                        {{ s.counts.shares }}
+                      </span>
+                    }
+                  }
+                  @case ('modified') {
+                    <span class="{{th.value.newly && s[th.value.newly] ? 'badge prop-newly-' + s[th.value.newly] : ''}}">
+                      <span>{{ s.hTimeAgo }}</span>
+                    </span>
+                  }
+                }
+              </td>
+            }
+          }
+        </tr>
+      }
+    </tbody>
+  </table>
+</app-virtual-scroll>
+<!--End Table Files Content-->
+<!--Start Foot Content-->
+<div class="app-foot-menu">
+  <span class="mx-auto">{{ spaces.length }} {{ 'spaces' | translate:locale.language }}</span>
+</div>
+<!--End Foot Content-->
+<!--Start Context Menu -->
+<context-menu #MainContextMenu>
+  <ng-template
+    (execute)="openSpaceDialog(true)" contextMenuItem>
+    <span l10nTranslate><fa-icon [icon]="icons.faPlus"></fa-icon>New space</span>
+  </ng-template>
+  <ng-template [divider]="true" contextMenuItem></ng-template>
+  <ng-template (execute)="loadSpaces()" contextMenuItem>
+    <span l10nTranslate><fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>Refresh</span>
+  </ng-template>
+</context-menu>
+<context-menu #TargetContextMenu>
+  <ng-template (execute)="openSpaceDialog()" contextMenuItem>
+    <span l10nTranslate><fa-icon [icon]="icons.faPen"></fa-icon>Edit space</span>
+  </ng-template>
+  @if (!!selected?.counts.shares) {
+    <ng-template (execute)="openChildShareDialog()" contextMenuItem>
+      <span l10nTranslate><fa-icon [icon]="icons.SHARED"></fa-icon>Edit children shares</span>
+    </ng-template>
+  }
+  <ng-template [divider]="true" contextMenuItem></ng-template>
+  <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
+    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
+  </ng-template>
+</context-menu>
+<!--End Context Menu-->

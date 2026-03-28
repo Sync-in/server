@@ -3,6 +3,7 @@ $sync-clients-panel-padding-x: 0.95rem;
 $sync-clients-icon-col-width: 1rem;
 $sync-clients-icon-col-gap: 0.45rem;
 $sync-path-rail-padding: 0.45rem;
+$sync-client-card-radius: 0.9rem;
 
 .app-sync-clients {
   --sync-client-card-shadow: none;
@@ -27,11 +28,15 @@ $sync-path-rail-padding: 0.45rem;
 
   .sync-client-card {
     margin: 0;
-    border-radius: 0.9rem;
-    overflow: hidden;
+    border-radius: $sync-client-card-radius;
+    overflow: visible;
     cursor: default;
     transition: box-shadow 0.16s ease, border-color 0.16s ease;
     box-shadow: var(--sync-client-card-shadow);
+  }
+
+  .sync-client-card > .card-body {
+    border-radius: inherit;
   }
 
   .sync-client-card--selected {
@@ -41,6 +46,7 @@ $sync-path-rail-padding: 0.45rem;
   .sync-client-layout {
     display: grid;
     grid-template-columns: minmax(280px, 350px) minmax(0, 1fr);
+    border-radius: inherit;
     min-width: 0;
   }
 
@@ -112,6 +118,8 @@ $sync-path-rail-padding: 0.45rem;
     flex-direction: column;
     gap: 0.45rem;
     padding: $sync-clients-panel-padding-y $sync-clients-panel-padding-x;
+    border-top-right-radius: inherit;
+    border-bottom-right-radius: inherit;
     min-width: 0;
   }
 
@@ -209,6 +217,11 @@ $sync-path-rail-padding: 0.45rem;
       border-bottom: 1px solid var(--sync-client-details-border);
       border-bottom-left-radius: 0;
       border-top-right-radius: inherit;
+    }
+
+    .sync-client-paths {
+      border-top-right-radius: 0;
+      border-bottom-left-radius: inherit;
     }
   }
 

@@ -1,3 +1,4 @@
+import { HttpException, HttpStatus } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { Test, TestingModule } from '@nestjs/testing'
 import fs from 'node:fs/promises'
@@ -190,5 +191,32 @@ describe(SpacesManager.name, () => {
     } catch (e) {
       expect(e).toBeInstanceOf(FileError)
     }
+  })
+
+  it('should list spaces as admin using spacesAsAdmin query', async () => {
+    const spaces = [{ id: 1, alias: 's1' }]
+    const spy = jest.spyOn(spacesQueries, 'spacesAsAdmin').mockResolvedValueOnce(spaces as any)
+
+    const result = await spacesManager.listSpacesAsAdmin()
+
+    expect(spy).toHaveBeenCalled()
+    expect(result).toBe(spaces)
+  })
+
+  it('should get a space with admin-or-manager access check', async () => {
+    const admin = { id: 99, isAdmin: true } as UserModel
+    const space = { id: 5, alias: 'space-5', roots: [] }
+    const spy = jest.spyOn(spacesQueries, 'getSpaceAsAdminOrManager').mockResolvedValueOnce(space as any)
+
+    const result = await spacesManager.getSpace(admin, 5)
+
+    expect(spy).toHaveBeenCalledWith(admin, 5)
+    expect(result).toBe(space)
+  })
+
+  it('should throw Forbidden when user is neither admin nor manager for space shares', async () => {
+    jest.spyOn(spacesQueries, 'userIsAdminOrSpaceManager').mockResolvedValueOnce(false)
+
+    await expect(spacesManager.listSpaceShares(userTest, 10)).rejects.toEqual(new HttpException('Not authorized', HttpStatus.FORBIDDEN))
   })
 })

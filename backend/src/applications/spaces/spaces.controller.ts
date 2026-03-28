@@ -92,6 +92,12 @@ export class SpacesController {
     return this.spacesManager.spacesWithDetails(user.id)
   }
 
+  @Get(`${SPACES_ROUTE.ADMIN}/${SPACES_ROUTE.LIST}`)
+  @UserHaveRole(USER_ROLE.ADMINISTRATOR)
+  listSpacesAsAdmin(): Promise<SpaceProps[]> {
+    return this.spacesManager.listSpacesAsAdmin()
+  }
+
   @UserHavePermission([USER_PERMISSION.PERSONAL_SPACE, USER_PERMISSION.SPACES])
   @Get(`${SPACES_ROUTE.TRASH}/${SPACES_ROUTE.LIST}`)
   listTrashes(@GetUser() user: UserModel): Promise<SpaceTrash[]> {

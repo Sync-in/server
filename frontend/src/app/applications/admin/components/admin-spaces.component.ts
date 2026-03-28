@@ -1,31 +1,17 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
-import { ActivatedRoute, Router } from '@angular/router'
+import { Component, ElementRef, inject, ViewChild } from '@angular/core'
+import { ActivatedRoute } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import {
-  faAnchor,
-  faArrowDown,
-  faArrowRotateRight,
-  faArrowUp,
-  faCircleInfo,
-  faPen,
-  faPlus,
-  faRotate,
-  faUpload
-} from '@fortawesome/free-solid-svg-icons'
+import { faArrowDown, faArrowRotateRight, faArrowUp, faCircleInfo, faPen, faPlus, faRotate, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
-import { SPACE_OPERATION, SPACE_ROLE } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
-import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
-import { Member } from '@sync-in-server/backend/src/applications/users/interfaces/member.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { BadgeMembersComponent } from '../../../common/components/badge-members.component'
-import { BadgePermissionsComponent } from '../../../common/components/badge-permissions.component'
 import { FilterComponent } from '../../../common/components/filter.component'
-import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
+import { StorageUsageComponent } from '../../../common/components/storage-usage.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
@@ -34,18 +20,17 @@ import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
-import { StoreService } from '../../../store/store.service'
 import { SharedChildrenDialogComponent } from '../../shares/components/dialogs/shared-children-dialog.component'
+import { SpaceDialogComponent } from '../../spaces/components/dialogs/space-dialog.component'
+import type { SpaceModel } from '../../spaces/models/space.model'
+import { SpacesService } from '../../spaces/services/spaces.service'
+import { SPACES_ICON } from '../../spaces/spaces.constants'
 import { UserAvatarComponent } from '../../users/components/utils/user-avatar.component'
-import { UserService } from '../../users/user.service'
-import { SpaceModel } from '../models/space.model'
-import { SpacesService } from '../services/spaces.service'
-import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../spaces.constants'
-import { SpaceDialogComponent } from './dialogs/space-dialog.component'
-import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-dialog.component'
+import { ADMIN_ICON, ADMIN_PATH, ADMIN_TITLE } from '../admin.constants'
+import { AdminService } from '../admin.service'
 
 @Component({
-  selector: 'app-spaces',
+  selector: 'app-admin-spaces',
   imports: [
     KeyValuePipe,
     L10nTranslateDirective,
@@ -55,31 +40,26 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
     TooltipModule,
     L10nTranslatePipe,
     ContextMenuModule,
-    NavigationViewComponent,
     FilterComponent,
     SearchFilterPipe,
-    BadgePermissionsComponent,
     TapDirective,
-    BadgeMembersComponent
+    BadgeMembersComponent,
+    StorageUsageComponent
   ],
-  templateUrl: 'spaces.component.html'
+  templateUrl: 'admin-spaces.component.html'
 })
-export class SpacesComponent implements OnInit {
+export class AdminSpacesComponent {
   @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: SpaceModel[]; scrollInto: (arg: SpaceModel | number) => void }
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
-  @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
-  protected readonly SPACE_ROLE = SPACE_ROLE
   protected readonly originalOrderKeyValue = originalOrderKeyValue
-  protected galleryMode: ViewMode
   protected readonly TAB_MENU = TAB_MENU
   protected readonly icons = {
-    SPACES: SPACES_ICON.SPACES,
+    SPACES: ADMIN_ICON.SPACES,
     SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
-    faAnchor,
     faArrowDown,
     faArrowUp,
     faRotate,
@@ -90,7 +70,7 @@ export class SpacesComponent implements OnInit {
     faCircleInfo
   }
   // Sort
-  protected tableHeaders: Record<'name' | 'managers' | 'members' | 'info' | 'permissions' | 'modified', TableHeaderConfig> = {
+  protected tableHeaders: Record<'name' | 'managers' | 'storage' | 'members' | 'info' | 'modified', TableHeaderConfig> = {
     name: {
       label: 'Name',
       width: 30,
@@ -101,7 +81,15 @@ export class SpacesComponent implements OnInit {
     },
     managers: {
       label: 'Managers',
-      width: 10,
+      width: 12,
+      class: 'd-none d-lg-table-cell',
+      textCenter: true,
+      show: true,
+      sortable: true
+    },
+    storage: {
+      label: 'Storage Space',
+      width: 15,
       class: 'd-none d-md-table-cell',
       textCenter: true,
       show: true,
@@ -109,20 +97,12 @@ export class SpacesComponent implements OnInit {
     },
     members: {
       label: 'Members',
-      width: 16,
-      class: 'd-none d-md-table-cell',
-      textCenter: false,
+      width: 15,
+      class: 'd-none d-lg-table-cell',
+      textCenter: true,
       show: true
     },
-    info: { label: 'Info', width: 15, textCenter: true, class: 'd-none d-md-table-cell', show: true },
-    permissions: {
-      label: 'Permissions',
-      width: 12,
-      textCenter: true,
-      class: 'd-none d-lg-table-cell',
-      show: true,
-      sortable: true
-    },
+    info: { label: 'Info', width: 8, textCenter: true, class: 'd-none d-lg-table-cell', show: true },
     modified: {
       label: 'Modified',
       width: 10,
@@ -133,23 +113,17 @@ export class SpacesComponent implements OnInit {
       sortable: true
     }
   }
-  protected btnSortFields = { name: 'Name', managers: 'Managers', permissions: 'Permissions', modified: 'Modified' }
   protected loading = false
   protected spaces: SpaceModel[] = []
   protected selected: SpaceModel = null
-  protected canCreateSpace = false
-  protected canEditSpace = false
-  protected canManageRoots = false
-  private readonly router = inject(Router)
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly spacesService = inject(SpacesService)
-  private readonly store = inject(StoreService)
-  private readonly userService = inject(UserService)
+  private readonly adminService = inject(AdminService)
   private readonly sortSettings: SortSettings = {
     default: [{ prop: 'name', type: 'string' }],
     name: [{ prop: 'name', type: 'string' }],
     managers: [{ prop: 'managers', type: 'length' }],
-    permissions: [{ prop: 'permissions', type: 'length' }],
+    storage: [{ prop: 'storageUsage', type: 'number' }],
     modified: [{ prop: 'modifiedAt', type: 'date' }]
   }
   protected sortTable = new SortTable(this.constructor.name, this.sortSettings)
@@ -158,20 +132,20 @@ export class SpacesComponent implements OnInit {
 
   constructor() {
     this.loadSpaces()
-    this.canCreateSpace = this.userService.userHavePermission(USER_PERMISSION.SPACES_ADMIN)
-    this.layout.setBreadcrumbIcon(SPACES_ICON.SPACES)
-    this.layout.setBreadcrumbNav({ url: `/${SPACES_PATH.SPACES}/${SPACES_TITLE.SPACES}`, translating: true, sameLink: true })
+    this.layout.setBreadcrumbIcon(ADMIN_ICON.SPACES)
+    this.layout.setBreadcrumbNav({
+      url: `/${ADMIN_PATH.BASE}/${ADMIN_PATH.SPACES}/${ADMIN_TITLE.SPACES}`,
+      splicing: 2,
+      translating: true,
+      sameLink: true
+    })
     this.activatedRoute.queryParams.subscribe((params) => (this.focusOnSelect = params.select))
-  }
-
-  ngOnInit() {
-    this.galleryMode = this.btnNavigationView.currentView()
   }
 
   loadSpaces() {
     this.loading = true
     this.onSelect()
-    this.spacesService.listSpaces().subscribe({
+    this.adminService.listSpaces().subscribe({
       next: (spaces: SpaceModel[]) => {
         this.sortBy(this.sortTable.sortParam.column, false, spaces)
         this.loading = false
@@ -189,25 +163,8 @@ export class SpacesComponent implements OnInit {
     })
   }
 
-  browse(space: SpaceModel) {
-    if (!space.enabled) {
-      this.layout.sendNotification('warning', space.name, 'Space is disabled')
-    } else {
-      this.router.navigate([SPACES_PATH.FILES, space.alias], { relativeTo: this.activatedRoute }).catch(console.error)
-    }
-  }
-
   onSelect(space: SpaceModel = null) {
-    if (space) {
-      this.selected = space
-      this.canEditSpace = !!space.managers.find((m: Member) => m.id === this.userService.user.id)
-      this.canManageRoots = this.canEditSpace || space.havePermission(SPACE_OPERATION.SHARE_INSIDE)
-    } else {
-      this.selected = null
-      this.canEditSpace = false
-      this.canManageRoots = false
-    }
-    this.store.spaceSelection.set(this.selected)
+    this.selected = space ?? null
   }
 
   sortBy(column: string, toUpdate = true, collection?: SpaceModel[]) {
@@ -239,7 +196,7 @@ export class SpacesComponent implements OnInit {
           this.onSelect(s)
         }
       })
-    } else if (this.selected && this.canEditSpace) {
+    } else if (this.selected) {
       this.spacesService.getSpace(this.selected.id).subscribe({
         next: (space: SpaceModel) => {
           const modalRef: BsModalRef<SpaceDialogComponent> = this.layout.openDialog(SpaceDialogComponent, 'xl', {
@@ -251,6 +208,8 @@ export class SpacesComponent implements OnInit {
               this.selected.name = s.name
               this.selected.alias = s.alias
               this.selected.description = s.description
+              this.selected.storageUsage = s.storageUsage
+              this.selected.storageQuota = s.storageQuota
               // hook to keep the shares count
               this.selected.counts = { ...s.counts, shares: this.selected.counts.shares }
               this.selected.modifiedAt = s.modifiedAt
@@ -269,20 +228,6 @@ export class SpacesComponent implements OnInit {
         error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Edit space', this.selected.name, e)
       })
     }
-  }
-
-  openSpaceRootsDialog() {
-    setTimeout(
-      () => {
-        this.layout.openDialog(SpaceUserAnchorsDialogComponent, 'md', {
-          initialState: {
-            space: this.selected,
-            user: this.userService.user
-          } as SpaceUserAnchorsDialogComponent
-        })
-      },
-      this.selected ? 0 : 100
-    )
   }
 
   openChildShareDialog(space?: SpaceModel) {

@@ -218,7 +218,8 @@ export class SpaceDialogComponent implements OnInit {
   }
 
   cantSubmit() {
-    return this.submitted || !this.space.name || !this.space.managers.length
+    const canDeleteWithoutManagers = this.confirmDeletion && this.space.id !== 0 && this.user.isAdmin
+    return this.submitted || !this.space.name || (!this.space.managers.length && !canDeleteWithoutManagers)
   }
 
   private onError() {

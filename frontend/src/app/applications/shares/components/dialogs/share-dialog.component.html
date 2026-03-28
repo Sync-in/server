@@ -60,7 +60,7 @@
                 <div class="d-flex flex-column align-items-start">
                   <app-storage-quota [(quota)]="share.storageQuota" [fullWidth]="true" class="w-100 mb-3"></app-storage-quota>
                 </div>
-                @if (share.storageUsage) {
+                @if (share.storageUsage || share.storageQuota) {
                   <div class="d-flex flex-column mb-3">
                     <label class="form-label" for="storage" l10nTranslate>Storage Usage</label>
                     <app-storage-usage id="storage" [item]="share"></app-storage-usage>

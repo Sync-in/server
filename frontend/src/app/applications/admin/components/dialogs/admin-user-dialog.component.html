@@ -148,7 +148,7 @@
               <div>
                 <app-storage-quota [quota]="userForm.value.storageQuota" (quotaChange)="updateQuota($event)" [fullWidth]="true"></app-storage-quota>
               </div>
-              @if (user && user.storageUsage) {
+              @if (user && (user.storageUsage || user.storageQuota)) {
                 <div>
                   <label class="form-label" for="storage" l10nTranslate>Storage Usage</label>
                   <app-storage-usage id="storage" [item]="user"></app-storage-usage>

@@ -1,4 +1,4 @@
-import { faGear, faUserGear, faUsersGear } from '@fortawesome/free-solid-svg-icons'
+import { faGear, faLayerGroup, faUserGear, faUsersGear } from '@fortawesome/free-solid-svg-icons'
 import { AppMenu } from '../../layout/layout.interfaces'
 
 export const ADMIN_PATH = {
@@ -6,7 +6,8 @@ export const ADMIN_PATH = {
   USERS: 'users',
   GUESTS: 'guests',
   GROUPS: 'groups',
-  PGROUPS: 'personal_groups'
+  PGROUPS: 'personal_groups',
+  SPACES: 'spaces'
 } as const
 
 export const ADMIN_TITLE = {
@@ -14,13 +15,15 @@ export const ADMIN_TITLE = {
   USERS: 'Users',
   GROUPS: 'Groups',
   GUESTS: 'Guests',
-  PGROUPS: 'Personal groups'
+  PGROUPS: 'Personal groups',
+  SPACES: 'Spaces'
 } as const
 
 export const ADMIN_ICON = {
   BASE: faGear,
   USERS: faUserGear,
-  GROUPS: faUsersGear
+  GROUPS: faUsersGear,
+  SPACES: faLayerGroup
 } as const
 
 export const ADMIN_MENU: AppMenu = {
@@ -41,6 +44,11 @@ export const ADMIN_MENU: AppMenu = {
       icon: ADMIN_ICON.GROUPS,
       link: `${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}`,
       matchLink: RegExp(`^${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}|^${ADMIN_PATH.BASE}/${ADMIN_PATH.PGROUPS}`)
+    },
+    {
+      title: ADMIN_TITLE.SPACES,
+      icon: ADMIN_ICON.SPACES,
+      link: `${ADMIN_PATH.BASE}/${ADMIN_PATH.SPACES}`
     }
   ]
 } as const

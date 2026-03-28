@@ -16,6 +16,7 @@ import { spacesMembers } from '../../spaces/schemas/spaces-members.schema'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
 import { USER_ROLE } from '../../users/constants/user'
+import { UserModel } from '../../users/models/user.model'
 import type { User } from '../../users/schemas/user.interface'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema'
 import { CACHE_LINK_UUID_PREFIX, CACHE_LINK_UUID_TTL } from '../constants/cache'
@@ -32,7 +33,7 @@ export class LinksQueries {
     private readonly cache: Cache
   ) {}
 
-  async linkFromShare(ownerId: number, linkId: number, shareId: number, isAdmin: number = 0): Promise<LinkGuest> {
+  async linkFromShare(owner: UserModel, linkId: number, shareId: number): Promise<LinkGuest> {
     const [r] = await this.db
       .select({
         ...getTableColumns(links),
@@ -41,7 +42,7 @@ export class LinksQueries {
         isActive: users.isActive
       })
       .from(links)
-      .innerJoin(shares, and(eq(shares.id, shareId), or(eq(shares.ownerId, ownerId), and(eq(sql`${isAdmin}`, 1), isNull(shares.ownerId)))))
+      .innerJoin(shares, and(eq(shares.id, shareId), or(eq(shares.ownerId, owner.id), eq(sql`${+owner.isAdmin}`, 1))))
       .innerJoin(sharesMembers, and(eq(sharesMembers.shareId, shares.id), eq(sharesMembers.userId, links.userId), eq(sharesMembers.linkId, linkId)))
       .innerJoin(users, eq(users.id, links.userId))
       .where(eq(links.id, linkId))
@@ -49,8 +50,9 @@ export class LinksQueries {
     return r as LinkGuest
   }
 
-  async linkFromSpace(managerId: number, linkId: number, spaceId: number): Promise<LinkGuest> {
+  async linkFromSpace(manager: UserModel, linkId: number, spaceId: number): Promise<LinkGuest> {
     const linkMember: any = alias(spacesMembers, 'linkMember')
+    const managerMember: any = alias(spacesMembers, 'managerMember')
     const [r] = await this.db
       .select({
         ...getTableColumns(links),
@@ -59,13 +61,13 @@ export class LinksQueries {
         isActive: users.isActive
       })
       .from(links)
-      .innerJoin(
-        spacesMembers,
-        and(eq(spacesMembers.spaceId, spaceId), eq(spacesMembers.userId, managerId), eq(spacesMembers.role, SPACE_ROLE.IS_MANAGER))
+      .innerJoin(linkMember, and(eq(linkMember.spaceId, spaceId), eq(linkMember.userId, links.userId), eq(linkMember.linkId, linkId)))
+      .leftJoin(
+        managerMember,
+        and(eq(managerMember.spaceId, linkMember.spaceId), eq(managerMember.userId, manager.id), eq(managerMember.role, SPACE_ROLE.IS_MANAGER))
       )
-      .innerJoin(linkMember, and(eq(linkMember.spaceId, spacesMembers.spaceId), eq(linkMember.userId, links.userId), eq(linkMember.linkId, linkId)))
       .innerJoin(users, eq(users.id, links.userId))
-      .where(eq(links.id, linkId))
+      .where(and(eq(links.id, linkId), or(eq(sql`${+manager.isAdmin}`, 1), isNotNull(managerMember.userId))))
       .limit(1)
     return r as LinkGuest
   }

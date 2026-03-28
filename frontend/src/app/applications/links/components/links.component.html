@@ -190,7 +190,7 @@
                     @case ('accessed') {
                       <span class="{{th.value.newly !== undefined && s[th.value.newly] ? 'badge prop-newly-' + s[th.value.newly] : ''}}">
                         @if (s.link.currentAccess) {
-                          {{ s.hTimeAccessAgo }}
+                          <span>{{ s.hTimeAccessAgo }}</span>
                         } @else {
                           <span class="badge sync-newly-0" l10nTranslate>never</span>
                         }
