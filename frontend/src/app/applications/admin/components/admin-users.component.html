@@ -114,7 +114,7 @@
                     </div>
                   }
                   @case ('storage') {
-                    @if (u.storageUsage) {
+                    @if (u.storageUsage || u.storageQuota) {
                       <app-storage-usage [item]="u"></app-storage-usage>
                     }
                   }

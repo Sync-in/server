@@ -79,13 +79,16 @@ export class SharesManager {
   }
 
   async setAllowedPermissions(user: UserModel, share: ShareProps | ShareLink, asAdmin = false) {
+    // Computes the effective maximum permissions on the shared file target (or on the share owner when `asOwner` is true)
+    // to safely restrict delegated member/link permissions.
     if (share.file?.ownerId === user.id || (share.externalPath && user.isAdmin)) {
       // current user is the file owner (personal space case)
       share.file.permissions = SHARE_ALL_OPERATIONS
     } else if (share.file?.space?.alias) {
       share.file.ownerId = null
       // retrieve space permissions (cached query)
-      const spacePermissions: Partial<SpaceEnv> = await this.spacesQueries.permissions(user.id, share.file.space.alias, share.file.space.root?.alias)
+      const userId = asAdmin ? share.ownerId : user.id
+      const spacePermissions: Partial<SpaceEnv> = await this.spacesQueries.permissions(userId, share.file.space.alias, share.file.space.root?.alias)
       if (!spacePermissions) {
         this.logger.warn({ tag: this.setAllowedPermissions.name, msg: `missing space permissions : ${JSON.stringify(share)}` })
         throw new HttpException('Space not found', HttpStatus.NOT_FOUND)
@@ -111,7 +114,7 @@ export class SharesManager {
   }
 
   async getShareWithMembers(user: UserModel, shareId: number, asAdmin = false): Promise<ShareProps> {
-    // asAdmin : true if the user is the owner of the parent share or if the share is requested from the administration
+    // asAdmin: true if the user is the owner of the parent share or if the share is requested from the administration
     const share: ShareProps = await this.sharesQueries.getShareWithMembers(user, shareId, asAdmin)
     if (!share) {
       throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
@@ -538,7 +541,7 @@ export class SharesManager {
     if (!shareLink) {
       throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
     }
-    await this.setAllowedPermissions(user, shareLink)
+    await this.setAllowedPermissions(user, shareLink, asAdmin)
     if (shareLink.file?.permissions) {
       // share link does not have these permissions
       shareLink.file.permissions = removePermissions(shareLink.file.permissions, [SPACE_OPERATION.SHARE_INSIDE, SPACE_OPERATION.SHARE_OUTSIDE])
@@ -549,9 +552,9 @@ export class SharesManager {
   async getLinkFromSpaceOrShare(user: UserModel, linkId: number, spaceOrShareId: number, type: LINK_TYPE): Promise<LinkGuest> {
     let linkGuest: LinkGuest
     if (type === LINK_TYPE.SPACE) {
-      linkGuest = await this.linksQueries.linkFromSpace(user.id, linkId, spaceOrShareId)
+      linkGuest = await this.linksQueries.linkFromSpace(user, linkId, spaceOrShareId)
     } else {
-      linkGuest = await this.linksQueries.linkFromShare(user.id, linkId, spaceOrShareId, +user.isAdmin)
+      linkGuest = await this.linksQueries.linkFromShare(user, linkId, spaceOrShareId)
     }
     if (!linkGuest) {
       this.logger.warn({ tag: this.getLinkFromSpaceOrShare.name, msg: `unable to find link (${linkId}) on ${type} (${spaceOrShareId})` })
@@ -635,7 +638,7 @@ export class SharesManager {
             }
             break
           case 'permissions':
-            if (fromAPI) {
+            if (fromAPI && type === LINK_TYPE.SHARE) {
               // permissions are only present if the share type is link
               // intersect permissions to ensure that the user does not attempt to exceed his rights
               const shareLink: ShareLink = await this.getShareLink(user, spaceOrShareId)

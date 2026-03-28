@@ -67,6 +67,10 @@ export class SpacesManager {
     return this.spacesQueries.spaces(userId)
   }
 
+  listSpacesAsAdmin(): Promise<SpaceProps[]> {
+    return this.spacesQueries.spacesAsAdmin()
+  }
+
   spacesWithDetails(userId: number): Promise<SpaceProps[]> {
     return this.spacesQueries.spacesWithDetails(userId)
   }
@@ -190,7 +194,7 @@ export class SpacesManager {
   }
 
   async getSpace(user: UserModel, spaceId: number): Promise<SpaceProps> {
-    const space: SpaceProps = await this.userCanAccessSpace(user.id, spaceId, true)
+    const space: SpaceProps = await this.userCanAccessSpace(user, spaceId, true)
     if (space.roots?.length && !user.isAdmin) {
       // remove external path if the current user is not an administrator
       for (const root of space.roots) {
@@ -226,12 +230,12 @@ export class SpacesManager {
     await this.updateMembers(user, space, createOrUpdateSpaceDto.members.concat(createOrUpdateSpaceDto.managers))
     // create links after members, user must be a space manager to create links
     await this.sharesManager.createOrUpdateLinksAsMembers(user, space, LINK_TYPE.SPACE, createOrUpdateSpaceDto.links)
-    return this.spacesQueries.getSpaceAsManager(user.id, space.id)
+    return this.spacesQueries.getSpaceAsAdminOrManager(user, space.id)
   }
 
   async updateSpace(user: UserModel, spaceId: number, createOrUpdateSpaceDto: CreateOrUpdateSpaceDto): Promise<SpaceProps> {
     /* only managers of the space can update it */
-    const space: SpaceProps = await this.userCanAccessSpace(user.id, spaceId, true)
+    const space: SpaceProps = await this.userCanAccessSpace(user, spaceId, true)
     // check and update space info
     const spaceDiffProps: Partial<SpaceProps> = { modifiedAt: new Date() }
     const props: (keyof CreateOrUpdateSpaceDto)[] = ['name', 'description', 'enabled', 'storageQuota', 'storageIndexing']
@@ -279,13 +283,13 @@ export class SpacesManager {
       // current manager was removed
       return null
     } else {
-      return this.spacesQueries.getSpaceAsManager(user.id, spaceId)
+      return this.spacesQueries.getSpaceAsAdminOrManager(user, spaceId)
     }
   }
 
   async deleteSpace(user: UserModel, spaceId: number, deleteSpaceDto?: DeleteSpaceDto) {
     /* only managers of the space can disable it */
-    const space: SpaceProps = await this.userCanAccessSpace(user.id, spaceId, true)
+    const space: SpaceProps = await this.userCanAccessSpace(user, spaceId, true)
     // only admin can delete the space data, managers can only disable the space for 30 days
     const deleteNow: boolean = user.isAdmin && !!deleteSpaceDto?.deleteNow
     try {
@@ -306,7 +310,7 @@ export class SpacesManager {
   }
 
   async updateUserRoots(user: UserModel, spaceId: number, userRoots: SpaceRootProps[], addOnly: boolean = false): Promise<SpaceRootProps[]> {
-    const space: Partial<SpaceProps> = await this.userCanAccessSpace(user.id, spaceId)
+    const space: Partial<SpaceProps> = await this.userCanAccessSpace(user, spaceId)
     if (space.role !== SPACE_ROLE.IS_MANAGER && !haveSpacePermission(space, SPACE_OPERATION.SHARE_INSIDE)) {
       this.logger.warn({ tag: this.updateUserRoots.name, msg: `is not allowed to share inside on this space : *${space.alias}* (${space.id})` })
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
@@ -452,31 +456,31 @@ export class SpacesManager {
   }
 
   async listSpaceShares(user: UserModel, spaceId: number): Promise<ShareChild[]> {
-    if (await this.userIsSpaceManager(user, spaceId)) {
+    if (await this.userIsAdminOrSpaceManager(user, spaceId)) {
       return this.sharesManager.listSpaceShares(spaceId)
     }
   }
 
   async getSpaceShare(user: UserModel, spaceId: number, shareId: number): Promise<ShareProps> {
-    if (await this.userIsSpaceManager(user, spaceId, shareId)) {
+    if (await this.userIsAdminOrSpaceManager(user, spaceId, shareId)) {
       return this.sharesManager.getShareWithMembers(user, shareId, true)
     }
   }
 
   async updateSpaceShare(user: UserModel, spaceId: number, shareId: number, createOrUpdateShareDto: CreateOrUpdateShareDto): Promise<ShareProps> {
-    if (await this.userIsSpaceManager(user, spaceId, shareId)) {
+    if (await this.userIsAdminOrSpaceManager(user, spaceId, shareId)) {
       return this.sharesManager.updateShare(user, shareId, createOrUpdateShareDto, true)
     }
   }
 
   async deleteSpaceShare(user: UserModel, spaceId: number, shareId: number): Promise<void> {
-    if (await this.userIsSpaceManager(user, spaceId, shareId)) {
+    if (await this.userIsAdminOrSpaceManager(user, spaceId, shareId)) {
       return this.sharesManager.deleteShare(user, shareId, true)
     }
   }
 
   async getSpaceShareLink(user: UserModel, spaceId: number, shareId: number): Promise<ShareLink> {
-    if (await this.userIsSpaceManager(user, spaceId, shareId)) {
+    if (await this.userIsAdminOrSpaceManager(user, spaceId, shareId)) {
       return this.sharesManager.getShareLink(user, shareId, true)
     }
   }
@@ -796,33 +800,33 @@ export class SpacesManager {
     return alias
   }
 
-  private async userCanAccessSpace(userId: number, spaceId: number, asManager: true): Promise<SpaceProps>
-  private async userCanAccessSpace(userId: number, spaceId: number, asManager?: false): Promise<Partial<SpaceProps>>
-  private async userCanAccessSpace(userId: number, spaceId: number, asManager: boolean = false): Promise<Partial<SpaceProps>> {
+  private async userCanAccessSpace(user: UserModel, spaceId: number, asManager: true): Promise<SpaceProps>
+  private async userCanAccessSpace(user: UserModel, spaceId: number, asManager?: false): Promise<Partial<SpaceProps>>
+  private async userCanAccessSpace(user: UserModel, spaceId: number, asManager: boolean = false): Promise<Partial<SpaceProps>> {
     if (asManager) {
       // Get all space details if user is a manager
-      const space: SpaceProps = await this.spacesQueries.getSpaceAsManager(userId, spaceId)
+      const space: SpaceProps = await this.spacesQueries.getSpaceAsAdminOrManager(user, spaceId)
       if (!space) {
-        this.logger.warn({ tag: this.userCanAccessSpace.name, msg: `space (${spaceId}) not found or not authorized for user (${userId})` })
+        this.logger.warn({ tag: this.userCanAccessSpace.name, msg: `space (${spaceId}) not found or not authorized for user (${user.id})` })
         throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
       }
       return space
     } else {
-      const [space]: SpaceProps[] = await this.spacesQueries.spaces(userId, true, spaceId)
+      const [space]: SpaceProps[] = await this.spacesQueries.spaces(user.id, true, spaceId)
       if (!space) {
-        this.logger.warn({ tag: this.userCanAccessSpace.name, msg: `space (${spaceId}) not found or not authorized for user (${userId})` })
+        this.logger.warn({ tag: this.userCanAccessSpace.name, msg: `space (${spaceId}) not found or not authorized for user (${user.id})` })
         throw new HttpException('Space not found', HttpStatus.NOT_FOUND)
       }
       return space
     }
   }
 
-  private async userIsSpaceManager(user: UserModel, spaceId: number, shareId?: number): Promise<boolean> {
-    if (!(await this.spacesQueries.userIsSpaceManager(user.id, spaceId, shareId))) {
-      this.logger.warn({ tag: this.userIsSpaceManager.name, msg: `space (${spaceId}) not found or not authorized for user (${user.id})` })
-      throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
+  private async userIsAdminOrSpaceManager(user: UserModel, spaceId: number, shareId?: number): Promise<boolean> {
+    if (await this.spacesQueries.userIsAdminOrSpaceManager(user, spaceId, shareId)) {
+      return true
     }
-    return true
+    this.logger.warn({ tag: this.userIsAdminOrSpaceManager.name, msg: `space (${spaceId}) not found or not authorized for user (${user.id})` })
+    throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
   }
 
   private async setQuotaExceeded(user: UserModel, space: SpaceEnv) {

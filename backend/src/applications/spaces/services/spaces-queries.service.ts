@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { and, countDistinct, eq, isNotNull, isNull, max, SelectedFields, SQL, sql } from 'drizzle-orm'
+import { and, countDistinct, eq, isNotNull, isNull, max, or, SelectedFields, SQL, sql } from 'drizzle-orm'
 import { alias, union } from 'drizzle-orm/mysql-core'
 import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { ACTION } from '../../../common/constants'
@@ -30,6 +30,7 @@ import { GROUP_TYPE } from '../../users/constants/group'
 import { MEMBER_TYPE } from '../../users/constants/member'
 import { USER_ROLE } from '../../users/constants/user'
 import { Member } from '../../users/interfaces/member.interface'
+import { UserModel } from '../../users/models/user.model'
 import { groups } from '../../users/schemas/groups.schema'
 import { usersGroups } from '../../users/schemas/users-groups.schema'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema'
@@ -98,27 +99,26 @@ export class SpacesQueries {
       .groupBy(spaces.id)
   }
 
-  async userIsSpaceManager(userId: number, spaceId: number, shareId?: number): Promise<boolean> {
-    /* Check if user is a space manager */
+  async userIsAdminOrSpaceManager(user: UserModel, spaceId: number, shareId?: number): Promise<boolean> {
     const q = this.db
       .select({
-        userId: spacesMembers.userId,
-        spaceId: spacesMembers.spaceId,
-        ...(shareId && { shareId: shares.id })
+        managerId: spacesMembers.userId,
+        ...(shareId ? { shareId: shares.id } : {})
       })
-      .from(spacesMembers)
+      .from(spaces)
+      .leftJoin(
+        spacesMembers,
+        and(eq(spacesMembers.spaceId, spaces.id), eq(spacesMembers.userId, user.id), eq(spacesMembers.role, SPACE_ROLE.IS_MANAGER))
+      )
     if (shareId) {
-      q.innerJoin(shares, and(eq(shares.id, shareId), eq(shares.spaceId, spaceId)))
+      q.innerJoin(shares, and(eq(shares.id, shareId), eq(shares.spaceId, spaces.id)))
     }
-    const [r] = await q
-      .where(and(eq(spacesMembers.spaceId, spaceId), eq(spacesMembers.userId, userId), eq(spacesMembers.role, SPACE_ROLE.IS_MANAGER)))
-      .limit(1)
-    return r && r.userId === userId && r.spaceId === spaceId && (shareId ? r.shareId === shareId : true)
+    const [r] = await q.where(and(eq(spaces.id, spaceId), or(isNotNull(spacesMembers.userId), eq(sql`${+user.isAdmin}`, 1)))).limit(1)
+    return !!r
   }
 
-  async getSpaceAsManager(userId: number, spaceId: number): Promise<SpaceProps> {
-    /* User must be the manager of the space */
-    // todo: make a condition if current user is an admin
+  async getSpaceAsAdminOrManager(user: UserModel, spaceId: number): Promise<SpaceProps> {
+    /* User must be an admin or the manager of the space */
     if (!this.spaceQuery) {
       const otherMembers: any = alias(spacesMembers, 'otherMembers')
       const rootOwner: any = alias(users, 'rootOwner')
@@ -179,17 +179,16 @@ export class SpacesQueries {
             createdAt: dateTimeUTC(otherMembers.createdAt)
           })
         } satisfies SpaceProps | SelectedFields<any, any>)
-        .from(spacesMembers)
-        .innerJoin(
-          spaces,
+        .from(spaces)
+        .leftJoin(
+          spacesMembers,
           and(
-            eq(spaces.id, spacesMembers.spaceId),
-            eq(spacesMembers.spaceId, sql.placeholder('spaceId')),
+            eq(spacesMembers.spaceId, spaces.id),
             eq(spacesMembers.userId, sql.placeholder('userId')),
             eq(spacesMembers.role, SPACE_ROLE.IS_MANAGER)
           )
         )
-        .innerJoin(otherMembers, eq(otherMembers.spaceId, spaces.id))
+        .leftJoin(otherMembers, eq(otherMembers.spaceId, spaces.id))
         .leftJoin(users, and(isNull(otherMembers.linkId), eq(otherMembers.userId, users.id)))
         .leftJoin(linkUsers, and(isNotNull(otherMembers.linkId), eq(linkUsers.id, otherMembers.userId)))
         .leftJoin(links, and(eq(links.userId, linkUsers.id), eq(links.id, otherMembers.linkId)))
@@ -198,17 +197,18 @@ export class SpacesQueries {
         .leftJoin(files, eq(spacesRoots.fileId, files.id))
         .leftJoin(rootOwner, eq(rootOwner.id, files.ownerId))
         .leftJoin(fileOwner, and(eq(fileOwner.id, files.id), eq(fileOwner.ownerId, sql.placeholder('userId'))))
+        .where(and(eq(spaces.id, sql.placeholder('spaceId')), or(isNotNull(spacesMembers.userId), eq(sql.placeholder('isAdmin'), 1))))
         .groupBy(spaces.id)
         .limit(1)
         .prepare()
     }
-    const [space] = await this.spaceQuery.execute({ userId, spaceId })
+    const [space] = await this.spaceQuery.execute({ userId: user.id, spaceId, isAdmin: +user.isAdmin })
     if (!space) {
       return null
     }
     // merge members
     space.members = [...popFromObject('users', space), ...popFromObject('groups', space), ...popFromObject('links', space)]
-    return new SpaceProps(space, userId)
+    return new SpaceProps(space, user.id)
   }
 
   async createSpace(space: SpaceProps): Promise<number> {
@@ -600,6 +600,49 @@ export class SpacesQueries {
         .prepare()
     }
     const r: MySqlQueryResult = await this.spacesWithDetailsQuery.execute({ userId })
+    return r.length ? r.map((s: Partial<SpaceProps>) => new SpaceProps(s)) : []
+  }
+
+  async spacesAsAdmin(): Promise<SpaceProps[]> {
+    const managers: any = alias(users, 'managers')
+    const select: SpaceProps | SelectedFields<any, any> = {
+      id: spaces.id,
+      alias: spaces.alias,
+      name: spaces.name,
+      description: spaces.description,
+      enabled: spaces.enabled,
+      storageQuota: spaces.storageQuota,
+      storageUsage: spaces.storageUsage,
+      modifiedAt: spaces.modifiedAt,
+      createdAt: spaces.createdAt,
+      disabledAt: spaces.disabledAt,
+      members: concatDistinctObjectsInArray(managers.id, {
+        id: managers.id,
+        login: managers.login,
+        name: userFullNameSQL(managers),
+        description: managers.email,
+        type: sql.raw(`'${MEMBER_TYPE.USER}'`),
+        spaceRole: spacesMembers.role,
+        permissions: sql<string>`''`,
+        createdAt: dateTimeUTC(spacesMembers.createdAt)
+      } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'login' | 'description' | 'type' | 'permissions' | 'spaceRole' | 'createdAt'>, any>),
+      counts: {
+        users: sql`COUNT(DISTINCT(CASE WHEN ${spacesMembers.userId} IS NOT NULL AND ${spacesMembers.linkId} IS NULL THEN ${spacesMembers.userId} END))`,
+        groups: countDistinct(spacesMembers.groupId),
+        links: sql`COUNT(DISTINCT(CASE WHEN ${spacesMembers.linkId} IS NOT NULL THEN ${spacesMembers.linkId} END))`,
+        shares: sql`COUNT(DISTINCT(CASE WHEN ${shares.id} IS NOT NULL THEN ${shares.id} END))`
+      }
+    }
+    const r = await this.db
+      .select(select)
+      .from(spaces)
+      .leftJoin(spacesMembers, eq(spacesMembers.spaceId, spaces.id))
+      .leftJoin(users, eq(users.id, spacesMembers.userId))
+      .leftJoin(groups, eq(groups.id, spacesMembers.groupId))
+      .leftJoin(managers, and(eq(spacesMembers.userId, managers.id), eq(spacesMembers.role, SPACE_ROLE.IS_MANAGER)))
+      .leftJoin(spacesRoots, eq(spacesRoots.spaceId, spaces.id))
+      .leftJoin(shares, and(eq(shares.spaceId, spaces.id), isNotNull(shares.spaceId)))
+      .groupBy(spaces.id)
     return r.length ? r.map((s: Partial<SpaceProps>) => new SpaceProps(s)) : []
   }
 

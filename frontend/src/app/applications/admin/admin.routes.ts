@@ -43,6 +43,16 @@ export const adminRoutes: Routes = [
           }
         ]
       },
+      {
+        path: ADMIN_PATH.SPACES,
+        children: [
+          {
+            path: '**',
+            resolve: { routes: routeResolver },
+            loadComponent: () => import('./components/admin-spaces.component').then((c) => c.AdminSpacesComponent)
+          }
+        ]
+      },
       { path: '**', redirectTo: ADMIN_PATH.USERS }
     ]
   }

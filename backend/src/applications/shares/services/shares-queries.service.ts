@@ -155,9 +155,7 @@ export class SharesQueries {
   }
 
   async listShareLinks(user: UserModel, shareId: number, asAdmin?: boolean): Promise<ShareLink>
-
   async listShareLinks(user: UserModel, shareId?: number, asAdmin?: boolean): Promise<ShareLink[]>
-
   async listShareLinks(user: UserModel, shareId?: number, asAdmin: boolean = false): Promise<ShareLink[] | ShareLink> {
     if (!this.shareLinksListQuery) {
       const [selectFile, shareRootFile, parentShare, parentShareFile, childShareFromRoot, shareMembers] = this.shareFileSelect()

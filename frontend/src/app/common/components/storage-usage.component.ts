@@ -46,9 +46,7 @@ export class StorageUsageComponent {
           this.cdr.detectChanges()
         }
       }
-
       measure()
-
       const ro = new ResizeObserver(() => measure())
       ro.observe(host)
       // cleanup

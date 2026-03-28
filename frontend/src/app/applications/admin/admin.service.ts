@@ -1,6 +1,8 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
+import { API_ADMIN_SPACES_LIST } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
+import type { SpaceProps } from '@sync-in-server/backend/src/applications/spaces/models/space-props.model'
 import {
   ADMIN_USERS_ROUTE,
   API_ADMIN_GROUPS,
@@ -29,6 +31,7 @@ import type { Member } from '@sync-in-server/backend/src/applications/users/inte
 import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import { catchError, map, Observable } from 'rxjs'
 import { AuthService } from '../../auth/auth.service'
+import { SpaceModel } from '../spaces/models/space.model'
 import { GroupBrowseModel } from '../users/models/group-browse.model'
 import { GuestUserModel } from '../users/models/guest.model'
 import { MemberModel } from '../users/models/member.model'
@@ -136,5 +139,9 @@ export class AdminService {
   initImpersonateUser(r: LoginResponseDto) {
     this.authService.initUserFromResponse(r, true)
     this.router.navigate([USER_PATH.BASE, USER_PATH.ACCOUNT]).catch(console.error)
+  }
+
+  listSpaces(): Observable<SpaceModel[]> {
+    return this.http.get<SpaceProps[]>(API_ADMIN_SPACES_LIST).pipe(map((sps: SpaceProps[]) => sps.map((s: SpaceProps) => new SpaceModel(s))))
   }
 }
