@@ -3,6 +3,7 @@ import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { instanceToPlain, plainToInstance } from 'class-transformer'
 import { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
+import { genHash } from '../../applications/files/utils/files'
 import { UserModel } from '../../applications/users/models/user.model'
 import { SERVER_NAME } from '../../common/shared'
 import { Cache } from '../../infrastructure/cache/services/cache.service'
@@ -25,10 +26,9 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
 
   async validate(req: FastifyRequest, loginOrEmail: string, password: string): Promise<Omit<UserModel, 'password'> | null> {
     loginOrEmail = loginOrEmail.trim()
-    password = password.trim()
     this.logger.assign({ user: loginOrEmail })
-    const authBasicUser = `${this.CACHE_KEY_PREFIX}-${req.headers['authorization'].split(' ').at(-1).toLowerCase()}`
-    const userFromCache: any = await this.cache.get(authBasicUser)
+    const basicAuthCacheKey = `${this.CACHE_KEY_PREFIX}-${genHash(`${loginOrEmail}\u0000${password}`, 'sha256')}`
+    const userFromCache: null | undefined | Partial<UserModel> = await this.cache.get(basicAuthCacheKey)
     if (userFromCache === null) {
       // not authorized
       return null
@@ -43,7 +43,7 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
       userFromDB.removePassword()
     }
     const userToCache: Record<string, any> | null = userFromDB ? instanceToPlain(userFromDB, { excludePrefixes: ['_'] }) : null
-    this.cache.set(authBasicUser, userToCache, this.CACHE_TTL).catch((e: Error) => this.logger.error({ tag: this.validate.name, msg: `${e}` }))
+    this.cache.set(basicAuthCacheKey, userToCache, this.CACHE_TTL).catch((e: Error) => this.logger.error({ tag: this.validate.name, msg: `${e}` }))
     return userFromDB
   }
 }

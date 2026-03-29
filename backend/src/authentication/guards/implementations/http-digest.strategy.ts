@@ -1,5 +1,5 @@
-import crypto from 'node:crypto'
 import { Strategy as PassportStrategy } from 'passport-strategy'
+import { genHash } from '../../../applications/files/utils/files'
 
 export interface DigestValidateParams {
   nonce?: string
@@ -41,10 +41,6 @@ export type HttpDigestStrategyOptionsWithReq = HttpDigestStrategyOptionsBase & {
 
 export type HttpDigestStrategyOptionsNoReq = HttpDigestStrategyOptionsBase & {
   passReqToCallback?: false | undefined
-}
-
-function md5(str: string, encoding: crypto.BinaryToTextEncoding = 'hex'): string {
-  return crypto.createHash('md5').update(str).digest(encoding)
 }
 
 function nonce(len: number): string {
@@ -141,13 +137,13 @@ export class HttpDigestStrategy extends PassportStrategy {
           ha1 = (secret as any).ha1
         } else {
           // password en clair (peu probable)
-          ha1 = md5(`${creds.username}:${creds.realm}:${String(secret)}`)
+          ha1 = genHash(`${creds.username}:${creds.realm}:${String(secret)}`)
         }
       } else if (algo === 'MD5-sess') {
         // idem digest.js (note: nonce/cnonce init non gérés)
         const base =
-          typeof secret === 'object' && (secret as any).ha1 ? (secret as any).ha1 : md5(`${creds.username}:${creds.realm}:${String(secret)}`)
-        ha1 = md5(`${base}:${creds.nonce}:${creds.cnonce}`)
+          typeof secret === 'object' && (secret as any).ha1 ? (secret as any).ha1 : genHash(`${creds.username}:${creds.realm}:${String(secret)}`)
+        ha1 = genHash(`${base}:${creds.nonce}:${creds.cnonce}`)
       } else {
         return this.fail(400 as any)
       }
@@ -155,7 +151,7 @@ export class HttpDigestStrategy extends PassportStrategy {
       // compute HA2
       let ha2: string
       if (!creds.qop || creds.qop === 'auth') {
-        ha2 = md5(`${req.method}:${creds.uri}`)
+        ha2 = genHash(`${req.method}:${creds.uri}`)
       } else if (creds.qop === 'auth-int') {
         return this.error(new Error('auth-int not implemented'))
       } else {
@@ -165,9 +161,9 @@ export class HttpDigestStrategy extends PassportStrategy {
       // compute expected digest
       let digest: string
       if (!creds.qop) {
-        digest = md5(`${ha1}:${creds.nonce}:${ha2}`)
+        digest = genHash(`${ha1}:${creds.nonce}:${ha2}`)
       } else if (creds.qop === 'auth' || creds.qop === 'auth-int') {
-        digest = md5(`${ha1}:${creds.nonce}:${creds.nc}:${creds.cnonce}:${creds.qop}:${ha2}`)
+        digest = genHash(`${ha1}:${creds.nonce}:${creds.nc}:${creds.cnonce}:${creds.qop}:${ha2}`)
       } else {
         return this.fail(400 as any)
       }

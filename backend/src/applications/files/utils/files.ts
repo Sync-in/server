@@ -107,12 +107,16 @@ export function genEtag(file?: Pick<FileProps, 'size' | 'mtime'>, rPath?: string
   return weakPrefix ? `W/"${etag}"` : etag
 }
 
+export function genHash(str: string, algo = 'md5', encoding: crypto.BinaryToTextEncoding = 'hex'): string {
+  return crypto.createHash(algo).update(str).digest(encoding)
+}
+
 export function genUniqHashFromFileDBProps(dbFile: FileDBProps) {
   const dbFileString = `${Object.keys(dbFile)
     .sort()
     .map((k) => `${k}=${String(dbFile[k])}`)
     .join('|')}`
-  return crypto.createHash(DEFAULT_CHECKSUM_ALGORITHM).update(dbFileString, 'utf-8').digest('hex')
+  return genHash(dbFileString, DEFAULT_CHECKSUM_ALGORITHM)
 }
 
 export function removeFiles(rPath: string): Promise<void> {
