@@ -151,7 +151,8 @@ export class WebDAVMethods {
 
   @IfHeaderDecorator()
   async propfind(req: FastifyDAVRequest, res: FastifyReply, repository: string): Promise<string> {
-    if (repository === SPACE_REPOSITORY.FILES && !req.space.inSharesList) {
+    const isFileSystemResource = repository === SPACE_REPOSITORY.FILES && !req.space.inSharesList
+    if (isFileSystemResource) {
       if (!(await isPathExists(req.space.realPath))) {
         return res.status(HttpStatus.NOT_FOUND).send(req.dav.url)
       }
@@ -169,7 +170,7 @@ export class WebDAVMethods {
     }
 
     // Searches all child locks (only for real files) & ignores /webdav/shares endpoint (special case)
-    if (req.dav.propfindMode !== PROPSTAT.PROPNAME && repository === SPACE_REPOSITORY.FILES && !req.space.inSharesList) {
+    if (req.dav.propfindMode !== PROPSTAT.PROPNAME && isFileSystemResource) {
       if (req.dav.depth === DEPTH.RESOURCE) {
         // match depth '0'
         locks = await this.filesLockManager.browseLocks(req.space.dbFile)
@@ -189,7 +190,7 @@ export class WebDAVMethods {
           let fP: any
           if (p === LOCK_DISCOVERY_PROP) {
             let lockDiscovery: any[] = null
-            if (repository === SPACE_REPOSITORY.FILES) {
+            if (isFileSystemResource) {
               if (f.name in locks) {
                 lockDiscovery = LOCK_DISCOVERY([locks[f.name]])
               } else {

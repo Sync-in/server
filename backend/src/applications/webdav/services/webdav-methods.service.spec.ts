@@ -452,6 +452,30 @@ describe('WebDAVMethods', () => {
         expect(res.body).toBe(req.dav.url)
       })
 
+      it('should return multistatus for shares list even when real path does not exist', async () => {
+        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        const req = createBaseRequest({
+          space: { ...createBaseRequest().space, inSharesList: true },
+          dav: {
+            ...createBaseRequest().dav,
+            url: '/webdav/shares',
+            propfindMode: PROPSTAT.PROPNAME
+          }
+        })
+        const res = createMockResponse()
+
+        webDAVSpaces.propfind.mockImplementation(async function* () {
+          yield { href: '/webdav/shares', name: 'shares' }
+        } as any)
+
+        await service.propfind(req, res, SPACE_REPOSITORY.FILES)
+
+        expect(isPathExists).not.toHaveBeenCalled()
+        expect(res.statusCode).toBe(HttpStatus.MULTI_STATUS)
+        expect(typeof res.body).toBe('string')
+        expect(res.body).toContain('/webdav/shares')
+      })
+
       it('should return multistatus with property names in PROPNAME mode', async () => {
         ;(isPathExists as jest.Mock).mockResolvedValue(true)
         const req = createBaseRequest({
