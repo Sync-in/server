@@ -653,8 +653,7 @@
   "No filter configured": "未配置过滤器",
   "checksums are not identical": "校验和不一致",
   "size has changed since parsing": "自解析后大小已更改",
-  "No synchronized folder": "没有同步文件夹"
-,
-  "Edit in OnlyOffice": "Edit in OnlyOffice",
-  "View in PDF.js": "View in PDF.js"
+  "No synchronized folder": "没有同步文件夹",
+  "Edit in OnlyOffice": "在OnlyOffice中编辑",
+  "View in PDF.js": "在PDF.js中查看"
 }

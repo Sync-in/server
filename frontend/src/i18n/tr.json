@@ -653,8 +653,7 @@
   "No filter configured": "Yapılandırılmış filtre yok",
   "checksums are not identical": "Sağlama toplamları aynı değil",
   "size has changed since parsing": "Boyut ayrıştırmadan beri değişti",
-  "No synchronized folder": "Senkronize edilmiş klasör yok"
-,
-  "Edit in OnlyOffice": "Edit in OnlyOffice",
-  "View in PDF.js": "View in PDF.js"
+  "No synchronized folder": "Senkronize edilmiş klasör yok",
+  "Edit in OnlyOffice": "OnlyOffice'te Düzenle",
+  "View in PDF.js": "PDF.js'de Görüntüle"
 }

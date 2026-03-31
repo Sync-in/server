@@ -653,8 +653,7 @@
   "No filter configured": "Aucun filtre configuré",
   "checksums are not identical": "Les sommes de contrôle ne sont pas identiques",
   "size has changed since parsing": "La taille a changé depuis l'analyse",
-  "No synchronized folder": "Aucun dossier synchronisé"
-,
-  "Edit in OnlyOffice": "Edit in OnlyOffice",
-  "View in PDF.js": "View in PDF.js"
+  "No synchronized folder": "Aucun dossier synchronisé",
+  "Edit in OnlyOffice": "Modifier dans OnlyOffice",
+  "View in PDF.js": "Voir dans PDF.js"
 }

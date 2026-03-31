@@ -653,8 +653,7 @@
   "No filter configured": "구성된 필터가 없습니다",
   "checksums are not identical": "체크섬이 동일하지 않습니다",
   "size has changed since parsing": "파싱 이후 크기가 변경되었습니다",
-  "No synchronized folder": "동기화된 폴더 없음"
-,
-  "Edit in OnlyOffice": "Edit in OnlyOffice",
-  "View in PDF.js": "View in PDF.js"
+  "No synchronized folder": "동기화된 폴더 없음",
+  "Edit in OnlyOffice": "OnlyOffice에서 편집",
+  "View in PDF.js": "PDF.js에서 보기"
 }
