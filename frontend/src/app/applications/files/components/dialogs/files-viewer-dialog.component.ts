@@ -44,9 +44,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   protected readonly SHORT_MIME = SHORT_MIME
   protected readonly icons = { faEye, faPen }
   protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
-  protected canToggleViewer = computed(
-    () => this.isWriteable && this.currentFile?.isEditable && this.currentFile?.shortMime === SHORT_MIME.PDF
-  )
+  protected canToggleViewer = false
   protected onlyOfficeForPdf = signal(false)
   private openedFile: { id: string | number; name: string; mimeUrl: string }
   protected readonly store = inject(StoreService)
@@ -55,8 +53,9 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   private readonly offsetTop = 42
 
   ngOnInit() {
+    this.canToggleViewer = this.isWriteable && !!this.currentFile?.isEditable && this.hookedShortMime === SHORT_MIME.PDF
     this.activeViewer.set(this.hookedShortMime)
-    this.isReadonly.set(this.mode === FILE_MODE.VIEW)
+    this.isReadonly.set(this.hookedShortMime === SHORT_MIME.PDF || this.mode === FILE_MODE.VIEW)
     this.openedFile = { id: this.currentFile.id, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
     this.onResize()
   }
@@ -78,7 +77,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   }
 
   onClose() {
-    if (this.currentFile.isEditable && this.activeViewer() === SHORT_MIME.TEXT) {
+    if (this.currentFile.isEditable && this.hookedShortMime === SHORT_MIME.TEXT) {
       // Prevent closing the modal without saving when using the text editor
       this.modalClosing.set(true)
       // Force the next state change
