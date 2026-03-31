@@ -1,6 +1,12 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
+    @if (canToggleViewer()) {
+      <button (click)="toggleViewer()" class="btn btn-link p-0 text-white" type="button" [attr.aria-label]="isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js'">
+        <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
+      </button>
+    } @else {
+      <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
+    }
     <span>{{ currentFile.name }}</span>
   </h4>
   <button (click)="onMinimize()" aria-label="Minimize" class="btn-minimize btn-minimize-white" type="button"></button>
@@ -8,7 +14,7 @@
 </div>
 @if (currentFile) {
   <div class="modal-body">
-    @switch (hookedShortMime) {
+    @switch (activeViewer()) {
       @case (SHORT_MIME.IMAGE) {
         <app-files-viewer-image [currentHeight]="currentHeight" [(file)]="currentFile" [directoryImages]="directoryImages()"></app-files-viewer-image>
       }
@@ -19,7 +25,9 @@
         <app-files-viewer-media [currentHeight]="currentHeight" [file]="currentFile"></app-files-viewer-media>
       }
       @case (SHORT_MIME.DOCUMENT) {
-        @if (editorProvider.collabora) {
+        @if (onlyOfficeForPdf()) {
+          <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
+        } @else if (editorProvider.collabora) {
           <app-files-viewer-collabora-online [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-collabora-online>
         } @else if (editorProvider.onlyoffice) {
           <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
