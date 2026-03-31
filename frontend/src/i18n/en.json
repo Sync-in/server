@@ -20,8 +20,5 @@
   "scheduler_unit_day": "days",
   "no_selection": "no item selected",
   "one_selection": "{{ nb }} item selected",
-  "nb_selections": "{{ nb }} items selected",
-  "RenameFileToExisting": "Do you want to rename <b>{{ old }}</b> to <b>{{ new }}</b>?",
-  "Edit in OnlyOffice": "Edit in OnlyOffice",
-  "View in PDF.js": "View in PDF.js"
+  "nb_selections": "{{ nb }} items selected"
 }
