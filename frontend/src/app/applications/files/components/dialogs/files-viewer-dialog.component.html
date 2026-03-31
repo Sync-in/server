@@ -1,14 +1,13 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    @if (canToggleViewer()) {
-      <button (click)="toggleViewer()" class="btn btn-link p-0 text-white" type="button" [attr.aria-label]="isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js'">
-        <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
-      </button>
-    } @else {
-      <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
-    }
+    <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
     <span>{{ currentFile.name }}</span>
   </h4>
+  @if (canToggleViewer()) {
+    <button (click)="toggleViewer()" class="btn btn-link p-0 text-white ms-2" type="button" [attr.aria-label]="isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js'">
+      <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
+    </button>
+  }
   <button (click)="onMinimize()" aria-label="Minimize" class="btn-minimize btn-minimize-white" type="button"></button>
   <button (click)="onClose()" aria-label="Close" class="btn-close btn-close-white ms-3" type="button"></button>
 </div>
@@ -25,6 +24,7 @@
         <app-files-viewer-media [currentHeight]="currentHeight" [file]="currentFile"></app-files-viewer-media>
       }
       @case (SHORT_MIME.DOCUMENT) {
+        <!-- PDF toggled to OnlyOffice: editorProvider flags are not set for PDFs, so we route directly via onlyOfficeForPdf signal (which is only true when currentFile.isEditable, i.e. OnlyOffice is enabled) -->
         @if (onlyOfficeForPdf()) {
           <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
         } @else if (editorProvider.collabora) {
