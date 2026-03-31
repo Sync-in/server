@@ -3,11 +3,10 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faEye, faPen } from '@fortawesome/free-solid-svg-icons'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/modules/file-editor-providers.interface'
-import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
+import { L10nTranslateDirective } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
-import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { SHORT_MIME } from '../../files.constants'
 import { FileModel } from '../../models/file.model'
 import { FilesViewerCollaboraOnlineComponent } from '../viewers/files-viewer-collabora-online.component'
@@ -27,9 +26,7 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
     FaIconComponent,
     FilesViewerOnlyOfficeComponent,
     FilesViewerCollaboraOnlineComponent,
-    L10nTranslateDirective,
-    L10nTranslatePipe,
-    TooltipModule
+    L10nTranslateDirective
   ],
   templateUrl: 'files-viewer-dialog.component.html'
 })
@@ -40,17 +37,16 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) isWriteable: boolean
   @Input({ required: true }) hookedShortMime: string
   @Input({ required: true }) editorProvider: FileEditorProviders
-  protected activeViewer = signal<string>('')
   modalClosing = signal<boolean>(false)
+  protected activeViewer = signal<string>('')
   protected isReadonly = model<boolean>(true)
   protected currentHeight: number
   protected readonly SHORT_MIME = SHORT_MIME
   protected readonly icons = { faEye, faPen }
   protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
   protected canToggleViewer = false
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  private openedFile: { id: string | number; name: string; mimeUrl: string }
   protected readonly store = inject(StoreService)
+  private openedFile: { id: string | number; name: string; mimeUrl: string }
   private readonly layout = inject(LayoutService)
   private readonly subscription: Subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
   private readonly offsetTop = 42
@@ -61,16 +57,6 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
     this.isReadonly.set(this.hookedShortMime === SHORT_MIME.PDF || this.mode === FILE_MODE.VIEW)
     this.openedFile = { id: this.currentFile.id, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
     this.onResize()
-  }
-
-  protected toggleViewer(): void {
-    if (this.activeViewer() === SHORT_MIME.PDF) {
-      this.activeViewer.set(SHORT_MIME.DOCUMENT)
-      this.isReadonly.set(false)
-    } else {
-      this.activeViewer.set(SHORT_MIME.PDF)
-      this.isReadonly.set(true)
-    }
   }
 
   ngOnDestroy() {
@@ -90,6 +76,16 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
 
   onMinimize() {
     this.layout.minimizeDialog(this.openedFile.id, { name: this.openedFile.name, mimeUrl: this.openedFile.mimeUrl })
+  }
+
+  protected toggleViewer(): void {
+    if (this.activeViewer() === SHORT_MIME.PDF) {
+      this.activeViewer.set(SHORT_MIME.DOCUMENT)
+      this.isReadonly.set(false)
+    } else {
+      this.activeViewer.set(SHORT_MIME.PDF)
+      this.isReadonly.set(true)
+    }
   }
 
   private onResize() {

@@ -1,17 +1,15 @@
 <div class="modal-header">
-  <h4 class="modal-title">
+  <h4 class="modal-title me-auto">
     <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
     <span>{{ currentFile.name }}</span>
   </h4>
   @if (canToggleViewer) {
-    <button (click)="toggleViewer()" class="btn btn-link p-0 text-white ms-4" type="button"
-      [attr.aria-label]="isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js'"
-      [tooltip]="(isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js') | translate:locale.language"
-      placement="bottom">
+    <button (click)="toggleViewer()" class="btn btn-sm btn-primary me-2" type="button">
       <fa-icon [icon]="isReadonly() ? icons.faPen : icons.faEye"></fa-icon>
+      <span class="ms-2" l10nTranslate>{{ isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js' }}</span>
     </button>
   }
-  <button (click)="onMinimize()" aria-label="Minimize" class="btn-minimize btn-minimize-white" type="button"></button>
+  <button (click)="onMinimize()" aria-label="Minimize" class="btn-minimize btn-minimize-white" [class.ms-1]="canToggleViewer" type="button"></button>
   <button (click)="onClose()" aria-label="Close" class="btn-close btn-close-white ms-3" type="button"></button>
 </div>
 @if (currentFile) {
