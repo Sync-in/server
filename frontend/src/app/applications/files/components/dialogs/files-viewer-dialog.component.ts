@@ -37,12 +37,16 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) isWriteable: boolean
   @Input({ required: true }) hookedShortMime: string
   @Input({ required: true }) editorProvider: FileEditorProviders
+  protected activeViewer = signal<string>('')
   modalClosing = signal<boolean>(false)
   protected isReadonly = model<boolean>(true)
   protected currentHeight: number
   protected readonly SHORT_MIME = SHORT_MIME
   protected readonly icons = { faEye, faPen }
   protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
+  protected canToggleViewer = computed(
+    () => this.isWriteable && this.currentFile?.isEditable && this.currentFile?.shortMime === SHORT_MIME.PDF
+  )
   private openedFile: { id: string | number; name: string; mimeUrl: string }
   protected readonly store = inject(StoreService)
   private readonly layout = inject(LayoutService)
@@ -50,9 +54,21 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   private readonly offsetTop = 42
 
   ngOnInit() {
+    this.activeViewer.set(this.hookedShortMime)
     this.isReadonly.set(this.mode === FILE_MODE.VIEW)
     this.openedFile = { id: this.currentFile.id, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
     this.onResize()
+  }
+
+  protected toggleViewer(): void {
+    if (this.activeViewer() === SHORT_MIME.PDF) {
+      this.editorProvider.onlyoffice = true
+      this.activeViewer.set(SHORT_MIME.DOCUMENT)
+      this.isReadonly.set(false)
+    } else {
+      this.activeViewer.set(SHORT_MIME.PDF)
+      this.isReadonly.set(true)
+    }
   }
 
   ngOnDestroy() {
@@ -60,7 +76,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   }
 
   onClose() {
-    if (this.currentFile.isEditable && this.hookedShortMime === SHORT_MIME.TEXT) {
+    if (this.currentFile.isEditable && this.activeViewer() === SHORT_MIME.TEXT) {
       // Prevent closing the modal without saving when using the text editor
       this.modalClosing.set(true)
       // Force the next state change
