@@ -5,7 +5,7 @@
   </h4>
   @if (canToggleViewer()) {
     <button (click)="toggleViewer()" class="btn btn-link p-0 text-white ms-2" type="button" [attr.aria-label]="isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js'">
-      <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
+      <fa-icon [icon]="isReadonly() ? icons.faPen : icons.faEye"></fa-icon>
     </button>
   }
   <button (click)="onMinimize()" aria-label="Minimize" class="btn-minimize btn-minimize-white" type="button"></button>
