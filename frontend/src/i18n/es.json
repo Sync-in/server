@@ -654,4 +654,7 @@
   "checksums are not identical": "Las sumas de comprobación no son idénticas",
   "size has changed since parsing": "El tamaño ha cambiado desde el análisis",
   "No synchronized folder": "Ninguna carpeta sincronizada"
+,
+  "Edit in OnlyOffice": "Edit in OnlyOffice",
+  "View in PDF.js": "View in PDF.js"
 }

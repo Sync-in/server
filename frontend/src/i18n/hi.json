@@ -654,4 +654,7 @@
   "checksums are not identical": "चेकसम एक जैसे नहीं हैं",
   "size has changed since parsing": "पार्सिंग के बाद से आकार बदल गया है",
   "No synchronized folder": "कोई सिंक्रोनाइज़्ड फ़ोल्डर नहीं"
+,
+  "Edit in OnlyOffice": "Edit in OnlyOffice",
+  "View in PDF.js": "View in PDF.js"
 }

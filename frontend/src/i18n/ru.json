@@ -654,4 +654,7 @@
   "checksums are not identical": "Контрольные суммы не совпадают",
   "size has changed since parsing": "Размер изменился с момента разбора",
   "No synchronized folder": "Нет синхронизированной папки"
+,
+  "Edit in OnlyOffice": "Edit in OnlyOffice",
+  "View in PDF.js": "View in PDF.js"
 }

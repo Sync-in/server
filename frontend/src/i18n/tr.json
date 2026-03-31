@@ -654,4 +654,7 @@
   "checksums are not identical": "Sağlama toplamları aynı değil",
   "size has changed since parsing": "Boyut ayrıştırmadan beri değişti",
   "No synchronized folder": "Senkronize edilmiş klasör yok"
+,
+  "Edit in OnlyOffice": "Edit in OnlyOffice",
+  "View in PDF.js": "View in PDF.js"
 }

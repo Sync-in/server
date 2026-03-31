@@ -654,4 +654,7 @@
   "checksums are not identical": "チェックサムが一致しません",
   "size has changed since parsing": "解析後にサイズが変更されました",
   "No synchronized folder": "同期されたフォルダーはありません"
+,
+  "Edit in OnlyOffice": "Edit in OnlyOffice",
+  "View in PDF.js": "View in PDF.js"
 }
