@@ -295,7 +295,7 @@ export class FilesService {
 
         let hookedShortMime: string
         try {
-          hookedShortMime = await this.viewerHook(file, isWriteable)
+          hookedShortMime = await this.viewerHook(file)
           if (file?.lock?.isExclusive) {
             this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(file.lock))
           }
@@ -351,10 +351,7 @@ export class FilesService {
     })
   }
 
-  private async viewerHook(file: FileModel, isWriteable = false): Promise<string> {
-    if (isWriteable && file.shortMime === SHORT_MIME.PDF && file.isEditable) {
-      return SHORT_MIME.DOCUMENT
-    }
+  private async viewerHook(file: FileModel): Promise<string> {
     if (file.shortMime === SHORT_MIME.TEXT) {
       if (file.size < MAX_TEXT_FILE_SIZE) {
         return SHORT_MIME.TEXT
