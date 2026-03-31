@@ -47,6 +47,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   protected canToggleViewer = computed(
     () => this.isWriteable && this.currentFile?.isEditable && this.currentFile?.shortMime === SHORT_MIME.PDF
   )
+  protected onlyOfficeForPdf = signal(false)
   private openedFile: { id: string | number; name: string; mimeUrl: string }
   protected readonly store = inject(StoreService)
   private readonly layout = inject(LayoutService)
@@ -62,10 +63,11 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
 
   protected toggleViewer(): void {
     if (this.activeViewer() === SHORT_MIME.PDF) {
-      this.editorProvider.onlyoffice = true
+      this.onlyOfficeForPdf.set(true)
       this.activeViewer.set(SHORT_MIME.DOCUMENT)
       this.isReadonly.set(false)
     } else {
+      this.onlyOfficeForPdf.set(false)
       this.activeViewer.set(SHORT_MIME.PDF)
       this.isReadonly.set(true)
     }
