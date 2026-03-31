@@ -3,8 +3,11 @@
     <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
     <span>{{ currentFile.name }}</span>
   </h4>
-  @if (canToggleViewer()) {
-    <button (click)="toggleViewer()" class="btn btn-link p-0 text-white ms-2" type="button" [attr.aria-label]="isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js'">
+  @if (canToggleViewer) {
+    <button (click)="toggleViewer()" class="btn btn-link p-0 text-white ms-4" type="button"
+      [attr.aria-label]="isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js'"
+      [tooltip]="(isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js') | translate:locale.language"
+      placement="bottom">
       <fa-icon [icon]="isReadonly() ? icons.faPen : icons.faEye"></fa-icon>
     </button>
   }
@@ -24,8 +27,8 @@
         <app-files-viewer-media [currentHeight]="currentHeight" [file]="currentFile"></app-files-viewer-media>
       }
       @case (SHORT_MIME.DOCUMENT) {
-        <!-- PDF toggled to OnlyOffice: editorProvider flags are not set for PDFs, so we route directly via onlyOfficeForPdf signal (which is only true when currentFile.isEditable, i.e. OnlyOffice is enabled) -->
-        @if (onlyOfficeForPdf()) {
+        <!-- PDF toggled to OnlyOffice: editorProvider flags are not set for PDFs, so we route directly when the original file was a PDF (hookedShortMime === SHORT_MIME.PDF) -->
+        @if (hookedShortMime === SHORT_MIME.PDF) {
           <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
         } @else if (editorProvider.collabora) {
           <app-files-viewer-collabora-online [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-collabora-online>

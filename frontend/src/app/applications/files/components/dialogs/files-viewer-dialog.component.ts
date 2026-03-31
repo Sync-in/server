@@ -3,10 +3,11 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faEye, faPen } from '@fortawesome/free-solid-svg-icons'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/modules/file-editor-providers.interface'
-import { L10nTranslateDirective } from 'angular-l10n'
+import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
+import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { SHORT_MIME } from '../../files.constants'
 import { FileModel } from '../../models/file.model'
 import { FilesViewerCollaboraOnlineComponent } from '../viewers/files-viewer-collabora-online.component'
@@ -26,7 +27,9 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
     FaIconComponent,
     FilesViewerOnlyOfficeComponent,
     FilesViewerCollaboraOnlineComponent,
-    L10nTranslateDirective
+    L10nTranslateDirective,
+    L10nTranslatePipe,
+    TooltipModule
   ],
   templateUrl: 'files-viewer-dialog.component.html'
 })
@@ -45,7 +48,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   protected readonly icons = { faEye, faPen }
   protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
   protected canToggleViewer = false
-  protected onlyOfficeForPdf = signal(false)
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   private openedFile: { id: string | number; name: string; mimeUrl: string }
   protected readonly store = inject(StoreService)
   private readonly layout = inject(LayoutService)
@@ -62,11 +65,9 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
 
   protected toggleViewer(): void {
     if (this.activeViewer() === SHORT_MIME.PDF) {
-      this.onlyOfficeForPdf.set(true)
       this.activeViewer.set(SHORT_MIME.DOCUMENT)
       this.isReadonly.set(false)
     } else {
-      this.onlyOfficeForPdf.set(false)
       this.activeViewer.set(SHORT_MIME.PDF)
       this.isReadonly.set(true)
     }
