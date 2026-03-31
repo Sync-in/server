@@ -38,19 +38,23 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) hookedShortMime: string
   @Input({ required: true }) editorProvider: FileEditorProviders
   modalClosing = signal<boolean>(false)
+  protected activeViewer = signal<string>('')
   protected isReadonly = model<boolean>(true)
   protected currentHeight: number
   protected readonly SHORT_MIME = SHORT_MIME
   protected readonly icons = { faEye, faPen }
   protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
-  private openedFile: { id: string | number; name: string; mimeUrl: string }
+  protected canToggleViewer = false
   protected readonly store = inject(StoreService)
+  private openedFile: { id: string | number; name: string; mimeUrl: string }
   private readonly layout = inject(LayoutService)
   private readonly subscription: Subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
   private readonly offsetTop = 42
 
   ngOnInit() {
-    this.isReadonly.set(this.mode === FILE_MODE.VIEW)
+    this.canToggleViewer = this.isWriteable && !!this.currentFile?.isEditable && this.hookedShortMime === SHORT_MIME.PDF
+    this.activeViewer.set(this.hookedShortMime)
+    this.isReadonly.set(this.hookedShortMime === SHORT_MIME.PDF || this.mode === FILE_MODE.VIEW)
     this.openedFile = { id: this.currentFile.id, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
     this.onResize()
   }
@@ -72,6 +76,16 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
 
   onMinimize() {
     this.layout.minimizeDialog(this.openedFile.id, { name: this.openedFile.name, mimeUrl: this.openedFile.mimeUrl })
+  }
+
+  protected toggleViewer(): void {
+    if (this.activeViewer() === SHORT_MIME.PDF) {
+      this.activeViewer.set(SHORT_MIME.DOCUMENT)
+      this.isReadonly.set(false)
+    } else {
+      this.activeViewer.set(SHORT_MIME.PDF)
+      this.isReadonly.set(true)
+    }
   }
 
   private onResize() {

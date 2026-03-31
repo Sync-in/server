@@ -653,5 +653,7 @@
   "No filter configured": "フィルターが設定されていません",
   "checksums are not identical": "チェックサムが一致しません",
   "size has changed since parsing": "解析後にサイズが変更されました",
-  "No synchronized folder": "同期されたフォルダーはありません"
+  "No synchronized folder": "同期されたフォルダーはありません",
+  "Edit in OnlyOffice": "OnlyOfficeで編集",
+  "View in PDF.js": "PDF.jsで表示"
 }

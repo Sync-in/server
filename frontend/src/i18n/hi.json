@@ -653,5 +653,7 @@
   "No filter configured": "कोई फ़िल्टर कॉन्फ़िगर नहीं है",
   "checksums are not identical": "चेकसम एक जैसे नहीं हैं",
   "size has changed since parsing": "पार्सिंग के बाद से आकार बदल गया है",
-  "No synchronized folder": "कोई सिंक्रोनाइज़्ड फ़ोल्डर नहीं"
+  "No synchronized folder": "कोई सिंक्रोनाइज़्ड फ़ोल्डर नहीं",
+  "Edit in OnlyOffice": "OnlyOffice में संपादित करें",
+  "View in PDF.js": "PDF.js में देखें"
 }

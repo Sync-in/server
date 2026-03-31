@@ -653,5 +653,7 @@
   "No filter configured": "Фильтры не настроены",
   "checksums are not identical": "Контрольные суммы не совпадают",
   "size has changed since parsing": "Размер изменился с момента разбора",
-  "No synchronized folder": "Нет синхронизированной папки"
+  "No synchronized folder": "Нет синхронизированной папки",
+  "Edit in OnlyOffice": "Редактировать в OnlyOffice",
+  "View in PDF.js": "Просмотр в PDF.js"
 }

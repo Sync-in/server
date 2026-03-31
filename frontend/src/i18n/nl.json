@@ -653,5 +653,7 @@
   "No filter configured": "Geen filter ingesteld",
   "checksums are not identical": "controlesommen komen niet overeen",
   "size has changed since parsing": "grootte is gewijzigd sinds verwerking",
-  "No synchronized folder": "Geen gesynchroniseerde map"
+  "No synchronized folder": "Geen gesynchroniseerde map",
+  "Edit in OnlyOffice": "Bewerken in OnlyOffice",
+  "View in PDF.js": "Bekijken in PDF.js"
 }

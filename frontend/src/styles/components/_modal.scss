@@ -13,11 +13,17 @@
     @include no-select-utility;
 
     .modal-title {
+      display: flex;
       font-size: $font-size-base;
-      @include text-truncate-utility;
+      overflow: hidden;
+
+      span {
+        @include text-truncate-utility;
+      }
 
       > fa-icon {
-        margin-right: 0.3rem;
+        font-size: $font-size-md;
+        margin-right: 0.4rem;
       }
 
       &.ms-auto {
