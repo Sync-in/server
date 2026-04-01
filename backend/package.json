@@ -56,7 +56,7 @@
     "archiver": "^7.0.1",
     "bcryptjs": "^3.0.0",
     "class-transformer": "^0.5.1",
-    "class-validator": "^0.14.1",
+    "class-validator": "^0.15.1",
     "deepmerge": "^4.3.1",
     "drizzle-kit": "^0.31.0",
     "drizzle-orm": "^0.45.1",
@@ -89,7 +89,7 @@
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@faker-js/faker": "^10.1.0",
-    "@golevelup/ts-jest": "^1.1.1",
+    "@golevelup/ts-jest": "^3.0.0",
     "@nestjs/cli": "^11.0.6",
     "@nestjs/schematics": "^11.0.5",
     "@nestjs/testing": "^11.0.15",
