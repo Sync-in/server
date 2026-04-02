@@ -57,7 +57,7 @@
   --badge-bg-full: #{$gray};
   --badge-border-full: #{$gray};
 
-  display: inline-flex;
+  display: inline-block;
   align-items: center;
   justify-content: center;
   gap: 0.2rem;

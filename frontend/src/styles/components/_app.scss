@@ -299,8 +299,11 @@
 
   tbody td:not(:first-child) {
     color: transparent;
-    font-size: 0.7rem !important;
+    font-size: 0.7rem;
     border-top: none;
+    .badge {
+      font-size: 0.7rem;
+    }
   }
 }
 
