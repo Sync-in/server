@@ -16,6 +16,8 @@ import { FilesRecents } from './services/files-recents.service'
 import { FilesScheduler } from './services/files-scheduler.service'
 import { FilesSearchManager } from './services/files-search-manager.service'
 import { FilesTasksManager } from './services/files-tasks-manager.service'
+import { FilesEventManager } from './services/files-event-manager.service'
+import { FilesQuotaManager } from './services/files-quota-manager.service'
 
 @Module({
   imports: [
@@ -35,7 +37,8 @@ import { FilesTasksManager } from './services/files-tasks-manager.service'
     FilesContentManager,
     { provide: FilesIndexer, useClass: FilesIndexerMySQL },
     FilesSearchManager
+    FilesQuotaManager
   ],
-  exports: [FilesManager, FilesQueries, FilesLockManager, FilesMethods, FilesRecents]
+  exports: [FilesManager, FilesQueries, FilesLockManager, FilesQuotaManager, FilesMethods, FilesRecents]
 })
 export class FilesModule {}

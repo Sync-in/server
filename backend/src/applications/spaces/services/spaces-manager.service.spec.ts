@@ -29,6 +29,7 @@ import { SpaceModel } from '../models/space.model'
 import { IsRealPathIsDirAndExists } from '../utils/paths'
 import { SpacesManager } from './spaces-manager.service'
 import { SpacesQueries } from './spaces-queries.service'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
 
 describe(SpacesManager.name, () => {
   let filesConfig: FilesConfig
@@ -52,6 +53,10 @@ describe(SpacesManager.name, () => {
           provide: NotificationsManager,
           useValue: {}
         },
+        {
+          provide: FilesQuotaManager,
+          useValue: { setQuotaExceeded: () => jest.fn() }
+        },
         SpacesManager,
         SpacesQueries,
         UsersQueries,
@@ -66,9 +71,7 @@ describe(SpacesManager.name, () => {
     filesConfig = module.get<ConfigService>(ConfigService).get('applications.files')
     spacesManager = module.get<SpacesManager>(SpacesManager)
     spacesQueries = module.get<SpacesQueries>(SpacesQueries)
-    spacesManager['setQuotaExceeded'] = jest.fn()
     userTest = new UserModel(generateUserTest())
-    // todo: validate shares, permissions
   })
 
   afterAll(async () => {

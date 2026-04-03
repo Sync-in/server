@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { Cron, CronExpression, Timeout } from '@nestjs/schedule'
+import { Cron, CronExpression, Interval, Timeout } from '@nestjs/schedule'
 import { isNotNull, sql } from 'drizzle-orm'
 import { unionAll } from 'drizzle-orm/mysql-core'
 import fs from 'node:fs/promises'
@@ -19,16 +19,20 @@ import { files } from '../schemas/files.schema'
 import { dirHasChildren, isPathExists, removeFiles } from '../utils/files'
 import { FilesContentManager } from './files-content-manager.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
+import { FilesQuotaManager } from './files-quota-manager.service'
 
 @Injectable()
 export class FilesScheduler {
   private readonly logger = new Logger(FilesScheduler.name)
   private isIndexContentFilesRunning = false
+  private isQuotaUpdateIsRunning = false
+  private isQuotaUpdateEntriesIsRunning = false
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
     private readonly cache: Cache,
-    private readonly filesContentManager: FilesContentManager
+    private readonly filesContentManager: FilesContentManager,
+    private readonly filesQuotaManager: FilesQuotaManager
   ) {}
 
   @Timeout(10_000)
@@ -36,6 +40,7 @@ export class FilesScheduler {
     try {
       await this.cleanupInterruptedTasks()
       await this.clearRecentFiles()
+      await this.updateQuotas()
     } catch (e) {
       this.logger.error(e)
     }
@@ -47,6 +52,19 @@ export class FilesScheduler {
       await this.indexContentFiles()
     } catch (e) {
       this.logger.error(e)
+    }
+  }
+
+  @Interval(60_000)
+  async updateQuotaEntries() {
+    if (this.isQuotaUpdateIsRunning || this.isQuotaUpdateEntriesIsRunning) return
+    this.isQuotaUpdateEntriesIsRunning = true
+    try {
+      await this.filesQuotaManager.updateQuotaEntries()
+    } catch (e) {
+      this.logger.error({ tag: this.updateQuotas.name, msg: `${e}` })
+    } finally {
+      this.isQuotaUpdateEntriesIsRunning = false
     }
   }
 
@@ -185,5 +203,33 @@ export class FilesScheduler {
       this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `${e}` })
     }
     this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `END` })
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async updateQuotas() {
+    if (this.isQuotaUpdateIsRunning) return
+    this.isQuotaUpdateIsRunning = true
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Personals - START' })
+    try {
+      await this.filesQuotaManager.updatePersonalSpacesQuota()
+    } catch (e) {
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Personals - ${e}` })
+    }
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Personals - END' })
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Spaces - START' })
+    try {
+      await this.filesQuotaManager.updateSpacesQuota()
+    } catch (e) {
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Spaces - ${e}` })
+    }
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Spaces - END' })
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Share External Paths - START' })
+    try {
+      await this.filesQuotaManager.updateSharesExternalPathQuota()
+    } catch (e) {
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Share External Paths - ${e}` })
+    }
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Share External Paths - END' })
+    this.isQuotaUpdateIsRunning = false
   }
 }

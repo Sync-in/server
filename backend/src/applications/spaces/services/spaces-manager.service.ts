@@ -1,15 +1,15 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
-import { eq, isNotNull, lte } from 'drizzle-orm'
+import { eq, isNotNull } from 'drizzle-orm'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { ACTION } from '../../../common/constants'
 import { convertDiffUpdate, diffCollection, differencePermissions } from '../../../common/functions'
-import type { Entries, StorageQuota } from '../../../common/interfaces'
+import type { Entries } from '../../../common/interfaces'
 import { createSlug, regExpNumberSuffix } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { FileError } from '../../files/models/file-error'
-import { dirListFileNames, dirSize, getProps, isPathExists, moveFiles, removeFiles } from '../../files/utils/files'
+import { dirListFileNames, getProps, isPathExists, moveFiles, removeFiles } from '../../files/utils/files'
 import { LINK_TYPE } from '../../links/constants/links'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
 import { NotificationContent } from '../../notifications/interfaces/notification-properties.interface'
@@ -20,12 +20,8 @@ import type { ShareProps } from '../../shares/interfaces/share-props.interface'
 import type { ShareChild } from '../../shares/models/share-child.model'
 import { SharesManager } from '../../shares/services/shares-manager.service'
 import { MEMBER_TYPE } from '../../users/constants/member'
-import { USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
-import type { User } from '../../users/schemas/user.interface'
-import { users } from '../../users/schemas/users.schema'
 import { UsersQueries } from '../../users/services/users-queries.service'
-import { CACHE_QUOTA_SPACE_PREFIX, CACHE_QUOTA_TTL, CACHE_QUOTA_USER_PREFIX } from '../constants/cache'
 import {
   SPACE_ALIAS,
   SPACE_ALL_OPERATIONS,
@@ -47,9 +43,10 @@ import { SpaceModel } from '../models/space.model'
 import type { SpaceRoot } from '../schemas/space-root.interface'
 import type { Space } from '../schemas/space.interface'
 import { spaces } from '../schemas/spaces.schema'
-import { quotaKeyFromSpace } from '../utils/paths'
 import { haveSpacePermission } from '../utils/permissions'
 import { SpacesQueries } from './spaces-queries.service'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
+import { CACHE_QUOTA_SPACE_PREFIX } from '../../files/constants/cache'
 
 @Injectable()
 export class SpacesManager {
@@ -60,6 +57,7 @@ export class SpacesManager {
     private readonly spacesQueries: SpacesQueries,
     private readonly usersQueries: UsersQueries,
     private readonly sharesManager: SharesManager,
+    private readonly filesQuotaManager: FilesQuotaManager,
     private readonly notificationsManager: NotificationsManager
   ) {}
 
@@ -138,7 +136,7 @@ export class SpacesManager {
     if (!space) return null
     try {
       space.setup(user, repository as SPACE_REPOSITORY, rootAlias, paths, urlSegments, skipEndpointProtection)
-      await this.setQuotaExceeded(user, space)
+      await this.filesQuotaManager.setQuotaExceeded(user, space)
       return space
     } catch (e) {
       this.logger.warn({ tag: this.spaceEnv.name, msg: `*${space.alias}* : ${e}` })
@@ -166,7 +164,7 @@ export class SpacesManager {
     return Promise.all(
       (await this.spacesQueries.spaces(user.id, true)).map(async (s) => {
         const space = new SpaceEnv(s)
-        await this.setQuotaExceeded(user, space)
+        await this.filesQuotaManager.setQuotaExceeded(user, space)
         return space
       })
     )
@@ -361,80 +359,6 @@ export class SpacesManager {
       return newAlias
     }
     return null
-  }
-
-  async updatePersonalSpacesQuota(): Promise<void>
-  async updatePersonalSpacesQuota(forUser: UserModel): Promise<StorageQuota>
-  async updatePersonalSpacesQuota(forUser?: UserModel): Promise<void | StorageQuota> {
-    const props: (keyof User)[] = ['id', 'login', 'storageUsage', 'storageQuota']
-    for (const user of await this.usersQueries.selectUsers(props, [
-      lte(users.role, USER_ROLE.USER),
-      ...(forUser ? [eq(users.id, forUser.id)] : [])
-    ])) {
-      const userPath = UserModel.getHomePath(user.login)
-      if (!(await isPathExists(userPath))) {
-        this.logger.warn({ tag: this.updatePersonalSpacesQuota.name, msg: `*${user.login}* home path does not exist` })
-        continue
-      }
-      const [size, errors] = await dirSize(userPath)
-      for (const [path, error] of Object.entries(errors)) {
-        this.logger.warn({ tag: this.updatePersonalSpacesQuota.name, msg: `unable to get size for *${user.login}* on ${path} : ${error}` })
-      }
-      const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: user.storageQuota }
-      this.spacesQueries.cache
-        .set(`${CACHE_QUOTA_USER_PREFIX}-${user.id}`, spaceQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error({ tag: this.updatePersonalSpacesQuota.name, msg: `user *${user.login}* (${user.id}) : ${e}` }))
-      if (user.storageUsage !== spaceQuota.storageUsage) {
-        this.usersQueries.updateUserOrGuest(user.id, { storageUsage: spaceQuota.storageUsage }).then(
-          (updated: boolean) =>
-            updated &&
-            this.logger.log({
-              tag: this.updatePersonalSpacesQuota.name,
-              msg: `user *${user.login}* (${user.id}) - storage usage updated: ${spaceQuota.storageUsage}`
-            })
-        )
-      }
-      if (forUser) {
-        return spaceQuota
-      }
-    }
-  }
-
-  async updateSpacesQuota(): Promise<void>
-  async updateSpacesQuota(spaceId: number): Promise<StorageQuota>
-  async updateSpacesQuota(spaceId?: number): Promise<void | StorageQuota> {
-    for (const space of await this.spacesQueries.spacesQuotaPaths(spaceId)) {
-      const spacePath = SpaceModel.getHomePath(space.alias)
-      if (!(await isPathExists(spacePath))) {
-        this.logger.warn({ tag: this.updateSpacesQuota.name, msg: `*${space.alias}* home path does not exist` })
-        continue
-      }
-      let size = 0
-      for (const rPath of [spacePath, ...space.externalPaths.filter(Boolean)]) {
-        const [rPathSize, errors] = await dirSize(rPath)
-        size += rPathSize
-        for (const [path, error] of Object.entries(errors)) {
-          this.logger.warn({ tag: this.updateSpacesQuota.name, msg: `unable to get size for *${space.alias}* on ${path} : ${error}` })
-        }
-      }
-      const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: space.storageQuota }
-      this.spacesQueries.cache
-        .set(`${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`, spaceQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error({ tag: this.updateSpacesQuota.name, msg: `space *${space.alias}* (${space.id}) : ${e}` }))
-      if (space.storageUsage !== spaceQuota.storageUsage) {
-        this.spacesQueries.updateSpace(space.id, { storageUsage: spaceQuota.storageUsage }).then(
-          (updated: boolean) =>
-            updated &&
-            this.logger.log({
-              tag: this.updateSpacesQuota.name,
-              msg: `space *${space.alias}* (${space.id}) - storage usage updated : ${spaceQuota.storageUsage}`
-            })
-        )
-      }
-      if (spaceId) {
-        return spaceQuota
-      }
-    }
   }
 
   async deleteExpiredSpaces() {
@@ -827,37 +751,6 @@ export class SpacesManager {
     }
     this.logger.warn({ tag: this.userIsAdminOrSpaceManager.name, msg: `space (${spaceId}) not found or not authorized for user (${user.id})` })
     throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
-  }
-
-  private async setQuotaExceeded(user: UserModel, space: SpaceEnv) {
-    /* extract quota from spaces|shares|roots */
-    if (space.inSharesList) {
-      return
-    }
-    const cacheQuotaKey = quotaKeyFromSpace(user.id, space)
-    if (!cacheQuotaKey) {
-      this.logger.verbose({ tag: this.setQuotaExceeded.name, msg: `quota was ignored for space : *${space.alias}* (${space.id})` })
-      return
-    }
-    let quota: StorageQuota = await this.spacesQueries.cache.get(cacheQuotaKey)
-    if (!quota) {
-      // the quota scheduler has not started yet or the cache has been cleared
-      if (space.inPersonalSpace) {
-        quota = await this.updatePersonalSpacesQuota(user)
-      } else if (space.inSharesRepository) {
-        // Shares with external paths
-        quota = await this.sharesManager.updateSharesExternalPathQuota(space.id)
-      } else {
-        quota = await this.updateSpacesQuota(space.id)
-      }
-    }
-    if (quota) {
-      space.storageUsage = quota.storageUsage
-      space.storageQuota = quota.storageQuota
-      space.quotaIsExceeded = quota.storageQuota !== null && quota.storageUsage >= quota.storageQuota
-    } else {
-      this.logger.verbose({ tag: this.setQuotaExceeded.name, msg: `quota not found for space : *${space.alias}* (${space.id})` })
-    }
   }
 
   private async onSpaceActionForMembers(

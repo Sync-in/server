@@ -18,10 +18,12 @@ import { tarExtension } from '../constants/compress'
 import { CompressFileDto, CopyMoveFileDto } from '../dto/file-operations.dto'
 import { FilesManager } from './files-manager.service'
 import { FilesMethods } from './files-methods.service'
+import { FilesQuotaManager } from './files-quota-manager.service'
 
 describe(FilesMethods.name, () => {
   let filesMethods: FilesMethods
   let spacesManager: SpacesManager
+  let filesQuotaManager: FilesQuotaManager
   let userTest: UserModel
   const spaceEnv = {
     id: 1,
@@ -53,6 +55,7 @@ describe(FilesMethods.name, () => {
         },
         { provide: UsersQueries, useValue: {} },
         { provide: SharesManager, useValue: {} },
+        { provide: FilesQuotaManager, useValue: {} },
         {
           provide: SpacesQueries,
           useValue: {
@@ -71,9 +74,10 @@ describe(FilesMethods.name, () => {
     module.useLogger(['fatal'])
     filesMethods = module.get<FilesMethods>(FilesMethods)
     spacesManager = module.get<SpacesManager>(SpacesManager)
+    filesQuotaManager = module.get<FilesQuotaManager>(FilesQuotaManager)
     userTest = new UserModel(generateUserTest())
     // mock
-    spacesManager.updateSpacesQuota = jest.fn().mockReturnValue(undefined)
+    filesQuotaManager.updateSpacesQuota = jest.fn().mockReturnValue(undefined)
   })
 
   it('should be defined', () => {
