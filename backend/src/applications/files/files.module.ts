@@ -36,7 +36,8 @@ import { FilesQuotaManager } from './services/files-quota-manager.service'
     FilesParser,
     FilesContentManager,
     { provide: FilesIndexer, useClass: FilesIndexerMySQL },
-    FilesSearchManager
+    FilesSearchManager,
+    FilesEventManager,
     FilesQuotaManager
   ],
   exports: [FilesManager, FilesQueries, FilesLockManager, FilesQuotaManager, FilesMethods, FilesRecents]

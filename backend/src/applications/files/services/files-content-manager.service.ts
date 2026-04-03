@@ -102,7 +102,7 @@ export class FilesContentManager {
       this.filesIndexer
         .dropIndex(indexName)
         .catch((e: Error) => this.logger.error({ tag: this.indexFiles.name, msg: `${indexSuffix} - unable to drop index : ${e}` }))
-      this.logger.log({ tag: this.indexFiles.name, msg: `${indexSuffix} - no data, index not stored` })
+      this.logger.verbose({ tag: this.indexFiles.name, msg: `${indexSuffix} - no data, index not stored` })
     } else {
       // clean up old records
       const recordsToDelete: number[] = [...context.db.keys()].filter((key) => !context.fs.has(key))
@@ -112,7 +112,7 @@ export class FilesContentManager {
           .catch((e: Error) => this.logger.error({ tag: this.indexFiles.name, msg: `${indexSuffix} - unable to delete records : ${e}` }))
       }
       if (indexedRecords === 0 && errorRecords === 0 && recordsToDelete.length === 0) {
-        this.logger.log({ tag: this.indexFiles.name, msg: `${indexSuffix} - no new data` })
+        this.logger.verbose({ tag: this.indexFiles.name, msg: `${indexSuffix} - no new data` })
       } else {
         this.logger.log({
           tag: this.indexFiles.name,
