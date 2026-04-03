@@ -6,6 +6,7 @@ import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces
 import { SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import { AppStoreManifest } from '@sync-in-server/backend/src/applications/sync/interfaces/store-manifest.interface'
 import {
+  API_USERS_ME,
   API_USERS_MY_APP_PASSWORDS,
   API_USERS_MY_AVATAR,
   API_USERS_MY_GROUPS,
@@ -66,6 +67,7 @@ import { GuestUserModel } from './models/guest.model'
 import { MemberModel } from './models/member.model'
 import { UserOnlineModel } from './models/user-online.model'
 import { myAvatarUrl } from './user.functions'
+import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 
 @Injectable({ providedIn: 'root' })
 export class UserService {
@@ -99,11 +101,22 @@ export class UserService {
     this.layout.setLanguage(user.language).catch(console.error)
     this.store.userImpersonate.set(impersonate || user.impersonated)
     this.store.user.next(user)
-    this.checkQuota(this.store.user.getValue())
+    this.checkQuota(this.user)
     if (impersonate) {
       this.disconnectWebSocket()
     }
     this.connectWebSocket()
+  }
+
+  loadUser(): Observable<Omit<LoginResponseDto, 'token'>> {
+    return this.http.get<Omit<LoginResponseDto, 'token'>>(API_USERS_ME)
+  }
+
+  refreshUser() {
+    this.loadUser().subscribe({
+      next: (r: Omit<LoginResponseDto, 'token'>) => this.store.user.next(r.user),
+      error: (e: HttpErrorResponse) => console.error(e)
+    })
   }
 
   connectWebSocket() {

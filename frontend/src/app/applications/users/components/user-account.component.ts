@@ -1,6 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
-import { Component, inject, OnDestroy } from '@angular/core'
+import { Component, inject, OnDestroy, OnInit } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCopy, faKey } from '@fortawesome/free-solid-svg-icons'
@@ -52,7 +52,7 @@ import { UserAuthManageAppPasswordsDialogComponent } from './dialogs/user-auth-m
   ],
   templateUrl: 'user-account.component.html'
 })
-export class UserAccountComponent implements OnDestroy {
+export class UserAccountComponent implements OnInit, OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly i18nLanguageText = i18nLanguageText
   protected readonly allNotifications = Object.values(USER_NOTIFICATION_TEXT)
@@ -105,6 +105,10 @@ export class UserAccountComponent implements OnDestroy {
       next: () => this.updateLanguage(value),
       error: () => this.layout.sendNotification('error', 'Configuration', 'Unable to update language')
     })
+  }
+
+  ngOnInit() {
+    this.userService.refreshUser()
   }
 
   ngOnDestroy() {

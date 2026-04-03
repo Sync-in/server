@@ -5,7 +5,7 @@ import { CLIENT_TOKEN_EXPIRED_ERROR } from '@sync-in-server/backend/src/applicat
 import { API_SYNC_AUTH_COOKIE, API_SYNC_REGISTER_AUTH } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications/sync/dtos/sync-client-auth.dto'
 import { SyncClientAuthCookie, SyncClientAuthRegistration } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
-import { API_ADMIN_IMPERSONATE_LOGOUT, API_USERS_ME } from '@sync-in-server/backend/src/applications/users/constants/routes'
+import { API_ADMIN_IMPERSONATE_LOGOUT } from '@sync-in-server/backend/src/applications/users/constants/routes'
 import { CSRF_KEY } from '@sync-in-server/backend/src/authentication/constants/auth'
 import {
   API_AUTH_LOGIN,
@@ -162,7 +162,7 @@ export class AuthService {
       this.logout()
       return of(false)
     } else if (!this.store.user.getValue()) {
-      return this.http.get<Omit<LoginResponseDto, 'token'>>(API_USERS_ME).pipe(
+      return this.userService.loadUser().pipe(
         tap((r: Omit<LoginResponseDto, 'token'>) => {
           this.initUser(r)
           if (authFromOIDC) {
