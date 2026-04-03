@@ -17,3 +17,4 @@ frontend/bazel-out
 /frontend/src/assets/pdfjs/
 circular-dependencies.png
 backend/src/applications/files/assets/ocr-languages/*.traineddata
+.husky/_/
