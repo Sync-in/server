@@ -36,9 +36,9 @@ export class NavigationViewComponent {
   protected readonly icons = { faSliders, faArrowDown, faArrowUp }
   protected viewsMode: Record<string, ViewMode> = {
     tl: { enabled: false, text: 'List', icon: faThList },
-    th: { enabled: true, text: 'S', icon: faTh, maxBadges: 0, dimensions: 96, image: 56, imageRes: 128, faSize: 30, textSize: 11, margins: 18 },
-    thM: { enabled: true, text: 'M', icon: faTh, maxBadges: 1, dimensions: 112, image: 72, imageRes: 192, faSize: 34, textSize: 11, margins: 18 },
-    thL: { enabled: true, text: 'L', icon: faTh, maxBadges: 2, dimensions: 152, image: 112, imageRes: 256, faSize: 50, textSize: 12, margins: 18 },
+    th: { enabled: true, text: 'S', icon: faTh, maxBadges: 0, dimensions: 96, image: 56, imageRes: 128, faSize: 30, textSize: 12, margins: 18 },
+    thM: { enabled: true, text: 'M', icon: faTh, maxBadges: 1, dimensions: 112, image: 72, imageRes: 192, faSize: 34, textSize: 12, margins: 18 },
+    thL: { enabled: true, text: 'L', icon: faTh, maxBadges: 2, dimensions: 152, image: 112, imageRes: 256, faSize: 50, textSize: 13, margins: 18 },
     thXl: { enabled: true, text: 'XL', icon: faTh, maxBadges: 6, dimensions: 192, image: 152, imageRes: 512, faSize: 65, textSize: 13, margins: 18 },
     thXxl: {
       enabled: true,
