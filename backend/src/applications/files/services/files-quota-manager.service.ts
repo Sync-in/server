@@ -11,14 +11,9 @@ import { dirSize, isPathExists } from '../utils/files'
 import { SpaceModel } from '../../spaces/models/space.model'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
-import {
-  CACHE_QUOTA_MUST_UPDATE,
-  CACHE_QUOTA_SHARE_PREFIX,
-  CACHE_QUOTA_SPACE_PREFIX,
-  CACHE_QUOTA_TTL,
-  CACHE_QUOTA_USER_PREFIX
-} from '../constants/cache'
-import { quotaCacheKeyFromSpace } from '../utils/quota'
+import { CACHE_QUOTA_EVENT_UPDATE_PREFIX, CACHE_QUOTA_TTL } from '../constants/cache'
+import { genQuotaCacheKey, quotaCacheKeyFromSpace } from '../utils/quota'
+import { FILE_REPOSITORY } from '../constants/operations'
 
 @Injectable()
 export class FilesQuotaManager {
@@ -62,16 +57,16 @@ export class FilesQuotaManager {
   }
 
   async updateQuotaEntries() {
-    for (const k of await this.spacesQueries.cache.keys(`${CACHE_QUOTA_MUST_UPDATE}-quota-*`)) {
+    for (const k of await this.spacesQueries.cache.keys(`${CACHE_QUOTA_EVENT_UPDATE_PREFIX}-*`)) {
       try {
         const keySegments = k.split('-')
         const [repository, idPart] = keySegments.slice(-2)
         const id = Number.parseInt(idPart ?? '', 10)
-        if (repository === 'user') {
+        if (repository === FILE_REPOSITORY.USER) {
           await this.updatePersonalSpacesQuota(id)
-        } else if (repository === 'space') {
+        } else if (repository === FILE_REPOSITORY.SPACE) {
           await this.updateSpacesQuota(id)
-        } else if (repository === 'share') {
+        } else if (repository === FILE_REPOSITORY.SHARE) {
           await this.updateSharesExternalPathQuota(id)
         } else {
           this.logger.warn({ tag: this.updateQuotaEntries.name, msg: `Unknown type: ${repository}` })
@@ -100,7 +95,7 @@ export class FilesQuotaManager {
       }
       const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: user.storageQuota }
       this.spacesQueries.cache
-        .set(`${CACHE_QUOTA_USER_PREFIX}-${user.id}`, spaceQuota, CACHE_QUOTA_TTL)
+        .set(genQuotaCacheKey(user.id, FILE_REPOSITORY.USER), spaceQuota, CACHE_QUOTA_TTL)
         .catch((e: Error) => this.logger.error({ tag: this.updatePersonalSpacesQuota.name, msg: `user *${user.login}* (${user.id}) : ${e}` }))
       if (user.storageUsage !== spaceQuota.storageUsage) {
         this.usersQueries.updateUserOrGuest(user.id, { storageUsage: spaceQuota.storageUsage }).then(
@@ -137,7 +132,7 @@ export class FilesQuotaManager {
       }
       const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: space.storageQuota }
       this.spacesQueries.cache
-        .set(`${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`, spaceQuota, CACHE_QUOTA_TTL)
+        .set(genQuotaCacheKey(space.id, FILE_REPOSITORY.SPACE), spaceQuota, CACHE_QUOTA_TTL)
         .catch((e: Error) => this.logger.error({ tag: this.updateSpacesQuota.name, msg: `space *${space.alias}* (${space.id}) : ${e}` }))
       if (space.storageUsage !== spaceQuota.storageUsage) {
         this.spacesQueries.updateSpace(space.id, { storageUsage: spaceQuota.storageUsage }).then(
@@ -169,7 +164,7 @@ export class FilesQuotaManager {
       }
       const shareQuota: StorageQuota = { storageUsage: size, storageQuota: share.storageQuota }
       this.sharesQueries.cache
-        .set(`${CACHE_QUOTA_SHARE_PREFIX}-${share.id}`, shareQuota, CACHE_QUOTA_TTL)
+        .set(genQuotaCacheKey(share.id, FILE_REPOSITORY.SHARE), shareQuota, CACHE_QUOTA_TTL)
         .catch((e: Error) => this.logger.error({ tag: this.updateSharesExternalPathQuota.name, msg: `share *${share.alias}* (${share.id}) : ${e}` }))
       if (share.storageUsage !== shareQuota.storageUsage) {
         this.sharesQueries.updateShare(share.id, { storageUsage: shareQuota.storageUsage }).then(

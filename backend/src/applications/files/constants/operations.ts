@@ -20,4 +20,10 @@ export enum FILE_MODE {
   EDIT = 'edit'
 }
 
+export enum FILE_REPOSITORY {
+  USER = 'user',
+  SPACE = 'space',
+  SHARE = 'share'
+}
+
 export const FORCE_AS_FILE_OWNER = 'forceAsFileOwner' as const

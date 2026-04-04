@@ -1,23 +1,28 @@
 import { SpaceEnv } from '../../spaces/models/space-env.model'
-import { CACHE_QUOTA_SHARE_PREFIX, CACHE_QUOTA_SPACE_PREFIX, CACHE_QUOTA_USER_PREFIX } from '../constants/cache'
+import { CACHE_QUOTA_EVENT_UPDATE_PREFIX, CACHE_QUOTA_PREFIX } from '../constants/cache'
+import { FILE_REPOSITORY } from '../constants/operations'
 
-export function quotaCacheKeyFromSpace(userId: number, space: SpaceEnv) {
+export function genQuotaCacheKey(id: number, type: FILE_REPOSITORY, isEventUpdate = false): string {
+  return `${isEventUpdate ? CACHE_QUOTA_EVENT_UPDATE_PREFIX : CACHE_QUOTA_PREFIX}-${type}-${id}`
+}
+
+export function quotaCacheKeyFromSpace(userId: number, space: SpaceEnv, isEventUpdate = false): string {
   if (space.inPersonalSpace) {
     // Personal user space
-    return `${CACHE_QUOTA_USER_PREFIX}-${userId}`
+    return genQuotaCacheKey(userId, FILE_REPOSITORY.USER, isEventUpdate)
   } else if (space.root?.externalPath) {
     // External paths used as shares or as space roots share the same quota as their origin
     if (space.inSharesRepository) {
-      return `${CACHE_QUOTA_SHARE_PREFIX}-${space.root?.externalParentShareId || space.id}`
+      return genQuotaCacheKey(space.root?.externalParentShareId || space.id, FILE_REPOSITORY.SHARE, isEventUpdate)
     }
-    return `${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`
-  } else if (space.root.file?.path && space.root.owner?.login) {
+    return genQuotaCacheKey(space.id, FILE_REPOSITORY.SPACE, isEventUpdate)
+  } else if (space.root?.file?.path && space.root.owner?.login) {
     // Space root is linked to a user file
-    return `${CACHE_QUOTA_USER_PREFIX}-${space.root.owner.id}`
-  } else if (space.root.file?.space?.id) {
-    return `${CACHE_QUOTA_SPACE_PREFIX}-${space.root.file.space.id}`
+    return genQuotaCacheKey(space.root.owner.id, FILE_REPOSITORY.USER, isEventUpdate)
+  } else if (space.root?.file?.space?.id) {
+    return genQuotaCacheKey(space.root.file.space.id, FILE_REPOSITORY.SPACE, isEventUpdate)
   } else if (space.id) {
-    return `${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`
+    return genQuotaCacheKey(space.id, FILE_REPOSITORY.SPACE, isEventUpdate)
   } else {
     return null
   }

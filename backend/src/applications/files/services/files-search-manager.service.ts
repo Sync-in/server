@@ -6,13 +6,13 @@ import { configuration } from '../../../configuration/config.environment'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { UserModel } from '../../users/models/user.model'
-import { shareIndexPrefix, spaceIndexPrefix, userIndexPrefix } from '../constants/indexing'
 import { SearchFilesDto } from '../dto/file-operations.dto'
 import { FilesIndexer } from '../models/files-indexer'
 import { FileContent } from '../schemas/file-content.interface'
 import { dirName, fileName, getMimeType } from '../utils/files'
 import { genRegexPositiveAndNegativeTerms } from '../utils/files-search'
 import { FilesParser } from './files-parser.service'
+import { FILE_REPOSITORY } from '../constants/operations'
 
 @Injectable()
 export class FilesSearchManager {
@@ -39,9 +39,9 @@ export class FilesSearchManager {
 
   private async searchFullText(userId: number, spaceIds: number[], shareIds: number[], search: string, limit: number): Promise<FileContent[]> {
     const indexNames = await this.filesIndexer.existingIndexes([
-      `${userIndexPrefix}${userId}`,
-      ...spaceIds.map((id) => `${spaceIndexPrefix}${id}`),
-      ...shareIds.map((id) => `${shareIndexPrefix}${id}`)
+      `${FILE_REPOSITORY.USER}_${userId}`,
+      ...spaceIds.map((id) => `${FILE_REPOSITORY.SPACE}_${id}`),
+      ...shareIds.map((id) => `${FILE_REPOSITORY.SHARE}_${id}`)
     ])
     if (indexNames.length === 0) {
       return []

@@ -1,5 +1,3 @@
-export type FileParseType = 'user' | 'space' | 'share'
-
 export interface FileParseContext {
   realPath: string
   pathPrefix: string

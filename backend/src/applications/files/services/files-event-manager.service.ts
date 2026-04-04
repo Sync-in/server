@@ -3,7 +3,7 @@ import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { FileEvent } from '../events/file-events'
 import { ACTION } from '../../../common/constants'
 import type { FileEventType } from '../interfaces/file-event.interface'
-import { CACHE_QUOTA_MUST_UPDATE, CACHE_QUOTA_TTL } from '../constants/cache'
+import { CACHE_QUOTA_TTL } from '../constants/cache'
 import { quotaCacheKeyFromSpace } from '../utils/quota'
 
 @Injectable()
@@ -91,7 +91,11 @@ export class FilesEventManager implements OnModuleDestroy {
   private async processEvents(fileEvents: FileEventType[]) {
     this.logger.verbose({ tag: this.processEvents.name, msg: `Processing ${fileEvents.length} file event(s)` })
     for (const event of fileEvents) {
-      this.processQuotaEvent(event)
+      try {
+        this.processQuotaEvent(event)
+      } catch (e) {
+        this.logger.warn({ tag: this.processEvents.name, msg: `Could not process quota event: ${JSON.stringify(event)} - ${e}` })
+      }
     }
     await this.storeEventsInCache()
   }
@@ -123,12 +127,11 @@ export class FilesEventManager implements OnModuleDestroy {
   private processQuotaEvent(fileEvent: FileEventType) {
     // Ignore files moved to the trash; storage usage remains unchanged.
     if (fileEvent.action === ACTION.DELETE) return
-    let cacheKey = quotaCacheKeyFromSpace(fileEvent.user.id, fileEvent.space)
+    const cacheKey = quotaCacheKeyFromSpace(fileEvent.user.id, fileEvent.space, true)
     if (!cacheKey) {
       this.logger.warn({ tag: this.processQuotaEvent.name, msg: `Unable to determine space location: ${fileEvent.space.id}` })
       return
     }
-    cacheKey = `${CACHE_QUOTA_MUST_UPDATE}-${cacheKey}`
     if (this.quotaEvents.indexOf(cacheKey) === -1) {
       this.quotaEvents.push(cacheKey)
     }

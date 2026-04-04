@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import fs from 'fs/promises'
 import { Stats } from 'node:fs'
 import path from 'node:path'
-import { indexableExtensions, shareIndexPrefix, spaceIndexPrefix, userIndexPrefix } from '../constants/indexing'
+import { indexableExtensions } from '../constants/indexing'
 import { FileIndexContext, FileParseContext } from '../interfaces/file-parse-index'
 import { FilesIndexer } from '../models/files-indexer'
 import { FileContent } from '../schemas/file-content.interface'
@@ -10,6 +10,7 @@ import { docTextify } from '../utils/doc-textify/doc-textify'
 import { PdfOCRWorkerManager } from '../utils/doc-textify/utils/pdf-ocr'
 import { getMimeType } from '../utils/files'
 import { FilesParser } from './files-parser.service'
+import { FILE_REPOSITORY } from '../constants/operations'
 
 @Injectable()
 export class FilesContentManager {
@@ -34,14 +35,14 @@ export class FilesContentManager {
       for await (const [id, type, paths] of this.filesParser.allPaths()) {
         let indexSuffix: string
         switch (type) {
-          case 'user':
-            indexSuffix = `${userIndexPrefix}${id}`
+          case FILE_REPOSITORY.USER:
+            indexSuffix = `${FILE_REPOSITORY.USER}_${id}`
             break
-          case 'space':
-            indexSuffix = `${spaceIndexPrefix}${id}`
+          case FILE_REPOSITORY.SPACE:
+            indexSuffix = `${FILE_REPOSITORY.SPACE}_${id}`
             break
-          case 'share':
-            indexSuffix = `${shareIndexPrefix}${id}`
+          case FILE_REPOSITORY.SHARE:
+            indexSuffix = `${FILE_REPOSITORY.SHARE}_${id}`
         }
         try {
           await this.indexFiles(indexSuffix, paths)

@@ -46,7 +46,8 @@ import { spaces } from '../schemas/spaces.schema'
 import { haveSpacePermission } from '../utils/permissions'
 import { SpacesQueries } from './spaces-queries.service'
 import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
-import { CACHE_QUOTA_SPACE_PREFIX } from '../../files/constants/cache'
+import { genQuotaCacheKey } from '../../files/utils/quota'
+import { FILE_REPOSITORY } from '../../files/constants/operations'
 
 @Injectable()
 export class SpacesManager {
@@ -666,7 +667,7 @@ export class SpacesManager {
     await this.spacesQueries.deleteSpace(space.id, deleteNow)
     if (deleteNow) {
       this.spacesQueries.cache
-        .del(`${CACHE_QUOTA_SPACE_PREFIX}-${space.id}`)
+        .del(genQuotaCacheKey(space.id, FILE_REPOSITORY.SPACE))
         .catch((e: Error) => this.logger.error({ tag: this.deleteOrDisableSpace.name, msg: `${e}` }))
       await this.deleteSpaceLocation(space.alias)
     }
