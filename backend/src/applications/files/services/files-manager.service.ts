@@ -14,7 +14,7 @@ import { HTTP_METHOD } from '../../applications.constants'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
 import { NotificationContent } from '../../notifications/interfaces/notification-properties.interface'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
-import { SPACE_OPERATION } from '../../spaces/constants/spaces'
+import { SPACE_OPERATION, SPACE_PERSONAL, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service'
@@ -28,7 +28,6 @@ import { COMPRESSION_EXTENSION, DEFAULT_HIGH_WATER_MARK } from '../constants/fil
 import { FILE_OPERATION } from '../constants/operations'
 import { DOCUMENT_TYPE, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
 import { CompressFileDto } from '../dto/file-operations.dto'
-import { FileTaskEvent } from '../events/file-task-event'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileLock } from '../interfaces/file-lock.interface'
 import { FileLockProps } from '../interfaces/file-props.interface'
@@ -60,6 +59,8 @@ import { extractZip } from '../utils/unzip-file'
 import { regExpPrivateIP } from '../utils/url-file'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesQueries } from './files-queries.service'
+import { FileEvent, FileTaskEvent } from '../events/file-events'
+import { ACTION } from '../../../common/constants'
 
 @Injectable()
 export class FilesManager {
@@ -127,6 +128,7 @@ export class FilesManager {
       }
       fileLock = lock
     }
+    const fileEventAction = fExists ? ACTION.UPDATE : ACTION.ADD
     try {
       // Check range
       let startRange = 0
@@ -170,6 +172,8 @@ export class FilesManager {
       }
       return fExists
     } finally {
+      // emit file event
+      FileEvent.emit('event', { user, space, action: fileEventAction, rPath: space.realPath })
       if (fileLock) {
         try {
           await this.filesLockManager.removeLock(fileLock.key)
@@ -211,6 +215,8 @@ export class FilesManager {
       const partFileName = patch ? fileName(space.realPath) : part.filename
       // `part.filename` may contain a path like foo/bar.txt
       const dstFile = path.resolve(basePath, partFileName)
+      const dstExists = await isPathExists(dstFile)
+      const dstIsDir = dstExists ? await isPathIsDir(dstFile) : false
       // Prevent path traversal
       if (!dstFile.startsWith(basePath)) {
         throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
@@ -221,7 +227,7 @@ export class FilesManager {
       if (overwrite) {
         // Prevent errors when an uploaded file would replace a directory with the same name
         // Only applies in `overwrite` cases
-        if ((await isPathExists(dstFile)) && (await isPathIsDir(dstFile))) {
+        if (dstExists && dstIsDir) {
           // If a directory already exists at the destination path, delete it to allow overwriting with the uploaded file
           const dstUrl = path.join(path.dirname(space.url), partFileName)
           const dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
@@ -246,6 +252,9 @@ export class FilesManager {
       try {
         await writeFromStream(dstFile, part.file)
       } finally {
+        // emit file event
+        const fileEventAction: ACTION = patch || (dstExists && !dstIsDir) ? ACTION.UPDATE : ACTION.ADD
+        FileEvent.emit('event', { user, space, action: fileEventAction, rPath: dstFile })
         if (!patch && created) {
           // Remove the file lock only if it has not been refreshed
           await this.filesLockManager.removeLock(fileLock.key)
@@ -281,9 +290,11 @@ export class FilesManager {
     const fileExtension = path.extname(space.realPath)
     if (checkDocument && fileExtension !== '.txt' && Object.values(DOCUMENT_TYPE).indexOf(fileExtension) > -1) {
       const srcSample = path.join(__dirname, `${SAMPLE_PATH_WITHOUT_EXT}${fileExtension}`)
-      return copyFileContent(srcSample, space.realPath)
+      await copyFileContent(srcSample, space.realPath)
+      // emit file event
+      FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: space.realPath })
     } else {
-      return createEmptyFile(space.realPath)
+      await createEmptyFile(space.realPath)
     }
   }
 
@@ -347,7 +358,7 @@ export class FilesManager {
       throw new FileError(HttpStatus.FORBIDDEN, 'Cannot copy/move source below itself')
     }
     if (dirName(srcSpace.url) === dirName(dstSpace.url) && dirName(srcSpace.realPath) !== dirName(dstSpace.realPath)) {
-      /* Handle renaming a space file with the same name as a space root :
+      /* Handle renaming a space file with the same name as a space root:
         srcSpace.url = '/space/sync-in/code2.ts' (a space file)
         srcSpace.realPath = '/home/sync-in/spaces/sync-in/code2.ts
         dstSpace.url = '/space/sync-in/code.ts' (a space root)
@@ -411,9 +422,17 @@ export class FilesManager {
     // do
     if (isMove) {
       await moveFiles(srcSpace.realPath, dstSpace.realPath, overwrite)
-      return this.filesQueries.moveFiles(srcSpace.dbFile, dstSpace.dbFile, isDir)
+      // emit a file event when the source space is different from the destination space
+      if (srcSpace.realBasePath !== dstSpace.realBasePath) {
+        FileEvent.emit('event', { user, space: srcSpace, action: ACTION.DELETE_PERMANENTLY, rPath: srcSpace.realPath })
+        FileEvent.emit('event', { user, space: dstSpace, action: ACTION.ADD, rPath: dstSpace.realPath })
+      }
+      await this.filesQueries.moveFiles(srcSpace.dbFile, dstSpace.dbFile, isDir)
+    } else {
+      await copyFiles(srcSpace.realPath, dstSpace.realPath, overwrite, recursive)
+      // emit file event
+      FileEvent.emit('event', { user, space: dstSpace, action: ACTION.ADD, rPath: dstSpace.realPath })
     }
-    return copyFiles(srcSpace.realPath, dstSpace.realPath, overwrite, recursive)
   }
 
   async delete(user: UserModel, space: SpaceEnv, dav?: { lockTokens: string[] }): Promise<void> {
@@ -430,6 +449,7 @@ export class FilesManager {
     let forceDeleteInDB = false
     if (space.inTrashRepository) {
       await removeFiles(space.realPath)
+      FileEvent.emit('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: space.realPath })
     } else {
       const baseTrashPath = realTrashPathFromSpace(user, space)
       if (baseTrashPath) {
@@ -450,6 +470,15 @@ export class FilesManager {
           await this.filesQueries.moveFiles(trashFileDB, dstTrashFileDB, dstTrash.isDir)
         }
         await moveFiles(space.realPath, trashFile, true)
+        // emit file event
+        if (space.dbFile.shareExternalId) {
+          // deleted files from shares with external locations are moved to the owner’s trash
+          FileEvent.emit('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: space.realPath })
+          // emit an event for the file newly moved to the owner’s trash space
+          const userSpace = new SpaceEnv(SPACE_PERSONAL, null, false)
+          userSpace.setup(user, SPACE_REPOSITORY.TRASH, null, [], [])
+          FileEvent.emit('event', { user, space: userSpace, action: ACTION.ADD, rPath: trashFile })
+        }
       } else {
         // unsupported case: delete the file (this shouldn't happen)
         this.logger.error({
@@ -458,6 +487,8 @@ export class FilesManager {
         })
         forceDeleteInDB = true
         await removeFiles(space.realPath)
+        // emit file event
+        FileEvent.emit('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: space.realPath })
       }
     }
     // remove locks, these locks have already been checked in the `checkConflicts` function
@@ -468,7 +499,7 @@ export class FilesManager {
       this.filesLockManager.removeLock(lock.key).catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: `${e}` }))
     }
     // delete or move to trash the files in db
-    return this.filesQueries.deleteFiles(space.dbFile, isDir, forceDeleteInDB)
+    await this.filesQueries.deleteFiles(space.dbFile, isDir, forceDeleteInDB)
   }
 
   async downloadFromUrl(user: UserModel, space: SpaceEnv, url: string): Promise<void> {
@@ -522,6 +553,8 @@ export class FilesManager {
     } finally {
       // release lock
       await this.filesLockManager.removeLock(fileLock.key)
+      // emit file event
+      FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: rPath })
     }
   }
 
@@ -574,6 +607,8 @@ export class FilesManager {
       if (fileLock) {
         await this.filesLockManager.removeLock(fileLock.key)
       }
+      // emit file event
+      FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
     }
   }
 
@@ -612,6 +647,8 @@ export class FilesManager {
       }
     } finally {
       await this.filesLockManager.removeLock(fileLock.key)
+      // emit file event
+      FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
     }
   }
 

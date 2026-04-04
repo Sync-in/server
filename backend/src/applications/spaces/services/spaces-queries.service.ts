@@ -231,7 +231,7 @@ export class SpacesQueries {
   async updateSpace(id: number, set: Partial<Record<keyof Space, any>>): Promise<boolean> {
     try {
       dbCheckAffectedRows(await this.db.update(spaces).set(set).where(eq(spaces.id, id)), 1)
-      this.logger.debug({ tag: this.updateSpace.name, msg: `space (${id}) was updated : ${JSON.stringify(set)}` })
+      this.logger.verbose({ tag: this.updateSpace.name, msg: `space (${id}) was updated : ${JSON.stringify(set)}` })
       return true
     } catch (e) {
       this.logger.error({ tag: this.updateSpace.name, msg: `space (${id}) was not updated : ${JSON.stringify(set)} : ${e}` })
