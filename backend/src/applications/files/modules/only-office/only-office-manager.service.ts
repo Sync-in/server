@@ -49,6 +49,8 @@ import {
 import { OnlyOfficeReqDto } from './only-office.dtos'
 import { OnlyOfficeCallBack, OnlyOfficeConfig, OnlyOfficeConvertForm } from './only-office.interface'
 import { API_ONLY_OFFICE_CALLBACK, API_ONLY_OFFICE_DOCUMENT } from './only-office.routes'
+import { FileEvent } from '../../events/file-events'
+import { ACTION } from '../../../../common/constants'
 
 @Injectable()
 export class OnlyOfficeManager {
@@ -123,14 +125,14 @@ export class OnlyOfficeManager {
             this.logger.debug({ tag: this.callBack.name, msg: `document was edited but closed with no changes : ${space.url}` })
           } else {
             this.logger.debug({ tag: this.callBack.name, msg: `document was edited and closed but not saved (let's do it) : ${space.url}` })
-            await this.saveDocument(space, callBackData.url)
+            await this.saveDocument(user, space, callBackData.url)
           }
           await this.removeFileLock(user.id, space)
           await this.removeDocumentKey(space)
           break
         case 3:
           this.logger.error({ tag: this.callBack.name, msg: `document cannot be saved, an error has occurred (try to save it) : ${space.url}` })
-          await this.saveDocument(space, callBackData.url)
+          await this.saveDocument(user, space, callBackData.url)
           break
         case 4:
           // No active users on the document
@@ -140,11 +142,11 @@ export class OnlyOfficeManager {
           break
         case 6:
           this.logger.debug({ tag: this.callBack.name, msg: `document is edited but save was requested : ${space.url}` })
-          await this.saveDocument(space, callBackData.url)
+          await this.saveDocument(user, space, callBackData.url)
           break
         case 7:
           this.logger.error({ tag: this.callBack.name, msg: `document cannot be force saved, an error has occurred (try to save it) : ${space.url}` })
-          await this.saveDocument(space, callBackData.url)
+          await this.saveDocument(user, space, callBackData.url)
           break
         default:
           this.logger.error({ tag: this.callBack.name, msg: 'unhandled case' })
@@ -317,7 +319,7 @@ export class OnlyOfficeManager {
     return docKey
   }
 
-  private async saveDocument(space: SpaceEnv, url: string): Promise<void> {
+  private async saveDocument(user: UserModel, space: SpaceEnv, url: string): Promise<void> {
     /* url format:
       https://onlyoffice-server.com/cache/files/data/-33120641_7158/output.pptx/output.pptx
       ?md5=duFHKC-5d47s-RRcYn3hAw&expires=1739400549&shardkey=-33120641&filename=output.pptx
@@ -368,8 +370,9 @@ export class OnlyOfficeManager {
     }
     // copy contents to avoid inode changes (`file.id` in some cases)
     try {
-      // todo: versioning
       await copyFileContent(tmpFilePath, space.realPath)
+      // emit file event
+      FileEvent.emit('event', { user: user, space: space, action: ACTION.UPDATE, rPath: space.realPath })
       await removeFiles(tmpFilePath)
     } catch (e) {
       throw new Error(`unable to save document : ${e.message}`)

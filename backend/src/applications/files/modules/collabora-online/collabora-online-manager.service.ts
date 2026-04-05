@@ -42,6 +42,8 @@ import {
 import { CollaboraOnlineReqDto, CollaboraSaveDocumentDto } from './collabora-online.dtos'
 import { CollaboraOnlineCheckFileInfo, FastifyCollaboraOnlineSpaceRequest, JwtCollaboraOnlinePayload } from './collabora-online.interface'
 import { API_COLLABORA_ONLINE_FILES } from './collabora-online.routes'
+import { FileEvent } from '../../events/file-events'
+import { ACTION } from '../../../../common/constants'
 
 @Injectable()
 export class CollaboraOnlineManager {
@@ -132,8 +134,9 @@ export class CollaboraOnlineManager {
     }
     // copy contents to avoid inode changes (dbFileHash in some cases)
     try {
-      // todo: versioning
       await copyFileContent(tmpFilePath, req.space.realPath)
+      // emit file event
+      FileEvent.emit('event', { user: req.user, space: req.space, action: ACTION.UPDATE, rPath: req.space.realPath })
       await removeFiles(tmpFilePath)
       const fStats = await fs.stat(req.space.realPath)
       return { LastModifiedTime: fStats.mtime.toISOString() } satisfies CollaboraSaveDocumentDto
