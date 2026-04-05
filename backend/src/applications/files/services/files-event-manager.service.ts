@@ -9,8 +9,9 @@ import { quotaCacheKeyFromSpace } from '../utils/quota'
 @Injectable()
 export class FilesEventManager implements OnModuleDestroy {
   /* Used to:
-      - process cache events (storage usage updates, new file indexing) in the main worker
-      - handle versioning
+      - store cached events for storage usage updates
+      - todo: handle indexing
+      - todo: handle versioning
   */
   private readonly MAX_BUFFER_SIZE = 1_000
   private readonly MAX_BUFFER_DELAY_MS = 20_000
