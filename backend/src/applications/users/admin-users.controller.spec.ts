@@ -13,6 +13,7 @@ import { AdminUsersManager } from './services/admin-users-manager.service'
 import { AdminUsersQueries } from './services/admin-users-queries.service'
 import { UsersManager } from './services/users-manager.service'
 import { UsersQueries } from './services/users-queries.service'
+import { FilesQuotaManager } from '../files/services/files-quota-manager.service'
 
 describe(AdminUsersController.name, () => {
   let controller: AdminUsersController
@@ -30,6 +31,10 @@ describe(AdminUsersController.name, () => {
         { provide: AuthProvider2FA, useValue: {} },
         { provide: AuthTwoFaGuard, useValue: {} },
         { provide: NotificationsManager, useValue: {} },
+        {
+          provide: FilesQuotaManager,
+          useValue: { updateStorageQuota: () => jest.fn() }
+        },
         JwtService,
         AuthManager,
         AdminUsersManager,

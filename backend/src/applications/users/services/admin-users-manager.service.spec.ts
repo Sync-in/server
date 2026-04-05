@@ -10,6 +10,7 @@ import type { SearchMembersDto } from '../dto/search-members.dto'
 import { UserModel } from '../models/user.model'
 import { AdminUsersManager } from './admin-users-manager.service'
 import { AdminUsersQueries } from './admin-users-queries.service'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
 
 // mock file utils used by the service (delete/rename user space)
 jest.mock('../../files/utils/files', () => ({
@@ -114,7 +115,15 @@ describe(AdminUsersManager.name, () => {
     }
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AdminUsersManager, { provide: AuthManager, useValue: authManagerMock }, { provide: AdminUsersQueries, useValue: adminQueriesMock }]
+      providers: [
+        AdminUsersManager,
+        { provide: AuthManager, useValue: authManagerMock },
+        {
+          provide: FilesQuotaManager,
+          useValue: { updateStorageQuota: () => jest.fn() }
+        },
+        { provide: AdminUsersQueries, useValue: adminQueriesMock }
+      ]
     }).compile()
 
     module.useLogger(['fatal'])

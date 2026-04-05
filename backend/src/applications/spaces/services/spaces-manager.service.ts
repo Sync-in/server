@@ -256,8 +256,14 @@ export class SpacesManager {
         }
       }
     }
-    // updates in db
-    this.spacesQueries.updateSpace(spaceId, spaceDiffProps).catch((e: Error) => this.logger.error({ tag: this.updateSpace.name, msg: `${e}` }))
+    // update in db
+    if (!(await this.spacesQueries.updateSpace(spaceId, spaceDiffProps))) {
+      throw new HttpException('Unable to update space', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+    // update quota in cache
+    if ('storageQuota' in spaceDiffProps) {
+      void this.filesQuotaManager.updateStorageQuota(spaceId, FILE_REPOSITORY.SPACE, spaceDiffProps.storageQuota)
+    }
     // checks & updates members
     const linkMembers: SpaceMemberDto[] = await this.sharesManager.createOrUpdateLinksAsMembers(
       user,

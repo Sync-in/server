@@ -56,11 +56,11 @@ export class FilesScheduler {
   }
 
   @Interval(60_000)
-  async updateQuotaEntries() {
+  async updateStorageUsageEntries() {
     if (this.isQuotaUpdateIsRunning || this.isQuotaUpdateEntriesIsRunning) return
     this.isQuotaUpdateEntriesIsRunning = true
     try {
-      await this.filesQuotaManager.updateQuotaEntries()
+      await this.filesQuotaManager.updateStorageUsageEntries()
     } catch (e) {
       this.logger.error({ tag: this.updateQuotas.name, msg: `${e}` })
     } finally {

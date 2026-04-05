@@ -19,6 +19,8 @@ import { UserModel } from '../models/user.model'
 import type { Group } from '../schemas/group.interface'
 import type { User } from '../schemas/user.interface'
 import { AdminUsersQueries } from './admin-users-queries.service'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
+import { FILE_REPOSITORY } from '../../files/constants/operations'
 
 @Injectable()
 export class AdminUsersManager {
@@ -26,6 +28,7 @@ export class AdminUsersManager {
 
   constructor(
     private readonly authManager: AuthManager,
+    private readonly filesQuotaManager: FilesQuotaManager,
     private readonly adminQueries: AdminUsersQueries
   ) {}
 
@@ -143,8 +146,13 @@ export class AdminUsersManager {
     if (Object.keys(updateUser).length) {
       // force the type for security reason
       const forceRole = userRole === USER_ROLE.GUEST ? USER_ROLE.GUEST : undefined
+      // updates in db
       if (!(await this.adminQueries.usersQueries.updateUserOrGuest(user.id, updateUser, forceRole))) {
         throw new HttpException('Unable to update user', HttpStatus.INTERNAL_SERVER_ERROR)
+      }
+      // update quota in cache
+      if ('storageQuota' in updateUser) {
+        void this.filesQuotaManager.updateStorageQuota(user.id, FILE_REPOSITORY.USER, updateUser.storageQuota)
       }
     }
 

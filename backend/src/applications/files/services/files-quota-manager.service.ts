@@ -56,7 +56,7 @@ export class FilesQuotaManager {
     }
   }
 
-  async updateQuotaEntries() {
+  async updateStorageUsageEntries() {
     for (const k of await this.spacesQueries.cache.keys(`${CACHE_QUOTA_EVENT_UPDATE_PREFIX}-*`)) {
       try {
         const keySegments = k.split('-')
@@ -69,13 +69,31 @@ export class FilesQuotaManager {
         } else if (repository === FILE_REPOSITORY.SHARE) {
           await this.updateSharesExternalPathQuota(id)
         } else {
-          this.logger.warn({ tag: this.updateQuotaEntries.name, msg: `Unknown type: ${repository}` })
+          this.logger.warn({ tag: this.updateStorageUsageEntries.name, msg: `Unknown type: ${repository}` })
         }
       } catch (e) {
-        this.logger.error({ tag: this.updateQuotaEntries.name, msg: `${e}` })
+        this.logger.error({ tag: this.updateStorageUsageEntries.name, msg: `${e}` })
       } finally {
-        this.spacesQueries.cache.del(k).catch((e) => this.logger.warn({ tag: this.updateQuotaEntries.name, msg: `Unable to clean key: ${k} - ${e}` }))
+        this.spacesQueries.cache
+          .del(k)
+          .catch((e) => this.logger.warn({ tag: this.updateStorageUsageEntries.name, msg: `Unable to clean key: ${k} - ${e}` }))
       }
+    }
+  }
+
+  async updateStorageQuota(id: number, type: FILE_REPOSITORY, quota: number) {
+    const cacheKey = genQuotaCacheKey(id, type)
+    const entryQuota: StorageQuota = await this.spacesQueries.cache.get(cacheKey)
+    if (entryQuota && entryQuota.storageUsage !== undefined) {
+      this.spacesQueries.cache
+        .set(cacheKey, { storageUsage: entryQuota.storageUsage, storageQuota: quota }, CACHE_QUOTA_TTL)
+        .catch((e: Error) => this.logger.error({ tag: this.updateStorageQuota.name, msg: `type *${type}* (${id}) - ${e}` }))
+    } else {
+      // store event update for later propagation
+      const updateCacheKey = genQuotaCacheKey(id, type, true)
+      this.spacesQueries.cache
+        .set(updateCacheKey, true, CACHE_QUOTA_TTL)
+        .catch((e: Error) => this.logger.error({ tag: this.updateStorageQuota.name, msg: `type *${type}* (${id}) event - ${e}` }))
     }
   }
 

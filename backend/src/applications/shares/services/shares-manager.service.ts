@@ -47,6 +47,8 @@ import type { ShareChild } from '../models/share-child.model'
 import type { ShareMembers } from '../schemas/share-members.interface'
 import type { Share } from '../schemas/share.interface'
 import { SharesQueries } from './shares-queries.service'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
+import { FILE_REPOSITORY } from '../../files/constants/operations'
 
 @Injectable()
 export class SharesManager {
@@ -55,6 +57,7 @@ export class SharesManager {
   constructor(
     private readonly contextManager: ContextManager,
     private readonly notificationsManager: NotificationsManager,
+    private readonly filesQuotaManager: FilesQuotaManager,
     private readonly sharesQueries: SharesQueries,
     private readonly spacesQueries: SpacesQueries,
     private readonly usersQueries: UsersQueries,
@@ -246,6 +249,10 @@ export class SharesManager {
     // update in db
     if (!(await this.sharesQueries.updateShare(shareId, shareDiffProps))) {
       throw new HttpException('Unable to update share', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+    // update quota in cache
+    if ('storageQuota' in shareDiffProps) {
+      void this.filesQuotaManager.updateStorageQuota(shareId, FILE_REPOSITORY.SHARE, shareDiffProps.storageQuota)
     }
     // check & update members
     const linkMembers: ShareMemberDto[] = await this.createOrUpdateLinksAsMembers(user, share, LINK_TYPE.SHARE, createOrUpdateShareDto.links)
