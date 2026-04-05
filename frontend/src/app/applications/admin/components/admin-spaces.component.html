@@ -122,7 +122,8 @@
 <!--End Table Files Content-->
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <span class="mx-auto">{{ spaces.length }} {{ 'spaces' | translate:locale.language }}</span>
+  <span>{{ spaces.length }} {{ 'spaces' | translate:locale.language }}</span>
+  <div class="ms-auto"><span l10nTranslate>Total</span>&nbsp;{{ storageUsage | toBytes }}</div>
 </div>
 <!--End Foot Content-->
 <!--Start Context Menu -->

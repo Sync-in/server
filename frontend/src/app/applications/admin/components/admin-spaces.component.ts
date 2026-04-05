@@ -28,6 +28,7 @@ import { SPACES_ICON } from '../../spaces/spaces.constants'
 import { UserAvatarComponent } from '../../users/components/utils/user-avatar.component'
 import { ADMIN_ICON, ADMIN_PATH, ADMIN_TITLE } from '../admin.constants'
 import { AdminService } from '../admin.service'
+import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
 
 @Component({
   selector: 'app-admin-spaces',
@@ -44,7 +45,8 @@ import { AdminService } from '../admin.service'
     SearchFilterPipe,
     TapDirective,
     BadgeMembersComponent,
-    StorageUsageComponent
+    StorageUsageComponent,
+    ToBytesPipe
   ],
   templateUrl: 'admin-spaces.component.html'
 })
@@ -116,6 +118,7 @@ export class AdminSpacesComponent {
   protected loading = false
   protected spaces: SpaceModel[] = []
   protected selected: SpaceModel = null
+  protected storageUsage = 0
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly spacesService = inject(SpacesService)
   private readonly adminService = inject(AdminService)
@@ -147,6 +150,7 @@ export class AdminSpacesComponent {
     this.onSelect()
     this.adminService.listSpaces().subscribe({
       next: (spaces: SpaceModel[]) => {
+        void this.calcUsageStorage(spaces)
         this.sortBy(this.sortTable.sortParam.column, false, spaces)
         this.loading = false
         if (this.focusOnSelect) {
@@ -244,5 +248,9 @@ export class AdminSpacesComponent {
       setTimeout(() => this.scrollView.scrollInto(s), 100)
       this.onSelect(s)
     }
+  }
+
+  private async calcUsageStorage(spaces: SpaceModel[]) {
+    this.storageUsage = spaces.reduce((sum, space) => sum + (space.storageUsage ?? 0), 0)
   }
 }
