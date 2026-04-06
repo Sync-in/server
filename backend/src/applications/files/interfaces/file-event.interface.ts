@@ -12,7 +12,6 @@ export interface FileEventType {
   space: SpaceEnv
   action: ACTION
   rPath: string
-  oriPath?: string // src from copy/move operations
 }
 
 export interface FileEventEmit {

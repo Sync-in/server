@@ -4,14 +4,14 @@ import { MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { CacheDecorator } from '../../../infrastructure/cache/cache.decorator'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
-import { FilesIndexer } from '../models/files-indexer'
+import { FilesContentStore } from '../models/files-content-store'
 import { FileContent } from '../schemas/file-content.interface'
 import { createTableFilesContent, FILES_CONTENT_TABLE_PREFIX } from '../schemas/files-content.schema'
 import { analyzeTerms, genTermsPattern, MaxSortedList } from '../utils/files-search'
 
 @Injectable()
-export class FilesIndexerMySQL implements FilesIndexer {
-  private readonly logger = new Logger(FilesIndexerMySQL.name)
+export class FilesContentStoreMySQL implements FilesContentStore {
+  private readonly logger = new Logger(FilesContentStoreMySQL.name)
 
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 

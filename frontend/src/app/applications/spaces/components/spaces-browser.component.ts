@@ -31,7 +31,7 @@ import {
   faUpload
 } from '@fortawesome/free-solid-svg-icons'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
-import { tarExtension } from '@sync-in-server/backend/src/applications/files/constants/compress'
+import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import type { FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
@@ -609,7 +609,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       name: this.selection[0].name,
       compressInDirectory: this.inSharesList ? false : inDir,
       files: this.selection.map((f: FileModel) => ({ name: f.name, rootAlias: f.root?.alias })),
-      extension: tarExtension
+      extension: TAR_EXTENSION
     }
     this.layout.openDialog(FilesCompressionDialogComponent, null, {
       initialState: {

@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
-import { FilesIndexerMySQL } from './files-indexer-mysql.service'
+import { FilesContentStoreMySQL } from './files-content-store-mysql.service'
 
-describe(FilesIndexerMySQL.name, () => {
+describe(FilesContentStoreMySQL.name, () => {
   let module: TestingModule
-  let filesIndexerMySQL: FilesIndexerMySQL
+  let filesIndexerMySQL: FilesContentStoreMySQL
   let db: { execute: jest.Mock }
   let cache: { genSlugKey: jest.Mock; get: jest.Mock; set: jest.Mock }
 
@@ -18,11 +18,11 @@ describe(FilesIndexerMySQL.name, () => {
     }
 
     module = await Test.createTestingModule({
-      providers: [FilesIndexerMySQL, { provide: DB_TOKEN_PROVIDER, useValue: db }, { provide: Cache, useValue: cache }]
+      providers: [FilesContentStoreMySQL, { provide: DB_TOKEN_PROVIDER, useValue: db }, { provide: Cache, useValue: cache }]
     }).compile()
 
     module.useLogger(['fatal'])
-    filesIndexerMySQL = module.get<FilesIndexerMySQL>(FilesIndexerMySQL)
+    filesIndexerMySQL = module.get<FilesContentStoreMySQL>(FilesContentStoreMySQL)
   })
 
   afterAll(async () => {

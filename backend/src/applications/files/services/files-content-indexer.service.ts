@@ -2,28 +2,28 @@ import { Injectable, Logger } from '@nestjs/common'
 import fs from 'fs/promises'
 import { Stats } from 'node:fs'
 import path from 'node:path'
-import { indexableExtensions } from '../constants/indexing'
+import { INDEXABLE_EXTENSIONS } from '../constants/indexing'
 import { FileIndexContext, FileParseContext } from '../interfaces/file-parse-index'
-import { FilesIndexer } from '../models/files-indexer'
+import { FilesContentStore } from '../models/files-content-store'
 import { FileContent } from '../schemas/file-content.interface'
 import { docTextify } from '../utils/doc-textify/doc-textify'
 import { PdfOCRWorkerManager } from '../utils/doc-textify/utils/pdf-ocr'
-import { getMimeType } from '../utils/files'
+import { getExtensionWithoutDot, getMimeType } from '../utils/files'
 import { FilesParser } from './files-parser.service'
-import { FILE_REPOSITORY } from '../constants/operations'
+import { genIndexingKey } from '../utils/indexing'
 
 @Injectable()
-export class FilesContentManager {
+export class FilesContentIndexer {
   private readonly maxDocumentSize = 150 * 1_000_000
-  private readonly logger = new Logger(FilesContentManager.name)
+  private readonly logger = new Logger(FilesContentIndexer.name)
   private pdfOcrWorkerManager: PdfOCRWorkerManager | null = null
 
   constructor(
-    private readonly filesIndexer: FilesIndexer,
+    private readonly filesIndexer: FilesContentStore,
     private readonly filesParser: FilesParser
   ) {}
 
-  async parseAndIndexAllFiles(): Promise<void> {
+  async parseAndIndexAllFiles(userIds?: number[], spaceIds?: number[], shareIds?: number[]): Promise<void> {
     this.pdfOcrWorkerManager = PdfOCRWorkerManager.getInstance(this.logger)
     try {
       await this.pdfOcrWorkerManager.start()
@@ -32,18 +32,8 @@ export class FilesContentManager {
     }
     try {
       const indexSuffixes: string[] = []
-      for await (const [id, type, paths] of this.filesParser.allPaths()) {
-        let indexSuffix: string
-        switch (type) {
-          case FILE_REPOSITORY.USER:
-            indexSuffix = `${FILE_REPOSITORY.USER}_${id}`
-            break
-          case FILE_REPOSITORY.SPACE:
-            indexSuffix = `${FILE_REPOSITORY.SPACE}_${id}`
-            break
-          case FILE_REPOSITORY.SHARE:
-            indexSuffix = `${FILE_REPOSITORY.SHARE}_${id}`
-        }
+      for await (const [id, type, paths] of this.filesParser.allPaths(userIds, spaceIds, shareIds)) {
+        const indexSuffix = genIndexingKey(id, type)
         try {
           await this.indexFiles(indexSuffix, paths)
         } catch (e) {
@@ -51,8 +41,10 @@ export class FilesContentManager {
         }
         indexSuffixes.push(indexSuffix)
       }
-      // clean up old tables
-      await this.filesIndexer.cleanIndexes(indexSuffixes)
+      // clean up old tables only when all indexes have been indexed
+      if (!userIds?.length && !spaceIds?.length && !shareIds?.length) {
+        await this.filesIndexer.cleanIndexes(indexSuffixes)
+      }
     } finally {
       await this.pdfOcrWorkerManager?.stop()
       this.pdfOcrWorkerManager = null
@@ -142,8 +134,8 @@ export class FilesContentManager {
   }
 
   private async analyzeFile(realPath: string, context: FileIndexContext, isRootFile = false): Promise<FileContent> {
-    const extension = path.extname(realPath).slice(1).toLowerCase()
-    if (!indexableExtensions.has(extension)) return null
+    const extension = getExtensionWithoutDot(realPath)
+    if (!INDEXABLE_EXTENSIONS.has(extension)) return null
 
     const fileName = isRootFile ? path.basename(context.pathPrefix) : path.basename(realPath)
 

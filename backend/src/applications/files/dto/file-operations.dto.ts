@@ -2,7 +2,7 @@ import { Transform } from 'class-transformer'
 import { ArrayMinSize, IsArray, IsBoolean, IsDefined, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator'
 import { RejectIfMatch } from '../../../common/decorators'
 import { regExpInvalidFileName } from '../../../common/shared'
-import { tarExtension, tarGzExtension } from '../constants/compress'
+import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '../constants/compress'
 
 export class CopyMoveFileDto {
   @IsNotEmpty()
@@ -58,8 +58,8 @@ export class CompressFileDto {
 
   @IsNotEmpty()
   @IsString()
-  @IsIn([tarExtension, tarGzExtension])
-  extension: typeof tarExtension | typeof tarGzExtension
+  @IsIn([TAR_EXTENSION, TAR_GZ_EXTENSION])
+  extension: typeof TAR_EXTENSION | typeof TAR_GZ_EXTENSION
 }
 
 export class SearchFilesDto {

@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject,
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFileArchive } from '@fortawesome/free-solid-svg-icons'
-import { tarExtension, tarGzExtension } from '@sync-in-server/backend/src/applications/files/constants/compress'
+import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
@@ -16,7 +16,7 @@ import { FilesService } from '../../services/files.service'
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FilesCompressionDialogComponent implements OnInit {
-  @Input() archiveProps: CompressFileDto = { name: '', files: [], compressInDirectory: true, extension: tarExtension }
+  @Input() archiveProps: CompressFileDto = { name: '', files: [], compressInDirectory: true, extension: TAR_EXTENSION }
   @Output() submitEvent = new EventEmitter()
   public disableInDirCompression = false
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
@@ -47,6 +47,6 @@ export class FilesCompressionDialogComponent implements OnInit {
   }
 
   setCompression(enable: boolean) {
-    this.archiveProps.extension = enable ? tarGzExtension : tarExtension
+    this.archiveProps.extension = enable ? TAR_GZ_EXTENSION : TAR_EXTENSION
   }
 }

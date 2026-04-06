@@ -24,20 +24,20 @@ export class FilesParser {
 
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 
-  async *allPaths(userId?: number, spaceIds?: number[], shareIds?: number[]): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
-    yield* this.userPaths(userId)
+  async *allPaths(userIds?: number[], spaceIds?: number[], shareIds?: number[]): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
+    yield* this.userPaths(userIds)
     yield* this.spacePaths(spaceIds)
     yield* this.sharePaths(shareIds)
   }
 
-  async *userPaths(userId?: number): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
+  async *userPaths(userIds?: number[]): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
     for (const user of await this.db
       .select({
         id: users.id,
         login: users.login
       })
       .from(users)
-      .where(and(...[eq(users.storageIndexing, true), lte(users.role, USER_ROLE.USER), ...(userId ? [eq(users.id, userId)] : [])]))) {
+      .where(and(...[eq(users.storageIndexing, true), lte(users.role, USER_ROLE.USER), ...(userIds ? [inArray(users.id, userIds)] : [])]))) {
       const userFilesPath = UserModel.getFilesPath(user.login)
       if (!(await isPathExists(userFilesPath))) {
         this.logger.warn({ tag: this.userPaths.name, msg: `user path does not exist : ${userFilesPath}` })

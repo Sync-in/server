@@ -23,7 +23,7 @@ import { canAccessToSpace, haveSpaceEnvPermissions } from '../../spaces/utils/pe
 import { UserModel } from '../../users/models/user.model'
 import { DEPTH, LOCK_DEPTH } from '../../webdav/constants/webdav'
 import { CACHE_LOCK_FILE_TTL } from '../constants/cache'
-import { tarGzExtension } from '../constants/compress'
+import { TAR_GZ_EXTENSION } from '../constants/compress'
 import { COMPRESSION_EXTENSION, DEFAULT_HIGH_WATER_MARK } from '../constants/files'
 import { FILE_OPERATION } from '../constants/operations'
 import { DOCUMENT_TYPE, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
@@ -566,7 +566,7 @@ export class FilesManager {
     const archiveExt = dto.name.endsWith(dto.extension) ? '' : `.${dto.extension}`
     const dstPath = await uniqueFilePathFromDir(path.join(dto.compressInDirectory ? srcPath : user.tasksPath, `${dto.name}${archiveExt}`))
     const archive: Archiver = archiver('tar', {
-      gzip: dto.extension === tarGzExtension,
+      gzip: dto.extension === TAR_GZ_EXTENSION,
       gzipOptions: {
         level: 9
       }
@@ -641,7 +641,7 @@ export class FilesManager {
         await extractTar({
           file: space.realPath,
           cwd: dstPath,
-          gzip: COMPRESSION_EXTENSION.get(extension) === tarGzExtension,
+          gzip: COMPRESSION_EXTENSION.get(extension) === TAR_GZ_EXTENSION,
           preserveOwner: false
         })
       }

@@ -17,7 +17,7 @@ import { FileTask, FileTaskStatus } from '../models/file-task'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { files } from '../schemas/files.schema'
 import { dirHasChildren, isPathExists, removeFiles } from '../utils/files'
-import { FilesContentManager } from './files-content-manager.service'
+import { FilesContentIndexer } from './files-content-indexer.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
 import { FilesQuotaManager } from './files-quota-manager.service'
 
@@ -31,7 +31,7 @@ export class FilesScheduler {
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
     private readonly cache: Cache,
-    private readonly filesContentManager: FilesContentManager,
+    private readonly filesContentIndexer: FilesContentIndexer,
     private readonly filesQuotaManager: FilesQuotaManager
   ) {}
 
@@ -46,7 +46,7 @@ export class FilesScheduler {
     }
   }
 
-  @Timeout(180_000)
+  @Timeout(300_000)
   async afterStartup(): Promise<void> {
     try {
       await this.indexContentFiles()
@@ -161,7 +161,7 @@ export class FilesScheduler {
     this.isIndexContentFilesRunning = true
     this.logger.log({ tag: this.indexContentFiles.name, msg: `START` })
     try {
-      await this.filesContentManager.parseAndIndexAllFiles()
+      await this.filesContentIndexer.parseAndIndexAllFiles()
       this.logger.log({ tag: this.indexContentFiles.name, msg: `END` })
     } finally {
       this.isIndexContentFilesRunning = false

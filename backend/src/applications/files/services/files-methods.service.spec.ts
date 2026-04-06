@@ -14,7 +14,7 @@ import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { UserModel } from '../../users/models/user.model'
 import { UsersQueries } from '../../users/services/users-queries.service'
 import { generateUserTest } from '../../users/utils/test'
-import { tarExtension } from '../constants/compress'
+import { TAR_EXTENSION } from '../constants/compress'
 import { CompressFileDto, CopyMoveFileDto } from '../dto/file-operations.dto'
 import { FilesManager } from './files-manager.service'
 import { FilesMethods } from './files-methods.service'
@@ -97,7 +97,7 @@ describe(FilesMethods.name, () => {
       name: '../../archive',
       compressInDirectory: false,
       files: [{ name: '../../foo', rootAlias: undefined }],
-      extension: tarExtension
+      extension: TAR_EXTENSION
     }
     expect(() => transformAndValidate(CompressFileDto, compressFileDto)).toThrow()
     await expect(filesMethods.compress(userTest, spaceEnv, compressFileDto)).rejects.toThrow(/does not exist/i)

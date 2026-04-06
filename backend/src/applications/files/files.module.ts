@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common'
 import { configuration } from '../../configuration/config.environment'
-import { FilesIndexerMySQL } from './adapters/files-indexer-mysql.service'
+import { FilesContentStoreMySQL } from './adapters/files-content-store-mysql.service'
 import { FilesTasksController } from './files-tasks.controller'
 import { FilesController } from './files.controller'
-import { FilesIndexer } from './models/files-indexer'
+import { FilesContentStore } from './models/files-content-store'
 import { CollaboraOnlineModule } from './modules/collabora-online/collabora-online.module'
 import { OnlyOfficeModule } from './modules/only-office/only-office.module'
-import { FilesContentManager } from './services/files-content-manager.service'
+import { FilesContentIndexer } from './services/files-content-indexer.service'
 import { FilesLockManager } from './services/files-lock-manager.service'
 import { FilesManager } from './services/files-manager.service'
 import { FilesMethods } from './services/files-methods.service'
@@ -34,8 +34,8 @@ import { FilesQuotaManager } from './services/files-quota-manager.service'
     FilesScheduler,
     FilesRecents,
     FilesParser,
-    FilesContentManager,
-    { provide: FilesIndexer, useClass: FilesIndexerMySQL },
+    FilesContentIndexer,
+    { provide: FilesContentStore, useClass: FilesContentStoreMySQL },
     FilesSearchManager,
     FilesEventManager,
     FilesQuotaManager

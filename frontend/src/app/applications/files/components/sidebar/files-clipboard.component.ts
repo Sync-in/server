@@ -3,7 +3,7 @@ import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowsAlt, faClone, faDownload, faQuestion, faTimes, faTrashCan } from '@fortawesome/free-solid-svg-icons'
-import { tarExtension } from '@sync-in-server/backend/src/applications/files/constants/compress'
+import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -70,7 +70,7 @@ export class FilesClipboardComponent implements OnDestroy {
         name: this.files[0].name,
         compressInDirectory: this.operations[this.selectedAction].operation === FILE_OPERATION.COMPRESS,
         files: this.files.map((f: FileModel) => ({ name: f.name, rootAlias: f.root?.alias, path: f.path })),
-        extension: tarExtension
+        extension: TAR_EXTENSION
       }
       const modalRef: BsModalRef<FilesCompressionDialogComponent> = this.layout.openDialog(FilesCompressionDialogComponent, null, {
         initialState: { archiveProps: archiveProps } as FilesCompressionDialogComponent

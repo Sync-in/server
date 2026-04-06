@@ -1,6 +1,6 @@
 import { FileContent } from '../schemas/file-content.interface'
 
-export abstract class FilesIndexer {
+export abstract class FilesContentStore {
   abstract indexesList(): Promise<string[]>
 
   abstract getIndexName(indexSuffix: string): string

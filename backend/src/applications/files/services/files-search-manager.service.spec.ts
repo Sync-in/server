@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
-import { FilesIndexer } from '../models/files-indexer'
+import { FilesContentStore } from '../models/files-content-store'
 import { FilesParser } from './files-parser.service'
 import { FilesSearchManager } from './files-search-manager.service'
 
@@ -12,7 +12,7 @@ describe(FilesSearchManager.name, () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FilesSearchManager,
-        { provide: FilesIndexer, useValue: {} },
+        { provide: FilesContentStore, useValue: {} },
         { provide: FilesParser, useValue: {} },
         {
           provide: SpacesQueries,
