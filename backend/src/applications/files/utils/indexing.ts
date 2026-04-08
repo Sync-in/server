@@ -12,8 +12,13 @@ export function indexingUpdateCacheKeysFromSpace(userId: number, space: SpaceEnv
   if (space.inSharesRepository && !space.root.externalPath) {
     // shares that are linked to a space must also be indexed
     cacheKeys.push(`${CACHE_INDEXING_UPDATE_PREFIX}-${genIndexingKey(space.id, FILE_REPOSITORY.SHARE, '-')}`)
+  } else if (space.inFilesRepository && space.root.owner?.login) {
+    // space where the user’s root file is anchored
+    cacheKeys.push(`${CACHE_INDEXING_UPDATE_PREFIX}-${genIndexingKey(space.id, FILE_REPOSITORY.SPACE, '-')}`)
   }
   const repository: { id: number; type: FILE_REPOSITORY } = SpaceToFileRepository(userId, space)
-  if (repository !== null) cacheKeys.push(`${CACHE_INDEXING_UPDATE_PREFIX}-${genIndexingKey(repository.id, repository.type, '-')}`)
+  if (repository !== null) {
+    cacheKeys.push(`${CACHE_INDEXING_UPDATE_PREFIX}-${genIndexingKey(repository.id, repository.type, '-')}`)
+  }
   return cacheKeys
 }
