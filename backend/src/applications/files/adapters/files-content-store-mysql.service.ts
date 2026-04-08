@@ -15,7 +15,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
 
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 
-  @CacheDecorator(900) // 15 mn
+  @CacheDecorator(300)
   async indexesList(): Promise<string[]> {
     return ((await this.db.execute(sql`SHOW TABLES LIKE '${sql.raw(FILES_CONTENT_TABLE_PREFIX)}%'`))[0] as any).flatMap((r: Record<string, string>) =>
       Object.values(r)
@@ -93,7 +93,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
 
   async searchRecords(tableNames: string[], search: string, limit: number): Promise<FileContent[]> {
     const terms: string[] = analyzeTerms(search)
-    this.logger.debug({ tag: this.searchRecords.name, msg: `convert ${search} -> ${JSON.stringify(terms)}` })
+    this.logger.verbose({ tag: this.searchRecords.name, msg: `convert ${search} -> ${JSON.stringify(terms)}` })
     if (!terms.length) {
       return []
     }

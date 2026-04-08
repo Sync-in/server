@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import fs from 'fs/promises'
 import { Stats } from 'node:fs'
 import path from 'node:path'
-import { INDEXABLE_EXTENSIONS } from '../constants/indexing'
+import { CACHE_INDEXING_UPDATE_PREFIX, INDEXABLE_EXTENSIONS } from '../constants/indexing'
 import { FileIndexContext, FileParseContext } from '../interfaces/file-parse-index'
 import { FilesContentStore } from '../models/files-content-store'
 import { FileContent } from '../schemas/file-content.interface'
@@ -11,6 +11,8 @@ import { PdfOCRWorkerManager } from '../utils/doc-textify/utils/pdf-ocr'
 import { getExtensionWithoutDot, getMimeType } from '../utils/files'
 import { FilesParser } from './files-parser.service'
 import { genIndexingKey } from '../utils/indexing'
+import { FILE_REPOSITORY } from '../constants/operations'
+import { Cache } from '../../../infrastructure/cache/services/cache.service'
 
 @Injectable()
 export class FilesContentIndexer {
@@ -19,9 +21,45 @@ export class FilesContentIndexer {
   private pdfOcrWorkerManager: PdfOCRWorkerManager | null = null
 
   constructor(
+    private readonly cache: Cache,
     private readonly filesIndexer: FilesContentStore,
     private readonly filesParser: FilesParser
   ) {}
+
+  async updateIndexEntries() {
+    const cacheKeys: string[] = []
+    const [userIds, spaceIds, shareIds]: [number[], number[], number[]] = [[], [], []]
+    for (const k of await this.cache.keys(`${CACHE_INDEXING_UPDATE_PREFIX}-*`)) {
+      cacheKeys.push(k)
+      const keySegments = k.split('-')
+      const [repository, idPart] = keySegments.slice(-2)
+      const id = Number.parseInt(idPart ?? '', 10)
+
+      if (repository === FILE_REPOSITORY.USER) {
+        userIds.push(id)
+      } else if (repository === FILE_REPOSITORY.SPACE) {
+        spaceIds.push(id)
+      } else if (repository === FILE_REPOSITORY.SHARE) {
+        shareIds.push(id)
+      } else {
+        this.logger.warn({ tag: this.updateIndexEntries.name, msg: `Unknown type: ${repository}` })
+      }
+    }
+
+    if (userIds.length || spaceIds.length || shareIds.length) {
+      try {
+        await this.parseAndIndexAllFiles(userIds, spaceIds, shareIds)
+      } catch (e) {
+        this.logger.error({ tag: this.updateIndexEntries.name, msg: `${e}` })
+      }
+    }
+
+    // Clean up event keys even if incremental indexing fails.
+    // Ignore cache deletion errors, the full reindex restores consistency.
+    for (const k of cacheKeys) {
+      this.cache.del(k).catch((e) => this.logger.warn({ tag: this.updateIndexEntries.name, msg: `Unable to clean key: ${k} - ${e}` }))
+    }
+  }
 
   async parseAndIndexAllFiles(userIds?: number[], spaceIds?: number[], shareIds?: number[]): Promise<void> {
     this.pdfOcrWorkerManager = PdfOCRWorkerManager.getInstance(this.logger)

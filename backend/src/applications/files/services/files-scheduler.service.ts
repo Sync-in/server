@@ -24,7 +24,8 @@ import { FilesQuotaManager } from './files-quota-manager.service'
 @Injectable()
 export class FilesScheduler {
   private readonly logger = new Logger(FilesScheduler.name)
-  private isIndexContentFilesRunning = false
+  private isIndexContentRunning = false
+  private isIndexContentEntriesRunning = false
   private isQuotaUpdateIsRunning = false
   private isQuotaUpdateEntriesIsRunning = false
 
@@ -56,15 +57,24 @@ export class FilesScheduler {
   }
 
   @Interval(60_000)
-  async updateStorageUsageEntries() {
+  async updateStorageAndIndexing() {
     if (this.isQuotaUpdateIsRunning || this.isQuotaUpdateEntriesIsRunning) return
     this.isQuotaUpdateEntriesIsRunning = true
     try {
       await this.filesQuotaManager.updateStorageUsageEntries()
     } catch (e) {
-      this.logger.error({ tag: this.updateQuotas.name, msg: `${e}` })
+      this.logger.error({ tag: this.updateStorageAndIndexing.name, msg: `update quota error: ${e}` })
     } finally {
       this.isQuotaUpdateEntriesIsRunning = false
+    }
+    if (!configuration.applications.files.contentIndexing.enabled || this.isIndexContentRunning || this.isIndexContentEntriesRunning) return
+    this.isIndexContentEntriesRunning = true
+    try {
+      await this.filesContentIndexer.updateIndexEntries()
+    } catch (e) {
+      this.logger.error({ tag: this.updateStorageAndIndexing.name, msg: `update indexing error: ${e}` })
+    } finally {
+      this.isIndexContentEntriesRunning = false
     }
   }
 
@@ -154,17 +164,17 @@ export class FilesScheduler {
   async indexContentFiles(): Promise<void> {
     // Conditional loading of file content indexing
     if (!configuration.applications.files.contentIndexing.enabled) return
-    if (this.isIndexContentFilesRunning) {
+    if (this.isIndexContentRunning || this.isIndexContentEntriesRunning) {
       this.logger.warn({ tag: this.indexContentFiles.name, msg: `SKIP (already running)` })
       return
     }
-    this.isIndexContentFilesRunning = true
+    this.isIndexContentRunning = true
     this.logger.log({ tag: this.indexContentFiles.name, msg: `START` })
     try {
       await this.filesContentIndexer.parseAndIndexAllFiles()
       this.logger.log({ tag: this.indexContentFiles.name, msg: `END` })
     } finally {
-      this.isIndexContentFilesRunning = false
+      this.isIndexContentRunning = false
     }
   }
 

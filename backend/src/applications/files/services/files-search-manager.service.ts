@@ -27,11 +27,11 @@ export class FilesSearchManager {
   ) {}
 
   async search(user: UserModel, search: SearchFilesDto): Promise<FileContent[]> {
+    if (search.fullText && !configuration.applications.files.contentIndexing.enabled) {
+      throw new HttpException('Full-text search is disabled', HttpStatus.BAD_REQUEST)
+    }
     const [spaceIds, shareIds] = await Promise.all([this.spacesQueries.spaceIds(user.id), this.sharesQueries.shareIds(user.id, +user.isAdmin)])
     if (search.fullText) {
-      if (!configuration.applications.files.contentIndexing.enabled) {
-        throw new HttpException('Full-text search is disabled', HttpStatus.BAD_REQUEST)
-      }
       return await this.searchFullText(user.id, spaceIds, shareIds, search.content, search.limit)
     } else {
       return await this.searchFileNames(user.id, spaceIds, shareIds, search.content, search.limit)
