@@ -14,6 +14,7 @@ import { UsersQueries } from '../../users/services/users-queries.service'
 import { SHARE_ALL_OPERATIONS } from '../constants/shares'
 import { SharesManager } from './shares-manager.service'
 import { SharesQueries } from './shares-queries.service'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
 
 // Mock classes and utility modules used by SharesManager
 jest.mock('../../spaces/models/space-env.model', () => ({
@@ -102,6 +103,10 @@ describe(SharesManager.name, () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
+        {
+          provide: FilesQuotaManager,
+          useValue: { updateStorageQuota: () => jest.fn() }
+        },
         { provide: ContextManager, useValue: contextManagerMock },
         { provide: NotificationsManager, useValue: notificationsManagerMock },
         { provide: SpacesQueries, useValue: spacesQueriesMock },

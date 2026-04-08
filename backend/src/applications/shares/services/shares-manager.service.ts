@@ -9,12 +9,12 @@ import {
   generateShortUUID,
   hashPassword
 } from '../../../common/functions'
-import type { Entries, StorageQuota } from '../../../common/interfaces'
+import type { Entries } from '../../../common/interfaces'
 import { intersectPermissions } from '../../../common/shared'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import type { FileProps } from '../../files/interfaces/file-props.interface'
 import { FileError } from '../../files/models/file-error'
-import { checkExternalPath, dirSize, getProps, isPathExists } from '../../files/utils/files'
+import { checkExternalPath, getProps, isPathExists } from '../../files/utils/files'
 import { LINK_TYPE } from '../../links/constants/links'
 import type { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto'
 import type { LinkGuest } from '../../links/interfaces/link-guest.interface'
@@ -24,7 +24,6 @@ import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/co
 import type { NotificationContent, NotificationOptions } from '../../notifications/interfaces/notification-properties.interface'
 import type { UserMailNotification } from '../../notifications/interfaces/user-mail-notification.interface'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
-import { CACHE_QUOTA_SHARE_PREFIX, CACHE_QUOTA_TTL } from '../../spaces/constants/cache'
 import { SPACE_OPERATION, SPACE_PERMS_SEP, SPACE_REPOSITORY, SPACE_ROLE } from '../../spaces/constants/spaces'
 import type { SpaceMemberDto } from '../../spaces/dto/create-or-update-space.dto'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
@@ -48,6 +47,8 @@ import type { ShareChild } from '../models/share-child.model'
 import type { ShareMembers } from '../schemas/share-members.interface'
 import type { Share } from '../schemas/share.interface'
 import { SharesQueries } from './shares-queries.service'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
+import { FILE_REPOSITORY } from '../../files/constants/operations'
 
 @Injectable()
 export class SharesManager {
@@ -56,6 +57,7 @@ export class SharesManager {
   constructor(
     private readonly contextManager: ContextManager,
     private readonly notificationsManager: NotificationsManager,
+    private readonly filesQuotaManager: FilesQuotaManager,
     private readonly sharesQueries: SharesQueries,
     private readonly spacesQueries: SpacesQueries,
     private readonly usersQueries: UsersQueries,
@@ -247,6 +249,10 @@ export class SharesManager {
     // update in db
     if (!(await this.sharesQueries.updateShare(shareId, shareDiffProps))) {
       throw new HttpException('Unable to update share', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+    // update quota in cache
+    if ('storageQuota' in shareDiffProps) {
+      void this.filesQuotaManager.updateStorageQuota(shareId, FILE_REPOSITORY.SHARE, shareDiffProps.storageQuota)
     }
     // check & update members
     const linkMembers: ShareMemberDto[] = await this.createOrUpdateLinksAsMembers(user, share, LINK_TYPE.SHARE, createOrUpdateShareDto.links)
@@ -734,38 +740,6 @@ export class SharesManager {
 
   async deleteLinkMembers(members: SpaceMemberDto[] | ShareMemberDto[]): Promise<void> {
     await this.deleteGuestLinks(members)
-  }
-
-  async updateSharesExternalPathQuota(): Promise<void>
-  async updateSharesExternalPathQuota(shareId: number): Promise<StorageQuota>
-  async updateSharesExternalPathQuota(shareId?: number): Promise<void | StorageQuota> {
-    for (const share of await this.sharesQueries.sharesQuotaExternalPaths(shareId)) {
-      if (!(await isPathExists(share.externalPath))) {
-        this.logger.warn({ tag: this.updateSharesExternalPathQuota.name, msg: `*${share.alias}* home path does not exist` })
-        continue
-      }
-      const [size, errors] = await dirSize(share.externalPath)
-      for (const [path, error] of Object.entries(errors)) {
-        this.logger.warn({ tag: this.updateSharesExternalPathQuota.name, msg: `unable to get size for *${share.alias}* on ${path} : ${error}` })
-      }
-      const shareQuota: StorageQuota = { storageUsage: size, storageQuota: share.storageQuota }
-      this.sharesQueries.cache
-        .set(`${CACHE_QUOTA_SHARE_PREFIX}-${share.id}`, shareQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error({ tag: this.updateSharesExternalPathQuota.name, msg: `share *${share.alias}* (${share.id}) : ${e}` }))
-      if (share.storageUsage !== shareQuota.storageUsage) {
-        this.sharesQueries.updateShare(share.id, { storageUsage: shareQuota.storageUsage }).then(
-          (updated: boolean) =>
-            updated &&
-            this.logger.log({
-              tag: this.updateSharesExternalPathQuota.name,
-              msg: `share *${share.alias}* (${share.id}) - storage usage updated : ${shareQuota.storageUsage}`
-            })
-        )
-      }
-      if (shareId) {
-        return shareQuota
-      }
-    }
   }
 
   private async updateMembers(user: UserModel, share: Partial<Share>, oldMembers: ShareMemberDto[], currentMembers: ShareMemberDto[]) {

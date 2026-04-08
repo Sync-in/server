@@ -14,6 +14,7 @@ import { UsersManager } from './services/users-manager.service'
 import { UsersQueries } from './services/users-queries.service'
 import { UsersController } from './users.controller'
 import { generateUserTest } from './utils/test'
+import { FilesQuotaManager } from '../files/services/files-quota-manager.service'
 
 describe(UsersController.name, () => {
   let module: TestingModule
@@ -31,6 +32,10 @@ describe(UsersController.name, () => {
         {
           provide: Cache,
           useValue: {}
+        },
+        {
+          provide: FilesQuotaManager,
+          useValue: { updateStorageQuota: () => jest.fn() }
         },
         UsersManager,
         UsersQueries,

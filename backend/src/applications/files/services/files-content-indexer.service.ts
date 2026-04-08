@@ -2,27 +2,66 @@ import { Injectable, Logger } from '@nestjs/common'
 import fs from 'fs/promises'
 import { Stats } from 'node:fs'
 import path from 'node:path'
-import { indexableExtensions, shareIndexPrefix, spaceIndexPrefix, userIndexPrefix } from '../constants/indexing'
+import { CACHE_INDEXING_UPDATE_PREFIX, INDEXABLE_EXTENSIONS } from '../constants/indexing'
 import { FileIndexContext, FileParseContext } from '../interfaces/file-parse-index'
-import { FilesIndexer } from '../models/files-indexer'
+import { FilesContentStore } from '../models/files-content-store'
 import { FileContent } from '../schemas/file-content.interface'
 import { docTextify } from '../utils/doc-textify/doc-textify'
 import { PdfOCRWorkerManager } from '../utils/doc-textify/utils/pdf-ocr'
-import { getMimeType } from '../utils/files'
+import { getExtensionWithoutDot, getMimeType } from '../utils/files'
 import { FilesParser } from './files-parser.service'
+import { genIndexingKey } from '../utils/indexing'
+import { FILE_REPOSITORY } from '../constants/operations'
+import { Cache } from '../../../infrastructure/cache/services/cache.service'
 
 @Injectable()
-export class FilesContentManager {
+export class FilesContentIndexer {
   private readonly maxDocumentSize = 150 * 1_000_000
-  private readonly logger = new Logger(FilesContentManager.name)
+  private readonly logger = new Logger(FilesContentIndexer.name)
   private pdfOcrWorkerManager: PdfOCRWorkerManager | null = null
 
   constructor(
-    private readonly filesIndexer: FilesIndexer,
+    private readonly cache: Cache,
+    private readonly filesIndexer: FilesContentStore,
     private readonly filesParser: FilesParser
   ) {}
 
-  async parseAndIndexAllFiles(): Promise<void> {
+  async updateIndexEntries() {
+    const cacheKeys: string[] = []
+    const [userIds, spaceIds, shareIds]: [number[], number[], number[]] = [[], [], []]
+    for (const k of await this.cache.keys(`${CACHE_INDEXING_UPDATE_PREFIX}-*`)) {
+      cacheKeys.push(k)
+      const keySegments = k.split('-')
+      const [repository, idPart] = keySegments.slice(-2)
+      const id = Number.parseInt(idPart ?? '', 10)
+
+      if (repository === FILE_REPOSITORY.USER) {
+        userIds.push(id)
+      } else if (repository === FILE_REPOSITORY.SPACE) {
+        spaceIds.push(id)
+      } else if (repository === FILE_REPOSITORY.SHARE) {
+        shareIds.push(id)
+      } else {
+        this.logger.warn({ tag: this.updateIndexEntries.name, msg: `Unknown type: ${repository}` })
+      }
+    }
+
+    if (userIds.length || spaceIds.length || shareIds.length) {
+      try {
+        await this.parseAndIndexAllFiles(userIds, spaceIds, shareIds)
+      } catch (e) {
+        this.logger.error({ tag: this.updateIndexEntries.name, msg: `${e}` })
+      }
+    }
+
+    // Clean up event keys even if incremental indexing fails.
+    // Ignore cache deletion errors, the full reindex restores consistency.
+    for (const k of cacheKeys) {
+      this.cache.del(k).catch((e) => this.logger.warn({ tag: this.updateIndexEntries.name, msg: `Unable to clean key: ${k} - ${e}` }))
+    }
+  }
+
+  async parseAndIndexAllFiles(userIds?: number[], spaceIds?: number[], shareIds?: number[]): Promise<void> {
     this.pdfOcrWorkerManager = PdfOCRWorkerManager.getInstance(this.logger)
     try {
       await this.pdfOcrWorkerManager.start()
@@ -31,18 +70,8 @@ export class FilesContentManager {
     }
     try {
       const indexSuffixes: string[] = []
-      for await (const [id, type, paths] of this.filesParser.allPaths()) {
-        let indexSuffix: string
-        switch (type) {
-          case 'user':
-            indexSuffix = `${userIndexPrefix}${id}`
-            break
-          case 'space':
-            indexSuffix = `${spaceIndexPrefix}${id}`
-            break
-          case 'share':
-            indexSuffix = `${shareIndexPrefix}${id}`
-        }
+      for await (const [id, type, paths] of this.filesParser.allPaths(userIds, spaceIds, shareIds)) {
+        const indexSuffix = genIndexingKey(id, type)
         try {
           await this.indexFiles(indexSuffix, paths)
         } catch (e) {
@@ -50,8 +79,10 @@ export class FilesContentManager {
         }
         indexSuffixes.push(indexSuffix)
       }
-      // clean up old tables
-      await this.filesIndexer.cleanIndexes(indexSuffixes)
+      // clean up old tables only when all indexes have been indexed
+      if (!userIds?.length && !spaceIds?.length && !shareIds?.length) {
+        await this.filesIndexer.cleanIndexes(indexSuffixes)
+      }
     } finally {
       await this.pdfOcrWorkerManager?.stop()
       this.pdfOcrWorkerManager = null
@@ -102,7 +133,7 @@ export class FilesContentManager {
       this.filesIndexer
         .dropIndex(indexName)
         .catch((e: Error) => this.logger.error({ tag: this.indexFiles.name, msg: `${indexSuffix} - unable to drop index : ${e}` }))
-      this.logger.log({ tag: this.indexFiles.name, msg: `${indexSuffix} - no data, index not stored` })
+      this.logger.verbose({ tag: this.indexFiles.name, msg: `${indexSuffix} - no data, index not stored` })
     } else {
       // clean up old records
       const recordsToDelete: number[] = [...context.db.keys()].filter((key) => !context.fs.has(key))
@@ -112,7 +143,7 @@ export class FilesContentManager {
           .catch((e: Error) => this.logger.error({ tag: this.indexFiles.name, msg: `${indexSuffix} - unable to delete records : ${e}` }))
       }
       if (indexedRecords === 0 && errorRecords === 0 && recordsToDelete.length === 0) {
-        this.logger.log({ tag: this.indexFiles.name, msg: `${indexSuffix} - no new data` })
+        this.logger.verbose({ tag: this.indexFiles.name, msg: `${indexSuffix} - no new data` })
       } else {
         this.logger.log({
           tag: this.indexFiles.name,
@@ -141,8 +172,8 @@ export class FilesContentManager {
   }
 
   private async analyzeFile(realPath: string, context: FileIndexContext, isRootFile = false): Promise<FileContent> {
-    const extension = path.extname(realPath).slice(1).toLowerCase()
-    if (!indexableExtensions.has(extension)) return null
+    const extension = getExtensionWithoutDot(realPath)
+    if (!INDEXABLE_EXTENSIONS.has(extension)) return null
 
     const fileName = isRootFile ? path.basename(context.pathPrefix) : path.basename(realPath)
 

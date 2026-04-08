@@ -10,6 +10,7 @@ import { UsersQueries } from '../users/services/users-queries.service'
 import { SharesManager } from './services/shares-manager.service'
 import { SharesQueries } from './services/shares-queries.service'
 import { SharesController } from './shares.controller'
+import { FilesQuotaManager } from '../files/services/files-quota-manager.service'
 
 describe(SharesController.name, () => {
   let controller: SharesController
@@ -27,6 +28,10 @@ describe(SharesController.name, () => {
         {
           provide: NotificationsManager,
           useValue: {}
+        },
+        {
+          provide: FilesQuotaManager,
+          useValue: { updateStorageQuota: () => jest.fn() }
         },
         SpacesQueries,
         FilesQueries,

@@ -97,6 +97,10 @@ export function getMimeType(fPath: string, isDir: boolean): string {
   return 'file'
 }
 
+export function getExtensionWithoutDot(fPath: string): string {
+  return path.extname(fPath).slice(1).toLowerCase()
+}
+
 export function genEtag(file?: Pick<FileProps, 'size' | 'mtime'>, rPath?: string, weakPrefix = true): string {
   if (!file) {
     if (!rPath) throw new Error('File or path are missing')

@@ -90,13 +90,13 @@
       border-right: .5px solid transparent;
 
       .app-shortcut {
-        flex: 0 0 calc(#{$sidebar-apps-height} - 8px);
+        flex: 0 0 calc(#{$sidebar-apps-height} - 7px);
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
         width: calc(#{$sidebar-apps-height} - 8px);
-        height: calc(#{$sidebar-apps-height} - 8px);
+        height: calc(#{$sidebar-apps-height} - 9px);
         border: .5px solid transparent;
         border-radius: $btn-border-radius;
         background: transparent;
@@ -169,7 +169,7 @@
           gap: .5rem;
           flex: 1 1 auto;
           width: auto;
-          height: calc(#{$sidebar-apps-height} - 5px);
+          height: calc(#{$sidebar-apps-height} - 4px);
           margin: 0 6px;
           padding: 0 10px;
           border-radius: $btn-border-radius;

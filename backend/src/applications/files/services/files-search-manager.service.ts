@@ -6,31 +6,32 @@ import { configuration } from '../../../configuration/config.environment'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { UserModel } from '../../users/models/user.model'
-import { shareIndexPrefix, spaceIndexPrefix, userIndexPrefix } from '../constants/indexing'
 import { SearchFilesDto } from '../dto/file-operations.dto'
-import { FilesIndexer } from '../models/files-indexer'
+import { FilesContentStore } from '../models/files-content-store'
 import { FileContent } from '../schemas/file-content.interface'
 import { dirName, fileName, getMimeType } from '../utils/files'
 import { genRegexPositiveAndNegativeTerms } from '../utils/files-search'
 import { FilesParser } from './files-parser.service'
+import { FILE_REPOSITORY } from '../constants/operations'
+import { genIndexingKey } from '../utils/indexing'
 
 @Injectable()
 export class FilesSearchManager {
   private readonly logger = new Logger(FilesSearchManager.name)
 
   constructor(
-    private readonly filesIndexer: FilesIndexer,
+    private readonly filesIndexer: FilesContentStore,
     private readonly filesParser: FilesParser,
     private readonly spacesQueries: SpacesQueries,
     private readonly sharesQueries: SharesQueries
   ) {}
 
   async search(user: UserModel, search: SearchFilesDto): Promise<FileContent[]> {
+    if (search.fullText && !configuration.applications.files.contentIndexing.enabled) {
+      throw new HttpException('Full-text search is disabled', HttpStatus.BAD_REQUEST)
+    }
     const [spaceIds, shareIds] = await Promise.all([this.spacesQueries.spaceIds(user.id), this.sharesQueries.shareIds(user.id, +user.isAdmin)])
     if (search.fullText) {
-      if (!configuration.applications.files.contentIndexing.enabled) {
-        throw new HttpException('Full-text search is disabled', HttpStatus.BAD_REQUEST)
-      }
       return await this.searchFullText(user.id, spaceIds, shareIds, search.content, search.limit)
     } else {
       return await this.searchFileNames(user.id, spaceIds, shareIds, search.content, search.limit)
@@ -39,9 +40,9 @@ export class FilesSearchManager {
 
   private async searchFullText(userId: number, spaceIds: number[], shareIds: number[], search: string, limit: number): Promise<FileContent[]> {
     const indexNames = await this.filesIndexer.existingIndexes([
-      `${userIndexPrefix}${userId}`,
-      ...spaceIds.map((id) => `${spaceIndexPrefix}${id}`),
-      ...shareIds.map((id) => `${shareIndexPrefix}${id}`)
+      genIndexingKey(userId, FILE_REPOSITORY.USER),
+      ...spaceIds.map((id) => genIndexingKey(id, FILE_REPOSITORY.SPACE)),
+      ...shareIds.map((id) => genIndexingKey(id, FILE_REPOSITORY.SHARE))
     ])
     if (indexNames.length === 0) {
       return []
@@ -63,7 +64,7 @@ export class FilesSearchManager {
   private async searchFileNames(userId: number, spaceIds: number[], shareIds: number[], search: string, limit: number): Promise<FileContent[]> {
     const fileContents: FileContent[] = []
     const regexpTerms = genRegexPositiveAndNegativeTerms(search)
-    for await (const [_id, _type, paths] of this.filesParser.allPaths(userId, spaceIds, shareIds)) {
+    for await (const [_id, _type, paths] of this.filesParser.allPaths([userId], spaceIds, shareIds)) {
       for (const p of paths) {
         const regexBasePath = new RegExp(`^/?${p.realPath}/?`)
         if (!p.isDir) {

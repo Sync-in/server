@@ -14,6 +14,7 @@ import { SpacesBrowser } from './services/spaces-browser.service'
 import { SpacesManager } from './services/spaces-manager.service'
 import { SpacesQueries } from './services/spaces-queries.service'
 import { SpacesController } from './spaces.controller'
+import { FilesQuotaManager } from '../files/services/files-quota-manager.service'
 
 describe(SpacesController.name, () => {
   let spacesController: SpacesController
@@ -29,6 +30,10 @@ describe(SpacesController.name, () => {
         },
         {
           provide: Cache,
+          useValue: {}
+        },
+        {
+          provide: FilesQuotaManager,
           useValue: {}
         },
         ContextManager,

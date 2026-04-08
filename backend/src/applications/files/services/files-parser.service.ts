@@ -13,9 +13,10 @@ import { spaces } from '../../spaces/schemas/spaces.schema'
 import { USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { users } from '../../users/schemas/users.schema'
-import { FileParseContext, FileParseType } from '../interfaces/file-parse-index'
+import { FileParseContext } from '../interfaces/file-parse-index'
 import { filePathSQL, files } from '../schemas/files.schema'
 import { isPathExists } from '../utils/files'
+import { FILE_REPOSITORY } from '../constants/operations'
 
 @Injectable()
 export class FilesParser {
@@ -23,30 +24,34 @@ export class FilesParser {
 
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 
-  async *allPaths(userId?: number, spaceIds?: number[], shareIds?: number[]): AsyncGenerator<[number, FileParseType, FileParseContext[]]> {
-    yield* this.userPaths(userId)
+  async *allPaths(userIds?: number[], spaceIds?: number[], shareIds?: number[]): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
+    yield* this.userPaths(userIds)
     yield* this.spacePaths(spaceIds)
     yield* this.sharePaths(shareIds)
   }
 
-  async *userPaths(userId?: number): AsyncGenerator<[number, FileParseType, FileParseContext[]]> {
+  async *userPaths(userIds?: number[]): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
     for (const user of await this.db
       .select({
         id: users.id,
         login: users.login
       })
       .from(users)
-      .where(and(...[eq(users.storageIndexing, true), lte(users.role, USER_ROLE.USER), ...(userId ? [eq(users.id, userId)] : [])]))) {
+      .where(and(...[eq(users.storageIndexing, true), lte(users.role, USER_ROLE.USER), ...(userIds ? [inArray(users.id, userIds)] : [])]))) {
       const userFilesPath = UserModel.getFilesPath(user.login)
       if (!(await isPathExists(userFilesPath))) {
         this.logger.warn({ tag: this.userPaths.name, msg: `user path does not exist : ${userFilesPath}` })
         continue
       }
-      yield [user.id, 'user', [{ realPath: userFilesPath, pathPrefix: `${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}`, isDir: true }]]
+      yield [
+        user.id,
+        FILE_REPOSITORY.USER,
+        [{ realPath: userFilesPath, pathPrefix: `${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}`, isDir: true }]
+      ]
     }
   }
 
-  async *spacePaths(spaceIds?: number[]): AsyncGenerator<[number, FileParseType, FileParseContext[]]> {
+  async *spacePaths(spaceIds?: number[]): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
     for (const space of await this.db
       .select({
         id: spaces.id,
@@ -87,11 +92,11 @@ export class FilesParser {
                 isDir: r.isDir
               }
       )
-      yield [space.id, 'space', [...spacePath, ...rootPaths]]
+      yield [space.id, FILE_REPOSITORY.SPACE, [...spacePath, ...rootPaths]]
     }
   }
 
-  async *sharePaths(shareIds?: number[]): AsyncGenerator<[number, FileParseType, FileParseContext[]]> {
+  async *sharePaths(shareIds?: number[]): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
     for (const share of await this.db
       .select({
         id: shares.id,
@@ -129,7 +134,11 @@ export class FilesParser {
         this.logger.warn({ tag: this.sharePaths.name, msg: `share path does not exist : ${shareFilesPath}` })
         continue
       }
-      yield [share.id, 'share', [{ realPath: shareFilesPath, pathPrefix: `${SPACE_REPOSITORY.SHARES}/${share.alias}`, isDir: share.isDir }]]
+      yield [
+        share.id,
+        FILE_REPOSITORY.SHARE,
+        [{ realPath: shareFilesPath, pathPrefix: `${SPACE_REPOSITORY.SHARES}/${share.alias}`, isDir: share.isDir }]
+      ]
     }
   }
 }

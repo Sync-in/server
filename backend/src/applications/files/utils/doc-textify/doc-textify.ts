@@ -1,5 +1,4 @@
 import fs from 'node:fs/promises'
-import path from 'node:path'
 import { parseExcel } from './adapters/excel'
 import { parseHtml } from './adapters/html'
 import { parseMarkdown } from './adapters/markdown'
@@ -10,6 +9,8 @@ import { parseText } from './adapters/text'
 import { parseWord } from './adapters/word'
 import { DocTextifyOptions } from './interfaces/doc-textify.interfaces'
 import { cleanContent } from './utils/clean'
+import { INDEXABLE_EXTENSIONS } from '../../constants/indexing'
+import { getExtensionWithoutDot } from '../files'
 
 /** Main: determine parser by extension and dispatch */
 export async function docTextify(
@@ -31,7 +32,11 @@ export async function docTextify(
     }
   }
 
-  const ext = fileProperties?.extension || path.extname(filePath).slice(1).toLowerCase()
+  const ext = fileProperties?.extension || getExtensionWithoutDot(filePath)
+
+  if (!INDEXABLE_EXTENSIONS.has(ext)) {
+    throw new Error(`currently only supports ${[...INDEXABLE_EXTENSIONS].join(',')} files`)
+  }
 
   switch (ext) {
     case 'docx':
@@ -54,6 +59,6 @@ export async function docTextify(
     case 'htm':
       return cleanContent(await parseHtml(filePath), options)
     default:
-      throw new Error('currently only supports docx, pptx, xlsx, odt, odp, ods, pdf, txt, md, html files')
+      throw new Error(`no handler found for extension: ${ext}`)
   }
 }

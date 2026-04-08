@@ -25,6 +25,7 @@ import { SpaceEnv } from '../models/space-env.model'
 import { SpacesManager } from '../services/spaces-manager.service'
 import { SpacesQueries } from '../services/spaces-queries.service'
 import { SpaceGuard } from './space.guard'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
 
 describe(SpaceGuard.name, () => {
   let spacesGuard: SpaceGuard
@@ -49,6 +50,10 @@ describe(SpaceGuard.name, () => {
           provide: NotificationsManager,
           useValue: {}
         },
+        {
+          provide: FilesQuotaManager,
+          useValue: { setQuotaExceeded: () => jest.fn() }
+        },
         SpaceGuard,
         SpacesManager,
         SpacesQueries,
@@ -64,7 +69,6 @@ describe(SpaceGuard.name, () => {
     spacesQueries = module.get<SpacesQueries>(SpacesQueries)
     spacesGuard = module.get<SpaceGuard>(SpaceGuard)
     // mocks
-    spacesManager['setQuotaExceeded'] = jest.fn()
     userTest = new UserModel(generateUserTest())
   })
 

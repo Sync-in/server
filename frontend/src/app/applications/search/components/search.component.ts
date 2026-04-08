@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFont, faMapMarkerAlt, faSpinner, faTimes, faTrashCan } from '@fortawesome/free-solid-svg-icons'
-import { minCharsToSearch } from '@sync-in-server/backend/src/applications/files/constants/indexing'
+import { MIN_CHARS_TO_SEARCH } from '@sync-in-server/backend/src/applications/files/constants/indexing'
 import type { SearchFilesDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
@@ -45,7 +45,7 @@ export class SearchComponent {
   protected readonly store = inject(StoreService)
   public searchContent: Signal<string> = computed(() => this.store.currentSearch().content)
   protected readonly icons = { SEARCH_ICON, faSpinner, faTrashCan, faTimes, faFont, faMapMarkerAlt }
-  protected minCharsToSearch = minCharsToSearch
+  protected minCharsToSearch = MIN_CHARS_TO_SEARCH
   protected loading = false
   protected errorMessage: string = null
   protected selectedId: number = null

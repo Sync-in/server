@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { Cron, CronExpression, Timeout } from '@nestjs/schedule'
+import { Cron, CronExpression, Interval, Timeout } from '@nestjs/schedule'
 import { isNotNull, sql } from 'drizzle-orm'
 import { unionAll } from 'drizzle-orm/mysql-core'
 import fs from 'node:fs/promises'
@@ -17,18 +17,23 @@ import { FileTask, FileTaskStatus } from '../models/file-task'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { files } from '../schemas/files.schema'
 import { dirHasChildren, isPathExists, removeFiles } from '../utils/files'
-import { FilesContentManager } from './files-content-manager.service'
+import { FilesContentIndexer } from './files-content-indexer.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
+import { FilesQuotaManager } from './files-quota-manager.service'
 
 @Injectable()
 export class FilesScheduler {
   private readonly logger = new Logger(FilesScheduler.name)
-  private isIndexContentFilesRunning = false
+  private isIndexContentRunning = false
+  private isIndexContentEntriesRunning = false
+  private isQuotaUpdateIsRunning = false
+  private isQuotaUpdateEntriesIsRunning = false
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
     private readonly cache: Cache,
-    private readonly filesContentManager: FilesContentManager
+    private readonly filesContentIndexer: FilesContentIndexer,
+    private readonly filesQuotaManager: FilesQuotaManager
   ) {}
 
   @Timeout(10_000)
@@ -36,17 +41,40 @@ export class FilesScheduler {
     try {
       await this.cleanupInterruptedTasks()
       await this.clearRecentFiles()
+      await this.updateQuotas()
     } catch (e) {
       this.logger.error(e)
     }
   }
 
-  @Timeout(180_000)
+  @Timeout(300_000)
   async afterStartup(): Promise<void> {
     try {
       await this.indexContentFiles()
     } catch (e) {
       this.logger.error(e)
+    }
+  }
+
+  @Interval(60_000)
+  async updateStorageAndIndexing() {
+    if (this.isQuotaUpdateIsRunning || this.isQuotaUpdateEntriesIsRunning) return
+    this.isQuotaUpdateEntriesIsRunning = true
+    try {
+      await this.filesQuotaManager.updateStorageUsageEntries()
+    } catch (e) {
+      this.logger.error({ tag: this.updateStorageAndIndexing.name, msg: `update quota error: ${e}` })
+    } finally {
+      this.isQuotaUpdateEntriesIsRunning = false
+    }
+    if (!configuration.applications.files.contentIndexing.enabled || this.isIndexContentRunning || this.isIndexContentEntriesRunning) return
+    this.isIndexContentEntriesRunning = true
+    try {
+      await this.filesContentIndexer.updateIndexEntries()
+    } catch (e) {
+      this.logger.error({ tag: this.updateStorageAndIndexing.name, msg: `update indexing error: ${e}` })
+    } finally {
+      this.isIndexContentEntriesRunning = false
     }
   }
 
@@ -136,17 +164,17 @@ export class FilesScheduler {
   async indexContentFiles(): Promise<void> {
     // Conditional loading of file content indexing
     if (!configuration.applications.files.contentIndexing.enabled) return
-    if (this.isIndexContentFilesRunning) {
+    if (this.isIndexContentRunning || this.isIndexContentEntriesRunning) {
       this.logger.warn({ tag: this.indexContentFiles.name, msg: `SKIP (already running)` })
       return
     }
-    this.isIndexContentFilesRunning = true
+    this.isIndexContentRunning = true
     this.logger.log({ tag: this.indexContentFiles.name, msg: `START` })
     try {
-      await this.filesContentManager.parseAndIndexAllFiles()
+      await this.filesContentIndexer.parseAndIndexAllFiles()
       this.logger.log({ tag: this.indexContentFiles.name, msg: `END` })
     } finally {
-      this.isIndexContentFilesRunning = false
+      this.isIndexContentRunning = false
     }
   }
 
@@ -185,5 +213,33 @@ export class FilesScheduler {
       this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `${e}` })
     }
     this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `END` })
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async updateQuotas() {
+    if (this.isQuotaUpdateIsRunning) return
+    this.isQuotaUpdateIsRunning = true
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Personals - START' })
+    try {
+      await this.filesQuotaManager.updatePersonalSpacesQuota()
+    } catch (e) {
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Personals - ${e}` })
+    }
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Personals - END' })
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Spaces - START' })
+    try {
+      await this.filesQuotaManager.updateSpacesQuota()
+    } catch (e) {
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Spaces - ${e}` })
+    }
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Spaces - END' })
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Share External Paths - START' })
+    try {
+      await this.filesQuotaManager.updateSharesExternalPathQuota()
+    } catch (e) {
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Share External Paths - ${e}` })
+    }
+    this.logger.log({ tag: this.updateQuotas.name, msg: 'Share External Paths - END' })
+    this.isQuotaUpdateIsRunning = false
   }
 }

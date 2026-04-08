@@ -308,7 +308,7 @@ export class SharesQueries {
   async updateShare(id: number, set: Partial<Record<keyof Share, any>>): Promise<boolean> {
     try {
       dbCheckAffectedRows(await this.db.update(shares).set(set).where(eq(shares.id, id)).limit(1), 1)
-      this.logger.debug({ tag: this.updateShare.name, msg: `share (${id}) was updated : ${JSON.stringify(set)}` })
+      this.logger.verbose({ tag: this.updateShare.name, msg: `share (${id}) was updated : ${JSON.stringify(set)}` })
       return true
     } catch (e) {
       this.logger.error({ tag: this.updateShare.name, msg: `share (${id}) was not updated : ${JSON.stringify(set)} : ${e}` })

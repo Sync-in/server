@@ -1,5 +1,5 @@
 import { escapeString } from '../../../common/functions'
-import { minCharsToSearch } from '../constants/indexing'
+import { MIN_CHARS_TO_SEARCH } from '../constants/indexing'
 
 const regexMatchSearchBoolean = new RegExp(`([+-]?)(?:"([^"]+)"|(\\S+))`)
 const regexMatchesSearchBoolean = new RegExp(regexMatchSearchBoolean.source, 'g')
@@ -59,7 +59,7 @@ export function analyzeTerms(search: string, onlyAllowNegative = false): string[
       const [, operator, quoted, unquoted] = match.match(regexMatchSearchBoolean)
       let term: string = (quoted || unquoted).trim()
 
-      if (term.length < minCharsToSearch) return null
+      if (term.length < MIN_CHARS_TO_SEARCH) return null
 
       if ((onlyAllowNegative && operator !== '-') || (!onlyAllowNegative && (operator === '-' || operator === '~'))) return null
 

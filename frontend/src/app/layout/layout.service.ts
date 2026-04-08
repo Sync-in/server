@@ -232,12 +232,11 @@ export class LayoutService {
     override: any = {}
   ): ActiveToast<any> | void {
     if (type === 'error' && e) {
-      console.error(e)
       const errorMessage = e.error
         ? Array.isArray(e.error.message)
           ? e.error.message.map((e: string) => this.translateString(e)).join(' & ')
           : this.translateString(e.error.message)
-        : e.message || 'Unknown error !'
+        : this.translateString(e.message || 'Unknown error !')
       if (this.electron.enabled) {
         this.electron.sendMessage(this.translateString(title), `${this.translateString(message)} - ${errorMessage}`)
       } else {

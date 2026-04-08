@@ -2,7 +2,12 @@ import type { TreeNode } from '@ali-hm/angular-tree-component'
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
-import { FILE_MODE, FILE_OPERATION, FORCE_AS_FILE_OWNER } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import {
+  FILE_MODE,
+  FILE_OPERATION,
+  FORCE_AS_FILE_OWNER,
+  SEND_FILE_ERROR_MSG
+} from '@sync-in-server/backend/src/applications/files/constants/operations'
 import {
   API_FILES_OPERATION,
   API_FILES_OPERATION_MAKE,
@@ -345,7 +350,9 @@ export class FilesService {
           } satisfies Partial<FilesViewerDialogComponent>
         })
       },
-      error: (e: HttpErrorResponse) => {
+      error: (e: HttpErrorResponse | any) => {
+        // HEAD requests do not include a body or custom message
+        e.message = e.status in SEND_FILE_ERROR_MSG ? SEND_FILE_ERROR_MSG[e.status] : e.statusText
         this.layout.sendNotification('error', 'Unable to open document', file?.name, e)
       }
     })

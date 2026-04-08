@@ -13,6 +13,7 @@ import { UsersQueries } from '../users/services/users-queries.service'
 import { CommentsController } from './comments.controller'
 import { CommentsManager } from './services/comments-manager.service'
 import { CommentsQueries } from './services/comments-queries.service'
+import { FilesQuotaManager } from '../files/services/files-quota-manager.service'
 
 describe(CommentsController.name, () => {
   let commentsController: CommentsController
@@ -41,6 +42,7 @@ describe(CommentsController.name, () => {
         { provide: Cache, useValue: {} },
         ContextManager,
         { provide: CommentsManager, useValue: commentsManagerMock },
+        { provide: FilesQuotaManager, useValue: {} },
         CommentsQueries,
         SpacesManager,
         SpacesQueries,

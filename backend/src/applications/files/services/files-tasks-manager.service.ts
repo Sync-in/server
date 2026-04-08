@@ -4,18 +4,17 @@ import crypto from 'node:crypto'
 import path from 'node:path'
 import { setTimeout } from 'node:timers/promises'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
-
 import { currentTimeStamp } from '../../../common/shared'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { UserModel } from '../../users/models/user.model'
 import { CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../constants/cache'
 import { FILE_OPERATION } from '../constants/operations'
-import { FileTaskEvent } from '../events/file-task-event'
 import { FileTask, FileTaskProps, FileTaskStatus } from '../models/file-task'
 import { countDirEntries, dirName, fileName, fileSize, isPathIsDir, removeFiles } from '../utils/files'
 import { SendFile } from '../utils/send-file'
 import { FilesMethods } from './files-methods.service'
+import { FileTaskEvent } from '../events/file-events'
 
 @Injectable()
 export class FilesTasksManager {

@@ -1,2 +1,2 @@
-export const tarExtension = 'tar'
-export const tarGzExtension = 'tgz'
+export const TAR_EXTENSION = 'tar'
+export const TAR_GZ_EXTENSION = 'tgz'

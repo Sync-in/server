@@ -20,4 +20,16 @@ export enum FILE_MODE {
   EDIT = 'edit'
 }
 
+export enum FILE_REPOSITORY {
+  USER = 'user',
+  SPACE = 'space',
+  SHARE = 'share'
+}
+
 export const FORCE_AS_FILE_OWNER = 'forceAsFileOwner' as const
+
+export const SEND_FILE_ERROR_MSG = {
+  400: 'The location is a directory',
+  404: 'Location not found',
+  405: 'The location is not readable'
+} as const

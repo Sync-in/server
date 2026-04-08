@@ -4,6 +4,7 @@ import { FastifyReply, FastifyRequest } from 'fastify'
 import { DEFAULT_HIGH_WATER_MARK } from '../constants/files'
 import { FileError } from '../models/file-error'
 import { fileName, isPathExists, isPathIsDir, isPathIsReadable } from './files'
+import { SEND_FILE_ERROR_MSG } from '../constants/operations'
 
 export function makeContentDispositionAttachment(fileName: string) {
   const downloadName = fileName.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
@@ -30,13 +31,13 @@ export class SendFile {
 
   async checks() {
     if (!(await isPathExists(this.filePath))) {
-      throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
+      throw new FileError(HttpStatus.NOT_FOUND, SEND_FILE_ERROR_MSG[HttpStatus.NOT_FOUND])
     }
     if (await isPathIsDir(this.filePath)) {
-      throw new FileError(HttpStatus.BAD_REQUEST, 'The location is a directory')
+      throw new FileError(HttpStatus.BAD_REQUEST, SEND_FILE_ERROR_MSG[HttpStatus.BAD_REQUEST])
     }
     if (!(await isPathIsReadable(this.filePath))) {
-      throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'The location is not readable')
+      throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, SEND_FILE_ERROR_MSG[HttpStatus.METHOD_NOT_ALLOWED])
     }
   }
 

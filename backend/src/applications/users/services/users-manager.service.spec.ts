@@ -22,6 +22,7 @@ import { AdminUsersManager } from './admin-users-manager.service'
 import { AdminUsersQueries } from './admin-users-queries.service'
 import { UsersManager } from './users-manager.service'
 import { UsersQueries } from './users-queries.service'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
 
 jest.mock('../../../common/functions', () => {
   const actual = jest.requireActual('../../../common/functions')
@@ -76,6 +77,10 @@ describe(UsersManager.name, () => {
         AdminUsersQueries,
         UsersManager,
         UsersQueries,
+        {
+          provide: FilesQuotaManager,
+          useValue: { updateStorageQuota: () => jest.fn() }
+        },
         { provide: NotificationsManager, useValue: notificationsManager },
         { provide: AuthManager, useValue: {} },
         { provide: DB_TOKEN_PROVIDER, useValue: {} },

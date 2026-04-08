@@ -42,6 +42,7 @@ import { AdminService } from '../admin.service'
 import { AdminUserModel } from '../models/admin-user.model'
 import { AdminGuestDialogComponent } from './dialogs/admin-guest-dialog.component'
 import { AdminUserDialogComponent } from './dialogs/admin-user-dialog.component'
+import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
 
 @Component({
   selector: 'app-admin-users',
@@ -60,7 +61,8 @@ import { AdminUserDialogComponent } from './dialogs/admin-user-dialog.component'
     ButtonCheckboxDirective,
     FormsModule,
     UserAvatarComponent,
-    TapDirective
+    TapDirective,
+    ToBytesPipe
   ],
   templateUrl: 'admin-users.component.html'
 })
@@ -151,6 +153,7 @@ export class AdminUsersComponent {
   protected loading = false
   protected selected: AdminUserModel = null
   protected users: AdminUserModel[] = []
+  protected storageUsage = 0
   private readonly router = inject(Router)
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly layout = inject(LayoutService)
@@ -180,6 +183,7 @@ export class AdminUsersComponent {
     this.onSelect()
     this.adminService.listUsers(this.guestsView).subscribe({
       next: (users: AdminUserModel[]) => {
+        void this.calcUsageStorage(users)
         this.sortBy(this.sortTable.sortParam.column, false, users)
         this.scrollView.scrollInto(-1)
         this.loading = false
@@ -310,6 +314,10 @@ export class AdminUsersComponent {
       },
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Impersonate identity', this.selected.login, e)
     })
+  }
+
+  private async calcUsageStorage(users: AdminUserModel[]) {
+    this.storageUsage = users.reduce((sum, user) => sum + (user.storageUsage ?? 0), 0)
   }
 
   private setEnv() {

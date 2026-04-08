@@ -15,6 +15,7 @@ import { UsersQueries } from '../../users/services/users-queries.service'
 import { SpacesBrowser } from './spaces-browser.service'
 import { SpacesManager } from './spaces-manager.service'
 import { SpacesQueries } from './spaces-queries.service'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
 
 describe(SpacesBrowser.name, () => {
   let spacesBrowserService: SpacesBrowser
@@ -33,6 +34,7 @@ describe(SpacesBrowser.name, () => {
           provide: NotificationsManager,
           useValue: {}
         },
+        { provide: FilesQuotaManager, useValue: {} },
         SpacesManager,
         SpacesBrowser,
         SpacesQueries,
