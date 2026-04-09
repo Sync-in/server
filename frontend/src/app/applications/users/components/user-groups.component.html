@@ -99,7 +99,7 @@
                       } @else {
                         <fa-icon [icon]="icons.GROUPS" class="{{m.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}"></fa-icon>
                       }
-                      <div class="d-flex flex-column">
+                      <div class="d-flex flex-column text-truncate">
                         <span class="no-pointer-events" draggable="false">
                           {{ m.name }}
                           @if (m.isUser && m.isGroupManager) {

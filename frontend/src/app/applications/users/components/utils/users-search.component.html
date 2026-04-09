@@ -1,6 +1,6 @@
 <ng-template #searchMembers let-member="item">
-  <div class="d-flex" role="button">
-    <div class="d-flex align-items-center text-truncate">
+  <div class="d-flex w-100 overflow-hidden typeahead-option" role="button">
+    <div class="d-flex align-items-center text-truncate flex-shrink-0">
       @if (member.isUser) {
         <img alt="" class="avatar-base-img" height="32" width="32" [src]="member.avatarUrl" />
       } @else {
@@ -9,10 +9,12 @@
         </fa-icon>
       }
     </div>
-    <div class="d-flex ms-2 pe-5 {{member.description ? 'flex-column align-items-start' : 'align-items-center'}}">
-      <div [innerHTML]="member.name | highlight: selection"></div>
+    <div class="d-flex ms-2 pe-lg-5 flex-grow-1 overflow-hidden typeahead-option-text {{member.description ? 'flex-column align-items-start' : 'align-items-center'}}"
+         style="min-width: 0">
+      <div class="w-100 text-truncate typeahead-option-name" [innerHTML]="member.name | highlight: selection"></div>
       @if (member.description) {
-        <span class="fs-xs me-4 text-muted" [innerHTML]="member.description | highlight: selection"></span>
+        <span class="fs-xs me-lg-4 text-muted w-100 text-truncate typeahead-option-description"
+              [innerHTML]="member.description | highlight: selection"></span>
       }
     </div>
     <div class="ms-auto ps-5 me-1 text-muted d-none d-lg-block fs-2xs align-self-center">
@@ -38,7 +40,7 @@
       [typeaheadWaitMs]="100"
       [typeaheadHideResultsOnBlur]="true"
       [typeahead]="asyncSearchUsersOrGroups"
-      class="form-control mb-3"
+      class="form-control mb-3 typeahead-input"
     />
   </div>
 }

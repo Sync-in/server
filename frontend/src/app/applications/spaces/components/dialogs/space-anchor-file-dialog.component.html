@@ -10,7 +10,7 @@
 </div>
 <div class="modal-body">
   <div class="mb-3 col-12 col-md-7">
-    <label for="space" l10nTranslate>Space</label>
+    <label class="form-label" for="space" l10nTranslate>Space</label>
     <app-select id="space"
                 [searchFunction]="onSearchSpaces.bind(this)"
                 (data)="onSetSpace($event)"
@@ -20,7 +20,7 @@
     </app-select>
   </div>
   <div class="mb-3">
-    <label for="files" l10nTranslate>Files</label>
+    <label class="form-label" for="files" l10nTranslate>Files</label>
     <app-space-manage-roots id="files" [space]="space" [user]="user" [showInfo]="false" [showUsers]="false"></app-space-manage-roots>
   </div>
 </div>

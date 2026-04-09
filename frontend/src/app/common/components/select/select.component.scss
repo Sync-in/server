@@ -58,6 +58,25 @@
       display: flex;
       align-items: center;
       height: 100%;
+      width: 100%;
+      min-width: 0;
+
+      > .ui-select-match-text {
+        display: flex;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+
+        > * {
+          width: 100%;
+          min-width: 0;
+        }
+      }
+
+      > fa-icon,
+      > .dropdown-toggle {
+        flex: 0 0 auto;
+      }
 
       > .caret {
         position: absolute;
@@ -74,6 +93,10 @@
       flex-direction: column;
       justify-content: center;
       width: 100%;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .dropdown-toggle {

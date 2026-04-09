@@ -1,0 +1,33 @@
+.typeahead-input + typeahead-container,
+.typeahead-input + typeahead-container.dropdown-menu,
+.typeahead-input + typeahead-container .dropdown-menu {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+}
+
+.typeahead-input + typeahead-container .dropdown-item {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.typeahead-input + typeahead-container .dropdown-item > span,
+.typeahead-input + typeahead-container .dropdown-item > div {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.typeahead-option-text {
+  min-width: 0;
+}
+
+.typeahead-option-name,
+.typeahead-option-description {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
