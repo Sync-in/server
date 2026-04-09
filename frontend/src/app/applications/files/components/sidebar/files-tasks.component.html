@@ -29,14 +29,17 @@
   @for (task of tasks; track task.id) {
     <div class="task-list">
       <div (click)="goToFile(task)" [tooltip]="task.result | translate:locale.language" class="text-truncate" placement="bottom">
-        <span [class.text-danger]="task.status >= 2">
-          <fa-icon [icon]="iconsStatus[task.status]" [animation]="task.status === 0 ? 'spin-pulse' : null"></fa-icon>
-          <b><fa-icon [icon]="iconsOperation[task.type]" class="me-1"></fa-icon></b>
+        <div>
+          <fa-icon [class.text-danger]="task.status >= 2" [icon]="iconsStatus[task.status]"
+                   [animation]="task.status === 0 ? 'spin-pulse' : null"></fa-icon>
+          <b>
+            <fa-icon [icon]="iconsOperation[task.type]" class="me-1"></fa-icon>
+          </b>
           <span>{{ task.name }}</span>
-          @if (task.status === 2) {
-            <span>&nbsp;:&nbsp;{{ task.result | translate:locale.language }}</span>
-          }
-        </span>
+        </div>
+        @if (task.status === 2) {
+          <div [class.text-danger]="task.status >= 2" class="ms-2">{{ task.result | translate:locale.language }}</div>
+        }
         <div class="mt-1 fs-sm">
           <progressbar [max]="100"
                        [value]="task.status > 0 ? 100 : task.props.progress || 100"
