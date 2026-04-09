@@ -628,7 +628,7 @@ export class UsersQueries {
     limit = 3
   ): Promise<Pick<Group, 'id' | 'name' | 'description' | 'type' | 'permissions'>[]> {
     /* Search for groups */
-    const where: SQL[] = [like(groups.name, `%${searchMembersDto.search}%`)]
+    const where: SQL[] = [or(like(groups.name, `%${searchMembersDto.search}%`), like(groups.description, `%${searchMembersDto.search}%`))]
     if (userId) {
       const userRole = searchMembersDto.isGroupManager ? USER_GROUP_ROLE.MANAGER : undefined
       let idsWhitelist: number[] = await this.groupsWhitelist(userId, undefined, userRole)
