@@ -79,7 +79,7 @@ export class AdminGroupDialogComponent implements OnInit {
   }
 
   onSetParent(item: AdminGroupModel['parent']) {
-    this.groupForm.controls.parent.setValue(item ? { id: item.id, name: item.name } : null)
+    this.groupForm.controls.parent.setValue(item ? { id: item.id, name: item.name, description: item.description } : null)
     this.groupForm.controls.parent.markAsDirty()
   }
 
@@ -88,9 +88,9 @@ export class AdminGroupDialogComponent implements OnInit {
       search: query,
       onlyGroups: true,
       excludePersonalGroups: true,
-      ignoreGroupIds: this.groupForm.value.parent ? [this.groupForm.value.parent.id] : []
+      ignoreGroupIds: [this.group.id, ...(this.groupForm.value.parent ? [this.groupForm.value.parent.id] : [])]
     }
-    return this.adminService.searchMembers(search, true)
+    return this.adminService.searchMembers(search)
   }
 
   onSubmit() {

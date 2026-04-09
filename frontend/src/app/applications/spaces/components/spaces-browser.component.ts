@@ -550,7 +550,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   openSpaceAnchorFileDialog() {
-    const modalRef: BsModalRef<SpaceAnchorFileDialogComponent> = this.layout.openDialog(SpaceAnchorFileDialogComponent, 'lg', {
+    const modalRef: BsModalRef<SpaceAnchorFileDialogComponent> = this.layout.openDialog(SpaceAnchorFileDialogComponent, 'md', {
       initialState: { files: this.selection } as SpaceAnchorFileDialogComponent
     })
     modalRef.content.addAnchoredFiles.pipe(take(1)).subscribe((up: { space: SpaceModel; rootFiles: { id: number; name: string }[] }) => {
