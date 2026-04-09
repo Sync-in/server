@@ -19,7 +19,7 @@
           <span class="ui-select-placeholder">{{ placeholder }}</span>
         }
         @if (allowClear && active) {
-          <button (click)="removeClick(active, $event)" aria-label="close" type="button" class="btn-close"></button>
+          <fa-icon class="cursor-pointer me-2" (click)="removeClick(active, $event)" [icon]="xMarkIcon"></fa-icon>
         }
         <i class="dropdown-toggle"></i>
       </span>
@@ -48,8 +48,12 @@
     <span class="ui-icon circle-primary-icon me-2">
       <fa-icon [icon]="itemIcon" [fixedWidth]="false"></fa-icon>
     </span>
-    <span>{{ active.name }}</span>
-    <div class="d-flex ms-auto me-4 fs-xs text-muted">{{ active.description }}</div>
+    <div class="d-flex flex-column text-truncate">
+      <span>{{ active.name }}</span>
+      @if (active.description) {
+        <span class="text-truncate fs-xs text-muted">{{ active.description }}</span>
+      }
+    </div>
   </div>
 </ng-template>
 <ng-template #DefaultOptions let-i="i" let-o="o">
@@ -58,8 +62,12 @@
       <span class="ui-icon circle-primary-icon me-2">
         <fa-icon [icon]="itemIcon" [fixedWidth]="false"></fa-icon>
       </span>
-      <span [innerHtml]="sanitize(o.name | highlight:i)"></span>
-      <span class="d-flex ms-auto fs-xs text-muted" [innerHtml]="sanitize(o.description | highlight:i)"></span>
+      <div class="d-flex flex-column text-truncate">
+        <span class="text-truncate" [innerHtml]="sanitize(o.name | highlight:i)"></span>
+        @if (o.description) {
+          <span class="text-truncate fs-xs text-muted" [innerHtml]="sanitize(o.description | highlight:i)"></span>
+        }
+      </div>
     </div>
   </a>
 </ng-template>

@@ -4,7 +4,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms'
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faQuestion } from '@fortawesome/free-solid-svg-icons'
+import { faQuestion, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 import { OffClickDirective } from '../../directives/off-click.directive'
@@ -40,6 +40,7 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
   @Output() removed = new EventEmitter<any>()
   @Output() typed = new EventEmitter<any>()
   @Output() opened = new EventEmitter<any>()
+  protected xMarkIcon = faXmark
   public options: SelectItem[] = []
   public itemObjects: SelectItem[] = []
   public activeOption: SelectItem

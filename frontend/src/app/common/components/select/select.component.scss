@@ -32,11 +32,12 @@
   }
 
   .ui-select-search {
-    line-height: 26px;
+    height: 42px
   }
 
   .ui-select-match {
-    padding-left: .3rem;
+    height: 42px;
+    padding: 0.2rem 0.5rem;
 
     .btn {
       text-align: start !important;
@@ -56,6 +57,7 @@
     .ui-select-toggle {
       display: flex;
       align-items: center;
+      height: 100%;
 
       > .caret {
         position: absolute;
@@ -67,9 +69,10 @@
     }
 
     .ui-select-placeholder {
-      float: left;
-      line-height: 26px;
       color: #8c8c8c;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       width: 100%;
     }
 
@@ -85,14 +88,14 @@
   .ui-select-choices {
     width: 100%;
     height: auto;
-    max-height: 200px;
+    max-height: 275px;
     overflow-x: hidden;
     margin-top: 0;
 
     .ui-select-choices-row {
       > a {
         display: block;
-        padding: 3px 5px;
+        padding: 5px;
         clear: both;
         font-weight: 400;
         line-height: 1.42857143;
