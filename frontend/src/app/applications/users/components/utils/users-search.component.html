@@ -2,7 +2,7 @@
   <div class="d-flex" role="button">
     <div class="d-flex align-items-center text-truncate">
       @if (member.isUser) {
-        <img alt="" class="avatar-base-img" height="30" width="30" [src]="member.avatarUrl" />
+        <img alt="" class="avatar-base-img" height="32" width="32" [src]="member.avatarUrl" />
       } @else {
         <fa-icon [icon]="icons.GROUPS"
                  class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}">
@@ -48,7 +48,7 @@
       <div class="d-flex align-items-center text-truncate no-select" style="max-height: 38px">
         <div class="d-flex align-items-center text-truncate w-100">
           @if (member.isUser) {
-            <img alt="" class="avatar-base-img" height="35" width="35" [src]="member.avatarUrl" />
+            <img alt="" class="avatar-base-img" height="32" width="32" [src]="member.avatarUrl" />
           } @else if (member.isLink) {
             <fa-icon [icon]="icons.LINKS" class="circle-primary-icon"></fa-icon>
           } @else {

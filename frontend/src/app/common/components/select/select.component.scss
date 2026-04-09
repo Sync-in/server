@@ -13,9 +13,9 @@
   }
 
   .ui-icon {
-    min-width: 26px;
-    min-height: 26px;
-    font-size: calc(var(--font-size-base) * 0.9066667);
+    min-width: 32px;
+    min-height: 32px;
+    font-size: var(--font-size-lg);
   }
 
   .ui-disabled {

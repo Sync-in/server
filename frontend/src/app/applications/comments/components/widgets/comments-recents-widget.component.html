@@ -13,8 +13,8 @@
   <div class="recents-widget-card__body">
     @for (c of comments(); track c.id; let i = $index) {
       <button type="button" class="recent-item-card" [style.animation-delay.ms]="i * 22" (click)="goToFile(c)">
-        <span class="recent-item-card__media">
-          <app-user-avatar [user]="c.author" [container]="'body'" [width]="29" [height]="29"></app-user-avatar>
+        <span>
+          <app-user-avatar [user]="c.author" [container]="'body'"></app-user-avatar>
         </span>
         <span class="recent-item-card__content">
           <span class="recent-item-card__title">{{ c.content }}</span>

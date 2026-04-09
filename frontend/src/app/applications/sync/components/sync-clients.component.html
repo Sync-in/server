@@ -84,9 +84,9 @@
                         <img [src]="path.mimeUrl" alt="" class="sync-path-image" draggable="false">
                         <div class="d-flex flex-column text-truncate ms-2">
                           <span class="fs-base text-truncate user-select-none text-bold">{{ path.settings.name }}</span>
-                          <div class="d-flex align-items-center text-{{path.iconClass}}">
-                            <fa-icon [icon]="path.icon" class="me-1"></fa-icon>
-                            <span class="fs-sm text-truncate user-select-none">{{ path.showedPath }}</span>
+                          <div class="d-inline-flex align-items-center text-{{path.iconClass}} fs-sm">
+                            <fa-icon [icon]="path.icon" size="1x" class="me-1"></fa-icon>
+                            <span class="text-truncate user-select-none">{{ path.showedPath }}</span>
                           </div>
                         </div>
                       </div>

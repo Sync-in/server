@@ -69,8 +69,8 @@ export class UserAvatarComponent implements OnInit {
   @Input() user: OwnerType | MemberModel | any
   @Input() isMember = false
   @Input() unknownUserAsInfo = false
-  @Input() height = 30
-  @Input() width = 30
+  @Input() height = 32
+  @Input() width = 32
   @Input() fontSize = 16
   @Input() tooltipPlacement: AvailableBSPositions = 'auto'
   @Input() container: string = null
