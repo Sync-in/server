@@ -1,5 +1,8 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
+import path from 'node:path'
+import { writeFile } from 'node:fs/promises'
 import { FastifyReply, FastifyRequest } from 'fastify'
+import sharp from 'sharp'
 import {
   allowInsecureRequests,
   authorizationCodeGrant,
@@ -23,6 +26,7 @@ import type { CreateUserDto, UpdateUserDto } from '../../../applications/users/d
 import { UserModel } from '../../../applications/users/models/user.model'
 import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service'
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
+import { USER_AVATAR_FILE_NAME, USER_AVATAR_MAX_UPLOAD_SIZE } from '../../../applications/users/utils/avatar'
 import { generateShortUUID, splitFullName } from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
 import { AUTH_ROUTE } from '../../constants/routes'
@@ -300,6 +304,18 @@ export class AuthProviderOIDC implements AuthProvider {
     // Create or update user
     user = await this.updateOrCreateUser(identity, user)
 
+    const avatarUrl = this.extractAvatarUrl(userInfo)
+    if (avatarUrl) {
+      try {
+        await this.syncOIDCAvatar(user, avatarUrl)
+      } catch (e) {
+        this.logger.warn({
+          tag: this.processUserInfo.name,
+          msg: `unable to sync OIDC avatar for *${user.login}* : ${e}`
+        })
+      }
+    }
+
     // Update user access log
     this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error({ tag: this.processUserInfo.name, msg: `${e}` }))
 
@@ -393,6 +409,68 @@ export class AuthProviderOIDC implements AuthProvider {
     }
 
     return user
+  }
+
+  private extractAvatarUrl(userInfo: UserInfoResponse): string | null {
+    const picture = (userInfo as Record<string, unknown>).picture
+
+    if (typeof picture !== 'string') {
+      return null
+    }
+
+    const avatarUrl = picture.trim()
+    if (!avatarUrl) {
+      return null
+    }
+
+    try {
+      const url = new URL(avatarUrl)
+      if (!['http:', 'https:'].includes(url.protocol)) {
+        return null
+      }
+      return url.toString()
+    } catch {
+      return null
+    }
+  }
+
+  private async syncOIDCAvatar(user: UserModel, avatarUrl: string): Promise<void> {
+    const response = await fetch(avatarUrl, {
+      redirect: 'follow'
+    })
+
+    if (!response.ok) {
+      throw new Error(`avatar download failed with status ${response.status}`)
+    }
+
+    const contentType = response.headers.get('content-type') ?? ''
+    if (!contentType.startsWith('image/')) {
+      throw new Error(`OIDC picture is not an image (${contentType || 'unknown'})`)
+    }
+
+    const contentLengthHeader = response.headers.get('content-length')
+    if (contentLengthHeader) {
+      const contentLength = Number(contentLengthHeader)
+      if (Number.isFinite(contentLength) && contentLength > USER_AVATAR_MAX_UPLOAD_SIZE) {
+        throw new Error(`OIDC picture is too large (${contentLength} bytes)`)
+      }
+    }
+
+    const arrayBuffer = await response.arrayBuffer()
+    const inputBuffer = Buffer.from(arrayBuffer)
+
+    if (inputBuffer.length > USER_AVATAR_MAX_UPLOAD_SIZE) {
+      throw new Error(`OIDC picture exceeds max size after download (${inputBuffer.length} bytes)`)
+    }
+
+    const pngBuffer = await sharp(inputBuffer).rotate().resize(256, 256, { fit: 'cover' }).png().toBuffer()
+
+    if (pngBuffer.length > USER_AVATAR_MAX_UPLOAD_SIZE) {
+      throw new Error(`converted avatar exceeds max size (${pngBuffer.length} bytes)`)
+    }
+
+    const dstPath = path.join(user.homePath, USER_AVATAR_FILE_NAME)
+    await writeFile(dstPath, pngBuffer)
   }
 
   private extractLoginAndEmail(userInfo: UserInfoResponse) {
