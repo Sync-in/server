@@ -3,19 +3,21 @@ import path from 'node:path'
 import Tesseract from 'tesseract.js'
 import { configuration } from '../../../../../configuration/config.environment'
 import { makeDir } from '../../files'
+import type { FilesContentIndexingOCRConfig } from '../../../files.config'
 
-export type PdfOCRWorker = Awaited<ReturnType<typeof Tesseract.createWorker>>
-type PdfOCRWorkerOptions = NonNullable<Parameters<typeof Tesseract.createWorker>[2]>
+type OCRWorker = Awaited<ReturnType<typeof Tesseract.createWorker>>
+type OCRWorkerOptions = NonNullable<Parameters<typeof Tesseract.createWorker>[2]>
 
-export class PdfOCRWorkerManager {
-  private static instance: PdfOCRWorkerManager
-  public worker: PdfOCRWorker | null
-  private readonly ocrLanguagesPath = path.resolve(__dirname, '../../../assets/ocr-languages')
+export class OCRManager {
+  private static instance: OCRManager
+  public worker: OCRWorker | null
+  private readonly ocrConfig: FilesContentIndexingOCRConfig = configuration.applications.files.contentIndexing.ocr
+  private readonly ocrLanguagesPath = this.ocrConfig.languagesPath ?? path.resolve(__dirname, '../../../assets/ocr-languages')
   private readonly ocrUserDefinedDpi = '300'
   private readonly ocrTrainedDataExtension = '.traineddata'
   private readonly ocrTrainedDataGzipExtension = '.traineddata.gz'
   private logger: Logger
-  private workerInitializationPromise: Promise<PdfOCRWorker | null> | null
+  private workerInitializationPromise: Promise<OCRWorker | null> | null
 
   private constructor(logger: Logger) {
     this.logger = logger
@@ -23,24 +25,25 @@ export class PdfOCRWorkerManager {
     this.workerInitializationPromise = null
   }
 
-  static getInstance(logger: Logger): PdfOCRWorkerManager {
-    if (!PdfOCRWorkerManager.instance) {
-      PdfOCRWorkerManager.instance = new PdfOCRWorkerManager(logger)
+  static getInstance(logger: Logger): OCRManager {
+    if (!OCRManager.instance) {
+      OCRManager.instance = new OCRManager(logger)
     }
-    return PdfOCRWorkerManager.instance
+    return OCRManager.instance
   }
 
-  async start(): Promise<PdfOCRWorker | null> {
+  async start(): Promise<OCRWorker | null> {
     if (this.worker) {
       return this.worker
     }
     if (this.workerInitializationPromise) {
       return this.workerInitializationPromise
     }
-    this.logger.verbose({ tag: this.constructor.name, msg: 'Starting OCR' })
+
     this.workerInitializationPromise = this.createWorkerFromConfiguration()
       .then((worker) => {
         this.worker = worker
+        if (this.worker !== null) this.logger.verbose({ tag: this.constructor.name, msg: 'Started' })
         return worker
       })
       .finally(() => {
@@ -50,7 +53,6 @@ export class PdfOCRWorkerManager {
   }
 
   async stop(): Promise<void> {
-    this.logger.verbose({ tag: this.constructor.name, msg: 'Stopping OCR' })
     if (this.workerInitializationPromise) {
       await this.workerInitializationPromise.catch((e) =>
         this.logger.error({
@@ -64,15 +66,19 @@ export class PdfOCRWorkerManager {
     if (!worker) {
       return
     }
-    await worker.terminate().catch((e) =>
-      this.logger.error({
-        tag: this.constructor.name,
-        msg: `${e}`
-      })
-    )
+
+    await worker
+      .terminate()
+      .then(() => this.logger.verbose({ tag: this.constructor.name, msg: 'Stopped' }))
+      .catch((e) =>
+        this.logger.error({
+          tag: this.constructor.name,
+          msg: `${e}`
+        })
+      )
   }
 
-  private async createConfiguredWorker(languages: string[], options: PdfOCRWorkerOptions): Promise<PdfOCRWorker> {
+  private async createConfiguredWorker(languages: string[], options: OCRWorkerOptions): Promise<OCRWorker> {
     const worker = await Tesseract.createWorker(languages, Tesseract.OEM.LSTM_ONLY, {
       ...options,
       errorHandler: (e: unknown) =>
@@ -90,9 +96,8 @@ export class PdfOCRWorkerManager {
     return worker
   }
 
-  private async createWorkerFromConfiguration(): Promise<PdfOCRWorker | null> {
-    const ocrOptions = configuration.applications.files.contentIndexing.ocr
-    if (!ocrOptions.enabled) {
+  private async createWorkerFromConfiguration(): Promise<OCRWorker | null> {
+    if (!this.ocrConfig.enabled) {
       return null
     }
     try {
@@ -103,14 +108,14 @@ export class PdfOCRWorkerManager {
         msg: `unable to create languages directory: ${e}`
       })
     }
-    if (ocrOptions.offline) {
+    if (this.ocrConfig.offline) {
       const offlineWorkerOptions = {
         langPath: this.ocrLanguagesPath,
         cacheMethod: 'none' as const
       }
       try {
         // First try for gzipped files: <lang>.traineddata.gz
-        return await this.createConfiguredWorker(ocrOptions.languages, {
+        return await this.createConfiguredWorker(this.ocrConfig.languages, {
           ...offlineWorkerOptions,
           gzip: true
         })
@@ -120,13 +125,13 @@ export class PdfOCRWorkerManager {
           msg: `unable to load offline OCR languages as ${this.ocrTrainedDataGzipExtension}, retrying with ${this.ocrTrainedDataExtension}: ${error}`
         })
         // Fallback for non-gz files: <lang>.traineddata
-        return this.createConfiguredWorker(ocrOptions.languages, {
+        return this.createConfiguredWorker(this.ocrConfig.languages, {
           ...offlineWorkerOptions,
           gzip: false
         })
       }
     }
-    return this.createConfiguredWorker(ocrOptions.languages, {
+    return this.createConfiguredWorker(this.ocrConfig.languages, {
       cachePath: this.ocrLanguagesPath,
       cacheMethod: 'write' as const
     })

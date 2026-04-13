@@ -7,7 +7,7 @@ import { FILE_REPOSITORY } from '../constants/operations'
 import { FileParseContext } from '../interfaces/file-parse-index'
 import { FilesContentStore } from '../models/files-content-store'
 import * as docTextifyModule from '../utils/doc-textify/doc-textify'
-import { PdfOCRWorkerManager } from '../utils/doc-textify/utils/pdf-ocr'
+import { OCRManager } from '../utils/doc-textify/utils/ocr'
 import { FilesParser } from './files-parser.service'
 import { FilesContentIndexer } from './files-content-indexer.service'
 
@@ -111,7 +111,7 @@ describe(FilesContentIndexer.name, () => {
       start: jest.fn().mockResolvedValue(null),
       stop: jest.fn().mockResolvedValue(undefined)
     }
-    jest.spyOn(PdfOCRWorkerManager, 'getInstance').mockReturnValue(ocrManager as any)
+    jest.spyOn(OCRManager, 'getInstance').mockReturnValue(ocrManager as any)
     filesParser.allPaths.mockReturnValue(
       asyncGen([
         [1, FILE_REPOSITORY.USER, [{ realPath: '/u/john', pathPrefix: 'files/personal', isDir: true }]],
@@ -135,7 +135,7 @@ describe(FilesContentIndexer.name, () => {
       start: jest.fn().mockRejectedValue(new Error('ocr init failed')),
       stop: jest.fn().mockResolvedValue(undefined)
     }
-    jest.spyOn(PdfOCRWorkerManager, 'getInstance').mockReturnValue(ocrManager as any)
+    jest.spyOn(OCRManager, 'getInstance').mockReturnValue(ocrManager as any)
     filesParser.allPaths.mockReturnValue(
       asyncGen([[9, FILE_REPOSITORY.USER, [{ realPath: '/u/jane', pathPrefix: 'files/personal', isDir: true }]]] as any)
     )
@@ -282,7 +282,7 @@ describe(FilesContentIndexer.name, () => {
   })
 
   it('should parse content and return null when parser returns empty or throws', async () => {
-    ;(service as any).pdfOcrWorkerManager = { worker: { id: 'worker-1' } }
+    ;(service as any).ocrManager = { worker: { id: 'worker-1' } }
     const docTextifySpy = jest.spyOn(docTextifyModule, 'docTextify')
     docTextifySpy.mockResolvedValueOnce('')
     docTextifySpy.mockRejectedValueOnce(new Error('parse failed'))

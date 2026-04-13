@@ -1,5 +1,16 @@
 import { Type } from 'class-transformer'
-import { ArrayNotEmpty, IsArray, IsBoolean, IsInt, IsNotEmpty, IsNotEmptyObject, IsString, ValidateIf, ValidateNested } from 'class-validator'
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsNotEmptyObject,
+  IsOptional,
+  IsString,
+  ValidateIf,
+  ValidateNested
+} from 'class-validator'
 import { CollaboraOnlineConfig } from './modules/collabora-online/collabora-online.config'
 import { OnlyOfficeConfig } from './modules/only-office/only-office.config'
 
@@ -15,6 +26,10 @@ export class FilesContentIndexingOCRConfig {
 
   @IsBoolean()
   offline: boolean = false
+
+  @IsOptional()
+  @IsString()
+  languagesPath?: string
 }
 
 export class FilesContentIndexingConfig {

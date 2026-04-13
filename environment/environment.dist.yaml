@@ -131,6 +131,9 @@ auth:
     #     ca: [/app/certs/ca.pem]
     # optional
     tlsOptions:
+    # baseDN: Distinguished name (e.g.: ou=people,dc=ldap,dc=sync-in,dc=com)
+    # Used as the search base for users, and for groups when adminGroup is a CN.
+    # required
     baseDN: ou=people,dc=ldap,dc=sync-in,dc=com
     # filter, e.g: (acl=admin)
     # Appended as-is to the LDAP search filter (trusted config).
@@ -314,6 +317,10 @@ applications:
         # To download languages, use this scheme: https://cdn.jsdelivr.net/npm/@tesseract.js-data/<lang>@1.0.0/4.0.0_best_int/<lang>.traineddata.gz
         # default: false
         offline: false
+        # Path to local OCR language files
+        # Used when offline mode is enabled or to override default location
+        # default: built-in OCR directory
+        languagesPath:
     # Show files starting with a dot in the file explorer
     # default: false
     showHiddenFiles: false

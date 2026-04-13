@@ -7,7 +7,7 @@ import { FileIndexContext, FileParseContext } from '../interfaces/file-parse-ind
 import { FilesContentStore } from '../models/files-content-store'
 import { FileContent } from '../schemas/file-content.interface'
 import { docTextify } from '../utils/doc-textify/doc-textify'
-import { PdfOCRWorkerManager } from '../utils/doc-textify/utils/pdf-ocr'
+import { OCRManager } from '../utils/doc-textify/utils/ocr'
 import { getExtensionWithoutDot, getMimeType } from '../utils/files'
 import { FilesParser } from './files-parser.service'
 import { genIndexingKey } from '../utils/indexing'
@@ -18,7 +18,7 @@ import { Cache } from '../../../infrastructure/cache/services/cache.service'
 export class FilesContentIndexer {
   private readonly maxDocumentSize = 150 * 1_000_000
   private readonly logger = new Logger(FilesContentIndexer.name)
-  private pdfOcrWorkerManager: PdfOCRWorkerManager | null = null
+  private ocrManager: OCRManager | null = null
 
   constructor(
     private readonly cache: Cache,
@@ -62,9 +62,9 @@ export class FilesContentIndexer {
   }
 
   async parseAndIndexAllFiles(userIds?: number[], spaceIds?: number[], shareIds?: number[]): Promise<void> {
-    this.pdfOcrWorkerManager = PdfOCRWorkerManager.getInstance(this.logger)
+    this.ocrManager = OCRManager.getInstance(this.logger)
     try {
-      await this.pdfOcrWorkerManager.start()
+      await this.ocrManager.start()
     } catch (e) {
       this.logger.warn({ tag: this.parseAndIndexAllFiles.name, msg: `unable to initialize OCR worker: ${e}` })
     }
@@ -84,8 +84,8 @@ export class FilesContentIndexer {
         await this.filesIndexer.cleanIndexes(indexSuffixes)
       }
     } finally {
-      await this.pdfOcrWorkerManager?.stop()
-      this.pdfOcrWorkerManager = null
+      await this.ocrManager?.stop()
+      this.ocrManager = null
     }
   }
 
@@ -147,7 +147,7 @@ export class FilesContentIndexer {
       } else {
         this.logger.log({
           tag: this.indexFiles.name,
-          msg: `${indexSuffix} - indexed: ${indexedRecords - errorRecords}, errors: ${errorRecords}, deleted: ${recordsToDelete.length}`
+          msg: `${indexSuffix} - indexed: ${indexedRecords - errorRecords}, deleted: ${recordsToDelete.length}, errors: ${errorRecords}`
         })
       }
     }
@@ -224,7 +224,7 @@ export class FilesContentIndexer {
         {
           newlineDelimiter: ' ',
           minCharsToExtract: 10,
-          ocrWorker: this.pdfOcrWorkerManager?.worker
+          ocrWorker: this.ocrManager?.worker
         },
         {
           extension: extension,

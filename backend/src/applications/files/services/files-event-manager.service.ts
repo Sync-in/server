@@ -37,12 +37,12 @@ export class FilesEventManager implements OnModuleDestroy {
     await this.flushEvents()
   }
 
-  private readonly onFileEvent = (fileEvent: FileEventType): void => {
+  private readonly onFileEvent = (fEvent: FileEventType): void => {
     this.logger.verbose({
       tag: this.onFileEvent.name,
-      msg: `Receiving: user:${fileEvent.user.login} action:${fileEvent.action} on ${fileEvent.space.alias}`
+      msg: `Receiving: user:${fEvent.user.login} action:${fEvent.action} url:${fEvent.space.url}`
     })
-    this.eventsBuffer.push(fileEvent)
+    this.eventsBuffer.push(fEvent)
     if (this.eventsBuffer.length >= this.MAX_BUFFER_SIZE) {
       void this.flushEvents()
       return
