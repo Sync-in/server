@@ -15,7 +15,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
 
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 
-  @CacheDecorator(300)
+  @CacheDecorator(60)
   async indexesList(): Promise<string[]> {
     return ((await this.db.execute(sql`SHOW TABLES LIKE '${sql.raw(FILES_CONTENT_TABLE_PREFIX)}%'`))[0] as any).flatMap((r: Record<string, string>) =>
       Object.values(r)
