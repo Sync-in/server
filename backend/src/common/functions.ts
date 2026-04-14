@@ -9,6 +9,8 @@ import { setTimeout } from 'node:timers/promises'
 import { SPACE_PERMS_SEP } from '../applications/spaces/constants/spaces'
 import { decodeUrl } from './shared'
 
+const DUMMY_PASSWORD_HASH = '$2a$10$tjgA0v/cGe.vAfAJgNHpZeNrIdMxu82i0kGEjbtYkaVUCDkVzHRjG'
+
 export const regexpEscape = /[.*+?^${}()|[\]\\]/g
 export const regexSpecialChars = /[-[\]{}()*+!<=:?./\\^$|#,]/g
 export const regexSpecialCharsWithSpace = /[-[\]{}()*+!<=:?./\\^$|#\s,]/g
@@ -66,7 +68,12 @@ export async function hashPassword(password: string): Promise<string> {
   return await bcrypt.hash(password, 10)
 }
 
-export async function comparePassword(password: string, hash: string): Promise<boolean> {
+export async function comparePassword(password: string, hash?: string | null): Promise<boolean> {
+  if (!hash) {
+    // No hash, waste time for time-based attacks
+    await bcrypt.compare(password, DUMMY_PASSWORD_HASH)
+    return false
+  }
   return await bcrypt.compare(password, hash)
 }
 
