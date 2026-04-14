@@ -1,4 +1,43 @@
 
+## [2.2.0](https://github.com/Sync-in/server/compare/v2.1.0...v2.2.0) (2026-04-14)
+
+
+### Features
+
+* **admin:** allow managing spaces from the admin section ([9822209](https://github.com/Sync-in/server/commit/9822209934c6beb25694f2194d908d59fec0555b))
+* **backend:auth:** add tlsOptions support for ldap provider ([2042ade](https://github.com/Sync-in/server/commit/2042adecf336da0b6cd40792901a5150dfb90cf1))
+* **backend:files:** add indexing support for markdown files ([abf59e7](https://github.com/Sync-in/server/commit/abf59e7bea196550d46c3fbcbd8825e94ed244e4))
+* **backend:files:** add pdf ocr indexing ([d37c531](https://github.com/Sync-in/server/commit/d37c531313d45c5d3eb86e2e71cafc7d522f635f))
+* **backend:files:** add support for configurable OCR language paths ([48443aa](https://github.com/Sync-in/server/commit/48443aa8578cf6e5178f7181c17654731b595477))
+* **backend:files:** align emitted FileEvent actions with real file mutations ([e0c7175](https://github.com/Sync-in/server/commit/e0c71751669591fb789f0d62cdc9a4b425b36c00))
+* **backend:files:** emit file event on document modification ([e7ed38c](https://github.com/Sync-in/server/commit/e7ed38cd3cc5ca5a861e9b275ab49f1ef2c99c8b))
+* **backend:files:** extend indexing key generation for anchored roots ([824bff8](https://github.com/Sync-in/server/commit/824bff84c965868f2672fe339f32211919e102c6))
+* **backend:files:** implement file event manager ([c9951d7](https://github.com/Sync-in/server/commit/c9951d72464538aed911ca1e19b5104faf987e66))
+* **backend:files:** implement incremental indexing triggers for full-text search ([468c1c3](https://github.com/Sync-in/server/commit/468c1c3d9480315bfc8cdf73e77826630563292b))
+* **backend:infrastructure:** allow null or undefined args in cache key slug generation ([9d661ea](https://github.com/Sync-in/server/commit/9d661ea4ba4d2030bd907ac101842297a11cd3e5))
+* **backend:users:** allow searching groups by description ([434bd30](https://github.com/Sync-in/server/commit/434bd307e019193311655347bb0d3eb577ce9101))
+* **frontend:admin:** show cumulative storage usage for users and spaces ([5af4996](https://github.com/Sync-in/server/commit/5af4996db40acd45acb2f81321b90b9af0545974))
+* **frontend:** extend group parent model with description and adjust anchor file dialog layout ([01bc72b](https://github.com/Sync-in/server/commit/01bc72bfd9e35913702f194aaea2276ae7ce62f7))
+* **users:** allow to manage personal groups from the guest profile dialog ([c5d3c70](https://github.com/Sync-in/server/commit/c5d3c70c485eb9f6ae29223a3e95b68e3ca2ff3a))
+
+
+### Bug Fixes
+
+* **backend:auth:** derive basic auth cache key from hashed credentials instead of Authorization header ([be98def](https://github.com/Sync-in/server/commit/be98defb7aaf5c39d0651552543d7309af78392b))
+* **backend:auth:** prevent user enumeration via timing attacks ([80eebf3](https://github.com/Sync-in/server/commit/80eebf3f9ceefe8b416714cfaf0f319637839afb))
+* **backend:files:** ensure content indexing scheduling has no parallel executions ([0bef5a6](https://github.com/Sync-in/server/commit/0bef5a6799e77186b6cad9ae020ddd9d62e2148e))
+* **backend:files:** ensure storage quota is updated in cache ([030b87e](https://github.com/Sync-in/server/commit/030b87ebeec6e26afa19bf0ca55cf816156a91ea))
+* **backend:files:** handle locks without scope in checkConflicts ([f9bcbde](https://github.com/Sync-in/server/commit/f9bcbde21ffd92217c1f190bced4599b746af025))
+* **backend:files:** handle optional chaining in indexing key generation ([2b2c238](https://github.com/Sync-in/server/commit/2b2c2385f64e5d9080257d026ead7f4f84f5cc2d))
+* **backend:users:** ensure whitelist cache entries with parameters are properly cleared ([5e21b8d](https://github.com/Sync-in/server/commit/5e21b8db5c83e97aee38fc92e09186d4db7ccef2))
+* **backend:users:** handle guest login rename without space location rename ([2627d2d](https://github.com/Sync-in/server/commit/2627d2d715cc8de92bf097d33a024cea599d5fd8))
+* **backend:users:** sanitize group and app password names for safe route params ([d1b21a8](https://github.com/Sync-in/server/commit/d1b21a80032e59c6285c36213238ec9a91a83b7d))
+* **backend:webdav:** restore access to shares repository via WebDAV ([bec04e1](https://github.com/Sync-in/server/commit/bec04e14b8f3bccd77155726d22f44dbac6fef92))
+* **files:** encode special characters not handled by AuthInterceptor ([d9e81f0](https://github.com/Sync-in/server/commit/d9e81f02dc5fe40151471e5eed4624f4de030703))
+* **files:** handle document-open error messages for HEAD requests ([328d823](https://github.com/Sync-in/server/commit/328d8235497c89baac6d5b755aca28eac92def5b))
+* **frontend:users:** add button behavior inside groups ([d13132a](https://github.com/Sync-in/server/commit/d13132ad6e3c40ef47a7c6c6ee602c54ff45425b))
+* **users:** ensure guests cannot be elected as group managers ([24e0d57](https://github.com/Sync-in/server/commit/24e0d5760213934c7c09f199e15c8ec4a384ac8e))
+
 ## [2.1.0](https://github.com/Sync-in/server/compare/v2.0.0...v2.1.0) (2026-03-13)
 
 
