@@ -38,6 +38,12 @@ import { MemberModel } from '../users/models/member.model'
 import { USER_PATH } from '../users/user.constants'
 import { AdminGroupModel } from './models/admin-group.model'
 import { AdminUserModel } from './models/admin-user.model'
+import {
+  API_FILES_INDEXING,
+  API_FILES_INDEXING_START,
+  API_FILES_INDEXING_STOP
+} from '@sync-in-server/backend/src/applications/files/constants/routes'
+import type { IndexingStatus } from '@sync-in-server/backend/src/applications/files/interfaces/indexing.interface'
 
 @Injectable({
   providedIn: 'root'
@@ -143,5 +149,21 @@ export class AdminService {
 
   listSpaces(): Observable<SpaceModel[]> {
     return this.http.get<SpaceProps[]>(API_ADMIN_SPACES_LIST).pipe(map((sps: SpaceProps[]) => sps.map((s: SpaceProps) => new SpaceModel(s))))
+  }
+
+  indexingStatus(): Observable<IndexingStatus> {
+    return this.http.get<IndexingStatus>(API_FILES_INDEXING)
+  }
+
+  startIndexing(): Observable<boolean> {
+    return this.http.post<boolean>(API_FILES_INDEXING_START, null)
+  }
+
+  stopIndexing(): Observable<boolean> {
+    return this.http.post<boolean>(API_FILES_INDEXING_STOP, null)
+  }
+
+  dropIndexes(): Observable<void> {
+    return this.http.delete<void>(API_FILES_INDEXING)
   }
 }

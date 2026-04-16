@@ -24,10 +24,9 @@ import { FilesQuotaManager } from './files-quota-manager.service'
 @Injectable()
 export class FilesScheduler {
   private readonly logger = new Logger(FilesScheduler.name)
-  private isIndexContentRunning = false
-  private isIndexContentEntriesRunning = false
   private isQuotaUpdateIsRunning = false
   private isQuotaUpdateEntriesIsRunning = false
+  private pendingFullSync = false
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
@@ -39,6 +38,7 @@ export class FilesScheduler {
   @Timeout(10_000)
   async onStartup(): Promise<void> {
     try {
+      await this.filesContentIndexer.resetRunningState()
       await this.cleanupInterruptedTasks()
       await this.clearRecentFiles()
       await this.updateQuotas()
@@ -67,14 +67,14 @@ export class FilesScheduler {
     } finally {
       this.isQuotaUpdateEntriesIsRunning = false
     }
-    if (!configuration.applications.files.contentIndexing.enabled || this.isIndexContentRunning || this.isIndexContentEntriesRunning) return
-    this.isIndexContentEntriesRunning = true
+    if (!configuration.applications.files.contentIndexing.enabled || (await this.filesContentIndexer.isRunning())) return
     try {
       await this.filesContentIndexer.updateIndexEntries()
     } catch (e) {
       this.logger.error({ tag: this.updateStorageAndIndexing.name, msg: `update indexing error: ${e}` })
-    } finally {
-      this.isIndexContentEntriesRunning = false
+    }
+    if (this.pendingFullSync) {
+      await this.indexContentFiles()
     }
   }
 
@@ -164,18 +164,15 @@ export class FilesScheduler {
   async indexContentFiles(): Promise<void> {
     // Conditional loading of file content indexing
     if (!configuration.applications.files.contentIndexing.enabled) return
-    if (this.isIndexContentRunning || this.isIndexContentEntriesRunning) {
-      this.logger.warn({ tag: this.indexContentFiles.name, msg: `SKIP (already running)` })
+    if (await this.filesContentIndexer.isRunning()) {
+      this.pendingFullSync = true
+      this.logger.warn({ tag: this.indexContentFiles.name, msg: `SKIP (already running) - deferred` })
       return
     }
-    this.isIndexContentRunning = true
+    this.pendingFullSync = false
     this.logger.log({ tag: this.indexContentFiles.name, msg: `START` })
-    try {
-      await this.filesContentIndexer.parseAndIndexAllFiles()
-      this.logger.log({ tag: this.indexContentFiles.name, msg: `END` })
-    } finally {
-      this.isIndexContentRunning = false
-    }
+    await this.filesContentIndexer.parseAndIndexAllFiles()
+    this.logger.log({ tag: this.indexContentFiles.name, msg: `END` })
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_4AM)

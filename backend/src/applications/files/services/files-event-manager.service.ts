@@ -6,7 +6,7 @@ import type { FileEventType } from '../interfaces/file-event.interface'
 import { CACHE_QUOTA_TTL } from '../constants/cache'
 import { quotaCacheKeyFromSpace } from '../utils/quota'
 import { getExtensionWithoutDot } from '../utils/files'
-import { CACHE_INDEXING_TTL, INDEXABLE_EXTENSIONS } from '../constants/indexing'
+import { CACHE_INDEXING_EVENT_TTL, INDEXABLE_EXTENSIONS } from '../constants/indexing'
 import { indexingUpdateCacheKeysFromSpace } from '../utils/indexing'
 import { configuration } from '../../../configuration/config.environment'
 
@@ -112,7 +112,7 @@ export class FilesEventManager implements OnModuleDestroy {
   private async storeEventsInCache() {
     const [failedQuotaKeys, failedIndexingKeys] = await Promise.all([
       this.cacheKeysWithTTL(this.quotaEvents, CACHE_QUOTA_TTL, 'quota'),
-      this.cacheKeysWithTTL(this.indexingEvents, CACHE_INDEXING_TTL, 'indexing')
+      this.cacheKeysWithTTL(this.indexingEvents, CACHE_INDEXING_EVENT_TTL, 'indexing')
     ])
     this.quotaEvents = failedQuotaKeys
     this.indexingEvents = failedIndexingKeys

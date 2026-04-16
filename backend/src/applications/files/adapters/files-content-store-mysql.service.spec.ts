@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { FilesContentStoreMySQL } from './files-content-store-mysql.service'
 
@@ -7,18 +6,12 @@ describe(FilesContentStoreMySQL.name, () => {
   let module: TestingModule
   let filesIndexerMySQL: FilesContentStoreMySQL
   let db: { execute: jest.Mock }
-  let cache: { genSlugKey: jest.Mock; get: jest.Mock; set: jest.Mock }
 
   beforeAll(async () => {
     db = { execute: jest.fn() }
-    cache = {
-      genSlugKey: jest.fn(() => 'cache:indexesList:key'),
-      get: jest.fn(),
-      set: jest.fn().mockResolvedValue(undefined)
-    }
 
     module = await Test.createTestingModule({
-      providers: [FilesContentStoreMySQL, { provide: DB_TOKEN_PROVIDER, useValue: db }, { provide: Cache, useValue: cache }]
+      providers: [FilesContentStoreMySQL, { provide: DB_TOKEN_PROVIDER, useValue: db }]
     }).compile()
 
     module.useLogger(['fatal'])
@@ -39,15 +32,11 @@ describe(FilesContentStoreMySQL.name, () => {
 
   describe('indexesList', () => {
     it('should list tables starting with prefix', async () => {
-      // Force a cache hit to avoid decorator calling the original method with a bad `this`
-      cache.get.mockResolvedValueOnce(['files_content_u_1', 'files_content_s_2'])
+      db.execute.mockResolvedValueOnce([[{ t: 'files_content_u_1' }, { t: 'files_content_s_2' }]])
 
       const res = await filesIndexerMySQL.indexesList()
       expect(res).toEqual(['files_content_u_1', 'files_content_s_2'])
-      expect(cache.genSlugKey).toHaveBeenCalled()
-      expect(cache.get).toHaveBeenCalled()
-      // DB should not be called on cache hit
-      expect(db.execute).not.toHaveBeenCalled()
+      expect(db.execute).toHaveBeenCalledTimes(1)
     })
   })
 

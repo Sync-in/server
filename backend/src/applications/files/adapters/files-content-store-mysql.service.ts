@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { SQL, sql } from 'drizzle-orm'
 import { MySqlQueryResult } from 'drizzle-orm/mysql2'
-import { CacheDecorator } from '../../../infrastructure/cache/cache.decorator'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { FilesContentStore } from '../models/files-content-store'
@@ -15,11 +14,12 @@ export class FilesContentStoreMySQL implements FilesContentStore {
 
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 
-  @CacheDecorator(60)
   async indexesList(): Promise<string[]> {
-    return ((await this.db.execute(sql`SHOW TABLES LIKE '${sql.raw(FILES_CONTENT_TABLE_PREFIX)}%'`))[0] as any).flatMap((r: Record<string, string>) =>
-      Object.values(r)
-    )
+    return (await this.getIndexes()).flatMap((r: Record<string, string>) => Object.values(r))
+  }
+
+  async indexesCount(): Promise<number> {
+    return (await this.getIndexes()).length
   }
 
   getIndexName(tableSuffix: string): string {
@@ -136,7 +136,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   }
 
   async cleanIndexes(tableSuffixes: string[]): Promise<void> {
-    // remove old tables
+    // remove outdated tables based on table suffixes
     if (!tableSuffixes.length) return
     const tableNames = tableSuffixes.map((s) => this.getIndexName(s))
     const tablesToDrop: string[] = (await this.indexesList()).filter((t: string) => tableNames.indexOf(t) === -1)
@@ -144,5 +144,15 @@ export class FilesContentStoreMySQL implements FilesContentStore {
       this.logger.log({ tag: this.cleanIndexes.name, msg: `drop table : ${t}` })
       await this.dropIndex(t)
     }
+  }
+
+  async dropAllIndexes(): Promise<void> {
+    for (const i of (await this.getIndexes()).flatMap((r: Record<string, string>) => Object.values(r))) {
+      await this.dropIndex(i)
+    }
+  }
+
+  private async getIndexes(): Promise<Record<string, string>[]> {
+    return (await this.db.execute(sql`SHOW TABLES LIKE '${sql.raw(FILES_CONTENT_TABLE_PREFIX)}%'`))[0] as any
   }
 }

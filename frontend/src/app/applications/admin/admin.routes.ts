@@ -53,6 +53,10 @@ export const adminRoutes: Routes = [
           }
         ]
       },
+      {
+        path: ADMIN_PATH.TOOLS,
+        loadComponent: () => import('./components/admin-tools.component').then((c) => c.AdminToolsComponent)
+      },
       { path: '**', redirectTo: ADMIN_PATH.USERS }
     ]
   }

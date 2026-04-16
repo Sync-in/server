@@ -1,6 +1,8 @@
 import { FileContent } from '../schemas/file-content.interface'
 
 export abstract class FilesContentStore {
+  abstract indexesCount(): Promise<number>
+
   abstract indexesList(): Promise<string[]>
 
   abstract getIndexName(indexSuffix: string): string
@@ -20,4 +22,6 @@ export abstract class FilesContentStore {
   abstract deleteRecords(indexName: string, ids: number[]): Promise<void>
 
   abstract cleanIndexes(indexSuffixes: string[]): Promise<void>
+
+  abstract dropAllIndexes(): Promise<void>
 }

@@ -43,7 +43,9 @@ export class OCRManager {
     this.workerInitializationPromise = this.createWorkerFromConfiguration()
       .then((worker) => {
         this.worker = worker
-        if (this.worker !== null) this.logger.verbose({ tag: this.constructor.name, msg: 'Started' })
+        if (this.worker !== null) {
+          this.logger.verbose({ tag: this.constructor.name, msg: 'Started' })
+        }
         return worker
       })
       .finally(() => {

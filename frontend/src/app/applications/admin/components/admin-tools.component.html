@@ -1,0 +1,109 @@
+<div class="profile-page" appAutoResize [resizeOffset]="40">
+  <div class="container-fluid p-2">
+    <div class="row g-3">
+      <div class="col-12 col-lg-6">
+        <div class="card dialog-tab-card">
+          <div class="card-body">
+            <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Full-text indexing</div>
+            <div class="row g-0">
+              <div class="col-12">
+                <div class="card dialog-check-card">
+                  <div class="card-body p-2">
+                    <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
+                      <label for="" class="form-label col-7 col-sm-6 mb-0" l10nTranslate>State</label>
+                      <div class="col-5 col-sm-6 text-end">
+                        @switch (indexingStatus.state) {
+                          @case (IndexingState.RUNNING) {
+                            <span class="badge bg-success" l10nTranslate>Running</span>
+                          }
+                          @case (IndexingState.STOPPING) {
+                            <span class="badge bg-warning" l10nTranslate>Stopping</span>
+                          }
+                          @default {
+                            <span class="badge bg-secondary" l10nTranslate>Idle</span>
+                          }
+                        }
+                      </div>
+                    </div>
+                    <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
+                      <label for="" class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Indexes</label>
+                      <div class="col-5 col-sm-6 text-end">
+                        <span class="badge bg-primary">{{ indexingStatus.indexesCount }}</span>
+                      </div>
+                    </div>
+                    <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle mb-2">
+                      <label for="" class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Last partial run</label>
+                      <div class="col-5 col-sm-6 text-end">
+                        @if (indexingStatus.lastPartialRunAt) {
+                          <span class="badge bg-purple text-muted">{{ indexingStatus.lastPartialRunAt | amDateFormat }}</span>
+                        } @else {
+                          <span class="badge bg-purple text-muted" l10nTranslate>Never</span>
+                        }
+                      </div>
+                    </div>
+                    <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle mb-2">
+                      <label for="" class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Last full run</label>
+                      <div class="col-5 col-sm-6 text-end">
+                        @if (indexingStatus.lastFullRunAt) {
+                          <span class="badge bg-purple text-muted">{{ indexingStatus.lastFullRunAt | amDateFormat }}</span>
+                        } @else {
+                          <span class="badge bg-danger text-muted" l10nTranslate>Never</span>
+                        }
+                      </div>
+                    </div>
+                    <label for="" class="form-label me-auto mb-0 text-nowrap" l10nTranslate>Actions</label>
+                    <div class="d-flex align-items-center">
+                      <div class="text-muted no-select fs-sm my-3 px-1 me-auto" l10nTranslate>
+                        Start or stop indexing.
+                      </div>
+                      @if (indexingStatus.state === IndexingState.RUNNING) {
+                        <button
+                          (click)="stopIndexing()"
+                          class="btn btn-warning btn-sm text-nowrap"
+                          type="button">
+                          <fa-icon [icon]="icons.faStop"></fa-icon>
+                          <span class="ms-1" l10nTranslate>Stop</span>
+                        </button>
+                      } @else {
+                        <button
+                          (click)="startIndexing()"
+                          [disabled]="indexingStatus.state === IndexingState.STOPPING"
+                          class="btn btn-success btn-sm text-nowrap"
+                          type="button">
+                          <fa-icon [icon]="icons.faPlay"></fa-icon>
+                          <span class="ms-1" l10nTranslate>Start</span>
+                        </button>
+                      }
+                    </div>
+                    <div class="d-flex align-items-center">
+                      <div class="text-muted no-select fs-sm my-3 px-1 me-auto" l10nTranslate>
+                        Delete all indexes.
+                      </div>
+                        @if (confirmResetIndexing) {
+                          <button
+                            (click)="confirmResetIndexing = false"
+                            [disabled]="indexingStatus.state === IndexingState.RUNNING"
+                            class="btn btn-secondary btn-sm text-nowrap me-2"
+                            type="button">
+                            <span l10nTranslate>Cancel</span>
+                          </button>
+                        }
+                        <button
+                          (click)="dropIndexes()"
+                          class="btn {{confirmResetIndexing ? 'btn-danger' : 'btn-secondary'}} btn-sm text-nowrap"
+                          type="button"
+                          [disabled]="indexingStatus.state !== IndexingState.IDLE || indexingStatus.indexesCount === 0">
+                          <fa-icon [icon]="icons.faTrash"></fa-icon>
+                          <span class="ms-1" l10nTranslate>Remove</span>
+                        </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

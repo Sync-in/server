@@ -44,6 +44,11 @@ import { FilesMethods } from './services/files-methods.service'
 import { FilesRecents } from './services/files-recents.service'
 import { FilesSearchManager } from './services/files-search-manager.service'
 import { FilesTasksManager } from './services/files-tasks-manager.service'
+import { FilesContentIndexer } from './services/files-content-indexer.service'
+import { UserHaveRole } from '../users/decorators/roles.decorator'
+import { USER_ROLE } from '../users/constants/user'
+import { UserRolesGuard } from '../users/guards/roles.guard'
+import { IndexingStatus } from './interfaces/indexing.interface'
 
 @Controller(FILES_ROUTE.BASE)
 @UseGuards(SpaceGuard)
@@ -54,7 +59,8 @@ export class FilesController {
     private readonly filesMethods: FilesMethods,
     private readonly filesTasksManager: FilesTasksManager,
     private readonly filesRecents: FilesRecents,
-    private readonly filesSearch: FilesSearchManager
+    private readonly filesSearch: FilesSearchManager,
+    private readonly filesContentIndexer: FilesContentIndexer
   ) {}
 
   // OPERATIONS
@@ -206,5 +212,39 @@ export class FilesController {
   @SkipSpaceGuard()
   search(@GetUser() user: UserModel, @Body() search: SearchFilesDto): Promise<FileContent[]> {
     return this.filesSearch.search(user, search)
+  }
+
+  // CONTENT INDEXING (requires ADMIN role)
+
+  @Get(FILES_ROUTE.INDEXING)
+  @SkipSpaceGuard()
+  @UserHaveRole(USER_ROLE.ADMINISTRATOR)
+  @UseGuards(UserRolesGuard)
+  status(): Promise<IndexingStatus> {
+    return this.filesContentIndexer.status()
+  }
+
+  @Post(`${FILES_ROUTE.INDEXING}/${FILES_ROUTE.INDEXING_START}`)
+  @SkipSpaceGuard()
+  @UserHaveRole(USER_ROLE.ADMINISTRATOR)
+  @UseGuards(UserRolesGuard)
+  startIndexing(): Promise<boolean> {
+    return this.filesContentIndexer.startIndexing()
+  }
+
+  @Post(`${FILES_ROUTE.INDEXING}/${FILES_ROUTE.INDEXING_STOP}`)
+  @SkipSpaceGuard()
+  @UserHaveRole(USER_ROLE.ADMINISTRATOR)
+  @UseGuards(UserRolesGuard)
+  stopIndexing(): Promise<boolean> {
+    return this.filesContentIndexer.stopIndexing()
+  }
+
+  @Delete(FILES_ROUTE.INDEXING)
+  @SkipSpaceGuard()
+  @UserHaveRole(USER_ROLE.ADMINISTRATOR)
+  @UseGuards(UserRolesGuard)
+  dropIndexes(): Promise<void> {
+    return this.filesContentIndexer.dropIndexes()
   }
 }

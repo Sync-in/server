@@ -5,7 +5,7 @@ import { ACTION } from '../../../common/constants'
 import { FileEvent } from '../events/file-events'
 import type { FileEventType } from '../interfaces/file-event.interface'
 import { CACHE_QUOTA_TTL } from '../constants/cache'
-import { CACHE_INDEXING_TTL } from '../constants/indexing'
+import { CACHE_INDEXING_EVENT_TTL } from '../constants/indexing'
 import { quotaCacheKeyFromSpace } from '../utils/quota'
 import { indexingUpdateCacheKeysFromSpace } from '../utils/indexing'
 import { configuration } from '../../../configuration/config.environment'
@@ -81,7 +81,7 @@ describe(FilesEventManager.name, () => {
     expect(cacheSetMock).toHaveBeenCalledTimes(1 + indexingKeys.length)
     expect(cacheSetMock).toHaveBeenCalledWith(quotaKey, true, CACHE_QUOTA_TTL)
     for (const key of indexingKeys) {
-      expect(cacheSetMock).toHaveBeenCalledWith(key, true, CACHE_INDEXING_TTL)
+      expect(cacheSetMock).toHaveBeenCalledWith(key, true, CACHE_INDEXING_EVENT_TTL)
     }
   })
 

@@ -1,4 +1,4 @@
-import { faGear, faLayerGroup, faUserGear, faUsersGear } from '@fortawesome/free-solid-svg-icons'
+import { faGear, faLayerGroup, faScrewdriverWrench, faUserGear, faUsersGear } from '@fortawesome/free-solid-svg-icons'
 import { AppMenu } from '../../layout/layout.interfaces'
 
 export const ADMIN_PATH = {
@@ -7,7 +7,8 @@ export const ADMIN_PATH = {
   GUESTS: 'guests',
   GROUPS: 'groups',
   PGROUPS: 'personal_groups',
-  SPACES: 'spaces'
+  SPACES: 'spaces',
+  TOOLS: 'tools'
 } as const
 
 export const ADMIN_TITLE = {
@@ -16,14 +17,16 @@ export const ADMIN_TITLE = {
   GROUPS: 'Groups',
   GUESTS: 'Guests',
   PGROUPS: 'Personal groups',
-  SPACES: 'Spaces'
+  SPACES: 'Spaces',
+  TOOLS: 'Tools'
 } as const
 
 export const ADMIN_ICON = {
   BASE: faGear,
   USERS: faUserGear,
   GROUPS: faUsersGear,
-  SPACES: faLayerGroup
+  SPACES: faLayerGroup,
+  TOOLS: faScrewdriverWrench
 } as const
 
 export const ADMIN_MENU: AppMenu = {
@@ -49,6 +52,11 @@ export const ADMIN_MENU: AppMenu = {
       title: ADMIN_TITLE.SPACES,
       icon: ADMIN_ICON.SPACES,
       link: `${ADMIN_PATH.BASE}/${ADMIN_PATH.SPACES}`
+    },
+    {
+      title: ADMIN_TITLE.TOOLS,
+      icon: ADMIN_ICON.TOOLS,
+      link: `${ADMIN_PATH.BASE}/${ADMIN_PATH.TOOLS}`
     }
   ]
 } as const
