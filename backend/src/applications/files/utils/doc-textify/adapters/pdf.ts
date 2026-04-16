@@ -61,7 +61,7 @@ function extractText(items: unknown[], newlineDelimiter: string): string {
   return fragments.join('')
 }
 
-async function extractTextFromImages(images: ExtractedImages, options: DocTextifyOptions): Promise<string[]> {
+async function extractTextFromImages(images: ExtractedImages, options: DocTextifyOptions, pageRotation = 0): Promise<string[]> {
   const contents: string[] = []
   const worker: DocTextifyOCRWorkerLike | undefined = options.ocrWorker
 
@@ -85,6 +85,10 @@ async function extractTextFromImages(images: ExtractedImages, options: DocTextif
 
       if (image.channels === 4) {
         imageProcessor = imageProcessor.flatten({ background: '#ffffff' })
+      }
+
+      if (pageRotation) {
+        imageProcessor = imageProcessor.rotate(pageRotation)
       }
 
       imageBuffer = await imageProcessor
@@ -156,7 +160,8 @@ export async function parsePdf(filePath: string, options: DocTextifyOptions): Pr
         if (!pageHasImages) {
           continue
         }
-        const ocrContents = await extractTextFromImages(images, options)
+        const viewport = page.getViewport({ scale: 1 })
+        const ocrContents = await extractTextFromImages(images, options, viewport.rotation)
         if (ocrContents.length > 0) {
           contents.push(...ocrContents)
         }
