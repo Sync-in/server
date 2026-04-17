@@ -4,6 +4,7 @@ import { MIN_CHARS_TO_SEARCH } from '../constants/indexing'
 const regexMatchSearchBoolean = new RegExp(`([+-]?)(?:"([^"]+)"|(\\S+))`)
 const regexMatchesSearchBoolean = new RegExp(regexMatchSearchBoolean.source, 'g')
 const booleanOperators = new Set(['+', '-', '<', '>', '~', '*'])
+const BOUNDARY = '(?:\\b|_)'
 const accentToBaseMap = new Map<string, string>([
   ['a', '[aàáâä]'],
   ['e', '[eèéêë]'],
@@ -85,12 +86,12 @@ export function genRegexPositiveAndNegativeTerms(search: string): RegExp {
   const negativeTerms = analyzeTerms(search, true)
   const p = positiveTerms
     .map((t) => genAccentInsensitiveRegexpPattern(t))
-    .map((t) => `(?=.*\\b${t})`)
+    .map((t) => `(?=.*${BOUNDARY}${t})`)
     .join('')
   if (!negativeTerms.length) return new RegExp(p, 'i')
   const n = negativeTerms
     .map((t) => genAccentInsensitiveRegexpPattern(t))
-    .map((t) => `\\b${t}\\b`)
+    .map((t) => `${BOUNDARY}${t}${BOUNDARY}`)
     .join('|')
   return new RegExp(`^${p}(?!.*(${n})).*$`, 'i')
 }

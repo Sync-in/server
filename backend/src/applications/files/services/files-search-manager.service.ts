@@ -14,6 +14,7 @@ import { genRegexPositiveAndNegativeTerms } from '../utils/files-search'
 import { FilesParser } from './files-parser.service'
 import { FILE_REPOSITORY } from '../constants/operations'
 import { genIndexingKey } from '../utils/indexing'
+import { escapePath } from '../../../common/functions'
 
 @Injectable()
 export class FilesSearchManager {
@@ -66,7 +67,7 @@ export class FilesSearchManager {
     const regexpTerms = genRegexPositiveAndNegativeTerms(search)
     for await (const [_id, _type, paths] of this.filesParser.allPaths([userId], spaceIds, shareIds)) {
       for (const p of paths) {
-        const regexBasePath = new RegExp(`^/?${p.realPath}/?`)
+        const regexBasePath = new RegExp(`^/?${escapePath(p.realPath)}/?`)
         if (!p.isDir) {
           const f = await this.analyzeFile(p.realPath, p.pathPrefix, regexBasePath, regexpTerms)
           if (f !== null) {
