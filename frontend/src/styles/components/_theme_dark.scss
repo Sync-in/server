@@ -261,8 +261,7 @@
       background-color: transparent;
 
       &:hover {
-        background-color: $sidebar-dark-icons-menu-bg !important;
-        color: $dark-item-hover-color !important;
+        background-color: $sidebar-dark-icons-menu-hover-bg !important;
       }
     }
 
@@ -277,7 +276,6 @@
     &.active,
     &:active {
       background-color: $sidebar-dark-icons-menu-bg !important;
-      color: $dark-item-hover-color !important;
     }
   }
   .dropdown-divider {
