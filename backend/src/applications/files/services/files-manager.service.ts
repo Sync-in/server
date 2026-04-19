@@ -535,7 +535,7 @@ export class FilesManager {
       // attempt to retrieve the Content-Length header
       try {
         if ('content-length' in headRes.headers) {
-          space.task.props.totalSize = parseInt(headRes.headers['content-length'], 10) || null
+          space.task.props.totalSize = Number(headRes.headers['content-length']) || null
         }
       } catch (e) {
         this.logger.debug({ tag: this.downloadFromUrl.name, msg: `content-length : ${e}` })

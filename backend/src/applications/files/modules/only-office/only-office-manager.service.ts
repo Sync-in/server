@@ -359,7 +359,7 @@ export class OnlyOfficeManager {
     }
 
     // try to verify the downloaded size
-    const contentLength = parseInt(res.headers['content-length'], 10)
+    const contentLength = Number(res.headers['content-length'])
     if (!isNaN(contentLength) && contentLength !== 0) {
       const tmpFileSize = await fileSize(tmpFilePath)
       if (tmpFileSize !== contentLength) {
