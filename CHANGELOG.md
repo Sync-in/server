@@ -1,4 +1,18 @@
 
+## [2.2.1](https://github.com/Sync-in/server/compare/v2.2.0...v2.2.1) (2026-04-19)
+
+
+### Features
+
+* **admin:** add indexing box to admin tools ([8686147](https://github.com/Sync-in/server/commit/8686147e01c19c9fad2a5c417ce3dec9742066b2))
+* **backend:files:** treat "_" as a term boundary in regex search ([bcd3577](https://github.com/Sync-in/server/commit/bcd357722d3124903a424d3b51347f4ae05ebcbd))
+
+
+### Bug Fixes
+
+* **backend:files:** add support for page rotation during OCR extraction ([6837cc4](https://github.com/Sync-in/server/commit/6837cc4ea8f11bbb587481e392c92fe720be01c8))
+* **backend:files:** handle axios content-length header as number-safe value ([3599ccb](https://github.com/Sync-in/server/commit/3599ccb5a041694dcbc4c6a95beaea1510669cbe))
+
 ## [2.2.0](https://github.com/Sync-in/server/compare/v2.1.0...v2.2.0) (2026-04-14)
 
 
