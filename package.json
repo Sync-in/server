@@ -94,7 +94,8 @@
     "prettier": "^3.4.1"
   },
   "overrides": {
-    "@napi-rs/canvas": "npm:noop3"
+    "@napi-rs/canvas": "npm:noop3",
+    "fastify": "5.8.5"
   },
   "commit-and-tag-version": {
     "header": "",
