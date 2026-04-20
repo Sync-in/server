@@ -812,18 +812,18 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private selectRangeFiles(file: FileModel) {
-    const fileIndex = this.files.indexOf(file)
-    const currentIndexes: number[] = this.selection.map((f: FileModel) => this.files.indexOf(f))
+    const fileIndex = this.scrollView.viewPortItems.indexOf(file)
+    const currentIndexes: number[] = this.selection.map((f: FileModel) => this.scrollView.viewPortItems.indexOf(f))
     const finalSelection: FileModel[] = []
     const minIndex = Math.min(...currentIndexes)
     const maxIndex = Math.max(...currentIndexes)
     if (fileIndex < minIndex) {
       for (let i = fileIndex; i < minIndex; i++) {
-        finalSelection.push(this.files[i])
+        finalSelection.push(this.scrollView.viewPortItems[i])
       }
     } else if (fileIndex > maxIndex) {
       for (let i = fileIndex; i > maxIndex; i--) {
-        finalSelection.push(this.files[i])
+        finalSelection.push(this.scrollView.viewPortItems[i])
       }
     }
     this.updateSelection([...this.selection, ...finalSelection])
