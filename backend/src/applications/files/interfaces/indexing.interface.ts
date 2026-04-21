@@ -1,7 +1,8 @@
 export enum IndexingState {
   RUNNING = 'running',
   STOPPING = 'stopping',
-  IDLE = 'idle'
+  IDLE = 'idle',
+  DISABLED = 'disabled'
 }
 
 export interface IndexingStatus {

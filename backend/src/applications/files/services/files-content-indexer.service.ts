@@ -22,9 +22,11 @@ import { FILE_REPOSITORY } from '../constants/operations'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { IndexingState, IndexingStatus } from '../interfaces/indexing.interface'
 import { escapePath } from '../../../common/functions'
+import { configuration } from '../../../configuration/config.environment'
 
 @Injectable()
 export class FilesContentIndexer {
+  public isEnabled = configuration.applications.files.contentIndexing.enabled
   private readonly maxDocumentSize = 150 * 1_000_000
   private readonly logger = new Logger(FilesContentIndexer.name)
   private ocrManager: OCRManager | null = null
@@ -44,13 +46,13 @@ export class FilesContentIndexer {
   }
 
   async startIndexing(): Promise<boolean> {
-    if (await this.isRunning()) return false
+    if (!this.isEnabled || (await this.isRunning())) return false
     this.parseAndIndexAllFiles().catch((e) => this.logger.error({ tag: this.startIndexing.name, msg: `${e}` }))
     return true
   }
 
   async stopIndexing(): Promise<boolean> {
-    if (!(await this.isRunning())) return false
+    if (!this.isEnabled || !(await this.isRunning())) return false
     await this.cache.set(CACHE_INDEXING_RUNNING_KEY, IndexingState.STOPPING, CACHE_INDEXING_RUNNING_TTL)
     return true
   }
@@ -58,7 +60,7 @@ export class FilesContentIndexer {
   async status(): Promise<IndexingStatus> {
     const status: IndexingStatus = {
       indexesCount: 0,
-      state: (await this.cache.get(CACHE_INDEXING_RUNNING_KEY)) ?? IndexingState.IDLE,
+      state: this.isEnabled ? ((await this.cache.get(CACHE_INDEXING_RUNNING_KEY)) ?? IndexingState.IDLE) : IndexingState.DISABLED,
       lastFullRunAt: (await this.cache.get(CACHE_INDEXING_LAST_RUN_KEY)) ?? null,
       lastPartialRunAt: (await this.cache.get(CACHE_INDEXING_EVENT_LAST_RUN_KEY)) ?? null
     }

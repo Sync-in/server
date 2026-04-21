@@ -4,7 +4,6 @@ import { isNotNull, sql } from 'drizzle-orm'
 import { unionAll } from 'drizzle-orm/mysql-core'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
@@ -38,12 +37,12 @@ export class FilesScheduler {
   @Timeout(10_000)
   async onStartup(): Promise<void> {
     try {
-      await this.filesContentIndexer.resetRunningState()
+      await this.resetContentIndexingState()
       await this.cleanupInterruptedTasks()
       await this.clearRecentFiles()
       await this.updateQuotas()
     } catch (e) {
-      this.logger.error(e)
+      this.logger.error({ tag: this.onStartup.name, msg: `${e}` })
     }
   }
 
@@ -52,7 +51,7 @@ export class FilesScheduler {
     try {
       await this.indexContentFiles()
     } catch (e) {
-      this.logger.error(e)
+      this.logger.error({ tag: this.afterStartup.name, msg: `${e}` })
     }
   }
 
@@ -67,7 +66,7 @@ export class FilesScheduler {
     } finally {
       this.isQuotaUpdateEntriesIsRunning = false
     }
-    if (!configuration.applications.files.contentIndexing.enabled || (await this.filesContentIndexer.isRunning())) return
+    if (!this.filesContentIndexer.isEnabled || (await this.filesContentIndexer.isRunning())) return
     try {
       await this.filesContentIndexer.updateIndexEntries()
     } catch (e) {
@@ -75,26 +74,6 @@ export class FilesScheduler {
     }
     if (this.pendingFullSync) {
       await this.indexContentFiles()
-    }
-  }
-
-  async cleanupInterruptedTasks(): Promise<void> {
-    this.logger.log({ tag: this.cleanupInterruptedTasks.name, msg: `START` })
-    try {
-      let nb = 0
-      const keys = await this.cache.keys(`${CACHE_TASK_PREFIX}-*`)
-      for (const key of keys) {
-        const task = await this.cache.get(key)
-        if (task && task.status === FileTaskStatus.PENDING) {
-          task.status = FileTaskStatus.ERROR
-          task.result = 'Interrupted'
-          nb++
-          this.cache.set(key, task).catch((e: Error) => this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` }))
-        }
-      }
-      this.logger.log({ tag: this.cleanupInterruptedTasks.name, msg: `${nb} tasks cleaned : END` })
-    } catch (e) {
-      this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` })
     }
   }
 
@@ -136,7 +115,6 @@ export class FilesScheduler {
 
   @Cron(CronExpression.EVERY_8_HOURS)
   async clearRecentFiles(): Promise<void> {
-    this.logger.log({ tag: this.clearRecentFiles.name, msg: `START` })
     const keepNumber = 100
     let nbCleared = 0
     try {
@@ -157,13 +135,13 @@ export class FilesScheduler {
     } catch (e) {
       this.logger.error({ tag: this.clearRecentFiles.name, msg: `${e}` })
     }
-    this.logger.log({ tag: this.clearRecentFiles.name, msg: `${nbCleared} records cleared - END` })
+    this.logger.log({ tag: this.clearRecentFiles.name, msg: `${nbCleared} records cleared` })
   }
 
   @Cron(CronExpression.EVERY_4_HOURS)
   async indexContentFiles(): Promise<void> {
     // Conditional loading of file content indexing
-    if (!configuration.applications.files.contentIndexing.enabled) return
+    if (!this.filesContentIndexer.isEnabled) return
     if (await this.filesContentIndexer.isRunning()) {
       this.pendingFullSync = true
       this.logger.warn({ tag: this.indexContentFiles.name, msg: `SKIP (already running) - deferred` })
@@ -238,5 +216,29 @@ export class FilesScheduler {
     }
     this.logger.log({ tag: this.updateQuotas.name, msg: 'Share External Paths - END' })
     this.isQuotaUpdateIsRunning = false
+  }
+
+  private async cleanupInterruptedTasks(): Promise<void> {
+    try {
+      let nb = 0
+      const keys = await this.cache.keys(`${CACHE_TASK_PREFIX}-*`)
+      for (const key of keys) {
+        const task = await this.cache.get(key)
+        if (task && task.status === FileTaskStatus.PENDING) {
+          task.status = FileTaskStatus.ERROR
+          task.result = 'Interrupted'
+          nb++
+          this.cache.set(key, task).catch((e: Error) => this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` }))
+        }
+      }
+      this.logger.log({ tag: this.cleanupInterruptedTasks.name, msg: `${nb} tasks cleaned` })
+    } catch (e) {
+      this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` })
+    }
+  }
+
+  private async resetContentIndexingState(): Promise<void> {
+    await this.filesContentIndexer.resetRunningState()
+    this.logger.log({ tag: this.resetContentIndexingState.name, msg: `done` })
   }
 }

@@ -14,13 +14,13 @@
                       <div class="col-5 col-sm-6 text-end">
                         @switch (indexingStatus.state) {
                           @case (IndexingState.RUNNING) {
-                            <span class="badge bg-success" l10nTranslate>Running</span>
+                            <span class="badge bg-success" l10nTranslate>{{indexingStatus.state}}</span>
                           }
                           @case (IndexingState.STOPPING) {
-                            <span class="badge bg-warning" l10nTranslate>Stopping</span>
+                            <span class="badge bg-warning" l10nTranslate>{{indexingStatus.state}}</span>
                           }
                           @default {
-                            <span class="badge bg-secondary" l10nTranslate>Idle</span>
+                            <span class="badge bg-secondary" l10nTranslate>{{indexingStatus.state}}</span>
                           }
                         }
                       </div>
@@ -59,7 +59,7 @@
                       @if (indexingStatus.state === IndexingState.RUNNING) {
                         <button
                           (click)="stopIndexing()"
-                          class="btn btn-warning btn-sm text-nowrap"
+                          class="btn btn-sm btn-warning btn-sm text-nowrap"
                           type="button">
                           <fa-icon [icon]="icons.faStop"></fa-icon>
                           <span class="ms-1" l10nTranslate>Stop</span>
@@ -67,8 +67,8 @@
                       } @else {
                         <button
                           (click)="startIndexing()"
-                          [disabled]="indexingStatus.state === IndexingState.STOPPING"
-                          class="btn btn-success btn-sm text-nowrap"
+                          [disabled]="indexingStatus.state === IndexingState.STOPPING || indexingStatus.state === IndexingState.DISABLED"
+                          class="btn btn-sm btn-success btn-sm text-nowrap"
                           type="button">
                           <fa-icon [icon]="icons.faPlay"></fa-icon>
                           <span class="ms-1" l10nTranslate>Start</span>
@@ -79,23 +79,24 @@
                       <div class="text-muted no-select fs-sm my-3 px-1 me-auto" l10nTranslate>
                         Delete all indexes.
                       </div>
-                        @if (confirmResetIndexing) {
-                          <button
-                            (click)="confirmResetIndexing = false"
-                            [disabled]="indexingStatus.state === IndexingState.RUNNING"
-                            class="btn btn-secondary btn-sm text-nowrap me-2"
-                            type="button">
-                            <span l10nTranslate>Cancel</span>
-                          </button>
-                        }
+                      @if (confirmResetIndexing) {
                         <button
-                          (click)="dropIndexes()"
-                          class="btn {{confirmResetIndexing ? 'btn-danger' : 'btn-secondary'}} btn-sm text-nowrap"
-                          type="button"
-                          [disabled]="indexingStatus.state !== IndexingState.IDLE || indexingStatus.indexesCount === 0">
-                          <fa-icon [icon]="icons.faTrash"></fa-icon>
-                          <span class="ms-1" l10nTranslate>Remove</span>
+                          (click)="confirmResetIndexing = false"
+                          [disabled]="indexingStatus.state === IndexingState.RUNNING"
+                          class="btn btn-sm btn-secondary btn-sm text-nowrap me-2"
+                          type="button">
+                          <span l10nTranslate>Cancel</span>
                         </button>
+                      }
+                      <button
+                        (click)="dropIndexes()"
+                        class="btn btn-sm {{confirmResetIndexing ? 'btn-danger' : 'btn-secondary'}} btn-sm text-nowrap"
+                        type="button"
+                        [disabled]="(indexingStatus.state !== IndexingState.IDLE && indexingStatus.state !== IndexingState.DISABLED) ||
+                        indexingStatus.indexesCount === 0">
+                        <fa-icon [icon]="icons.faTrash"></fa-icon>
+                        <span class="ms-1" l10nTranslate>Remove</span>
+                      </button>
                     </div>
                   </div>
                 </div>
