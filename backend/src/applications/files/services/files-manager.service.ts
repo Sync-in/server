@@ -1,6 +1,6 @@
 import { HttpService } from '@nestjs/axios'
 import { HttpStatus, Injectable, Logger } from '@nestjs/common'
-import archiver, { Archiver, ArchiverError } from 'archiver'
+import archiver, { Archiver } from 'archiver'
 import { AxiosResponse } from 'axios'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -23,7 +23,7 @@ import { canAccessToSpace, haveSpaceEnvPermissions } from '../../spaces/utils/pe
 import { UserModel } from '../../users/models/user.model'
 import { DEPTH, LOCK_DEPTH } from '../../webdav/constants/webdav'
 import { CACHE_LOCK_FILE_TTL } from '../constants/cache'
-import { TAR_GZ_EXTENSION } from '../constants/compress'
+import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '../constants/compress'
 import { COMPRESSION_EXTENSION, DEFAULT_HIGH_WATER_MARK } from '../constants/files'
 import { FILE_OPERATION } from '../constants/operations'
 import { DOCUMENT_TYPE, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
@@ -61,6 +61,7 @@ import { FilesLockManager } from './files-lock-manager.service'
 import { FilesQueries } from './files-queries.service'
 import { FileEvent, FileTaskEvent } from '../events/file-events'
 import { ACTION } from '../../../common/constants'
+import { pipeline } from 'node:stream/promises'
 
 @Injectable()
 export class FilesManager {
@@ -562,10 +563,10 @@ export class FilesManager {
     // This method is currently used only by files-methods.service, which handles input sanitization.
     // If it is used in other services in the future, make sure to refactor accordingly to sanitize inputs properly.
     const srcPath = dirName(space.realPath)
-    // todo: a guest link tasksPath should be in specific directory (guest link has no home)
     const archiveExt = dto.name.endsWith(dto.extension) ? '' : `.${dto.extension}`
     const dstPath = await uniqueFilePathFromDir(path.join(dto.compressInDirectory ? srcPath : user.tasksPath, `${dto.name}${archiveExt}`))
-    const archive: Archiver = archiver('tar', {
+    // avoid using ZIP here because it can trigger high memory usage.
+    const archive: Archiver = archiver(TAR_EXTENSION, {
       gzip: dto.extension === TAR_GZ_EXTENSION,
       gzipOptions: {
         level: 9
@@ -588,21 +589,19 @@ export class FilesManager {
     }
     // do
     try {
-      archive.on('error', (error: ArchiverError) => {
-        throw error
-      })
       const dstStream = fs.createWriteStream(dstPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
-      archive.pipe(dstStream)
+      const pipePromise = pipeline(archive, dstStream) // handle archive errors + write stream
+
       for (const f of dto.files) {
         if (await isPathIsDir(f.path)) {
           archive.directory(f.path, dto.files.length > 1 ? fileName(f.path) : false)
         } else {
-          archive.file(f.path, {
-            name: f.rootAlias ? f.name : fileName(f.path)
-          })
+          archive.file(f.path, { name: f.rootAlias ? f.name : fileName(f.path) })
         }
       }
-      await archive.finalize()
+
+      const finalizePromise = archive.finalize()
+      await Promise.all([finalizePromise, pipePromise])
     } finally {
       if (fileLock) {
         await this.filesLockManager.removeLock(fileLock.key)

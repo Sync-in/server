@@ -4,7 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import archiver from 'archiver'
 import fs from 'node:fs'
 import path from 'node:path'
-import { Readable } from 'node:stream'
+import { PassThrough, Readable } from 'node:stream'
 import * as tar from 'tar'
 import * as imageUtils from '../../../common/image'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
@@ -382,15 +382,18 @@ describe(FilesManager.name, () => {
   })
 
   it('compress should archive files and emit events', async () => {
-    const archive = {
-      on: jest.fn().mockReturnThis(),
-      pipe: jest.fn().mockReturnThis(),
-      directory: jest.fn().mockReturnThis(),
-      file: jest.fn().mockReturnThis(),
-      finalize: jest.fn().mockResolvedValue(undefined)
+    const archive = new PassThrough() as PassThrough & {
+      directory: jest.Mock
+      file: jest.Mock
+      finalize: jest.Mock
     }
-    ;(archiver as unknown as jest.Mock).mockReturnValueOnce(archive)
-    jest.spyOn(fs, 'createWriteStream').mockReturnValue({} as any)
+    archive.directory = jest.fn().mockReturnValue(archive)
+    archive.file = jest.fn().mockReturnValue(archive)
+    archive.finalize = jest.fn().mockImplementation(async () => {
+      archive.end()
+    })
+    ;(archiver as unknown as jest.Mock).mockReturnValueOnce(archive as any)
+    jest.spyOn(fs, 'createWriteStream').mockReturnValue(new PassThrough() as any)
     ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive.tar.gz')
     ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p.endsWith('/dir'))
     const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: { cacheKey: 'task-c', props: {} } })
