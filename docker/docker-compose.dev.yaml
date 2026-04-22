@@ -1,0 +1,25 @@
+name: sync-in-dev
+
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: sync-in-dev-mariadb
+    restart: unless-stopped
+    command: --innodb_ft_cache_size=16000000 --max-allowed-packet=1G
+    environment:
+      MYSQL_ROOT_PASSWORD: dev_root
+      MYSQL_DATABASE: sync_in
+      MYSQL_USER: sync_in
+      MYSQL_PASSWORD: dev
+    ports:
+      - '3307:3306'
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'healthcheck.sh', '--connect', '--innodb_initialized']
+      interval: 10s
+      timeout: 5s
+      retries: 6
+
+volumes:
+  mariadb_data:

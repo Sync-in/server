@@ -85,7 +85,13 @@
     "docker:build": "docker build -t $npm_package_name .",
     "docker:buildx": "docker buildx build --platform linux/arm64,linux/amd64 --tag syncin/server:latest --tag syncin/server:${npm_package_version} --tag syncin/server:$(echo ${npm_package_version} | cut -d. -f1) . --push",
     "docker:buildx:dev": "docker buildx build --platform linux/arm64,linux/amd64 --tag syncin/server:dev . --push",
-    "docker:start": "docker run --name sync-in -it --rm -e SKIP_INIT=true -p 8080:8080 -v ./environment/environment.yaml:/app/environment/environment.yaml $npm_package_name"
+    "docker:start": "docker run --name sync-in -it --rm -e SKIP_INIT=true -p 8080:8080 -v ./environment/environment.yaml:/app/environment/environment.yaml $npm_package_name",
+    "dev:db": "docker compose -f docker/docker-compose.dev.yaml up -d --wait mariadb",
+    "dev:db:down": "docker compose -f docker/docker-compose.dev.yaml down",
+    "dev:db:reset": "docker compose -f docker/docker-compose.dev.yaml down -v && npm run dev:db",
+    "dev:migrate": "npm -w backend run db:migrate",
+    "dev:backend": "npm -w backend run start:dev",
+    "dev:frontend": "npm -w frontend start"
   },
   "devDependencies": {
     "commit-and-tag-version": "^12.5.1",
