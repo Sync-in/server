@@ -1,7 +1,7 @@
 # Fork maintenance design
 
 **Date:** 2026-04-22
-**Upstream:** `Sync-in/sync-in-server` (AGPL-3.0-or-later)
+**Upstream:** `Sync-in/server` (AGPL-3.0-or-later)
 **Fork:** `zjean/server`
 **Customization prefix:** `custom-`
 
@@ -18,10 +18,10 @@
 ### Remotes
 
 - `origin` → `git@github-prive:zjean/server.git` (already set)
-- `upstream` → `git@github-prive:Sync-in/sync-in-server.git` (to add)
+- `upstream` → `git@github-prive:Sync-in/server.git` (to add)
 
 ```bash
-git remote add upstream git@github-prive:Sync-in/sync-in-server.git
+git remote add upstream git@github-prive:Sync-in/server.git
 git remote set-url --push upstream DISABLE  # guard against accidental push
 ```
 
@@ -32,7 +32,7 @@ git remote set-url --push upstream DISABLE  # guard against accidental push
 | `upstream-main` | Exact mirror of upstream `main`. No local commits ever. | Automated mirror workflow only. |
 | `main` | Our product. CI builds images from here. | Merge commits from `upstream-main`; PRs from `feat/*`, `fix/*`, `mod/*`. |
 | `feat/*`, `fix/*`, `mod/*` | Short-lived customization work. | PR into `main`. |
-| `upstream-contrib/<topic>` | Work intended to be PR'd to upstream. Branched from `upstream/main`. | PR to `Sync-in/sync-in-server:main`. |
+| `upstream-contrib/<topic>` | Work intended to be PR'd to upstream. Branched from `upstream/main`. | PR to `Sync-in/server:main`. |
 
 ### Sync cadence
 
@@ -91,7 +91,7 @@ git checkout -b upstream-contrib/fix-foo upstream/main
 # make changes — no custom- prefix, no fork-flavored commit messages
 
 git push origin upstream-contrib/fix-foo
-gh pr create --repo Sync-in/sync-in-server \
+gh pr create --repo Sync-in/server \
   --base main \
   --head zjean:upstream-contrib/fix-foo
 ```
@@ -208,7 +208,7 @@ The upstream project is licensed **AGPL-3.0-or-later**. Every decision above is 
 2. **Modifications inherit AGPL-3.0-or-later.**
    `custom-*` modules, theming, config — everything we add or change inside this repo is a derivative work and must be AGPL. We cannot ship a proprietary or closed version of anything living in this repo.
 3. **§5(a) — mark modified files.**
-   Maintain a `NOTICE` file at the repo root stating that this is a fork of `Sync-in/sync-in-server`, with the fork date. Modification dates are otherwise tracked via git history and the `mod(...)` commit convention.
+   Maintain a `NOTICE` file at the repo root stating that this is a fork of `Sync-in/server`, with the fork date. Modification dates are otherwise tracked via git history and the `mod(...)` commit convention.
 4. **§13 — the network clause.**
    If the server is run and third parties interact with it over a network, the corresponding source of our modified version must be offered to those users. Practically:
    - Keep `zjean/server` publicly discoverable on GitHub.
