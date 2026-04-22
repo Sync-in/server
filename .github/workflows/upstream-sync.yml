@@ -1,0 +1,72 @@
+name: Upstream Sync
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: upstream-main
+
+      - name: Configure git
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+      - name: Add upstream and fetch
+        run: |
+          git remote add upstream https://github.com/Sync-in/server.git
+          git fetch upstream main
+
+      - name: Fast-forward upstream-main to upstream/main
+        id: sync
+        run: |
+          BEFORE=$(git rev-parse HEAD)
+          git reset --hard upstream/main
+          AFTER=$(git rev-parse HEAD)
+          if [ "$BEFORE" = "$AFTER" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No upstream changes."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "upstream-main: $BEFORE -> $AFTER"
+          fi
+
+      - name: Push upstream-main
+        if: steps.sync.outputs.changed == 'true'
+        run: git push --force-with-lease origin upstream-main
+
+      - name: Open or update PR into main
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch origin main
+          if git diff --quiet origin/main HEAD; then
+            echo "main already contains upstream-main; skipping PR."
+            exit 0
+          fi
+
+          EXISTING=$(gh pr list --repo "${{ github.repository }}" \
+            --state open --base main --head upstream-main \
+            --json number --jq '.[0].number // empty')
+
+          if [ -z "$EXISTING" ]; then
+            gh pr create --repo "${{ github.repository }}" \
+              --base main --head upstream-main \
+              --title "chore: sync upstream ($(date +%Y-%m-%d))" \
+              --body "Automated upstream sync from \`Sync-in/server\`. Review the diff and merge to pull upstream changes into \`main\`."
+          else
+            echo "PR #$EXISTING already open; the push updates it automatically."
+          fi

@@ -1,0 +1,18 @@
+This repository (`zjean/server`) is a fork of `Sync-in/server`
+(https://github.com/Sync-in/server), first forked on 2026-04-22.
+
+The upstream project is licensed under the GNU Affero General Public License,
+version 3 or later (AGPL-3.0-or-later). The full license text is in the
+`LICENSE` file at the root of this repository and applies equally to this fork
+and to all modifications made here.
+
+Per AGPL-3.0 §5(a), files modified in this fork relative to upstream carry
+their modification history via the git log. Modifications to upstream source
+files use commit messages prefixed with `mod(<area>): ...`. New modules and
+files added by this fork are named or located under a `custom-` prefix, and
+new internationalisation keys use a `custom.` prefix.
+
+Per AGPL-3.0 §13, if this software is run on a server and users interact with
+it over a network, the corresponding source code for the modified version must
+be made available to those users. This fork's source is publicly available at
+https://github.com/zjean/server.
