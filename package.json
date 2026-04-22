@@ -90,6 +90,7 @@
     "dev:db:down": "docker compose -f docker/docker-compose.dev.yaml down",
     "dev:db:reset": "docker compose -f docker/docker-compose.dev.yaml down -v && npm run dev:db",
     "dev:migrate": "npm -w backend run db:migrate",
+    "dev:seed": "npm -w backend run db:seed",
     "dev:backend": "npm -w backend run start:dev",
     "dev:frontend": "npm -w frontend start"
   },

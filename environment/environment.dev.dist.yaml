@@ -23,6 +23,24 @@ websocket:
   adapter: cluster
   corsOrigin: '*'
 
+# Dev-only secrets — safe to commit because this is a template for local machines.
+# Generate fresh random values if you're paranoid: `openssl rand -hex 32`.
+auth:
+  provider: mysql
+  encryptionKey: dev-encryption-key-do-not-use-in-prod
+  token:
+    access:
+      secret: dev-access-secret-do-not-use-in-prod
+      expiration: 30m
+    refresh:
+      secret: dev-refresh-secret-do-not-use-in-prod
+      expiration: 4h
+
 applications:
   files:
     dataPath: /tmp/sync-in-dev-data
+    onlyoffice:
+      enabled: false
+      secret: dev-onlyoffice-secret
+    collabora:
+      enabled: false

@@ -11,11 +11,16 @@ npm ci                                                           # install all w
 cp environment/environment.dev.dist.yaml environment/environment.yaml
 npm run dev:db                                                   # start mariadb, waits for healthcheck
 npm run dev:migrate                                              # create schema
+npm run dev:seed                                                 # seed admin + sample users/groups
 ```
 
 > The backend config loader always reads `environment/environment.yaml` (which is
 > gitignored). The committed `environment.dev.dist.yaml` is a template: copy once,
 > edit if your ports/creds differ.
+
+After seeding, log in with `sync-in` / `password`. The seed also inserts 10 faker
+users (all `password`) and 5 random groups. Re-running the seed fails on the
+duplicate `sync-in` login — use `npm run dev:db:reset && npm run dev:migrate && npm run dev:seed` for a clean slate.
 
 ## Daily workflow
 
@@ -42,6 +47,7 @@ npm run dev:frontend
 | `npm run dev:db:down` | Stop and remove the MariaDB container (keeps the volume) |
 | `npm run dev:db:reset` | Drop the DB volume and re-create it — wipes all dev data |
 | `npm run dev:migrate` | Run drizzle migrations against the dev DB |
+| `npm run dev:seed` | Seed admin (`sync-in` / `password`) + 10 faker users + 5 groups |
 | `npm run dev:backend` | NestJS in `--watch` mode |
 | `npm run dev:frontend` | `ng serve` with `proxy.conf.json` |
 
