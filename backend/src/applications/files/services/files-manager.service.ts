@@ -1,7 +1,6 @@
 import { HttpService } from '@nestjs/axios'
 import { HttpStatus, Injectable, Logger } from '@nestjs/common'
 import archiver, { Archiver } from 'archiver'
-import { AxiosResponse } from 'axios'
 import fs from 'node:fs'
 import path from 'node:path'
 import { Readable } from 'node:stream'
@@ -27,7 +26,7 @@ import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '../constants/compress'
 import { COMPRESSION_EXTENSION, DEFAULT_HIGH_WATER_MARK } from '../constants/files'
 import { FILE_OPERATION } from '../constants/operations'
 import { DOCUMENT_TYPE, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
-import { CompressFileDto } from '../dto/file-operations.dto'
+import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileLock } from '../interfaces/file-lock.interface'
 import { FileLockProps } from '../interfaces/file-props.interface'
@@ -56,7 +55,7 @@ import {
 } from '../utils/files'
 import { SendFile } from '../utils/send-file'
 import { extractZip } from '../utils/unzip-file'
-import { regExpPrivateIP } from '../utils/url-file'
+import { downloadFile } from '../utils/download-file'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesQueries } from './files-queries.service'
 import { FileEvent, FileTaskEvent } from '../events/file-events'
@@ -503,54 +502,21 @@ export class FilesManager {
     await this.filesQueries.deleteFiles(space.dbFile, isDir, forceDeleteInDB)
   }
 
-  async downloadFromUrl(user: UserModel, space: SpaceEnv, url: string): Promise<void> {
-    this.logger.log({ tag: this.downloadFromUrl.name, msg: `${url}` })
-    // create lock
+  async downloadFromUrl(user: UserModel, space: SpaceEnv, downloadDto: DownloadFileDto): Promise<void> {
+    this.logger.log({ tag: this.downloadFromUrl.name, msg: `${downloadDto.url}` })
     const rPath = await uniqueFilePathFromDir(space.realPath)
     const dbFile = space.dbFile
     dbFile.path = path.join(dirName(dbFile.path), fileName(space.realPath))
+
+    // create lock
     const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.RESOURCE)
     if (!ok) {
       throw new LockConflict(fileLock, 'Conflicting lock')
     }
-    // tasking
-    if (space.task.cacheKey) {
-      let headRes: AxiosResponse
 
-      try {
-        headRes = await this.http.axiosRef({ method: HTTP_METHOD.HEAD, url: url, maxRedirects: 1 })
-      } catch (e) {
-        // release lock
-        await this.filesLockManager.removeLock(fileLock.key)
-        this.logger.error({ tag: this.downloadFromUrl.name, msg: `${url} : ${e}` })
-        throw new FileError(HttpStatus.BAD_REQUEST, 'Unable to download file')
-      }
-
-      if (regExpPrivateIP.test(headRes.request.socket.remoteAddress)) {
-        // release lock
-        await this.filesLockManager.removeLock(fileLock.key)
-        // prevent SSRF attack
-        throw new FileError(HttpStatus.FORBIDDEN, 'Access to internal IP addresses is forbidden')
-      }
-
-      // attempt to retrieve the Content-Length header
-      try {
-        if ('content-length' in headRes.headers) {
-          space.task.props.totalSize = Number(headRes.headers['content-length']) || null
-        }
-      } catch (e) {
-        this.logger.debug({ tag: this.downloadFromUrl.name, msg: `content-length : ${e}` })
-      }
-      FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DOWNLOAD, rPath)
-    }
     // do
     try {
-      const getRes = await this.http.axiosRef({ method: HTTP_METHOD.GET, url: url, responseType: 'stream', maxRedirects: 1 })
-      if (regExpPrivateIP.test(getRes.request.socket.remoteAddress)) {
-        // Prevent SSRF attacks and perform a DNS-rebinding check if a HEAD request has already been made
-        throw new FileError(HttpStatus.FORBIDDEN, 'Access to internal IP addresses is forbidden')
-      }
-      await writeFromStream(rPath, getRes.data)
+      await downloadFile(this.http, downloadDto, rPath, space)
     } finally {
       // release lock
       await this.filesLockManager.removeLock(fileLock.key)

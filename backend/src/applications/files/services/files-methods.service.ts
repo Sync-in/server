@@ -87,7 +87,7 @@ export class FilesMethods {
   async downloadFromUrl(user: UserModel, space: SpaceEnv, downloadDto: DownloadFileDto): Promise<void> {
     checkFileName(space.realPath)
     try {
-      return await this.filesManager.downloadFromUrl(user, space, downloadDto.url)
+      return await this.filesManager.downloadFromUrl(user, space, downloadDto)
     } catch (e) {
       this.handleError(space, FILE_OPERATION.DOWNLOAD, e)
     }

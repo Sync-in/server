@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { PassThrough, Readable } from 'node:stream'
 import * as tar from 'tar'
+import { transformAndValidate } from '../../../common/functions'
 import * as imageUtils from '../../../common/image'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
@@ -15,6 +16,7 @@ import * as spacesPermsUtils from '../../spaces/utils/permissions'
 import { DEPTH } from '../../webdav/constants/webdav'
 import { ACTION } from '../../../common/constants'
 import { FILE_OPERATION } from '../constants/operations'
+import { DownloadFileDto } from '../dto/file-operations.dto'
 import { FileEvent, FileTaskEvent } from '../events/file-events'
 import { FileError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
@@ -350,11 +352,25 @@ describe(FilesManager.name, () => {
     expect(filesQueries.deleteFiles).toHaveBeenCalledWith(space.dbFile, false, true)
   })
 
+  describe('downloadFromUrl dto validation', () => {
+    it('should accept http and https schemes', () => {
+      expect(transformAndValidate(DownloadFileDto, { url: 'https://example.org/file.txt' }).url).toBe('https://example.org/file.txt')
+      expect(transformAndValidate(DownloadFileDto, { url: 'http://example.org/file.txt' }).url).toBe('http://example.org/file.txt')
+    })
+
+    it('should reject non-http(s) schemes', () => {
+      const invalidUrls = ['ftp://example.org/file.txt', 'file:///tmp/file.txt', 'ws://example.org/file.txt']
+      for (const url of invalidUrls) {
+        expect(() => transformAndValidate(DownloadFileDto, { url })).toThrow()
+      }
+    })
+  })
+
   it('downloadFromUrl should throw conflict when lock cannot be created', async () => {
     const space = makeSpace()
     filesLockManager.create.mockResolvedValueOnce([false, { key: 'other', owner: { id: 99 } }])
 
-    await expect(service.downloadFromUrl(user, space, 'https://example.org/file.txt')).rejects.toBeInstanceOf(LockConflict)
+    await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toBeInstanceOf(LockConflict)
   })
 
   it('downloadFromUrl should handle HEAD+GET and emit task watch/event', async () => {
@@ -372,7 +388,7 @@ describe(FilesManager.name, () => {
     const taskEmitSpy = jest.spyOn(FileTaskEvent, 'emit')
     const fileEmitSpy = jest.spyOn(FileEvent, 'emit')
 
-    await service.downloadFromUrl(user, space, 'https://example.org/file.txt')
+    await service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })
 
     expect(space.task.props.totalSize).toBe(55)
     expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, FILE_OPERATION.DOWNLOAD, '/tmp/download.txt')
