@@ -4,13 +4,15 @@ import path from 'node:path'
 import { Readable } from 'node:stream'
 import { promisify } from 'node:util'
 import sharp from 'sharp'
-import TextToSVG from 'text-to-svg' // Sharp settings
+import TextToSVG from 'text-to-svg'
+import { moveFiles } from '../applications/files/utils/files'
 
 // Sharp settings
 sharp.cache(false)
 sharp.concurrency(Math.min(2, os.cpus()?.length || 1))
 
 // Constants
+export const imgMimeTypePrefix = 'image/'
 export const pngMimeType = 'image/png'
 export const svgMimeType = 'image/svg+xml'
 export const webpMimeType = 'image/webp'
@@ -62,6 +64,13 @@ export async function generateAvatar(initials: string): Promise<NodeJS.ReadableS
 export async function convertImageToBase64(imgPath: string) {
   const base64String = await fs.readFile(imgPath, { encoding: 'base64' })
   return `data:image/png;base64,${base64String}`
+}
+
+export async function convertTempImageToPng(temporaryImagePath: string, outputPngPath: string, size = 256): Promise<void> {
+  const srcBuffer = await fs.readFile(temporaryImagePath)
+  const pngBuffer = await sharp(srcBuffer).rotate().resize(size, size, { fit: 'cover' }).png().toBuffer()
+  await fs.writeFile(temporaryImagePath, pngBuffer)
+  await moveFiles(temporaryImagePath, outputPngPath, true)
 }
 
 function randomColor() {

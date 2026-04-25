@@ -35,7 +35,12 @@ const parts = [
 const regExpPrivateIP = new RegExp(`^(?:${parts.join('|')})$`, 'i')
 const errorRegexpPrivateIP = 'Access to internal IP addresses is forbidden'
 
-export async function downloadFile(http: HttpService, downloadDto: DownloadFileDto, dstPath: string, space?: SpaceEnv) {
+export async function downloadFile(
+  http: HttpService,
+  downloadDto: DownloadFileDto,
+  dstPath: string,
+  options?: { space?: SpaceEnv; getContentInfo?: boolean }
+) {
   // dto must be validated by the caller
   const headRes: AxiosResponse = await http.axiosRef({ method: HTTP_METHOD.HEAD, url: downloadDto.url, maxRedirects: 1 })
   if (regExpPrivateIP.test(headRes.request.socket.remoteAddress)) {
@@ -45,18 +50,22 @@ export async function downloadFile(http: HttpService, downloadDto: DownloadFileD
 
   // attempt to retrieve the Content-Length header
   const contentLength = 'content-length' in headRes.headers ? Number(headRes.headers['content-length']) || null : null
+  if (options?.getContentInfo) {
+    return { contentLength: contentLength, contentType: `${headRes.headers['content-type']}`, lastModified: headRes.headers['last-modified'] }
+  }
+
   if (!contentLength) {
     throw new FileError(HttpStatus.BAD_REQUEST, 'Missing "content-length" header')
   }
 
-  if (space) {
-    if (space.willExceedQuota(contentLength)) {
+  if (options?.space) {
+    if (options.space.willExceedQuota(contentLength)) {
       throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, 'Storage quota will be exceeded')
     }
     // tasking
-    if (space.task.cacheKey) {
-      space.task.props.totalSize = contentLength
-      FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DOWNLOAD, dstPath)
+    if (options.space.task?.cacheKey) {
+      options.space.task.props.totalSize = contentLength
+      FileTaskEvent.emit('startWatch', options.space, FILE_OPERATION.DOWNLOAD, dstPath)
     }
   }
 

@@ -1,11 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import bcrypt from 'bcryptjs'
+import fs from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { AuthManager } from '../../../authentication/auth.service'
 import { comparePassword } from '../../../common/functions'
 import * as imageModule from '../../../common/image'
 import { pngMimeType, svgMimeType } from '../../../common/image'
+import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import * as filesUtilsModule from '../../files/utils/files'
@@ -44,6 +47,13 @@ describe(UsersManager.name, () => {
   let usersQueriesService: UsersQueries
   let userTest: UserModel
   let deleteUserDto: DeleteUserDto
+  let testDataPath: string
+  const initialFilesPaths = {
+    dataPath: configuration.applications.files.dataPath,
+    usersPath: configuration.applications.files.usersPath,
+    spacesPath: configuration.applications.files.spacesPath,
+    tmpPath: configuration.applications.files.tmpPath
+  }
   const flush = () => new Promise<void>((r) => setImmediate(r))
   const okStream = (d = 'OK') => {
     const s: any = Readable.from([Buffer.from(d)])
@@ -71,6 +81,12 @@ describe(UsersManager.name, () => {
   }
 
   beforeAll(async () => {
+    testDataPath = await fs.mkdtemp(path.join(os.tmpdir(), 'sync-in-users-manager-spec-'))
+    configuration.applications.files.dataPath = testDataPath
+    configuration.applications.files.usersPath = path.join(testDataPath, 'users')
+    configuration.applications.files.spacesPath = path.join(testDataPath, 'spaces')
+    configuration.applications.files.tmpPath = path.join(testDataPath, 'tmp')
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminUsersManager,
@@ -100,6 +116,11 @@ describe(UsersManager.name, () => {
 
   afterAll(async () => {
     await expect(adminUsersManager.deleteUserSpace(userTest.login)).resolves.not.toThrow()
+    configuration.applications.files.dataPath = initialFilesPaths.dataPath
+    configuration.applications.files.usersPath = initialFilesPaths.usersPath
+    configuration.applications.files.spacesPath = initialFilesPaths.spacesPath
+    configuration.applications.files.tmpPath = initialFilesPaths.tmpPath
+    await fs.rm(testDataPath, { recursive: true, force: true })
   })
 
   it('instances + findUser/me/fromUserId + impersonation', async () => {
@@ -271,7 +292,7 @@ describe(UsersManager.name, () => {
 
   it('avatars advanced: generateIsNotExists, failure branches, base64 fallback', async () => {
     await ensurePaths()
-    usersManager.findUser = jest.fn().mockResolvedValue({ getInitials: () => 'UT' } as unknown as UserModel)
+    usersManager.findUser = jest.fn().mockResolvedValue({ login: userTest.login, getInitials: () => 'UT' } as unknown as UserModel)
     const [p, m] = (await usersManager.getAvatar(userTest.login, false, true)) as [string, string]
     expect(fileName(p)).toBe('avatar.png')
     expect(m).toBe(pngMimeType)
@@ -289,7 +310,7 @@ describe(UsersManager.name, () => {
     const t = okStream('OK')
     t.truncated = true
     const mvSpy = jest.spyOn(filesUtilsModule, 'moveFiles').mockResolvedValue(undefined)
-    await expect(usersManager.updateAvatar(mkReq('image/png', t) as any)).rejects.toThrow('Image is too large (5MB max)')
+    await expect(usersManager.updateAvatar(mkReq('image/png', t) as any)).rejects.toThrow('Image is too large')
     expect(mvSpy).not.toHaveBeenCalled()
 
     jest.spyOn(filesUtilsModule, 'moveFiles').mockRejectedValue(new Error('mv fail'))

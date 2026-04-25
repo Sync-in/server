@@ -516,7 +516,7 @@ export class FilesManager {
 
     // do
     try {
-      await downloadFile(this.http, downloadDto, rPath, space)
+      await downloadFile(this.http, downloadDto, rPath, { space: space })
     } finally {
       // release lock
       await this.filesLockManager.removeLock(fileLock.key)
