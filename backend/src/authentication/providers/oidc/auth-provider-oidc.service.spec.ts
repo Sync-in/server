@@ -1,4 +1,5 @@
 import { HttpStatus } from '@nestjs/common'
+import { HttpService } from '@nestjs/axios'
 import { Test, TestingModule } from '@nestjs/testing'
 import {
   authorizationCodeGrant,
@@ -10,8 +11,13 @@ import {
   randomState
 } from 'openid-client'
 import { USER_ROLE } from '../../../applications/users/constants/user'
+import { UserModel } from '../../../applications/users/models/user.model'
 import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service'
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
+import * as avatarUtils from '../../../applications/users/utils/avatar'
+import * as filesUtils from '../../../applications/files/utils/files'
+import * as downloadFileUtils from '../../../applications/files/utils/download-file'
+import * as imageUtils from '../../../common/image'
 import { OAuthCookie } from './auth-oidc.constants'
 import { AuthProviderOIDC } from './auth-provider-oidc.service'
 
@@ -85,6 +91,9 @@ describe(AuthProviderOIDC.name, () => {
     createUserOrGuest: jest.Mock
     updateUserOrGuest: jest.Mock
   }
+  let httpService: {
+    axiosRef: jest.Mock
+  }
 
   const makeConfig = (supportsPKCE = true) => ({
     serverMetadata: () => ({
@@ -110,9 +119,17 @@ describe(AuthProviderOIDC.name, () => {
       createUserOrGuest: jest.fn(),
       updateUserOrGuest: jest.fn()
     }
+    httpService = {
+      axiosRef: jest.fn()
+    }
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [{ provide: UsersManager, useValue: usersManager }, { provide: AdminUsersManager, useValue: adminUsersManager }, AuthProviderOIDC]
+      providers: [
+        { provide: HttpService, useValue: httpService },
+        { provide: UsersManager, useValue: usersManager },
+        { provide: AdminUsersManager, useValue: adminUsersManager },
+        AuthProviderOIDC
+      ]
     }).compile()
 
     module.useLogger(['fatal'])
@@ -260,5 +277,88 @@ describe(AuthProviderOIDC.name, () => {
       USER_ROLE.ADMINISTRATOR
     )
     expect(result.role).toBe(USER_ROLE.ADMINISTRATOR)
+  })
+
+  describe('updatePictureUrl', () => {
+    const oidcUser = { login: 'alice', tmpPath: '/tmp/sync-in/alice/tmp' } as UserModel
+    const userInfo = (picture = 'https://cdn.example.test/avatar.jpg') => ({ picture }) as any
+
+    it('returns when picture url is invalid', async () => {
+      const downloadSpy = jest.spyOn(downloadFileUtils, 'downloadFile')
+
+      await (service as any).updatePictureUrl(oidcUser, userInfo('not-a-url'))
+
+      expect(downloadSpy).not.toHaveBeenCalled()
+    })
+
+    it('stops when content type is not an image', async () => {
+      const downloadSpy = jest.spyOn(downloadFileUtils, 'downloadFile').mockResolvedValueOnce({
+        contentType: 'text/plain',
+        contentLength: 123,
+        lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
+      } as any)
+      const convertSpy = jest.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+
+      await (service as any).updatePictureUrl(oidcUser, userInfo())
+
+      expect(downloadSpy).toHaveBeenCalledTimes(1)
+      expect(convertSpy).not.toHaveBeenCalled()
+    })
+
+    it('skips update when avatar metadata is unchanged', async () => {
+      const downloadSpy = jest.spyOn(downloadFileUtils, 'downloadFile').mockResolvedValueOnce({
+        contentType: 'image/png',
+        contentLength: 128,
+        lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
+      } as any)
+      jest.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(true)
+      const convertSpy = jest.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+
+      await (service as any).updatePictureUrl(oidcUser, userInfo())
+
+      expect(downloadSpy).toHaveBeenCalledTimes(1)
+      expect(convertSpy).not.toHaveBeenCalled()
+    })
+
+    it('downloads and converts avatar when checks pass', async () => {
+      const downloadSpy = jest
+        .spyOn(downloadFileUtils, 'downloadFile')
+        .mockResolvedValueOnce({
+          contentType: 'image/png',
+          contentLength: 128,
+          lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
+        } as any)
+        .mockResolvedValueOnce(undefined as any)
+      jest.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(false)
+      jest.spyOn(filesUtils, 'fileSize').mockResolvedValue(1024)
+      jest.spyOn(UserModel, 'getHomePath').mockReturnValue('/tmp/sync-in/users/alice')
+      const convertSpy = jest.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+      const metadataSpy = jest.spyOn(avatarUtils, 'saveAvatarMetadata').mockResolvedValue(undefined)
+
+      await (service as any).updatePictureUrl(oidcUser, userInfo())
+
+      expect(downloadSpy).toHaveBeenCalledTimes(2)
+      expect(convertSpy).toHaveBeenCalledWith('/tmp/sync-in/alice/tmp/avatar.png', '/tmp/sync-in/users/alice/avatar.png')
+      expect(metadataSpy).toHaveBeenCalledWith('alice', 'https://cdn.example.test/avatar.jpg', 128, 'Mon, 01 Jan 2024 00:00:00 GMT')
+    })
+
+    it('stops after download when avatar size exceeds limit', async () => {
+      const downloadSpy = jest
+        .spyOn(downloadFileUtils, 'downloadFile')
+        .mockResolvedValueOnce({
+          contentType: 'image/png',
+          contentLength: 128,
+          lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
+        } as any)
+        .mockResolvedValueOnce(undefined as any)
+      jest.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(false)
+      jest.spyOn(filesUtils, 'fileSize').mockResolvedValue(avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE + 1)
+      const convertSpy = jest.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+
+      await (service as any).updatePictureUrl(oidcUser, userInfo())
+
+      expect(downloadSpy).toHaveBeenCalledTimes(2)
+      expect(convertSpy).not.toHaveBeenCalled()
+    })
   })
 })

@@ -1,4 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
+import path from 'node:path'
+import fs from 'node:fs/promises'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import {
   allowInsecureRequests,
@@ -23,7 +25,13 @@ import type { CreateUserDto, UpdateUserDto } from '../../../applications/users/d
 import { UserModel } from '../../../applications/users/models/user.model'
 import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service'
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
-import { generateShortUUID, splitFullName } from '../../../common/functions'
+import {
+  isAvatarMetadataUnchanged,
+  saveAvatarMetadata,
+  USER_AVATAR_FILE_NAME,
+  USER_AVATAR_MAX_UPLOAD_SIZE
+} from '../../../applications/users/utils/avatar'
+import { generateShortUUID, splitFullName, transformAndValidate } from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
 import { AUTH_ROUTE } from '../../constants/routes'
 import type { AUTH_SCOPE } from '../../constants/scope'
@@ -33,6 +41,11 @@ import { AuthProvider } from '../auth-providers.models'
 import { OAuthDesktopCallBackURI, OAuthDesktopLoopbackPorts, OAuthDesktopPortParam } from './auth-oidc-desktop.constants'
 import type { AuthProviderOIDCConfig } from './auth-oidc.config'
 import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint } from './auth-oidc.constants'
+import { HttpService } from '@nestjs/axios'
+import { DownloadFileDto } from '../../../applications/files/dto/file-operations.dto'
+import { downloadFile } from '../../../applications/files/utils/download-file'
+import { convertTempImageToPng, imgMimeTypePrefix } from '../../../common/image'
+import { fileSize } from '../../../applications/files/utils/files'
 
 @Injectable()
 export class AuthProviderOIDC implements AuthProvider {
@@ -42,6 +55,7 @@ export class AuthProviderOIDC implements AuthProvider {
   private config: Configuration = null
 
   constructor(
+    private readonly http: HttpService,
     private readonly usersManager: UsersManager,
     private readonly adminUsersManager: AdminUsersManager
   ) {}
@@ -299,7 +313,8 @@ export class AuthProviderOIDC implements AuthProvider {
 
     // Create or update user
     user = await this.updateOrCreateUser(identity, user)
-
+    // Update picture url (if it exists)
+    await this.updatePictureUrl(user, userInfo)
     // Update user access log
     this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error({ tag: this.processUserInfo.name, msg: `${e}` }))
 
@@ -393,6 +408,80 @@ export class AuthProviderOIDC implements AuthProvider {
     }
 
     return user
+  }
+
+  private async updatePictureUrl(user: UserModel, userInfo: UserInfoResponse): Promise<void> {
+    const picture = userInfo.picture
+
+    if (typeof picture !== 'string') return
+
+    const pictureUrl = picture.trim()
+    if (!pictureUrl) return
+
+    // validate URL
+    let downloadDto: DownloadFileDto
+    try {
+      downloadDto = transformAndValidate(DownloadFileDto, { url: pictureUrl })
+    } catch (e) {
+      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `unable to validate picture URL *${pictureUrl}* : ${e}` })
+      return
+    }
+
+    // checks
+    let pictureContentLength: number | undefined
+    let pictureLastModified: string | undefined
+    try {
+      const tmpPicturePath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
+      // retrieve headers
+      const { contentType, contentLength, lastModified } = await downloadFile(this.http, downloadDto, tmpPicturePath, { getContentInfo: true })
+      pictureContentLength = contentLength ?? undefined
+      pictureLastModified = lastModified ?? ''
+
+      if (!contentType.startsWith(imgMimeTypePrefix)) {
+        this.logger.warn({ tag: this.updatePictureUrl.name, msg: `picture content type is not an image: ${contentType}` })
+        return
+      }
+
+      if (!pictureContentLength || pictureContentLength > USER_AVATAR_MAX_UPLOAD_SIZE) {
+        this.logger.warn({ tag: this.updatePictureUrl.name, msg: `picture content length is invalid: ${pictureContentLength}` })
+        return
+      }
+
+      if (await isAvatarMetadataUnchanged(user.login, pictureUrl, pictureContentLength, pictureLastModified)) {
+        this.logger.warn({ tag: this.updatePictureUrl.name, msg: `avatar metadata unchanged, skipping update` })
+        return
+      }
+    } catch (e) {
+      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `checks failed: ${e}` })
+    }
+
+    // download avatar
+    const userAvatarTmpPath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
+    try {
+      await downloadFile(this.http, downloadDto, userAvatarTmpPath)
+    } catch (e) {
+      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `download failed: ${e}` })
+      return
+    }
+
+    // check size
+    const avatarSize = await fileSize(userAvatarTmpPath)
+    if (avatarSize > USER_AVATAR_MAX_UPLOAD_SIZE) {
+      fs.unlink(userAvatarTmpPath).catch(() => undefined)
+      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `avatar size exceeds limit: ${avatarSize}` })
+      return
+    }
+
+    // convert
+    const userAvatarPath = path.join(UserModel.getHomePath(user.login), USER_AVATAR_FILE_NAME)
+    try {
+      await convertTempImageToPng(userAvatarTmpPath, userAvatarPath)
+      void saveAvatarMetadata(user.login, pictureUrl, pictureContentLength, pictureLastModified)
+    } catch (e) {
+      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `convert failed: ${e}` })
+    } finally {
+      fs.unlink(userAvatarTmpPath).catch(() => undefined)
+    }
   }
 
   private extractLoginAndEmail(userInfo: UserInfoResponse) {
