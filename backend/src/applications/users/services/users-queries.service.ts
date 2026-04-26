@@ -5,6 +5,7 @@ import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { anonymizePassword, comparePassword, uniquePermissions } from '../../../common/functions'
 import { CacheDecorator } from '../../../infrastructure/cache/cache.decorator'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { configuration } from '../../../configuration/config.environment'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import {
@@ -484,12 +485,15 @@ export class UsersQueries {
   @CacheDecorator(900)
   async usersWhitelist(userId: number, lowerOrEqualUserRole: USER_ROLE = USER_ROLE.GUEST): Promise<number[]> {
     /* Get the list of user ids allowed to the current user
-       - all users with no groups (except users with a role higher than lowerOrEqualUserRole, and except for guest requester)
+       - users with no groups only when applications.users.showUngroupedUsers = true
+         (guest accounts are excluded from this global branch, and guest requesters never get this branch)
+         (also excludes users with a role higher than lowerOrEqualUserRole)
        - all users who are members of groups visible to the current user
          (VISIBLE groups for everyone, PRIVATE groups only if the current user is a member, never members of ISOLATED groups)
        - all guests managed by the current user
        - all managers who manage the current guest
     */
+    const showUngroupedUsers = +configuration.applications.users.showUngroupedUsers
     const userIds: any = sql`
     WITH visible_groups AS (
       SELECT ${groups.id} AS id
@@ -524,6 +528,8 @@ export class UsersQueries {
       SELECT ${users.id} AS id
       FROM ${users}
       WHERE
+        ${showUngroupedUsers} = 1
+        AND
         ${users.role} <= ${sql.raw(`${lowerOrEqualUserRole}`)}
         -- Guests without (personal) groups are not globally visible.
         -- They are allowed only through part 1 (shared visible group) or part 3 (manager relation).

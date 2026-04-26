@@ -295,6 +295,11 @@ auth:
       # default: false
       skipSubjectCheck: false
 applications:
+  users:
+    # showUngroupedUsers: make users without a group globally visible to regular users/admins.
+    # Guest accounts are excluded from this global visibility (both as listed accounts and as requesters).
+    # default: `true`
+    showUngroupedUsers: true
   files:
     # required
     dataPath: /home/sync-in
