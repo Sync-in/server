@@ -54,7 +54,7 @@ import type {
 } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.interfaces'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Socket } from 'ngx-socket-io'
-import { catchError, map, Observable } from 'rxjs'
+import { catchError, map, Observable, of } from 'rxjs'
 import { AppMenu } from '../../layout/layout.interfaces'
 import { LayoutService } from '../../layout/layout.service'
 import { StoreService } from '../../store/store.service'
@@ -258,7 +258,7 @@ export class UserService {
   searchMembers(search: SearchMembersDto, omitPermissions: SPACE_OPERATION[] = []): Observable<MemberModel[]> {
     return this.http.request<Member[]>('search', USERS_ROUTE.BASE, { body: search }).pipe(
       map((members: Member[]) => members.map((m: Member) => new MemberModel(m, omitPermissions))),
-      catchError(() => [])
+      catchError(() => of([]))
     )
   }
 

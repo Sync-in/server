@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Injector, Input, OnInit, Output } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCog, faPlus, faSpinner, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
@@ -33,6 +33,9 @@ import { ShareModel } from '../../models/share.model'
 import { SharesService } from '../../services/shares.service'
 import { ShareFileNameComponent } from '../utils/share-file-name.component'
 import { ShareRepositoryComponent } from '../utils/share-repository.component'
+import { StoreService } from '../../../../store/store.service'
+import { UserType } from '../../../users/interfaces/user.interface'
+import { AdminService } from '../../../admin/admin.service'
 
 @Component({
   selector: 'app-share-dialog',
@@ -61,6 +64,7 @@ export class ShareDialogComponent implements OnInit {
   @Input() isSharesRepo = false
   @Input() inSharesList = false
   @Input() allowFilesOptions = true
+  @Input() fromAdmin = false
   @Output() shareChange = new EventEmitter<['add' | 'update' | 'delete', ShareModel]>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
@@ -79,13 +83,16 @@ export class ShareDialogComponent implements OnInit {
   protected confirmDeletion = false
   protected loading = false
   protected submitted = false
-  private readonly userService = inject(UserService)
-  protected readonly user = this.userService.user
+  private readonly injector = inject(Injector)
+  private memberSearchService!: Pick<UserService, 'searchMembers'> | Pick<AdminService, 'searchMembers'>
+  private readonly store = inject(StoreService)
   private readonly sharesService = inject(SharesService)
   private readonly linksService = inject(LinksService)
   private readonly spacesService = inject(SpacesService)
+  protected readonly user: UserType = this.store.user.getValue()
 
   ngOnInit() {
+    this.memberSearchService = this.fromAdmin ? this.injector.get(AdminService) : this.injector.get(UserService)
     if (!this.share) {
       // new share
       ;[this.share, this.parentShareId] = this.sharesService.initShareFromFile(this.user, this.file, this.isSharesRepo, this.inSharesList)
@@ -103,7 +110,7 @@ export class ShareDialogComponent implements OnInit {
       ],
       ignoreGroupIds: this.share.members.filter((m: MemberModel) => m.isGroup).map((m: MemberModel) => m.id)
     }
-    return this.userService.searchMembers(search, [SPACE_OPERATION.SHARE_INSIDE])
+    return this.memberSearchService.searchMembers(search, [SPACE_OPERATION.SHARE_INSIDE])
   }
 
   openSelectRootDialog() {

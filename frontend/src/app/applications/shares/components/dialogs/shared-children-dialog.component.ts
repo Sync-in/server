@@ -29,9 +29,9 @@ import { ShareDialogComponent } from './share-dialog.component'
   styleUrls: ['shared-children-dialog.component.scss']
 })
 export class SharedChildrenDialogComponent implements OnInit {
-  @Input() fromAdmin = false
   @Input() share: ShareFileModel
   @Input() space: SpaceModel
+  @Input() fromAdmin = false
   @Output() sharesCountEvent = new EventEmitter<number>()
   protected readonly layout = inject(LayoutService)
   protected readonly icons = { SHARED: SPACES_ICON.SHARED_WITH_OTHERS, LINKS: SPACES_ICON.LINKS }
@@ -126,7 +126,8 @@ export class SharedChildrenDialogComponent implements OnInit {
             initialState: {
               ...(this.share ? { parentShareId: this.share.id } : {}),
               ...(this.space ? { parentSpaceId: this.space.id } : {}),
-              share: share
+              share: share,
+              fromAdmin: this.fromAdmin
             } as ShareDialogComponent
           })
           modalRef.content.shareChange.pipe(take(1)).subscribe((r: ['update' | 'delete' | string, ShareModel]) => {

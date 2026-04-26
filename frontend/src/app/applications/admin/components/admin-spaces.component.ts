@@ -192,7 +192,9 @@ export class AdminSpacesComponent {
 
   openSpaceDialog(add = false) {
     if (add) {
-      const modalRef: BsModalRef<SpaceDialogComponent> = this.layout.openDialog(SpaceDialogComponent, 'xl')
+      const modalRef: BsModalRef<SpaceDialogComponent> = this.layout.openDialog(SpaceDialogComponent, 'xl', {
+        initialState: { fromAdmin: true } as SpaceDialogComponent
+      })
       modalRef.content.spaceChange.pipe(take(1)).subscribe((r: ['add' | string, SpaceModel]) => {
         const [action, s] = r
         if (action === 'add') {
@@ -204,7 +206,7 @@ export class AdminSpacesComponent {
       this.spacesService.getSpace(this.selected.id).subscribe({
         next: (space: SpaceModel) => {
           const modalRef: BsModalRef<SpaceDialogComponent> = this.layout.openDialog(SpaceDialogComponent, 'xl', {
-            initialState: { space: space } as SpaceDialogComponent
+            initialState: { space: space, fromAdmin: true } as SpaceDialogComponent
           })
           modalRef.content.spaceChange.pipe(take(1)).subscribe((r: ['update' | 'delete' | string, SpaceModel]) => {
             const [action, s] = r
@@ -237,7 +239,7 @@ export class AdminSpacesComponent {
   openChildShareDialog(space?: SpaceModel) {
     if (space) this.onSelect(space)
     const modalRef: BsModalRef<SharedChildrenDialogComponent> = this.layout.openDialog(SharedChildrenDialogComponent, null, {
-      initialState: { space: this.selected } as SharedChildrenDialogComponent
+      initialState: { space: this.selected, fromAdmin: true } as SharedChildrenDialogComponent
     })
     modalRef.content.sharesCountEvent.subscribe((sharesCount: number) => (this.selected.counts.shares = sharesCount))
   }

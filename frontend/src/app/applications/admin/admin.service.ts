@@ -29,7 +29,7 @@ import type { GroupBrowse } from '@sync-in-server/backend/src/applications/users
 import type { GuestUser } from '@sync-in-server/backend/src/applications/users/interfaces/guest-user.interface'
 import type { Member } from '@sync-in-server/backend/src/applications/users/interfaces/member.interface'
 import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
-import { catchError, map, Observable } from 'rxjs'
+import { catchError, map, Observable, of } from 'rxjs'
 import { AuthService } from '../../auth/auth.service'
 import { SpaceModel } from '../spaces/models/space.model'
 import { GroupBrowseModel } from '../users/models/group-browse.model'
@@ -44,6 +44,7 @@ import {
   API_FILES_INDEXING_STOP
 } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import type { IndexingStatus } from '@sync-in-server/backend/src/applications/files/interfaces/indexing.interface'
+import type { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 
 @Injectable({
   providedIn: 'root'
@@ -124,17 +125,10 @@ export class AdminService {
     return this.http.delete<void>(`${API_ADMIN_GROUPS}/${groupId}/${ADMIN_USERS_ROUTE.USERS}/${userId}`)
   }
 
-  searchMembers(search: SearchMembersDto, removeDescription = false): Observable<MemberModel[]> {
+  searchMembers(search: SearchMembersDto, omitPermissions: SPACE_OPERATION[] = []): Observable<MemberModel[]> {
     return this.http.request<Member[]>('search', API_ADMIN_MEMBERS, { body: search }).pipe(
-      map((members: Member[]) =>
-        members.map((m: Member) => {
-          if (removeDescription) {
-            delete m.description
-          }
-          return new MemberModel(m)
-        })
-      ),
-      catchError(() => [])
+      map((members: Member[]) => members.map((m: Member) => new MemberModel(m, omitPermissions))),
+      catchError(() => of([]))
     )
   }
 

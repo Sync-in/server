@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http'
-import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
+import { Component, EventEmitter, inject, Injector, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faAnchor, faCog, faPen, faPlus, faSpinner, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
@@ -32,6 +32,8 @@ import { SpacesService } from '../../services/spaces.service'
 import { SPACES_ICON } from '../../spaces.constants'
 import { SpaceManageRootsComponent } from '../utils/space-manage-roots.component'
 import { ExternalFilePathEvent, SpaceRootPathDialogComponent } from './space-root-path-dialog.component'
+import { StoreService } from '../../../../store/store.service'
+import { AdminService } from '../../../admin/admin.service'
 
 @Component({
   selector: 'app-space-dialog',
@@ -61,6 +63,7 @@ export class SpaceDialogComponent implements OnInit {
     storageUsage: 0,
     storageQuota: null
   } as SpaceProps)
+  @Input() fromAdmin = false
   @Output() spaceChange = new EventEmitter<['add' | 'update' | 'delete', SpaceModel]>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
@@ -84,12 +87,15 @@ export class SpaceDialogComponent implements OnInit {
   protected confirmDeletion = false
   protected loading = false
   protected submitted = false
-  private readonly userService = inject(UserService)
-  protected readonly user: UserType = this.userService.user
+  private readonly injector = inject(Injector)
+  private memberSearchService!: Pick<UserService, 'searchMembers'> | Pick<AdminService, 'searchMembers'>
+  private readonly store = inject(StoreService)
   private readonly spacesService = inject(SpacesService)
   private readonly linksService = inject(LinksService)
+  protected readonly user: UserType = this.store.user.getValue()
 
   ngOnInit() {
+    this.memberSearchService = this.fromAdmin ? this.injector.get(AdminService) : this.injector.get(UserService)
     if (!this.space.id) {
       this.space.managers.unshift(ownerToMember(this.user, SPACE_ROLE.IS_MANAGER))
     }
@@ -104,7 +110,7 @@ export class SpaceDialogComponent implements OnInit {
       ],
       onlyUsers: true
     }
-    return this.userService.searchMembers(search)
+    return this.memberSearchService.searchMembers(search)
   }
 
   searchMembers(query: string): Observable<MemberModel[]> {
@@ -116,7 +122,7 @@ export class SpaceDialogComponent implements OnInit {
       ],
       ignoreGroupIds: this.space.members.filter((m: MemberModel) => m.isGroup).map((m: MemberModel) => m.id)
     }
-    return this.userService.searchMembers(search)
+    return this.memberSearchService.searchMembers(search)
   }
 
   openSelectRootDialog() {
