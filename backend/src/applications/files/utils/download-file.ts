@@ -7,7 +7,8 @@ import { HttpStatus } from '@nestjs/common'
 import { FileTaskEvent } from '../events/file-events'
 import { FILE_OPERATION } from '../constants/operations'
 import { writeFromStream } from './files'
-import { DownloadFileDto } from '../dto/file-operations.dto'
+import type { DownloadFileDto } from '../dto/file-operations.dto'
+import type { DownloadFileContentInfo, DownloadFileOptions } from '../interfaces/download-file.interface'
 
 const parts = [
   // IPv4 loopback (127.0.0.0/8)
@@ -39,8 +40,20 @@ export async function downloadFile(
   http: HttpService,
   downloadDto: DownloadFileDto,
   dstPath: string,
-  options?: { space?: SpaceEnv; getContentInfo?: boolean }
-) {
+  options: { space?: SpaceEnv; getContentInfo: true }
+): Promise<DownloadFileContentInfo>
+export async function downloadFile(
+  http: HttpService,
+  downloadDto: DownloadFileDto,
+  dstPath: string,
+  options?: { space?: SpaceEnv; getContentInfo?: false | undefined }
+): Promise<void>
+export async function downloadFile(
+  http: HttpService,
+  downloadDto: DownloadFileDto,
+  dstPath: string,
+  options?: DownloadFileOptions
+): Promise<void | DownloadFileContentInfo> {
   // dto must be validated by the caller
   const headRes: AxiosResponse = await http.axiosRef({ method: HTTP_METHOD.HEAD, url: downloadDto.url, maxRedirects: 1 })
   if (regExpPrivateIP.test(headRes.request.socket.remoteAddress)) {
@@ -51,7 +64,11 @@ export async function downloadFile(
   // attempt to retrieve the Content-Length header
   const contentLength = 'content-length' in headRes.headers ? Number(headRes.headers['content-length']) || null : null
   if (options?.getContentInfo) {
-    return { contentLength: contentLength, contentType: `${headRes.headers['content-type']}`, lastModified: headRes.headers['last-modified'] }
+    return {
+      contentLength: contentLength,
+      contentType: `${headRes.headers['content-type']}`,
+      lastModified: headRes.headers['last-modified'] as string | undefined
+    } satisfies DownloadFileContentInfo
   }
 
   if (!contentLength) {
