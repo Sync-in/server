@@ -484,7 +484,7 @@ export class UsersQueries {
   @CacheDecorator(900)
   async usersWhitelist(userId: number, lowerOrEqualUserRole: USER_ROLE = USER_ROLE.GUEST): Promise<number[]> {
     /* Get the list of user ids allowed to the current user
-       - all users with no groups (except users with a role higher than lowerOrEqualUserRole)
+       - all users with no groups (except users with a role higher than lowerOrEqualUserRole, and except for guest requester)
        - all users who are members of groups visible to the current user
          (VISIBLE groups for everyone, PRIVATE groups only if the current user is a member, never members of ISOLATED groups)
        - all guests managed by the current user
@@ -525,6 +525,17 @@ export class UsersQueries {
       FROM ${users}
       WHERE
         ${users.role} <= ${sql.raw(`${lowerOrEqualUserRole}`)}
+        -- Guests without (personal) groups are not globally visible.
+        -- They are allowed only through part 1 (shared visible group) or part 3 (manager relation).
+        AND ${users.role} != ${USER_ROLE.GUEST}
+        -- Guests must not see all users without groups:
+        -- this branch is enabled only for non-guest requesters.
+        AND EXISTS (
+          SELECT 1
+          FROM ${users}
+          WHERE ${users.id} = ${userId}
+            AND ${users.role} != ${USER_ROLE.GUEST}
+        )
         AND NOT EXISTS (
           SELECT 1
           FROM ${usersGroups}
