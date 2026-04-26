@@ -22,12 +22,12 @@ _Welcome to the Sync-in server repository!_
 <a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/discord/1391081837849346088?logo=discord&label=Discord" alt="Discord"/></a>
 <a href="https://deepwiki.com/Sync-in/server"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 
-**The Sync-in Server** runs on your own infrastructure, giving you **full ownership of your files and documents** while providing a modern and
-intuitive collaboration platform. It combines collaborative spaces, secure file sharing, and fine-grained access control with strong security
-foundations.
+**Sync-in Server is a self-hosted file storage, synchronization, and collaboration platform.**
+It runs on your own infrastructure, giving you full control over your data while enabling secure file sharing, collaborative workspaces, and
+fine-grained access control.
 
-Built around open standards and interoperability, Sync-in supports multi-editor document collaboration, seamless client integration, and flexible
-deployment models, making it suitable for self-hosted environments, organizations, and privacy-focused users.
+Built around open standards and interoperability, Sync-in supports real-time document collaboration, seamless client integration, and flexible
+deployment models for both self-hosted and managed environments.
 
 <picture>
   <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/server-dark.png" media="(prefers-color-scheme: dark)" />
