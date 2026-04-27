@@ -6,6 +6,7 @@ import { catchError, filter, finalize, switchMap, take } from 'rxjs/operators'
 import { SERVER_CONNECTION_ERROR } from '../app.constants'
 import { hasReservedUrlChars } from '../common/utils/functions'
 import { AuthService } from './auth.service'
+import { API_ADMIN_IMPERSONATE_LOGOUT } from '@sync-in-server/backend/src/applications/users/constants/routes'
 
 @Injectable({
   providedIn: 'root'
@@ -41,7 +42,7 @@ export class AuthInterceptor implements HttpInterceptor {
       this.auth = this.injector.get(AuthService)
     }
     console.debug('AuthInterceptor:', request.url, error.status)
-    if ([API_AUTH_REFRESH, API_AUTH_LOGIN, API_AUTH_LOGOUT].indexOf(request.url) === -1) {
+    if ([API_AUTH_REFRESH, API_AUTH_LOGIN, API_AUTH_LOGOUT, API_ADMIN_IMPERSONATE_LOGOUT].indexOf(request.url) === -1) {
       if (this.isRefreshingToken) {
         console.debug('AuthInterceptor: wait for refresh token')
         return this.waitForRefreshToken.pipe(

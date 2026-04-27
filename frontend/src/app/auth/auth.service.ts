@@ -227,7 +227,8 @@ export class AuthService {
       },
       error: (e: HttpErrorResponse) => {
         console.error(e)
-        this.layout.sendNotification('error', 'Impersonate identity', 'logout', e)
+        this.store.userImpersonate.set(false)
+        this.logout(true, true)
       }
     })
   }
