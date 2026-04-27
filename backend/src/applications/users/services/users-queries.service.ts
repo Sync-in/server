@@ -482,7 +482,7 @@ export class UsersQueries {
     return guest
   }
 
-  @CacheDecorator(900)
+  @CacheDecorator(1800)
   async usersWhitelist(userId: number, lowerOrEqualUserRole: USER_ROLE = USER_ROLE.GUEST): Promise<number[]> {
     /* Get the list of user ids allowed to the current user
        - users with no groups only when applications.users.showUngroupedUsers = true
@@ -493,6 +493,10 @@ export class UsersQueries {
        - all guests managed by the current user
        - all managers who manage the current guest
     */
+    if (await this.isGuestLink(userId)) {
+      // Guest-link accounts must never receive a user whitelist
+      return []
+    }
     const showUngroupedUsers = +configuration.applications.users.showUngroupedUsers
     const userIds: any = sql`
     WITH visible_groups AS (
@@ -564,7 +568,7 @@ export class UsersQueries {
     return JSON.parse(r[0].ids) || []
   }
 
-  @CacheDecorator(900)
+  @CacheDecorator(1800)
   async groupsWhitelist(userId: number, groupType?: GROUP_TYPE, userGroupRole?: USER_GROUP_ROLE): Promise<number[]> {
     /* Get the list of group IDs the current user is allowed to see.
        - A group marked VISIBLE is always included.
@@ -572,6 +576,10 @@ export class UsersQueries {
        - A PRIVATE group is included only if the user is a direct member of it.
        - Visibility does not inherit from parent or child groups.
     */
+    if (await this.isGuestLink(userId)) {
+      // Guest-link accounts must never receive a group whitelist
+      return []
+    }
     const optionalFilters: SQL[] = [
       ...(groupType != null ? [eq(groups.type, groupType)] : []),
       ...(userGroupRole != null ? [eq(usersGroups.role, userGroupRole)] : [])
@@ -636,6 +644,11 @@ export class UsersQueries {
     `
     const [r]: { userId: number }[][] = (await this.db.execute(withChildren)) as MySqlQueryResult
     return r.length ? r.map((r) => r.userId) : []
+  }
+
+  private async isGuestLink(userId: number): Promise<boolean> {
+    const [user] = await this.db.select({ role: users.role }).from(users).where(eq(users.id, userId)).limit(1)
+    return !user || user.role === USER_ROLE.LINK
   }
 
   private async searchGroups(
