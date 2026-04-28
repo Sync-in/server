@@ -5,6 +5,7 @@ import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { anonymizePassword, comparePassword, uniquePermissions } from '../../../common/functions'
 import { CacheDecorator } from '../../../infrastructure/cache/cache.decorator'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { configuration } from '../../../configuration/config.environment'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import {
@@ -481,15 +482,22 @@ export class UsersQueries {
     return guest
   }
 
-  @CacheDecorator(900)
+  @CacheDecorator(1800)
   async usersWhitelist(userId: number, lowerOrEqualUserRole: USER_ROLE = USER_ROLE.GUEST): Promise<number[]> {
     /* Get the list of user ids allowed to the current user
-       - all users with no groups (except users with a role higher than lowerOrEqualUserRole)
+       - users with no groups only when applications.users.showUngroupedUsers = true
+         (guest accounts are excluded from this global branch, and guest requesters never get this branch)
+         (also excludes users with a role higher than lowerOrEqualUserRole)
        - all users who are members of groups visible to the current user
          (VISIBLE groups for everyone, PRIVATE groups only if the current user is a member, never members of ISOLATED groups)
        - all guests managed by the current user
        - all managers who manage the current guest
     */
+    if (await this.isGuestLink(userId)) {
+      // Guest-link accounts must never receive a user whitelist
+      return []
+    }
+    const showUngroupedUsers = +configuration.applications.users.showUngroupedUsers
     const userIds: any = sql`
     WITH visible_groups AS (
       SELECT ${groups.id} AS id
@@ -524,7 +532,20 @@ export class UsersQueries {
       SELECT ${users.id} AS id
       FROM ${users}
       WHERE
+        ${showUngroupedUsers} = 1
+        AND
         ${users.role} <= ${sql.raw(`${lowerOrEqualUserRole}`)}
+        -- Guests without (personal) groups are not globally visible.
+        -- They are allowed only through part 1 (shared visible group) or part 3 (manager relation).
+        AND ${users.role} != ${USER_ROLE.GUEST}
+        -- Guests must not see all users without groups:
+        -- this branch is enabled only for non-guest requesters.
+        AND EXISTS (
+          SELECT 1
+          FROM ${users}
+          WHERE ${users.id} = ${userId}
+            AND ${users.role} != ${USER_ROLE.GUEST}
+        )
         AND NOT EXISTS (
           SELECT 1
           FROM ${usersGroups}
@@ -547,7 +568,7 @@ export class UsersQueries {
     return JSON.parse(r[0].ids) || []
   }
 
-  @CacheDecorator(900)
+  @CacheDecorator(1800)
   async groupsWhitelist(userId: number, groupType?: GROUP_TYPE, userGroupRole?: USER_GROUP_ROLE): Promise<number[]> {
     /* Get the list of group IDs the current user is allowed to see.
        - A group marked VISIBLE is always included.
@@ -555,6 +576,10 @@ export class UsersQueries {
        - A PRIVATE group is included only if the user is a direct member of it.
        - Visibility does not inherit from parent or child groups.
     */
+    if (await this.isGuestLink(userId)) {
+      // Guest-link accounts must never receive a group whitelist
+      return []
+    }
     const optionalFilters: SQL[] = [
       ...(groupType != null ? [eq(groups.type, groupType)] : []),
       ...(userGroupRole != null ? [eq(usersGroups.role, userGroupRole)] : [])
@@ -619,6 +644,11 @@ export class UsersQueries {
     `
     const [r]: { userId: number }[][] = (await this.db.execute(withChildren)) as MySqlQueryResult
     return r.length ? r.map((r) => r.userId) : []
+  }
+
+  private async isGuestLink(userId: number): Promise<boolean> {
+    const [user] = await this.db.select({ role: users.role }).from(users).where(eq(users.id, userId)).limit(1)
+    return !user || user.role === USER_ROLE.LINK
   }
 
   private async searchGroups(
