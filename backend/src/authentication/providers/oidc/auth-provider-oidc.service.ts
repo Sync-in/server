@@ -38,6 +38,7 @@ import type { AUTH_SCOPE } from '../../constants/scope'
 import { TOKEN_TYPE } from '../../interfaces/token.interface'
 import { AUTH_PROVIDER } from '../auth-providers.constants'
 import { AuthProvider } from '../auth-providers.models'
+import { applyStorageQuotaToIdentity } from '../auth-providers.utils'
 import { OAuthDesktopCallBackURI, OAuthDesktopLoopbackPorts, OAuthDesktopPortParam } from './auth-oidc-desktop.constants'
 import type { AuthProviderOIDCConfig } from './auth-oidc.config'
 import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint } from './auth-oidc.constants'
@@ -349,13 +350,15 @@ export class AuthProviderOIDC implements AuthProvider {
       lastName = names.lastName
     }
 
-    return {
+    const identity: Omit<CreateUserDto, 'password'> & { password?: string } = {
       login,
       email,
       role: isAdmin ? USER_ROLE.ADMINISTRATOR : USER_ROLE.USER,
       firstName,
       lastName
     }
+    applyStorageQuotaToIdentity(identity, userInfo as Record<string, unknown>, this.oidcConfig.options.storageQuotaClaim)
+    return identity
   }
 
   private async updateOrCreateUser(identity: Omit<CreateUserDto, 'password'> & { password?: string }, user: UserModel | null): Promise<UserModel> {
@@ -448,7 +451,7 @@ export class AuthProviderOIDC implements AuthProvider {
       }
 
       if (await isAvatarMetadataUnchanged(user.login, pictureUrl, pictureContentLength, pictureLastModified)) {
-        this.logger.warn({ tag: this.updatePictureUrl.name, msg: `avatar metadata unchanged, skipping update` })
+        this.logger.verbose({ tag: this.updatePictureUrl.name, msg: `avatar metadata unchanged, skipping update` })
         return
       }
     } catch (e) {

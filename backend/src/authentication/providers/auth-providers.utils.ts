@@ -1,24 +1,28 @@
-import { Provider } from '@nestjs/common'
-import { AUTH_PROVIDER } from './auth-providers.constants'
+import { DEFAULT_STORAGE_QUOTA_FIELD } from './auth-providers.constants'
 
-import { AuthProvider } from './auth-providers.models'
-import { AuthProviderLDAP } from './ldap/auth-provider-ldap.service'
-import { AuthProviderMySQL } from './mysql/auth-provider-mysql.service'
-import { AuthProviderOIDC } from './oidc/auth-provider-oidc.service'
+interface IdentityWithStorageQuota {
+  storageQuota?: number | null
+}
 
-export function selectAuthProvider(provider: AUTH_PROVIDER): Provider {
-  switch (provider) {
-    case AUTH_PROVIDER.OIDC:
-      // `AuthProviderOIDC` is already provided by `AuthProviderOIDCModule`
-      return { provide: AuthProvider, useExisting: AuthProviderOIDC }
+function parseStorageQuotaInBytes(value: unknown): number | undefined {
+  const parsed = typeof value === 'number' ? value : typeof value === 'string' && /^\d+$/.test(value.trim()) ? Number(value.trim()) : NaN
 
-    case AUTH_PROVIDER.LDAP:
-      return { provide: AuthProvider, useClass: AuthProviderLDAP }
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : undefined
+}
 
-    case AUTH_PROVIDER.MYSQL:
-      return { provide: AuthProvider, useClass: AuthProviderMySQL }
-
-    default:
-      return { provide: AuthProvider, useClass: AuthProviderMySQL }
+export function applyStorageQuotaToIdentity<T extends IdentityWithStorageQuota>(
+  identity: T,
+  profile: Record<string, unknown>,
+  fieldName = DEFAULT_STORAGE_QUOTA_FIELD
+): void {
+  if (!Object.hasOwn(profile, fieldName)) {
+    return
   }
+
+  const quota = profile[fieldName] === null ? null : parseStorageQuotaInBytes(profile[fieldName])
+  if (quota === undefined) {
+    return
+  }
+
+  identity.storageQuota = quota === 0 ? null : quota
 }

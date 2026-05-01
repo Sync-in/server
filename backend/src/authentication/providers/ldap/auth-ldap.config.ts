@@ -14,6 +14,7 @@ import {
 } from 'class-validator'
 import { USER_PERMISSION } from '../../../applications/users/constants/user'
 import { LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
+import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants'
 
 export class AuthProviderLDAPAttributesConfig {
   @IsOptional()
@@ -25,6 +26,11 @@ export class AuthProviderLDAPAttributesConfig {
   @IsString()
   @Transform(({ value }) => value || LDAP_COMMON_ATTR.MAIL)
   email: string = LDAP_COMMON_ATTR.MAIL
+
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value || DEFAULT_STORAGE_QUOTA_FIELD)
+  storageQuota: string = DEFAULT_STORAGE_QUOTA_FIELD
 }
 
 export class AuthProviderLDAPOptionsConfig {

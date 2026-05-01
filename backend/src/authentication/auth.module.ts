@@ -18,7 +18,7 @@ import { AuthTokenRefreshGuard } from './guards/auth-token-refresh.guard'
 import { AuthTokenRefreshStrategy } from './guards/auth-token-refresh.strategy'
 import { AUTH_PROVIDER } from './providers/auth-providers.constants'
 import { AuthProvider } from './providers/auth-providers.models'
-import { selectAuthProvider } from './providers/auth-providers.utils'
+import { selectAuthProvider } from './providers/auth-providers'
 import { AuthProviderOIDCModule } from './providers/oidc/auth-provider-oidc.module'
 import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service'
 
