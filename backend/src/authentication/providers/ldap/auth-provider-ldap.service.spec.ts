@@ -11,6 +11,7 @@ import { AdminUsersManager } from '../../../applications/users/services/admin-us
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import * as commonFunctions from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
+import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants'
 import type { AuthProviderLDAPConfig } from './auth-ldap.config'
 import { LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
 import { AuthProviderLDAP } from './auth-provider-ldap.service'
@@ -61,7 +62,7 @@ describe(AuthProviderLDAP.name, () => {
   const setLdapConfig = (overrides: LdapConfigOverrides = {}) => {
     const base: AuthProviderLDAPConfig = {
       servers: ['ldap://localhost:389'],
-      attributes: { login: LDAP_LOGIN_ATTR.UID, email: LDAP_COMMON_ATTR.MAIL },
+      attributes: { login: LDAP_LOGIN_ATTR.UID, email: LDAP_COMMON_ATTR.MAIL, storageQuota: DEFAULT_STORAGE_QUOTA_FIELD },
       baseDN: 'ou=people,dc=example,dc=org',
       filter: '',
       options: {
@@ -80,6 +81,9 @@ describe(AuthProviderLDAP.name, () => {
     ;(authProviderLDAP as any).ldapConfig = next
     ;(authProviderLDAP as any).isAD = [LDAP_LOGIN_ATTR.SAM, LDAP_LOGIN_ATTR.UPN].includes(next.attributes.login)
     ;(authProviderLDAP as any).hasServiceBind = Boolean(next.serviceBindDN && next.serviceBindPassword)
+    ;(authProviderLDAP as any).requestedAttributes = Array.from(
+      new Set([...Object.values(LDAP_LOGIN_ATTR), ...Object.values(LDAP_COMMON_ATTR), next.attributes.email, next.attributes.storageQuota])
+    )
     ;(authProviderLDAP as any).clientOptionsPromise = (authProviderLDAP as any).buildClientOptions()
   }
 
@@ -309,6 +313,80 @@ describe(AuthProviderLDAP.name, () => {
     )
     expect(res).toBe(createdUser)
     expect(usersManager.updateAccesses).toHaveBeenCalledWith(createdUser, '192.168.1.10', true)
+  })
+
+  it('should handle LDAP storage quota mapping cases', async () => {
+    jest.spyOn(commonFunctions, 'comparePassword').mockResolvedValue(true)
+    const scenarios = [
+      {
+        mode: 'create',
+        entry: { uid: 'john', mail: 'john@example.org', quotaBytes: '2048' },
+        expectedQuota: 2048
+      },
+      {
+        mode: 'create',
+        entry: { uid: 'john', mail: 'john@example.org', quotaBytes: '0' },
+        expectedQuota: null
+      },
+      {
+        mode: 'update',
+        entry: { uid: 'john', mail: 'john@example.org' },
+        expectedUpdate: false
+      },
+      {
+        mode: 'update',
+        entry: { uid: 'john', mail: 'john@example.org', quotaBytes: null },
+        expectedUpdate: true,
+        expectedQuota: null
+      },
+      {
+        mode: 'update',
+        entry: { uid: 'john', mail: 'john@example.org', quotaBytes: 'invalid' },
+        expectedUpdate: false
+      },
+      {
+        mode: 'update',
+        entry: { uid: 'john', mail: 'john@example.org', quotaBytes: '9007199254740992' },
+        expectedUpdate: false
+      }
+    ] as const
+
+    setLdapConfig({ attributes: { storageQuota: 'quotaBytes' } })
+
+    for (const [index, scenario] of scenarios.entries()) {
+      jest.clearAllMocks()
+      mockBindResolve()
+      mockSearchEntries([scenario.entry])
+
+      if (scenario.mode === 'create') {
+        const createdUser: any = { id: 22 + index, login: 'john', isGuest: false, isActive: true, makePaths: jest.fn() }
+        usersManager.findUser.mockResolvedValue(null)
+        adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
+        usersManager.fromUserId.mockResolvedValue(createdUser)
+
+        await authProviderLDAP.validateUser('john', 'pwd')
+
+        expect(adminUsersManager.createUserOrGuest).toHaveBeenCalledWith(
+          expect.objectContaining({ storageQuota: scenario.expectedQuota }),
+          USER_ROLE.USER
+        )
+        continue
+      }
+
+      const existingUser: any = buildUser({ id: 60 + index, email: 'john@example.org', firstName: '', lastName: '', storageQuota: 4096 })
+      usersManager.findUser.mockResolvedValue(existingUser)
+
+      await authProviderLDAP.validateUser('john', 'pwd')
+
+      if (scenario.expectedUpdate) {
+        expect(adminUsersManager.updateUserOrGuest).toHaveBeenCalledWith(
+          existingUser.id,
+          expect.objectContaining({ storageQuota: scenario.expectedQuota })
+        )
+      } else {
+        expect(adminUsersManager.updateUserOrGuest).not.toHaveBeenCalled()
+      }
+    }
   })
 
   it('should accept adminGroup as full DN', async () => {

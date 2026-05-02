@@ -18,6 +18,7 @@ import * as avatarUtils from '../../../applications/users/utils/avatar'
 import * as filesUtils from '../../../applications/files/utils/files'
 import * as downloadFileUtils from '../../../applications/files/utils/download-file'
 import * as imageUtils from '../../../common/image'
+import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants'
 import { OAuthCookie } from './auth-oidc.constants'
 import { AuthProviderOIDC } from './auth-provider-oidc.service'
 
@@ -277,6 +278,102 @@ describe(AuthProviderOIDC.name, () => {
       USER_ROLE.ADMINISTRATOR
     )
     expect(result.role).toBe(USER_ROLE.ADMINISTRATOR)
+  })
+
+  it('handles storage quota claim mapping cases', async () => {
+    const scenarios = [
+      {
+        mode: 'create',
+        claimName: DEFAULT_STORAGE_QUOTA_FIELD,
+        profile: { sub: 'x', email: 'sam@c.d', preferred_username: 'sam', [DEFAULT_STORAGE_QUOTA_FIELD]: '2048' },
+        expectedQuota: 2048
+      },
+      {
+        mode: 'create',
+        claimName: DEFAULT_STORAGE_QUOTA_FIELD,
+        profile: { sub: 'x', email: 'sam0@c.d', preferred_username: 'sam0', [DEFAULT_STORAGE_QUOTA_FIELD]: 0 },
+        expectedQuota: null
+      },
+      {
+        mode: 'create',
+        claimName: 'quotaBytes',
+        profile: { sub: 'x', email: 'samq@c.d', preferred_username: 'samq', quotaBytes: '4096' },
+        expectedQuota: 4096
+      },
+      {
+        mode: 'update',
+        claimName: DEFAULT_STORAGE_QUOTA_FIELD,
+        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice' },
+        expectedUpdate: false
+      },
+      {
+        mode: 'update',
+        claimName: DEFAULT_STORAGE_QUOTA_FIELD,
+        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', [DEFAULT_STORAGE_QUOTA_FIELD]: null },
+        expectedUpdate: true,
+        expectedQuota: null
+      },
+      {
+        mode: 'update',
+        claimName: DEFAULT_STORAGE_QUOTA_FIELD,
+        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', [DEFAULT_STORAGE_QUOTA_FIELD]: 'invalid' },
+        expectedUpdate: false
+      },
+      {
+        mode: 'update',
+        claimName: DEFAULT_STORAGE_QUOTA_FIELD,
+        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', [DEFAULT_STORAGE_QUOTA_FIELD]: '9007199254740992' },
+        expectedUpdate: false
+      }
+    ] as const
+
+    const originalStorageQuotaClaim = (service as any).oidcConfig.options.storageQuotaClaim
+    try {
+      for (const [index, scenario] of scenarios.entries()) {
+        jest.clearAllMocks()
+        ;(service as any).oidcConfig.options.storageQuotaClaim = scenario.claimName
+
+        if (scenario.mode === 'create') {
+          const id = 110 + index
+          usersManager.findUser.mockResolvedValue(null)
+          adminUsersManager.createUserOrGuest.mockResolvedValue({ id, login: `user-${id}` })
+          usersManager.fromUserId.mockResolvedValue({ id, role: USER_ROLE.USER, login: `user-${id}`, setFullName: jest.fn() } as any)
+
+          await (service as any).processUserInfo(scenario.profile, '127.0.0.1')
+
+          expect(adminUsersManager.createUserOrGuest).toHaveBeenCalledWith(
+            expect.objectContaining({ storageQuota: scenario.expectedQuota }),
+            USER_ROLE.USER
+          )
+          continue
+        }
+
+        const existingUser = {
+          id: 210 + index,
+          login: 'alice',
+          email: 'alice@example.org',
+          role: USER_ROLE.USER,
+          firstName: '',
+          lastName: '',
+          storageQuota: 4096,
+          setFullName: jest.fn()
+        } as any
+        usersManager.findUser.mockResolvedValue(existingUser)
+
+        await (service as any).processUserInfo(scenario.profile, '127.0.0.1')
+
+        if (scenario.expectedUpdate) {
+          expect(adminUsersManager.updateUserOrGuest).toHaveBeenCalledWith(
+            existingUser.id,
+            expect.objectContaining({ storageQuota: scenario.expectedQuota })
+          )
+        } else {
+          expect(adminUsersManager.updateUserOrGuest).not.toHaveBeenCalled()
+        }
+      }
+    } finally {
+      ;(service as any).oidcConfig.options.storageQuotaClaim = originalStorageQuotaClaim
+    }
   })
 
   describe('updatePictureUrl', () => {

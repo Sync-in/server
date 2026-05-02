@@ -167,6 +167,11 @@ auth:
       # email: `mail` or `email`
       # default: `mail`
       email: mail
+      # Attribute used to retrieve the user's storage quota in bytes.
+      # If the attribute is missing, the local storageQuota is not updated.
+      # If the attribute exists with null or 0, local storageQuota is set to null (unlimited).
+      # default: `storageQuota`
+      storageQuota: storageQuota
     options:
       # autoCreateUser: Automatically create a local user on first successful LDAP authentication.
       # The local account is created from LDAP attributes:
@@ -239,6 +244,11 @@ auth:
       # e.g.: [personal_space, spaces_access] (array required)
       # default: []
       autoCreatePermissions: []
+      # storageQuotaClaim: OIDC claim used to retrieve the user's storage quota in bytes.
+      # If the claim is missing, the local storageQuota is not updated.
+      # If the claim exists with null or 0, local storageQuota is set to null (unlimited).
+      # default: `storageQuota`
+      storageQuotaClaim: storageQuota
       # adminRoleOrGroup: Name of the role or group that grants Sync-in administrator access
       # Users with this value will be granted administrator privileges.
       # The value is matched against `roles` or `groups` claims provided by the IdP.

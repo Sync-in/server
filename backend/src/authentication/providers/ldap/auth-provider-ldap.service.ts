@@ -12,6 +12,7 @@ import { comparePassword, splitFullName } from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
 import type { AUTH_SCOPE } from '../../constants/scope'
 import { AuthProvider } from '../auth-providers.models'
+import { applyStorageQuotaToIdentity } from '../auth-providers.utils'
 import type { AuthProviderLDAPConfig } from './auth-ldap.config'
 import { ALL_LDAP_ATTRIBUTES, LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR, LDAP_SEARCH_ATTR } from './auth-ldap.constants'
 import type { LdapCa, LdapUserEntry } from './auth-ldap.interface'
@@ -23,6 +24,9 @@ export class AuthProviderLDAP implements AuthProvider {
   private readonly hasServiceBind = Boolean(this.ldapConfig.serviceBindDN && this.ldapConfig.serviceBindPassword)
   private readonly isAD = this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.SAM || this.ldapConfig.attributes.login === LDAP_LOGIN_ATTR.UPN
   private readonly clientOptionsPromise: Promise<ClientOptions> = this.buildClientOptions()
+  private readonly requestedAttributes: string[] = Array.from(
+    new Set([...ALL_LDAP_ATTRIBUTES, this.ldapConfig.attributes.email, this.ldapConfig.attributes.storageQuota])
+  )
 
   constructor(
     private readonly usersManager: UsersManager,
@@ -191,7 +195,7 @@ export class AuthProviderLDAP implements AuthProvider {
       const { searchEntries } = await client.search(this.ldapConfig.baseDN, {
         scope: LDAP_SEARCH_ATTR.SUB,
         filter: searchFilter,
-        attributes: ALL_LDAP_ATTRIBUTES
+        attributes: this.requestedAttributes
       })
 
       if (searchEntries.length === 0) {
@@ -290,7 +294,7 @@ export class AuthProviderLDAP implements AuthProvider {
 
   private convertToLdapUserEntry(entry: Entry): LdapUserEntry {
     // Normalize memberOf and other LDAP attributes for downstream usage.
-    for (const attr of ALL_LDAP_ATTRIBUTES) {
+    for (const attr of this.requestedAttributes) {
       if (attr === LDAP_COMMON_ATTR.MEMBER_OF && entry[attr]) {
         const values = (Array.isArray(entry[attr]) ? entry[attr] : entry[attr] ? [entry[attr]] : []).filter(
           (v: any) => typeof v === 'string'
@@ -320,13 +324,15 @@ export class AuthProviderLDAP implements AuthProvider {
       typeof this.ldapConfig.options.adminGroup === 'string' &&
       this.ldapConfig.options.adminGroup &&
       entry[LDAP_COMMON_ATTR.MEMBER_OF]?.includes(this.ldapConfig.options.adminGroup)
-    return {
+    const identity: CreateUserDto = {
       login: this.dbLogin(entry[this.ldapConfig.attributes.login]),
       email: entry[this.ldapConfig.attributes.email] as string,
       password: password,
       role: isAdmin ? USER_ROLE.ADMINISTRATOR : USER_ROLE.USER,
       ...this.getFirstNameAndLastName(entry)
-    } satisfies CreateUserDto
+    }
+    applyStorageQuotaToIdentity(identity, entry as Record<string, unknown>, this.ldapConfig.attributes.storageQuota)
+    return identity
   }
 
   private getFirstNameAndLastName(entry: LdapUserEntry): { firstName: string; lastName: string } {

@@ -14,6 +14,7 @@ import {
 } from 'class-validator'
 import { USER_PERMISSION } from '../../../applications/users/constants/user'
 import { OAuthTokenEndpoint } from './auth-oidc.constants'
+import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants'
 
 export class AuthProviderOIDCSecurityConfig {
   @IsString()
@@ -62,6 +63,11 @@ export class AuthProviderOIDCOptionsConfig {
   @IsOptional()
   @IsString()
   adminRoleOrGroup?: string
+
+  @IsOptional()
+  @IsString()
+  @Transform(({ value }) => value || DEFAULT_STORAGE_QUOTA_FIELD)
+  storageQuotaClaim?: string = DEFAULT_STORAGE_QUOTA_FIELD
 
   @IsString()
   @IsNotEmpty()
