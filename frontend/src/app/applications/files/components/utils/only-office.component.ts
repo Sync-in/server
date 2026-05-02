@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core'
-import type { OnlyOfficeConfig } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.interface'
+import type { OnlyOfficeConfig } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.interface'
 import loadScript from './only-office.utils'
 
 @Component({

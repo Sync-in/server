@@ -11,8 +11,8 @@ import {
   ValidateIf,
   ValidateNested
 } from 'class-validator'
-import { CollaboraOnlineConfig } from './modules/collabora-online/collabora-online.config'
-import { OnlyOfficeConfig } from './modules/only-office/only-office.config'
+import { CollaboraOnlineConfig } from './editors/collabora-online/collabora-online.config'
+import { OnlyOfficeConfig } from './editors/only-office/only-office.config'
 
 export class FilesContentIndexingOCRConfig {
   @IsBoolean()

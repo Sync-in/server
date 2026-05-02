@@ -1,4 +1,4 @@
-import type { FileEditorProviders } from '../applications/files/modules/file-editor-providers.interface'
+import type { FileEditorProviders } from '../applications/files/editors/file-editor-providers.interface'
 
 export interface ServerConfig {
   twoFaEnabled: boolean

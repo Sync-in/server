@@ -2,7 +2,7 @@ import { Component, computed, inject, Input, model, OnDestroy, OnInit, signal } 
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faEye, faPen } from '@fortawesome/free-solid-svg-icons'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
-import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/modules/file-editor-providers.interface'
+import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'

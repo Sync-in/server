@@ -4,9 +4,9 @@ import {
   API_FILES_TASK_OPERATION
 } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import type { FileLockProps, FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
-import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/collabora-online/collabora-online.constants'
-import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/modules/file-editor-providers.interface'
-import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
+import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
+import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
+import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import type { File } from '@sync-in-server/backend/src/applications/files/schemas/file.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { currentTimeStamp, encodeUrl, popFromObject } from '@sync-in-server/backend/src/common/shared'
