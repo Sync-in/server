@@ -57,8 +57,18 @@ describe(FilesContentStoreMySQL.name, () => {
   describe('createIndex', () => {
     it('should return true when creation succeeds', async () => {
       db.execute.mockResolvedValueOnce([{}])
+      db.execute.mockResolvedValueOnce([[{ Field: 'seen_run_id' }]])
       await expect(filesIndexerMySQL.createIndex('files_content_u_1')).resolves.toBe(true)
-      expect(db.execute).toHaveBeenCalledTimes(1)
+      expect(db.execute).toHaveBeenCalledTimes(2)
+    })
+
+    it('should add run id column when it is missing', async () => {
+      db.execute.mockResolvedValueOnce([{}])
+      db.execute.mockResolvedValueOnce([[]])
+      db.execute.mockResolvedValueOnce([{}])
+
+      await expect(filesIndexerMySQL.createIndex('files_content_u_1')).resolves.toBe(true)
+      expect(db.execute).toHaveBeenCalledTimes(3)
     })
 
     it('should return false when creation fails', async () => {
@@ -84,56 +94,75 @@ describe(FilesContentStoreMySQL.name, () => {
     it('should insert or update a record without throwing', async () => {
       db.execute.mockResolvedValueOnce([{}])
       await expect(
-        filesIndexerMySQL.insertRecord('files_content_u_1', {
-          id: 42,
-          path: '/docs',
-          name: 'file.txt',
-          mime: 'text/plain',
-          size: 12,
-          mtime: 1730000000000,
-          content: 'hello world'
-        })
-      ).resolves.toBeUndefined()
+        filesIndexerMySQL.insertRecord(
+          'files_content_u_1',
+          {
+            id: 42,
+            path: '/docs',
+            name: 'file.txt',
+            mime: 'text/plain',
+            size: 12,
+            mtime: 1730000000000,
+            content: 'hello world'
+          },
+          'run-1'
+        )
+      ).resolves.toBe(true)
       expect(db.execute).toHaveBeenCalledTimes(1)
     })
 
     it('should catch and log errors', async () => {
       db.execute.mockRejectedValueOnce(new Error('insert failed'))
       await expect(
-        filesIndexerMySQL.insertRecord('files_content_u_1', {
-          id: 1,
-          path: '/',
-          name: 'a',
-          mime: 'text/plain',
-          size: 1,
-          mtime: Date.now(),
-          content: 'x'
-        })
-      ).resolves.toBeUndefined()
+        filesIndexerMySQL.insertRecord(
+          'files_content_u_1',
+          {
+            id: 1,
+            path: '/',
+            name: 'a',
+            mime: 'text/plain',
+            size: 1,
+            mtime: Date.now(),
+            content: 'x'
+          },
+          'run-1'
+        )
+      ).resolves.toBe(false)
       expect(db.execute).toHaveBeenCalledTimes(1)
     })
   })
 
-  describe('getRecordStats', () => {
-    it('should return a map of id to basic stats without path filter', async () => {
-      db.execute.mockResolvedValueOnce([
-        [
-          { id: 1, path: '/a', name: 'a.txt', size: 10 },
-          { id: 2, path: '/b', name: 'b.txt', size: 20 }
-        ]
-      ])
+  describe('getRecordMetadataByIds', () => {
+    it('should return an empty map without querying when there are no ids', async () => {
+      const map = await filesIndexerMySQL.getRecordMetadataByIds('files_content_u_1', [])
+      expect(map.size).toBe(0)
+      expect(db.execute).toHaveBeenCalledTimes(0)
+    })
 
-      const map = await filesIndexerMySQL.getRecordStats('files_content_u_1')
+    it('should return a map of id to basic stats for ids', async () => {
+      db.execute.mockResolvedValueOnce([[{ id: 1, path: '/a', name: 'a.txt', size: 10 }]])
+
+      const map = await filesIndexerMySQL.getRecordMetadataByIds('files_content_u_1', [1])
       expect(map.get(1)).toEqual({ path: '/a', name: 'a.txt', size: 10 })
-      expect(map.get(2)).toEqual({ path: '/b', name: 'b.txt', size: 20 })
+      expect(db.execute).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('markRecordsSeen', () => {
+    it('should not query when no ids are provided', async () => {
+      await expect(filesIndexerMySQL.markRecordsSeen('files_content_u_1', [], 'run-1')).resolves.toBe(true)
+      expect(db.execute).toHaveBeenCalledTimes(0)
+    })
+
+    it('should update seen_run_id for ids', async () => {
+      db.execute.mockResolvedValueOnce([{}])
+      await expect(filesIndexerMySQL.markRecordsSeen('files_content_u_1', [1, 2], 'run-1')).resolves.toBe(true)
       expect(db.execute).toHaveBeenCalledTimes(1)
     })
 
-    it('should append WHERE clause when path filter is provided', async () => {
-      db.execute.mockResolvedValueOnce([[{ id: 3, path: '/docs', name: 'c.txt', size: 30 }]])
-
-      const map = await filesIndexerMySQL.getRecordStats('files_content_u_1', '/docs')
-      expect(map.get(3)).toEqual({ path: '/docs', name: 'c.txt', size: 30 })
+    it('should return false when update fails', async () => {
+      db.execute.mockRejectedValueOnce(new Error('update failed'))
+      await expect(filesIndexerMySQL.markRecordsSeen('files_content_u_1', [1, 2], 'run-1')).resolves.toBe(false)
       expect(db.execute).toHaveBeenCalledTimes(1)
     })
   })
@@ -159,6 +188,20 @@ describe(FilesContentStoreMySQL.name, () => {
     it('should catch errors', async () => {
       db.execute.mockRejectedValueOnce(new Error('delete failed'))
       await filesIndexerMySQL.deleteRecords('files_content_u_1', [1])
+      expect(db.execute).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('deleteUnseenRecords', () => {
+    it('should delete records not seen in the current run', async () => {
+      db.execute.mockResolvedValueOnce([{ affectedRows: 2 }])
+      await expect(filesIndexerMySQL.deleteUnseenRecords('files_content_u_1', 'run-1')).resolves.toBe(2)
+      expect(db.execute).toHaveBeenCalledTimes(1)
+    })
+
+    it('should catch errors', async () => {
+      db.execute.mockRejectedValueOnce(new Error('delete failed'))
+      await expect(filesIndexerMySQL.deleteUnseenRecords('files_content_u_1', 'run-1')).resolves.toBe(0)
       expect(db.execute).toHaveBeenCalledTimes(1)
     })
   })

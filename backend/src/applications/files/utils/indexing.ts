@@ -7,6 +7,10 @@ export function genIndexingKey(id: number, type: FILE_REPOSITORY, sep = '_'): st
   return `${type}${sep}${id}`
 }
 
+export function genRunId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`
+}
+
 export function indexingUpdateCacheKeysFromSpace(userId: number, space: SpaceEnv): string[] {
   const cacheKeys: string[] = []
   if (space.inSharesRepository && !space.root.externalPath) {

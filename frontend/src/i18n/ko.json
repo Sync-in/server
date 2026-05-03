@@ -651,6 +651,7 @@
   "State": "상태",
   "Stop": "중지",
   "Indexes": "인덱스",
+  "pending": "대기 중",
   "running": "실행 중",
   "stopping": "중지 중",
   "idle": "유휴",

@@ -42,14 +42,14 @@ export class AdminToolsComponent {
   }
 
   startIndexing() {
-    this.adminService.startIndexing().subscribe((started) => {
-      if (started) this.indexingStatus.state = IndexingState.RUNNING
+    this.adminService.startIndexing().subscribe((pending) => {
+      if (pending) this.indexingStatus.state = IndexingState.PENDING
     })
   }
 
   stopIndexing() {
-    this.adminService.stopIndexing().subscribe((stopped) => {
-      if (stopped) this.indexingStatus.state = IndexingState.STOPPING
+    this.adminService.stopIndexing().subscribe((stopping) => {
+      if (stopping) this.indexingStatus.state = IndexingState.STOPPING
     })
   }
 

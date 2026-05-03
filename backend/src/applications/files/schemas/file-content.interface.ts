@@ -12,3 +12,12 @@ export interface FileContent {
   // used for search
   score?: number
 }
+
+export type FileContentRecordMetadata = Pick<FileContent, 'name' | 'path' | 'size'>
+
+export type FileContentRecordMetadataMap = Map<FileContent['id'], FileContentRecordMetadata>
+
+export type FileContentMetadata = Omit<FileContent, 'content' | 'matches' | 'score'> & {
+  realPath: string
+  extension: string
+}

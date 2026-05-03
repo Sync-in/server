@@ -651,6 +651,7 @@
   "State": "Stato",
   "Stop": "Arresta",
   "Indexes": "Indici",
+  "pending": "in attesa",
   "running": "in esecuzione",
   "stopping": "in arresto",
   "idle": "inattivo",

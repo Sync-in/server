@@ -651,6 +651,7 @@
   "State": "Status",
   "Stop": "Stop",
   "Indexes": "Indexen",
+  "pending": "in afwachting",
   "running": "actief",
   "stopping": "bezig met stoppen",
   "idle": "inactief",

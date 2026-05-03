@@ -1,4 +1,5 @@
 export enum IndexingState {
+  PENDING = 'pending',
   RUNNING = 'running',
   STOPPING = 'stopping',
   IDLE = 'idle',

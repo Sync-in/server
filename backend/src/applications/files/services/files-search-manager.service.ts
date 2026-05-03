@@ -65,7 +65,7 @@ export class FilesSearchManager {
   private async searchFileNames(userId: number, spaceIds: number[], shareIds: number[], search: string, limit: number): Promise<FileContent[]> {
     const fileContents: FileContent[] = []
     const regexpTerms = genRegexPositiveAndNegativeTerms(search)
-    for await (const [_id, _type, paths] of this.filesParser.allPaths([userId], spaceIds, shareIds)) {
+    for (const { paths } of await this.filesParser.allPaths([userId], spaceIds, shareIds)) {
       for (const p of paths) {
         const regexBasePath = new RegExp(`^/?${escapePath(p.realPath)}/?`)
         if (!p.isDir) {

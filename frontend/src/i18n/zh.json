@@ -651,6 +651,7 @@
   "State": "状态",
   "Stop": "停止",
   "Indexes": "索引",
+  "pending": "等待中",
   "running": "运行中",
   "stopping": "停止中",
   "idle": "空闲",

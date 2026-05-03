@@ -651,6 +651,7 @@
   "State": "État",
   "Stop": "Arrêter",
   "Indexes": "Indexes",
+  "pending": "en attente",
   "running": "en cours",
   "stopping": "arrêt en cours",
   "idle": "inactif",

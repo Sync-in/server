@@ -4,7 +4,7 @@ import { MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { FilesContentStore } from '../models/files-content-store'
-import { FileContent } from '../schemas/file-content.interface'
+import { FileContent, FileContentRecordMetadata, FileContentRecordMetadataMap } from '../schemas/file-content.interface'
 import { createTableFilesContent, FILES_CONTENT_TABLE_PREFIX } from '../schemas/files-content.schema'
 import { analyzeTerms, genTermsPattern, MaxSortedList } from '../utils/files-search'
 
@@ -34,6 +34,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   async createIndex(tableName: string): Promise<boolean> {
     try {
       await this.db.execute(createTableFilesContent(tableName))
+      await this.ensureRunIdColumn(tableName)
       return true
     } catch (e) {
       this.logger.error({ tag: this.createIndex.name, msg: `${tableName} : ${e}` })
@@ -51,44 +52,68 @@ export class FilesContentStoreMySQL implements FilesContentStore {
     }
   }
 
-  async insertRecord(tableName: string, fc: FileContent): Promise<void> {
+  async insertRecord(tableName: string, fc: FileContent, runId: string): Promise<boolean> {
     try {
       await this.db.execute(sql`
-          INSERT INTO ${sql.raw(tableName)} (id, path, name, mime, size, mtime, content)
-          VALUES ${sql`(${fc.id}, ${fc.path}, ${fc.name}, ${fc.mime}, ${fc.size}, ${fc.mtime}, ${fc.content})`}
+          INSERT INTO ${sql.raw(tableName)} (id, path, name, mime, size, mtime, content, seen_run_id)
+          VALUES ${sql`(${fc.id}, ${fc.path}, ${fc.name}, ${fc.mime}, ${fc.size}, ${fc.mtime}, ${fc.content}, ${runId})`}
           ON DUPLICATE KEY UPDATE path    = VALUES(path),
                                   name    = VALUES(name),
                                   mime    = VALUES(mime),
                                   size    = VALUES(size),
                                   mtime   = VALUES(mtime),
-                                  content = VALUES(content)
+                                  content = VALUES(content),
+                                  seen_run_id = VALUES(seen_run_id)
       `)
+      return true
     } catch (e) {
       this.logger.error({ tag: this.insertRecord.name, msg: `${tableName} : ${e}` })
     }
+    return false
   }
 
-  async getRecordStats(tableName: string, path?: string): Promise<Map<number, { path: string; name: string; size: number }>> {
-    const q: SQL = sql`SELECT id, path, name, size
-                       FROM ${sql.raw(tableName)}`
-    if (path) {
-      q.append(sql` WHERE path = ${path}`)
+  async getRecordMetadataByIds(tableName: string, ids: number[]): Promise<FileContentRecordMetadataMap> {
+    if (!ids.length) {
+      return new Map()
     }
-    const [r]: { id: number; path: string; name: string; size: number }[][] = (await this.db.execute(q)) as MySqlQueryResult
-    return new Map(r.map((row) => [row.id, { path: row.path, name: row.name, size: row.size }]))
+    const [r]: { id: number; path: string; name: string; size: number }[][] = (await this.db.execute(
+      sql`SELECT id, path, name, size FROM ${sql.raw(tableName)} WHERE id IN (${sql.raw(ids.join(','))})`
+    )) as MySqlQueryResult
+    return new Map(
+      r.map((row) => [row.id, { path: row.path, name: row.name, size: row.size }] satisfies [FileContent['id'], FileContentRecordMetadata])
+    )
+  }
+
+  async markRecordsSeen(tableName: string, ids: number[], runId: string): Promise<boolean> {
+    if (!ids.length) return true
+    try {
+      await this.db.execute(sql`UPDATE ${sql.raw(tableName)} SET seen_run_id = ${runId} WHERE id IN (${sql.raw(ids.join(','))})`)
+      return true
+    } catch (e) {
+      this.logger.error({ tag: this.markRecordsSeen.name, msg: `${tableName} : ${e}` })
+    }
+    return false
   }
 
   async deleteRecords(tableName: string, ids: number[]): Promise<void> {
     try {
-      const [r] = await this.db.execute(sql`DELETE
-                                            FROM ${sql.raw(tableName)}
-                                            WHERE id IN (${sql.raw(ids.join(','))})`)
+      const [r] = await this.db.execute(sql`DELETE FROM ${sql.raw(tableName)} WHERE id IN (${sql.raw(ids.join(','))})`)
       if (r.affectedRows !== ids.length) {
         this.logger.warn({ tag: this.deleteRecords.name, msg: `${tableName} - deleted : ${r.affectedRows}/${ids.length}` })
       }
     } catch (e) {
       this.logger.error({ tag: this.deleteRecords.name, msg: `${tableName} : ${e}` })
     }
+  }
+
+  async deleteUnseenRecords(tableName: string, runId: string): Promise<number> {
+    try {
+      const [r] = await this.db.execute(sql`DELETE FROM ${sql.raw(tableName)} WHERE seen_run_id IS NULL OR seen_run_id <> ${runId}`)
+      return r.affectedRows ?? 0
+    } catch (e) {
+      this.logger.error({ tag: this.deleteUnseenRecords.name, msg: `${tableName} : ${e}` })
+    }
+    return 0
   }
 
   async searchRecords(tableNames: string[], search: string, limit: number): Promise<FileContent[]> {
@@ -154,5 +179,14 @@ export class FilesContentStoreMySQL implements FilesContentStore {
 
   private async getIndexes(): Promise<Record<string, string>[]> {
     return (await this.db.execute(sql`SHOW TABLES LIKE '${sql.raw(FILES_CONTENT_TABLE_PREFIX)}%'`))[0] as any
+  }
+
+  private async ensureRunIdColumn(tableName: string): Promise<void> {
+    // migration for old versions of the application
+    const [columns] = (await this.db.execute(sql`SHOW COLUMNS FROM ${sql.raw(tableName)} LIKE 'seen_run_id'`)) as MySqlQueryResult
+    if ((columns as unknown[]).length) {
+      return
+    }
+    await this.db.execute(sql`ALTER TABLE ${sql.raw(tableName)} ADD COLUMN seen_run_id varchar(64), ADD INDEX seen_run_id (seen_run_id)`)
   }
 }

@@ -25,7 +25,6 @@ export class FilesScheduler {
   private readonly logger = new Logger(FilesScheduler.name)
   private isQuotaUpdateIsRunning = false
   private isQuotaUpdateEntriesIsRunning = false
-  private pendingFullSync = false
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
@@ -68,12 +67,9 @@ export class FilesScheduler {
     }
     if (!this.filesContentIndexer.isEnabled || (await this.filesContentIndexer.isRunning())) return
     try {
-      await this.filesContentIndexer.updateIndexEntries()
+      await this.filesContentIndexer.processIndexingQueue()
     } catch (e) {
       this.logger.error({ tag: this.updateStorageAndIndexing.name, msg: `update indexing error: ${e}` })
-    }
-    if (this.pendingFullSync) {
-      await this.indexContentFiles()
     }
   }
 
@@ -140,17 +136,10 @@ export class FilesScheduler {
 
   @Cron(CronExpression.EVERY_4_HOURS)
   async indexContentFiles(): Promise<void> {
-    // Conditional loading of file content indexing
-    if (!this.filesContentIndexer.isEnabled) return
-    if (await this.filesContentIndexer.isRunning()) {
-      this.pendingFullSync = true
-      this.logger.warn({ tag: this.indexContentFiles.name, msg: `SKIP (already running) - deferred` })
-      return
+    // queue a full content indexing request, it will be consumed by the minute scheduler
+    if (await this.filesContentIndexer.requestFullIndexing()) {
+      this.logger.log({ tag: this.indexContentFiles.name, msg: `PENDING` })
     }
-    this.pendingFullSync = false
-    this.logger.log({ tag: this.indexContentFiles.name, msg: `START` })
-    await this.filesContentIndexer.parseAndIndexAllFiles()
-    this.logger.log({ tag: this.indexContentFiles.name, msg: `END` })
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_4AM)
@@ -238,7 +227,7 @@ export class FilesScheduler {
   }
 
   private async resetContentIndexingState(): Promise<void> {
-    await this.filesContentIndexer.resetRunningState()
+    await this.filesContentIndexer.resetIndexingRuntimeState()
     this.logger.log({ tag: this.resetContentIndexingState.name, msg: `done` })
   }
 }

@@ -651,6 +651,7 @@
   "State": "Durum",
   "Stop": "Durdur",
   "Indexes": "Dizinler",
+  "pending": "beklemede",
   "running": "çalışıyor",
   "stopping": "durduruluyor",
   "idle": "boşta",
