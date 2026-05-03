@@ -6,7 +6,7 @@ import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { FilesContentStore } from '../models/files-content-store'
 import { FILE_REPOSITORY } from '../constants/operations'
 import { configuration } from '../../../configuration/config.environment'
-import { FilesParser } from './files-parser.service'
+import { FilesContentParser } from './files-content-parser.service'
 import { FilesSearchManager } from './files-search-manager.service'
 
 describe(FilesSearchManager.name, () => {
@@ -53,7 +53,7 @@ describe(FilesSearchManager.name, () => {
       providers: [
         FilesSearchManager,
         { provide: FilesContentStore, useValue: filesIndexer },
-        { provide: FilesParser, useValue: filesParser },
+        { provide: FilesContentParser, useValue: filesParser },
         {
           provide: SpacesQueries,
           useValue: spacesQueries

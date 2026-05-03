@@ -16,7 +16,7 @@ import { FileContent } from '../schemas/file-content.interface'
 import { docTextify } from '../utils/doc-textify/doc-textify'
 import { OCRManager } from '../utils/doc-textify/utils/ocr'
 import { getExtensionWithoutDot, getMimeType } from '../utils/files'
-import { FilesParser } from './files-parser.service'
+import { FilesContentParser } from './files-content-parser.service'
 import { genIndexingKey } from '../utils/indexing'
 import { FILE_REPOSITORY } from '../constants/operations'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
@@ -34,7 +34,7 @@ export class FilesContentIndexer {
   constructor(
     private readonly cache: Cache,
     private readonly filesContentStore: FilesContentStore,
-    private readonly filesParser: FilesParser
+    private readonly filesParser: FilesContentParser
   ) {}
 
   isRunning(): Promise<boolean> {

@@ -11,7 +11,7 @@ import { FilesContentStore } from '../models/files-content-store'
 import { FileContent } from '../schemas/file-content.interface'
 import { dirName, fileName, getMimeType } from '../utils/files'
 import { genRegexPositiveAndNegativeTerms } from '../utils/files-search'
-import { FilesParser } from './files-parser.service'
+import { FilesContentParser } from './files-content-parser.service'
 import { FILE_REPOSITORY } from '../constants/operations'
 import { genIndexingKey } from '../utils/indexing'
 import { escapePath } from '../../../common/functions'
@@ -22,7 +22,7 @@ export class FilesSearchManager {
 
   constructor(
     private readonly filesIndexer: FilesContentStore,
-    private readonly filesParser: FilesParser,
+    private readonly filesParser: FilesContentParser,
     private readonly spacesQueries: SpacesQueries,
     private readonly sharesQueries: SharesQueries
   ) {}

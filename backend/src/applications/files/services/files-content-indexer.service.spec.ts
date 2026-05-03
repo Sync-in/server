@@ -14,7 +14,7 @@ import { IndexingState } from '../interfaces/indexing.interface'
 import { FilesContentStore } from '../models/files-content-store'
 import * as docTextifyModule from '../utils/doc-textify/doc-textify'
 import { OCRManager } from '../utils/doc-textify/utils/ocr'
-import { FilesParser } from './files-parser.service'
+import { FilesContentParser } from './files-content-parser.service'
 import { FilesContentIndexer } from './files-content-indexer.service'
 
 describe(FilesContentIndexer.name, () => {
@@ -75,7 +75,7 @@ describe(FilesContentIndexer.name, () => {
         FilesContentIndexer,
         { provide: Cache, useValue: cache },
         { provide: FilesContentStore, useValue: filesIndexer },
-        { provide: FilesParser, useValue: filesParser }
+        { provide: FilesContentParser, useValue: filesParser }
       ]
     }).compile()
 

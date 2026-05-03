@@ -10,7 +10,7 @@ import { FilesContentIndexer } from './services/files-content-indexer.service'
 import { FilesLockManager } from './services/files-lock-manager.service'
 import { FilesManager } from './services/files-manager.service'
 import { FilesMethods } from './services/files-methods.service'
-import { FilesParser } from './services/files-parser.service'
+import { FilesContentParser } from './services/files-content-parser.service'
 import { FilesQueries } from './services/files-queries.service'
 import { FilesRecents } from './services/files-recents.service'
 import { FilesScheduler } from './services/files-scheduler.service'
@@ -18,6 +18,7 @@ import { FilesSearchManager } from './services/files-search-manager.service'
 import { FilesTasksManager } from './services/files-tasks-manager.service'
 import { FilesEventManager } from './services/files-event-manager.service'
 import { FilesQuotaManager } from './services/files-quota-manager.service'
+import { FilesTrashManagerService } from './services/files-trash-manager.service'
 
 @Module({
   imports: [
@@ -33,7 +34,7 @@ import { FilesQuotaManager } from './services/files-quota-manager.service'
     FilesTasksManager,
     FilesScheduler,
     FilesRecents,
-    FilesParser,
+    FilesContentParser,
     FilesContentIndexer,
     { provide: FilesContentStore, useClass: FilesContentStoreMySQL },
     FilesSearchManager,

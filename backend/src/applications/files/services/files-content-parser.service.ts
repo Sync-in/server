@@ -19,8 +19,8 @@ import { isPathExists } from '../utils/files'
 import { FILE_REPOSITORY } from '../constants/operations'
 
 @Injectable()
-export class FilesParser {
-  private readonly logger = new Logger(FilesParser.name)
+export class FilesContentParser {
+  private readonly logger = new Logger(FilesContentParser.name)
 
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 
