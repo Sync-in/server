@@ -26,10 +26,10 @@ import { configuration } from '../../../configuration/config.environment'
 
 @Injectable()
 export class FilesContentIndexer {
-  public isEnabled = configuration.applications.files.contentIndexing.enabled
-  private readonly maxDocumentSize = 150 * 1_000_000
   private readonly logger = new Logger(FilesContentIndexer.name)
+  private readonly maxDocumentSize = 150 * 1_000_000
   private ocrManager: OCRManager | null = null
+  public isEnabled = configuration.applications.files.contentIndexing.enabled
 
   constructor(
     private readonly cache: Cache,
