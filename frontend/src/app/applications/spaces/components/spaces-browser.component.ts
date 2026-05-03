@@ -395,7 +395,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   onContextMenu(ev: MouseEvent | Event) {
     ev.preventDefault()
     ev.stopPropagation()
-    if (!this.isTrashRepo) {
+    if (this.isTrashRepo) {
+      this.layout.openContextMenu(ev, this.mainReadOnlyContextMenu)
+    } else {
       this.layout.openContextMenu(ev, this.mainContextMenu)
     }
   }
@@ -607,14 +609,14 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   openCompressionDialog(inDir = true) {
     const archiveProps: CompressFileDto = {
       name: this.selection[0].name,
-      compressInDirectory: this.inSharesList ? false : inDir,
+      compressInDirectory: this.isTrashRepo || this.inSharesList ? false : inDir,
       files: this.selection.map((f: FileModel) => ({ name: f.name, rootAlias: f.root?.alias })),
       extension: TAR_EXTENSION
     }
     this.layout.openDialog(FilesCompressionDialogComponent, null, {
       initialState: {
         archiveProps: archiveProps,
-        disableInDirCompression: this.inSharesList
+        disableInDirCompression: this.isTrashRepo || this.inSharesList
       } as FilesCompressionDialogComponent
     })
   }
@@ -724,7 +726,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private openViewerDialog() {
     const f = this.selection[0]
     let permissions: string
-    if (this.inSharesList) {
+    if (this.isTrashRepo) {
+      permissions = ''
+    } else if (this.inSharesList) {
       permissions = f.root.permissions
     } else {
       permissions = f?.root ? intersectPermissions(this.spacePermissions, f?.root.permissions) : this.spacePermissions
@@ -846,7 +850,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         }
       })
       this.eventDragStartHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'dragstart', (ev) => {
-        if (this.inSharesList) {
+        if (this.isTrashRepo || this.inSharesList) {
           ev.preventDefault()
         }
         if (ev.target.parentElement.nodeName === 'TD' || ev.target.parentElement.nodeName === 'DIV') {
