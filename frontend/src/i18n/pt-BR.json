@@ -130,6 +130,7 @@
   "Storage Usage": "Uso do armazenamento",
   "Space status": "Status do espaço",
   "Storage quota exceeded": "Cota de armazenamento excedida",
+  "The trash is read-only": "A lixeira é somente leitura",
   "Storage quota will be exceeded": "A cota de armazenamento será excedida",
   "No more space available": "Sem espaço disponível",
   "available_space_is_low": "Pouco espaço disponível ({{ nb }}%)",

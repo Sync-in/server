@@ -130,6 +130,7 @@
   "Storage Usage": "Wykorzystanie przestrzeni",
   "Space status": "Status przestrzeni",
   "Storage quota exceeded": "Przekroczono limit przestrzeni",
+  "The trash is read-only": "Kosz jest tylko do odczytu",
   "Storage quota will be exceeded": "Limit przestrzeni zostanie przekroczony",
   "No more space available": "Brak dostępnego miejsca",
   "available_space_is_low": "Mało dostępnego miejsca ({{ nb }}%)",

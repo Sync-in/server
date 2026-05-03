@@ -377,6 +377,26 @@ describe(SpaceGuard.name, () => {
     expect(await spacesGuard.canActivate(context)).toBe(true)
   })
 
+  it('should fail for add and modify operations in trash repository', async () => {
+    userTest.role = USER_ROLE.USER
+    spacesManager.spaceEnv = jest.fn().mockReturnValue({
+      enabled: true,
+      inTrashRepository: true,
+      envPermissions: SPACE_ALL_OPERATIONS
+    } as Partial<SpaceEnv>)
+    for (const method of ['POST', 'PATCH']) {
+      context.switchToHttp().getRequest.mockReturnValueOnce({
+        method,
+        user: userTest,
+        params: { '*': 'trash/personal' }
+      })
+      await expect(spacesGuard.canActivate(context)).rejects.toMatchObject({
+        status: HttpStatus.FORBIDDEN,
+        message: 'The trash is read-only'
+      })
+    }
+  })
+
   it('should fail with space disabled', async () => {
     userTest.role = USER_ROLE.USER
     spacesManager.spaceEnv = jest.fn().mockReturnValueOnce({

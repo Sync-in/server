@@ -13,10 +13,9 @@ import { configuration } from '../../../../configuration/config.environment'
 import { Cache } from '../../../../infrastructure/cache/services/cache.service'
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
 import { HTTP_METHOD } from '../../../applications.constants'
-import { SPACE_OPERATION } from '../../../spaces/constants/spaces'
 import { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface'
 import type { SpaceEnv } from '../../../spaces/models/space-env.model'
-import { haveSpaceEnvPermissions } from '../../../spaces/utils/permissions'
+import { canModifySpaceEnv } from '../../../spaces/utils/permissions'
 import type { UserModel } from '../../../users/models/user.model'
 import { getAvatarBase64 } from '../../../users/utils/avatar'
 import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
@@ -81,7 +80,7 @@ export class OnlyOfficeManager {
       throw new HttpException('Document not supported', HttpStatus.BAD_REQUEST)
     }
     let hasLock: false | FileLockProps = false
-    let mode: FILE_MODE = haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY) ? FILE_MODE.EDIT : FILE_MODE.VIEW
+    let mode: FILE_MODE = canModifySpaceEnv(space) ? FILE_MODE.EDIT : FILE_MODE.VIEW
     if (mode === FILE_MODE.EDIT) {
       // Check lock conflicts
       try {

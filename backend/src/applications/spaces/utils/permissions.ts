@@ -63,3 +63,7 @@ export function canAccessToSpace(user: UserModel, space: SpaceEnv): boolean {
   }
   return false
 }
+
+export function canModifySpaceEnv(space: SpaceEnv): boolean {
+  return !space.inTrashRepository && haveSpaceEnvPermissions(space, SPACE_OPERATION.MODIFY)
+}

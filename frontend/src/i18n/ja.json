@@ -130,6 +130,7 @@
   "Storage Usage": "ストレージ使用量",
   "Space status": "スペースの状態",
   "Storage quota exceeded": "ストレージの割り当てを超えています",
+  "The trash is read-only": "ゴミ箱は読み取り専用です",
   "Storage quota will be exceeded": "ストレージの割り当てを超過する見込みです",
   "No more space available": "空き容量がありません",
   "available_space_is_low": "空き容量が少ない（{{ nb }}%）",

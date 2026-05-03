@@ -130,6 +130,7 @@
   "Storage Usage": "Uso de almacenamiento",
   "Space status": "Estado del espacio",
   "Storage quota exceeded": "Se ha superado la cuota de almacenamiento",
+  "The trash is read-only": "La papelera es de solo lectura",
   "Storage quota will be exceeded": "Se superará la cuota de almacenamiento",
   "No more space available": "No hay más espacio disponible",
   "available_space_is_low": "Espacio disponible bajo ( {{ nb }}% )",

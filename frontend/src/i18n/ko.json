@@ -130,6 +130,7 @@
   "Storage Usage": "저장 사용량",
   "Space status": "스페이스 상태",
   "Storage quota exceeded": "저장 할당량을 초과했습니다",
+  "The trash is read-only": "휴지통은 읽기 전용입니다",
   "Storage quota will be exceeded": "저장 할당량을 초과할 예정입니다",
   "No more space available": "사용 가능한 공간이 없습니다",
   "available_space_is_low": "사용 가능한 공간이 부족합니다 ({{ nb }}%)",

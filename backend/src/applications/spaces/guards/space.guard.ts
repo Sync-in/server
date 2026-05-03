@@ -42,6 +42,9 @@ export class SpaceGuard implements CanActivate {
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
     }
     if ([SPACE_OPERATION.ADD, SPACE_OPERATION.MODIFY].indexOf(permission) > -1) {
+      if (req.space.inTrashRepository) {
+        throw new HttpException('The trash is read-only', HttpStatus.FORBIDDEN)
+      }
       if (req.space.quotaIsExceeded) {
         logger.warn(`Storage quota exceeded for *${req.space.alias}* (${req.space.id})`)
         throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)

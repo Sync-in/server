@@ -98,6 +98,7 @@ export class FilesManager {
   ): Promise<boolean | string> {
     // If tmpPath is used, we lock the final destination during the transfer
     // space.realPath is replaced by tmpPath (if allowed). If the move operation failed, we remove the tmp file
+    this.checkNotTrashRepository(space)
     const fExists = await isPathExists(space.realPath)
     const fTmpExists = options?.tmpPath ? await isPathExists(options.tmpPath) : false
     if (fExists && req.method === HTTP_METHOD.POST) {
@@ -192,6 +193,7 @@ export class FilesManager {
                In this text-editing scenario, locking and refreshing occur automatically, but unlocking must be handled explicitly via
                the `unlock` method.
     */
+    this.checkNotTrashRepository(space)
     const overwrite = req.method === HTTP_METHOD.PUT
     const patch = req.method === HTTP_METHOD.PATCH
     const realParentPath = dirName(space.realPath)
@@ -268,6 +270,7 @@ export class FilesManager {
   }
 
   async touch(user: UserModel, space: SpaceEnv, mtime: number, checkLocks = true): Promise<void> {
+    this.checkNotTrashRepository(space)
     if (!(await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
     }
@@ -279,6 +282,7 @@ export class FilesManager {
   }
 
   async mkFile(user: UserModel, space: SpaceEnv, overwrite = false, checkLocks = true, checkDocument = false): Promise<void> {
+    this.checkNotTrashRepository(space)
     checkFileName(space.realPath)
     if (!overwrite && (await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.BAD_REQUEST, 'Resource already exists')
@@ -299,6 +303,7 @@ export class FilesManager {
   }
 
   async mkDir(user: UserModel, space: SpaceEnv, recursive = false, dav?: { depth: LOCK_DEPTH; lockTokens: string[] }): Promise<void> {
+    this.checkNotTrashRepository(space)
     checkFileName(space.realPath)
     if (!recursive) {
       if (await isPathExists(space.realPath)) {
@@ -321,6 +326,7 @@ export class FilesManager {
     dav?: { depth: LOCK_DEPTH; lockTokens: string[] }
   ): Promise<void> {
     // checks
+    this.checkNotTrashRepository(dstSpace)
     if (!canAccessToSpace(user, dstSpace)) {
       this.logger.warn({ tag: this.copyMove.name, msg: `is not allowed to access to this space repository : ${dstSpace.repository}` })
       throw new FileError(HttpStatus.FORBIDDEN, 'You are not allowed to access to this repository')
@@ -503,6 +509,7 @@ export class FilesManager {
   }
 
   async downloadFromUrl(user: UserModel, space: SpaceEnv, downloadDto: DownloadFileDto): Promise<void> {
+    this.checkNotTrashRepository(space)
     this.logger.log({ tag: this.downloadFromUrl.name, msg: `${downloadDto.url}` })
     const rPath = await uniqueFilePathFromDir(space.realPath)
     const dbFile = space.dbFile
@@ -528,6 +535,9 @@ export class FilesManager {
   async compress(user: UserModel, space: SpaceEnv, dto: CompressFileDto): Promise<void> {
     // This method is currently used only by files-methods.service, which handles input sanitization.
     // If it is used in other services in the future, make sure to refactor accordingly to sanitize inputs properly.
+    if (dto.compressInDirectory) {
+      this.checkNotTrashRepository(space)
+    }
     const srcPath = dirName(space.realPath)
     const archiveExt = dto.name.endsWith(dto.extension) ? '' : `.${dto.extension}`
     const dstPath = await uniqueFilePathFromDir(path.join(dto.compressInDirectory ? srcPath : user.tasksPath, `${dto.name}${archiveExt}`))
@@ -579,6 +589,7 @@ export class FilesManager {
 
   async decompress(user: UserModel, space: SpaceEnv): Promise<void> {
     // checks
+    this.checkNotTrashRepository(space)
     if (!(await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
     }
@@ -694,6 +705,12 @@ export class FilesManager {
       return (await dirSize(space.realPath))[0]
     } else {
       return await fileSize(space.realPath)
+    }
+  }
+
+  private checkNotTrashRepository(space: SpaceEnv): void {
+    if (space.inTrashRepository) {
+      throw new FileError(HttpStatus.FORBIDDEN, 'The trash is read-only')
     }
   }
 }

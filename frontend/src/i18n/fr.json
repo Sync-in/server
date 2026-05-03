@@ -130,6 +130,7 @@
   "Storage Usage": "Utilisation du stockage",
   "Space status": "État de l'espace",
   "Storage quota exceeded": "Le quota de stockage est dépassé",
+  "The trash is read-only": "La corbeille est en lecture seule",
   "Storage quota will be exceeded": "Le quota de stockage sera dépassé",
   "No more space available": "Plus d'espace disponible",
   "available_space_is_low": "Espace disponible faible ( {{ nb }}% )",
