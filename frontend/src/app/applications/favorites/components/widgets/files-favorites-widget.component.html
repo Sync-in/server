@@ -6,15 +6,17 @@
       </span>
       <span class="recents-widget-card__title" l10nTranslate>Favorites</span>
     </div>
-    <button type="button" class="recents-widget-card__toggle" (click)="switchMore()">
+    <button type="button" class="recents-widget-card__toggle" (click)="switchMore()"
+            [attr.aria-label]="moreElements ? 'Show fewer favorites' : 'Show more favorites'">
       <fa-icon [icon]="moreElements ? icons.faMagnifyingGlassMinus : icons.faMagnifyingGlassPlus"></fa-icon>
     </button>
   </div>
   <div class="recents-widget-card__body">
     @for (f of files(); track f.id; let i = $index) {
-      <button type="button" class="recent-item-card" [style.animation-delay.ms]="i * 22" (click)="goToFile(f)">
+      <button type="button" class="recent-item-card" [style.animation-delay.ms]="i * 22" (click)="goToFile(f)"
+              [attr.aria-label]="'Open ' + f.name">
         <span class="recent-item-card__media">
-          <img [src]="getMimeUrl(f.mime)" alt="" (error)="onMimeError(f.mime)">
+          <img [src]="getMimeUrl(f.mime)" [attr.alt]="f.mime + ' file icon'" (error)="onMimeError(f.mime)">
         </span>
         <span class="recent-item-card__content">
           <span class="recent-item-card__title">{{ f.name }}</span>

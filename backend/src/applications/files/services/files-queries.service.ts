@@ -317,7 +317,7 @@ export class FilesQueries {
         size: files.size,
         mtime: files.mtime,
         ctime: files.ctime,
-        isFavorite: sql<true>`true`,
+        isFavorite: sql<boolean>`true`.mapWith(Boolean),
         navPath: sql<string>`CONCAT(
           ${SPACE_REPOSITORY.FILES}, '/',
           CASE
@@ -331,7 +331,7 @@ export class FilesQueries {
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
       .leftJoin(spaces, eq(spaces.id, files.spaceId))
-      .where(eq(filesFavorites.userId, userId))
+      .where(and(eq(filesFavorites.userId, userId), eq(files.inTrash, false)))
       .orderBy(desc(filesFavorites.createdAt))
       .limit(limit)
   }

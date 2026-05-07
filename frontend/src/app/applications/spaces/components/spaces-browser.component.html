@@ -423,9 +423,15 @@
                         </span>
                         }
                         <span (click)="toggleFavorite(f, $event)"
+                              (keydown.enter)="toggleFavorite(f, $event)"
+                              (keydown.space)="toggleFavorite(f, $event)"
                               class="badge cursor-pointer me-1"
                               [class.bg-warning]="f.isFavorite"
-                              [class.bg-secondary]="!f.isFavorite">
+                              [class.bg-secondary]="!f.isFavorite"
+                              role="button"
+                              tabindex="0"
+                              [attr.aria-label]="f.isFavorite ? 'Remove from favorites' : 'Add to favorites'"
+                              [attr.aria-pressed]="f.isFavorite">
                           <fa-icon [icon]="f.isFavorite ? icons.faStar : icons.faStarRegular"></fa-icon>
                         </span>
                         @if (f.hasComments) {

@@ -1,3 +1,4 @@
+import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { UserModel } from '../../users/models/user.model'
 import { FilesQueries } from './files-queries.service'
@@ -63,7 +64,7 @@ describe(FilesFavorites.name, () => {
 
   it('addFavorite throws NotFoundException when file is not accessible', async () => {
     filesQueries.isFileAccessibleByUser.mockResolvedValue(false)
-    await expect(service.addFavorite(user, 42)).rejects.toThrow()
+    await expect(service.addFavorite(user, 42)).rejects.toThrow(NotFoundException)
     expect(filesQueries.addFavorite).not.toHaveBeenCalled()
   })
 
