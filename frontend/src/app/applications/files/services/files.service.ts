@@ -34,6 +34,7 @@ import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applica
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
+import type { FileFavorite } from '@sync-in-server/backend/src/applications/files/schemas/file-favorite.interface'
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -216,9 +217,9 @@ export class FilesService {
 
   loadFavorites(limit: number) {
     this.http
-      .get<FileProps[]>(API_FILES_FAVORITES, { params: new HttpParams().set('limit', limit) })
+      .get<FileFavorite[]>(API_FILES_FAVORITES, { params: new HttpParams().set('limit', limit) })
       .subscribe({
-        next: (fs: FileProps[]) => {
+        next: (fs: FileFavorite[]) => {
           this.store.filesFavorites.update((files) => [...fs, ...files.slice(limit)])
         },
         error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to load favorites', e)
@@ -234,7 +235,7 @@ export class FilesService {
         if (add) {
           this.loadFavorites(100)
         } else {
-          this.store.filesFavorites.update((files) => files.filter((f) => f.id !== fileId))
+          this.store.filesFavorites.update((files: FileFavorite[]) => files.filter((f) => f.id !== fileId))
         }
       },
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)

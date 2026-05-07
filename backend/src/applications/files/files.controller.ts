@@ -39,6 +39,7 @@ import { FILES_ROUTE } from './constants/routes'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto, SearchFilesDto } from './dto/file-operations.dto'
 import { FileLockProps, FileProps } from './interfaces/file-props.interface'
 import { FileTask } from './models/file-task'
+import { FileFavorite } from './schemas/file-favorite.interface'
 import { FileContent } from './schemas/file-content.interface'
 import { FileRecent } from './schemas/file-recent.interface'
 import { FilesMethods } from './services/files-methods.service'
@@ -213,7 +214,7 @@ export class FilesController {
 
   @Get(FILES_ROUTE.FAVORITES)
   @SkipSpaceGuard()
-  getFavorites(@GetUser() user: UserModel, @Query('limit') limit?: number): Promise<FileProps[]> {
+  getFavorites(@GetUser() user: UserModel, @Query('limit') limit?: number): Promise<FileFavorite[]> {
     return this.filesFavorites.getFavorites(user, limit ? +limit : undefined)
   }
 
