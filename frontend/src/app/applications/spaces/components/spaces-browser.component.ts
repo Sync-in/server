@@ -28,8 +28,10 @@ import {
   faPlus,
   faRotate,
   faSpellCheck,
+  faStar,
   faUpload
 } from '@fortawesome/free-solid-svg-icons'
+import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
@@ -150,7 +152,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     faArrowDown,
     faLock,
     faLockOpen,
-    faClipboardList
+    faClipboardList,
+    faStar,
+    faStarRegular
   }
   // States
   protected loading = false
@@ -644,6 +648,12 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   openLockDialog(f: FileModel) {
     this.filesService.openLockDialog(f)
+  }
+
+  toggleFavorite(file: FileModel, event: MouseEvent) {
+    event.stopPropagation()
+    this.filesService.toggleFavorite(file.id, !file.isFavorite)
+    file.isFavorite = !file.isFavorite
   }
 
   private setSpace(route: { repository: SPACE_REPOSITORY; routes: UrlSegment[] }) {

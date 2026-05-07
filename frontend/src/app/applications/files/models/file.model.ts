@@ -84,6 +84,7 @@ export class FileModel implements File {
   isDisabled = false
   canBeReShared = false
   haveThumbnail = false
+  isFavorite = false
 
   constructor(props: FileProps | File, basePath: string, inShare = false, editorConfig: FileEditorProviders) {
     this.setShares(popFromObject('shares', props))
