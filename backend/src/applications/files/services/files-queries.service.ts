@@ -5,6 +5,7 @@ import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { concatDistinctObjectsInArray, convertToWhere, dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils'
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
+import { fileIsFavoriteForUserSQL, filesFavorites } from '../schemas/files-favorites.schema'
 import { shares } from '../../shares/schemas/shares.schema'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
@@ -33,6 +34,7 @@ export class FilesQueries {
       withShares?: boolean
       withSyncs?: boolean
       withHasComments?: boolean
+      withIsFavorite?: boolean
       ignoreChildShares?: boolean
     }
   ): Promise<FileProps[]> {
@@ -62,7 +64,10 @@ export class FilesQueries {
             clientName: sql`JSON_VALUE(${syncClients.info}, '$.node')`
           })
         }),
-        ...(options.withHasComments && { hasComments: sql`${fileHasCommentsSubquerySQL(files.id)}`.mapWith(Boolean) })
+        ...(options.withHasComments && { hasComments: sql`${fileHasCommentsSubquerySQL(files.id)}`.mapWith(Boolean) }),
+        ...(options.withIsFavorite && {
+          isFavorite: fileIsFavoriteForUserSQL(files.id, sql`${userId}`).mapWith(Boolean)
+        })
       })
       .from(files)
       .where(and(...convertToWhere(files, dbFile)))
@@ -298,6 +303,44 @@ export class FilesQueries {
       .select(getTableColumns(filesRecents))
       .from(filesRecents)
       .where(and(...where))
+  }
+
+  async getFavorites(userId: number, limit = 100): Promise<FileProps[]> {
+    return this.db
+      .select({
+        id: files.id,
+        path: files.path,
+        name: files.name,
+        isDir: files.isDir,
+        mime: files.mime,
+        size: files.size,
+        mtime: files.mtime,
+        ctime: files.ctime,
+        ownerId: files.ownerId,
+        spaceId: files.spaceId,
+        spaceExternalRootId: files.spaceExternalRootId,
+        shareExternalId: files.shareExternalId,
+        inTrash: files.inTrash,
+        isFavorite: sql<boolean>`true`.mapWith(Boolean),
+      })
+      .from(filesFavorites)
+      .innerJoin(files, eq(files.id, filesFavorites.fileId))
+      .where(eq(filesFavorites.userId, userId))
+      .orderBy(desc(filesFavorites.createdAt))
+      .limit(limit)
+  }
+
+  async addFavorite(userId: number, fileId: number): Promise<void> {
+    await this.db
+      .insert(filesFavorites)
+      .ignore()
+      .values({ userId, fileId, createdAt: new Date() })
+  }
+
+  async removeFavorite(userId: number, fileId: number): Promise<void> {
+    await this.db
+      .delete(filesFavorites)
+      .where(and(eq(filesFavorites.userId, userId), eq(filesFavorites.fileId, fileId)))
   }
 
   async updateRecents(
