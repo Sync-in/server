@@ -1,3 +1,10 @@
+<a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
+<a href="https://github.com/Sync-in/server/releases" target="_blank"><img src="https://img.shields.io/github/v/release/Sync-in/server?sort=semver&display_name=tag&style=flat&logo=github&label=Release" alt="GitHub Release"/></a>
+<a href="https://hub.docker.com/r/syncin/server" target="_blank"><img src="https://img.shields.io/docker/pulls/syncin/server?logo=docker&label=Docker%20Hub%20Pulls" alt="Docker pulls"/></a>
+<a href="https://www.npmjs.com/package/@sync-in/server" target="_blank"><img src="https://img.shields.io/npm/d18m/@sync-in/server.svg?logo=npm&label=NPM%20Downloads&color=cb3837" alt="NPM"/></a>
+<a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/discord/1391081837849346088?logo=discord&label=Discord" alt="Discord"/></a>
+<a href="https://deepwiki.com/Sync-in/server"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+
 <a href="https://sync-in.com" target="_blank" rel="noopener">
 <picture>
   <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/logo-dark.svg" media="(prefers-color-scheme: dark)" />
@@ -5,7 +12,7 @@
 </picture>
 </a>
 
-_Welcome to the Sync-in server repository!_
+_Welcome to the Sync-in Server repository!_
 
 - 🌍 [Website](https://sync-in.com)
 - 📄 [Documentation](https://sync-in.com/docs)
@@ -15,28 +22,24 @@ _Welcome to the Sync-in server repository!_
 - 🗄️ [GitHub Server Repository](https://github.com/Sync-in/server)
 - 💻 [GitHub Desktop & CLI Repository](https://github.com/Sync-in/desktop)
 
-<a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
-<a href="https://github.com/Sync-in/server/releases" target="_blank"><img src="https://img.shields.io/github/v/release/Sync-in/server?sort=semver&display_name=tag&style=flat&logo=github&label=Release" alt="GitHub Release"/></a>
-<a href="https://hub.docker.com/r/syncin/server" target="_blank"><img src="https://img.shields.io/docker/pulls/syncin/server?logo=docker&label=Docker%20Hub%20Pulls" alt="Docker pulls"/></a>
-<a href="https://www.npmjs.com/package/@sync-in/server" target="_blank"><img src="https://img.shields.io/npm/d18m/@sync-in/server.svg?logo=npm&label=NPM%20Downloads&color=cb3837" alt="NPM"/></a>
-<a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/discord/1391081837849346088?logo=discord&label=Discord" alt="Discord"/></a>
-<a href="https://deepwiki.com/Sync-in/server"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+**Sync-in is a self-hosted platform for file storage, synchronization, and collaboration.**
 
-**Sync-in Server is a self-hosted file storage, synchronization, and collaboration platform.**
-It runs on your own infrastructure, giving you full control over your data while enabling secure file sharing, collaborative workspaces, and
-fine-grained access control.
+Designed to give individuals and organizations full control over their files and documents, Sync-in lets you host your own workspace to organize,
+access, and collaborate on content with your team, your community, or for personal use.
 
-Built around open standards and interoperability, Sync-in supports real-time document collaboration, seamless client integration, and flexible
-deployment models for both self-hosted and managed environments.
+It runs on your own infrastructure, keeping you in control of your data while enabling secure file sharing, collaborative workspaces, and fine-grained
+access control.
 
 <picture>
   <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/server-dark.png" media="(prefers-color-scheme: dark)" />
   <img src="https://raw.githubusercontent.com/Sync-in/assets/main/server.png" alt="Sync-in" width="600"/>
 </picture>
 
+*This project is supported by the **Docker-Sponsored Open Source Program**.*
+
 ---
 
-## 🚀 Features
+## Features
 
 - 🖥️ Modern, Fast, and High-Performance Interface
     - Intuitive and responsive UI designed for productivity
