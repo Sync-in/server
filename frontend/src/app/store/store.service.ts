@@ -1,4 +1,5 @@
 import { computed, Injectable, Signal, signal, WritableSignal } from '@angular/core'
+import type { FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { SearchFilesDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { AppStoreManifest } from '@sync-in-server/backend/src/applications/sync/interfaces/store-manifest.interface'
@@ -42,6 +43,7 @@ export class StoreService {
   public filesActiveTasks = new BehaviorSubject<FileTask[]>([])
   public filesEndedTasks = new BehaviorSubject<FileTask[]>([])
   public filesRecents: WritableSignal<FileRecentModel[]> = signal<FileRecentModel[]>([])
+  public filesFavorites: WritableSignal<FileProps[]> = signal<FileProps[]>([])
   // Search
   public currentSearch: WritableSignal<SearchFilesDto> = signal<SearchFilesDto>({ content: '', fullText: false })
   public filesSearch: WritableSignal<FileContentModel[]> = signal<FileContentModel[]>([])
@@ -80,6 +82,7 @@ export class StoreService {
     this.filesActiveTasks.next([])
     this.filesEndedTasks.next([])
     this.filesRecents.set([])
+    this.filesFavorites.set([])
     this.filesSearch.set([])
     this.commentsRecents.set([])
     // Websocket
