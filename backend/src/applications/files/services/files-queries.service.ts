@@ -6,6 +6,7 @@ import { DBSchema } from '../../../infrastructure/database/interfaces/database.i
 import { concatDistinctObjectsInArray, convertToWhere, dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils'
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
 import { shares } from '../../shares/schemas/shares.schema'
+import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
 import { syncClients } from '../../sync/schemas/sync-clients.schema'
@@ -13,6 +14,7 @@ import { syncPaths } from '../../sync/schemas/sync-paths.schema'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileProps } from '../interfaces/file-props.interface'
 import { FileRecentLocation } from '../interfaces/file-recent-location.interface'
+import { FileFavorite } from '../schemas/file-favorite.interface'
 import { FileRecent } from '../schemas/file-recent.interface'
 import { File } from '../schemas/file.interface'
 import { fileIsFavoriteForUserSQL, filesFavorites } from '../schemas/files-favorites.schema'
@@ -305,21 +307,30 @@ export class FilesQueries {
       .where(and(...where))
   }
 
-  getFavorites(userId: number, limit = 100): Promise<FileProps[]> {
+  getFavorites(userId: number, limit = 100): Promise<FileFavorite[]> {
     return this.db
       .select({
         id: files.id,
-        path: files.path,
         name: files.name,
         isDir: files.isDir,
         mime: files.mime,
         size: files.size,
         mtime: files.mtime,
         ctime: files.ctime,
-        isFavorite: sql<boolean>`true`.mapWith(Boolean)
+        isFavorite: sql<true>`true`,
+        navPath: sql<string>`CONCAT(
+          ${SPACE_REPOSITORY.FILES}, '/',
+          CASE
+            WHEN ${files.ownerId} IS NOT NULL THEN ${SPACE_ALIAS.PERSONAL}
+            WHEN ${files.spaceId} IS NOT NULL THEN ${spaces.alias}
+            ELSE 'shared'
+          END,
+          CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END
+        )`
       })
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
+      .leftJoin(spaces, eq(spaces.id, files.spaceId))
       .where(eq(filesFavorites.userId, userId))
       .orderBy(desc(filesFavorites.createdAt))
       .limit(limit)
