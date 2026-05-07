@@ -12,6 +12,7 @@ import { FilesManager } from './services/files-manager.service'
 import { FilesMethods } from './services/files-methods.service'
 import { FilesParser } from './services/files-parser.service'
 import { FilesQueries } from './services/files-queries.service'
+import { FilesFavorites } from './services/files-favorites.service'
 import { FilesRecents } from './services/files-recents.service'
 import { FilesScheduler } from './services/files-scheduler.service'
 import { FilesSearchManager } from './services/files-search-manager.service'
@@ -33,6 +34,7 @@ import { FilesQuotaManager } from './services/files-quota-manager.service'
     FilesTasksManager,
     FilesScheduler,
     FilesRecents,
+    FilesFavorites,
     FilesParser,
     FilesContentIndexer,
     { provide: FilesContentStore, useClass: FilesContentStoreMySQL },
@@ -40,6 +42,6 @@ import { FilesQuotaManager } from './services/files-quota-manager.service'
     FilesEventManager,
     FilesQuotaManager
   ],
-  exports: [FilesManager, FilesQueries, FilesLockManager, FilesQuotaManager, FilesMethods, FilesRecents]
+  exports: [FilesManager, FilesQueries, FilesLockManager, FilesQuotaManager, FilesMethods, FilesRecents, FilesFavorites]
 })
 export class FilesModule {}
