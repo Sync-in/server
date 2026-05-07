@@ -8,6 +8,7 @@ import {
   Lock,
   Logger,
   Move,
+  Param,
   ParseBoolPipe,
   ParseIntPipe,
   Patch,
@@ -36,11 +37,12 @@ import { UserModel } from '../users/models/user.model'
 import { FILE_OPERATION, FORCE_AS_FILE_OWNER } from './constants/operations'
 import { FILES_ROUTE } from './constants/routes'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto, SearchFilesDto } from './dto/file-operations.dto'
-import { FileLockProps } from './interfaces/file-props.interface'
+import { FileLockProps, FileProps } from './interfaces/file-props.interface'
 import { FileTask } from './models/file-task'
 import { FileContent } from './schemas/file-content.interface'
 import { FileRecent } from './schemas/file-recent.interface'
 import { FilesMethods } from './services/files-methods.service'
+import { FilesFavorites } from './services/files-favorites.service'
 import { FilesRecents } from './services/files-recents.service'
 import { FilesSearchManager } from './services/files-search-manager.service'
 import { FilesTasksManager } from './services/files-tasks-manager.service'
@@ -58,6 +60,7 @@ export class FilesController {
   constructor(
     private readonly filesMethods: FilesMethods,
     private readonly filesTasksManager: FilesTasksManager,
+    private readonly filesFavorites: FilesFavorites,
     private readonly filesRecents: FilesRecents,
     private readonly filesSearch: FilesSearchManager,
     private readonly filesContentIndexer: FilesContentIndexer
@@ -204,6 +207,26 @@ export class FilesController {
   @SkipSpaceGuard()
   getRecents(@GetUser() user: UserModel, @Query('limit') limit: number = 10): Promise<FileRecent[]> {
     return this.filesRecents.getRecents(user, limit)
+  }
+
+  // FAVORITES
+
+  @Get(FILES_ROUTE.FAVORITES)
+  @SkipSpaceGuard()
+  getFavorites(@GetUser() user: UserModel, @Query('limit') limit?: number): Promise<FileProps[]> {
+    return this.filesFavorites.getFavorites(user, limit ? +limit : undefined)
+  }
+
+  @Post(`${FILES_ROUTE.FAVORITE}/:fileId`)
+  @SkipSpaceGuard()
+  addFavorite(@GetUser() user: UserModel, @Param('fileId', ParseIntPipe) fileId: number): Promise<void> {
+    return this.filesFavorites.addFavorite(user, fileId)
+  }
+
+  @Delete(`${FILES_ROUTE.FAVORITE}/:fileId`)
+  @SkipSpaceGuard()
+  removeFavorite(@GetUser() user: UserModel, @Param('fileId', ParseIntPipe) fileId: number): Promise<void> {
+    return this.filesFavorites.removeFavorite(user, fileId)
   }
 
   // SEARCH FILES
