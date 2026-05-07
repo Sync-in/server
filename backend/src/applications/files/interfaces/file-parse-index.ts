@@ -1,4 +1,3 @@
-import type { FileTrash } from '../schemas/file-trash.interface'
 import type { FILE_REPOSITORY } from '../constants/operations'
 
 export interface FileParseContext {
@@ -28,6 +27,4 @@ export interface FileParseTrashRetentionPath {
 export interface FileTrashRetentionIndexContext {
   tableName: string
   regexBasePath: RegExp
-  db: Map<FileTrash['id'], { name: FileTrash['name']; path: FileTrash['path']; deletedAt: FileTrash['deletedAt'] }>
-  fs: Set<number>
 }

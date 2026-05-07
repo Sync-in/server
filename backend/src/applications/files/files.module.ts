@@ -18,7 +18,7 @@ import { FilesSearchManager } from './services/files-search-manager.service'
 import { FilesTasksManager } from './services/files-tasks-manager.service'
 import { FilesEventManager } from './services/files-event-manager.service'
 import { FilesQuotaManager } from './services/files-quota-manager.service'
-import { FilesTrashManagerService } from './services/files-trash-manager.service'
+import { FilesTrashRetention } from './services/files-trash-retention.service'
 
 @Module({
   imports: [
@@ -39,7 +39,8 @@ import { FilesTrashManagerService } from './services/files-trash-manager.service
     { provide: FilesContentStore, useClass: FilesContentStoreMySQL },
     FilesSearchManager,
     FilesEventManager,
-    FilesQuotaManager
+    FilesQuotaManager,
+    FilesTrashRetention
   ],
   exports: [FilesManager, FilesQueries, FilesLockManager, FilesQuotaManager, FilesMethods, FilesRecents]
 })

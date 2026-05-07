@@ -4,7 +4,7 @@ import { isNotNull, sql } from 'drizzle-orm'
 import { unionAll } from 'drizzle-orm/mysql-core'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { getTablesWithFileIdColumn } from '../../../infrastructure/database/utils'
@@ -19,18 +19,21 @@ import { dirHasChildren, isPathExists, removeFiles } from '../utils/files'
 import { FilesContentIndexer } from './files-content-indexer.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
 import { FilesQuotaManager } from './files-quota-manager.service'
+import { FilesTrashRetention } from './files-trash-retention.service'
 
 @Injectable()
 export class FilesScheduler {
   private readonly logger = new Logger(FilesScheduler.name)
   private isQuotaUpdateIsRunning = false
   private isQuotaUpdateEntriesIsRunning = false
+  private isTrashCleanupRunning = false
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
     private readonly cache: Cache,
     private readonly filesContentIndexer: FilesContentIndexer,
-    private readonly filesQuotaManager: FilesQuotaManager
+    private readonly filesQuotaManager: FilesQuotaManager,
+    private readonly filesTrashRetention: FilesTrashRetention
   ) {}
 
   @Timeout(10_000)
@@ -40,6 +43,7 @@ export class FilesScheduler {
       await this.cleanupInterruptedTasks()
       await this.clearRecentFiles()
       await this.updateQuotas()
+      await this.cleanupTrashFiles()
     } catch (e) {
       this.logger.error({ tag: this.onStartup.name, msg: `${e}` })
     }
@@ -70,6 +74,19 @@ export class FilesScheduler {
       await this.filesContentIndexer.processIndexingQueue()
     } catch (e) {
       this.logger.error({ tag: this.updateStorageAndIndexing.name, msg: `update indexing error: ${e}` })
+    }
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_2AM)
+  async cleanupTrashFiles() {
+    if (this.isTrashCleanupRunning) return
+    this.isTrashCleanupRunning = true
+    try {
+      await this.filesTrashRetention.indexAndCleanTrash()
+    } catch (e) {
+      this.logger.error({ tag: this.cleanupTrashFiles.name, msg: `${e}` })
+    } finally {
+      this.isTrashCleanupRunning = false
     }
   }
 
@@ -138,7 +155,7 @@ export class FilesScheduler {
   async indexContentFiles(): Promise<void> {
     // queue a full content indexing request, it will be consumed by the minute scheduler
     if (await this.filesContentIndexer.requestFullIndexing()) {
-      this.logger.log({ tag: this.indexContentFiles.name, msg: `PENDING` })
+      this.logger.log({ tag: this.indexContentFiles.name, msg: 'REQUESTED' })
     }
   }
 
