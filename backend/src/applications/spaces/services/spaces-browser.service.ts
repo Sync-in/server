@@ -39,6 +39,7 @@ export class SpacesBrowser {
       withSpacesAndShares?: boolean
       withSyncs?: boolean
       withHasComments?: boolean
+      withIsFavorite?: boolean
     } = {}
   ): Promise<SpaceFiles> {
     // check sync permission
@@ -98,6 +99,7 @@ export class SpacesBrowser {
       withSpacesAndShares?: boolean
       withSyncs?: boolean
       withHasComments?: boolean
+      withIsFavorite?: boolean
     }
   ): Promise<FileProps[]> {
     if (space.inSharesList) return []
@@ -106,6 +108,7 @@ export class SpacesBrowser {
       withShares: options.withSpacesAndShares,
       withSyncs: options.withSyncs,
       withHasComments: options.withHasComments,
+      withIsFavorite: options.withIsFavorite,
       ignoreChildShares: !space.inSharesRepository
     }
     return this.filesQueries.browseFiles(userId, space.dbFile, dbOptions)
@@ -221,6 +224,7 @@ export class SpacesBrowser {
       withSpacesAndShares?: boolean
       withSyncs?: boolean
       withHasComments?: boolean
+      withIsFavorite?: boolean
     }
   ) {
     for (const dbFile of dbFiles) {
@@ -237,6 +241,9 @@ export class SpacesBrowser {
         }
         if (options.withHasComments) {
           fsFile.hasComments = dbFile.hasComments
+        }
+        if (options.withIsFavorite) {
+          fsFile.isFavorite = dbFile.isFavorite
         }
         this.filesQueries
           .compareAndUpdateFileProps(dbFile, fsFile)

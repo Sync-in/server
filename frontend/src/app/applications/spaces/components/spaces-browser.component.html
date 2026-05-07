@@ -422,6 +422,12 @@
                           <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
                         </span>
                         }
+                        <span (click)="toggleFavorite(f, $event)"
+                              class="badge cursor-pointer me-1"
+                              [class.bg-warning]="f.isFavorite"
+                              [class.bg-secondary]="!f.isFavorite">
+                          <fa-icon [icon]="f.isFavorite ? icons.faStar : icons.faStarRegular"></fa-icon>
+                        </span>
                         @if (f.hasComments) {
                           <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
                                 class="badge bg-success cursor-pointer me-1">
