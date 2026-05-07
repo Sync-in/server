@@ -1,0 +1,1 @@
+ALTER TABLE `files_favorites` MODIFY COLUMN `createdAt` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP;
