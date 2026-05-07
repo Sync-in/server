@@ -1,4 +1,4 @@
-import { Component, computed, inject, Signal } from '@angular/core'
+import { Component, computed, inject, signal, Signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faMagnifyingGlassMinus, faMagnifyingGlassPlus, faStar } from '@fortawesome/free-solid-svg-icons'
@@ -23,8 +23,8 @@ export class FilesFavoritesWidgetComponent {
   private readonly store = inject(StoreService)
   private readonly filesService = inject(FilesService)
   private nbInitialFiles = 10
-  private nbFiles = this.nbInitialFiles
-  protected files: Signal<FileFavorite[]> = computed(() => this.store.filesFavorites().slice(0, this.nbFiles))
+  private readonly nbFiles = signal(this.nbInitialFiles)
+  protected files: Signal<FileFavorite[]> = computed(() => this.store.filesFavorites().slice(0, this.nbFiles()))
   private readonly mimeUrlCache = new Map<string, string>()
 
   constructor() {
@@ -34,10 +34,10 @@ export class FilesFavoritesWidgetComponent {
   switchMore() {
     if (this.moreElements) {
       this.moreElements = false
-      this.nbFiles = this.nbInitialFiles
+      this.nbFiles.set(this.nbInitialFiles)
     } else {
       this.moreElements = true
-      this.nbFiles *= 5
+      this.nbFiles.set(this.nbInitialFiles * 5)
     }
     this.load()
   }
@@ -54,10 +54,11 @@ export class FilesFavoritesWidgetComponent {
   }
 
   goToFile(f: FileFavorite) {
+    if (!f.navPath) return
     this.router.navigate([SPACES_PATH.SPACES, ...f.navPath.split('/')], { queryParams: { select: f.name } }).catch(console.error)
   }
 
   private load() {
-    this.filesService.loadFavorites(this.nbFiles)
+    this.filesService.loadFavorites(this.nbFiles())
   }
 }

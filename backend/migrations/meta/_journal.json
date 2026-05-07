@@ -43,6 +43,13 @@
       "when": 1778174352357,
       "tag": "0005_cuddly_photon",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1778182775748,
+      "tag": "0006_stale_zuras",
+      "breakpoints": true
     }
   ]
 }

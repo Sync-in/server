@@ -9,6 +9,7 @@ describe(FilesFavorites.name, () => {
     getFavorites: jest.Mock
     addFavorite: jest.Mock
     removeFavorite: jest.Mock
+    isFileAccessibleByUser: jest.Mock
   }
 
   const user = { id: 1 } as UserModel
@@ -17,7 +18,8 @@ describe(FilesFavorites.name, () => {
     filesQueries = {
       getFavorites: jest.fn().mockResolvedValue([]),
       addFavorite: jest.fn().mockResolvedValue(undefined),
-      removeFavorite: jest.fn().mockResolvedValue(undefined)
+      removeFavorite: jest.fn().mockResolvedValue(undefined),
+      isFileAccessibleByUser: jest.fn().mockResolvedValue(true)
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -35,12 +37,12 @@ describe(FilesFavorites.name, () => {
 
   it('should be defined', () => expect(service).toBeDefined())
 
-  it('getFavorites delegates to filesQueries with userId', async () => {
+  it('getFavorites delegates to filesQueries with userId and default limit', async () => {
     const files = [{ id: 1, name: 'a.txt' }]
     filesQueries.getFavorites.mockResolvedValue(files)
     const result = await service.getFavorites(user)
     expect(result).toBe(files)
-    expect(filesQueries.getFavorites).toHaveBeenCalledWith(user.id, undefined)
+    expect(filesQueries.getFavorites).toHaveBeenCalledWith(user.id, 100)
   })
 
   it('getFavorites passes limit when provided', async () => {
@@ -48,9 +50,21 @@ describe(FilesFavorites.name, () => {
     expect(filesQueries.getFavorites).toHaveBeenCalledWith(user.id, 5)
   })
 
-  it('addFavorite delegates to filesQueries with userId and fileId', async () => {
+  it('getFavorites caps limit at 1000', async () => {
+    await service.getFavorites(user, 9999)
+    expect(filesQueries.getFavorites).toHaveBeenCalledWith(user.id, 1000)
+  })
+
+  it('addFavorite delegates to filesQueries with userId and fileId when accessible', async () => {
     await service.addFavorite(user, 42)
+    expect(filesQueries.isFileAccessibleByUser).toHaveBeenCalledWith(user.id, 42)
     expect(filesQueries.addFavorite).toHaveBeenCalledWith(user.id, 42)
+  })
+
+  it('addFavorite throws NotFoundException when file is not accessible', async () => {
+    filesQueries.isFileAccessibleByUser.mockResolvedValue(false)
+    await expect(service.addFavorite(user, 42)).rejects.toThrow()
+    expect(filesQueries.addFavorite).not.toHaveBeenCalled()
   })
 
   it('removeFavorite delegates to filesQueries with userId and fileId', async () => {

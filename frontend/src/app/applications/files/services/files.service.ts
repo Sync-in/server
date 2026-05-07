@@ -220,7 +220,7 @@ export class FilesService {
       .get<FileFavorite[]>(API_FILES_FAVORITES, { params: new HttpParams().set('limit', limit) })
       .subscribe({
         next: (fs: FileFavorite[]) => {
-          this.store.filesFavorites.update((files) => [...fs, ...files.slice(limit)])
+          this.store.filesFavorites.set(fs)
         },
         error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to load favorites', e)
       })

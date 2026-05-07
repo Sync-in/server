@@ -14,6 +14,6 @@ export class FavoritesComponent {
 
   constructor() {
     this.layout.setBreadcrumbIcon(FAVORITES_ICON)
-    this.layout.setBreadcrumbNav({ url: `/${FAVORITES_PATH.BASE}/${FAVORITES_TITLE}`, translating: true, sameLink: true })
+    this.layout.setBreadcrumbNav({ url: `/${FAVORITES_PATH.BASE}`, translating: true, sameLink: true })
   }
 }
