@@ -5,7 +5,6 @@ import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { concatDistinctObjectsInArray, convertToWhere, dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils'
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
-import { fileIsFavoriteForUserSQL, filesFavorites } from '../schemas/files-favorites.schema'
 import { shares } from '../../shares/schemas/shares.schema'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
@@ -16,6 +15,7 @@ import { FileProps } from '../interfaces/file-props.interface'
 import { FileRecentLocation } from '../interfaces/file-recent-location.interface'
 import { FileRecent } from '../schemas/file-recent.interface'
 import { File } from '../schemas/file.interface'
+import { fileIsFavoriteForUserSQL, filesFavorites } from '../schemas/files-favorites.schema'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { childFilesFindRegexp, childFilesReplaceRegexp, filePathSQL, files } from '../schemas/files.schema'
 import { dirName, fileName } from '../utils/files'
@@ -313,7 +313,7 @@ export class FilesQueries {
       .where(and(...where))
   }
 
-  async getFavorites(userId: number, limit = 100): Promise<FileProps[]> {
+  getFavorites(userId: number, limit = 100): Promise<FileProps[]> {
     return this.db
       .select({
         id: files.id,
@@ -324,12 +324,7 @@ export class FilesQueries {
         size: files.size,
         mtime: files.mtime,
         ctime: files.ctime,
-        ownerId: files.ownerId,
-        spaceId: files.spaceId,
-        spaceExternalRootId: files.spaceExternalRootId,
-        shareExternalId: files.shareExternalId,
-        inTrash: files.inTrash,
-        isFavorite: sql<boolean>`true`.mapWith(Boolean),
+        isFavorite: sql<boolean>`true`.mapWith(Boolean)
       })
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
@@ -342,7 +337,7 @@ export class FilesQueries {
     await this.db
       .insert(filesFavorites)
       .ignore()
-      .values({ userId, fileId, createdAt: new Date() })
+      .values({ userId, fileId })
   }
 
   async removeFavorite(userId: number, fileId: number): Promise<void> {
