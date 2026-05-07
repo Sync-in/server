@@ -9,6 +9,8 @@ import {
   SEND_FILE_ERROR_MSG
 } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import {
+  API_FILES_FAVORITE,
+  API_FILES_FAVORITES,
   API_FILES_OPERATION,
   API_FILES_OPERATION_MAKE,
   API_FILES_RECENTS,
@@ -25,7 +27,7 @@ import type {
   MakeFileDto,
   SearchFilesDto
 } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
-import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
+import type { FileLockProps, FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
@@ -210,6 +212,33 @@ export class FilesService {
         },
         error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to load', e)
       })
+  }
+
+  loadFavorites(limit: number) {
+    this.http
+      .get<FileProps[]>(API_FILES_FAVORITES, { params: new HttpParams().set('limit', limit) })
+      .subscribe({
+        next: (fs: FileProps[]) => {
+          this.store.filesFavorites.update((files) => [...fs, ...files.slice(limit)])
+        },
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to load favorites', e)
+      })
+  }
+
+  toggleFavorite(fileId: number, add: boolean) {
+    const req = add
+      ? this.http.post<void>(`${API_FILES_FAVORITE}/${fileId}`, null)
+      : this.http.delete<void>(`${API_FILES_FAVORITE}/${fileId}`)
+    req.subscribe({
+      next: () => {
+        if (add) {
+          this.loadFavorites(100)
+        } else {
+          this.store.filesFavorites.update((files) => files.filter((f) => f.id !== fileId))
+        }
+      },
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)
+    })
   }
 
   search(search: SearchFilesDto): Observable<FileContentModel[]> {
