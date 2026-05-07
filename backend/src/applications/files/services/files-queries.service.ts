@@ -344,6 +344,15 @@ export class FilesQueries {
       .limit(limit)
   }
 
+  async isFileAccessibleByUser(userId: number, fileId: number): Promise<boolean> {
+    const [row] = await this.db
+      .select({ id: files.id })
+      .from(files)
+      .where(and(eq(files.id, fileId), eq(files.ownerId, userId)))
+      .limit(1)
+    return !!row
+  }
+
   async addFavorite(userId: number, fileId: number): Promise<void> {
     await this.db
       .insert(filesFavorites)

@@ -214,8 +214,8 @@ export class FilesController {
 
   @Get(FILES_ROUTE.FAVORITES)
   @SkipSpaceGuard()
-  getFavorites(@GetUser() user: UserModel, @Query('limit') limit?: number): Promise<FileFavorite[]> {
-    return this.filesFavorites.getFavorites(user, limit ? +limit : undefined)
+  getFavorites(@GetUser() user: UserModel, @Query('limit', new ParseIntPipe({ optional: true })) limit?: number): Promise<FileFavorite[]> {
+    return this.filesFavorites.getFavorites(user, limit)
   }
 
   @Post(`${FILES_ROUTE.FAVORITE}/:fileId`)

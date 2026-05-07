@@ -19,6 +19,7 @@ export const filesFavorites = mysqlTable(
   (table) => [
     primaryKey({ columns: [table.userId, table.fileId] }),
     index('user_idx').on(table.userId),
+    index('file_idx').on(table.fileId),
   ]
 )
 
