@@ -17,7 +17,7 @@ describe(FilesFavorites.name, () => {
     filesQueries = {
       getFavorites: jest.fn().mockResolvedValue([]),
       addFavorite: jest.fn().mockResolvedValue(undefined),
-      removeFavorite: jest.fn().mockResolvedValue(undefined),
+      removeFavorite: jest.fn().mockResolvedValue(undefined)
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -29,7 +29,9 @@ describe(FilesFavorites.name, () => {
     service = module.get<FilesFavorites>(FilesFavorites)
   })
 
-  afterEach(() => jest.clearAllMocks())
+  afterEach(() => {
+    jest.clearAllMocks()
+  })
 
   it('should be defined', () => expect(service).toBeDefined())
 
