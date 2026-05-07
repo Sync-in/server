@@ -12,7 +12,9 @@ export const filesFavorites = mysqlTable(
     fileId: bigint('fileId', { mode: 'number', unsigned: true })
       .notNull()
       .references(() => files.id, { onDelete: 'cascade' }),
-    createdAt: datetime('createdAt', { mode: 'date' }),
+    createdAt: datetime('createdAt', { mode: 'date' })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
   },
   (table) => [
     primaryKey({ columns: [table.userId, table.fileId] }),
