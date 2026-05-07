@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router'
 import { APP_PATH } from './app.constants'
 import { adminRoutes } from './applications/admin/admin.routes'
+import { favoritesRoutes } from './applications/favorites/favorites.routes'
 import { linksRoutes } from './applications/links/links.routes'
 import { RECENTS_PATH } from './applications/recents/recents.constants'
 import { recentsRoutes } from './applications/recents/recents.routes'
@@ -17,7 +18,7 @@ export const routes: Routes = [
     path: APP_PATH.BASE,
     component: LayoutComponent,
     canActivate: [authGuard],
-    children: [...recentsRoutes, ...searchRoutes, ...spacesRoutes, ...userRoutes, ...syncRoutes, ...adminRoutes]
+    children: [...recentsRoutes, ...favoritesRoutes, ...searchRoutes, ...spacesRoutes, ...userRoutes, ...syncRoutes, ...adminRoutes]
   },
   ...authRoutes,
   ...linksRoutes,
