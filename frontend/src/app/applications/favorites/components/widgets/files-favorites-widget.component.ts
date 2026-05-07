@@ -54,7 +54,7 @@ export class FilesFavoritesWidgetComponent {
   }
 
   goToFile(f: FileProps) {
-    const basePath = f.spaceId ? SPACES_PATH.SPACES_FILES : SPACES_PATH.PERSONAL_FILES
+    const basePath = f.origin?.spaceId ? SPACES_PATH.SPACES_FILES : SPACES_PATH.PERSONAL_FILES
     this.router.navigate([basePath], { queryParams: { select: f.name } }).catch(console.error)
   }
 
