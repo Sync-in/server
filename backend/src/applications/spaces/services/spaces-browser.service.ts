@@ -56,6 +56,10 @@ export class SpacesBrowser {
       })
     ])
     this.updateDBFiles(user, space, dbFiles, fsFiles, options)
+    // Stamp storage context on unindexed FS files so favorites/sharing work before next re-index
+    const { ownerId, spaceId, spaceExternalRootId, shareExternalId } = space.dbFile
+    const storageCtx = { ownerId: ownerId ?? null, spaceId: spaceId ?? null, spaceExternalRootId: spaceExternalRootId ?? null, shareExternalId: shareExternalId ?? null }
+    for (const f of fsFiles) { if (f.id < 0) Object.assign(f, storageCtx) }
     if (space.inSharesList) {
       // the share space includes shares as root files
       spaceFiles.files = [...rootFiles, ...fsFiles]
@@ -87,7 +91,7 @@ export class SpacesBrowser {
       return Promise.all((await this.spacesQueries.spaceRootFiles(user.id, space.id, options)).map((f) => this.updateRootFile(f, options, space.id)))
     } else if (space.inSharesList) {
       // list shares as roots
-      return Promise.all((await this.sharesQueries.shareRootFiles(user, options)).map((f) => this.updateRootFile(f, options)))
+      return Promise.all((await this.sharesQueries.shareRootFiles(user, options)).map((f) => this.updateRootFile(f, options, undefined, f.root?.id)))
     }
     return []
   }
@@ -157,7 +161,8 @@ export class SpacesBrowser {
   private async updateRootFile(
     f: FileProps,
     options: { withShares?: boolean; withHasComments?: boolean; withSyncs?: boolean; withLocks?: boolean },
-    spaceId?: number
+    spaceId?: number,
+    shareExternalId?: number
   ): Promise<FileProps> {
     const realPath = realPathFromRootFile(f)
     const originalPath = f.path
@@ -201,8 +206,9 @@ export class SpacesBrowser {
           .catch((e: Error) => this.logger.error({ tag: this.updateRootFile.name, msg: `${e}` }))
         fileProps.id = f.id
       } else if (spaceId) {
-        // propagate space context for unindexed roots so find-or-create has correct storage context
         ;(fileProps as any).spaceId = spaceId
+      } else if (shareExternalId) {
+        ;(fileProps as any).shareExternalId = shareExternalId
       }
       fileProps.root = {
         id: f.root.id,
