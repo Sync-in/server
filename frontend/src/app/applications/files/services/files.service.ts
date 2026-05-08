@@ -27,7 +27,7 @@ import type {
   MakeFileDto,
   SearchFilesDto
 } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
-import type { FileLockProps, FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
+import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
@@ -217,14 +217,12 @@ export class FilesService {
   }
 
   loadFavorites(limit: number) {
-    this.http
-      .get<FileFavorite[]>(API_FILES_FAVORITES, { params: new HttpParams().set('limit', limit) })
-      .subscribe({
-        next: (fs: FileFavorite[]) => {
-          this.store.filesFavorites.set(fs.map((f) => new FileFavoriteModel(f)))
-        },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to load favorites', e)
-      })
+    this.http.get<FileFavorite[]>(API_FILES_FAVORITES, { params: new HttpParams().set('limit', limit) }).subscribe({
+      next: (fs: FileFavorite[]) => {
+        this.store.filesFavorites.set(fs.map((f) => new FileFavoriteModel(f)))
+      },
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to load favorites', e)
+    })
   }
 
   toggleFavorite(file: FileModel, add: boolean) {
@@ -241,7 +239,7 @@ export class FilesService {
         ownerId: file.ownerId || undefined,
         spaceId: file.spaceId || undefined,
         spaceExternalRootId: file.spaceExternalRootId || undefined,
-        shareExternalId: file.shareExternalId || undefined,
+        shareExternalId: file.shareExternalId || undefined
       }
       this.http.post<FileFavorite>(API_FILES_FAVORITE, dto).subscribe({
         next: (favorite) => {

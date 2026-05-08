@@ -1,6 +1,5 @@
 import { computed, Injectable, Signal, signal, WritableSignal } from '@angular/core'
 import { ALL_DOCUMENT_TYPES } from '@sync-in-server/backend/src/applications/files/constants/samples'
-import type { FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import { FileFavoriteModel } from '../applications/favorites/models/file-favorite.model'
 import type { SearchFilesDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'

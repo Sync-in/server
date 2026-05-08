@@ -63,7 +63,13 @@ export class SpacesController {
   @UserHavePermission() // override: checked in space guard
   @UseGuards(SpaceGuard)
   async browseSpace(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<SpaceFiles> {
-    return this.spacesBrowser.browse(user, space, { withLocks: true, withSpacesAndShares: true, withSyncs: true, withHasComments: true, withIsFavorite: true })
+    return this.spacesBrowser.browse(user, space, {
+      withLocks: true,
+      withSpacesAndShares: true,
+      withSyncs: true,
+      withHasComments: true,
+      withIsFavorite: true
+    })
   }
 
   @Get(`${SPACES_ROUTE.TREE}/${SPACES_BASE_ROUTE}`)

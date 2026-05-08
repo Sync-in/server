@@ -58,8 +58,15 @@ export class SpacesBrowser {
     this.updateDBFiles(user, space, dbFiles, fsFiles, options)
     // Stamp storage context on unindexed FS files so favorites/sharing work before next re-index
     const { ownerId, spaceId, spaceExternalRootId, shareExternalId } = space.dbFile
-    const storageCtx = { ownerId: ownerId ?? null, spaceId: spaceId ?? null, spaceExternalRootId: spaceExternalRootId ?? null, shareExternalId: shareExternalId ?? null }
-    for (const f of fsFiles) { if (f.id < 0) Object.assign(f, storageCtx) }
+    const storageCtx = {
+      ownerId: ownerId ?? null,
+      spaceId: spaceId ?? null,
+      spaceExternalRootId: spaceExternalRootId ?? null,
+      shareExternalId: shareExternalId ?? null
+    }
+    for (const f of fsFiles) {
+      if (f.id < 0) Object.assign(f, storageCtx)
+    }
     if (space.inSharesList) {
       // the share space includes shares as root files
       spaceFiles.files = [...rootFiles, ...fsFiles]
