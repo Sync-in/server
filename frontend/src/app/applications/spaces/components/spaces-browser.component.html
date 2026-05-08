@@ -389,6 +389,20 @@
                     [class.text-align-center]="th.value.textCenter"
                     class="{{th.value.class}}">
                   @switch (th.key) {
+                    @case ('favorite') {
+                      <span (click)="toggleFavorite(f, $event)"
+                            (keydown.enter)="toggleFavorite(f, $event)"
+                            (keydown.space)="toggleFavorite(f, $event)"
+                            class="badge cursor-pointer"
+                            [class.bg-warning]="f.isFavorite"
+                            [class.bg-light]="!f.isFavorite"
+                            role="button"
+                            tabindex="0"
+                            [attr.aria-label]="f.isFavorite ? 'Remove from favorites' : 'Add to favorites'"
+                            [attr.aria-pressed]="f.isFavorite">
+                        <fa-icon [icon]="f.isFavorite ? icons.faStar : icons.faStarRegular"></fa-icon>
+                      </span>
+                    }
                     @case ('name') {
                       <div class="d-flex align-items-center" draggable="true">
                         <img [src]="f.mimeUrl"
@@ -431,18 +445,6 @@
                           <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
                         </span>
                       }
-                      <span (click)="toggleFavorite(f, $event)"
-                            (keydown.enter)="toggleFavorite(f, $event)"
-                            (keydown.space)="toggleFavorite(f, $event)"
-                            class="badge cursor-pointer me-1"
-                            [class.bg-warning]="f.isFavorite"
-                            [class.bg-secondary]="!f.isFavorite"
-                            role="button"
-                            tabindex="0"
-                            [attr.aria-label]="f.isFavorite ? 'Remove from favorites' : 'Add to favorites'"
-                            [attr.aria-pressed]="f.isFavorite">
-                        <fa-icon [icon]="f.isFavorite ? icons.faStar : icons.faStarRegular"></fa-icon>
-                      </span>
                       @if (f.hasComments) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
                               class="badge bg-success cursor-pointer me-1">
