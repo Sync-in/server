@@ -230,6 +230,7 @@ export class FilesService {
   toggleFavorite(file: FileModel, add: boolean) {
     if (add) {
       const dto = {
+        id: file.id > 0 ? file.id : undefined,
         path: file.fsPath,
         name: file.name,
         isDir: file.isDir,

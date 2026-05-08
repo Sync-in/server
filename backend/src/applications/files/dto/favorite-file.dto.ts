@@ -1,6 +1,10 @@
 import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator'
 
 export class FavoriteFileDto {
+  @IsOptional()
+  @IsInt()
+  id?: number
+
   @IsString()
   path: string
 
