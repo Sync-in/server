@@ -7,7 +7,6 @@ import { concatDistinctObjectsInArray, convertToWhere, dbCheckAffectedRows, dbGe
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
 import { shares } from '../../shares/schemas/shares.schema'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
-import { spacesMembers } from '../../spaces/schemas/spaces-members.schema'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
 import { syncClients } from '../../sync/schemas/sync-clients.schema'
@@ -343,19 +342,6 @@ export class FilesQueries {
       .where(and(eq(filesFavorites.userId, userId), eq(files.inTrash, false)))
       .orderBy(desc(filesFavorites.createdAt))
       .limit(limit)
-  }
-
-  async isFileAccessibleByUser(userId: number, fileId: number): Promise<boolean> {
-    if (fileId <= 0) return false
-    const [row] = await this.db
-      .select({ id: files.id })
-      .from(files)
-      .where(and(
-        eq(files.id, fileId),
-        sql`(${files.ownerId} = ${userId} OR EXISTS (SELECT 1 FROM ${spacesMembers} WHERE ${spacesMembers.spaceId} = ${files.spaceId} AND ${spacesMembers.userId} = ${userId}))`
-      ))
-      .limit(1)
-    return !!row
   }
 
   async addFavorite(userId: number, fileId: number): Promise<void> {
