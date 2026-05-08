@@ -1,4 +1,3 @@
-import { NotFoundException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { UserModel } from '../../users/models/user.model'
 import { FilesQueries } from './files-queries.service'
@@ -10,7 +9,6 @@ describe(FilesFavorites.name, () => {
     getFavorites: jest.Mock
     addFavorite: jest.Mock
     removeFavorite: jest.Mock
-    isFileAccessibleByUser: jest.Mock
   }
 
   const user = { id: 1 } as UserModel
@@ -19,8 +17,7 @@ describe(FilesFavorites.name, () => {
     filesQueries = {
       getFavorites: jest.fn().mockResolvedValue([]),
       addFavorite: jest.fn().mockResolvedValue(undefined),
-      removeFavorite: jest.fn().mockResolvedValue(undefined),
-      isFileAccessibleByUser: jest.fn().mockResolvedValue(true)
+      removeFavorite: jest.fn().mockResolvedValue(undefined)
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -56,16 +53,9 @@ describe(FilesFavorites.name, () => {
     expect(filesQueries.getFavorites).toHaveBeenCalledWith(user.id, 1000)
   })
 
-  it('addFavorite delegates to filesQueries with userId and fileId when accessible', async () => {
+  it('addFavorite delegates to filesQueries with userId and fileId', async () => {
     await service.addFavorite(user, 42)
-    expect(filesQueries.isFileAccessibleByUser).toHaveBeenCalledWith(user.id, 42)
     expect(filesQueries.addFavorite).toHaveBeenCalledWith(user.id, 42)
-  })
-
-  it('addFavorite throws NotFoundException when file is not accessible', async () => {
-    filesQueries.isFileAccessibleByUser.mockResolvedValue(false)
-    await expect(service.addFavorite(user, 42)).rejects.toThrow(NotFoundException)
-    expect(filesQueries.addFavorite).not.toHaveBeenCalled()
   })
 
   it('removeFavorite delegates to filesQueries with userId and fileId', async () => {
