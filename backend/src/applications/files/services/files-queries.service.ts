@@ -346,6 +346,7 @@ export class FilesQueries {
   }
 
   async getOrCreateFileForFavorite(userId: number, dto: FavoriteFileDto): Promise<number> {
+    if (dto.id && dto.id > 0) return dto.id
     const dbFile = {
       ownerId: dto.ownerId || null,
       spaceId: dto.spaceId || null,
