@@ -390,7 +390,6 @@
                     class="{{th.value.class}}">
                   @switch (th.key) {
                     @case ('favorite') {
-                      @if (f.id > 0) {
                       <span (click)="toggleFavorite(f, $event)"
                             (keydown.enter)="toggleFavorite(f, $event)"
                             (keydown.space)="toggleFavorite(f, $event)"
@@ -403,7 +402,6 @@
                             [attr.aria-pressed]="f.isFavorite">
                         <fa-icon [icon]="f.isFavorite ? icons.faStar : icons.faStarRegular"></fa-icon>
                       </span>
-                      }
                     }
                     @case ('name') {
                       <div class="d-flex align-items-center" draggable="true">
