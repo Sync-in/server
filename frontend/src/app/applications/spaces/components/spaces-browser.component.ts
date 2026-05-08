@@ -181,10 +181,11 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   // Settings
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
-  protected tableHeaders: Record<'name' | 'anchored' | 'info' | 'permissions' | 'size' | 'mtime', TableHeaderConfig> = {
+  protected tableHeaders: Record<'favorite' | 'name' | 'anchored' | 'info' | 'permissions' | 'size' | 'mtime', TableHeaderConfig> = {
+    favorite: { label: '', width: 4, textCenter: true, class: '', show: true },
     name: {
       label: 'Name',
-      width: 40,
+      width: 36,
       textCenter: false,
       class: '',
       show: true,
