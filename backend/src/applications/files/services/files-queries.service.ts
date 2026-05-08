@@ -23,6 +23,54 @@ import { filesRecents } from '../schemas/files-recents.schema'
 import { childFilesFindRegexp, childFilesReplaceRegexp, filePathSQL, files } from '../schemas/files.schema'
 import { dirName, fileName } from '../utils/files'
 
+const favoriteFileSelect = {
+  id: files.id,
+  name: files.name,
+  isDir: files.isDir,
+  mime: files.mime,
+  size: files.size,
+  mtime: files.mtime,
+  ctime: files.ctime,
+  path: files.path,
+  ownerId: files.ownerId,
+  spaceAlias: spaces.alias,
+  shareAlias: shares.alias
+}
+
+const buildFavoriteNavPath = (path: string, ownerId: number | null, spaceAlias: string | null, shareAlias: string | null): string => {
+  const subPath = path !== '.' ? `/${path}` : ''
+  if (ownerId !== null) return `${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}${subPath}`
+  if (spaceAlias) return `${SPACE_REPOSITORY.FILES}/${spaceAlias}${subPath}`
+  if (shareAlias) return `${SPACE_REPOSITORY.SHARES}/${shareAlias}${subPath}`
+  return ''
+}
+
+interface FavoriteFileRow {
+  id: number
+  name: string
+  isDir: boolean
+  mime: string | null
+  size: number
+  mtime: number
+  ctime: number
+  path: string
+  ownerId: number | null
+  spaceAlias: string | null
+  shareAlias: string | null
+}
+
+const toFileFavorite = (row: FavoriteFileRow): FileFavorite => ({
+  id: row.id,
+  name: row.name,
+  isDir: row.isDir,
+  mime: row.mime,
+  size: row.size,
+  mtime: row.mtime,
+  ctime: row.ctime,
+  isFavorite: true,
+  navPath: buildFavoriteNavPath(row.path, row.ownerId, row.spaceAlias, row.shareAlias)
+})
+
 @Injectable()
 export class FilesQueries {
   private readonly logger = new Logger(FilesQueries.name)
@@ -316,24 +364,9 @@ export class FilesQueries {
       .where(and(...where))
   }
 
-  getFavorites(userId: number, spaceIds: number[], shareIds: number[], limit = 100): Promise<FileFavorite[]> {
-    return this.db
-      .select({
-        id: files.id,
-        name: files.name,
-        isDir: files.isDir,
-        mime: files.mime,
-        size: files.size,
-        mtime: files.mtime,
-        ctime: files.ctime,
-        isFavorite: sql<boolean>`true`.mapWith(Boolean),
-        navPath: sql<string>`CASE
-          WHEN ${files.ownerId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.FILES}, '/', ${SPACE_ALIAS.PERSONAL}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
-          WHEN ${files.spaceId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.FILES}, '/', ${spaces.alias}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
-          WHEN ${files.shareExternalId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.SHARES}, '/', ${shares.alias}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
-          ELSE ''
-        END`
-      })
+  async getFavorites(userId: number, spaceIds: number[], shareIds: number[], limit = 100): Promise<FileFavorite[]> {
+    const rows = await this.db
+      .select(favoriteFileSelect)
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
       .leftJoin(spaces, eq(spaces.id, files.spaceId))
@@ -351,6 +384,7 @@ export class FilesQueries {
       )
       .orderBy(desc(filesFavorites.createdAt))
       .limit(limit)
+    return rows.map(toFileFavorite)
   }
 
   async getOrCreateFileForFavorite(dto: FavoriteFileDto): Promise<number> {
@@ -390,29 +424,14 @@ export class FilesQueries {
 
   async getFavoriteForFile(userId: number, fileId: number): Promise<FileFavorite | undefined> {
     const [row] = await this.db
-      .select({
-        id: files.id,
-        name: files.name,
-        isDir: files.isDir,
-        mime: files.mime,
-        size: files.size,
-        mtime: files.mtime,
-        ctime: files.ctime,
-        isFavorite: sql<boolean>`true`.mapWith(Boolean),
-        navPath: sql<string>`CASE
-          WHEN ${files.ownerId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.FILES}, '/', ${SPACE_ALIAS.PERSONAL}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
-          WHEN ${files.spaceId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.FILES}, '/', ${spaces.alias}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
-          WHEN ${files.shareExternalId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.SHARES}, '/', ${shares.alias}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
-          ELSE ''
-        END`
-      })
+      .select(favoriteFileSelect)
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
       .leftJoin(spaces, eq(spaces.id, files.spaceId))
       .leftJoin(shares, eq(shares.id, files.shareExternalId))
       .where(and(eq(filesFavorites.userId, userId), eq(filesFavorites.fileId, fileId)))
       .limit(1)
-    return row
+    return row ? toFileFavorite(row) : undefined
   }
 
   async removeFavorite(userId: number, fileId: number): Promise<void> {
