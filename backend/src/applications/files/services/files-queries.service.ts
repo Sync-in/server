@@ -352,7 +352,7 @@ export class FilesQueries {
       .from(files)
       .where(and(...convertToWhere(files, { ...dbFile, name: dto.name, isDir: dto.isDir })))
       .limit(1)
-    if (existing?.id) return existing.id
+    if (existing) return existing.id
     // Create new record — this indexes the file into the DB
     return dbGetInsertedId(
       await this.db.insert(files).values({
