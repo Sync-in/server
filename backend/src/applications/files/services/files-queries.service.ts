@@ -316,7 +316,7 @@ export class FilesQueries {
       .where(and(...where))
   }
 
-  getFavorites(userId: number, limit = 100): Promise<FileFavorite[]> {
+  getFavorites(userId: number, spaceIds: number[], shareIds: number[], limit = 100): Promise<FileFavorite[]> {
     return this.db
       .select({
         id: files.id,
@@ -340,7 +340,15 @@ export class FilesQueries {
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
       .leftJoin(spaces, eq(spaces.id, files.spaceId))
-      .where(and(eq(filesFavorites.userId, userId), eq(files.inTrash, false)))
+      .where(and(
+        eq(filesFavorites.userId, userId),
+        eq(files.inTrash, false),
+        or(
+          eq(files.ownerId, userId),
+          ...(spaceIds.length ? [inArray(files.spaceId, spaceIds)] : []),
+          ...(shareIds.length ? [inArray(files.shareExternalId, shareIds)] : [])
+        )
+      ))
       .orderBy(desc(filesFavorites.createdAt))
       .limit(limit)
   }
