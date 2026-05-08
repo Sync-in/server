@@ -2,13 +2,12 @@ import { Component, computed, inject, signal, Signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faMagnifyingGlassMinus, faMagnifyingGlassPlus, faStar } from '@fortawesome/free-solid-svg-icons'
-import type { FileFavorite } from '@sync-in-server/backend/src/applications/files/schemas/file-favorite.interface'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
-import { defaultMimeUrl, getAssetsMimeUrl } from '../../../files/files.constants'
 import { FilesService } from '../../../files/services/files.service'
 import { SPACES_PATH } from '../../../spaces/spaces.constants'
 import { StoreService } from '../../../../store/store.service'
+import { FileFavoriteModel } from '../../models/file-favorite.model'
 
 @Component({
   selector: 'app-files-favorites-widget',
@@ -24,8 +23,7 @@ export class FilesFavoritesWidgetComponent {
   private readonly filesService = inject(FilesService)
   private nbInitialFiles = 10
   private readonly nbFiles = signal(this.nbInitialFiles)
-  protected files: Signal<FileFavorite[]> = computed(() => this.store.filesFavorites().slice(0, this.nbFiles()))
-  private readonly mimeUrlCache = new Map<string, string>()
+  protected files: Signal<FileFavoriteModel[]> = computed(() => this.store.filesFavorites().slice(0, this.nbFiles()))
 
   constructor() {
     this.load()
@@ -42,18 +40,7 @@ export class FilesFavoritesWidgetComponent {
     this.load()
   }
 
-  getMimeUrl(mime: string): string {
-    if (!this.mimeUrlCache.has(mime)) {
-      this.mimeUrlCache.set(mime, getAssetsMimeUrl(mime))
-    }
-    return this.mimeUrlCache.get(mime)!
-  }
-
-  onMimeError(mime: string) {
-    this.mimeUrlCache.set(mime, defaultMimeUrl)
-  }
-
-  goToFile(f: FileFavorite) {
+  goToFile(f: FileFavoriteModel) {
     if (!f.navPath) return
     this.router.navigate([SPACES_PATH.SPACES, ...f.navPath.split('/')], { queryParams: { select: f.name } }).catch(console.error)
   }

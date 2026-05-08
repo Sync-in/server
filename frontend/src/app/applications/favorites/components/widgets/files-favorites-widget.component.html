@@ -16,12 +16,13 @@
       <button type="button" class="recent-item-card" [style.animation-delay.ms]="i * 22" (click)="goToFile(f)"
               [attr.aria-label]="'Open ' + f.name">
         <span class="recent-item-card__media">
-          <img [src]="getMimeUrl(f.mime)" [attr.alt]="f.mime + ' file icon'" (error)="onMimeError(f.mime)">
+          <img [src]="f.mimeUrl" alt="" (error)="f.fallBackMimeUrl()">
         </span>
         <span class="recent-item-card__content">
           <span class="recent-item-card__title">{{ f.name }}</span>
-          <span class="recent-item-card__path text-primary">
-            <span>{{ f.navPath }}</span>
+          <span class="recent-item-card__path text-{{f.iconClass}}">
+            <fa-icon [icon]="f.icon" class="me-1"></fa-icon>
+            <span>{{ f.showedPath }}</span>
           </span>
         </span>
         <span class="recent-item-card__time">{{ f.mtime | amTimeAgo }}</span>
