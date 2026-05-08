@@ -36,7 +36,7 @@ describe(FilesFavorites.name, () => {
         { provide: FilesQueries, useValue: filesQueries },
         { provide: SpacesQueries, useValue: spacesQueries },
         { provide: SharesQueries, useValue: sharesQueries }
-      ],
+      ]
     }).compile()
     module.useLogger(['fatal'])
     service = module.get<FilesFavorites>(FilesFavorites)
@@ -46,7 +46,9 @@ describe(FilesFavorites.name, () => {
     jest.clearAllMocks()
   })
 
-  it('should be defined', () => expect(service).toBeDefined())
+  it('should be defined', () => {
+    expect(service).toBeDefined()
+  })
 
   it('getFavorites delegates to filesQueries with userId, spaceIds, shareIds and default limit', async () => {
     const files = [{ id: 1, name: 'a.txt' }]

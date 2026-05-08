@@ -14,13 +14,9 @@ export const filesFavorites = mysqlTable(
       .references(() => files.id, { onDelete: 'cascade' }),
     createdAt: datetime('createdAt', { mode: 'date' })
       .default(sql`CURRENT_TIMESTAMP`)
-      .notNull(),
+      .notNull()
   },
-  (table) => [
-    primaryKey({ columns: [table.userId, table.fileId] }),
-    index('user_idx').on(table.userId),
-    index('file_idx').on(table.fileId),
-  ]
+  (table) => [primaryKey({ columns: [table.userId, table.fileId] }), index('user_idx').on(table.userId), index('file_idx').on(table.fileId)]
 )
 
 export const fileIsFavoriteForUserSQL = (fileId: Column | SQL, userId: Column | SQL): SQL =>
