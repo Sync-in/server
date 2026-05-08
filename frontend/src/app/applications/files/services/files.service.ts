@@ -227,20 +227,36 @@ export class FilesService {
       })
   }
 
-  toggleFavorite(fileId: number, add: boolean) {
-    const req = add
-      ? this.http.post<void>(`${API_FILES_FAVORITE}/${fileId}`, null)
-      : this.http.delete<void>(`${API_FILES_FAVORITE}/${fileId}`)
-    req.subscribe({
-      next: () => {
-        if (add) {
+  toggleFavorite(file: FileModel, add: boolean) {
+    if (add) {
+      const dto = {
+        path: file.fsPath,
+        name: file.name,
+        isDir: file.isDir,
+        mime: file.mime || undefined,
+        size: file.size,
+        mtime: file.mtime,
+        ctime: file.ctime,
+        ownerId: file.ownerId || undefined,
+        spaceId: file.spaceId || undefined,
+        spaceExternalRootId: file.spaceExternalRootId || undefined,
+        shareExternalId: file.shareExternalId || undefined,
+      }
+      this.http.post<{ id: number }>(API_FILES_FAVORITE, dto).subscribe({
+        next: ({ id }) => {
+          if (file.id !== id) file.id = id
           this.loadFavorites(100)
-        } else {
-          this.store.filesFavorites.update((files) => files.filter((f) => f.id !== fileId))
-        }
-      },
-      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)
-    })
+        },
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)
+      })
+    } else {
+      this.http.delete<void>(`${API_FILES_FAVORITE}/${file.id}`).subscribe({
+        next: () => {
+          this.store.filesFavorites.update((files) => files.filter((f) => f.id !== file.id))
+        },
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)
+      })
+    }
   }
 
   search(search: SearchFilesDto): Observable<FileContentModel[]> {

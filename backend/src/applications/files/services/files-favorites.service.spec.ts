@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { UserModel } from '../../users/models/user.model'
+import { FavoriteFileDto } from '../dto/favorite-file.dto'
 import { FilesQueries } from './files-queries.service'
 import { FilesFavorites } from './files-favorites.service'
 
@@ -7,6 +8,7 @@ describe(FilesFavorites.name, () => {
   let service: FilesFavorites
   let filesQueries: {
     getFavorites: jest.Mock
+    getOrCreateFileForFavorite: jest.Mock
     addFavorite: jest.Mock
     removeFavorite: jest.Mock
   }
@@ -16,6 +18,7 @@ describe(FilesFavorites.name, () => {
   beforeEach(async () => {
     filesQueries = {
       getFavorites: jest.fn().mockResolvedValue([]),
+      getOrCreateFileForFavorite: jest.fn().mockResolvedValue(99),
       addFavorite: jest.fn().mockResolvedValue(undefined),
       removeFavorite: jest.fn().mockResolvedValue(undefined)
     }
@@ -53,9 +56,13 @@ describe(FilesFavorites.name, () => {
     expect(filesQueries.getFavorites).toHaveBeenCalledWith(user.id, 1000)
   })
 
-  it('addFavorite delegates to filesQueries with userId and fileId', async () => {
-    await service.addFavorite(user, 42)
-    expect(filesQueries.addFavorite).toHaveBeenCalledWith(user.id, 42)
+  it('addFavorite calls getOrCreateFileForFavorite, then addFavorite, and returns { id }', async () => {
+    const dto: FavoriteFileDto = { path: '.', name: 'test.txt', isDir: false }
+    filesQueries.getOrCreateFileForFavorite.mockResolvedValue(99)
+    const result = await service.addFavorite(user, dto)
+    expect(filesQueries.getOrCreateFileForFavorite).toHaveBeenCalledWith(user.id, dto)
+    expect(filesQueries.addFavorite).toHaveBeenCalledWith(user.id, 99)
+    expect(result).toEqual({ id: 99 })
   })
 
   it('removeFavorite delegates to filesQueries with userId and fileId', async () => {
