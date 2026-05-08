@@ -7,6 +7,7 @@ import { concatDistinctObjectsInArray, convertToWhere, dbCheckAffectedRows, dbGe
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
 import { shares } from '../../shares/schemas/shares.schema'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
+import { spacesMembers } from '../../spaces/schemas/spaces-members.schema'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
 import { syncClients } from '../../sync/schemas/sync-clients.schema'
@@ -337,10 +338,15 @@ export class FilesQueries {
   }
 
   async isFileAccessibleByUser(userId: number, fileId: number): Promise<boolean> {
+    if (fileId <= 0) return false
     const [row] = await this.db
       .select({ id: files.id })
       .from(files)
-      .where(and(eq(files.id, fileId), eq(files.ownerId, userId)))
+      .leftJoin(spacesMembers, and(eq(spacesMembers.spaceId, files.spaceId), eq(spacesMembers.userId, userId)))
+      .where(and(
+        eq(files.id, fileId),
+        or(eq(files.ownerId, userId), eq(spacesMembers.userId, userId))
+      ))
       .limit(1)
     return !!row
   }
