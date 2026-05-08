@@ -35,6 +35,7 @@ import type { FileEditorProviders } from '@sync-in-server/backend/src/applicatio
 import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/modules/only-office/only-office.constants'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
 import type { FileFavorite } from '@sync-in-server/backend/src/applications/files/schemas/file-favorite.interface'
+import { FileFavoriteModel } from '../../favorites/models/file-favorite.model'
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -220,7 +221,7 @@ export class FilesService {
       .get<FileFavorite[]>(API_FILES_FAVORITES, { params: new HttpParams().set('limit', limit) })
       .subscribe({
         next: (fs: FileFavorite[]) => {
-          this.store.filesFavorites.set(fs)
+          this.store.filesFavorites.set(fs.map((f) => new FileFavoriteModel(f)))
         },
         error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to load favorites', e)
       })
@@ -235,7 +236,7 @@ export class FilesService {
         if (add) {
           this.loadFavorites(100)
         } else {
-          this.store.filesFavorites.update((files: FileFavorite[]) => files.filter((f) => f.id !== fileId))
+          this.store.filesFavorites.update((files) => files.filter((f) => f.id !== fileId))
         }
       },
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)
