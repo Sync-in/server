@@ -644,7 +644,8 @@
 
   }
   app-files-recents-widget,
-  app-comments-recents-widget {
+  app-comments-recents-widget,
+  app-files-favorites-widget {
     .recents-widget-card {
       border-color: rgba($dark-surface-border, 0.82);
       box-shadow: 0 12px 26px rgba($black, 0.3);
