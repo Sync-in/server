@@ -11,6 +11,7 @@ import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
 import { syncClients } from '../../sync/schemas/sync-clients.schema'
 import { syncPaths } from '../../sync/schemas/sync-paths.schema'
+import { FavoriteFileDto } from '../dto/favorite-file.dto'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileProps } from '../interfaces/file-props.interface'
 import { FileRecentLocation } from '../interfaces/file-recent-location.interface'
@@ -342,6 +343,36 @@ export class FilesQueries {
       .where(and(eq(filesFavorites.userId, userId), eq(files.inTrash, false)))
       .orderBy(desc(filesFavorites.createdAt))
       .limit(limit)
+  }
+
+  async getOrCreateFileForFavorite(userId: number, dto: FavoriteFileDto): Promise<number> {
+    const dbFile = {
+      ownerId: dto.ownerId || null,
+      spaceId: dto.spaceId || null,
+      spaceExternalRootId: dto.spaceExternalRootId || null,
+      shareExternalId: dto.shareExternalId || null,
+      inTrash: false as const,
+      path: dto.path,
+    }
+    // Try to find existing file by path + name + isDir + storage context
+    const [existing] = await this.db
+      .select({ id: files.id })
+      .from(files)
+      .where(and(...convertToWhere(files, { ...dbFile, name: dto.name, isDir: dto.isDir })))
+      .limit(1)
+    if (existing?.id) return existing.id
+    // Create new record — this indexes the file into the DB
+    return dbGetInsertedId(
+      await this.db.insert(files).values({
+        ...dbFile,
+        name: dto.name,
+        isDir: dto.isDir,
+        mime: dto.mime ?? null,
+        size: dto.size ?? 0,
+        mtime: dto.mtime ?? 0,
+        ctime: dto.ctime ?? 0,
+      } as File)
+    )
   }
 
   async addFavorite(userId: number, fileId: number): Promise<void> {

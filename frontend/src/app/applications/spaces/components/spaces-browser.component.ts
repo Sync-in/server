@@ -653,7 +653,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   toggleFavorite(file: FileModel, event: Event) {
     event.stopPropagation()
-    this.filesService.toggleFavorite(file.id, !file.isFavorite)
+    this.filesService.toggleFavorite(file, !file.isFavorite)
     file.isFavorite = !file.isFavorite
   }
 

@@ -37,6 +37,7 @@ import { UserModel } from '../users/models/user.model'
 import { FILE_OPERATION, FORCE_AS_FILE_OWNER } from './constants/operations'
 import { FILES_ROUTE } from './constants/routes'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto, SearchFilesDto } from './dto/file-operations.dto'
+import { FavoriteFileDto } from './dto/favorite-file.dto'
 import { FileLockProps, FileProps } from './interfaces/file-props.interface'
 import { FileTask } from './models/file-task'
 import { FileFavorite } from './schemas/file-favorite.interface'
@@ -218,10 +219,10 @@ export class FilesController {
     return this.filesFavorites.getFavorites(user, limit)
   }
 
-  @Post(`${FILES_ROUTE.FAVORITE}/:fileId`)
+  @Post(FILES_ROUTE.FAVORITE)
   @SkipSpaceGuard()
-  addFavorite(@GetUser() user: UserModel, @Param('fileId', ParseIntPipe) fileId: number): Promise<void> {
-    return this.filesFavorites.addFavorite(user, fileId)
+  addFavorite(@GetUser() user: UserModel, @Body() dto: FavoriteFileDto): Promise<{ id: number }> {
+    return this.filesFavorites.addFavorite(user, dto)
   }
 
   @Delete(`${FILES_ROUTE.FAVORITE}/:fileId`)
