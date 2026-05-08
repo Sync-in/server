@@ -1,6 +1,6 @@
 import { HttpService } from '@nestjs/axios'
 import { Test, TestingModule } from '@nestjs/testing'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { AdminUsersQueries } from '../../users/services/admin-users-queries.service'
 import { AdminService } from './admin.service'

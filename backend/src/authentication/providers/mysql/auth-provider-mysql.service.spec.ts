@@ -8,7 +8,7 @@ import { UsersManager } from '../../../applications/users/services/users-manager
 import { UsersQueries } from '../../../applications/users/services/users-queries.service'
 import { generateUserTest } from '../../../applications/users/utils/test'
 import { hashPassword } from '../../../common/functions'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { AuthManager } from '../../auth.service'
 import { AuthProviderMySQL } from './auth-provider-mysql.service'

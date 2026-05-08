@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { FilesEventManager } from './files-event-manager.service'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { ACTION } from '../../../common/constants'
 import { FileEvent } from '../events/file-events'
 import type { FileEventType } from '../interfaces/file-event.interface'

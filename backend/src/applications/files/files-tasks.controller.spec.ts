@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { Cache } from '../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../infrastructure/cache/cache.service'
 import { FilesTasksController } from './files-tasks.controller'
 import { FilesMethods } from './services/files-methods.service'
 import { FilesTasksManager } from './services/files-tasks-manager.service'

@@ -3,7 +3,7 @@ import { LoggerModule } from 'nestjs-pino'
 import { setTimeout } from 'node:timers/promises'
 import { DatabaseModule } from '../database/database.module'
 import { CacheModule } from './cache.module'
-import { Cache } from './services/cache.service'
+import { Cache } from './cache.service'
 
 describe(Cache.name, () => {
   let module: TestingModule

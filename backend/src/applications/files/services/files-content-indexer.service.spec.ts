@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import fs from 'fs/promises'
 import path from 'node:path'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import {
   CACHE_INDEXING_EVENT_PREFIX,
   CACHE_INDEXING_FULL_RUN_REQUEST_KEY,

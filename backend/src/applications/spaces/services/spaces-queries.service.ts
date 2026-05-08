@@ -5,7 +5,7 @@ import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { ACTION } from '../../../common/constants'
 import { popFromObject } from '../../../common/shared'
 import { CacheDecorator } from '../../../infrastructure/cache/cache.decorator'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import {

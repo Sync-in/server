@@ -3,7 +3,7 @@ import { RedisClientOptions } from '@redis/client'
 import { createClient, RedisClientType } from 'redis'
 import { createCacheKeySlug } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
-import { Cache } from '../services/cache.service'
+import { Cache } from '../cache.service'
 
 @Injectable()
 export class RedisCacheAdapter implements Cache {

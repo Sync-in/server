@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { HttpException, HttpStatus } from '@nestjs/common'
 import crypto from 'node:crypto'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import * as filesUtils from '../utils/files'
 import { FileTaskEvent } from '../events/file-events'
 import { SendFile } from '../utils/send-file'

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import crypto from 'node:crypto'
 import { currentTimeStamp } from '../../../common/shared'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { CACHE_LOCK_PREFIX } from '../constants/cache'
 import { LockConflict } from '../models/file-lock-error'
 import { DEPTH, LOCK_PREFIX, LOCK_SCOPE, WEBDAV_APP_LOCK } from '../../webdav/constants/webdav'

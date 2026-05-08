@@ -10,7 +10,7 @@ import { JwtIdentityPayload } from '../../../../authentication/interfaces/jwt-pa
 import { convertHumanTimeToSeconds } from '../../../../common/functions'
 import { encodeUrl } from '../../../../common/shared'
 import { configuration } from '../../../../configuration/config.environment'
-import { Cache } from '../../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../../infrastructure/cache/cache.service'
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
 import { HTTP_METHOD } from '../../../applications.constants'
 import { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface'

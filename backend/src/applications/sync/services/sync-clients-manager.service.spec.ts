@@ -10,7 +10,7 @@ import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-p
 import * as commonFunctions from '../../../common/functions'
 import * as commonShared from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { isPathExists } from '../../files/utils/files'
 import { UserModel } from '../../users/models/user.model'
 import { UsersManager } from '../../users/services/users-manager.service'

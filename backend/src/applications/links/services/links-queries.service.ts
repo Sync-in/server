@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { and, eq, getTableColumns, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/mysql-core'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { dbGetInsertedId } from '../../../infrastructure/database/utils'

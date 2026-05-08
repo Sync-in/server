@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import path from 'node:path'
 import { transformAndValidate } from '../../../common/functions'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import crypto from 'node:crypto'
 
 import { currentTimeStamp } from '../../../common/shared'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { UserModel } from '../../users/models/user.model'
 import { DEPTH, LOCK_DEPTH, LOCK_PREFIX, LOCK_SCOPE } from '../../webdav/constants/webdav'
 import { CACHE_LOCK_DEFAULT_TTL, CACHE_LOCK_PREFIX } from '../constants/cache'

@@ -11,7 +11,7 @@ import { dbCheckAffectedRows } from '../../database/utils'
 import { SCHEDULER_ENV, SCHEDULER_STATE } from '../../scheduler/scheduler.constants'
 import { MysqlCache } from '../schemas/mysql-cache.interface'
 import { cache } from '../schemas/mysql-cache.schema'
-import { Cache } from '../services/cache.service'
+import { Cache } from '../cache.service'
 
 @Injectable()
 export class MysqlCacheAdapter implements Cache {

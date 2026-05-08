@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
-import { Cache } from '../../../infrastructure/cache/services/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { FileEvent } from '../events/file-events'
 import { ACTION } from '../../../common/constants'
 import type { FileEventType } from '../interfaces/file-event.interface'
