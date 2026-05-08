@@ -221,7 +221,7 @@ export class FilesController {
 
   @Post(FILES_ROUTE.FAVORITE)
   @SkipSpaceGuard()
-  addFavorite(@GetUser() user: UserModel, @Body() dto: FavoriteFileDto): Promise<{ id: number }> {
+  addFavorite(@GetUser() user: UserModel, @Body() dto: FavoriteFileDto): Promise<FileFavorite> {
     return this.filesFavorites.addFavorite(user, dto)
   }
 
