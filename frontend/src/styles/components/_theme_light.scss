@@ -629,7 +629,8 @@
     background-color: $white !important;
   }
   app-files-recents-widget,
-  app-comments-recents-widget {
+  app-comments-recents-widget,
+  app-files-favorites-widget {
     .recents-widget-card {
       border-color: rgba($light-surface-border, 0.5);
       box-shadow: 0 14px 34px $light-box-transparent-shadow-color;
