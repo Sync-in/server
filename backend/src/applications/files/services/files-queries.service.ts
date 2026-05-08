@@ -350,10 +350,9 @@ export class FilesQueries {
     const [row] = await this.db
       .select({ id: files.id })
       .from(files)
-      .leftJoin(spacesMembers, and(eq(spacesMembers.spaceId, files.spaceId), eq(spacesMembers.userId, userId)))
       .where(and(
         eq(files.id, fileId),
-        or(eq(files.ownerId, userId), eq(spacesMembers.userId, userId))
+        sql`(${files.ownerId} = ${userId} OR EXISTS (SELECT 1 FROM ${spacesMembers} WHERE ${spacesMembers.spaceId} = ${files.spaceId} AND ${spacesMembers.userId} = ${userId}))`
       ))
       .limit(1)
     return !!row
