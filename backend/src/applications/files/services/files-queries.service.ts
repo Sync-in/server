@@ -327,19 +327,17 @@ export class FilesQueries {
         mtime: files.mtime,
         ctime: files.ctime,
         isFavorite: sql<boolean>`true`.mapWith(Boolean),
-        navPath: sql<string>`CONCAT(
-          ${SPACE_REPOSITORY.FILES}, '/',
-          CASE
-            WHEN ${files.ownerId} IS NOT NULL THEN ${SPACE_ALIAS.PERSONAL}
-            WHEN ${files.spaceId} IS NOT NULL THEN ${spaces.alias}
-            ELSE 'shared'
-          END,
-          CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END
-        )`
+        navPath: sql<string>`CASE
+          WHEN ${files.ownerId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.FILES}, '/', ${SPACE_ALIAS.PERSONAL}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
+          WHEN ${files.spaceId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.FILES}, '/', ${spaces.alias}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
+          WHEN ${files.shareExternalId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.SHARES}, '/', ${shares.alias}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
+          ELSE ''
+        END`
       })
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
       .leftJoin(spaces, eq(spaces.id, files.spaceId))
+      .leftJoin(shares, eq(shares.id, files.shareExternalId))
       .where(and(
         eq(filesFavorites.userId, userId),
         eq(files.inTrash, false),

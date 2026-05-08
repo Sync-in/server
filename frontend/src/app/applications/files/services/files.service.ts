@@ -248,14 +248,20 @@ export class FilesService {
           if (file.id !== id) file.id = id
           this.loadFavorites(100)
         },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)
+        error: (e: HttpErrorResponse) => {
+          file.isFavorite = false
+          this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)
+        }
       })
     } else {
       this.http.delete<void>(`${API_FILES_FAVORITE}/${file.id}`).subscribe({
         next: () => {
           this.store.filesFavorites.update((files) => files.filter((f) => f.id !== file.id))
         },
-        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)
+        error: (e: HttpErrorResponse) => {
+          file.isFavorite = true
+          this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)
+        }
       })
     }
   }

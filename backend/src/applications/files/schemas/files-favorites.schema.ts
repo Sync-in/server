@@ -24,4 +24,4 @@ export const filesFavorites = mysqlTable(
 )
 
 export const fileIsFavoriteForUserSQL = (fileId: Column | SQL, userId: Column | SQL): SQL =>
-  sql`EXISTS(SELECT 1 FROM ${filesFavorites} WHERE ${sql`${filesFavorites.fileId}`} = ${sql`${fileId}`} AND ${sql`${filesFavorites.userId}`} = ${sql`${userId}`})`
+  sql`EXISTS(SELECT 1 FROM ${filesFavorites} WHERE ${filesFavorites.fileId} = ${fileId} AND ${filesFavorites.userId} = ${userId})`
