@@ -84,7 +84,7 @@ export class SpacesBrowser {
   ): Promise<FileProps[]> {
     if (space.inFilesRepository && space.id && !space.root.alias) {
       // list roots in the space
-      return Promise.all((await this.spacesQueries.spaceRootFiles(user.id, space.id, options)).map((f) => this.updateRootFile(f, options)))
+      return Promise.all((await this.spacesQueries.spaceRootFiles(user.id, space.id, options)).map((f) => this.updateRootFile(f, options, space.id)))
     } else if (space.inSharesList) {
       // list shares as roots
       return Promise.all((await this.sharesQueries.shareRootFiles(user, options)).map((f) => this.updateRootFile(f, options)))
@@ -156,7 +156,8 @@ export class SpacesBrowser {
 
   private async updateRootFile(
     f: FileProps,
-    options: { withShares?: boolean; withHasComments?: boolean; withSyncs?: boolean; withLocks?: boolean }
+    options: { withShares?: boolean; withHasComments?: boolean; withSyncs?: boolean; withLocks?: boolean },
+    spaceId?: number
   ): Promise<FileProps> {
     const realPath = realPathFromRootFile(f)
     const originalPath = f.path
@@ -199,6 +200,9 @@ export class SpacesBrowser {
           .compareAndUpdateFileProps(f, fileProps)
           .catch((e: Error) => this.logger.error({ tag: this.updateRootFile.name, msg: `${e}` }))
         fileProps.id = f.id
+      } else if (spaceId) {
+        // propagate space context for unindexed roots so find-or-create has correct storage context
+        ;(fileProps as any).spaceId = spaceId
       }
       fileProps.root = {
         id: f.root.id,
