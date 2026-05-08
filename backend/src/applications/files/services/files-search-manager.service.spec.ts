@@ -6,7 +6,7 @@ import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { FilesContentStore } from '../models/files-content-store'
 import { FILE_REPOSITORY } from '../constants/operations'
 import { configuration } from '../../../configuration/config.environment'
-import { FilesParser } from './files-parser.service'
+import { FilesContentParser } from './files-content-parser.service'
 import { FilesSearchManager } from './files-search-manager.service'
 
 describe(FilesSearchManager.name, () => {
@@ -53,7 +53,7 @@ describe(FilesSearchManager.name, () => {
       providers: [
         FilesSearchManager,
         { provide: FilesContentStore, useValue: filesIndexer },
-        { provide: FilesParser, useValue: filesParser },
+        { provide: FilesContentParser, useValue: filesParser },
         {
           provide: SpacesQueries,
           useValue: spacesQueries
@@ -135,18 +135,16 @@ describe(FilesSearchManager.name, () => {
   })
 
   it('should stop filename search when the limit is reached', async () => {
-    filesParser.allPaths.mockReturnValue(
-      (async function* () {
-        yield [
-          5,
-          FILE_REPOSITORY.USER,
-          [
-            { realPath: '/root/file-a.txt', pathPrefix: 'files/personal', isDir: false },
-            { realPath: '/root/dir', pathPrefix: 'files/personal', isDir: true }
-          ]
+    filesParser.allPaths.mockResolvedValue([
+      {
+        id: 5,
+        type: FILE_REPOSITORY.USER,
+        paths: [
+          { realPath: '/root/file-a.txt', pathPrefix: 'files/personal', isDir: false },
+          { realPath: '/root/dir', pathPrefix: 'files/personal', isDir: true }
         ]
-      })()
-    )
+      }
+    ])
     jest.spyOn(service as any, 'analyzeFile').mockResolvedValue(fileContent('file-a.txt'))
     jest.spyOn(service as any, 'parseFileNames').mockReturnValue(
       (async function* () {

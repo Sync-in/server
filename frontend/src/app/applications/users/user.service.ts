@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
-import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/modules/file-editor-providers.interface'
+import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { NOTIFICATIONS_WS } from '@sync-in-server/backend/src/applications/notifications/constants/websocket'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'

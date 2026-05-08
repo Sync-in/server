@@ -164,6 +164,19 @@ describe(CollaboraOnlineManager.name, () => {
       expect(filesLockManager.checkConflicts).not.toHaveBeenCalled()
     })
 
+    it('should return view mode when document is in trash repository', async () => {
+      const trashSpace = {
+        ...mockSpace,
+        envPermissions: SPACE_OPERATION.MODIFY,
+        inTrashRepository: true
+      } as unknown as SpaceEnv
+
+      const result = await service.getSettings(mockUser, trashSpace)
+
+      expect(result.mode).toBe(FILE_MODE.VIEW)
+      expect(filesLockManager.checkConflicts).not.toHaveBeenCalled()
+    })
+
     it('should throw error when document extension is not supported', async () => {
       const spaceWithUnsupportedFile = {
         ...mockSpace,
@@ -248,6 +261,32 @@ describe(CollaboraOnlineManager.name, () => {
         space: {
           ...mockSpace,
           envPermissions: ''
+        }
+      } as unknown as FastifyCollaboraOnlineSpaceRequest
+
+      jest.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
+      jest.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
+      jest.spyOn(filesUtils, 'genEtag').mockReturnValue('etag-123')
+      const { getAvatarBase64 } = await import('../../../users/utils/avatar')
+      ;(getAvatarBase64 as jest.Mock).mockResolvedValue('base64-avatar')
+
+      const result = await service.checkFileInfo(mockRequest)
+
+      expect(result.UserCanWrite).toBe(false)
+    })
+
+    it('should set UserCanWrite to false when document is in trash repository', async () => {
+      const mockStats = {
+        size: 1024,
+        mtime: new Date('2024-01-01T10:00:00Z')
+      }
+
+      const mockRequest = {
+        user: mockUser,
+        space: {
+          ...mockSpace,
+          envPermissions: SPACE_OPERATION.MODIFY,
+          inTrashRepository: true
         }
       } as unknown as FastifyCollaboraOnlineSpaceRequest
 

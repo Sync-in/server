@@ -195,6 +195,19 @@ describe(OnlyOfficeManager.name, () => {
       expect(result.config.document.permissions.edit).toBe(false)
     })
 
+    it('should set mode to VIEW when document is in trash repository', async () => {
+      const trashSpaceEnv = {
+        ...mockSpaceEnv,
+        inTrashRepository: true
+      } as unknown as SpaceEnv
+
+      const result = await service.getSettings(mockUser, trashSpaceEnv, mockRequest)
+
+      expect(result.config.editorConfig.mode).toBe(FILE_MODE.VIEW)
+      expect(result.config.document.permissions.edit).toBe(false)
+      expect(filesLockManager.checkConflicts).not.toHaveBeenCalled()
+    })
+
     it('should detect mobile user agent', async () => {
       const mobileRequest = {
         headers: {

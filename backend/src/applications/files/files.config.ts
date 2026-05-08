@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer'
+import { Transform, Type } from 'class-transformer'
 import {
   ArrayNotEmpty,
   IsArray,
@@ -8,11 +8,12 @@ import {
   IsNotEmptyObject,
   IsOptional,
   IsString,
+  Min,
   ValidateIf,
   ValidateNested
 } from 'class-validator'
-import { CollaboraOnlineConfig } from './modules/collabora-online/collabora-online.config'
-import { OnlyOfficeConfig } from './modules/only-office/only-office.config'
+import { CollaboraOnlineConfig } from './editors/collabora-online/collabora-online.config'
+import { OnlyOfficeConfig } from './editors/only-office/only-office.config'
 
 export class FilesContentIndexingOCRConfig {
   @IsBoolean()
@@ -67,6 +68,12 @@ export class FilesConfig {
   @ValidateNested()
   @Type(() => FilesContentIndexingConfig)
   contentIndexing: FilesContentIndexingConfig = new FilesContentIndexingConfig()
+
+  @Transform(({ value }) => (value === 0 ? false : value))
+  @ValidateIf((o: FilesConfig) => o.trashRetentionDays !== false)
+  @IsInt()
+  @Min(1)
+  trashRetentionDays: number | false = false
 
   @IsBoolean()
   showHiddenFiles: boolean = false

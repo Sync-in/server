@@ -36,7 +36,11 @@
             <span l10nTranslate><fa-icon [icon]="icons.faUpload"></fa-icon>Upload files</span>
           </a>
           @if (supportUploadFolder) {
-            <a appUploadFiles [options]="{isDirectory: true}" (uploadFiles)="onUploadFiles($event, true)" class="dropdown-item" id="uploadFoldersButton">
+            <a appUploadFiles
+               [options]="{isDirectory: true}"
+               (uploadFiles)="onUploadFiles($event, true)"
+               class="dropdown-item"
+               id="uploadFoldersButton">
               <span l10nTranslate><fa-icon [icon]="icons.faUpload"></fa-icon>Upload folders</span>
             </a>
           }
@@ -115,39 +119,6 @@
             </a>
           </li>
         }
-        @if (!inSharesList) {
-          <li role="menuitem">
-            <a (click)="shortcutRename()" class="dropdown-item">
-              <span l10nTranslate><fa-icon [icon]="icons.faSpellCheck"></fa-icon>Rename</span>
-            </a>
-          </li>
-        }
-        <li role="menuitem">
-          <a (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" class="dropdown-item">
-            <span l10nTranslate><fa-icon [icon]="icons.faCommentDots"></fa-icon>Comment</span>
-          </a>
-        </li>
-        @if (isElectronApp && selection[0].isDir) {
-          <li role="menuitem">
-            <a (click)="addToSync()" class="dropdown-item">
-              <span l10nTranslate><fa-icon [icon]="icons.faRotate"></fa-icon>Synchronize</span>
-            </a>
-          </li>
-        }
-        @if (!inSharesList && !selection[0].isCompressible) {
-          <li role="menuitem">
-            <a (click)="decompressFile()" class="dropdown-item">
-              <span l10nTranslate><fa-icon [icon]="icons.faFileArchive"></fa-icon>Decompress</span>
-            </a>
-          </li>
-        }
-      }
-      @if (canCompress) {
-        <li role="menuitem">
-          <a (click)="openCompressionDialog()" class="dropdown-item">
-            <span l10nTranslate><fa-icon [icon]="icons.faFileArchive"></fa-icon>Compress</span>
-          </a>
-        </li>
       }
       @if (!hasDisabledItemsInSelection) {
         <li role="menuitem">
@@ -156,11 +127,46 @@
           </a>
         </li>
       }
+      @if (selection.length === 1 && !isTrashRepo && !inSharesList) {
+        <li role="menuitem">
+          <a (click)="shortcutRename()" class="dropdown-item">
+            <span l10nTranslate><fa-icon [icon]="icons.faSpellCheck"></fa-icon>Rename</span>
+          </a>
+        </li>
+      }
+      @if (!isTrashRepo && canCompress) {
+        <li role="menuitem">
+          <a (click)="openCompressionDialog()" class="dropdown-item">
+            <span l10nTranslate><fa-icon [icon]="icons.faFileArchive"></fa-icon>Compress</span>
+          </a>
+        </li>
+      }
+      @if (selection.length === 1 && !isTrashRepo && !inSharesList && !selection[0].isCompressible) {
+        <li role="menuitem">
+          <a (click)="decompressFile()" class="dropdown-item">
+            <span l10nTranslate><fa-icon [icon]="icons.faFileArchive"></fa-icon>Decompress</span>
+          </a>
+        </li>
+      }
       <li role="menuitem">
         <a (click)="addToClipboard()" class="dropdown-item">
           <span l10nTranslate><fa-icon [icon]="icons.faClipboardList"></fa-icon>Clipboard</span>
         </a>
       </li>
+      @if (selection.length === 1 && !isTrashRepo && isElectronApp && selection[0].isDir) {
+        <li role="menuitem">
+          <a (click)="addToSync()" class="dropdown-item">
+            <span l10nTranslate><fa-icon [icon]="icons.faRotate"></fa-icon>Synchronize</span>
+          </a>
+        </li>
+      }
+      @if (selection.length === 1 && !isTrashRepo) {
+        <li role="menuitem">
+          <a (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" class="dropdown-item">
+            <span l10nTranslate><fa-icon [icon]="icons.faCommentDots"></fa-icon>Comment</span>
+          </a>
+        </li>
+      }
       <li role="menuitem">
         <a (click)="layout.showRSideBarTab(TAB_MENU.SELECTION)" class="dropdown-item">
           <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
@@ -330,7 +336,8 @@
                        type="text"
                        required>
               } @else {
-                <span [style.font-size.px]="galleryMode.textSize" class="no-pointer-events text-file-name-preserve" draggable="false">{{ f.name }}</span>
+                <span [style.font-size.px]="galleryMode.textSize" class="no-pointer-events text-file-name-preserve"
+                      draggable="false">{{ f.name }}</span>
               }
             </div>
           </div>
@@ -414,48 +421,48 @@
                       }
                     }
                     @case ('info') {
-                        @if (f.lock) {
-                          <span (click)="openLockDialog(f)"
-                                tooltip="{{f.lock | fileLockFormatPipe}}"
-                                placement="auto"
-                                class="badge bg-maroon cursor-pointer me-1">
+                      @if (f.lock) {
+                        <span (click)="openLockDialog(f)"
+                              tooltip="{{f.lock | fileLockFormatPipe}}"
+                              placement="auto"
+                              class="badge bg-maroon cursor-pointer me-1">
                           <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
                         </span>
-                        }
-                        @if (f.hasComments) {
-                          <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
-                                class="badge bg-success cursor-pointer me-1">
+                      }
+                      @if (f.hasComments) {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
+                              class="badge bg-success cursor-pointer me-1">
                           <fa-icon [icon]="icons.faCommentDots"></fa-icon>
                         </span>
-                        }
-                        @if (f.shares.length) {
-                          <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                                class="badge bg-primary cursor-pointer me-1">
+                      }
+                      @if (f.shares.length) {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                              class="badge bg-primary cursor-pointer me-1">
                           <fa-icon [icon]="icons.SHARES"></fa-icon>
-                            {{ f.shares.length }}
+                          {{ f.shares.length }}
                         </span>
-                        }
-                        @if (f.links.length) {
-                          <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                                class="badge bg-primary cursor-pointer me-1">
+                      }
+                      @if (f.links.length) {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                              class="badge bg-primary cursor-pointer me-1">
                           <fa-icon [icon]="icons.LINKS"></fa-icon>
-                            {{ f.links.length }}
+                          {{ f.links.length }}
                         </span>
-                        }
-                        @if (f.spaces.length) {
-                          <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                                class="badge bg-primary cursor-pointer me-1">
+                      }
+                      @if (f.spaces.length) {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                              class="badge bg-primary cursor-pointer me-1">
                           <fa-icon [icon]="icons.SPACES"></fa-icon>
-                            {{ f.spaces.length }}
+                          {{ f.spaces.length }}
                         </span>
-                        }
-                        @if (f.syncs.length) {
-                          <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                                class="badge bg-primary cursor-pointer">
+                      }
+                      @if (f.syncs.length) {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                              class="badge bg-primary cursor-pointer">
                           <fa-icon [icon]="icons.SYNC"></fa-icon>
-                            {{ f.syncs.length }}
+                          {{ f.syncs.length }}
                         </span>
-                        }
+                      }
                     }
                     @case ('permissions') {
                       @if (f.root && f.root.permissions) {
@@ -523,48 +530,50 @@
         <span l10nTranslate><fa-icon [icon]="selection[0].isDir ? icons.faFolderOpen : icons.faEye"></fa-icon>Open</span>
       </ng-template>
     }
-    @if (!inSharesList) {
-      <ng-template (execute)="shortcutRename()" contextMenuItem>
-        <span l10nTranslate><fa-icon [icon]="icons.faSpellCheck"></fa-icon>Rename</span>
-      </ng-template>
-    }
-    <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faCommentDots"></fa-icon>Comment</span>
-    </ng-template>
-    @if (isElectronApp && selection[0].isDir) {
-      <ng-template (execute)="addToSync()" contextMenuItem>
-        <span l10nTranslate><fa-icon [icon]="icons.faRotate"></fa-icon>Synchronize</span>
-      </ng-template>
-    }
   }
   @if (!hasDisabledItemsInSelection) {
     <ng-template (execute)="downloadFiles()" contextMenuItem>
       <span l10nTranslate><fa-icon [icon]="icons.faDownload"></fa-icon>Download</span>
     </ng-template>
-  }
-  @if (canCompress) {
-    <ng-template (execute)="openCompressionDialog()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faFileArchive"></fa-icon>Compress</span>
-    </ng-template>
-  }
-  @if (!inSharesList && selection.length === 1 && !selection[0].isCompressible) {
-    <ng-template (execute)="decompressFile()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faFileArchive"></fa-icon>Decompress</span>
-    </ng-template>
-  }
-  @if (!hasDisabledItemsInSelection) {
     <ng-template (execute)="copyMoveFiles()" contextMenuItem>
       <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy · Move</span>
     </ng-template>
   }
-  @if (!isTrashRepo && canShare.outside || inSharesList && selection[0]?.canBeReShared) {
-    <ng-template [subMenu]="ShareContextMenu" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.SHARES"></fa-icon>Share</span>
+  @if (selection.length === 1 && !isTrashRepo && !inSharesList) {
+    <ng-template (execute)="shortcutRename()" contextMenuItem>
+      <span l10nTranslate><fa-icon [icon]="icons.faSpellCheck"></fa-icon>Rename</span>
     </ng-template>
+  }
+  @if (!isTrashRepo) {
+    @if (canCompress) {
+      <ng-template (execute)="openCompressionDialog()" contextMenuItem>
+        <span l10nTranslate><fa-icon [icon]="icons.faFileArchive"></fa-icon>Compress</span>
+      </ng-template>
+    }
+    @if (!inSharesList && selection.length === 1 && !selection[0].isCompressible) {
+      <ng-template (execute)="decompressFile()" contextMenuItem>
+        <span l10nTranslate><fa-icon [icon]="icons.faFileArchive"></fa-icon>Decompress</span>
+      </ng-template>
+    }
+    @if (canShare.outside || inSharesList && selection[0]?.canBeReShared) {
+      <ng-template [subMenu]="ShareContextMenu" contextMenuItem>
+        <span l10nTranslate><fa-icon [icon]="icons.SHARES"></fa-icon>Share</span>
+      </ng-template>
+    }
   }
   <ng-template (execute)="addToClipboard()" contextMenuItem>
     <span l10nTranslate><fa-icon [icon]="icons.faClipboardList"></fa-icon>Clipboard</span>
   </ng-template>
+  @if (selection.length === 1 && !isTrashRepo && isElectronApp && selection[0].isDir) {
+    <ng-template (execute)="addToSync()" contextMenuItem>
+      <span l10nTranslate><fa-icon [icon]="icons.faRotate"></fa-icon>Synchronize</span>
+    </ng-template>
+  }
+  @if (selection.length === 1 && !isTrashRepo) {
+    <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" contextMenuItem>
+      <span l10nTranslate><fa-icon [icon]="icons.faCommentDots"></fa-icon>Comment</span>
+    </ng-template>
+  }
   @if (!inSharesList) {
     <ng-template [divider]="true" contextMenuItem></ng-template>
     <ng-template (execute)="openTrashDialog(isTrashRepo)" contextMenuItem>
@@ -587,9 +596,14 @@
   }
 </context-menu>
 <context-menu #MainReadOnlyContextMenu>
-  <ng-template (execute)="openEmptyTrashDialog()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.TRASH"></fa-icon>Empty</span>
+  <ng-template (execute)="loadFiles()" contextMenuItem>
+    <span l10nTranslate><fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>Refresh</span>
   </ng-template>
+  @if (inRootSpace) {
+    <ng-template (execute)="openEmptyTrashDialog()" contextMenuItem>
+      <span l10nTranslate><fa-icon [icon]="icons.TRASH"></fa-icon>Empty</span>
+    </ng-template>
+  }
 </context-menu>
 <context-menu #MainContextMenu>
   @if (inSharesList) {

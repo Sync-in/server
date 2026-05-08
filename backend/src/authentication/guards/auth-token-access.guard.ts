@@ -1,8 +1,8 @@
 import { ExecutionContext, Injectable, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { AuthGuard, IAuthGuard } from '@nestjs/passport'
-import { COLLABORA_CONTEXT } from '../../applications/files/modules/collabora-online/collabora-online.constants'
-import { ONLY_OFFICE_CONTEXT } from '../../applications/files/modules/only-office/only-office.constants'
+import { COLLABORA_CONTEXT } from '../../applications/files/editors/collabora-online/collabora-online.constants'
+import { ONLY_OFFICE_CONTEXT } from '../../applications/files/editors/only-office/only-office.constants'
 import { WEB_DAV_CONTEXT } from '../../applications/webdav/decorators/webdav-context.decorator'
 import { AUTH_TOKEN_SKIP } from '../decorators/auth-token-skip.decorator'
 

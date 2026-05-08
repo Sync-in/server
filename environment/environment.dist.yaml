@@ -336,6 +336,10 @@ applications:
         # Used when offline mode is enabled or to override default location
         # default: built-in OCR directory
         languagesPath:
+    # Trash retention in days. Set to a number of days to enable automatic trash cleanup.
+    # Set to `false` or `0` to disable it.
+    # default: false
+    trashRetentionDays: false
     # Show files starting with a dot in the file explorer
     # default: false
     showHiddenFiles: false

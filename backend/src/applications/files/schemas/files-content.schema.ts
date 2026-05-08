@@ -5,15 +5,17 @@ export function createTableFilesContent(tableName: string): string {
   return `
       CREATE TABLE IF NOT EXISTS ${tableName}
       (
-          id      bigint          NOT NULL,
+          id      bigint unsigned NOT NULL,
           path    varchar(4096)   NOT NULL,
           name    varchar(255)    NOT NULL,
           mime    varchar(255),
           size    bigint unsigned NOT NULL,
           mtime   bigint unsigned NOT NULL,
           content LONGTEXT,
-          FULLTEXT (content),
-          CONSTRAINT files_content_id PRIMARY KEY (id)
+          seen_run_id varchar(64),
+          PRIMARY KEY (id),
+          INDEX seen_run_id (seen_run_id),
+          FULLTEXT (content)
       ) CHARACTER SET utf8mb4
         COLLATE utf8mb4_general_ci;`
 }

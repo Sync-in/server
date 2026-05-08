@@ -13,45 +13,59 @@ import { spaces } from '../../spaces/schemas/spaces.schema'
 import { USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { users } from '../../users/schemas/users.schema'
-import { FileParseContext } from '../interfaces/file-parse-index'
+import { FileParseContentPath, FileParseContext } from '../interfaces/file-parse-index'
 import { filePathSQL, files } from '../schemas/files.schema'
 import { isPathExists } from '../utils/files'
 import { FILE_REPOSITORY } from '../constants/operations'
 
 @Injectable()
-export class FilesParser {
-  private readonly logger = new Logger(FilesParser.name)
+export class FilesContentParser {
+  private readonly logger = new Logger(FilesContentParser.name)
 
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 
-  async *allPaths(userIds?: number[], spaceIds?: number[], shareIds?: number[]): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
-    yield* this.userPaths(userIds)
-    yield* this.spacePaths(spaceIds)
-    yield* this.sharePaths(shareIds)
+  async allPaths(userIds?: number[], spaceIds?: number[], shareIds?: number[]): Promise<FileParseContentPath[]> {
+    const hasNoFilters = userIds === undefined && spaceIds === undefined && shareIds === undefined
+    const includeUsers = hasNoFilters || !!userIds?.length
+    const includeSpaces = hasNoFilters || !!spaceIds?.length
+    const includeShares = hasNoFilters || !!shareIds?.length
+
+    const [userPaths, spacePaths, sharePaths] = await Promise.all([
+      includeUsers ? this.userPaths(userIds) : [],
+      includeSpaces ? this.spacePaths(spaceIds) : [],
+      includeShares ? this.sharePaths(shareIds) : []
+    ])
+
+    return [...userPaths, ...spacePaths, ...sharePaths]
   }
 
-  async *userPaths(userIds?: number[]): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
+  private async userPaths(userIds?: number[]): Promise<FileParseContentPath[]> {
+    if (userIds?.length === 0) return []
+    const paths: FileParseContentPath[] = []
     for (const user of await this.db
       .select({
         id: users.id,
         login: users.login
       })
       .from(users)
-      .where(and(...[eq(users.storageIndexing, true), lte(users.role, USER_ROLE.USER), ...(userIds ? [inArray(users.id, userIds)] : [])]))) {
+      .where(and(...[eq(users.storageIndexing, true), lte(users.role, USER_ROLE.USER), ...(userIds?.length ? [inArray(users.id, userIds)] : [])]))) {
       const userFilesPath = UserModel.getFilesPath(user.login)
       if (!(await isPathExists(userFilesPath))) {
         this.logger.warn({ tag: this.userPaths.name, msg: `user path does not exist : ${userFilesPath}` })
         continue
       }
-      yield [
-        user.id,
-        FILE_REPOSITORY.USER,
-        [{ realPath: userFilesPath, pathPrefix: `${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}`, isDir: true }]
-      ]
+      paths.push({
+        id: user.id,
+        type: FILE_REPOSITORY.USER,
+        paths: [{ realPath: userFilesPath, pathPrefix: `${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}`, isDir: true }]
+      })
     }
+    return paths
   }
 
-  async *spacePaths(spaceIds?: number[]): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
+  private async spacePaths(spaceIds?: number[]): Promise<FileParseContentPath[]> {
+    if (spaceIds?.length === 0) return []
+    const paths: FileParseContentPath[] = []
     for (const space of await this.db
       .select({
         id: spaces.id,
@@ -70,14 +84,14 @@ export class FilesParser {
       .leftJoin(spacesRoots, eq(spacesRoots.spaceId, spaces.id))
       .leftJoin(files, eq(files.id, spacesRoots.fileId))
       .leftJoin(users, eq(users.id, files.ownerId))
-      .where(and(eq(spaces.storageIndexing, true), ...(spaceIds ? [inArray(spaces.id, spaceIds)] : [])))
+      .where(and(eq(spaces.storageIndexing, true), ...(spaceIds?.length ? [inArray(spaces.id, spaceIds)] : [])))
       .groupBy(spaces.id)) {
       const spaceFilesPath = SpaceModel.getFilesPath(space.alias)
       if (!(await isPathExists(spaceFilesPath))) {
         this.logger.warn({ tag: this.spacePaths.name, msg: `space path does not exist : ${spaceFilesPath}` })
         continue
       }
-      const spacePath = [{ realPath: spaceFilesPath, pathPrefix: `${SPACE_REPOSITORY.FILES}/${space.alias}`, isDir: true }]
+      const spacePath: FileParseContext[] = [{ realPath: spaceFilesPath, pathPrefix: `${SPACE_REPOSITORY.FILES}/${space.alias}`, isDir: true }]
       const rootPaths = space.roots.map(
         (r: any): FileParseContext =>
           r.externalPath
@@ -92,11 +106,14 @@ export class FilesParser {
                 isDir: r.isDir
               }
       )
-      yield [space.id, FILE_REPOSITORY.SPACE, [...spacePath, ...rootPaths]]
+      paths.push({ id: space.id, type: FILE_REPOSITORY.SPACE, paths: [...spacePath, ...rootPaths] })
     }
+    return paths
   }
 
-  async *sharePaths(shareIds?: number[]): AsyncGenerator<[number, FILE_REPOSITORY, FileParseContext[]]> {
+  private async sharePaths(shareIds?: number[]): Promise<FileParseContentPath[]> {
+    if (shareIds?.length === 0) return []
+    const paths: FileParseContentPath[] = []
     for (const share of await this.db
       .select({
         id: shares.id,
@@ -117,7 +134,9 @@ export class FilesParser {
       )
       .leftJoin(spaces, and(isNull(shares.externalPath), isNotNull(files.spaceId), eq(spaces.id, files.spaceId), eq(spaces.storageIndexing, true)))
       .leftJoin(users, and(eq(users.id, files.ownerId), eq(users.storageIndexing, true)))
-      .where(and(eq(shares.storageIndexing, true), ...[eq(shares.type, SHARE_TYPE.COMMON), ...(shareIds ? [inArray(shares.id, shareIds)] : [])]))
+      .where(
+        and(eq(shares.storageIndexing, true), ...[eq(shares.type, SHARE_TYPE.COMMON), ...(shareIds?.length ? [inArray(shares.id, shareIds)] : [])])
+      )
       .groupBy(shares.id)) {
       let shareFilesPath: string
       if (share.externalPath) {
@@ -134,11 +153,12 @@ export class FilesParser {
         this.logger.warn({ tag: this.sharePaths.name, msg: `share path does not exist : ${shareFilesPath}` })
         continue
       }
-      yield [
-        share.id,
-        FILE_REPOSITORY.SHARE,
-        [{ realPath: shareFilesPath, pathPrefix: `${SPACE_REPOSITORY.SHARES}/${share.alias}`, isDir: share.isDir }]
-      ]
+      paths.push({
+        id: share.id,
+        type: FILE_REPOSITORY.SHARE,
+        paths: [{ realPath: shareFilesPath, pathPrefix: `${SPACE_REPOSITORY.SHARES}/${share.alias}`, isDir: share.isDir }]
+      })
     }
+    return paths
   }
 }

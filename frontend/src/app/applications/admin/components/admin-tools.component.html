@@ -19,6 +19,9 @@
                           @case (IndexingState.STOPPING) {
                             <span class="badge bg-warning" l10nTranslate>{{indexingStatus.state}}</span>
                           }
+                          @case (IndexingState.PENDING) {
+                            <span class="badge bg-black" l10nTranslate>{{indexingStatus.state}}</span>
+                          }
                           @default {
                             <span class="badge bg-secondary" l10nTranslate>{{indexingStatus.state}}</span>
                           }
@@ -56,7 +59,7 @@
                       <div class="text-muted no-select fs-sm my-3 px-1 me-auto" l10nTranslate>
                         Start or stop indexing.
                       </div>
-                      @if (indexingStatus.state === IndexingState.RUNNING) {
+                      @if (indexingStatus.state === IndexingState.RUNNING || indexingStatus.state === IndexingState.PENDING) {
                         <button
                           (click)="stopIndexing()"
                           class="btn btn-sm btn-warning btn-sm text-nowrap"
@@ -82,7 +85,7 @@
                       @if (confirmResetIndexing) {
                         <button
                           (click)="confirmResetIndexing = false"
-                          [disabled]="indexingStatus.state === IndexingState.RUNNING"
+                          [disabled]="indexingStatus.state === IndexingState.RUNNING || indexingStatus.state === IndexingState.PENDING"
                           class="btn btn-sm btn-secondary btn-sm text-nowrap me-2"
                           type="button">
                           <span l10nTranslate>Cancel</span>

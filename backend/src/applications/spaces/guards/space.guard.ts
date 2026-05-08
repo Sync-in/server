@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { HTTP_METHOD } from '../../applications.constants'
-import { COLLABORA_CONTEXT } from '../../files/modules/collabora-online/collabora-online.constants'
-import { COLLABORA_ONLINE_TO_SPACE_SEGMENTS } from '../../files/modules/collabora-online/collabora-online.utils'
+import { COLLABORA_CONTEXT } from '../../files/editors/collabora-online/collabora-online.constants'
+import { COLLABORA_ONLINE_TO_SPACE_SEGMENTS } from '../../files/editors/collabora-online/collabora-online.utils'
 import { isPathExists, isPathIsDir } from '../../files/utils/files'
 import { SYNC_CONTEXT } from '../../sync/decorators/sync-context.decorator'
 import { SYNC_PATH_TO_SPACE_SEGMENTS } from '../../sync/utils/routes'
@@ -42,6 +42,9 @@ export class SpaceGuard implements CanActivate {
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
     }
     if ([SPACE_OPERATION.ADD, SPACE_OPERATION.MODIFY].indexOf(permission) > -1) {
+      if (req.space.inTrashRepository) {
+        throw new HttpException('The trash is read-only', HttpStatus.FORBIDDEN)
+      }
       if (req.space.quotaIsExceeded) {
         logger.warn(`Storage quota exceeded for *${req.space.alias}* (${req.space.id})`)
         throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)

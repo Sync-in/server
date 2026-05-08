@@ -4,42 +4,63 @@ import path from 'node:path'
 import { Cache } from '../../../infrastructure/cache/services/cache.service'
 import {
   CACHE_INDEXING_EVENT_PREFIX,
+  CACHE_INDEXING_FULL_RUN_REQUEST_KEY,
+  CACHE_INDEXING_FULL_RUN_REQUEST_TTL,
   CACHE_INDEXING_LAST_RUN_KEY,
   CACHE_INDEXING_RUNNING_KEY,
   CACHE_INDEXING_RUNNING_TTL
 } from '../constants/indexing'
 import { FILE_REPOSITORY } from '../constants/operations'
-import { FileParseContext } from '../interfaces/file-parse-index'
+import { FileContentIndexContext, FileParseContentPath, FileParseContext } from '../interfaces/file-parse-index'
 import { IndexingState } from '../interfaces/indexing.interface'
 import { FilesContentStore } from '../models/files-content-store'
 import * as docTextifyModule from '../utils/doc-textify/doc-textify'
 import { OCRManager } from '../utils/doc-textify/utils/ocr'
-import { FilesParser } from './files-parser.service'
+import { FilesContentParser } from './files-content-parser.service'
 import { FilesContentIndexer } from './files-content-indexer.service'
+
+interface CacheMock {
+  has: jest.Mock
+  keys: jest.Mock
+  get: jest.Mock
+  set: jest.Mock
+  del: jest.Mock
+}
+
+interface FilesContentStoreMock {
+  indexesCount: jest.Mock
+  getIndexName: jest.Mock
+  createIndex: jest.Mock
+  getRecordMetadataByIds: jest.Mock
+  markRecordsSeen: jest.Mock
+  insertRecord: jest.Mock
+  deleteRecords: jest.Mock
+  deleteUnseenRecords: jest.Mock
+  dropIndex: jest.Mock
+  cleanIndexes: jest.Mock
+  dropAllIndexes: jest.Mock
+}
+
+interface FilesContentParserMock {
+  allPaths: jest.Mock
+}
+
+interface FileMetadataMock {
+  id: number
+  path: string
+  name: string
+  mime: string
+  size: number
+  mtime: number
+  realPath: string
+  extension: string
+}
 
 describe(FilesContentIndexer.name, () => {
   let service: FilesContentIndexer
-  let cache: {
-    has: jest.Mock
-    keys: jest.Mock
-    get: jest.Mock
-    set: jest.Mock
-    del: jest.Mock
-  }
-  let filesIndexer: {
-    indexesCount: jest.Mock
-    getIndexName: jest.Mock
-    createIndex: jest.Mock
-    getRecordStats: jest.Mock
-    insertRecord: jest.Mock
-    deleteRecords: jest.Mock
-    dropIndex: jest.Mock
-    cleanIndexes: jest.Mock
-    dropAllIndexes: jest.Mock
-  }
-  let filesParser: {
-    allPaths: jest.Mock
-  }
+  let cache: CacheMock
+  let filesIndexer: FilesContentStoreMock
+  let filesParser: FilesContentParserMock
 
   const asyncGen = <T>(items: T[]) =>
     (async function* () {
@@ -47,6 +68,49 @@ describe(FilesContentIndexer.name, () => {
         yield item
       }
     })()
+
+  const parsePath = (overrides: Partial<FileParseContext> = {}): FileParseContext => ({
+    realPath: '/root',
+    pathPrefix: 'files/personal',
+    isDir: true,
+    ...overrides
+  })
+
+  const parseContentPath = (overrides: Partial<FileParseContentPath> = {}): FileParseContentPath => ({
+    id: 1,
+    type: FILE_REPOSITORY.USER,
+    paths: [parsePath({ realPath: '/u/john' })],
+    ...overrides
+  })
+
+  const contentContext = (overrides: Partial<FileContentIndexContext> = {}): FileContentIndexContext => ({
+    indexName: 'user_1',
+    pathPrefix: 'files/personal',
+    regexBasePath: /^\/?data\/base\/?/,
+    ...overrides
+  })
+
+  const fileMetadata = (overrides: Partial<FileMetadataMock> = {}): FileMetadataMock => ({
+    id: 3,
+    path: 'files/personal',
+    name: 'new.txt',
+    mime: 'text-plain',
+    size: 30,
+    mtime: 1700000000000,
+    realPath: '/root/new.txt',
+    extension: 'txt',
+    ...overrides
+  })
+
+  const ocrManager = (overrides: Partial<{ worker: any; start: jest.Mock; stop: jest.Mock }> = {}) => ({
+    worker: null,
+    start: jest.fn().mockResolvedValue(null),
+    stop: jest.fn().mockResolvedValue(undefined),
+    ...overrides
+  })
+
+  const indexFiles = (indexSuffix = 'user_1', paths: FileParseContext[] = [parsePath()]) =>
+    (service as any).indexFiles(indexSuffix, paths) as Promise<void>
 
   beforeEach(async () => {
     cache = {
@@ -60,22 +124,24 @@ describe(FilesContentIndexer.name, () => {
       indexesCount: jest.fn().mockResolvedValue(0),
       getIndexName: jest.fn((suffix: string) => `files_content_${suffix}`),
       createIndex: jest.fn().mockResolvedValue(true),
-      getRecordStats: jest.fn().mockResolvedValue(new Map()),
-      insertRecord: jest.fn().mockResolvedValue(undefined),
+      getRecordMetadataByIds: jest.fn().mockResolvedValue(new Map()),
+      markRecordsSeen: jest.fn().mockResolvedValue(true),
+      insertRecord: jest.fn().mockResolvedValue(true),
       deleteRecords: jest.fn().mockResolvedValue(undefined),
+      deleteUnseenRecords: jest.fn().mockResolvedValue(0),
       dropIndex: jest.fn().mockResolvedValue(true),
       cleanIndexes: jest.fn().mockResolvedValue(undefined),
       dropAllIndexes: jest.fn().mockResolvedValue(undefined)
     }
     filesParser = {
-      allPaths: jest.fn().mockReturnValue(asyncGen([]))
+      allPaths: jest.fn().mockResolvedValue([])
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FilesContentIndexer,
         { provide: Cache, useValue: cache },
         { provide: FilesContentStore, useValue: filesIndexer },
-        { provide: FilesParser, useValue: filesParser }
+        { provide: FilesContentParser, useValue: filesParser }
       ]
     }).compile()
 
@@ -98,31 +164,41 @@ describe(FilesContentIndexer.name, () => {
     expect(cache.has).toHaveBeenCalledWith(CACHE_INDEXING_RUNNING_KEY)
   })
 
-  it('should reset running state in cache', async () => {
-    await service.resetRunningState()
+  it('should reset indexing runtime state in cache', async () => {
+    await service.resetIndexingRuntimeState()
     expect(cache.del).toHaveBeenCalledWith(CACHE_INDEXING_RUNNING_KEY)
+    expect(cache.del).toHaveBeenCalledWith(CACHE_INDEXING_FULL_RUN_REQUEST_KEY)
   })
 
-  it('should start indexing only when no run is active', async () => {
+  it('should request full indexing only when no run is active', async () => {
     cache.has.mockResolvedValueOnce(false)
-    const parseSpy = jest.spyOn(service, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
+    const parseSpy = jest.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
 
     await expect(service.startIndexing()).resolves.toBe(true)
-    expect(parseSpy).toHaveBeenCalledTimes(1)
+    expect(parseSpy).not.toHaveBeenCalled()
+    expect(cache.set).toHaveBeenCalledWith(CACHE_INDEXING_FULL_RUN_REQUEST_KEY, expect.any(Number), CACHE_INDEXING_FULL_RUN_REQUEST_TTL)
   })
 
   it('should not start indexing when a run is already active', async () => {
     cache.has.mockResolvedValueOnce(true)
-    const parseSpy = jest.spyOn(service, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
+    const parseSpy = jest.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
 
     await expect(service.startIndexing()).resolves.toBe(false)
     expect(parseSpy).not.toHaveBeenCalled()
+    expect(cache.set).not.toHaveBeenCalledWith(CACHE_INDEXING_FULL_RUN_REQUEST_KEY, expect.any(Number), CACHE_INDEXING_FULL_RUN_REQUEST_TTL)
+  })
+
+  it('should request full indexing without checking active runs', async () => {
+    await expect(service.requestFullIndexing()).resolves.toBe(true)
+    expect(cache.has).not.toHaveBeenCalled()
+    expect(cache.set).toHaveBeenCalledWith(CACHE_INDEXING_FULL_RUN_REQUEST_KEY, expect.any(Number), CACHE_INDEXING_FULL_RUN_REQUEST_TTL)
   })
 
   it('should stop indexing by setting STOPPING state', async () => {
     cache.has.mockResolvedValueOnce(true)
 
     await expect(service.stopIndexing()).resolves.toBe(true)
+    expect(cache.del).toHaveBeenCalledWith(CACHE_INDEXING_FULL_RUN_REQUEST_KEY)
     expect(cache.set).toHaveBeenCalledWith(CACHE_INDEXING_RUNNING_KEY, IndexingState.STOPPING, CACHE_INDEXING_RUNNING_TTL)
   })
 
@@ -130,6 +206,15 @@ describe(FilesContentIndexer.name, () => {
     cache.has.mockResolvedValueOnce(false)
 
     await expect(service.stopIndexing()).resolves.toBe(false)
+    expect(cache.set).not.toHaveBeenCalledWith(CACHE_INDEXING_RUNNING_KEY, IndexingState.STOPPING, CACHE_INDEXING_RUNNING_TTL)
+    expect(cache.del).not.toHaveBeenCalledWith(CACHE_INDEXING_FULL_RUN_REQUEST_KEY)
+  })
+
+  it('should cancel a pending full indexing request when no run is active', async () => {
+    cache.has.mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+
+    await expect(service.stopIndexing()).resolves.toBe(true)
+    expect(cache.del).toHaveBeenCalledWith(CACHE_INDEXING_FULL_RUN_REQUEST_KEY)
     expect(cache.set).not.toHaveBeenCalledWith(CACHE_INDEXING_RUNNING_KEY, IndexingState.STOPPING, CACHE_INDEXING_RUNNING_TTL)
   })
 
@@ -140,6 +225,18 @@ describe(FilesContentIndexer.name, () => {
     await expect(service.status()).resolves.toEqual({
       indexesCount: 7,
       state: IndexingState.RUNNING,
+      lastFullRunAt: 1700000000000,
+      lastPartialRunAt: 1700000500000
+    })
+  })
+
+  it('should return pending indexing status when a full run is pending', async () => {
+    cache.get.mockResolvedValueOnce(null).mockResolvedValueOnce(1700000000000).mockResolvedValueOnce(1700000500000)
+    cache.has.mockResolvedValueOnce(true)
+
+    await expect(service.status()).resolves.toEqual({
+      indexesCount: 0,
+      state: IndexingState.PENDING,
       lastFullRunAt: 1700000000000,
       lastPartialRunAt: 1700000500000
     })
@@ -169,9 +266,9 @@ describe(FilesContentIndexer.name, () => {
       `${CACHE_INDEXING_EVENT_PREFIX}-share-3`,
       `${CACHE_INDEXING_EVENT_PREFIX}-unknown-9`
     ])
-    const parseSpy = jest.spyOn(service, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
+    const parseSpy = jest.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
 
-    await service.updateIndexEntries()
+    await service.processIndexingQueue()
 
     expect(parseSpy).toHaveBeenCalledWith([1], [2], [3])
     expect(cache.del).toHaveBeenCalledWith(`${CACHE_INDEXING_EVENT_PREFIX}-user-1`)
@@ -180,198 +277,231 @@ describe(FilesContentIndexer.name, () => {
     expect(cache.del).toHaveBeenCalledWith(`${CACHE_INDEXING_EVENT_PREFIX}-unknown-9`)
   })
 
+  it('should consume pending full indexing request before partial indexing events', async () => {
+    cache.has.mockResolvedValueOnce(true)
+    cache.keys.mockResolvedValueOnce([`${CACHE_INDEXING_EVENT_PREFIX}-user-1`])
+    const parseSpy = jest.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
+
+    await service.processIndexingQueue()
+
+    expect(cache.del).toHaveBeenCalledWith(CACHE_INDEXING_FULL_RUN_REQUEST_KEY)
+    expect(parseSpy).toHaveBeenCalledWith()
+    expect(cache.keys).not.toHaveBeenCalled()
+    expect(cache.del).not.toHaveBeenCalledWith(`${CACHE_INDEXING_EVENT_PREFIX}-user-1`)
+  })
+
   it('should only clean keys when no valid indexing repository type is found', async () => {
     cache.keys.mockResolvedValueOnce([`${CACHE_INDEXING_EVENT_PREFIX}-unknown-10`])
-    const parseSpy = jest.spyOn(service, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
+    const parseSpy = jest.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
 
-    await service.updateIndexEntries()
+    await service.processIndexingQueue()
 
     expect(parseSpy).not.toHaveBeenCalled()
     expect(cache.del).toHaveBeenCalledWith(`${CACHE_INDEXING_EVENT_PREFIX}-unknown-10`)
   })
 
   it('should start and stop OCR manager, index all parser paths and clean stale indexes on full reindex', async () => {
-    const ocrManager = {
-      worker: null,
-      start: jest.fn().mockResolvedValue(null),
-      stop: jest.fn().mockResolvedValue(undefined)
-    }
-    jest.spyOn(OCRManager, 'getInstance').mockReturnValue(ocrManager as any)
-    filesParser.allPaths.mockReturnValue(
-      asyncGen([
-        [1, FILE_REPOSITORY.USER, [{ realPath: '/u/john', pathPrefix: 'files/personal', isDir: true }]],
-        [5, FILE_REPOSITORY.SPACE, [{ realPath: '/s/project', pathPrefix: 'files/project', isDir: true }]]
-      ] as [number, FILE_REPOSITORY, FileParseContext[]][])
-    )
+    const manager = ocrManager()
+    jest.spyOn(OCRManager, 'getInstance').mockReturnValue(manager as any)
+    filesParser.allPaths.mockResolvedValue([
+      parseContentPath(),
+      parseContentPath({ id: 5, type: FILE_REPOSITORY.SPACE, paths: [parsePath({ realPath: '/s/project', pathPrefix: 'files/project' })] })
+    ] as FileParseContentPath[])
     const indexSpy = jest.spyOn(service as any, 'indexFiles').mockResolvedValue(undefined)
 
-    await service.parseAndIndexAllFiles()
+    await (service as any).parseAndIndexAllFiles()
 
-    expect(ocrManager.start).toHaveBeenCalledTimes(1)
+    expect(manager.start).toHaveBeenCalledTimes(1)
     expect(indexSpy).toHaveBeenNthCalledWith(1, 'user_1', [{ realPath: '/u/john', pathPrefix: 'files/personal', isDir: true }])
     expect(indexSpy).toHaveBeenNthCalledWith(2, 'space_5', [{ realPath: '/s/project', pathPrefix: 'files/project', isDir: true }])
     expect(filesIndexer.cleanIndexes).toHaveBeenCalledWith(['user_1', 'space_5'])
     expect(cache.set).toHaveBeenCalledWith(CACHE_INDEXING_LAST_RUN_KEY, expect.any(Number), 0)
-    expect(ocrManager.stop).toHaveBeenCalledTimes(1)
+    expect(manager.stop).toHaveBeenCalledTimes(1)
   })
 
   it('should stop parsing early when STOPPING state is detected', async () => {
-    const ocrManager = {
-      worker: null,
-      start: jest.fn().mockResolvedValue(null),
-      stop: jest.fn().mockResolvedValue(undefined)
-    }
-    jest.spyOn(OCRManager, 'getInstance').mockReturnValue(ocrManager as any)
-    filesParser.allPaths.mockReturnValue(
-      asyncGen([[1, FILE_REPOSITORY.USER, [{ realPath: '/u/john', pathPrefix: 'files/personal', isDir: true }]]] as [
-        number,
-        FILE_REPOSITORY,
-        FileParseContext[]
-      ][])
-    )
+    const manager = ocrManager()
+    jest.spyOn(OCRManager, 'getInstance').mockReturnValue(manager as any)
+    filesParser.allPaths.mockResolvedValue([parseContentPath()] as FileParseContentPath[])
     cache.get
       .mockResolvedValueOnce(IndexingState.STOPPING) // setRunning(true) guard
       .mockResolvedValueOnce(IndexingState.STOPPING) // loop STOPPING check
     const indexSpy = jest.spyOn(service as any, 'indexFiles').mockResolvedValue(undefined)
 
-    await service.parseAndIndexAllFiles()
+    await (service as any).parseAndIndexAllFiles()
 
     expect(indexSpy).not.toHaveBeenCalled()
     expect(filesIndexer.cleanIndexes).not.toHaveBeenCalled()
-    expect(ocrManager.stop).toHaveBeenCalledTimes(1)
+    expect(manager.stop).toHaveBeenCalledTimes(1)
   })
 
   it('should continue parseAndIndexAllFiles when OCR startup fails and skip cleanIndexes for incremental runs', async () => {
-    const ocrManager = {
-      worker: null,
-      start: jest.fn().mockRejectedValue(new Error('ocr init failed')),
-      stop: jest.fn().mockResolvedValue(undefined)
-    }
-    jest.spyOn(OCRManager, 'getInstance').mockReturnValue(ocrManager as any)
-    filesParser.allPaths.mockReturnValue(
-      asyncGen([[9, FILE_REPOSITORY.USER, [{ realPath: '/u/jane', pathPrefix: 'files/personal', isDir: true }]]] as any)
-    )
+    const manager = ocrManager({ start: jest.fn().mockRejectedValue(new Error('ocr init failed')) })
+    jest.spyOn(OCRManager, 'getInstance').mockReturnValue(manager as any)
+    filesParser.allPaths.mockResolvedValue([parseContentPath({ id: 9, paths: [parsePath({ realPath: '/u/jane' })] })] as FileParseContentPath[])
     jest.spyOn(service as any, 'indexFiles').mockResolvedValue(undefined)
 
-    await service.parseAndIndexAllFiles([9], [], [])
+    await (service as any).parseAndIndexAllFiles([9], [], [])
 
     expect(filesIndexer.cleanIndexes).not.toHaveBeenCalled()
-    expect(ocrManager.stop).toHaveBeenCalledTimes(1)
+    expect(manager.stop).toHaveBeenCalledTimes(1)
   })
 
   it('should skip indexFiles when index creation fails', async () => {
     filesIndexer.createIndex.mockResolvedValueOnce(false)
 
-    await (service as any).indexFiles('user_7', [{ realPath: '/u/john', pathPrefix: 'files/personal', isDir: true }])
+    await indexFiles('user_7', [parsePath({ realPath: '/u/john' })])
 
-    expect(filesIndexer.getRecordStats).not.toHaveBeenCalled()
+    expect(filesIndexer.getRecordMetadataByIds).not.toHaveBeenCalled()
     expect(filesIndexer.insertRecord).not.toHaveBeenCalled()
     expect(filesIndexer.deleteRecords).not.toHaveBeenCalled()
+    expect(filesIndexer.deleteUnseenRecords).not.toHaveBeenCalled()
     expect(filesIndexer.dropIndex).not.toHaveBeenCalled()
   })
 
   it('should drop empty index when there is no db data and no indexed records', async () => {
-    filesIndexer.getRecordStats.mockResolvedValueOnce(new Map())
-    jest.spyOn(service as any, 'parseFiles').mockReturnValue(asyncGen([]))
+    jest.spyOn(service as any, 'parseFileMetadata').mockReturnValue(asyncGen([]))
 
-    await (service as any).indexFiles('user_8', [{ realPath: '/empty', pathPrefix: 'files/personal', isDir: true }])
+    await indexFiles('user_8', [parsePath({ realPath: '/empty' })])
 
     expect(filesIndexer.dropIndex).toHaveBeenCalledWith('files_content_user_8')
   })
 
-  it('should insert parsed records and delete stale entries in indexFiles', async () => {
-    filesIndexer.getRecordStats.mockResolvedValueOnce(
-      new Map([
-        [1, { path: 'files/personal', name: 'old.txt', size: 10 }],
-        [2, { path: 'files/personal', name: 'keep.txt', size: 20 }]
-      ])
-    )
-    jest.spyOn(service as any, 'parseFiles').mockImplementation(async function* (_dir: string, context: any) {
-      context.fs.add(2)
-      context.fs.add(3)
-      yield {
-        id: 3,
-        path: 'files/personal',
-        name: 'new.txt',
-        mime: 'text-plain',
-        size: 30,
-        mtime: 1700000000000,
-        content: 'indexed'
-      }
+  it('should insert parsed records, mark unchanged records and delete unseen entries in indexFiles', async () => {
+    filesIndexer.getRecordMetadataByIds.mockResolvedValueOnce(new Map([[2, { path: 'files/personal', name: 'keep.txt', size: 20 }]]))
+    filesIndexer.deleteUnseenRecords.mockResolvedValueOnce(1)
+    jest.spyOn(service as any, 'parseFileMetadata').mockImplementation(async function* () {
+      yield fileMetadata({
+        id: 2,
+        name: 'keep.txt',
+        size: 20,
+        realPath: '/root/keep.txt'
+      })
+      yield fileMetadata()
     })
+    jest.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed')
 
-    await (service as any).indexFiles('user_9', [{ realPath: '/root', pathPrefix: 'files/personal', isDir: true }])
+    await indexFiles('user_9')
 
     expect(filesIndexer.insertRecord).toHaveBeenCalledWith(
       'files_content_user_9',
-      expect.objectContaining({ id: 3, name: 'new.txt', content: 'indexed' })
+      expect.objectContaining({ id: 3, name: 'new.txt', content: 'indexed' }),
+      expect.any(String)
     )
-    expect(filesIndexer.deleteRecords).toHaveBeenCalledWith('files_content_user_9', [1])
+    expect(filesIndexer.markRecordsSeen).toHaveBeenCalledWith('files_content_user_9', [2], expect.any(String))
+    expect(filesIndexer.deleteUnseenRecords).toHaveBeenCalledWith('files_content_user_9', expect.any(String))
   })
 
-  it('should recursively parse directories and yield file contents only', async () => {
+  it('should not delete unseen records when marking seen records fails', async () => {
+    filesIndexer.getRecordMetadataByIds.mockResolvedValueOnce(new Map([[2, { path: 'files/personal', name: 'keep.txt', size: 20 }]]))
+    filesIndexer.markRecordsSeen.mockResolvedValueOnce(false)
+    jest.spyOn(service as any, 'parseFileMetadata').mockReturnValue(
+      asyncGen([
+        fileMetadata({
+          id: 2,
+          name: 'keep.txt',
+          size: 20,
+          realPath: '/root/keep.txt'
+        })
+      ])
+    )
+
+    await expect(indexFiles('user_10')).rejects.toThrow('unable to mark records as seen')
+    expect(filesIndexer.deleteUnseenRecords).not.toHaveBeenCalled()
+  })
+
+  it('should not mark new records as seen when insert fails', async () => {
+    filesIndexer.getRecordMetadataByIds.mockResolvedValueOnce(new Map())
+    filesIndexer.insertRecord.mockResolvedValueOnce(false)
+    filesIndexer.deleteUnseenRecords.mockResolvedValueOnce(1)
+    jest.spyOn(service as any, 'parseFileMetadata').mockReturnValue(asyncGen([fileMetadata()]))
+    jest.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed')
+
+    await indexFiles('user_11')
+
+    expect(filesIndexer.insertRecord).toHaveBeenCalledWith(
+      'files_content_user_11',
+      expect.objectContaining({ id: 3, name: 'new.txt', content: 'indexed' }),
+      expect.any(String)
+    )
+    expect(filesIndexer.markRecordsSeen).toHaveBeenCalledWith('files_content_user_11', [], expect.any(String))
+    expect(filesIndexer.deleteUnseenRecords).toHaveBeenCalledWith('files_content_user_11', expect.any(String))
+  })
+
+  it('should keep existing records seen when insert fails', async () => {
+    filesIndexer.getRecordMetadataByIds.mockResolvedValueOnce(new Map([[3, { path: 'files/personal', name: 'old.txt', size: 1 }]]))
+    filesIndexer.insertRecord.mockResolvedValueOnce(false)
+    filesIndexer.deleteUnseenRecords.mockResolvedValueOnce(1)
+    jest.spyOn(service as any, 'parseFileMetadata').mockReturnValue(asyncGen([fileMetadata()]))
+    jest.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed')
+
+    await indexFiles('user_12')
+
+    expect(filesIndexer.insertRecord).toHaveBeenCalledWith(
+      'files_content_user_12',
+      expect.objectContaining({ id: 3, name: 'new.txt', content: 'indexed' }),
+      expect.any(String)
+    )
+    expect(filesIndexer.markRecordsSeen).toHaveBeenCalledWith('files_content_user_12', [3], expect.any(String))
+    expect(filesIndexer.deleteUnseenRecords).toHaveBeenCalledWith('files_content_user_12', expect.any(String))
+  })
+
+  it('should recursively parse directories and yield file metadata only', async () => {
     const readdirSpy = jest.spyOn(fs, 'readdir')
     readdirSpy.mockResolvedValueOnce([
       { parentPath: '/root', name: 'sub', isDirectory: () => true },
       { parentPath: '/root', name: 'a.txt', isDirectory: () => false }
     ] as any)
     readdirSpy.mockResolvedValueOnce([{ parentPath: '/root/sub', name: 'b.txt', isDirectory: () => false }] as any)
-    jest.spyOn(service as any, 'analyzeFile').mockImplementation(async (realPath: string) => ({
-      id: realPath.length,
-      path: 'files/personal',
-      name: path.basename(realPath),
-      mime: 'text-plain',
-      size: 1,
-      mtime: 1,
-      content: 'ok'
-    }))
+    jest.spyOn(service as any, 'getFileMetadata').mockImplementation(async (realPath: string) =>
+      fileMetadata({
+        id: realPath.length,
+        name: path.basename(realPath),
+        realPath
+      })
+    )
     const yielded: any[] = []
 
-    for await (const fileContent of (service as any).parseFiles('/root', {
-      indexSuffix: 'user_1',
-      pathPrefix: 'files/personal',
-      regexBasePath: /^\/?root\/?/,
-      db: new Map(),
-      fs: new Set()
-    })) {
-      yielded.push(fileContent)
+    for await (const metadata of (service as any).parseFileMetadata('/root', contentContext({ regexBasePath: /^\/?root\/?/ }))) {
+      yielded.push(metadata)
     }
 
     expect(yielded.map((f) => f.name)).toEqual(['b.txt', 'a.txt'])
   })
 
-  it('should skip non-indexable files and unchanged files in analyzeFile', async () => {
+  it('should skip non-indexable files in getFileMetadata', async () => {
     const statSpy = jest.spyOn(fs, 'stat')
-    const context = {
-      indexSuffix: 'user_1',
-      pathPrefix: 'files/personal',
-      regexBasePath: /^\/?data\/?/,
-      db: new Map<number, { name: string; path: string; size: number }>([[123, { path: 'files/personal/sub', name: 'doc.txt', size: 12 }]]),
-      fs: new Set<number>()
-    }
+    const context = contentContext({ regexBasePath: /^\/?data\/?/ })
 
-    const unsupported = await (service as any).analyzeFile('/data/image.png', context, false)
+    const unsupported = await (service as any).getFileMetadata('/data/image.png', context, false)
     expect(unsupported).toBeNull()
     expect(statSpy).not.toHaveBeenCalled()
-
-    statSpy.mockResolvedValueOnce({
-      ino: 123,
-      size: 12,
-      mtime: new Date('2024-01-01T00:00:00.000Z')
-    } as any)
-    const unchanged = await (service as any).analyzeFile('/data/sub/doc.txt', context, false)
-    expect(unchanged).toBeNull()
-    expect(context.fs.has(123)).toBe(true)
   })
 
-  it('should build indexed file content in analyzeFile for changed files', async () => {
-    const context = {
-      indexSuffix: 'user_1',
-      pathPrefix: 'files/personal',
-      regexBasePath: /^\/?data\/base\/?/,
-      db: new Map<number, { name: string; path: string; size: number }>(),
-      fs: new Set<number>()
-    }
+  it('should build file metadata in getFileMetadata for indexable files', async () => {
+    const context = contentContext()
+    jest.spyOn(fs, 'stat').mockResolvedValueOnce({
+      ino: 200,
+      size: 42,
+      mtime: new Date('2024-01-02T03:04:05.000Z')
+    } as any)
+
+    const fileMetadata = await (service as any).getFileMetadata('/data/base/sub/doc.txt', context, false)
+
+    expect(fileMetadata).toEqual({
+      id: 200,
+      path: 'files/personal/sub',
+      name: 'doc.txt',
+      mime: 'text-plain',
+      size: 42,
+      mtime: new Date('2024-01-02T03:04:05.000Z').getTime(),
+      realPath: '/data/base/sub/doc.txt',
+      extension: 'txt'
+    })
+  })
+
+  it('should build indexed file content from file metadata', async () => {
+    const context = contentContext()
     jest.spyOn(fs, 'stat').mockResolvedValueOnce({
       ino: 200,
       size: 42,
@@ -379,7 +509,8 @@ describe(FilesContentIndexer.name, () => {
     } as any)
     jest.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed content')
 
-    const fileContent = await (service as any).analyzeFile('/data/base/sub/doc.txt', context, false)
+    const fileMetadata = await (service as any).getFileMetadata('/data/base/sub/doc.txt', context, false)
+    const fileContent = await (service as any).buildFileContent(fileMetadata)
 
     expect(fileContent).toEqual({
       id: 200,
@@ -390,7 +521,6 @@ describe(FilesContentIndexer.name, () => {
       mtime: new Date('2024-01-02T03:04:05.000Z').getTime(),
       content: 'indexed content'
     })
-    expect(context.fs.has(200)).toBe(true)
   })
 
   it('should parse content and return null when parser returns empty or throws', async () => {
