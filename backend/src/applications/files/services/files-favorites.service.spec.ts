@@ -12,6 +12,7 @@ describe(FilesFavorites.name, () => {
     getFavorites: jest.Mock
     getOrCreateFileForFavorite: jest.Mock
     addFavorite: jest.Mock
+    getFavoriteForFile: jest.Mock
     removeFavorite: jest.Mock
   }
   let spacesQueries: { spaceIds: jest.Mock }
@@ -24,6 +25,7 @@ describe(FilesFavorites.name, () => {
       getFavorites: jest.fn().mockResolvedValue([]),
       getOrCreateFileForFavorite: jest.fn().mockResolvedValue(99),
       addFavorite: jest.fn().mockResolvedValue(undefined),
+      getFavoriteForFile: jest.fn().mockResolvedValue({ id: 99, name: 'test.txt', navPath: 'files/personal' }),
       removeFavorite: jest.fn().mockResolvedValue(undefined)
     }
     spacesQueries = { spaceIds: jest.fn().mockResolvedValue([]) }
@@ -64,13 +66,16 @@ describe(FilesFavorites.name, () => {
     expect(filesQueries.getFavorites).toHaveBeenCalledWith(user.id, [], [], 1000)
   })
 
-  it('addFavorite calls getOrCreateFileForFavorite, then addFavorite, and returns { id }', async () => {
+  it('addFavorite calls getOrCreateFileForFavorite, addFavorite, getFavoriteForFile and returns FileFavorite', async () => {
     const dto: FavoriteFileDto = { path: '.', name: 'test.txt', isDir: false }
+    const favorite = { id: 99, name: 'test.txt', navPath: 'files/personal' }
     filesQueries.getOrCreateFileForFavorite.mockResolvedValue(99)
+    filesQueries.getFavoriteForFile.mockResolvedValue(favorite)
     const result = await service.addFavorite(user, dto)
     expect(filesQueries.getOrCreateFileForFavorite).toHaveBeenCalledWith(user.id, dto)
     expect(filesQueries.addFavorite).toHaveBeenCalledWith(user.id, 99)
-    expect(result).toEqual({ id: 99 })
+    expect(filesQueries.getFavoriteForFile).toHaveBeenCalledWith(user.id, 99)
+    expect(result).toBe(favorite)
   })
 
   it('removeFavorite delegates to filesQueries with userId and fileId', async () => {

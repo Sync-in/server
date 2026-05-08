@@ -19,10 +19,10 @@ export class FilesFavorites {
     return this.filesQueries.getFavorites(user.id, spaceIds, shareIds, Math.min(limit ?? 100, 1000))
   }
 
-  async addFavorite(user: UserModel, dto: FavoriteFileDto): Promise<{ id: number }> {
+  async addFavorite(user: UserModel, dto: FavoriteFileDto): Promise<FileFavorite> {
     const id = await this.filesQueries.getOrCreateFileForFavorite(user.id, dto)
     await this.filesQueries.addFavorite(user.id, id)
-    return { id }
+    return this.filesQueries.getFavoriteForFile(user.id, id)
   }
 
   removeFavorite(user: UserModel, fileId: number): Promise<void> {

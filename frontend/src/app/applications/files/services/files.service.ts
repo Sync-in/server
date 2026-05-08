@@ -243,10 +243,10 @@ export class FilesService {
         spaceExternalRootId: file.spaceExternalRootId || undefined,
         shareExternalId: file.shareExternalId || undefined,
       }
-      this.http.post<{ id: number }>(API_FILES_FAVORITE, dto).subscribe({
-        next: ({ id }) => {
-          if (file.id !== id) file.id = id
-          this.loadFavorites(100)
+      this.http.post<FileFavorite>(API_FILES_FAVORITE, dto).subscribe({
+        next: (favorite) => {
+          if (file.id !== favorite.id) file.id = favorite.id
+          this.store.filesFavorites.update((favorites) => [new FileFavoriteModel(favorite), ...favorites])
         },
         error: (e: HttpErrorResponse) => {
           file.isFavorite = false

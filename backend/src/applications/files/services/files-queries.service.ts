@@ -389,6 +389,33 @@ export class FilesQueries {
       .values({ userId, fileId })
   }
 
+  async getFavoriteForFile(userId: number, fileId: number): Promise<FileFavorite | undefined> {
+    const [row] = await this.db
+      .select({
+        id: files.id,
+        name: files.name,
+        isDir: files.isDir,
+        mime: files.mime,
+        size: files.size,
+        mtime: files.mtime,
+        ctime: files.ctime,
+        isFavorite: sql<boolean>`true`.mapWith(Boolean),
+        navPath: sql<string>`CASE
+          WHEN ${files.ownerId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.FILES}, '/', ${SPACE_ALIAS.PERSONAL}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
+          WHEN ${files.spaceId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.FILES}, '/', ${spaces.alias}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
+          WHEN ${files.shareExternalId} IS NOT NULL THEN CONCAT(${SPACE_REPOSITORY.SHARES}, '/', ${shares.alias}, CASE WHEN ${files.path} != '.' THEN CONCAT('/', ${files.path}) ELSE '' END)
+          ELSE ''
+        END`
+      })
+      .from(filesFavorites)
+      .innerJoin(files, eq(files.id, filesFavorites.fileId))
+      .leftJoin(spaces, eq(spaces.id, files.spaceId))
+      .leftJoin(shares, eq(shares.id, files.shareExternalId))
+      .where(and(eq(filesFavorites.userId, userId), eq(filesFavorites.fileId, fileId)))
+      .limit(1)
+    return row
+  }
+
   async removeFavorite(userId: number, fileId: number): Promise<void> {
     await this.db
       .delete(filesFavorites)
