@@ -24,13 +24,14 @@ export class FileFavoriteModel implements FileFavorite {
     Object.assign(this, props)
     this.mimeUrl = getAssetsMimeUrl(this.mime)
     const parts = this.navPath?.split('/') ?? []
-    const alias = parts[1]
-    if (alias === SPACE_ALIAS.PERSONAL) {
-      this.icon = SPACES_ICON.PERSONAL
-      this.iconClass = 'primary'
-    } else if (alias === SPACE_REPOSITORY.SHARES) {
+    const repo = parts[0]   // 'files' or 'shares'
+    const alias = parts[1]  // 'personal', space alias, or share alias
+    if (repo === SPACE_REPOSITORY.SHARES) {
       this.icon = SPACES_ICON.SHARES
       this.iconClass = 'purple'
+    } else if (alias === SPACE_ALIAS.PERSONAL) {
+      this.icon = SPACES_ICON.PERSONAL
+      this.iconClass = 'primary'
     } else {
       this.icon = SPACES_ICON.SPACES
       this.iconClass = 'purple'
