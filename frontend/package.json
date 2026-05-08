@@ -12,7 +12,7 @@
     "prewatch": "NODE_ENV=development npm run build-assets",
     "prebuild": "npm run build-assets",
     "ng": "ng",
-    "start": "ng serve",
+    "start": "ng serve --proxy-config proxy.conf.json",
     "build": "ng build",
     "build:dev": "ng build --configuration development",
     "lint": "ng lint",
