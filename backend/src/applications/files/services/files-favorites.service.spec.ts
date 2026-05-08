@@ -74,7 +74,7 @@ describe(FilesFavorites.name, () => {
     filesQueries.getOrCreateFileForFavorite.mockResolvedValue(99)
     filesQueries.getFavoriteForFile.mockResolvedValue(favorite)
     const result = await service.addFavorite(user, dto)
-    expect(filesQueries.getOrCreateFileForFavorite).toHaveBeenCalledWith(user.id, dto)
+    expect(filesQueries.getOrCreateFileForFavorite).toHaveBeenCalledWith(dto)
     expect(filesQueries.addFavorite).toHaveBeenCalledWith(user.id, 99)
     expect(filesQueries.getFavoriteForFile).toHaveBeenCalledWith(user.id, 99)
     expect(result).toBe(favorite)

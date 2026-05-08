@@ -330,20 +330,22 @@ export class FilesQueries {
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
       .leftJoin(spaces, eq(spaces.id, files.spaceId))
       .leftJoin(shares, eq(shares.id, files.shareExternalId))
-      .where(and(
-        eq(filesFavorites.userId, userId),
-        eq(files.inTrash, false),
-        or(
-          eq(files.ownerId, userId),
-          ...(spaceIds.length ? [inArray(files.spaceId, spaceIds)] : []),
-          ...(shareIds.length ? [inArray(files.shareExternalId, shareIds)] : [])
+      .where(
+        and(
+          eq(filesFavorites.userId, userId),
+          eq(files.inTrash, false),
+          or(
+            eq(files.ownerId, userId),
+            ...(spaceIds.length ? [inArray(files.spaceId, spaceIds)] : []),
+            ...(shareIds.length ? [inArray(files.shareExternalId, shareIds)] : [])
+          )
         )
-      ))
+      )
       .orderBy(desc(filesFavorites.createdAt))
       .limit(limit)
   }
 
-  async getOrCreateFileForFavorite(userId: number, dto: FavoriteFileDto): Promise<number> {
+  async getOrCreateFileForFavorite(dto: FavoriteFileDto): Promise<number> {
     if (dto.id && dto.id > 0) return dto.id
     const dbFile = {
       ownerId: dto.ownerId || null,
@@ -351,7 +353,7 @@ export class FilesQueries {
       spaceExternalRootId: dto.spaceExternalRootId || null,
       shareExternalId: dto.shareExternalId || null,
       inTrash: false as const,
-      path: dto.path,
+      path: dto.path
     }
     // Try to find existing file by path + name + isDir + storage context
     const [existing] = await this.db
@@ -369,16 +371,13 @@ export class FilesQueries {
         mime: dto.mime ?? null,
         size: dto.size ?? 0,
         mtime: dto.mtime ?? 0,
-        ctime: dto.ctime ?? 0,
+        ctime: dto.ctime ?? 0
       } as File)
     )
   }
 
   async addFavorite(userId: number, fileId: number): Promise<void> {
-    await this.db
-      .insert(filesFavorites)
-      .ignore()
-      .values({ userId, fileId })
+    await this.db.insert(filesFavorites).ignore().values({ userId, fileId })
   }
 
   async getFavoriteForFile(userId: number, fileId: number): Promise<FileFavorite | undefined> {
@@ -409,9 +408,7 @@ export class FilesQueries {
   }
 
   async removeFavorite(userId: number, fileId: number): Promise<void> {
-    await this.db
-      .delete(filesFavorites)
-      .where(and(eq(filesFavorites.userId, userId), eq(filesFavorites.fileId, fileId)))
+    await this.db.delete(filesFavorites).where(and(eq(filesFavorites.userId, userId), eq(filesFavorites.fileId, fileId)))
   }
 
   async updateRecents(
