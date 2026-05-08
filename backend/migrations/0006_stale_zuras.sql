@@ -1,1 +1,0 @@
-CREATE INDEX `file_idx` ON `files_favorites` (`fileId`);
