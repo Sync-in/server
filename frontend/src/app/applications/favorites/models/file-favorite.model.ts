@@ -24,8 +24,8 @@ export class FileFavoriteModel implements FileFavorite {
     Object.assign(this, props)
     this.mimeUrl = getAssetsMimeUrl(this.mime)
     const parts = this.navPath?.split('/') ?? []
-    const repo = parts[0]   // 'files' or 'shares'
-    const alias = parts[1]  // 'personal', space alias, or share alias
+    const repo = parts[0] // 'files' or 'shares'
+    const alias = parts[1] // 'personal', space alias, or share alias
     if (repo === SPACE_REPOSITORY.SHARES) {
       this.icon = SPACES_ICON.SHARES
       this.iconClass = 'purple'
