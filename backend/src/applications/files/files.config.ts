@@ -1,8 +1,10 @@
 import { Transform, Type } from 'class-transformer'
 import {
   ArrayNotEmpty,
+  ArrayUnique,
   IsArray,
   IsBoolean,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsNotEmptyObject,
@@ -12,6 +14,8 @@ import {
   ValidateIf,
   ValidateNested
 } from 'class-validator'
+import type { SampleDocumentGroup } from './constants/samples'
+import { SAMPLE_DOCUMENT_GROUPS } from './constants/samples'
 import { CollaboraOnlineConfig } from './editors/collabora-online/collabora-online.config'
 import { OnlyOfficeConfig } from './editors/only-office/only-office.config'
 
@@ -77,6 +81,19 @@ export class FilesConfig {
 
   @IsBoolean()
   showHiddenFiles: boolean = false
+
+  @Transform(({ value }) =>
+    typeof value === 'string'
+      ? value
+          .split(',')
+          .map((v: string) => v.trim())
+          .filter(Boolean)
+      : value
+  )
+  @ArrayUnique()
+  @IsArray()
+  @IsIn(SAMPLE_DOCUMENT_GROUPS, { each: true })
+  sampleDocuments: SampleDocumentGroup[] = [...SAMPLE_DOCUMENT_GROUPS]
 
   @IsNotEmptyObject()
   @ValidateNested()

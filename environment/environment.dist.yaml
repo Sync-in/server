@@ -343,6 +343,11 @@ applications:
     # Show files starting with a dot in the file explorer
     # default: false
     showHiddenFiles: false
+    # Optional document groups shown in the "new document" dialog.
+    # options: `microsoft` | `opendocument`
+    # use [] to only show Text and Markdown
+    # default: [opendocument, microsoft]
+    sampleDocuments: [opendocument, microsoft]
     onlyoffice:
       # enable onlyoffice integration
       # default: false

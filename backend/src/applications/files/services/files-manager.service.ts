@@ -25,7 +25,7 @@ import { CACHE_LOCK_FILE_TTL } from '../constants/cache'
 import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '../constants/compress'
 import { COMPRESSION_EXTENSION, DEFAULT_HIGH_WATER_MARK } from '../constants/files'
 import { FILE_OPERATION } from '../constants/operations'
-import { DOCUMENT_TYPE, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
+import { ALL_DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPES, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
 import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileLock } from '../interfaces/file-lock.interface'
@@ -291,9 +291,13 @@ export class FilesManager {
       await this.filesLockManager.checkConflicts(space.dbFile, DEPTH.RESOURCE, { userId: user.id })
     }
     // use sample documents when possible
-    const fileExtension = path.extname(space.realPath)
-    if (checkDocument && fileExtension !== '.txt' && Object.values(DOCUMENT_TYPE).indexOf(fileExtension) > -1) {
-      const srcSample = path.join(__dirname, `${SAMPLE_PATH_WITHOUT_EXT}${fileExtension}`)
+    const fileExtension = path.extname(space.realPath).slice(1)
+    if (
+      checkDocument &&
+      Object.values(DEFAULT_DOCUMENT_TYPES).indexOf(fileExtension) === -1 &&
+      Object.values(ALL_DOCUMENT_TYPES).indexOf(fileExtension) > -1
+    ) {
+      const srcSample = path.join(__dirname, `${SAMPLE_PATH_WITHOUT_EXT}.${fileExtension}`)
       await copyFileContent(srcSample, space.realPath)
       // emit file event
       FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: space.realPath })

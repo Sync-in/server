@@ -3,13 +3,13 @@ import { Component, ElementRef, EventEmitter, HostListener, inject, Input, OnIni
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCaretDown, faFileAlt, faFolderClosed, faGlobe } from '@fortawesome/free-solid-svg-icons'
-import { DOCUMENT_TYPE } from '@sync-in-server/backend/src/applications/files/constants/samples'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
 import { originalOrderKeyValue } from '../../../../common/utils/functions'
 import { validHttpSchemaRegexp } from '../../../../common/utils/regexp'
 import { LayoutService } from '../../../../layout/layout.service'
+import { StoreService } from '../../../../store/store.service'
 import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 
@@ -30,7 +30,8 @@ export class FilesNewDialogComponent implements OnInit {
   protected fileProp = { title: '', name: '', placeholder: '' }
   protected downloadProp = { title: 'Download from an external link', url: '', placeholder: 'URL (https://...)' }
   protected selectedDocType = 'Text'
-  protected docTypes = DOCUMENT_TYPE
+  private store = inject(StoreService)
+  protected docTypes = this.store.server().files.sampleDocuments
   protected submitted = false
   protected error: string
   private filesService = inject(FilesService)
@@ -40,7 +41,8 @@ export class FilesNewDialogComponent implements OnInit {
       this.fileProp.title = 'Download from URL'
       this.fileProp.placeholder = 'File name'
     } else if (this.inputType === 'file') {
-      this.fileProp.name = `${this.layout.translateString('New document')}.txt`
+      this.selectedDocType = this.docTypes[this.selectedDocType] ? this.selectedDocType : Object.keys(this.docTypes)[0]
+      this.fileProp.name = `${this.layout.translateString('New document')}${this.docTypeExtension(this.selectedDocType)}`
       this.fileProp.title = 'New document'
       this.fileProp.placeholder = 'Document name'
       this.updateFileSelection()
@@ -53,7 +55,7 @@ export class FilesNewDialogComponent implements OnInit {
   onSelectDocType(docType: string) {
     this.selectedDocType = docType
     const pos = this.fileNamePosition()
-    this.fileProp.name = `${this.fileProp.name.substring(0, pos < 0 ? this.fileProp.name.length : pos)}${this.docTypes[docType]}`
+    this.fileProp.name = `${this.fileProp.name.substring(0, pos < 0 ? this.fileProp.name.length : pos)}${this.docTypeExtension(docType)}`
     this.updateFileSelection()
   }
 
@@ -92,6 +94,10 @@ export class FilesNewDialogComponent implements OnInit {
 
   private fileNamePosition() {
     return this.fileProp.name.lastIndexOf('.')
+  }
+
+  private docTypeExtension(docType: string) {
+    return `.${this.docTypes[docType]}`
   }
 
   private updateFileSelection() {
