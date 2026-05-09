@@ -7,6 +7,7 @@ export interface DownloadFileContentInfo {
 }
 
 export interface DownloadFileOptions {
+  allowPrivateIP?: boolean
   space?: SpaceEnv
   getContentInfo?: boolean
 }

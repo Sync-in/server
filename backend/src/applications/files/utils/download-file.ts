@@ -40,13 +40,13 @@ export async function downloadFile(
   http: HttpService,
   downloadDto: DownloadFileDto,
   dstPath: string,
-  options: { space?: SpaceEnv; getContentInfo: true }
+  options: { allowPrivateIP?: boolean; space?: SpaceEnv; getContentInfo: true }
 ): Promise<DownloadFileContentInfo>
 export async function downloadFile(
   http: HttpService,
   downloadDto: DownloadFileDto,
   dstPath: string,
-  options?: { space?: SpaceEnv; getContentInfo?: false | undefined }
+  options?: { allowPrivateIP?: boolean; space?: SpaceEnv; getContentInfo?: false | undefined }
 ): Promise<void>
 export async function downloadFile(
   http: HttpService,
@@ -56,7 +56,7 @@ export async function downloadFile(
 ): Promise<void | DownloadFileContentInfo> {
   // dto must be validated by the caller
   const headRes: AxiosResponse = await http.axiosRef({ method: HTTP_METHOD.HEAD, url: downloadDto.url, maxRedirects: 1 })
-  if (regExpPrivateIP.test(headRes.request.socket.remoteAddress)) {
+  if (!options?.allowPrivateIP && regExpPrivateIP.test(headRes.request.socket.remoteAddress)) {
     // prevent SSRF attack
     throw new FileError(HttpStatus.FORBIDDEN, errorRegexpPrivateIP)
   }
@@ -87,7 +87,7 @@ export async function downloadFile(
   }
 
   const getRes = await http.axiosRef({ method: HTTP_METHOD.GET, url: downloadDto.url, responseType: 'stream', maxRedirects: 1 })
-  if (regExpPrivateIP.test(getRes.request.socket.remoteAddress)) {
+  if (!options?.allowPrivateIP && regExpPrivateIP.test(getRes.request.socket.remoteAddress)) {
     // close request
     getRes.data?.destroy()
     // Prevent SSRF attacks and perform a DNS-rebinding check if a HEAD request has already been made
