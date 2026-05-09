@@ -13,7 +13,7 @@
     "/node_modules/(?!@faker-js/faker)"
   ],
   "collectCoverageFrom": [
-    "**/*.{(guard|strategy|service|filter|pipe|provider|interceptor),}.(t|j)s",
+    "!**/*-controller.service.(t|j)s",
     "!**/*-queries.service.(t|j)s",
     "!**/*-scheduler.service.(t|j)s"
   ],
