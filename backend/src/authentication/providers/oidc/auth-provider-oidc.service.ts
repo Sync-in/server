@@ -436,7 +436,10 @@ export class AuthProviderOIDC implements AuthProvider {
     try {
       const tmpPicturePath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
       // retrieve headers
-      const { contentType, contentLength, lastModified } = await downloadFile(this.http, downloadDto, tmpPicturePath, { getContentInfo: true })
+      const { contentType, contentLength, lastModified } = await downloadFile(this.http, downloadDto, tmpPicturePath, {
+        allowPrivateIP: true, // trust the url source
+        getContentInfo: true
+      })
       pictureContentLength = contentLength ?? undefined
       pictureLastModified = lastModified ?? ''
 
@@ -458,10 +461,10 @@ export class AuthProviderOIDC implements AuthProvider {
       this.logger.warn({ tag: this.updatePictureUrl.name, msg: `checks failed: ${e}` })
     }
 
-    // download avatar
+    // download avatar (trust the url source)
     const userAvatarTmpPath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
     try {
-      await downloadFile(this.http, downloadDto, userAvatarTmpPath)
+      await downloadFile(this.http, downloadDto, userAvatarTmpPath, { allowPrivateIP: true })
     } catch (e) {
       this.logger.warn({ tag: this.updatePictureUrl.name, msg: `download failed: ${e}` })
       return
