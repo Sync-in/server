@@ -1,4 +1,5 @@
 import { join } from 'node:path'
+import { getDocumentTypes } from '../applications/files/constants/samples'
 import { FilesContentIndexingConfig } from '../applications/files/files.config'
 import { AuthTokenAccessConfig, AuthTokenRefreshConfig } from '../authentication/auth.config'
 import { ACCESS_KEY, CSRF_KEY, TWO_FA_VERIFY_EXPIRATION, WS_KEY } from '../authentication/constants/auth'
@@ -12,9 +13,12 @@ export const configuration: GlobalConfig = loadConfiguration()
 export const serverConfig: ServerConfig = {
   twoFaEnabled: configuration.auth.mfa.totp.enabled,
   mailServerEnabled: !!configuration.mail?.host,
-  fileEditors: {
-    collabora: configuration.applications.files.collabora.enabled,
-    onlyoffice: configuration.applications.files.onlyoffice.enabled
+  files: {
+    editors: {
+      collabora: configuration.applications.files.collabora.enabled,
+      onlyoffice: configuration.applications.files.onlyoffice.enabled
+    },
+    sampleDocuments: getDocumentTypes(configuration.applications.files.sampleDocuments)
   }
 }
 export const exportConfiguration: (reload?: boolean) => GlobalConfig = (reload = false) => (reload ? loadConfiguration() : configuration)

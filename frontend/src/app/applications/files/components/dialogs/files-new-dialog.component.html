@@ -24,7 +24,14 @@
       </button>
       <ul *dropdownMenu aria-labelledby="button-animated" class="dropdown-menu" id="dropdown-animated" role="menu">
         @for (item of docTypes | keyvalue: originalOrderKeyValue; track item.key) {
-          <li role="menuitem"><a (click)="onSelectDocType(item.key)" class="dropdown-item" l10nTranslate>{{ item.key }}</a></li>
+          <li role="menuitem">
+            <a (click)="onSelectDocType(item.key)" class="dropdown-item">
+              <div class="d-flex align-items-center">
+                <div class="me-5" l10nTranslate>{{ item.key }}</div>
+                <div class="ms-auto fs-xs">{{ item.value }}</div>
+              </div>
+            </a>
+          </li>
         }
       </ul>
     </div>
@@ -34,29 +41,33 @@
       <span class="input-group-text">
         <fa-icon [icon]="icons.faGlobe"></fa-icon>
       </span>
-      <input [(ngModel)]="downloadProp.url"
-             (keydown.control.v)="pasteUrl()"
-             (keydown.meta.v)="pasteUrl()"
-             [placeholder]="downloadProp.placeholder|translate:locale.language"
-             class="form-control"
-             type="text"
-             appAutofocus>
+      <input
+        [(ngModel)]="downloadProp.url"
+        (keydown.control.v)="pasteUrl()"
+        (keydown.meta.v)="pasteUrl()"
+        [placeholder]="downloadProp.placeholder | translate: locale.language"
+        class="form-control"
+        type="text"
+        appAutofocus
+      />
     </div>
   }
   <div class="input-group my-2">
-       <span class="input-group-text">
-         @if (inputType === 'directory') {
-           <fa-icon [icon]="icons.faFolderClosed"></fa-icon>
-         } @else {
-           <fa-icon [icon]="icons.faFileAlt"></fa-icon>
-         }
-         </span>
-    <input #InputText
-           [(ngModel)]="fileProp.name"
-           [placeholder]="fileProp.placeholder|translate:locale.language"
-           class="form-control"
-           type="text"
-           appAutofocus>
+    <span class="input-group-text">
+      @if (inputType === 'directory') {
+        <fa-icon [icon]="icons.faFolderClosed"></fa-icon>
+      } @else {
+        <fa-icon [icon]="icons.faFileAlt"></fa-icon>
+      }
+    </span>
+    <input
+      #InputText
+      [(ngModel)]="fileProp.name"
+      [placeholder]="fileProp.placeholder | translate: locale.language"
+      class="form-control"
+      type="text"
+      appAutofocus
+    />
   </div>
 </div>
 <div class="modal-footer">
@@ -64,10 +75,12 @@
     <span class="me-auto fs-sm text-danger" l10nTranslate>{{ error }}</span>
   }
   <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()"
-          [disabled]="!fileProp.name || inputType === 'download' && !downloadProp.url || submitted"
-          class="btn btn-primary"
-          type="button"
-          l10nTranslate>Confirm
+  <button
+    (click)="onSubmit()"
+    [disabled]="!fileProp.name || (inputType === 'download' && !downloadProp.url) || submitted"
+    class="btn btn-primary"
+    type="button"
+    l10nTranslate>
+    Confirm
   </button>
 </div>

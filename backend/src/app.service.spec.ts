@@ -87,6 +87,7 @@ describe(AppService.name, () => {
     process.env[`${ENVIRONMENT_PREFIX}LOGGER_STDOUT`] = 'false'
     process.env[`${ENVIRONMENT_PREFIX}LOGGER_COLORIZE`] = '"false"'
     process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_MAXUPLOADSIZE`] = '8888'
+    process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_SAMPLEDOCUMENTS`] = 'microsoft'
     // docker compose secret file
     process.env[`${ENVIRONMENT_PREFIX}AUTH_TOKEN_ACCESS_SECRET_FILE`] = tmpSecretFile
     conf = exportConfiguration(true)
@@ -94,6 +95,7 @@ describe(AppService.name, () => {
     expect(conf.logger.stdout).toBe(false)
     expect(conf.logger.colorize).toBe(false)
     expect(conf.applications.files.maxUploadSize).toBe(8888)
+    expect(conf.applications.files.sampleDocuments).toEqual(['microsoft'])
     expect(conf.auth.token.access.secret).toBe('fooBAR8888')
     // clean up secret file
     fs.promises.rm(tmpSecretFile, { force: true }).catch(console.error)

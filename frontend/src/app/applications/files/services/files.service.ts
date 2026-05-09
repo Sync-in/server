@@ -312,7 +312,7 @@ export class FilesService {
 
         const editorProvider: FileEditorProviders = { collabora: false, onlyoffice: false }
         if (hookedShortMime === SHORT_MIME.DOCUMENT) {
-          if (this.store.server().fileEditors.collabora && this.store.server().fileEditors.onlyoffice) {
+          if (this.store.server().files.editors.collabora && this.store.server().files.editors.onlyoffice) {
             // Case with multiple editors
             const collaboraHasExtension = COLLABORA_ONLINE_EXTENSIONS.has(file.getExtension())
             const onlyofficeHasExtension = ONLY_OFFICE_EXTENSIONS.has(file.getExtension())
@@ -333,8 +333,8 @@ export class FilesService {
             }
           } else {
             // Based on availability
-            editorProvider.collabora = this.store.server().fileEditors.collabora
-            editorProvider.onlyoffice = this.store.server().fileEditors.onlyoffice
+            editorProvider.collabora = this.store.server().files.editors.collabora
+            editorProvider.onlyoffice = this.store.server().files.editors.onlyoffice
           }
         }
 

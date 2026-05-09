@@ -44,7 +44,7 @@ export class LinksManager {
       }
       if (spaceLink?.share) {
         // Only used when the link is a file or a directory
-        spaceLink.fileEditors = serverConfig.fileEditors
+        spaceLink.fileEditors = serverConfig.files.editors
       }
     }
     return { ok: ok, error: ok ? null : check, link: spaceLink }

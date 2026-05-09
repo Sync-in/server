@@ -1,4 +1,5 @@
 import { computed, Injectable, Signal, signal, WritableSignal } from '@angular/core'
+import { ALL_DOCUMENT_TYPES } from '@sync-in-server/backend/src/applications/files/constants/samples'
 import type { SearchFilesDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { AppStoreManifest } from '@sync-in-server/backend/src/applications/sync/interfaces/store-manifest.interface'
@@ -29,7 +30,10 @@ export class StoreService {
   public server: WritableSignal<ServerConfig> = signal<ServerConfig>({
     twoFaEnabled: false,
     mailServerEnabled: false,
-    fileEditors: { collabora: false, onlyoffice: false }
+    files: {
+      editors: { collabora: false, onlyoffice: false },
+      sampleDocuments: ALL_DOCUMENT_TYPES
+    }
   })
   public user = new BehaviorSubject<UserType>(null)
   public userAvatarUrl = new BehaviorSubject<string>(myAvatarUrl())

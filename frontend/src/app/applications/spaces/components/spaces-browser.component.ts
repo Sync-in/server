@@ -342,7 +342,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         this.sortBy(
           this.sortTable.sortParam.column,
           false,
-          spacesFiles.files.map((f: FileProps) => new FileModel(f, this.baseRepoUrl, this.isSharesRepo, this.store.server().fileEditors))
+          spacesFiles.files.map((f: FileProps) => new FileModel(f, this.baseRepoUrl, this.isSharesRepo, this.store.server().files.editors))
         )
         this.updateFilesStats(this.files)
         this.loading = false

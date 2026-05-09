@@ -89,7 +89,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
       translating: true,
       sameLink: true
     })
-    this.showEditorPreference = this.store.server().fileEditors.collabora && this.store.server().fileEditors.onlyoffice
+    this.showEditorPreference = this.store.server().files.editors.collabora && this.store.server().files.editors.onlyoffice
     if (this.showEditorPreference) {
       this.userEditorPreference = this.userService.getEditorProviderPreference()
     }
