@@ -265,9 +265,9 @@ export class FilesContentIndexer {
       this.filesContentStore
         .dropIndex(indexName)
         .catch((e: Error) => this.logger.error({ tag: this.indexFiles.name, msg: `${indexSuffix} - unable to drop index : ${e}` }))
-      this.logger.verbose({ tag: this.indexFiles.name, msg: `${indexSuffix} - no data, index not stored` })
+      this.logger.verbose({ tag: this.indexFiles.name, msg: `${indexSuffix} - no data: index not stored` })
     } else if (indexedRecords === 0 && indexingErrors === 0 && deletedRecords === 0) {
-      this.logger.verbose({ tag: this.indexFiles.name, msg: `${indexSuffix} - no new data` })
+      this.logger.verbose({ tag: this.indexFiles.name, msg: `${indexSuffix} - no changes` })
     } else {
       this.logger.log({
         tag: this.indexFiles.name,

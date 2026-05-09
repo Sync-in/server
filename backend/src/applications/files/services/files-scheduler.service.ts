@@ -160,6 +160,7 @@ export class FilesScheduler {
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_4AM)
+  // Remove files that are no longer referenced by any relation.
   async deleteOrphanFiles() {
     this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `START` })
     const selects: any[] = []

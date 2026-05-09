@@ -76,9 +76,9 @@ export class FilesTrashRetention {
         this.dropTable(tableName).catch((e: Error) =>
           this.logger.error({ tag: this.indexAndCleanTrash.name, msg: `${tableName} - unable to drop table : ${e}` })
         )
-        this.logger.verbose({ tag: this.indexAndCleanTrash.name, msg: `${tableName} - no data, index not stored` })
+        this.logger.verbose({ tag: this.indexAndCleanTrash.name, msg: `${tableName} - no data: index not stored` })
       } else if (indexedRecords === 0 && totalErrorRecords === 0 && deletedRecords === 0 && expiredRecords.deletedRecords === 0) {
-        this.logger.verbose({ tag: this.indexAndCleanTrash.name, msg: `${tableName} - no new data` })
+        this.logger.verbose({ tag: this.indexAndCleanTrash.name, msg: `${tableName} - no changes` })
       } else {
         this.logger.log({
           tag: this.indexAndCleanTrash.name,
