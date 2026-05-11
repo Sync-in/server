@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "d346b63b-9e0e-4d1b-ae8e-28aac910ca38",
+  "id": "f3502b05-4578-4f8e-8508-08a7815a2e47",
   "prevId": "da1a6d68-b222-46e6-bda9-2a917b447be2",
   "tables": {
     "cache": {
@@ -1822,15 +1822,15 @@
         }
       },
       "indexes": {
-        "user_idx": {
-          "name": "user_idx",
+        "files_favorites_user_idx": {
+          "name": "files_favorites_user_idx",
           "columns": [
             "userId"
           ],
           "isUnique": false
         },
-        "file_idx": {
-          "name": "file_idx",
+        "files_favorites_file_idx": {
+          "name": "files_favorites_file_idx",
           "columns": [
             "fileId"
           ],

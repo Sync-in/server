@@ -340,7 +340,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         // todo: share inside is not used, this should allow the file anchor dialog to add a personal file to the current space (?)
         this.canShare.inside = this.spacePermissions.indexOf(SPACE_OPERATION.SHARE_INSIDE) > -1
         this.hasRoots = spacesFiles.hasRoots
-        this.tableHeaders.favorite.show = !this.isTrashRepo
+        this.tableHeaders.favorite.show = !this.isTrashRepo && !this.inSharesList
         this.tableHeaders.anchored.show = spacesFiles.hasRoots
         this.tableHeaders.anchored.label = this.isSharesRepo ? 'Owner' : 'Anchored by'
         this.tableHeaders.anchored.width = 10

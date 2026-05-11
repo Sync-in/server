@@ -213,9 +213,9 @@ export class SpacesBrowser {
           .catch((e: Error) => this.logger.error({ tag: this.updateRootFile.name, msg: `${e}` }))
         fileProps.id = f.id
       } else if (spaceId) {
-        ;(fileProps as any).spaceId = spaceId
+        fileProps.spaceId = spaceId
       } else if (shareExternalId) {
-        ;(fileProps as any).shareExternalId = shareExternalId
+        fileProps.shareExternalId = shareExternalId
       }
       fileProps.root = {
         id: f.root.id,

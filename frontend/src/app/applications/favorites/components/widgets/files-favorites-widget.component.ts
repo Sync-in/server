@@ -36,8 +36,8 @@ export class FilesFavoritesWidgetComponent {
     } else {
       this.moreElements = true
       this.nbFiles.set(this.nbInitialFiles * 5)
+      this.load()
     }
-    this.load()
   }
 
   goToFile(f: FileFavoriteModel) {

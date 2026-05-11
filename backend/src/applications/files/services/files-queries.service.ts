@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common'
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { and, desc, eq, getTableColumns, inArray, isNull, or, SelectedFields, sql, SQL } from 'drizzle-orm'
 import { popFromObject } from '../../../common/shared'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
@@ -435,7 +435,8 @@ export class FilesQueries {
   }
 
   async removeFavorite(userId: number, fileId: number): Promise<void> {
-    await this.db.delete(filesFavorites).where(and(eq(filesFavorites.userId, userId), eq(filesFavorites.fileId, fileId)))
+    const result = await this.db.delete(filesFavorites).where(and(eq(filesFavorites.userId, userId), eq(filesFavorites.fileId, fileId)))
+    if (!result[0].affectedRows) throw new NotFoundException()
   }
 
   async updateRecents(

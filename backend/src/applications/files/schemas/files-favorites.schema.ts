@@ -16,7 +16,7 @@ export const filesFavorites = mysqlTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull()
   },
-  (table) => [primaryKey({ columns: [table.userId, table.fileId] }), index('user_idx').on(table.userId), index('file_idx').on(table.fileId)]
+  (table) => [primaryKey({ columns: [table.userId, table.fileId] }), index('files_favorites_user_idx').on(table.userId), index('files_favorites_file_idx').on(table.fileId)]
 )
 
 export const fileIsFavoriteForUserSQL = (fileId: Column | SQL, userId: Column | SQL): SQL =>

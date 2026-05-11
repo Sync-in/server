@@ -44,6 +44,8 @@ export interface FileProps extends Omit<File, 'ownerId' | 'spaceId' | 'spaceExte
   spaces?: Pick<Space, 'id' | 'alias' | 'name'>[]
   shares?: Pick<Share, 'id' | 'alias' | 'name' | 'type'>[]
   syncs?: Pick<SyncPath, 'clientId' | 'id'> & { clientName: string }[]
+  spaceId?: number | null
+  shareExternalId?: number | null
   hasComments?: boolean
   isFavorite?: boolean
 }

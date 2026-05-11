@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import type { FileFavorite } from '../schemas/file-favorite.interface'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
@@ -22,7 +22,9 @@ export class FilesFavorites {
   async addFavorite(user: UserModel, dto: FavoriteFileDto): Promise<FileFavorite> {
     const id = await this.filesQueries.getOrCreateFileForFavorite(dto)
     await this.filesQueries.addFavorite(user.id, id)
-    return this.filesQueries.getFavoriteForFile(user.id, id)
+    const favorite = await this.filesQueries.getFavoriteForFile(user.id, id)
+    if (!favorite) throw new NotFoundException()
+    return favorite
   }
 
   removeFavorite(user: UserModel, fileId: number): Promise<void> {
