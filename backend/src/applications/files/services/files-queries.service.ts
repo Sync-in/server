@@ -135,6 +135,10 @@ export class FilesQueries {
         })
       }
     }
+    // Before inserting, check whether a record already exists at this path to avoid
+    // creating duplicate rows when concurrent or repeated calls race to index the same file.
+    const existingId = await this.getSpaceFileId(file, dbFile)
+    if (existingId !== undefined) return existingId
     // order is important, path is replaced by the FileProps.path
     return dbGetInsertedId(await this.db.insert(files).values({ ...dbFile, ...file }))
   }

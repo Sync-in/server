@@ -159,6 +159,21 @@ describe(CommentsManager.name, () => {
       })
     })
 
+    it('uses getOrCreate when fileId > 0 but file is not yet indexed', async () => {
+      filesQueries.getSpaceFileId.mockResolvedValue(undefined)
+      filesQueries.getOrCreateSpaceFile.mockResolvedValue(77)
+      commentQueries.createComment.mockResolvedValue(1)
+      commentQueries.getComments.mockResolvedValue([{ id: 1, fileId: 77, content: 'hi' }])
+      commentQueries.membersToNotify.mockResolvedValue([])
+
+      const res = await commentsManager.createComment(user, makeSpace(), { fileId: 42, content: 'hi' } as any)
+
+      expect(filesQueries.getSpaceFileId).toHaveBeenCalledTimes(1)
+      expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(42, expect.anything(), expect.anything())
+      expect(commentQueries.createComment).toHaveBeenCalledWith(42, 77, 'hi')
+      expect(res).toMatchObject({ id: 1, fileId: 77, content: 'hi' })
+    })
+
     it('uses getOrCreate when fileId < 0', async () => {
       filesQueries.getOrCreateSpaceFile.mockResolvedValue(555)
       commentQueries.createComment.mockResolvedValue(777)
@@ -269,6 +284,15 @@ describe(CommentsManager.name, () => {
       })
     })
 
+    it('rejects BAD_REQUEST if file is not indexed (getSpaceFileId returns undefined)', async () => {
+      commentQueries.getComments.mockResolvedValue([{ id: 50, fileId: 5 }])
+      filesQueries.getSpaceFileId.mockResolvedValue(undefined)
+
+      await expect(commentsManager.updateComment(user, makeSpace(), { commentId: 50, fileId: 5, content: 'z' } as any)).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST
+      })
+    })
+
     it('rejects INTERNAL_SERVER_ERROR if update fails', async () => {
       commentQueries.getComments.mockResolvedValueOnce([{ id: 50, fileId: 5 }])
       filesQueries.getSpaceFileId.mockResolvedValue(5)
@@ -299,6 +323,14 @@ describe(CommentsManager.name, () => {
       filesQueries.getSpaceFileId.mockResolvedValue(10)
 
       await expect(commentsManager.deleteComment(user, makeSpace(), { commentId: 1, fileId: 11 } as any)).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST
+      })
+    })
+
+    it('rejects BAD_REQUEST if file is not indexed (getSpaceFileId returns undefined)', async () => {
+      filesQueries.getSpaceFileId.mockResolvedValue(undefined)
+
+      await expect(commentsManager.deleteComment(user, makeSpace(), { commentId: 1, fileId: 10 } as any)).rejects.toMatchObject({
         status: HttpStatus.BAD_REQUEST
       })
     })
