@@ -159,7 +159,27 @@ describe(CommentsManager.name, () => {
       })
     })
 
+    it('uses getOrCreate when fileId > 0 but file is not yet indexed', async () => {
+      const space = makeSpace()
+      const fileProps = { name: 'file.txt', path: 'folder', id: undefined }
+      filesQueries.getSpaceFileId.mockResolvedValue(undefined)
+      filesQueries.getOrCreateSpaceFile.mockResolvedValue(77)
+      commentQueries.createComment.mockResolvedValue(1)
+      commentQueries.getComments.mockResolvedValue([{ id: 1, fileId: 77, content: 'hi' }])
+      commentQueries.membersToNotify.mockResolvedValue([])
+
+      const res = await commentsManager.createComment(user, space, { fileId: 42, content: 'hi' } as any)
+
+      expect(filesQueries.getSpaceFileId).toHaveBeenCalledTimes(1)
+      expect(filesQueries.getSpaceFileId).toHaveBeenCalledWith(fileProps, space.dbFile)
+      expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(42, fileProps, space.dbFile)
+      expect(commentQueries.createComment).toHaveBeenCalledWith(42, 77, 'hi')
+      expect(res).toMatchObject({ id: 1, fileId: 77, content: 'hi' })
+    })
+
     it('uses getOrCreate when fileId < 0', async () => {
+      const space = makeSpace()
+      const fileProps = { name: 'file.txt', path: 'folder', id: undefined }
       filesQueries.getOrCreateSpaceFile.mockResolvedValue(555)
       commentQueries.createComment.mockResolvedValue(777)
       commentQueries.getComments.mockResolvedValue([{ id: 777, fileId: 555, content: 'hello' }])
@@ -167,11 +187,11 @@ describe(CommentsManager.name, () => {
       commentQueries.membersToNotify.mockRejectedValueOnce(new Error('members failed'))
       const loggerSpy = jest.spyOn(commentsManager['logger'], 'error').mockImplementation(() => undefined as any)
 
-      const res = await commentsManager.createComment(user, makeSpace(), { fileId: -1, content: 'hello' } as any)
+      const res = await commentsManager.createComment(user, space, { fileId: -1, content: 'hello' } as any)
       // Let the microtask run the catch of createComment
       await new Promise((r) => setImmediate(r))
 
-      expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalled()
+      expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(-1, fileProps, space.dbFile)
       expect(filesQueries.getSpaceFileId).not.toHaveBeenCalled()
       expect(commentQueries.createComment).toHaveBeenCalledWith(42, 555, 'hello')
       expect(notificationsManager.create).not.toHaveBeenCalled()
@@ -269,6 +289,15 @@ describe(CommentsManager.name, () => {
       })
     })
 
+    it('rejects BAD_REQUEST if file is not indexed (getSpaceFileId returns undefined)', async () => {
+      commentQueries.getComments.mockResolvedValue([{ id: 50, fileId: 5 }])
+      filesQueries.getSpaceFileId.mockResolvedValue(undefined)
+
+      await expect(commentsManager.updateComment(user, makeSpace(), { commentId: 50, fileId: 5, content: 'z' } as any)).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST
+      })
+    })
+
     it('rejects INTERNAL_SERVER_ERROR if update fails', async () => {
       commentQueries.getComments.mockResolvedValueOnce([{ id: 50, fileId: 5 }])
       filesQueries.getSpaceFileId.mockResolvedValue(5)
@@ -299,6 +328,14 @@ describe(CommentsManager.name, () => {
       filesQueries.getSpaceFileId.mockResolvedValue(10)
 
       await expect(commentsManager.deleteComment(user, makeSpace(), { commentId: 1, fileId: 11 } as any)).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST
+      })
+    })
+
+    it('rejects BAD_REQUEST if file is not indexed (getSpaceFileId returns undefined)', async () => {
+      filesQueries.getSpaceFileId.mockResolvedValue(undefined)
+
+      await expect(commentsManager.deleteComment(user, makeSpace(), { commentId: 1, fileId: 10 } as any)).rejects.toMatchObject({
         status: HttpStatus.BAD_REQUEST
       })
     })

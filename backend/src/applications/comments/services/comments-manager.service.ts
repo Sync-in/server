@@ -42,9 +42,13 @@ export class CommentsManager {
     }
     let fileId: number
     if (createCommentDto.fileId > 0) {
-      fileId = await this.getFileId(space)
-      if (createCommentDto.fileId !== fileId) {
+      const dbFileId = await this.getFileId(space)
+      if (dbFileId === undefined) {
+        fileId = await this.getFileId(space, createCommentDto.fileId)
+      } else if (createCommentDto.fileId !== dbFileId) {
         throw new HttpException('File id mismatch', HttpStatus.BAD_REQUEST)
+      } else {
+        fileId = dbFileId
       }
     } else {
       fileId = await this.getFileId(space, createCommentDto.fileId)
@@ -59,8 +63,8 @@ export class CommentsManager {
     if (!comment) {
       throw new HttpException('Location not found', HttpStatus.NOT_FOUND)
     }
-    const fileId: number = await this.getFileId(space)
-    if (updateCommentDto.fileId !== fileId || comment.fileId !== fileId) {
+    const fileId = await this.getFileId(space)
+    if (fileId === undefined || updateCommentDto.fileId !== fileId || comment.fileId !== fileId) {
       throw new HttpException('File id mismatch', HttpStatus.BAD_REQUEST)
     }
     if (!(await this.commentQueries.updateComment(user.id, updateCommentDto.commentId, updateCommentDto.fileId, updateCommentDto.content))) {
@@ -70,8 +74,8 @@ export class CommentsManager {
   }
 
   async deleteComment(user: UserModel, space: SpaceEnv, deleteCommentDto: DeleteCommentDto): Promise<void> {
-    const fileId: number = await this.getFileId(space)
-    if (deleteCommentDto.fileId !== fileId) {
+    const fileId = await this.getFileId(space)
+    if (fileId === undefined || deleteCommentDto.fileId !== fileId) {
       throw new HttpException('File id mismatch', HttpStatus.BAD_REQUEST)
     }
     if (!(await this.commentQueries.deleteComment(user.id, deleteCommentDto.commentId, fileId, space.dbFile?.ownerId === user.id))) {
@@ -79,7 +83,7 @@ export class CommentsManager {
     }
   }
 
-  private async getFileId(space: SpaceEnv, fileId?: number): Promise<number> {
+  private async getFileId(space: SpaceEnv, fileId?: number): Promise<number | undefined> {
     if (!(await isPathExists(space.realPath))) {
       throw new HttpException('Location not found', HttpStatus.NOT_FOUND)
     }

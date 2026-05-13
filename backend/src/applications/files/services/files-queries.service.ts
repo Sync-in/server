@@ -114,13 +114,15 @@ export class FilesQueries {
   }
 
   async getOrCreateSpaceFile(fileId: number, file: FileProps, dbFile: FileDBProps): Promise<number> {
-    if (fileId && fileId > 0) {
-      const fileInDB = {
-        ...dbFile,
-        name: file.name,
-        path: file.path,
-        isDir: file.isDir
-      }
+    // `isDir` is intentionally excluded here: this flow reconciles an existing path before insert,
+    // even if the caller has a stale file/dir kind for the same location.
+    const fileInDB = {
+      ...dbFile,
+      name: file.name,
+      path: file.path
+    }
+    const hasDbFileId = Number.isSafeInteger(fileId) && fileId > 0
+    if (hasDbFileId) {
       const [searchFileInDB] = await this.db
         .select({ id: files.id })
         .from(files)
@@ -135,16 +137,22 @@ export class FilesQueries {
         })
       }
     }
-    // order is important, path is replaced by the FileProps.path
-    return dbGetInsertedId(await this.db.insert(files).values({ ...dbFile, ...file }))
+
+    // Before inserting, check whether a record already exists at this path to avoid
+    // creating duplicate rows when repeated calls index the same file.
+    const existingId = await this.getSpaceFileId(file, dbFile, { withDir: false })
+    if (existingId !== undefined) return existingId
+
+    // `fileInDB` keeps the DB scope and uses the `FileProps` path/name.
+    return dbGetInsertedId(await this.db.insert(files).values({ ...file, ...fileInDB, id: undefined } as File))
   }
 
-  async getSpaceFileId(file: FileProps, dbFile: FileDBProps): Promise<number> {
+  async getSpaceFileId(file: FileProps, dbFile: FileDBProps, options: { withDir?: boolean } = {}): Promise<number | undefined> {
     const fileInDB = {
       ...dbFile,
       name: file.name,
       path: file.path,
-      isDir: file.isDir
+      ...(options.withDir !== false && { isDir: file.isDir })
     }
     const [searchFileInDB] = await this.db
       .select({ id: files.id })
