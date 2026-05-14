@@ -6,7 +6,7 @@
   @if (canToggleViewer) {
     <button (click)="toggleViewer()" class="btn btn-sm btn-primary me-2" type="button">
       <fa-icon [icon]="isReadonly() ? icons.faPen : icons.faEye"></fa-icon>
-      <span class="ms-2" l10nTranslate>{{ isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js' }}</span>
+      <span class="d-none d-sm-inline ms-2" l10nTranslate>{{ isReadonly() ? 'Edit in OnlyOffice' : 'View in PDF.js' }}</span>
     </button>
   }
   <button (click)="onMinimize()" aria-label="Minimize" class="btn-minimize btn-minimize-white" [class.ms-1]="canToggleViewer" type="button"></button>
