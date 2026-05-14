@@ -274,6 +274,7 @@ export class UserService {
       if (menu.submenus?.length) {
         this.setMenusVisibility(menu.submenus)
       }
+      menu.hasSubmenus = !!menu.submenus?.some((submenu) => !submenu.hide)
       // updates the files menu link based on user permissions
       if (menu.title === SPACES_TITLE.FILES) {
         for (const submenu of menu.submenus) {

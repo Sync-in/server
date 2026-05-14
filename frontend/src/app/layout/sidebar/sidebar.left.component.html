@@ -56,7 +56,7 @@
 <ng-template #MenuTemplate let-menu="menu">
   <fa-icon [icon]="menu.icon" [animation]="menu.iconAnimated ? 'spin' : null"></fa-icon>
   <span l10nTranslate>{{ menu.title }}</span>
-  @if (menu?.submenus?.length) {
+  @if (menu.hasSubmenus) {
     <span class="ms-auto opacity-75"><fa-icon [icon]="icons.faChevronDown" size="sm"></fa-icon></span>
   }
   @if (menu.count) {
@@ -74,7 +74,7 @@
       <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: menu}"></ng-container>
     </a>
   </div>
-  @if (menu.submenus?.length) {
+  @if (menu.hasSubmenus) {
     @for (submenu of menu.submenus; track submenu.title) {
       @if (!submenu.hide) {
         <div class="menu submenu" [class.active]="submenu.isActive">

@@ -35,6 +35,7 @@ export interface AppMenu {
   // prop must be an attribute of the userService
   checks?: { negate?: boolean; prop: 'user'; value: UserStatus }[]
   submenus?: AppMenu[]
+  hasSubmenus?: boolean
 }
 
 export interface TabMenu {

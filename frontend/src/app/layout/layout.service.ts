@@ -142,10 +142,6 @@ export class LayoutService {
     return window.innerWidth !== 0 && window.innerWidth < this.screenMediumSize
   }
 
-  isSmallerScreen() {
-    return window.innerWidth !== 0 && window.innerWidth < this.screenSmallSize
-  }
-
   toggleTheme() {
     this.setTheme(this.switchTheme.getValue() === themeLight ? themeDark : themeLight)
   }

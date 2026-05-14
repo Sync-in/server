@@ -112,6 +112,7 @@ export const SPACES_MENU: AppMenu = {
       icon: SPACES_ICON.SHARES,
       link: SPACES_PATH.SPACES_SHARES,
       matchLink: new RegExp(`^${SPACES_PATH.SPACES_SHARES}|^${SPACES_PATH.SHARED}|^${SPACES_PATH.LINKS}`),
+      hasSubmenus: true,
       submenus: [
         {
           id: USER_PERMISSION.SHARES_ADMIN,
