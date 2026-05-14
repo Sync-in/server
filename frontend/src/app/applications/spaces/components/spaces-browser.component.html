@@ -328,6 +328,7 @@
               @if (f.isRenamed) {
                 <input appInputEdit
                        [inputObject]="f"
+                       [selectFileNameWithoutExtension]="!f.isDir"
                        [fullWidth]="true"
                        [textCenter]="true"
                        (renamingInProgress)="setRenamingInProgress($event)"
@@ -401,6 +402,7 @@
                                  (renamingInProgress)="setRenamingInProgress($event)"
                                  (updateObject)="renameFile($event)"
                                  [inputObject]="f"
+                                 [selectFileNameWithoutExtension]="!f.isDir"
                                  required
                                  type="text">
                         } @else {

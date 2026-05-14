@@ -1,4 +1,4 @@
-import { Directive, ElementRef, EventEmitter, HostListener, inject, Input, OnInit, Output, Renderer2 } from '@angular/core'
+import { booleanAttribute, Directive, ElementRef, EventEmitter, HostListener, inject, Input, OnInit, Output, Renderer2 } from '@angular/core'
 
 @Directive({
   selector: '[appInputEdit]'
@@ -11,6 +11,7 @@ export class InputEditDirective implements OnInit {
   @Input() disableOnBlur = true
   @Input() disableFocus = false
   @Input() disableKeyboard = false
+  @Input({ transform: booleanAttribute }) selectFileNameWithoutExtension = false
   @Output() updateObject = new EventEmitter<{ object: any; name: string }>(true)
   @Output() renamingInProgress = new EventEmitter<boolean>(true)
   private readonly elementRef = inject(ElementRef)
@@ -26,7 +27,7 @@ export class InputEditDirective implements OnInit {
       this.setParentDraggable('false')
       if (!this.disableFocus) {
         this.elementRef.nativeElement.focus()
-        this.elementRef.nativeElement.select()
+        this.selectInputValue()
       }
     }, 5)
   }
@@ -95,6 +96,15 @@ export class InputEditDirective implements OnInit {
         this.disableEdit()
       }
     }
+  }
+
+  private selectInputValue() {
+    if (!this.selectFileNameWithoutExtension) {
+      this.elementRef.nativeElement.select()
+      return
+    }
+    const pos = this.elementRef.nativeElement.value.lastIndexOf('.')
+    this.elementRef.nativeElement.setSelectionRange(0, pos > 0 ? pos : this.elementRef.nativeElement.value.length)
   }
 
   private disableEdit() {
