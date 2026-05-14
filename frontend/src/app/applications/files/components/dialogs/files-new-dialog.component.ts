@@ -1,5 +1,5 @@
 import { KeyValuePipe } from '@angular/common'
-import { Component, ElementRef, EventEmitter, HostListener, inject, Input, OnInit, Output, ViewChild } from '@angular/core'
+import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, inject, Input, OnInit, Output, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCaretDown, faFileAlt, faFolderClosed, faGlobe } from '@fortawesome/free-solid-svg-icons'
@@ -18,7 +18,7 @@ import { FilesService } from '../../services/files.service'
   templateUrl: 'files-new-dialog.component.html',
   imports: [FaIconComponent, L10nTranslateDirective, BsDropdownModule, FormsModule, L10nTranslatePipe, AutofocusDirective, KeyValuePipe]
 })
-export class FilesNewDialogComponent implements OnInit {
+export class FilesNewDialogComponent implements OnInit, AfterViewInit {
   @Input() files: FileModel[]
   @Input() inputType: 'file' | 'directory' | 'download'
   @Output() refreshFiles = new EventEmitter()
@@ -45,10 +45,15 @@ export class FilesNewDialogComponent implements OnInit {
       this.fileProp.name = `${this.layout.translateString('New document')}${this.docTypeExtension(this.selectedDocType)}`
       this.fileProp.title = 'New document'
       this.fileProp.placeholder = 'Document name'
-      this.updateFileSelection()
     } else {
       this.fileProp.title = 'New folder'
       this.fileProp.placeholder = 'Folder name'
+    }
+  }
+
+  ngAfterViewInit() {
+    if (this.inputType === 'file') {
+      this.updateFileSelection()
     }
   }
 
