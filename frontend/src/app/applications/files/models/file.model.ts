@@ -73,7 +73,6 @@ export class FileModel implements File {
   galleryBadges: ('lock' | 'shares' | 'spaces' | 'links' | 'syncs' | 'comments')[] = []
 
   // States
-  fsPath = ''
   newly = 0
   isRenamed = false
   isImage = false
@@ -90,7 +89,6 @@ export class FileModel implements File {
   constructor(props: FileProps | File, basePath: string, inShare = false, editorConfig: FileEditorProviders) {
     this.setShares(popFromObject('shares', props))
     Object.assign(this, props)
-    this.fsPath = this.path // capture FS path before navigation path overwrites it
     this.path = `${basePath}/${this.path !== '.' ? `${this.path}/` : ''}${this.root?.alias || this.name}`
     this.mime = this.getMime(this.mime, inShare, editorConfig)
     this.updateHTimeAgo(this.mtime)
