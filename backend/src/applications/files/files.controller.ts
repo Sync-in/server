@@ -8,7 +8,6 @@ import {
   Lock,
   Logger,
   Move,
-  Param,
   ParseBoolPipe,
   ParseIntPipe,
   Patch,

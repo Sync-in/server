@@ -12,7 +12,18 @@ import { WebDAVModule } from './webdav/webdav.module'
 
 @Global()
 @Module({
-  imports: [UsersModule, SpacesModule, SharesModule, FilesModule, WebDAVModule, AdminModule, CommentsModule, FavoritesModule, NotificationsModule, SyncModule],
+  imports: [
+    UsersModule,
+    SpacesModule,
+    SharesModule,
+    FilesModule,
+    WebDAVModule,
+    AdminModule,
+    CommentsModule,
+    FavoritesModule,
+    NotificationsModule,
+    SyncModule
+  ],
   exports: [UsersModule, SpacesModule, SharesModule, FilesModule, WebDAVModule, CommentsModule, NotificationsModule]
 })
 export class ApplicationsModule {}
