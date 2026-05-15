@@ -130,6 +130,7 @@
   "Storage Usage": "Speichernutzung",
   "Space status": "Status des Bereichs",
   "Storage quota exceeded": "Speicherkontingent überschritten",
+  "File size limit exceeded": "Dateigrößenlimit überschritten",
   "The trash is read-only": "Der Papierkorb ist schreibgeschützt",
   "Storage quota will be exceeded": "Speicherkontingent wird überschritten",
   "No more space available": "Kein Speicherplatz mehr verfügbar",

@@ -130,6 +130,7 @@
   "Storage Usage": "存储使用情况",
   "Space status": "空间状态",
   "Storage quota exceeded": "存储配额已超出",
+  "File size limit exceeded": "已超出文件大小限制",
   "The trash is read-only": "回收站是只读的",
   "Storage quota will be exceeded": "存储配额将被超出",
   "No more space available": "没有更多可用空间",

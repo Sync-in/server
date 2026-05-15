@@ -130,6 +130,7 @@
   "Storage Usage": "Depolama Kullanımı",
   "Space status": "Alan durumu",
   "Storage quota exceeded": "Depolama kotası aşıldı",
+  "File size limit exceeded": "Dosya boyutu sınırı aşıldı",
   "The trash is read-only": "Çöp kutusu salt okunurdur",
   "Storage quota will be exceeded": "Depolama kotası aşılacak",
   "No more space available": "Boş alan kalmadı",

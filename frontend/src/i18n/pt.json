@@ -130,6 +130,7 @@
   "Storage Usage": "Uso do armazenamento",
   "Space status": "Estado do espaço",
   "Storage quota exceeded": "A cota de armazenamento foi excedida",
+  "File size limit exceeded": "Limite de tamanho do ficheiro excedido",
   "The trash is read-only": "A lixeira é apenas de leitura",
   "Storage quota will be exceeded": "A cota de armazenamento será excedida",
   "No more space available": "Sem mais espaço disponível",
