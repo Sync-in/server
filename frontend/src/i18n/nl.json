@@ -130,6 +130,7 @@
   "Storage Usage": "Opslaggebruik",
   "Space status": "Opslag-status",
   "Storage quota exceeded": "Opslagquotum overschreden",
+  "File size limit exceeded": "Limiet voor bestandsgrootte overschreden",
   "The trash is read-only": "De prullenbak is alleen-lezen",
   "Storage quota will be exceeded": "Opslagquotum wordt overschreden",
   "No more space available": "Geen opslagruimte meer beschikbaar",

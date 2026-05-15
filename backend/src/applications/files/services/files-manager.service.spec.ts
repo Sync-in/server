@@ -54,7 +54,7 @@ describe(FilesManager.name, () => {
     removeChildLocks: jest.Mock
   }
 
-  const user = { id: 7, login: 'john', tasksPath: '/data/users/john/tmp/tasks' } as any
+  const user = { id: 7, login: 'john', tmpPath: '/data/users/john/tmp', tasksPath: '/data/users/john/tmp/tasks' } as any
 
   const makeSpace = (overrides: Record<string, any> = {}) =>
     ({
@@ -237,14 +237,64 @@ describe(FilesManager.name, () => {
   })
 
   describe('saveMultipart', () => {
+    it('should reject POST when target root already exists before reading multipart parts', async () => {
+      const space = makeSpace()
+      setPathExists({ [space.realPath]: true }, false)
+
+      const req = {
+        method: 'POST',
+        files: jest.fn().mockImplementation(async function* () {
+          yield { filename: path.basename(space.realPath), file: Readable.from(['content']) }
+        })
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
+        new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
+      )
+
+      expect(req.files).not.toHaveBeenCalled()
+      expectNoWriteOperations()
+    })
+
+    it.each([
+      {
+        name: 'missing parent',
+        pathExists: (space: any) => ({ [space.realPath]: false, [path.dirname(space.realPath)]: false }),
+        isDir: () => true,
+        expected: new FileError(HttpStatus.BAD_REQUEST, 'Parent must exists')
+      },
+      {
+        name: 'parent file',
+        pathExists: (space: any) => ({ [space.realPath]: false, [path.dirname(space.realPath)]: true }),
+        isDir: () => false,
+        expected: new FileError(HttpStatus.BAD_REQUEST, 'Parent must be a directory')
+      }
+    ])('should reject POST when target root has $name', async ({ pathExists, isDir, expected }) => {
+      const space = makeSpace()
+      setPathExists(pathExists(space), false)
+      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async () => isDir())
+
+      const req = {
+        method: 'POST',
+        files: jest.fn().mockImplementation(async function* () {
+          yield { filename: path.basename(space.realPath), file: Readable.from(['content']) }
+        })
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(expected)
+
+      expect(req.files).not.toHaveBeenCalled()
+      expectNoWriteOperations()
+    })
+
     it('should write one PATCH part and emit update event', async () => {
       const space = makeSpace({
         url: 'files/personal/report.txt',
         realPath: '/data/users/john/files/report.txt',
         dbFile: { ownerId: 7, path: 'report.txt' }
       })
-      setPathExists({ [path.dirname(space.realPath)]: true, [space.realPath]: true }, false)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValue(true)
+      setPathExists({ [path.dirname(space.realPath)]: true, [space.realPath]: true, [user.tmpPath]: true }, false)
+      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
       const emitSpy = jest.spyOn(FileEvent, 'emit')
 
       const req = {
@@ -256,9 +306,336 @@ describe(FilesManager.name, () => {
 
       await service.saveMultipart(user, space, req as any)
 
+      const tmpWritePath = (filesUtils.writeFromStream as jest.Mock).mock.calls[0][0] as string
       expect(filesLockManager.createOrRefresh).toHaveBeenCalled()
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith('/data/users/john/files/report.txt', expect.anything())
+      expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
+      expect(tmpWritePath.endsWith('-report.txt')).toBe(true)
+      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, expect.anything())
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, '/data/users/john/files/report.txt', true)
       expect(emitSpy).toHaveBeenCalledWith('event', expect.objectContaining({ action: ACTION.UPDATE, rPath: '/data/users/john/files/report.txt' }))
+    })
+
+    it('should reject PATCH when destination does not exist', async () => {
+      const space = makeSpace({
+        url: 'files/personal/report.txt',
+        realPath: '/data/users/john/files/report.txt',
+        dbFile: { ownerId: 7, path: 'report.txt' }
+      })
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      setPathExists({ [path.dirname(space.realPath)]: true, [space.realPath]: false }, false)
+      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
+
+      const req = {
+        method: 'PATCH',
+        files: async function* () {
+          yield { filename: 'ignored-on-patch.txt', file: Readable.from(['content']) }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(new FileError(HttpStatus.NOT_FOUND, 'Location not found'))
+
+      expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(filesUtils.removeFiles).not.toHaveBeenCalled()
+      expect(filesLockManager.createOrRefresh).not.toHaveBeenCalled()
+      expect(emitSpy).not.toHaveBeenCalled()
+    })
+
+    it('should write PUT to a temporary file before moving it to the destination', async () => {
+      const space = makeSpace()
+      const file = Readable.from(['content'])
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      setPathExists({ [space.realPath]: true, [path.dirname(space.realPath)]: true, [user.tmpPath]: true }, false)
+      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
+
+      const req = {
+        method: 'PUT',
+        files: async function* () {
+          yield { filename: path.basename(space.realPath), file }
+        }
+      }
+
+      await service.saveMultipart(user, space, req as any)
+
+      const tmpWritePath = (filesUtils.writeFromStream as jest.Mock).mock.calls[0][0] as string
+      expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
+      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, file)
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, space.realPath, true)
+      expect(filesUtils.removeFiles).not.toHaveBeenCalled()
+      expect(emitSpy).toHaveBeenCalledWith('event', expect.objectContaining({ action: ACTION.UPDATE, rPath: space.realPath }))
+    })
+
+    it('should create missing destination directory and release created lock for POST nested upload', async () => {
+      const space = makeSpace()
+      const partFileName = 'folder/file.txt'
+      const dstDir = path.join(path.dirname(space.realPath), 'folder')
+      const dstFile = path.join(dstDir, 'file.txt')
+      const file = Readable.from(['content'])
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      setPathExists(
+        {
+          [space.realPath]: false,
+          [path.dirname(space.realPath)]: true,
+          [dstDir]: false,
+          [dstFile]: false
+        },
+        false
+      )
+      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
+      filesLockManager.createOrRefresh.mockResolvedValueOnce([true, { key: 'lock-created' }])
+
+      const req = {
+        method: 'POST',
+        files: async function* () {
+          yield { filename: partFileName, file }
+        }
+      }
+
+      await service.saveMultipart(user, space, req as any)
+
+      expect(filesUtils.makeDir).toHaveBeenCalledWith(dstDir, true)
+      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(dstFile, file)
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-created')
+      expect(emitSpy).toHaveBeenCalledWith('event', expect.objectContaining({ action: ACTION.ADD, rPath: dstFile }))
+    })
+
+    it('should reject POST when resolved multipart destination already exists', async () => {
+      const space = makeSpace()
+      const partFileName = 'folder/file.txt'
+      const dstDir = path.join(path.dirname(space.realPath), 'folder')
+      const dstFile = path.join(dstDir, 'file.txt')
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      setPathExists(
+        {
+          [space.realPath]: false,
+          [path.dirname(space.realPath)]: true,
+          [dstDir]: true,
+          [dstFile]: true
+        },
+        false
+      )
+      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath) || p === dstDir)
+
+      const req = {
+        method: 'POST',
+        files: async function* () {
+          yield { filename: partFileName, file: Readable.from(['content']) }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
+        new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
+      )
+
+      expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(filesUtils.removeFiles).not.toHaveBeenCalled()
+      expect(filesLockManager.createOrRefresh).not.toHaveBeenCalled()
+      expect(emitSpy).not.toHaveBeenCalled()
+    })
+
+    it('should reject multipart path traversal before checking destination path', async () => {
+      const space = makeSpace()
+      const parentPath = path.dirname(space.realPath)
+      const forbiddenFile = path.resolve(`${parentPath}${path.sep}`, '../escape.txt')
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      setPathExists({ [space.realPath]: false, [parentPath]: true }, false)
+      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === parentPath)
+
+      const req = {
+        method: 'POST',
+        files: async function* () {
+          yield { filename: '../escape.txt', file: Readable.from(['content']) }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed'))
+
+      expect(filesUtils.isPathExists).not.toHaveBeenCalledWith(forbiddenFile)
+      expect(filesUtils.isPathIsDir).not.toHaveBeenCalledWith(forbiddenFile)
+      expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(filesLockManager.createOrRefresh).not.toHaveBeenCalled()
+      expect(emitSpy).not.toHaveBeenCalled()
+    })
+
+    it('should keep existing destination untouched when PUT upload is too large', async () => {
+      const space = makeSpace()
+      const file = Readable.from(['content']) as Readable & { truncated: boolean }
+      file.truncated = true
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      setPathExists({ [space.realPath]: true, [path.dirname(space.realPath)]: true, [user.tmpPath]: true }, false)
+      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
+
+      const req = {
+        method: 'PUT',
+        files: async function* () {
+          yield { filename: path.basename(space.realPath), file }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
+        new FileError(HttpStatus.PAYLOAD_TOO_LARGE, 'File size limit exceeded')
+      )
+
+      const tmpWritePath = (filesUtils.writeFromStream as jest.Mock).mock.calls[0][0] as string
+      expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
+      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, file)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpWritePath)
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(space.realPath)
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(emitSpy).not.toHaveBeenCalled()
+    })
+
+    it('should reject truncated multipart file as payload too large', async () => {
+      const space = makeSpace()
+      const dstFile = '/data/users/john/files/too-big.bin'
+      const file = Readable.from(['content']) as Readable & { truncated: boolean }
+      file.truncated = true
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true, [dstFile]: false }, false)
+      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValue(true)
+
+      const req = {
+        method: 'POST',
+        files: jest.fn().mockImplementation(async function* () {
+          yield { filename: 'too-big.bin', file }
+        })
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
+        new FileError(HttpStatus.PAYLOAD_TOO_LARGE, 'File size limit exceeded')
+      )
+
+      expect(req.files).toHaveBeenCalled()
+      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(dstFile, file)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(dstFile)
+      expect(emitSpy).not.toHaveBeenCalled()
+    })
+
+    it('should map multipart iterator file size errors to payload too large', async () => {
+      const space = makeSpace()
+      const error = Object.assign(new Error('request file too large'), { code: 'FST_REQ_FILE_TOO_LARGE', statusCode: HttpStatus.PAYLOAD_TOO_LARGE })
+      setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
+      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValue(true)
+
+      const req = {
+        method: 'POST',
+        files: jest.fn().mockImplementation(async function* () {
+          yield* []
+          throw error
+        })
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
+        new FileError(HttpStatus.PAYLOAD_TOO_LARGE, 'File size limit exceeded')
+      )
+
+      expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
+    })
+
+    it('should not map non-file-size multipart 413 errors to file size limit', async () => {
+      const space = makeSpace()
+      const error = Object.assign(new Error('reach parts limit'), { code: 'FST_PARTS_LIMIT', statusCode: HttpStatus.PAYLOAD_TOO_LARGE })
+      setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
+      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValue(true)
+
+      const req = {
+        method: 'POST',
+        files: jest.fn().mockImplementation(async function* () {
+          yield* []
+          throw error
+        })
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toBe(error)
+
+      expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      {
+        name: 'existing destination directory',
+        partFileName: 'file.txt',
+        pathExists: (space: any) => ({
+          [space.realPath]: true,
+          [path.dirname(space.realPath)]: true,
+          [user.tmpPath]: true
+        }),
+        isDir: (space: any, p: string) => p === space.realPath || p === path.dirname(space.realPath)
+      },
+      {
+        name: 'destination parent file',
+        partFileName: 'folder/file.txt',
+        pathExists: (space: any) => ({
+          [path.join(path.dirname(space.realPath), 'folder')]: true,
+          [user.tmpPath]: true
+        }),
+        isDir: () => false
+      }
+    ])('should cleanup temporary file when PUT move fails after deleting $name', async ({ partFileName, pathExists, isDir }) => {
+      const space = makeSpace()
+      const file = Readable.from(['content'])
+      const error = new Error('move failed')
+      const deleteSpy = jest.spyOn(service, 'delete').mockResolvedValue(undefined)
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      setPathExists(pathExists(space), false)
+      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => isDir(space, p))
+      ;(filesUtils.moveFiles as jest.Mock).mockRejectedValueOnce(error)
+
+      const req = {
+        method: 'PUT',
+        files: async function* () {
+          yield { filename: partFileName, file }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toBe(error)
+
+      const tmpWritePath = (filesUtils.writeFromStream as jest.Mock).mock.calls[0][0] as string
+      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, file)
+      expect(deleteSpy).toHaveBeenCalledTimes(1)
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, expect.stringContaining(path.basename(partFileName)), true)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpWritePath)
+      expect(emitSpy).not.toHaveBeenCalled()
+      expect((filesUtils.writeFromStream as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(deleteSpy.mock.invocationCallOrder[0])
+      expect(deleteSpy.mock.invocationCallOrder[0]).toBeLessThan((filesUtils.moveFiles as jest.Mock).mock.invocationCallOrder[0])
+    })
+
+    it('should recreate destination directory after deleting a parent file before moving PUT tmp file', async () => {
+      const space = makeSpace()
+      const partFileName = 'folder/file.txt'
+      const dstDir = path.join(path.dirname(space.realPath), 'folder')
+      const dstFile = path.join(dstDir, 'file.txt')
+      const file = Readable.from(['content'])
+      const deleteSpy = jest.spyOn(service, 'delete').mockResolvedValue(undefined)
+      let dstDirExistsChecks = 0
+      ;(filesUtils.isPathExists as jest.Mock).mockImplementation(async (p: string) => {
+        if (p === dstDir) {
+          dstDirExistsChecks++
+          return dstDirExistsChecks === 1
+        }
+        return false
+      })
+      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async () => false)
+
+      const req = {
+        method: 'PUT',
+        files: async function* () {
+          yield { filename: partFileName, file }
+        }
+      }
+
+      await service.saveMultipart(user, space, req as any)
+
+      const tmpWritePath = (filesUtils.writeFromStream as jest.Mock).mock.calls[0][0] as string
+      expect(deleteSpy).toHaveBeenCalledTimes(1)
+      expect(filesUtils.makeDir).toHaveBeenCalledWith(dstDir, true)
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, dstFile, true)
+      expect(deleteSpy.mock.invocationCallOrder[0]).toBeLessThan((filesUtils.makeDir as jest.Mock).mock.invocationCallOrder[0])
+      expect((filesUtils.makeDir as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
+        (filesUtils.moveFiles as jest.Mock).mock.invocationCallOrder[0]
+      )
     })
   })
 

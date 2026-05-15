@@ -130,6 +130,7 @@
   "Storage Usage": "Utilizzo dell’archiviazione",
   "Space status": "Stato dello spazio",
   "Storage quota exceeded": "Quota di archiviazione superata",
+  "File size limit exceeded": "Limite di dimensione del file superato",
   "The trash is read-only": "Il cestino è di sola lettura",
   "Storage quota will be exceeded": "La quota di archiviazione verrà superata",
   "No more space available": "Nessuno spazio disponibile",

@@ -130,6 +130,7 @@
   "Storage Usage": "Использование хранилища",
   "Space status": "Статус пространства",
   "Storage quota exceeded": "Превышена квота хранилища",
+  "File size limit exceeded": "Превышен лимит размера файла",
   "The trash is read-only": "Корзина доступна только для чтения",
   "Storage quota will be exceeded": "Квота хранилища будет превышена",
   "No more space available": "Место закончилось",

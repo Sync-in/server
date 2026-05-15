@@ -61,6 +61,7 @@ import { FilesQueries } from './files-queries.service'
 import { FileEvent, FileTaskEvent } from '../events/file-events'
 import { ACTION } from '../../../common/constants'
 import { pipeline } from 'node:stream/promises'
+import { isMultipartFileTooLargeError, maxUploadSizeExceededError, uploadTmpFilePath } from '../utils/upload-file'
 
 @Injectable()
 export class FilesManager {
@@ -195,13 +196,15 @@ export class FilesManager {
     */
     this.checkNotTrashRepository(space)
     const overwrite = req.method === HTTP_METHOD.PUT
-    const patch = req.method === HTTP_METHOD.PATCH
+    const patchMethod = req.method === HTTP_METHOD.PATCH
+    const postMethod = req.method === HTTP_METHOD.POST
     const realParentPath = dirName(space.realPath)
 
+    // For POST, space.realPath can be either the final file path or the root directory for a folder upload.
+    if (postMethod && (await isPathExists(space.realPath))) {
+      throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
+    }
     if (!overwrite) {
-      if (!patch && (await isPathExists(space.realPath))) {
-        throw new FileError(HttpStatus.BAD_REQUEST, 'Resource already exists')
-      }
       if (!(await isPathExists(realParentPath))) {
         throw new FileError(HttpStatus.BAD_REQUEST, 'Parent must exists')
       }
@@ -212,60 +215,111 @@ export class FilesManager {
 
     const basePath = realParentPath + path.sep
 
-    for await (const part of req.files()) {
-      // If the request uses the PATCH method, the file name corresponds to the space
-      const partFileName = patch ? fileName(space.realPath) : part.filename
-      // `part.filename` may contain a path like foo/bar.txt
-      const dstFile = path.resolve(basePath, partFileName)
-      const dstExists = await isPathExists(dstFile)
-      const dstIsDir = dstExists ? await isPathIsDir(dstFile) : false
-      // Prevent path traversal
-      if (!dstFile.startsWith(basePath)) {
-        throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
-      }
+    try {
+      for await (const part of req.files({ throwFileSizeLimit: false })) {
+        // If the request uses the PATCH method, the file name corresponds to the space
+        const partFileName = patchMethod ? fileName(space.realPath) : part.filename
+        // `part.filename` may contain a path like foo/bar.txt
+        const dstFile = path.resolve(basePath, partFileName)
+        // Prevent path traversal
+        if (!dstFile.startsWith(basePath)) {
+          throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
+        }
+        const dstExists = await isPathExists(dstFile)
+        const dstIsDir = dstExists ? await isPathIsDir(dstFile) : false
+        if (postMethod && dstExists) {
+          throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
+        }
+        if (patchMethod && !dstExists) {
+          throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
+        }
+        // PUT/PATCH write outside the destination first, so a failed upload does not corrupt an existing file.
+        const tmpFile = overwrite || patchMethod ? uploadTmpFilePath(user.tmpPath, partFileName) : undefined
+        const writePath = tmpFile || dstFile
 
-      const dstDir = dirName(dstFile)
+        const dstDir = dirName(dstFile)
+        // For overwrite conflicts, defer destructive deletes until the upload stream is fully validated.
+        let dstSpaceToDeleteBeforeMove: SpaceEnv | undefined
+        let dstParentSpaceToDeleteBeforeMove: SpaceEnv | undefined
 
-      if (overwrite) {
-        // Prevent errors when an uploaded file would replace a directory with the same name
-        // Only applies in `overwrite` cases
-        if (dstExists && dstIsDir) {
-          // If a directory already exists at the destination path, delete it to allow overwriting with the uploaded file
-          const dstUrl = path.join(path.dirname(space.url), partFileName)
-          const dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
-          await this.delete(user, dstSpace)
-        } else if ((await isPathExists(dstDir)) && !(await isPathIsDir(dstDir))) {
-          // If the destination's parent exists but is a file, remove it so we can create the directory
-          const dstUrl = path.join(path.dirname(space.url), path.dirname(partFileName))
-          const dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
-          await this.delete(user, dstSpace)
+        if (overwrite) {
+          // Prevent errors when an uploaded file would replace a directory with the same name
+          // Only applies in `overwrite` cases
+          if (dstExists && dstIsDir) {
+            // If a directory already exists at the destination path, delete it to allow overwriting with the uploaded file
+            const dstUrl = path.join(path.dirname(space.url), partFileName)
+            dstSpaceToDeleteBeforeMove = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
+          } else if ((await isPathExists(dstDir)) && !(await isPathIsDir(dstDir))) {
+            // If the destination's parent exists but is a file, remove it so we can create the directory
+            const dstUrl = path.join(path.dirname(space.url), path.dirname(partFileName))
+            dstParentSpaceToDeleteBeforeMove = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
+          }
+        }
+        // Create the destination directory only when writing directly; user.tmpPath already exists.
+        if (!tmpFile && !(await isPathExists(dstDir))) {
+          await makeDir(dstDir, true)
+        }
+
+        // Create or refresh lock
+        const dbFile = { ...space.dbFile, path: path.join(dirName(space.dbFile.path), partFileName) }
+        // Use a short TTL for the PATCH method (which is also used for refreshing)
+        const ttl = patchMethod ? CACHE_LOCK_FILE_TTL : undefined
+        const [created, fileLock] = await this.filesLockManager.createOrRefresh(user, dbFile, SERVER_NAME, DEPTH.RESOURCE, ttl)
+
+        let fileWritten = false
+        // Do
+        try {
+          await writeFromStream(writePath, part.file)
+          // With throwFileSizeLimit disabled, multipart marks the file stream as truncated instead of rejecting.
+          if (part.file.truncated) {
+            throw maxUploadSizeExceededError()
+          }
+          if (tmpFile) {
+            // If the following move fails after these deletes, the previous resources remain recoverable from the trash.
+            if (dstSpaceToDeleteBeforeMove) {
+              await this.delete(user, dstSpaceToDeleteBeforeMove)
+            }
+            if (dstParentSpaceToDeleteBeforeMove) {
+              await this.delete(user, dstParentSpaceToDeleteBeforeMove)
+            }
+            if (!(await isPathExists(dstDir))) {
+              await makeDir(dstDir, true)
+            }
+            await moveFiles(tmpFile, dstFile, true)
+          }
+          fileWritten = true
+        } catch (e) {
+          // Failed temporary uploads are discarded without touching the existing destination.
+          if (tmpFile) {
+            await removeFiles(tmpFile)
+          } else if (!dstExists) {
+            await removeFiles(dstFile)
+          }
+          if (isMultipartFileTooLargeError(e)) {
+            throw maxUploadSizeExceededError()
+          }
+          throw e
+        } finally {
+          if (fileWritten) {
+            // Emit only after the final destination has been written or moved into place.
+            const fileEventAction: ACTION = patchMethod || (dstExists && !dstIsDir) ? ACTION.UPDATE : ACTION.ADD
+            FileEvent.emit('event', { user, space, action: fileEventAction, rPath: dstFile })
+          }
+          if (!patchMethod && created) {
+            // Remove the file lock only if it has not been refreshed
+            await this.filesLockManager.removeLock(fileLock.key)
+          }
+        }
+        if (patchMethod) {
+          // Only one resource can be updated with the PATCH method.
+          break
         }
       }
-      // Create the directory in the space
-      if (!(await isPathExists(dstDir))) {
-        await makeDir(dstDir, true)
+    } catch (e) {
+      if (isMultipartFileTooLargeError(e)) {
+        throw maxUploadSizeExceededError()
       }
-      // Create or refresh lock
-      const dbFile = { ...space.dbFile, path: path.join(dirName(space.dbFile.path), partFileName) }
-      // Use a short TTL for the PATCH method (which is also used for refreshing)
-      const ttl = patch ? CACHE_LOCK_FILE_TTL : undefined
-      const [created, fileLock] = await this.filesLockManager.createOrRefresh(user, dbFile, SERVER_NAME, DEPTH.RESOURCE, ttl)
-      // Do
-      try {
-        await writeFromStream(dstFile, part.file)
-      } finally {
-        // emit file event
-        const fileEventAction: ACTION = patch || (dstExists && !dstIsDir) ? ACTION.UPDATE : ACTION.ADD
-        FileEvent.emit('event', { user, space, action: fileEventAction, rPath: dstFile })
-        if (!patch && created) {
-          // Remove the file lock only if it has not been refreshed
-          await this.filesLockManager.removeLock(fileLock.key)
-        }
-      }
-      if (patch) {
-        // Only one resource can be updated with the PATCH method.
-        break
-      }
+      throw e
     }
   }
 
