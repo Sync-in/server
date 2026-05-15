@@ -181,8 +181,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   // Settings
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
-  protected tableHeaders: Record<'favorite' | 'name' | 'anchored' | 'info' | 'permissions' | 'size' | 'mtime', TableHeaderConfig> = {
-    favorite: { label: '', width: 4, textCenter: true, class: '', show: true },
+  protected tableHeaders: Record<'name' | 'anchored' | 'info' | 'permissions' | 'size' | 'mtime', TableHeaderConfig> = {
     name: {
       label: 'Name',
       width: 36,
@@ -340,7 +339,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         // todo: share inside is not used, this should allow the file anchor dialog to add a personal file to the current space (?)
         this.canShare.inside = this.spacePermissions.indexOf(SPACE_OPERATION.SHARE_INSIDE) > -1
         this.hasRoots = spacesFiles.hasRoots
-        this.tableHeaders.favorite.show = !this.isTrashRepo && !this.inSharesList
         this.tableHeaders.anchored.show = spacesFiles.hasRoots
         this.tableHeaders.anchored.label = this.isSharesRepo ? 'Owner' : 'Anchored by'
         this.tableHeaders.anchored.width = 10
@@ -652,8 +650,8 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.filesService.openLockDialog(f)
   }
 
-  toggleFavorite(file: FileModel, event: Event) {
-    event.stopPropagation()
+  toggleFavorite(file: FileModel, event?: Event) {
+    event?.stopPropagation()
     this.filesService.toggleFavorite(file, !file.isFavorite)
     file.isFavorite = !file.isFavorite
   }

@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { UserModel } from '../../users/models/user.model'
-import { FavoriteFileDto } from '../dto/favorite-file.dto'
 import { FilesQueries } from './files-queries.service'
 import { FilesFavorites } from './files-favorites.service'
 
@@ -10,7 +9,6 @@ describe(FilesFavorites.name, () => {
   let service: FilesFavorites
   let filesQueries: {
     getFavorites: jest.Mock
-    getOrCreateFileForFavorite: jest.Mock
     addFavorite: jest.Mock
     getFavoriteForFile: jest.Mock
     removeFavorite: jest.Mock
@@ -23,7 +21,6 @@ describe(FilesFavorites.name, () => {
   beforeEach(async () => {
     filesQueries = {
       getFavorites: jest.fn().mockResolvedValue([]),
-      getOrCreateFileForFavorite: jest.fn().mockResolvedValue(99),
       addFavorite: jest.fn().mockResolvedValue(undefined),
       getFavoriteForFile: jest.fn().mockResolvedValue({ id: 99, name: 'test.txt', navPath: 'files/personal' }),
       removeFavorite: jest.fn().mockResolvedValue(undefined)
@@ -66,18 +63,6 @@ describe(FilesFavorites.name, () => {
   it('getFavorites caps limit at 1000', async () => {
     await service.getFavorites(user, 9999)
     expect(filesQueries.getFavorites).toHaveBeenCalledWith(user.id, [], [], 1000)
-  })
-
-  it('addFavorite calls getOrCreateFileForFavorite, addFavorite, getFavoriteForFile and returns FileFavorite', async () => {
-    const dto: FavoriteFileDto = { path: '.', name: 'test.txt', isDir: false }
-    const favorite = { id: 99, name: 'test.txt', navPath: 'files/personal' }
-    filesQueries.getOrCreateFileForFavorite.mockResolvedValue(99)
-    filesQueries.getFavoriteForFile.mockResolvedValue(favorite)
-    const result = await service.addFavorite(user, dto)
-    expect(filesQueries.getOrCreateFileForFavorite).toHaveBeenCalledWith(dto)
-    expect(filesQueries.addFavorite).toHaveBeenCalledWith(user.id, 99)
-    expect(filesQueries.getFavoriteForFile).toHaveBeenCalledWith(user.id, 99)
-    expect(result).toBe(favorite)
   })
 
   it('removeFavorite delegates to filesQueries with userId and fileId', async () => {

@@ -9,8 +9,6 @@ import {
   SEND_FILE_ERROR_MSG
 } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import {
-  API_FILES_FAVORITE,
-  API_FILES_FAVORITES,
   API_FILES_OPERATION,
   API_FILES_OPERATION_MAKE,
   API_FILES_RECENTS,
@@ -20,6 +18,7 @@ import {
   API_FILES_TASK_OPERATION_DOWNLOAD,
   API_FILES_TASKS_DOWNLOAD
 } from '@sync-in-server/backend/src/applications/files/constants/routes'
+import { API_FAVORITES, API_FAVORITES_FROM_SPACE } from '@sync-in-server/backend/src/applications/favorites/constants/routes'
 import type {
   CompressFileDto,
   CopyMoveFileDto,
@@ -217,7 +216,7 @@ export class FilesService {
   }
 
   loadFavorites(limit: number) {
-    this.http.get<FileFavorite[]>(API_FILES_FAVORITES, { params: new HttpParams().set('limit', limit) }).subscribe({
+    this.http.get<FileFavorite[]>(API_FAVORITES, { params: new HttpParams().set('limit', limit) }).subscribe({
       next: (fs: FileFavorite[]) => {
         this.store.filesFavorites.set(fs.map((f) => new FileFavoriteModel(f)))
       },
@@ -227,21 +226,7 @@ export class FilesService {
 
   toggleFavorite(file: FileModel, add: boolean) {
     if (add) {
-      const dto = {
-        id: file.id > 0 ? file.id : undefined,
-        path: file.fsPath,
-        name: file.name,
-        isDir: file.isDir,
-        mime: file.mime || undefined,
-        size: file.size,
-        mtime: file.mtime,
-        ctime: file.ctime,
-        ownerId: file.ownerId || undefined,
-        spaceId: file.spaceId || undefined,
-        spaceExternalRootId: file.spaceExternalRootId || undefined,
-        shareExternalId: file.shareExternalId || undefined
-      }
-      this.http.post<FileFavorite>(API_FILES_FAVORITE, dto).subscribe({
+      this.http.post<FileFavorite>(`${API_FAVORITES_FROM_SPACE}/${file.path}`, {}).subscribe({
         next: (favorite) => {
           if (file.id !== favorite.id) file.id = favorite.id
           this.store.filesFavorites.update((favorites) => [new FileFavoriteModel(favorite), ...favorites])
@@ -252,7 +237,7 @@ export class FilesService {
         }
       })
     } else {
-      this.http.delete<void>(`${API_FILES_FAVORITE}/${file.id}`).subscribe({
+      this.http.delete<void>(`${API_FAVORITES_FROM_SPACE}/${file.path}`).subscribe({
         next: () => {
           this.store.filesFavorites.update((files) => files.filter((f) => f.id !== file.id))
         },

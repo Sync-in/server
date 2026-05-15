@@ -5,7 +5,6 @@ import { SpaceGuard } from '../spaces/guards/space.guard'
 import { FILE_OPERATION } from './constants/operations'
 import { FilesController } from './files.controller'
 import { FilesMethods } from './services/files-methods.service'
-import { FilesFavorites } from './services/files-favorites.service'
 import { FilesRecents } from './services/files-recents.service'
 import { FilesSearchManager } from './services/files-search-manager.service'
 import { FilesTasksManager } from './services/files-tasks-manager.service'
@@ -42,12 +41,6 @@ describe(FilesController.name, () => {
     getRecents: jest.fn()
   }
 
-  const filesFavoritesMock = {
-    getFavorites: jest.fn(),
-    addFavorite: jest.fn(),
-    removeFavorite: jest.fn()
-  }
-
   const filesSearchMock = {
     search: jest.fn()
   }
@@ -59,7 +52,6 @@ describe(FilesController.name, () => {
         { provide: FilesMethods, useValue: filesMethodsMock },
         { provide: FilesTasksManager, useValue: filesTasksManagerMock },
         { provide: FilesRecents, useValue: filesRecentsMock },
-        { provide: FilesFavorites, useValue: filesFavoritesMock },
         { provide: FilesSearchManager, useValue: filesSearchMock },
         { provide: ContextManager, useValue: filesSearchMock },
         { provide: FilesContentIndexer, useValue: {} },

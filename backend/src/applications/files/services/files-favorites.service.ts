@@ -3,7 +3,6 @@ import type { FileFavorite } from '../schemas/file-favorite.interface'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { UserModel } from '../../users/models/user.model'
-import { FavoriteFileDto } from '../dto/favorite-file.dto'
 import { FilesQueries } from './files-queries.service'
 
 @Injectable()
@@ -19,10 +18,9 @@ export class FilesFavorites {
     return this.filesQueries.getFavorites(user.id, spaceIds, shareIds, Math.min(limit ?? 100, 1000))
   }
 
-  async addFavorite(user: UserModel, dto: FavoriteFileDto): Promise<FileFavorite> {
-    const id = await this.filesQueries.getOrCreateFileForFavorite(dto)
-    await this.filesQueries.addFavorite(user.id, id)
-    const favorite = await this.filesQueries.getFavoriteForFile(user.id, id)
+  async addFavoriteById(userId: number, fileId: number): Promise<FileFavorite> {
+    await this.filesQueries.addFavorite(userId, fileId)
+    const favorite = await this.filesQueries.getFavoriteForFile(userId, fileId)
     if (!favorite) throw new NotFoundException()
     return favorite
   }
