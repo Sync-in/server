@@ -1,9 +1,1 @@
-<?xml version="1.0" encoding="utf-8"?>
-<svg height="64px" viewBox="0 0 48 48" width="64px" xmlns="http://www.w3.org/2000/svg">
-  <linearGradient gradientUnits="userSpaceOnUse" x1="23.725" y1="12.142" x2="23.725" y2="46.208" id="gradient-0" spreadMethod="pad" gradientTransform="matrix(0.977602, 0, 0, 1.100001, 0.806302, -7.465478)">
-    <stop offset="0" style="stop-color: rgb(240, 100, 0);"/>
-    <stop offset="1" style="stop-color: rgb(150, 40, 0);"/>
-  </linearGradient>
-  <path d="M 41.864 11.009 L 2.001 18.708 L 2.001 10.136 C 2.001 7.1 4.193 4.636 6.889 4.636 L 14.091 4.636 C 15.164 4.636 16.753 5.207 17.632 5.911 L 20.397 8.119 C 21.276 8.823 22.857 9.533 23.925 9.703 L 32.089 11.009 L 41.864 11.009 Z" fill="#b24000"/>
-  <path d="M 5.694 9.882 C 3.744 9.592 3.145 8.291 3.811 5.895 C 3.709 5.94 3.637 5.999 3.604 6.08 C 2.927 6.721 1.905 8.591 2.007 9.909 L 2.007 37.862 C 2.007 40.902 4.198 43.363 6.893 43.363 L 41.111 43.363 C 43.81 43.363 46 40.902 46 37.862 L 46 15.384 C 46 12.348 43.81 9.882 41.111 9.882 L 5.694 9.882 Z" style="paint-order: fill; fill: url('#gradient-0');"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path fill="#f06400" d="m13.844 7.536-1.288-1.072A2 2 0 0 0 11.276 6H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h24a2 2 0 0 0 2-2V10a2 2 0 0 0-2-2H15.124a2 2 0 0 1-1.28-.464"/></svg>

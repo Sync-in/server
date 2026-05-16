@@ -1,16 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="1024px" height="1024px" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
-    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
-    <title>App Icon / Apple / Pages / @SVG</title>
-    <desc>Created with Sketch.</desc>
-    <defs>
-        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-1">
-            <stop stop-color="#FFA700" offset="0%"/>
-            <stop stop-color="#F9661E" offset="100%"/>
-        </linearGradient>
-    </defs>
-    <g id="App-Icon-/-Apple-/-Pages-/-" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <rect id="Origin-Color" fill="url(#linearGradient-1)" x="0" y="0" width="1024" height="1024"/>
-        <path d="M1024,805 L1024,833 L224,833 C216.268014,833 210,826.731986 210,819 C210,811.268014 216.268014,805 224,805 L1024,805 Z M250.324119,726.258453 L278.353125,754.287458 L233.632022,783.434371 C229.467802,786.148366 223.891907,784.972725 221.177913,780.808505 C219.23123,777.821609 219.23123,773.967158 221.177913,770.980263 L250.324119,726.258453 Z M710.523354,244.591455 L760.020829,294.08893 L347.372785,706.736974 C342.470486,711.639273 337.071673,716.01848 331.263454,719.803935 L286.058467,749.264879 L255.346698,718.55311 L284.808349,673.34883 C288.593805,667.540612 292.973011,662.141799 297.87531,657.239499 L710.523354,244.591455 Z M824.367546,180.244738 C838.035896,193.913089 838.035896,216.073863 824.367546,229.742213 L768.50611,285.603649 L719.008636,236.106174 L774.870071,180.244738 C788.538421,166.576388 810.699196,166.576388 824.367546,180.244738 Z" id="Combined-Shape" fill="#FFFFFF"/>
-    </g>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g style="fill:#ff8d00;fill-opacity:1"><path d="M19.665 5.635c.343-.343.343-.915 0-1.24l-2.06-2.06c-.325-.343-.897-.343-1.24 0l-1.62 1.61 3.3 3.3M4.08 14.62v3.3h3.3l9.733-9.742-3.3-3.3Z" style="stroke-width:.880029;fill:#ff8d00;fill-opacity:1"/><path d="M4.086 19.355h16.11v1.461H4.086z" style="fill:#ff8d00;stroke-width:0;stroke-linejoin:round;fill-opacity:1"/></g></svg>
