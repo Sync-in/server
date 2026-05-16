@@ -7,6 +7,7 @@ import { dJs } from '../../../common/utils/time'
 export class TrashModel implements SpaceTrash {
   alias: string
   id: number
+  enabled: boolean
   mtime: number
   ctime: number
   name: string

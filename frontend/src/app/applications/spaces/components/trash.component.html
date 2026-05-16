@@ -36,6 +36,7 @@
           <div (click)="onSelect(t)"
                (contextmenu)="onTargetContextMenu($event, t)"
                (appTap)="browse(t)"
+               [class.disabled]="!t.enabled"
                [class.selected]="t.id === selected?.id"
                [style.height.px]="galleryMode.dimensions"
                [style.width.px]="galleryMode.dimensions"
@@ -103,6 +104,7 @@
           <tr (click)="onSelect(t)"
               (contextmenu)="onTargetContextMenu($event, t)"
               (appTap)="browse(t)"
+              [class.disabled]="!t.enabled"
               [class.selected]="t.id === selected?.id">
             @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
               @if (th.value.show) {

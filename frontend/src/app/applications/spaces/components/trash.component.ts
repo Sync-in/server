@@ -147,6 +147,10 @@ export class TrashComponent implements OnInit {
   }
 
   browse(trash: TrashModel) {
-    this.router.navigate([SPACES_PATH.SPACES_TRASH, trash.alias]).catch(console.error)
+    if (!trash.enabled) {
+      this.layout.sendNotification('warning', trash.name, 'Space is disabled')
+    } else {
+      this.router.navigate([SPACES_PATH.SPACES_TRASH, trash.alias]).catch(console.error)
+    }
   }
 }

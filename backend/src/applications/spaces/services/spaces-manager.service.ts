@@ -174,7 +174,7 @@ export class SpacesManager {
   async listTrashes(user: UserModel): Promise<SpaceTrash[]> {
     const trashes: SpaceTrash[] = []
     // todo: store 'Personal files' as const somewhere (used in frontend too)
-    const personalTrash: SpaceTrash = { id: 0, name: 'Personal files', alias: SPACE_ALIAS.PERSONAL, nb: 0, mtime: 0, ctime: 0 }
+    const personalTrash: SpaceTrash = { id: 0, name: 'Personal files', alias: SPACE_ALIAS.PERSONAL, nb: 0, mtime: 0, ctime: 0, enabled: true }
     for (const space of [...(await this.listSpaces(user.id)), personalTrash] as SpaceTrash[]) {
       const rPath = space.alias === SPACE_ALIAS.PERSONAL ? user.trashPath : SpaceModel.getTrashPath(space.alias)
       try {
