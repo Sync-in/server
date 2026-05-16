@@ -44,6 +44,15 @@
           },
           "configurations": {
             "production": {
+              "assets": [
+                "src/favicon.ico",
+                {
+                  "glob": "**/*",
+                  "input": "src/assets",
+                  "output": "assets",
+                  "ignore": ["mimes/**"]
+                }
+              ],
               "budgets": [
                 {
                   "type": "initial",

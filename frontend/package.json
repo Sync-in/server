@@ -8,9 +8,9 @@
   "license": "AGPL-3.0-or-later",
   "private": true,
   "scripts": {
-    "build-assets": "node scripts/build-assets.mjs",
-    "prewatch": "NODE_ENV=development npm run build-assets",
-    "prebuild": "npm run build-assets",
+    "prewatch": "NODE_ENV=development npm run prebuild",
+    "prebuild": "node scripts/prebuild.mjs",
+    "postbuild": "node scripts/postbuild.mjs",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
