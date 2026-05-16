@@ -11,6 +11,7 @@
     "build-assets": "node scripts/build-assets.mjs",
     "prewatch": "NODE_ENV=development npm run build-assets",
     "prebuild": "npm run build-assets",
+    "postbuild": "node scripts/fix-assets.mjs",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
