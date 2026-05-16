@@ -712,6 +712,7 @@ export class SpacesQueries {
         rootAliases.forEach((rAlias: string) => patterns.push(this.cache.genSlugKey(...basePattern, rAlias)))
       } else {
         // clear cache on spaces list
+        patterns.push(this.cache.genSlugKey(...[this.constructor.name, this.spaces.name, uid]))
         patterns.push(this.cache.genSlugKey(...[this.constructor.name, this.spaces.name, uid, '*']))
         // clear cache on spaces and roots
         patterns.push(this.cache.genSlugKey(...basePattern), this.cache.genSlugKey(...basePattern, '*'))
