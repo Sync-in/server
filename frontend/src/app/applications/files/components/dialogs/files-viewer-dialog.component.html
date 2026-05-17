@@ -38,13 +38,23 @@
         }
       }
       @default {
-        <app-files-viewer-text
-          [currentHeight]="currentHeight"
-          [file]="currentFile"
-          [isWriteable]="isWriteable"
-          [modalClosing]="modalClosing()"
-          [(isReadonly)]="isReadonly">
-        </app-files-viewer-text>
+        @if (isMarkdownFile) {
+          <app-files-viewer-markdown
+            [currentHeight]="currentHeight"
+            [file]="currentFile"
+            [isWriteable]="isWriteable"
+            [modalClosing]="modalClosing()"
+            [(isReadonly)]="isReadonly">
+          </app-files-viewer-markdown>
+        } @else {
+          <app-files-viewer-text
+            [currentHeight]="currentHeight"
+            [file]="currentFile"
+            [isWriteable]="isWriteable"
+            [modalClosing]="modalClosing()"
+            [(isReadonly)]="isReadonly">
+          </app-files-viewer-text>
+        }
       }
     }
   </div>

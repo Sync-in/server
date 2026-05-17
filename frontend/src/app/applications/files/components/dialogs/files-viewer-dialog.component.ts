@@ -11,6 +11,7 @@ import { SHORT_MIME } from '../../files.constants'
 import { FileModel } from '../../models/file.model'
 import { FilesViewerCollaboraOnlineComponent } from '../viewers/files-viewer-collabora-online.component'
 import { FilesViewerImageComponent } from '../viewers/files-viewer-image.component'
+import { FilesViewerMarkdownComponent } from '../viewers/files-viewer-markdown.component'
 import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.component'
 import { FilesViewerOnlyOfficeComponent } from '../viewers/files-viewer-only-office.component'
 import { FilesViewerPdfComponent } from '../viewers/files-viewer-pdf.component'
@@ -22,6 +23,7 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
     FilesViewerPdfComponent,
     FilesViewerMediaComponent,
     FilesViewerTextComponent,
+    FilesViewerMarkdownComponent,
     FilesViewerImageComponent,
     FaIconComponent,
     FilesViewerOnlyOfficeComponent,
@@ -45,11 +47,16 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   protected readonly icons = { faEye, faPen }
   protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
   protected canToggleViewer = false
+  protected readonly markdownExtensions = new Set(['md', 'markdown', 'mdown', 'mkd', 'mkdn'])
   protected readonly store = inject(StoreService)
   private openedFile: { id: string | number; name: string; mimeUrl: string }
   private readonly layout = inject(LayoutService)
   private readonly subscription: Subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
   private readonly offsetTop = 42
+
+  protected get isMarkdownFile(): boolean {
+    return this.markdownExtensions.has(this.currentFile?.getExtension())
+  }
 
   ngOnInit() {
     this.canToggleViewer = this.isWriteable && !!this.currentFile?.isEditable && this.hookedShortMime === SHORT_MIME.PDF
@@ -65,7 +72,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
 
   onClose() {
     if (this.currentFile.isEditable && this.hookedShortMime === SHORT_MIME.TEXT) {
-      // Prevent closing the modal without saving when using the text editor
+      // Prevent closing the modal without saving when using text-based editors
       this.modalClosing.set(true)
       // Force the next state change
       setTimeout(() => this.modalClosing.set(false), 1000)

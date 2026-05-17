@@ -1,0 +1,344 @@
+<div class="files-viewer-markdown" [style.height.px]="currentHeight()">
+  <div class="app-top-menu files-markdown-toolbar">
+    <button
+      (click)="toggleReadonly()"
+      [tooltip]="(isReadonly() || !isWriteable() ? 'Read-only' : 'Read-write') | translate:locale.language"
+      [adaptivePosition]="true"
+      class="btn btn-default me-1"
+      type="button"
+      [disabled]="!isSupported() || !isWriteable()">
+      <fa-icon [icon]="isReadonly() ? icons.faLock : icons.faLockOpen"></fa-icon>
+    </button>
+    <button
+      (click)="save()"
+      [tooltip]="(canSave() ? 'Save' : undefined) | translate:locale.language"
+      [isDisabled]="!canSave()"
+      class="btn btn-default me-1"
+      type="button"
+      [disabled]="!canSave()">
+      @if (isSaving()) {
+        <fa-icon [icon]="icons.faSpinner" animation="spin"></fa-icon>
+      } @else {
+        <fa-icon [icon]="icons.faFloppyDisk"></fa-icon>
+      }
+    </button>
+    <button
+      (click)="onUndo()"
+      [disabled]="!canUndo()"
+      [tooltip]="'Undo' | translate:locale.language"
+      class="d-none d-sm-block btn btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faReply"></fa-icon>
+    </button>
+    <button
+      (click)="onRedo()"
+      [disabled]="!canRedo()"
+      [tooltip]="'Redo' | translate:locale.language"
+      class="d-none d-sm-block btn btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faShare"></fa-icon>
+    </button>
+
+    <div class="files-markdown-mode-group">
+      <div class="vr files-markdown-mode-separator files-markdown-mode-separator-start"></div>
+      <button
+        (click)="toggleViewMode()"
+        [tooltip]="(isSourceMode() ? 'Visual Mode' : 'Code Mode') | translate:locale.language"
+        class="btn btn-custom"
+        type="button">
+        <fa-icon [icon]="isSourceMode() ? icons.faKeyboard : icons.faCode"></fa-icon>
+      </button>
+      <div class="vr files-markdown-mode-separator files-markdown-mode-separator-end"></div>
+    </div>
+
+    @if (!isSourceMode()) {
+      <div class="files-markdown-toolbar-group me-1">
+        <div class="btn-group" dropdown>
+          <button
+            [disabled]="!canEditVisual()"
+            [class.active]="isSelectionActive('heading')"
+            [tooltip]="'Heading' | translate:locale.language"
+            class="btn btn-custom dropdown-toggle files-markdown-heading-toggle"
+            dropdownToggle
+            type="button">
+            <fa-icon [icon]="icons.faHeading"></fa-icon>
+          </button>
+          <ul *dropdownMenu class="dropdown-menu files-markdown-heading-menu" role="menu">
+            <li role="menuitem">
+              <a (click)="setParagraph()" [class.active]="editor.isActive('paragraph')" class="dropdown-item">
+                <span class="files-markdown-heading-item">
+                  <span class="files-markdown-heading-level"><fa-icon [icon]="icons.faParagraph"></fa-icon></span>
+                  <span class="files-markdown-heading-name" l10nTranslate>Paragraph</span>
+                </span>
+              </a>
+            </li>
+            @for (level of headingLevels; track level) {
+              <li role="menuitem">
+                <a (click)="toggleHeading(level)" [class.active]="editor.isActive('heading', { level })" class="dropdown-item">
+                  <span class="files-markdown-heading-item">
+                    <span class="files-markdown-heading-level">H{{ level }}</span>
+                    <span class="files-markdown-heading-name">{{ 'Heading' | translate:locale.language }} {{ level }}</span>
+                  </span>
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+        <button
+          (click)="toggleBold()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('bold')"
+          [tooltip]="'Bold' | translate:locale.language"
+          class="btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faBold"></fa-icon>
+        </button>
+        <button
+          (click)="toggleItalic()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('italic')"
+          [tooltip]="'Italic' | translate:locale.language"
+          class="btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faItalic"></fa-icon>
+        </button>
+        <button
+          (click)="toggleUnderline()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('underline')"
+          [tooltip]="'Underline' | translate:locale.language"
+          class="d-none d-md-block btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faUnderline"></fa-icon>
+        </button>
+        <button
+          (click)="toggleStrike()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('strike')"
+          [tooltip]="'Strikethrough' | translate:locale.language"
+          class="d-none d-md-block btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faStrikethrough"></fa-icon>
+        </button>
+
+        <div class="d-none d-md-block vr files-markdown-toolbar-separator"></div>
+
+        <div class="btn-group" dropdown>
+          <button
+            [disabled]="!canEditVisual()"
+            [tooltip]="'List' | translate:locale.language"
+            class="btn btn-custom dropdown-toggle"
+            dropdownToggle
+            type="button">
+            <fa-icon [icon]="icons.faListUl"></fa-icon>
+          </button>
+          <ul *dropdownMenu class="dropdown-menu files-markdown-list-menu" role="menu">
+            <li role="menuitem">
+              <a (click)="toggleBulletList()" [class.active]="isSelectionActive('bulletList')" class="dropdown-item">
+                <span class="files-markdown-list-item">
+                  <fa-icon [icon]="icons.faListUl"></fa-icon>
+                  <span l10nTranslate>Bullet List</span>
+                </span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="toggleOrderedList()" [class.active]="isSelectionActive('orderedList')" class="dropdown-item">
+                <span class="files-markdown-list-item">
+                  <fa-icon [icon]="icons.faListOl"></fa-icon>
+                  <span l10nTranslate>Ordered List</span>
+                </span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="toggleTaskList()" [class.active]="isSelectionActive('taskList')" class="dropdown-item">
+                <span class="files-markdown-list-item">
+                  <fa-icon [icon]="icons.faSquareCheck"></fa-icon>
+                  <span l10nTranslate>Task List</span>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="btn-group" dropdown>
+          <button
+            [disabled]="!canEditVisual()"
+            [tooltip]="'Code' | translate:locale.language"
+            class="btn btn-custom dropdown-toggle"
+            dropdownToggle
+            type="button">
+            <fa-icon [icon]="icons.faCode"></fa-icon>
+          </button>
+          <ul *dropdownMenu class="dropdown-menu files-markdown-code-menu" role="menu">
+            <li role="menuitem">
+              <a (click)="toggleCode()" [class.active]="isSelectionActive('code')" class="dropdown-item">
+                <span class="files-markdown-code-item">
+                  <fa-icon [icon]="icons.faCode"></fa-icon>
+                  <span l10nTranslate>Inline Code</span>
+                </span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="toggleCodeBlock()" [class.active]="isSelectionActive('codeBlock')" class="dropdown-item">
+                <span class="files-markdown-code-item">
+                  <fa-icon [icon]="icons.faCode"></fa-icon>
+                  <span l10nTranslate>Code Block</span>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="files-markdown-toolbar-group me-1">
+        <button
+          (click)="toggleBlockquote()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('blockquote')"
+          [tooltip]="'Blockquote' | translate:locale.language"
+          class="d-none d-md-block btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faQuoteLeft"></fa-icon>
+        </button>
+      </div>
+
+      <div class="files-markdown-toolbar-group me-1">
+        <button
+          (click)="setLink()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('link')"
+          [tooltip]="'Link' | translate:locale.language"
+          class="btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faLink"></fa-icon>
+        </button>
+
+        <div class="d-none d-lg-block btn-group" dropdown>
+          <button
+            [disabled]="!canEditVisual()"
+            [tooltip]="'Table' | translate:locale.language"
+            class="btn btn-custom dropdown-toggle"
+            dropdownToggle
+            type="button">
+            <fa-icon [icon]="icons.faTable"></fa-icon>
+          </button>
+          <ul *dropdownMenu class="dropdown-menu files-markdown-table-menu" role="menu">
+            <li role="menuitem">
+              <a (click)="insertTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faTable"></fa-icon><span class="ms-2" l10nTranslate>Create a table</span></span>
+              </a>
+            </li>
+            <li class="dropdown-divider"></li>
+            <li role="menuitem">
+              <a (click)="addTableRow('above')" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faPlus"></fa-icon><span class="ms-2" l10nTranslate>Add row above</span></span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="addTableRow('below')" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faPlus"></fa-icon><span class="ms-2" l10nTranslate>Add row below</span></span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="deleteTableRow()" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faMinus"></fa-icon><span class="ms-2" l10nTranslate>Delete row</span></span>
+              </a>
+            </li>
+            <li class="dropdown-divider"></li>
+            <li role="menuitem">
+              <a (click)="addTableColumn('left')" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faPlus"></fa-icon><span class="ms-2" l10nTranslate>Add column left</span></span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="addTableColumn('right')" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faPlus"></fa-icon><span class="ms-2" l10nTranslate>Add column right</span></span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="deleteTableColumn()" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faTrashCan"></fa-icon><span class="ms-2" l10nTranslate>Delete column</span></span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="deleteTable()" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faTrashCan"></fa-icon><span class="ms-2" l10nTranslate>Delete table</span></span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <button
+          (click)="setHorizontalRule()"
+          [disabled]="!canEditVisual()"
+          [tooltip]="'Horizontal Rule' | translate:locale.language"
+          class="d-none d-lg-block btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faMinus"></fa-icon>
+        </button>
+      </div>
+    }
+
+    @if (isSourceMode()) {
+      <button
+        btnCheckbox
+        [ngModel]="lineWrapping()"
+        (ngModelChange)="lineWrapping.set($event)"
+        [tooltip]="'Line Wrap' | translate:locale.language"
+        class="btn btn-custom me-1"
+        type="button">
+        <fa-icon [icon]="icons.faArrowsLeftRightToLine"></fa-icon>
+      </button>
+      <button
+        btnCheckbox
+        [ngModel]="isSearchPanelOpen()"
+        (ngModelChange)="toggleSearch()"
+        [tooltip]="'Search' | translate:locale.language"
+        class="d-none d-sm-block btn btn-custom me-1"
+        type="button">
+        <fa-icon [icon]="icons.faMagnifyingGlass"></fa-icon>
+      </button>
+    }
+
+    @if (warnOnUnsavedChanges()) {
+      <button (click)="save(true)"
+              class="btn btn-primary me-2 ms-auto"
+              type="button"
+              l10nTranslate>Save And Exit
+      </button>
+      <button (click)="onClose()"
+              class="btn btn-danger me-2"
+              data-dismiss="modal" type="button"
+              l10nTranslate>Close Without Saving
+      </button>
+      <button (click)="warnOnUnsavedChanges.set(false)"
+              class="d-none d-sm-block btn btn-default"
+              data-dismiss="modal" type="button"
+              l10nTranslate>Cancel
+      </button>
+    }
+  </div>
+
+  <div class="files-markdown-content" [class.is-visual]="!isSourceMode()" [class.is-source]="isSourceMode()">
+    <div class="files-markdown-visual-pane">
+      <tiptap-editor
+        class="files-markdown-visual-editor"
+        [class.is-readonly]="isReadonly()"
+        [editor]="editor">
+      </tiptap-editor>
+    </div>
+    <div class="files-markdown-source-pane">
+      <code-editor
+        #sourceEditor
+        [autoFocus]="false"
+        [languages]="languages"
+        [language]="currentLanguage"
+        [(ngModel)]="sourceContent"
+        (change)="sourceContentChange()"
+        [theme]="currentTheme"
+        [readonly]="!canEditContent()"
+        [disabled]="!canEditContent()"
+        [lineWrapping]="lineWrapping()" />
+    </div>
+  </div>
+</div>
