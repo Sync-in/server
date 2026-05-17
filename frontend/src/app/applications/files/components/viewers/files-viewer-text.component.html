@@ -4,18 +4,18 @@
       (click)="toggleReadonly()"
       [tooltip]="(isReadonly() || !isWriteable() ? 'Read-only' : 'Read-write') | translate:locale.language"
       [adaptivePosition]="true"
-      class="btn btn-default me-1"
+      class="btn {{ isReadonly() ? 'btn-warning' : 'btn-default' }} me-1"
       type="button"
       [disabled]="!isSupported() || !isWriteable()">
       <fa-icon [icon]="isReadonly() ? icons.faLock : icons.faLockOpen"></fa-icon>
     </button>
     <button
       (click)="save()"
-      [tooltip]="(isReadonly() || !isWriteable() || !isModified() ? undefined : 'Save') | translate:locale.language"
-      [isDisabled]="isReadonly() || !isWriteable() || !isModified()"
+      [tooltip]="(canSave() ? 'Save' : undefined) | translate:locale.language"
+      [isDisabled]="!canSave()"
       class="btn btn-default me-1"
       type="button"
-      [disabled]="isReadonly() || !isWriteable() || !isModified()">
+      [disabled]="!canSave()">
       @if (isSaving()) {
         <fa-icon [icon]="icons.faSpinner" animation="spin"></fa-icon>
       } @else {

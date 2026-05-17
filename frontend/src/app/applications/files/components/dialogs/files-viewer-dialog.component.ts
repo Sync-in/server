@@ -1,4 +1,4 @@
-import { Component, computed, inject, Input, model, OnDestroy, OnInit, signal } from '@angular/core'
+import { Component, computed, HostListener, inject, Input, model, OnDestroy, OnInit, signal } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faEye, faPen } from '@fortawesome/free-solid-svg-icons'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
@@ -83,6 +83,12 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
 
   onMinimize() {
     this.layout.minimizeDialog(this.openedFile.id, { name: this.openedFile.name, mimeUrl: this.openedFile.mimeUrl })
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    event.preventDefault()
+    event.returnValue = ''
   }
 
   protected toggleViewer(): void {

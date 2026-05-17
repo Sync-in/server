@@ -4,7 +4,7 @@
       (click)="toggleReadonly()"
       [tooltip]="(isReadonly() || !isWriteable() ? 'Read-only' : 'Read-write') | translate:locale.language"
       [adaptivePosition]="true"
-      class="btn btn-default me-1"
+      class="btn {{ isReadonly() ? 'btn-warning' : 'btn-default' }} me-1"
       type="button"
       [disabled]="!isSupported() || !isWriteable()">
       <fa-icon [icon]="isReadonly() ? icons.faLock : icons.faLockOpen"></fa-icon>
@@ -44,9 +44,9 @@
       <button
         (click)="toggleViewMode()"
         [tooltip]="(isSourceMode() ? 'Visual Mode' : 'Code Mode') | translate:locale.language"
-        class="btn btn-custom"
+        class="btn btn-custom mx-0"
         type="button">
-        <fa-icon [icon]="isSourceMode() ? icons.faKeyboard : icons.faCode"></fa-icon>
+        <fa-icon [icon]="isSourceMode() ? icons.faKeyboard : icons.faEye"></fa-icon>
       </button>
       <div class="vr files-markdown-mode-separator files-markdown-mode-separator-end"></div>
     </div>
@@ -64,21 +64,10 @@
             <fa-icon [icon]="icons.faHeading"></fa-icon>
           </button>
           <ul *dropdownMenu class="dropdown-menu files-markdown-heading-menu" role="menu">
-            <li role="menuitem">
-              <a (click)="setParagraph()" [class.active]="editor.isActive('paragraph')" class="dropdown-item">
-                <span class="files-markdown-heading-item">
-                  <span class="files-markdown-heading-level"><fa-icon [icon]="icons.faParagraph"></fa-icon></span>
-                  <span class="files-markdown-heading-name" l10nTranslate>Paragraph</span>
-                </span>
-              </a>
-            </li>
             @for (level of headingLevels; track level) {
               <li role="menuitem">
                 <a (click)="toggleHeading(level)" [class.active]="editor.isActive('heading', { level })" class="dropdown-item">
-                  <span class="files-markdown-heading-item">
-                    <span class="files-markdown-heading-level">H{{ level }}</span>
-                    <span class="files-markdown-heading-name">{{ 'Heading' | translate:locale.language }} {{ level }}</span>
-                  </span>
+                  H{{ level }}
                 </a>
               </li>
             }
@@ -126,6 +115,7 @@
         <div class="btn-group" dropdown>
           <button
             [disabled]="!canEditVisual()"
+            [class.active]="editor.isActive('bulletList') || editor.isActive('orderedList') || editor.isActive('taskList')"
             [tooltip]="'List' | translate:locale.language"
             class="btn btn-custom dropdown-toggle"
             dropdownToggle
@@ -134,7 +124,7 @@
           </button>
           <ul *dropdownMenu class="dropdown-menu files-markdown-list-menu" role="menu">
             <li role="menuitem">
-              <a (click)="toggleBulletList()" [class.active]="isSelectionActive('bulletList')" class="dropdown-item">
+              <a (click)="toggleBulletList()" [class.active]="editor.isActive('bulletList')" class="dropdown-item">
                 <span class="files-markdown-list-item">
                   <fa-icon [icon]="icons.faListUl"></fa-icon>
                   <span l10nTranslate>Bullet List</span>
@@ -142,7 +132,7 @@
               </a>
             </li>
             <li role="menuitem">
-              <a (click)="toggleOrderedList()" [class.active]="isSelectionActive('orderedList')" class="dropdown-item">
+              <a (click)="toggleOrderedList()" [class.active]="editor.isActive('orderedList')" class="dropdown-item">
                 <span class="files-markdown-list-item">
                   <fa-icon [icon]="icons.faListOl"></fa-icon>
                   <span l10nTranslate>Ordered List</span>
@@ -150,7 +140,7 @@
               </a>
             </li>
             <li role="menuitem">
-              <a (click)="toggleTaskList()" [class.active]="isSelectionActive('taskList')" class="dropdown-item">
+              <a (click)="toggleTaskList()" [class.active]="editor.isActive('taskList')" class="dropdown-item">
                 <span class="files-markdown-list-item">
                   <fa-icon [icon]="icons.faSquareCheck"></fa-icon>
                   <span l10nTranslate>Task List</span>
@@ -163,6 +153,7 @@
         <div class="btn-group" dropdown>
           <button
             [disabled]="!canEditVisual()"
+            [class.active]="editor.isActive('code') || editor.isActive('codeBlock')"
             [tooltip]="'Code' | translate:locale.language"
             class="btn btn-custom dropdown-toggle"
             dropdownToggle
@@ -171,7 +162,7 @@
           </button>
           <ul *dropdownMenu class="dropdown-menu files-markdown-code-menu" role="menu">
             <li role="menuitem">
-              <a (click)="toggleCode()" [class.active]="isSelectionActive('code')" class="dropdown-item">
+              <a (click)="toggleCode()" [class.active]="editor.isActive('code')" class="dropdown-item">
                 <span class="files-markdown-code-item">
                   <fa-icon [icon]="icons.faCode"></fa-icon>
                   <span l10nTranslate>Inline Code</span>
@@ -179,7 +170,7 @@
               </a>
             </li>
             <li role="menuitem">
-              <a (click)="toggleCodeBlock()" [class.active]="isSelectionActive('codeBlock')" class="dropdown-item">
+              <a (click)="toggleCodeBlock()" [class.active]="editor.isActive('codeBlock')" class="dropdown-item">
                 <span class="files-markdown-code-item">
                   <fa-icon [icon]="icons.faCode"></fa-icon>
                   <span l10nTranslate>Code Block</span>
@@ -203,19 +194,10 @@
       </div>
 
       <div class="files-markdown-toolbar-group me-1">
-        <button
-          (click)="setLink()"
-          [disabled]="!canEditVisual()"
-          [class.active]="isSelectionActive('link')"
-          [tooltip]="'Link' | translate:locale.language"
-          class="btn btn-custom"
-          type="button">
-          <fa-icon [icon]="icons.faLink"></fa-icon>
-        </button>
-
         <div class="d-none d-lg-block btn-group" dropdown>
           <button
             [disabled]="!canEditVisual()"
+            [class.active]="editor.isActive('table')"
             [tooltip]="'Table' | translate:locale.language"
             class="btn btn-custom dropdown-toggle"
             dropdownToggle
@@ -225,44 +207,44 @@
           <ul *dropdownMenu class="dropdown-menu files-markdown-table-menu" role="menu">
             <li role="menuitem">
               <a (click)="insertTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faTable"></fa-icon><span class="ms-2" l10nTranslate>Create a table</span></span>
+                <span><fa-icon [icon]="icons.faTable"></fa-icon><span l10nTranslate>Create a table</span></span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="deleteTable()" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faTrashCan"></fa-icon><span l10nTranslate>Delete table</span></span>
               </a>
             </li>
             <li class="dropdown-divider"></li>
             <li role="menuitem">
               <a (click)="addTableRow('above')" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faPlus"></fa-icon><span class="ms-2" l10nTranslate>Add row above</span></span>
+                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add row above</span></span>
               </a>
             </li>
             <li role="menuitem">
               <a (click)="addTableRow('below')" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faPlus"></fa-icon><span class="ms-2" l10nTranslate>Add row below</span></span>
+                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add row below</span></span>
               </a>
             </li>
             <li role="menuitem">
               <a (click)="deleteTableRow()" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faMinus"></fa-icon><span class="ms-2" l10nTranslate>Delete row</span></span>
+                <span><fa-icon [icon]="icons.faSquareMinus"></fa-icon><span l10nTranslate>Delete row</span></span>
               </a>
             </li>
             <li class="dropdown-divider"></li>
             <li role="menuitem">
               <a (click)="addTableColumn('left')" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faPlus"></fa-icon><span class="ms-2" l10nTranslate>Add column left</span></span>
+                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add column left</span></span>
               </a>
             </li>
             <li role="menuitem">
               <a (click)="addTableColumn('right')" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faPlus"></fa-icon><span class="ms-2" l10nTranslate>Add column right</span></span>
+                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add column right</span></span>
               </a>
             </li>
             <li role="menuitem">
               <a (click)="deleteTableColumn()" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faTrashCan"></fa-icon><span class="ms-2" l10nTranslate>Delete column</span></span>
-              </a>
-            </li>
-            <li role="menuitem">
-              <a (click)="deleteTable()" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faTrashCan"></fa-icon><span class="ms-2" l10nTranslate>Delete table</span></span>
+                <span><fa-icon [icon]="icons.faSquareMinus"></fa-icon><span l10nTranslate>Delete column</span></span>
               </a>
             </li>
           </ul>
@@ -276,7 +258,49 @@
           type="button">
           <fa-icon [icon]="icons.faMinus"></fa-icon>
         </button>
+
+        <button
+          (click)="setLink()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('link')"
+          [tooltip]="'Link' | translate:locale.language"
+          class="btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faLink"></fa-icon>
+        </button>
+
+        <div class="btn-group" dropdown>
+          <button
+            [disabled]="!canEditVisual()"
+            [class.active]="isSelectionActive('image')"
+            [tooltip]="'Image' | translate:locale.language"
+            class="btn btn-custom dropdown-toggle"
+            dropdownToggle
+            type="button">
+            <fa-icon [icon]="icons.faImage"></fa-icon>
+          </button>
+          <ul *dropdownMenu class="dropdown-menu files-markdown-image-menu" role="menu">
+            <li role="menuitem">
+              <a (click)="openImageFilePicker()" class="dropdown-item">
+                <span class="files-markdown-image-item">
+                  <fa-icon [icon]="icons.faImage"></fa-icon>
+                  <span l10nTranslate>Image from file</span>
+                </span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="insertImageFromUrl()" class="dropdown-item">
+                <span class="files-markdown-image-item">
+                  <fa-icon [icon]="icons.faLink"></fa-icon>
+                  <span l10nTranslate>Image from URL</span>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
+
+      <input #imageFileInput (change)="insertImageFromFile($event)" accept="image/*" class="d-none" type="file" />
     }
 
     @if (isSourceMode()) {

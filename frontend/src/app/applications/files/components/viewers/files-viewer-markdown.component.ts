@@ -1,31 +1,20 @@
 import { CodeEditor } from '@acrodata/code-editor'
-import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import {
-  Component,
-  effect,
-  HostListener,
-  inject,
-  input,
-  model,
-  OnDestroy,
-  OnInit,
-  signal,
-  untracked,
-  viewChild,
-  ViewEncapsulation
-} from '@angular/core'
+import { Component, effect, ElementRef, HostListener, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
 import { closeSearchPanel, openSearchPanel } from '@codemirror/search'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import { faSquareMinus, faSquarePlus } from '@fortawesome/free-regular-svg-icons'
 import {
   faArrowsLeftRightToLine,
   faBold,
   faCode,
+  faEye,
   faFloppyDisk,
   faHeading,
+  faImage,
   faItalic,
   faKeyboard,
   faLink,
@@ -35,7 +24,6 @@ import {
   faLockOpen,
   faMagnifyingGlass,
   faMinus,
-  faParagraph,
   faPlus,
   faQuoteLeft,
   faReply,
@@ -47,27 +35,35 @@ import {
   faTrashCan,
   faUnderline
 } from '@fortawesome/free-solid-svg-icons'
-import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
-import { Editor } from '@tiptap/core'
+import { Editor, Extension, type Range } from '@tiptap/core'
+import Image, { type SetImageOptions } from '@tiptap/extension-image'
 import { TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
 import { TaskList } from '@tiptap/extension-task-list'
 import { Markdown } from '@tiptap/markdown'
 import StarterKit from '@tiptap/starter-kit'
-import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
+import { L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { TiptapEditorDirective } from 'ngx-tiptap'
-import { firstValueFrom } from 'rxjs'
-import { type AppWindow, themeDark } from '../../../../layout/layout.interfaces'
-import { LayoutService } from '../../../../layout/layout.service'
-import { FileModel } from '../../models/file.model'
-import { FilesService } from '../../services/files.service'
-import { FilesUploadService } from '../../services/files-upload.service'
-import { fileLockPropsToString } from '../utils/file-lock.utils'
+import { FilesViewerEditableBase } from './files-viewer-editable-base'
 
 type MarkdownHeadingLevel = 1 | 2 | 3 | 4
+type MarkdownInlineMark = 'bold' | 'code' | 'italic' | 'strike' | 'underline'
+
+const ExitInlineCodeOnEnter = Extension.create({
+  name: 'exitInlineCodeOnEnter',
+
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => {
+        if (!this.editor.isActive('code') || this.editor.isActive('codeBlock')) return false
+        return this.editor.chain().splitBlock().unsetMark('code').run()
+      }
+    }
+  }
+})
 
 @Component({
   selector: 'app-files-viewer-markdown',
@@ -86,23 +82,14 @@ type MarkdownHeadingLevel = 1 | 2 | 3 | 4
   styleUrl: 'files-viewer-markdown.component.scss',
   templateUrl: 'files-viewer-markdown.component.html'
 })
-export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
+export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implements OnInit, OnDestroy {
   private readonly sourceEditor = viewChild<CodeEditor>('sourceEditor')
-  currentHeight = input.required<number>()
-  file = model.required<FileModel>()
-  isWriteable = input.required<boolean>()
-  isReadonly = model.required<boolean>()
-  modalClosing = input.required<boolean>()
-  protected isSupported = signal(false)
-  protected isModified = signal(false)
-  protected isSaving = signal(false)
+  private readonly imageFileInput = viewChild<ElementRef<HTMLInputElement>>('imageFileInput')
   protected isSourceMode = signal(false)
-  protected lineWrapping = signal(true)
+  protected lineWrapping = signal(false)
   protected isSearchPanelOpen = signal(false)
-  protected warnOnUnsavedChanges = signal(false)
   protected sourceContent = ''
   protected currentLanguage: string | undefined = undefined
-  protected currentTheme: 'dark' | 'light' = 'light'
   protected readonly languages: LanguageDescription[] = languages
   protected readonly editor = new Editor({
     extensions: [
@@ -111,6 +98,7 @@ export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
           openOnClick: false
         }
       }),
+      ExitInlineCodeOnEnter,
       TaskList,
       TaskItem.configure({
         nested: true
@@ -119,6 +107,9 @@ export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
         table: {
           resizable: true
         }
+      }),
+      Image.configure({
+        allowBase64: true
       }),
       Markdown
     ],
@@ -131,8 +122,10 @@ export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
     faArrowsLeftRightToLine,
     faBold,
     faCode,
+    faEye,
     faFloppyDisk,
     faHeading,
+    faImage,
     faItalic,
     faKeyboard,
     faLink,
@@ -142,7 +135,6 @@ export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
     faLockOpen,
     faMagnifyingGlass,
     faMinus,
-    faParagraph,
     faPlus,
     faQuoteLeft,
     faReply,
@@ -152,31 +144,15 @@ export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
     faStrikethrough,
     faTable,
     faTrashCan,
-    faUnderline
+    faUnderline,
+    faSquareMinus,
+    faSquarePlus
   }
   protected readonly headingLevels: MarkdownHeadingLevel[] = [1, 2, 3, 4]
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly layout = inject(LayoutService)
-  private readonly http = inject(HttpClient)
-  private readonly filesServices = inject(FilesService)
-  private readonly filesUpload = inject(FilesUploadService)
-  private readonly subscription = this.layout.switchTheme.subscribe((layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light'))
   private savedContent = ''
 
   constructor() {
-    effect(() => {
-      if (!this.modalClosing()) return
-      const fileId = untracked(() => this.file().id)
-      const modified = untracked(() => this.isModified())
-      if (modified) {
-        this.warnOnUnsavedChanges.set(true)
-        if (this.layout.windows.getValue().find((w: AppWindow) => w.id === fileId)) {
-          this.layout.restoreDialog(fileId)
-        }
-      } else {
-        this.onClose().catch(console.error)
-      }
-    })
+    super()
     effect(() => {
       const editable = !this.isReadonly() && this.isWriteable() && this.isSupported()
       if (!this.editor.isDestroyed) {
@@ -222,47 +198,9 @@ export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
     this.loadContent().catch(console.error)
   }
 
-  ngOnDestroy() {
-    this.subscription.unsubscribe()
+  override ngOnDestroy() {
+    super.ngOnDestroy()
     this.editor.destroy()
-  }
-
-  protected async toggleReadonly() {
-    if (this.isReadonly()) {
-      if (await this.lockFile()) {
-        this.isReadonly.set(false)
-      }
-    } else {
-      await this.unlockFile()
-      this.isReadonly.set(true)
-    }
-  }
-
-  protected save(exit = false) {
-    if (!this.canSave()) return
-    this.isSaving.set(true)
-    const content = this.currentMarkdown()
-    this.filesUpload.uploadOneFile(this.file(), content, true).subscribe({
-      next: () => {
-        this.sourceContent = content
-        this.savedContent = content
-        this.isModified.set(false)
-        this.isSaving.set(false)
-        this.warnOnUnsavedChanges.set(false)
-        if (exit) {
-          this.onClose().catch(console.error)
-        }
-        this.file().updateHTimeAgo()
-      },
-      error: (e: HttpErrorResponse) => {
-        this.isSaving.set(false)
-        this.layout.sendNotification('error', 'Unable to save document', e.error.message)
-      }
-    })
-  }
-
-  protected canSave(): boolean {
-    return this.canEditContent() && this.isModified() && !this.isSaving()
   }
 
   protected onUndo() {
@@ -308,7 +246,7 @@ export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
       if (this.isSearchPanelOpen()) {
         this.toggleSearch()
       }
-      this.editor.commands.setContent(this.sourceContent, { emitUpdate: false, contentType: 'markdown' })
+      this.setMarkdownContent(this.sourceContent)
     }
     this.isSourceMode.set(sourceMode)
     setTimeout(() => {
@@ -336,32 +274,28 @@ export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
     }
   }
 
-  protected setParagraph() {
-    this.runEditorCommand(() => this.editor.chain().focus().setParagraph().run())
-  }
-
   protected toggleHeading(level: MarkdownHeadingLevel) {
     this.runEditorCommand(() => this.editor.chain().focus().toggleHeading({ level }).run())
   }
 
   protected toggleBold() {
-    this.runEditorCommand(() => this.editor.chain().focus().toggleBold().run())
+    this.toggleInlineMark('bold')
   }
 
   protected toggleItalic() {
-    this.runEditorCommand(() => this.editor.chain().focus().toggleItalic().run())
+    this.toggleInlineMark('italic')
   }
 
   protected toggleUnderline() {
-    this.runEditorCommand(() => this.editor.chain().focus().toggleUnderline().run())
+    this.toggleInlineMark('underline')
   }
 
   protected toggleStrike() {
-    this.runEditorCommand(() => this.editor.chain().focus().toggleStrike().run())
+    this.toggleInlineMark('strike')
   }
 
   protected toggleCode() {
-    this.runEditorCommand(() => this.editor.chain().focus().toggleCode().run())
+    this.toggleInlineMark('code')
   }
 
   protected toggleBulletList() {
@@ -397,6 +331,51 @@ export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
         return this.editor.chain().focus().extendMarkRange('link').unsetLink().run()
       }
       return this.editor.chain().focus().extendMarkRange('link').setLink({ href: url.trim() }).run()
+    })
+  }
+
+  protected openImageFilePicker() {
+    this.runEditorCommand(() => {
+      const inputElement = this.imageFileInput()?.nativeElement
+      if (!inputElement) return false
+      inputElement.value = ''
+      inputElement.click()
+      return true
+    })
+  }
+
+  protected insertImageFromFile(event: Event) {
+    const inputElement = event.target as HTMLInputElement
+    const imageFile = inputElement.files?.[0]
+    inputElement.value = ''
+    if (!imageFile || !this.canEditVisual()) return
+    if (!imageFile.type.startsWith('image/')) {
+      this.layout.sendNotification('error', 'Unable to insert image', 'Unsupported image file')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const src = typeof reader.result === 'string' ? reader.result : ''
+      if (!src) {
+        this.layout.sendNotification('error', 'Unable to insert image', imageFile.name)
+        return
+      }
+      this.insertImage({ src, alt: imageFile.name })
+    }
+    reader.onerror = () => this.layout.sendNotification('error', 'Unable to insert image', imageFile.name)
+    reader.readAsDataURL(imageFile)
+  }
+
+  protected insertImageFromUrl() {
+    this.runEditorCommand(() => {
+      const previousSrc = this.editor.getAttributes('image').src as string | undefined
+      const src = window.prompt('Image URL', previousSrc || 'https://')
+      if (src === null || !src.trim()) return false
+      const previousAlt = this.editor.getAttributes('image').alt as string | undefined
+      const alt = window.prompt('Alternative text', previousAlt || '')
+      if (alt === null) return false
+      return this.insertImage({ src: src.trim(), alt: alt.trim() || undefined })
     })
   }
 
@@ -438,25 +417,66 @@ export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
     return this.editor.isFocused && this.editor.isActive(name, attributes)
   }
 
-  protected async onClose() {
-    if (!this.isReadonly()) {
-      await this.unlockFile()
-    }
-    this.layout.closeDialog(null, this.file().id)
-  }
-
   private runEditorCommand(command: () => boolean) {
     if (this.canEditVisual() && !this.editor.isDestroyed) {
       command()
     }
   }
 
-  protected canEditVisual(): boolean {
-    return !this.isSourceMode() && this.canEditContent()
+  private toggleInlineMark(markName: MarkdownInlineMark) {
+    this.runEditorCommand(() => {
+      const wordRange = this.currentWordRange()
+      if (!wordRange) {
+        return this.editor.chain().focus().toggleMark(markName, {}, { extendEmptyMarkRange: true }).run()
+      }
+
+      const cursorPosition = this.editor.state.selection.from
+      const command = this.editor.chain().focus().setTextSelection(wordRange)
+      return (this.editor.isActive(markName) ? command.unsetMark(markName) : command.setMark(markName)).setTextSelection(cursorPosition).run()
+    })
   }
 
-  protected canEditContent(): boolean {
-    return !this.isReadonly() && this.isWriteable()
+  private insertImage(options: SetImageOptions): boolean {
+    return this.canEditVisual() && !this.editor.isDestroyed && this.editor.chain().focus().setImage(options).run()
+  }
+
+  private currentWordRange(): Range | null {
+    const { selection } = this.editor.state
+    if (!selection.empty) return null
+
+    const { $from } = selection
+    const text = $from.parent.textBetween(0, $from.parent.content.size, '\n', '\ufffc')
+    const offset = $from.parentOffset
+
+    if (!this.isWordCharacter(text[offset - 1]) && !this.isWordCharacter(text[offset])) {
+      return null
+    }
+
+    let start = offset
+    let end = offset
+
+    while (start > 0 && this.isWordCharacter(text[start - 1])) {
+      start--
+    }
+
+    while (end < text.length && this.isWordCharacter(text[end])) {
+      end++
+    }
+
+    if (start === end) return null
+
+    return {
+      from: $from.start() + start,
+      to: $from.start() + end
+    }
+  }
+
+  private isWordCharacter(character: string | undefined): boolean {
+    return !!character && /[\p{L}\p{N}_]/u.test(character)
+  }
+
+  protected canEditVisual(): boolean {
+    return !this.isSourceMode() && this.canEditContent()
   }
 
   private get sourceView() {
@@ -483,66 +503,28 @@ export class FilesViewerMarkdownComponent implements OnInit, OnDestroy {
     return this.sourceContent
   }
 
+  protected currentFileContent(): string {
+    return this.currentMarkdown()
+  }
+
+  protected onContentLoaded(content: string) {
+    this.savedContent = content
+    this.sourceContent = content
+    this.setMarkdownContent(content)
+    this.isModified.set(false)
+  }
+
+  protected override onContentSaved(content: string) {
+    this.sourceContent = content
+    this.savedContent = content
+  }
+
   private markModifiedIfNeeded() {
     const content = this.isSourceMode() ? this.sourceContent : this.editor.getMarkdown()
     this.isModified.set(content !== this.savedContent)
   }
 
-  private async loadContent() {
-    if (!this.isReadonly()) {
-      await this.lockFile()
-    }
-    this.http.get(this.file().dataUrl, { responseType: 'text' }).subscribe({
-      next: (data: string) => {
-        this.savedContent = data
-        this.sourceContent = data
-        this.editor.commands.setContent(data, { emitUpdate: false, contentType: 'markdown' })
-        this.isModified.set(false)
-      },
-      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Unable to open document', this.file().name, e)
-    })
-  }
-
-  private async lockFile(): Promise<boolean> {
-    if (!this.isSupported() || !this.isWriteable()) return false
-    try {
-      const lock: FileLockProps = await firstValueFrom(this.filesServices.lock(this.file()))
-      this.file.update((f) => {
-        f.lock = lock
-        return f
-      })
-      return true
-    } catch (e) {
-      this.lockError(e as HttpErrorResponse)
-      return false
-    }
-  }
-
-  private async unlockFile() {
-    if (!this.isSupported() || !this.isWriteable()) return
-    try {
-      await firstValueFrom(this.filesServices.unlock(this.file()))
-      this.file.update((f) => {
-        delete f.lock
-        return f
-      })
-    } catch (e) {
-      this.lockError(e as HttpErrorResponse)
-    }
-  }
-
-  private lockError(e: HttpErrorResponse) {
-    this.isReadonly.set(true)
-    this.isSupported.set(false)
-    if (e.error?.owner) {
-      const lock: FileLockProps = e.error
-      this.file.update((f) => {
-        f.lock = lock
-        return f
-      })
-      this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(lock))
-    } else {
-      this.layout.sendNotification('warning', this.file().name, e.error.message)
-    }
+  private setMarkdownContent(content: string) {
+    this.editor.chain().setMeta('addToHistory', false).setContent(content, { emitUpdate: false, contentType: 'markdown' }).run()
   }
 }
