@@ -1,0 +1,86 @@
+:host {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 4;
+  display: block;
+}
+
+.files-viewer-search {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 0.35rem 0 0;
+  overflow: hidden;
+  border-top: 1px solid rgba(128, 128, 128, 0.28);
+  background: #fff;
+  color: #1f2933;
+}
+
+.files-viewer-search-icon {
+  flex: 0 0 auto;
+  padding: 0 0.55rem;
+  opacity: 0.7;
+}
+
+.files-viewer-search-input {
+  flex: 1 1 auto;
+  min-width: 4rem;
+  height: 30px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.files-viewer-search-count {
+  flex: 0 0 auto;
+  min-width: 3.5rem;
+  padding: 0 0.6rem 0 0.45rem;
+  color: inherit;
+  font-size: 0.78rem;
+  text-align: right;
+  opacity: 0.72;
+}
+
+.files-viewer-search-button {
+  position: relative;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 26px;
+  margin: 2px 1px;
+  padding: 0;
+  border: 0;
+
+  &:first-of-type {
+    margin-left: 5px;
+
+    &::before {
+      position: absolute;
+      top: 6px;
+      bottom: 6px;
+      left: -4px;
+      width: 1px;
+      content: '';
+      background: rgba(128, 128, 128, 0.2);
+    }
+  }
+}
+
+:host-context(body.theme-dark) {
+  .files-viewer-search {
+    border-top-color: rgba(132, 157, 185, 0.28);
+    background: #202a2f;
+    color: #d7dde8;
+  }
+
+  .files-viewer-search-input::placeholder {
+    color: rgba(215, 221, 232, 0.55);
+  }
+
+  .files-viewer-search-button:first-of-type::before {
+    background: rgba(132, 157, 185, 0.28);
+  }
+}

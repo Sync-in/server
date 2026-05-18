@@ -1,4 +1,4 @@
-import { Component, computed, inject, Input, model, OnDestroy, OnInit, signal } from '@angular/core'
+import { Component, computed, HostListener, inject, Input, model, OnDestroy, OnInit, signal } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faEye, faPen } from '@fortawesome/free-solid-svg-icons'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
@@ -11,6 +11,7 @@ import { SHORT_MIME } from '../../files.constants'
 import { FileModel } from '../../models/file.model'
 import { FilesViewerCollaboraOnlineComponent } from '../viewers/files-viewer-collabora-online.component'
 import { FilesViewerImageComponent } from '../viewers/files-viewer-image.component'
+import { FilesViewerMarkdownComponent } from '../viewers/files-viewer-markdown.component'
 import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.component'
 import { FilesViewerOnlyOfficeComponent } from '../viewers/files-viewer-only-office.component'
 import { FilesViewerPdfComponent } from '../viewers/files-viewer-pdf.component'
@@ -22,6 +23,7 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
     FilesViewerPdfComponent,
     FilesViewerMediaComponent,
     FilesViewerTextComponent,
+    FilesViewerMarkdownComponent,
     FilesViewerImageComponent,
     FaIconComponent,
     FilesViewerOnlyOfficeComponent,
@@ -64,8 +66,8 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   }
 
   onClose() {
-    if (this.currentFile.isEditable && this.hookedShortMime === SHORT_MIME.TEXT) {
-      // Prevent closing the modal without saving when using the text editor
+    if (this.currentFile.isEditable && (this.hookedShortMime === SHORT_MIME.TEXT || this.hookedShortMime === SHORT_MIME.MARKDOWN)) {
+      // Prevent closing the modal without saving when using text-based editors
       this.modalClosing.set(true)
       // Force the next state change
       setTimeout(() => this.modalClosing.set(false), 1000)
@@ -76,6 +78,12 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
 
   onMinimize() {
     this.layout.minimizeDialog(this.openedFile.id, { name: this.openedFile.name, mimeUrl: this.openedFile.mimeUrl })
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent) {
+    event.preventDefault()
+    event.returnValue = ''
   }
 
   protected toggleViewer(): void {

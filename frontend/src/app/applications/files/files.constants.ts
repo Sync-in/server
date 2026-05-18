@@ -22,6 +22,7 @@ export const COMPRESSIBLE_MIMES = new Set(['application-gzip', 'application-zip'
 export const SHORT_MIME = {
   DOCUMENT: 'document',
   TEXT: 'text',
+  MARKDOWN: 'markdown',
   IMAGE: 'image',
   MEDIA: 'media',
   PDF: 'pdf'

@@ -1,0 +1,372 @@
+<div class="files-viewer-markdown" [style.height.px]="currentHeight()">
+  <div class="app-top-menu files-markdown-toolbar">
+    <button
+      (click)="toggleReadonly()"
+      [tooltip]="(isReadonly() || !isWriteable() ? 'Read-only' : 'Read-write') | translate:locale.language"
+      [adaptivePosition]="true"
+      class="btn {{ isReadonly() ? 'btn-warning' : 'btn-default' }} me-1"
+      type="button"
+      [disabled]="!isSupported() || !isWriteable()">
+      <fa-icon [icon]="isReadonly() ? icons.faLock : icons.faLockOpen"></fa-icon>
+    </button>
+    <button
+      (click)="save()"
+      [tooltip]="(canSave() ? 'Save' : undefined) | translate:locale.language"
+      [delay]="0"
+      [isDisabled]="!canSave()"
+      class="btn btn-default me-1"
+      type="button"
+      [disabled]="!canSave()">
+      @if (isSaving()) {
+        <fa-icon [icon]="icons.faSpinner" animation="spin"></fa-icon>
+      } @else {
+        <fa-icon [icon]="icons.faFloppyDisk"></fa-icon>
+      }
+    </button>
+    <button
+      (click)="onUndo()"
+      [disabled]="!canUndo()"
+      [tooltip]="'Undo' | translate:locale.language"
+      class="d-none d-sm-block btn btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faReply"></fa-icon>
+    </button>
+    <button
+      (click)="onRedo()"
+      [disabled]="!canRedo()"
+      [tooltip]="'Redo' | translate:locale.language"
+      class="d-none d-sm-block btn btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faShare"></fa-icon>
+    </button>
+
+    <div class="files-markdown-mode-group">
+      <div class="vr files-markdown-mode-separator files-markdown-mode-separator-start"></div>
+      <button
+        (click)="toggleViewMode()"
+        [tooltip]="(isSourceMode() ? 'Visual Mode' : 'Code Mode') | translate:locale.language"
+        class="btn btn-custom mx-0"
+        type="button">
+        <fa-icon [icon]="isSourceMode() ? icons.faEye : icons.faKeyboard"></fa-icon>
+      </button>
+      <div class="vr files-markdown-mode-separator files-markdown-mode-separator-end"></div>
+    </div>
+
+    @if (!isSourceMode()) {
+      <div class="files-markdown-toolbar-group">
+        <div class="btn-group" dropdown>
+          <button
+            [disabled]="!canEditVisual()"
+            [class.active]="isSelectionActive('heading')"
+            [tooltip]="'Heading' | translate:locale.language"
+            class="btn btn-custom dropdown-toggle files-markdown-heading-toggle"
+            dropdownToggle
+            type="button">
+            <fa-icon [icon]="icons.faHeading"></fa-icon>
+          </button>
+          <ul *dropdownMenu class="dropdown-menu files-markdown-heading-menu" role="menu">
+            @for (level of headingLevels; track level) {
+              <li role="menuitem">
+                <a (click)="toggleHeading(level)" [class.active]="editor.isActive('heading', { level })" class="dropdown-item">
+                  H{{ level }}
+                </a>
+              </li>
+            }
+          </ul>
+        </div>
+        <button
+          (click)="toggleBold()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('bold')"
+          [tooltip]="'Bold' | translate:locale.language"
+          class="btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faBold"></fa-icon>
+        </button>
+        <button
+          (click)="toggleItalic()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('italic')"
+          [tooltip]="'Italic' | translate:locale.language"
+          class="btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faItalic"></fa-icon>
+        </button>
+        <button
+          (click)="toggleUnderline()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('underline')"
+          [tooltip]="'Underline' | translate:locale.language"
+          class="d-none d-md-block btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faUnderline"></fa-icon>
+        </button>
+        <button
+          (click)="toggleStrike()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('strike')"
+          [tooltip]="'Strikethrough' | translate:locale.language"
+          class="d-none d-md-block btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faStrikethrough"></fa-icon>
+        </button>
+
+        <div class="d-none d-md-block vr files-markdown-toolbar-separator"></div>
+
+        <div class="btn-group" dropdown>
+          <button
+            [disabled]="!canEditVisual()"
+            [class.active]="editor.isActive('bulletList') || editor.isActive('orderedList') || editor.isActive('taskList')"
+            [tooltip]="'List' | translate:locale.language"
+            class="btn btn-custom dropdown-toggle"
+            dropdownToggle
+            type="button">
+            <fa-icon [icon]="icons.faListUl"></fa-icon>
+          </button>
+          <ul *dropdownMenu class="dropdown-menu files-markdown-list-menu" role="menu">
+            <li role="menuitem">
+              <a (click)="toggleBulletList()" [class.active]="editor.isActive('bulletList')" class="dropdown-item">
+                <span class="files-markdown-list-item">
+                  <fa-icon [icon]="icons.faListUl"></fa-icon>
+                  <span l10nTranslate>Bullet List</span>
+                </span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="toggleOrderedList()" [class.active]="editor.isActive('orderedList')" class="dropdown-item">
+                <span class="files-markdown-list-item">
+                  <fa-icon [icon]="icons.faListOl"></fa-icon>
+                  <span l10nTranslate>Ordered List</span>
+                </span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="toggleTaskList()" [class.active]="editor.isActive('taskList')" class="dropdown-item">
+                <span class="files-markdown-list-item">
+                  <fa-icon [icon]="icons.faSquareCheck"></fa-icon>
+                  <span l10nTranslate>Task List</span>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="btn-group" dropdown>
+          <button
+            [disabled]="!canEditVisual()"
+            [class.active]="editor.isActive('code') || editor.isActive('codeBlock')"
+            [tooltip]="'Code' | translate:locale.language"
+            class="btn btn-custom dropdown-toggle"
+            dropdownToggle
+            type="button">
+            <fa-icon [icon]="icons.faCode"></fa-icon>
+          </button>
+          <ul *dropdownMenu class="dropdown-menu files-markdown-code-menu" role="menu">
+            <li role="menuitem">
+              <a (click)="toggleCode()" [class.active]="editor.isActive('code')" class="dropdown-item">
+                <span class="files-markdown-code-item">
+                  <fa-icon [icon]="icons.faCode"></fa-icon>
+                  <span l10nTranslate>Inline Code</span>
+                </span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="toggleCodeBlock()" [class.active]="editor.isActive('codeBlock')" class="dropdown-item">
+                <span class="files-markdown-code-item">
+                  <fa-icon [icon]="icons.faCode"></fa-icon>
+                  <span l10nTranslate>Code Block</span>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="files-markdown-toolbar-group me-1">
+        <button
+          (click)="toggleBlockquote()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('blockquote')"
+          [tooltip]="'Blockquote' | translate:locale.language"
+          class="d-none d-md-block btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faQuoteLeft"></fa-icon>
+        </button>
+      </div>
+
+      <div class="files-markdown-toolbar-group">
+        <div class="d-none d-lg-block btn-group" dropdown>
+          <button
+            [disabled]="!canEditVisual()"
+            [class.active]="editor.isActive('table')"
+            [tooltip]="'Table' | translate:locale.language"
+            class="btn btn-custom dropdown-toggle"
+            dropdownToggle
+            type="button">
+            <fa-icon [icon]="icons.faTable"></fa-icon>
+          </button>
+          <ul *dropdownMenu class="dropdown-menu files-markdown-table-menu" role="menu">
+            <li role="menuitem">
+              <a (click)="insertTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faTable"></fa-icon><span l10nTranslate>Create a table</span></span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="deleteTable()" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faTrashCan"></fa-icon><span l10nTranslate>Delete table</span></span>
+              </a>
+            </li>
+            <li class="dropdown-divider"></li>
+            <li role="menuitem">
+              <a (click)="addTableRow('above')" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add row above</span></span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="addTableRow('below')" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add row below</span></span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="deleteTableRow()" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faSquareMinus"></fa-icon><span l10nTranslate>Delete row</span></span>
+              </a>
+            </li>
+            <li class="dropdown-divider"></li>
+            <li role="menuitem">
+              <a (click)="addTableColumn('left')" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add column left</span></span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="addTableColumn('right')" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add column right</span></span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="deleteTableColumn()" [class.disabled]="!canEditTable()" class="dropdown-item">
+                <span><fa-icon [icon]="icons.faSquareMinus"></fa-icon><span l10nTranslate>Delete column</span></span>
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <button
+          (click)="setHorizontalRule()"
+          [disabled]="!canEditVisual()"
+          [tooltip]="'Horizontal Rule' | translate:locale.language"
+          class="d-none d-lg-block btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faMinus"></fa-icon>
+        </button>
+
+        <button
+          (click)="setLink()"
+          [disabled]="!canEditVisual()"
+          [class.active]="isSelectionActive('link')"
+          [tooltip]="'Link' | translate:locale.language"
+          class="btn btn-custom"
+          type="button">
+          <fa-icon [icon]="icons.faLink"></fa-icon>
+        </button>
+
+        <div class="btn-group" dropdown>
+          <button
+            [disabled]="!canEditVisual()"
+            [class.active]="isSelectionActive('image')"
+            [tooltip]="'Image' | translate:locale.language"
+            class="btn btn-custom dropdown-toggle"
+            dropdownToggle
+            type="button">
+            <fa-icon [icon]="icons.faImage"></fa-icon>
+          </button>
+          <ul *dropdownMenu class="dropdown-menu files-markdown-image-menu" role="menu">
+            <li role="menuitem">
+              <a (click)="openImageFilePicker()" class="dropdown-item">
+                <span class="files-markdown-image-item">
+                  <fa-icon [icon]="icons.faImage"></fa-icon>
+                  <span l10nTranslate>Image from file</span>
+                </span>
+              </a>
+            </li>
+            <li role="menuitem">
+              <a (click)="insertImageFromUrl()" class="dropdown-item">
+                <span class="files-markdown-image-item">
+                  <fa-icon [icon]="icons.faLink"></fa-icon>
+                  <span l10nTranslate>Image from URL</span>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <input #imageFileInput (change)="insertImageFromFile($event)" accept="image/*" class="d-none" type="file" />
+    }
+
+    @if (isSourceMode()) {
+      <button
+        btnCheckbox
+        [ngModel]="lineWrapping()"
+        (ngModelChange)="lineWrapping.set($event)"
+        [tooltip]="'Line Wrap' | translate:locale.language"
+        class="btn btn-custom"
+        type="button">
+        <fa-icon [icon]="icons.faArrowsLeftRightToLine"></fa-icon>
+      </button>
+    }
+    <div class="d-none d-sm-block vr files-markdown-toolbar-separator"></div>
+    <button
+      btnCheckbox
+      [ngModel]="isSearchPanelOpen()"
+      (ngModelChange)="toggleSearch()"
+      [tooltip]="'Search' | translate:locale.language"
+      class="d-none d-sm-block btn btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faMagnifyingGlass"></fa-icon>
+    </button>
+
+    @if (warnOnUnsavedChanges()) {
+      <button (click)="save(true)"
+              class="btn btn-primary me-2 ms-auto"
+              type="button"
+              l10nTranslate>Save And Exit
+      </button>
+      <button (click)="onClose()"
+              class="btn btn-danger me-2"
+              data-dismiss="modal" type="button"
+              l10nTranslate>Close Without Saving
+      </button>
+      <button (click)="warnOnUnsavedChanges.set(false)"
+              class="d-none d-sm-block btn btn-default"
+              data-dismiss="modal" type="button"
+              l10nTranslate>Cancel
+      </button>
+    }
+  </div>
+
+  <div class="files-markdown-content" [class.is-visual]="!isSourceMode()" [class.is-source]="isSourceMode()">
+    <div class="files-markdown-visual-pane">
+      <tiptap-editor
+        class="files-markdown-visual-editor"
+        [class.is-readonly]="isReadonly()"
+        [editor]="editor">
+      </tiptap-editor>
+    </div>
+    <div class="files-markdown-source-pane">
+      <code-editor
+        #sourceEditor
+        [autoFocus]="false"
+        [languages]="languages"
+        [language]="currentLanguage"
+        [(ngModel)]="sourceContent"
+        (change)="sourceContentChange()"
+        [theme]="currentTheme"
+        [readonly]="!canEditContent()"
+        [disabled]="!canEditContent()"
+        [extensions]="sourceSearchAdapter.extensions"
+        [lineWrapping]="lineWrapping()" />
+    </div>
+  </div>
+  <app-files-viewer-search [adapter]="activeSearchAdapter()"></app-files-viewer-search>
+</div>
