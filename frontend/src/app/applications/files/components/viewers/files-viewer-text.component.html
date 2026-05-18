@@ -1,4 +1,4 @@
-<div [style.height.px]="currentHeight()">
+<div class="files-viewer-text" [style.height.px]="currentHeight()">
   <div class="app-top-menu">
     <button
       (click)="toggleReadonly()"
@@ -84,5 +84,7 @@
     [theme]="currentTheme"
     [readonly]="isReadonly()"
     [disabled]="isReadonly()"
+    [extensions]="searchAdapter.extensions"
     [lineWrapping]="lineWrapping()" />
+  <app-files-viewer-search [adapter]="searchAdapter"></app-files-viewer-search>
 </div>

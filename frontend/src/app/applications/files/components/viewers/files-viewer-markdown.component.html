@@ -46,13 +46,13 @@
         [tooltip]="(isSourceMode() ? 'Visual Mode' : 'Code Mode') | translate:locale.language"
         class="btn btn-custom mx-0"
         type="button">
-        <fa-icon [icon]="isSourceMode() ? icons.faKeyboard : icons.faEye"></fa-icon>
+        <fa-icon [icon]="isSourceMode() ? icons.faEye : icons.faKeyboard"></fa-icon>
       </button>
       <div class="vr files-markdown-mode-separator files-markdown-mode-separator-end"></div>
     </div>
 
     @if (!isSourceMode()) {
-      <div class="files-markdown-toolbar-group me-1">
+      <div class="files-markdown-toolbar-group">
         <div class="btn-group" dropdown>
           <button
             [disabled]="!canEditVisual()"
@@ -193,7 +193,7 @@
         </button>
       </div>
 
-      <div class="files-markdown-toolbar-group me-1">
+      <div class="files-markdown-toolbar-group">
         <div class="d-none d-lg-block btn-group" dropdown>
           <button
             [disabled]="!canEditVisual()"
@@ -309,20 +309,21 @@
         [ngModel]="lineWrapping()"
         (ngModelChange)="lineWrapping.set($event)"
         [tooltip]="'Line Wrap' | translate:locale.language"
-        class="btn btn-custom me-1"
+        class="btn btn-custom"
         type="button">
         <fa-icon [icon]="icons.faArrowsLeftRightToLine"></fa-icon>
       </button>
-      <button
-        btnCheckbox
-        [ngModel]="isSearchPanelOpen()"
-        (ngModelChange)="toggleSearch()"
-        [tooltip]="'Search' | translate:locale.language"
-        class="d-none d-sm-block btn btn-custom me-1"
-        type="button">
-        <fa-icon [icon]="icons.faMagnifyingGlass"></fa-icon>
-      </button>
     }
+    <div class="d-none d-sm-block vr files-markdown-toolbar-separator"></div>
+    <button
+      btnCheckbox
+      [ngModel]="isSearchPanelOpen()"
+      (ngModelChange)="toggleSearch()"
+      [tooltip]="'Search' | translate:locale.language"
+      class="d-none d-sm-block btn btn-custom me-1"
+      type="button">
+      <fa-icon [icon]="icons.faMagnifyingGlass"></fa-icon>
+    </button>
 
     @if (warnOnUnsavedChanges()) {
       <button (click)="save(true)"
@@ -362,7 +363,9 @@
         [theme]="currentTheme"
         [readonly]="!canEditContent()"
         [disabled]="!canEditContent()"
+        [extensions]="sourceSearchAdapter.extensions"
         [lineWrapping]="lineWrapping()" />
     </div>
   </div>
+  <app-files-viewer-search [adapter]="activeSearchAdapter()"></app-files-viewer-search>
 </div>

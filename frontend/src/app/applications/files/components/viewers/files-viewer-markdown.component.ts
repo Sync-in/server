@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms'
 import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
-import { closeSearchPanel, openSearchPanel } from '@codemirror/search'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faSquareMinus, faSquarePlus } from '@fortawesome/free-regular-svg-icons'
 import {
@@ -24,7 +23,6 @@ import {
   faLockOpen,
   faMagnifyingGlass,
   faMinus,
-  faPlus,
   faQuoteLeft,
   faReply,
   faShare,
@@ -48,6 +46,12 @@ import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { TiptapEditorDirective } from 'ngx-tiptap'
 import { FilesViewerEditableBase } from './files-viewer-editable-base'
+import {
+  CodeMirrorFileViewerSearchAdapter,
+  type FileViewerSearchAdapter,
+  TipTapFileViewerSearchAdapter
+} from './components/files-viewer-search-adapter'
+import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 
 type MarkdownHeadingLevel = 1 | 2 | 3 | 4
 type MarkdownInlineMark = 'bold' | 'code' | 'italic' | 'strike' | 'underline'
@@ -77,20 +81,20 @@ const ExitInlineCodeOnEnter = Extension.create({
     BsDropdownModule,
     FaIconComponent,
     L10nTranslatePipe,
-    L10nTranslateDirective
+    L10nTranslateDirective,
+    FilesViewerSearchComponent
   ],
   styleUrl: 'files-viewer-markdown.component.scss',
   templateUrl: 'files-viewer-markdown.component.html'
 })
 export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implements OnInit, OnDestroy {
-  private readonly sourceEditor = viewChild<CodeEditor>('sourceEditor')
-  private readonly imageFileInput = viewChild<ElementRef<HTMLInputElement>>('imageFileInput')
   protected isSourceMode = signal(false)
   protected lineWrapping = signal(false)
-  protected isSearchPanelOpen = signal(false)
   protected sourceContent = ''
   protected currentLanguage: string | undefined = undefined
   protected readonly languages: LanguageDescription[] = languages
+  protected readonly sourceSearchAdapter = new CodeMirrorFileViewerSearchAdapter(() => this.sourceView)
+  protected readonly visualSearchAdapter = new TipTapFileViewerSearchAdapter(() => this.editor)
   protected readonly editor = new Editor({
     extensions: [
       StarterKit.configure({
@@ -111,12 +115,17 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
       Image.configure({
         allowBase64: true
       }),
-      Markdown
+      Markdown,
+      this.visualSearchAdapter.extension
     ],
     editable: false,
     content: '',
     contentType: 'markdown',
-    onUpdate: () => this.markModifiedIfNeeded()
+    onUpdate: () => {
+      this.markModifiedIfNeeded()
+      this.visualSearchAdapter.sync()
+    },
+    onSelectionUpdate: () => this.visualSearchAdapter.sync()
   })
   protected readonly icons = {
     faArrowsLeftRightToLine,
@@ -135,7 +144,6 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     faLockOpen,
     faMagnifyingGlass,
     faMinus,
-    faPlus,
     faQuoteLeft,
     faReply,
     faShare,
@@ -149,6 +157,8 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     faSquarePlus
   }
   protected readonly headingLevels: MarkdownHeadingLevel[] = [1, 2, 3, 4]
+  private readonly sourceEditor = viewChild<CodeEditor>('sourceEditor')
+  private readonly imageFileInput = viewChild<ElementRef<HTMLInputElement>>('imageFileInput')
   private savedContent = ''
 
   constructor() {
@@ -161,12 +171,16 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     })
   }
 
+  private get sourceView() {
+    return this.sourceEditor()?.view || null
+  }
+
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
     if (event.key === 'Escape' || event.key === 'Esc') {
       event.preventDefault()
       event.stopPropagation()
-      if (this.isSourceMode() && this.isSearchPanelOpen()) {
+      if (this.isSearchPanelOpen()) {
         this.toggleSearch()
       } else if (this.warnOnUnsavedChanges()) {
         this.warnOnUnsavedChanges.set(false)
@@ -184,7 +198,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
       return
     }
 
-    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f' && this.isSourceMode()) {
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') {
       event.preventDefault()
       event.stopPropagation()
       this.toggleSearch()
@@ -243,9 +257,6 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
       this.sourceContent = this.editor.getMarkdown()
     }
     if (!sourceMode) {
-      if (this.isSearchPanelOpen()) {
-        this.toggleSearch()
-      }
       this.setMarkdownContent(this.sourceContent)
     }
     this.isSourceMode.set(sourceMode)
@@ -264,14 +275,15 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   }
 
   protected toggleSearch() {
-    const view = this.sourceView
-    if (!this.isSourceMode() || !view) return
-    this.isSearchPanelOpen.update((value) => !value)
-    if (this.isSearchPanelOpen()) {
-      openSearchPanel(view)
-    } else {
-      closeSearchPanel(view)
-    }
+    this.activeSearchAdapter().toggle()
+  }
+
+  protected activeSearchAdapter(): FileViewerSearchAdapter {
+    return this.isSourceMode() ? this.sourceSearchAdapter : this.visualSearchAdapter
+  }
+
+  protected isSearchPanelOpen(): boolean {
+    return this.activeSearchAdapter().isOpen()
   }
 
   protected toggleHeading(level: MarkdownHeadingLevel) {
@@ -417,6 +429,26 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     return this.editor.isFocused && this.editor.isActive(name, attributes)
   }
 
+  protected canEditVisual(): boolean {
+    return !this.isSourceMode() && this.canEditContent()
+  }
+
+  protected currentFileContent(): string {
+    return this.currentMarkdown()
+  }
+
+  protected onContentLoaded(content: string) {
+    this.savedContent = content
+    this.sourceContent = content
+    this.setMarkdownContent(content)
+    this.isModified.set(false)
+  }
+
+  protected override onContentSaved(content: string) {
+    this.sourceContent = content
+    this.savedContent = content
+  }
+
   private runEditorCommand(command: () => boolean) {
     if (this.canEditVisual() && !this.editor.isDestroyed) {
       command()
@@ -475,14 +507,6 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     return !!character && /[\p{L}\p{N}_]/u.test(character)
   }
 
-  protected canEditVisual(): boolean {
-    return !this.isSourceMode() && this.canEditContent()
-  }
-
-  private get sourceView() {
-    return this.sourceEditor()?.view || null
-  }
-
   private runSourceHistory(command: typeof undo) {
     const view = this.sourceView
     if (view && this.canEditContent()) {
@@ -501,22 +525,6 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     }
     this.sourceContent = this.editor.getMarkdown()
     return this.sourceContent
-  }
-
-  protected currentFileContent(): string {
-    return this.currentMarkdown()
-  }
-
-  protected onContentLoaded(content: string) {
-    this.savedContent = content
-    this.sourceContent = content
-    this.setMarkdownContent(content)
-    this.isModified.set(false)
-  }
-
-  protected override onContentSaved(content: string) {
-    this.sourceContent = content
-    this.savedContent = content
   }
 
   private markModifiedIfNeeded() {

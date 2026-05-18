@@ -1,10 +1,9 @@
 import { CodeEditor } from '@acrodata/code-editor'
-import { Component, effect, HostListener, OnInit, signal, untracked, viewChild, ViewEncapsulation } from '@angular/core'
+import { Component, HostListener, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
-import { closeSearchPanel, openSearchPanel } from '@codemirror/search'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
   faArrowsLeftRightToLine,
@@ -20,13 +19,28 @@ import { L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { FilesViewerEditableBase } from './files-viewer-editable-base'
+import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-search-adapter'
+import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 
 @Component({
   selector: 'app-files-viewer-text',
   encapsulation: ViewEncapsulation.None,
-  imports: [CodeEditor, TooltipModule, FormsModule, FaIconComponent, L10nTranslatePipe, ButtonCheckboxDirective, L10nTranslateDirective],
+  imports: [
+    CodeEditor,
+    TooltipModule,
+    FormsModule,
+    FaIconComponent,
+    L10nTranslatePipe,
+    ButtonCheckboxDirective,
+    L10nTranslateDirective,
+    FilesViewerSearchComponent
+  ],
   styles: [
     `
+      .files-viewer-text {
+        position: relative;
+      }
+
       .code-editor {
         height: calc(100% - 40px);
       }
@@ -36,18 +50,7 @@ import { FilesViewerEditableBase } from './files-viewer-editable-base'
       }
 
       .cm-panel.cm-search {
-        display: flex;
-        align-items: center;
-        text-wrap: nowrap;
-
-        label {
-          display: flex;
-          align-items: center;
-        }
-
-        button[aria-label='close'] {
-          display: none;
-        }
+        display: none;
       }
     `
   ],
@@ -60,23 +63,9 @@ export class FilesViewerTextComponent extends FilesViewerEditableBase implements
   protected currentLanguage = undefined
   protected readonly languages: LanguageDescription[] = languages
   protected readonly icons = { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass, faSpinner, faArrowsLeftRightToLine, faReply, faShare }
-  protected isSearchPanelOpen = signal(false)
+  protected readonly searchAdapter = new CodeMirrorFileViewerSearchAdapter(() => this.editor()?.view)
+  protected readonly isSearchPanelOpen = this.searchAdapter.isOpen
   private isContentReady = false
-
-  constructor() {
-    super()
-    effect(() => {
-      this.isReadonly()
-      // Reset search state when open to enable/disable the replace function
-      const isSearchPanelIsOpen = untracked(() => this.isSearchPanelOpen())
-      if (isSearchPanelIsOpen) {
-        setTimeout(() => {
-          this.toggleSearch()
-          this.toggleSearch()
-        }, 100)
-      }
-    })
-  }
 
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
@@ -122,12 +111,7 @@ export class FilesViewerTextComponent extends FilesViewerEditableBase implements
   }
 
   toggleSearch() {
-    this.isSearchPanelOpen.update((value) => !value)
-    if (this.isSearchPanelOpen()) {
-      openSearchPanel(this.editor().view)
-    } else {
-      closeSearchPanel(this.editor().view)
-    }
+    this.searchAdapter.toggle()
   }
 
   contentChange() {
