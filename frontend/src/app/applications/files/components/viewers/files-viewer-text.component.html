@@ -12,6 +12,7 @@
     <button
       (click)="save()"
       [tooltip]="(canSave() ? 'Save' : undefined) | translate:locale.language"
+      [delay]="0"
       [isDisabled]="!canSave()"
       class="btn btn-default me-1"
       type="button"
