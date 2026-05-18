@@ -359,9 +359,9 @@ export class FilesService {
   }
 
   private async viewerHook(file: FileModel): Promise<string> {
-    if (file.shortMime === SHORT_MIME.TEXT) {
+    if (file.shortMime === SHORT_MIME.TEXT || file.shortMime === SHORT_MIME.MARKDOWN) {
       if (file.size < MAX_TEXT_FILE_SIZE) {
-        return SHORT_MIME.TEXT
+        return file.shortMime
       }
       // Download if too large
       throw new Error('No editor found')

@@ -27,34 +27,37 @@
       @case (SHORT_MIME.DOCUMENT) {
         <!-- PDF toggled to OnlyOffice: editorProvider flags are not set for PDFs, so we route directly when the original file was a PDF (hookedShortMime === SHORT_MIME.PDF) -->
         @if (hookedShortMime === SHORT_MIME.PDF) {
-          <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
+          <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile"
+                                        [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
         } @else if (editorProvider.collabora) {
-          <app-files-viewer-collabora-online [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-collabora-online>
+          <app-files-viewer-collabora-online [currentHeight]="currentHeight" [file]="currentFile"
+                                             [(isReadonly)]="isReadonly"></app-files-viewer-collabora-online>
         } @else if (editorProvider.onlyoffice) {
-          <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile" [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
+          <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile"
+                                        [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
         } @else {
           <!--This case should never happen-->
           <div [style.height.px]="currentHeight" class="d-flex p-4" l10nTranslate>No editor found</div>
         }
       }
+      @case (SHORT_MIME.MARKDOWN) {
+        <app-files-viewer-markdown
+          [currentHeight]="currentHeight"
+          [file]="currentFile"
+          [isWriteable]="isWriteable"
+          [modalClosing]="modalClosing()"
+          [(isReadonly)]="isReadonly">
+        </app-files-viewer-markdown>
+      }
       @default {
-        @if (isMarkdownFile) {
-          <app-files-viewer-markdown
-            [currentHeight]="currentHeight"
-            [file]="currentFile"
-            [isWriteable]="isWriteable"
-            [modalClosing]="modalClosing()"
-            [(isReadonly)]="isReadonly">
-          </app-files-viewer-markdown>
-        } @else {
-          <app-files-viewer-text
-            [currentHeight]="currentHeight"
-            [file]="currentFile"
-            [isWriteable]="isWriteable"
-            [modalClosing]="modalClosing()"
-            [(isReadonly)]="isReadonly">
-          </app-files-viewer-text>
-        }
+        <app-files-viewer-text
+          [currentHeight]="currentHeight"
+          [file]="currentFile"
+          [isWriteable]="isWriteable"
+          [modalClosing]="modalClosing()"
+          [(isReadonly)]="isReadonly">
+        </app-files-viewer-text>
+
       }
     }
   </div>

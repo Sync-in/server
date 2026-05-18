@@ -173,6 +173,13 @@ export class FileModel implements File {
       return this.getType(inShare)
     }
 
+    if (mime.includes(SHORT_MIME.MARKDOWN)) {
+      this.shortMime = SHORT_MIME.MARKDOWN
+      this.isViewable = true
+      this.isEditable = true
+      return mime
+    }
+
     const extension = this.getExtension()
     const dash = mime.indexOf('-')
     const temporaryMime = dash >= 0 ? mime.slice(0, dash) : mime

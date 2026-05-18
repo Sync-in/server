@@ -47,16 +47,11 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   protected readonly icons = { faEye, faPen }
   protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
   protected canToggleViewer = false
-  protected readonly markdownExtensions = new Set(['md', 'markdown', 'mdown', 'mkd', 'mkdn'])
   protected readonly store = inject(StoreService)
   private openedFile: { id: string | number; name: string; mimeUrl: string }
   private readonly layout = inject(LayoutService)
   private readonly subscription: Subscription = this.layout.resizeEvent.subscribe(() => this.onResize())
   private readonly offsetTop = 42
-
-  protected get isMarkdownFile(): boolean {
-    return this.markdownExtensions.has(this.currentFile?.getExtension())
-  }
 
   ngOnInit() {
     this.canToggleViewer = this.isWriteable && !!this.currentFile?.isEditable && this.hookedShortMime === SHORT_MIME.PDF
@@ -71,7 +66,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   }
 
   onClose() {
-    if (this.currentFile.isEditable && this.hookedShortMime === SHORT_MIME.TEXT) {
+    if (this.currentFile.isEditable && (this.hookedShortMime === SHORT_MIME.TEXT || this.hookedShortMime === SHORT_MIME.MARKDOWN)) {
       // Prevent closing the modal without saving when using text-based editors
       this.modalClosing.set(true)
       // Force the next state change
