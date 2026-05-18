@@ -34,8 +34,9 @@ import { SchedulerModule } from './infrastructure/scheduler/scheduler.module'
       headers: {
         'User-Agent': USER_AGENT
       },
-      timeout: 5000,
-      maxRedirects: 5
+      proxy: false,
+      timeout: 6000,
+      maxRedirects: 0
     })
   ],
   providers: [AppService]

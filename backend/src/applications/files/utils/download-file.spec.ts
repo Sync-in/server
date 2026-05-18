@@ -1,25 +1,50 @@
+import { lookup } from 'node:dns/promises'
 import { HttpService } from '@nestjs/axios'
 import { HttpStatus } from '@nestjs/common'
 import { Readable } from 'node:stream'
 import { HTTP_METHOD } from '../../applications.constants'
 import { FileError } from '../models/file-error'
+import { FILE_ERROR_MESSAGES } from './errors'
 import { writeFromStream } from './files'
-import { downloadFile } from './download-file'
+import { DownloadFile } from './download-file'
 
 jest.mock('./files', () => ({
   writeFromStream: jest.fn()
 }))
+jest.mock('node:dns/promises', () => ({
+  lookup: jest.fn()
+}))
 
-describe(downloadFile.name, () => {
+describe(DownloadFile.name, () => {
   let http: { axiosRef: jest.Mock }
+  const lookupMock = lookup as jest.Mock
 
-  const response = (remoteAddress: string, headers: Record<string, string> = {}) => ({
+  const blockedRemoteAddresses = [
+    '10.0.0.1',
+    '100.64.0.0',
+    '127.0.0.1',
+    '169.254.169.254',
+    '192.168.1.1',
+    '192.0.2.1',
+    '::1',
+    'fc00::1',
+    'fe80::1',
+    '2001:db8::1',
+    '::ffff:127.0.0.1',
+    '999.1.1.1'
+  ]
+
+  const publicRemoteAddresses = ['8.8.8.8', '100.128.0.0', '172.32.0.0', '2001:4860:4860::8888', '::ffff:8.8.8.8']
+
+  const response = (remoteAddress: string | undefined, headers: Record<string, string> = {}, status = 200) => ({
+    status,
     headers,
     request: { socket: { remoteAddress } }
   })
 
   beforeEach(() => {
     http = { axiosRef: jest.fn() }
+    lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }])
     ;(writeFromStream as jest.Mock).mockResolvedValue(undefined)
   })
 
@@ -27,15 +52,138 @@ describe(downloadFile.name, () => {
     jest.clearAllMocks()
   })
 
-  it('rejects private IPs on HEAD by default', async () => {
-    http.axiosRef.mockResolvedValueOnce(response('127.0.0.1', { 'content-length': '12' }))
+  it.each(blockedRemoteAddresses)('rejects blocked remote address "%s" on HEAD by default', async (remoteAddress) => {
+    http.axiosRef.mockResolvedValueOnce(response(remoteAddress, { 'content-length': '12' }))
 
-    await expect(downloadFile(http as unknown as HttpService, { url: 'https://example.test/file.txt' }, '/tmp/file.txt')).rejects.toEqual(
-      new FileError(HttpStatus.FORBIDDEN, 'Access to internal IP addresses is forbidden')
-    )
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
 
     expect(http.axiosRef).toHaveBeenCalledTimes(1)
-    expect(http.axiosRef).toHaveBeenCalledWith({ method: HTTP_METHOD.HEAD, url: 'https://example.test/file.txt', maxRedirects: 1 })
+    expect(http.axiosRef).toHaveBeenCalledWith(
+      expect.objectContaining({ method: HTTP_METHOD.HEAD, url: 'https://example.test/file.txt', maxRedirects: 0 })
+    )
+    expect(writeFromStream).not.toHaveBeenCalled()
+  })
+
+  it('rejects blocked DNS resolutions before calling HEAD', async () => {
+    lookupMock.mockResolvedValueOnce([{ address: '127.0.0.1', family: 4 }])
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+
+    expect(lookupMock).toHaveBeenCalledWith('example.test', { all: true, order: 'verbatim' })
+    expect(http.axiosRef).not.toHaveBeenCalled()
+    expect(writeFromStream).not.toHaveBeenCalled()
+  })
+
+  it('rejects mixed DNS resolutions when one address is blocked', async () => {
+    lookupMock.mockResolvedValueOnce([
+      { address: '8.8.8.8', family: 4 },
+      { address: '::1', family: 6 }
+    ])
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+
+    expect(http.axiosRef).not.toHaveBeenCalled()
+    expect(writeFromStream).not.toHaveBeenCalled()
+  })
+
+  it('follows a safe redirect manually', async () => {
+    lookupMock.mockResolvedValueOnce([{ address: '8.8.8.8', family: 4 }]).mockResolvedValueOnce([{ address: '1.1.1.1', family: 4 }])
+    http.axiosRef
+      .mockResolvedValueOnce(response('8.8.8.8', { location: 'https://cdn.example.test/file.txt' }, 302))
+      .mockResolvedValueOnce(response('1.1.1.1', { 'content-length': '12', 'content-type': 'text/plain' }))
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', { getContentInfo: true })
+    ).resolves.toEqual({
+      contentLength: 12,
+      contentType: 'text/plain',
+      lastModified: undefined
+    })
+
+    expect(http.axiosRef).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ method: HTTP_METHOD.HEAD, url: 'https://example.test/file.txt', maxRedirects: 0 })
+    )
+    expect(http.axiosRef).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ method: HTTP_METHOD.HEAD, url: 'https://cdn.example.test/file.txt', maxRedirects: 0 })
+    )
+    expect(writeFromStream).not.toHaveBeenCalled()
+  })
+
+  it('rejects a redirect to a blocked DNS resolution before following it', async () => {
+    lookupMock.mockResolvedValueOnce([{ address: '8.8.8.8', family: 4 }]).mockResolvedValueOnce([{ address: '127.0.0.1', family: 4 }])
+    http.axiosRef.mockResolvedValueOnce(response('8.8.8.8', { location: 'https://internal.example.test/file.txt' }, 302))
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+
+    expect(http.axiosRef).toHaveBeenCalledTimes(1)
+    expect(writeFromStream).not.toHaveBeenCalled()
+  })
+
+  it('rejects a missing remote address on HEAD by default', async () => {
+    http.axiosRef.mockResolvedValueOnce(response(undefined, { 'content-length': '12' }))
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+
+    expect(http.axiosRef).toHaveBeenCalledTimes(1)
+    expect(writeFromStream).not.toHaveBeenCalled()
+  })
+
+  it.each(publicRemoteAddresses)('allows public remote address "%s" on HEAD by default', async (remoteAddress) => {
+    http.axiosRef.mockResolvedValueOnce(response(remoteAddress, { 'content-length': '12', 'content-type': 'text/plain' }))
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', { getContentInfo: true })
+    ).resolves.toEqual({
+      contentLength: 12,
+      contentType: 'text/plain',
+      lastModified: undefined
+    })
+
+    expect(http.axiosRef).toHaveBeenCalledTimes(1)
+    expect(http.axiosRef).toHaveBeenCalledWith(
+      expect.objectContaining({
+        httpAgent: expect.any(Object),
+        httpsAgent: expect.any(Object)
+      })
+    )
+    expect(writeFromStream).not.toHaveBeenCalled()
+  })
+
+  it('uses a guarded agent lookup for connection-time resolutions', async () => {
+    lookupMock.mockResolvedValueOnce([{ address: '8.8.8.8', family: 4 }]).mockResolvedValueOnce([{ address: '127.0.0.1', family: 4 }])
+    http.axiosRef.mockImplementationOnce(
+      (config: {
+        httpAgent: {
+          options: { lookup: (hostname: string, options: Record<string, unknown>, callback: (e: Error | null) => void) => void }
+        }
+      }) =>
+        new Promise((resolve, reject) => {
+          config.httpAgent.options.lookup('redirect.test', {}, (e: Error | null) => {
+            if (e) {
+              reject(e)
+            } else {
+              resolve(response('8.8.8.8', { 'content-length': '12', 'content-type': 'text/plain' }))
+            }
+          })
+        })
+    )
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', { getContentInfo: true })
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+
     expect(writeFromStream).not.toHaveBeenCalled()
   })
 
@@ -48,7 +196,7 @@ describe(downloadFile.name, () => {
       })
     )
 
-    const result = await downloadFile(http as unknown as HttpService, { url: 'https://example.test/avatar.png' }, '/tmp/avatar.png', {
+    const result = await new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/avatar.png' }, '/tmp/avatar.png', {
       allowPrivateIP: true,
       getContentInfo: true
     })
@@ -69,10 +217,48 @@ describe(downloadFile.name, () => {
       .mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '12' }))
       .mockResolvedValueOnce({ ...response('10.0.0.7'), data: stream })
 
-    await expect(downloadFile(http as unknown as HttpService, { url: 'https://example.test/file.txt' }, '/tmp/file.txt')).rejects.toEqual(
-      new FileError(HttpStatus.FORBIDDEN, 'Access to internal IP addresses is forbidden')
-    )
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
 
+    expect(destroySpy).toHaveBeenCalled()
+    expect(writeFromStream).not.toHaveBeenCalled()
+  })
+
+  it.each(['', '-1', '1.5', 'Infinity', '9007199254740992', 'abc'])('rejects invalid content-length "%s"', async (contentLength) => {
+    http.axiosRef.mockResolvedValueOnce(response('8.8.8.8', { 'content-length': contentLength }))
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
+    ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_INVALID_CONTENT_LENGTH))
+
+    expect(http.axiosRef).toHaveBeenCalledTimes(1)
+    expect(writeFromStream).not.toHaveBeenCalled()
+  })
+
+  it('allows zero content-length and guards the written stream at zero bytes', async () => {
+    const stream = Readable.from([])
+    http.axiosRef
+      .mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '0' }))
+      .mockResolvedValueOnce({ ...response('8.8.8.8'), data: stream })
+
+    await new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
+
+    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 0)
+  })
+
+  it('rejects redirects on GET after the HEAD URL has been resolved', async () => {
+    const stream = Readable.from(['abc'])
+    const destroySpy = jest.spyOn(stream, 'destroy')
+    http.axiosRef
+      .mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '12' }))
+      .mockResolvedValueOnce({ ...response('8.8.8.8', { location: 'https://cdn.example.test/file.txt' }, 302), data: stream })
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
+    ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_MAX_REDIRECTS_EXCEEDED))
+
+    expect(http.axiosRef).toHaveBeenCalledTimes(2)
     expect(destroySpy).toHaveBeenCalled()
     expect(writeFromStream).not.toHaveBeenCalled()
   })
@@ -83,8 +269,22 @@ describe(downloadFile.name, () => {
       .mockResolvedValueOnce(response('127.0.0.1', { 'content-length': '12' }))
       .mockResolvedValueOnce({ ...response('10.0.0.7'), data: stream })
 
-    await downloadFile(http as unknown as HttpService, { url: 'https://example.test/file.txt' }, '/tmp/file.txt', { allowPrivateIP: true })
+    await new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', {
+      allowPrivateIP: true
+    })
 
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream)
+    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 12)
+    expect(http.axiosRef).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        method: HTTP_METHOD.GET,
+        url: 'https://example.test/file.txt',
+        responseType: 'stream',
+        decompress: false,
+        headers: { 'Accept-Encoding': 'identity' },
+        proxy: false,
+        maxRedirects: 0
+      })
+    )
   })
 })

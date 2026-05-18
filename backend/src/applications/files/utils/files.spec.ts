@@ -1,0 +1,47 @@
+import { HttpStatus } from '@nestjs/common'
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
+import { Readable } from 'node:stream'
+import { FileError } from '../models/file-error'
+import { FILE_ERROR_MESSAGES } from './errors'
+import { writeFromStream } from './files'
+
+describe(writeFromStream.name, () => {
+  let tmpDir: string
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(path.join(os.tmpdir(), 'write-from-stream-'))
+  })
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true })
+  })
+
+  it('writes a stream matching the max size', async () => {
+    const filePath = path.join(tmpDir, 'file.txt')
+
+    await writeFromStream(filePath, Readable.from([Buffer.from('abc')]), 0, 3)
+
+    await expect(readFile(filePath, 'utf8')).resolves.toBe('abc')
+  })
+
+  it('rejects a stream exceeding the max size', async () => {
+    const filePath = path.join(tmpDir, 'file.txt')
+
+    await expect(writeFromStream(filePath, Readable.from([Buffer.from('abcd')]), 0, 3)).rejects.toMatchObject({
+      httpCode: HttpStatus.PAYLOAD_TOO_LARGE,
+      message: FILE_ERROR_MESSAGES.MAX_FILE_SIZE_EXCEEDED,
+      name: FileError.name
+    })
+  })
+
+  it('accounts for the existing start offset', async () => {
+    const filePath = path.join(tmpDir, 'file.txt')
+    await writeFile(filePath, 'abc')
+
+    await writeFromStream(filePath, Readable.from([Buffer.from('de')]), 3, 5)
+
+    await expect(readFile(filePath, 'utf8')).resolves.toBe('abcde')
+  })
+})

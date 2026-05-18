@@ -17,6 +17,7 @@ import { SpaceEnv } from '../models/space-env.model'
 import { SpacesManager } from '../services/spaces-manager.service'
 import { canAccessToSpaceUrl, haveSpaceEnvPermissions } from '../utils/permissions'
 import { PATH_TO_SPACE_SEGMENTS } from '../utils/routes'
+import { FILE_ERROR_MESSAGES } from '../../files/utils/errors'
 
 @Injectable()
 export class SpaceGuard implements CanActivate {
@@ -51,7 +52,7 @@ export class SpaceGuard implements CanActivate {
       } else if (req.space.storageQuota) {
         const contentLength = parseInt(req.headers['content-length'] || '0', 10) || 0
         if (req.space.willExceedQuota(contentLength)) {
-          throw new HttpException('Storage quota will be exceeded', HttpStatus.INSUFFICIENT_STORAGE)
+          throw new HttpException(FILE_ERROR_MESSAGES.STORAGE_QUOTA_EXCEEDED, HttpStatus.INSUFFICIENT_STORAGE)
         }
       }
     }

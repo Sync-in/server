@@ -6,7 +6,7 @@ import crypto from 'node:crypto'
 import { createReadStream, createWriteStream, Dirent, statSync } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { Readable } from 'node:stream'
+import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { formatDateISOString } from '../../../common/functions'
 import { currentTimeStamp, isValidFileName, regExpPreventPathTraversal } from '../../../common/shared'
@@ -14,6 +14,7 @@ import { DEFAULT_CHECKSUM_ALGORITHM, DEFAULT_HIGH_WATER_MARK, EXTRA_MIMES_TYPE }
 import type { FileDBProps } from '../interfaces/file-db-props.interface'
 import type { FileProps } from '../interfaces/file-props.interface'
 import { FileError } from '../models/file-error'
+import { maxFileSizeExceededError } from './errors'
 
 export function sanitizePath(fPath: string): string {
   return path.normalize(fPath).replace(regExpPreventPathTraversal, '')
@@ -178,9 +179,23 @@ export async function checksumFile(filePath: string, alg: string): Promise<strin
   return hash.digest('hex')
 }
 
-export function writeFromStream(rPath: string, stream: Readable, start: number = 0): Promise<void> {
+export function writeFromStream(rPath: string, stream: Readable, start: number = 0, maxSize?: number): Promise<void> {
   const dst: WriteStream = createWriteStream(rPath, { flags: start ? 'a' : 'w', start: start, highWaterMark: DEFAULT_HIGH_WATER_MARK })
-  return pipeline(stream, dst)
+  if (maxSize === undefined) {
+    return pipeline(stream, dst)
+  }
+  let received = start
+  const limitSize = new Transform({
+    transform(chunk, _encoding, callback) {
+      received += chunk.length
+      if (received > maxSize) {
+        callback(maxFileSizeExceededError())
+        return
+      }
+      callback(null, chunk)
+    }
+  })
+  return pipeline(stream, limitSize, dst)
 }
 
 export async function writeFromStreamAndChecksum(rPath: string, stream: Readable, hasRange: number, alg: string): Promise<string> {
