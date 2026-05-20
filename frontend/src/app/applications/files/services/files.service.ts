@@ -25,6 +25,7 @@ import type {
   MakeFileDto,
   SearchFilesDto
 } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
+import type { CopyMoveFileResponse } from '@sync-in-server/backend/src/applications/files/interfaces/copy-move-file.interface'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
@@ -138,11 +139,11 @@ export class FilesService {
     }
   }
 
-  rename(file: FileModel, name: string, overwrite = false): Observable<Pick<FileTask, 'name'>> {
+  rename(file: FileModel, name: string, overwrite = false): Observable<CopyMoveFileResponse> {
     if (!this.isValidName(name)) return EMPTY
     const dstDirectory = file.path.split('/').slice(0, -1).join('/') || '.'
     const op: CopyMoveFileDto = { dstDirectory: dstDirectory, dstName: name, overwrite: overwrite }
-    return this.http.request<Pick<FileTask, 'name'>>(FILE_OPERATION.MOVE, file.dataUrl, { body: op })
+    return this.http.request<CopyMoveFileResponse>(FILE_OPERATION.MOVE, file.dataUrl, { body: op })
   }
 
   delete(files: FileModel[]) {

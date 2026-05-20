@@ -11,9 +11,10 @@ import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto } from '
 import { FileLockProps } from '../interfaces/file-props.interface'
 import { FileError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
-import { checkFileName, dirName, fileName, isPathExists, sanitizeName } from '../utils/files'
+import { checkFileName, dirName, fileName, getMimeType, isPathExists, isPathIsDir, sanitizeName } from '../utils/files'
 import { SendFile } from '../utils/send-file'
 import { FilesManager } from './files-manager.service'
+import type { CopyMoveFileResponse } from '../interfaces/copy-move-file.interface'
 
 @Injectable()
 export class FilesMethods {
@@ -54,25 +55,11 @@ export class FilesMethods {
     }
   }
 
-  copy(
-    user: UserModel,
-    space: SpaceEnv,
-    copyMoveFileDto: CopyMoveFileDto
-  ): Promise<{
-    path: string
-    name: string
-  }> {
+  copy(user: UserModel, space: SpaceEnv, copyMoveFileDto: CopyMoveFileDto): Promise<CopyMoveFileResponse> {
     return this.copyMove(user, space, copyMoveFileDto, false)
   }
 
-  move(
-    user: UserModel,
-    space: SpaceEnv,
-    copyMoveFileDto: CopyMoveFileDto
-  ): Promise<{
-    path: string
-    name: string
-  }> {
+  move(user: UserModel, space: SpaceEnv, copyMoveFileDto: CopyMoveFileDto): Promise<CopyMoveFileResponse> {
     return this.copyMove(user, space, copyMoveFileDto, true)
   }
 
@@ -179,27 +166,19 @@ export class FilesMethods {
     }
   }
 
-  private async copyMove(
-    user: UserModel,
-    space: SpaceEnv,
-    copyMoveFileDto: CopyMoveFileDto,
-    isMove: boolean
-  ): Promise<{
-    path: string
-    name: string
-  }> {
+  private async copyMove(user: UserModel, space: SpaceEnv, copyMoveFileDto: CopyMoveFileDto, isMove: boolean): Promise<CopyMoveFileResponse> {
     const dstUrl = path.join(copyMoveFileDto.dstDirectory, copyMoveFileDto.dstName ? copyMoveFileDto.dstName : fileName(space.realPath))
     let dstSpace: SpaceEnv
     try {
       dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
       await this.filesManager.copyMove(user, space, dstSpace, isMove, copyMoveFileDto.overwrite)
+      return { path: dirName(dstUrl), name: fileName(dstUrl), mime: getMimeType(dstSpace.realPath, await isPathIsDir(dstSpace.realPath)) }
     } catch (e) {
       this.handleError(space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, dstSpace)
     }
-    return { path: dirName(dstUrl), name: fileName(dstUrl) }
   }
 
-  private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv) {
+  private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv): never {
     this.logger.error({ tag: this.handleError.name, msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}` })
     // Remove the last part to avoid exposing the path
     const errorMsg = e.message.split(',')[0]

@@ -123,8 +123,9 @@ export class FileModel implements File {
     this.path = [...this.path.split('/').slice(0, -1), this.name].join('/')
   }
 
-  updateMime(mime: string) {
-    this.mime = mime
+  updateMime(mime: string, inShare: boolean, editorConfig: FileEditorProviders) {
+    this.resetMimeState()
+    this.mime = this.getMime(mime, inShare, editorConfig)
     this.setMimeUrl()
   }
 
@@ -244,6 +245,16 @@ export class FileModel implements File {
       this.isTextProbeRequired = temporaryMime !== SHORT_MIME.TEXT
     }
     return mime
+  }
+
+  private resetMimeState() {
+    this.shortMime = undefined
+    this.isImage = false
+    this.isViewable = false
+    this.isEditable = false
+    this.isTextProbeRequired = false
+    this.isCompressible = true
+    this.haveThumbnail = false
   }
 
   private setMimeUrl() {

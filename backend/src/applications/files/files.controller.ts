@@ -49,6 +49,7 @@ import { UserHaveRole } from '../users/decorators/roles.decorator'
 import { USER_ROLE } from '../users/constants/user'
 import { UserRolesGuard } from '../users/guards/roles.guard'
 import { IndexingStatus } from './interfaces/indexing.interface'
+import type { CopyMoveFileResponse } from './interfaces/copy-move-file.interface'
 
 @Controller(FILES_ROUTE.BASE)
 @UseGuards(SpaceGuard)
@@ -96,26 +97,12 @@ export class FilesController {
   }
 
   @Copy(`${FILES_ROUTE.OPERATION}/*`)
-  async copy(
-    @GetUser() user: UserModel,
-    @GetSpace() space: SpaceEnv,
-    @Body() copyMoveFileDto: CopyMoveFileDto
-  ): Promise<{
-    path: string
-    name: string
-  }> {
+  async copy(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() copyMoveFileDto: CopyMoveFileDto): Promise<CopyMoveFileResponse> {
     return this.filesMethods.copy(user, space, copyMoveFileDto)
   }
 
   @Move(`${FILES_ROUTE.OPERATION}/*`)
-  async move(
-    @GetUser() user: UserModel,
-    @GetSpace() space: SpaceEnv,
-    @Body() copyMoveFileDto: CopyMoveFileDto
-  ): Promise<{
-    path: string
-    name: string
-  }> {
+  async move(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() copyMoveFileDto: CopyMoveFileDto): Promise<CopyMoveFileResponse> {
     return this.filesMethods.move(user, space, copyMoveFileDto)
   }
 
