@@ -66,7 +66,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   }
 
   onClose() {
-    if (this.currentFile.isEditable && (this.hookedShortMime === SHORT_MIME.TEXT || this.hookedShortMime === SHORT_MIME.MARKDOWN)) {
+    if (this.hookedShortMime === SHORT_MIME.TEXT || this.hookedShortMime === SHORT_MIME.MARKDOWN) {
       // Prevent closing the modal without saving when using text-based editors
       this.modalClosing.set(true)
       // Force the next state change
