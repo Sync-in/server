@@ -373,7 +373,7 @@
   "The destination already exists": "La destination existe déjà",
   "This item is already selected": "Ce fichier est déjà sélectionné",
   "Parent item is already selected": "L'élément parent est déjà sélectionné",
-  "This file contains binary data that can not be read": "Ce fichier contient des données binaires qu\"il n\"est pas possible de lire",
+  "This file contains binary data that can not be read": "Ce fichier contient des données binaires qu'il n'est pas possible de lire",
   "Navigation Tree": "Arborescence de navigation",
   "item": "élément",
   "items": "éléments",

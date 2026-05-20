@@ -103,7 +103,7 @@ export class FilesViewerTextComponent extends FilesViewerEditableBase implements
     }
   }
 
-  async ngOnInit() {
+  ngOnInit() {
     const language: LanguageDescription = LanguageDescription.matchFilename(languages, this.file().name)
     this.currentLanguage = language?.name
     this.isSupported.set(true)

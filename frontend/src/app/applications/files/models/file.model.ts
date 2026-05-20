@@ -78,6 +78,7 @@ export class FileModel implements File {
   isImage = false
   isViewable = false
   isEditable = false
+  isTextProbeRequired = false
   isCompressible = true
   isBeingDeleted = false
   isSelected = false
@@ -167,28 +168,16 @@ export class FileModel implements File {
       return this.getType(inShare)
     }
 
-    if (!mime || mime === mimeFile) {
-      this.isViewable = true
-      this.shortMime = SHORT_MIME.TEXT
-      return this.getType(inShare)
-    }
-
-    if (mime.includes(SHORT_MIME.MARKDOWN)) {
-      this.shortMime = SHORT_MIME.MARKDOWN
-      this.isViewable = true
-      this.isEditable = true
-      return mime
-    }
-
     const extension = this.getExtension()
-    const dash = mime.indexOf('-')
-    const temporaryMime = dash >= 0 ? mime.slice(0, dash) : mime
+
+    const dash = mime?.indexOf('-') ?? -1
+    const temporaryMime = mime && dash >= 0 ? mime.slice(0, dash) : mime
 
     if (extension === SHORT_MIME.PDF) {
       this.shortMime = SHORT_MIME.PDF
       this.isViewable = true
       this.isEditable = editorConfig.onlyoffice === true
-      return mime
+      return mime || mimeFile
     }
 
     if (
@@ -198,6 +187,25 @@ export class FileModel implements File {
       this.shortMime = SHORT_MIME.DOCUMENT
       this.isEditable = true
       this.isViewable = true
+      return mime || mimeFile
+    }
+
+    if ((!mime || mime === mimeFile) && UNSUPPORTED_VIEW_EXTENSIONS.has(extension)) {
+      return this.getType(inShare)
+    }
+
+    if (!mime || mime === mimeFile) {
+      this.isViewable = true
+      this.isEditable = true
+      this.isTextProbeRequired = true
+      this.shortMime = SHORT_MIME.TEXT
+      return this.getType(inShare)
+    }
+
+    if (mime.includes(SHORT_MIME.MARKDOWN)) {
+      this.shortMime = SHORT_MIME.MARKDOWN
+      this.isViewable = true
+      this.isEditable = true
       return mime
     }
 
@@ -233,9 +241,8 @@ export class FileModel implements File {
       this.shortMime = SHORT_MIME.TEXT
       this.isViewable = true
       this.isEditable = true
-      return mime
+      this.isTextProbeRequired = temporaryMime !== SHORT_MIME.TEXT
     }
-
     return mime
   }
 
