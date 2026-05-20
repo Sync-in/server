@@ -28,6 +28,8 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
   private readonly filesServices = inject(FilesService)
   private readonly filesUpload = inject(FilesUploadService)
   private readonly subscription = this.layout.switchTheme.subscribe((layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light'))
+  private isDestroyed = false
+  private unlockRequested = false
 
   protected constructor() {
     effect(() => {
@@ -47,6 +49,11 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
 
   ngOnDestroy() {
     this.subscription.unsubscribe()
+    this.isDestroyed = true
+    // Fallback for programmatic closes that bypass onClose().
+    if (!this.isReadonly() && this.file().lock) {
+      void this.unlockFile()
+    }
   }
 
   protected abstract currentFileContent(): string
@@ -119,10 +126,15 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
     if (!this.isSupported() || !this.isWriteable()) return false
     try {
       const lock: FileLockProps = await firstValueFrom(this.filesServices.lock(this.file()))
+      this.unlockRequested = false
       this.file.update((f) => {
         f.lock = lock
         return f
       })
+      if (this.isDestroyed) {
+        await this.unlockFile()
+        return false
+      }
       return true
     } catch (e) {
       this.lockError(e as HttpErrorResponse)
@@ -131,7 +143,8 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
   }
 
   protected async unlockFile() {
-    if (!this.isSupported() || !this.isWriteable()) return
+    if (this.unlockRequested || !this.isSupported() || !this.isWriteable()) return
+    this.unlockRequested = true
     try {
       await firstValueFrom(this.filesServices.unlock(this.file()))
       this.file.update((f) => {
