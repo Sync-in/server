@@ -34,9 +34,10 @@ import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-cont
 import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
+import type { CopyMoveFileResponse } from '@sync-in-server/backend/src/applications/files/interfaces/copy-move-file.interface'
 import type { FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
-import { type FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import { FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { SHARE_TYPE } from '@sync-in-server/backend/src/applications/shares/constants/shares'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import type { SpaceFiles } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-files.interface'
@@ -484,11 +485,10 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       .rename(f, renamedTo, overwrite)
       .pipe(take(1))
       .subscribe({
-        next: (dto: Pick<FileTask, 'name'>) => {
+        next: (dto: CopyMoveFileResponse) => {
           f.rename(dto.name)
-          f.isEditable = false
+          f.updateMime(dto.mime, this.isSharesRepo, this.store.server().files.editors)
           if (overwrite) {
-            f.updateMime(fileExists.mime)
             this.sortBy(
               this.sortTable.sortParam.column,
               false,

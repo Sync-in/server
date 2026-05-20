@@ -25,6 +25,7 @@ import type {
   MakeFileDto,
   SearchFilesDto
 } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
+import type { CopyMoveFileResponse } from '@sync-in-server/backend/src/applications/files/interfaces/copy-move-file.interface'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
@@ -54,6 +55,8 @@ import { FileRecentModel } from '../models/file-recent.model'
 import { FileModel } from '../models/file.model'
 import { FilesTasksService } from './files-tasks.service'
 
+type ViewerHookResult = { action: 'open'; shortMime: string } | { action: 'download'; message?: string }
+
 @Injectable({ providedIn: 'root' })
 export class FilesService {
   // Tree section
@@ -63,6 +66,8 @@ export class FilesService {
   public clipboardAction: 'copyPaste' | 'cutPaste' = 'copyPaste'
   // Files
   public currentRoute: string
+  private readonly textFileSizeLimitExceededMessage = 'File size limit exceeded'
+  private readonly textBinaryProbeBytes = 4096
   private readonly http = inject(HttpClient)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
@@ -134,11 +139,11 @@ export class FilesService {
     }
   }
 
-  rename(file: FileModel, name: string, overwrite = false): Observable<Pick<FileTask, 'name'>> {
+  rename(file: FileModel, name: string, overwrite = false): Observable<CopyMoveFileResponse> {
     if (!this.isValidName(name)) return EMPTY
     const dstDirectory = file.path.split('/').slice(0, -1).join('/') || '.'
     const op: CopyMoveFileDto = { dstDirectory: dstDirectory, dstName: name, overwrite: overwrite }
-    return this.http.request<Pick<FileTask, 'name'>>(FILE_OPERATION.MOVE, file.dataUrl, { body: op })
+    return this.http.request<CopyMoveFileResponse>(FILE_OPERATION.MOVE, file.dataUrl, { body: op })
   }
 
   delete(files: FileModel[]) {
@@ -292,81 +297,130 @@ export class FilesService {
   }
 
   async openViewerDialog(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<void> {
+    if (this.useTextProbeAsAvailabilityCheck(file)) {
+      await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions).catch((e) => this.sendOpenDocumentError(file, e))
+      return
+    }
     this.http.head(file.dataUrl).subscribe({
-      next: async () => {
-        // This check is only used for the text viewer; other viewers are read-only or enforce permissions on the backend.
-        const isWriteable = !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
-        const mode: FILE_MODE = isWriteable ? FILE_MODE.EDIT : FILE_MODE.VIEW
-
-        let hookedShortMime: string
-        try {
-          hookedShortMime = await this.viewerHook(file)
-          if (file?.lock?.isExclusive) {
-            this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(file.lock))
-          }
-        } catch {
-          // No office editors are enabled, falling back to download
-          this.download(file)
-          return
-        }
-
-        const editorProvider: FileEditorProviders = { collabora: false, onlyoffice: false }
-        if (hookedShortMime === SHORT_MIME.DOCUMENT) {
-          if (this.store.server().files.editors.collabora && this.store.server().files.editors.onlyoffice) {
-            // Case with multiple editors
-            const collaboraHasExtension = COLLABORA_ONLINE_EXTENSIONS.has(file.getExtension())
-            const onlyofficeHasExtension = ONLY_OFFICE_EXTENSIONS.has(file.getExtension())
-            if (collaboraHasExtension && onlyofficeHasExtension) {
-              // Get user's saved preference
-              const userEditorPreference = this.userService.getEditorProviderPreference()
-              if (userEditorPreference && userEditorPreference in editorProvider) {
-                editorProvider[userEditorPreference] = true
-              } else {
-                // Both editors support this file extension, let the user choose
-                await this.openSelectViewerDialog(file, editorProvider)
-                if (!editorProvider.onlyoffice && !editorProvider.collabora) return
-              }
-            } else {
-              // Based on the supported extension
-              editorProvider.collabora = collaboraHasExtension
-              editorProvider.onlyoffice = onlyofficeHasExtension
-            }
-          } else {
-            // Based on availability
-            editorProvider.collabora = this.store.server().files.editors.collabora
-            editorProvider.onlyoffice = this.store.server().files.editors.onlyoffice
-          }
-        }
-
-        this.layout.openDialog(FilesViewerDialogComponent, 'full', {
-          id: file.id, // only used to manage the modal
-          initialState: {
-            currentFile: file,
-            directoryFiles: directoryFiles,
-            mode: mode,
-            isWriteable: isWriteable,
-            hookedShortMime: hookedShortMime,
-            editorProvider: editorProvider
-          } satisfies Partial<FilesViewerDialogComponent>
-        })
-      },
-      error: (e: HttpErrorResponse | any) => {
-        // HEAD requests do not include a body or custom message
-        e.message = e.status in SEND_FILE_ERROR_MSG ? SEND_FILE_ERROR_MSG[e.status] : e.statusText
-        this.layout.sendNotification('error', 'Unable to open document', file?.name, e)
-      }
+      next: () => this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions).catch((e) => this.sendOpenDocumentError(file, e)),
+      error: (e: HttpErrorResponse | any) => this.sendOpenDocumentError(file, e)
     })
   }
 
-  private async viewerHook(file: FileModel): Promise<string> {
-    if (file.shortMime === SHORT_MIME.TEXT || file.shortMime === SHORT_MIME.MARKDOWN) {
-      if (file.size < MAX_TEXT_FILE_SIZE) {
-        return file.shortMime
-      }
-      // Download if too large
-      throw new Error('No editor found')
+  private async openViewerAfterAvailabilityCheck(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<void> {
+    // This check is only used for the text viewer; other viewers are read-only or enforce permissions on the backend.
+    const isWriteable = !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
+    const mode: FILE_MODE = isWriteable ? FILE_MODE.EDIT : FILE_MODE.VIEW
+
+    let hookResult: ViewerHookResult
+    try {
+      hookResult = await this.viewerHook(file)
+    } catch (e) {
+      this.sendOpenDocumentError(file, e)
+      return
     }
-    return file.shortMime
+
+    if (hookResult.action === 'download') {
+      if (hookResult.message) {
+        this.layout.sendNotification('warning', 'Download', hookResult.message)
+      }
+      this.download(file)
+      return
+    }
+
+    const hookedShortMime = hookResult.shortMime
+    if (file?.lock?.isExclusive) {
+      this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(file.lock))
+    }
+
+    const editorProvider: FileEditorProviders = { collabora: false, onlyoffice: false }
+    if (hookedShortMime === SHORT_MIME.DOCUMENT) {
+      if (this.store.server().files.editors.collabora && this.store.server().files.editors.onlyoffice) {
+        // Case with multiple editors
+        const collaboraHasExtension = COLLABORA_ONLINE_EXTENSIONS.has(file.getExtension())
+        const onlyofficeHasExtension = ONLY_OFFICE_EXTENSIONS.has(file.getExtension())
+        if (collaboraHasExtension && onlyofficeHasExtension) {
+          // Get user's saved preference
+          const userEditorPreference = this.userService.getEditorProviderPreference()
+          if (userEditorPreference && userEditorPreference in editorProvider) {
+            editorProvider[userEditorPreference] = true
+          } else {
+            // Both editors support this file extension, let the user choose
+            await this.openSelectViewerDialog(file, editorProvider)
+            if (!editorProvider.onlyoffice && !editorProvider.collabora) return
+          }
+        } else {
+          // Based on the supported extension
+          editorProvider.collabora = collaboraHasExtension
+          editorProvider.onlyoffice = onlyofficeHasExtension
+        }
+      } else {
+        // Based on availability
+        editorProvider.collabora = this.store.server().files.editors.collabora
+        editorProvider.onlyoffice = this.store.server().files.editors.onlyoffice
+      }
+    }
+
+    this.layout.openDialog(FilesViewerDialogComponent, 'full', {
+      id: file.id, // only used to manage the modal
+      initialState: {
+        currentFile: file,
+        directoryFiles: directoryFiles,
+        mode: mode,
+        isWriteable: isWriteable,
+        hookedShortMime: hookedShortMime,
+        editorProvider: editorProvider
+      } satisfies Partial<FilesViewerDialogComponent>
+    })
+  }
+
+  private sendOpenDocumentError(file: FileModel, e: HttpErrorResponse | any): void {
+    // Availability checks do not include a body or custom message.
+    if (e?.status) {
+      e.message = e.status in SEND_FILE_ERROR_MSG ? SEND_FILE_ERROR_MSG[e.status] : e.statusText
+    }
+    this.layout.sendNotification('error', 'Unable to open document', file?.name, e)
+  }
+
+  private async viewerHook(file: FileModel): Promise<ViewerHookResult> {
+    if (file.shortMime === SHORT_MIME.TEXT || file.shortMime === SHORT_MIME.MARKDOWN) {
+      if (file.shortMime === SHORT_MIME.TEXT && (await this.hasBinaryContent(file))) {
+        return { action: 'download' }
+      }
+      if (file.size >= MAX_TEXT_FILE_SIZE) {
+        // Download if too large
+        return { action: 'download', message: this.textFileSizeLimitExceededMessage }
+      }
+      return { action: 'open', shortMime: file.shortMime }
+    }
+    return { action: 'open', shortMime: file.shortMime }
+  }
+
+  private useTextProbeAsAvailabilityCheck(file: FileModel): boolean {
+    return file.shortMime === SHORT_MIME.TEXT && file.isTextProbeRequired && file.size > 0
+  }
+
+  private async hasBinaryContent(file: FileModel): Promise<boolean> {
+    if (!file.isTextProbeRequired || file.size === 0) return false
+    const content = await firstValueFrom(
+      this.http.get(file.dataUrl, {
+        headers: { Range: `bytes=0-${this.textBinaryProbeBytes - 1}` },
+        responseType: 'arraybuffer'
+      })
+    )
+    return this.looksBinary(new Uint8Array(content))
+  }
+
+  private looksBinary(bytes: Uint8Array): boolean {
+    if (!bytes.length) return false
+    let controlBytes = 0
+    for (const byte of bytes) {
+      if (byte === 0) return true
+      if (byte < 32 && byte !== 9 && byte !== 10 && byte !== 13) {
+        controlBytes++
+      }
+    }
+    return controlBytes / bytes.length > 0.02
   }
 
   private isValidName(fileName: string): boolean {
