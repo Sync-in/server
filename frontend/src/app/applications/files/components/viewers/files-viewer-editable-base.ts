@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Directive, effect, inject, input, model, OnDestroy, signal, untracked } from '@angular/core'
+import { Directive, effect, HostListener, inject, input, model, OnDestroy, signal, untracked } from '@angular/core'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import { L10N_LOCALE, L10nLocale } from 'angular-l10n'
 import { firstValueFrom } from 'rxjs'
@@ -53,6 +53,13 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
     // Fallback for programmatic closes that bypass onClose().
     if (!this.isReadonly() && this.file().lock) {
       void this.unlockFile()
+    }
+  }
+
+  @HostListener('window:pagehide', ['$event'])
+  protected onPageHide(event: PageTransitionEvent) {
+    if (!event.persisted) {
+      this.unlockFileOnPageUnload()
     }
   }
 
@@ -154,6 +161,13 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
     } catch (e) {
       this.lockError(e as HttpErrorResponse)
     }
+  }
+
+  private unlockFileOnPageUnload() {
+    // Firefox may cancel this request when closing the tab before it reaches the backend.
+    if (this.unlockRequested || this.isReadonly() || !this.file().lock || !this.isSupported() || !this.isWriteable()) return
+    this.unlockRequested = true
+    this.filesServices.unlock(this.file()).subscribe({ error: () => undefined })
   }
 
   private lockError(e: HttpErrorResponse) {
