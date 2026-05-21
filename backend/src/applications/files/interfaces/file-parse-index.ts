@@ -22,6 +22,7 @@ export interface FileParseTrashRetentionPath {
   id: number
   type: FILE_REPOSITORY
   realPath: string
+  retentionDays: number
 }
 
 export interface FileTrashRetentionIndexContext {

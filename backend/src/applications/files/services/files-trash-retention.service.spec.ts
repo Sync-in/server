@@ -49,8 +49,8 @@ describe(FilesTrashRetention.name, () => {
     return records
   }
 
-  const mockTrashPath = (files: FileTrash[] = []) => {
-    jest.spyOn(service as any, 'allPaths').mockResolvedValueOnce([{ id: 9, type: FILE_REPOSITORY.USER, realPath: '/trash' }])
+  const mockTrashPath = (files: FileTrash[] = [], type: FILE_REPOSITORY.USER | FILE_REPOSITORY.SPACE = FILE_REPOSITORY.USER, retentionDays = 30) => {
+    jest.spyOn(service as any, 'allPaths').mockResolvedValueOnce([{ id: 9, type, realPath: '/trash', retentionDays }])
     jest.spyOn(service as any, 'createTable').mockResolvedValueOnce(true)
     jest.spyOn(service as any, 'parseFiles').mockReturnValueOnce(asyncGen(files))
   }
@@ -82,7 +82,6 @@ describe(FilesTrashRetention.name, () => {
   })
 
   it('should process trash files by batches of 1000 and delete unseen records', async () => {
-    ;(service as any).retentionDays = 30
     const files = Array.from({ length: 1001 }, (_, i) => fileTrash(i + 1))
     mockTrashPath(files)
     const indexTrashBatchSpy = jest.spyOn(service as any, 'indexTrashBatch').mockResolvedValue({ indexedRecords: 0, errorRecords: 0 })
@@ -95,11 +94,21 @@ describe(FilesTrashRetention.name, () => {
     expect(indexTrashBatchSpy.mock.calls[0][2]).toHaveLength(1000)
     expect(indexTrashBatchSpy.mock.calls[1][2]).toHaveLength(1)
     expect(deleteUnseenRecordsSpy).toHaveBeenCalledWith('files_trash_user_9', expect.any(String))
-    expect(cleanupExpiredRecordsSpy).toHaveBeenCalledWith('files_trash_user_9', '/trash')
+    expect(cleanupExpiredRecordsSpy).toHaveBeenCalledWith('files_trash_user_9', '/trash', 30)
+  })
+
+  it('should use the trash retention attached to each repository path', async () => {
+    mockTrashPath([fileTrash(1)], FILE_REPOSITORY.SPACE, 14)
+    jest.spyOn(service as any, 'indexTrashBatch').mockResolvedValueOnce({ indexedRecords: 1, errorRecords: 0 })
+    jest.spyOn(service as any, 'deleteUnseenRecords').mockResolvedValueOnce(0)
+    const cleanupExpiredRecordsSpy = jest.spyOn(service as any, 'cleanupExpiredRecords').mockResolvedValueOnce({ deletedRecords: 0, errorRecords: 0 })
+
+    await service.indexAndCleanTrash()
+
+    expect(cleanupExpiredRecordsSpy).toHaveBeenCalledWith('files_trash_space_9', '/trash', 14)
   })
 
   it('should skip expired cleanup when unseen records cannot be deleted', async () => {
-    ;(service as any).retentionDays = 30
     mockTrashPath([fileTrash(1)])
     jest.spyOn(service as any, 'indexTrashBatch').mockResolvedValueOnce({ indexedRecords: 1, errorRecords: 0 })
     jest.spyOn(service as any, 'deleteUnseenRecords').mockResolvedValueOnce(null)
@@ -167,7 +176,6 @@ describe(FilesTrashRetention.name, () => {
   })
 
   it('should delete expired records from filesystem and database', async () => {
-    ;(service as any).retentionDays = 30
     const expiredRecords = [fileTrash(1), fileTrash(2, { path: 'nested' })]
     const getExpiredRecordsSpy = jest
       .spyOn(service as any, 'getExpiredRecords')
@@ -180,23 +188,22 @@ describe(FilesTrashRetention.name, () => {
       .mockResolvedValueOnce(false)
     const deleteRecordsByIdsSpy = jest.spyOn(service as any, 'deleteRecordsByIds').mockResolvedValueOnce(1)
 
-    await expect((service as any).cleanupExpiredRecords('files_trash_user_1', '/trash')).resolves.toEqual({
+    await expect((service as any).cleanupExpiredRecords('files_trash_user_1', '/trash', 30)).resolves.toEqual({
       deletedRecords: 1,
       errorRecords: 1
     })
 
     expect(getExpiredRecordsSpy).toHaveBeenCalledTimes(3)
-    expect(getExpiredRecordsSpy).toHaveBeenNthCalledWith(1, 'files_trash_user_1', false, [])
-    expect(getExpiredRecordsSpy).toHaveBeenNthCalledWith(2, 'files_trash_user_1', false, [2])
-    expect(getExpiredRecordsSpy).toHaveBeenNthCalledWith(3, 'files_trash_user_1', true, [])
+    expect(getExpiredRecordsSpy).toHaveBeenNthCalledWith(1, 'files_trash_user_1', false, 30, [])
+    expect(getExpiredRecordsSpy).toHaveBeenNthCalledWith(2, 'files_trash_user_1', false, 30, [2])
+    expect(getExpiredRecordsSpy).toHaveBeenNthCalledWith(3, 'files_trash_user_1', true, 30, [])
     expect(deleteRecordsByIdsSpy).toHaveBeenCalledWith('files_trash_user_1', [1])
   })
 
   it('should only query expired directories without indexed descendants', async () => {
-    ;(service as any).retentionDays = 30
     db.execute.mockResolvedValueOnce([[]])
 
-    await expect((service as any).getExpiredRecords('files_trash_user_1', true)).resolves.toEqual([])
+    await expect((service as any).getExpiredRecords('files_trash_user_1', true, 30)).resolves.toEqual([])
 
     const query = sqlText(db.execute.mock.calls[0][0])
     expect(query).toContain('NOT EXISTS')

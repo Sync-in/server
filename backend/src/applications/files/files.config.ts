@@ -48,6 +48,20 @@ export class FilesContentIndexingConfig {
   ocr: FilesContentIndexingOCRConfig = new FilesContentIndexingOCRConfig()
 }
 
+export class FilesTrashRetentionConfig {
+  @Transform(({ value }) => (value === 0 ? false : value))
+  @ValidateIf((o: FilesTrashRetentionConfig) => o.users !== false)
+  @IsInt()
+  @Min(1)
+  users: number | false = false
+
+  @Transform(({ value }) => (value === 0 ? false : value))
+  @ValidateIf((o: FilesTrashRetentionConfig) => o.spaces !== false)
+  @IsInt()
+  @Min(1)
+  spaces: number | false = false
+}
+
 export class FilesConfig {
   @IsNotEmpty()
   @IsString()
@@ -73,11 +87,10 @@ export class FilesConfig {
   @Type(() => FilesContentIndexingConfig)
   contentIndexing: FilesContentIndexingConfig = new FilesContentIndexingConfig()
 
-  @Transform(({ value }) => (value === 0 ? false : value))
-  @ValidateIf((o: FilesConfig) => o.trashRetentionDays !== false)
-  @IsInt()
-  @Min(1)
-  trashRetentionDays: number | false = false
+  @IsNotEmptyObject()
+  @ValidateNested()
+  @Type(() => FilesTrashRetentionConfig)
+  trashRetention: FilesTrashRetentionConfig = new FilesTrashRetentionConfig()
 
   @IsBoolean()
   showHiddenFiles: boolean = false

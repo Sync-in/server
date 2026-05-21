@@ -19,17 +19,17 @@ import { FileTrash, FileTrashCleanupResult, FileTrashRecordMetadata, FileTrashRe
 import fs from 'fs/promises'
 import path from 'node:path'
 import { Stats } from 'node:fs'
+import type { FilesTrashRetentionConfig } from '../files.config'
 
 @Injectable()
 export class FilesTrashRetention {
   private readonly logger = new Logger(FilesTrashRetention.name)
-  private readonly retentionDays = configuration.applications.files.trashRetentionDays
+  private readonly trashRetention: FilesTrashRetentionConfig = configuration.applications.files.trashRetention
   private readonly fileBatchSize = 1000
 
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 
   async indexAndCleanTrash(userIds?: number[], spaceIds?: number[]): Promise<void> {
-    if (this.retentionDays === false) return
     for (const p of await this.allPaths(userIds, spaceIds)) {
       const tableName = this.getTableName(genIndexingKey(p.id, p.type))
       if (!(await this.createTable(tableName))) {
@@ -69,7 +69,7 @@ export class FilesTrashRetention {
         this.logger.error({ tag: this.indexAndCleanTrash.name, msg: `${tableName} - cleanup skipped because unseen records could not be deleted` })
         continue
       }
-      const expiredRecords = await this.cleanupExpiredRecords(tableName, p.realPath)
+      const expiredRecords = await this.cleanupExpiredRecords(tableName, p.realPath, p.retentionDays)
       const totalErrorRecords = errorRecords + expiredRecords.errorRecords
 
       if (scannedRecords === 0 && indexedRecords === 0 && deletedRecords === 0 && expiredRecords.deletedRecords === 0) {
@@ -126,8 +126,8 @@ export class FilesTrashRetention {
 
   private async allPaths(userIds?: number[], spaceIds?: number[]): Promise<FileParseTrashRetentionPath[]> {
     const hasNoFilters = userIds === undefined && spaceIds === undefined
-    const includeUsers = hasNoFilters || !!userIds?.length
-    const includeSpaces = hasNoFilters || !!spaceIds?.length
+    const includeUsers = this.trashRetention.users !== false && (hasNoFilters || !!userIds?.length)
+    const includeSpaces = this.trashRetention.spaces !== false && (hasNoFilters || !!spaceIds?.length)
 
     const [userPaths, spacePaths] = await Promise.all([includeUsers ? this.userPaths(userIds) : [], includeSpaces ? this.spacePaths(spaceIds) : []])
 
@@ -135,6 +135,8 @@ export class FilesTrashRetention {
   }
 
   private async userPaths(userIds?: number[]): Promise<FileParseTrashRetentionPath[]> {
+    if (this.trashRetention.users === false) return []
+    const retentionDays = this.trashRetention.users
     const paths: FileParseTrashRetentionPath[] = []
     for (const user of await this.db
       .select({
@@ -148,12 +150,14 @@ export class FilesTrashRetention {
         this.logger.warn({ tag: this.userPaths.name, msg: `user trash path does not exist : ${userTrashPath}` })
         continue
       }
-      paths.push({ id: user.id, type: FILE_REPOSITORY.USER, realPath: userTrashPath })
+      paths.push({ id: user.id, type: FILE_REPOSITORY.USER, realPath: userTrashPath, retentionDays })
     }
     return paths
   }
 
   private async spacePaths(spaceIds?: number[]): Promise<FileParseTrashRetentionPath[]> {
+    if (this.trashRetention.spaces === false) return []
+    const retentionDays = this.trashRetention.spaces
     const paths: FileParseTrashRetentionPath[] = []
     for (const space of await this.db
       .select({
@@ -167,7 +171,7 @@ export class FilesTrashRetention {
         this.logger.warn({ tag: this.spacePaths.name, msg: `space trash path does not exist : ${spaceTrashPath}` })
         continue
       }
-      paths.push({ id: space.id, type: FILE_REPOSITORY.SPACE, realPath: spaceTrashPath })
+      paths.push({ id: space.id, type: FILE_REPOSITORY.SPACE, realPath: spaceTrashPath, retentionDays })
     }
     return paths
   }
@@ -279,13 +283,9 @@ export class FilesTrashRetention {
     return null
   }
 
-  private async cleanupExpiredRecords(tableName: string, realBasePath: string): Promise<FileTrashCleanupResult> {
-    if (this.retentionDays === false) {
-      return { deletedRecords: 0, errorRecords: 0 }
-    }
-
-    const fileResult = await this.cleanupExpiredRecordsByType(tableName, realBasePath, false)
-    const dirResult = await this.cleanupExpiredRecordsByType(tableName, realBasePath, true)
+  private async cleanupExpiredRecords(tableName: string, realBasePath: string, retentionDays: number): Promise<FileTrashCleanupResult> {
+    const fileResult = await this.cleanupExpiredRecordsByType(tableName, realBasePath, false, retentionDays)
+    const dirResult = await this.cleanupExpiredRecordsByType(tableName, realBasePath, true, retentionDays)
 
     return {
       deletedRecords: fileResult.deletedRecords + dirResult.deletedRecords,
@@ -293,14 +293,19 @@ export class FilesTrashRetention {
     }
   }
 
-  private async cleanupExpiredRecordsByType(tableName: string, realBasePath: string, isDir: boolean): Promise<FileTrashCleanupResult> {
+  private async cleanupExpiredRecordsByType(
+    tableName: string,
+    realBasePath: string,
+    isDir: boolean,
+    retentionDays: number
+  ): Promise<FileTrashCleanupResult> {
     // Process fixed-size pages. Filesystem failures are kept in DB and retried on a later run.
     // They are ignored only for the current run so later eligible records are not blocked.
     const result: FileTrashCleanupResult = { deletedRecords: 0, errorRecords: 0 }
     const ignoredIds: number[] = []
 
     while (true) {
-      const expiredRecords = await this.getExpiredRecords(tableName, isDir, [...ignoredIds])
+      const expiredRecords = await this.getExpiredRecords(tableName, isDir, retentionDays, [...ignoredIds])
       if (!expiredRecords.length) {
         break
       }
@@ -335,10 +340,7 @@ export class FilesTrashRetention {
     return result
   }
 
-  private async getExpiredRecords(tableName: string, isDir: boolean, ignoredIds: number[] = []): Promise<FileTrash[]> {
-    if (this.retentionDays === false) {
-      return []
-    }
+  private async getExpiredRecords(tableName: string, isDir: boolean, retentionDays: number, ignoredIds: number[] = []): Promise<FileTrash[]> {
     const ignoredRecordsFilter = ignoredIds.length ? sql`AND trash_record.id NOT IN (${sql.raw(ignoredIds.join(','))})` : sql``
     const escapedRecordPath = sql`REPLACE(REPLACE(REPLACE(trash_record.path, '=', '=='), '%', '=%'), '_', '=_')`
     // Directories are eligible only after their indexed children are gone.
@@ -355,7 +357,7 @@ export class FilesTrashRetention {
     const req = sql`
       SELECT trash_record.id, trash_record.path, trash_record.isDir, trash_record.deletedAt
       FROM ${sql.raw(tableName)} AS trash_record
-      WHERE trash_record.deletedAt < DATE_SUB(CURRENT_DATE, INTERVAL ${this.retentionDays} DAY)
+      WHERE trash_record.deletedAt < DATE_SUB(CURRENT_DATE, INTERVAL ${retentionDays} DAY)
         AND trash_record.isDir = ${isDir}
         ${ignoredRecordsFilter}
         ${emptyDirectoryFilter}
