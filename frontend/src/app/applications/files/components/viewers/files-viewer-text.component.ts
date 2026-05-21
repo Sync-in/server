@@ -42,6 +42,7 @@ import { FilesViewerSearchComponent } from './components/files-viewer-search.com
       }
 
       .code-editor {
+        font-size: 0.85rem;
         height: calc(100% - 40px);
       }
 
