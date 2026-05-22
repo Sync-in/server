@@ -1,4 +1,56 @@
 
+## [2.3.0](https://github.com/Sync-in/server/compare/v2.2.1...v2.3.0) (2026-05-22)
+
+
+### Features
+
+* **backend:auth:** allow trusted private IPs for OIDC avatar downloads ([9c9b682](https://github.com/Sync-in/server/commit/9c9b682b13578dab3fcbc111602e748f977ef052))
+* **backend:auth:** harden OIDC avatar sync and add avatar metadata tracking ([22ac4f0](https://github.com/Sync-in/server/commit/22ac4f04ef7a1395745dc664cd66eefe439ab65a))
+* **backend:auth:** map configurable OIDC/LDAP storage quota to user profile ([76b4b8c](https://github.com/Sync-in/server/commit/76b4b8cdab1432628d9a7299386bcf1217fea7f9))
+* **backend:files:** enable HTML-to-text conversion for all base elements ([6352393](https://github.com/Sync-in/server/commit/6352393b0a9d2e327159134410e5f165dcf13e74))
+* **backend:files:** optimize content indexing memory usage with batched metadata, run_id cleanup, and pending scheduler state ([3d819cd](https://github.com/Sync-in/server/commit/3d819cdaa0aadaa9ed6122e4f71dbbc8487883bf))
+* **backend:files:** prevent file mutations in trash repository ([738402c](https://github.com/Sync-in/server/commit/738402c13acbd894a7e95cb42a7cbb4541445f56))
+* **backend:files:** split trash retention by repository type ([1c490ee](https://github.com/Sync-in/server/commit/1c490eee902b3c0aed52ef02b0bab919809e0346))
+* **backend:files:** support trusted private IP downloads ([44261ea](https://github.com/Sync-in/server/commit/44261ea20e83e34741a521ffed66ef0d1fb35f63))
+* **backend:files:** trash retention support with indexing and cleanup ([c990335](https://github.com/Sync-in/server/commit/c99033573bac8e60f08cb43cfeb2972c389fd541))
+* **backend:users:** add avatar synchronization for OIDC users ([8790c19](https://github.com/Sync-in/server/commit/8790c1905bf74e509cb90923b422d0472e266b9c))
+* **backend:users:** add showUngroupedUsers toggle for ungrouped account visibility ([2fad377](https://github.com/Sync-in/server/commit/2fad377cb9298bdfd8ee8730e52c3400576eb9aa))
+* **backend:users:** convert uploaded avatars to PNG during update ([47af28b](https://github.com/Sync-in/server/commit/47af28b4b7df29903d1d144b2f23157871237a0d))
+* **backend:users:** hide all users and groups for guest-link accounts ([c5e1988](https://github.com/Sync-in/server/commit/c5e19885868b6d1f932a10edbc80c24d206e0fce))
+* **files:** add a disabled indexing state and update scheduler/admin indexing workflows ([f7fc4f1](https://github.com/Sync-in/server/commit/f7fc4f1cbb907d7e7f5efbdb40c15c890b9ac35f))
+* **files:** add optional document types for frontend ([7e8f64f](https://github.com/Sync-in/server/commit/7e8f64f0a11169d8effee4a5bd62292b233b29fd))
+* **frontend:files:** add binary probe for unknown text files ([fea9e17](https://github.com/Sync-in/server/commit/fea9e17e93871c465274d7181228b2445bf21287))
+* **frontend:files:** implement common file viewer search ([ae3866e](https://github.com/Sync-in/server/commit/ae3866ebcc75f69419d72c1f558abc2a76e2fac5))
+* **frontend:files:** improve markdown detection and viewer handling ([3d2d871](https://github.com/Sync-in/server/commit/3d2d871d9bef63f5dcce5bd917cf922f3df607df))
+* **frontend:files:** refine file actions for trash and selection menus ([666d661](https://github.com/Sync-in/server/commit/666d66107650475d27efbaaa9f61e2755b8a43a7))
+* **frontend:files:** refresh MIME metadata after move ([bb85795](https://github.com/Sync-in/server/commit/bb85795bd3c5d642d76160476b7ee7ed767d967b))
+* **frontend:files:** select filename without extension when renaming files ([163b5c9](https://github.com/Sync-in/server/commit/163b5c9592c744771834fd8655af7752592944b4))
+* **frontend:files:** start implementing markdown viewer editor ([f36a2bc](https://github.com/Sync-in/server/commit/f36a2bc297b1da23ca21dc07c02862ddb0495b5f))
+* **frontend:files:** WIP markdown viewer editor ([c2bf44f](https://github.com/Sync-in/server/commit/c2bf44f1083c5aded9ac9fd3cfd2f59b8a767661))
+
+
+### Bug Fixes
+
+* **backend:files:** harden multipart upload replacement ([c63f83c](https://github.com/Sync-in/server/commit/c63f83c21723489ee5b8765af5a430571c4fccad))
+* **backend:files:** harden remote downloads against SSRF, redirects, proxy bypasses and oversized streams ([22e773e](https://github.com/Sync-in/server/commit/22e773e5b8265f865799e90376921f601e31f3c4))
+* **backend:files:** make space file lookup resilient to stale kind ([5f64673](https://github.com/Sync-in/server/commit/5f6467385c2b51948afa8f89a514ac807a2202c6))
+* **backend:links:** ensure tmp path is created after authentication for guest links ([d782aaa](https://github.com/Sync-in/server/commit/d782aaa78caf3aa1db6df290c7a8e447908dfb4c))
+* **backend:spaces:** invalidate spaces cache when space state changes ([0c95836](https://github.com/Sync-in/server/commit/0c95836d12b1e52ab88ebfc046f207705602e82b))
+* **backend:users:** restrict usersWhitelist so guests only see shared-group or managed users ([17fd9ba](https://github.com/Sync-in/server/commit/17fd9ba323cad70225baca8ac8e1445b639b4358))
+* **backend:users:** unify avatar rendering to 512px and tune dynamic font scaling ([6ecd91d](https://github.com/Sync-in/server/commit/6ecd91d4cf540b8b80fe345f9f22a2352f606e58))
+* **files,comments:** prevent duplicate file rows and handle undefined fileId ([c04adef](https://github.com/Sync-in/server/commit/c04adef2cc747717b337d5b024332fd44fcf1b10))
+* **frontend:admin:** adjust group dialog spacing ([c30b72d](https://github.com/Sync-in/server/commit/c30b72dea2337e3808238cb7dfeba39a556f9ba6))
+* **frontend:admin:** allow admins to see all users when selecting members in spaces and child shares ([cba4eeb](https://github.com/Sync-in/server/commit/cba4eeb775232e028a42802d0162175edee3d704))
+* **frontend:auth:** handle impersonation logout without token refresh retry and force fallback logout on error ([ead2508](https://github.com/Sync-in/server/commit/ead2508a4932f4713fcfa3439a5eede1b24f9eee))
+* **frontend:files:**  unlock extensionless text files on viewer close ([9595153](https://github.com/Sync-in/server/commit/9595153737bc9ab306bf0abda083e3a148cd85c0))
+* **frontend:files:** fix range file selection when filtering is enabled ([43125d5](https://github.com/Sync-in/server/commit/43125d5ef79e56ce84077eb4e548c06cab241004))
+* **frontend:files:** hide PDF viewer toggle label on mobile ([9d1154e](https://github.com/Sync-in/server/commit/9d1154e95e41b8722077e25c327422f3b041b62c))
+* **frontend:files:** initialize file selection after dialog view init ([9d0fe08](https://github.com/Sync-in/server/commit/9d0fe086bdbe9ecd1fa8cab9353380576ed548fa))
+* **frontend:files:** prevent stale save tooltip in viewers ([70b3b98](https://github.com/Sync-in/server/commit/70b3b98a773384a3cbe68fcf537bfa31a9b1195d))
+* **frontend:files:** release editable viewer lock on destroy ([5fdc7b2](https://github.com/Sync-in/server/commit/5fdc7b23f0ff9a8b73213b8df20e599e990a412e))
+* **frontend:files:** unlock text editors on page unload ([4f9025e](https://github.com/Sync-in/server/commit/4f9025e3bcc29fdf9c4ad170c2e78e1fd05f1fb2))
+* **frontend:layout:** update `hasSubmenus` based on visible sidebar submenus ([22a9bca](https://github.com/Sync-in/server/commit/22a9bcaba4e653ba3a7b8be7913c3428ac4d7ec8))
+
 ## [2.2.1](https://github.com/Sync-in/server/compare/v2.2.0...v2.2.1) (2026-04-19)
 
 
