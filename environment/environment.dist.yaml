@@ -375,6 +375,7 @@ applications:
       # Note: when using an external server (e.g.: https://collabora.domain.com), make sure it is accessible from the client/browser.
       # default: null
       externalServer:
+  # Client application repository configuration
   appStore:
     # repository: `public` | `local`
     # default: `public`
