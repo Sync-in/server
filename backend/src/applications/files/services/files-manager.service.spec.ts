@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios'
 import { HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import archiver from 'archiver'
+import { lookup } from 'node:dns/promises'
 import fs from 'node:fs'
 import path from 'node:path'
 import { PassThrough, Readable } from 'node:stream'
@@ -20,6 +21,7 @@ import { DownloadFileDto } from '../dto/file-operations.dto'
 import { FileEvent, FileTaskEvent } from '../events/file-events'
 import { FileError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
+import { FILE_ERROR_MESSAGES } from '../utils/errors'
 import { SendFile } from '../utils/send-file'
 import * as unzipUtils from '../utils/unzip-file'
 import * as filesUtils from '../utils/files'
@@ -36,10 +38,14 @@ jest.mock('tar', () => ({
   __esModule: true,
   extract: jest.fn()
 }))
+jest.mock('node:dns/promises', () => ({
+  lookup: jest.fn()
+}))
 
 describe(FilesManager.name, () => {
   let service: FilesManager
   let http: { axiosRef: jest.Mock }
+  const lookupMock = lookup as jest.Mock
   let filesQueries: { moveFiles: jest.Mock; deleteFiles: jest.Mock }
   let spacesManager: { spaceEnv: jest.Mock }
   let contextManager: { headerOriginUrl: jest.Mock }
@@ -120,6 +126,7 @@ describe(FilesManager.name, () => {
 
   beforeEach(async () => {
     http = { axiosRef: jest.fn() }
+    lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }])
     filesQueries = {
       moveFiles: jest.fn().mockResolvedValue(undefined),
       deleteFiles: jest.fn().mockResolvedValue(undefined)
@@ -475,7 +482,7 @@ describe(FilesManager.name, () => {
       }
 
       await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
-        new FileError(HttpStatus.PAYLOAD_TOO_LARGE, 'File size limit exceeded')
+        new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR_MESSAGES.MAX_FILE_SIZE_EXCEEDED)
       )
 
       const tmpWritePath = (filesUtils.writeFromStream as jest.Mock).mock.calls[0][0] as string
@@ -504,7 +511,7 @@ describe(FilesManager.name, () => {
       }
 
       await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
-        new FileError(HttpStatus.PAYLOAD_TOO_LARGE, 'File size limit exceeded')
+        new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR_MESSAGES.MAX_FILE_SIZE_EXCEEDED)
       )
 
       expect(req.files).toHaveBeenCalled()
@@ -528,7 +535,7 @@ describe(FilesManager.name, () => {
       }
 
       await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
-        new FileError(HttpStatus.PAYLOAD_TOO_LARGE, 'File size limit exceeded')
+        new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR_MESSAGES.MAX_FILE_SIZE_EXCEEDED)
       )
 
       expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
@@ -892,9 +899,32 @@ describe(FilesManager.name, () => {
 
       expect(space.task.props.totalSize).toBe(55)
       expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, FILE_OPERATION.DOWNLOAD, '/tmp/download.txt')
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith('/tmp/download.txt', expect.anything())
+      expect(filesUtils.writeFromStream).toHaveBeenCalledWith('/tmp/download.txt', expect.anything(), 0, 55)
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
       expect(fileEmitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
+    })
+
+    it('should cleanup partial file and skip ADD event when download write fails', async () => {
+      const error = new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR_MESSAGES.MAX_FILE_SIZE_EXCEEDED)
+      const space = makeSpace()
+      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/download.txt')
+      ;(filesUtils.writeFromStream as jest.Mock).mockRejectedValueOnce(error)
+      http.axiosRef
+        .mockResolvedValueOnce({
+          headers: { 'content-length': '55' },
+          request: { socket: { remoteAddress: '8.8.8.8' } }
+        })
+        .mockResolvedValueOnce({
+          data: Readable.from(['abc']),
+          request: { socket: { remoteAddress: '8.8.8.8' } }
+        })
+      const fileEmitSpy = jest.spyOn(FileEvent, 'emit')
+
+      await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toBe(error)
+
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/tmp/download.txt')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(fileEmitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
     })
   })
 

@@ -44,7 +44,7 @@ import type { AuthProviderOIDCConfig } from './auth-oidc.config'
 import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint } from './auth-oidc.constants'
 import { HttpService } from '@nestjs/axios'
 import { DownloadFileDto } from '../../../applications/files/dto/file-operations.dto'
-import { downloadFile } from '../../../applications/files/utils/download-file'
+import { DownloadFile } from '../../../applications/files/utils/download-file'
 import { convertTempImageToPng, imgMimeTypePrefix } from '../../../common/image'
 import { fileSize } from '../../../applications/files/utils/files'
 
@@ -433,10 +433,11 @@ export class AuthProviderOIDC implements AuthProvider {
     // checks
     let pictureContentLength: number | undefined
     let pictureLastModified: string | undefined
+    const downloader = new DownloadFile(this.http)
     try {
       const tmpPicturePath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
       // retrieve headers
-      const { contentType, contentLength, lastModified } = await downloadFile(this.http, downloadDto, tmpPicturePath, {
+      const { contentType, contentLength, lastModified } = await downloader.download(downloadDto, tmpPicturePath, {
         allowPrivateIP: true, // trust the url source
         getContentInfo: true
       })
@@ -464,7 +465,7 @@ export class AuthProviderOIDC implements AuthProvider {
     // download avatar (trust the url source)
     const userAvatarTmpPath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
     try {
-      await downloadFile(this.http, downloadDto, userAvatarTmpPath, { allowPrivateIP: true })
+      await downloader.download(downloadDto, userAvatarTmpPath, { allowPrivateIP: true })
     } catch (e) {
       this.logger.warn({ tag: this.updatePictureUrl.name, msg: `download failed: ${e}` })
       return

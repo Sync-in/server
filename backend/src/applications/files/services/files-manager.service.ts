@@ -55,13 +55,14 @@ import {
 } from '../utils/files'
 import { SendFile } from '../utils/send-file'
 import { extractZip } from '../utils/unzip-file'
-import { downloadFile } from '../utils/download-file'
+import { DownloadFile } from '../utils/download-file'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesQueries } from './files-queries.service'
 import { FileEvent, FileTaskEvent } from '../events/file-events'
 import { ACTION } from '../../../common/constants'
 import { pipeline } from 'node:stream/promises'
-import { isMultipartFileTooLargeError, maxUploadSizeExceededError, uploadTmpFilePath } from '../utils/upload-file'
+import { isMultipartFileTooLargeError, uploadTmpFilePath } from '../utils/upload-file'
+import { FILE_ERROR_MESSAGES, maxFileSizeExceededError } from '../utils/errors'
 
 @Injectable()
 export class FilesManager {
@@ -272,7 +273,7 @@ export class FilesManager {
           await writeFromStream(writePath, part.file)
           // With throwFileSizeLimit disabled, multipart marks the file stream as truncated instead of rejecting.
           if (part.file.truncated) {
-            throw maxUploadSizeExceededError()
+            throw maxFileSizeExceededError()
           }
           if (tmpFile) {
             // If the following move fails after these deletes, the previous resources remain recoverable from the trash.
@@ -296,7 +297,7 @@ export class FilesManager {
             await removeFiles(dstFile)
           }
           if (isMultipartFileTooLargeError(e)) {
-            throw maxUploadSizeExceededError()
+            throw maxFileSizeExceededError()
           }
           throw e
         } finally {
@@ -317,7 +318,7 @@ export class FilesManager {
       }
     } catch (e) {
       if (isMultipartFileTooLargeError(e)) {
-        throw maxUploadSizeExceededError()
+        throw maxFileSizeExceededError()
       }
       throw e
     }
@@ -448,8 +449,8 @@ export class FilesManager {
       if (!isMove || (isMove && srcSpace.id !== dstSpace.id)) {
         const size = isDir ? (await dirSize(srcSpace.realPath))[0] : await fileSize(srcSpace.realPath)
         if (dstSpace.willExceedQuota(size)) {
-          this.logger.warn({ tag: this.copyMove.name, msg: `storage quota will be exceeded for *${dstSpace.alias}* (${dstSpace.id})` })
-          throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, 'Storage quota will be exceeded')
+          this.logger.warn({ tag: this.copyMove.name, msg: `${FILE_ERROR_MESSAGES.STORAGE_QUOTA_EXCEEDED} for *${dstSpace.alias}* (${dstSpace.id})` })
+          throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR_MESSAGES.STORAGE_QUOTA_EXCEEDED)
         }
       }
     }
@@ -579,15 +580,16 @@ export class FilesManager {
       throw new LockConflict(fileLock, 'Conflicting lock')
     }
 
-    // do
     try {
-      await downloadFile(this.http, downloadDto, rPath, { space: space })
+      await new DownloadFile(this.http).download(downloadDto, rPath, { space: space })
+    } catch (e) {
+      await removeFiles(rPath).catch((err: Error) => this.logger.error({ tag: this.downloadFromUrl.name, msg: `unable to remove ${rPath} : ${err}` }))
+      throw e
     } finally {
       // release lock
       await this.filesLockManager.removeLock(fileLock.key)
-      // emit file event
-      FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: rPath })
     }
+    FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: rPath })
   }
 
   async compress(user: UserModel, space: SpaceEnv, dto: CompressFileDto): Promise<void> {

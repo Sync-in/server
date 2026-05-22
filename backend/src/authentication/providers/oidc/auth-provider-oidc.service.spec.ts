@@ -16,7 +16,7 @@ import { AdminUsersManager } from '../../../applications/users/services/admin-us
 import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import * as avatarUtils from '../../../applications/users/utils/avatar'
 import * as filesUtils from '../../../applications/files/utils/files'
-import * as downloadFileUtils from '../../../applications/files/utils/download-file'
+import { DownloadFile } from '../../../applications/files/utils/download-file'
 import * as imageUtils from '../../../common/image'
 import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants'
 import { OAuthCookie } from './auth-oidc.constants'
@@ -381,7 +381,7 @@ describe(AuthProviderOIDC.name, () => {
     const userInfo = (picture = 'https://cdn.example.test/avatar.jpg') => ({ picture }) as any
 
     it('returns when picture url is invalid', async () => {
-      const downloadSpy = jest.spyOn(downloadFileUtils, 'downloadFile')
+      const downloadSpy = jest.spyOn(DownloadFile.prototype, 'download')
 
       await (service as any).updatePictureUrl(oidcUser, userInfo('not-a-url'))
 
@@ -389,7 +389,7 @@ describe(AuthProviderOIDC.name, () => {
     })
 
     it('stops when content type is not an image', async () => {
-      const downloadSpy = jest.spyOn(downloadFileUtils, 'downloadFile').mockResolvedValueOnce({
+      const downloadSpy = jest.spyOn(DownloadFile.prototype, 'download').mockResolvedValueOnce({
         contentType: 'text/plain',
         contentLength: 123,
         lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
@@ -403,7 +403,7 @@ describe(AuthProviderOIDC.name, () => {
     })
 
     it('skips update when avatar metadata is unchanged', async () => {
-      const downloadSpy = jest.spyOn(downloadFileUtils, 'downloadFile').mockResolvedValueOnce({
+      const downloadSpy = jest.spyOn(DownloadFile.prototype, 'download').mockResolvedValueOnce({
         contentType: 'image/png',
         contentLength: 128,
         lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
@@ -419,7 +419,7 @@ describe(AuthProviderOIDC.name, () => {
 
     it('downloads and converts avatar when checks pass', async () => {
       const downloadSpy = jest
-        .spyOn(downloadFileUtils, 'downloadFile')
+        .spyOn(DownloadFile.prototype, 'download')
         .mockResolvedValueOnce({
           contentType: 'image/png',
           contentLength: 128,
@@ -441,7 +441,7 @@ describe(AuthProviderOIDC.name, () => {
 
     it('stops after download when avatar size exceeds limit', async () => {
       const downloadSpy = jest
-        .spyOn(downloadFileUtils, 'downloadFile')
+        .spyOn(DownloadFile.prototype, 'download')
         .mockResolvedValueOnce({
           contentType: 'image/png',
           contentLength: 128,
