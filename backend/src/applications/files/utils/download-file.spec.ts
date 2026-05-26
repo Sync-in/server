@@ -154,6 +154,8 @@ describe(DownloadFile.name, () => {
     expect(http.axiosRef).toHaveBeenCalledTimes(1)
     expect(http.axiosRef).toHaveBeenCalledWith(
       expect.objectContaining({
+        decompress: false,
+        headers: { 'Accept-Encoding': 'identity' },
         httpAgent: expect.any(Object),
         httpsAgent: expect.any(Object)
       })

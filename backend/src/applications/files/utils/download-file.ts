@@ -45,7 +45,13 @@ export class DownloadFile {
     options?: { allowPrivateIP?: boolean; space?: SpaceEnv; getContentInfo?: false | undefined }
   ): Promise<void>
   async download(downloadDto: DownloadFileDto, dstPath: string, options?: DownloadFileOptions): Promise<void | DownloadFileContentInfo> {
-    const { response: headRes, url } = await this.request(downloadDto.url, { method: HTTP_METHOD.HEAD }, { allowPrivateIP: options?.allowPrivateIP })
+    const identityEncodingConfig = { decompress: false, headers: { 'Accept-Encoding': 'identity' } }
+
+    const { response: headRes, url } = await this.request(
+      downloadDto.url,
+      { method: HTTP_METHOD.HEAD, ...identityEncodingConfig },
+      { allowPrivateIP: options?.allowPrivateIP }
+    )
 
     const headers = AxiosHeaders.from(headRes.headers)
     const contentLength = this.contentLength(headers)
@@ -63,7 +69,7 @@ export class DownloadFile {
     // The HEAD request resolved redirects; the GET must target that final URL directly.
     const { response: getRes } = await this.request(
       url,
-      { method: HTTP_METHOD.GET, responseType: 'stream', decompress: false, headers: { 'Accept-Encoding': 'identity' } },
+      { method: HTTP_METHOD.GET, responseType: 'stream', ...identityEncodingConfig },
       { allowPrivateIP: options?.allowPrivateIP, maxRedirects: 0 }
     )
     await writeFromStream(dstPath, getRes.data, 0, contentLength)
