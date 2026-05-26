@@ -28,7 +28,7 @@ export class FilesNewDialogComponent implements OnInit, AfterViewInit {
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = { faCaretDown, faGlobe, faFolderClosed, faFileAlt }
   protected fileProp = { title: '', name: '', placeholder: '' }
-  protected downloadProp = { title: 'Download from an external link', url: '', placeholder: 'URL (https://...)' }
+  protected downloadProp = { title: '', url: '', placeholder: 'URL (https://...)' }
   protected selectedDocType = 'Text'
   private store = inject(StoreService)
   protected docTypes = this.store.server().files.sampleDocuments
