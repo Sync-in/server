@@ -435,8 +435,37 @@ describe(AuthProviderOIDC.name, () => {
       await (service as any).updatePictureUrl(oidcUser, userInfo())
 
       expect(downloadSpy).toHaveBeenCalledTimes(2)
+      expect(downloadSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }),
+        '/tmp/sync-in/alice/tmp/avatar.png',
+        { allowPrivateIP: true, maxSize: avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE }
+      )
       expect(convertSpy).toHaveBeenCalledWith('/tmp/sync-in/alice/tmp/avatar.png', '/tmp/sync-in/users/alice/avatar.png')
       expect(metadataSpy).toHaveBeenCalledWith('alice', 'https://cdn.example.test/avatar.jpg', 128, 'Mon, 01 Jan 2024 00:00:00 GMT')
+    })
+
+    it('downloads avatar when content length is missing and stores the actual downloaded size', async () => {
+      const downloadSpy = jest
+        .spyOn(DownloadFile.prototype, 'download')
+        .mockResolvedValueOnce({
+          contentType: 'image/png',
+          contentLength: null,
+          lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
+        } as any)
+        .mockResolvedValueOnce(undefined as any)
+      const metadataUnchangedSpy = jest.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(false)
+      jest.spyOn(filesUtils, 'fileSize').mockResolvedValue(1024)
+      jest.spyOn(UserModel, 'getHomePath').mockReturnValue('/tmp/sync-in/users/alice')
+      const convertSpy = jest.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+      const metadataSpy = jest.spyOn(avatarUtils, 'saveAvatarMetadata').mockResolvedValue(undefined)
+
+      await (service as any).updatePictureUrl(oidcUser, userInfo())
+
+      expect(downloadSpy).toHaveBeenCalledTimes(2)
+      expect(metadataUnchangedSpy).not.toHaveBeenCalled()
+      expect(convertSpy).toHaveBeenCalledWith('/tmp/sync-in/alice/tmp/avatar.png', '/tmp/sync-in/users/alice/avatar.png')
+      expect(metadataSpy).toHaveBeenCalledWith('alice', 'https://cdn.example.test/avatar.jpg', 1024, 'Mon, 01 Jan 2024 00:00:00 GMT')
     })
 
     it('stops after download when avatar size exceeds limit', async () => {
