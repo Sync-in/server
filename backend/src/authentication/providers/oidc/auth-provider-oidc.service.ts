@@ -449,12 +449,16 @@ export class AuthProviderOIDC implements AuthProvider {
         return
       }
 
-      if (!pictureContentLength || pictureContentLength > USER_AVATAR_MAX_UPLOAD_SIZE) {
+      if (pictureContentLength !== undefined && pictureContentLength > USER_AVATAR_MAX_UPLOAD_SIZE) {
         this.logger.warn({ tag: this.updatePictureUrl.name, msg: `picture content length is invalid: ${pictureContentLength}` })
         return
       }
 
-      if (await isAvatarMetadataUnchanged(user.login, pictureUrl, pictureContentLength, pictureLastModified)) {
+      if (
+        pictureContentLength !== undefined &&
+        pictureContentLength > 0 &&
+        (await isAvatarMetadataUnchanged(user.login, pictureUrl, pictureContentLength, pictureLastModified))
+      ) {
         this.logger.verbose({ tag: this.updatePictureUrl.name, msg: `avatar metadata unchanged, skipping update` })
         return
       }
@@ -465,7 +469,7 @@ export class AuthProviderOIDC implements AuthProvider {
     // download avatar (trust the url source)
     const userAvatarTmpPath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
     try {
-      await downloader.download(downloadDto, userAvatarTmpPath, { allowPrivateIP: true })
+      await downloader.download(downloadDto, userAvatarTmpPath, { allowPrivateIP: true, maxSize: USER_AVATAR_MAX_UPLOAD_SIZE })
     } catch (e) {
       this.logger.warn({ tag: this.updatePictureUrl.name, msg: `download failed: ${e}` })
       return
@@ -483,7 +487,8 @@ export class AuthProviderOIDC implements AuthProvider {
     const userAvatarPath = path.join(UserModel.getHomePath(user.login), USER_AVATAR_FILE_NAME)
     try {
       await convertTempImageToPng(userAvatarTmpPath, userAvatarPath)
-      void saveAvatarMetadata(user.login, pictureUrl, pictureContentLength, pictureLastModified)
+      const avatarMetadataSize = pictureContentLength !== undefined && pictureContentLength > 0 ? pictureContentLength : avatarSize
+      void saveAvatarMetadata(user.login, pictureUrl, avatarMetadataSize, pictureLastModified)
     } catch (e) {
       this.logger.warn({ tag: this.updatePictureUrl.name, msg: `convert failed: ${e}` })
     } finally {

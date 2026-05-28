@@ -10,4 +10,5 @@ export interface DownloadFileOptions {
   allowPrivateIP?: boolean
   space?: SpaceEnv
   getContentInfo?: boolean
+  maxSize?: number
 }

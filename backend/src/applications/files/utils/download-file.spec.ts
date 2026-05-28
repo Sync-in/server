@@ -238,6 +238,48 @@ describe(DownloadFile.name, () => {
     expect(writeFromStream).not.toHaveBeenCalled()
   })
 
+  it('allows missing content-length when maxSize is provided', async () => {
+    const stream = Readable.from(['abc'])
+    http.axiosRef.mockResolvedValueOnce(response('8.8.8.8')).mockResolvedValueOnce({ ...response('8.8.8.8'), data: stream })
+
+    await new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', {
+      maxSize: 1024
+    })
+
+    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 1024)
+  })
+
+  it('rejects missing content-length for space downloads even when maxSize is provided', async () => {
+    const space = { willExceedQuota: jest.fn() }
+    http.axiosRef.mockResolvedValueOnce(response('8.8.8.8'))
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', {
+        space: space as any,
+        maxSize: 1024
+      })
+    ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_INVALID_CONTENT_LENGTH))
+
+    expect(space.willExceedQuota).not.toHaveBeenCalled()
+    expect(writeFromStream).not.toHaveBeenCalled()
+  })
+
+  it('keeps content-length as the stream guard for space downloads even when maxSize is provided', async () => {
+    const stream = Readable.from(['abc'])
+    const space = { willExceedQuota: jest.fn().mockReturnValue(false) }
+    http.axiosRef
+      .mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '12' }))
+      .mockResolvedValueOnce({ ...response('8.8.8.8'), data: stream })
+
+    await new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', {
+      space: space as any,
+      maxSize: 1024
+    })
+
+    expect(space.willExceedQuota).toHaveBeenCalledWith(12)
+    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 12)
+  })
+
   it('allows zero content-length and guards the written stream at zero bytes', async () => {
     const stream = Readable.from([])
     http.axiosRef
@@ -288,5 +330,18 @@ describe(DownloadFile.name, () => {
         maxRedirects: 0
       })
     )
+  })
+
+  it('uses maxSize as the stream guard when provided', async () => {
+    const stream = Readable.from(['abc'])
+    http.axiosRef
+      .mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '12' }))
+      .mockResolvedValueOnce({ ...response('8.8.8.8'), data: stream })
+
+    await new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', {
+      maxSize: 1024
+    })
+
+    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 1024)
   })
 })

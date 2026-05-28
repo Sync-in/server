@@ -37,12 +37,12 @@ export class DownloadFile {
   async download(
     downloadDto: DownloadFileDto,
     dstPath: string,
-    options: { allowPrivateIP?: boolean; space?: SpaceEnv; getContentInfo: true }
+    options: { allowPrivateIP?: boolean; space?: SpaceEnv; getContentInfo: true; maxSize?: number }
   ): Promise<DownloadFileContentInfo>
   async download(
     downloadDto: DownloadFileDto,
     dstPath: string,
-    options?: { allowPrivateIP?: boolean; space?: SpaceEnv; getContentInfo?: false | undefined }
+    options?: { allowPrivateIP?: boolean; space?: SpaceEnv; getContentInfo?: false | undefined; maxSize?: number }
   ): Promise<void>
   async download(downloadDto: DownloadFileDto, dstPath: string, options?: DownloadFileOptions): Promise<void | DownloadFileContentInfo> {
     const identityEncodingConfig = { decompress: false, headers: { 'Accept-Encoding': 'identity' } }
@@ -63,8 +63,11 @@ export class DownloadFile {
       } satisfies DownloadFileContentInfo
     }
 
-    if (contentLength === null) throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_INVALID_CONTENT_LENGTH)
-    this.prepareSpace(options?.space, contentLength, dstPath)
+    const maxSize = options?.space ? contentLength : (options?.maxSize ?? contentLength)
+    if (maxSize === null || (contentLength === null && options?.space)) {
+      throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_INVALID_CONTENT_LENGTH)
+    }
+    if (contentLength !== null) this.prepareSpace(options?.space, contentLength, dstPath)
 
     // The HEAD request resolved redirects; the GET must target that final URL directly.
     const { response: getRes } = await this.request(
@@ -72,7 +75,7 @@ export class DownloadFile {
       { method: HTTP_METHOD.GET, responseType: 'stream', ...identityEncodingConfig },
       { allowPrivateIP: options?.allowPrivateIP, maxRedirects: 0 }
     )
-    await writeFromStream(dstPath, getRes.data, 0, contentLength)
+    await writeFromStream(dstPath, getRes.data, 0, maxSize)
   }
 
   private safeLookup(hostname: string, options: Parameters<LookupFunction>[1], cb: Parameters<LookupFunction>[2]): void {
