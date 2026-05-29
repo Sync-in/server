@@ -59,7 +59,7 @@ import { UploadFilesDirective } from '../../../common/directives/upload-files.di
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
-import { decrement, elementIsVisible, increment, originalOrderKeyValue, pathFromRoutes } from '../../../common/utils/functions'
+import { decrement, elementIsVisible, filterArray, increment, originalOrderKeyValue, pathFromRoutes } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { dragClass, tableTrSelectedClass } from '../../../layout/layout.constants'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
@@ -244,6 +244,8 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   // Others
   private subscriptions: Subscription[] = []
   private focusOnSelect: string
+  private selectionAnchor: FileModel | null = null
+  private selectionFocus: FileModel | null = null
   // Sort
   private readonly sortSettings: SortSettings = {
     default: [
@@ -299,7 +301,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         // select all
         ev.preventDefault()
         ev.stopPropagation()
-        this.updateSelection(this.files)
+        this.selectAllFiles()
         return
       case 67:
       case 88:
@@ -384,10 +386,10 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     if (this.loading) {
       return
     }
-    if (ev.shiftKey && this.selection.length > 0 && this.selection.indexOf(file) === -1) {
+    if (ev.shiftKey && (this.selection.length > 0 || this.selectionAnchor)) {
       this.selectRangeFiles(file)
     } else if (!ev.ctrlKey && !ev.metaKey) {
-      this.updateSelection([file])
+      this.setSelection([file], file, file)
     } else {
       this.modifySelection(file)
     }
@@ -408,8 +410,10 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     if (ev.type === 'contextmenu') {
       ev.stopPropagation()
     }
-    if (this.selection.length <= 1) {
-      this.updateSelection([file])
+    if (this.selection.indexOf(file) === -1) {
+      this.setSelection([file], file, file)
+    } else {
+      this.setSelectionCursor(file, file)
     }
     this.layout.openContextMenu(ev, this.fileContextMenu)
   }
@@ -752,7 +756,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
     if (f) {
       setTimeout(() => this.scrollView.scrollInto(f), 100)
-      this.updateSelection([f])
+      this.setSelection([f], f, f)
     } else {
       // wait for the `loadFiles`
       this.focusOnSelect = selectName
@@ -778,34 +782,29 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private resetFilesSelection() {
-    this.updateSelection([])
+    this.setSelection([], null, null)
   }
 
   private modifySelection(file: FileModel) {
     if (!file) return
     if (file.isSelected) {
-      this.updateSelection(this.selection.filter((f) => f.id !== file.id))
+      this.setSelection(
+        this.selection.filter((f) => f !== file),
+        file,
+        file
+      )
     } else {
-      this.updateSelection([file, ...this.selection])
+      this.setSelection([file, ...this.selection], file, file)
     }
   }
 
-  private updateSelection(selection: FileModel[]) {
-    if (selection.length) {
-      this.selection = this.files.filter((file: FileModel) => {
-        if (selection.indexOf(file) > -1) {
-          file.isSelected = true
-          return true
-        }
-        file.isSelected = false
-        return false
-      })
-    } else {
-      this.selection = this.selection.filter((file: FileModel) => {
-        file.isSelected = false
-        return false
-      })
-    }
+  private setSelection(selection: FileModel[], selectionAnchor: FileModel | null = null, selectionFocus: FileModel | null = selectionAnchor) {
+    const selected = new Set(selection)
+    this.selection = this.files.filter((file: FileModel) => {
+      file.isSelected = selected.has(file)
+      return file.isSelected
+    })
+    this.setSelectionCursor(selectionAnchor, selectionFocus)
     // update states
     this.hasSelection = !!this.selection.length
     this.hasDisabledItemsInSelection = !!this.selection.find((f: FileModel) => f.isDisabled)
@@ -815,22 +814,105 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.store.filesSelection.set(this.selection)
   }
 
+  private setSelectionCursor(anchor: FileModel | null, focus: FileModel | null = anchor) {
+    this.selectionAnchor = anchor && this.files.indexOf(anchor) > -1 ? anchor : null
+    this.selectionFocus = focus && this.files.indexOf(focus) > -1 ? focus : this.selectionAnchor
+  }
+
+  private getFilteredFiles(): FileModel[] {
+    const search = this.inputFilter?.search()
+    return search ? filterArray(search, this.files, 'name') : this.files
+  }
+
+  private selectAllFiles() {
+    const files = this.getFilteredFiles()
+    this.setSelection(files, files[0] || null, files[0] || null)
+  }
+
   private selectRangeFiles(file: FileModel) {
-    const fileIndex = this.scrollView.viewPortItems.indexOf(file)
-    const currentIndexes: number[] = this.selection.map((f: FileModel) => this.scrollView.viewPortItems.indexOf(f))
-    const finalSelection: FileModel[] = []
-    const minIndex = Math.min(...currentIndexes)
-    const maxIndex = Math.max(...currentIndexes)
-    if (fileIndex < minIndex) {
-      for (let i = fileIndex; i < minIndex; i++) {
-        finalSelection.push(this.scrollView.viewPortItems[i])
-      }
-    } else if (fileIndex > maxIndex) {
-      for (let i = fileIndex; i > maxIndex; i--) {
-        finalSelection.push(this.scrollView.viewPortItems[i])
-      }
+    const files = this.getFilteredFiles()
+    const fileIndex = files.indexOf(file)
+    if (fileIndex === -1) {
+      this.setSelection([file], file, file)
+      return
     }
-    this.updateSelection([...this.selection, ...finalSelection])
+    let anchor = this.selectionAnchor
+    let anchorIndex = anchor ? files.indexOf(anchor) : -1
+    if (anchorIndex === -1) {
+      anchor = this.selection.find((f: FileModel) => files.indexOf(f) > -1) || file
+      anchorIndex = files.indexOf(anchor)
+    }
+    const minIndex = Math.min(anchorIndex, fileIndex)
+    const maxIndex = Math.max(anchorIndex, fileIndex)
+    const filteredFiles = new Set(files)
+    const hiddenSelection = this.selection.filter((f: FileModel) => !filteredFiles.has(f))
+    this.setSelection([...hiddenSelection, ...files.slice(minIndex, maxIndex + 1)], anchor, file)
+  }
+
+  private getKeyboardNavigationTarget(files: FileModel[], keyCode: number, extendSelection: boolean): { file: FileModel; keyCode: number } {
+    let direction = keyCode
+    let useGalleryColumns = this.galleryMode.enabled
+    if (direction === 37) {
+      useGalleryColumns = false
+      direction = 38
+    } else if (direction === 39) {
+      useGalleryColumns = false
+      direction = 40
+    }
+    const referenceIndexes = this.getSelectionReferenceIndexes(files, extendSelection)
+    const step = useGalleryColumns
+      ? Math.ceil(this.scrollView.element.nativeElement.offsetWidth / (this.galleryMode.dimensions + this.galleryMode.margins))
+      : 1
+    let index: number
+    if (!referenceIndexes.length) {
+      index = direction === 38 ? files.length - 1 : 0
+    } else if (direction === 38) {
+      index = Math.min(...referenceIndexes) - step
+      if (index <= -1) index = files.length - 1
+    } else {
+      index = Math.max(...referenceIndexes) + step
+      if (index >= files.length) index = 0
+    }
+    return { file: files[index], keyCode: direction }
+  }
+
+  private getSelectionReferenceIndexes(files: FileModel[], extendSelection: boolean): number[] {
+    const focusIndex = this.selectionFocus ? files.indexOf(this.selectionFocus) : -1
+    if (extendSelection && focusIndex > -1) {
+      return [focusIndex]
+    }
+    const selectedIndexes = this.selection.map((f: FileModel) => files.indexOf(f)).filter((index: number) => index > -1)
+    if (selectedIndexes.length) {
+      return selectedIndexes
+    }
+    const anchorIndex = this.selectionAnchor ? files.indexOf(this.selectionAnchor) : -1
+    return anchorIndex > -1 ? [anchorIndex] : []
+  }
+
+  private applyKeyboardSelection(ev: KeyboardEvent, file: FileModel) {
+    if (ev.shiftKey) {
+      this.selectRangeFiles(file)
+    } else if (!ev.ctrlKey && !ev.metaKey) {
+      this.setSelection([file], file, file)
+    } else {
+      this.modifySelection(file)
+    }
+  }
+
+  private scrollKeyboardSelectionIntoView(file: FileModel, keyCode: number) {
+    if (this.scrollView.viewPortItems.indexOf(file) === -1) {
+      setTimeout(() => this.scrollView.scrollInto(file), 0)
+      return
+    }
+    const selectedRows = this.scrollView.element.nativeElement.querySelectorAll(tableTrSelectedClass)
+    if (!selectedRows.length) {
+      setTimeout(() => this.scrollView.scrollInto(file), 0)
+      return
+    }
+    const element: HTMLElement = keyCode === 38 ? selectedRows[0] : selectedRows[selectedRows.length - 1]
+    if (!elementIsVisible(element)) {
+      element.scrollIntoView(keyCode === 38)
+    }
   }
 
   private initEventHandlers() {
@@ -860,7 +942,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
             ]
           if (f) {
             if (this.selection.indexOf(f) === -1) {
-              this.zone.run(() => this.updateSelection([f]))
+              this.zone.run(() => this.setSelection([f], f, f))
             }
             this.moveFromDrag = true
           }
@@ -927,7 +1009,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         if (this.renamingInProgress) {
           return
         }
-        let code = ev.keyCode || ev.which
+        const code = ev.keyCode || ev.which
         if ([37, 38, 39, 40].indexOf(code) === -1) {
           return
         } else if ((code === 37 || code === 39) && !this.galleryMode.enabled) {
@@ -935,64 +1017,13 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         }
         ev.preventDefault()
         ev.stopPropagation()
-        let currentIndex: number
-        const indexes = this.selection.map((f: FileModel) => this.files.indexOf(f))
-        let galleryView = this.galleryMode.enabled
-        if (code === 37) {
-          galleryView = false
-          code = 38
-        } else if (code === 39) {
-          galleryView = false
-          code = 40
+        const files = this.getFilteredFiles()
+        if (!files.length) {
+          return
         }
-        if (code === 38) {
-          if (galleryView) {
-            currentIndex =
-              Math.min(...indexes) -
-              Math.ceil(this.scrollView.element.nativeElement.offsetWidth / (this.galleryMode.dimensions + this.galleryMode.margins))
-          } else {
-            currentIndex = Math.min(...indexes) - 1
-          }
-          if (currentIndex <= -1) {
-            currentIndex = this.files.length - 1
-          }
-        } else {
-          if (galleryView) {
-            currentIndex =
-              Math.max(...indexes) +
-              Math.ceil(this.scrollView.element.nativeElement.offsetWidth / (this.galleryMode.dimensions + this.galleryMode.margins))
-          } else {
-            currentIndex = Math.max(...indexes) + 1
-          }
-          if (currentIndex >= this.files.length) {
-            currentIndex = 0
-          }
-        }
-        const f: FileModel = this.files[currentIndex]
-        this.zone.run(() => {
-          if (!ev.shiftKey && !ev.ctrlKey && !ev.metaKey) {
-            this.updateSelection([f])
-          } else {
-            this.modifySelection(f)
-          }
-        })
-        const selectedRows = this.scrollView.element.nativeElement.querySelectorAll(tableTrSelectedClass)
-        if (selectedRows.length) {
-          let element: HTMLElement
-          if (code === 38) {
-            element = selectedRows[0]
-            if (!elementIsVisible(element)) {
-              element.scrollIntoView(true)
-            }
-          } else {
-            element = selectedRows[selectedRows.length - 1]
-            if (!elementIsVisible(element)) {
-              element.scrollIntoView(false)
-            }
-          }
-        } else {
-          setTimeout(() => this.scrollView.scrollInto(f), 0)
-        }
+        const target = this.getKeyboardNavigationTarget(files, code, ev.shiftKey)
+        this.zone.run(() => this.applyKeyboardSelection(ev, target.file))
+        this.scrollKeyboardSelectionIntoView(target.file, target.keyCode)
       })
     })
   }

@@ -30,7 +30,7 @@ export class SpacesNavComponent implements OnDestroy {
       count: {
         value: toObservable(
           computed(() =>
-            this.store.filesSelection().length > 1 ? (this.store.filesSelection().length > 1000 ? '999+' : this.store.filesSelection().length) : 0
+            this.store.filesSelection().length > 1 ? (this.store.filesSelection().length > 100 ? '99+' : this.store.filesSelection().length) : 0
           )
         ),
         level: 'primary'
