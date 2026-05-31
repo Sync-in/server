@@ -4,7 +4,6 @@ import archiver, { Archiver } from 'archiver'
 import fs from 'node:fs'
 import path from 'node:path'
 import { Readable } from 'node:stream'
-import { extract as extractTar } from 'tar'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { generateThumbnail } from '../../../common/image'
 import { SERVER_NAME } from '../../../common/shared'
@@ -56,6 +55,7 @@ import {
 } from '../utils/files'
 import { SendFile } from '../utils/send-file'
 import { extractZip } from '../utils/unzip-file'
+import { extractTar } from '../utils/untar-file'
 import { DownloadFile } from '../utils/download-file'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesQueries } from './files-queries.service'
@@ -607,7 +607,7 @@ export class FilesManager {
       }
     })
     // create lock
-    let fileLock: FileLock
+    let fileLock: FileLock | undefined
     if (dto.compressInDirectory) {
       const dbFile = space.dbFile
       dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
@@ -658,32 +658,32 @@ export class FilesManager {
     // make destination folder
     const dstPath = await uniqueFilePathFromDir(path.join(dirName(space.realPath), path.basename(space.realPath, extension)))
     await makeDir(dstPath)
-    // create lock
-    const dbFile = space.dbFile
-    dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
-    const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.INFINITY)
-    if (!ok) {
-      throw new LockConflict(fileLock, 'Conflicting lock')
-    }
-    // tasking
-    if (space.task?.cacheKey) FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, dstPath)
-    // do
+    let fileLock: FileLock | undefined
     try {
+      // create lock
+      const dbFile = space.dbFile
+      dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
+      const [ok, lock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.INFINITY)
+      if (!ok) {
+        throw new LockConflict(lock, 'Conflicting lock')
+      }
+      fileLock = lock
+      // tasking
+      if (space.task?.cacheKey) FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, dstPath)
+      // do
       if (extension === '.zip') {
         await extractZip(space.realPath, dstPath)
       } else {
-        await extractTar({
-          file: space.realPath,
-          cwd: dstPath,
-          gzip: COMPRESSION_EXTENSION.get(extension) === TAR_GZ_EXTENSION,
-          preserveOwner: false
-        })
+        await extractTar(space.realPath, dstPath, COMPRESSION_EXTENSION.get(extension) === TAR_GZ_EXTENSION)
       }
+    } catch (e) {
+      await removeFiles(dstPath).catch((err: Error) => this.logger.error({ tag: this.decompress.name, msg: `unable to remove ${dstPath} : ${err}` }))
+      throw e
     } finally {
-      await this.filesLockManager.removeLock(fileLock.key)
-      // emit file event
-      FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
+      if (fileLock) await this.filesLockManager.removeLock(fileLock.key)
     }
+    // emit file event
+    FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
   }
 
   async generateThumbnail(space: SpaceEnv, size: number): Promise<Readable> {

@@ -6,7 +6,6 @@ import { lookup } from 'node:dns/promises'
 import fs from 'node:fs'
 import path from 'node:path'
 import { PassThrough, Readable } from 'node:stream'
-import * as tar from 'tar'
 import { transformAndValidate } from '../../../common/functions'
 import * as imageUtils from '../../../common/image'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
@@ -24,6 +23,7 @@ import { LockConflict } from '../models/file-lock-error'
 import { FILE_ERROR_MESSAGES } from '../utils/errors'
 import { SendFile } from '../utils/send-file'
 import * as unzipUtils from '../utils/unzip-file'
+import * as untarUtils from '../utils/untar-file'
 import * as filesUtils from '../utils/files'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesManager } from './files-manager.service'
@@ -34,10 +34,6 @@ jest.mock('archiver', () => ({
   default: jest.fn()
 }))
 
-jest.mock('tar', () => ({
-  __esModule: true,
-  extract: jest.fn()
-}))
 jest.mock('node:dns/promises', () => ({
   lookup: jest.fn()
 }))
@@ -994,21 +990,35 @@ describe(FilesManager.name, () => {
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
     })
 
-    it('should extract tar formats via tar.extract', async () => {
+    it('should extract tar formats via extractTar', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.tar.gz' })
       ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true)
       ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
-      ;(tar.extract as unknown as jest.Mock).mockResolvedValueOnce(undefined)
+      const untarSpy = jest.spyOn(untarUtils, 'extractTar').mockResolvedValueOnce(undefined)
 
       await service.decompress(user, space)
 
-      expect(tar.extract).toHaveBeenCalledWith(
-        expect.objectContaining({
-          file: '/data/users/john/files/archive.tar.gz',
-          cwd: '/data/users/john/files/archive',
-          gzip: true
-        })
-      )
+      expect(untarSpy).toHaveBeenCalledWith('/data/users/john/files/archive.tar.gz', '/data/users/john/files/archive', true)
+    })
+
+    it('should remove partial extraction and skip add event on failure', async () => {
+      const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
+      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true)
+      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
+      const error = new Error('extraction failed')
+      jest.spyOn(unzipUtils, 'extractZip').mockRejectedValueOnce(error)
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+
+      await expect(service.decompress(user, space)).rejects.toBe(error)
+
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/files/archive')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(emitSpy).not.toHaveBeenCalledWith('event', {
+        user,
+        space,
+        action: ACTION.ADD,
+        rPath: '/data/users/john/files/archive'
+      })
     })
   })
 
