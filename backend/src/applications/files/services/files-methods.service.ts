@@ -11,7 +11,7 @@ import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto } from '
 import { FileLockProps } from '../interfaces/file-props.interface'
 import { FileError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
-import { checkFileName, dirName, fileName, getMimeType, isPathExists, isPathIsDir, sanitizeName } from '../utils/files'
+import { checkFileName, dirName, fileName, getMimeType, isPathExists, isPathInside, isPathIsDir, sanitizeName } from '../utils/files'
 import { SendFile } from '../utils/send-file'
 import { FilesManager } from './files-manager.service'
 import type { CopyMoveFileResponse } from '../interfaces/copy-move-file.interface'
@@ -100,8 +100,7 @@ export class FilesMethods {
             f.path = path.resolve(dirName(space.realPath), f.name)
           }
         }
-        // prevent path traversal
-        if (!f.path.startsWith(baseSpace.realBasePath)) {
+        if (!isPathInside(baseSpace.realBasePath, f.path, true)) {
           return this.handleError(space, FILE_OPERATION.COMPRESS, new FileError(HttpStatus.FORBIDDEN, `${f.name} not allowed`))
         }
         if (!(await isPathExists(f.path))) {

@@ -43,6 +43,7 @@ import {
   fileSize,
   getMimeType,
   isPathExists,
+  isPathInside,
   isPathIsDir,
   makeDir,
   moveFiles,
@@ -214,16 +215,13 @@ export class FilesManager {
       }
     }
 
-    const basePath = realParentPath + path.sep
-
     try {
       for await (const part of req.files({ throwFileSizeLimit: false })) {
         // If the request uses the PATCH method, the file name corresponds to the space
         const partFileName = patchMethod ? fileName(space.realPath) : part.filename
         // `part.filename` may contain a path like foo/bar.txt
-        const dstFile = path.resolve(basePath, partFileName)
-        // Prevent path traversal
-        if (!dstFile.startsWith(basePath)) {
+        const dstFile = path.resolve(realParentPath, partFileName)
+        if (!isPathInside(realParentPath, dstFile)) {
           throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
         }
         const dstExists = await isPathExists(dstFile)

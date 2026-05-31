@@ -4,6 +4,7 @@ import path from 'node:path'
 import { FileDBProps } from '../../files/interfaces/file-db-props.interface'
 import { FileProps } from '../../files/interfaces/file-props.interface'
 import { FileError } from '../../files/models/file-error'
+import { isPathInside } from '../../files/utils/files'
 import { UserModel } from '../../users/models/user.model'
 import { SPACE_REPOSITORY } from '../constants/spaces'
 import { SpaceEnv } from '../models/space-env.model'
@@ -66,8 +67,7 @@ export function realPathFromSpace(user: UserModel, space: SpaceEnv, withBasePath
     throw new FileError(HttpStatus.NOT_FOUND, 'Space root not found')
   }
   const rPath = path.resolve(bPath, ...fPath)
-  // prevent path traversal
-  if (!rPath.startsWith(bPath)) {
+  if (!isPathInside(bPath, rPath, true)) {
     throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
   }
   return withBasePath ? [bPath, rPath] : rPath

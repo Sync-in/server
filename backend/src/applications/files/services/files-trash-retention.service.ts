@@ -6,7 +6,7 @@ import { users } from '../../users/schemas/users.schema'
 import { and, eq, inArray, lte, sql } from 'drizzle-orm'
 import { USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
-import { isPathExists, removeFiles } from '../utils/files'
+import { isPathExists, isPathInside, removeFiles } from '../utils/files'
 import { spaces } from '../../spaces/schemas/spaces.schema'
 import { SpaceModel } from '../../spaces/models/space.model'
 import { configuration } from '../../../configuration/config.environment'
@@ -401,7 +401,7 @@ export class FilesTrashRetention {
     const realPath = path.resolve(basePath, ft.path)
 
     // DB paths are resolved against the trash root and must stay inside it before any filesystem deletion.
-    if (realPath !== basePath && realPath.startsWith(`${basePath}${path.sep}`)) {
+    if (isPathInside(basePath, realPath)) {
       return realPath
     }
 

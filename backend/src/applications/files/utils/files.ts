@@ -20,6 +20,17 @@ export function sanitizePath(fPath: string): string {
   return path.normalize(fPath).replace(regExpPreventPathTraversal, '')
 }
 
+export function isPathInside(basePath: string, candidatePath: string, allowBasePath = false): boolean {
+  // Prevent lexical path traversal and prefix collisions by checking the resolved candidate against the base directory boundary.
+  const resolvedBasePath = path.resolve(basePath)
+  const resolvedCandidatePath = path.resolve(candidatePath)
+  if (resolvedCandidatePath === resolvedBasePath) {
+    return allowBasePath
+  }
+  const basePathPrefix = resolvedBasePath.endsWith(path.sep) ? resolvedBasePath : `${resolvedBasePath}${path.sep}`
+  return resolvedCandidatePath.startsWith(basePathPrefix)
+}
+
 export function sanitizeName(name: string): string {
   return name
     .replace(/^\s+|[. ]+$/g, '') // trimStart + trimEnd + strip trailing dots

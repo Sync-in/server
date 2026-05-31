@@ -5,7 +5,28 @@ import path from 'node:path'
 import { Readable } from 'node:stream'
 import { FileError } from '../models/file-error'
 import { FILE_ERROR_MESSAGES } from './errors'
-import { writeFromStream } from './files'
+import { isPathInside, writeFromStream } from './files'
+
+describe(isPathInside.name, () => {
+  const basePath = path.join(path.sep, 'tmp', 'output')
+
+  it('accepts paths inside the base path', () => {
+    expect(isPathInside(basePath, path.join(basePath, 'safe', 'file.txt'))).toBe(true)
+  })
+
+  it('accepts the base path only when explicitly allowed', () => {
+    expect(isPathInside(basePath, basePath)).toBe(false)
+    expect(isPathInside(basePath, basePath, true)).toBe(true)
+    expect(isPathInside(path.parse(basePath).root, path.parse(basePath).root)).toBe(false)
+  })
+
+  it.each([path.join(basePath, '..', 'zip-slip-proof.txt'), path.join(path.sep, 'tmp', 'output-evil', 'file.txt')])(
+    'rejects path "%s"',
+    (candidatePath) => {
+      expect(isPathInside(basePath, candidatePath)).toBe(false)
+    }
+  )
+})
 
 describe(writeFromStream.name, () => {
   let tmpDir: string
