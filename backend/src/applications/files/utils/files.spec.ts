@@ -5,7 +5,7 @@ import path from 'node:path'
 import { Readable } from 'node:stream'
 import { FileError } from '../models/file-error'
 import { FILE_ERROR_MESSAGES } from './errors'
-import { isPathInside, makeTempDir, writeFromStream } from './files'
+import { isPathInside, makeTempDir, tempFilePath, writeFromStream } from './files'
 
 describe(isPathInside.name, () => {
   const basePath = path.join(path.sep, 'tmp', 'output')
@@ -86,5 +86,23 @@ describe(makeTempDir.name, () => {
     expect(path.basename(firstPath)).toMatch(/^extract-/)
     await expect(access(firstPath)).resolves.toBeUndefined()
     await expect(access(secondPath)).resolves.toBeUndefined()
+  })
+})
+
+describe(tempFilePath.name, () => {
+  it('returns distinct paths with the requested parent and prefix', () => {
+    const parentPath = path.join(path.sep, 'tmp', 'user')
+    const firstPath = tempFilePath(parentPath, 'archive-compress-')
+    const secondPath = tempFilePath(parentPath, 'archive-compress-')
+
+    expect(firstPath).not.toBe(secondPath)
+    expect(path.dirname(firstPath)).toBe(parentPath)
+    expect(path.basename(firstPath)).toMatch(/^archive-compress-/)
+  })
+
+  it('keeps paths with traversal prefixes inside the requested parent', () => {
+    const parentPath = path.join(path.sep, 'tmp', 'user')
+
+    expect(path.dirname(tempFilePath(parentPath, path.join('..', 'archive-')))).toBe(parentPath)
   })
 })

@@ -37,12 +37,12 @@ export class DownloadFile {
   async download(
     downloadDto: DownloadFileDto,
     dstPath: string,
-    options: { allowPrivateIP?: boolean; space?: SpaceEnv; getContentInfo: true; maxSize?: number }
+    options: { allowPrivateIP?: boolean; space?: SpaceEnv; publishedPath?: string; getContentInfo: true; maxSize?: number }
   ): Promise<DownloadFileContentInfo>
   async download(
     downloadDto: DownloadFileDto,
     dstPath: string,
-    options?: { allowPrivateIP?: boolean; space?: SpaceEnv; getContentInfo?: false | undefined; maxSize?: number }
+    options?: { allowPrivateIP?: boolean; space?: SpaceEnv; publishedPath?: string; getContentInfo?: false | undefined; maxSize?: number }
   ): Promise<void>
   async download(downloadDto: DownloadFileDto, dstPath: string, options?: DownloadFileOptions): Promise<void | DownloadFileContentInfo> {
     const identityEncodingConfig = { decompress: false, headers: { 'Accept-Encoding': 'identity' } }
@@ -67,7 +67,7 @@ export class DownloadFile {
     if (maxSize === null || (contentLength === null && options?.space)) {
       throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_INVALID_CONTENT_LENGTH)
     }
-    if (contentLength !== null) this.prepareSpace(options?.space, contentLength, dstPath)
+    if (contentLength !== null) this.prepareSpace(options?.space, contentLength, options?.publishedPath || dstPath, dstPath)
 
     // The HEAD request resolved redirects; the GET must target that final URL directly.
     const { response: getRes } = await this.request(
@@ -173,14 +173,18 @@ export class DownloadFile {
     return Number.isSafeInteger(contentLength) ? contentLength : null
   }
 
-  private prepareSpace(space: SpaceEnv | undefined, contentLength: number, dstPath: string): void {
+  private prepareSpace(space: SpaceEnv | undefined, contentLength: number, publishedPath: string, dstPath: string): void {
     if (!space) return
     if (space.willExceedQuota(contentLength)) {
       throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR_MESSAGES.STORAGE_QUOTA_EXCEEDED)
     }
     if (space.task?.cacheKey) {
       space.task.props.totalSize = contentLength
-      FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DOWNLOAD, dstPath)
+      if (publishedPath === dstPath) {
+        FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DOWNLOAD, dstPath)
+      } else {
+        FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DOWNLOAD, publishedPath, dstPath)
+      }
     }
   }
 }

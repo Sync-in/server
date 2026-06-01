@@ -11,7 +11,7 @@ import { UserModel } from '../../users/models/user.model'
 import { CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../constants/cache'
 import { FILE_OPERATION } from '../constants/operations'
 import { FileTask, FileTaskProps, FileTaskStatus } from '../models/file-task'
-import { countDirEntries, dirName, fileName, fileSize, isPathIsDir, removeFiles } from '../utils/files'
+import { countDirEntries, dirName, fileName, fileSize, isPathExists, isPathIsDir, removeFiles } from '../utils/files'
 import { SendFile } from '../utils/send-file'
 import { FilesMethods } from './files-methods.service'
 import { FileTaskEvent } from '../events/file-events'
@@ -28,7 +28,7 @@ export class FilesTasksManager {
     private readonly filesMethods: FilesMethods
   ) {
     FileTaskEvent.on('startWatch', async (space: SpaceEnv, taskType: FILE_OPERATION, rPath: string, watchPath?: string) =>
-      this.startWatch(space, taskType, watchPath || rPath, dirName(space.url), fileName(rPath))
+      this.startWatch(space, taskType, watchPath || rPath, dirName(space.url), fileName(rPath), watchPath ? rPath : undefined)
     )
   }
 
@@ -144,7 +144,14 @@ export class FilesTasksManager {
     }
   }
 
-  private async startWatch(space: SpaceEnv, taskType: FILE_OPERATION, rPath: string, taskPath?: string, taskName = fileName(rPath)): Promise<void> {
+  private async startWatch(
+    space: SpaceEnv,
+    taskType: FILE_OPERATION,
+    rPath: string,
+    taskPath?: string,
+    taskName = fileName(rPath),
+    publishedPath?: string
+  ): Promise<void> {
     if (!space.task?.cacheKey || space.task.cacheKey in this.tasksWatcher) return
     this.logger.verbose({ tag: this.startWatch.name, msg: `${space.task.cacheKey}` })
     this.updateTask(space.task.cacheKey, space.task?.props, {
@@ -153,13 +160,13 @@ export class FilesTasksManager {
     }).catch((e: Error) => this.logger.error({ tag: this.startWatch.name, msg: `${e}` }))
     switch (taskType) {
       case FILE_OPERATION.COMPRESS:
-        this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateCompressTask(space, rPath), this.watchInterval)
+        this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateCompressTask(space, rPath, publishedPath), this.watchInterval)
         return
       case FILE_OPERATION.DECOMPRESS:
-        this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateDecompressTask(space, rPath), this.watchInterval)
+        this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateDecompressTask(space, rPath, publishedPath), this.watchInterval)
         return
       case FILE_OPERATION.DOWNLOAD:
-        this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateDownloadTask(space, rPath), this.watchInterval)
+        this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateDownloadTask(space, rPath, publishedPath), this.watchInterval)
         return
       case FILE_OPERATION.COPY:
       case FILE_OPERATION.MOVE:
@@ -178,9 +185,11 @@ export class FilesTasksManager {
     delete this.tasksWatcher[cacheKey]
   }
 
-  private async updateCompressTask(space: SpaceEnv, rPath: string): Promise<void> {
+  private async updateCompressTask(space: SpaceEnv, rPath: string, publishedPath?: string): Promise<void> {
     try {
-      space.task.props.size = await fileSize(rPath)
+      const size = await this.readWatchedPath(rPath, publishedPath, fileSize)
+      if (size === undefined) return
+      space.task.props.size = size
       await this.updateTask(space.task.cacheKey, space.task.props).catch((e: Error) =>
         this.logger.error({ tag: this.updateCompressTask.name, msg: `${e}` })
       )
@@ -190,9 +199,11 @@ export class FilesTasksManager {
     }
   }
 
-  private async updateDecompressTask(space: SpaceEnv, rPath: string): Promise<void> {
+  private async updateDecompressTask(space: SpaceEnv, rPath: string, publishedPath?: string): Promise<void> {
     try {
-      space.task.props = await countDirEntries(rPath)
+      const props = await this.readWatchedPath(rPath, publishedPath, countDirEntries)
+      if (props === undefined) return
+      space.task.props = props
       this.updateTask(space.task.cacheKey, space.task.props).catch((e: Error) =>
         this.logger.error({ tag: this.updateDecompressTask.name, msg: `${e}` })
       )
@@ -202,9 +213,9 @@ export class FilesTasksManager {
     }
   }
 
-  private async updateDownloadTask(space: SpaceEnv, rPath: string): Promise<void> {
+  private async updateDownloadTask(space: SpaceEnv, rPath: string, publishedPath?: string): Promise<void> {
     try {
-      await this.calcSizeAndProgressTask(space, rPath)
+      if (!(await this.calcSizeAndProgressTask(space, rPath, publishedPath))) return
       this.updateTask(space.task.cacheKey, space.task.props).catch((e: Error) =>
         this.logger.error({ tag: this.updateDownloadTask.name, msg: `${e}` })
       )
@@ -230,10 +241,28 @@ export class FilesTasksManager {
     }
   }
 
-  private async calcSizeAndProgressTask(space: SpaceEnv, rPath: string) {
-    space.task.props.size = await fileSize(rPath)
+  private async calcSizeAndProgressTask(space: SpaceEnv, rPath: string, publishedPath?: string): Promise<boolean> {
+    const size = await this.readWatchedPath(rPath, publishedPath, fileSize)
+    if (size === undefined) return false
+    space.task.props.size = size
     if (space.task.props.totalSize) {
       space.task.props.progress = (100 * space.task.props.size) / space.task.props.totalSize
     }
+    return true
+  }
+
+  private async readWatchedPath<T>(rPath: string, publishedPath: string | undefined, read: (rPath: string) => Promise<T>): Promise<T | undefined> {
+    if (!publishedPath) return read(rPath)
+    if (await isPathExists(rPath)) {
+      try {
+        const value = await read(rPath)
+        // The temporary path may be moved atomically while it is being read.
+        if (await isPathExists(rPath)) return value
+      } catch (e) {
+        // Retry the published path only when the temporary path disappeared during publication.
+        if (e?.code !== 'ENOENT') throw e
+      }
+    }
+    if (await isPathExists(publishedPath)) return read(publishedPath)
   }
 }

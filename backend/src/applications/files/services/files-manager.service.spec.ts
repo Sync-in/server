@@ -95,11 +95,16 @@ describe(FilesManager.name, () => {
       directory: jest.Mock
       file: jest.Mock
       finalize: jest.Mock
+      abort: jest.Mock
     }
     archive.directory = jest.fn().mockReturnValue(archive)
     archive.file = jest.fn().mockReturnValue(archive)
     archive.finalize = jest.fn().mockImplementation(async () => {
       archive.end()
+    })
+    archive.abort = jest.fn().mockImplementation(() => {
+      archive.end()
+      return archive
     })
     ;(archiver as unknown as jest.Mock).mockReturnValueOnce(archive as any)
     jest.spyOn(fs, 'createWriteStream').mockReturnValue(new PassThrough() as any)
@@ -165,6 +170,7 @@ describe(FilesManager.name, () => {
     jest.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
     jest.spyOn(filesUtils, 'makeDir').mockResolvedValue('/tmp' as any)
     jest.spyOn(filesUtils, 'makeTempDir').mockResolvedValue('/tmp/extract')
+    jest.spyOn(filesUtils, 'tempFilePath').mockReturnValue('/tmp/staged-file')
     jest.spyOn(filesUtils, 'writeFromStream').mockResolvedValue(undefined)
     jest.spyOn(filesUtils, 'writeFromStreamAndChecksum').mockResolvedValue('sha256-abc')
     jest.spyOn(filesUtils, 'moveFiles').mockResolvedValue(undefined)
@@ -880,6 +886,7 @@ describe(FilesManager.name, () => {
     it('should handle HEAD+GET and emit task watch/event', async () => {
       const space = makeSpace({ task: { cacheKey: 'task-1', props: {} } })
       ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/download.txt')
+      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
       http.axiosRef
         .mockResolvedValueOnce({
           headers: { 'content-length': '55' },
@@ -895,8 +902,21 @@ describe(FilesManager.name, () => {
       await service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })
 
       expect(space.task.props.totalSize).toBe(55)
-      expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, FILE_OPERATION.DOWNLOAD, '/tmp/download.txt')
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith('/tmp/download.txt', expect.anything(), 0, 55)
+      expect(taskEmitSpy).toHaveBeenCalledWith(
+        'startWatch',
+        space,
+        FILE_OPERATION.DOWNLOAD,
+        '/tmp/download.txt',
+        '/data/users/john/tmp/download.txt-download-uuid'
+      )
+      expect(filesUtils.writeFromStream).toHaveBeenCalledWith('/data/users/john/tmp/download.txt-download-uuid', expect.anything(), 0, 55)
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/download.txt-download-uuid', '/tmp/download.txt')
+      expect(filesLockManager.create).toHaveBeenCalledWith(
+        user,
+        expect.objectContaining({ path: 'download.txt' }),
+        expect.any(String),
+        DEPTH.RESOURCE
+      )
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
       expect(fileEmitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
     })
@@ -905,6 +925,7 @@ describe(FilesManager.name, () => {
       const error = new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR_MESSAGES.MAX_FILE_SIZE_EXCEEDED)
       const space = makeSpace()
       ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/download.txt')
+      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
       ;(filesUtils.writeFromStream as jest.Mock).mockRejectedValueOnce(error)
       http.axiosRef
         .mockResolvedValueOnce({
@@ -919,7 +940,32 @@ describe(FilesManager.name, () => {
 
       await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/tmp/download.txt')
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/download.txt-download-uuid')
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+      expect(fileEmitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
+    })
+
+    it('should cleanup temporary file and skip ADD event when publishing download fails', async () => {
+      const error = new Error('move failed')
+      const space = makeSpace()
+      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/download.txt')
+      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
+      ;(filesUtils.moveFiles as jest.Mock).mockRejectedValueOnce(error)
+      http.axiosRef
+        .mockResolvedValueOnce({
+          headers: { 'content-length': '55' },
+          request: { socket: { remoteAddress: '8.8.8.8' } }
+        })
+        .mockResolvedValueOnce({
+          data: Readable.from(['abc']),
+          request: { socket: { remoteAddress: '8.8.8.8' } }
+        })
+      const fileEmitSpy = jest.spyOn(FileEvent, 'emit')
+
+      await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toBe(error)
+
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/download.txt-download-uuid')
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
       expect(fileEmitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
     })
@@ -929,6 +975,7 @@ describe(FilesManager.name, () => {
     it('should archive files and emit events', async () => {
       const archive = createArchiveMock()
       ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive.tar.gz')
+      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
       ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p.endsWith('/dir'))
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: { cacheKey: 'task-c', props: {} } })
       const dto = {
@@ -948,12 +995,21 @@ describe(FilesManager.name, () => {
       expect(archive.directory).toHaveBeenCalled()
       expect(archive.file).toHaveBeenCalled()
       expect(archive.finalize).toHaveBeenCalled()
-      expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, FILE_OPERATION.COMPRESS, '/tmp/archive.tar.gz')
+      expect(taskEmitSpy).toHaveBeenCalledWith(
+        'startWatch',
+        space,
+        FILE_OPERATION.COMPRESS,
+        '/tmp/archive.tar.gz',
+        '/data/users/john/tmp/archive.tar.gz-compress-uuid'
+      )
+      expect(fs.createWriteStream).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar.gz-compress-uuid', { highWaterMark: expect.any(Number) })
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar.gz-compress-uuid', '/tmp/archive.tar.gz')
     })
 
     it('should allow archive export from trash when compressInDirectory is false', async () => {
       const archive = createArchiveMock()
       ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive-trash.tar.gz')
+      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive-trash.tar.gz-compress-uuid')
       ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValueOnce(false)
       const emitSpy = jest.spyOn(FileEvent, 'emit')
       const space = makeTrashSpace({
@@ -971,7 +1027,120 @@ describe(FilesManager.name, () => {
       await expect(service.compress(user, space, dto)).resolves.toBeUndefined()
       expect(filesLockManager.create).not.toHaveBeenCalled()
       expect(archive.file).toHaveBeenCalled()
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-trash.tar.gz-compress-uuid', '/tmp/archive-trash.tar.gz')
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/archive-trash.tar.gz' })
+    })
+
+    it('should cleanup temporary archive and skip ADD event when publishing archive fails', async () => {
+      const archive = createArchiveMock()
+      const error = new Error('move failed')
+      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive.tar.gz')
+      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValueOnce(false)
+      ;(filesUtils.moveFiles as jest.Mock).mockRejectedValueOnce(error)
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
+      const dto = {
+        name: 'archive',
+        extension: 'tar.gz',
+        compressInDirectory: false,
+        files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
+      } as any
+
+      await expect(service.compress(user, space, dto)).rejects.toBe(error)
+
+      expect(archive.abort).toHaveBeenCalled()
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      expect(archive.abort.mock.invocationCallOrder[0]).toBeLessThan((filesUtils.removeFiles as jest.Mock).mock.invocationCallOrder[0])
+      expect(emitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/archive.tar.gz' })
+    })
+
+    it('should abort archive pipeline and cleanup temporary file when preparing an entry fails', async () => {
+      const archive = createArchiveMock()
+      const error = new Error('unable to prepare entry')
+      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive.tar.gz')
+      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      ;(filesUtils.isPathIsDir as jest.Mock).mockRejectedValueOnce(error)
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
+      const dto = {
+        name: 'archive',
+        extension: 'tar.gz',
+        compressInDirectory: false,
+        files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
+      } as any
+
+      await expect(service.compress(user, space, dto)).rejects.toBe(error)
+
+      expect(archive.abort).toHaveBeenCalled()
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      expect(archive.abort.mock.invocationCallOrder[0]).toBeLessThan((filesUtils.removeFiles as jest.Mock).mock.invocationCallOrder[0])
+      expect(emitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/archive.tar.gz' })
+    })
+
+    it('should cleanup temporary archive without waiting for finalize after pipeline failure', async () => {
+      const archive = createArchiveMock()
+      const error = new Error('pipeline failed')
+      archive.finalize.mockImplementationOnce(() => {
+        archive.emit('error', error)
+        return new Promise<void>(() => undefined)
+      })
+      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive.tar.gz')
+      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValueOnce(false)
+      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
+      const dto = {
+        name: 'archive',
+        extension: 'tar.gz',
+        compressInDirectory: false,
+        files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
+      } as any
+
+      await expect(service.compress(user, space, dto)).rejects.toBe(error)
+
+      expect(archive.abort).toHaveBeenCalled()
+      expect(archive.destroyed).toBe(true)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      expect(emitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/archive.tar.gz' })
+    })
+
+    it('should not append entries after archive pipeline cancellation', async () => {
+      const archive = createArchiveMock()
+      const error = new Error('pipeline failed')
+      let resolveEntry!: (isDir: boolean) => void
+      let entryStarted!: () => void
+      const entryStartedPromise = new Promise<void>((resolve) => {
+        entryStarted = resolve
+      })
+      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive.tar.gz')
+      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementationOnce(
+        () =>
+          new Promise<boolean>((resolve) => {
+            resolveEntry = resolve
+            entryStarted()
+          })
+      )
+      const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
+      const dto = {
+        name: 'archive',
+        extension: 'tar.gz',
+        compressInDirectory: false,
+        files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
+      } as any
+
+      const compressPromise = service.compress(user, space, dto)
+      await entryStartedPromise
+      archive.emit('error', error)
+      await new Promise<void>((resolve) => setImmediate(resolve))
+
+      expect(filesUtils.removeFiles).not.toHaveBeenCalled()
+      resolveEntry(false)
+      await expect(compressPromise).rejects.toBe(error)
+      expect(archive.file).not.toHaveBeenCalled()
+      expect(archive.finalize).not.toHaveBeenCalled()
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar.gz-compress-uuid')
     })
   })
 

@@ -86,7 +86,95 @@ describe(FilesTasksManager.name, () => {
 
     FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, '/files/archive', '/tmp/archive-extract')
 
-    expect(startWatchSpy).toHaveBeenCalledWith(space, FILE_OPERATION.DECOMPRESS, '/tmp/archive-extract', 'files/personal', 'archive')
+    expect(startWatchSpy).toHaveBeenCalledWith(
+      space,
+      FILE_OPERATION.DECOMPRESS,
+      '/tmp/archive-extract',
+      'files/personal',
+      'archive',
+      '/files/archive'
+    )
+  })
+
+  it('should watch the published archive after the temporary archive has been moved', async () => {
+    const pathExistsSpy = jest.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    const fileSizeSpy = jest.spyOn(filesUtils, 'fileSize').mockResolvedValueOnce(42)
+    const updateTaskSpy = jest.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+    const space = { task: { cacheKey: 'task-1', props: {} } } as any
+
+    await (filesTasksManager as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
+
+    expect(pathExistsSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-compress-uuid')
+    expect(pathExistsSpy).toHaveBeenNthCalledWith(2, '/files/archive.tgz')
+    expect(fileSizeSpy).toHaveBeenCalledWith('/files/archive.tgz')
+    expect(space.task.props.size).toBe(42)
+    expect(updateTaskSpy).toHaveBeenCalledWith('task-1', { size: 42 })
+  })
+
+  it('should retry the published archive when the temporary archive is moved before reading it', async () => {
+    const missingError = Object.assign(new Error('missing temporary archive'), { code: 'ENOENT' })
+    const pathExistsSpy = jest.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
+    const fileSizeSpy = jest.spyOn(filesUtils, 'fileSize').mockRejectedValueOnce(missingError).mockResolvedValueOnce(42)
+    const updateTaskSpy = jest.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+    const space = { task: { cacheKey: 'task-1', props: {} } } as any
+
+    await (filesTasksManager as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
+
+    expect(pathExistsSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-compress-uuid')
+    expect(pathExistsSpy).toHaveBeenNthCalledWith(2, '/files/archive.tgz')
+    expect(fileSizeSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-compress-uuid')
+    expect(fileSizeSpy).toHaveBeenNthCalledWith(2, '/files/archive.tgz')
+    expect(space.task.props.size).toBe(42)
+    expect(updateTaskSpy).toHaveBeenCalledWith('task-1', { size: 42 })
+  })
+
+  it('should retry the published directory when the temporary directory is moved while reading it', async () => {
+    const pathExistsSpy = jest.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(true).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    const countDirEntriesSpy = jest
+      .spyOn(filesUtils, 'countDirEntries')
+      .mockResolvedValueOnce({ files: 0, directories: 0 })
+      .mockResolvedValueOnce({ files: 2, directories: 1 })
+    const updateTaskSpy = jest.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+    const space = { task: { cacheKey: 'task-1', props: {} } } as any
+
+    await (filesTasksManager as any).updateDecompressTask(space, '/tmp/archive-extract-uuid', '/files/archive')
+
+    expect(pathExistsSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-extract-uuid')
+    expect(pathExistsSpy).toHaveBeenNthCalledWith(2, '/tmp/archive-extract-uuid')
+    expect(pathExistsSpy).toHaveBeenNthCalledWith(3, '/files/archive')
+    expect(countDirEntriesSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-extract-uuid')
+    expect(countDirEntriesSpy).toHaveBeenNthCalledWith(2, '/files/archive')
+    expect(space.task.props).toEqual({ files: 2, directories: 1 })
+    expect(updateTaskSpy).toHaveBeenCalledWith('task-1', { files: 2, directories: 1 })
+  })
+
+  it('should silently skip watcher update while temporary and published paths are missing', async () => {
+    jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(false)
+    const fileSizeSpy = jest.spyOn(filesUtils, 'fileSize')
+    const loggerErrorSpy = jest.spyOn((filesTasksManager as any).logger, 'error')
+    const stopWatchSpy = jest.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)
+    const updateTaskSpy = jest.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+    const space = { task: { cacheKey: 'task-1', props: {} } } as any
+
+    await (filesTasksManager as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
+
+    expect(loggerErrorSpy).not.toHaveBeenCalled()
+    expect(stopWatchSpy).not.toHaveBeenCalled()
+    expect(updateTaskSpy).not.toHaveBeenCalled()
+    expect(fileSizeSpy).not.toHaveBeenCalled()
+  })
+
+  it('should stop a watcher without staging when its path is missing', async () => {
+    const missingError = Object.assign(new Error('missing archive'), { code: 'ENOENT' })
+    jest.spyOn(filesUtils, 'fileSize').mockRejectedValueOnce(missingError)
+    const loggerErrorSpy = jest.spyOn((filesTasksManager as any).logger, 'error')
+    const stopWatchSpy = jest.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)
+    const space = { task: { cacheKey: 'task-1', props: {} } } as any
+
+    await (filesTasksManager as any).updateCompressTask(space, '/files/archive.tgz')
+
+    expect(loggerErrorSpy).toHaveBeenCalled()
+    expect(stopWatchSpy).toHaveBeenCalledWith('task-1')
   })
 
   it('should create a task and mark it as success when the async method resolves', async () => {

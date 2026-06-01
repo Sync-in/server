@@ -48,6 +48,7 @@ import {
   makeTempDir,
   moveFiles,
   removeFiles,
+  tempFilePath,
   touchFile,
   uniqueDatedFilePath,
   uniqueFilePathFromDir,
@@ -569,9 +570,10 @@ export class FilesManager {
   async downloadFromUrl(user: UserModel, space: SpaceEnv, downloadDto: DownloadFileDto): Promise<void> {
     this.checkNotTrashRepository(space)
     this.logger.log({ tag: this.downloadFromUrl.name, msg: `${downloadDto.url}` })
-    const rPath = await uniqueFilePathFromDir(space.realPath)
+    const dstPath = await uniqueFilePathFromDir(space.realPath)
+    const tmpPath = tempFilePath(user.tmpPath, `${fileName(dstPath)}-download-`)
     const dbFile = space.dbFile
-    dbFile.path = path.join(dirName(dbFile.path), fileName(space.realPath))
+    dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
 
     // create lock
     const [ok, fileLock] = await this.filesLockManager.create(user, dbFile, SERVER_NAME, DEPTH.RESOURCE)
@@ -580,15 +582,18 @@ export class FilesManager {
     }
 
     try {
-      await new DownloadFile(this.http).download(downloadDto, rPath, { space: space })
+      await new DownloadFile(this.http).download(downloadDto, tmpPath, { space: space, publishedPath: dstPath })
+      await moveFiles(tmpPath, dstPath)
     } catch (e) {
-      await removeFiles(rPath).catch((err: Error) => this.logger.error({ tag: this.downloadFromUrl.name, msg: `unable to remove ${rPath} : ${err}` }))
+      await removeFiles(tmpPath).catch((err: Error) =>
+        this.logger.error({ tag: this.downloadFromUrl.name, msg: `unable to remove ${tmpPath} : ${err}` })
+      )
       throw e
     } finally {
       // release lock
       await this.filesLockManager.removeLock(fileLock.key)
     }
-    FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: rPath })
+    FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
   }
 
   async compress(user: UserModel, space: SpaceEnv, dto: CompressFileDto): Promise<void> {
@@ -600,6 +605,7 @@ export class FilesManager {
     const srcPath = dirName(space.realPath)
     const archiveExt = dto.name.endsWith(dto.extension) ? '' : `.${dto.extension}`
     const dstPath = await uniqueFilePathFromDir(path.join(dto.compressInDirectory ? srcPath : user.tasksPath, `${dto.name}${archiveExt}`))
+    const tmpPath = tempFilePath(user.tmpPath, `${fileName(dstPath)}-compress-`)
     // avoid using ZIP here because it can trigger high memory usage.
     const archive: Archiver = archiver(TAR_EXTENSION, {
       gzip: dto.extension === TAR_GZ_EXTENSION,
@@ -620,30 +626,46 @@ export class FilesManager {
     }
     if (space.task?.cacheKey) {
       space.task.props.compressInDirectory = dto.compressInDirectory
-      FileTaskEvent.emit('startWatch', space, FILE_OPERATION.COMPRESS, dstPath)
+      FileTaskEvent.emit('startWatch', space, FILE_OPERATION.COMPRESS, dstPath, tmpPath)
     }
     // do
+    let aborted = false
+    let pipePromise: Promise<void> | undefined
+    let entriesPromise: Promise<void> | undefined
     try {
-      const dstStream = fs.createWriteStream(dstPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
-      const pipePromise = pipeline(archive, dstStream) // handle archive errors + write stream
-
-      for (const f of dto.files) {
-        if (await isPathIsDir(f.path)) {
-          archive.directory(f.path, dto.files.length > 1 ? fileName(f.path) : false)
-        } else {
-          archive.file(f.path, { name: f.rootAlias ? f.name : fileName(f.path) })
+      const dstStream = fs.createWriteStream(tmpPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
+      pipePromise = pipeline(archive, dstStream) // handle archive errors + write stream
+      entriesPromise = (async () => {
+        for (const f of dto.files) {
+          const isDir = await isPathIsDir(f.path)
+          if (aborted) return
+          if (isDir) {
+            archive.directory(f.path, dto.files.length > 1 ? fileName(f.path) : false)
+          } else {
+            archive.file(f.path, { name: f.rootAlias ? f.name : fileName(f.path) })
+          }
         }
-      }
-
-      const finalizePromise = archive.finalize()
-      await Promise.all([finalizePromise, pipePromise])
+        // The pipeline is the completion signal: finalize() may remain pending after abort().
+        if (!aborted) {
+          void archive.finalize().catch(() => undefined)
+        }
+      })()
+      await Promise.all([entriesPromise, pipePromise])
+      await moveFiles(tmpPath, dstPath)
+    } catch (e) {
+      aborted = true
+      archive.abort()
+      archive.destroy()
+      await Promise.allSettled([entriesPromise, pipePromise].filter((promise): promise is Promise<void> => !!promise))
+      await removeFiles(tmpPath).catch((err: Error) => this.logger.error({ tag: this.compress.name, msg: `unable to remove ${tmpPath} : ${err}` }))
+      throw e
     } finally {
       if (fileLock) {
         await this.filesLockManager.removeLock(fileLock.key)
       }
-      // emit file event
-      FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
     }
+    // emit file event
+    FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
   }
 
   async decompress(user: UserModel, space: SpaceEnv): Promise<void> {

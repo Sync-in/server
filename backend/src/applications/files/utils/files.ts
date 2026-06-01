@@ -99,6 +99,10 @@ export async function makeTempDir(parentPath: string, prefix: string): Promise<s
   return fs.mkdtemp(path.join(parentPath, prefix))
 }
 
+export function tempFilePath(parentPath: string, prefix: string): string {
+  return path.join(parentPath, `${path.basename(prefix)}${crypto.randomUUID()}`)
+}
+
 export function getMimeType(fPath: string, isDir: boolean): string {
   if (isDir) {
     return 'directory'
