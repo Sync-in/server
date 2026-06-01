@@ -4,17 +4,21 @@ import path from 'node:path'
 import * as filesUtils from './files'
 import { extractZip } from './unzip-file'
 
-function createEmptyZip(entryName: string): Buffer {
+function createZip(entryName: string, content = Buffer.alloc(0)): Buffer {
   const encodedEntryName = Buffer.from(entryName)
   const localFileHeader = Buffer.alloc(30)
   localFileHeader.writeUInt32LE(0x04034b50, 0)
   localFileHeader.writeUInt16LE(20, 4)
+  localFileHeader.writeUInt32LE(content.length, 18)
+  localFileHeader.writeUInt32LE(content.length, 22)
   localFileHeader.writeUInt16LE(encodedEntryName.length, 26)
 
   const centralDirectoryHeader = Buffer.alloc(46)
   centralDirectoryHeader.writeUInt32LE(0x02014b50, 0)
   centralDirectoryHeader.writeUInt16LE(20, 4)
   centralDirectoryHeader.writeUInt16LE(20, 6)
+  centralDirectoryHeader.writeUInt32LE(content.length, 20)
+  centralDirectoryHeader.writeUInt32LE(content.length, 24)
   centralDirectoryHeader.writeUInt16LE(encodedEntryName.length, 28)
 
   const endOfCentralDirectory = Buffer.alloc(22)
@@ -22,9 +26,9 @@ function createEmptyZip(entryName: string): Buffer {
   endOfCentralDirectory.writeUInt16LE(1, 8)
   endOfCentralDirectory.writeUInt16LE(1, 10)
   endOfCentralDirectory.writeUInt32LE(centralDirectoryHeader.length + encodedEntryName.length, 12)
-  endOfCentralDirectory.writeUInt32LE(localFileHeader.length + encodedEntryName.length, 16)
+  endOfCentralDirectory.writeUInt32LE(localFileHeader.length + encodedEntryName.length + content.length, 16)
 
-  return Buffer.concat([localFileHeader, encodedEntryName, centralDirectoryHeader, encodedEntryName, endOfCentralDirectory])
+  return Buffer.concat([localFileHeader, encodedEntryName, content, centralDirectoryHeader, encodedEntryName, endOfCentralDirectory])
 }
 
 describe(extractZip.name, () => {
@@ -46,7 +50,7 @@ describe(extractZip.name, () => {
 
   it('rejects entries escaping the output directory', async () => {
     const escapedPath = path.join(tmpDir, 'zip-slip-proof.txt')
-    await writeFile(archivePath, createEmptyZip('../zip-slip-proof.txt'))
+    await writeFile(archivePath, createZip('../zip-slip-proof.txt'))
 
     await expect(extractZip(archivePath, outputDir)).rejects.toThrow('invalid relative path: ../zip-slip-proof.txt')
     await expect(access(escapedPath)).rejects.toMatchObject({ code: 'ENOENT' })
@@ -54,14 +58,14 @@ describe(extractZip.name, () => {
 
   it('extracts entries inside the output directory', async () => {
     const extractedPath = path.join(outputDir, 'safe.txt')
-    await writeFile(archivePath, createEmptyZip('safe.txt'))
+    await writeFile(archivePath, createZip('safe.txt'))
 
     await expect(extractZip(archivePath, outputDir)).resolves.toBeUndefined()
     await expect(access(extractedPath)).resolves.toBeUndefined()
   })
 
   it('rejects entries outside the output directory', async () => {
-    await writeFile(archivePath, createEmptyZip('safe.txt'))
+    await writeFile(archivePath, createZip('safe.txt'))
     const isPathInsideSpy = jest.spyOn(filesUtils, 'isPathInside').mockReturnValueOnce(false)
 
     await expect(extractZip(archivePath, outputDir)).rejects.toThrow('Zip entry "safe.txt" would escape the output directory')
@@ -69,10 +73,16 @@ describe(extractZip.name, () => {
   })
 
   it('accepts a root directory entry', async () => {
-    await writeFile(archivePath, createEmptyZip('./'))
+    await writeFile(archivePath, createZip('./'))
     const isPathInsideSpy = jest.spyOn(filesUtils, 'isPathInside')
 
     await expect(extractZip(archivePath, outputDir)).resolves.toBeUndefined()
     expect(isPathInsideSpy).toHaveBeenCalledWith(outputDir, outputDir, true)
+  })
+
+  it('rejects entries exceeding the extracted size limit', async () => {
+    await writeFile(archivePath, createZip('large.txt', Buffer.from('ab')))
+
+    await expect(extractZip(archivePath, outputDir, 1)).rejects.toThrow('Storage quota will be exceeded')
   })
 })

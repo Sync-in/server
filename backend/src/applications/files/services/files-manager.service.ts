@@ -694,10 +694,11 @@ export class FilesManager {
       // tasking
       if (space.task?.cacheKey) FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, dstPath, tmpPath)
       // do
+      const maxExtractedSize = space.storageQuota === null ? undefined : Math.max(0, space.storageQuota - space.storageUsage)
       if (extension === '.zip') {
-        await extractZip(space.realPath, tmpPath)
+        await extractZip(space.realPath, tmpPath, maxExtractedSize)
       } else {
-        await extractTar(space.realPath, tmpPath, COMPRESSION_EXTENSION.get(extension) === TAR_GZ_EXTENSION)
+        await extractTar(space.realPath, tmpPath, COMPRESSION_EXTENSION.get(extension) === TAR_GZ_EXTENSION, maxExtractedSize)
       }
       if (await isPathExists(dstPath)) {
         throw new FileError(HttpStatus.CONFLICT, 'The destination already exists')

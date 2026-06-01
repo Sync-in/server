@@ -1,5 +1,8 @@
+import { createReadStream } from 'node:fs'
 import path from 'node:path'
-import { extract, type ReadEntry } from 'tar'
+import { pipeline } from 'node:stream/promises'
+import { extract, type ReadEntry, type Unpack } from 'tar'
+import { storageQuotaExceededError } from './errors'
 import { isPathInside } from './files'
 
 export function checkTarEntry(outputDir: string, entry: Pick<ReadEntry, 'type' | 'path' | 'linkpath'>): boolean {
@@ -18,11 +21,20 @@ export function checkTarEntry(outputDir: string, entry: Pick<ReadEntry, 'type' |
   return true
 }
 
-export async function extractTar(filePath: string, outputDir: string, gzip: boolean): Promise<void> {
-  // Do not throw from the stream filter callback: reject explicitly once parsing has completed.
+export async function extractTar(filePath: string, outputDir: string, gzip: boolean, maxExtractedSize?: number): Promise<void> {
   let validationError: Error | undefined
-  await extract({
-    file: filePath,
+  let extractedSize = 0
+  const srcStream = createReadStream(filePath)
+
+  const abortExtraction = (error: Error): false => {
+    // Stop both the file read and node-tar parser so a rejected TAR.GZ is not decompressed to the end.
+    validationError = error
+    srcStream.destroy(error)
+    extractStream.abort(error)
+    return false
+  }
+
+  const extractStream: Unpack = extract({
     cwd: outputDir,
     gzip,
     preserveOwner: false,
@@ -31,12 +43,20 @@ export async function extractTar(filePath: string, outputDir: string, gzip: bool
     filter: (_path, entry) => {
       if (validationError) return false
       try {
+        // node-tar invokes the filter before writing an entry, so metadata can enforce the known quota.
+        extractedSize += entry.size
+        if (maxExtractedSize !== undefined && extractedSize > maxExtractedSize) {
+          throw storageQuotaExceededError()
+        }
         return !('type' in entry) || checkTarEntry(outputDir, entry)
       } catch (e) {
-        validationError = e as Error
-        return false
+        return abortExtraction(e as Error)
       }
     }
   })
-  if (validationError) throw validationError
+  try {
+    await pipeline(srcStream, extractStream)
+  } catch (e) {
+    throw validationError || e
+  }
 }

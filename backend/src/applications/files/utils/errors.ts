@@ -14,3 +14,7 @@ export const FILE_ERROR_MESSAGES = {
 export function maxFileSizeExceededError(): FileError {
   return new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR_MESSAGES.MAX_FILE_SIZE_EXCEEDED)
 }
+
+export function storageQuotaExceededError(): FileError {
+  return new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR_MESSAGES.STORAGE_QUOTA_EXCEEDED)
+}

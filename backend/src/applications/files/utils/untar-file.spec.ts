@@ -1,4 +1,5 @@
-import { access, mkdir, mkdtemp, readlink, rm, symlink } from 'node:fs/promises'
+import fs from 'node:fs'
+import { access, mkdir, mkdtemp, readlink, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { create } from 'tar'
@@ -34,6 +35,7 @@ describe(extractTar.name, () => {
   })
 
   afterEach(async () => {
+    jest.restoreAllMocks()
     await rm(tmpDir, { recursive: true, force: true })
   })
 
@@ -55,7 +57,26 @@ describe(extractTar.name, () => {
     await expect(access(linkPath)).rejects.toMatchObject({ code: 'ENOENT' })
   })
 
-  function createArchive(): Promise<void> {
-    return create({ cwd: sourceDir, file: archivePath }, ['docs'])
+  it('rejects entries exceeding the extracted size limit', async () => {
+    await writeFile(path.join(sourceDir, 'docs', 'large.txt'), 'ab')
+    await createArchive()
+    const destroySpy = jest.spyOn(fs.ReadStream.prototype, 'destroy')
+
+    await expect(extractTar(archivePath, outputDir, false, 1)).rejects.toThrow('Storage quota will be exceeded')
+    expect(destroySpy).toHaveBeenCalled()
+  })
+
+  it('aborts TAR.GZ extraction when the extracted size limit is exceeded', async () => {
+    archivePath = path.join(tmpDir, 'archive.tar.gz')
+    await writeFile(path.join(sourceDir, 'docs', 'large.txt'), 'ab')
+    await createArchive(true)
+    const destroySpy = jest.spyOn(fs.ReadStream.prototype, 'destroy')
+
+    await expect(extractTar(archivePath, outputDir, true, 1)).rejects.toThrow('Storage quota will be exceeded')
+    expect(destroySpy).toHaveBeenCalled()
+  })
+
+  function createArchive(gzip = false): Promise<void> {
+    return create({ cwd: sourceDir, file: archivePath, gzip }, ['docs'])
   }
 })
