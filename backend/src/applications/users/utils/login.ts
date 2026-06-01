@@ -1,4 +1,4 @@
-const USER_LOGIN_VALIDATION = /^(?! )(?!.* $)[a-zA-Z0-9@\-._ ]{2,255}$/
+import { USER_LOGIN_VALIDATION } from '../constants/user'
 
 export function isSafePathSegment(value: unknown): value is string {
   return typeof value === 'string' && !!value && value !== '.' && value !== '..' && !value.includes('/') && !value.includes('\\')
