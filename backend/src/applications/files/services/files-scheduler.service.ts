@@ -8,14 +8,14 @@ import { Cache } from '../../../infrastructure/cache/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { getTablesWithFileIdColumn } from '../../../infrastructure/database/utils'
-import { USER_ROLE } from '../../users/constants/user'
+import { USER_PATH, USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { users } from '../../users/schemas/users.schema'
 import { CACHE_TASK_PREFIX } from '../constants/cache'
 import { FileTask, FileTaskStatus } from '../models/file-task'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { files } from '../schemas/files.schema'
-import { dirHasChildren, isPathExists, removeFiles } from '../utils/files'
+import { isPathExists, removeFiles } from '../utils/files'
 import { FilesContentIndexer } from './files-content-indexer.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
 import { FilesQuotaManager } from './files-quota-manager.service'
@@ -23,6 +23,8 @@ import { FilesTrashRetention } from './files-trash-retention.service'
 
 @Injectable()
 export class FilesScheduler {
+  private readonly TMP_FILE_MAX_AGE = 86_400_000 // one day
+
   private readonly logger = new Logger(FilesScheduler.name)
   private isQuotaUpdateIsRunning = false
   private isQuotaUpdateEntriesIsRunning = false
@@ -91,9 +93,10 @@ export class FilesScheduler {
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async cleanupUserTaskFiles(): Promise<void> {
-    this.logger.log({ tag: this.cleanupUserTaskFiles.name, msg: `START` })
+  async cleanupUserTmpFiles(): Promise<void> {
+    this.logger.log({ tag: this.cleanupUserTmpFiles.name, msg: `START` })
     try {
+      const expiration = Date.now() - this.TMP_FILE_MAX_AGE
       for (const user of await this.db
         .select({
           id: users.id,
@@ -101,29 +104,12 @@ export class FilesScheduler {
           role: users.role
         })
         .from(users)) {
-        const userTasksPath = UserModel.getTasksPath(user.login, user.role === USER_ROLE.GUEST, user.role === USER_ROLE.LINK)
-        if (!(await isPathExists(userTasksPath))) {
-          continue
-        }
-        if (await dirHasChildren(userTasksPath, false)) {
-          const cacheKey = FilesTasksManager.getCacheKey(user.id)
-          const keys = await this.cache.keys(cacheKey)
-          const excludeFiles = (await this.cache.mget(keys))
-            .filter((task: FileTask) => task && task.status === FileTaskStatus.PENDING && task.props.compressInDirectory === false)
-            .map((task: FileTask) => task.name)
-          for (const f of (await fs.readdir(userTasksPath)).filter((f: string) => excludeFiles.indexOf(f) === -1)) {
-            try {
-              removeFiles(path.join(userTasksPath, f)).catch((e: Error) => this.logger.error({ tag: this.cleanupUserTaskFiles.name, msg: `${e}` }))
-            } catch (e) {
-              this.logger.error({ tag: this.cleanupUserTaskFiles.name, msg: `unable to remove ${path.join(userTasksPath, f)} : ${e}` })
-            }
-          }
-        }
+        await this.cleanupUserTmpFilesForUser(user, expiration)
       }
     } catch (e) {
-      this.logger.error({ tag: this.cleanupUserTaskFiles.name, msg: `${e}` })
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `${e}` })
     }
-    this.logger.log({ tag: this.cleanupUserTaskFiles.name, msg: `END` })
+    this.logger.log({ tag: this.cleanupUserTmpFiles.name, msg: `END` })
   }
 
   @Cron(CronExpression.EVERY_8_HOURS)
@@ -223,6 +209,51 @@ export class FilesScheduler {
     }
     this.logger.log({ tag: this.updateQuotas.name, msg: 'Share External Paths - END' })
     this.isQuotaUpdateIsRunning = false
+  }
+
+  private async cleanupUserTaskFiles(userId: number, userTasksPath: string): Promise<void> {
+    try {
+      const keys = await this.cache.keys(FilesTasksManager.getCacheKey(userId))
+      const excludeFiles = keys.length
+        ? (await this.cache.mget(keys))
+            .filter((task: FileTask) => task && task.status === FileTaskStatus.PENDING && task.props.compressInDirectory === false)
+            .map((task: FileTask) => task.name)
+        : []
+      for (const f of (await fs.readdir(userTasksPath)).filter((f: string) => excludeFiles.indexOf(f) === -1)) {
+        await this.removeTmpFile(path.join(userTasksPath, f))
+      }
+    } catch (e) {
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${userTasksPath} : ${e}` })
+    }
+  }
+
+  private async cleanupUserTmpFilesForUser(user: { id: number; login: string; role: number }, expiration: number): Promise<void> {
+    const userTmpPath = UserModel.getTmpPath(user.login, user.role === USER_ROLE.GUEST, user.role === USER_ROLE.LINK)
+    try {
+      if (!(await isPathExists(userTmpPath))) {
+        return
+      }
+      for (const f of await fs.readdir(userTmpPath)) {
+        const rPath = path.join(userTmpPath, f)
+        if (f === USER_PATH.TASKS) {
+          await this.cleanupUserTaskFiles(user.id, rPath)
+        } else {
+          await this.removeTmpFile(rPath, expiration)
+        }
+      }
+    } catch (e) {
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${userTmpPath} : ${e}` })
+    }
+  }
+
+  private async removeTmpFile(rPath: string, expiration?: number): Promise<void> {
+    try {
+      if (expiration === undefined || (await fs.lstat(rPath)).mtimeMs < expiration) {
+        await removeFiles(rPath)
+      }
+    } catch (e) {
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to remove ${rPath} : ${e}` })
+    }
   }
 
   private async cleanupInterruptedTasks(): Promise<void> {

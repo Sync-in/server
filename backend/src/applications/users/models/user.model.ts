@@ -148,8 +148,8 @@ export class UserModel implements User {
     return path.join(UserModel.getHomePath(userLogin), SPACE_REPOSITORY.TRASH)
   }
 
-  static getTasksPath(userLogin: string, isGuest = false, isLink = false): string {
-    return path.join(UserModel.getHomePath(userLogin, isGuest, isLink), USER_PATH.TMP, USER_PATH.TASKS)
+  static getTmpPath(userLogin: string, isGuest = false, isLink = false): string {
+    return path.join(UserModel.getHomePath(userLogin, isGuest, isLink), USER_PATH.TMP)
   }
 
   static getRepositoryPath(userLogin: string, inTrash = false): string {
