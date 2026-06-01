@@ -1,20 +1,7 @@
 import { Transform } from 'class-transformer'
-import {
-  IsArray,
-  IsBoolean,
-  IsEmail,
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Matches,
-  Max,
-  MaxLength,
-  Min,
-  MinLength
-} from 'class-validator'
-import { USER_GROUP_ROLE, USER_LOGIN_VALIDATION, USER_NOTIFICATION, USER_PASSWORD_MIN_LENGTH, USER_ROLE } from '../constants/user'
+import { IsArray, IsBoolean, IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
+import { USER_GROUP_ROLE, USER_NOTIFICATION, USER_PASSWORD_MIN_LENGTH, USER_ROLE } from '../constants/user'
+import { IsUserLogin } from './user-login.dto.decorator'
 
 export class OptionalUserDto {
   @IsOptional()
@@ -65,7 +52,7 @@ export class CreateUserDto extends OptionalUserDto {
   @Transform(({ value }) => (value ? value.trim() : ''))
   @MinLength(2)
   @MaxLength(255)
-  @Matches(USER_LOGIN_VALIDATION)
+  @IsUserLogin()
   login: string
 
   @IsNotEmpty()
@@ -91,7 +78,7 @@ export class UpdateUserDto extends OptionalUserDto {
   @Transform(({ value }) => (value ? value.trim() : ''))
   @MinLength(2)
   @MaxLength(255)
-  @Matches(USER_LOGIN_VALIDATION)
+  @IsUserLogin()
   login?: string
 
   @IsOptional()

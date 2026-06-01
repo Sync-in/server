@@ -14,6 +14,7 @@ import { FilesQuotaManager } from '../../files/services/files-quota-manager.serv
 
 // mock file utils used by the service (delete/rename user space)
 jest.mock('../../files/utils/files', () => ({
+  isPathInside: jest.fn(() => true),
   isPathExists: jest.fn(),
   moveFiles: jest.fn(),
   removeFiles: jest.fn()
@@ -30,7 +31,12 @@ jest.mock('../../../common/functions', () => {
 })
 
 // Alias FS mocks (avoid repetitions)
-const fs = jest.requireMock('../../files/utils/files') as { isPathExists: jest.Mock; moveFiles: jest.Mock; removeFiles: jest.Mock }
+const fs = jest.requireMock('../../files/utils/files') as {
+  isPathInside: jest.Mock
+  isPathExists: jest.Mock
+  moveFiles: jest.Mock
+  removeFiles: jest.Mock
+}
 
 // Helper utilities
 const expectHttp = async (p: Promise<any>) => expect(p).rejects.toBeInstanceOf(HttpException)
@@ -193,6 +199,12 @@ describe(AdminUsersManager.name, () => {
       adminQueriesMock.usersQueries.createUserOrGuest.mockRejectedValueOnce(new Error('db fail'))
       await expectHttp(service.createUserOrGuest({ login: 'bob', email: 'b@x', password: 'p', managers: [] } as any, USER_ROLE.USER, false))
     })
+
+    it('rejects a login that would escape the user directory', async () => {
+      await expectHttp(service.createUserOrGuest({ login: '..', email: 'bad@x', password: 'p', managers: [] } as any, USER_ROLE.USER, false))
+      expect(adminQueriesMock.usersQueries.checkUserExists).not.toHaveBeenCalled()
+      expect(adminQueriesMock.usersQueries.createUserOrGuest).not.toHaveBeenCalled()
+    })
   })
 
   describe('updateUserOrGuest - USER branch', () => {
@@ -232,6 +244,13 @@ describe(AdminUsersManager.name, () => {
       adminQueriesMock.usersQueries.checkUserExists.mockResolvedValueOnce(true)
       await expectHttp(service.updateUserOrGuest(current.id, { email: 'dup@x' } as any))
       expect(adminQueriesMock.usersQueries.updateUserOrGuest).not.toHaveBeenCalled()
+    })
+
+    it('rejects a login that would escape the user directory before rename', async () => {
+      setUser({ ...baseUser })
+      await expectHttp(service.updateUserOrGuest(baseUser.id, { login: '../outside' } as any))
+      expect(adminQueriesMock.usersQueries.checkUserExists).not.toHaveBeenCalled()
+      expect(fs.moveFiles).not.toHaveBeenCalled()
     })
 
     it('renameUserSpace impossible (new space exists)', async () => {

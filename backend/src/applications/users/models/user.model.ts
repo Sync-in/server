@@ -3,11 +3,13 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { popFromObject } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
+import { isPathInside } from '../../files/utils/files'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { GUEST_PERMISSION, USER_PATH, USER_PERMISSION, USER_PERMS_SEP, USER_ROLE } from '../constants/user'
 import type { Owner } from '../interfaces/owner.interface'
 import type { UserSecrets } from '../interfaces/user-secrets.interface'
 import type { User } from '../schemas/user.interface'
+import { isSafePathSegment } from '../utils/login'
 
 export class UserModel implements User {
   id: number
@@ -68,10 +70,7 @@ export class UserModel implements User {
   private _homePath: string
 
   get homePath(): string {
-    if (this.isLink || this.isGuest) {
-      return (this._homePath ||= path.join(configuration.applications.files.tmpPath, this.isGuest ? 'guests' : 'links', this.login))
-    }
-    return (this._homePath ||= path.join(configuration.applications.files.usersPath, this.login))
+    return (this._homePath ||= UserModel.getHomePath(this.login, this.isGuest, this.isLink))
   }
 
   private _filesPath: string
@@ -134,10 +133,18 @@ export class UserModel implements User {
   }
 
   static getHomePath(userLogin: string, isGuest = false, isLink = false): string {
-    if (isGuest || isLink) {
-      return path.join(configuration.applications.files.tmpPath, isGuest ? 'guests' : 'links', userLogin)
+    if (!isSafePathSegment(userLogin)) {
+      throw new Error('User login must be a single path segment')
     }
-    return path.join(configuration.applications.files.usersPath, userLogin)
+    const basePath =
+      isGuest || isLink
+        ? path.join(configuration.applications.files.tmpPath, isGuest ? 'guests' : 'links')
+        : configuration.applications.files.usersPath
+    const homePath = path.resolve(basePath, userLogin)
+    if (!isPathInside(basePath, homePath)) {
+      throw new Error('User login resolves outside user data directory')
+    }
+    return homePath
   }
 
   static getFilesPath(userLogin: string): string {

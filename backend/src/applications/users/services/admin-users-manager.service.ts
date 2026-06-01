@@ -18,6 +18,7 @@ import type { Member } from '../interfaces/member.interface'
 import { UserModel } from '../models/user.model'
 import type { Group } from '../schemas/group.interface'
 import type { User } from '../schemas/user.interface'
+import { isValidUserLogin } from '../utils/login'
 import { AdminUsersQueries } from './admin-users-queries.service'
 import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
 import { FILE_REPOSITORY } from '../../files/constants/operations'
@@ -56,6 +57,7 @@ export class AdminUsersManager {
     userRole: USER_ROLE = USER_ROLE.USER,
     asAdmin = false
   ): Promise<UserModel | AdminUser | GuestUser> {
+    this.validateUserLogin(createUserDto.login)
     await this.loginOrEmailAlreadyUsed(createUserDto.login, createUserDto.email)
     try {
       createUserDto.password = await hashPassword(createUserDto.password)
@@ -96,6 +98,7 @@ export class AdminUsersManager {
           if (user.login === v) {
             break
           }
+          this.validateUserLogin(v)
           if (await this.adminQueries.usersQueries.checkUserExists(v)) {
             throw new HttpException('Login already used', HttpStatus.FORBIDDEN)
           }
@@ -386,6 +389,12 @@ export class AdminUsersManager {
   private async checkGroupNameExists(groupName: string): Promise<void> {
     if (await this.adminQueries.usersQueries.checkGroupNameExists(groupName)) {
       throw new HttpException('Name already used', HttpStatus.BAD_REQUEST)
+    }
+  }
+
+  private validateUserLogin(login: string): void {
+    if (!isValidUserLogin(login)) {
+      throw new HttpException('Invalid login', HttpStatus.BAD_REQUEST)
     }
   }
 
