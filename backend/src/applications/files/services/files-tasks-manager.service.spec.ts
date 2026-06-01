@@ -13,6 +13,7 @@ import { FilesTasksManager } from './files-tasks-manager.service'
 
 describe(FilesTasksManager.name, () => {
   let filesTasksManager: FilesTasksManager
+  let module: TestingModule
   let filesMethods: {
     doWork: jest.Mock
   }
@@ -50,7 +51,7 @@ describe(FilesTasksManager.name, () => {
     filesMethods = {
       doWork: jest.fn()
     }
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [
         FilesTasksManager,
         {
@@ -65,14 +66,30 @@ describe(FilesTasksManager.name, () => {
     filesTasksManager = module.get<FilesTasksManager>(FilesTasksManager)
   })
 
-  afterEach(() => {
-    FileTaskEvent.removeAllListeners('startWatch')
+  afterEach(async () => {
+    await module.close()
     jest.restoreAllMocks()
     jest.clearAllMocks()
   })
 
   it('should be defined', () => {
     expect(filesTasksManager).toBeDefined()
+  })
+
+  it('should unref watchers and clear them on module destroy', async () => {
+    const cacheKey = 'task-1'
+    const listenersBeforeDestroy = FileTaskEvent.listenerCount('startWatch')
+    const space = { task: { cacheKey, props: {} } } as any
+    cacheStore.set(cacheKey, { props: {} })
+    ;(filesTasksManager as any).startWatch(space, FILE_OPERATION.COPY, '/files/document.txt')
+
+    const watcher = (filesTasksManager as any).tasksWatcher[cacheKey] as NodeJS.Timeout
+    expect(watcher.hasRef()).toBe(false)
+
+    filesTasksManager.onModuleDestroy()
+
+    expect((filesTasksManager as any).tasksWatcher).toEqual({})
+    expect(FileTaskEvent.listenerCount('startWatch')).toBe(listenersBeforeDestroy - 1)
   })
 
   it('should build task cache key with and without task id', () => {

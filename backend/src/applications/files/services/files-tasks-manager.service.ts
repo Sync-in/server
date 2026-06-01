@@ -1,8 +1,7 @@
-import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
+import { HttpException, HttpStatus, Injectable, Logger, OnModuleDestroy, StreamableFile } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import crypto from 'node:crypto'
 import path from 'node:path'
-import { setTimeout } from 'node:timers/promises'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { currentTimeStamp } from '../../../common/shared'
 import { Cache } from '../../../infrastructure/cache/cache.service'
@@ -17,23 +16,28 @@ import { FilesMethods } from './files-methods.service'
 import { FileTaskEvent } from '../events/file-events'
 
 @Injectable()
-export class FilesTasksManager {
+export class FilesTasksManager implements OnModuleDestroy {
   // task cache key = `ftask-$(userId}-${taskId}` => FileTask
   private readonly logger = new Logger(FilesTasksManager.name)
   private readonly watchInterval = 1000
-  private tasksWatcher: Record<string, any> = {}
+  private tasksWatcher: Record<string, NodeJS.Timeout> = {}
 
   constructor(
     private readonly cache: Cache,
     private readonly filesMethods: FilesMethods
   ) {
-    FileTaskEvent.on('startWatch', async (space: SpaceEnv, taskType: FILE_OPERATION, rPath: string, watchPath?: string) =>
-      this.startWatch(space, taskType, watchPath || rPath, dirName(space.url), fileName(rPath), watchPath ? rPath : undefined)
-    )
+    FileTaskEvent.on('startWatch', this.onStartWatch)
   }
 
   static getCacheKey(userId: number, taskId?: string): string {
     return `${CACHE_TASK_PREFIX}-${userId}-${taskId || '*'}`
+  }
+
+  onModuleDestroy(): void {
+    FileTaskEvent.off('startWatch', this.onStartWatch)
+    for (const cacheKey of Object.keys(this.tasksWatcher)) {
+      this.stopWatch(cacheKey)
+    }
   }
 
   async createTask(type: FILE_OPERATION, user: UserModel, space: SpaceEnv, dto: any, method: string): Promise<FileTask> {
@@ -84,7 +88,7 @@ export class FilesTasksManager {
         removeFiles(rPath).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
       }
       // clear watcher
-      this.stopWatch(key).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
+      this.stopWatch(key)
       // remove from cache
       this.cache.del(key).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
     }
@@ -130,7 +134,7 @@ export class FilesTasksManager {
       }
       await this.cache.set(cacheKey, task, CACHE_TASK_TTL)
     }
-    await this.stopWatch(cacheKey)
+    this.stopWatch(cacheKey)
   }
 
   private async updateTask(cacheKey: string, props?: FileTaskProps, task?: Partial<FileTask>): Promise<void> {
@@ -140,18 +144,18 @@ export class FilesTasksManager {
       if (props) ftask.props = { ...ftask.props, ...props }
       await this.cache.set(cacheKey, ftask, CACHE_TASK_TTL)
     } else {
-      await this.stopWatch(cacheKey)
+      this.stopWatch(cacheKey)
     }
   }
 
-  private async startWatch(
+  private startWatch(
     space: SpaceEnv,
     taskType: FILE_OPERATION,
     rPath: string,
     taskPath?: string,
     taskName = fileName(rPath),
     publishedPath?: string
-  ): Promise<void> {
+  ): void {
     if (!space.task?.cacheKey || space.task.cacheKey in this.tasksWatcher) return
     this.logger.verbose({ tag: this.startWatch.name, msg: `${space.task.cacheKey}` })
     this.updateTask(space.task.cacheKey, space.task?.props, {
@@ -160,17 +164,17 @@ export class FilesTasksManager {
     }).catch((e: Error) => this.logger.error({ tag: this.startWatch.name, msg: `${e}` }))
     switch (taskType) {
       case FILE_OPERATION.COMPRESS:
-        this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateCompressTask(space, rPath, publishedPath), this.watchInterval)
+        this.watchTask(space.task.cacheKey, () => this.updateCompressTask(space, rPath, publishedPath))
         return
       case FILE_OPERATION.DECOMPRESS:
-        this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateDecompressTask(space, rPath, publishedPath), this.watchInterval)
+        this.watchTask(space.task.cacheKey, () => this.updateDecompressTask(space, rPath, publishedPath))
         return
       case FILE_OPERATION.DOWNLOAD:
-        this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateDownloadTask(space, rPath, publishedPath), this.watchInterval)
+        this.watchTask(space.task.cacheKey, () => this.updateDownloadTask(space, rPath, publishedPath))
         return
       case FILE_OPERATION.COPY:
       case FILE_OPERATION.MOVE:
-        this.tasksWatcher[space.task.cacheKey] = setInterval(async () => this.updateCopyMoveTask(space, rPath), this.watchInterval)
+        this.watchTask(space.task.cacheKey, () => this.updateCopyMoveTask(space, rPath))
         return
       default:
         this.logger.warn({ tag: this.startWatch.name, msg: `unknown task type ${taskType}` })
@@ -178,11 +182,20 @@ export class FilesTasksManager {
     }
   }
 
-  private async stopWatch(cacheKey: string): Promise<void> {
+  private stopWatch(cacheKey: string): void {
     if (!(cacheKey in this.tasksWatcher)) return
-    await setTimeout(this.watchInterval)
     clearInterval(this.tasksWatcher[cacheKey])
     delete this.tasksWatcher[cacheKey]
+  }
+
+  private readonly onStartWatch = (space: SpaceEnv, taskType: FILE_OPERATION, rPath: string, watchPath?: string): void => {
+    this.startWatch(space, taskType, watchPath || rPath, dirName(space.url), fileName(rPath), watchPath ? rPath : undefined)
+  }
+
+  private watchTask(cacheKey: string, update: () => Promise<void>): void {
+    const watcher = setInterval(() => void update(), this.watchInterval)
+    watcher.unref()
+    this.tasksWatcher[cacheKey] = watcher
   }
 
   private async updateCompressTask(space: SpaceEnv, rPath: string, publishedPath?: string): Promise<void> {
@@ -195,7 +208,7 @@ export class FilesTasksManager {
       )
     } catch (e) {
       this.logger.error({ tag: this.updateCompressTask.name, msg: `${e}` })
-      await this.stopWatch(space.task.cacheKey)
+      this.stopWatch(space.task.cacheKey)
     }
   }
 
@@ -209,7 +222,7 @@ export class FilesTasksManager {
       )
     } catch (e) {
       this.logger.error({ tag: this.updateDecompressTask.name, msg: `${e}` })
-      await this.stopWatch(space.task.cacheKey)
+      this.stopWatch(space.task.cacheKey)
     }
   }
 
@@ -221,7 +234,7 @@ export class FilesTasksManager {
       )
     } catch (e) {
       this.logger.error({ tag: this.updateDownloadTask.name, msg: `${e}` })
-      await this.stopWatch(space.task.cacheKey)
+      this.stopWatch(space.task.cacheKey)
     }
   }
 
@@ -237,7 +250,7 @@ export class FilesTasksManager {
       )
     } catch (e) {
       this.logger.error({ tag: this.updateCopyMoveTask.name, msg: `${e}` })
-      await this.stopWatch(space.task.cacheKey)
+      this.stopWatch(space.task.cacheKey)
     }
   }
 
