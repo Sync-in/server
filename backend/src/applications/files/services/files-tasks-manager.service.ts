@@ -27,8 +27,8 @@ export class FilesTasksManager {
     private readonly cache: Cache,
     private readonly filesMethods: FilesMethods
   ) {
-    FileTaskEvent.on('startWatch', async (space: SpaceEnv, taskType: FILE_OPERATION, rPath: string) =>
-      this.startWatch(space, taskType, rPath, dirName(space.url))
+    FileTaskEvent.on('startWatch', async (space: SpaceEnv, taskType: FILE_OPERATION, rPath: string, watchPath?: string) =>
+      this.startWatch(space, taskType, watchPath || rPath, dirName(space.url), fileName(rPath))
     )
   }
 
@@ -144,11 +144,11 @@ export class FilesTasksManager {
     }
   }
 
-  private async startWatch(space: SpaceEnv, taskType: FILE_OPERATION, rPath: string, taskPath?: string): Promise<void> {
+  private async startWatch(space: SpaceEnv, taskType: FILE_OPERATION, rPath: string, taskPath?: string, taskName = fileName(rPath)): Promise<void> {
     if (!space.task?.cacheKey || space.task.cacheKey in this.tasksWatcher) return
     this.logger.verbose({ tag: this.startWatch.name, msg: `${space.task.cacheKey}` })
     this.updateTask(space.task.cacheKey, space.task?.props, {
-      name: fileName(rPath),
+      name: taskName,
       path: taskPath
     }).catch((e: Error) => this.logger.error({ tag: this.startWatch.name, msg: `${e}` }))
     switch (taskType) {

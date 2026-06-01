@@ -4,7 +4,7 @@ import type { ACTION } from '../../../common/constants'
 import type { UserModel } from '../../users/models/user.model'
 
 export interface FileTaskEventEmit {
-  startWatch: [space: SpaceEnv, taskType: FILE_OPERATION, rPath: string]
+  startWatch: [space: SpaceEnv, taskType: FILE_OPERATION, rPath: string, watchPath?: string]
 }
 
 export interface FileEventType {

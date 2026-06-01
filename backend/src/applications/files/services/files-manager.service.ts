@@ -45,6 +45,7 @@ import {
   isPathInside,
   isPathIsDir,
   makeDir,
+  makeTempDir,
   moveFiles,
   removeFiles,
   touchFile,
@@ -655,9 +656,9 @@ export class FilesManager {
     if (!COMPRESSION_EXTENSION.has(extension)) {
       throw new FileError(HttpStatus.BAD_REQUEST, `${extension} is not supported`)
     }
-    // make destination folder
+    // make temporary extraction folder
     const dstPath = await uniqueFilePathFromDir(path.join(dirName(space.realPath), path.basename(space.realPath, extension)))
-    await makeDir(dstPath)
+    const tmpPath = await makeTempDir(user.tmpPath, `${fileName(dstPath)}-extract-`)
     let fileLock: FileLock | undefined
     try {
       // create lock
@@ -669,15 +670,19 @@ export class FilesManager {
       }
       fileLock = lock
       // tasking
-      if (space.task?.cacheKey) FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, dstPath)
+      if (space.task?.cacheKey) FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, dstPath, tmpPath)
       // do
       if (extension === '.zip') {
-        await extractZip(space.realPath, dstPath)
+        await extractZip(space.realPath, tmpPath)
       } else {
-        await extractTar(space.realPath, dstPath, COMPRESSION_EXTENSION.get(extension) === TAR_GZ_EXTENSION)
+        await extractTar(space.realPath, tmpPath, COMPRESSION_EXTENSION.get(extension) === TAR_GZ_EXTENSION)
       }
+      if (await isPathExists(dstPath)) {
+        throw new FileError(HttpStatus.CONFLICT, 'The destination already exists')
+      }
+      await moveFiles(tmpPath, dstPath)
     } catch (e) {
-      await removeFiles(dstPath).catch((err: Error) => this.logger.error({ tag: this.decompress.name, msg: `unable to remove ${dstPath} : ${err}` }))
+      await removeFiles(tmpPath).catch((err: Error) => this.logger.error({ tag: this.decompress.name, msg: `unable to remove ${tmpPath} : ${err}` }))
       throw e
     } finally {
       if (fileLock) await this.filesLockManager.removeLock(fileLock.key)

@@ -164,6 +164,7 @@ describe(FilesManager.name, () => {
     jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
     jest.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
     jest.spyOn(filesUtils, 'makeDir').mockResolvedValue('/tmp' as any)
+    jest.spyOn(filesUtils, 'makeTempDir').mockResolvedValue('/tmp/extract')
     jest.spyOn(filesUtils, 'writeFromStream').mockResolvedValue(undefined)
     jest.spyOn(filesUtils, 'writeFromStreamAndChecksum').mockResolvedValue('sha256-abc')
     jest.spyOn(filesUtils, 'moveFiles').mockResolvedValue(undefined)
@@ -977,41 +978,53 @@ describe(FilesManager.name, () => {
   describe('decompress', () => {
     it('should extract zip and release lock', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip', task: { cacheKey: 'task-d', props: {} } })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true)
+      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
+      ;(filesUtils.makeTempDir as jest.Mock).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
       const unzipSpy = jest.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
       const taskEmitSpy = jest.spyOn(FileTaskEvent, 'emit')
 
       await service.decompress(user, space)
 
-      expect(filesUtils.makeDir).toHaveBeenCalledWith('/data/users/john/files/archive')
-      expect(unzipSpy).toHaveBeenCalledWith('/data/users/john/files/archive.zip', '/data/users/john/files/archive')
-      expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, FILE_OPERATION.DECOMPRESS, '/data/users/john/files/archive')
+      expect(filesUtils.makeTempDir).toHaveBeenCalledWith('/data/users/john/tmp', 'archive-extract-')
+      expect(unzipSpy).toHaveBeenCalledWith('/data/users/john/files/archive.zip', '/data/users/john/tmp/archive-extract-123')
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123', '/data/users/john/files/archive')
+      expect(taskEmitSpy).toHaveBeenCalledWith(
+        'startWatch',
+        space,
+        FILE_OPERATION.DECOMPRESS,
+        '/data/users/john/files/archive',
+        '/data/users/john/tmp/archive-extract-123'
+      )
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
     })
 
     it('should extract tar formats via extractTar', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.tar.gz' })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true)
+      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
+      ;(filesUtils.makeTempDir as jest.Mock).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
       const untarSpy = jest.spyOn(untarUtils, 'extractTar').mockResolvedValueOnce(undefined)
 
       await service.decompress(user, space)
 
-      expect(untarSpy).toHaveBeenCalledWith('/data/users/john/files/archive.tar.gz', '/data/users/john/files/archive', true)
+      expect(untarSpy).toHaveBeenCalledWith('/data/users/john/files/archive.tar.gz', '/data/users/john/tmp/archive-extract-123', true)
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123', '/data/users/john/files/archive')
     })
 
     it('should remove partial extraction and skip add event on failure', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
       ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true)
       ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
+      ;(filesUtils.makeTempDir as jest.Mock).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
       const error = new Error('extraction failed')
       jest.spyOn(unzipUtils, 'extractZip').mockRejectedValueOnce(error)
       const emitSpy = jest.spyOn(FileEvent, 'emit')
 
       await expect(service.decompress(user, space)).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/files/archive')
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123')
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith('/data/users/john/files/archive')
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
       expect(emitSpy).not.toHaveBeenCalledWith('event', {
         user,
@@ -1019,6 +1032,36 @@ describe(FilesManager.name, () => {
         action: ACTION.ADD,
         rPath: '/data/users/john/files/archive'
       })
+    })
+
+    it('should remove temporary extraction when move fails', async () => {
+      const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
+      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
+      ;(filesUtils.makeTempDir as jest.Mock).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      const error = new Error('move failed')
+      jest.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
+      ;(filesUtils.moveFiles as jest.Mock).mockRejectedValueOnce(error)
+
+      await expect(service.decompress(user, space)).rejects.toBe(error)
+
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123')
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith('/data/users/john/files/archive')
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+    })
+
+    it('should keep an existing destination when publishing extraction', async () => {
+      const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
+      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true).mockResolvedValueOnce(true)
+      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
+      ;(filesUtils.makeTempDir as jest.Mock).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      jest.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
+
+      await expect(service.decompress(user, space)).rejects.toEqual(new FileError(HttpStatus.CONFLICT, 'The destination already exists'))
+
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123')
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith('/data/users/john/files/archive')
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
     })
   })
 

@@ -1,11 +1,11 @@
 import { HttpStatus } from '@nestjs/common'
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { FileError } from '../models/file-error'
 import { FILE_ERROR_MESSAGES } from './errors'
-import { isPathInside, writeFromStream } from './files'
+import { isPathInside, makeTempDir, writeFromStream } from './files'
 
 describe(isPathInside.name, () => {
   const basePath = path.join(path.sep, 'tmp', 'output')
@@ -64,5 +64,27 @@ describe(writeFromStream.name, () => {
     await writeFromStream(filePath, Readable.from([Buffer.from('de')]), 3, 5)
 
     await expect(readFile(filePath, 'utf8')).resolves.toBe('abcde')
+  })
+})
+
+describe(makeTempDir.name, () => {
+  let tmpDir: string
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(path.join(os.tmpdir(), 'make-temp-dir-'))
+  })
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true })
+  })
+
+  it('creates distinct directories with the requested prefix', async () => {
+    const firstPath = await makeTempDir(tmpDir, 'extract-')
+    const secondPath = await makeTempDir(tmpDir, 'extract-')
+
+    expect(firstPath).not.toBe(secondPath)
+    expect(path.basename(firstPath)).toMatch(/^extract-/)
+    await expect(access(firstPath)).resolves.toBeUndefined()
+    await expect(access(secondPath)).resolves.toBeUndefined()
   })
 })

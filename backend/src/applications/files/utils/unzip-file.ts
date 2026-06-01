@@ -9,7 +9,7 @@ import { isPathInside, makeDir } from './files'
 const openZipAsync: (path: string, options: Options) => Promise<ZipFile> = promisify(openZip)
 
 export async function extractZip(filePath: string, outputDir: string): Promise<void> {
-  const zipFile = await openZipAsync(filePath, { lazyEntries: true })
+  const zipFile = await openZipAsync(filePath, { lazyEntries: true, validateEntrySizes: true })
   const openReadStream = promisify(zipFile.openReadStream.bind(zipFile))
   const resolvedOutputDir = path.resolve(outputDir)
 

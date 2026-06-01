@@ -94,6 +94,11 @@ export function makeDir(rPath: string, recursive?: boolean): Promise<string> {
   return fs.mkdir(rPath, { recursive: recursive })
 }
 
+export async function makeTempDir(parentPath: string, prefix: string): Promise<string> {
+  await makeDir(parentPath, true)
+  return fs.mkdtemp(path.join(parentPath, prefix))
+}
+
 export function getMimeType(fPath: string, isDir: boolean): string {
   if (isDir) {
     return 'directory'

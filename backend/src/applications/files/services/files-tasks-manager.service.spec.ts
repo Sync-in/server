@@ -80,6 +80,15 @@ describe(FilesTasksManager.name, () => {
     expect(FilesTasksManager.getCacheKey(10)).toBe(`${CACHE_TASK_PREFIX}-10-*`)
   })
 
+  it('should watch a temporary path while keeping the published file name', () => {
+    const startWatchSpy = jest.spyOn(filesTasksManager as any, 'startWatch').mockResolvedValueOnce(undefined)
+    const space = { url: 'files/personal/archive.zip', task: { cacheKey: 'task-1', props: {} } } as any
+
+    FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, '/files/archive', '/tmp/archive-extract')
+
+    expect(startWatchSpy).toHaveBeenCalledWith(space, FILE_OPERATION.DECOMPRESS, '/tmp/archive-extract', 'files/personal', 'archive')
+  })
+
   it('should create a task and mark it as success when the async method resolves', async () => {
     jest.spyOn(crypto, 'randomUUID').mockReturnValueOnce('11111111-1111-4111-8111-111111111111')
     filesMethods.doWork.mockResolvedValueOnce({ props: { totalSize: 99 }, result: 'done' })
