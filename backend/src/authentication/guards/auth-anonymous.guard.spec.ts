@@ -1,4 +1,4 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest'
+import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { PassportModule } from '@nestjs/passport'
@@ -46,7 +46,7 @@ describe(AuthAnonymousGuard.name, () => {
 
   it('should pass without a valid auth', async () => {
     context = createMock<ExecutionContext>()
-    const spyAuthenticate = jest.spyOn(authAnonymousStrategy, 'authenticate')
+    const spyAuthenticate = vi.spyOn(authAnonymousStrategy, 'authenticate')
     context.switchToHttp().getRequest.mockReturnValue({})
     expect(await authAnonymousGuard.canActivate(context)).toBe(true)
     expect(spyAuthenticate).toHaveBeenCalledTimes(1)

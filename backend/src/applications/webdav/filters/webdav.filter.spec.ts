@@ -9,10 +9,10 @@ describe('WebDAVExceptionsFilter', () => {
 
   const createMockResponse = () => {
     const res: any = {}
-    res.header = jest.fn().mockReturnValue(res)
-    res.type = jest.fn().mockReturnValue(res)
-    res.status = jest.fn().mockReturnValue(res)
-    res.send = jest.fn().mockReturnValue(res)
+    res.header = vi.fn().mockReturnValue(res)
+    res.type = vi.fn().mockReturnValue(res)
+    res.status = vi.fn().mockReturnValue(res)
+    res.send = vi.fn().mockReturnValue(res)
     return res
   }
 
@@ -33,7 +33,7 @@ describe('WebDAVExceptionsFilter', () => {
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should set WWW-Authenticate header and send empty body for 401', () => {

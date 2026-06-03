@@ -1,5 +1,5 @@
 import { sign } from '@fastify/cookie'
-import { createMock, DeepMocked } from '@golevelup/ts-jest'
+import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule, JwtService } from '@nestjs/jwt'

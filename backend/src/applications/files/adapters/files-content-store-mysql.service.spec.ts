@@ -1,14 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { FilesContentStoreMySQL } from './files-content-store-mysql.service'
+import { Mock } from 'vitest'
 
 describe(FilesContentStoreMySQL.name, () => {
   let module: TestingModule
   let filesIndexerMySQL: FilesContentStoreMySQL
-  let db: { execute: jest.Mock }
+  let db: { execute: Mock }
 
   beforeAll(async () => {
-    db = { execute: jest.fn() }
+    db = { execute: vi.fn() }
 
     module = await Test.createTestingModule({
       providers: [FilesContentStoreMySQL, { provide: DB_TOKEN_PROVIDER, useValue: db }]
@@ -23,7 +24,7 @@ describe(FilesContentStoreMySQL.name, () => {
   })
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -175,7 +176,7 @@ describe(FilesContentStoreMySQL.name, () => {
     })
 
     it('should not warn when all requested ids are deleted', async () => {
-      const warnSpy = jest.spyOn(filesIndexerMySQL['logger'], 'warn').mockImplementation(() => undefined)
+      const warnSpy = vi.spyOn(filesIndexerMySQL['logger'], 'warn').mockImplementation(() => undefined)
       db.execute.mockResolvedValueOnce([{ affectedRows: 2 }])
 
       await filesIndexerMySQL.deleteRecords('files_content_u_1', [1, 2])

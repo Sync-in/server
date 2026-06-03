@@ -35,7 +35,7 @@ describe(UsersController.name, () => {
         },
         {
           provide: FilesQuotaManager,
-          useValue: { updateStorageQuota: () => jest.fn() }
+          useValue: { updateStorageQuota: () => vi.fn() }
         },
         UsersManager,
         UsersQueries,
@@ -65,7 +65,7 @@ describe(UsersController.name, () => {
   })
 
   it('should get the user profile', async () => {
-    usersQueries.from = jest.fn().mockReturnValue(userTest)
+    usersQueries.from = vi.fn().mockReturnValue(userTest)
     const profile = await userController.me(userTest)
     expect(usersQueries.from).toHaveBeenCalled()
     expect(profile.user).toBeInstanceOf(UserModel)
@@ -73,7 +73,7 @@ describe(UsersController.name, () => {
   })
 
   it('should not generate the user avatar stream', async () => {
-    usersQueries.from = jest.fn().mockReturnValueOnce(null)
+    usersQueries.from = vi.fn().mockReturnValueOnce(null)
     await expect(userController.genAvatar(userTest)).rejects.toThrow('does not exist')
   })
 })

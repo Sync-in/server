@@ -11,69 +11,66 @@ import { UserModel } from '../models/user.model'
 import { AdminUsersManager } from './admin-users-manager.service'
 import { AdminUsersQueries } from './admin-users-queries.service'
 import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
+import { Mock } from 'vitest'
+import * as _fs from '../../files/utils/files'
 
 // mock file utils used by the service (delete/rename user space)
-jest.mock('../../files/utils/files', () => ({
-  isPathInside: jest.fn(() => true),
-  isPathExists: jest.fn(),
-  moveFiles: jest.fn(),
-  removeFiles: jest.fn()
+vi.mock('../../files/utils/files', () => ({
+  isPathInside: vi.fn(() => true),
+  isPathExists: vi.fn(),
+  moveFiles: vi.fn(),
+  removeFiles: vi.fn()
 }))
 
 // mock hash/anonymize utilities (preserve other module exports)
-jest.mock('../../../common/functions', () => {
-  const actual = jest.requireActual('../../../common/functions')
+vi.mock('../../../common/functions', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/functions')>()
   return {
     ...actual,
-    hashPassword: jest.fn(async (pwd: string) => `hashed:${pwd}`),
-    anonymizePassword: jest.fn((dto: any) => ({ ...dto, password: '***' }))
+    hashPassword: vi.fn(async (pwd: string) => `hashed:${pwd}`),
+    anonymizePassword: vi.fn((dto: any) => ({ ...dto, password: '***' }))
   }
 })
 
 // Alias FS mocks (avoid repetitions)
-const fs = jest.requireMock('../../files/utils/files') as {
-  isPathInside: jest.Mock
-  isPathExists: jest.Mock
-  moveFiles: jest.Mock
-  removeFiles: jest.Mock
-}
+const fs = vi.mocked(_fs)
 
 // Helper utilities
 const expectHttp = async (p: Promise<any>) => expect(p).rejects.toBeInstanceOf(HttpException)
-const spyMakePaths = () => jest.spyOn(UserModel.prototype, 'makePaths').mockResolvedValueOnce(undefined)
+const spyMakePaths = () => vi.spyOn(UserModel.prototype, 'makePaths').mockResolvedValueOnce(undefined)
 
 describe(AdminUsersManager.name, () => {
   let service: AdminUsersManager
 
   // deep mocks
-  let authManagerMock: { setCookies: jest.Mock }
+  let authManagerMock: { setCookies: Mock }
   let adminQueriesMock: {
-    listUsers: jest.Mock
+    listUsers: Mock
     usersQueries: {
-      listGuests: jest.Mock
-      from: jest.Mock
-      createUserOrGuest: jest.Mock
-      updateUserOrGuest: jest.Mock
-      deleteUser: jest.Mock
-      compareUserPassword: jest.Mock
-      checkGroupNameExists: jest.Mock
-      checkUserExists: jest.Mock
-      searchUsersOrGroups: jest.Mock
-      clearWhiteListCaches: jest.Mock
+      listGuests: Mock
+      from: Mock
+      createUserOrGuest: Mock
+      updateUserOrGuest: Mock
+      deleteUser: Mock
+      compareUserPassword: Mock
+      checkGroupNameExists: Mock
+      checkUserExists: Mock
+      searchUsersOrGroups: Mock
+      clearWhiteListCaches: Mock
     }
-    updateUserGroups: jest.Mock
-    updateGuestManagers: jest.Mock
-    deleteUser: jest.Mock
-    groupFromName: jest.Mock
-    browseGroupMembers: jest.Mock
-    browseRootGroupMembers: jest.Mock
-    groupFromId: jest.Mock
-    createGroup: jest.Mock
-    updateGroup: jest.Mock
-    deleteGroup: jest.Mock
-    addUsersToGroup: jest.Mock
-    updateUserFromGroup: jest.Mock
-    removeUserFromGroup: jest.Mock
+    updateUserGroups: Mock
+    updateGuestManagers: Mock
+    deleteUser: Mock
+    groupFromName: Mock
+    browseGroupMembers: Mock
+    browseRootGroupMembers: Mock
+    groupFromId: Mock
+    createGroup: Mock
+    updateGroup: Mock
+    deleteGroup: Mock
+    addUsersToGroup: Mock
+    updateUserFromGroup: Mock
+    removeUserFromGroup: Mock
   }
 
   const setUser = (u: any) => adminQueriesMock.listUsers.mockResolvedValueOnce(u)
@@ -89,35 +86,35 @@ describe(AdminUsersManager.name, () => {
   } as any
 
   beforeAll(async () => {
-    authManagerMock = { setCookies: jest.fn() }
+    authManagerMock = { setCookies: vi.fn() }
 
     adminQueriesMock = {
-      listUsers: jest.fn(),
+      listUsers: vi.fn(),
       usersQueries: {
-        listGuests: jest.fn(),
-        from: jest.fn(),
-        createUserOrGuest: jest.fn(),
-        updateUserOrGuest: jest.fn(),
-        deleteUser: jest.fn(),
-        compareUserPassword: jest.fn(),
-        checkGroupNameExists: jest.fn(),
-        checkUserExists: jest.fn(),
-        searchUsersOrGroups: jest.fn(),
-        clearWhiteListCaches: jest.fn()
+        listGuests: vi.fn(),
+        from: vi.fn(),
+        createUserOrGuest: vi.fn(),
+        updateUserOrGuest: vi.fn(),
+        deleteUser: vi.fn(),
+        compareUserPassword: vi.fn(),
+        checkGroupNameExists: vi.fn(),
+        checkUserExists: vi.fn(),
+        searchUsersOrGroups: vi.fn(),
+        clearWhiteListCaches: vi.fn()
       },
-      updateUserGroups: jest.fn(),
-      updateGuestManagers: jest.fn(),
-      deleteUser: jest.fn(),
-      groupFromName: jest.fn(),
-      browseGroupMembers: jest.fn(),
-      browseRootGroupMembers: jest.fn(),
-      groupFromId: jest.fn(),
-      createGroup: jest.fn(),
-      updateGroup: jest.fn(),
-      deleteGroup: jest.fn(),
-      addUsersToGroup: jest.fn(),
-      updateUserFromGroup: jest.fn(),
-      removeUserFromGroup: jest.fn()
+      updateUserGroups: vi.fn(),
+      updateGuestManagers: vi.fn(),
+      deleteUser: vi.fn(),
+      groupFromName: vi.fn(),
+      browseGroupMembers: vi.fn(),
+      browseRootGroupMembers: vi.fn(),
+      groupFromId: vi.fn(),
+      createGroup: vi.fn(),
+      updateGroup: vi.fn(),
+      deleteGroup: vi.fn(),
+      addUsersToGroup: vi.fn(),
+      updateUserFromGroup: vi.fn(),
+      removeUserFromGroup: vi.fn()
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -126,7 +123,7 @@ describe(AdminUsersManager.name, () => {
         { provide: AuthManager, useValue: authManagerMock },
         {
           provide: FilesQuotaManager,
-          useValue: { updateStorageQuota: () => jest.fn() }
+          useValue: { updateStorageQuota: () => vi.fn() }
         },
         { provide: AdminUsersQueries, useValue: adminQueriesMock }
       ]
@@ -137,7 +134,7 @@ describe(AdminUsersManager.name, () => {
   })
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {

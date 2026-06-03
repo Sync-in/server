@@ -9,8 +9,8 @@ import { AppService } from './app.service'
 import { ENVIRONMENT_PREFIX } from './configuration/config.constants'
 import { configuration, exportConfiguration } from './configuration/config.environment'
 
-jest.mock('@socket.io/cluster-adapter', () => ({
-  setupPrimary: jest.fn()
+vi.mock('@socket.io/cluster-adapter', () => ({
+  setupPrimary: vi.fn()
 }))
 
 describe(AppService.name, () => {
@@ -30,13 +30,13 @@ describe(AppService.name, () => {
     configuration.websocket.adapter = 'cluster'
     configuration.server.restartOnFailure = true
 
-    const bootstrap = jest.fn()
+    const bootstrap = vi.fn()
 
     // IMPORTANT: do NOT call bootstrap() from fork mock
     const fakeWorker = { process: { pid: 1 } } as any
-    cluster.fork = jest.fn(() => fakeWorker)
+    cluster.fork = vi.fn(() => fakeWorker)
 
-    const spyExit = jest.spyOn(cluster, 'on')
+    const spyExit = vi.spyOn(cluster, 'on')
 
     // 1) master path (cluster.isPrimary true by default)
     expect(() => AppService.clusterize(bootstrap)).not.toThrow()
@@ -45,22 +45,22 @@ describe(AppService.name, () => {
     expect(setupPrimary).toHaveBeenCalledTimes(1)
 
     // fork called exactly workers times
-    expect((cluster.fork as jest.Mock).mock.calls.length).toBe(configuration.server.workers)
+    expect(vi.mocked(cluster.fork).mock.calls.length).toBe(configuration.server.workers)
 
     // --- Test exit handler with ONLY ONE registered handler
     // TRUE branch: restart twice -> fork called +2
-    const forkCallsAfterMaster = (cluster.fork as jest.Mock).mock.calls.length
+    const forkCallsAfterMaster = vi.mocked(cluster.fork).mock.calls.length
     AppService.schedulerPID = 1
     cluster.emit('exit', { process: { pid: 1 } } as any, 1 as any, 'SIGKILL' as any)
     AppService.schedulerPID = 0
     cluster.emit('exit', { process: { pid: 2 } } as any, 1 as any, 'SIGKILL' as any)
-    expect((cluster.fork as jest.Mock).mock.calls.length).toBe(forkCallsAfterMaster + 2)
+    expect(vi.mocked(cluster.fork).mock.calls.length).toBe(forkCallsAfterMaster + 2)
 
     // FALSE branch: no restart -> fork unchanged
     configuration.server.restartOnFailure = false
-    const forkCallsAfterTrue = (cluster.fork as jest.Mock).mock.calls.length
+    const forkCallsAfterTrue = vi.mocked(cluster.fork).mock.calls.length
     cluster.emit('exit', { process: { pid: 3 } } as any, 1 as any, 'SIGKILL' as any)
-    expect((cluster.fork as jest.Mock).mock.calls.length).toBe(forkCallsAfterTrue)
+    expect(vi.mocked(cluster.fork).mock.calls.length).toBe(forkCallsAfterTrue)
 
     // --- MASTER again, adapter != 'cluster' -> covers the FALSE side of the adapter check
     configuration.websocket.adapter = null
@@ -69,7 +69,7 @@ describe(AppService.name, () => {
     expect(setupPrimary).toHaveBeenCalledTimes(1)
 
     // --- WORKER path (else branch): bootstrap should be called exactly once here
-    jest.replaceProperty(cluster, 'isPrimary', false)
+    vi.spyOn(cluster, 'isPrimary', 'get').mockReturnValue(false)
     bootstrap.mockClear() // isolate bootstrap count for a worker branch
     expect(() => AppService.clusterize(bootstrap)).not.toThrow()
     expect(bootstrap).toHaveBeenCalledTimes(1)

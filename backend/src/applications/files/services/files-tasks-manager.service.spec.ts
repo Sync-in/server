@@ -10,20 +10,21 @@ import { CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../constants/cache'
 import { FileTaskStatus } from '../models/file-task'
 import { FilesMethods } from './files-methods.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
+import { Mock } from 'vitest'
 
 describe(FilesTasksManager.name, () => {
   let filesTasksManager: FilesTasksManager
   let module: TestingModule
   let filesMethods: {
-    doWork: jest.Mock
+    doWork: Mock
   }
   let cacheStore: Map<string, any>
   let cache: {
-    set: jest.Mock
-    get: jest.Mock
-    keys: jest.Mock
-    mget: jest.Mock
-    del: jest.Mock
+    set: Mock
+    get: Mock
+    keys: Mock
+    mget: Mock
+    del: Mock
   }
 
   const flushPromises = async () => {
@@ -39,17 +40,17 @@ describe(FilesTasksManager.name, () => {
   beforeEach(async () => {
     cacheStore = new Map<string, any>()
     cache = {
-      set: jest.fn(async (key: string, value: unknown) => {
+      set: vi.fn(async (key: string, value: unknown) => {
         cacheStore.set(key, value)
         return true
       }),
-      get: jest.fn(async (key: string) => cacheStore.get(key)),
-      keys: jest.fn(async (pattern: string) => [...cacheStore.keys()].filter((k) => createPatternRegex(pattern).test(k))),
-      mget: jest.fn(async (keys: string[]) => keys.map((k) => cacheStore.get(k)).filter((v) => v !== undefined)),
-      del: jest.fn(async (key: string) => cacheStore.delete(key))
+      get: vi.fn(async (key: string) => cacheStore.get(key)),
+      keys: vi.fn(async (pattern: string) => [...cacheStore.keys()].filter((k) => createPatternRegex(pattern).test(k))),
+      mget: vi.fn(async (keys: string[]) => keys.map((k) => cacheStore.get(k)).filter((v) => v !== undefined)),
+      del: vi.fn(async (key: string) => cacheStore.delete(key))
     }
     filesMethods = {
-      doWork: jest.fn()
+      doWork: vi.fn()
     }
     module = await Test.createTestingModule({
       providers: [
@@ -68,8 +69,8 @@ describe(FilesTasksManager.name, () => {
 
   afterEach(async () => {
     await module.close()
-    jest.restoreAllMocks()
-    jest.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -98,7 +99,7 @@ describe(FilesTasksManager.name, () => {
   })
 
   it('should watch a temporary path while keeping the published file name', () => {
-    const startWatchSpy = jest.spyOn(filesTasksManager as any, 'startWatch').mockResolvedValueOnce(undefined)
+    const startWatchSpy = vi.spyOn(filesTasksManager as any, 'startWatch').mockResolvedValueOnce(undefined)
     const space = { url: 'files/personal/archive.zip', task: { cacheKey: 'task-1', props: {} } } as any
 
     FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, '/files/archive', '/tmp/archive-extract')
@@ -114,9 +115,9 @@ describe(FilesTasksManager.name, () => {
   })
 
   it('should watch the published archive after the temporary archive has been moved', async () => {
-    const pathExistsSpy = jest.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
-    const fileSizeSpy = jest.spyOn(filesUtils, 'fileSize').mockResolvedValueOnce(42)
-    const updateTaskSpy = jest.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+    const pathExistsSpy = vi.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    const fileSizeSpy = vi.spyOn(filesUtils, 'fileSize').mockResolvedValueOnce(42)
+    const updateTaskSpy = vi.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
     const space = { task: { cacheKey: 'task-1', props: {} } } as any
 
     await (filesTasksManager as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
@@ -130,9 +131,9 @@ describe(FilesTasksManager.name, () => {
 
   it('should retry the published archive when the temporary archive is moved before reading it', async () => {
     const missingError = Object.assign(new Error('missing temporary archive'), { code: 'ENOENT' })
-    const pathExistsSpy = jest.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
-    const fileSizeSpy = jest.spyOn(filesUtils, 'fileSize').mockRejectedValueOnce(missingError).mockResolvedValueOnce(42)
-    const updateTaskSpy = jest.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+    const pathExistsSpy = vi.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
+    const fileSizeSpy = vi.spyOn(filesUtils, 'fileSize').mockRejectedValueOnce(missingError).mockResolvedValueOnce(42)
+    const updateTaskSpy = vi.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
     const space = { task: { cacheKey: 'task-1', props: {} } } as any
 
     await (filesTasksManager as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
@@ -146,12 +147,12 @@ describe(FilesTasksManager.name, () => {
   })
 
   it('should retry the published directory when the temporary directory is moved while reading it', async () => {
-    const pathExistsSpy = jest.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(true).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
-    const countDirEntriesSpy = jest
+    const pathExistsSpy = vi.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(true).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    const countDirEntriesSpy = vi
       .spyOn(filesUtils, 'countDirEntries')
       .mockResolvedValueOnce({ files: 0, directories: 0 })
       .mockResolvedValueOnce({ files: 2, directories: 1 })
-    const updateTaskSpy = jest.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+    const updateTaskSpy = vi.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
     const space = { task: { cacheKey: 'task-1', props: {} } } as any
 
     await (filesTasksManager as any).updateDecompressTask(space, '/tmp/archive-extract-uuid', '/files/archive')
@@ -166,11 +167,11 @@ describe(FilesTasksManager.name, () => {
   })
 
   it('should silently skip watcher update while temporary and published paths are missing', async () => {
-    jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(false)
-    const fileSizeSpy = jest.spyOn(filesUtils, 'fileSize')
-    const loggerErrorSpy = jest.spyOn((filesTasksManager as any).logger, 'error')
-    const stopWatchSpy = jest.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)
-    const updateTaskSpy = jest.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+    vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(false)
+    const fileSizeSpy = vi.spyOn(filesUtils, 'fileSize')
+    const loggerErrorSpy = vi.spyOn((filesTasksManager as any).logger, 'error')
+    const stopWatchSpy = vi.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)
+    const updateTaskSpy = vi.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
     const space = { task: { cacheKey: 'task-1', props: {} } } as any
 
     await (filesTasksManager as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
@@ -183,9 +184,9 @@ describe(FilesTasksManager.name, () => {
 
   it('should stop a watcher without staging when its path is missing', async () => {
     const missingError = Object.assign(new Error('missing archive'), { code: 'ENOENT' })
-    jest.spyOn(filesUtils, 'fileSize').mockRejectedValueOnce(missingError)
-    const loggerErrorSpy = jest.spyOn((filesTasksManager as any).logger, 'error')
-    const stopWatchSpy = jest.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)
+    vi.spyOn(filesUtils, 'fileSize').mockRejectedValueOnce(missingError)
+    const loggerErrorSpy = vi.spyOn((filesTasksManager as any).logger, 'error')
+    const stopWatchSpy = vi.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)
     const space = { task: { cacheKey: 'task-1', props: {} } } as any
 
     await (filesTasksManager as any).updateCompressTask(space, '/files/archive.tgz')
@@ -195,7 +196,7 @@ describe(FilesTasksManager.name, () => {
   })
 
   it('should create a task and mark it as success when the async method resolves', async () => {
-    jest.spyOn(crypto, 'randomUUID').mockReturnValueOnce('11111111-1111-4111-8111-111111111111')
+    vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce('11111111-1111-4111-8111-111111111111')
     filesMethods.doWork.mockResolvedValueOnce({ props: { totalSize: 99 }, result: 'done' })
     const user = { id: 7 } as any
     const space = { url: 'files/personal/document.txt' } as any
@@ -219,7 +220,7 @@ describe(FilesTasksManager.name, () => {
   })
 
   it('should create a task and mark it as error when the async method fails', async () => {
-    jest.spyOn(crypto, 'randomUUID').mockReturnValueOnce('22222222-2222-4222-8222-222222222222')
+    vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce('22222222-2222-4222-8222-222222222222')
     filesMethods.doWork.mockRejectedValueOnce(new Error('operation failed'))
     const user = { id: 7 } as any
     const space = { url: 'files/personal/document.txt' } as any
@@ -251,8 +252,8 @@ describe(FilesTasksManager.name, () => {
   })
 
   it('should delete completed task, remove archive file and delete cache entry', async () => {
-    const removeFilesSpy = jest.spyOn(filesUtils, 'removeFiles').mockResolvedValueOnce(undefined)
-    const stopWatchSpy = jest.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)
+    const removeFilesSpy = vi.spyOn(filesUtils, 'removeFiles').mockResolvedValueOnce(undefined)
+    const stopWatchSpy = vi.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)
     const user = { id: 22, tasksPath: '/tmp/tasks' } as any
     cacheStore.set(`${CACHE_TASK_PREFIX}-22-task-ok`, {
       id: 'task-ok',
@@ -269,8 +270,8 @@ describe(FilesTasksManager.name, () => {
   })
 
   it('should ignore pending tasks when deleting all tasks', async () => {
-    const removeFilesSpy = jest.spyOn(filesUtils, 'removeFiles').mockResolvedValue(undefined)
-    const stopWatchSpy = jest.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValue(undefined)
+    const removeFilesSpy = vi.spyOn(filesUtils, 'removeFiles').mockResolvedValue(undefined)
+    const stopWatchSpy = vi.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValue(undefined)
     const user = { id: 31, tasksPath: '/tmp/tasks' } as any
     cacheStore.set(`${CACHE_TASK_PREFIX}-31-task-pending`, {
       id: 'task-pending',
@@ -312,16 +313,14 @@ describe(FilesTasksManager.name, () => {
       status: FileTaskStatus.SUCCESS,
       props: { compressInDirectory: false }
     })
-    jest.spyOn(SendFile.prototype, 'checks').mockRejectedValueOnce({ message: 'Location not found', httpCode: 404 } as any)
+    vi.spyOn(SendFile.prototype, 'checks').mockRejectedValueOnce({ message: 'Location not found', httpCode: 404 } as any)
 
-    try {
-      await filesTasksManager.downloadArchive({ id: 50, tasksPath: '/tmp/tasks' } as any, 'task-ok', {} as any, {} as any)
-      fail('downloadArchive should throw')
-    } catch (e) {
-      expect(e).toBeInstanceOf(HttpException)
-      expect((e as HttpException).getStatus()).toBe(404)
-      expect((e as HttpException).message).toBe('Location not found')
-    }
+    const downloadPromise = filesTasksManager.downloadArchive({ id: 50, tasksPath: '/tmp/tasks' } as any, 'task-ok', {} as any, {} as any)
+    await expect(downloadPromise).rejects.toThrow(HttpException)
+    await expect(downloadPromise).rejects.toThrow('Location not found')
+    await expect(downloadPromise).rejects.toSatisfy((e: HttpException) => {
+      return e.getStatus() === 404
+    })
   })
 
   it('should stream archive when task is valid', async () => {
@@ -332,8 +331,8 @@ describe(FilesTasksManager.name, () => {
       status: FileTaskStatus.SUCCESS,
       props: { compressInDirectory: false }
     })
-    jest.spyOn(SendFile.prototype, 'checks').mockResolvedValueOnce(undefined)
-    jest.spyOn(SendFile.prototype, 'stream').mockResolvedValueOnce(streamable)
+    vi.spyOn(SendFile.prototype, 'checks').mockResolvedValueOnce(undefined)
+    vi.spyOn(SendFile.prototype, 'stream').mockResolvedValueOnce(streamable)
 
     const result = await filesTasksManager.downloadArchive({ id: 60, tasksPath: '/tmp/tasks' } as any, 'task-ok', { raw: {} } as any, {} as any)
 

@@ -31,7 +31,7 @@ describe(SharesController.name, () => {
         },
         {
           provide: FilesQuotaManager,
-          useValue: { updateStorageQuota: () => jest.fn() }
+          useValue: { updateStorageQuota: () => vi.fn() }
         },
         SpacesQueries,
         FilesQueries,

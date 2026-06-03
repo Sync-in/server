@@ -9,10 +9,11 @@ import { CACHE_INDEXING_EVENT_TTL } from '../constants/indexing'
 import { quotaCacheKeyFromSpace } from '../utils/quota'
 import { indexingUpdateCacheKeysFromSpace } from '../utils/indexing'
 import { configuration } from '../../../configuration/config.environment'
+import { Mock } from 'vitest'
 
 describe(FilesEventManager.name, () => {
   let service: FilesEventManager
-  let cacheSetMock: jest.Mock<Promise<boolean>, [string, unknown, number?]>
+  let cacheSetMock: Mock<Promise<boolean>, [string, unknown, number?]>
   let contentIndexingEnabled: boolean
 
   const buildEvent = (props?: Partial<FileEventType>): FileEventType =>
@@ -25,7 +26,7 @@ describe(FilesEventManager.name, () => {
     }) as FileEventType
 
   beforeEach(async () => {
-    cacheSetMock = jest.fn().mockResolvedValue(true)
+    cacheSetMock = vi.fn().mockResolvedValue(true)
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FilesEventManager,
@@ -43,8 +44,8 @@ describe(FilesEventManager.name, () => {
 
   afterEach(async () => {
     configuration.applications.files.contentIndexing.enabled = contentIndexingEnabled
-    jest.useRealTimers()
-    jest.clearAllMocks()
+    vi.useRealTimers()
+    vi.clearAllMocks()
     await service.onModuleDestroy()
   })
 

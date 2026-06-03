@@ -12,25 +12,29 @@ import { PROPFIND_ALL_PROP } from '../utils/webdav'
 import { WebDAVProtocolGuard } from './webdav-protocol.guard'
 
 // Keep these mocks to control path transforms in COPY/MOVE tests
-jest.mock('../../../common/shared', () => ({
-  decodeUrl: jest.fn((s: string) => s)
-}))
-jest.mock('../../../common/functions', () => ({
-  urlToPath: jest.fn((s: string) => s)
+vi.mock('../../../common/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/shared')>()
+  return {
+    ...actual,
+    decodeUrl: vi.fn((s: string) => s)
+  }
+})
+vi.mock('../../../common/functions', () => ({
+  urlToPath: vi.fn((s: string) => s)
 }))
 
 describe(WebDAVProtocolGuard.name, () => {
   let guard: WebDAVProtocolGuard
 
   const makeUser = (hasPerm = true) => ({
-    havePermission: jest.fn(() => hasPerm),
+    havePermission: vi.fn(() => hasPerm),
     fullName: 'John Doe',
     email: 'john@doe.tld'
   })
 
   const makeRes = (): FastifyReply =>
     ({
-      headers: jest.fn()
+      headers: vi.fn()
     }) as unknown as FastifyReply
 
   const baseReq = (method: string, overrides: Partial<FastifyDAVRequest> = {}): FastifyDAVRequest =>
@@ -60,7 +64,7 @@ describe(WebDAVProtocolGuard.name, () => {
   }
 
   beforeEach(async () => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       providers: [WebDAVProtocolGuard]
     }).compile()
@@ -95,7 +99,7 @@ describe(WebDAVProtocolGuard.name, () => {
       const req = baseReq('VIEW', {})
       const res = makeRes()
       const ctx = makeCtx(req, res)
-      const spy = jest.spyOn(guard as any, 'setDAVContext')
+      const spy = vi.spyOn(guard as any, 'setDAVContext')
 
       const result = await guard.canActivate(ctx)
       expect(result).toBe(true)
@@ -180,7 +184,7 @@ describe(WebDAVProtocolGuard.name, () => {
     })
 
     it('skips body when parseBody returns false, still parses If header', async () => {
-      const spyParse = jest.spyOn(guard as any, 'parseBody').mockReturnValue(false as any)
+      const spyParse = vi.spyOn(guard as any, 'parseBody').mockReturnValue(false as any)
       const req = baseReq(HTTP_METHOD.PROPFIND, {
         headers: { [HEADER.IF]: '(<urn:uuid:abc>)' },
         body: undefined
@@ -285,7 +289,7 @@ describe(WebDAVProtocolGuard.name, () => {
       const ctx = makeCtx(req, res)
 
       const originalParseInt = global.parseInt
-      global.parseInt = jest.fn().mockImplementation(() => {
+      global.parseInt = vi.fn().mockImplementation(() => {
         throw new Error('Forced parseInt error')
       })
 
@@ -298,7 +302,7 @@ describe(WebDAVProtocolGuard.name, () => {
     })
 
     it('timeout Infinite + empty IfHeader -> default timeout and ifHeaders undefined', async () => {
-      const spyIf = jest.spyOn(IfHeaderUtils, 'parseIfHeader').mockReturnValue([] as any)
+      const spyIf = vi.spyOn(IfHeaderUtils, 'parseIfHeader').mockReturnValue([] as any)
       const req = baseReq(HTTP_METHOD.LOCK, {
         headers: { [HEADER.TIMEOUT]: 'Infinite', [HEADER.IF]: '(<any>)' },
         body: '<lockinfo xmlns="DAV:"><lockscope><exclusive/></lockscope></lockinfo>'
@@ -316,7 +320,7 @@ describe(WebDAVProtocolGuard.name, () => {
     })
 
     it('decodes If header path with special chars via urlToPath', async () => {
-      ;(urlToPath as jest.Mock).mockImplementation((s: string) =>
+      vi.mocked(urlToPath).mockImplementation((s: string) =>
         s
           .split('/')
           .map((segment) => decodeURIComponent(segment))
@@ -364,7 +368,7 @@ describe(WebDAVProtocolGuard.name, () => {
       const res = makeRes()
       const ctx = makeCtx(req, res)
 
-      jest.spyOn(guard as any, 'parseBody').mockImplementation(() => {
+      vi.spyOn(guard as any, 'parseBody').mockImplementation(() => {
         req.dav.body = {
           lockinfo: {
             lockscope: null
@@ -477,8 +481,8 @@ describe(WebDAVProtocolGuard.name, () => {
     })
 
     it('COPY: invalid Destination base path -> 400', async () => {
-      ;(decodeUrl as jest.Mock).mockImplementation((s: string) => s)
-      ;(urlToPath as jest.Mock).mockImplementation((s: string) => '/not-webdav' + s)
+      vi.mocked(decodeUrl).mockImplementation((s: string) => s)
+      vi.mocked(urlToPath).mockImplementation((s: string) => '/not-webdav' + s)
 
       const req = baseReq(HTTP_METHOD.COPY, {
         headers: { [HEADER.DESTINATION]: '/wrong' }
@@ -489,8 +493,8 @@ describe(WebDAVProtocolGuard.name, () => {
     })
 
     it('COPY: valid Destination -> overwrite=true, move=false, depth=infinity and parses If header', async () => {
-      ;(decodeUrl as jest.Mock).mockImplementation((s: string) => s)
-      ;(urlToPath as jest.Mock).mockImplementation((_s: string) => '/webdav/base/path/target')
+      vi.mocked(decodeUrl).mockImplementation((s: string) => s)
+      vi.mocked(urlToPath).mockImplementation((_s: string) => '/webdav/base/path/target')
 
       const req = baseReq(HTTP_METHOD.COPY, {
         headers: { [HEADER.DESTINATION]: '/webdav/base/path/target', [HEADER.IF]: '(<urn:uuid:abc>)' }
@@ -508,7 +512,7 @@ describe(WebDAVProtocolGuard.name, () => {
     })
 
     it('COPY: decodes special chars in Destination via urlToPath', async () => {
-      ;(urlToPath as jest.Mock).mockImplementation((s: string) =>
+      vi.mocked(urlToPath).mockImplementation((s: string) =>
         s
           .split('/')
           .map((segment) => decodeURIComponent(segment))
@@ -531,8 +535,8 @@ describe(WebDAVProtocolGuard.name, () => {
     })
 
     it('MOVE: isMove=true and overwrite=false when OVERWRITE header is "f", respects depth header', async () => {
-      ;(decodeUrl as jest.Mock).mockImplementation((s: string) => s)
-      ;(urlToPath as jest.Mock).mockImplementation((_s: string) => '/webdav/base/path/target2')
+      vi.mocked(decodeUrl).mockImplementation((s: string) => s)
+      vi.mocked(urlToPath).mockImplementation((_s: string) => '/webdav/base/path/target2')
 
       const req = baseReq(HTTP_METHOD.MOVE, {
         headers: {
@@ -553,7 +557,7 @@ describe(WebDAVProtocolGuard.name, () => {
     })
 
     it('MOVE: decodes special chars in Destination via urlToPath', async () => {
-      ;(urlToPath as jest.Mock).mockImplementation((s: string) =>
+      vi.mocked(urlToPath).mockImplementation((s: string) =>
         s
           .split('/')
           .map((segment) => decodeURIComponent(segment))

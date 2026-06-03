@@ -14,34 +14,35 @@ import { DEPTH, LOCK_DISCOVERY_PROP, PROPSTAT, STANDARD_PROPS } from '../constan
 import * as IfHeaderUtils from '../utils/if-header'
 import { WebDAVMethods } from './webdav-methods.service'
 import { WebDAVSpaces } from './webdav-spaces.service'
+import { Mocked } from 'vitest'
 
 // Mock external dependencies
-jest.mock('../../files/utils/files', () => ({
-  isPathExists: jest.fn().mockReturnValue(false),
-  isPathIsDir: jest.fn(),
-  fileName: jest.fn().mockReturnValue('fileName'),
-  dirName: jest.fn(),
-  genEtag: jest.fn().mockReturnValue('W/"etag-123"')
+vi.mock('../../files/utils/files', () => ({
+  isPathExists: vi.fn().mockReturnValue(false),
+  isPathIsDir: vi.fn(),
+  fileName: vi.fn().mockReturnValue('fileName'),
+  dirName: vi.fn(),
+  genEtag: vi.fn().mockReturnValue('W/"etag-123"')
 }))
 
-jest.mock('../../spaces/utils/permissions', () => ({
-  haveSpaceEnvPermissions: jest.fn()
+vi.mock('../../spaces/utils/permissions', () => ({
+  haveSpaceEnvPermissions: vi.fn()
 }))
 
-jest.mock('../../spaces/utils/paths', () => {
-  const actual = jest.requireActual('../../spaces/utils/paths')
-  return { ...actual, dbFileFromSpace: jest.fn() }
+vi.mock('../../spaces/utils/paths', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../spaces/utils/paths')>()
+  return { ...actual, dbFileFromSpace: vi.fn() }
 })
 
-jest.mock('../decorators/if-header.decorator', () => ({
+vi.mock('../decorators/if-header.decorator', () => ({
   IfHeaderDecorator: () => (_target?: any, _key?: string, _desc?: any) => undefined
 }))
 
 describe('WebDAVMethods', () => {
   let service: WebDAVMethods
-  let filesManager: jest.Mocked<FilesManager>
-  let filesLockManager: jest.Mocked<FilesLockManager>
-  let webDAVSpaces: jest.Mocked<WebDAVSpaces>
+  let filesManager: Mocked<FilesManager>
+  let filesLockManager: Mocked<FilesLockManager>
+  let webDAVSpaces: Mocked<WebDAVSpaces>
 
   // Helper to create a mocked response object
   const createMockResponse = () => {
@@ -102,31 +103,31 @@ describe('WebDAVMethods', () => {
   beforeEach(async () => {
     // Initialize mocks
     filesManager = {
-      sendFileFromSpace: jest.fn(),
-      mkFile: jest.fn(),
-      saveStream: jest.fn(),
-      delete: jest.fn(),
-      touch: jest.fn(),
-      mkDir: jest.fn(),
-      copyMove: jest.fn()
+      sendFileFromSpace: vi.fn(),
+      mkFile: vi.fn(),
+      saveStream: vi.fn(),
+      delete: vi.fn(),
+      touch: vi.fn(),
+      mkDir: vi.fn(),
+      copyMove: vi.fn()
     } as any
 
     filesLockManager = {
-      create: jest.fn(),
-      isLockedWithToken: jest.fn(),
-      removeLock: jest.fn(),
-      browseLocks: jest.fn(),
-      browseParentChildLocks: jest.fn(),
-      checkConflicts: jest.fn(),
-      getLocksByPath: jest.fn(),
-      getLockByToken: jest.fn(),
-      refreshLockTimeout: jest.fn(),
-      genDAVToken: jest.fn().mockReturnValue('opaquelocktoken:new-token')
+      create: vi.fn(),
+      isLockedWithToken: vi.fn(),
+      removeLock: vi.fn(),
+      browseLocks: vi.fn(),
+      browseParentChildLocks: vi.fn(),
+      checkConflicts: vi.fn(),
+      getLocksByPath: vi.fn(),
+      getLockByToken: vi.fn(),
+      refreshLockTimeout: vi.fn(),
+      genDAVToken: vi.fn().mockReturnValue('opaquelocktoken:new-token')
     } as any
 
     webDAVSpaces = {
-      propfind: jest.fn(),
-      spaceEnv: jest.fn()
+      propfind: vi.fn(),
+      spaceEnv: vi.fn()
     } as any
 
     const module: TestingModule = await Test.createTestingModule({
@@ -142,14 +143,14 @@ describe('WebDAVMethods', () => {
     service = module.get<WebDAVMethods>(WebDAVMethods)
 
     // Reset global mocks
-    jest.clearAllMocks()
-    ;(isPathExists as jest.Mock).mockResolvedValue(true)
-    ;(dirName as jest.Mock).mockReturnValue('/real/path/to')
-    ;(haveSpaceEnvPermissions as jest.Mock).mockReturnValue(true)
+    vi.clearAllMocks()
+    vi.mocked(isPathExists).mockResolvedValue(true)
+    vi.mocked(dirName).mockReturnValue('/real/path/to')
+    vi.mocked(haveSpaceEnvPermissions).mockReturnValue(true)
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   describe('Service initialization', () => {
@@ -166,8 +167,8 @@ describe('WebDAVMethods', () => {
         const res = createMockResponse()
         const streamable = { stream: 'file-content' }
         const sendFile = {
-          checks: jest.fn().mockResolvedValue(undefined),
-          stream: jest.fn().mockResolvedValue(streamable)
+          checks: vi.fn().mockResolvedValue(undefined),
+          stream: vi.fn().mockResolvedValue(streamable)
         }
         filesManager.sendFileFromSpace.mockReturnValue(sendFile as any)
 
@@ -206,11 +207,11 @@ describe('WebDAVMethods', () => {
         const res = createMockResponse()
         const error = new Error('File check failed')
         const sendFile = {
-          checks: jest.fn().mockRejectedValue(error),
-          stream: jest.fn()
+          checks: vi.fn().mockRejectedValue(error),
+          stream: vi.fn()
         }
         filesManager.sendFileFromSpace.mockReturnValue(sendFile as any)
-        jest.spyOn<any, any>(service, 'handleError').mockReturnValue('error-handled')
+        vi.spyOn<any, any>(service, 'handleError').mockReturnValue('error-handled')
 
         const result = await service.headOrGet(req, res, SPACE_REPOSITORY.FILES)
 
@@ -222,11 +223,11 @@ describe('WebDAVMethods', () => {
         const res = createMockResponse()
         const error = new Error('Stream failed')
         const sendFile = {
-          checks: jest.fn().mockResolvedValue(undefined),
-          stream: jest.fn().mockRejectedValue(error)
+          checks: vi.fn().mockResolvedValue(undefined),
+          stream: vi.fn().mockRejectedValue(error)
         }
         filesManager.sendFileFromSpace.mockReturnValue(sendFile as any)
-        jest.spyOn<any, any>(service, 'handleError').mockReturnValue('error-handled')
+        vi.spyOn<any, any>(service, 'handleError').mockReturnValue('error-handled')
 
         const result = await service.headOrGet(req, res, SPACE_REPOSITORY.FILES)
 
@@ -238,7 +239,7 @@ describe('WebDAVMethods', () => {
   describe('lock', () => {
     describe('Lock refresh (without body)', () => {
       it('should return 400 if resource does not exist for lock refresh', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        vi.mocked(isPathExists).mockResolvedValue(false)
         const req = createBaseRequest({ dav: { ...createBaseRequest().dav, body: undefined } })
         const res = createMockResponse()
 
@@ -249,10 +250,10 @@ describe('WebDAVMethods', () => {
       })
 
       it('should delegate to lockRefresh when resource exists and no body', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest({ dav: { ...createBaseRequest().dav, body: undefined } })
         const res = createMockResponse()
-        const lockRefreshSpy = jest.spyOn<any, any>(service, 'lockRefresh').mockResolvedValue('refresh-ok')
+        const lockRefreshSpy = vi.spyOn<any, any>(service, 'lockRefresh').mockResolvedValue('refresh-ok')
 
         const result = await service.lock(req, res)
 
@@ -263,7 +264,7 @@ describe('WebDAVMethods', () => {
 
     describe('Lock creation on existing resource', () => {
       it('should create lock successfully and return 200', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest()
         const res = createMockResponse()
 
@@ -296,8 +297,8 @@ describe('WebDAVMethods', () => {
 
     describe('Lock creation on non-existent resource', () => {
       it('should return 403 when user lacks ADD permission', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(false)
-        ;(haveSpaceEnvPermissions as jest.Mock).mockReturnValue(false)
+        vi.mocked(isPathExists).mockResolvedValue(false)
+        vi.mocked(haveSpaceEnvPermissions).mockReturnValue(false)
         const req = createBaseRequest()
         const res = createMockResponse()
 
@@ -309,11 +310,11 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return 409 when parent directory does not exist', async () => {
-        ;(isPathExists as jest.Mock)
+        vi.mocked(isPathExists)
           .mockResolvedValueOnce(false) // resource
           .mockResolvedValueOnce(false) // parent
-        ;(haveSpaceEnvPermissions as jest.Mock).mockReturnValue(true)
-        ;(dirName as jest.Mock).mockReturnValue('/real/path/missing')
+        vi.mocked(haveSpaceEnvPermissions).mockReturnValue(true)
+        vi.mocked(dirName).mockReturnValue('/real/path/missing')
         const req = createBaseRequest()
         const res = createMockResponse()
 
@@ -325,7 +326,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should create empty file and lock, return 201', async () => {
-        ;(isPathExists as jest.Mock)
+        vi.mocked(isPathExists)
           .mockResolvedValueOnce(false) // resource
           .mockResolvedValueOnce(true) // parent exists
         const req = createBaseRequest()
@@ -357,7 +358,7 @@ describe('WebDAVMethods', () => {
 
     describe('Lock conflict', () => {
       it('should return 423 when lock conflict occurs', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest()
         const res = createMockResponse()
 
@@ -381,7 +382,7 @@ describe('WebDAVMethods', () => {
   describe('unlock', () => {
     describe('Success cases', () => {
       it('should unlock resource and return 204', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.isLockedWithToken.mockResolvedValue({
           owner: { id: 1, login: 'test-user' },
           key: 'lock-key-123'
@@ -398,7 +399,7 @@ describe('WebDAVMethods', () => {
 
     describe('Error cases', () => {
       it('should return 404 when resource does not exist', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        vi.mocked(isPathExists).mockResolvedValue(false)
         const req = createBaseRequest()
         const res = createMockResponse()
 
@@ -409,7 +410,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return 409 when lock token does not exist', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.isLockedWithToken.mockResolvedValue(null)
         const req = createBaseRequest()
         const res = createMockResponse()
@@ -421,7 +422,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return 403 when lock owner is different user', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.isLockedWithToken.mockResolvedValue({
           owner: { id: 999, login: 'other-user' },
           key: 'lock-key-456'
@@ -441,7 +442,7 @@ describe('WebDAVMethods', () => {
   describe('propfind', () => {
     describe('Base cases', () => {
       it('should return 404 when resource does not exist in FILES repository', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        vi.mocked(isPathExists).mockResolvedValue(false)
         const req = createBaseRequest({ dav: { ...createBaseRequest().dav, propfindMode: 'prop' } })
         const res = createMockResponse()
 
@@ -453,7 +454,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return multistatus for shares list even when real path does not exist', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        vi.mocked(isPathExists).mockResolvedValue(false)
         const req = createBaseRequest({
           space: { ...createBaseRequest().space, inSharesList: true },
           dav: {
@@ -477,7 +478,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return multistatus with property names in PROPNAME mode', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest({
           dav: { ...createBaseRequest().dav, propfindMode: 'propname' }
         })
@@ -496,7 +497,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return multistatus with property values in PROP mode', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest({
           dav: {
             ...createBaseRequest().dav,
@@ -524,7 +525,7 @@ describe('WebDAVMethods', () => {
 
     describe('Lock discovery', () => {
       it('should collect locks with depth 0', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest({
           dav: {
             ...createBaseRequest().dav,
@@ -553,7 +554,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should collect parent and child locks with depth infinity', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest({
           dav: {
             ...createBaseRequest().dav,
@@ -582,7 +583,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should not collect locks for PROPNAME mode', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest({
           dav: { ...createBaseRequest().dav, propfindMode: PROPSTAT.PROPNAME }
         })
@@ -599,7 +600,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should not collect locks for shares list', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest({
           space: { ...createBaseRequest().space, inSharesList: true },
           dav: {
@@ -658,7 +659,7 @@ describe('WebDAVMethods', () => {
           }
         })
         const res = createMockResponse()
-        jest.spyOn(IfHeaderUtils, 'extractAllTokens').mockReturnValue(['opaquelocktoken:xyz'])
+        vi.spyOn(IfHeaderUtils, 'extractAllTokens').mockReturnValue(['opaquelocktoken:xyz'])
 
         await service.put(req, res)
 
@@ -740,7 +741,7 @@ describe('WebDAVMethods', () => {
           }
         })
         const res = createMockResponse()
-        jest.spyOn(IfHeaderUtils, 'extractAllTokens').mockReturnValue(['opaquelocktoken:abc'])
+        vi.spyOn(IfHeaderUtils, 'extractAllTokens').mockReturnValue(['opaquelocktoken:abc'])
 
         await service.delete(req, res)
 
@@ -792,7 +793,7 @@ describe('WebDAVMethods', () => {
   describe('proppatch', () => {
     describe('Base cases', () => {
       it('should return 404 when resource does not exist', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        vi.mocked(isPathExists).mockResolvedValue(false)
         const req = createBaseRequest({
           method: 'PROPPATCH',
           dav: {
@@ -809,7 +810,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return 400 for unknown action tag', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest({
           method: 'PROPPATCH',
           dav: {
@@ -826,7 +827,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return 400 when missing prop tag', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest({
           method: 'PROPPATCH',
           dav: {
@@ -845,7 +846,7 @@ describe('WebDAVMethods', () => {
 
     describe('SET action', () => {
       it('should successfully modify lastmodified property', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.checkConflicts.mockResolvedValue(undefined)
         filesManager.touch.mockResolvedValue(undefined)
         const req = createBaseRequest({
@@ -869,7 +870,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return 207 with 403 for unsupported properties', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.checkConflicts.mockResolvedValue(undefined)
         const req = createBaseRequest({
           method: 'PROPPATCH',
@@ -889,7 +890,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should handle Win32 properties correctly', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.checkConflicts.mockResolvedValue(undefined)
         const req = createBaseRequest({
           method: 'PROPPATCH',
@@ -910,7 +911,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return 424 failed dependency when touch fails', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.checkConflicts.mockResolvedValue(undefined)
         filesManager.touch.mockRejectedValue(new Error('Touch failed'))
         const req = createBaseRequest({
@@ -930,7 +931,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should mark supported props as 424 when unsupported prop fails', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.checkConflicts.mockResolvedValue(undefined)
         const req = createBaseRequest({
           method: 'PROPPATCH',
@@ -958,7 +959,7 @@ describe('WebDAVMethods', () => {
 
     describe('REMOVE action', () => {
       it('should handle REMOVE action on supported property', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.checkConflicts.mockResolvedValue(undefined)
         const req = createBaseRequest({
           method: 'PROPPATCH',
@@ -985,7 +986,7 @@ describe('WebDAVMethods', () => {
 
     describe('Data normalization', () => {
       it('should normalize array of propertyupdate items', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.checkConflicts.mockResolvedValue(undefined)
         filesManager.touch.mockResolvedValue(undefined)
         const req = createBaseRequest({
@@ -1010,7 +1011,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should wrap single prop object into array', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.checkConflicts.mockResolvedValue(undefined)
         filesManager.touch.mockResolvedValue(undefined)
         const req = createBaseRequest({
@@ -1036,7 +1037,7 @@ describe('WebDAVMethods', () => {
 
     describe('Lock handling', () => {
       it('should check lock conflicts before applying changes', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         filesLockManager.checkConflicts.mockResolvedValue(undefined)
         const req = createBaseRequest({
           method: 'PROPPATCH',
@@ -1060,7 +1061,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should handle lock conflict error', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const lockError = new LockConflict(
           {
             dbFilePath: 'file.txt',
@@ -1177,8 +1178,8 @@ describe('WebDAVMethods', () => {
           dbFile: { path: 'copy.txt', spaceId: 1, inTrash: false }
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
-        ;(isPathExists as jest.Mock).mockResolvedValue(false)
-        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(false)
+        vi.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
         filesManager.copyMove.mockResolvedValue(undefined)
         const req = createBaseRequest({
           method: 'COPY',
@@ -1214,8 +1215,8 @@ describe('WebDAVMethods', () => {
           dbFile: { path: 'existing.txt', spaceId: 1, inTrash: false }
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
-        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
+        vi.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
         filesManager.copyMove.mockResolvedValue(undefined)
         const req = createBaseRequest({
           method: 'COPY',
@@ -1241,8 +1242,8 @@ describe('WebDAVMethods', () => {
           dbFile: { path: 'moved.txt', spaceId: 1, inTrash: false }
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
-        ;(isPathExists as jest.Mock).mockResolvedValue(false)
-        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(false)
+        vi.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
         filesManager.copyMove.mockResolvedValue(undefined)
         const req = createBaseRequest({
           method: 'MOVE',
@@ -1267,8 +1268,8 @@ describe('WebDAVMethods', () => {
           dbFile: { path: 'existing.txt', spaceId: 1, inTrash: false }
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
-        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
+        vi.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
         filesManager.copyMove.mockResolvedValue(undefined)
         const req = createBaseRequest({
           method: 'MOVE',
@@ -1294,7 +1295,7 @@ describe('WebDAVMethods', () => {
           dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
-        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(false)
+        vi.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(false)
         const req = createBaseRequest({
           method: 'COPY',
           dav: {
@@ -1319,8 +1320,8 @@ describe('WebDAVMethods', () => {
           dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
-        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue(dstSpace.dbFile)
+        vi.mocked(isPathExists).mockResolvedValue(true)
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue(dstSpace.dbFile)
         filesLockManager.getLocksByPath.mockResolvedValue([{ key: 'lock1' }] as any)
         const req = createBaseRequest({
           method: 'COPY',
@@ -1348,7 +1349,7 @@ describe('WebDAVMethods', () => {
           dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
-        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        vi.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
         const lockError = new LockConflict(
           {
             dbFilePath: 'dest.txt',
@@ -1379,7 +1380,7 @@ describe('WebDAVMethods', () => {
           dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
-        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        vi.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
         const lockError = new LockConflict({ dbFilePath: 'dest.txt' } as any, 'Lock conflict')
         filesManager.copyMove.mockRejectedValue(lockError)
         const req = createBaseRequest({
@@ -1404,7 +1405,7 @@ describe('WebDAVMethods', () => {
           dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
-        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        vi.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
         const fileError = new FileError(409, 'File conflict')
         filesManager.copyMove.mockRejectedValue(fileError)
         const req = createBaseRequest({
@@ -1430,7 +1431,7 @@ describe('WebDAVMethods', () => {
           dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
-        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        vi.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
         const unexpectedError = new Error('Unexpected filesystem error')
         filesManager.copyMove.mockRejectedValue(unexpectedError)
         const req = createBaseRequest({
@@ -1453,8 +1454,8 @@ describe('WebDAVMethods', () => {
           dbFile: { path: 'dest.txt', spaceId: 1, inTrash: false }
         }
         webDAVSpaces.spaceEnv.mockResolvedValue(dstSpace)
-        jest.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
-        const logSpy = jest.spyOn((service as any)['logger'], 'error').mockImplementation(() => undefined as any)
+        vi.spyOn<any, any>(service, 'evaluateIfHeaders').mockResolvedValue(true)
+        const logSpy = vi.spyOn((service as any)['logger'], 'error').mockImplementation(() => undefined as any)
         filesManager.copyMove.mockRejectedValue(new Error('Copy failed'))
         const req = createBaseRequest({
           method: 'COPY',
@@ -1489,7 +1490,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return true when at least one condition matches', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
+        vi.mocked(isPathExists).mockResolvedValue(true)
         const req = createBaseRequest({
           dav: {
             ...createBaseRequest().dav,
@@ -1523,7 +1524,7 @@ describe('WebDAVMethods', () => {
 
     describe('haveLock condition', () => {
       it('should return true when haveLock matches (lock exists, mustMatch=true)', async () => {
-        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
         filesLockManager.getLocksByPath.mockResolvedValue([{ key: 'lock1' }] as any)
         const req = createBaseRequest({
           dav: {
@@ -1539,7 +1540,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return true when haveLock matches (no lock, mustMatch=false)', async () => {
-        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
         filesLockManager.getLocksByPath.mockResolvedValue([])
         const req = createBaseRequest({
           dav: {
@@ -1555,7 +1556,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return false with 412 when haveLock mismatches (lock exists, mustMatch=false)', async () => {
-        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
         filesLockManager.getLocksByPath.mockResolvedValue([{ key: 'lock1' }] as any)
         const req = createBaseRequest({
           dav: {
@@ -1572,7 +1573,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return false with 412 when haveLock mismatches (no lock, mustMatch=true)', async () => {
-        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
         filesLockManager.getLocksByPath.mockResolvedValue([])
         const req = createBaseRequest({
           dav: {
@@ -1589,7 +1590,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return false with 412 when haveLock lookup throws error', async () => {
-        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
         filesLockManager.getLocksByPath.mockRejectedValue(new Error('Database error'))
         const req = createBaseRequest({
           dav: {
@@ -1711,8 +1712,8 @@ describe('WebDAVMethods', () => {
 
     describe('etag condition', () => {
       it('should return true when etag matches', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
-        ;(genEtag as jest.Mock).mockReturnValue('W/"etag-123"')
+        vi.mocked(isPathExists).mockResolvedValue(true)
+        vi.mocked(genEtag).mockReturnValue('W/"etag-123"')
         const req = createBaseRequest({
           dav: {
             ...createBaseRequest().dav,
@@ -1727,8 +1728,8 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return true when etag does not match and mustMatch=false', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
-        ;(genEtag as jest.Mock).mockReturnValue('W/"etag-123"')
+        vi.mocked(isPathExists).mockResolvedValue(true)
+        vi.mocked(genEtag).mockReturnValue('W/"etag-123"')
         const req = createBaseRequest({
           dav: {
             ...createBaseRequest().dav,
@@ -1743,8 +1744,8 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return false with 412 when etag mismatches', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
-        ;(genEtag as jest.Mock).mockReturnValue('W/"etag-123"')
+        vi.mocked(isPathExists).mockResolvedValue(true)
+        vi.mocked(genEtag).mockReturnValue('W/"etag-123"')
         const req = createBaseRequest({
           dav: {
             ...createBaseRequest().dav,
@@ -1760,7 +1761,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return false with 412 when resource does not exist (null etag)', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(false)
+        vi.mocked(isPathExists).mockResolvedValue(false)
         const req = createBaseRequest({
           dav: {
             ...createBaseRequest().dav,
@@ -1776,8 +1777,8 @@ describe('WebDAVMethods', () => {
       })
 
       it('should cache etag for multiple conditions on same path', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
-        ;(genEtag as jest.Mock).mockReturnValue('W/"etag-123"')
+        vi.mocked(isPathExists).mockResolvedValue(true)
+        vi.mocked(genEtag).mockReturnValue('W/"etag-123"')
         const req = createBaseRequest({
           dav: {
             ...createBaseRequest().dav,
@@ -1795,8 +1796,8 @@ describe('WebDAVMethods', () => {
 
     describe('Multiple conditions', () => {
       it('should evaluate multiple conditions and return true if any matches', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
-        ;(PathsUtils.dbFileFromSpace as jest.Mock).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(isPathExists).mockResolvedValue(true)
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
         filesLockManager.getLocksByPath.mockResolvedValue([])
         const req = createBaseRequest({
           dav: {
@@ -1815,8 +1816,8 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return false with 412 when all conditions fail', async () => {
-        ;(isPathExists as jest.Mock).mockResolvedValue(true)
-        ;(genEtag as jest.Mock).mockReturnValue('W/"etag-123"')
+        vi.mocked(isPathExists).mockResolvedValue(true)
+        vi.mocked(genEtag).mockReturnValue('W/"etag-123"')
         filesLockManager.getLockByToken.mockResolvedValue(null)
         const req = createBaseRequest({
           dav: {
@@ -1878,7 +1879,7 @@ describe('WebDAVMethods', () => {
           }
         })
         const res = createMockResponse()
-        jest.spyOn(IfHeaderUtils, 'extractOneToken').mockImplementation(() => {
+        vi.spyOn(IfHeaderUtils, 'extractOneToken').mockImplementation(() => {
           throw new Error('No token found')
         })
 
@@ -1899,7 +1900,7 @@ describe('WebDAVMethods', () => {
           }
         })
         const res = createMockResponse()
-        jest.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:missing')
+        vi.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:missing')
         filesLockManager.isLockedWithToken.mockResolvedValue(null)
 
         await (service as any).lockRefresh(req, res, 'file.txt')
@@ -1918,7 +1919,7 @@ describe('WebDAVMethods', () => {
           }
         })
         const res = createMockResponse()
-        jest.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
+        vi.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
         filesLockManager.isLockedWithToken.mockResolvedValue({
           owner: { id: 999, login: 'other-user' }
         } as any)
@@ -1945,7 +1946,7 @@ describe('WebDAVMethods', () => {
           owner: { id: 1, login: 'test-user' },
           options: { lockRoot: '/webdav/test/file.txt', lockToken: 'opaquelocktoken:abc' }
         }
-        jest.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
+        vi.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
         filesLockManager.isLockedWithToken.mockResolvedValue(mockLock as any)
 
         await (service as any).lockRefresh(req, res, 'file.txt')
@@ -1970,7 +1971,7 @@ describe('WebDAVMethods', () => {
           owner: { id: 1, login: 'test-user' },
           options: { lockRoot: '/webdav/test/file.txt' }
         }
-        jest.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
+        vi.spyOn(IfHeaderUtils, 'extractOneToken').mockReturnValue('opaquelocktoken:abc')
         filesLockManager.isLockedWithToken.mockResolvedValue(mockLock as any)
 
         await (service as any).lockRefresh(req, res, 'file.txt')
@@ -2050,7 +2051,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should log error with method and URL', () => {
-        const logSpy = jest.spyOn((service as any)['logger'], 'error').mockImplementation(() => undefined)
+        const logSpy = vi.spyOn((service as any)['logger'], 'error').mockImplementation(() => undefined)
         const req = createBaseRequest({ method: 'PUT', dav: { ...createBaseRequest().dav, url: '/webdav/test.txt' } })
         const res = createMockResponse()
         const error = new Error('Test error')
@@ -2066,7 +2067,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should include destination URL in log when provided', () => {
-        const logSpy = jest.spyOn((service as any)['logger'], 'error').mockImplementation(() => undefined)
+        const logSpy = vi.spyOn((service as any)['logger'], 'error').mockImplementation(() => undefined)
         const req = createBaseRequest({ method: 'COPY' })
         const res = createMockResponse()
         const error = new Error('Copy error')

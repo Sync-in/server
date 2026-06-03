@@ -6,12 +6,12 @@ import { MailerConfig } from './mailer.config'
 import { Mailer } from './mailer.service'
 
 // Mocks
-jest.mock('nodemailer')
+vi.mock('nodemailer')
 const createTransportMock = {
-  verify: jest.fn().mockResolvedValue(true),
-  sendMail: jest.fn().mockResolvedValue(true)
+  verify: vi.fn().mockResolvedValue(true),
+  sendMail: vi.fn().mockResolvedValue(true)
 }
-;(nodemailer.createTransport as jest.Mock).mockReturnValue(createTransportMock)
+vi.mocked(nodemailer.createTransport).mockReturnValue(createTransportMock)
 
 describe(Mailer.name, () => {
   let module: TestingModule
@@ -33,15 +33,15 @@ describe(Mailer.name, () => {
     module = await Test.createTestingModule({
       providers: [
         Mailer,
-        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue(config) } },
+        { provide: ConfigService, useValue: { get: vi.fn().mockReturnValue(config) } },
         {
           provide: PinoLogger,
           useValue: {
-            setContext: jest.fn(),
-            warn: jest.fn(),
-            error: jest.fn(),
-            info: jest.fn(),
-            assign: jest.fn(),
+            setContext: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            info: vi.fn(),
+            assign: vi.fn(),
             logger: { level: 'info' }
           }
         }
@@ -74,7 +74,7 @@ describe(Mailer.name, () => {
     expect(mailer['configuration'].secure).toBe(false)
     await initModule({ ...mailerConfig, port: 25, secure: true, logger: true, debug: true })
     expect(mailer['configuration'].secure).toBe(false)
-    const loggerWarnSpy = jest.spyOn(logger, 'warn')
+    const loggerWarnSpy = vi.spyOn(logger, 'warn')
     expect(loggerWarnSpy).toHaveBeenCalledWith(expect.stringMatching(/has been disabled/i))
     loggerWarnSpy.mockClear()
   })
@@ -83,7 +83,7 @@ describe(Mailer.name, () => {
     createTransportMock.verify.mockRejectedValueOnce(new Error('Mail Server down'))
     await initModule(mailerConfig)
     expect(mailer.available).toBe(false)
-    const loggerErrorSpy = jest.spyOn(logger, 'error')
+    const loggerErrorSpy = vi.spyOn(logger, 'error')
     expect(loggerErrorSpy).toHaveBeenCalledWith(expect.stringMatching(/mail server down/i))
     loggerErrorSpy.mockClear()
   })

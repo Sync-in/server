@@ -15,18 +15,19 @@ import { FilesLockManager } from '../../services/files-lock-manager.service'
 import * as filesUtils from '../../utils/files'
 import { OnlyOfficeManager } from './only-office-manager.service'
 import { ONLY_OFFICE_APP_LOCK } from './only-office.constants'
+import { Mocked } from 'vitest'
 
-jest.mock('../../utils/files')
-jest.mock('../../../users/utils/avatar', () => ({
-  getAvatarBase64: jest.fn().mockResolvedValue('data:image/png;base64,iVBORw0KGgo=')
+vi.mock('../../utils/files')
+vi.mock('../../../users/utils/avatar', () => ({
+  getAvatarBase64: vi.fn().mockResolvedValue('data:image/png;base64,iVBORw0KGgo=')
 }))
 
 describe(OnlyOfficeManager.name, () => {
   let service: OnlyOfficeManager
-  let cache: jest.Mocked<Cache>
-  let httpService: jest.Mocked<HttpService>
-  let jwtService: jest.Mocked<JwtService>
-  let filesLockManager: jest.Mocked<FilesLockManager>
+  let cache: Mocked<Cache>
+  let httpService: Mocked<HttpService>
+  let jwtService: Mocked<JwtService>
+  let filesLockManager: Mocked<FilesLockManager>
 
   const mockUser = {
     id: 1,
@@ -65,39 +66,39 @@ describe(OnlyOfficeManager.name, () => {
         {
           provide: Cache,
           useValue: {
-            get: jest.fn(),
-            set: jest.fn(),
-            del: jest.fn()
+            get: vi.fn(),
+            set: vi.fn(),
+            del: vi.fn()
           }
         },
         {
           provide: HttpService,
           useValue: {
-            axiosRef: jest.fn()
+            axiosRef: vi.fn()
           }
         },
         {
           provide: JwtService,
           useValue: {
-            signAsync: jest.fn(),
-            verifyAsync: jest.fn()
+            signAsync: vi.fn(),
+            verifyAsync: vi.fn()
           }
         },
         {
           provide: ContextManager,
           useValue: {
-            headerOriginUrl: jest.fn().mockReturnValue('http://localhost:3000')
+            headerOriginUrl: vi.fn().mockReturnValue('http://localhost:3000')
           }
         },
         {
           provide: FilesLockManager,
           useValue: {
-            checkConflicts: jest.fn(),
-            convertLockToFileLockProps: jest.fn(),
-            create: jest.fn(),
-            getLocksByPath: jest.fn(),
-            removeLock: jest.fn(),
-            isPathLocked: jest.fn()
+            checkConflicts: vi.fn(),
+            convertLockToFileLockProps: vi.fn(),
+            create: vi.fn(),
+            getLocksByPath: vi.fn(),
+            removeLock: vi.fn(),
+            isPathLocked: vi.fn()
           }
         }
       ]
@@ -112,18 +113,18 @@ describe(OnlyOfficeManager.name, () => {
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   describe('getSettings', () => {
     beforeEach(() => {
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValue(true)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValue(false)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValue(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(false)
       filesLockManager.checkConflicts.mockResolvedValue(undefined)
       jwtService.signAsync.mockResolvedValue('mock-token')
       cache.get.mockResolvedValue(null)
       cache.set.mockResolvedValue(undefined)
-      ;(filesUtils.genEtag as jest.Mock).mockReturnValue('mock-etag')
+      vi.mocked(filesUtils.genEtag).mockReturnValue('mock-etag')
     })
 
     it('should return OnlyOffice settings for editable document', async () => {
@@ -137,7 +138,7 @@ describe(OnlyOfficeManager.name, () => {
     })
 
     it('should throw error if document does not exist', async () => {
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValue(false)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValue(false)
 
       await expect(service.getSettings(mockUser, mockSpaceEnv, mockRequest)).rejects.toThrow(
         new HttpException('Document not found', HttpStatus.BAD_REQUEST)
@@ -145,7 +146,7 @@ describe(OnlyOfficeManager.name, () => {
     })
 
     it('should throw error if path is a directory', async () => {
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValue(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(true)
 
       await expect(service.getSettings(mockUser, mockSpaceEnv, mockRequest)).rejects.toThrow(
         new HttpException('Document must be a file', HttpStatus.BAD_REQUEST)
@@ -238,11 +239,11 @@ describe(OnlyOfficeManager.name, () => {
       filesLockManager.getLocksByPath.mockResolvedValue([])
       filesLockManager.isPathLocked.mockResolvedValue(false)
       cache.del.mockResolvedValue(true)
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValue('/tmp/temp-file.docx')
-      ;(filesUtils.writeFromStream as jest.Mock).mockResolvedValue(undefined)
-      ;(filesUtils.fileSize as jest.Mock).mockResolvedValue(12)
-      ;(filesUtils.copyFileContent as jest.Mock).mockResolvedValue(undefined)
-      ;(filesUtils.removeFiles as jest.Mock).mockResolvedValue(undefined)
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValue('/tmp/temp-file.docx')
+      vi.mocked(filesUtils.writeFromStream).mockResolvedValue(undefined)
+      vi.mocked(filesUtils.fileSize).mockResolvedValue(12)
+      vi.mocked(filesUtils.copyFileContent).mockResolvedValue(undefined)
+      vi.mocked(filesUtils.removeFiles).mockResolvedValue(undefined)
     })
 
     it('should handle status 1 (document being edited)', async () => {

@@ -17,33 +17,35 @@ import { SharesQueries } from './shares-queries.service'
 import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
 
 // Mock classes and utility modules used by SharesManager
-jest.mock('../../spaces/models/space-env.model', () => ({
-  SpaceEnv: jest.fn().mockImplementation(() => ({
-    setPermissions: jest.fn(),
-    envPermissions: 'ENV_PERMS'
-  }))
+vi.mock('../../spaces/models/space-env.model', () => ({
+  SpaceEnv: vi.fn(function () {
+    return {
+      setPermissions: vi.fn(),
+      envPermissions: 'ENV_PERMS'
+    }
+  })
 }))
 
-jest.mock('../../spaces/utils/permissions', () => ({
-  havePermission: jest.fn(),
-  haveSpacePermission: jest.fn(),
-  removePermissions: jest.fn(() => 'trimmed')
+vi.mock('../../spaces/utils/permissions', () => ({
+  havePermission: vi.fn(),
+  haveSpacePermission: vi.fn(),
+  removePermissions: vi.fn(() => 'trimmed')
 }))
 
-jest.mock('../../../common/functions', () => {
-  const actual = jest.requireActual('../../../common/functions')
+vi.mock('../../../common/functions', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/functions')>()
   return {
     ...actual,
-    generateShortUUID: jest.fn(),
-    hashPassword: jest.fn()
+    generateShortUUID: vi.fn(),
+    hashPassword: vi.fn()
   }
 })
 
-jest.mock('../../../common/shared', () => {
-  const actual = jest.requireActual('../../../common/shared')
+vi.mock('../../../common/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/shared')>()
   return {
     ...actual,
-    intersectPermissions: jest.fn()
+    intersectPermissions: vi.fn()
   }
 })
 
@@ -52,49 +54,49 @@ describe(SharesManager.name, () => {
 
   // Mocks
   const contextManagerMock = {
-    headerOriginUrl: jest.fn()
+    headerOriginUrl: vi.fn()
   }
 
   const notificationsManagerMock = {
-    create: jest.fn().mockResolvedValue(undefined),
-    sendEmailNotification: jest.fn().mockResolvedValue(undefined)
+    create: vi.fn().mockResolvedValue(undefined),
+    sendEmailNotification: vi.fn().mockResolvedValue(undefined)
   }
 
   const spacesQueriesMock = {
-    permissions: jest.fn()
+    permissions: vi.fn()
   }
 
   const usersQueriesMock = {
-    createUserOrGuest: jest.fn(),
-    deleteGuestLink: jest.fn(),
-    usersWhitelist: jest.fn().mockResolvedValue([]),
-    groupsWhitelist: jest.fn().mockResolvedValue([]),
-    allUserIdsFromGroupsAndSubGroups: jest.fn().mockResolvedValue([])
+    createUserOrGuest: vi.fn(),
+    deleteGuestLink: vi.fn(),
+    usersWhitelist: vi.fn().mockResolvedValue([]),
+    groupsWhitelist: vi.fn().mockResolvedValue([]),
+    allUserIdsFromGroupsAndSubGroups: vi.fn().mockResolvedValue([])
   }
 
   const linksQueriesMock = {
-    isUniqueUUID: jest.fn(),
-    isReservedUUID: jest.fn(),
-    allLinksFromSpaceOrShare: jest.fn(),
-    createLinkToSpaceOrShare: jest.fn(),
-    updateLinkFromSpaceOrShare: jest.fn(),
-    linkFromShare: jest.fn(),
-    linkFromSpace: jest.fn()
+    isUniqueUUID: vi.fn(),
+    isReservedUUID: vi.fn(),
+    allLinksFromSpaceOrShare: vi.fn(),
+    createLinkToSpaceOrShare: vi.fn(),
+    updateLinkFromSpaceOrShare: vi.fn(),
+    linkFromShare: vi.fn(),
+    linkFromSpace: vi.fn()
   }
 
   const sharesQueriesMock = {
-    permissions: jest.fn(),
-    listShareLinks: jest.fn(),
-    getShareWithMembers: jest.fn(),
-    createShare: jest.fn(),
-    updateShare: jest.fn(),
-    selectShares: jest.fn(),
-    deleteShare: jest.fn(),
-    updateMember: jest.fn(),
-    updateMembers: jest.fn(),
-    shareExistsForOwner: jest.fn(),
-    childExistsForShareOwner: jest.fn(),
-    clearCachePermissions: jest.fn().mockResolvedValue(true)
+    permissions: vi.fn(),
+    listShareLinks: vi.fn(),
+    getShareWithMembers: vi.fn(),
+    createShare: vi.fn(),
+    updateShare: vi.fn(),
+    selectShares: vi.fn(),
+    deleteShare: vi.fn(),
+    updateMember: vi.fn(),
+    updateMembers: vi.fn(),
+    shareExistsForOwner: vi.fn(),
+    childExistsForShareOwner: vi.fn(),
+    clearCachePermissions: vi.fn().mockResolvedValue(true)
   }
 
   const user = { id: 1, isAdmin: false } as any
@@ -105,7 +107,7 @@ describe(SharesManager.name, () => {
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
         {
           provide: FilesQuotaManager,
-          useValue: { updateStorageQuota: () => jest.fn() }
+          useValue: { updateStorageQuota: () => vi.fn() }
         },
         { provide: ContextManager, useValue: contextManagerMock },
         { provide: NotificationsManager, useValue: notificationsManagerMock },
@@ -122,8 +124,8 @@ describe(SharesManager.name, () => {
   })
 
   beforeEach(() => {
-    jest.restoreAllMocks()
-    jest.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -170,7 +172,7 @@ describe(SharesManager.name, () => {
     it('returns the share and calls setAllowedPermissions', async () => {
       const share: any = { id: 10, file: {} }
       sharesQueriesMock.getShareWithMembers.mockResolvedValueOnce(share)
-      const spy = jest.spyOn(service, 'setAllowedPermissions').mockResolvedValueOnce(void 0)
+      const spy = vi.spyOn(service, 'setAllowedPermissions').mockResolvedValueOnce(void 0)
 
       const result = await service.getShareWithMembers(user, 10, true)
 
@@ -186,7 +188,7 @@ describe(SharesManager.name, () => {
 
   describe('generateLinkUUID', () => {
     it('loops until a unique UUID is found', async () => {
-      ;(commonFunctions.generateShortUUID as jest.Mock).mockReturnValueOnce('aaa').mockReturnValueOnce('bbb')
+      vi.mocked(commonFunctions.generateShortUUID).mockReturnValueOnce('aaa').mockReturnValueOnce('bbb')
 
       linksQueriesMock.isUniqueUUID.mockResolvedValueOnce(false).mockResolvedValueOnce(true)
 
@@ -203,14 +205,14 @@ describe(SharesManager.name, () => {
     it('returns the share link and trims unsupported permissions', async () => {
       const shareLink: any = { id: 5, file: { permissions: 'ORIG' } }
       sharesQueriesMock.listShareLinks.mockResolvedValueOnce(shareLink)
-      const spy = jest.spyOn(service, 'setAllowedPermissions').mockResolvedValueOnce(void 0)
+      const spy = vi.spyOn(service, 'setAllowedPermissions').mockResolvedValueOnce(void 0)
 
       const result = await service.getShareLink(user, 5)
 
       expect(spy).toHaveBeenCalledWith(user, shareLink, false)
       expect(result).toBe(shareLink)
       expect(result.file.permissions).toBe('trimmed')
-      expect((permissionsUtils.removePermissions as jest.Mock).mock.calls[0][0]).toBe('ORIG')
+      expect(vi.mocked(permissionsUtils.removePermissions).mock.calls[0][0]).toBe('ORIG')
     })
 
     it('throws Forbidden when link is not found', async () => {
@@ -232,9 +234,9 @@ describe(SharesManager.name, () => {
         shareName: 'OldShare',
         shareDescription: 'OldDesc'
       }
-      jest.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(baseLink)
-      jest.spyOn(service, 'getShareLink').mockResolvedValueOnce({ file: { permissions: 'SHARE_PERMS' } } as any)
-      ;(intersectPermissions as jest.Mock).mockReturnValue('INTERSECTED')
+      vi.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(baseLink)
+      vi.spyOn(service, 'getShareLink').mockResolvedValueOnce({ file: { permissions: 'SHARE_PERMS' } } as any)
+      vi.mocked(intersectPermissions).mockReturnValue('INTERSECTED')
       linksQueriesMock.updateLinkFromSpaceOrShare.mockResolvedValueOnce(undefined)
 
       const dto: any = {
@@ -254,8 +256,8 @@ describe(SharesManager.name, () => {
 
   describe('createGuestLink', () => {
     it('creates guest link with hashed password and returns created user info', async () => {
-      ;(commonFunctions.hashPassword as jest.Mock).mockResolvedValue('HASHED')
-      ;(commonFunctions.generateShortUUID as jest.Mock).mockReturnValue('RANDOMSEQ')
+      vi.mocked(commonFunctions.hashPassword).mockResolvedValue('HASHED')
+      vi.mocked(commonFunctions.generateShortUUID).mockReturnValue('RANDOMSEQ')
       usersQueriesMock.createUserOrGuest.mockResolvedValueOnce(99)
 
       const guest = await service.createGuestLink(GUEST_PERMISSION.SHARES, 'plaintext', 'en', true)
@@ -270,8 +272,8 @@ describe(SharesManager.name, () => {
     })
 
     it('generates a random password and defaults isActive when not provided', async () => {
-      ;(commonFunctions.hashPassword as jest.Mock).mockResolvedValue('HASHED-RAND')
-      ;(commonFunctions.generateShortUUID as jest.Mock).mockReturnValueOnce('RANDOMSEQ')
+      vi.mocked(commonFunctions.hashPassword).mockResolvedValue('HASHED-RAND')
+      vi.mocked(commonFunctions.generateShortUUID).mockReturnValueOnce('RANDOMSEQ')
       usersQueriesMock.createUserOrGuest.mockResolvedValueOnce(123)
 
       const guest = await service.createGuestLink(GUEST_PERMISSION.SPACES)
@@ -318,7 +320,7 @@ describe(SharesManager.name, () => {
   describe('updateLinkFromSpaceOrShare (additional branches)', () => {
     it('returns null when no diff and not from API', async () => {
       const link: any = { id: 1, name: 'n', email: 'e', requireAuth: false, limitAccess: null, expiresAt: null }
-      jest.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(link)
+      vi.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(link)
 
       const result = await service.updateLinkFromSpaceOrShare(user, 1, 2, LINK_TYPE.SHARE, {}, false)
 
@@ -328,9 +330,9 @@ describe(SharesManager.name, () => {
 
     it('hashes password and does not leak it when fromAPI is true', async () => {
       const link: any = { id: 1 }
-      jest.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(link)
-      ;(commonFunctions.hashPassword as jest.Mock).mockResolvedValueOnce('HASHED')
-      ;(linksQueriesMock.updateLinkFromSpaceOrShare as jest.Mock).mockImplementation(async (_link: any, _spaceOrShareId: number, updateUser: any) => {
+      vi.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(link)
+      vi.mocked(commonFunctions.hashPassword).mockResolvedValueOnce('HASHED')
+      vi.mocked(linksQueriesMock.updateLinkFromSpaceOrShare).mockImplementation(async (_link: any, _spaceOrShareId: number, updateUser: any) => {
         // Assert at call time before the service deletes the password
         expect(updateUser).toMatchObject({ password: 'HASHED' })
         return
@@ -353,7 +355,7 @@ describe(SharesManager.name, () => {
         limitAccess: null,
         expiresAt: { date: '2025-01-01' }
       }
-      jest.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(base as any)
+      vi.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(base as any)
       linksQueriesMock.updateLinkFromSpaceOrShare.mockResolvedValueOnce(undefined)
 
       const dto = {
@@ -366,7 +368,7 @@ describe(SharesManager.name, () => {
 
       await service.updateLinkFromSpaceOrShare(user, 9, 99, LINK_TYPE.SHARE, dto as any, false)
 
-      const [, , , updateLink] = (linksQueriesMock.updateLinkFromSpaceOrShare as jest.Mock).mock.calls[0].slice(0, 5)
+      const [, , , updateLink] = vi.mocked(linksQueriesMock.updateLinkFromSpaceOrShare).mock.calls[0].slice(0, 5)
       expect(updateLink).toMatchObject({
         name: 'a2',
         email: 'b2',
@@ -386,8 +388,8 @@ describe(SharesManager.name, () => {
         limitAccess: null,
         expiresAt: null
       }
-      jest.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(link)
-      const getShareLinkSpy = jest.spyOn(service, 'getShareLink')
+      vi.spyOn(service, 'getLinkFromSpaceOrShare').mockResolvedValueOnce(link)
+      const getShareLinkSpy = vi.spyOn(service, 'getShareLink')
 
       const result = await service.updateLinkFromSpaceOrShare(user, 1, 2, LINK_TYPE.SPACE, { permissions: 'NEW' } as any, true)
 
@@ -451,7 +453,7 @@ describe(SharesManager.name, () => {
     it('does not trim permissions if file.permissions is falsy', async () => {
       const shareLink: any = { id: 7, file: {} }
       sharesQueriesMock.listShareLinks.mockResolvedValueOnce(shareLink)
-      const spy = jest.spyOn(service, 'setAllowedPermissions').mockResolvedValueOnce(void 0)
+      const spy = vi.spyOn(service, 'setAllowedPermissions').mockResolvedValueOnce(void 0)
 
       const res = await service.getShareLink(user, 7)
 
@@ -471,8 +473,8 @@ describe(SharesManager.name, () => {
     })
 
     it('deletes links and removes shares when authorized (asAdmin)', async () => {
-      const deleteLinksSpy = jest.spyOn(service, 'deleteAllLinkMembers').mockResolvedValue(void 0)
-      const removeSpy = jest.spyOn<any, any>(service as any, 'removeShareFromOwners').mockResolvedValue(void 0)
+      const deleteLinksSpy = vi.spyOn(service, 'deleteAllLinkMembers').mockResolvedValue(void 0)
+      const removeSpy = vi.spyOn<any, any>(service as any, 'removeShareFromOwners').mockResolvedValue(void 0)
 
       await service.deleteShare(user, 456, true)
 
@@ -484,7 +486,7 @@ describe(SharesManager.name, () => {
   describe('child share wrappers', () => {
     it('getChildShare returns share link when isLink = true', async () => {
       sharesQueriesMock.childExistsForShareOwner.mockResolvedValueOnce(99)
-      const getShareLinkSpy = jest.spyOn(service, 'getShareLink').mockResolvedValueOnce({ id: 99 } as any)
+      const getShareLinkSpy = vi.spyOn(service, 'getShareLink').mockResolvedValueOnce({ id: 99 } as any)
 
       const res = await service.getChildShare(user, 1, 99, true)
       expect(res).toEqual({ id: 99 })
@@ -493,7 +495,7 @@ describe(SharesManager.name, () => {
 
     it('getChildShare returns child share when isLink = false', async () => {
       sharesQueriesMock.childExistsForShareOwner.mockResolvedValueOnce(100)
-      const getShareSpy = jest.spyOn(service, 'getShareWithMembers').mockResolvedValueOnce({ id: 100 } as any)
+      const getShareSpy = vi.spyOn(service, 'getShareWithMembers').mockResolvedValueOnce({ id: 100 } as any)
 
       const res = await service.getChildShare(user, 1, 100, false)
       expect(res).toEqual({ id: 100 })
@@ -502,8 +504,8 @@ describe(SharesManager.name, () => {
 
     it('updateChildShare forwards update and deleteChildShare forwards delete', async () => {
       sharesQueriesMock.childExistsForShareOwner.mockResolvedValue(200)
-      const updateSpy = jest.spyOn(service, 'updateShare').mockResolvedValueOnce({ id: 200 } as any)
-      const deleteSpy = jest.spyOn(service, 'deleteShare').mockResolvedValueOnce(void 0)
+      const updateSpy = vi.spyOn(service, 'updateShare').mockResolvedValueOnce({ id: 200 } as any)
+      const deleteSpy = vi.spyOn(service, 'deleteShare').mockResolvedValueOnce(void 0)
 
       await service.updateChildShare(user, 1, 200, {} as any)
       expect(updateSpy).toHaveBeenCalledWith(user, 200, {} as any, true)
@@ -520,8 +522,8 @@ describe(SharesManager.name, () => {
 
   describe('createOrUpdateLinksAsMembers', () => {
     it('creates new links for id < 0 and notifies guest', async () => {
-      const createLinkSpy = jest.spyOn<any, any>(service as any, 'createLinkFromSpaceOrShare').mockResolvedValue(void 0)
-      const notifySpy = jest.spyOn<any, any>(service as any, 'notifyGuestLink').mockResolvedValue(void 0)
+      const createLinkSpy = vi.spyOn<any, any>(service as any, 'createLinkFromSpaceOrShare').mockResolvedValue(void 0)
+      const notifySpy = vi.spyOn<any, any>(service as any, 'notifyGuestLink').mockResolvedValue(void 0)
 
       const links = [{ id: -1, linkSettings: { uuid: 'u', email: 'e', permissions: 'p' }, permissions: 'p' }] as any
 
@@ -533,7 +535,7 @@ describe(SharesManager.name, () => {
     })
 
     it('updates modified links and returns them along with unmodified ones', async () => {
-      const updateLinkSpy = jest.spyOn(service, 'updateLinkFromSpaceOrShare').mockResolvedValue(void 0)
+      const updateLinkSpy = vi.spyOn(service, 'updateLinkFromSpaceOrShare').mockResolvedValue(void 0)
 
       const members = await service.createOrUpdateLinksAsMembers(user, { id: 1, name: 'S' } as any, LINK_TYPE.SHARE, [
         { id: 2, linkId: 2, permissions: 'p', linkSettings: { name: 'new' } },
@@ -548,7 +550,7 @@ describe(SharesManager.name, () => {
 
   describe('generateLinkUUID (additional)', () => {
     it('returns immediately when the first UUID is unique', async () => {
-      ;(commonFunctions.generateShortUUID as jest.Mock).mockReturnValueOnce('only-one')
+      vi.mocked(commonFunctions.generateShortUUID).mockReturnValueOnce('only-one')
       linksQueriesMock.isUniqueUUID.mockResolvedValueOnce(true)
 
       const { uuid } = await service.generateLinkUUID(user.id)

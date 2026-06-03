@@ -38,7 +38,7 @@ describe(AuthProviderMySQL.name, () => {
     module.useLogger(['fatal'])
     // mocks
     userTest = new UserModel(generateUserTest(), false)
-    usersManager.updateAccesses = jest.fn(() => Promise.resolve())
+    usersManager.updateAccesses = vi.fn(() => Promise.resolve())
   })
 
   it('should be defined', () => {
@@ -48,14 +48,14 @@ describe(AuthProviderMySQL.name, () => {
   })
 
   it('should validate the user', async () => {
-    userTest.makePaths = jest.fn()
-    usersManager.findUser = jest.fn().mockReturnValue({ ...userTest, password: await hashPassword(userTest.password) })
+    userTest.makePaths = vi.fn()
+    usersManager.findUser = vi.fn().mockReturnValue({ ...userTest, password: await hashPassword(userTest.password) })
     expect(await authProviderMySQL.validateUser(userTest.login, userTest.password)).toBeDefined()
     expect(userTest.makePaths).toHaveBeenCalled()
   })
 
   it('should not validate the user', async () => {
-    usersManager.findUser = jest
+    usersManager.findUser = vi
       .fn()
       .mockReturnValueOnce(null)
       .mockReturnValueOnce({ ...userTest, password: await hashPassword('bar') })

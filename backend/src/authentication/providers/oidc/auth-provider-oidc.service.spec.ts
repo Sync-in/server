@@ -21,8 +21,9 @@ import * as imageUtils from '../../../common/image'
 import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants'
 import { OAuthCookie } from './auth-oidc.constants'
 import { AuthProviderOIDC } from './auth-provider-oidc.service'
+import { Mock } from 'vitest'
 
-jest.mock('../../../configuration/config.environment', () => ({
+vi.mock('../../../configuration/config.environment', () => ({
   configuration: {
     auth: {
       oidc: {
@@ -49,7 +50,7 @@ jest.mock('../../../configuration/config.environment', () => ({
   }
 }))
 
-jest.mock('openid-client', () => {
+vi.mock('openid-client', () => {
   class AuthorizationResponseError extends Error {
     code: string
     error_description: string
@@ -61,20 +62,20 @@ jest.mock('openid-client', () => {
   }
 
   return {
-    allowInsecureRequests: jest.fn(),
-    authorizationCodeGrant: jest.fn(),
+    allowInsecureRequests: vi.fn(),
+    authorizationCodeGrant: vi.fn(),
     AuthorizationResponseError,
-    calculatePKCECodeChallenge: jest.fn(),
-    ClientSecretBasic: jest.fn(),
-    ClientSecretPost: jest.fn(),
+    calculatePKCECodeChallenge: vi.fn(),
+    ClientSecretBasic: vi.fn(),
+    ClientSecretPost: vi.fn(),
     Configuration: class {},
-    discovery: jest.fn(),
-    fetchUserInfo: jest.fn(),
+    discovery: vi.fn(),
+    fetchUserInfo: vi.fn(),
     IDToken: class {},
-    None: jest.fn(),
-    randomNonce: jest.fn(),
-    randomPKCECodeVerifier: jest.fn(),
-    randomState: jest.fn(),
+    None: vi.fn(),
+    randomNonce: vi.fn(),
+    randomPKCECodeVerifier: vi.fn(),
+    randomState: vi.fn(),
     skipSubjectCheck: Symbol('skipSubjectCheck'),
     UserInfoResponse: class {}
   }
@@ -83,17 +84,17 @@ jest.mock('openid-client', () => {
 describe(AuthProviderOIDC.name, () => {
   let service: AuthProviderOIDC
   let usersManager: {
-    findUser: jest.Mock
-    logUser: jest.Mock
-    updateAccesses: jest.Mock
-    fromUserId: jest.Mock
+    findUser: Mock
+    logUser: Mock
+    updateAccesses: Mock
+    fromUserId: Mock
   }
   let adminUsersManager: {
-    createUserOrGuest: jest.Mock
-    updateUserOrGuest: jest.Mock
+    createUserOrGuest: Mock
+    updateUserOrGuest: Mock
   }
   let httpService: {
-    axiosRef: jest.Mock
+    axiosRef: Mock
   }
 
   const makeConfig = (supportsPKCE = true) => ({
@@ -104,24 +105,24 @@ describe(AuthProviderOIDC.name, () => {
   })
 
   const makeReply = () => ({
-    header: jest.fn().mockReturnThis(),
-    setCookie: jest.fn(),
-    clearCookie: jest.fn()
+    header: vi.fn().mockReturnThis(),
+    setCookie: vi.fn(),
+    clearCookie: vi.fn()
   })
 
   beforeAll(async () => {
     usersManager = {
-      findUser: jest.fn(),
-      logUser: jest.fn(),
-      updateAccesses: jest.fn().mockResolvedValue(undefined),
-      fromUserId: jest.fn()
+      findUser: vi.fn(),
+      logUser: vi.fn(),
+      updateAccesses: vi.fn().mockResolvedValue(undefined),
+      fromUserId: vi.fn()
     }
     adminUsersManager = {
-      createUserOrGuest: jest.fn(),
-      updateUserOrGuest: jest.fn()
+      createUserOrGuest: vi.fn(),
+      updateUserOrGuest: vi.fn()
     }
     httpService = {
-      axiosRef: jest.fn()
+      axiosRef: vi.fn()
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -138,8 +139,8 @@ describe(AuthProviderOIDC.name, () => {
   })
 
   beforeEach(() => {
-    jest.restoreAllMocks()
-    jest.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('returns null when user is not found', async () => {
@@ -164,11 +165,11 @@ describe(AuthProviderOIDC.name, () => {
   })
 
   it('builds the authorization url with PKCE data and cookies', async () => {
-    jest.spyOn(service, 'getConfig').mockResolvedValue(makeConfig(true) as any)
-    ;(randomState as jest.Mock).mockReturnValue('state-1')
-    ;(randomNonce as jest.Mock).mockReturnValue('nonce-1')
-    ;(randomPKCECodeVerifier as jest.Mock).mockReturnValue('verifier-1')
-    ;(calculatePKCECodeChallenge as jest.Mock).mockResolvedValue('challenge-1')
+    vi.spyOn(service, 'getConfig').mockResolvedValue(makeConfig(true) as any)
+    vi.mocked(randomState).mockReturnValue('state-1')
+    vi.mocked(randomNonce).mockReturnValue('nonce-1')
+    vi.mocked(randomPKCECodeVerifier).mockReturnValue('verifier-1')
+    vi.mocked(calculatePKCECodeChallenge).mockResolvedValue('challenge-1')
     const reply = makeReply()
 
     const authUrl = await service.getAuthorizationUrl(reply as any)
@@ -184,9 +185,9 @@ describe(AuthProviderOIDC.name, () => {
 
   it('does not use PKCE when supportPKCE is false', async () => {
     ;(service as any).oidcConfig.security.supportPKCE = false
-    jest.spyOn(service, 'getConfig').mockResolvedValue(makeConfig(true) as any)
-    ;(randomState as jest.Mock).mockReturnValue('state-1')
-    ;(randomNonce as jest.Mock).mockReturnValue('nonce-1')
+    vi.spyOn(service, 'getConfig').mockResolvedValue(makeConfig(true) as any)
+    vi.mocked(randomState).mockReturnValue('state-1')
+    vi.mocked(randomNonce).mockReturnValue('nonce-1')
     const reply = makeReply()
 
     const authUrl = await service.getAuthorizationUrl(reply as any)
@@ -201,13 +202,13 @@ describe(AuthProviderOIDC.name, () => {
 
   it('handles callback success and clears cookies', async () => {
     const config = makeConfig(true)
-    jest.spyOn(service, 'getConfig').mockResolvedValue(config as any)
-    const processSpy = jest.spyOn(service as any, 'processUserInfo').mockResolvedValue({ id: 7 } as any)
-    ;(authorizationCodeGrant as jest.Mock).mockResolvedValue({
+    vi.spyOn(service, 'getConfig').mockResolvedValue(config as any)
+    const processSpy = vi.spyOn(service as any, 'processUserInfo').mockResolvedValue({ id: 7 } as any)
+    vi.mocked(authorizationCodeGrant).mockResolvedValue({
       claims: () => ({ sub: 'subject-1' }),
       access_token: 'access-token'
     })
-    ;(fetchUserInfo as jest.Mock).mockResolvedValue({ sub: 'subject-1', email: 'a@b.c', preferred_username: 'alice' })
+    vi.mocked(fetchUserInfo).mockResolvedValue({ sub: 'subject-1', email: 'a@b.c', preferred_username: 'alice' })
     const req = {
       cookies: {
         [OAuthCookie.State]: 'state-1',
@@ -228,7 +229,7 @@ describe(AuthProviderOIDC.name, () => {
   })
 
   it('rejects callback when state is missing', async () => {
-    jest.spyOn(service, 'getConfig').mockResolvedValue(makeConfig(false) as any)
+    vi.spyOn(service, 'getConfig').mockResolvedValue(makeConfig(false) as any)
     const reply = makeReply()
     const req = { cookies: {}, ip: '127.0.0.1' }
 
@@ -237,8 +238,8 @@ describe(AuthProviderOIDC.name, () => {
   })
 
   it('maps AuthorizationResponseError to BAD_REQUEST', async () => {
-    jest.spyOn(service, 'getConfig').mockResolvedValue(makeConfig(false) as any)
-    ;(authorizationCodeGrant as jest.Mock).mockRejectedValue(
+    vi.spyOn(service, 'getConfig').mockResolvedValue(makeConfig(false) as any)
+    vi.mocked(authorizationCodeGrant).mockRejectedValue(
       new AuthorizationResponseError('access_denied', {
         cause: new URLSearchParams('error=access_denied&error_description=No access')
       })
@@ -268,7 +269,7 @@ describe(AuthProviderOIDC.name, () => {
   it('creates identities with admin role when claims match', async () => {
     usersManager.findUser.mockResolvedValue(null)
     adminUsersManager.createUserOrGuest.mockResolvedValue({ id: 10, login: 'bob' })
-    usersManager.fromUserId.mockResolvedValue({ id: 10, role: USER_ROLE.ADMINISTRATOR, login: 'bob', setFullName: jest.fn() } as any)
+    usersManager.fromUserId.mockResolvedValue({ id: 10, role: USER_ROLE.ADMINISTRATOR, login: 'bob', setFullName: vi.fn() } as any)
     const userInfo = { sub: 'x', email: 'b@c.d', preferred_username: 'bob', groups: ['admins'] }
 
     const result = await (service as any).processUserInfo(userInfo, '127.0.0.1')
@@ -330,14 +331,14 @@ describe(AuthProviderOIDC.name, () => {
     const originalStorageQuotaClaim = (service as any).oidcConfig.options.storageQuotaClaim
     try {
       for (const [index, scenario] of scenarios.entries()) {
-        jest.clearAllMocks()
+        vi.clearAllMocks()
         ;(service as any).oidcConfig.options.storageQuotaClaim = scenario.claimName
 
         if (scenario.mode === 'create') {
           const id = 110 + index
           usersManager.findUser.mockResolvedValue(null)
           adminUsersManager.createUserOrGuest.mockResolvedValue({ id, login: `user-${id}` })
-          usersManager.fromUserId.mockResolvedValue({ id, role: USER_ROLE.USER, login: `user-${id}`, setFullName: jest.fn() } as any)
+          usersManager.fromUserId.mockResolvedValue({ id, role: USER_ROLE.USER, login: `user-${id}`, setFullName: vi.fn() } as any)
 
           await (service as any).processUserInfo(scenario.profile, '127.0.0.1')
 
@@ -356,7 +357,7 @@ describe(AuthProviderOIDC.name, () => {
           firstName: '',
           lastName: '',
           storageQuota: 4096,
-          setFullName: jest.fn()
+          setFullName: vi.fn()
         } as any
         usersManager.findUser.mockResolvedValue(existingUser)
 
@@ -381,7 +382,7 @@ describe(AuthProviderOIDC.name, () => {
     const userInfo = (picture = 'https://cdn.example.test/avatar.jpg') => ({ picture }) as any
 
     it('returns when picture url is invalid', async () => {
-      const downloadSpy = jest.spyOn(DownloadFile.prototype, 'download')
+      const downloadSpy = vi.spyOn(DownloadFile.prototype, 'download')
 
       await (service as any).updatePictureUrl(oidcUser, userInfo('not-a-url'))
 
@@ -389,12 +390,12 @@ describe(AuthProviderOIDC.name, () => {
     })
 
     it('stops when content type is not an image', async () => {
-      const downloadSpy = jest.spyOn(DownloadFile.prototype, 'download').mockResolvedValueOnce({
+      const downloadSpy = vi.spyOn(DownloadFile.prototype, 'download').mockResolvedValueOnce({
         contentType: 'text/plain',
         contentLength: 123,
         lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
       } as any)
-      const convertSpy = jest.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+      const convertSpy = vi.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
 
       await (service as any).updatePictureUrl(oidcUser, userInfo())
 
@@ -403,13 +404,13 @@ describe(AuthProviderOIDC.name, () => {
     })
 
     it('skips update when avatar metadata is unchanged', async () => {
-      const downloadSpy = jest.spyOn(DownloadFile.prototype, 'download').mockResolvedValueOnce({
+      const downloadSpy = vi.spyOn(DownloadFile.prototype, 'download').mockResolvedValueOnce({
         contentType: 'image/png',
         contentLength: 128,
         lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
       } as any)
-      jest.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(true)
-      const convertSpy = jest.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+      vi.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(true)
+      const convertSpy = vi.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
 
       await (service as any).updatePictureUrl(oidcUser, userInfo())
 
@@ -418,7 +419,7 @@ describe(AuthProviderOIDC.name, () => {
     })
 
     it('downloads and converts avatar when checks pass', async () => {
-      const downloadSpy = jest
+      const downloadSpy = vi
         .spyOn(DownloadFile.prototype, 'download')
         .mockResolvedValueOnce({
           contentType: 'image/png',
@@ -426,11 +427,11 @@ describe(AuthProviderOIDC.name, () => {
           lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
         } as any)
         .mockResolvedValueOnce(undefined as any)
-      jest.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(false)
-      jest.spyOn(filesUtils, 'fileSize').mockResolvedValue(1024)
-      jest.spyOn(UserModel, 'getHomePath').mockReturnValue('/tmp/sync-in/users/alice')
-      const convertSpy = jest.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
-      const metadataSpy = jest.spyOn(avatarUtils, 'saveAvatarMetadata').mockResolvedValue(undefined)
+      vi.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(false)
+      vi.spyOn(filesUtils, 'fileSize').mockResolvedValue(1024)
+      vi.spyOn(UserModel, 'getHomePath').mockReturnValue('/tmp/sync-in/users/alice')
+      const convertSpy = vi.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+      const metadataSpy = vi.spyOn(avatarUtils, 'saveAvatarMetadata').mockResolvedValue(undefined)
 
       await (service as any).updatePictureUrl(oidcUser, userInfo())
 
@@ -446,7 +447,7 @@ describe(AuthProviderOIDC.name, () => {
     })
 
     it('downloads avatar when content length is missing and stores the actual downloaded size', async () => {
-      const downloadSpy = jest
+      const downloadSpy = vi
         .spyOn(DownloadFile.prototype, 'download')
         .mockResolvedValueOnce({
           contentType: 'image/png',
@@ -454,11 +455,11 @@ describe(AuthProviderOIDC.name, () => {
           lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
         } as any)
         .mockResolvedValueOnce(undefined as any)
-      const metadataUnchangedSpy = jest.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(false)
-      jest.spyOn(filesUtils, 'fileSize').mockResolvedValue(1024)
-      jest.spyOn(UserModel, 'getHomePath').mockReturnValue('/tmp/sync-in/users/alice')
-      const convertSpy = jest.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
-      const metadataSpy = jest.spyOn(avatarUtils, 'saveAvatarMetadata').mockResolvedValue(undefined)
+      const metadataUnchangedSpy = vi.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(false)
+      vi.spyOn(filesUtils, 'fileSize').mockResolvedValue(1024)
+      vi.spyOn(UserModel, 'getHomePath').mockReturnValue('/tmp/sync-in/users/alice')
+      const convertSpy = vi.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+      const metadataSpy = vi.spyOn(avatarUtils, 'saveAvatarMetadata').mockResolvedValue(undefined)
 
       await (service as any).updatePictureUrl(oidcUser, userInfo())
 
@@ -469,7 +470,7 @@ describe(AuthProviderOIDC.name, () => {
     })
 
     it('stops after download when avatar size exceeds limit', async () => {
-      const downloadSpy = jest
+      const downloadSpy = vi
         .spyOn(DownloadFile.prototype, 'download')
         .mockResolvedValueOnce({
           contentType: 'image/png',
@@ -477,9 +478,9 @@ describe(AuthProviderOIDC.name, () => {
           lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
         } as any)
         .mockResolvedValueOnce(undefined as any)
-      jest.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(false)
-      jest.spyOn(filesUtils, 'fileSize').mockResolvedValue(avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE + 1)
-      const convertSpy = jest.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+      vi.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(false)
+      vi.spyOn(filesUtils, 'fileSize').mockResolvedValue(avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE + 1)
+      const convertSpy = vi.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
 
       await (service as any).updatePictureUrl(oidcUser, userInfo())
 

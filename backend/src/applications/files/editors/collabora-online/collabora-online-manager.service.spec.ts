@@ -18,9 +18,9 @@ import { CollaboraOnlineManager } from './collabora-online-manager.service'
 import { COLLABORA_APP_LOCK, COLLABORA_HEADERS, COLLABORA_LOCK_ACTION } from './collabora-online.constants'
 import type { FastifyCollaboraOnlineSpaceRequest } from './collabora-online.interface'
 
-jest.mock('../../utils/files')
-jest.mock('node:fs/promises')
-jest.mock('../../../users/utils/avatar')
+vi.mock('../../utils/files')
+vi.mock('node:fs/promises')
+vi.mock('../../../users/utils/avatar')
 
 describe(CollaboraOnlineManager.name, () => {
   let service: CollaboraOnlineManager
@@ -55,25 +55,25 @@ describe(CollaboraOnlineManager.name, () => {
         {
           provide: ContextManager,
           useValue: {
-            headerOriginUrl: jest.fn().mockReturnValue('https://domain.com')
+            headerOriginUrl: vi.fn().mockReturnValue('https://domain.com')
           }
         },
         {
           provide: JwtService,
           useValue: {
-            signAsync: jest.fn().mockResolvedValue('mock-jwt-token')
+            signAsync: vi.fn().mockResolvedValue('mock-jwt-token')
           }
         },
         {
           provide: FilesLockManager,
           useValue: {
-            checkConflicts: jest.fn(),
-            convertLockToFileLockProps: jest.fn(),
-            create: jest.fn(),
-            removeLock: jest.fn(),
-            getLocksByPath: jest.fn(),
-            isLockedWithToken: jest.fn(),
-            refreshLockTimeout: jest.fn()
+            checkConflicts: vi.fn(),
+            convertLockToFileLockProps: vi.fn(),
+            create: vi.fn(),
+            removeLock: vi.fn(),
+            getLocksByPath: vi.fn(),
+            isLockedWithToken: vi.fn(),
+            refreshLockTimeout: vi.fn()
           }
         }
       ]
@@ -85,7 +85,7 @@ describe(CollaboraOnlineManager.name, () => {
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -94,9 +94,9 @@ describe(CollaboraOnlineManager.name, () => {
 
   describe('getSettings', () => {
     beforeEach(() => {
-      jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
-      jest.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
-      jest.spyOn(filesUtils, 'genUniqHashFromFileDBProps').mockReturnValue('file-hash-123')
+      vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
+      vi.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
+      vi.spyOn(filesUtils, 'genUniqHashFromFileDBProps').mockReturnValue('file-hash-123')
     })
 
     it('should return settings with edit mode when user has modify permissions and no lock conflicts', async () => {
@@ -105,7 +105,7 @@ describe(CollaboraOnlineManager.name, () => {
         envPermissions: SPACE_OPERATION.MODIFY
       } as unknown as SpaceEnv
 
-      jest.spyOn(filesLockManager, 'checkConflicts').mockResolvedValue(undefined)
+      vi.spyOn(filesLockManager, 'checkConflicts').mockResolvedValue(undefined)
 
       const result = await service.getSettings(mockUser, spaceWithPermissions)
 
@@ -143,8 +143,8 @@ describe(CollaboraOnlineManager.name, () => {
         isExclusive: false
       }
 
-      jest.spyOn(filesLockManager, 'checkConflicts').mockRejectedValue(new LockConflict(mockLock as any, 'conflict'))
-      jest.spyOn(filesLockManager, 'convertLockToFileLockProps').mockReturnValue(mockFileLockProps)
+      vi.spyOn(filesLockManager, 'checkConflicts').mockRejectedValue(new LockConflict(mockLock as any, 'conflict'))
+      vi.spyOn(filesLockManager, 'convertLockToFileLockProps').mockReturnValue(mockFileLockProps)
 
       const result = await service.getSettings(mockUser, spaceWithPermissions)
 
@@ -183,8 +183,8 @@ describe(CollaboraOnlineManager.name, () => {
         realPath: '/path/to/document.xyz'
       } as unknown as SpaceEnv
 
-      jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
-      jest.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
+      vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
+      vi.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
 
       await expect(service.getSettings(mockUser, spaceWithUnsupportedFile)).rejects.toThrow(
         new HttpException('Document not supported', HttpStatus.BAD_REQUEST)
@@ -192,14 +192,14 @@ describe(CollaboraOnlineManager.name, () => {
     })
 
     it('should throw error when document does not exist', async () => {
-      jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(false)
+      vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(false)
 
       await expect(service.getSettings(mockUser, mockSpace)).rejects.toThrow(new HttpException('Document not found', HttpStatus.NOT_FOUND))
     })
 
     it('should throw error when path is a directory', async () => {
-      jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
-      jest.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(true)
+      vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
+      vi.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(true)
 
       await expect(service.getSettings(mockUser, mockSpace)).rejects.toThrow(new HttpException('Document must be a file', HttpStatus.BAD_REQUEST))
     })
@@ -220,11 +220,11 @@ describe(CollaboraOnlineManager.name, () => {
         }
       } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-      jest.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
-      jest.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
-      jest.spyOn(filesUtils, 'genEtag').mockReturnValue('etag-123')
+      vi.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
+      vi.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
+      vi.spyOn(filesUtils, 'genEtag').mockReturnValue('etag-123')
       const { getAvatarBase64 } = await import('../../../users/utils/avatar')
-      ;(getAvatarBase64 as jest.Mock).mockResolvedValue('base64-avatar')
+      vi.mocked(getAvatarBase64).mockResolvedValue('base64-avatar')
 
       const result = await service.checkFileInfo(mockRequest)
 
@@ -264,11 +264,11 @@ describe(CollaboraOnlineManager.name, () => {
         }
       } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-      jest.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
-      jest.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
-      jest.spyOn(filesUtils, 'genEtag').mockReturnValue('etag-123')
+      vi.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
+      vi.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
+      vi.spyOn(filesUtils, 'genEtag').mockReturnValue('etag-123')
       const { getAvatarBase64 } = await import('../../../users/utils/avatar')
-      ;(getAvatarBase64 as jest.Mock).mockResolvedValue('base64-avatar')
+      vi.mocked(getAvatarBase64).mockResolvedValue('base64-avatar')
 
       const result = await service.checkFileInfo(mockRequest)
 
@@ -290,11 +290,11 @@ describe(CollaboraOnlineManager.name, () => {
         }
       } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-      jest.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
-      jest.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
-      jest.spyOn(filesUtils, 'genEtag').mockReturnValue('etag-123')
+      vi.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
+      vi.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
+      vi.spyOn(filesUtils, 'genEtag').mockReturnValue('etag-123')
       const { getAvatarBase64 } = await import('../../../users/utils/avatar')
-      ;(getAvatarBase64 as jest.Mock).mockResolvedValue('base64-avatar')
+      vi.mocked(getAvatarBase64).mockResolvedValue('base64-avatar')
 
       const result = await service.checkFileInfo(mockRequest)
 
@@ -304,13 +304,13 @@ describe(CollaboraOnlineManager.name, () => {
 
   describe('saveDocument', () => {
     beforeEach(() => {
-      jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
-      jest.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
-      jest.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
-      jest.spyOn(filesUtils, 'uniqueFilePathFromDir').mockResolvedValue('/tmp/document-unique.docx')
-      jest.spyOn(filesUtils, 'writeFromStream').mockResolvedValue(undefined)
-      jest.spyOn(filesUtils, 'copyFileContent').mockResolvedValue(undefined)
-      jest.spyOn(filesUtils, 'removeFiles').mockResolvedValue(undefined)
+      vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
+      vi.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
+      vi.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
+      vi.spyOn(filesUtils, 'uniqueFilePathFromDir').mockResolvedValue('/tmp/document-unique.docx')
+      vi.spyOn(filesUtils, 'writeFromStream').mockResolvedValue(undefined)
+      vi.spyOn(filesUtils, 'copyFileContent').mockResolvedValue(undefined)
+      vi.spyOn(filesUtils, 'removeFiles').mockResolvedValue(undefined)
     })
 
     it('should save document successfully', async () => {
@@ -327,8 +327,8 @@ describe(CollaboraOnlineManager.name, () => {
         raw: new Readable()
       } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-      jest.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
-      jest.spyOn(filesUtils, 'fileSize').mockResolvedValue(1024)
+      vi.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
+      vi.spyOn(filesUtils, 'fileSize').mockResolvedValue(1024)
 
       const result = await service.saveDocument(mockRequest)
 
@@ -351,8 +351,8 @@ describe(CollaboraOnlineManager.name, () => {
         raw: new Readable()
       } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-      jest.spyOn(filesUtils, 'fileSize').mockResolvedValue(512)
-      jest.spyOn(fs, 'stat').mockResolvedValue({ mtime: new Date('2024-01-01T10:00:00.000Z') } as any)
+      vi.spyOn(filesUtils, 'fileSize').mockResolvedValue(512)
+      vi.spyOn(fs, 'stat').mockResolvedValue({ mtime: new Date('2024-01-01T10:00:00.000Z') } as any)
 
       await expect(service.saveDocument(mockRequest)).rejects.toThrow(new HttpException('Size Mismatch', HttpStatus.BAD_REQUEST))
     })
@@ -368,7 +368,7 @@ describe(CollaboraOnlineManager.name, () => {
         raw: new Readable()
       } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-      jest.spyOn(fs, 'stat').mockResolvedValue({ mtime: new Date('2024-01-01T11:00:00.000Z') } as any)
+      vi.spyOn(fs, 'stat').mockResolvedValue({ mtime: new Date('2024-01-01T11:00:00.000Z') } as any)
 
       await expect(service.saveDocument(mockRequest)).rejects.toThrow(new HttpException({ LOOLStatusCode: 1010 }, HttpStatus.CONFLICT))
     })
@@ -383,7 +383,7 @@ describe(CollaboraOnlineManager.name, () => {
         raw: new Readable()
       } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-      jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(false)
+      vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(false)
 
       await expect(service.saveDocument(mockRequest)).rejects.toThrow(new HttpException('Document not found', HttpStatus.NOT_FOUND))
     })
@@ -391,7 +391,7 @@ describe(CollaboraOnlineManager.name, () => {
 
   describe('manageLock', () => {
     const mockReply = {
-      header: jest.fn().mockReturnThis()
+      header: vi.fn().mockReturnThis()
     } as unknown as FastifyReply
 
     describe('LOCK action', () => {
@@ -405,8 +405,8 @@ describe(CollaboraOnlineManager.name, () => {
           }
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-        jest.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
-        jest.spyOn(filesLockManager, 'create').mockResolvedValue([true, {} as any])
+        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
+        vi.spyOn(filesLockManager, 'create').mockResolvedValue([true, {} as any])
 
         await service.manageLock(mockRequest, mockReply)
 
@@ -434,8 +434,8 @@ describe(CollaboraOnlineManager.name, () => {
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
         const existingLock = { key: 'lock-key', options: { lockToken: 'existing-lock-token' } }
-        jest.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(existingLock as any)
-        jest.spyOn(filesLockManager, 'refreshLockTimeout').mockResolvedValue(undefined)
+        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(existingLock as any)
+        vi.spyOn(filesLockManager, 'refreshLockTimeout').mockResolvedValue(undefined)
 
         await service.manageLock(mockRequest, mockReply)
 
@@ -454,8 +454,8 @@ describe(CollaboraOnlineManager.name, () => {
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
         const conflictingLock = { options: { lockToken: 'conflicting-token' } }
-        jest.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
-        jest.spyOn(filesLockManager, 'create').mockResolvedValue([false, conflictingLock as any])
+        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
+        vi.spyOn(filesLockManager, 'create').mockResolvedValue([false, conflictingLock as any])
 
         await expect(service.manageLock(mockRequest, mockReply)).rejects.toThrow(new HttpException('The file is locked', HttpStatus.CONFLICT))
         expect(mockReply.header).toHaveBeenCalledWith(COLLABORA_HEADERS.LockToken, 'conflicting-token')
@@ -486,8 +486,8 @@ describe(CollaboraOnlineManager.name, () => {
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
         const existingLock = { key: 'lock-key', options: { lockToken: 'lock-token-to-remove' } }
-        jest.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(existingLock as any)
-        jest.spyOn(filesLockManager, 'removeLock').mockResolvedValue(undefined)
+        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(existingLock as any)
+        vi.spyOn(filesLockManager, 'removeLock').mockResolvedValue(undefined)
 
         await service.manageLock(mockRequest, mockReply)
 
@@ -504,7 +504,7 @@ describe(CollaboraOnlineManager.name, () => {
           }
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-        jest.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
+        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
 
         await expect(service.manageLock(mockRequest, mockReply)).rejects.toThrow(new HttpException('Lock not found', HttpStatus.CONFLICT))
       })
@@ -521,7 +521,7 @@ describe(CollaboraOnlineManager.name, () => {
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
         const existingLock = { options: { lockToken: 'existing-lock-token' } }
-        jest.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValue([existingLock as any])
+        vi.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValue([existingLock as any])
 
         await service.manageLock(mockRequest, mockReply)
 
@@ -537,7 +537,7 @@ describe(CollaboraOnlineManager.name, () => {
           }
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-        jest.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValue([])
+        vi.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValue([])
 
         await service.manageLock(mockRequest, mockReply)
 
@@ -557,8 +557,8 @@ describe(CollaboraOnlineManager.name, () => {
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
         const existingLock = { key: 'lock-key', options: { lockToken: 'lock-token-to-refresh' } }
-        jest.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(existingLock as any)
-        jest.spyOn(filesLockManager, 'refreshLockTimeout').mockResolvedValue(undefined)
+        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(existingLock as any)
+        vi.spyOn(filesLockManager, 'refreshLockTimeout').mockResolvedValue(undefined)
 
         await service.manageLock(mockRequest, mockReply)
 
@@ -575,7 +575,7 @@ describe(CollaboraOnlineManager.name, () => {
           }
         } as unknown as FastifyCollaboraOnlineSpaceRequest
 
-        jest.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
+        vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(null)
 
         await expect(service.manageLock(mockRequest, mockReply)).rejects.toThrow(new HttpException('Lock not found', HttpStatus.CONFLICT))
       })

@@ -1,4 +1,4 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest'
+import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'

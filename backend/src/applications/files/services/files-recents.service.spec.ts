@@ -5,32 +5,33 @@ import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { FilesQueries } from './files-queries.service'
 import { FilesRecents } from './files-recents.service'
+import { Mock } from 'vitest'
 
 describe(FilesRecents.name, () => {
   let service: FilesRecents
   let filesQueries: {
-    getRecentsFromUser: jest.Mock
-    getRecentsFromLocation: jest.Mock
-    updateRecents: jest.Mock
+    getRecentsFromUser: Mock
+    getRecentsFromLocation: Mock
+    updateRecents: Mock
   }
   let spacesQueries: {
-    spaceIds: jest.Mock
+    spaceIds: Mock
   }
   let sharesQueries: {
-    shareIds: jest.Mock
+    shareIds: Mock
   }
 
   beforeEach(async () => {
     filesQueries = {
-      getRecentsFromUser: jest.fn().mockResolvedValue([]),
-      getRecentsFromLocation: jest.fn().mockResolvedValue([]),
-      updateRecents: jest.fn().mockResolvedValue(undefined)
+      getRecentsFromUser: vi.fn().mockResolvedValue([]),
+      getRecentsFromLocation: vi.fn().mockResolvedValue([]),
+      updateRecents: vi.fn().mockResolvedValue(undefined)
     }
     spacesQueries = {
-      spaceIds: jest.fn().mockResolvedValue([])
+      spaceIds: vi.fn().mockResolvedValue([])
     }
     sharesQueries = {
-      shareIds: jest.fn().mockResolvedValue([])
+      shareIds: vi.fn().mockResolvedValue([])
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -49,7 +50,7 @@ describe(FilesRecents.name, () => {
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {

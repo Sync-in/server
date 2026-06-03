@@ -25,7 +25,7 @@ describe('SyncDiffGzipBodyInterceptor', () => {
 
   const createCallHandler = <T = any>(value: T = 'ok' as unknown as T): CallHandler => {
     return {
-      handle: jest.fn(() => of(value))
+      handle: vi.fn(() => of(value))
     }
   }
 

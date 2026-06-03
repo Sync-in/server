@@ -1,5 +1,5 @@
 import { sign } from '@fastify/cookie'
-import { createMock, DeepMocked } from '@golevelup/ts-jest'
+import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { Reflector } from '@nestjs/core'
@@ -216,7 +216,7 @@ describe(AuthTokenAccessGuard.name, () => {
   })
 
   it('should pass without a valid access token when AuthTokenOptional is applied to context', async () => {
-    const spyAuthenticate = jest.spyOn(authAnonymousStrategy, 'authenticate')
+    const spyAuthenticate = vi.spyOn(authAnonymousStrategy, 'authenticate')
     context = createMock<ExecutionContext>()
     AuthTokenOptional()(context.getHandler())
     expect(reflector.getAllAndOverride<boolean>(AUTH_TOKEN_SKIP, [context.getHandler(), context.getClass()])).toBe(true)

@@ -6,16 +6,17 @@ import { CACHE_LOCK_PREFIX } from '../constants/cache'
 import { LockConflict } from '../models/file-lock-error'
 import { DEPTH, LOCK_PREFIX, LOCK_SCOPE, WEBDAV_APP_LOCK } from '../../webdav/constants/webdav'
 import { FilesLockManager } from './files-lock-manager.service'
+import { Mock } from 'vitest'
 
 describe(FilesLockManager.name, () => {
   let filesLockManager: FilesLockManager
   let cacheStore: Map<string, any>
   let cache: {
-    set: jest.Mock
-    get: jest.Mock
-    mget: jest.Mock
-    del: jest.Mock
-    keys: jest.Mock
+    set: Mock
+    get: Mock
+    mget: Mock
+    del: Mock
+    keys: Mock
   }
 
   const createPatternRegex = (pattern: string): RegExp => {
@@ -33,14 +34,14 @@ describe(FilesLockManager.name, () => {
   beforeEach(async () => {
     cacheStore = new Map<string, any>()
     cache = {
-      set: jest.fn(async (key: string, value: unknown) => {
+      set: vi.fn(async (key: string, value: unknown) => {
         cacheStore.set(key, value)
         return true
       }),
-      get: jest.fn(async (key: string) => cacheStore.get(key)),
-      mget: jest.fn(async (keys: string[]) => keys.map((k) => cacheStore.get(k))),
-      del: jest.fn(async (key: string) => cacheStore.delete(key)),
-      keys: jest.fn(async (pattern: string) => [...cacheStore.keys()].filter((k) => createPatternRegex(pattern).test(k)))
+      get: vi.fn(async (key: string) => cacheStore.get(key)),
+      mget: vi.fn(async (keys: string[]) => keys.map((k) => cacheStore.get(k))),
+      del: vi.fn(async (key: string) => cacheStore.delete(key)),
+      keys: vi.fn(async (pattern: string) => [...cacheStore.keys()].filter((k) => createPatternRegex(pattern).test(k)))
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [FilesLockManager, { provide: Cache, useValue: cache }]
@@ -51,8 +52,8 @@ describe(FilesLockManager.name, () => {
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
-    jest.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -74,7 +75,7 @@ describe(FilesLockManager.name, () => {
       asOwner: () => ({ id: 10, login: 'john', email: 'john@sync-in.com', fullName: 'John' })
     } as any
     const dbFile = { path: 'docs/file.txt', ownerId: 10, inTrash: false } as any
-    const conflictSpy = jest.spyOn(filesLockManager, 'checkConflicts').mockResolvedValueOnce(undefined)
+    const conflictSpy = vi.spyOn(filesLockManager, 'checkConflicts').mockResolvedValueOnce(undefined)
 
     const [created, lock] = await filesLockManager.create(
       user,
@@ -98,7 +99,7 @@ describe(FilesLockManager.name, () => {
       dbFilePath: 'docs/file.txt',
       key: 'flock|x'
     } as any
-    jest.spyOn(filesLockManager, 'checkConflicts').mockRejectedValueOnce(new LockConflict(conflictLock, 'conflict'))
+    vi.spyOn(filesLockManager, 'checkConflicts').mockRejectedValueOnce(new LockConflict(conflictLock, 'conflict'))
 
     const [created, lock] = await filesLockManager.create(
       { id: 10, asOwner: () => ({ id: 10, login: 'john', email: '', fullName: '' }) } as any,
@@ -118,8 +119,8 @@ describe(FilesLockManager.name, () => {
       owner: { id: 10, login: 'john' },
       expiration: currentTimeStamp() + 100
     } as any
-    jest.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValueOnce([lock])
-    const refreshSpy = jest.spyOn(filesLockManager, 'refreshLockTimeout').mockResolvedValueOnce(undefined)
+    vi.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValueOnce([lock])
+    const refreshSpy = vi.spyOn(filesLockManager, 'refreshLockTimeout').mockResolvedValueOnce(undefined)
 
     const [created, result] = await filesLockManager.createOrRefresh(
       { id: 10 } as any,
@@ -136,7 +137,7 @@ describe(FilesLockManager.name, () => {
 
   it('should throw conflict in createOrRefresh when lock is owned by another user', async () => {
     const lock = { key: 'flock|k2', owner: { id: 42, login: 'alice' } } as any
-    jest.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValueOnce([lock])
+    vi.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValueOnce([lock])
 
     await expect(
       filesLockManager.createOrRefresh(
@@ -150,8 +151,8 @@ describe(FilesLockManager.name, () => {
 
   it('should create a new lock in createOrRefresh when no lock exists', async () => {
     const lock = { key: 'flock|k3', owner: { id: 10 } } as any
-    jest.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValueOnce([])
-    const createSpy = jest.spyOn(filesLockManager, 'create').mockResolvedValueOnce([true, lock])
+    vi.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValueOnce([])
+    const createSpy = vi.spyOn(filesLockManager, 'create').mockResolvedValueOnce([true, lock])
 
     const [created, result] = await filesLockManager.createOrRefresh(
       { id: 10 } as any,
@@ -184,7 +185,7 @@ describe(FilesLockManager.name, () => {
   })
 
   it('should browse locks and return keyed object by file name', async () => {
-    jest.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValueOnce([
+    vi.spyOn(filesLockManager, 'getLocksByPath').mockResolvedValueOnce([
       { dbFilePath: 'docs/a.txt', owner: { login: 'john' } },
       { dbFilePath: 'docs/b.txt', owner: { login: 'alice' } }
     ] as any)
@@ -198,7 +199,7 @@ describe(FilesLockManager.name, () => {
   })
 
   it('should return false for isPathLocked when path is not root path', async () => {
-    const spy = jest.spyOn(filesLockManager as any, 'searchKeysByPath')
+    const spy = vi.spyOn(filesLockManager as any, 'searchKeysByPath')
 
     const isLocked = await filesLockManager.isPathLocked({ path: 'docs/file.txt', ownerId: 1, inTrash: false } as any)
 
@@ -207,7 +208,7 @@ describe(FilesLockManager.name, () => {
   })
 
   it('should return true for isPathLocked when root path has lock keys', async () => {
-    const spy = jest.spyOn(filesLockManager as any, 'searchKeysByPath').mockResolvedValueOnce(['flock|root-key'])
+    const spy = vi.spyOn(filesLockManager as any, 'searchKeysByPath').mockResolvedValueOnce(['flock|root-key'])
 
     const isLocked = await filesLockManager.isPathLocked({ path: '.', ownerId: 1, inTrash: false } as any)
 
@@ -226,18 +227,16 @@ describe(FilesLockManager.name, () => {
   })
 
   it('should browse parent and child locks and keep first shared duplicate name', async () => {
-    jest.spyOn(filesLockManager, 'browseLocks').mockResolvedValueOnce({
+    vi.spyOn(filesLockManager, 'browseLocks').mockResolvedValueOnce({
       root: { dbFilePath: 'docs/root' } as any
     })
-    jest
-      .spyOn(filesLockManager as any, 'searchChildLocks')
-      .mockReturnValue(
-        generatorFrom([
-          { dbFilePath: 'docs/a.txt', owner: { login: 'a' } } as any,
-          { dbFilePath: 'docs/a.txt', owner: { login: 'b' } } as any,
-          { dbFilePath: 'docs/sub/b.txt', owner: { login: 'c' } } as any
-        ])
-      )
+    vi.spyOn(filesLockManager as any, 'searchChildLocks').mockReturnValue(
+      generatorFrom([
+        { dbFilePath: 'docs/a.txt', owner: { login: 'a' } } as any,
+        { dbFilePath: 'docs/a.txt', owner: { login: 'b' } } as any,
+        { dbFilePath: 'docs/sub/b.txt', owner: { login: 'c' } } as any
+      ])
+    )
 
     const locks = await filesLockManager.browseParentChildLocks({ path: 'docs', ownerId: 1, inTrash: false } as any)
 
@@ -247,30 +246,28 @@ describe(FilesLockManager.name, () => {
   })
 
   it('should remove owned child locks and throw on conflicting owner lock', async () => {
-    const removeSpy = jest.spyOn(filesLockManager, 'removeLock').mockResolvedValue(true)
+    const removeSpy = vi.spyOn(filesLockManager, 'removeLock').mockResolvedValue(true)
 
-    jest
-      .spyOn(filesLockManager as any, 'searchChildLocks')
-      .mockReturnValueOnce(
-        generatorFrom([
-          { key: 'k1', owner: { id: 7, login: 'john' }, dbFilePath: 'docs/a.txt' } as any,
-          { key: 'k2', owner: { id: 7, login: 'john' }, dbFilePath: 'docs/b.txt' } as any
-        ])
-      )
+    vi.spyOn(filesLockManager as any, 'searchChildLocks').mockReturnValueOnce(
+      generatorFrom([
+        { key: 'k1', owner: { id: 7, login: 'john' }, dbFilePath: 'docs/a.txt' } as any,
+        { key: 'k2', owner: { id: 7, login: 'john' }, dbFilePath: 'docs/b.txt' } as any
+      ])
+    )
     await filesLockManager.removeChildLocks({ id: 7, login: 'john' } as any, { path: 'docs', ownerId: 7, inTrash: false } as any)
     expect(removeSpy).toHaveBeenCalledWith('k1')
     expect(removeSpy).toHaveBeenCalledWith('k2')
 
-    jest
-      .spyOn(filesLockManager as any, 'searchChildLocks')
-      .mockReturnValueOnce(generatorFrom([{ key: 'k3', owner: { id: 9, login: 'alice' }, dbFilePath: 'docs/c.txt' } as any]))
+    vi.spyOn(filesLockManager as any, 'searchChildLocks').mockReturnValueOnce(
+      generatorFrom([{ key: 'k3', owner: { id: 9, login: 'alice' }, dbFilePath: 'docs/c.txt' } as any])
+    )
     await expect(
       filesLockManager.removeChildLocks({ id: 7, login: 'john' } as any, { path: 'docs', ownerId: 7, inTrash: false } as any)
     ).rejects.toBeInstanceOf(LockConflict)
   })
 
   it('should accept shared same-app conflicts and owner token matches in checkConflicts', async () => {
-    jest.spyOn(filesLockManager as any, 'searchParentLocks').mockReturnValue(
+    vi.spyOn(filesLockManager as any, 'searchParentLocks').mockReturnValue(
       generatorFrom([
         {
           owner: { id: 2, login: 'alice' },
@@ -279,7 +276,7 @@ describe(FilesLockManager.name, () => {
         } as any
       ])
     )
-    jest.spyOn(filesLockManager as any, 'searchChildLocks').mockReturnValue(
+    vi.spyOn(filesLockManager as any, 'searchChildLocks').mockReturnValue(
       generatorFrom([
         {
           owner: { id: 7, login: 'john' },
@@ -306,8 +303,8 @@ describe(FilesLockManager.name, () => {
       app: WEBDAV_APP_LOCK,
       options: { lockScope: LOCK_SCOPE.EXCLUSIVE }
     } as any
-    jest.spyOn(filesLockManager as any, 'searchParentLocks').mockReturnValue(generatorFrom([parentLock]))
-    jest.spyOn(filesLockManager as any, 'searchChildLocks').mockReturnValue(generatorFrom([]))
+    vi.spyOn(filesLockManager as any, 'searchParentLocks').mockReturnValue(generatorFrom([parentLock]))
+    vi.spyOn(filesLockManager as any, 'searchChildLocks').mockReturnValue(generatorFrom([]))
 
     await expect(
       filesLockManager.checkConflicts({ path: 'docs/file.txt', ownerId: 7, inTrash: false } as any, DEPTH.RESOURCE, {
@@ -318,7 +315,7 @@ describe(FilesLockManager.name, () => {
   })
 
   it('should convert lock to file lock props and generate a DAV token', () => {
-    jest.spyOn(crypto, 'randomUUID').mockReturnValueOnce('33333333-3333-4333-8333-333333333333')
+    vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce('33333333-3333-4333-8333-333333333333')
     const lock = {
       owner: { id: 2, login: 'alice' },
       app: WEBDAV_APP_LOCK,

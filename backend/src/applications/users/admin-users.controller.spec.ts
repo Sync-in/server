@@ -33,7 +33,7 @@ describe(AdminUsersController.name, () => {
         { provide: NotificationsManager, useValue: {} },
         {
           provide: FilesQuotaManager,
-          useValue: { updateStorageQuota: () => jest.fn() }
+          useValue: { updateStorageQuota: () => vi.fn() }
         },
         JwtService,
         AuthManager,

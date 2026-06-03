@@ -3,7 +3,7 @@ import { HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { FastifyReply } from 'fastify'
 import crypto from 'node:crypto'
-import fs from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { AuthManager } from '../../../authentication/auth.service'
 import { AuthProvider } from '../../../authentication/providers/auth-providers.models'
 import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-provider-two-fa.service'
@@ -20,46 +20,73 @@ import { SYNC_CLIENT_TYPE } from '../constants/sync'
 import { SyncClientAuthRegistration } from '../interfaces/sync-client-auth.interface'
 import { SyncClientsManager } from './sync-clients-manager.service'
 import { SyncQueries } from './sync-queries.service'
+import { Mock } from 'vitest'
 
 // Pilotage permission via UserModel
 let mockHavePermission = true
-jest.mock('../../users/models/user.model', () => ({
-  UserModel: jest.fn().mockImplementation((props: any) => ({
-    ...props,
-    havePermission: () => mockHavePermission
-  }))
+vi.mock('../../users/models/user.model', () => ({
+  UserModel: vi.fn(function (props: any) {
+    return {
+      ...props,
+      havePermission: () => mockHavePermission
+    }
+  })
 }))
 
 // Mock ciblé de convertHumanTimeToSeconds
-jest.mock('../../../common/functions', () => {
-  const actual = jest.requireActual('../../../common/functions')
-  return { ...actual, convertHumanTimeToSeconds: jest.fn() }
+vi.mock('../../../common/functions', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/functions')>()
+  return { ...actual, convertHumanTimeToSeconds: vi.fn() }
 })
 
 // Mock currentTimeStamp
-jest.mock('../../../common/shared', () => ({ currentTimeStamp: jest.fn() }))
+vi.mock('../../../common/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/shared')>()
+  return {
+    ...actual,
+    currentTimeStamp: vi.fn()
+  }
+})
 
 // Mock FS et helper d'existence
-jest.mock('node:fs/promises', () => ({ readFile: jest.fn() }))
-jest.mock('../../files/utils/files', () => ({ isPathExists: jest.fn() }))
+vi.mock('node:fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs/promises')>()
+  const readFileMock = vi.fn()
+  return {
+    ...actual,
+    readFile: readFileMock,
+    default: {
+      ...(actual as any).default,
+      readFile: readFileMock
+    }
+  }
+})
+
+vi.mock('../../files/utils/files', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/utils/files')>()
+  return {
+    ...actual,
+    isPathExists: vi.fn()
+  }
+})
 
 describe(SyncClientsManager.name, () => {
   let service: SyncClientsManager
 
   // Mocks
-  let http: { axiosRef: jest.Mock }
-  let authManager: { setCookies: jest.Mock; getTokens: jest.Mock }
-  let authProvider: { validateUser: jest.Mock }
-  let usersManager: { fromUserId: jest.Mock; updateAccesses: jest.Mock }
+  let http: { axiosRef: Mock }
+  let authManager: { setCookies: Mock; getTokens: Mock }
+  let authProvider: { validateUser: Mock }
+  let usersManager: { fromUserId: Mock; updateAccesses: Mock }
   let syncQueries: {
-    getOrCreateClient: jest.Mock
-    deleteClient: jest.Mock
-    getClient: jest.Mock
-    updateClientInfo: jest.Mock
-    renewClientTokenAndExpiration: jest.Mock
-    getClients: jest.Mock
+    getOrCreateClient: Mock
+    deleteClient: Mock
+    getClient: Mock
+    updateClientInfo: Mock
+    renewClientTokenAndExpiration: Mock
+    getClients: Mock
   }
-  let cacheMock: { genSlugKey: jest.Mock; get: jest.Mock; set: jest.Mock; del: jest.Mock }
+  let cacheMock: { genSlugKey: Mock; get: Mock; set: Mock; del: Mock }
 
   // Helpers
   const setRepo = (repo: APP_STORE_REPOSITORY) => {
@@ -87,23 +114,23 @@ describe(SyncClientsManager.name, () => {
     })
 
   beforeAll(async () => {
-    http = { axiosRef: jest.fn() }
-    authManager = { setCookies: jest.fn(), getTokens: jest.fn() }
-    authProvider = { validateUser: jest.fn() }
-    usersManager = { fromUserId: jest.fn(), updateAccesses: jest.fn() }
+    http = { axiosRef: vi.fn() }
+    authManager = { setCookies: vi.fn(), getTokens: vi.fn() }
+    authProvider = { validateUser: vi.fn() }
+    usersManager = { fromUserId: vi.fn(), updateAccesses: vi.fn() }
     syncQueries = {
-      getOrCreateClient: jest.fn(),
-      deleteClient: jest.fn(),
-      getClient: jest.fn(),
-      updateClientInfo: jest.fn(),
-      renewClientTokenAndExpiration: jest.fn(),
-      getClients: jest.fn()
+      getOrCreateClient: vi.fn(),
+      deleteClient: vi.fn(),
+      getClient: vi.fn(),
+      updateClientInfo: vi.fn(),
+      renewClientTokenAndExpiration: vi.fn(),
+      getClients: vi.fn()
     }
     cacheMock = {
-      genSlugKey: jest.fn().mockReturnValue('syncclientsmanager:checkappstore'),
-      get: jest.fn().mockResolvedValue(undefined),
-      set: jest.fn().mockResolvedValue(undefined),
-      del: jest.fn().mockResolvedValue(undefined)
+      genSlugKey: vi.fn().mockReturnValue('syncclientsmanager:checkappstore'),
+      get: vi.fn().mockResolvedValue(undefined),
+      set: vi.fn().mockResolvedValue(undefined),
+      del: vi.fn().mockResolvedValue(undefined)
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -125,20 +152,20 @@ describe(SyncClientsManager.name, () => {
   })
 
   beforeEach(() => {
-    jest.restoreAllMocks()
-    jest.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
     mockHavePermission = true
-    ;(commonShared.currentTimeStamp as jest.Mock).mockReturnValue(1_000)
-    ;(commonFunctions.convertHumanTimeToSeconds as jest.Mock).mockImplementation((v: string | number) => {
+    vi.mocked(commonShared.currentTimeStamp).mockReturnValue(1_000)
+    vi.mocked(commonFunctions.convertHumanTimeToSeconds).mockImplementation((v: string | number) => {
       if (v === '90d') return 90 * 24 * 3600
       if (v === '180d') return 180 * 24 * 3600
       if (typeof v === 'number') return v
       return 0
     })
-    ;(isPathExists as jest.Mock).mockReset()
-    ;(fs.readFile as jest.Mock).mockReset()
-    ;(syncQueries.updateClientInfo as jest.Mock).mockResolvedValue(undefined)
-    ;(usersManager.updateAccesses as jest.Mock).mockResolvedValue(undefined)
+    vi.mocked(isPathExists).mockReset()
+    vi.mocked(readFile).mockReset()
+    vi.mocked(syncQueries.updateClientInfo).mockResolvedValue(undefined)
+    vi.mocked(usersManager.updateAccesses).mockResolvedValue(undefined)
     ;(service as any).cache = cacheMock
     cacheMock.get.mockResolvedValue(undefined)
     cacheMock.get.mockClear()
@@ -210,7 +237,7 @@ describe(SyncClientsManager.name, () => {
     })
 
     it('should forbid when client token is expired', async () => {
-      ;(commonShared.currentTimeStamp as jest.Mock).mockReturnValue(1000)
+      vi.mocked(commonShared.currentTimeStamp).mockReturnValue(1000)
       syncQueries.getClient.mockResolvedValue(makeClient({ tokenExpiration: 1000 }))
       await expect(service.authenticate(CLIENT_AUTH_TYPE.TOKEN, dto as any, ip, {} as FastifyReply)).rejects.toMatchObject({
         status: HttpStatus.FORBIDDEN,
@@ -252,7 +279,7 @@ describe(SyncClientsManager.name, () => {
       usersManager.fromUserId.mockResolvedValue(makeUser({ id: 7, login: 'john', email: 'john@doe', firstName: 'John', lastName: 'Doe' }))
       usersManager.updateAccesses.mockRejectedValueOnce(new Error('update-access-fail')) // silence expected
       authManager.setCookies.mockResolvedValue({ access_token: 'a', refresh_token: 'b' })
-      jest.spyOn(service, 'renewTokenAndExpiration').mockResolvedValue('new-client-token')
+      vi.spyOn(service, 'renewTokenAndExpiration').mockResolvedValue('new-client-token')
 
       const reply = {} as unknown as FastifyReply
       const r: any = await service.authenticate(CLIENT_AUTH_TYPE.COOKIE, dto as any, ip, reply)
@@ -266,7 +293,7 @@ describe(SyncClientsManager.name, () => {
       syncQueries.getClient.mockResolvedValue(makeClient({ ownerId: 8 }))
       usersManager.fromUserId.mockResolvedValue(makeUser({ id: 8, login: 'alice', email: 'alice@doe', firstName: 'Alice' }))
       authManager.getTokens.mockResolvedValue({ access_token: 'x', refresh_token: 'y' })
-      jest.spyOn(service, 'renewTokenAndExpiration').mockResolvedValue(undefined)
+      vi.spyOn(service, 'renewTokenAndExpiration').mockResolvedValue(undefined)
 
       const r: any = await service.authenticate(CLIENT_AUTH_TYPE.TOKEN, dto as any, ip, {} as FastifyReply)
       expect(authManager.getTokens).toHaveBeenCalledTimes(1)
@@ -276,7 +303,7 @@ describe(SyncClientsManager.name, () => {
     it('should throw when auth type is unknown (else branch)', async () => {
       syncQueries.getClient.mockResolvedValue(makeClient({ ownerId: 9 }))
       usersManager.fromUserId.mockResolvedValue(makeUser({ id: 9, login: 'bob', email: 'bob@doe', firstName: 'Bob' }))
-      jest.spyOn(service, 'renewTokenAndExpiration').mockResolvedValue(undefined)
+      vi.spyOn(service, 'renewTokenAndExpiration').mockResolvedValue(undefined)
       await expect(service.authenticate('unknown' as any, { clientId: 'cid', token: 'ctok' } as any, ip, {} as FastifyReply)).rejects.toBeInstanceOf(
         TypeError
       )
@@ -297,15 +324,15 @@ describe(SyncClientsManager.name, () => {
     const owner = { id: 1, login: 'bob' } as any
 
     it('should return undefined when token expiration is far enough', async () => {
-      ;(commonShared.currentTimeStamp as jest.Mock).mockReturnValue(1_000)
-      ;(commonFunctions.convertHumanTimeToSeconds as jest.Mock).mockImplementation((v: string) => (v === '90d' ? 90 * 24 * 3600 : 0))
+      vi.mocked(commonShared.currentTimeStamp).mockReturnValue(1_000)
+      vi.mocked(commonFunctions.convertHumanTimeToSeconds).mockImplementation((v: string) => (v === '90d' ? 90 * 24 * 3600 : 0))
       const client = { id: 'cid', tokenExpiration: 1_000 + 90 * 24 * 3600 + 1 } as any
       expect(await service.renewTokenAndExpiration(client, owner)).toBeUndefined()
     })
 
     it('should renew token and return new value when close to expiration', async () => {
-      ;(commonShared.currentTimeStamp as jest.Mock).mockReturnValue(1_000)
-      ;(commonFunctions.convertHumanTimeToSeconds as jest.Mock).mockImplementation((v: string) =>
+      vi.mocked(commonShared.currentTimeStamp).mockReturnValue(1_000)
+      vi.mocked(commonFunctions.convertHumanTimeToSeconds).mockImplementation((v: string) =>
         v === '60d' ? 60 * 24 * 3600 : v === '120d' ? 120 * 24 * 3600 : 0
       )
       const client = { id: 'cid', tokenExpiration: 1_000 + 60 * 24 * 3600 - 1 } as any
@@ -318,9 +345,9 @@ describe(SyncClientsManager.name, () => {
     })
 
     it('should throw Bad Request when renewal persistence fails', async () => {
-      ;(commonShared.currentTimeStamp as jest.Mock).mockReturnValue(1_000)
+      vi.mocked(commonShared.currentTimeStamp).mockReturnValue(1_000)
       const client = { id: 'cid', tokenExpiration: 1_000 } as any
-      jest.spyOn(crypto, 'randomUUID').mockReturnValue('uuid-err' as any)
+      vi.spyOn(crypto, 'randomUUID').mockReturnValue('uuid-err' as any)
       syncQueries.renewClientTokenAndExpiration.mockRejectedValue(new Error('db fail'))
       await expect(service.renewTokenAndExpiration(client, owner)).rejects.toMatchObject({ status: HttpStatus.BAD_REQUEST })
     })
@@ -357,20 +384,20 @@ describe(SyncClientsManager.name, () => {
 
     it('should return null when LOCAL manifest file does not exist', async () => {
       setRepo(APP_STORE_REPOSITORY.LOCAL)
-      ;(isPathExists as jest.Mock).mockResolvedValue(false)
+      vi.mocked(isPathExists).mockResolvedValue(false)
       expect(await service.checkAppStore()).toBeNull()
     })
 
     it('should return LOCAL manifest with rewritten URLs when file is valid', async () => {
       setRepo(APP_STORE_REPOSITORY.LOCAL)
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
+      vi.mocked(isPathExists).mockResolvedValue(true)
       const raw = {
         platform: {
           win: [{ package: 'desktop-win.exe' }, { package: 'cli-win.zip' }],
           linux: [{ package: 'desktop-linux.AppImage' }]
         }
       }
-      ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(raw))
+      vi.mocked(readFile).mockResolvedValue(JSON.stringify(raw))
 
       const manifest: any = await service.checkAppStore()
       expect(manifest.repository).toBe(APP_STORE_REPOSITORY.LOCAL)
@@ -384,14 +411,14 @@ describe(SyncClientsManager.name, () => {
 
     it('should return null when LOCAL manifest cannot be parsed', async () => {
       setRepo(APP_STORE_REPOSITORY.LOCAL)
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      ;(fs.readFile as jest.Mock).mockRejectedValue(new Error('fs error'))
+      vi.mocked(isPathExists).mockResolvedValue(true)
+      vi.mocked(readFile).mockRejectedValue(new Error('fs error'))
       expect(await service.checkAppStore()).toBeNull()
     })
 
     it('should rewrite desktop packages under desktop/os when package starts with "desktop"', async () => {
       setRepo(APP_STORE_REPOSITORY.LOCAL)
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
+      vi.mocked(isPathExists).mockResolvedValue(true)
       const raw = {
         platform: {
           win: [{ package: `${SYNC_CLIENT_TYPE.DESKTOP}-win.exe` }],
@@ -399,7 +426,7 @@ describe(SyncClientsManager.name, () => {
           linux: [{ package: `${SYNC_CLIENT_TYPE.DESKTOP}-linux.AppImage` }]
         }
       }
-      ;(fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(raw))
+      vi.mocked(readFile).mockResolvedValue(JSON.stringify(raw))
 
       const manifest: any = await service.checkAppStore()
       expect(manifest).toBeTruthy()

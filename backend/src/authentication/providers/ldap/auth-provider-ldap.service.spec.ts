@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { Mocked } from 'jest-mock'
 import { Client, InvalidCredentialsError } from 'ldapts'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -15,15 +14,19 @@ import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants'
 import type { AuthProviderLDAPConfig } from './auth-ldap.config'
 import { LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
 import { AuthProviderLDAP } from './auth-provider-ldap.service'
+import { Mocked } from 'vitest'
 
-jest.mock('ldapts', () => {
-  const actual = jest.requireActual('ldapts')
-  const mockClientInstance = {
-    bind: jest.fn(),
-    search: jest.fn(),
-    unbind: jest.fn()
-  }
-  const Client = jest.fn().mockImplementation(() => mockClientInstance)
+vi.mock('ldapts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('ldapts')>()
+
+  const Client = vi.fn(function () {
+    return {
+      bind: vi.fn(),
+      search: vi.fn(),
+      unbind: vi.fn()
+    }
+  })
+
   return { ...actual, Client }
 })
 
@@ -37,17 +40,19 @@ const buildUser = (overrides: Partial<UserModel> = {}) =>
     isGuest: false,
     isActive: true,
     isAdmin: false,
-    makePaths: jest.fn().mockResolvedValue(undefined),
-    setFullName: jest.fn(),
+    makePaths: vi.fn().mockResolvedValue(undefined),
+    setFullName: vi.fn(),
     ...overrides
   }) as any
 
 const ldapClient = {
-  bind: jest.fn(),
-  search: jest.fn(),
-  unbind: jest.fn()
+  bind: vi.fn(),
+  search: vi.fn(),
+  unbind: vi.fn()
 }
-;(Client as Mocked<any>).mockImplementation(() => ldapClient)
+vi.mocked(Client).mockImplementation(function () {
+  return ldapClient
+})
 
 describe(AuthProviderLDAP.name, () => {
   let authProviderLDAP: AuthProviderLDAP
@@ -108,18 +113,18 @@ describe(AuthProviderLDAP.name, () => {
         {
           provide: UsersManager,
           useValue: {
-            findUser: jest.fn(),
-            logUser: jest.fn(),
-            updateAccesses: jest.fn().mockResolvedValue(undefined),
-            validateAppPassword: jest.fn(),
-            fromUserId: jest.fn()
+            findUser: vi.fn(),
+            logUser: vi.fn(),
+            updateAccesses: vi.fn().mockResolvedValue(undefined),
+            validateAppPassword: vi.fn(),
+            fromUserId: vi.fn()
           }
         },
         {
           provide: AdminUsersManager,
           useValue: {
-            createUserOrGuest: jest.fn(),
-            updateUserOrGuest: jest.fn()
+            createUserOrGuest: vi.fn(),
+            updateUserOrGuest: vi.fn()
           }
         }
       ]
@@ -132,13 +137,13 @@ describe(AuthProviderLDAP.name, () => {
   })
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     setLdapConfig()
     usersManager.updateAccesses.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   it('should be defined', () => {
@@ -175,7 +180,7 @@ describe(AuthProviderLDAP.name, () => {
 
   it('should throw FORBIDDEN for locked account', async () => {
     usersManager.findUser.mockResolvedValue({ login: 'john', isGuest: false, isActive: false } as UserModel)
-    const loggerErrorSpy = jest.spyOn(authProviderLDAP['logger'], 'error').mockImplementation(() => undefined as any)
+    const loggerErrorSpy = vi.spyOn(authProviderLDAP['logger'], 'error').mockImplementation(() => undefined as any)
 
     await expect(authProviderLDAP.validateUser('john', 'pwd')).rejects.toThrow(/account locked/i)
     expect(loggerErrorSpy).toHaveBeenCalled()
@@ -254,7 +259,7 @@ describe(AuthProviderLDAP.name, () => {
     usersManager.findUser.mockResolvedValue(null)
     mockBindResolve()
     mockSearchEntries([{ uid: 'jane', cn: 'Jane Doe', mail: undefined }])
-    const loggerErrorSpy = jest.spyOn(authProviderLDAP['logger'], 'error').mockImplementation(() => undefined as any)
+    const loggerErrorSpy = vi.spyOn(authProviderLDAP['logger'], 'error').mockImplementation(() => undefined as any)
 
     const res = await authProviderLDAP.validateUser('jane', 'pwd')
 
@@ -266,7 +271,7 @@ describe(AuthProviderLDAP.name, () => {
   it('should throw UNAUTHORIZED when autoCreateUser is disabled', async () => {
     setLdapConfig({ options: { autoCreateUser: false } })
     usersManager.findUser.mockResolvedValue(null)
-    const checkAuthSpy = jest.spyOn<any, any>(authProviderLDAP as any, 'checkAuth').mockResolvedValue({
+    const checkAuthSpy = vi.spyOn<any, any>(authProviderLDAP as any, 'checkAuth').mockResolvedValue({
       uid: 'john',
       mail: 'john@example.org'
     })
@@ -293,7 +298,7 @@ describe(AuthProviderLDAP.name, () => {
         memberOf: ['CN=Admins,OU=Groups,DC=example,DC=org']
       }
     ])
-    const createdUser: any = { id: 2, login: 'john', isGuest: false, isActive: true, makePaths: jest.fn() }
+    const createdUser: any = { id: 2, login: 'john', isGuest: false, isActive: true, makePaths: vi.fn() }
     adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
     usersManager.fromUserId.mockResolvedValue(createdUser)
 
@@ -316,7 +321,7 @@ describe(AuthProviderLDAP.name, () => {
   })
 
   it('should handle LDAP storage quota mapping cases', async () => {
-    jest.spyOn(commonFunctions, 'comparePassword').mockResolvedValue(true)
+    vi.spyOn(commonFunctions, 'comparePassword').mockResolvedValue(true)
     const scenarios = [
       {
         mode: 'create',
@@ -354,12 +359,12 @@ describe(AuthProviderLDAP.name, () => {
     setLdapConfig({ attributes: { storageQuota: 'quotaBytes' } })
 
     for (const [index, scenario] of scenarios.entries()) {
-      jest.clearAllMocks()
+      vi.clearAllMocks()
       mockBindResolve()
       mockSearchEntries([scenario.entry])
 
       if (scenario.mode === 'create') {
-        const createdUser: any = { id: 22 + index, login: 'john', isGuest: false, isActive: true, makePaths: jest.fn() }
+        const createdUser: any = { id: 22 + index, login: 'john', isGuest: false, isActive: true, makePaths: vi.fn() }
         usersManager.findUser.mockResolvedValue(null)
         adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
         usersManager.fromUserId.mockResolvedValue(createdUser)
@@ -406,7 +411,7 @@ describe(AuthProviderLDAP.name, () => {
         memberOf: ['CN=Admins,OU=Groups,DC=example,DC=org']
       }
     ])
-    const createdUser: any = { id: 9, login: 'john', isGuest: false, isActive: true, makePaths: jest.fn() }
+    const createdUser: any = { id: 9, login: 'john', isGuest: false, isActive: true, makePaths: vi.fn() }
     adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
     usersManager.fromUserId.mockResolvedValue(createdUser)
 
@@ -435,7 +440,7 @@ describe(AuthProviderLDAP.name, () => {
         ]
       })
       .mockResolvedValueOnce({ searchEntries: [{ cn: 'Admins' }] })
-    const createdUser: any = { id: 3, login: 'john', isGuest: false, isActive: true, makePaths: jest.fn() }
+    const createdUser: any = { id: 3, login: 'john', isGuest: false, isActive: true, makePaths: vi.fn() }
     adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
     usersManager.fromUserId.mockResolvedValue(createdUser)
 
@@ -458,7 +463,7 @@ describe(AuthProviderLDAP.name, () => {
     ldapClient.search.mockResolvedValueOnce({
       searchEntries: [{ uid: 'john', cn: 'John Doe', mail: 'john@example.org', dn: 'uid=john,ou=people,dc=example,dc=org' }]
     })
-    const createdUser: any = { id: 8, login: 'john', isGuest: false, isActive: true, makePaths: jest.fn() }
+    const createdUser: any = { id: 8, login: 'john', isGuest: false, isActive: true, makePaths: vi.fn() }
     adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
     usersManager.fromUserId.mockResolvedValue(createdUser)
 
@@ -509,7 +514,7 @@ describe(AuthProviderLDAP.name, () => {
     usersManager.findUser.mockResolvedValue(existingUser)
     mockBindResolve()
     mockSearchEntries([{ uid: 'john', cn: 'John Doe', mail: 'john@example.org' }])
-    jest.spyOn(commonFunctions, 'comparePassword').mockResolvedValue(true)
+    vi.spyOn(commonFunctions, 'comparePassword').mockResolvedValue(true)
 
     await authProviderLDAP.validateUser('john', 'pwd')
 
@@ -524,8 +529,8 @@ describe(AuthProviderLDAP.name, () => {
     usersManager.findUser.mockResolvedValue(existingUser)
     mockBindResolve()
     mockSearchEntries([{ uid: 'john', displayName: 'Jane Doe', mail: 'john@example.org' }])
-    const compareSpy = jest.spyOn(commonFunctions, 'comparePassword').mockResolvedValue(false)
-    const splitSpy = jest.spyOn(commonFunctions, 'splitFullName').mockReturnValue({ firstName: 'Jane', lastName: 'Doe' })
+    const compareSpy = vi.spyOn(commonFunctions, 'comparePassword').mockResolvedValue(false)
+    const splitSpy = vi.spyOn(commonFunctions, 'splitFullName').mockReturnValue({ firstName: 'Jane', lastName: 'Doe' })
 
     const res = await authProviderLDAP.validateUser('john', 'new-plain-password', '127.0.0.2')
 
@@ -614,7 +619,7 @@ describe(AuthProviderLDAP.name, () => {
   })
 
   it('should warn and fallback when ca path is not readable', async () => {
-    const warnSpy = jest.spyOn(authProviderLDAP['logger'], 'warn').mockImplementation(() => undefined)
+    const warnSpy = vi.spyOn(authProviderLDAP['logger'], 'warn').mockImplementation(() => undefined)
     const unreadableCaPath = '/definitely/missing/ca.pem'
 
     const ca = await (authProviderLDAP as any).readTlsCa(unreadableCaPath)

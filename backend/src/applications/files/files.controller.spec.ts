@@ -17,32 +17,32 @@ describe(FilesController.name, () => {
   const fakeUser: any = { id: 1, login: 'john', role: 1 }
   const fakeSpace: any = { id: 42, key: 'space-key', url: '/space/a', realPath: '/data/space/a', realBasePath: '/data/space' }
   const fakeReq: any = { user: fakeUser, space: fakeSpace, headers: {}, method: 'GET', ip: '127.0.0.1' }
-  const fakeRes: any = { header: jest.fn().mockReturnThis(), status: jest.fn().mockReturnThis(), type: jest.fn().mockReturnThis(), send: jest.fn() }
+  const fakeRes: any = { header: vi.fn().mockReturnThis(), status: vi.fn().mockReturnThis(), type: vi.fn().mockReturnThis(), send: vi.fn() }
 
   // Mocks
   const filesMethodsMock = {
-    headOrGet: jest.fn(),
-    make: jest.fn(),
-    upload: jest.fn(),
-    copy: jest.fn(),
-    move: jest.fn(),
-    delete: jest.fn(),
-    genThumbnail: jest.fn(),
-    downloadFromUrl: jest.fn(),
-    compress: jest.fn(),
-    decompress: jest.fn()
+    headOrGet: vi.fn(),
+    make: vi.fn(),
+    upload: vi.fn(),
+    copy: vi.fn(),
+    move: vi.fn(),
+    delete: vi.fn(),
+    genThumbnail: vi.fn(),
+    downloadFromUrl: vi.fn(),
+    compress: vi.fn(),
+    decompress: vi.fn()
   }
 
   const filesTasksManagerMock = {
-    createTask: jest.fn()
+    createTask: vi.fn()
   }
 
   const filesRecentsMock = {
-    getRecents: jest.fn()
+    getRecents: vi.fn()
   }
 
   const filesSearchMock = {
-    search: jest.fn()
+    search: vi.fn()
   }
 
   beforeAll(async () => {
@@ -59,7 +59,7 @@ describe(FilesController.name, () => {
       ]
     })
     // IMPORTANT: override the guard referenced by @UseGuards to avoid resolving its dependencies
-    testingModuleBuilder.overrideGuard(SpaceGuard).useValue({ canActivate: jest.fn().mockReturnValue(true) })
+    testingModuleBuilder.overrideGuard(SpaceGuard).useValue({ canActivate: vi.fn().mockReturnValue(true) })
 
     const module: TestingModule = await testingModuleBuilder.compile()
 
@@ -72,7 +72,7 @@ describe(FilesController.name, () => {
 
   describe('Operations', () => {
     beforeEach(() => {
-      jest.clearAllMocks()
+      vi.clearAllMocks()
     })
 
     it('head() should delegate to filesMethods.headOrGet(req, res) and return its result', async () => {
@@ -177,7 +177,7 @@ describe(FilesController.name, () => {
 
   describe('Tasks operations', () => {
     beforeEach(() => {
-      jest.clearAllMocks()
+      vi.clearAllMocks()
     })
 
     it('downloadFromUrlAsTask() should create DOWNLOAD task using method name "downloadFromUrl"', async () => {
@@ -199,7 +199,7 @@ describe(FilesController.name, () => {
 
     it('compressAsTask() should call SpaceGuard.checkPermissions when compressInDirectory is true', async () => {
       const dto = { compressInDirectory: true } as any
-      const spy = jest.spyOn(SpaceGuard as any, 'checkPermissions').mockImplementation(() => undefined)
+      const spy = vi.spyOn(SpaceGuard as any, 'checkPermissions').mockImplementation(() => undefined)
 
       filesTasksManagerMock.createTask.mockResolvedValue({} as any)
       await filesController.compressAsTask(fakeReq, dto)
@@ -276,7 +276,7 @@ describe(FilesController.name, () => {
 
   describe('Recents & Search', () => {
     beforeEach(() => {
-      jest.clearAllMocks()
+      vi.clearAllMocks()
     })
 
     it('getRecents() should use limit=10 by default', async () => {

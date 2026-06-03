@@ -1,4 +1,4 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest'
+import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { USER_ROLE } from '../constants/user'

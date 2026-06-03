@@ -8,11 +8,12 @@ import { FILE_REPOSITORY } from '../constants/operations'
 import { FileTrash } from '../schemas/file-trash.interface'
 import { createTableFilesTrash } from '../schemas/files-trash.schema'
 import { FilesTrashRetention } from './files-trash-retention.service'
+import { Mock } from 'vitest'
 
 describe(FilesTrashRetention.name, () => {
   let module: TestingModule
   let service: FilesTrashRetention
-  let db: { execute: jest.Mock }
+  let db: { execute: Mock }
 
   const asyncGen = <T>(items: T[]) =>
     (async function* () {
@@ -50,13 +51,13 @@ describe(FilesTrashRetention.name, () => {
   }
 
   const mockTrashPath = (files: FileTrash[] = [], type: FILE_REPOSITORY.USER | FILE_REPOSITORY.SPACE = FILE_REPOSITORY.USER, retentionDays = 30) => {
-    jest.spyOn(service as any, 'allPaths').mockResolvedValueOnce([{ id: 9, type, realPath: '/trash', retentionDays }])
-    jest.spyOn(service as any, 'createTable').mockResolvedValueOnce(true)
-    jest.spyOn(service as any, 'parseFiles').mockReturnValueOnce(asyncGen(files))
+    vi.spyOn(service as any, 'allPaths').mockResolvedValueOnce([{ id: 9, type, realPath: '/trash', retentionDays }])
+    vi.spyOn(service as any, 'createTable').mockResolvedValueOnce(true)
+    vi.spyOn(service as any, 'parseFiles').mockReturnValueOnce(asyncGen(files))
   }
 
   beforeEach(async () => {
-    db = { execute: jest.fn() }
+    db = { execute: vi.fn() }
 
     module = await Test.createTestingModule({
       providers: [FilesTrashRetention, { provide: DB_TOKEN_PROVIDER, useValue: db }]
@@ -67,8 +68,8 @@ describe(FilesTrashRetention.name, () => {
   })
 
   afterEach(async () => {
-    jest.restoreAllMocks()
-    jest.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
     await module.close()
   })
 
@@ -84,9 +85,9 @@ describe(FilesTrashRetention.name, () => {
   it('should process trash files by batches of 1000 and delete unseen records', async () => {
     const files = Array.from({ length: 1001 }, (_, i) => fileTrash(i + 1))
     mockTrashPath(files)
-    const indexTrashBatchSpy = jest.spyOn(service as any, 'indexTrashBatch').mockResolvedValue({ indexedRecords: 0, errorRecords: 0 })
-    const deleteUnseenRecordsSpy = jest.spyOn(service as any, 'deleteUnseenRecords').mockResolvedValueOnce(2)
-    const cleanupExpiredRecordsSpy = jest.spyOn(service as any, 'cleanupExpiredRecords').mockResolvedValueOnce({ deletedRecords: 3, errorRecords: 0 })
+    const indexTrashBatchSpy = vi.spyOn(service as any, 'indexTrashBatch').mockResolvedValue({ indexedRecords: 0, errorRecords: 0 })
+    const deleteUnseenRecordsSpy = vi.spyOn(service as any, 'deleteUnseenRecords').mockResolvedValueOnce(2)
+    const cleanupExpiredRecordsSpy = vi.spyOn(service as any, 'cleanupExpiredRecords').mockResolvedValueOnce({ deletedRecords: 3, errorRecords: 0 })
 
     await service.indexAndCleanTrash()
 
@@ -99,9 +100,9 @@ describe(FilesTrashRetention.name, () => {
 
   it('should use the trash retention attached to each repository path', async () => {
     mockTrashPath([fileTrash(1)], FILE_REPOSITORY.SPACE, 14)
-    jest.spyOn(service as any, 'indexTrashBatch').mockResolvedValueOnce({ indexedRecords: 1, errorRecords: 0 })
-    jest.spyOn(service as any, 'deleteUnseenRecords').mockResolvedValueOnce(0)
-    const cleanupExpiredRecordsSpy = jest.spyOn(service as any, 'cleanupExpiredRecords').mockResolvedValueOnce({ deletedRecords: 0, errorRecords: 0 })
+    vi.spyOn(service as any, 'indexTrashBatch').mockResolvedValueOnce({ indexedRecords: 1, errorRecords: 0 })
+    vi.spyOn(service as any, 'deleteUnseenRecords').mockResolvedValueOnce(0)
+    const cleanupExpiredRecordsSpy = vi.spyOn(service as any, 'cleanupExpiredRecords').mockResolvedValueOnce({ deletedRecords: 0, errorRecords: 0 })
 
     await service.indexAndCleanTrash()
 
@@ -110,9 +111,9 @@ describe(FilesTrashRetention.name, () => {
 
   it('should skip expired cleanup when unseen records cannot be deleted', async () => {
     mockTrashPath([fileTrash(1)])
-    jest.spyOn(service as any, 'indexTrashBatch').mockResolvedValueOnce({ indexedRecords: 1, errorRecords: 0 })
-    jest.spyOn(service as any, 'deleteUnseenRecords').mockResolvedValueOnce(null)
-    const cleanupExpiredRecordsSpy = jest.spyOn(service as any, 'cleanupExpiredRecords')
+    vi.spyOn(service as any, 'indexTrashBatch').mockResolvedValueOnce({ indexedRecords: 1, errorRecords: 0 })
+    vi.spyOn(service as any, 'deleteUnseenRecords').mockResolvedValueOnce(null)
+    const cleanupExpiredRecordsSpy = vi.spyOn(service as any, 'cleanupExpiredRecords')
 
     await service.indexAndCleanTrash()
 
@@ -143,17 +144,17 @@ describe(FilesTrashRetention.name, () => {
 
   it('should insert changed records and mark unchanged records seen inside a batch', async () => {
     const runId = 'run-1'
-    jest.spyOn(service as any, 'getRecordMetadataByIds').mockResolvedValueOnce(
+    vi.spyOn(service as any, 'getRecordMetadataByIds').mockResolvedValueOnce(
       new Map([
         [1, { path: 'file-1.txt', isDir: false }],
         [2, { path: 'old.txt', isDir: false }]
       ])
     )
-    const insertRecordSpy = jest
+    const insertRecordSpy = vi
       .spyOn(service as any, 'insertRecord')
       .mockResolvedValueOnce(false)
       .mockResolvedValueOnce(true)
-    const markRecordsSeenSpy = jest.spyOn(service as any, 'markRecordsSeen').mockResolvedValueOnce(true)
+    const markRecordsSeenSpy = vi.spyOn(service as any, 'markRecordsSeen').mockResolvedValueOnce(true)
 
     await expect(
       (service as any).indexTrashBatch('files_trash_user_1', runId, [fileTrash(1), fileTrash(2, { path: 'file-2.txt' }), fileTrash(3)])
@@ -177,16 +178,15 @@ describe(FilesTrashRetention.name, () => {
 
   it('should delete expired records from filesystem and database', async () => {
     const expiredRecords = [fileTrash(1), fileTrash(2, { path: 'nested' })]
-    const getExpiredRecordsSpy = jest
+    const getExpiredRecordsSpy = vi
       .spyOn(service as any, 'getExpiredRecords')
       .mockResolvedValueOnce(expiredRecords)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
-    jest
-      .spyOn(service as any, 'deleteTrashRecordFile')
+    vi.spyOn(service as any, 'deleteTrashRecordFile')
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(false)
-    const deleteRecordsByIdsSpy = jest.spyOn(service as any, 'deleteRecordsByIds').mockResolvedValueOnce(1)
+    const deleteRecordsByIdsSpy = vi.spyOn(service as any, 'deleteRecordsByIds').mockResolvedValueOnce(1)
 
     await expect((service as any).cleanupExpiredRecords('files_trash_user_1', '/trash', 30)).resolves.toEqual({
       deletedRecords: 1,

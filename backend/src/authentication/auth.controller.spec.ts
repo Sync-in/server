@@ -60,7 +60,7 @@ describe(AuthController.name, () => {
   })
 
   it('should set JWT in cookies', async () => {
-    const res: any = { setCookie: jest.fn() }
+    const res: any = { setCookie: vi.fn() }
     const result = await authController.login(userTest, res)
     expect(result).toBeDefined()
     expect(result).toBeInstanceOf(LoginResponseDto)
@@ -70,14 +70,14 @@ describe(AuthController.name, () => {
   })
 
   it('should clear JWT in cookies', async () => {
-    const res: any = { clearCookie: jest.fn() }
+    const res: any = { clearCookie: vi.fn() }
     await expect(authController.logout(res)).resolves.not.toThrow()
     expect(res.clearCookie).toHaveBeenCalledTimes(Object.keys(TOKEN_PATHS).length)
   })
 
   it('should refresh JWT in cookies', async () => {
     userTest.exp = currentTimeStamp() + convertHumanTimeToSeconds('30s')
-    const res: any = { setCookie: jest.fn() }
+    const res: any = { setCookie: vi.fn() }
     const result = await authController.refreshCookies(userTest, res)
     expect(result).toBeDefined()
     expect(res.setCookie).toHaveBeenCalledTimes(4)
@@ -87,7 +87,7 @@ describe(AuthController.name, () => {
 
   it('should not refresh JWT in cookies', async () => {
     userTest.exp = currentTimeStamp() - 1
-    const res: any = { setCookie: jest.fn() }
+    const res: any = { setCookie: vi.fn() }
     await expect(authController.refreshCookies(userTest, res)).rejects.toThrow()
   })
 

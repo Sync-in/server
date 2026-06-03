@@ -1,4 +1,4 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest'
+import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
@@ -34,7 +34,7 @@ describe(AuthBasicGuard.name, () => {
           provide: PinoLogger,
           useValue: {
             assign: () => undefined,
-            error: jest.fn()
+            error: vi.fn()
           }
         },
         {
@@ -68,7 +68,7 @@ describe(AuthBasicGuard.name, () => {
   })
 
   it('should validate the user authentication', async () => {
-    authProvider.validateUser = jest.fn().mockReturnValueOnce(userTest)
+    authProvider.validateUser = vi.fn().mockReturnValueOnce(userTest)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       headers: { authorization: `Basic ${encodedAuth}` }
@@ -82,7 +82,7 @@ describe(AuthBasicGuard.name, () => {
     const userWithColonPassword = new UserModel({ ...generateUserTest(), password: passwordWithColon }, false)
     const encodedAuthWithColon = Buffer.from(`${userWithColonPassword.login}:${passwordWithColon}`).toString('base64')
 
-    authProvider.validateUser = jest.fn().mockImplementation((login: string, password: string) => {
+    authProvider.validateUser = vi.fn().mockImplementation((login: string, password: string) => {
       expect(login).toBe(userWithColonPassword.login)
       expect(password).toBe(passwordWithColon)
       return userWithColonPassword
@@ -96,7 +96,7 @@ describe(AuthBasicGuard.name, () => {
   })
 
   it('should validate the user authentication with cache', async () => {
-    cache.get = jest.fn().mockReturnValueOnce(userTest)
+    cache.get = vi.fn().mockReturnValueOnce(userTest)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       headers: { authorization: `Basic ${encodedAuth}` }
@@ -105,7 +105,7 @@ describe(AuthBasicGuard.name, () => {
   })
 
   it('should not validate the user authentication when cache returns null (explicitly unauthorized)', async () => {
-    cache.get = jest.fn().mockReturnValueOnce(null)
+    cache.get = vi.fn().mockReturnValueOnce(null)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       headers: { authorization: `Basic ${encodedAuth}` }
@@ -114,14 +114,14 @@ describe(AuthBasicGuard.name, () => {
   })
 
   it('should not validate the user authentication when cache returns undefined and database return null', async () => {
-    cache.get = jest.fn().mockReturnValueOnce(undefined)
-    authProvider.validateUser = jest.fn().mockReturnValueOnce(null)
-    jest.spyOn(cache, 'set').mockRejectedValueOnce(new Error('cache failed'))
+    cache.get = vi.fn().mockReturnValueOnce(undefined)
+    authProvider.validateUser = vi.fn().mockReturnValueOnce(null)
+    vi.spyOn(cache, 'set').mockRejectedValueOnce(new Error('cache failed'))
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       headers: { authorization: `Basic ${encodedAuth}` }
     })
-    const loggerSpy = jest
+    const loggerSpy = vi
       .spyOn(authBasicStrategy['logger'], 'error') // <-- spy the SAME instance used in the class
       .mockImplementation(() => undefined)
     await expect(authBasicGuard.canActivate(context)).rejects.toThrow()

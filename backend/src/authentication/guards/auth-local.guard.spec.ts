@@ -1,4 +1,4 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest'
+import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
@@ -42,7 +42,7 @@ describe(AuthLocalGuard.name, () => {
   })
 
   it('should validate the user authentication', async () => {
-    authProvider.validateUser = jest.fn().mockReturnValueOnce(userTest)
+    authProvider.validateUser = vi.fn().mockReturnValueOnce(userTest)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       body: {
@@ -56,7 +56,7 @@ describe(AuthLocalGuard.name, () => {
 
   it('should not validate the user authentication', async () => {
     userTest.password = 'password'
-    authProvider.validateUser = jest.fn().mockReturnValueOnce(null)
+    authProvider.validateUser = vi.fn().mockReturnValueOnce(null)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       body: {
@@ -68,7 +68,7 @@ describe(AuthLocalGuard.name, () => {
   })
 
   it('should throw error due to malformed body', async () => {
-    authProvider.validateUser = jest.fn().mockReturnValueOnce(null)
+    authProvider.validateUser = vi.fn().mockReturnValueOnce(null)
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
       body: null

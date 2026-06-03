@@ -8,21 +8,22 @@ import { FILE_REPOSITORY } from '../constants/operations'
 import { configuration } from '../../../configuration/config.environment'
 import { FilesContentParser } from './files-content-parser.service'
 import { FilesSearchManager } from './files-search-manager.service'
+import { Mock } from 'vitest'
 
 describe(FilesSearchManager.name, () => {
   let service: FilesSearchManager
   let filesIndexer: {
-    existingIndexes: jest.Mock
-    searchRecords: jest.Mock
+    existingIndexes: Mock
+    searchRecords: Mock
   }
   let filesParser: {
-    allPaths: jest.Mock
+    allPaths: Mock
   }
   let spacesQueries: {
-    spaceIds: jest.Mock
+    spaceIds: Mock
   }
   let sharesQueries: {
-    shareIds: jest.Mock
+    shareIds: Mock
   }
   let contentIndexingEnabled: boolean
 
@@ -37,17 +38,17 @@ describe(FilesSearchManager.name, () => {
 
   beforeEach(async () => {
     filesIndexer = {
-      existingIndexes: jest.fn().mockResolvedValue([]),
-      searchRecords: jest.fn().mockResolvedValue([])
+      existingIndexes: vi.fn().mockResolvedValue([]),
+      searchRecords: vi.fn().mockResolvedValue([])
     }
     filesParser = {
-      allPaths: jest.fn()
+      allPaths: vi.fn()
     }
     spacesQueries = {
-      spaceIds: jest.fn().mockResolvedValue([])
+      spaceIds: vi.fn().mockResolvedValue([])
     }
     sharesQueries = {
-      shareIds: jest.fn().mockResolvedValue([])
+      shareIds: vi.fn().mockResolvedValue([])
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -69,8 +70,8 @@ describe(FilesSearchManager.name, () => {
 
   afterEach(() => {
     configuration.applications.files.contentIndexing.enabled = contentIndexingEnabled
-    jest.restoreAllMocks()
-    jest.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -89,7 +90,7 @@ describe(FilesSearchManager.name, () => {
     configuration.applications.files.contentIndexing.enabled = true
     spacesQueries.spaceIds.mockResolvedValueOnce([1, 2])
     sharesQueries.shareIds.mockResolvedValueOnce([4])
-    const fullTextSpy = jest.spyOn(service as any, 'searchFullText').mockResolvedValueOnce([fileContent('match.md')])
+    const fullTextSpy = vi.spyOn(service as any, 'searchFullText').mockResolvedValueOnce([fileContent('match.md')])
 
     const result = await service.search({ id: 10, isAdmin: true } as any, { content: 'match', fullText: true, limit: 5 } as any)
 
@@ -102,7 +103,7 @@ describe(FilesSearchManager.name, () => {
   it('should route to filename search when fullText is false', async () => {
     spacesQueries.spaceIds.mockResolvedValueOnce([6])
     sharesQueries.shareIds.mockResolvedValueOnce([8, 9])
-    const nameSearchSpy = jest.spyOn(service as any, 'searchFileNames').mockResolvedValueOnce([fileContent('report.pdf')])
+    const nameSearchSpy = vi.spyOn(service as any, 'searchFileNames').mockResolvedValueOnce([fileContent('report.pdf')])
 
     const result = await service.search({ id: 3, isAdmin: false } as any, { content: 'report', fullText: false, limit: 2 } as any)
 
@@ -145,8 +146,8 @@ describe(FilesSearchManager.name, () => {
         ]
       }
     ])
-    jest.spyOn(service as any, 'analyzeFile').mockResolvedValue(fileContent('file-a.txt'))
-    jest.spyOn(service as any, 'parseFileNames').mockReturnValue(
+    vi.spyOn(service as any, 'analyzeFile').mockResolvedValue(fileContent('file-a.txt'))
+    vi.spyOn(service as any, 'parseFileNames').mockReturnValue(
       (async function* () {
         yield fileContent('from-dir-1.txt')
         yield fileContent('from-dir-2.txt')
@@ -161,7 +162,7 @@ describe(FilesSearchManager.name, () => {
   })
 
   it('should ignore parse errors in parseFileNames', async () => {
-    jest.spyOn(fs, 'readdir').mockRejectedValueOnce(new Error('EACCES'))
+    vi.spyOn(fs, 'readdir').mockRejectedValueOnce(new Error('EACCES'))
     const result: any[] = []
 
     for await (const item of (service as any).parseFileNames('/forbidden', 'files/personal', /^\/?forbidden\/?/, /a/i)) {
@@ -172,7 +173,7 @@ describe(FilesSearchManager.name, () => {
   })
 
   it('should analyze a matching file and return its metadata', async () => {
-    jest.spyOn(fs, 'stat').mockResolvedValueOnce({
+    vi.spyOn(fs, 'stat').mockResolvedValueOnce({
       ino: 42,
       size: 512,
       mtime: new Date('2024-01-02T03:04:05.000Z'),
@@ -192,7 +193,7 @@ describe(FilesSearchManager.name, () => {
   })
 
   it('should return null for analyzeFile when terms do not match', async () => {
-    const statSpy = jest.spyOn(fs, 'stat')
+    const statSpy = vi.spyOn(fs, 'stat')
 
     const result = await (service as any).analyzeFile('/base/docs/readme.txt', 'files/personal', /^\/?base\/?/, /invoice/i)
 

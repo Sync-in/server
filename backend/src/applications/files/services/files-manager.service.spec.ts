@@ -28,32 +28,33 @@ import * as filesUtils from '../utils/files'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesManager } from './files-manager.service'
 import { FilesQueries } from './files-queries.service'
+import { Mock } from 'vitest'
 
-jest.mock('archiver', () => ({
+vi.mock('archiver', () => ({
   __esModule: true,
-  default: jest.fn()
+  default: vi.fn()
 }))
 
-jest.mock('node:dns/promises', () => ({
-  lookup: jest.fn()
+vi.mock('node:dns/promises', () => ({
+  lookup: vi.fn()
 }))
 
 describe(FilesManager.name, () => {
   let service: FilesManager
-  let http: { axiosRef: jest.Mock }
-  const lookupMock = lookup as jest.Mock
-  let filesQueries: { moveFiles: jest.Mock; deleteFiles: jest.Mock }
-  let spacesManager: { spaceEnv: jest.Mock }
-  let contextManager: { headerOriginUrl: jest.Mock }
-  let notificationsManager: { create: jest.Mock }
+  let http: { axiosRef: Mock }
+  const lookupMock = lookup as Mock
+  let filesQueries: { moveFiles: Mock; deleteFiles: Mock }
+  let spacesManager: { spaceEnv: Mock }
+  let contextManager: { headerOriginUrl: Mock }
+  let notificationsManager: { create: Mock }
   let filesLockManager: {
-    create: jest.Mock
-    checkConflicts: jest.Mock
-    removeLock: jest.Mock
-    createOrRefresh: jest.Mock
-    getLocksByPath: jest.Mock
-    convertLockToFileLockProps: jest.Mock
-    removeChildLocks: jest.Mock
+    create: Mock
+    checkConflicts: Mock
+    removeLock: Mock
+    createOrRefresh: Mock
+    getLocksByPath: Mock
+    convertLockToFileLockProps: Mock
+    removeChildLocks: Mock
   }
 
   const user = { id: 7, login: 'john', tmpPath: '/data/users/john/tmp', tasksPath: '/data/users/john/tmp/tasks' } as any
@@ -70,13 +71,13 @@ describe(FilesManager.name, () => {
       inTrashRepository: false,
       quotaIsExceeded: false,
       storageQuota: null,
-      willExceedQuota: jest.fn().mockReturnValue(false),
+      willExceedQuota: vi.fn().mockReturnValue(false),
       task: { cacheKey: '', props: {} },
       ...overrides
     }) as any
 
   const setPathExists = (values: Record<string, boolean>, fallback = false) => {
-    ;(filesUtils.isPathExists as jest.Mock).mockImplementation(async (p: string) => (p in values ? values[p] : fallback))
+    vi.mocked(filesUtils.isPathExists).mockImplementation(async (p: string) => (p in values ? values[p] : fallback))
   }
 
   const makeTrashSpace = (overrides: Record<string, any> = {}) =>
@@ -92,22 +93,22 @@ describe(FilesManager.name, () => {
 
   const createArchiveMock = () => {
     const archive = new PassThrough() as PassThrough & {
-      directory: jest.Mock
-      file: jest.Mock
-      finalize: jest.Mock
-      abort: jest.Mock
+      directory: Mock
+      file: Mock
+      finalize: Mock
+      abort: Mock
     }
-    archive.directory = jest.fn().mockReturnValue(archive)
-    archive.file = jest.fn().mockReturnValue(archive)
-    archive.finalize = jest.fn().mockImplementation(async () => {
+    archive.directory = vi.fn().mockReturnValue(archive)
+    archive.file = vi.fn().mockReturnValue(archive)
+    archive.finalize = vi.fn().mockImplementation(async () => {
       archive.end()
     })
-    archive.abort = jest.fn().mockImplementation(() => {
+    archive.abort = vi.fn().mockImplementation(() => {
       archive.end()
       return archive
     })
-    ;(archiver as unknown as jest.Mock).mockReturnValueOnce(archive as any)
-    jest.spyOn(fs, 'createWriteStream').mockReturnValue(new PassThrough() as any)
+    vi.mocked(archiver).mockReturnValueOnce(archive as any)
+    vi.spyOn(fs, 'createWriteStream').mockReturnValue(new PassThrough() as any)
     return archive
   }
 
@@ -126,29 +127,29 @@ describe(FilesManager.name, () => {
   }
 
   beforeEach(async () => {
-    http = { axiosRef: jest.fn() }
+    http = { axiosRef: vi.fn() }
     lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }])
     filesQueries = {
-      moveFiles: jest.fn().mockResolvedValue(undefined),
-      deleteFiles: jest.fn().mockResolvedValue(undefined)
+      moveFiles: vi.fn().mockResolvedValue(undefined),
+      deleteFiles: vi.fn().mockResolvedValue(undefined)
     }
     spacesManager = {
-      spaceEnv: jest.fn().mockResolvedValue(makeSpace())
+      spaceEnv: vi.fn().mockResolvedValue(makeSpace())
     }
     contextManager = {
-      headerOriginUrl: jest.fn().mockReturnValue('https://sync-in.example')
+      headerOriginUrl: vi.fn().mockReturnValue('https://sync-in.example')
     }
     notificationsManager = {
-      create: jest.fn().mockResolvedValue(undefined)
+      create: vi.fn().mockResolvedValue(undefined)
     }
     filesLockManager = {
-      create: jest.fn().mockResolvedValue([true, { key: 'lock-1' }]),
-      checkConflicts: jest.fn().mockResolvedValue(undefined),
-      removeLock: jest.fn().mockResolvedValue(true),
-      createOrRefresh: jest.fn().mockResolvedValue([false, { key: 'lock-2' }]),
-      getLocksByPath: jest.fn().mockResolvedValue([]),
-      convertLockToFileLockProps: jest.fn().mockReturnValue({ owner: { id: 7, login: 'john' }, app: 'Sync-in', isExclusive: true }),
-      removeChildLocks: jest.fn().mockResolvedValue(undefined)
+      create: vi.fn().mockResolvedValue([true, { key: 'lock-1' }]),
+      checkConflicts: vi.fn().mockResolvedValue(undefined),
+      removeLock: vi.fn().mockResolvedValue(true),
+      createOrRefresh: vi.fn().mockResolvedValue([false, { key: 'lock-2' }]),
+      getLocksByPath: vi.fn().mockResolvedValue([]),
+      convertLockToFileLockProps: vi.fn().mockReturnValue({ owner: { id: 7, login: 'john' }, app: 'Sync-in', isExclusive: true }),
+      removeChildLocks: vi.fn().mockResolvedValue(undefined)
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -166,32 +167,32 @@ describe(FilesManager.name, () => {
     module.useLogger(['fatal'])
     service = module.get<FilesManager>(FilesManager)
 
-    jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
-    jest.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
-    jest.spyOn(filesUtils, 'makeDir').mockResolvedValue('/tmp' as any)
-    jest.spyOn(filesUtils, 'makeTempDir').mockResolvedValue('/tmp/extract')
-    jest.spyOn(filesUtils, 'tempFilePath').mockReturnValue('/tmp/staged-file')
-    jest.spyOn(filesUtils, 'writeFromStream').mockResolvedValue(undefined)
-    jest.spyOn(filesUtils, 'writeFromStreamAndChecksum').mockResolvedValue('sha256-abc')
-    jest.spyOn(filesUtils, 'moveFiles').mockResolvedValue(undefined)
-    jest.spyOn(filesUtils, 'copyFiles').mockResolvedValue(undefined)
-    jest.spyOn(filesUtils, 'removeFiles').mockResolvedValue(undefined)
-    jest.spyOn(filesUtils, 'touchFile').mockResolvedValue(undefined)
-    jest.spyOn(filesUtils, 'createEmptyFile').mockResolvedValue(undefined)
-    jest.spyOn(filesUtils, 'copyFileContent').mockResolvedValue(undefined)
-    jest.spyOn(filesUtils, 'fileSize').mockResolvedValue(100)
-    jest.spyOn(filesUtils, 'dirSize').mockResolvedValue([123, {}] as any)
-    jest.spyOn(filesUtils, 'uniqueFilePathFromDir').mockResolvedValue('/tmp/unique-path.txt')
-    jest.spyOn(filesUtils, 'uniqueDatedFilePath').mockResolvedValue({ isDir: false, path: '/trash/file-2026.txt' })
-    jest.spyOn(filesUtils, 'getMimeType').mockReturnValue('image-png')
-    jest.spyOn(spacesPermsUtils, 'canAccessToSpace').mockReturnValue(true)
-    jest.spyOn(spacesPermsUtils, 'haveSpaceEnvPermissions').mockReturnValue(true)
-    jest.spyOn(spacesPathUtils, 'realTrashPathFromSpace').mockReturnValue('/data/users/john/trash')
+    vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
+    vi.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
+    vi.spyOn(filesUtils, 'makeDir').mockResolvedValue('/tmp' as any)
+    vi.spyOn(filesUtils, 'makeTempDir').mockResolvedValue('/tmp/extract')
+    vi.spyOn(filesUtils, 'tempFilePath').mockReturnValue('/tmp/staged-file')
+    vi.spyOn(filesUtils, 'writeFromStream').mockResolvedValue(undefined)
+    vi.spyOn(filesUtils, 'writeFromStreamAndChecksum').mockResolvedValue('sha256-abc')
+    vi.spyOn(filesUtils, 'moveFiles').mockResolvedValue(undefined)
+    vi.spyOn(filesUtils, 'copyFiles').mockResolvedValue(undefined)
+    vi.spyOn(filesUtils, 'removeFiles').mockResolvedValue(undefined)
+    vi.spyOn(filesUtils, 'touchFile').mockResolvedValue(undefined)
+    vi.spyOn(filesUtils, 'createEmptyFile').mockResolvedValue(undefined)
+    vi.spyOn(filesUtils, 'copyFileContent').mockResolvedValue(undefined)
+    vi.spyOn(filesUtils, 'fileSize').mockResolvedValue(100)
+    vi.spyOn(filesUtils, 'dirSize').mockResolvedValue([123, {}] as any)
+    vi.spyOn(filesUtils, 'uniqueFilePathFromDir').mockResolvedValue('/tmp/unique-path.txt')
+    vi.spyOn(filesUtils, 'uniqueDatedFilePath').mockResolvedValue({ isDir: false, path: '/trash/file-2026.txt' })
+    vi.spyOn(filesUtils, 'getMimeType').mockReturnValue('image-png')
+    vi.spyOn(spacesPermsUtils, 'canAccessToSpace').mockReturnValue(true)
+    vi.spyOn(spacesPermsUtils, 'haveSpaceEnvPermissions').mockReturnValue(true)
+    vi.spyOn(spacesPathUtils, 'realTrashPathFromSpace').mockReturnValue('/data/users/john/trash')
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
-    jest.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -217,7 +218,7 @@ describe(FilesManager.name, () => {
     it('should write stream, emit event and release lock', async () => {
       const space = makeSpace()
       setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       const result = await service.saveStream(user, space, { method: 'PUT', headers: {}, raw: Readable.from(['hello']) } as any)
 
@@ -253,7 +254,7 @@ describe(FilesManager.name, () => {
 
       const req = {
         method: 'POST',
-        files: jest.fn().mockImplementation(async function* () {
+        files: vi.fn().mockImplementation(async function* () {
           yield { filename: path.basename(space.realPath), file: Readable.from(['content']) }
         })
       }
@@ -282,11 +283,11 @@ describe(FilesManager.name, () => {
     ])('should reject POST when target root has $name', async ({ pathExists, isDir, expected }) => {
       const space = makeSpace()
       setPathExists(pathExists(space), false)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async () => isDir())
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async () => isDir())
 
       const req = {
         method: 'POST',
-        files: jest.fn().mockImplementation(async function* () {
+        files: vi.fn().mockImplementation(async function* () {
           yield { filename: path.basename(space.realPath), file: Readable.from(['content']) }
         })
       }
@@ -304,8 +305,8 @@ describe(FilesManager.name, () => {
         dbFile: { ownerId: 7, path: 'report.txt' }
       })
       setPathExists({ [path.dirname(space.realPath)]: true, [space.realPath]: true, [user.tmpPath]: true }, false)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       const req = {
         method: 'PATCH',
@@ -316,7 +317,7 @@ describe(FilesManager.name, () => {
 
       await service.saveMultipart(user, space, req as any)
 
-      const tmpWritePath = (filesUtils.writeFromStream as jest.Mock).mock.calls[0][0] as string
+      const tmpWritePath = vi.mocked(filesUtils.writeFromStream).mock.calls[0][0] as string
       expect(filesLockManager.createOrRefresh).toHaveBeenCalled()
       expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
       expect(tmpWritePath.endsWith('-report.txt')).toBe(true)
@@ -331,9 +332,9 @@ describe(FilesManager.name, () => {
         realPath: '/data/users/john/files/report.txt',
         dbFile: { ownerId: 7, path: 'report.txt' }
       })
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       setPathExists({ [path.dirname(space.realPath)]: true, [space.realPath]: false }, false)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
 
       const req = {
         method: 'PATCH',
@@ -354,9 +355,9 @@ describe(FilesManager.name, () => {
     it('should write PUT to a temporary file before moving it to the destination', async () => {
       const space = makeSpace()
       const file = Readable.from(['content'])
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       setPathExists({ [space.realPath]: true, [path.dirname(space.realPath)]: true, [user.tmpPath]: true }, false)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
 
       const req = {
         method: 'PUT',
@@ -367,7 +368,7 @@ describe(FilesManager.name, () => {
 
       await service.saveMultipart(user, space, req as any)
 
-      const tmpWritePath = (filesUtils.writeFromStream as jest.Mock).mock.calls[0][0] as string
+      const tmpWritePath = vi.mocked(filesUtils.writeFromStream).mock.calls[0][0] as string
       expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
       expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, file)
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, space.realPath, true)
@@ -381,7 +382,7 @@ describe(FilesManager.name, () => {
       const dstDir = path.join(path.dirname(space.realPath), 'folder')
       const dstFile = path.join(dstDir, 'file.txt')
       const file = Readable.from(['content'])
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       setPathExists(
         {
           [space.realPath]: false,
@@ -391,7 +392,7 @@ describe(FilesManager.name, () => {
         },
         false
       )
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
       filesLockManager.createOrRefresh.mockResolvedValueOnce([true, { key: 'lock-created' }])
 
       const req = {
@@ -414,7 +415,7 @@ describe(FilesManager.name, () => {
       const partFileName = 'folder/file.txt'
       const dstDir = path.join(path.dirname(space.realPath), 'folder')
       const dstFile = path.join(dstDir, 'file.txt')
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       setPathExists(
         {
           [space.realPath]: false,
@@ -424,7 +425,7 @@ describe(FilesManager.name, () => {
         },
         false
       )
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath) || p === dstDir)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === path.dirname(space.realPath) || p === dstDir)
 
       const req = {
         method: 'POST',
@@ -448,9 +449,9 @@ describe(FilesManager.name, () => {
       const space = makeSpace()
       const parentPath = path.dirname(space.realPath)
       const forbiddenFile = path.resolve(`${parentPath}${path.sep}`, '../escape.txt')
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       setPathExists({ [space.realPath]: false, [parentPath]: true }, false)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === parentPath)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
 
       const req = {
         method: 'POST',
@@ -473,9 +474,9 @@ describe(FilesManager.name, () => {
       const space = makeSpace()
       const file = Readable.from(['content']) as Readable & { truncated: boolean }
       file.truncated = true
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       setPathExists({ [space.realPath]: true, [path.dirname(space.realPath)]: true, [user.tmpPath]: true }, false)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === path.dirname(space.realPath))
 
       const req = {
         method: 'PUT',
@@ -488,7 +489,7 @@ describe(FilesManager.name, () => {
         new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR_MESSAGES.MAX_FILE_SIZE_EXCEEDED)
       )
 
-      const tmpWritePath = (filesUtils.writeFromStream as jest.Mock).mock.calls[0][0] as string
+      const tmpWritePath = vi.mocked(filesUtils.writeFromStream).mock.calls[0][0] as string
       expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
       expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, file)
       expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpWritePath)
@@ -502,13 +503,13 @@ describe(FilesManager.name, () => {
       const dstFile = '/data/users/john/files/too-big.bin'
       const file = Readable.from(['content']) as Readable & { truncated: boolean }
       file.truncated = true
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true, [dstFile]: false }, false)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValue(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(true)
 
       const req = {
         method: 'POST',
-        files: jest.fn().mockImplementation(async function* () {
+        files: vi.fn().mockImplementation(async function* () {
           yield { filename: 'too-big.bin', file }
         })
       }
@@ -527,11 +528,11 @@ describe(FilesManager.name, () => {
       const space = makeSpace()
       const error = Object.assign(new Error('request file too large'), { code: 'FST_REQ_FILE_TOO_LARGE', statusCode: HttpStatus.PAYLOAD_TOO_LARGE })
       setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValue(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(true)
 
       const req = {
         method: 'POST',
-        files: jest.fn().mockImplementation(async function* () {
+        files: vi.fn().mockImplementation(async function* () {
           yield* []
           throw error
         })
@@ -548,11 +549,11 @@ describe(FilesManager.name, () => {
       const space = makeSpace()
       const error = Object.assign(new Error('reach parts limit'), { code: 'FST_PARTS_LIMIT', statusCode: HttpStatus.PAYLOAD_TOO_LARGE })
       setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValue(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(true)
 
       const req = {
         method: 'POST',
-        files: jest.fn().mockImplementation(async function* () {
+        files: vi.fn().mockImplementation(async function* () {
           yield* []
           throw error
         })
@@ -587,11 +588,11 @@ describe(FilesManager.name, () => {
       const space = makeSpace()
       const file = Readable.from(['content'])
       const error = new Error('move failed')
-      const deleteSpy = jest.spyOn(service, 'delete').mockResolvedValue(undefined)
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const deleteSpy = vi.spyOn(service, 'delete').mockResolvedValue(undefined)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       setPathExists(pathExists(space), false)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => isDir(space, p))
-      ;(filesUtils.moveFiles as jest.Mock).mockRejectedValueOnce(error)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => isDir(space, p))
+      vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(error)
 
       const req = {
         method: 'PUT',
@@ -602,14 +603,14 @@ describe(FilesManager.name, () => {
 
       await expect(service.saveMultipart(user, space, req as any)).rejects.toBe(error)
 
-      const tmpWritePath = (filesUtils.writeFromStream as jest.Mock).mock.calls[0][0] as string
+      const tmpWritePath = vi.mocked(filesUtils.writeFromStream).mock.calls[0][0] as string
       expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, file)
       expect(deleteSpy).toHaveBeenCalledTimes(1)
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, expect.stringContaining(path.basename(partFileName)), true)
       expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpWritePath)
       expect(emitSpy).not.toHaveBeenCalled()
-      expect((filesUtils.writeFromStream as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(deleteSpy.mock.invocationCallOrder[0])
-      expect(deleteSpy.mock.invocationCallOrder[0]).toBeLessThan((filesUtils.moveFiles as jest.Mock).mock.invocationCallOrder[0])
+      expect(vi.mocked(filesUtils.writeFromStream).mock.invocationCallOrder[0]).toBeLessThan(deleteSpy.mock.invocationCallOrder[0])
+      expect(deleteSpy.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.moveFiles).mock.invocationCallOrder[0])
     })
 
     it('should recreate destination directory after deleting a parent file before moving PUT tmp file', async () => {
@@ -618,16 +619,16 @@ describe(FilesManager.name, () => {
       const dstDir = path.join(path.dirname(space.realPath), 'folder')
       const dstFile = path.join(dstDir, 'file.txt')
       const file = Readable.from(['content'])
-      const deleteSpy = jest.spyOn(service, 'delete').mockResolvedValue(undefined)
+      const deleteSpy = vi.spyOn(service, 'delete').mockResolvedValue(undefined)
       let dstDirExistsChecks = 0
-      ;(filesUtils.isPathExists as jest.Mock).mockImplementation(async (p: string) => {
+      vi.mocked(filesUtils.isPathExists).mockImplementation(async (p: string) => {
         if (p === dstDir) {
           dstDirExistsChecks++
           return dstDirExistsChecks === 1
         }
         return false
       })
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async () => false)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async () => false)
 
       const req = {
         method: 'PUT',
@@ -638,28 +639,26 @@ describe(FilesManager.name, () => {
 
       await service.saveMultipart(user, space, req as any)
 
-      const tmpWritePath = (filesUtils.writeFromStream as jest.Mock).mock.calls[0][0] as string
+      const tmpWritePath = vi.mocked(filesUtils.writeFromStream).mock.calls[0][0] as string
       expect(deleteSpy).toHaveBeenCalledTimes(1)
       expect(filesUtils.makeDir).toHaveBeenCalledWith(dstDir, true)
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, dstFile, true)
-      expect(deleteSpy.mock.invocationCallOrder[0]).toBeLessThan((filesUtils.makeDir as jest.Mock).mock.invocationCallOrder[0])
-      expect((filesUtils.makeDir as jest.Mock).mock.invocationCallOrder[0]).toBeLessThan(
-        (filesUtils.moveFiles as jest.Mock).mock.invocationCallOrder[0]
-      )
+      expect(deleteSpy.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.makeDir).mock.invocationCallOrder[0])
+      expect(vi.mocked(filesUtils.makeDir).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.moveFiles).mock.invocationCallOrder[0])
     })
   })
 
   describe('touch', () => {
     it('should fail when location does not exist', async () => {
       const space = makeSpace()
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(false)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(false)
 
       await expect(service.touch(user, space, 123456)).rejects.toEqual(new FileError(HttpStatus.NOT_FOUND, 'Location not found'))
     })
 
     it('should check locks and update mtime', async () => {
       const space = makeSpace()
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
 
       await service.touch(user, space, 111)
 
@@ -671,8 +670,8 @@ describe(FilesManager.name, () => {
   describe('creation', () => {
     it('mkFile should use sample document when requested', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/doc.docx' })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(false)
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(false)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await service.mkFile(user, space, false, true, true)
 
@@ -685,7 +684,7 @@ describe(FilesManager.name, () => {
 
     it('mkDir should check conflicts and create directory', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/folder' })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
 
       await service.mkDir(user, space, false, { depth: DEPTH.INFINITY, lockTokens: ['lt1'] })
 
@@ -785,8 +784,8 @@ describe(FilesManager.name, () => {
         },
         false
       )
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValueOnce(false)
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(false)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await service.copyMove(user, src, dst, false)
 
@@ -819,8 +818,8 @@ describe(FilesManager.name, () => {
         },
         false
       )
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValueOnce(false)
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(false)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await service.copyMove(user, src, dst, true)
 
@@ -834,10 +833,10 @@ describe(FilesManager.name, () => {
   describe('delete', () => {
     it('should remove trash file, locks and db entries', async () => {
       const space = makeSpace({ inTrashRepository: true, realPath: '/data/users/john/trash/old.txt' })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValueOnce(true)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(true)
       filesLockManager.getLocksByPath.mockResolvedValueOnce([{ key: 'lk-1' }])
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await service.delete(user, space)
 
@@ -850,9 +849,9 @@ describe(FilesManager.name, () => {
 
     it('should force delete when trash path is not available', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/no-trash.txt', inTrashRepository: false })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValueOnce(false)
-      ;(spacesPathUtils.realTrashPathFromSpace as jest.Mock).mockReturnValueOnce(null)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(false)
+      vi.mocked(spacesPathUtils.realTrashPathFromSpace).mockReturnValueOnce(null)
 
       await service.delete(user, space)
 
@@ -885,8 +884,8 @@ describe(FilesManager.name, () => {
 
     it('should handle HEAD+GET and emit task watch/event', async () => {
       const space = makeSpace({ task: { cacheKey: 'task-1', props: {} } })
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/download.txt')
-      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
       http.axiosRef
         .mockResolvedValueOnce({
           headers: { 'content-length': '55' },
@@ -896,8 +895,8 @@ describe(FilesManager.name, () => {
           data: Readable.from(['abc']),
           request: { socket: { remoteAddress: '8.8.8.8' } }
         })
-      const taskEmitSpy = jest.spyOn(FileTaskEvent, 'emit')
-      const fileEmitSpy = jest.spyOn(FileEvent, 'emit')
+      const taskEmitSpy = vi.spyOn(FileTaskEvent, 'emit')
+      const fileEmitSpy = vi.spyOn(FileEvent, 'emit')
 
       await service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })
 
@@ -924,9 +923,9 @@ describe(FilesManager.name, () => {
     it('should cleanup partial file and skip ADD event when download write fails', async () => {
       const error = new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR_MESSAGES.MAX_FILE_SIZE_EXCEEDED)
       const space = makeSpace()
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/download.txt')
-      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
-      ;(filesUtils.writeFromStream as jest.Mock).mockRejectedValueOnce(error)
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
+      vi.mocked(filesUtils.writeFromStream).mockRejectedValueOnce(error)
       http.axiosRef
         .mockResolvedValueOnce({
           headers: { 'content-length': '55' },
@@ -936,7 +935,7 @@ describe(FilesManager.name, () => {
           data: Readable.from(['abc']),
           request: { socket: { remoteAddress: '8.8.8.8' } }
         })
-      const fileEmitSpy = jest.spyOn(FileEvent, 'emit')
+      const fileEmitSpy = vi.spyOn(FileEvent, 'emit')
 
       await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toBe(error)
 
@@ -949,9 +948,9 @@ describe(FilesManager.name, () => {
     it('should cleanup temporary file and skip ADD event when publishing download fails', async () => {
       const error = new Error('move failed')
       const space = makeSpace()
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/download.txt')
-      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
-      ;(filesUtils.moveFiles as jest.Mock).mockRejectedValueOnce(error)
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
+      vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(error)
       http.axiosRef
         .mockResolvedValueOnce({
           headers: { 'content-length': '55' },
@@ -961,7 +960,7 @@ describe(FilesManager.name, () => {
           data: Readable.from(['abc']),
           request: { socket: { remoteAddress: '8.8.8.8' } }
         })
-      const fileEmitSpy = jest.spyOn(FileEvent, 'emit')
+      const fileEmitSpy = vi.spyOn(FileEvent, 'emit')
 
       await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toBe(error)
 
@@ -974,9 +973,9 @@ describe(FilesManager.name, () => {
   describe('compress', () => {
     it('should archive files and emit events', async () => {
       const archive = createArchiveMock()
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive.tar.gz')
-      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementation(async (p: string) => p.endsWith('/dir'))
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.tar.gz')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p.endsWith('/dir'))
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: { cacheKey: 'task-c', props: {} } })
       const dto = {
         name: 'archive',
@@ -987,11 +986,11 @@ describe(FilesManager.name, () => {
           { path: '/data/users/john/files/file.txt', name: 'file.txt', rootAlias: null }
         ]
       } as any
-      const taskEmitSpy = jest.spyOn(FileTaskEvent, 'emit')
+      const taskEmitSpy = vi.spyOn(FileTaskEvent, 'emit')
 
       await service.compress(user, space, dto)
 
-      expect(archiver as unknown as jest.Mock).toHaveBeenCalled()
+      expect(archiver as unknown as Mock).toHaveBeenCalled()
       expect(archive.directory).toHaveBeenCalled()
       expect(archive.file).toHaveBeenCalled()
       expect(archive.finalize).toHaveBeenCalled()
@@ -1008,10 +1007,10 @@ describe(FilesManager.name, () => {
 
     it('should allow archive export from trash when compressInDirectory is false', async () => {
       const archive = createArchiveMock()
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive-trash.tar.gz')
-      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive-trash.tar.gz-compress-uuid')
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValueOnce(false)
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive-trash.tar.gz')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive-trash.tar.gz-compress-uuid')
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(false)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       const space = makeTrashSpace({
         url: 'trash/personal/source.txt',
         realPath: '/data/users/john/trash/source.txt',
@@ -1034,11 +1033,11 @@ describe(FilesManager.name, () => {
     it('should cleanup temporary archive and skip ADD event when publishing archive fails', async () => {
       const archive = createArchiveMock()
       const error = new Error('move failed')
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive.tar.gz')
-      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValueOnce(false)
-      ;(filesUtils.moveFiles as jest.Mock).mockRejectedValueOnce(error)
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.tar.gz')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(false)
+      vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(error)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
       const dto = {
         name: 'archive',
@@ -1051,17 +1050,17 @@ describe(FilesManager.name, () => {
 
       expect(archive.abort).toHaveBeenCalled()
       expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar.gz-compress-uuid')
-      expect(archive.abort.mock.invocationCallOrder[0]).toBeLessThan((filesUtils.removeFiles as jest.Mock).mock.invocationCallOrder[0])
+      expect(archive.abort.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.removeFiles).mock.invocationCallOrder[0])
       expect(emitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/archive.tar.gz' })
     })
 
     it('should abort archive pipeline and cleanup temporary file when preparing an entry fails', async () => {
       const archive = createArchiveMock()
       const error = new Error('unable to prepare entry')
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive.tar.gz')
-      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
-      ;(filesUtils.isPathIsDir as jest.Mock).mockRejectedValueOnce(error)
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.tar.gz')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      vi.mocked(filesUtils.isPathIsDir).mockRejectedValueOnce(error)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
       const dto = {
         name: 'archive',
@@ -1074,7 +1073,7 @@ describe(FilesManager.name, () => {
 
       expect(archive.abort).toHaveBeenCalled()
       expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar.gz-compress-uuid')
-      expect(archive.abort.mock.invocationCallOrder[0]).toBeLessThan((filesUtils.removeFiles as jest.Mock).mock.invocationCallOrder[0])
+      expect(archive.abort.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.removeFiles).mock.invocationCallOrder[0])
       expect(emitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/archive.tar.gz' })
     })
 
@@ -1085,10 +1084,10 @@ describe(FilesManager.name, () => {
         archive.emit('error', error)
         return new Promise<void>(() => undefined)
       })
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive.tar.gz')
-      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValueOnce(false)
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.tar.gz')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(false)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
       const dto = {
         name: 'archive',
@@ -1113,9 +1112,9 @@ describe(FilesManager.name, () => {
       const entryStartedPromise = new Promise<void>((resolve) => {
         entryStarted = resolve
       })
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/tmp/archive.tar.gz')
-      ;(filesUtils.tempFilePath as jest.Mock).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
-      ;(filesUtils.isPathIsDir as jest.Mock).mockImplementationOnce(
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.tar.gz')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.tar.gz-compress-uuid')
+      vi.mocked(filesUtils.isPathIsDir).mockImplementationOnce(
         () =>
           new Promise<boolean>((resolve) => {
             resolveEntry = resolve
@@ -1147,11 +1146,11 @@ describe(FilesManager.name, () => {
   describe('decompress', () => {
     it('should extract zip and release lock', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip', task: { cacheKey: 'task-d', props: {} } })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
-      ;(filesUtils.makeTempDir as jest.Mock).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
-      const unzipSpy = jest.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
-      const taskEmitSpy = jest.spyOn(FileTaskEvent, 'emit')
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
+      vi.mocked(filesUtils.makeTempDir).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      const unzipSpy = vi.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
+      const taskEmitSpy = vi.spyOn(FileTaskEvent, 'emit')
 
       await service.decompress(user, space)
 
@@ -1170,10 +1169,10 @@ describe(FilesManager.name, () => {
 
     it('should extract tar formats via extractTar', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.tar.gz' })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
-      ;(filesUtils.makeTempDir as jest.Mock).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
-      const untarSpy = jest.spyOn(untarUtils, 'extractTar').mockResolvedValueOnce(undefined)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
+      vi.mocked(filesUtils.makeTempDir).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      const untarSpy = vi.spyOn(untarUtils, 'extractTar').mockResolvedValueOnce(undefined)
 
       await service.decompress(user, space)
 
@@ -1183,10 +1182,10 @@ describe(FilesManager.name, () => {
 
     it('should limit extracted size to the known remaining quota', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip', storageQuota: 100, storageUsage: 40 })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
-      ;(filesUtils.makeTempDir as jest.Mock).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
-      const unzipSpy = jest.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
+      vi.mocked(filesUtils.makeTempDir).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      const unzipSpy = vi.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
 
       await service.decompress(user, space)
 
@@ -1195,12 +1194,12 @@ describe(FilesManager.name, () => {
 
     it('should remove partial extraction and skip add event on failure', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true)
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
-      ;(filesUtils.makeTempDir as jest.Mock).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
+      vi.mocked(filesUtils.makeTempDir).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
       const error = new Error('extraction failed')
-      jest.spyOn(unzipUtils, 'extractZip').mockRejectedValueOnce(error)
-      const emitSpy = jest.spyOn(FileEvent, 'emit')
+      vi.spyOn(unzipUtils, 'extractZip').mockRejectedValueOnce(error)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await expect(service.decompress(user, space)).rejects.toBe(error)
 
@@ -1217,12 +1216,12 @@ describe(FilesManager.name, () => {
 
     it('should remove temporary extraction when move fails', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
-      ;(filesUtils.makeTempDir as jest.Mock).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
+      vi.mocked(filesUtils.makeTempDir).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
       const error = new Error('move failed')
-      jest.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
-      ;(filesUtils.moveFiles as jest.Mock).mockRejectedValueOnce(error)
+      vi.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
+      vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(error)
 
       await expect(service.decompress(user, space)).rejects.toBe(error)
 
@@ -1233,10 +1232,10 @@ describe(FilesManager.name, () => {
 
     it('should keep an existing destination when publishing extraction', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true).mockResolvedValueOnce(true)
-      ;(filesUtils.uniqueFilePathFromDir as jest.Mock).mockResolvedValueOnce('/data/users/john/files/archive')
-      ;(filesUtils.makeTempDir as jest.Mock).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
-      jest.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(true)
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
+      vi.mocked(filesUtils.makeTempDir).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      vi.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
 
       await expect(service.decompress(user, space)).rejects.toEqual(new FileError(HttpStatus.CONFLICT, 'The destination already exists'))
 
@@ -1249,10 +1248,10 @@ describe(FilesManager.name, () => {
   describe('generateThumbnail', () => {
     it('should validate image and return generated stream', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/image.png' })
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(true)
-      ;(filesUtils.getMimeType as jest.Mock).mockReturnValueOnce('image-png')
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
+      vi.mocked(filesUtils.getMimeType).mockReturnValueOnce('image-png')
       const stream = Readable.from(['img'])
-      jest.spyOn(imageUtils, 'generateThumbnail').mockReturnValueOnce(stream as any)
+      vi.spyOn(imageUtils, 'generateThumbnail').mockReturnValueOnce(stream as any)
 
       const result = await service.generateThumbnail(space, 256)
 
@@ -1263,14 +1262,14 @@ describe(FilesManager.name, () => {
   describe('locking', () => {
     it('lock should fail if resource does not exist', async () => {
       const space = makeSpace()
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValueOnce(false)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(false)
 
       await expect(service.lock(user, space)).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, 'Lock refresh must specify an existing resource'))
     })
 
     it('unlock should remove owned lock and reject foreign lock', async () => {
       const space = makeSpace()
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValue(true)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValue(true)
       filesLockManager.getLocksByPath.mockResolvedValueOnce([{ key: 'l1', owner: { id: 7 } }])
 
       await service.unlock(user, space)
@@ -1300,10 +1299,10 @@ describe(FilesManager.name, () => {
   describe('getSize', () => {
     it('should return directory size or file size depending on target type', async () => {
       const space = makeSpace()
-      ;(filesUtils.isPathExists as jest.Mock).mockResolvedValue(true)
-      ;(filesUtils.isPathIsDir as jest.Mock).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
-      ;(filesUtils.dirSize as jest.Mock).mockResolvedValueOnce([500, {}])
-      ;(filesUtils.fileSize as jest.Mock).mockResolvedValueOnce(20)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValue(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
+      vi.mocked(filesUtils.dirSize).mockResolvedValueOnce([500, {}])
+      vi.mocked(filesUtils.fileSize).mockResolvedValueOnce(20)
 
       await expect(service.getSize(space)).resolves.toBe(500)
       await expect(service.getSize(space)).resolves.toBe(20)

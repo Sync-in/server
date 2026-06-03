@@ -11,37 +11,37 @@ import { NotificationsManager } from './notifications-manager.service'
 import { NotificationsQueries } from './notifications-queries.service'
 
 // Compact mock for mail generators
-jest.mock('../mails/models', () => ({
-  commentMail: jest.fn(() => ['comment title', 'comment html']),
-  spaceMail: jest.fn(() => ['space title', 'space html']),
-  spaceRootMail: jest.fn(() => ['spaceRoot title', 'spaceRoot html']),
-  shareMail: jest.fn(() => ['share title', 'share html']),
-  linkMail: jest.fn(() => ['link title', 'link html']),
-  syncMail: jest.fn(() => ['sync title', 'sync html'])
+vi.mock('../mails/models', () => ({
+  commentMail: vi.fn(() => ['comment title', 'comment html']),
+  spaceMail: vi.fn(() => ['space title', 'space html']),
+  spaceRootMail: vi.fn(() => ['spaceRoot title', 'spaceRoot html']),
+  shareMail: vi.fn(() => ['share title', 'share html']),
+  linkMail: vi.fn(() => ['link title', 'link html']),
+  syncMail: vi.fn(() => ['sync title', 'sync html'])
 }))
 
-jest.mock('../../users/utils/avatar', () => ({
-  getAvatarBase64: jest.fn()
+vi.mock('../../users/utils/avatar', () => ({
+  getAvatarBase64: vi.fn()
 }))
 
 describe(NotificationsManager.name, () => {
   let service: NotificationsManager
 
-  const mailerMock = { available: true, sendMails: jest.fn() }
+  const mailerMock = { available: true, sendMails: vi.fn() }
   const notificationsQueriesMock = {
-    list: jest.fn(),
-    usersNotifiedByEmail: jest.fn(),
-    create: jest.fn(),
-    wasRead: jest.fn(),
-    delete: jest.fn()
+    list: vi.fn(),
+    usersNotifiedByEmail: vi.fn(),
+    create: vi.fn(),
+    wasRead: vi.fn(),
+    delete: vi.fn()
   }
-  const webSocketNotificationsMock = { sendMessageToUsers: jest.fn() }
+  const webSocketNotificationsMock = { sendMessageToUsers: vi.fn() }
 
   const flushPromises = () => new Promise<void>((r) => setImmediate(r))
-  const spyLogger = () => jest.spyOn((service as any).logger, 'error').mockImplementation(() => undefined as any)
+  const spyLogger = () => vi.spyOn((service as any).logger, 'error').mockImplementation(() => undefined as any)
 
   beforeEach(async () => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     mailerMock.available = true
     mailerMock.sendMails.mockResolvedValue(undefined)
     notificationsQueriesMock.create.mockResolvedValue(undefined)
@@ -82,7 +82,7 @@ describe(NotificationsManager.name, () => {
 
   describe('create', () => {
     it('stores, sends WS and no email when filtered list empty (object input)', async () => {
-      const sendEmailSpy = jest.spyOn(service, 'sendEmailNotification').mockResolvedValue(undefined)
+      const sendEmailSpy = vi.spyOn(service, 'sendEmailNotification').mockResolvedValue(undefined)
       const toUsers = [
         { id: 10, email: 'u1@test.tld', language: 'en', notification: USER_NOTIFICATION.APPLICATION },
         { id: 11, email: 'u2@test.tld', language: 'fr', notification: USER_NOTIFICATION.APPLICATION }
@@ -95,7 +95,7 @@ describe(NotificationsManager.name, () => {
     })
 
     it('stores, sends WS and email for ids input', async () => {
-      const sendEmailSpy = jest.spyOn(service, 'sendEmailNotification').mockResolvedValue(undefined)
+      const sendEmailSpy = vi.spyOn(service, 'sendEmailNotification').mockResolvedValue(undefined)
       const toUserIds = [1, 2, 3]
       const content = { app: NOTIFICATION_APP.SHARES } as any
       const emailUsers = [
@@ -112,7 +112,7 @@ describe(NotificationsManager.name, () => {
 
     it('does not try email when mailer is unavailable', async () => {
       mailerMock.available = false
-      const sendEmailSpy = jest.spyOn(service, 'sendEmailNotification').mockResolvedValue(undefined)
+      const sendEmailSpy = vi.spyOn(service, 'sendEmailNotification').mockResolvedValue(undefined)
       await service.create([7], { app: NOTIFICATION_APP.SYNC } as any, { author: { id: 12, login: 'jane' } } as any)
       expect(notificationsQueriesMock.create).toHaveBeenCalledWith(12, [7], { app: NOTIFICATION_APP.SYNC })
       expect(webSocketNotificationsMock.sendMessageToUsers).toHaveBeenCalledWith([7], NOTIFICATIONS_WS.EVENTS.NOTIFICATION, 'check')
@@ -131,7 +131,7 @@ describe(NotificationsManager.name, () => {
 
     it('logs error when storeNotification promise rejects (create catch)', async () => {
       const loggerSpy = spyLogger()
-      jest.spyOn<any, any>(service as any, 'storeNotification').mockRejectedValueOnce(new Error('store reject'))
+      vi.spyOn<any, any>(service as any, 'storeNotification').mockRejectedValueOnce(new Error('store reject'))
       await service.create([1, 2], { app: NOTIFICATION_APP.SYNC } as any, { author: { id: 5, login: 'xx' } } as any)
       await flushPromises()
       expect(loggerSpy).toHaveBeenCalled()
@@ -141,7 +141,7 @@ describe(NotificationsManager.name, () => {
     it('logs error when sendEmailNotification rejects (create catch)', async () => {
       const loggerSpy = spyLogger()
       notificationsQueriesMock.usersNotifiedByEmail.mockResolvedValueOnce([{ id: 1, email: 'a@test', language: 'en' }] as any)
-      jest.spyOn(service, 'sendEmailNotification').mockRejectedValueOnce(new Error('email reject'))
+      vi.spyOn(service, 'sendEmailNotification').mockRejectedValueOnce(new Error('email reject'))
       await service.create([1], { app: NOTIFICATION_APP.COMMENTS } as any)
       await flushPromises()
       expect(loggerSpy).toHaveBeenCalled()
@@ -184,7 +184,7 @@ describe(NotificationsManager.name, () => {
     })
 
     it('enriches author avatar and sends mapped mails', async () => {
-      ;(getAvatarBase64 as jest.Mock).mockResolvedValueOnce('base64-xxx')
+      vi.mocked(getAvatarBase64).mockResolvedValueOnce('base64-xxx')
       const toUsers = [
         { id: 1, email: 'a@test', language: 'en' },
         { id: 2, email: 'b@test', language: 'fr' }
@@ -195,7 +195,7 @@ describe(NotificationsManager.name, () => {
       expect(getAvatarBase64).toHaveBeenCalledWith('jdoe')
       expect(options.author.avatarBase64).toBe('base64-xxx')
       expect(mailerMock.sendMails).toHaveBeenCalledTimes(1)
-      expect((mailerMock.sendMails as jest.Mock).mock.calls[0][0]).toEqual([
+      expect(vi.mocked(mailerMock.sendMails).mock.calls[0][0]).toEqual([
         { to: 'a@test', subject: 'comment title', html: 'comment html' },
         { to: 'b@test', subject: 'comment title', html: 'comment html' }
       ])

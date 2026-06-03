@@ -20,29 +20,29 @@ import { FilesContentParser } from './files-content-parser.service'
 import { FilesContentIndexer } from './files-content-indexer.service'
 
 interface CacheMock {
-  has: jest.Mock
-  keys: jest.Mock
-  get: jest.Mock
-  set: jest.Mock
-  del: jest.Mock
+  has: Mock
+  keys: Mock
+  get: Mock
+  set: Mock
+  del: Mock
 }
 
 interface FilesContentStoreMock {
-  indexesCount: jest.Mock
-  getIndexName: jest.Mock
-  createIndex: jest.Mock
-  getRecordMetadataByIds: jest.Mock
-  markRecordsSeen: jest.Mock
-  insertRecord: jest.Mock
-  deleteRecords: jest.Mock
-  deleteUnseenRecords: jest.Mock
-  dropIndex: jest.Mock
-  cleanIndexes: jest.Mock
-  dropAllIndexes: jest.Mock
+  indexesCount: Mock
+  getIndexName: Mock
+  createIndex: Mock
+  getRecordMetadataByIds: Mock
+  markRecordsSeen: Mock
+  insertRecord: Mock
+  deleteRecords: Mock
+  deleteUnseenRecords: Mock
+  dropIndex: Mock
+  cleanIndexes: Mock
+  dropAllIndexes: Mock
 }
 
 interface FilesContentParserMock {
-  allPaths: jest.Mock
+  allPaths: Mock
 }
 
 interface FileMetadataMock {
@@ -102,10 +102,10 @@ describe(FilesContentIndexer.name, () => {
     ...overrides
   })
 
-  const ocrManager = (overrides: Partial<{ worker: any; start: jest.Mock; stop: jest.Mock }> = {}) => ({
+  const ocrManager = (overrides: Partial<{ worker: any; start: Mock; stop: Mock }> = {}) => ({
     worker: null,
-    start: jest.fn().mockResolvedValue(null),
-    stop: jest.fn().mockResolvedValue(undefined),
+    start: vi.fn().mockResolvedValue(null),
+    stop: vi.fn().mockResolvedValue(undefined),
     ...overrides
   })
 
@@ -114,27 +114,27 @@ describe(FilesContentIndexer.name, () => {
 
   beforeEach(async () => {
     cache = {
-      has: jest.fn().mockResolvedValue(false),
-      keys: jest.fn().mockResolvedValue([]),
-      get: jest.fn().mockResolvedValue(null),
-      set: jest.fn().mockResolvedValue(true),
-      del: jest.fn().mockResolvedValue(true)
+      has: vi.fn().mockResolvedValue(false),
+      keys: vi.fn().mockResolvedValue([]),
+      get: vi.fn().mockResolvedValue(null),
+      set: vi.fn().mockResolvedValue(true),
+      del: vi.fn().mockResolvedValue(true)
     }
     filesIndexer = {
-      indexesCount: jest.fn().mockResolvedValue(0),
-      getIndexName: jest.fn((suffix: string) => `files_content_${suffix}`),
-      createIndex: jest.fn().mockResolvedValue(true),
-      getRecordMetadataByIds: jest.fn().mockResolvedValue(new Map()),
-      markRecordsSeen: jest.fn().mockResolvedValue(true),
-      insertRecord: jest.fn().mockResolvedValue(true),
-      deleteRecords: jest.fn().mockResolvedValue(undefined),
-      deleteUnseenRecords: jest.fn().mockResolvedValue(0),
-      dropIndex: jest.fn().mockResolvedValue(true),
-      cleanIndexes: jest.fn().mockResolvedValue(undefined),
-      dropAllIndexes: jest.fn().mockResolvedValue(undefined)
+      indexesCount: vi.fn().mockResolvedValue(0),
+      getIndexName: vi.fn((suffix: string) => `files_content_${suffix}`),
+      createIndex: vi.fn().mockResolvedValue(true),
+      getRecordMetadataByIds: vi.fn().mockResolvedValue(new Map()),
+      markRecordsSeen: vi.fn().mockResolvedValue(true),
+      insertRecord: vi.fn().mockResolvedValue(true),
+      deleteRecords: vi.fn().mockResolvedValue(undefined),
+      deleteUnseenRecords: vi.fn().mockResolvedValue(0),
+      dropIndex: vi.fn().mockResolvedValue(true),
+      cleanIndexes: vi.fn().mockResolvedValue(undefined),
+      dropAllIndexes: vi.fn().mockResolvedValue(undefined)
     }
     filesParser = {
-      allPaths: jest.fn().mockResolvedValue([])
+      allPaths: vi.fn().mockResolvedValue([])
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -150,8 +150,8 @@ describe(FilesContentIndexer.name, () => {
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
-    jest.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -172,7 +172,7 @@ describe(FilesContentIndexer.name, () => {
 
   it('should request full indexing only when no run is active', async () => {
     cache.has.mockResolvedValueOnce(false)
-    const parseSpy = jest.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
+    const parseSpy = vi.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
 
     await expect(service.startIndexing()).resolves.toBe(true)
     expect(parseSpy).not.toHaveBeenCalled()
@@ -181,7 +181,7 @@ describe(FilesContentIndexer.name, () => {
 
   it('should not start indexing when a run is already active', async () => {
     cache.has.mockResolvedValueOnce(true)
-    const parseSpy = jest.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
+    const parseSpy = vi.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
 
     await expect(service.startIndexing()).resolves.toBe(false)
     expect(parseSpy).not.toHaveBeenCalled()
@@ -266,7 +266,7 @@ describe(FilesContentIndexer.name, () => {
       `${CACHE_INDEXING_EVENT_PREFIX}-share-3`,
       `${CACHE_INDEXING_EVENT_PREFIX}-unknown-9`
     ])
-    const parseSpy = jest.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
+    const parseSpy = vi.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
 
     await service.processIndexingQueue()
 
@@ -280,7 +280,7 @@ describe(FilesContentIndexer.name, () => {
   it('should consume pending full indexing request before partial indexing events', async () => {
     cache.has.mockResolvedValueOnce(true)
     cache.keys.mockResolvedValueOnce([`${CACHE_INDEXING_EVENT_PREFIX}-user-1`])
-    const parseSpy = jest.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
+    const parseSpy = vi.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
 
     await service.processIndexingQueue()
 
@@ -292,7 +292,7 @@ describe(FilesContentIndexer.name, () => {
 
   it('should only clean keys when no valid indexing repository type is found', async () => {
     cache.keys.mockResolvedValueOnce([`${CACHE_INDEXING_EVENT_PREFIX}-unknown-10`])
-    const parseSpy = jest.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
+    const parseSpy = vi.spyOn(service as any, 'parseAndIndexAllFiles').mockResolvedValueOnce(undefined)
 
     await service.processIndexingQueue()
 
@@ -302,12 +302,12 @@ describe(FilesContentIndexer.name, () => {
 
   it('should start and stop OCR manager, index all parser paths and clean stale indexes on full reindex', async () => {
     const manager = ocrManager()
-    jest.spyOn(OCRManager, 'getInstance').mockReturnValue(manager as any)
+    vi.spyOn(OCRManager, 'getInstance').mockReturnValue(manager as any)
     filesParser.allPaths.mockResolvedValue([
       parseContentPath(),
       parseContentPath({ id: 5, type: FILE_REPOSITORY.SPACE, paths: [parsePath({ realPath: '/s/project', pathPrefix: 'files/project' })] })
     ] as FileParseContentPath[])
-    const indexSpy = jest.spyOn(service as any, 'indexFiles').mockResolvedValue(undefined)
+    const indexSpy = vi.spyOn(service as any, 'indexFiles').mockResolvedValue(undefined)
 
     await (service as any).parseAndIndexAllFiles()
 
@@ -321,12 +321,12 @@ describe(FilesContentIndexer.name, () => {
 
   it('should stop parsing early when STOPPING state is detected', async () => {
     const manager = ocrManager()
-    jest.spyOn(OCRManager, 'getInstance').mockReturnValue(manager as any)
+    vi.spyOn(OCRManager, 'getInstance').mockReturnValue(manager as any)
     filesParser.allPaths.mockResolvedValue([parseContentPath()] as FileParseContentPath[])
     cache.get
       .mockResolvedValueOnce(IndexingState.STOPPING) // setRunning(true) guard
       .mockResolvedValueOnce(IndexingState.STOPPING) // loop STOPPING check
-    const indexSpy = jest.spyOn(service as any, 'indexFiles').mockResolvedValue(undefined)
+    const indexSpy = vi.spyOn(service as any, 'indexFiles').mockResolvedValue(undefined)
 
     await (service as any).parseAndIndexAllFiles()
 
@@ -336,10 +336,10 @@ describe(FilesContentIndexer.name, () => {
   })
 
   it('should continue parseAndIndexAllFiles when OCR startup fails and skip cleanIndexes for incremental runs', async () => {
-    const manager = ocrManager({ start: jest.fn().mockRejectedValue(new Error('ocr init failed')) })
-    jest.spyOn(OCRManager, 'getInstance').mockReturnValue(manager as any)
+    const manager = ocrManager({ start: vi.fn().mockRejectedValue(new Error('ocr init failed')) })
+    vi.spyOn(OCRManager, 'getInstance').mockReturnValue(manager as any)
     filesParser.allPaths.mockResolvedValue([parseContentPath({ id: 9, paths: [parsePath({ realPath: '/u/jane' })] })] as FileParseContentPath[])
-    jest.spyOn(service as any, 'indexFiles').mockResolvedValue(undefined)
+    vi.spyOn(service as any, 'indexFiles').mockResolvedValue(undefined)
 
     await (service as any).parseAndIndexAllFiles([9], [], [])
 
@@ -360,7 +360,7 @@ describe(FilesContentIndexer.name, () => {
   })
 
   it('should drop empty index when there is no db data and no indexed records', async () => {
-    jest.spyOn(service as any, 'parseFileMetadata').mockReturnValue(asyncGen([]))
+    vi.spyOn(service as any, 'parseFileMetadata').mockReturnValue(asyncGen([]))
 
     await indexFiles('user_8', [parsePath({ realPath: '/empty' })])
 
@@ -370,7 +370,7 @@ describe(FilesContentIndexer.name, () => {
   it('should insert parsed records, mark unchanged records and delete unseen entries in indexFiles', async () => {
     filesIndexer.getRecordMetadataByIds.mockResolvedValueOnce(new Map([[2, { path: 'files/personal', name: 'keep.txt', size: 20 }]]))
     filesIndexer.deleteUnseenRecords.mockResolvedValueOnce(1)
-    jest.spyOn(service as any, 'parseFileMetadata').mockImplementation(async function* () {
+    vi.spyOn(service as any, 'parseFileMetadata').mockImplementation(async function* () {
       yield fileMetadata({
         id: 2,
         name: 'keep.txt',
@@ -379,7 +379,7 @@ describe(FilesContentIndexer.name, () => {
       })
       yield fileMetadata()
     })
-    jest.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed')
+    vi.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed')
 
     await indexFiles('user_9')
 
@@ -395,7 +395,7 @@ describe(FilesContentIndexer.name, () => {
   it('should not delete unseen records when marking seen records fails', async () => {
     filesIndexer.getRecordMetadataByIds.mockResolvedValueOnce(new Map([[2, { path: 'files/personal', name: 'keep.txt', size: 20 }]]))
     filesIndexer.markRecordsSeen.mockResolvedValueOnce(false)
-    jest.spyOn(service as any, 'parseFileMetadata').mockReturnValue(
+    vi.spyOn(service as any, 'parseFileMetadata').mockReturnValue(
       asyncGen([
         fileMetadata({
           id: 2,
@@ -414,8 +414,8 @@ describe(FilesContentIndexer.name, () => {
     filesIndexer.getRecordMetadataByIds.mockResolvedValueOnce(new Map())
     filesIndexer.insertRecord.mockResolvedValueOnce(false)
     filesIndexer.deleteUnseenRecords.mockResolvedValueOnce(1)
-    jest.spyOn(service as any, 'parseFileMetadata').mockReturnValue(asyncGen([fileMetadata()]))
-    jest.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed')
+    vi.spyOn(service as any, 'parseFileMetadata').mockReturnValue(asyncGen([fileMetadata()]))
+    vi.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed')
 
     await indexFiles('user_11')
 
@@ -432,8 +432,8 @@ describe(FilesContentIndexer.name, () => {
     filesIndexer.getRecordMetadataByIds.mockResolvedValueOnce(new Map([[3, { path: 'files/personal', name: 'old.txt', size: 1 }]]))
     filesIndexer.insertRecord.mockResolvedValueOnce(false)
     filesIndexer.deleteUnseenRecords.mockResolvedValueOnce(1)
-    jest.spyOn(service as any, 'parseFileMetadata').mockReturnValue(asyncGen([fileMetadata()]))
-    jest.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed')
+    vi.spyOn(service as any, 'parseFileMetadata').mockReturnValue(asyncGen([fileMetadata()]))
+    vi.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed')
 
     await indexFiles('user_12')
 
@@ -447,13 +447,13 @@ describe(FilesContentIndexer.name, () => {
   })
 
   it('should recursively parse directories and yield file metadata only', async () => {
-    const readdirSpy = jest.spyOn(fs, 'readdir')
+    const readdirSpy = vi.spyOn(fs, 'readdir')
     readdirSpy.mockResolvedValueOnce([
       { parentPath: '/root', name: 'sub', isDirectory: () => true },
       { parentPath: '/root', name: 'a.txt', isDirectory: () => false }
     ] as any)
     readdirSpy.mockResolvedValueOnce([{ parentPath: '/root/sub', name: 'b.txt', isDirectory: () => false }] as any)
-    jest.spyOn(service as any, 'getFileMetadata').mockImplementation(async (realPath: string) =>
+    vi.spyOn(service as any, 'getFileMetadata').mockImplementation(async (realPath: string) =>
       fileMetadata({
         id: realPath.length,
         name: path.basename(realPath),
@@ -470,7 +470,7 @@ describe(FilesContentIndexer.name, () => {
   })
 
   it('should skip non-indexable files in getFileMetadata', async () => {
-    const statSpy = jest.spyOn(fs, 'stat')
+    const statSpy = vi.spyOn(fs, 'stat')
     const context = contentContext({ regexBasePath: /^\/?data\/?/ })
 
     const unsupported = await (service as any).getFileMetadata('/data/image.png', context, false)
@@ -480,7 +480,7 @@ describe(FilesContentIndexer.name, () => {
 
   it('should build file metadata in getFileMetadata for indexable files', async () => {
     const context = contentContext()
-    jest.spyOn(fs, 'stat').mockResolvedValueOnce({
+    vi.spyOn(fs, 'stat').mockResolvedValueOnce({
       ino: 200,
       size: 42,
       mtime: new Date('2024-01-02T03:04:05.000Z')
@@ -502,12 +502,12 @@ describe(FilesContentIndexer.name, () => {
 
   it('should build indexed file content from file metadata', async () => {
     const context = contentContext()
-    jest.spyOn(fs, 'stat').mockResolvedValueOnce({
+    vi.spyOn(fs, 'stat').mockResolvedValueOnce({
       ino: 200,
       size: 42,
       mtime: new Date('2024-01-02T03:04:05.000Z')
     } as any)
-    jest.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed content')
+    vi.spyOn(service as any, 'parseContent').mockResolvedValueOnce('indexed content')
 
     const fileMetadata = await (service as any).getFileMetadata('/data/base/sub/doc.txt', context, false)
     const fileContent = await (service as any).buildFileContent(fileMetadata)
@@ -525,7 +525,7 @@ describe(FilesContentIndexer.name, () => {
 
   it('should parse content and return null when parser returns empty or throws', async () => {
     ;(service as any).ocrManager = { worker: { id: 'worker-1' } }
-    const docTextifySpy = jest.spyOn(docTextifyModule, 'docTextify')
+    const docTextifySpy = vi.spyOn(docTextifyModule, 'docTextify')
     docTextifySpy.mockResolvedValueOnce('')
     docTextifySpy.mockRejectedValueOnce(new Error('parse failed'))
 

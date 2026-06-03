@@ -55,7 +55,7 @@ describe(SpacesManager.name, () => {
         },
         {
           provide: FilesQuotaManager,
-          useValue: { setQuotaExceeded: () => jest.fn() }
+          useValue: { setQuotaExceeded: () => vi.fn() }
         },
         SpacesManager,
         SpacesQueries,
@@ -139,7 +139,7 @@ describe(SpacesManager.name, () => {
       permissions: 'a:d:m:so',
       role: 0
     }
-    spacesQueries.permissions = jest.fn().mockReturnValue(permissions)
+    spacesQueries.permissions = vi.fn().mockReturnValue(permissions)
     for (const repository of [SPACE_REPOSITORY.FILES, SPACE_REPOSITORY.TRASH]) {
       const spaceEnv = await spacesManager.spaceEnv(userTest, [repository, spaceAlias, 'foo', 'bar'])
       await expect(IsRealPathIsDirAndExists(spaceEnv.realPath)).rejects.toThrow()
@@ -158,7 +158,7 @@ describe(SpacesManager.name, () => {
       permissions: SPACE_ALL_OPERATIONS,
       root: { id: 1, alias: 'foo', name: 'foo', externalPath: tmpDir, permissions: SPACE_ALL_OPERATIONS }
     }
-    spacesQueries.permissions = jest.fn().mockReturnValueOnce(permissions)
+    spacesQueries.permissions = vi.fn().mockReturnValueOnce(permissions)
     const spaceEnv = await spacesManager.spaceEnv(userTest, [SPACE_REPOSITORY.FILES, spaceAlias, 'foo', 'bar'])
     const rootPath = path.join(tmpDir, ...spaceEnv.paths)
     await fs.mkdir(rootPath, { recursive: true })
@@ -182,7 +182,7 @@ describe(SpacesManager.name, () => {
         permissions: SPACE_ALL_OPERATIONS
       }
     }
-    spacesQueries.permissions = jest.fn().mockReturnValueOnce(permissions)
+    spacesQueries.permissions = vi.fn().mockReturnValueOnce(permissions)
     const spaceEnv = await spacesManager.spaceEnv(userTest, [SPACE_REPOSITORY.FILES, spaceAlias, 'document', 'bar'])
     await fs.mkdir(path.join(UserModel.getFilesPath(userTest.login), 'foo', 'bar'), { recursive: true })
     await expect(IsRealPathIsDirAndExists(spaceEnv.realPath)).resolves.toBeUndefined()
@@ -198,7 +198,7 @@ describe(SpacesManager.name, () => {
 
   it('should list spaces as admin using spacesAsAdmin query', async () => {
     const spaces = [{ id: 1, alias: 's1' }]
-    const spy = jest.spyOn(spacesQueries, 'spacesAsAdmin').mockResolvedValueOnce(spaces as any)
+    const spy = vi.spyOn(spacesQueries, 'spacesAsAdmin').mockResolvedValueOnce(spaces as any)
 
     const result = await spacesManager.listSpacesAsAdmin()
 
@@ -209,7 +209,7 @@ describe(SpacesManager.name, () => {
   it('should get a space with admin-or-manager access check', async () => {
     const admin = { id: 99, isAdmin: true } as UserModel
     const space = { id: 5, alias: 'space-5', roots: [] }
-    const spy = jest.spyOn(spacesQueries, 'getSpaceAsAdminOrManager').mockResolvedValueOnce(space as any)
+    const spy = vi.spyOn(spacesQueries, 'getSpaceAsAdminOrManager').mockResolvedValueOnce(space as any)
 
     const result = await spacesManager.getSpace(admin, 5)
 
@@ -218,7 +218,7 @@ describe(SpacesManager.name, () => {
   })
 
   it('should throw Forbidden when user is neither admin nor manager for space shares', async () => {
-    jest.spyOn(spacesQueries, 'userIsAdminOrSpaceManager').mockResolvedValueOnce(false)
+    vi.spyOn(spacesQueries, 'userIsAdminOrSpaceManager').mockResolvedValueOnce(false)
 
     await expect(spacesManager.listSpaceShares(userTest, 10)).rejects.toEqual(new HttpException('Not authorized', HttpStatus.FORBIDDEN))
   })

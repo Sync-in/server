@@ -10,79 +10,104 @@ import { getEnvPermissions } from '../../spaces/utils/permissions'
 import { UsersQueries } from '../../users/services/users-queries.service'
 import { SyncPathsManager } from './sync-paths-manager.service'
 import { SyncQueries } from './sync-queries.service'
+import { Mock } from 'vitest'
 
 // Mock modules used directly inside SyncPathsManager
-jest.mock('../../../common/shared', () => ({
-  currentTimeStamp: jest.fn(() => 1000)
-}))
-jest.mock('../../files/utils/files', () => ({
-  isPathExists: jest.fn(),
-  isPathIsDir: jest.fn(),
-  getProps: jest.fn(),
-  sanitizePath: jest.fn((p: string) => p)
-}))
-jest.mock('../../spaces/utils/permissions', () => ({
-  getEnvPermissions: jest.fn(() => 'server-perms')
-}))
-jest.mock('../constants/sync', () => ({
-  SYNC_PATH_REPOSITORY: {
-    SPACES: ['spaces'],
-    PERSONAL: ['personal'],
-    SHARES: ['shares']
+vi.mock('../../../common/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/shared')>()
+  return {
+    ...actual,
+    currentTimeStamp: vi.fn(() => 1000)
   }
-}))
-jest.mock('../../notifications/constants/notifications', () => ({
-  NOTIFICATION_APP: { SYNC: 'SYNC' },
-  NOTIFICATION_APP_EVENT: { SYNC: { DELETE: 'DELETE', CREATE: 'CREATE', UPDATE: 'UPDATE' } }
-}))
+})
+
+vi.mock('../../files/utils/files', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/utils/files')>()
+  return {
+    ...actual,
+    isPathExists: vi.fn(),
+    isPathIsDir: vi.fn(),
+    getProps: vi.fn(),
+    sanitizePath: vi.fn((p: string) => p)
+  }
+})
+
+vi.mock('../../spaces/utils/permissions', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../spaces/utils/permissions')>()
+  return {
+    ...actual,
+    getEnvPermissions: vi.fn(() => 'server-perms')
+  }
+})
+
+vi.mock('../constants/sync', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../constants/sync')>()
+  return {
+    ...actual,
+    SYNC_PATH_REPOSITORY: {
+      SPACES: ['spaces'],
+      PERSONAL: ['personal'],
+      SHARES: ['shares']
+    }
+  }
+})
+
+vi.mock('../../notifications/constants/notifications', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../notifications/constants/notifications')>()
+  return {
+    ...actual,
+    NOTIFICATION_APP: { SYNC: 'SYNC' },
+    NOTIFICATION_APP_EVENT: { SYNC: { DELETE: 'DELETE', CREATE: 'CREATE', UPDATE: 'UPDATE' } }
+  }
+})
 
 describe(SyncPathsManager.name, () => {
   let service: SyncPathsManager
-  let contextManager: { headerOriginUrl: jest.Mock }
-  let spacesManager: { spaceEnv: jest.Mock }
-  let usersQueries: Record<string, jest.Mock>
-  let filesQueries: { getSpaceFileId: jest.Mock; getOrCreateSpaceFile: jest.Mock }
-  let notificationsManager: { create: jest.Mock }
+  let contextManager: { headerOriginUrl: Mock }
+  let spacesManager: { spaceEnv: Mock }
+  let usersQueries: Record<string, Mock>
+  let filesQueries: { getSpaceFileId: Mock; getOrCreateSpaceFile: Mock }
+  let notificationsManager: { create: Mock }
   let syncQueries: {
-    getClient: jest.Mock
-    clientExistsForOwner: jest.Mock
-    createPath: jest.Mock
-    deletePath: jest.Mock
-    getPaths: jest.Mock
-    getPathSettings: jest.Mock
-    updatePathSettings: jest.Mock
-    clearCachePathSettings: jest.Mock
+    getClient: Mock
+    clientExistsForOwner: Mock
+    createPath: Mock
+    deletePath: Mock
+    getPaths: Mock
+    getPathSettings: Mock
+    updatePathSettings: Mock
+    clearCachePathSettings: Mock
   }
 
   const userWith = (clientId?: string) => ({ id: 1, clientId })
   const flush = () => new Promise((r) => setImmediate(r))
 
   beforeEach(async () => {
-    contextManager = { headerOriginUrl: jest.fn(() => 'http://origin.local') }
-    spacesManager = { spaceEnv: jest.fn() }
+    contextManager = { headerOriginUrl: vi.fn(() => 'http://origin.local') }
+    spacesManager = { spaceEnv: vi.fn() }
     usersQueries = {}
     filesQueries = {
-      getSpaceFileId: jest.fn(),
-      getOrCreateSpaceFile: jest.fn()
+      getSpaceFileId: vi.fn(),
+      getOrCreateSpaceFile: vi.fn()
     }
     notificationsManager = {
-      create: jest.fn().mockResolvedValue(undefined)
+      create: vi.fn().mockResolvedValue(undefined)
     }
     syncQueries = {
-      getClient: jest.fn(),
-      clientExistsForOwner: jest.fn(),
-      createPath: jest.fn(),
-      deletePath: jest.fn(),
-      getPaths: jest.fn(),
-      getPathSettings: jest.fn(),
-      updatePathSettings: jest.fn().mockResolvedValue(undefined),
-      clearCachePathSettings: jest.fn()
+      getClient: vi.fn(),
+      clientExistsForOwner: vi.fn(),
+      createPath: vi.fn(),
+      deletePath: vi.fn(),
+      getPaths: vi.fn(),
+      getPathSettings: vi.fn(),
+      updatePathSettings: vi.fn().mockResolvedValue(undefined),
+      clearCachePathSettings: vi.fn()
     }
-    ;(isPathExists as jest.Mock).mockReset()
-    ;(isPathIsDir as jest.Mock).mockReset()
-    ;(getProps as jest.Mock).mockReset()
-    ;(getEnvPermissions as jest.Mock).mockReset().mockReturnValue('server-perms')
-    ;(currentTimeStamp as jest.Mock).mockReset().mockReturnValue(1000)
+    vi.mocked(isPathExists).mockReset()
+    vi.mocked(isPathIsDir).mockReset()
+    vi.mocked(getProps).mockReset()
+    vi.mocked(getEnvPermissions).mockReset().mockReturnValue('server-perms')
+    vi.mocked(currentTimeStamp).mockReset().mockReturnValue(1000)
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -140,19 +165,19 @@ describe(SyncPathsManager.name, () => {
     it.each([
       {
         title: 'NOT_FOUND when remote path does not exist',
-        setup: () => (isPathExists as jest.Mock).mockResolvedValue(false),
+        setup: () => vi.mocked(isPathExists).mockResolvedValue(false),
         expected: { status: HttpStatus.NOT_FOUND, message: 'Remote path not found : client/remote' }
       },
       {
         title: 'BAD_REQUEST when remote path is not a directory',
-        setup: () => ((isPathExists as jest.Mock).mockResolvedValue(true), (isPathIsDir as jest.Mock).mockResolvedValue(false)),
+        setup: () => (vi.mocked(isPathExists).mockResolvedValue(true), vi.mocked(isPathIsDir).mockResolvedValue(false)),
         expected: { status: HttpStatus.BAD_REQUEST, message: 'Remote path must be a directory' }
       },
       {
         title: 'NOT_FOUND when client is not found',
         setup: () => (
-          (isPathExists as jest.Mock).mockResolvedValue(true),
-          (isPathIsDir as jest.Mock).mockResolvedValue(true),
+          vi.mocked(isPathExists).mockResolvedValue(true),
+          vi.mocked(isPathIsDir).mockResolvedValue(true),
           syncQueries.getClient.mockResolvedValue(null)
         ),
         expected: { status: HttpStatus.NOT_FOUND, message: 'Client not found' }
@@ -165,12 +190,12 @@ describe(SyncPathsManager.name, () => {
 
     it('should create path and return id and permissions, overriding remotePath and permissions', async () => {
       const req = baseReq()
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      ;(isPathIsDir as jest.Mock).mockResolvedValue(true)
-      ;(getEnvPermissions as jest.Mock).mockReturnValue('env-perms')
+      vi.mocked(isPathExists).mockResolvedValue(true)
+      vi.mocked(isPathIsDir).mockResolvedValue(true)
+      vi.mocked(getEnvPermissions).mockReturnValue('env-perms')
       syncQueries.getClient.mockResolvedValue({ id: 'client-1' })
       // Spy on private getDBProps to simplify
-      const getDBPropsSpy = jest.spyOn<any, any>(service as any, 'getDBProps').mockResolvedValue({ ownerId: 1 })
+      const getDBPropsSpy = vi.spyOn<any, any>(service as any, 'getDBProps').mockResolvedValue({ ownerId: 1 })
       syncQueries.createPath.mockResolvedValue(123)
 
       const res = await service.createPath(req, { remotePath: 'client/remote', permissions: 'client-perms' } as any)
@@ -235,7 +260,7 @@ describe(SyncPathsManager.name, () => {
       syncQueries.clientExistsForOwner.mockResolvedValue(true)
       syncQueries.getPathSettings.mockResolvedValue({ id: 5, timestamp: 500, lastSync: 1, remotePath: '/a', permissions: 'p' })
       syncQueries.updatePathSettings.mockResolvedValue(undefined)
-      ;(currentTimeStamp as jest.Mock).mockReturnValue(4242)
+      vi.mocked(currentTimeStamp).mockReturnValue(4242)
 
       const out = await service.updatePath({ id: 1 } as any, 'c1', 5, { id: 666, lastSync: 3, permissions: 'new' } as any)
       expect(syncQueries.updatePathSettings).toHaveBeenCalledWith(
@@ -404,7 +429,7 @@ describe(SyncPathsManager.name, () => {
       // Force client newer to trigger updatePathSettings
       const client = [{ id: 11, timestamp: 10, lastSync: 2, remotePath: 'SPACES/x', permissions: 'p' } as any]
       syncQueries.updatePathSettings.mockRejectedValueOnce(new Error('db-fail'))
-      const loggerSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => undefined)
+      const loggerSpy = vi.spyOn((service as any).logger, 'error').mockImplementation(() => undefined)
 
       await service.updatePaths(userWith('c1') as any, client)
       // wait for microtasks to ensure .catch executed
@@ -418,7 +443,7 @@ describe(SyncPathsManager.name, () => {
       syncQueries.clientExistsForOwner.mockResolvedValue(true)
       // No server paths: will mark client path as deleted and call notify
       syncQueries.getPaths.mockResolvedValue([])
-      const loggerSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => undefined)
+      const loggerSpy = vi.spyOn((service as any).logger, 'error').mockImplementation(() => undefined)
       // BAD first segment to make notify fail while building URL (before notificationsManager.create)
       const client = [{ id: 1, remotePath: 'BAD/a/b', timestamp: 1, lastSync: 1, permissions: 'p' } as any]
 
@@ -437,7 +462,7 @@ describe(SyncPathsManager.name, () => {
       syncQueries.getPaths.mockResolvedValue([])
       // Valid remotePath to build URL correctly
       const client = [{ id: 2, remotePath: 'SPACES/a', timestamp: 1, lastSync: 1, permissions: 'p' } as any]
-      const loggerSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => undefined)
+      const loggerSpy = vi.spyOn((service as any).logger, 'error').mockImplementation(() => undefined)
       notificationsManager.create.mockRejectedValueOnce(new Error('notify-fail'))
 
       const res = await service.updatePaths(userWith('c1') as any, client)
@@ -473,7 +498,7 @@ describe(SyncPathsManager.name, () => {
     })
 
     it('should return ownerId and fileId for personal space subdir', async () => {
-      const getOrCreateFileIdSpy = jest.spyOn<any, any>(service as any, 'getOrCreateFileId').mockResolvedValue(77)
+      const getOrCreateFileIdSpy = vi.spyOn<any, any>(service as any, 'getOrCreateFileId').mockResolvedValue(77)
       const res = await (service as any).getDBProps({
         inPersonalSpace: true,
         paths: ['sub'],
@@ -501,7 +526,7 @@ describe(SyncPathsManager.name, () => {
     })
 
     it('should return spaceId, rootId and fileId for files repository subdir or null root', async () => {
-      const getOrCreateFileIdSpy = jest.spyOn<any, any>(service as any, 'getOrCreateFileId').mockResolvedValue(88)
+      const getOrCreateFileIdSpy = vi.spyOn<any, any>(service as any, 'getOrCreateFileId').mockResolvedValue(88)
       const res = await (service as any).getDBProps({
         inFilesRepository: true,
         id: 5,
@@ -513,7 +538,7 @@ describe(SyncPathsManager.name, () => {
     })
 
     it('should return spaceId and null spaceRootId plus fileId when files repository root has no id', async () => {
-      const getOrCreateFileIdSpy = jest.spyOn<any, any>(service as any, 'getOrCreateFileId').mockResolvedValue(90)
+      const getOrCreateFileIdSpy = vi.spyOn<any, any>(service as any, 'getOrCreateFileId').mockResolvedValue(90)
       const res = await (service as any).getDBProps({
         inFilesRepository: true,
         id: 6,
@@ -537,7 +562,7 @@ describe(SyncPathsManager.name, () => {
     })
 
     it('should return shareId and fileId for shares repository subdir', async () => {
-      const getOrCreateFileIdSpy = jest.spyOn<any, any>(service as any, 'getOrCreateFileId').mockResolvedValue(55)
+      const getOrCreateFileIdSpy = vi.spyOn<any, any>(service as any, 'getOrCreateFileId').mockResolvedValue(55)
       const res = await (service as any).getDBProps({
         inSharesList: false,
         inPersonalSpace: false,
@@ -564,7 +589,7 @@ describe(SyncPathsManager.name, () => {
 
   describe('getOrCreateFileId (private) branches', () => {
     it('should return existing file id without creation', async () => {
-      ;(getProps as jest.Mock).mockResolvedValue({ name: 'file' })
+      vi.mocked(getProps).mockResolvedValue({ name: 'file' })
       filesQueries.getSpaceFileId.mockResolvedValue(101)
       const id = await (service as any).getOrCreateFileId({
         realPath: '/rp',
@@ -575,7 +600,7 @@ describe(SyncPathsManager.name, () => {
     })
 
     it('should create file when not exists and return its id', async () => {
-      ;(getProps as jest.Mock).mockResolvedValue({ id: 999, name: 'file' })
+      vi.mocked(getProps).mockResolvedValue({ id: 999, name: 'file' })
       filesQueries.getSpaceFileId.mockResolvedValue(0)
       filesQueries.getOrCreateSpaceFile.mockResolvedValue(202)
       const id = await (service as any).getOrCreateFileId({

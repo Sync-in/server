@@ -9,19 +9,20 @@ import { WEBDAV_NS } from '../constants/routes'
 import { DEPTH } from '../constants/webdav'
 import type { FastifyDAVRequest } from '../interfaces/webdav.interface'
 import { WebDAVSpaces } from './webdav-spaces.service'
+import { Mocked } from 'vitest'
 
 // mocks for file utils and permissions
-jest.mock('../../files/utils/files', () => ({
-  getProps: jest.fn(),
-  isPathExists: jest.fn(),
-  isPathIsDir: jest.fn()
+vi.mock('../../files/utils/files', () => ({
+  getProps: vi.fn(),
+  isPathExists: vi.fn(),
+  isPathIsDir: vi.fn()
 }))
-jest.mock('../../spaces/utils/permissions', () => ({
-  canAccessToSpaceUrl: jest.fn()
+vi.mock('../../spaces/utils/permissions', () => ({
+  canAccessToSpaceUrl: vi.fn()
 }))
 // mock for WEBDAV path-to-space segments
-jest.mock('../utils/routes', () => ({
-  WEBDAV_PATH_TO_SPACE_SEGMENTS: jest.fn(() => ['files', 'personal'])
+vi.mock('../utils/routes', () => ({
+  WEBDAV_PATH_TO_SPACE_SEGMENTS: vi.fn(() => ['files', 'personal'])
 }))
 
 // small helper to collect results from an AsyncGenerator
@@ -35,19 +36,19 @@ async function collectGenerator<T>(gen: AsyncGenerator<T>): Promise<T[]> {
 
 describe(WebDAVSpaces.name, () => {
   let service: WebDAVSpaces
-  let spacesManager: jest.Mocked<SpacesManager>
-  let spacesBrowser: jest.Mocked<SpacesBrowser>
+  let spacesManager: Mocked<SpacesManager>
+  let spacesBrowser: Mocked<SpacesBrowser>
 
   const user = { id: 1, login: 'john', isAdmin: false } as any
 
   beforeAll(async () => {
-    const spacesManagerMock: Partial<jest.Mocked<SpacesManager>> = {
-      spaceEnv: jest.fn(),
-      listSpaces: jest.fn(),
-      listTrashes: jest.fn()
+    const spacesManagerMock: Partial<Mocked<SpacesManager>> = {
+      spaceEnv: vi.fn(),
+      listSpaces: vi.fn(),
+      listTrashes: vi.fn()
     }
-    const spacesBrowserMock: Partial<jest.Mocked<SpacesBrowser>> = {
-      browse: jest.fn()
+    const spacesBrowserMock: Partial<Mocked<SpacesBrowser>> = {
+      browse: vi.fn()
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -56,12 +57,12 @@ describe(WebDAVSpaces.name, () => {
 
     module.useLogger(['fatal'])
     service = module.get<WebDAVSpaces>(WebDAVSpaces)
-    spacesManager = module.get(SpacesManager) as jest.Mocked<SpacesManager>
-    spacesBrowser = module.get(SpacesBrowser) as jest.Mocked<SpacesBrowser>
+    spacesManager = module.get(SpacesManager) as Mocked<SpacesManager>
+    spacesBrowser = module.get(SpacesBrowser) as Mocked<SpacesBrowser>
   })
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -71,7 +72,7 @@ describe(WebDAVSpaces.name, () => {
   describe('spaceEnv', () => {
     it('returns space when manager resolves', async () => {
       const fakeSpace = { alias: 'personal', id: 0 } as any
-      ;(spacesManager.spaceEnv as jest.Mock).mockResolvedValue(fakeSpace)
+      vi.mocked(spacesManager.spaceEnv).mockResolvedValue(fakeSpace)
 
       const res = await service.spaceEnv(user as any, '/webdav/personal')
       expect(res).toBe(fakeSpace)
@@ -79,14 +80,14 @@ describe(WebDAVSpaces.name, () => {
     })
 
     it('returns null when manager throws', async () => {
-      ;(spacesManager.spaceEnv as jest.Mock).mockRejectedValue(new Error('boom'))
+      vi.mocked(spacesManager.spaceEnv).mockRejectedValue(new Error('boom'))
 
       const res = await service.spaceEnv(user as any, '/webdav/personal')
       expect(res).toBeNull()
     })
 
     it('returns null when space not found', async () => {
-      ;(spacesManager.spaceEnv as jest.Mock).mockResolvedValue(null)
+      vi.mocked(spacesManager.spaceEnv).mockResolvedValue(null)
 
       const res = await service.spaceEnv(user as any, '/webdav/personal')
       expect(res).toBeNull()
@@ -109,7 +110,7 @@ describe(WebDAVSpaces.name, () => {
 
   describe('propfind - webdav listing', () => {
     it('filters repositories by user access', async () => {
-      ;(canAccessToSpaceUrl as jest.Mock).mockImplementation((_u: any, repos: string[]) => repos?.includes(SPACE_REPOSITORY.FILES))
+      vi.mocked(canAccessToSpaceUrl).mockImplementation((_u: any, repos: string[]) => repos?.includes(SPACE_REPOSITORY.FILES))
       const req = { user, dav: { url: '/webdav', depth: DEPTH.MEMBERS } } as unknown as FastifyDAVRequest
 
       const items = await collectGenerator(service.propfind(req, WEBDAV_NS.WEBDAV as any))
@@ -127,7 +128,7 @@ describe(WebDAVSpaces.name, () => {
   describe('propfind - spaces listing', () => {
     it('yields spaces root then user spaces when depth=1', async () => {
       const now = new Date()
-      ;(spacesManager.listSpaces as jest.Mock).mockResolvedValue([
+      vi.mocked(spacesManager.listSpaces).mockResolvedValue([
         { id: 10, name: 'Team A', alias: 'team-a', createdAt: now.toISOString(), modifiedAt: now.toISOString() },
         { id: 11, name: 'Team B', alias: 'team-b', createdAt: now.toISOString(), modifiedAt: now.toISOString() }
       ])
@@ -138,7 +139,7 @@ describe(WebDAVSpaces.name, () => {
     })
 
     it('yields only spaces root when depth=0', async () => {
-      ;(spacesManager.listSpaces as jest.Mock).mockResolvedValue([])
+      vi.mocked(spacesManager.listSpaces).mockResolvedValue([])
       const req = { user, dav: { url: '/webdav/spaces', depth: DEPTH.RESOURCE } } as unknown as FastifyDAVRequest
       const items = await collectGenerator(service.propfind(req, WEBDAV_NS.SPACES as any))
       expect(items.map((i: any) => i.name)).toEqual([WEBDAV_NS.SPACES])
@@ -147,7 +148,7 @@ describe(WebDAVSpaces.name, () => {
 
   describe('propfind - trashes listing', () => {
     it('yields trash root then each trash bucket when depth=1', async () => {
-      ;(spacesManager.listTrashes as jest.Mock).mockResolvedValue([
+      vi.mocked(spacesManager.listTrashes).mockResolvedValue([
         { id: 1, alias: 'personal', nb: 2, mtime: 3, ctime: 4, name: 'Personal files' },
         { id: 2, alias: 'team-a', nb: 5, mtime: 6, ctime: 7, name: 'Team A' }
       ])
@@ -157,7 +158,7 @@ describe(WebDAVSpaces.name, () => {
     })
 
     it('yields only trash root when depth=0', async () => {
-      ;(spacesManager.listTrashes as jest.Mock).mockResolvedValue([])
+      vi.mocked(spacesManager.listTrashes).mockResolvedValue([])
       const req = { user, dav: { url: '/webdav/trash', depth: DEPTH.RESOURCE } } as unknown as FastifyDAVRequest
       const items = await collectGenerator(service.propfind(req, WEBDAV_NS.TRASH as any))
       expect(items.map((i: any) => i.name)).toEqual([WEBDAV_NS.TRASH])
@@ -166,7 +167,7 @@ describe(WebDAVSpaces.name, () => {
 
   describe('propfind - files listing (shares list)', () => {
     it('yields shares root and children when inSharesList=true and depth=1', async () => {
-      ;(spacesBrowser.browse as jest.Mock).mockResolvedValue({
+      vi.mocked(spacesBrowser.browse).mockResolvedValue({
         files: [{ id: 1, name: 'doc.txt', isDir: false, size: 12, ctime: 1, mtime: 2, mime: 'text/plain' }]
       })
 
@@ -183,7 +184,7 @@ describe(WebDAVSpaces.name, () => {
 
   describe('propfind - files listing (path cases)', () => {
     it('throws 404 when path does not exist', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(false)
+      vi.mocked(isPathExists).mockResolvedValue(false)
 
       const req = {
         user,
@@ -196,8 +197,8 @@ describe(WebDAVSpaces.name, () => {
     })
 
     it('yields current directory and children when path exists and is dir', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      ;(getProps as jest.Mock).mockResolvedValue({
+      vi.mocked(isPathExists).mockResolvedValue(true)
+      vi.mocked(getProps).mockResolvedValue({
         id: 100,
         name: 'current',
         isDir: true,
@@ -206,8 +207,8 @@ describe(WebDAVSpaces.name, () => {
         mtime: Date.now(),
         mime: undefined
       })
-      ;(isPathIsDir as jest.Mock).mockResolvedValue(true)
-      ;(spacesBrowser.browse as jest.Mock).mockResolvedValue({
+      vi.mocked(isPathIsDir).mockResolvedValue(true)
+      vi.mocked(spacesBrowser.browse).mockResolvedValue({
         files: [{ id: 2, name: 'child.txt', isDir: false, size: 1, ctime: 1, mtime: 2, mime: 'text/plain' }]
       })
 
@@ -222,8 +223,8 @@ describe(WebDAVSpaces.name, () => {
     })
 
     it('does not list children when path exists but is not a directory', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      ;(getProps as jest.Mock).mockResolvedValue({
+      vi.mocked(isPathExists).mockResolvedValue(true)
+      vi.mocked(getProps).mockResolvedValue({
         id: 101,
         name: 'current',
         isDir: false,
@@ -232,8 +233,8 @@ describe(WebDAVSpaces.name, () => {
         mtime: Date.now(),
         mime: 'text/plain'
       })
-      ;(isPathIsDir as jest.Mock).mockResolvedValue(false)
-      ;(spacesBrowser.browse as jest.Mock).mockResolvedValue({ files: [] })
+      vi.mocked(isPathIsDir).mockResolvedValue(false)
+      vi.mocked(spacesBrowser.browse).mockResolvedValue({ files: [] })
 
       const req = {
         user,

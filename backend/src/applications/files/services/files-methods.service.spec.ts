@@ -65,7 +65,7 @@ describe(FilesMethods.name, () => {
         {
           provide: FilesManager,
           useValue: {
-            compress: jest.fn()
+            compress: vi.fn()
           }
         }
       ]
@@ -77,7 +77,7 @@ describe(FilesMethods.name, () => {
     filesQuotaManager = module.get<FilesQuotaManager>(FilesQuotaManager)
     userTest = new UserModel(generateUserTest())
     // mock
-    filesQuotaManager.updateSpacesQuota = jest.fn().mockReturnValue(undefined)
+    filesQuotaManager.updateSpacesQuota = vi.fn().mockReturnValue(undefined)
   })
 
   it('should be defined', () => {

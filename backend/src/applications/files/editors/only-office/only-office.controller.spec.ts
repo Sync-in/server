@@ -11,16 +11,16 @@ describe(OnlyOfficeController.name, () => {
   let controller: OnlyOfficeController
 
   const filesOnlyOfficeManagerMock = {
-    getSettings: jest.fn(),
-    callBack: jest.fn()
+    getSettings: vi.fn(),
+    callBack: vi.fn()
   }
 
   const filesMethodsMock = {
-    headOrGet: jest.fn()
+    headOrGet: vi.fn()
   }
 
   beforeEach(async () => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
     const module: TestingModule = await Test.createTestingModule({
       controllers: [OnlyOfficeController],
       providers: [
@@ -71,7 +71,7 @@ describe(OnlyOfficeController.name, () => {
   describe('onlyOfficeDocument', () => {
     it('should delegate to filesMethods.headOrGet with req and res', async () => {
       const req: any = { params: { '*': 'path/to/file' } }
-      const res: any = { header: jest.fn(), status: jest.fn().mockReturnThis() }
+      const res: any = { header: vi.fn(), status: vi.fn().mockReturnThis() }
       const stream: any = { readable: true }
       filesMethodsMock.headOrGet.mockResolvedValue(stream)
 

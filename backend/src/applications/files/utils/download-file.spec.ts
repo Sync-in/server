@@ -8,16 +8,16 @@ import { FILE_ERROR_MESSAGES } from './errors'
 import { writeFromStream } from './files'
 import { DownloadFile } from './download-file'
 
-jest.mock('./files', () => ({
-  writeFromStream: jest.fn()
+vi.mock('./files', () => ({
+  writeFromStream: vi.fn()
 }))
-jest.mock('node:dns/promises', () => ({
-  lookup: jest.fn()
+vi.mock('node:dns/promises', () => ({
+  lookup: vi.fn()
 }))
 
 describe(DownloadFile.name, () => {
-  let http: { axiosRef: jest.Mock }
-  const lookupMock = lookup as jest.Mock
+  let http: { axiosRef: Mock }
+  const lookupMock = lookup as Mock
 
   const blockedRemoteAddresses = [
     '10.0.0.1',
@@ -43,13 +43,13 @@ describe(DownloadFile.name, () => {
   })
 
   beforeEach(() => {
-    http = { axiosRef: jest.fn() }
+    http = { axiosRef: vi.fn() }
     lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }])
-    ;(writeFromStream as jest.Mock).mockResolvedValue(undefined)
+    vi.mocked(writeFromStream).mockResolvedValue(undefined)
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it.each(blockedRemoteAddresses)('rejects blocked remote address "%s" on HEAD by default', async (remoteAddress) => {
@@ -214,7 +214,7 @@ describe(DownloadFile.name, () => {
 
   it('rejects private IPs on GET by default and closes the stream', async () => {
     const stream = Readable.from(['abc'])
-    const destroySpy = jest.spyOn(stream, 'destroy')
+    const destroySpy = vi.spyOn(stream, 'destroy')
     http.axiosRef
       .mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '12' }))
       .mockResolvedValueOnce({ ...response('10.0.0.7'), data: stream })
@@ -250,7 +250,7 @@ describe(DownloadFile.name, () => {
   })
 
   it('rejects missing content-length for space downloads even when maxSize is provided', async () => {
-    const space = { willExceedQuota: jest.fn() }
+    const space = { willExceedQuota: vi.fn() }
     http.axiosRef.mockResolvedValueOnce(response('8.8.8.8'))
 
     await expect(
@@ -266,7 +266,7 @@ describe(DownloadFile.name, () => {
 
   it('keeps content-length as the stream guard for space downloads even when maxSize is provided', async () => {
     const stream = Readable.from(['abc'])
-    const space = { willExceedQuota: jest.fn().mockReturnValue(false) }
+    const space = { willExceedQuota: vi.fn().mockReturnValue(false) }
     http.axiosRef
       .mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '12' }))
       .mockResolvedValueOnce({ ...response('8.8.8.8'), data: stream })
@@ -293,7 +293,7 @@ describe(DownloadFile.name, () => {
 
   it('rejects redirects on GET after the HEAD URL has been resolved', async () => {
     const stream = Readable.from(['abc'])
-    const destroySpy = jest.spyOn(stream, 'destroy')
+    const destroySpy = vi.spyOn(stream, 'destroy')
     http.axiosRef
       .mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '12' }))
       .mockResolvedValueOnce({ ...response('8.8.8.8', { location: 'https://cdn.example.test/file.txt' }, 302), data: stream })

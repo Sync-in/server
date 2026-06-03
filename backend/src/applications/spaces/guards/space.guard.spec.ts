@@ -1,4 +1,4 @@
-import { createMock, DeepMocked } from '@golevelup/ts-jest'
+import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext, HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { intersectPermissions } from '../../../common/shared'
@@ -52,7 +52,7 @@ describe(SpaceGuard.name, () => {
         },
         {
           provide: FilesQuotaManager,
-          useValue: { setQuotaExceeded: () => jest.fn() }
+          useValue: { setQuotaExceeded: () => vi.fn() }
         },
         SpaceGuard,
         SpacesManager,
@@ -115,7 +115,7 @@ describe(SpaceGuard.name, () => {
       permissions: ':a:d:m:so',
       role: 0
     }
-    spacesQueries.permissions = jest.fn().mockReturnValueOnce(fakeSpace)
+    spacesQueries.permissions = vi.fn().mockReturnValueOnce(fakeSpace)
     context.switchToHttp().getRequest.mockReturnValue({
       user: userTest,
       params: { '*': 'files/test' }
@@ -157,7 +157,7 @@ describe(SpaceGuard.name, () => {
         externalPath: null
       }
     }
-    spacesQueries.permissions = jest.fn().mockReturnValueOnce(fakeSpace)
+    spacesQueries.permissions = vi.fn().mockReturnValueOnce(fakeSpace)
     context.switchToHttp().getRequest.mockReturnValue({
       user: userTest,
       params: { '*': 'files/test/root' }
@@ -204,7 +204,7 @@ describe(SpaceGuard.name, () => {
         externalPath: null
       }
     }
-    spacesQueries.permissions = jest.fn().mockReturnValueOnce(fakeSpace)
+    spacesQueries.permissions = vi.fn().mockReturnValueOnce(fakeSpace)
     context.switchToHttp().getRequest.mockReturnValue({
       user: userTest,
       params: { '*': 'files/test/root/path' }
@@ -258,7 +258,7 @@ describe(SpaceGuard.name, () => {
 
   it('should not pass if the space is not found or not valid', async () => {
     const fakeSpace = null
-    spacesQueries.permissions = jest.fn().mockReturnValueOnce(fakeSpace)
+    spacesQueries.permissions = vi.fn().mockReturnValueOnce(fakeSpace)
     context.switchToHttp().getRequest.mockReturnValue({
       user: userTest,
       params: { '*': 'files/foo' }
@@ -278,7 +278,7 @@ describe(SpaceGuard.name, () => {
     }
     // should pass because it is a standard user
     // should not pass because user is a guest (and dot not have the permission to access to a personal space)
-    spacesManager.spaceEnv = jest.fn().mockReturnValueOnce({ enabled: true }) // only for user role
+    spacesManager.spaceEnv = vi.fn().mockReturnValueOnce({ enabled: true }) // only for user role
     context.switchToHttp().getRequest.mockReturnValue({
       user: userTest,
       params: { '*': 'files/personal/root/foo/bar' }
@@ -295,7 +295,7 @@ describe(SpaceGuard.name, () => {
 
   it('should check user permissions on route', async () => {
     userTest.role = USER_ROLE.USER
-    spacesManager.spaceEnv = jest.fn().mockReturnValue({
+    spacesManager.spaceEnv = vi.fn().mockReturnValue({
       enabled: true,
       envPermissions: `${SPACE_OPERATION.MODIFY}`
     } as Partial<SpaceEnv>)
@@ -322,7 +322,7 @@ describe(SpaceGuard.name, () => {
     // allow if SkipSpacePermissionsCheck is enabled
     userTest.role = USER_ROLE.USER
     SkipSpacePermissionsCheck()(context.getHandler())
-    spacesManager.spaceEnv = jest.fn().mockReturnValue({
+    spacesManager.spaceEnv = vi.fn().mockReturnValue({
       enabled: true,
       envPermissions: `${SPACE_OPERATION.MODIFY}`
     } as Partial<SpaceEnv>)
@@ -337,7 +337,7 @@ describe(SpaceGuard.name, () => {
 
   it('should fail with quota exceeded', async () => {
     userTest.role = USER_ROLE.USER
-    spacesManager.spaceEnv = jest.fn().mockReturnValueOnce({
+    spacesManager.spaceEnv = vi.fn().mockReturnValueOnce({
       enabled: true,
       envPermissions: `${SPACE_OPERATION.ADD}`,
       quotaIsExceeded: true
@@ -354,7 +354,7 @@ describe(SpaceGuard.name, () => {
     userTest.role = USER_ROLE.USER
     const storageQuota = 12
     const storageUsage = 11
-    spacesManager.spaceEnv = jest.fn().mockReturnValue({
+    spacesManager.spaceEnv = vi.fn().mockReturnValue({
       enabled: true,
       envPermissions: `${SPACE_OPERATION.ADD}`,
       storageQuota: storageQuota,
@@ -379,7 +379,7 @@ describe(SpaceGuard.name, () => {
 
   it('should fail for add and modify operations in trash repository', async () => {
     userTest.role = USER_ROLE.USER
-    spacesManager.spaceEnv = jest.fn().mockReturnValue({
+    spacesManager.spaceEnv = vi.fn().mockReturnValue({
       enabled: true,
       inTrashRepository: true,
       envPermissions: SPACE_ALL_OPERATIONS
@@ -399,7 +399,7 @@ describe(SpaceGuard.name, () => {
 
   it('should fail with space disabled', async () => {
     userTest.role = USER_ROLE.USER
-    spacesManager.spaceEnv = jest.fn().mockReturnValueOnce({
+    spacesManager.spaceEnv = vi.fn().mockReturnValueOnce({
       enabled: false
     } as Partial<SpaceEnv>)
     context.switchToHttp().getRequest.mockReturnValueOnce({
@@ -412,8 +412,8 @@ describe(SpaceGuard.name, () => {
 
   it('should validate (or not) the webdav routes', async () => {
     userTest.role = USER_ROLE.USER
-    spacesManager.spaceEnv = jest.fn().mockReturnValue({ enabled: true })
-    const spyUrlSegment = jest.spyOn(spacesGuard as any, 'urlSegmentsFromContext')
+    spacesManager.spaceEnv = vi.fn().mockReturnValue({ enabled: true })
+    const spyUrlSegment = vi.spyOn(spacesGuard as any, 'urlSegmentsFromContext')
     WebDAVContext()(context.getHandler())
     context.switchToHttp().getRequest.mockReturnValueOnce({
       user: userTest,
@@ -432,8 +432,8 @@ describe(SpaceGuard.name, () => {
 
   it('should validate (or not) the sync routes', async () => {
     userTest.role = USER_ROLE.USER
-    spacesManager.spaceEnv = jest.fn().mockReturnValue({ enabled: true })
-    const spyUrlSegment = jest.spyOn(spacesGuard as any, 'urlSegmentsFromContext')
+    spacesManager.spaceEnv = vi.fn().mockReturnValue({ enabled: true })
+    const spyUrlSegment = vi.spyOn(spacesGuard as any, 'urlSegmentsFromContext')
     SyncContext()(context.getHandler())
     context.switchToHttp().getRequest.mockReturnValueOnce({
       user: userTest,
@@ -452,7 +452,7 @@ describe(SpaceGuard.name, () => {
 
   it('should allow the modify permission when using the POST method with override space permission decorator', async () => {
     userTest.role = USER_ROLE.USER
-    spacesManager.spaceEnv = jest.fn().mockReturnValue({ enabled: true, envPermissions: `${SPACE_OPERATION.MODIFY}` })
+    spacesManager.spaceEnv = vi.fn().mockReturnValue({ enabled: true, envPermissions: `${SPACE_OPERATION.MODIFY}` })
     OverrideSpacePermission(SPACE_OPERATION.MODIFY)(context.getHandler())
     context.switchToHttp().getRequest.mockReturnValue({
       method: 'POST',
@@ -463,7 +463,7 @@ describe(SpaceGuard.name, () => {
     expect(await spacesGuard.canActivate(context)).toBe(true)
     // reset context
     context = createMock<ExecutionContext>()
-    spacesManager.spaceEnv = jest.fn().mockReturnValue({ enabled: true, envPermissions: `${SPACE_OPERATION.ADD}` })
+    spacesManager.spaceEnv = vi.fn().mockReturnValue({ enabled: true, envPermissions: `${SPACE_OPERATION.ADD}` })
     await expect(spacesGuard.canActivate(context)).rejects.toThrow(HttpException)
     context.switchToHttp().getRequest.mockReturnValue({
       method: 'POST',
@@ -477,7 +477,7 @@ describe(SpaceGuard.name, () => {
   it('should pass if skipSpaceGuard context is enabled', async () => {
     userTest.role = USER_ROLE.USER
     userTest.applications = [USER_PERMISSION.PERSONAL_SPACE]
-    spacesManager.spaceEnv = jest.fn().mockReturnValue({ enabled: true })
+    spacesManager.spaceEnv = vi.fn().mockReturnValue({ enabled: true })
     context.switchToHttp().getRequest.mockReturnValue({
       user: userTest,
       params: { '*': 'shares/personal' }
@@ -490,7 +490,7 @@ describe(SpaceGuard.name, () => {
   it('coverage only', async () => {
     userTest.role = USER_ROLE.USER
     userTest.applications = [USER_PERMISSION.PERSONAL_SPACE]
-    spacesManager.spaceEnv = jest.fn().mockRejectedValueOnce(new Error('error'))
+    spacesManager.spaceEnv = vi.fn().mockRejectedValueOnce(new Error('error'))
     context.switchToHttp().getRequest.mockReturnValue({
       user: userTest,
       params: { '*': 'files/personal' }

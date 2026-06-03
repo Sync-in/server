@@ -8,54 +8,55 @@ import { FILE_REPOSITORY } from '../constants/operations'
 import { genQuotaCacheKey } from '../utils/quota'
 import { SpaceModel } from '../../spaces/models/space.model'
 import * as filesUtils from '../utils/files'
+import { Mock, MockInstance } from 'vitest'
 
 describe(FilesQuotaManager.name, () => {
   let service: FilesQuotaManager
   let spacesQueries: {
     cache: {
-      get: jest.Mock
-      set: jest.Mock
-      del: jest.Mock
-      keys: jest.Mock
+      get: Mock
+      set: Mock
+      del: Mock
+      keys: Mock
     }
-    spacesQuotaPaths: jest.Mock
-    updateSpace: jest.Mock
+    spacesQuotaPaths: Mock
+    updateSpace: Mock
   }
   let usersQueries: {
-    selectUsers: jest.Mock
-    updateUserOrGuest: jest.Mock
+    selectUsers: Mock
+    updateUserOrGuest: Mock
   }
   let sharesQueries: {
     cache: {
-      set: jest.Mock
+      set: Mock
     }
-    sharesQuotaExternalPaths: jest.Mock
-    updateShare: jest.Mock
+    sharesQuotaExternalPaths: Mock
+    updateShare: Mock
   }
-  let isPathExistsSpy: jest.SpiedFunction<typeof filesUtils.isPathExists>
-  let dirSizeSpy: jest.SpiedFunction<typeof filesUtils.dirSize>
+  let isPathExistsSpy: MockInstance<typeof filesUtils.isPathExists>
+  let dirSizeSpy: MockInstance<typeof filesUtils.dirSize>
 
   beforeEach(async () => {
     spacesQueries = {
       cache: {
-        get: jest.fn().mockResolvedValue(null),
-        set: jest.fn().mockResolvedValue(true),
-        del: jest.fn().mockResolvedValue(true),
-        keys: jest.fn().mockResolvedValue([])
+        get: vi.fn().mockResolvedValue(null),
+        set: vi.fn().mockResolvedValue(true),
+        del: vi.fn().mockResolvedValue(true),
+        keys: vi.fn().mockResolvedValue([])
       },
-      spacesQuotaPaths: jest.fn().mockResolvedValue([]),
-      updateSpace: jest.fn().mockResolvedValue(true)
+      spacesQuotaPaths: vi.fn().mockResolvedValue([]),
+      updateSpace: vi.fn().mockResolvedValue(true)
     }
     usersQueries = {
-      selectUsers: jest.fn().mockResolvedValue([]),
-      updateUserOrGuest: jest.fn().mockResolvedValue(true)
+      selectUsers: vi.fn().mockResolvedValue([]),
+      updateUserOrGuest: vi.fn().mockResolvedValue(true)
     }
     sharesQueries = {
       cache: {
-        set: jest.fn().mockResolvedValue(true)
+        set: vi.fn().mockResolvedValue(true)
       },
-      sharesQuotaExternalPaths: jest.fn().mockResolvedValue([]),
-      updateShare: jest.fn().mockResolvedValue(true)
+      sharesQuotaExternalPaths: vi.fn().mockResolvedValue([]),
+      updateShare: vi.fn().mockResolvedValue(true)
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -68,13 +69,13 @@ describe(FilesQuotaManager.name, () => {
 
     module.useLogger(['fatal'])
     service = module.get<FilesQuotaManager>(FilesQuotaManager)
-    isPathExistsSpy = jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
-    dirSizeSpy = jest.spyOn(filesUtils, 'dirSize').mockResolvedValue([0, {}])
+    isPathExistsSpy = vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
+    dirSizeSpy = vi.spyOn(filesUtils, 'dirSize').mockResolvedValue([0, {}])
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
-    jest.clearAllMocks()
+    vi.restoreAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -108,7 +109,7 @@ describe(FilesQuotaManager.name, () => {
     const user = { id: 7 } as any
     const space = { id: 0, alias: 'personal', inSharesList: false, inPersonalSpace: true, inSharesRepository: false } as any
     const personalQuota = { storageUsage: 20, storageQuota: 100 }
-    const spy = jest.spyOn(service, 'updatePersonalSpacesQuota').mockResolvedValueOnce(personalQuota)
+    const spy = vi.spyOn(service, 'updatePersonalSpacesQuota').mockResolvedValueOnce(personalQuota)
 
     await service.setQuotaExceeded(user, space)
 
@@ -125,9 +126,9 @@ describe(FilesQuotaManager.name, () => {
       'event-update-quota-share-3',
       'event-update-quota-unknown-4'
     ])
-    const userSpy = jest.spyOn(service, 'updatePersonalSpacesQuota').mockResolvedValueOnce(undefined)
-    const spaceSpy = jest.spyOn(service, 'updateSpacesQuota').mockResolvedValueOnce(undefined)
-    const shareSpy = jest.spyOn(service, 'updateSharesExternalPathQuota').mockResolvedValueOnce(undefined)
+    const userSpy = vi.spyOn(service, 'updatePersonalSpacesQuota').mockResolvedValueOnce(undefined)
+    const spaceSpy = vi.spyOn(service, 'updateSpacesQuota').mockResolvedValueOnce(undefined)
+    const shareSpy = vi.spyOn(service, 'updateSharesExternalPathQuota').mockResolvedValueOnce(undefined)
 
     await service.updateStorageUsageEntries()
 

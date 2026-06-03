@@ -1,14 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { NotificationsController } from './notifications.controller'
 import { NotificationsManager } from './services/notifications-manager.service'
+import { Mocked } from 'vitest'
 
 describe(NotificationsController.name, () => {
   let controller: NotificationsController
-  const notificationsManagerMock: jest.Mocked<NotificationsManager> = {
-    list: jest.fn(),
-    wasRead: jest.fn(),
-    delete: jest.fn()
-  } as unknown as jest.Mocked<NotificationsManager>
+  const notificationsManagerMock: Mocked<NotificationsManager> = {
+    list: vi.fn(),
+    wasRead: vi.fn(),
+    delete: vi.fn()
+  } as unknown as Mocked<NotificationsManager>
 
   const user = { id: 1, login: 'john.doe' } as any
 
@@ -22,7 +23,7 @@ describe(NotificationsController.name, () => {
   })
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {

@@ -3,16 +3,17 @@ import { Cache } from '../../infrastructure/cache/cache.service'
 import { FilesTasksController } from './files-tasks.controller'
 import { FilesMethods } from './services/files-methods.service'
 import { FilesTasksManager } from './services/files-tasks-manager.service'
+import { Mock } from 'vitest'
 
 describe(FilesTasksController.name, () => {
   let controller: FilesTasksController
-  let filesTasksManager: { getTasks: jest.Mock; deleteTasks: jest.Mock; downloadArchive: jest.Mock }
+  let filesTasksManager: { getTasks: Mock; deleteTasks: Mock; downloadArchive: Mock }
 
   beforeAll(async () => {
     filesTasksManager = {
-      getTasks: jest.fn(),
-      deleteTasks: jest.fn(),
-      downloadArchive: jest.fn()
+      getTasks: vi.fn(),
+      deleteTasks: vi.fn(),
+      downloadArchive: vi.fn()
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -31,7 +32,7 @@ describe(FilesTasksController.name, () => {
   })
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {

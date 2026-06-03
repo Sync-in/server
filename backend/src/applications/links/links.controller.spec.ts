@@ -2,20 +2,21 @@ import { StreamableFile } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { LinksController } from './links.controller'
 import { LinksManager } from './services/links-manager.service'
+import { Mock } from 'vitest'
 
 describe(LinksController.name, () => {
   let controller: LinksController
   let linksManager: {
-    linkValidation: jest.Mock
-    linkAccess: jest.Mock
-    linkAuthentication: jest.Mock
+    linkValidation: Mock
+    linkAccess: Mock
+    linkAuthentication: Mock
   }
 
   beforeAll(async () => {
     linksManager = {
-      linkValidation: jest.fn(),
-      linkAccess: jest.fn(),
-      linkAuthentication: jest.fn()
+      linkValidation: vi.fn(),
+      linkAccess: vi.fn(),
+      linkAuthentication: vi.fn()
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -27,7 +28,7 @@ describe(LinksController.name, () => {
   })
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {

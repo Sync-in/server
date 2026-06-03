@@ -26,12 +26,12 @@
     "start:debug": "NODE_ENV=development nest start --debug --watch",
     "start:dev": "NODE_ENV=development nest start --watch",
     "start:prod": "nest build && nest start",
-    "test": "NODE_ENV=test jest --verbose",
-    "test:cov": "NODE_ENV=test jest --coverage",
-    "test:debug": "NODE_ENV=test node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/jest/bin/jest --runInBand",
-    "test:e2e": "NODE_ENV=test jest --config jest-e2e.config.json --verbose",
-    "test:e2e:cov": "NODE_ENV=test jest --config jest-e2e.config.json --coverage",
-    "test:watch": "NODE_ENV=test jest --watch"
+    "test": "NODE_ENV=test vitest run",
+    "test:cov": "NODE_ENV=test vitest run --coverage",
+    "test:debug": "NODE_ENV=test vitest --inspect-brk --inspect --logHeapUsage --no-file-parallelism",
+    "test:e2e": "NODE_ENV=test vitest run --config vitest-e2e.config.mts",
+    "test:e2e:cov": "NODE_ENV=test vitest run --config vitest-e2e.config.mts --coverage",
+    "test:watch": "NODE_ENV=test vitest"
   },
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
@@ -90,7 +90,7 @@
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@faker-js/faker": "^10.1.0",
-    "@golevelup/ts-jest": "^3.0.0",
+    "@golevelup/ts-vitest": "^4.0.0",
     "@nestjs/cli": "^11.0.6",
     "@nestjs/schematics": "^11.0.5",
     "@nestjs/testing": "^11.0.15",
@@ -101,7 +101,6 @@
     "@types/cookie-parser": "^1.4.6",
     "@types/fs-extra": "^11.0.4",
     "@types/html-to-text": "^9.0.4",
-    "@types/jest": "^30.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/mime-types": "^3.0.1",
     "@types/node": "^24.10.4",
@@ -117,6 +116,7 @@
     "@types/tar": "^6.1.13",
     "@types/text-to-svg": "^3.1.4",
     "@types/yauzl": "^2.10.3",
+    "@vitest/coverage-v8": "^4.1.8",
     "chokidar": "^5.0.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
@@ -125,11 +125,12 @@
     "madge": "^8.0.0",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
-    "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.20.0"
+    "typescript-eslint": "^8.20.0",
+    "unplugin-swc": "^1.5.9",
+    "vitest": "^4.1.8"
   }
 }

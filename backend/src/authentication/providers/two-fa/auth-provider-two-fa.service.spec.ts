@@ -9,15 +9,16 @@ import { FastifyAuthenticatedRequest } from '../../interfaces/auth-request.inter
 import { decryptSecret, encryptSecret } from '../../utils/crypt-secret'
 import { AuthProvider2FA } from './auth-provider-two-fa.service'
 import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './auth-two-fa.dtos'
+import { Mocked } from 'vitest'
 
-jest.mock('../../utils/crypt-secret')
-jest.mock('../../../common/qrcode')
+vi.mock('../../utils/crypt-secret')
+vi.mock('../../../common/qrcode')
 
 describe(AuthProvider2FA.name, () => {
   let service: AuthProvider2FA
-  let cache: jest.Mocked<Cache>
-  let usersManager: jest.Mocked<UsersManager>
-  let notificationsManager: jest.Mocked<NotificationsManager>
+  let cache: Mocked<Cache>
+  let usersManager: Mocked<UsersManager>
+  let notificationsManager: Mocked<NotificationsManager>
 
   const mockUser: Partial<UserModel> = {
     id: 1,
@@ -42,24 +43,24 @@ describe(AuthProvider2FA.name, () => {
         {
           provide: Cache,
           useValue: {
-            get: jest.fn(),
-            set: jest.fn()
+            get: vi.fn(),
+            set: vi.fn()
           }
         },
         {
           provide: UsersManager,
           useValue: {
-            fromUserId: jest.fn(),
-            validateUserAccess: jest.fn(),
-            compareUserPassword: jest.fn(),
-            updateAccesses: jest.fn().mockResolvedValue(undefined),
-            updateSecrets: jest.fn()
+            fromUserId: vi.fn(),
+            validateUserAccess: vi.fn(),
+            compareUserPassword: vi.fn(),
+            updateAccesses: vi.fn().mockResolvedValue(undefined),
+            updateSecrets: vi.fn()
           }
         },
         {
           provide: NotificationsManager,
           useValue: {
-            sendEmailNotification: jest.fn().mockResolvedValue(undefined)
+            sendEmailNotification: vi.fn().mockResolvedValue(undefined)
           }
         }
       ]
@@ -70,15 +71,15 @@ describe(AuthProvider2FA.name, () => {
     cache = module.get(Cache)
     usersManager = module.get(UsersManager)
     notificationsManager = module.get(NotificationsManager)
-    ;(encryptSecret as jest.Mock).mockImplementation((secret: string) => `encrypted-${secret}`)
-    ;(decryptSecret as jest.Mock).mockImplementation((secret: string) => secret.replace('encrypted-', ''))
+    vi.mocked(encryptSecret).mockImplementation((secret: string) => `encrypted-${secret}`)
+    vi.mocked(decryptSecret).mockImplementation((secret: string) => secret.replace('encrypted-', ''))
 
     const { qrcodeToDataURL } = await import('../../../common/qrcode')
-    ;(qrcodeToDataURL as jest.Mock).mockReturnValue('data:image/png;base64,mock')
+    vi.mocked(qrcodeToDataURL).mockReturnValue('data:image/png;base64,mock')
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -114,7 +115,7 @@ describe(AuthProvider2FA.name, () => {
     it('should throw error if verification fails', async () => {
       cache.get.mockResolvedValue('encrypted-secret')
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      jest.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: false, message: 'Invalid code' })
+      vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: false, message: 'Invalid code' })
 
       await expect(service.enableTwoFactor(enableDto, mockRequest as FastifyAuthenticatedRequest)).rejects.toThrow(
         new HttpException('Invalid code', HttpStatus.FORBIDDEN)
@@ -124,7 +125,7 @@ describe(AuthProvider2FA.name, () => {
     it('should throw error if password is incorrect', async () => {
       cache.get.mockResolvedValue('encrypted-secret')
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      jest.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
+      vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
       usersManager.compareUserPassword.mockResolvedValue(false)
 
       await expect(service.enableTwoFactor(enableDto, mockRequest as FastifyAuthenticatedRequest)).rejects.toThrow(
@@ -135,7 +136,7 @@ describe(AuthProvider2FA.name, () => {
     it('should enable 2FA and return recovery codes on success', async () => {
       cache.get.mockResolvedValue('encrypted-secret')
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      jest.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
+      vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
       usersManager.compareUserPassword.mockResolvedValue(true)
 
       const result = await service.enableTwoFactor(enableDto, mockRequest as FastifyAuthenticatedRequest)
@@ -164,7 +165,7 @@ describe(AuthProvider2FA.name, () => {
 
     it('should throw error if verification fails', async () => {
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      jest.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: false, message: 'Invalid code' })
+      vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: false, message: 'Invalid code' })
 
       await expect(service.disableTwoFactor(disableDto, mockRequest as FastifyAuthenticatedRequest)).rejects.toThrow(
         new HttpException('Invalid code', HttpStatus.FORBIDDEN)
@@ -173,7 +174,7 @@ describe(AuthProvider2FA.name, () => {
 
     it('should throw error if password is incorrect', async () => {
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      jest.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
+      vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
       usersManager.compareUserPassword.mockResolvedValue(false)
 
       await expect(service.disableTwoFactor(disableDto, mockRequest as FastifyAuthenticatedRequest)).rejects.toThrow(
@@ -183,7 +184,7 @@ describe(AuthProvider2FA.name, () => {
 
     it('should disable 2FA on success', async () => {
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      jest.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
+      vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
       usersManager.compareUserPassword.mockResolvedValue(true)
 
       const result = await service.disableTwoFactor(disableDto, mockRequest as FastifyAuthenticatedRequest)
@@ -210,7 +211,7 @@ describe(AuthProvider2FA.name, () => {
 
     it('should verify 2FA code successfully', async () => {
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      jest.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
+      vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
 
       const result = await service.verify(verifyDto, mockRequest as FastifyAuthenticatedRequest)
 
@@ -262,7 +263,7 @@ describe(AuthProvider2FA.name, () => {
 
     it('should return user when fromLogin is true', async () => {
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      jest.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
+      vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
 
       const result = await service.verify(verifyDto, mockRequest as FastifyAuthenticatedRequest, true)
 
@@ -331,7 +332,7 @@ describe(AuthProvider2FA.name, () => {
 
   describe('validateTwoFactorCode', () => {
     it('should validate code successfully', () => {
-      jest.spyOn(Totp, 'validate').mockReturnValue(true)
+      vi.spyOn(Totp, 'validate').mockReturnValue(true)
 
       const result = service.validateTwoFactorCode('123456', 'encrypted-secret')
 
@@ -340,7 +341,7 @@ describe(AuthProvider2FA.name, () => {
     })
 
     it('should fail validation for incorrect code', () => {
-      jest.spyOn(Totp, 'validate').mockReturnValue(false)
+      vi.spyOn(Totp, 'validate').mockReturnValue(false)
 
       const result = service.validateTwoFactorCode('wrong-code', 'encrypted-secret')
 
@@ -356,7 +357,7 @@ describe(AuthProvider2FA.name, () => {
     })
 
     it('should handle validation errors', () => {
-      jest.spyOn(Totp, 'validate').mockImplementation(() => {
+      vi.spyOn(Totp, 'validate').mockImplementation(() => {
         throw new Error('Validation error')
       })
 

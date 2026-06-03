@@ -22,18 +22,19 @@ import { UsersQueries } from '../../users/services/users-queries.service'
 import { getAvatarBase64 } from '../../users/utils/avatar'
 import { LinksManager } from './links-manager.service'
 import { LinksQueries } from './links-queries.service'
+import { Mocked } from 'vitest'
 
-jest.mock('../../users/utils/avatar', () => ({
-  getAvatarBase64: jest.fn()
+vi.mock('../../users/utils/avatar', () => ({
+  getAvatarBase64: vi.fn()
 }))
 
 describe(LinksManager.name, () => {
   let service: LinksManager
-  let linksQueriesMock: jest.Mocked<LinksQueries>
-  let usersManagerMock: jest.Mocked<UsersManager>
-  let filesManagerMock: jest.Mocked<FilesManager>
-  let spacesManagerMock: jest.Mocked<SpacesManager>
-  let authManagerMock: jest.Mocked<AuthManager>
+  let linksQueriesMock: Mocked<LinksQueries>
+  let usersManagerMock: Mocked<UsersManager>
+  let filesManagerMock: Mocked<FilesManager>
+  let spacesManagerMock: Mocked<SpacesManager>
+  let authManagerMock: Mocked<AuthManager>
 
   const identity: any = { id: 42, login: 'visitor' }
   const baseLink: any = {
@@ -47,26 +48,26 @@ describe(LinksManager.name, () => {
 
   beforeAll(async () => {
     linksQueriesMock = {
-      linkFromUUID: jest.fn(),
-      spaceLink: jest.fn(),
-      incrementLinkNbAccess: jest.fn().mockResolvedValue(undefined)
+      linkFromUUID: vi.fn(),
+      spaceLink: vi.fn(),
+      incrementLinkNbAccess: vi.fn().mockResolvedValue(undefined)
     } as any
 
     usersManagerMock = {
-      compareUserPassword: jest.fn(),
-      updateAccesses: jest.fn()
+      compareUserPassword: vi.fn(),
+      updateAccesses: vi.fn()
     } as any
 
     filesManagerMock = {
-      sendFileFromSpace: jest.fn()
+      sendFileFromSpace: vi.fn()
     } as any
 
     spacesManagerMock = {
-      spaceEnv: jest.fn()
+      spaceEnv: vi.fn()
     } as any
 
     authManagerMock = {
-      setCookies: jest.fn()
+      setCookies: vi.fn()
     } as any
 
     const module: TestingModule = await Test.createTestingModule({
@@ -109,7 +110,7 @@ describe(LinksManager.name, () => {
   })
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {
@@ -126,7 +127,7 @@ describe(LinksManager.name, () => {
         space: null
       } as any
       linksQueriesMock.spaceLink.mockResolvedValueOnce(spaceLink)
-      ;(getAvatarBase64 as jest.Mock).mockResolvedValueOnce('base64-xxx')
+      vi.mocked(getAvatarBase64).mockResolvedValueOnce('base64-xxx')
 
       const res = await service.linkValidation(identity, link.uuid)
 
@@ -193,12 +194,12 @@ describe(LinksManager.name, () => {
       spacesManagerMock.spaceEnv.mockResolvedValueOnce({} as any)
       const streamable: any = { some: 'stream' }
       filesManagerMock.sendFileFromSpace.mockReturnValueOnce({
-        checks: jest.fn().mockResolvedValueOnce(undefined),
-        stream: jest.fn().mockResolvedValueOnce(streamable)
+        checks: vi.fn().mockResolvedValueOnce(undefined),
+        stream: vi.fn().mockResolvedValueOnce(streamable)
       } as any)
 
       // cover: incrementLinkNbAccess.catch(...) should log an error when the query rejects
-      const logErrorSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => undefined as any)
+      const logErrorSpy = vi.spyOn((service as any).logger, 'error').mockImplementation(() => undefined as any)
       linksQueriesMock.incrementLinkNbAccess.mockRejectedValueOnce(new Error('increment boom'))
 
       const result = await service.linkDownload(identity, link.uuid, req, res)
@@ -226,7 +227,7 @@ describe(LinksManager.name, () => {
       authManagerMock.setCookies.mockResolvedValueOnce(loginDto)
 
       // cover: usersManager.updateAccesses.catch(...) should log an error when updateAccesses rejects
-      const logErrorSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => undefined as any)
+      const logErrorSpy = vi.spyOn((service as any).logger, 'error').mockImplementation(() => undefined as any)
       usersManagerMock.updateAccesses.mockRejectedValueOnce(new Error('updateAccesses boom'))
 
       const result = await service.linkAccess(identity, link.uuid, req, res)
@@ -280,8 +281,8 @@ describe(LinksManager.name, () => {
 
       spacesManagerMock.spaceEnv.mockResolvedValueOnce({} as any)
       filesManagerMock.sendFileFromSpace.mockReturnValueOnce({
-        checks: jest.fn().mockRejectedValueOnce(new Error('disk error')),
-        stream: jest.fn()
+        checks: vi.fn().mockRejectedValueOnce(new Error('disk error')),
+        stream: vi.fn()
       } as any)
 
       await expect(service.linkDownload(identity, link.uuid, req, res)).rejects.toMatchObject({
@@ -304,7 +305,7 @@ describe(LinksManager.name, () => {
       authManagerMock.setCookies.mockResolvedValueOnce(loginDto)
 
       // cover: usersManager.updateAccesses.catch(...) should log an error when updateAccesses rejects (success flow)
-      const logErrorSpy = jest.spyOn((service as any).logger, 'error').mockImplementation(() => undefined as any)
+      const logErrorSpy = vi.spyOn((service as any).logger, 'error').mockImplementation(() => undefined as any)
       usersManagerMock.updateAccesses.mockRejectedValueOnce(new Error('updateAccesses auth success boom'))
 
       const result = await service.linkAuthentication(identity, link.uuid, { password: 'secret' } as any, req, res)

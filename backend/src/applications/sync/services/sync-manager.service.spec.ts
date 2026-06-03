@@ -12,54 +12,55 @@ import { SpacesManager } from '../../spaces/services/spaces-manager.service'
 import { F_SPECIAL_STAT, F_STAT, SYNC_CHECKSUM_ALG, SYNC_DIFF_DONE } from '../constants/sync'
 import { SyncManager } from './sync-manager.service'
 import { SyncQueries } from './sync-queries.service'
+import { Mock } from 'vitest'
 
 // Mock fs/promises used internally by the service
-jest.mock('fs/promises', () => ({
+vi.mock('fs/promises', () => ({
   __esModule: true,
   default: {
-    stat: jest.fn(),
-    readdir: jest.fn()
+    stat: vi.fn(),
+    readdir: vi.fn()
   }
 }))
 
 // Mock helper functions used in service
-jest.mock('../../files/utils/files', () => ({
+vi.mock('../../files/utils/files', () => ({
   __esModule: true,
-  checksumFile: jest.fn(),
-  isPathExists: jest.fn(),
-  isPathIsDir: jest.fn(),
-  removeFiles: jest.fn(),
-  touchFile: jest.fn(),
-  sanitizePath: jest.fn((p: string) => p)
+  checksumFile: vi.fn(),
+  isPathExists: vi.fn(),
+  isPathIsDir: vi.fn(),
+  removeFiles: vi.fn(),
+  touchFile: vi.fn(),
+  sanitizePath: vi.fn((p: string) => p)
 }))
 
 // Mock regExpPathPattern to a simple, predictable behavior
-jest.mock('../../../common/functions', () => ({
+vi.mock('../../../common/functions', () => ({
   __esModule: true,
   regExpPathPattern: (base: string) => new RegExp('^' + base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
 }))
 
 // Mock routes helper used by copyMove to bypass repo validation
-jest.mock('../utils/routes', () => ({
+vi.mock('../utils/routes', () => ({
   __esModule: true,
-  SYNC_PATH_TO_SPACE_SEGMENTS: jest.fn((dst: string) => dst)
+  SYNC_PATH_TO_SPACE_SEGMENTS: vi.fn((dst: string) => dst)
 }))
 
 // Mock heavy providers to avoid configuration side-effects on import
-jest.mock('../../files/services/files-manager.service', () => ({
+vi.mock('../../files/services/files-manager.service', () => ({
   __esModule: true,
   FilesManager: class FilesManager {}
 }))
-jest.mock('../../spaces/services/spaces-manager.service', () => ({
+vi.mock('../../spaces/services/spaces-manager.service', () => ({
   __esModule: true,
   SpacesManager: class SpacesManager {}
 }))
-jest.mock('./sync-queries.service', () => ({
+vi.mock('./sync-queries.service', () => ({
   __esModule: true,
   SyncQueries: class SyncQueries {}
 }))
 
-const fsPromises = fsPromisesModule as unknown as { stat: jest.Mock; readdir: jest.Mock }
+const fsPromises = fsPromisesModule as unknown as { stat: Mock; readdir: Mock }
 
 // small helper to collect async generators
 const collect = async <T>(iter: AsyncIterable<T>): Promise<T[]> => {
@@ -71,29 +72,29 @@ const collect = async <T>(iter: AsyncIterable<T>): Promise<T[]> => {
 describe(SyncManager.name, () => {
   let service: SyncManager
   let filesManager: {
-    sendFileFromSpace: jest.Mock
-    saveStream: jest.Mock
-    delete: jest.Mock
-    touch: jest.Mock
-    mkDir: jest.Mock
-    mkFile: jest.Mock
-    copyMove: jest.Mock
+    sendFileFromSpace: Mock
+    saveStream: Mock
+    delete: Mock
+    touch: Mock
+    mkDir: Mock
+    mkFile: Mock
+    copyMove: Mock
   }
-  let spacesManager: { spaceEnv: jest.Mock }
-  let syncQueries: { getPathSettings: jest.Mock }
+  let spacesManager: { spaceEnv: Mock }
+  let syncQueries: { getPathSettings: Mock }
 
   beforeAll(async () => {
     filesManager = {
-      sendFileFromSpace: jest.fn(),
-      saveStream: jest.fn(),
-      delete: jest.fn(),
-      touch: jest.fn(),
-      mkDir: jest.fn(),
-      mkFile: jest.fn(),
-      copyMove: jest.fn()
+      sendFileFromSpace: vi.fn(),
+      saveStream: vi.fn(),
+      delete: vi.fn(),
+      touch: vi.fn(),
+      mkDir: vi.fn(),
+      mkFile: vi.fn(),
+      copyMove: vi.fn()
     }
-    spacesManager = { spaceEnv: jest.fn() }
-    syncQueries = { getPathSettings: jest.fn() }
+    spacesManager = { spaceEnv: vi.fn() }
+    syncQueries = { getPathSettings: vi.fn() }
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -108,7 +109,7 @@ describe(SyncManager.name, () => {
     service = module.get<SyncManager>(SyncManager)
   })
 
-  beforeEach(() => jest.clearAllMocks())
+  beforeEach(() => vi.clearAllMocks())
 
   const makeReq = (over?: Partial<any>) => ({
     method: 'PUT',
@@ -118,16 +119,16 @@ describe(SyncManager.name, () => {
   })
 
   const makeReply = () => {
-    const raw = { writeHead: jest.fn(), write: jest.fn(), end: jest.fn() }
-    return { raw, status: jest.fn().mockReturnThis() }
+    const raw = { writeHead: vi.fn(), write: vi.fn(), end: vi.fn() }
+    return { raw, status: vi.fn().mockReturnThis() }
   }
 
   describe('download', () => {
     it('should stream file successfully', async () => {
       const req = makeReq()
       const res = makeReply()
-      const checks = jest.fn().mockResolvedValue(undefined)
-      const stream = jest.fn().mockResolvedValue(new StreamableFile(Buffer.from('abc')))
+      const checks = vi.fn().mockResolvedValue(undefined)
+      const stream = vi.fn().mockResolvedValue(new StreamableFile(Buffer.from('abc')))
       filesManager.sendFileFromSpace.mockReturnValue({ checks, stream })
 
       const result = await service.download(req as any, res as any)
@@ -145,8 +146,8 @@ describe(SyncManager.name, () => {
     ])('should map errors (%s)', async (_title, thrown, expectedStatus) => {
       const req = makeReq()
       const res = makeReply()
-      const checks = jest.fn().mockRejectedValue(thrown)
-      const stream = jest.fn()
+      const checks = vi.fn().mockRejectedValue(thrown)
+      const stream = vi.fn()
       filesManager.sendFileFromSpace.mockReturnValue({ checks, stream })
 
       await expect(service.download(req as any, res as any)).rejects.toMatchObject({ status: expectedStatus })
@@ -159,7 +160,7 @@ describe(SyncManager.name, () => {
       const dto = { checksum: 'abc', size: 10, mtime: 1710000000 }
       filesManager.saveStream.mockResolvedValue('abc')
       fsPromises.stat.mockResolvedValue({ size: 10, ino: 123, mtime: new Date(1710000000 * 1000) })
-      ;(touchFile as jest.Mock).mockResolvedValue(undefined)
+      vi.mocked(touchFile).mockResolvedValue(undefined)
 
       const r = await service.upload(req as any, dto as any)
       expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, { tmpPath: expect.any(String), checksumAlg: SYNC_CHECKSUM_ALG })
@@ -240,7 +241,7 @@ describe(SyncManager.name, () => {
       const req = makeReq({ space: { realPath: '/tmp/newdir', url: '/space/newdir' } })
       filesManager.mkDir.mockResolvedValue(undefined)
       fsPromises.stat.mockResolvedValue({ ino: 555 })
-      ;(touchFile as jest.Mock).mockResolvedValue(undefined)
+      vi.mocked(touchFile).mockResolvedValue(undefined)
 
       const r = await service.make(req as any, { type: 'directory', mtime: 1710000300 } as any)
       expect(filesManager.mkDir).toHaveBeenCalledWith(req.user, req.space, true)
@@ -321,7 +322,7 @@ describe(SyncManager.name, () => {
       spacesManager.spaceEnv.mockResolvedValue(dstSpace)
       filesManager.copyMove.mockRejectedValue(new LockConflict(null, 'locked'))
 
-      const spy = jest.spyOn(service as any, 'handleError')
+      const spy = vi.spyOn(service as any, 'handleError')
 
       await expect(service.copyMove(req as any, { destination: '/dst/err-move' } as any, true)).rejects.toMatchObject({
         status: HttpStatus.LOCKED
@@ -400,7 +401,7 @@ describe(SyncManager.name, () => {
       const user = { id: 1, clientId: 9 } as any
       syncQueries.getPathSettings.mockResolvedValue({ remotePath: '/base' })
       spacesManager.spaceEnv.mockResolvedValue({ realPath: '/base', url: '/space', quotaIsExceeded: false })
-      ;(isPathExists as jest.Mock).mockResolvedValue(false)
+      vi.mocked(isPathExists).mockResolvedValue(false)
 
       await expect(service.diff(user, 1, {} as any, res as any)).rejects.toMatchObject({
         status: HttpStatus.NOT_FOUND,
@@ -413,8 +414,8 @@ describe(SyncManager.name, () => {
       const user = { id: 1, clientId: 9 } as any
       syncQueries.getPathSettings.mockResolvedValue({ remotePath: '/base' })
       spacesManager.spaceEnv.mockResolvedValue({ realPath: '/base', url: '/space', quotaIsExceeded: false })
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      ;(isPathIsDir as jest.Mock).mockResolvedValue(false)
+      vi.mocked(isPathExists).mockResolvedValue(true)
+      vi.mocked(isPathIsDir).mockResolvedValue(false)
 
       await expect(service.diff(user, 1, {} as any, res as any)).rejects.toMatchObject({
         status: HttpStatus.BAD_REQUEST,
@@ -428,14 +429,14 @@ describe(SyncManager.name, () => {
       syncQueries.getPathSettings.mockResolvedValue({ remotePath: '/base' })
       const space = { realPath: '/base', url: '/space', quotaIsExceeded: false }
       spacesManager.spaceEnv.mockResolvedValue(space)
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      ;(isPathIsDir as jest.Mock).mockResolvedValue(true)
+      vi.mocked(isPathExists).mockResolvedValue(true)
+      vi.mocked(isPathIsDir).mockResolvedValue(true)
 
       const gen = async function* () {
         yield { '/file1': [false, 1, 2, 3, 'x'] }
         yield { '/file2': [true, 0, 2, 4, null] }
       }
-      jest.spyOn(service as any, 'parseSyncPath').mockImplementation(() => gen())
+      vi.spyOn(service as any, 'parseSyncPath').mockImplementation(() => gen())
 
       await service.diff(user, 1, { secureDiff: false } as any, res as any)
 
@@ -455,10 +456,10 @@ describe(SyncManager.name, () => {
       syncQueries.getPathSettings.mockResolvedValue({ remotePath: '/base' })
       const space = { realPath: '/base', url: '/space', quotaIsExceeded: false }
       spacesManager.spaceEnv.mockResolvedValue(space)
-      ;(isPathExists as jest.Mock).mockResolvedValue(true)
-      ;(isPathIsDir as jest.Mock).mockResolvedValue(true)
+      vi.mocked(isPathExists).mockResolvedValue(true)
+      vi.mocked(isPathIsDir).mockResolvedValue(true)
 
-      jest.spyOn(service as any, 'parseSyncPath').mockImplementation(() => {
+      vi.spyOn(service as any, 'parseSyncPath').mockImplementation(() => {
         throw new Error('parse error')
       })
 
@@ -524,7 +525,7 @@ describe(SyncManager.name, () => {
             return { isDirectory: () => false, isFile: () => false, size: 0, ino: 0, mtime: new Date() }
         }
       })
-      ;(checksumFile as jest.Mock).mockResolvedValue('computed-hash')
+      vi.mocked(checksumFile).mockResolvedValue('computed-hash')
 
       const results = await collect<Record<string, any>>((service as any).parseFiles(base, ctx))
 
@@ -568,7 +569,7 @@ describe(SyncManager.name, () => {
       fsPromises.readdir.mockImplementation(async (dir: string) => (dir === base ? [dirent] : []))
       fsPromises.stat.mockResolvedValue({ isDirectory: () => false, isFile: () => true, size: 10, ino: 42, mtime: new Date(1234 * 1000) })
 
-      jest.spyOn(service as any, 'checkSumFile').mockRejectedValue(new Error('checksum fail'))
+      vi.spyOn(service as any, 'checkSumFile').mockRejectedValue(new Error('checksum fail'))
 
       const ctx: any = {
         regexBasePath: new RegExp('^/base'),

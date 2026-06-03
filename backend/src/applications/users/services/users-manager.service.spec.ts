@@ -26,18 +26,19 @@ import { AdminUsersQueries } from './admin-users-queries.service'
 import { UsersManager } from './users-manager.service'
 import { UsersQueries } from './users-queries.service'
 import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
+import { Mock } from 'vitest'
 
-jest.mock('../../../common/functions', () => {
-  const actual = jest.requireActual('../../../common/functions')
-  return { ...actual, comparePassword: jest.fn() }
+vi.mock('../../../common/functions', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/functions')>()
+  return { ...actual, comparePassword: vi.fn() }
 })
-jest.mock('bcryptjs', () => ({ __esModule: true, default: { hash: jest.fn(() => Promise.resolve('hashed-password')) } }))
-jest.mock('../../../common/image', () => {
-  const actual = jest.requireActual('../../../common/image')
+vi.mock('bcryptjs', () => ({ __esModule: true, default: { hash: vi.fn(() => Promise.resolve('hashed-password')) } }))
+vi.mock('../../../common/image', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/image')>()
   return {
     ...actual,
-    generateAvatar: jest.fn(() => Readable.from([Buffer.from('PNGDATA')])),
-    convertTempImageToPng: jest.fn(() => Promise.resolve())
+    generateAvatar: vi.fn(() => Readable.from([Buffer.from('PNGDATA')])),
+    convertTempImageToPng: vi.fn(() => Promise.resolve())
   }
 })
 
@@ -70,7 +71,7 @@ describe(UsersManager.name, () => {
     s.truncated = truncated
     return s
   }
-  const mkReq = (mimetype: string, stream: any, user = userTest) => ({ user, file: jest.fn().mockResolvedValue({ mimetype, file: stream }) })
+  const mkReq = (mimetype: string, stream: any, user = userTest) => ({ user, file: vi.fn().mockResolvedValue({ mimetype, file: stream }) })
   const ensurePaths = async () => {
     if (!(await isPathExists(userTest.homePath))) {
       await userTest.makePaths()
@@ -78,7 +79,7 @@ describe(UsersManager.name, () => {
   }
 
   const notificationsManager = {
-    sendEmailNotification: jest.fn().mockResolvedValue(undefined)
+    sendEmailNotification: vi.fn().mockResolvedValue(undefined)
   }
 
   beforeAll(async () => {
@@ -96,7 +97,7 @@ describe(UsersManager.name, () => {
         UsersQueries,
         {
           provide: FilesQuotaManager,
-          useValue: { updateStorageQuota: () => jest.fn() }
+          useValue: { updateStorageQuota: () => vi.fn() }
         },
         { provide: NotificationsManager, useValue: notificationsManager },
         { provide: AuthManager, useValue: {} },
@@ -113,7 +114,7 @@ describe(UsersManager.name, () => {
     deleteUserDto = { deleteSpace: true, isGuest: false } satisfies DeleteUserDto
   })
 
-  afterEach(() => jest.restoreAllMocks())
+  afterEach(() => vi.restoreAllMocks())
 
   afterAll(async () => {
     await expect(adminUsersManager.deleteUserSpace(userTest.login)).resolves.not.toThrow()
@@ -126,7 +127,7 @@ describe(UsersManager.name, () => {
 
   it('instances + findUser/me/fromUserId + impersonation', async () => {
     expect(usersManager && adminUsersManager && usersQueriesService && userTest).toBeDefined()
-    usersQueriesService.from = jest.fn().mockReturnValue(userTest)
+    usersQueriesService.from = vi.fn().mockReturnValue(userTest)
     const u1: any = await usersManager.findUser(userTest.login, true)
     expect(u1).toBeInstanceOf(UserModel)
     expect(u1.password).toBeUndefined()
@@ -135,14 +136,14 @@ describe(UsersManager.name, () => {
     expect(u2.password).toBeDefined()
     const me1: any = await usersManager.me(userTest)
     expect(me1.user.password).toBeUndefined()
-    usersQueriesService.from = jest.fn().mockReturnValue(null)
+    usersQueriesService.from = vi.fn().mockReturnValue(null)
     await expect(usersManager.findUser('unknown')).resolves.toBeNull()
     await expect(usersManager.me({ id: 0 } as UserModel)).rejects.toThrow()
-    usersQueriesService.from = jest.fn().mockResolvedValue(null)
+    usersQueriesService.from = vi.fn().mockResolvedValue(null)
     await expect(usersManager.fromUserId(123)).resolves.toBeNull()
     const authUser = new UserModel({ ...generateUserTest(), id: 42, clientId: 'CID', impersonatedFromId: 1 } as any, true)
     const fromUser = new UserModel({ ...generateUserTest(), id: 42 }, true)
-    usersQueriesService.from = jest.fn().mockResolvedValue(fromUser)
+    usersQueriesService.from = vi.fn().mockResolvedValue(fromUser)
     const me2 = await usersManager.me(authUser)
     expect(me2.user.impersonated).toBe(true)
     expect(me2.user.clientId).toBe('CID')
@@ -151,43 +152,43 @@ describe(UsersManager.name, () => {
   it('paths + avatars (default/generate) + create/delete user', async () => {
     await expect(ensurePaths()).resolves.not.toThrow()
     expect(await isPathExists(userTest.filesPath)).toBe(true)
-    usersQueriesService.from = jest.fn().mockReturnValueOnce(userTest)
+    usersQueriesService.from = vi.fn().mockReturnValueOnce(userTest)
     const [p0, m0] = await usersManager.getAvatar(userTest.login)
     expect(fileName(p0)).toBe('avatar.svg')
     expect(m0).toBe(svgMimeType)
-    usersQueriesService.from = jest.fn().mockReturnValueOnce(null)
+    usersQueriesService.from = vi.fn().mockReturnValueOnce(null)
     await expect(usersManager.getAvatar('#', true)).rejects.toThrow('does not exist')
-    usersQueriesService.from = jest.fn().mockReturnValue(userTest)
+    usersQueriesService.from = vi.fn().mockReturnValue(userTest)
     expect(await usersManager.getAvatar(userTest.login, true)).toBeUndefined()
     const [p1, m1] = await usersManager.getAvatar(userTest.login)
     expect(fileName(p1)).toBe('avatar.png')
     expect(m1).toBe(pngMimeType)
 
-    usersQueriesService.checkUserExists = jest.fn().mockReturnValue(undefined)
-    usersQueriesService.createUserOrGuest = jest.fn().mockReturnValue(888)
-    usersQueriesService.clearWhiteListCaches = jest.fn()
+    usersQueriesService.checkUserExists = vi.fn().mockReturnValue(undefined)
+    usersQueriesService.createUserOrGuest = vi.fn().mockReturnValue(888)
+    usersQueriesService.clearWhiteListCaches = vi.fn()
     const created = await adminUsersManager.createUserOrGuest(userTest satisfies CreateUserDto, USER_ROLE.USER)
     expect(created).toBeInstanceOf(UserModel)
     expect(await isPathExists(created.filesPath)).toBe(true)
 
-    usersQueriesService.checkUserExists = jest
+    usersQueriesService.checkUserExists = vi
       .fn()
       .mockReturnValueOnce({ login: userTest.login, email: '' })
       .mockReturnValueOnce({ login: '', email: userTest.email })
       .mockReturnValueOnce(undefined)
     await expect(adminUsersManager.createUserOrGuest(userTest satisfies CreateUserDto, USER_ROLE.USER)).rejects.toThrow()
     await expect(adminUsersManager.createUserOrGuest(userTest satisfies CreateUserDto, USER_ROLE.USER)).rejects.toThrow()
-    usersQueriesService.createUserOrGuest = jest.fn().mockImplementation(() => {
+    usersQueriesService.createUserOrGuest = vi.fn().mockImplementation(() => {
       throw new Error('testing')
     })
     await expect(adminUsersManager.createUserOrGuest(userTest satisfies CreateUserDto, USER_ROLE.USER)).rejects.toThrow()
 
-    adminUsersQueries.deleteUser = jest.fn().mockReturnValue(true)
+    adminUsersQueries.deleteUser = vi.fn().mockReturnValue(true)
     await expect(adminUsersManager.deleteUserOrGuest(userTest.id, userTest.login, deleteUserDto)).resolves.not.toThrow()
     expect(await isPathExists(userTest.filesPath)).toBe(false)
-    adminUsersQueries.deleteUser = jest.fn().mockReturnValue(false)
+    adminUsersQueries.deleteUser = vi.fn().mockReturnValue(false)
     await expect(adminUsersManager.deleteUserOrGuest(userTest.id, userTest.login, deleteUserDto)).resolves.not.toThrow()
-    adminUsersQueries.deleteUser = jest.fn().mockImplementation(() => {
+    adminUsersQueries.deleteUser = vi.fn().mockImplementation(() => {
       throw new Error('testing')
     })
     await expect(adminUsersManager.deleteUserOrGuest(userTest.id, userTest.login, deleteUserDto)).rejects.toThrow()
@@ -198,25 +199,25 @@ describe(UsersManager.name, () => {
     await expect(usersManager.logUser(linkUser, 'x', '127.0.0.1')).rejects.toThrow('Account is not allowed')
 
     const uLocked = new UserModel({ ...generateUserTest(), isActive: false, passwordAttempts: 5 }, false)
-    const errSpy = jest.spyOn((usersManager as any)['logger'], 'error').mockImplementation(() => undefined as any)
-    const updSpy1 = jest.spyOn(usersManager, 'updateAccesses').mockRejectedValue(new Error('reject-locked'))
+    const errSpy = vi.spyOn((usersManager as any)['logger'], 'error').mockImplementation(() => undefined as any)
+    const updSpy1 = vi.spyOn(usersManager, 'updateAccesses').mockRejectedValue(new Error('reject-locked'))
     await expect(usersManager.logUser(uLocked, 'pwd', 'ip')).rejects.toThrow('Account locked')
     await flush()
     expect(errSpy.mock.calls.some(([payload]: { msg: string }[]) => payload?.msg?.includes('reject-locked'))).toBe(true)
     expect(updSpy1).toHaveBeenCalledWith(uLocked, 'ip', false)
-    ;(comparePassword as jest.Mock).mockResolvedValue(false)
+    vi.mocked(comparePassword).mockResolvedValue(false)
     const uBad = new UserModel({ ...generateUserTest(), isActive: true, passwordAttempts: 0 }, false)
-    const errSpy2 = jest.spyOn((usersManager as any)['logger'], 'error').mockImplementation(() => undefined as any)
-    const updSpy2 = jest.spyOn(usersManager, 'updateAccesses').mockRejectedValue(new Error('reject-auth'))
+    const errSpy2 = vi.spyOn((usersManager as any)['logger'], 'error').mockImplementation(() => undefined as any)
+    const updSpy2 = vi.spyOn(usersManager, 'updateAccesses').mockRejectedValue(new Error('reject-auth'))
     const out = await usersManager.logUser(uBad, 'bad', '1.1.1.1')
     expect(out).toBeNull()
     await flush()
     expect(errSpy2.mock.calls.some(([payload]: { msg: string }[]) => payload?.msg?.includes('reject-auth'))).toBe(true)
     expect(updSpy2).toHaveBeenCalledWith(uBad, '1.1.1.1', false)
-    ;(comparePassword as jest.Mock).mockResolvedValue(true)
+    vi.mocked(comparePassword).mockResolvedValue(true)
     const uGood = new UserModel({ ...generateUserTest(), isActive: true, passwordAttempts: 0 }, false)
-    const updSpy3 = jest.spyOn(usersManager, 'updateAccesses').mockResolvedValue(undefined)
-    const pathsSpy = jest.spyOn(uGood, 'makePaths').mockResolvedValue(undefined)
+    const updSpy3 = vi.spyOn(usersManager, 'updateAccesses').mockResolvedValue(undefined)
+    const pathsSpy = vi.spyOn(uGood, 'makePaths').mockResolvedValue(undefined)
     const out2 = await usersManager.logUser(uGood, 'good', '8.8.8.8')
     expect(out2).toBe(uGood)
     expect(updSpy3).toHaveBeenCalledWith(uGood, '8.8.8.8', true)
@@ -224,37 +225,37 @@ describe(UsersManager.name, () => {
   })
 
   it('compareUserPassword + updateLanguage + updatePassword branches', async () => {
-    usersQueriesService.compareUserPassword = jest.fn().mockResolvedValue(true)
+    usersQueriesService.compareUserPassword = vi.fn().mockResolvedValue(true)
     await expect(usersManager.compareUserPassword(1, 'p')).resolves.toBe(true)
     expect(usersQueriesService.compareUserPassword).toHaveBeenCalledWith(1, 'p')
 
-    usersQueriesService.updateUserOrGuest = jest.fn().mockResolvedValue(false)
+    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(false)
     await expect(usersManager.updateLanguage(userTest, { language: '' })).rejects.toThrow('Unable to update language')
     expect(usersQueriesService.updateUserOrGuest).toHaveBeenCalledWith(userTest.id, { language: null })
-    usersQueriesService.updateUserOrGuest = jest.fn().mockResolvedValue(true)
+    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(true)
     await expect(usersManager.updateLanguage(userTest, { language: 'fr' })).resolves.toBeUndefined()
 
-    usersQueriesService.selectUserProperties = jest.fn().mockResolvedValue(null)
+    usersQueriesService.selectUserProperties = vi.fn().mockResolvedValue(null)
     await expect(usersManager.updatePassword(userTest, { oldPassword: 'a', newPassword: 'b' })).rejects.toThrow('Unable to check password')
-    usersQueriesService.selectUserProperties = jest.fn().mockResolvedValue({ password: 'HASH' })
-    ;(comparePassword as jest.Mock).mockResolvedValue(false)
+    usersQueriesService.selectUserProperties = vi.fn().mockResolvedValue({ password: 'HASH' })
+    vi.mocked(comparePassword).mockResolvedValue(false)
     await expect(usersManager.updatePassword(userTest, { oldPassword: 'a', newPassword: 'b' })).rejects.toThrow('Password mismatch')
-    ;(comparePassword as jest.Mock).mockResolvedValue(true)
-    ;(bcrypt.hash as unknown as jest.Mock).mockResolvedValue('HASHED')
-    usersQueriesService.updateUserOrGuest = jest.fn().mockResolvedValue(true)
+    vi.mocked(comparePassword).mockResolvedValue(true)
+    ;(bcrypt.hash as unknown as Mock).mockResolvedValue('HASHED')
+    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(true)
     await expect(usersManager.updatePassword(userTest, { oldPassword: 'a', newPassword: 'b' })).resolves.toBeUndefined()
     expect(usersQueriesService.updateUserOrGuest).toHaveBeenCalledWith(userTest.id, { password: 'HASHED' })
-    usersQueriesService.updateUserOrGuest = jest.fn().mockResolvedValue(false)
-    usersQueriesService.selectUserProperties = jest.fn().mockResolvedValue({ password: 'HASH' })
-    ;(comparePassword as jest.Mock).mockResolvedValue(true)
-    ;(bcrypt.hash as unknown as jest.Mock).mockResolvedValue('HASHED2')
+    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(false)
+    usersQueriesService.selectUserProperties = vi.fn().mockResolvedValue({ password: 'HASH' })
+    vi.mocked(comparePassword).mockResolvedValue(true)
+    ;(bcrypt.hash as unknown as Mock).mockResolvedValue('HASHED2')
     await expect(usersManager.updatePassword(userTest, { oldPassword: 'a', newPassword: 'b' })).rejects.toThrow('Unable to update password')
   })
 
   it('updateNotification + updateAccesses branches', async () => {
-    usersQueriesService.updateUserOrGuest = jest.fn().mockResolvedValue(false)
+    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(false)
     await expect(usersManager.updateNotification(userTest, { notification: 1 })).rejects.toThrow('Unable to update notification')
-    usersQueriesService.updateUserOrGuest = jest.fn().mockResolvedValue(true)
+    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(true)
     await expect(usersManager.updateNotification(userTest, { notification: 2 })).resolves.toBeUndefined()
 
     const prevAccess1 = new Date('2021-01-01T00:00:00Z')
@@ -262,9 +263,9 @@ describe(UsersManager.name, () => {
       { ...generateUserTest(), isActive: true, passwordAttempts: 3, currentIp: '1.2.3.4', currentAccess: prevAccess1 } as any,
       false
     )
-    usersQueriesService.updateUserOrGuest = jest.fn().mockResolvedValue(true)
+    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(true)
     await expect(usersManager.updateAccesses(u1, '5.6.7.8', true)).resolves.toBeUndefined()
-    const payload1 = (usersQueriesService.updateUserOrGuest as jest.Mock).mock.calls[0][1]
+    const payload1 = vi.mocked(usersQueriesService.updateUserOrGuest).mock.calls[0][1]
     expect(payload1).toMatchObject({ lastIp: '1.2.3.4', currentIp: '5.6.7.8', passwordAttempts: 0, isActive: true })
     expect(payload1.lastAccess).toBe(prevAccess1)
     expect(payload1.currentAccess).toBeInstanceOf(Date)
@@ -280,9 +281,9 @@ describe(UsersManager.name, () => {
       } as any,
       false
     )
-    usersQueriesService.updateUserOrGuest = jest.fn().mockResolvedValue(true)
+    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(true)
     await expect(usersManager.updateAccesses(u2, 'new.ip', false)).resolves.toBeUndefined()
-    const payload2 = (usersQueriesService.updateUserOrGuest as jest.Mock).mock.calls[0][1]
+    const payload2 = vi.mocked(usersQueriesService.updateUserOrGuest).mock.calls[0][1]
     expect(payload2.passwordAttempts).toBe(USER_MAX_PASSWORD_ATTEMPTS)
     expect(payload2.isActive).toBe(false)
     expect(payload2.lastAccess).toBe(prevAccess2)
@@ -293,19 +294,19 @@ describe(UsersManager.name, () => {
 
   it('avatars advanced: generateIsNotExists, failure branches, base64 fallback', async () => {
     await ensurePaths()
-    usersManager.findUser = jest.fn().mockResolvedValue({ login: userTest.login, getInitials: () => 'UT' } as unknown as UserModel)
+    usersManager.findUser = vi.fn().mockResolvedValue({ login: userTest.login, getInitials: () => 'UT' } as unknown as UserModel)
     const [p, m] = (await usersManager.getAvatar(userTest.login, false, true)) as [string, string]
     expect(fileName(p)).toBe('avatar.png')
     expect(m).toBe(pngMimeType)
-    jest.spyOn(imageModule, 'generateAvatar').mockImplementation(() => errStream('gen error'))
+    vi.spyOn(imageModule, 'generateAvatar').mockImplementation(() => errStream('gen error'))
     await expect(usersManager.getAvatar(userTest.login, true)).rejects.toThrow('Unable to create avatar')
-    usersManager.findUser = jest.fn().mockResolvedValue(null)
+    usersManager.findUser = vi.fn().mockResolvedValue(null)
     await expect(usersManager.getAvatar(userTest.login, true)).rejects.toThrow('avatar not found')
   })
 
   it('updateAvatar branches: mime error, stream error, truncated, invalid image, convert fail, success', async () => {
     await ensurePaths()
-    const convertTempImageToPngMock = imageModule.convertTempImageToPng as jest.MockedFunction<typeof imageModule.convertTempImageToPng>
+    const convertTempImageToPngMock = vi.mocked(imageModule.convertTempImageToPng)
     await expect(usersManager.updateAvatar(mkReq('text/plain', okStream('X')) as any)).rejects.toMatchObject({
       message: 'Unsupported file type',
       status: HttpStatus.BAD_REQUEST
@@ -337,65 +338,65 @@ describe(UsersManager.name, () => {
   })
 
   it('setOnlineStatus + browseGroups + getGroup', async () => {
-    usersQueriesService.setOnlineStatus = jest.fn().mockRejectedValue(new Error('boom'))
+    usersQueriesService.setOnlineStatus = vi.fn().mockRejectedValue(new Error('boom'))
     expect(() => usersManager.setOnlineStatus({ id: 1 } as any, 1 as any)).not.toThrow()
 
-    usersQueriesService.browseRootGroups = jest.fn().mockResolvedValue([{ id: 1 }])
+    usersQueriesService.browseRootGroups = vi.fn().mockResolvedValue([{ id: 1 }])
     const root = await usersManager.browseGroups(userTest, '')
     expect(root.parentGroup).toBeUndefined()
     expect(root.members.length).toBe(1)
-    usersQueriesService.groupFromName = jest.fn().mockResolvedValue(null)
+    usersQueriesService.groupFromName = vi.fn().mockResolvedValue(null)
     await expect(usersManager.browseGroups(userTest, 'unknown')).rejects.toThrow('Group not found')
     const group = { id: 42, name: 'Team' }
-    usersQueriesService.groupFromName = jest.fn().mockResolvedValue(group)
-    usersQueriesService.browseGroupMembers = jest.fn().mockResolvedValue([{ id: 7 }, { id: 8 }])
+    usersQueriesService.groupFromName = vi.fn().mockResolvedValue(group)
+    usersQueriesService.browseGroupMembers = vi.fn().mockResolvedValue([{ id: 7 }, { id: 8 }])
     const g2 = await usersManager.browseGroups(userTest, 'Team')
     expect(g2.parentGroup).toEqual(group)
     expect(g2.members).toEqual([{ id: 7 }, { id: 8 }])
     expect(usersQueriesService.browseGroupMembers).toHaveBeenCalledWith(42)
 
-    usersQueriesService.getGroupWithMembers = jest.fn().mockResolvedValue({ id: 1, members: [] })
+    usersQueriesService.getGroupWithMembers = vi.fn().mockResolvedValue({ id: 1, members: [] })
     await expect(usersManager.getGroup(userTest, 1)).resolves.toEqual({ id: 1, members: [] })
-    usersQueriesService.getGroup = jest.fn().mockResolvedValue({ id: 2 })
+    usersQueriesService.getGroup = vi.fn().mockResolvedValue({ id: 2 })
     await expect(usersManager.getGroup(userTest, 2, false)).resolves.toEqual({ id: 2 })
-    usersQueriesService.getGroup = jest.fn().mockResolvedValue(null)
+    usersQueriesService.getGroup = vi.fn().mockResolvedValue(null)
     await expect(usersManager.getGroup(userTest, 3, false)).rejects.toThrow('You are not allowed to do this action')
   })
 
   it('create/update personal group', async () => {
     await expect(usersManager.createPersonalGroup(userTest, { name: '' } as any)).rejects.toThrow('Group name is missing')
-    usersQueriesService.checkGroupNameExists = jest.fn().mockResolvedValue(true)
+    usersQueriesService.checkGroupNameExists = vi.fn().mockResolvedValue(true)
     await expect(usersManager.createPersonalGroup(userTest, { name: 'A' })).rejects.toThrow('Name already used')
-    usersQueriesService.checkGroupNameExists = jest.fn().mockResolvedValue(false)
-    usersQueriesService.createPersonalGroup = jest.fn().mockResolvedValue(10)
-    usersQueriesService.clearWhiteListCaches = jest.fn()
-    usersManager.getGroup = jest.fn().mockResolvedValue({ id: 10 })
-    const logSpy = jest.spyOn((usersManager as any)['logger'], 'log').mockImplementation(() => undefined as any)
+    usersQueriesService.checkGroupNameExists = vi.fn().mockResolvedValue(false)
+    usersQueriesService.createPersonalGroup = vi.fn().mockResolvedValue(10)
+    usersQueriesService.clearWhiteListCaches = vi.fn()
+    usersManager.getGroup = vi.fn().mockResolvedValue({ id: 10 })
+    const logSpy = vi.spyOn((usersManager as any)['logger'], 'log').mockImplementation(() => undefined as any)
     await expect(usersManager.createPersonalGroup(userTest, { name: 'OK' })).resolves.toEqual({ id: 10 })
     expect(logSpy).toHaveBeenCalled()
-    usersQueriesService.createPersonalGroup = jest.fn().mockRejectedValue(new Error('db down'))
+    usersQueriesService.createPersonalGroup = vi.fn().mockRejectedValue(new Error('db down'))
     await expect(usersManager.createPersonalGroup(userTest, { name: 'OK' })).rejects.toThrow('Unable to create group')
 
     await expect(usersManager.updatePersonalGroup(userTest, 1, {} as any)).rejects.toThrow('No changes to update')
-    usersManager.getGroup = jest.fn().mockResolvedValueOnce({ id: 1, type: MEMBER_TYPE.GROUP })
+    usersManager.getGroup = vi.fn().mockResolvedValueOnce({ id: 1, type: MEMBER_TYPE.GROUP })
     await expect(usersManager.updatePersonalGroup(userTest, 1, { name: 'x' })).rejects.toThrow('You are not allowed to do this action')
-    usersManager.getGroup = jest.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP })
-    usersQueriesService.checkGroupNameExists = jest.fn().mockResolvedValue(true)
+    usersManager.getGroup = vi.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP })
+    usersQueriesService.checkGroupNameExists = vi.fn().mockResolvedValue(true)
     await expect(usersManager.updatePersonalGroup(userTest, 1, { name: 'dup' })).rejects.toThrow('Name already used')
-    usersQueriesService.checkGroupNameExists = jest.fn().mockResolvedValue(false)
-    usersQueriesService.updateGroup = jest.fn().mockRejectedValue(new Error('oops'))
+    usersQueriesService.checkGroupNameExists = vi.fn().mockResolvedValue(false)
+    usersQueriesService.updateGroup = vi.fn().mockRejectedValue(new Error('oops'))
     await expect(usersManager.updatePersonalGroup(userTest, 1, { name: 'ok' })).rejects.toThrow('oops')
-    usersQueriesService.updateGroup = jest.fn().mockResolvedValue(true)
-    usersManager.getGroup = jest.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP })
+    usersQueriesService.updateGroup = vi.fn().mockResolvedValue(true)
+    usersManager.getGroup = vi.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP })
     await expect(usersManager.updatePersonalGroup(userTest, 1, { name: 'ok' })).resolves.not.toThrow()
     expect(usersManager.getGroup).toHaveBeenCalledWith(userTest, 1, false, userTest.isAdmin)
   })
 
   it('addUsersToGroup (GROUP/PGROUP)', async () => {
-    usersManager.getGroup = jest.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.GROUP, members: [{ id: 2 }, { id: 3 }] })
-    usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([3, 4, 5])
+    usersManager.getGroup = vi.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.GROUP, members: [{ id: 2 }, { id: 3 }] })
+    usersQueriesService.usersWhitelist = vi.fn().mockResolvedValue([3, 4, 5])
     await expect(usersManager.addUsersToGroup(userTest, 1, [2, 3])).rejects.toThrow('No users to add to group')
-    usersQueriesService.updateGroupMembers = jest.fn().mockResolvedValue(undefined)
+    usersQueriesService.updateGroupMembers = vi.fn().mockResolvedValue(undefined)
     await expect(usersManager.addUsersToGroup(userTest, 1, [3, 4, 5])).resolves.toBeUndefined()
     expect(usersQueriesService.updateGroupMembers).toHaveBeenCalledWith(1, {
       add: [
@@ -405,9 +406,9 @@ describe(UsersManager.name, () => {
     })
     expect(usersQueriesService.usersWhitelist).toHaveBeenCalledWith(userTest.id, USER_ROLE.USER)
 
-    usersManager.getGroup = jest.fn().mockResolvedValue({ id: 2, type: MEMBER_TYPE.PGROUP, members: [] })
-    usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([10, 11])
-    usersQueriesService.updateGroupMembers = jest.fn().mockResolvedValue(undefined)
+    usersManager.getGroup = vi.fn().mockResolvedValue({ id: 2, type: MEMBER_TYPE.PGROUP, members: [] })
+    usersQueriesService.usersWhitelist = vi.fn().mockResolvedValue([10, 11])
+    usersQueriesService.updateGroupMembers = vi.fn().mockResolvedValue(undefined)
     await expect(usersManager.addUsersToGroup(userTest, 2, [10, 11])).resolves.toBeUndefined()
     expect(usersQueriesService.usersWhitelist).toHaveBeenCalledWith(userTest.id, undefined)
     expect(usersQueriesService.updateGroupMembers).toHaveBeenCalledWith(2, {
@@ -419,11 +420,11 @@ describe(UsersManager.name, () => {
   })
 
   it('updateUserFromPersonalGroup', async () => {
-    usersManager.getGroup = jest.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.GROUP, members: [] })
+    usersManager.getGroup = vi.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.GROUP, members: [] })
     await expect(usersManager.updateUserFromPersonalGroup(userTest, 1, 9, { role: 1 })).rejects.toThrow('You are not allowed to do this action')
-    usersManager.getGroup = jest.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP, members: [] })
+    usersManager.getGroup = vi.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP, members: [] })
     await expect(usersManager.updateUserFromPersonalGroup(userTest, 1, 9, { role: 1 })).rejects.toThrow('User was not found')
-    usersManager.getGroup = jest.fn().mockResolvedValue({
+    usersManager.getGroup = vi.fn().mockResolvedValue({
       id: 1,
       type: MEMBER_TYPE.PGROUP,
       members: [
@@ -434,8 +435,8 @@ describe(UsersManager.name, () => {
     await expect(usersManager.updateUserFromPersonalGroup(userTest, 1, 9, { role: USER_GROUP_ROLE.MEMBER })).rejects.toThrow(
       /group must have at least one manager/i
     )
-    const spy = jest.spyOn(adminUsersManager, 'updateUserFromGroup').mockResolvedValue(undefined)
-    usersManager.getGroup = jest.fn().mockResolvedValue({
+    const spy = vi.spyOn(adminUsersManager, 'updateUserFromGroup').mockResolvedValue(undefined)
+    usersManager.getGroup = vi.fn().mockResolvedValue({
       id: 1,
       type: MEMBER_TYPE.PGROUP,
       members: [
@@ -446,10 +447,10 @@ describe(UsersManager.name, () => {
     })
     await expect(usersManager.updateUserFromPersonalGroup(userTest, 1, 9, { role: USER_GROUP_ROLE.MANAGER })).resolves.toBeUndefined()
     expect(spy).toHaveBeenCalledWith(1, 9, { role: 1 })
-    usersManager.getGroup = jest.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP, members: [{ id: 9, groupRole: USER_GROUP_ROLE.MEMBER }] })
+    usersManager.getGroup = vi.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP, members: [{ id: 9, groupRole: USER_GROUP_ROLE.MEMBER }] })
     await expect(usersManager.updateUserFromPersonalGroup(userTest, 1, 9, { role: USER_GROUP_ROLE.MEMBER })).resolves.toBeUndefined()
-    ;(spy as jest.Mock).mockClear()
-    usersManager.getGroup = jest.fn().mockResolvedValue({
+    vi.mocked(spy).mockClear()
+    usersManager.getGroup = vi.fn().mockResolvedValue({
       id: 1,
       type: MEMBER_TYPE.PGROUP,
       members: [
@@ -459,8 +460,8 @@ describe(UsersManager.name, () => {
     })
     await expect(usersManager.updateUserFromPersonalGroup(userTest, 1, 9, { role: USER_GROUP_ROLE.MEMBER })).resolves.toBeUndefined()
     expect(spy).toHaveBeenCalledWith(1, 9, { role: USER_GROUP_ROLE.MEMBER })
-    ;(spy as jest.Mock).mockClear()
-    usersManager.getGroup = jest.fn().mockResolvedValue({
+    vi.mocked(spy).mockClear()
+    usersManager.getGroup = vi.fn().mockResolvedValue({
       id: 1,
       type: MEMBER_TYPE.PGROUP,
       members: [
@@ -473,14 +474,14 @@ describe(UsersManager.name, () => {
   })
 
   it('removeUserFromGroup', async () => {
-    usersManager.getGroup = jest.fn().mockResolvedValue({ id: 1, members: [] })
+    usersManager.getGroup = vi.fn().mockResolvedValue({ id: 1, members: [] })
     await expect(usersManager.removeUserFromGroup(userTest, 1, 9)).rejects.toThrow('User was not found')
-    usersManager.getGroup = jest.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.GROUP, members: [{ id: 9, groupRole: USER_GROUP_ROLE.MANAGER }] })
+    usersManager.getGroup = vi.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.GROUP, members: [{ id: 9, groupRole: USER_GROUP_ROLE.MANAGER }] })
     await expect(usersManager.removeUserFromGroup(userTest, 1, 9)).rejects.toThrow('You are not allowed to do this action')
-    usersManager.getGroup = jest.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP, members: [{ id: 9, groupRole: USER_GROUP_ROLE.MANAGER }] })
+    usersManager.getGroup = vi.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP, members: [{ id: 9, groupRole: USER_GROUP_ROLE.MANAGER }] })
     await expect(usersManager.removeUserFromGroup(userTest, 1, 9)).rejects.toThrow('Group must have at least one manager')
-    usersQueriesService.updateGroupMembers = jest.fn().mockResolvedValue(undefined)
-    usersManager.getGroup = jest.fn().mockResolvedValue({
+    usersQueriesService.updateGroupMembers = vi.fn().mockResolvedValue(undefined)
+    usersManager.getGroup = vi.fn().mockResolvedValue({
       id: 1,
       type: MEMBER_TYPE.PGROUP,
       members: [
@@ -490,8 +491,8 @@ describe(UsersManager.name, () => {
     })
     await expect(usersManager.removeUserFromGroup(userTest, 1, 9)).resolves.toBeUndefined()
     expect(usersQueriesService.updateGroupMembers).toHaveBeenCalledWith(1, { remove: [9] })
-    usersQueriesService.updateGroupMembers = jest.fn().mockResolvedValue(undefined)
-    usersManager.getGroup = jest.fn().mockResolvedValue({
+    usersQueriesService.updateGroupMembers = vi.fn().mockResolvedValue(undefined)
+    usersManager.getGroup = vi.fn().mockResolvedValue({
       id: 1,
       type: MEMBER_TYPE.PGROUP,
       members: [
@@ -504,19 +505,19 @@ describe(UsersManager.name, () => {
   })
 
   it('leave/delete personal group', async () => {
-    usersQueriesService.getGroupWithMembers = jest.fn().mockResolvedValue(null)
+    usersQueriesService.getGroupWithMembers = vi.fn().mockResolvedValue(null)
     await expect(usersManager.leavePersonalGroup(userTest, 1)).rejects.toThrow('You are not allowed to do this action')
-    usersQueriesService.getGroupWithMembers = jest.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.GROUP, members: [{ id: userTest.id }] })
+    usersQueriesService.getGroupWithMembers = vi.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.GROUP, members: [{ id: userTest.id }] })
     await expect(usersManager.leavePersonalGroup(userTest, 1)).rejects.toThrow('You are not allowed to do this action')
-    usersQueriesService.getGroupWithMembers = jest.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP, members: [] })
+    usersQueriesService.getGroupWithMembers = vi.fn().mockResolvedValue({ id: 1, type: MEMBER_TYPE.PGROUP, members: [] })
     await expect(usersManager.leavePersonalGroup(userTest, 1)).rejects.toThrow('User was not found')
-    usersQueriesService.getGroupWithMembers = jest.fn().mockResolvedValue({
+    usersQueriesService.getGroupWithMembers = vi.fn().mockResolvedValue({
       id: 1,
       type: MEMBER_TYPE.PGROUP,
       members: [{ id: userTest.id, groupRole: USER_GROUP_ROLE.MANAGER }]
     })
     await expect(usersManager.leavePersonalGroup(userTest, 1)).rejects.toThrow('Group must have at least one manager')
-    usersQueriesService.getGroupWithMembers = jest.fn().mockResolvedValue({
+    usersQueriesService.getGroupWithMembers = vi.fn().mockResolvedValue({
       id: 1,
       type: 2,
       members: [
@@ -524,13 +525,13 @@ describe(UsersManager.name, () => {
         { id: 9, groupRole: USER_GROUP_ROLE.MANAGER }
       ]
     })
-    const lSpy = jest.spyOn((usersManager as any)['logger'], 'log').mockImplementation(() => undefined as any)
-    usersQueriesService.updateGroupMembers = jest.fn().mockResolvedValue(undefined)
+    const lSpy = vi.spyOn((usersManager as any)['logger'], 'log').mockImplementation(() => undefined as any)
+    usersQueriesService.updateGroupMembers = vi.fn().mockResolvedValue(undefined)
     await expect(usersManager.leavePersonalGroup(userTest, 1)).resolves.toBeUndefined()
     expect(lSpy).toHaveBeenCalledWith(expect.objectContaining({ msg: expect.stringMatching(/has left group/) }))
-    usersQueriesService.updateGroupMembers = jest.fn().mockRejectedValue(new Error('DB'))
+    usersQueriesService.updateGroupMembers = vi.fn().mockRejectedValue(new Error('DB'))
     await expect(usersManager.leavePersonalGroup(userTest, 1)).rejects.toThrow('DB')
-    usersQueriesService.getGroupWithMembers = jest.fn().mockResolvedValue({
+    usersQueriesService.getGroupWithMembers = vi.fn().mockResolvedValue({
       id: 1,
       type: MEMBER_TYPE.PGROUP,
       members: [
@@ -538,111 +539,111 @@ describe(UsersManager.name, () => {
         { id: 9, groupRole: USER_GROUP_ROLE.MANAGER }
       ]
     })
-    usersQueriesService.updateGroupMembers = jest.fn().mockResolvedValue(undefined)
+    usersQueriesService.updateGroupMembers = vi.fn().mockResolvedValue(undefined)
     await expect(usersManager.leavePersonalGroup(userTest, 1)).resolves.toBeUndefined()
 
-    usersQueriesService.canDeletePersonalGroup = jest.fn().mockResolvedValue(false)
+    usersQueriesService.canDeletePersonalGroup = vi.fn().mockResolvedValue(false)
     await expect(usersManager.deletePersonalGroup(userTest, 7)).rejects.toThrow('You are not allowed to do this action')
-    usersQueriesService.canDeletePersonalGroup = jest.fn().mockResolvedValue(true)
-    const wSpy = jest.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
-    usersQueriesService.deletePersonalGroup = jest.fn().mockResolvedValue(false)
+    usersQueriesService.canDeletePersonalGroup = vi.fn().mockResolvedValue(true)
+    const wSpy = vi.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
+    usersQueriesService.deletePersonalGroup = vi.fn().mockResolvedValue(false)
     await expect(usersManager.deletePersonalGroup(userTest, 7)).rejects.toThrow('Unable to delete group')
     expect(wSpy).toHaveBeenCalledWith(expect.objectContaining({ msg: expect.stringMatching(/does not exist/) }))
-    const lgSpy = jest.spyOn((usersManager as any)['logger'], 'log').mockImplementation(() => undefined as any)
-    usersQueriesService.deletePersonalGroup = jest.fn().mockResolvedValue(true)
+    const lgSpy = vi.spyOn((usersManager as any)['logger'], 'log').mockImplementation(() => undefined as any)
+    usersQueriesService.deletePersonalGroup = vi.fn().mockResolvedValue(true)
     await expect(usersManager.deletePersonalGroup(userTest, 7)).resolves.toBeUndefined()
     expect(lgSpy).toHaveBeenCalledWith(expect.objectContaining({ msg: expect.stringMatching(/was deleted/) }))
   })
 
   it('guests list + get', async () => {
-    usersQueriesService.listGuests = jest.fn().mockResolvedValue([{ id: 1 }])
+    usersQueriesService.listGuests = vi.fn().mockResolvedValue([{ id: 1 }])
     await expect(usersManager.listGuests(userTest)).resolves.toEqual([{ id: 1 }])
 
-    const checkSpy = jest.spyOn(adminUsersManager, 'checkUser').mockImplementation(() => undefined)
-    usersQueriesService.listGuests = jest.fn().mockResolvedValue({ id: 9 })
+    const checkSpy = vi.spyOn(adminUsersManager, 'checkUser').mockImplementation(() => undefined)
+    usersQueriesService.listGuests = vi.fn().mockResolvedValue({ id: 9 })
     await expect(usersManager.getGuest(userTest, 9)).resolves.toEqual({ id: 9 })
     expect(checkSpy).toHaveBeenCalled()
   })
 
   it('createGuest adds current user as manager only once', async () => {
-    usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([userTest.id, 100])
-    const createSpy = jest.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
+    usersQueriesService.usersWhitelist = vi.fn().mockResolvedValue([userTest.id, 100])
+    const createSpy = vi.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
 
     const dto1: CreateUserDto = { ...userTest, managers: [100], password: 'x' }
     const r = await usersManager.createGuest(userTest, dto1)
     expect(createSpy).toHaveBeenCalled()
     expect(r).toEqual({ id: 55 })
-    const args1 = (createSpy as jest.Mock).mock.calls[0][0]
+    const args1 = vi.mocked(createSpy).mock.calls[0][0]
     expect(args1.managers).toEqual(expect.arrayContaining([userTest.id]))
-    ;(createSpy as jest.Mock).mockClear()
+    vi.mocked(createSpy).mockClear()
     const dto2: CreateUserDto = { ...userTest, managers: [userTest.id, 100], password: 'y' }
     await usersManager.createGuest(userTest, dto2)
-    const args2 = (createSpy as jest.Mock).mock.calls[0][0]
+    const args2 = vi.mocked(createSpy).mock.calls[0][0]
     expect((args2.managers as number[]).filter((m: number) => m === userTest.id)).toHaveLength(1)
   })
 
   it('createGuest groups filtering keeps only allowed groups and logs warning', async () => {
-    const warnSpy = jest.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
-    usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([userTest.id, 100])
-    usersQueriesService.groupsWhitelist = jest.fn().mockResolvedValue([10])
-    const createSpy = jest.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
+    const warnSpy = vi.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
+    usersQueriesService.usersWhitelist = vi.fn().mockResolvedValue([userTest.id, 100])
+    usersQueriesService.groupsWhitelist = vi.fn().mockResolvedValue([10])
+    const createSpy = vi.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
 
     const dto: CreateUserDto = { ...userTest, managers: [100], groups: [10, 11], password: 'x' }
     await expect(usersManager.createGuest(userTest, dto)).resolves.toEqual({ id: 55 })
     expect(usersQueriesService.groupsWhitelist).toHaveBeenCalledWith(userTest.id, GROUP_TYPE.PERSONAL, USER_GROUP_ROLE.MANAGER)
-    const args = (createSpy as jest.Mock).mock.calls[0][0]
+    const args = vi.mocked(createSpy).mock.calls[0][0]
     expect(args.groups).toEqual([10])
     expect(warnSpy).toHaveBeenCalledWith(expect.objectContaining({ msg: 'Some groups were not allowed' }))
   })
 
   it('createGuest groups keeps all allowed groups without warning', async () => {
-    const warnSpy = jest.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
-    usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([userTest.id, 100])
-    usersQueriesService.groupsWhitelist = jest.fn().mockResolvedValue([10, 11])
-    const createSpy = jest.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
+    const warnSpy = vi.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
+    usersQueriesService.usersWhitelist = vi.fn().mockResolvedValue([userTest.id, 100])
+    usersQueriesService.groupsWhitelist = vi.fn().mockResolvedValue([10, 11])
+    const createSpy = vi.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
 
     const dto: CreateUserDto = { ...userTest, managers: [100], groups: [10, 11], password: 'x' }
     await expect(usersManager.createGuest(userTest, dto)).resolves.toEqual({ id: 55 })
     expect(usersQueriesService.groupsWhitelist).toHaveBeenCalledWith(userTest.id, GROUP_TYPE.PERSONAL, USER_GROUP_ROLE.MANAGER)
-    const args = (createSpy as jest.Mock).mock.calls[0][0]
+    const args = vi.mocked(createSpy).mock.calls[0][0]
     expect(args.groups).toEqual([10, 11])
     expect(warnSpy).not.toHaveBeenCalled()
   })
 
   it('updateGuest checks ownership and manager whitelist', async () => {
     await expect(usersManager.updateGuest(userTest, 9, {} as any)).rejects.toThrow('No changes to update')
-    usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([1])
-    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(true)
+    usersQueriesService.usersWhitelist = vi.fn().mockResolvedValue([1])
+    usersQueriesService.isGuestManager = vi.fn().mockResolvedValue(true)
     await expect(usersManager.updateGuest(userTest, 9, { managers: [2] } as any)).rejects.toThrow('Guest must have at least one manager')
-    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(false)
+    usersQueriesService.isGuestManager = vi.fn().mockResolvedValue(false)
     await expect(usersManager.updateGuest(userTest, 9, { email: 'a' } as any)).rejects.toThrow('You are not allowed to do this action')
-    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(true)
-    jest.spyOn(adminUsersManager, 'updateUserOrGuest').mockResolvedValue({ managers: [{ id: 999 }] } as any)
+    usersQueriesService.isGuestManager = vi.fn().mockResolvedValue(true)
+    vi.spyOn(adminUsersManager, 'updateUserOrGuest').mockResolvedValue({ managers: [{ id: 999 }] } as any)
     await expect(usersManager.updateGuest(userTest, 9, { email: 'a' } as any)).resolves.toBeNull()
-    jest.spyOn(adminUsersManager, 'updateUserOrGuest').mockResolvedValue({ managers: [{ id: userTest.id }] } as any)
+    vi.spyOn(adminUsersManager, 'updateUserOrGuest').mockResolvedValue({ managers: [{ id: userTest.id }] } as any)
     await expect(usersManager.updateGuest(userTest, 9, { email: 'a' } as any)).resolves.toEqual({ managers: [{ id: userTest.id }] })
-    usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([userTest.id, 77])
-    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(true)
-    jest.spyOn(adminUsersManager, 'updateUserOrGuest').mockResolvedValue({ managers: [{ id: userTest.id }, { id: 77 }] } as any)
+    usersQueriesService.usersWhitelist = vi.fn().mockResolvedValue([userTest.id, 77])
+    usersQueriesService.isGuestManager = vi.fn().mockResolvedValue(true)
+    vi.spyOn(adminUsersManager, 'updateUserOrGuest').mockResolvedValue({ managers: [{ id: userTest.id }, { id: 77 }] } as any)
     await expect(usersManager.updateGuest(userTest, 9, { managers: [userTest.id, 77] } as any)).resolves.toEqual({
       managers: [{ id: userTest.id }, { id: 77 }]
     })
   })
 
   it('updateGuest groups forbidden when current user is not manager', async () => {
-    const updateSpy = jest.spyOn(adminUsersManager, 'updateUserOrGuest')
-    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(false)
-    usersQueriesService.groupsWhitelist = jest.fn()
+    const updateSpy = vi.spyOn(adminUsersManager, 'updateUserOrGuest')
+    usersQueriesService.isGuestManager = vi.fn().mockResolvedValue(false)
+    usersQueriesService.groupsWhitelist = vi.fn()
     await expect(usersManager.updateGuest(userTest, 9, { groups: [10] } as any)).rejects.toThrow('You are not allowed to do this action')
     expect(usersQueriesService.groupsWhitelist).not.toHaveBeenCalled()
     expect(updateSpy).not.toHaveBeenCalled()
   })
 
   it('updateGuest groups filtering logs warning when some groups are rejected', async () => {
-    const warnSpy = jest.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
-    const updateSpy = jest.spyOn(adminUsersManager, 'updateUserOrGuest')
-    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(true)
-    usersQueriesService.groupsWhitelist = jest.fn().mockResolvedValue([10])
+    const warnSpy = vi.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
+    const updateSpy = vi.spyOn(adminUsersManager, 'updateUserOrGuest')
+    usersQueriesService.isGuestManager = vi.fn().mockResolvedValue(true)
+    usersQueriesService.groupsWhitelist = vi.fn().mockResolvedValue([10])
     updateSpy.mockResolvedValue({ managers: [{ id: userTest.id }], groups: [{ id: 10 }] } as any)
 
     await expect(usersManager.updateGuest(userTest, 9, { groups: [10, 11] } as any)).resolves.toEqual({
@@ -655,10 +656,10 @@ describe(UsersManager.name, () => {
   })
 
   it('updateGuest groups does not log warning when all groups are allowed', async () => {
-    const warnSpy = jest.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
-    const updateSpy = jest.spyOn(adminUsersManager, 'updateUserOrGuest')
-    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(true)
-    usersQueriesService.groupsWhitelist = jest.fn().mockResolvedValue([10, 11])
+    const warnSpy = vi.spyOn((usersManager as any)['logger'], 'warn').mockImplementation(() => undefined as any)
+    const updateSpy = vi.spyOn(adminUsersManager, 'updateUserOrGuest')
+    usersQueriesService.isGuestManager = vi.fn().mockResolvedValue(true)
+    usersQueriesService.groupsWhitelist = vi.fn().mockResolvedValue([10, 11])
     updateSpy.mockResolvedValue({ managers: [{ id: userTest.id }], groups: [{ id: 10 }, { id: 11 }] } as any)
 
     await expect(usersManager.updateGuest(userTest, 9, { groups: [10, 11] } as any)).resolves.toEqual({
@@ -670,22 +671,22 @@ describe(UsersManager.name, () => {
   })
 
   it('deleteGuest checks ownership then deletes guest', async () => {
-    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue(null)
+    usersQueriesService.isGuestManager = vi.fn().mockResolvedValue(null)
     await expect(usersManager.deleteGuest(userTest, 9)).rejects.toThrow('You are not allowed to do this action')
-    usersQueriesService.isGuestManager = jest.fn().mockResolvedValue({ id: 9, login: 'guest' })
-    const delSpy = jest.spyOn(adminUsersManager, 'deleteUserOrGuest').mockResolvedValue(undefined)
+    usersQueriesService.isGuestManager = vi.fn().mockResolvedValue({ id: 9, login: 'guest' })
+    const delSpy = vi.spyOn(adminUsersManager, 'deleteUserOrGuest').mockResolvedValue(undefined)
     await expect(usersManager.deleteGuest(userTest, 9)).resolves.toBeUndefined()
     expect(delSpy).toHaveBeenCalledWith(9, 'guest', { deleteSpace: true, isGuest: true })
   })
 
   it('proxies forward search + online + whitelist', async () => {
-    usersQueriesService.searchUsersOrGroups = jest.fn().mockResolvedValue([{ id: 1 }])
+    usersQueriesService.searchUsersOrGroups = vi.fn().mockResolvedValue([{ id: 1 }])
     await expect(usersManager.searchMembers(userTest, { search: '' } as any)).resolves.toEqual([{ id: 1 }])
 
-    usersQueriesService.getOnlineUsers = jest.fn().mockResolvedValue([{ id: 123 }])
+    usersQueriesService.getOnlineUsers = vi.fn().mockResolvedValue([{ id: 123 }])
     await expect(usersManager.getOnlineUsers([123])).resolves.toEqual([{ id: 123 }])
     expect(usersQueriesService.getOnlineUsers).toHaveBeenCalledWith([123])
-    usersQueriesService.usersWhitelist = jest.fn().mockResolvedValue([10, 11])
+    usersQueriesService.usersWhitelist = vi.fn().mockResolvedValue([10, 11])
     await expect(usersManager.usersWhitelist(userTest.id)).resolves.toEqual([10, 11])
     expect(usersQueriesService.usersWhitelist).toHaveBeenCalledWith(userTest.id)
   })

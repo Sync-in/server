@@ -10,31 +10,32 @@ import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { CommentsManager } from './comments-manager.service'
 import { CommentsQueries } from './comments-queries.service'
+import { Mock } from 'vitest'
 
 // Mocks of the file utilities used by the service
-jest.mock('../../files/utils/files', () => ({
-  isPathExists: jest.fn(),
-  getProps: jest.fn(),
-  dirName: jest.fn(),
-  fileName: jest.fn()
+vi.mock('../../files/utils/files', () => ({
+  isPathExists: vi.fn(),
+  getProps: vi.fn(),
+  dirName: vi.fn(),
+  fileName: vi.fn()
 }))
 
 describe(CommentsManager.name, () => {
   let commentsManager: CommentsManager
-  let contextManager: { headerOriginUrl: jest.Mock }
+  let contextManager: { headerOriginUrl: Mock }
   let commentQueries: {
-    getComments: jest.Mock
-    createComment: jest.Mock
-    updateComment: jest.Mock
-    deleteComment: jest.Mock
-    getRecentsFromUser: jest.Mock
-    membersToNotify: jest.Mock
+    getComments: Mock
+    createComment: Mock
+    updateComment: Mock
+    deleteComment: Mock
+    getRecentsFromUser: Mock
+    membersToNotify: Mock
   }
   let filesQueries: {
-    getSpaceFileId: jest.Mock
-    getOrCreateSpaceFile: jest.Mock
+    getSpaceFileId: Mock
+    getOrCreateSpaceFile: Mock
   }
-  let notificationsManager: { create: jest.Mock }
+  let notificationsManager: { create: Mock }
 
   const user = { id: 42, email: 'john@doe.tld' } as any
 
@@ -53,22 +54,22 @@ describe(CommentsManager.name, () => {
 
   beforeAll(async () => {
     commentQueries = {
-      getComments: jest.fn(),
-      createComment: jest.fn(),
-      updateComment: jest.fn(),
-      deleteComment: jest.fn(),
-      getRecentsFromUser: jest.fn(),
-      membersToNotify: jest.fn()
+      getComments: vi.fn(),
+      createComment: vi.fn(),
+      updateComment: vi.fn(),
+      deleteComment: vi.fn(),
+      getRecentsFromUser: vi.fn(),
+      membersToNotify: vi.fn()
     }
     filesQueries = {
-      getSpaceFileId: jest.fn(),
-      getOrCreateSpaceFile: jest.fn()
+      getSpaceFileId: vi.fn(),
+      getOrCreateSpaceFile: vi.fn()
     }
     notificationsManager = {
-      create: jest.fn().mockResolvedValue(undefined)
+      create: vi.fn().mockResolvedValue(undefined)
     }
     contextManager = {
-      headerOriginUrl: jest.fn().mockReturnValue('https://app.local/path')
+      headerOriginUrl: vi.fn().mockReturnValue('https://app.local/path')
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -92,11 +93,11 @@ describe(CommentsManager.name, () => {
   })
 
   beforeEach(() => {
-    jest.clearAllMocks()
-    ;(isPathExists as jest.Mock).mockResolvedValue(true)
-    ;(getProps as jest.Mock).mockResolvedValue({ name: 'file.txt', path: 'folder' })
-    ;(dirName as jest.Mock).mockReturnValue('/space/folder')
-    ;(fileName as jest.Mock).mockReturnValue('file.txt')
+    vi.clearAllMocks()
+    vi.mocked(isPathExists).mockResolvedValue(true)
+    vi.mocked(getProps).mockResolvedValue({ name: 'file.txt', path: 'folder' })
+    vi.mocked(dirName).mockReturnValue('/space/folder')
+    vi.mocked(fileName).mockReturnValue('file.txt')
   })
 
   it('should be defined', () => {
@@ -127,7 +128,7 @@ describe(CommentsManager.name, () => {
     })
 
     it('throws NOT_FOUND if path does not exist', async () => {
-      ;(isPathExists as jest.Mock).mockResolvedValue(false)
+      vi.mocked(isPathExists).mockResolvedValue(false)
 
       await expect(commentsManager.getComments(user, makeSpace())).rejects.toThrow(HttpException)
       await expect(commentsManager.getComments(user, makeSpace())).rejects.toMatchObject({ status: HttpStatus.NOT_FOUND })
@@ -185,7 +186,7 @@ describe(CommentsManager.name, () => {
       commentQueries.getComments.mockResolvedValue([{ id: 777, fileId: 555, content: 'hello' }])
       // Force a rejection in notify() to cover the catch attached to this.notify(...) in createComment
       commentQueries.membersToNotify.mockRejectedValueOnce(new Error('members failed'))
-      const loggerSpy = jest.spyOn(commentsManager['logger'], 'error').mockImplementation(() => undefined as any)
+      const loggerSpy = vi.spyOn(commentsManager['logger'], 'error').mockImplementation(() => undefined as any)
 
       const res = await commentsManager.createComment(user, space, { fileId: -1, content: 'hello' } as any)
       // Let the microtask run the catch of createComment
@@ -208,7 +209,7 @@ describe(CommentsManager.name, () => {
       commentQueries.membersToNotify.mockResolvedValue([{ id: 2, email: 'a@b.c' }])
       // Force rejection of notification creation to trigger the catch in notify()
       notificationsManager.create.mockRejectedValueOnce(new Error('notify failed'))
-      const loggerSpy = jest.spyOn(commentsManager['logger'], 'error').mockImplementation(() => undefined as any)
+      const loggerSpy = vi.spyOn(commentsManager['logger'], 'error').mockImplementation(() => undefined as any)
 
       await commentsManager.createComment(user, makeSpace(), { fileId: 10, content: 'c' } as any)
       // Let the microtask execute the internal catch of notify()
@@ -248,7 +249,7 @@ describe(CommentsManager.name, () => {
       commentQueries.membersToNotify.mockResolvedValue([{ id: 2, email: 'a@b.c' }])
       // Force rejection to trigger the catch in notify()
       notificationsManager.create.mockRejectedValueOnce(new Error('notify failed'))
-      const loggerSpy = jest.spyOn(commentsManager['logger'], 'error').mockImplementation(() => undefined as any)
+      const loggerSpy = vi.spyOn(commentsManager['logger'], 'error').mockImplementation(() => undefined as any)
 
       await commentsManager.createComment(user, makeSpace(), { fileId: 10, content: 'c' } as any)
       // Allow the microtask to run the internal catch of notify()

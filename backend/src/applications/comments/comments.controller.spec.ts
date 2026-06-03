@@ -14,10 +14,11 @@ import { CommentsController } from './comments.controller'
 import { CommentsManager } from './services/comments-manager.service'
 import { CommentsQueries } from './services/comments-queries.service'
 import { FilesQuotaManager } from '../files/services/files-quota-manager.service'
+import { Mocked } from 'vitest'
 
 describe(CommentsController.name, () => {
   let commentsController: CommentsController
-  let commentsManager: jest.Mocked<CommentsManager>
+  let commentsManager: Mocked<CommentsManager>
 
   const user: any = { id: 'user-1' }
   const space: any = { id: 'space-1' }
@@ -25,12 +26,12 @@ describe(CommentsController.name, () => {
   const commentsSample = [{ id: 'c1' }, { id: 'c2' }] as any
   const commentSample = { id: 'c1', text: 'hello' } as any
 
-  const commentsManagerMock: jest.Mocked<CommentsManager> = {
-    getComments: jest.fn(),
-    createComment: jest.fn(),
-    updateComment: jest.fn(),
-    deleteComment: jest.fn(),
-    getRecents: jest.fn()
+  const commentsManagerMock: Mocked<CommentsManager> = {
+    getComments: vi.fn(),
+    createComment: vi.fn(),
+    updateComment: vi.fn(),
+    deleteComment: vi.fn(),
+    getRecents: vi.fn()
   } as any
 
   beforeAll(async () => {
@@ -59,7 +60,7 @@ describe(CommentsController.name, () => {
   })
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should be defined', () => {

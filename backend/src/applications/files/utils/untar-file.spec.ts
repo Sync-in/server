@@ -35,7 +35,7 @@ describe(extractTar.name, () => {
   })
 
   afterEach(async () => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
     await rm(tmpDir, { recursive: true, force: true })
   })
 
@@ -60,7 +60,7 @@ describe(extractTar.name, () => {
   it('rejects entries exceeding the extracted size limit', async () => {
     await writeFile(path.join(sourceDir, 'docs', 'large.txt'), 'ab')
     await createArchive()
-    const destroySpy = jest.spyOn(fs.ReadStream.prototype, 'destroy')
+    const destroySpy = vi.spyOn(fs.ReadStream.prototype, 'destroy')
 
     await expect(extractTar(archivePath, outputDir, false, 1)).rejects.toThrow('Storage quota will be exceeded')
     expect(destroySpy).toHaveBeenCalled()
@@ -70,7 +70,7 @@ describe(extractTar.name, () => {
     archivePath = path.join(tmpDir, 'archive.tar.gz')
     await writeFile(path.join(sourceDir, 'docs', 'large.txt'), 'ab')
     await createArchive(true)
-    const destroySpy = jest.spyOn(fs.ReadStream.prototype, 'destroy')
+    const destroySpy = vi.spyOn(fs.ReadStream.prototype, 'destroy')
 
     await expect(extractTar(archivePath, outputDir, true, 1)).rejects.toThrow('Storage quota will be exceeded')
     expect(destroySpy).toHaveBeenCalled()

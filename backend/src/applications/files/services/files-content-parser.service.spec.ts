@@ -7,42 +7,43 @@ import { UserModel } from '../../users/models/user.model'
 import { FILE_REPOSITORY } from '../constants/operations'
 import * as filesUtils from '../utils/files'
 import { FilesContentParser } from './files-content-parser.service'
+import { Mock, MockInstance } from 'vitest'
 
 interface QueryMock {
-  from: jest.Mock
-  leftJoin: jest.Mock
-  where: jest.Mock
-  groupBy: jest.Mock
+  from: Mock
+  leftJoin: Mock
+  where: Mock
+  groupBy: Mock
 }
 
 describe(FilesContentParser.name, () => {
   let service: FilesContentParser
-  let db: { select: jest.Mock }
-  let isPathExistsSpy: jest.SpiedFunction<typeof filesUtils.isPathExists>
+  let db: { select: Mock }
+  let isPathExistsSpy: MockInstance<typeof filesUtils.isPathExists>
 
   const mockQuery = (rows: unknown[], options: { groupBy?: boolean } = {}): QueryMock => {
     const query = {} as QueryMock
-    query.from = jest.fn(() => query)
-    query.leftJoin = jest.fn(() => query)
-    query.where = jest.fn(() => (options.groupBy ? query : rows))
-    query.groupBy = jest.fn(() => rows)
+    query.from = vi.fn(() => query)
+    query.leftJoin = vi.fn(() => query)
+    query.where = vi.fn(() => (options.groupBy ? query : rows))
+    query.groupBy = vi.fn(() => rows)
     db.select.mockReturnValueOnce(query)
     return query
   }
 
   beforeEach(async () => {
-    db = { select: jest.fn() }
+    db = { select: vi.fn() }
     const module: TestingModule = await Test.createTestingModule({
       providers: [FilesContentParser, { provide: DB_TOKEN_PROVIDER, useValue: db }]
     }).compile()
 
     module.useLogger(['fatal'])
     service = module.get<FilesContentParser>(FilesContentParser)
-    isPathExistsSpy = jest.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
+    isPathExistsSpy = vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
   })
 
   afterEach(() => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
   })
 
   it('should be defined', () => {
@@ -55,9 +56,9 @@ describe(FilesContentParser.name, () => {
       { id: 2, type: FILE_REPOSITORY.SPACE, paths: [{ realPath: '/spaces/project/files', pathPrefix: 'files/project', isDir: true }] }
     ]
     const sharePaths = [{ id: 3, type: FILE_REPOSITORY.SHARE, paths: [{ realPath: '/shares/docs', pathPrefix: 'shares/docs', isDir: true }] }]
-    const userPathsSpy = jest.spyOn(service as any, 'userPaths').mockResolvedValue(userPaths)
-    const spacePathsSpy = jest.spyOn(service as any, 'spacePaths').mockResolvedValue(spacePaths)
-    const sharePathsSpy = jest.spyOn(service as any, 'sharePaths').mockResolvedValue(sharePaths as any)
+    const userPathsSpy = vi.spyOn(service as any, 'userPaths').mockResolvedValue(userPaths)
+    const spacePathsSpy = vi.spyOn(service as any, 'spacePaths').mockResolvedValue(spacePaths)
+    const sharePathsSpy = vi.spyOn(service as any, 'sharePaths').mockResolvedValue(sharePaths as any)
 
     await expect(service.allPaths()).resolves.toEqual([...userPaths, ...spacePaths, ...sharePaths])
     expect(userPathsSpy).toHaveBeenCalledWith(undefined)
@@ -67,9 +68,9 @@ describe(FilesContentParser.name, () => {
 
   it('should only query filtered repositories and ignore empty filters', async () => {
     const userPaths = [{ id: 1, type: FILE_REPOSITORY.USER, paths: [{ realPath: '/users/john/files', pathPrefix: 'files/personal', isDir: true }] }]
-    const userPathsSpy = jest.spyOn(service as any, 'userPaths').mockResolvedValue(userPaths)
-    const spacePathsSpy = jest.spyOn(service as any, 'spacePaths').mockResolvedValue([])
-    const sharePathsSpy = jest.spyOn(service as any, 'sharePaths').mockResolvedValue([])
+    const userPathsSpy = vi.spyOn(service as any, 'userPaths').mockResolvedValue(userPaths)
+    const spacePathsSpy = vi.spyOn(service as any, 'spacePaths').mockResolvedValue([])
+    const sharePathsSpy = vi.spyOn(service as any, 'sharePaths').mockResolvedValue([])
 
     await expect(service.allPaths([1], [], [])).resolves.toEqual(userPaths)
     expect(userPathsSpy).toHaveBeenCalledWith([1])

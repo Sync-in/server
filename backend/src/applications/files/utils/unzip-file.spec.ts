@@ -44,7 +44,7 @@ describe(extractZip.name, () => {
   })
 
   afterEach(async () => {
-    jest.restoreAllMocks()
+    vi.restoreAllMocks()
     await rm(tmpDir, { recursive: true, force: true })
   })
 
@@ -66,7 +66,7 @@ describe(extractZip.name, () => {
 
   it('rejects entries outside the output directory', async () => {
     await writeFile(archivePath, createZip('safe.txt'))
-    const isPathInsideSpy = jest.spyOn(filesUtils, 'isPathInside').mockReturnValueOnce(false)
+    const isPathInsideSpy = vi.spyOn(filesUtils, 'isPathInside').mockReturnValueOnce(false)
 
     await expect(extractZip(archivePath, outputDir)).rejects.toThrow('Zip entry "safe.txt" would escape the output directory')
     expect(isPathInsideSpy).toHaveBeenCalledWith(outputDir, path.join(outputDir, 'safe.txt'), false)
@@ -74,7 +74,7 @@ describe(extractZip.name, () => {
 
   it('accepts a root directory entry', async () => {
     await writeFile(archivePath, createZip('./'))
-    const isPathInsideSpy = jest.spyOn(filesUtils, 'isPathInside')
+    const isPathInsideSpy = vi.spyOn(filesUtils, 'isPathInside')
 
     await expect(extractZip(archivePath, outputDir)).resolves.toBeUndefined()
     expect(isPathInsideSpy).toHaveBeenCalledWith(outputDir, outputDir, true)
