@@ -18,6 +18,7 @@ import * as docTextifyModule from '../utils/doc-textify/doc-textify'
 import { OCRManager } from '../utils/doc-textify/utils/ocr'
 import { FilesContentParser } from './files-content-parser.service'
 import { FilesContentIndexer } from './files-content-indexer.service'
+import type { Mock } from 'vitest'
 
 interface CacheMock {
   has: Mock

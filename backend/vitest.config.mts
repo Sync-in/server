@@ -7,21 +7,18 @@ export default defineConfig({
     globals: true,
     root: './',
     testTimeout: 30000,
+    typecheck: {
+      enabled: true
+    },
     coverage: {
       provider: 'v8',
       reportsDirectory: '../coverage/units',
-      exclude: [
-        '**/*-controller.service.{ts,js}',
-        '**/*-queries.service.{ts,js}',
-        '**/*-scheduler.service.{ts,js}',
-        'dist/**',
-        'node_modules/**'
-      ]
+      exclude: ['**/*-controller.service.{ts,js}', '**/*-queries.service.{ts,js}', '**/*-scheduler.service.{ts,js}', 'dist/**', 'node_modules/**']
     }
   },
   plugins: [
     swc.vite({
-      module: {type: 'es6'}
+      module: { type: 'es6' }
     })
   ]
 })

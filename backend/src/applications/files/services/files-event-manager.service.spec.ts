@@ -9,11 +9,11 @@ import { CACHE_INDEXING_EVENT_TTL } from '../constants/indexing'
 import { quotaCacheKeyFromSpace } from '../utils/quota'
 import { indexingUpdateCacheKeysFromSpace } from '../utils/indexing'
 import { configuration } from '../../../configuration/config.environment'
-import { Mock } from 'vitest'
+import type { Mock } from 'vitest'
 
 describe(FilesEventManager.name, () => {
   let service: FilesEventManager
-  let cacheSetMock: Mock<Promise<boolean>, [string, unknown, number?]>
+  let cacheSetMock: Mock<(key: string, value: unknown, ttl?: number) => Promise<boolean>>
   let contentIndexingEnabled: boolean
 
   const buildEvent = (props?: Partial<FileEventType>): FileEventType =>

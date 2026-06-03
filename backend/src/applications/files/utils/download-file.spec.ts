@@ -7,6 +7,7 @@ import { FileError } from '../models/file-error'
 import { FILE_ERROR_MESSAGES } from './errors'
 import { writeFromStream } from './files'
 import { DownloadFile } from './download-file'
+import type { Mock } from 'vitest'
 
 vi.mock('./files', () => ({
   writeFromStream: vi.fn()
