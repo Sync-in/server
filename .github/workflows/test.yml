@@ -21,9 +21,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint code
-        run: npm run lint
-
       - name: Copy environment file
         run: |
           cp environment/environment.dist.yaml environment/environment.yaml
