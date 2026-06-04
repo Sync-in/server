@@ -96,10 +96,7 @@
     "prettier": "^3.8.3"
   },
   "overrides": {
-    "@napi-rs/canvas": "npm:noop3",
-    "fastify": "5.8.5",
-    "@angular/common": "^21.2.16",
-    "@angular/core": "^21.2.16"
+    "@napi-rs/canvas": "npm:noop3"
   },
   "commit-and-tag-version": {
     "header": "",
