@@ -90,14 +90,16 @@
     "docker:start": "docker run --name sync-in -it --rm -e SKIP_INIT=true -p 8080:8080 -v ./environment/environment.yaml:/app/environment/environment.yaml $npm_package_name"
   },
   "devDependencies": {
-    "commit-and-tag-version": "^12.5.1",
+    "commit-and-tag-version": "^12.7.3",
     "husky": "^9.1.7",
     "noop3": "^1000.0.0",
-    "prettier": "^3.4.1"
+    "prettier": "^3.8.3"
   },
   "overrides": {
     "@napi-rs/canvas": "npm:noop3",
-    "fastify": "5.8.5"
+    "fastify": "5.8.5",
+    "@angular/common": "^21.2.16",
+    "@angular/core": "^21.2.16"
   },
   "commit-and-tag-version": {
     "header": "",

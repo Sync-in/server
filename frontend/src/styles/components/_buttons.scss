@@ -6,7 +6,7 @@
 ) {
   $bg: rgba(mix(rgba($white, 0.92), mix($white, $tone, $light-bg-mix), 68%), 0.95);
   $border: mix($white, $tone, $light-border-mix - 4%);
-  $fg: if($light-text != null, $light-text, mix($tone, $black, 90%));
+  $fg: if(sass($light-text != null): $light-text; else: mix($tone, $black, 90%));
   $hover-bg: rgba(mix(rgba($white, 0.96), mix($white, $tone, $light-bg-mix - 8%), 62%), 0.98);
   $hover-border: mix($white, $tone, $light-border-mix - 16%);
   $hover-fg: mix($fg, $black, 88%);
@@ -179,8 +179,8 @@ $button-dark-variants: (
     $selector,
     semantic-tone(map-get($config, tone)),
     map-get($config, text),
-    if($bg-mix == null, 84%, $bg-mix),
-    if($border-mix == null, 66%, $border-mix)
+    if(sass($bg-mix == null): 84%; else: $bg-mix),
+    if(sass($border-mix == null): 66%; else: $border-mix)
   );
 }
 

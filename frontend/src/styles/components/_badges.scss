@@ -6,7 +6,7 @@
 ) {
   $light-bg: mix(rgba($white, 0.92), mix($white, $tone, $light-bg-mix), 72%);
   $light-border: mix($white, $tone, $light-border-mix);
-  $light-fg: if($light-text != null, $light-text, mix($tone, $black, 90%));
+  $light-fg: if(sass($light-text != null): $light-text; else: mix($tone, $black, 90%));
   $light-bg-full: $tone;
   $light-border-full: $tone;
 
@@ -158,8 +158,8 @@ $badge-dark-variants: (
     $selector,
     semantic-tone(map-get($config, tone)),
     map-get($config, text),
-    if($bg-mix == null, 84%, $bg-mix),
-    if($border-mix == null, 66%, $border-mix)
+    if(sass($bg-mix == null): 84%; else: $bg-mix),
+    if(sass($border-mix == null): 66%; else: $border-mix)
   );
 }
 
