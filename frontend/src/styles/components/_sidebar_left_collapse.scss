@@ -1,11 +1,11 @@
 .sidebar-collapse {
   .main-header, .content-wrapper {
-    margin-left: 0 !important;
+    margin-inline-start: 0 !important;
   }
 
   &.theme-dark {
     .content-container {
-      border-left: 0.5px solid $sidebar-dark-icons-menu-border-color !important;
+      border-inline-start: 0.5px solid $sidebar-dark-icons-menu-border-color !important;
     }
   }
 
@@ -17,7 +17,7 @@
     .sidebar-apps-menus {
       transform: translate3d(0, 0, 0);
       transition: width $transition-speed $transition-fn;
-      border-right: none !important;
+      border-inline-end: none !important;
       overflow: hidden;
       width: 0;
     }
@@ -47,7 +47,7 @@
   }
   @include media-breakpoint-down(md) {
     .main-header, .content-wrapper {
-      margin-left: 0;
+      margin-inline-start: 0;
     }
   }
 }

@@ -44,19 +44,19 @@ body {
 .content-wrapper {
   display: flex;
   position: relative;
-  margin-left: $sidebar-apps-menus-width;
-  margin-right: $control-sidebar-menu-width;
+  margin-inline-start: $sidebar-apps-menus-width;
+  margin-inline-end: $control-sidebar-menu-width;
   padding-top: $navbar-height;
   flex: 1 1 auto;
   z-index: $content-z-index;
-  transition: margin-left $transition-speed $transition-fn, margin-right $transition-speed $transition-fn;
+  transition: margin-inline-start $transition-speed $transition-fn, margin-inline-end $transition-speed $transition-fn;
 
   .content-container {
-    padding-left: 0;
-    padding-right: 0;
+    padding-inline-start: 0;
+    padding-inline-end: 0;
     width: 100%;
-    margin-right: auto;
-    margin-left: auto;
+    margin-inline-end: auto;
+    margin-inline-start: auto;
     --bs-gutter-x: 1.5rem;
     --bs-gutter-y: 0;
   }

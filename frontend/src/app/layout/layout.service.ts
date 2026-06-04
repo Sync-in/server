@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { inject, Injectable, NgZone, signal, WritableSignal } from '@angular/core'
+import { DOCUMENT } from '@angular/common'
 import { Title } from '@angular/platform-browser'
 import { FaConfig } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -55,6 +56,7 @@ export class LayoutService {
   public modalRefs = new Map<number | string, BsModalRef>()
   public collapseRSideBarPreference: WritableSignal<boolean> = signal(this.getAutoCollapseRSideBarPreference())
   // Services
+  private readonly document = inject(DOCUMENT)
   private readonly title = inject(Title)
   private readonly ngZone = inject(NgZone)
   private readonly translation = inject(L10nTranslationService)
@@ -89,6 +91,15 @@ export class LayoutService {
     this.faConfig.fixedWidth = true
     this.title.setTitle(APP_NAME)
     this.preferTheme.subscribe((theme) => this.setTheme(theme))
+    this.initDir()
+  }
+
+  private initDir(): void {
+    const locale = this.translation.getLocale()
+    if (locale?.language) {
+      this.document.documentElement.dir = locale.language === 'fa' ? 'rtl' : 'ltr'
+      this.document.documentElement.lang = locale.language
+    }
   }
 
   showRSideBarTab(tabName: TAB_MENU = null, tabVisible = false, delay: number = 0) {
@@ -258,6 +269,8 @@ export class LayoutService {
       language = getBrowserL10nLocale().language
     }
     if (language && language !== this.getCurrentLanguage()) {
+      this.document.documentElement.dir = language === 'fa' ? 'rtl' : 'ltr'
+      this.document.documentElement.lang = language
       return this.translation.setLocale({ language })
     }
     return Promise.resolve()

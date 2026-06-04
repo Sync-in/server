@@ -2,7 +2,7 @@
   display: flex;
   position: fixed;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   height: 100%;
   z-index: $sidebar-z-index;
 
@@ -50,8 +50,8 @@
         padding: 0;
         border: none;
         border-radius: 50%;
-        margin-right: .4rem;
-        margin-left: .4rem;
+        margin-inline-end: .4rem;
+        margin-inline-start: .4rem;
         background: $black;
         cursor: pointer;
 
@@ -64,7 +64,7 @@
       .sidebar-title {
         @include text-truncate-utility;
         text-transform: uppercase;
-        margin-right: auto;
+        margin-inline-end: auto;
         font-size: $font-size-xs;
 
         > span {
@@ -72,7 +72,7 @@
         }
 
         > fa-icon {
-          margin-right: .25rem;
+          margin-inline-end: .25rem;
           font-size: $font-size-lg;
         }
       }
@@ -87,7 +87,7 @@
       min-height: 40px;
       max-height: 40px;
       border-bottom: .5px solid transparent;
-      border-right: .5px solid transparent;
+      border-inline-end: .5px solid transparent;
 
       .app-shortcut {
         flex: 0 0 calc(#{$sidebar-apps-height} - 7px);
@@ -155,7 +155,7 @@
         cursor: pointer;
 
         &.submenu {
-          padding-left: 10px;
+          padding-inline-start: 10px;
           font-size: $font-size-sm;
 
           fa-icon {
@@ -179,7 +179,7 @@
 
           > fa-icon {
             font-size: $font-size-lg;
-            margin-right: 0;
+            margin-inline-end: 0;
             width: .95rem;
             min-width: .95rem;
             display: inline-flex;
@@ -188,7 +188,7 @@
           }
 
           .menu-badge {
-            margin-left: auto;
+            margin-inline-start: auto;
             font-size: $font-size-xs;
           }
         }
@@ -202,7 +202,7 @@
       }
       display: flex;
       padding: 4px;
-      margin-left: auto;
+      margin-inline-start: auto;
       margin-top: auto;
 
       span {

@@ -1,21 +1,21 @@
 .control-sidebar {
   top: 0;
-  right: -$control-sidebar-width;
+  inset-inline-end: -$control-sidebar-width;
   width: $control-sidebar-width;
   position: fixed;
   height: 100%;
   margin-top: $navbar-height;
   z-index: $control-sidebar-menu-z-index;
   transform: translate3d(0, 0, 0);
-  transition: right $transition-speed $transition-fn;
+  transition: inset-inline-end $transition-speed $transition-fn;
 
   //Open state with slide over content effect
   &.control-sidebar-open {
-    right: $control-sidebar-menu-width;
+    inset-inline-end: $control-sidebar-menu-width;
   }
 
   @include media-breakpoint-down(sm) {
-    right: -$control-sidebar-small-width;
+    inset-inline-end: -$control-sidebar-small-width;
     width: $control-sidebar-small-width;
   }
 
@@ -32,8 +32,8 @@
 
   .sidebar-component-title {
     > span {
-      margin-right: auto;
-      margin-left: auto;
+      margin-inline-end: auto;
+      margin-inline-start: auto;
     }
   }
 
@@ -59,7 +59,7 @@
   display: flex;
   position: fixed;
   top: 0;
-  right: 0;
+  inset-inline-end: 0;
   padding-top: $navbar-height;
   width: $control-sidebar-menu-width;
   height: 100%;
@@ -106,7 +106,7 @@
             @extend .badge-small;
             @extend .badge-color-full;
             position: absolute;
-            right: 3px;
+            inset-inline-end: 3px;
             bottom: 1px;
           }
         }
@@ -118,7 +118,7 @@
 .control-sidebar-open {
   @include media-breakpoint-up(lg) {
     .content-wrapper {
-      margin-right: $control-sidebar-width + $control-sidebar-menu-width;
+      margin-inline-end: $control-sidebar-width + $control-sidebar-menu-width;
     }
   }
 }

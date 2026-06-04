@@ -26,7 +26,7 @@
 
       .header {
         margin-bottom: .6rem;
-        text-align: left;
+        text-align: start;
 
         .auth-logo {
           display: block;
@@ -139,16 +139,16 @@
   @extend .container-fluid;
   padding-top: .4rem;
   margin-top: 0;
-  padding-left: 0;
-  padding-right: 0;
+  padding-inline-start: 0;
+  padding-inline-end: 0;
 
   .row {
-    margin-right: 0.4rem;
-    margin-left: 0.4rem;
+    margin-inline-end: 0.4rem;
+    margin-inline-start: 0.4rem;
     font-size: $font-size-xs;
 
     .card {
-      margin-right: 0.2rem;
+      margin-inline-end: 0.2rem;
       margin-bottom: 0.2rem;
       border-width: .5px;
       border-color: transparent;
@@ -184,7 +184,7 @@
           font-weight: 500;
           position: absolute;
           bottom: 28px;
-          right: .2rem;
+          inset-inline-end: .2rem;
 
           > span {
             margin-top: 0.15rem;
@@ -196,7 +196,7 @@
           font-weight: 500;
           position: absolute;
           bottom: 28px;
-          left: .2rem;
+          inset-inline-start: .2rem;
         }
 
         .label-top-right {
@@ -204,7 +204,7 @@
           font-weight: 500;
           position: absolute;
           top: .2rem;
-          right: .2rem;
+          inset-inline-end: .2rem;
         }
 
         .label-top-left {
@@ -212,7 +212,7 @@
           font-weight: 500;
           position: absolute;
           top: .2rem;
-          left: .2rem;
+          inset-inline-start: .2rem;
         }
       }
 
@@ -293,7 +293,7 @@
 
   tbody td:first-child {
     img, fa-icon {
-      margin-right: 0.3rem;
+      margin-inline-end: 0.3rem;
     }
   }
 
@@ -314,7 +314,7 @@
 }
 
 .avatar-stack > * + * {
-  margin-left: calc(var(--avatar-overlap) * -1);
+  margin-inline-start: calc(var(--avatar-overlap) * -1);
 }
 
 .avatar-stack > * {
@@ -334,7 +334,7 @@
 
   .btn.me-1, .btn-group.me-1 {
     // handles space between button
-    margin-right: .4rem !important;
+    margin-inline-end: .4rem !important;
   }
 
   .btn {
@@ -348,7 +348,7 @@
 
       fa-icon {
         font-size: $font-size-md;
-        margin-right: 0.2rem;
+        margin-inline-end: 0.2rem;
       }
     }
   }
@@ -366,7 +366,7 @@
         align-items: center;
 
         fa-icon {
-          margin-right: 0.4rem;
+          margin-inline-end: 0.4rem;
           font-size: $font-size-base;
         }
       }
@@ -399,6 +399,7 @@ app-input-filter {
       font-size: $font-size-sm;
       line-height: 1.5;
       padding: 0 31px 0 29px;
+      padding-inline: 29px 31px;
 
       &::placeholder {
         font-size: $font-size-sm;
@@ -409,14 +410,14 @@ app-input-filter {
 
   .filter-icon {
     position: absolute;
-    left: 9px;
+    inset-inline-start: 9px;
     pointer-events: none;
     font-size: $font-size-xs;
   }
 
   .clear-btn {
     position: absolute;
-    right: 6px;
+    inset-inline-end: 6px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -448,8 +449,8 @@ app-input-filter {
   width: 100%;
   font-size: $font-size-xs;
   height: 24px;
-  padding-left: 5px;
-  padding-right: 5px;
+  padding-inline-start: 5px;
+  padding-inline-end: 5px;
   background-color: transparent;
   color: transparent;
 
@@ -506,7 +507,7 @@ app-input-filter {
   .info-box {
     position: absolute;
     bottom: 0;
-    right: 0;
+    inset-inline-end: 0;
     width: $control-sidebar-width;
   }
 }

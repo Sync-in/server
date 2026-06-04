@@ -112,7 +112,7 @@
 
 .btn-custom {
   @extend .btn-secondary;
-  margin-right: 0.2rem;
+  margin-inline-end: 0.2rem;
   transition: background-color .2s ease, border-color .2s ease, color .2s ease;
 }
 
@@ -136,7 +136,7 @@
   input {
     position: absolute;
     top: 0;
-    right: 0;
+    inset-inline-end: 0;
     margin: 0;
     padding: 0;
     opacity: 0;

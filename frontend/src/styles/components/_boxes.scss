@@ -15,7 +15,7 @@
       font-size: $font-size-base;
 
       &:first-child {
-        margin-right: 10px;
+        margin-inline-end: 10px;
       }
     }
 
@@ -81,7 +81,7 @@
   > .inner {
     display: flex;
     align-items: center;
-    padding-left: 10px;
+    padding-inline-start: 10px;
   }
 
   h4 {
@@ -111,8 +111,8 @@
   .icon {
     transition: all $transition-speed linear;
     align-self: center;
-    margin-left: auto;
-    padding-right: 10px;
+    margin-inline-start: auto;
+    padding-inline-end: 10px;
     z-index: 0;
     font-size: $font-size-2xl;
     color: rgba(0, 0, 0, 0.15);
@@ -132,8 +132,8 @@
   // No need for icons on very small devices
   .small-box {
     .icon {
-      margin-right: auto;
-      padding-right: 0;
+      margin-inline-end: auto;
+      padding-inline-end: 0;
     }
 
     .inner {

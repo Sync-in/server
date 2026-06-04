@@ -3,17 +3,17 @@
   top: 0;
   right: 0;
   left: 0;
-  margin-left: $sidebar-apps-menus-width;
+  margin-inline-start: $sidebar-apps-menus-width;
   max-height: $navbar-height;
   z-index: $sidebar-z-index;
   transform: translate3d(0, 0, 0);
-  transition: margin-left $transition-speed $transition-fn;
+  transition: margin-inline-start $transition-speed $transition-fn;
 
   .navbar {
     display: flex;
     width: 100%;
     margin-bottom: 0;
-    margin-left: 0;
+    margin-inline-start: 0;
     max-height: $navbar-height;
     border: none;
     @include border-radius(0);
@@ -96,16 +96,16 @@
     .navbar-history-button-left {
       margin-left: -.5px;
       @include media-breakpoint-up(sm) {
-        border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
+        border-inline-start: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
       }
     }
 
     .navbar-history-button-right {
-      border-right: none;
+      border-inline-end: none;
     }
 
     .navbar-breadcrumb {
-      border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
+      border-inline-start: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
       flex: 1 1 auto;
       min-width: 0;
       max-width: none;
@@ -117,7 +117,7 @@
 
     .navbar-right-side {
       display: flex;
-      margin-left: auto;
+      margin-inline-start: auto;
       flex: 0 0 auto;
       min-width: $sidebar-apps-icons-width;
 
@@ -235,7 +235,7 @@
       > a {
         color: darken($gray-light, 10%);
         text-decoration: none;
-        margin-left: .3rem;
+        margin-inline-start: .3rem;
 
         &:hover {
           color: $gray-lightest;
@@ -249,7 +249,7 @@
 
     > fa-icon {
       color: $sidebar-light-apps-menu-title-color;
-      margin-left: .3rem;
+      margin-inline-start: .3rem;
     }
   }
 }

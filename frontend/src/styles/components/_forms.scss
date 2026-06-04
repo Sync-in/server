@@ -23,11 +23,11 @@
 
 .form-validation {
   .ng-valid:not(.form-check-input), .ng-valid[required], .ng-valid.required {
-    border-left: 5px solid $primary;
+    border-inline-start: 5px solid $primary;
   }
 
   .ng-invalid:not(form) {
-    border-left: 5px solid $red !important;
+    border-inline-start: 5px solid $red !important;
   }
 }
 
@@ -37,11 +37,11 @@
   @include no-select-utility;
 
   input {
-    margin-right: 0.25rem;
+    margin-inline-end: 0.25rem;
   }
 }
 
 .form-check-input {
-  margin-right: 0 !important;
+  margin-inline-end: 0 !important;
 }
 
