@@ -1,10 +1,12 @@
 import { ChangeDetectorRef, inject, NgZone, OnDestroy, Pipe, PipeTransform } from '@angular/core'
+import { L10N_LOCALE, L10nLocale } from 'angular-l10n'
 import { Dayjs } from 'dayjs/esm'
 import { dJs } from '../utils/time'
 
 @Pipe({ name: 'amTimeAgo', pure: false })
 export class TimeAgoPipe implements PipeTransform, OnDestroy {
   private readonly cdRef = inject(ChangeDetectorRef)
+  private readonly locale = inject<L10nLocale>(L10N_LOCALE)
   private ngZone = inject(NgZone)
   private currentTimer: number | null
   private lastTime: number
@@ -15,7 +17,8 @@ export class TimeAgoPipe implements PipeTransform, OnDestroy {
   private formatFn: (d: Dayjs) => string
 
   format(d: Dayjs) {
-    return d.from(dJs(), this.lastOmitSuffix)
+    const instance = this.locale?.language === 'fa' ? d.calendar('jalali').locale('fa') : d
+    return instance.from(dJs(), this.lastOmitSuffix)
   }
 
   transform(value: any, omitSuffix?: boolean, formatFn?: (m: Dayjs) => string): string {
