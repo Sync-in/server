@@ -68,6 +68,10 @@ export class FilesViewerTextComponent extends FilesViewerEditableBase implements
   protected readonly isSearchPanelOpen = this.searchAdapter.isOpen
   private isContentReady = false
 
+  constructor() {
+    super()
+  }
+
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
     // ESC
