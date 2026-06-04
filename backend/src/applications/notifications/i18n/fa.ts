@@ -1,0 +1,47 @@
+export const fa = {
+  'If you no longer wish to receive notifications, change your preferences directly from your user space.':
+    'اگر دیگر مایل به دریافت اعلان‌ها نیستید، تنظیمات خود را مستقیماً از فضای کاربری‌تان تغییر دهید.',
+  'Access it from': 'از این طریق دسترسی پیدا کنید',
+  Comment: 'نظر',
+  commented: 'نظر داد',
+  'You receive this notification if you are the owner of the file or if you have also commented on this file':
+    'این اعلان را دریافت می‌کنید اگر مالک فایل هستید یا اگر در این فایل نیز نظر داده‌اید',
+  Space: 'فضا',
+  'from the space': 'از فضا',
+  'to the space': 'به فضا',
+  'Access your spaces from': 'از این طریق به فضاهای خود دسترسی پیدا کنید',
+  'Access this space from': 'از این طریق به این فضا دسترسی پیدا کنید',
+  'You now have access to the space': 'اکنون به فضا دسترسی دارید',
+  'You no longer have access to the space': 'دیگر به فضا دسترسی ندارید',
+  'This space has been permanently deleted': 'این فضا برای همیشه حذف شده است',
+  anchored: 'پین کرد',
+  unanchored: 'از پین خارج کرد',
+  Share: 'اشتراک‌گذاری',
+  'shared with you': 'با شما به اشتراک گذاشت',
+  'no longer share with you': 'دیگر با شما به اشتراک نمی‌گذارد',
+  'You now have access to the share': 'اکنون به اشتراک‌گذاری دسترسی دارید',
+  'You no longer have access to the share': 'دیگر به اشتراک‌گذاری دسترسی ندارید',
+  'You are no longer a member of the parent share, your child share has been deleted':
+    'شما دیگر عضو اشتراک‌گذاری والد نیستید، اشتراک‌گذاری فرزند شما حذف شده است',
+  'Access your shares from': 'از این طریق به اشتراک‌گذاری‌های خود دسترسی پیدا کنید',
+  'Access password': 'رمز دسترسی',
+  Sync: 'همگام‌سازی',
+  'Access your syncs from': 'از این طریق به همگام‌سازی‌های خود دسترسی پیدا کنید',
+  'You are no longer synchronizing': 'دیگر همگام‌سازی نمی‌کنید',
+  'Unlock Request': 'درخواست بازکردن قفل',
+  'You receive this notification because you have a lock on this file.': 'این اعلان را دریافت می‌کنید زیرا قفل این فایل در اختیار شماست.',
+  'sends you a request to unlock the file': 'از شما درخواست بازکردن قفل فایل را دارد',
+  'Security notification': 'اعلان امنیتی',
+  'Your account has been locked after several unsuccessful authentication attempts': 'حساب کاربری شما پس از چندین تلاش ناموفق احراز هویت قفل شده است',
+  'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':
+    'این اعلان امنیتی مربوط به حساب Sync-in شماست. لطفاً برای بررسی و بازکردن قفل حساب خود با مدیر سیستم تماس بگیرید.',
+  'Two-factor authentication (2FA) on your account has been disabled': 'احراز هویت دو مرحله‌ای (2FA) حساب شما غیرفعال شد',
+  'Two-factor authentication (2FA) on your account has been enabled': 'احراز هویت دو مرحله‌ای (2FA) حساب شما فعال شد',
+  'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':
+    'این اعلان را دریافت کردید زیرا امنیت حساب Sync-in شما تغییر کرده است. اگر فکر می‌کنید اشتباهی رخ داده، لطفاً تنظیمات امنیتی خود را بررسی کنید یا با مدیر سیستم تماس بگیرید.',
+  'Address IP': 'آدرس IP',
+  Browser: 'مرورگر',
+  'New Version Available': 'نسخه جدید در دسترس است',
+  'You receive this notification because you are the administrator of this server.': 'این اعلان را دریافت می‌کنید زیرا مدیر این سرور هستید.',
+  'A new update is available': 'یک به‌روزرسانی جدید در دسترس است'
+} as const
