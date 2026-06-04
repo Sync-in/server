@@ -3,6 +3,7 @@ import {
   defineLocale,
   deLocale,
   esLocale,
+  faLocale,
   frLocale,
   hiLocale,
   itLocale,
@@ -21,6 +22,7 @@ import {
 const BOOTSTRAP_LOCALES: Record<Exclude<i18nLocaleSupported, 'en'>, LocaleData> = {
   de: deLocale,
   es: esLocale,
+  fa: faLocale,
   fr: frLocale,
   hi: hiLocale,
   it: itLocale,

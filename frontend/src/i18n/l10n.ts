@@ -26,6 +26,7 @@ export const i18nLanguageText: Record<i18nLocaleSupported | typeof USER_LANGUAGE
   de: 'Deutsch',
   en: 'English',
   es: 'Español',
+  fa: 'فارسی',
   fr: 'Français',
   hi: 'हिन्दी',
   it: 'Italiano',
@@ -44,7 +45,7 @@ type L10nSchema = { locale: { language: i18nLocaleSupported }; dir: 'ltr' | 'rtl
 
 const LANG_SCHEMA: L10nSchema = (Object.keys(i18nLanguageText) as (keyof typeof i18nLanguageText)[])
   .filter((language): language is i18nLocaleSupported => language !== USER_LANGUAGE_AUTO)
-  .map((language) => ({ locale: { language }, dir: 'ltr' as const }))
+  .map((language) => ({ locale: { language }, dir: language === 'fa' ? ('rtl' as const) : ('ltr' as const) }))
 
 export const l10nConfig: L10nConfig & {
   schema: L10nSchema

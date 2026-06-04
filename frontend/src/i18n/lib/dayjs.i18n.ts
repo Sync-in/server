@@ -5,6 +5,7 @@ const DAYJS_LOADER: Record<i18nLocaleSupported, () => Promise<ILocale>> = {
   de: () => import('dayjs/esm/locale/de'),
   en: () => import('dayjs/esm/locale/en'),
   es: () => import('dayjs/esm/locale/es'),
+  fa: () => import('dayjs/esm/locale/fa'),
   fr: () => import('dayjs/esm/locale/fr'),
   hi: () => import('dayjs/esm/locale/hi'),
   it: () => import('dayjs/esm/locale/it'),
