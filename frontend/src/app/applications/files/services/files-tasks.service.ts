@@ -54,6 +54,7 @@ export class FilesTasksService {
   }
   private currentUserId: number
   private cancellingTasks = new Set<string>()
+  private uploadCancellationHandlers = new Map<string, () => void>()
   private watcher: Subscription = null
   private watch = timer(1000, 1000).pipe(tap(() => this.doWatch()))
 
@@ -103,6 +104,15 @@ export class FilesTasksService {
   cancel(task: FileTask) {
     if (!this.canCancel(task)) return
     this.cancellingTasks.add(task.id)
+    if (task.type === FILE_OPERATION.UPLOAD) {
+      const cancelUpload = this.uploadCancellationHandlers.get(task.id)
+      if (cancelUpload) {
+        cancelUpload()
+      } else {
+        this.cancellingTasks.delete(task.id)
+      }
+      return
+    }
     this.http.post<void>(`${API_FILES_TASKS_CANCEL}/${task.id}`, null).subscribe({
       error: (e) => {
         this.cancellingTasks.delete(task.id)
@@ -115,8 +125,20 @@ export class FilesTasksService {
     return (
       task.status === FileTaskStatus.PENDING &&
       !this.cancellingTasks.has(task.id) &&
-      (task.type === FILE_OPERATION.DOWNLOAD || task.type === FILE_OPERATION.COMPRESS || task.type === FILE_OPERATION.DECOMPRESS)
+      (task.type === FILE_OPERATION.DOWNLOAD ||
+        task.type === FILE_OPERATION.COMPRESS ||
+        task.type === FILE_OPERATION.DECOMPRESS ||
+        (task.type === FILE_OPERATION.UPLOAD && this.uploadCancellationHandlers.has(task.id)))
     )
+  }
+
+  registerUploadCancellation(taskId: string, cancel: () => void) {
+    this.uploadCancellationHandlers.set(taskId, cancel)
+    this.store.filesActiveTasks.next([...this.store.filesActiveTasks.getValue()])
+  }
+
+  unregisterUploadCancellation(taskId: string) {
+    this.uploadCancellationHandlers.delete(taskId)
   }
 
   updateTask(task: FileTask) {

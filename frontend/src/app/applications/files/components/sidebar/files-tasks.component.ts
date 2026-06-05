@@ -93,6 +93,14 @@ export class FilesTasksComponent implements OnDestroy {
     return this.filesTasksService.canCancel(task)
   }
 
+  canOpenTask(task: FileTask): boolean {
+    return task.status === FileTaskStatus.SUCCESS
+  }
+
+  isTaskPending(task: FileTask): boolean {
+    return task.status === FileTaskStatus.PENDING
+  }
+
   isTaskError(task: FileTask): boolean {
     return task.status === FileTaskStatus.ERROR
   }
@@ -101,20 +109,19 @@ export class FilesTasksComponent implements OnDestroy {
     return task.status === FileTaskStatus.CANCELLED
   }
 
-  goToFile(task: FileTask) {
-    if (task.status === 1) {
-      if (task.type === FILE_OPERATION.COMPRESS && task.props.compressInDirectory === false) {
-        this.filesService.downloadTaskArchive(task.id)
+  openTask(task: FileTask) {
+    if (!this.canOpenTask(task)) return
+    if (task.type === FILE_OPERATION.COMPRESS && task.props.compressInDirectory === false) {
+      this.filesService.downloadTaskArchive(task.id)
+      return
+    } else if (task.type === FILE_OPERATION.DELETE) {
+      if (task.path.startsWith(SPACES_PATH.FILES)) {
+        task.path = task.path.replace(SPACES_PATH.FILES, SPACES_PATH.TRASH)
+      } else if (task.path.startsWith(SPACES_PATH.SHARES)) {
+        // cannot access to the space referenced by the share
         return
-      } else if (task.type === FILE_OPERATION.DELETE) {
-        if (task.path.startsWith(SPACES_PATH.FILES)) {
-          task.path = task.path.replace(SPACES_PATH.FILES, SPACES_PATH.TRASH)
-        } else if (task.path.startsWith(SPACES_PATH.SHARES)) {
-          // cannot access to the space referenced by the share
-          return
-        }
       }
-      this.router.navigate([`${SPACES_PATH.SPACES}/${task.path}`], { queryParams: { select: task.name } }).catch(console.error)
     }
+    this.router.navigate([`${SPACES_PATH.SPACES}/${task.path}`], { queryParams: { select: task.name } }).catch(console.error)
   }
 }

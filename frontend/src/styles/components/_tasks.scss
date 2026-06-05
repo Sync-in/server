@@ -1,20 +1,109 @@
-.task-list {
-  @include no-select-pointer-utility;
-  border-bottom: .5px solid transparent;
-  font-size: $font-size-sm;
+$task-progress-height: 1.35rem;
 
-  &:hover {
-    background-color: transparent;
+.task-list {
+  @include no-select-utility;
+  border-bottom: .5px solid transparent;
+  border-left: 3px solid transparent;
+  font-size: $font-size-sm;
+  padding: .3rem .4rem;
+  transition: background-color .16s ease, border-left-color .16s ease;
+
+  &--pending {
+    border-left-color: $warning;
   }
 
-  > div {
-    padding: 0.3rem;
-    //max-height: 50px;
+  &--error {
+    border-left-color: $danger;
+  }
+
+  &--cancelled {
+    border-left-color: $secondary;
+  }
+
+  &--interactive {
+    cursor: pointer;
+  }
+
+  &__content {
+    min-width: 0;
+  }
+
+  &__header {
+    align-items: center;
+    display: flex;
+    gap: .25rem;
+    min-width: 0;
+  }
+
+  &__status,
+  &__operation {
+    flex: 0 0 .95rem;
+  }
+
+  &__operation {
+    opacity: .85;
+  }
+
+  &__name,
+  &__result,
+  &__progress-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__name {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &__result {
+    line-height: 1.2;
+    margin: .2rem 0 0;
+  }
+
+  &__progress-row {
+    align-items: center;
+    display: flex;
+    gap: .35rem;
+    margin-top: .4rem;
+    min-width: 0;
+  }
+
+  &__progress {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  &__progress-label {
+    inset: 0;
+    min-width: 0;
+    padding: 0 .5rem;
+    text-shadow: 0 1px 1px rgba($black, .32);
+  }
+
+  &__cancel {
+    align-items: center;
+    display: inline-flex;
+    flex: 0 0 auto;
+    height: $task-progress-height;
+    justify-content: center;
+    min-width: 1.9rem;
+    padding: 0;
   }
 }
 
 .custom-progress-bar {
-  background-color: black;
+  background-color: rgba($black, .82);
+  border-radius: .45rem;
+  display: block;
   font-size: $font-size-xs;
+  height: $task-progress-height;
+  overflow: hidden;
 
+  &--cancelled {
+    .progress-bar {
+      background-color: mix($gray-dark, $gray, 72%) !important;
+    }
+  }
 }

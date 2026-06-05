@@ -27,30 +27,45 @@
 <!-- Inner menu: contains the tasks -->
 <div appAutoResize>
   @for (task of tasks; track task.id) {
-    <div class="task-list">
-      <div (click)="goToFile(task)" [tooltip]="task.result | translate:locale.language" class="text-truncate" placement="bottom">
-        <div>
-          @if (canCancel(task)) {
-            <button (click)="cancelTask($event, task)" class="btn btn-sm btn-default float-end">
-              <fa-icon [icon]="icons.faStop"></fa-icon>
-            </button>
-          }
-          <fa-icon [class.text-danger]="isTaskError(task)" [class.text-muted]="isTaskCancelled(task)" [icon]="iconsStatus[task.status]"
-                   [animation]="task.status === 0 ? 'spin-pulse' : null"></fa-icon>
-          <b>
-            <fa-icon [icon]="iconsOperation[task.type]" class="me-1"></fa-icon>
-          </b>
-          <span>{{ task.name }}</span>
+    @let pending = isTaskPending(task);
+    @let error = isTaskError(task);
+    @let cancelled = isTaskCancelled(task);
+    @let openable = canOpenTask(task);
+    @let cancellable = canCancel(task);
+    <div class="task-list"
+         [class.task-list--cancelled]="cancelled"
+         [class.task-list--error]="error"
+         [class.task-list--interactive]="openable"
+         [class.task-list--pending]="pending"
+         [tooltip]="task.result ? (task.result | translate:locale.language) : ''"
+         (click)="openTask(task)"
+         placement="bottom">
+      <div class="task-list__content">
+        <div class="task-list__header">
+          <fa-icon class="task-list__status"
+                   [class.text-danger]="error"
+                   [class.text-muted]="cancelled"
+                   [icon]="iconsStatus[task.status]"
+                   [animation]="pending ? 'spin-pulse' : null"></fa-icon>
+          <span class="task-list__operation">
+            <fa-icon [icon]="iconsOperation[task.type]"></fa-icon>
+          </span>
+          <span class="task-list__name">{{ task.name }}</span>
         </div>
-        @if (task.status >= 2) {
-          <div [class.text-danger]="isTaskError(task)" [class.text-muted]="isTaskCancelled(task)" class="ms-2">{{ task.result | translate:locale.language }}</div>
+        @if (task.status >= 2 && !cancelled) {
+          <div [class.text-danger]="error" class="task-list__result">
+            {{ task.result | translate:locale.language }}
+          </div>
         }
-        <div class="mt-1 fs-sm">
+      </div>
+      <div class="task-list__progress-row">
+        <div class="task-list__progress">
           <progressbar [max]="100"
                        [value]="task.status > 0 ? 100 : task.props.progress || 100"
-                       [type]="task.status < 1 ? 'warning' : isTaskError(task) ? 'danger' : null"
+                       [type]="pending ? 'warning' : error ? 'danger' : null"
+                       [class.custom-progress-bar--cancelled]="cancelled"
                        class="custom-progress-bar position-relative">
-              <span class="d-flex align-items-center justify-content-center position-absolute mx-1 w-100">
+              <span class="task-list__progress-label d-flex align-items-center justify-content-center position-absolute w-100">
                 @if (task.props.size) {
                   <span>{{ task.props.size | toBytes:2 }}&nbsp;•&nbsp;</span>
                 }
@@ -67,6 +82,15 @@
               </span>
           </progressbar>
         </div>
+        @if (cancellable) {
+          <button type="button"
+                  (click)="cancelTask($event, task)"
+                  [tooltip]="'Stop' | translate:locale.language"
+                  class="btn btn-sm btn-default task-list__cancel"
+                  placement="top">
+            <fa-icon [icon]="icons.faStop"></fa-icon>
+          </button>
+        }
       </div>
     </div>
   }

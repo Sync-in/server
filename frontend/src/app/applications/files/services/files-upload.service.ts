@@ -1,11 +1,11 @@
 import { HttpClient, HttpEventType, HttpUploadProgressEvent } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { API_FILES_OPERATION_UPLOAD } from '@sync-in-server/backend/src/applications/files/constants/routes'
-import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
-import { lastValueFrom, Observable } from 'rxjs'
-import { filter, tap } from 'rxjs/operators'
+import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import { FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import { Observable, Subscription } from 'rxjs'
 import { supportUploadDirectory } from '../../../common/utils/functions'
-import { FileUpload } from '../interfaces/file-upload.interface'
+import type { FileUpload, FileUploadTaskRequest } from '../interfaces/file-upload.interface'
 import { FileModel } from '../models/file.model'
 import { FilesTasksService } from './files-tasks.service'
 import { FilesService } from './files.service'
@@ -19,33 +19,46 @@ export class FilesUploadService {
 
   async addFiles(files: FileUpload[], overwrite: boolean) {
     const apiRoute = `${API_FILES_OPERATION_UPLOAD}/${this.filesService.currentRoute}`
-    const taskReqs: [FileTask, Observable<any>][] = []
+    const taskReqs: FileUploadTaskRequest[] = []
 
     for (const [key, data] of Object.entries(this.sortFiles(files))) {
       const path = `${this.filesService.currentRoute}/${key}`.split('/').slice(0, -1).join('/')
       const name = `${this.filesService.currentRoute}/${key}`.split('/').slice(-1)[0]
       const task: FileTask = this.filesTasksService.createUploadTask(path, name, data.size)
-      taskReqs.unshift([
-        task,
-        this.uploadFiles(`${apiRoute}/${key}`, data.form, overwrite).pipe(
-          filter((ev: any) => ev.type === HttpEventType.UploadProgress),
-          tap((ev: HttpUploadProgressEvent) => this.updateProgress(task, ev))
-        )
-      ])
+      const controller = new AbortController()
+      const taskReq = {
+        controller,
+        done: false,
+        req: this.uploadFiles(`${apiRoute}/${key}`, data.form, overwrite),
+        started: false,
+        task
+      }
+      this.filesTasksService.registerUploadCancellation(task.id, () => this.cancelUploadTask(taskReq))
+      taskReqs.unshift(taskReq)
     }
-    for (const [task, req] of taskReqs) {
+    for (const taskReq of taskReqs) {
+      const { controller, req, task } = taskReq
+      if (taskReq.done) continue
+      taskReq.started = true
       try {
-        await lastValueFrom(req)
+        await this.runUpload(task, req, controller.signal)
         task.props.progress = 100
         task.status = FileTaskStatus.SUCCESS
       } catch (e: any) {
-        task.status = FileTaskStatus.ERROR
-        if (e.status === 0) {
-          task.result = e.statusText
+        if (this.isUploadCancelled(e)) {
+          task.status = FileTaskStatus.CANCELLED
+          task.result = 'Cancelled'
         } else {
-          task.result = e.error.message
+          task.status = FileTaskStatus.ERROR
+          if (e.status === 0) {
+            task.result = e.statusText
+          } else {
+            task.result = e.error?.message || e.message
+          }
         }
       } finally {
+        taskReq.done = true
+        this.filesTasksService.unregisterUploadCancellation(task.id)
         this.filesTasksService.updateTask(task)
       }
     }
@@ -78,6 +91,53 @@ export class FilesUploadService {
       reportProgress: true,
       observe: 'events'
     })
+  }
+
+  private runUpload(task: FileTask, req: Observable<any>, signal: AbortSignal): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (signal.aborted) {
+        reject(signal.reason)
+        return
+      }
+      let settled = false
+      const subscription = new Subscription()
+      const onAbort = () => {
+        subscription.unsubscribe()
+        settle(() => reject(signal.reason))
+      }
+      const settle = (done: () => void) => {
+        if (settled) return
+        settled = true
+        signal.removeEventListener('abort', onAbort)
+        done()
+      }
+      signal.addEventListener('abort', onAbort, { once: true })
+      subscription.add(
+        req.subscribe({
+          next: (ev: any) => {
+            if (ev.type === HttpEventType.UploadProgress) {
+              this.updateProgress(task, ev)
+            }
+          },
+          error: (e) => settle(() => reject(e)),
+          complete: () => settle(resolve)
+        })
+      )
+    })
+  }
+
+  private cancelUploadTask(taskReq: FileUploadTaskRequest) {
+    taskReq.controller.abort(new Error('Cancelled'))
+    if (taskReq.started || taskReq.done) return
+    taskReq.done = true
+    taskReq.task.status = FileTaskStatus.CANCELLED
+    taskReq.task.result = 'Cancelled'
+    this.filesTasksService.unregisterUploadCancellation(taskReq.task.id)
+    this.filesTasksService.updateTask(taskReq.task)
+  }
+
+  private isUploadCancelled(e: any): boolean {
+    return e?.message === 'Cancelled'
   }
 
   private updateProgress(task: FileTask, ev: HttpUploadProgressEvent) {

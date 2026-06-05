@@ -478,7 +478,7 @@
   .task-list {
     border-bottom-color: $gray-mid;
 
-    &:hover {
+    &.task-list--interactive:hover {
       background-color: $table-bg-hover;
     }
   }

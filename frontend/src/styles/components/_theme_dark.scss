@@ -453,7 +453,7 @@
   .task-list {
     border-bottom-color: $sidebar-dark-icons-menu-border-color;
 
-    &:hover {
+    &.task-list--interactive:hover {
       background-color: $sidebar-dark-apps-menu-title-bg;
     }
   }
