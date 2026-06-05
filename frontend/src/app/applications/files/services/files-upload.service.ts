@@ -16,6 +16,9 @@ export class FilesUploadService {
   private readonly http = inject(HttpClient)
   private readonly filesService = inject(FilesService)
   private readonly filesTasksService = inject(FilesTasksService)
+  private readonly maxConcurrentUploads = 3
+  private queuedUploads: FileUploadTaskRequest[] = []
+  private runningUploads = 0
 
   async addFiles(files: FileUpload[], overwrite: boolean) {
     const apiRoute = `${API_FILES_OPERATION_UPLOAD}/${this.filesService.currentRoute}`
@@ -25,43 +28,13 @@ export class FilesUploadService {
       const path = `${this.filesService.currentRoute}/${key}`.split('/').slice(0, -1).join('/')
       const name = `${this.filesService.currentRoute}/${key}`.split('/').slice(-1)[0]
       const task: FileTask = this.filesTasksService.createUploadTask(path, name, data.size)
-      const controller = new AbortController()
-      const taskReq = {
-        controller,
-        done: false,
-        req: this.uploadFiles(`${apiRoute}/${key}`, data.form, overwrite),
-        started: false,
-        task
-      }
+      const taskReq = this.createUploadTaskRequest(task, this.uploadFiles(`${apiRoute}/${key}`, data.form, overwrite))
       this.filesTasksService.registerUploadCancellation(task.id, () => this.cancelUploadTask(taskReq))
       taskReqs.unshift(taskReq)
     }
-    for (const taskReq of taskReqs) {
-      const { controller, req, task } = taskReq
-      if (taskReq.done) continue
-      taskReq.started = true
-      try {
-        await this.runUpload(task, req, controller.signal)
-        task.props.progress = 100
-        task.status = FileTaskStatus.SUCCESS
-      } catch (e: any) {
-        if (this.isUploadCancelled(e)) {
-          task.status = FileTaskStatus.CANCELLED
-          task.result = 'Cancelled'
-        } else {
-          task.status = FileTaskStatus.ERROR
-          if (e.status === 0) {
-            task.result = e.statusText
-          } else {
-            task.result = e.error?.message || e.message
-          }
-        }
-      } finally {
-        taskReq.done = true
-        this.filesTasksService.unregisterUploadCancellation(task.id)
-        this.filesTasksService.updateTask(task)
-      }
-    }
+    this.queuedUploads.push(...taskReqs)
+    this.drainUploadQueue()
+    await Promise.all(taskReqs.map((taskReq: FileUploadTaskRequest) => taskReq.completed))
   }
 
   onDropFiles(ev: any, exist: FileModel[]) {
@@ -76,7 +49,7 @@ export class FilesUploadService {
     }
   }
 
-  uploadOneFile(file: FileModel, content: string, updateContent = false, overwrite = false) {
+  uploadFileContent(file: FileModel, content: string, updateContent = false, overwrite = false) {
     const url = `${API_FILES_OPERATION_UPLOAD}/${file.path}`
     const fileName = (file?.root?.alias || file.name).normalize()
     const fileContent = new File([new Blob([content])], fileName, { type: file.mime.replace('-', '/') })
@@ -91,6 +64,61 @@ export class FilesUploadService {
       reportProgress: true,
       observe: 'events'
     })
+  }
+
+  private createUploadTaskRequest(task: FileTask, req: Observable<any>): FileUploadTaskRequest {
+    let resolveCompleted: () => void = () => undefined
+    const completed = new Promise<void>((resolve) => {
+      resolveCompleted = () => resolve()
+    })
+    return {
+      completed,
+      controller: new AbortController(),
+      done: false,
+      req,
+      resolveCompleted,
+      started: false,
+      task
+    }
+  }
+
+  private drainUploadQueue() {
+    while (this.runningUploads < this.maxConcurrentUploads && this.queuedUploads.length) {
+      const taskReq = this.queuedUploads.shift()
+      if (!taskReq || taskReq.done) continue
+      this.runningUploads++
+      void this.runUploadTask(taskReq).finally(() => {
+        this.runningUploads--
+        this.drainUploadQueue()
+      })
+    }
+  }
+
+  private async runUploadTask(taskReq: FileUploadTaskRequest): Promise<void> {
+    const { controller, req, task } = taskReq
+    if (taskReq.done) return
+    taskReq.started = true
+    try {
+      await this.runUpload(task, req, controller.signal)
+      task.props.progress = 100
+      task.status = FileTaskStatus.SUCCESS
+    } catch (e: any) {
+      if (this.isUploadCancelled(e)) {
+        this.setUploadCancelled(task)
+      } else {
+        this.setUploadError(task, e)
+      }
+    } finally {
+      this.finishUploadTask(taskReq)
+    }
+  }
+
+  private finishUploadTask(taskReq: FileUploadTaskRequest) {
+    if (taskReq.done) return
+    taskReq.done = true
+    this.filesTasksService.unregisterUploadCancellation(taskReq.task.id)
+    this.filesTasksService.updateTask(taskReq.task)
+    taskReq.resolveCompleted()
   }
 
   private runUpload(task: FileTask, req: Observable<any>, signal: AbortSignal): Promise<void> {
@@ -127,17 +155,26 @@ export class FilesUploadService {
   }
 
   private cancelUploadTask(taskReq: FileUploadTaskRequest) {
+    if (taskReq.done) return
     taskReq.controller.abort(new Error('Cancelled'))
-    if (taskReq.started || taskReq.done) return
-    taskReq.done = true
-    taskReq.task.status = FileTaskStatus.CANCELLED
-    taskReq.task.result = 'Cancelled'
-    this.filesTasksService.unregisterUploadCancellation(taskReq.task.id)
-    this.filesTasksService.updateTask(taskReq.task)
+    if (taskReq.started) return
+    this.queuedUploads = this.queuedUploads.filter((queuedTaskReq: FileUploadTaskRequest) => queuedTaskReq !== taskReq)
+    this.setUploadCancelled(taskReq.task)
+    this.finishUploadTask(taskReq)
   }
 
   private isUploadCancelled(e: any): boolean {
     return e?.message === 'Cancelled'
+  }
+
+  private setUploadCancelled(task: FileTask) {
+    task.status = FileTaskStatus.CANCELLED
+    task.result = 'Cancelled'
+  }
+
+  private setUploadError(task: FileTask, e: any) {
+    task.status = FileTaskStatus.ERROR
+    task.result = e.status === 0 ? e.statusText : e.error?.message || e.message
   }
 
   private updateProgress(task: FileTask, ev: HttpUploadProgressEvent) {

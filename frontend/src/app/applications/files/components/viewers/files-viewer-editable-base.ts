@@ -86,7 +86,7 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
     if (!this.canSave()) return
     this.isSaving.set(true)
     const content = this.currentFileContent()
-    this.filesUpload.uploadOneFile(this.file(), content, true).subscribe({
+    this.filesUpload.uploadFileContent(this.file(), content, true).subscribe({
       next: () => {
         this.onContentSaved(content)
         this.isModified.set(false)

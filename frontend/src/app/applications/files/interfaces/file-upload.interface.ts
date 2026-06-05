@@ -6,9 +6,11 @@ export interface FileUpload extends File {
 }
 
 export interface FileUploadTaskRequest {
+  completed: Promise<void>
   controller: AbortController
   done: boolean
   req: Observable<any>
+  resolveCompleted: () => void
   started: boolean
   task: FileTask
 }
