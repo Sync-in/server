@@ -65,6 +65,16 @@ describe(writeFromStream.name, () => {
 
     await expect(readFile(filePath, 'utf8')).resolves.toBe('abcde')
   })
+
+  it('aborts a stream when its signal is already aborted', async () => {
+    const filePath = path.join(tmpDir, 'file.txt')
+    const controller = new AbortController()
+    controller.abort()
+
+    await expect(writeFromStream(filePath, Readable.from([Buffer.from('abc')]), 0, undefined, controller.signal)).rejects.toMatchObject({
+      name: 'AbortError'
+    })
+  })
 })
 
 describe(makeTempDir.name, () => {

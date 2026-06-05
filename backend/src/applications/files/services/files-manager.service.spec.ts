@@ -1155,7 +1155,7 @@ describe(FilesManager.name, () => {
       await service.decompress(user, space)
 
       expect(filesUtils.makeTempDir).toHaveBeenCalledWith('/data/users/john/tmp', 'archive-extract-')
-      expect(unzipSpy).toHaveBeenCalledWith('/data/users/john/files/archive.zip', '/data/users/john/tmp/archive-extract-123', undefined)
+      expect(unzipSpy).toHaveBeenCalledWith('/data/users/john/files/archive.zip', '/data/users/john/tmp/archive-extract-123', undefined, undefined)
       expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123', '/data/users/john/files/archive')
       expect(taskEmitSpy).toHaveBeenCalledWith(
         'startWatch',
@@ -1176,7 +1176,13 @@ describe(FilesManager.name, () => {
 
       await service.decompress(user, space)
 
-      expect(untarSpy).toHaveBeenCalledWith('/data/users/john/files/archive.tar.gz', '/data/users/john/tmp/archive-extract-123', true, undefined)
+      expect(untarSpy).toHaveBeenCalledWith(
+        '/data/users/john/files/archive.tar.gz',
+        '/data/users/john/tmp/archive-extract-123',
+        true,
+        undefined,
+        undefined
+      )
       expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123', '/data/users/john/files/archive')
     })
 
@@ -1189,7 +1195,7 @@ describe(FilesManager.name, () => {
 
       await service.decompress(user, space)
 
-      expect(unzipSpy).toHaveBeenCalledWith('/data/users/john/files/archive.zip', '/data/users/john/tmp/archive-extract-123', 60)
+      expect(unzipSpy).toHaveBeenCalledWith('/data/users/john/files/archive.zip', '/data/users/john/tmp/archive-extract-123', 60, undefined)
     })
 
     it('should remove partial extraction and skip add event on failure', async () => {

@@ -3,7 +3,8 @@ import { FILE_OPERATION } from '../constants/operations'
 export enum FileTaskStatus {
   PENDING,
   SUCCESS,
-  ERROR
+  ERROR,
+  CANCELLED
 }
 
 export interface FileTaskProps {

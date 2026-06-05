@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, Param, Req, Res, StreamableFile } from '@nestjs/common'
+import { Controller, Delete, Get, Param, Post, Req, Res, StreamableFile } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { FastifySpaceRequest } from '../spaces/interfaces/space-request.interface'
 import { GetUser } from '../users/decorators/user.decorator'
@@ -18,6 +18,11 @@ export class FilesTasksController {
   @Delete(':id?')
   deleteTasks(@GetUser() user: UserModel, @Param('id') taskId?: string) {
     return this.filesTasksManager.deleteTasks(user, taskId)
+  }
+
+  @Post(`${FILES_ROUTE.TASKS_CANCEL}/:id`)
+  cancelTask(@GetUser() user: UserModel, @Param('id') taskId: string) {
+    return this.filesTasksManager.cancelTask(user.id, taskId)
   }
 
   @Get(`${FILES_ROUTE.TASKS_DOWNLOAD}/:id`)

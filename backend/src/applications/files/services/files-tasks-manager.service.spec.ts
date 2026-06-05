@@ -6,7 +6,7 @@ import * as filesUtils from '../utils/files'
 import { FileTaskEvent } from '../events/file-events'
 import { SendFile } from '../utils/send-file'
 import { FILE_OPERATION } from '../constants/operations'
-import { CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../constants/cache'
+import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../constants/cache'
 import { FileTaskStatus } from '../models/file-task'
 import { FilesMethods } from './files-methods.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
@@ -96,6 +96,56 @@ describe(FilesTasksManager.name, () => {
   it('should build task cache key with and without task id', () => {
     expect(FilesTasksManager.getCacheKey(10, 'task-1')).toBe(`${CACHE_TASK_PREFIX}-10-task-1`)
     expect(FilesTasksManager.getCacheKey(10)).toBe(`${CACHE_TASK_PREFIX}-10-*`)
+    expect(FilesTasksManager.getCancellationCacheKey(10, 'task-1')).toBe(`${CACHE_TASK_CANCEL_PREFIX}-10-task-1`)
+  })
+
+  it('should request cancellation through cache for a pending supported task', async () => {
+    cacheStore.set(`${CACHE_TASK_PREFIX}-15-task-1`, {
+      id: 'task-1',
+      type: FILE_OPERATION.DOWNLOAD,
+      status: FileTaskStatus.PENDING
+    })
+
+    await filesTasksManager.cancelTask(15, 'task-1')
+
+    expect(cache.set).toHaveBeenCalledWith(`${CACHE_TASK_CANCEL_PREFIX}-15-task-1`, true, CACHE_TASK_TTL)
+  })
+
+  it('should abort a cancellable task and store a cancelled status when cancellation is requested', async () => {
+    vi.useFakeTimers()
+    try {
+      const taskId = '33333333-3333-4333-8333-333333333333'
+      const user = { id: 7 } as any
+      const space = { url: 'files/personal/document.txt' } as any
+      const cacheKey = `${CACHE_TASK_PREFIX}-7-${taskId}`
+      const cancellationCacheKey = `${CACHE_TASK_CANCEL_PREFIX}-7-${taskId}`
+      let taskSignal!: AbortSignal
+
+      vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce(taskId)
+      filesMethods.doWork.mockImplementationOnce((_user, _space, _dto, signal?: AbortSignal) => {
+        if (!signal) return Promise.reject(new Error('missing abort signal'))
+        taskSignal = signal
+        return new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () => reject(signal.reason), { once: true })
+        })
+      })
+
+      await filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, space, null, 'doWork')
+      cacheStore.set(cancellationCacheKey, true)
+
+      await vi.advanceTimersByTimeAsync(1000)
+      for (let i = 0; i < 6; i++) await Promise.resolve()
+
+      const storedTask = cacheStore.get(cacheKey)
+      expect(filesMethods.doWork).toHaveBeenCalledWith(user, space, null, expect.any(AbortSignal))
+      expect(taskSignal.aborted).toBe(true)
+      expect(storedTask.status).toBe(FileTaskStatus.CANCELLED)
+      expect(storedTask.result).toBe('Cancelled')
+      expect(cacheStore.has(cancellationCacheKey)).toBe(false)
+      expect((filesTasksManager as any).tasksCancellationWatcher).toEqual({})
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('should watch a temporary path while keeping the published file name', () => {

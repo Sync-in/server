@@ -21,7 +21,7 @@ export function checkTarEntry(outputDir: string, entry: Pick<ReadEntry, 'type' |
   return true
 }
 
-export async function extractTar(filePath: string, outputDir: string, gzip: boolean, maxExtractedSize?: number): Promise<void> {
+export async function extractTar(filePath: string, outputDir: string, gzip: boolean, maxExtractedSize?: number, signal?: AbortSignal): Promise<void> {
   let validationError: Error | undefined
   let extractedSize = 0
   const srcStream = createReadStream(filePath)
@@ -55,7 +55,7 @@ export async function extractTar(filePath: string, outputDir: string, gzip: bool
     }
   })
   try {
-    await pipeline(srcStream, extractStream)
+    await pipeline(srcStream, extractStream, { signal })
   } catch (e) {
     throw validationError || e
   }

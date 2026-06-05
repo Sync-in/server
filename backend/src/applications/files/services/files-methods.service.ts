@@ -71,16 +71,16 @@ export class FilesMethods {
     }
   }
 
-  async downloadFromUrl(user: UserModel, space: SpaceEnv, downloadDto: DownloadFileDto): Promise<void> {
+  async downloadFromUrl(user: UserModel, space: SpaceEnv, downloadDto: DownloadFileDto, signal?: AbortSignal): Promise<void> {
     checkFileName(space.realPath)
     try {
-      return await this.filesManager.downloadFromUrl(user, space, downloadDto)
+      return await this.filesManager.downloadFromUrl(user, space, downloadDto, signal)
     } catch (e) {
       this.handleError(space, FILE_OPERATION.DOWNLOAD, e)
     }
   }
 
-  async compress(user: UserModel, space: SpaceEnv, compressFileDto: CompressFileDto): Promise<void> {
+  async compress(user: UserModel, space: SpaceEnv, compressFileDto: CompressFileDto, signal?: AbortSignal): Promise<void> {
     compressFileDto.name = checkFileName(space.realPath)
     try {
       for (const f of compressFileDto.files) {
@@ -107,15 +107,15 @@ export class FilesMethods {
           return this.handleError(space, FILE_OPERATION.COMPRESS, new FileError(HttpStatus.NOT_FOUND, `${f.name} does not exist`))
         }
       }
-      return await this.filesManager.compress(user, space, compressFileDto)
+      return await this.filesManager.compress(user, space, compressFileDto, signal)
     } catch (e) {
       this.handleError(space, FILE_OPERATION.COMPRESS, e)
     }
   }
 
-  async decompress(user: UserModel, space: SpaceEnv): Promise<void> {
+  async decompress(user: UserModel, space: SpaceEnv, _dto?: null, signal?: AbortSignal): Promise<void> {
     try {
-      return await this.filesManager.decompress(user, space)
+      return await this.filesManager.decompress(user, space, signal)
     } catch (e) {
       this.handleError(space, FILE_OPERATION.DECOMPRESS, e)
     }

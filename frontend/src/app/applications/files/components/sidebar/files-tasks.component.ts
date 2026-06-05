@@ -5,6 +5,7 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faClock, faFile, faFileArchive, faFolderClosed, faTrashCan } from '@fortawesome/free-regular-svg-icons'
 import {
   faArrowsAlt,
+  faBan,
   faCheck,
   faClone,
   faExclamation,
@@ -12,10 +13,11 @@ import {
   faFlag,
   faGlobe,
   faSpinner,
+  faStop,
   faTrashAlt
 } from '@fortawesome/free-solid-svg-icons'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
-import { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -35,8 +37,8 @@ import { FilesService } from '../../services/files.service'
 })
 export class FilesTasksComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly icons = { faTrashAlt, faFlag, faClock, faFile, faFolderClosed }
-  protected readonly iconsStatus: IconDefinition[] = [faSpinner, faCheck, faExclamation]
+  protected readonly icons = { faTrashAlt, faFlag, faClock, faFile, faFolderClosed, faStop }
+  protected readonly iconsStatus: IconDefinition[] = [faSpinner, faCheck, faExclamation, faBan]
   protected readonly iconsOperation = {
     [FILE_OPERATION.DELETE]: faTrashCan,
     [FILE_OPERATION.MOVE]: faArrowsAlt,
@@ -80,6 +82,23 @@ export class FilesTasksComponent implements OnDestroy {
 
   removeTasks() {
     this.filesTasksService.removeAll()
+  }
+
+  cancelTask(event: MouseEvent, task: FileTask) {
+    event.stopPropagation()
+    this.filesTasksService.cancel(task)
+  }
+
+  canCancel(task: FileTask): boolean {
+    return this.filesTasksService.canCancel(task)
+  }
+
+  isTaskError(task: FileTask): boolean {
+    return task.status === FileTaskStatus.ERROR
+  }
+
+  isTaskCancelled(task: FileTask): boolean {
+    return task.status === FileTaskStatus.CANCELLED
   }
 
   goToFile(task: FileTask) {

@@ -9,7 +9,7 @@ import { isPathInside, makeDir } from './files'
 
 const openZipAsync: (path: string, options: Options) => Promise<ZipFile> = promisify(openZip)
 
-export async function extractZip(filePath: string, outputDir: string, maxExtractedSize?: number): Promise<void> {
+export async function extractZip(filePath: string, outputDir: string, maxExtractedSize?: number, signal?: AbortSignal): Promise<void> {
   // Reject entries whose actual decompressed size differs from their metadata.
   const zipFile = await openZipAsync(filePath, { lazyEntries: true, validateEntrySizes: true })
   const openReadStream = promisify(zipFile.openReadStream.bind(zipFile))
@@ -17,8 +17,21 @@ export async function extractZip(filePath: string, outputDir: string, maxExtract
   let extractedSize = 0
 
   return new Promise((resolve, reject) => {
+    let settled = false
+    const cleanup = () => signal?.removeEventListener('abort', onAbort)
+    const rejectOnce = (err: unknown) => {
+      if (settled) return
+      settled = true
+      cleanup()
+      zipFile.close()
+      reject(err)
+    }
+    const onAbort = () => rejectOnce(signal?.reason)
+    signal?.addEventListener('abort', onAbort, { once: true })
+
     zipFile.on('entry', async (entry: Entry) => {
       try {
+        signal?.throwIfAborted()
         // Check the cumulative size before opening the entry stream to avoid writing beyond the known quota.
         extractedSize += entry.uncompressedSize
         if (maxExtractedSize !== undefined && extractedSize > maxExtractedSize) {
@@ -36,17 +49,26 @@ export async function extractZip(filePath: string, outputDir: string, maxExtract
           // make sure parent exists
           await makeDir(path.dirname(fullPath), true)
           const readStream = await openReadStream(entry)
-          await pipeline(readStream, fs.createWriteStream(fullPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK }))
+          await pipeline(readStream, fs.createWriteStream(fullPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK }), { signal })
           zipFile.readEntry()
         }
       } catch (err) {
-        zipFile.close()
-        reject(err)
+        rejectOnce(err)
       }
     })
 
-    zipFile.on('end', resolve)
-    zipFile.on('error', reject)
-    zipFile.readEntry()
+    zipFile.on('end', () => {
+      if (settled) return
+      settled = true
+      cleanup()
+      resolve()
+    })
+    zipFile.on('error', rejectOnce)
+    try {
+      signal?.throwIfAborted()
+      zipFile.readEntry()
+    } catch (err) {
+      rejectOnce(err)
+    }
   })
 }

@@ -7,7 +7,7 @@ import { currentTimeStamp } from '../../../common/shared'
 import { Cache } from '../../../infrastructure/cache/cache.service'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { UserModel } from '../../users/models/user.model'
-import { CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../constants/cache'
+import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../constants/cache'
 import { FILE_OPERATION } from '../constants/operations'
 import { FileTask, FileTaskProps, FileTaskStatus } from '../models/file-task'
 import { countDirEntries, dirName, fileName, fileSize, isPathExists, isPathIsDir, removeFiles } from '../utils/files'
@@ -21,6 +21,7 @@ export class FilesTasksManager implements OnModuleDestroy {
   private readonly logger = new Logger(FilesTasksManager.name)
   private readonly watchInterval = 1000
   private tasksWatcher: Record<string, NodeJS.Timeout> = {}
+  private tasksCancellationWatcher: Record<string, NodeJS.Timeout> = {}
 
   constructor(
     private readonly cache: Cache,
@@ -33,10 +34,17 @@ export class FilesTasksManager implements OnModuleDestroy {
     return `${CACHE_TASK_PREFIX}-${userId}-${taskId || '*'}`
   }
 
+  static getCancellationCacheKey(userId: number, taskId: string): string {
+    return `${CACHE_TASK_CANCEL_PREFIX}-${userId}-${taskId}`
+  }
+
   onModuleDestroy(): void {
     FileTaskEvent.off('startWatch', this.onStartWatch)
     for (const cacheKey of Object.keys(this.tasksWatcher)) {
       this.stopWatch(cacheKey)
+    }
+    for (const cacheKey of Object.keys(this.tasksCancellationWatcher)) {
+      this.stopCancellationWatch(cacheKey)
     }
   }
 
@@ -46,14 +54,20 @@ export class FilesTasksManager implements OnModuleDestroy {
     const newTask = new FileTask(taskId, type, dirName(space.url), fileName(space.url))
     await this.storeTask(cacheKey, newTask)
     space.task = { cacheKey: cacheKey, props: {} }
-    this.filesMethods[method](user, space, dto)
+    const controller = this.watchCancellation(type, user.id, taskId, cacheKey)
+    const taskPromise = controller ? this.filesMethods[method](user, space, dto, controller.signal) : this.filesMethods[method](user, space, dto)
+    taskPromise
       .then((data: any) => {
         this.logger.debug({ tag: this.createTask.name, msg: `${newTask.name} : ${method} done` })
         this.setTaskDone(cacheKey, FileTaskStatus.SUCCESS, data).catch((e: Error) => this.logger.error({ tag: this.createTask.name, msg: `${e}` }))
       })
       .catch((e: HttpException | any) => {
         this.logger.error({ tag: this.createTask.name, msg: `${newTask.name} : ${method} : ${e}` })
-        this.setTaskDone(cacheKey, FileTaskStatus.ERROR, e.message).catch((e: Error) => this.logger.error({ tag: this.createTask.name, msg: `${e}` }))
+        this.setTaskDone(
+          cacheKey,
+          controller?.signal.aborted ? FileTaskStatus.CANCELLED : FileTaskStatus.ERROR,
+          controller?.signal.aborted ? 'Cancelled' : e.message
+        ).catch((e: Error) => this.logger.error({ tag: this.createTask.name, msg: `${e}` }))
       })
     return newTask
   }
@@ -91,6 +105,21 @@ export class FilesTasksManager implements OnModuleDestroy {
       this.stopWatch(key)
       // remove from cache
       this.cache.del(key).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
+    }
+  }
+
+  async cancelTask(userId: number, taskId: string): Promise<void> {
+    const cacheKey = FilesTasksManager.getCacheKey(userId, taskId)
+    const task: FileTask = await this.cache.get(cacheKey)
+    if (!task) {
+      throw new HttpException('Task not found', HttpStatus.NOT_FOUND)
+    }
+    if (task.status !== FileTaskStatus.PENDING || !this.canCancel(task.type)) {
+      throw new HttpException('Not applicable', HttpStatus.BAD_REQUEST)
+    }
+    const isStored = await this.cache.set(FilesTasksManager.getCancellationCacheKey(userId, taskId), true, CACHE_TASK_TTL)
+    if (!isStored) {
+      throw new HttpException('Unable to cancel task', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
@@ -135,6 +164,10 @@ export class FilesTasksManager implements OnModuleDestroy {
       await this.cache.set(cacheKey, task, CACHE_TASK_TTL)
     }
     this.stopWatch(cacheKey)
+    this.stopCancellationWatch(cacheKey)
+    await this.cache
+      .del(cacheKey.replace(`${CACHE_TASK_PREFIX}-`, `${CACHE_TASK_CANCEL_PREFIX}-`))
+      .catch((e: Error) => this.logger.error({ tag: this.setTaskDone.name, msg: `${e}` }))
   }
 
   private async updateTask(cacheKey: string, props?: FileTaskProps, task?: Partial<FileTask>): Promise<void> {
@@ -196,6 +229,37 @@ export class FilesTasksManager implements OnModuleDestroy {
     const watcher = setInterval(() => void update(), this.watchInterval)
     watcher.unref()
     this.tasksWatcher[cacheKey] = watcher
+  }
+
+  private watchCancellation(type: FILE_OPERATION, userId: number, taskId: string, cacheKey: string): AbortController | undefined {
+    if (!this.canCancel(type)) return
+    const controller = new AbortController()
+    const cancellationCacheKey = FilesTasksManager.getCancellationCacheKey(userId, taskId)
+    const watcher = setInterval(() => void this.abortTaskIfRequested(cacheKey, cancellationCacheKey, controller), this.watchInterval)
+    watcher.unref()
+    this.tasksCancellationWatcher[cacheKey] = watcher
+    return controller
+  }
+
+  private async abortTaskIfRequested(cacheKey: string, cancellationCacheKey: string, controller: AbortController): Promise<void> {
+    try {
+      if (!(await this.cache.get(cancellationCacheKey))) return
+      controller.abort(new Error('Cancelled'))
+      this.stopCancellationWatch(cacheKey)
+      await this.cache.del(cancellationCacheKey)
+    } catch (e) {
+      this.logger.error({ tag: this.abortTaskIfRequested.name, msg: `${e}` })
+    }
+  }
+
+  private stopCancellationWatch(cacheKey: string): void {
+    if (!(cacheKey in this.tasksCancellationWatcher)) return
+    clearInterval(this.tasksCancellationWatcher[cacheKey])
+    delete this.tasksCancellationWatcher[cacheKey]
+  }
+
+  private canCancel(type: FILE_OPERATION): boolean {
+    return type === FILE_OPERATION.DOWNLOAD || type === FILE_OPERATION.COMPRESS || type === FILE_OPERATION.DECOMPRESS
   }
 
   private async updateCompressTask(space: SpaceEnv, rPath: string, publishedPath?: string): Promise<void> {

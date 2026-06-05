@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
-import { API_FILES_TASKS } from '@sync-in-server/backend/src/applications/files/constants/routes'
+import { API_FILES_TASKS, API_FILES_TASKS_CANCEL } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
@@ -53,6 +53,7 @@ export class FilesTasksService {
     }
   }
   private currentUserId: number
+  private cancellingTasks = new Set<string>()
   private watcher: Subscription = null
   private watch = timer(1000, 1000).pipe(tap(() => this.doWatch()))
 
@@ -99,11 +100,31 @@ export class FilesTasksService {
     })
   }
 
+  cancel(task: FileTask) {
+    if (!this.canCancel(task)) return
+    this.cancellingTasks.add(task.id)
+    this.http.post<void>(`${API_FILES_TASKS_CANCEL}/${task.id}`, null).subscribe({
+      error: (e) => {
+        this.cancellingTasks.delete(task.id)
+        console.error(e)
+      }
+    })
+  }
+
+  canCancel(task: FileTask): boolean {
+    return (
+      task.status === FileTaskStatus.PENDING &&
+      !this.cancellingTasks.has(task.id) &&
+      (task.type === FILE_OPERATION.DOWNLOAD || task.type === FILE_OPERATION.COMPRESS || task.type === FILE_OPERATION.DECOMPRESS)
+    )
+  }
+
   updateTask(task: FileTask) {
     if (task.status === FileTaskStatus.PENDING) {
       const currentTask = this.findTask(task.id, true)
       Object.assign(currentTask, task)
     } else {
+      this.cancellingTasks.delete(task.id)
       this.deleteTask(task.id, true)
       this.addTask(task)
       this.taskDone(task)
@@ -171,6 +192,7 @@ export class FilesTasksService {
   }
 
   private taskDone(task: FileTask) {
+    if (task.status === FileTaskStatus.CANCELLED) return
     if (task.type in this.onDone) {
       if (this.onDone[task.type].fileEvent) {
         const fileEvent: Partial<FileEvent> = { ...this.onDone[task.type].fileEvent, status: task.status }

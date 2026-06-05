@@ -199,10 +199,10 @@ export async function checksumFile(filePath: string, alg: string): Promise<strin
   return hash.digest('hex')
 }
 
-export function writeFromStream(rPath: string, stream: Readable, start: number = 0, maxSize?: number): Promise<void> {
+export function writeFromStream(rPath: string, stream: Readable, start: number = 0, maxSize?: number, signal?: AbortSignal): Promise<void> {
   const dst: WriteStream = createWriteStream(rPath, { flags: start ? 'a' : 'w', start: start, highWaterMark: DEFAULT_HIGH_WATER_MARK })
   if (maxSize === undefined) {
-    return pipeline(stream, dst)
+    return pipeline(stream, dst, { signal })
   }
   let received = start
   const limitSize = new Transform({
@@ -215,7 +215,7 @@ export function writeFromStream(rPath: string, stream: Readable, start: number =
       callback(null, chunk)
     }
   })
-  return pipeline(stream, limitSize, dst)
+  return pipeline(stream, limitSize, dst, { signal })
 }
 
 export async function writeFromStreamAndChecksum(rPath: string, stream: Readable, hasRange: number, alg: string): Promise<string> {

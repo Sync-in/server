@@ -567,7 +567,7 @@ export class FilesManager {
     await this.filesQueries.deleteFiles(space.dbFile, isDir, forceDeleteInDB)
   }
 
-  async downloadFromUrl(user: UserModel, space: SpaceEnv, downloadDto: DownloadFileDto): Promise<void> {
+  async downloadFromUrl(user: UserModel, space: SpaceEnv, downloadDto: DownloadFileDto, signal?: AbortSignal): Promise<void> {
     this.checkNotTrashRepository(space)
     this.logger.log({ tag: this.downloadFromUrl.name, msg: `${downloadDto.url}` })
     const dstPath = await uniqueFilePathFromDir(space.realPath)
@@ -582,7 +582,8 @@ export class FilesManager {
     }
 
     try {
-      await new DownloadFile(this.http).download(downloadDto, tmpPath, { space: space, publishedPath: dstPath })
+      await new DownloadFile(this.http).download(downloadDto, tmpPath, { space, publishedPath: dstPath, signal })
+      signal?.throwIfAborted()
       await moveFiles(tmpPath, dstPath)
     } catch (e) {
       await removeFiles(tmpPath).catch((err: Error) =>
@@ -596,7 +597,7 @@ export class FilesManager {
     FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
   }
 
-  async compress(user: UserModel, space: SpaceEnv, dto: CompressFileDto): Promise<void> {
+  async compress(user: UserModel, space: SpaceEnv, dto: CompressFileDto, signal?: AbortSignal): Promise<void> {
     // This method is currently used only by files-methods.service, which handles input sanitization.
     // If it is used in other services in the future, make sure to refactor accordingly to sanitize inputs properly.
     if (dto.compressInDirectory) {
@@ -634,9 +635,10 @@ export class FilesManager {
     let entriesPromise: Promise<void> | undefined
     try {
       const dstStream = fs.createWriteStream(tmpPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
-      pipePromise = pipeline(archive, dstStream) // handle archive errors + write stream
+      pipePromise = pipeline(archive, dstStream, { signal }) // handle archive errors + write stream
       entriesPromise = (async () => {
         for (const f of dto.files) {
+          signal?.throwIfAborted()
           const isDir = await isPathIsDir(f.path)
           if (aborted) return
           if (isDir) {
@@ -651,6 +653,7 @@ export class FilesManager {
         }
       })()
       await Promise.all([entriesPromise, pipePromise])
+      signal?.throwIfAborted()
       await moveFiles(tmpPath, dstPath)
     } catch (e) {
       aborted = true
@@ -668,7 +671,7 @@ export class FilesManager {
     FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
   }
 
-  async decompress(user: UserModel, space: SpaceEnv): Promise<void> {
+  async decompress(user: UserModel, space: SpaceEnv, signal?: AbortSignal): Promise<void> {
     // checks
     this.checkNotTrashRepository(space)
     if (!(await isPathExists(space.realPath))) {
@@ -696,10 +699,11 @@ export class FilesManager {
       // do
       const maxExtractedSize = space.storageQuota === null ? undefined : Math.max(0, space.storageQuota - space.storageUsage)
       if (extension === '.zip') {
-        await extractZip(space.realPath, tmpPath, maxExtractedSize)
+        await extractZip(space.realPath, tmpPath, maxExtractedSize, signal)
       } else {
-        await extractTar(space.realPath, tmpPath, COMPRESSION_EXTENSION.get(extension) === TAR_GZ_EXTENSION, maxExtractedSize)
+        await extractTar(space.realPath, tmpPath, COMPRESSION_EXTENSION.get(extension) === TAR_GZ_EXTENSION, maxExtractedSize, signal)
       }
+      signal?.throwIfAborted()
       if (await isPathExists(dstPath)) {
         throw new FileError(HttpStatus.CONFLICT, 'The destination already exists')
       }

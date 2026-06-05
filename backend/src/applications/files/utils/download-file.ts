@@ -37,19 +37,15 @@ export class DownloadFile {
   async download(
     downloadDto: DownloadFileDto,
     dstPath: string,
-    options: { allowPrivateIP?: boolean; space?: SpaceEnv; publishedPath?: string; getContentInfo: true; maxSize?: number }
+    options: DownloadFileOptions & { getContentInfo: true }
   ): Promise<DownloadFileContentInfo>
-  async download(
-    downloadDto: DownloadFileDto,
-    dstPath: string,
-    options?: { allowPrivateIP?: boolean; space?: SpaceEnv; publishedPath?: string; getContentInfo?: false | undefined; maxSize?: number }
-  ): Promise<void>
+  async download(downloadDto: DownloadFileDto, dstPath: string, options?: DownloadFileOptions & { getContentInfo?: false | undefined }): Promise<void>
   async download(downloadDto: DownloadFileDto, dstPath: string, options?: DownloadFileOptions): Promise<void | DownloadFileContentInfo> {
     const identityEncodingConfig = { decompress: false, headers: { 'Accept-Encoding': 'identity' } }
 
     const { response: headRes, url } = await this.request(
       downloadDto.url,
-      { method: HTTP_METHOD.HEAD, ...identityEncodingConfig },
+      { method: HTTP_METHOD.HEAD, signal: options?.signal, ...identityEncodingConfig },
       { allowPrivateIP: options?.allowPrivateIP }
     )
 
@@ -72,10 +68,14 @@ export class DownloadFile {
     // The HEAD request resolved redirects; the GET must target that final URL directly.
     const { response: getRes } = await this.request(
       url,
-      { method: HTTP_METHOD.GET, responseType: 'stream', ...identityEncodingConfig },
+      { method: HTTP_METHOD.GET, responseType: 'stream', signal: options?.signal, ...identityEncodingConfig },
       { allowPrivateIP: options?.allowPrivateIP, maxRedirects: 0 }
     )
-    await writeFromStream(dstPath, getRes.data, 0, maxSize)
+    if (options?.signal) {
+      await writeFromStream(dstPath, getRes.data, 0, maxSize, options.signal)
+    } else {
+      await writeFromStream(dstPath, getRes.data, 0, maxSize)
+    }
   }
 
   private safeLookup(hostname: string, options: Parameters<LookupFunction>[1], cb: Parameters<LookupFunction>[2]): void {

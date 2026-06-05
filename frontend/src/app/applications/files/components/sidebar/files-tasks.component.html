@@ -30,20 +30,25 @@
     <div class="task-list">
       <div (click)="goToFile(task)" [tooltip]="task.result | translate:locale.language" class="text-truncate" placement="bottom">
         <div>
-          <fa-icon [class.text-danger]="task.status >= 2" [icon]="iconsStatus[task.status]"
+          @if (canCancel(task)) {
+            <button (click)="cancelTask($event, task)" class="btn btn-sm btn-default float-end">
+              <fa-icon [icon]="icons.faStop"></fa-icon>
+            </button>
+          }
+          <fa-icon [class.text-danger]="isTaskError(task)" [class.text-muted]="isTaskCancelled(task)" [icon]="iconsStatus[task.status]"
                    [animation]="task.status === 0 ? 'spin-pulse' : null"></fa-icon>
           <b>
             <fa-icon [icon]="iconsOperation[task.type]" class="me-1"></fa-icon>
           </b>
           <span>{{ task.name }}</span>
         </div>
-        @if (task.status === 2) {
-          <div [class.text-danger]="task.status >= 2" class="ms-2">{{ task.result | translate:locale.language }}</div>
+        @if (task.status >= 2) {
+          <div [class.text-danger]="isTaskError(task)" [class.text-muted]="isTaskCancelled(task)" class="ms-2">{{ task.result | translate:locale.language }}</div>
         }
         <div class="mt-1 fs-sm">
           <progressbar [max]="100"
                        [value]="task.status > 0 ? 100 : task.props.progress || 100"
-                       [type]="task.status < 1 ? 'warning' : task.status === 2 ? 'danger' : null"
+                       [type]="task.status < 1 ? 'warning' : isTaskError(task) ? 'danger' : null"
                        class="custom-progress-bar position-relative">
               <span class="d-flex align-items-center justify-content-center position-absolute mx-1 w-100">
                 @if (task.props.size) {

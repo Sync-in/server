@@ -11,7 +11,7 @@ import { getTablesWithFileIdColumn } from '../../../infrastructure/database/util
 import { USER_PATH, USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { users } from '../../users/schemas/users.schema'
-import { CACHE_TASK_PREFIX } from '../constants/cache'
+import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX } from '../constants/cache'
 import { FileTask, FileTaskStatus } from '../models/file-task'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { files } from '../schemas/files.schema'
@@ -259,8 +259,14 @@ export class FilesScheduler {
   private async cleanupInterruptedTasks(): Promise<void> {
     try {
       let nb = 0
+      let nbCancellationRequests = 0
       const keys = await this.cache.keys(`${CACHE_TASK_PREFIX}-*`)
       for (const key of keys) {
+        if (key.startsWith(`${CACHE_TASK_CANCEL_PREFIX}-`)) {
+          await this.cache.del(key)
+          nbCancellationRequests++
+          continue
+        }
         const task = await this.cache.get(key)
         if (task && task.status === FileTaskStatus.PENDING) {
           task.status = FileTaskStatus.ERROR
@@ -269,7 +275,7 @@ export class FilesScheduler {
           this.cache.set(key, task).catch((e: Error) => this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` }))
         }
       }
-      this.logger.log({ tag: this.cleanupInterruptedTasks.name, msg: `${nb} tasks cleaned` })
+      this.logger.log({ tag: this.cleanupInterruptedTasks.name, msg: `${nb} tasks cleaned, ${nbCancellationRequests} cancellation requests cleared` })
     } catch (e) {
       this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` })
     }
