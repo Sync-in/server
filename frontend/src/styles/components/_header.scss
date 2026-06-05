@@ -94,7 +94,7 @@
     }
 
     .navbar-history-button-left {
-      margin-left: -.5px;
+      margin-inline-start: -.5px;
       @include media-breakpoint-up(sm) {
         border-inline-start: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
       }

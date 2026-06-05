@@ -83,7 +83,7 @@
   grid-template-columns: 2rem minmax(0, 1fr) max-content;
   align-items: center;
   gap: 0.54rem;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   animation: recent-card-enter 0.26s ease both;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
@@ -130,9 +130,9 @@
   white-space: nowrap;
   font-size: $font-size-xs;
   line-height: 1;
-  margin-left: 0.38rem;
+  margin-inline-start: 0.38rem;
   min-width: 5.05rem;
-  text-align: right;
+  text-align: end;
   padding-top: 0.04rem;
 }
 

@@ -17,7 +17,7 @@
   &::before {
     content: '';
     position: absolute;
-    left: 0.58rem;
+    inset-inline-start: 0.58rem;
     top: 0.52rem;
     bottom: 0.52rem;
     width: 0.34rem;

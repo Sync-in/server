@@ -751,7 +751,7 @@
   // Code Mirror
   .cm-panel.cm-search {
     button[aria-label="close"] {
-      right: 10px !important;
+      inset-inline-end: 10px !important;
       font-size: 18px !important;
       color: $gray-light !important;
     }
