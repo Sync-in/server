@@ -84,6 +84,14 @@ export class FilesTasksComponent implements OnDestroy {
     this.filesTasksService.removeAll()
   }
 
+  cancelTasks() {
+    for (const task of this.tasks) {
+      if (this.canCancel(task)) {
+        this.filesTasksService.cancel(task)
+      }
+    }
+  }
+
   cancelTask(event: MouseEvent, task: FileTask) {
     event.stopPropagation()
     this.filesTasksService.cancel(task)
@@ -91,6 +99,10 @@ export class FilesTasksComponent implements OnDestroy {
 
   canCancel(task: FileTask): boolean {
     return this.filesTasksService.canCancel(task)
+  }
+
+  hasCancellableTasks(): boolean {
+    return this.tasks.some((task: FileTask) => this.canCancel(task))
   }
 
   canOpenTask(task: FileTask): boolean {

@@ -17,9 +17,16 @@
     }
   </div>
   @if (nbTotalTasks) {
-    <button (click)="removeTasks()" class="btn btn-sm btn-default">
-      <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
-    </button>
+    <div class="d-flex gap-1">
+      @if (hasCancellableTasks()) {
+        <button type="button" (click)="cancelTasks()" [tooltip]="'Stop' | translate:locale.language" class="btn btn-sm btn-default" placement="top">
+          <fa-icon [icon]="icons.faStop"></fa-icon>
+        </button>
+      }
+      <button type="button" (click)="removeTasks()" class="btn btn-sm btn-default">
+        <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
+      </button>
+    </div>
   } @else {
     <div style="width: 35px"></div>
   }
