@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { Cache } from '../../infrastructure/cache/cache.service'
 import { FilesTasksController } from './files-tasks.controller'
 import { FilesMethods } from './services/files-methods.service'
-import { FilesTasksManager } from './services/files-tasks-manager.service'
+import { FilesTasksManager } from './services/tasks/files-tasks-manager.service'
 import { Mock } from 'vitest'
 
 describe(FilesTasksController.name, () => {

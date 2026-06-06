@@ -6,7 +6,7 @@ import { UserModel } from '../users/models/user.model'
 import { API_FILES_TASKS, FILES_ROUTE } from './constants/routes'
 import { FileTasksPollDto } from './dto/file-tasks-poll.dto'
 import type { FileTasksPollResponse } from './interfaces/file-task.interface'
-import { FilesTasksManager } from './services/files-tasks-manager.service'
+import { FilesTasksManager } from './services/tasks/files-tasks-manager.service'
 
 @Controller(API_FILES_TASKS)
 export class FilesTasksController {

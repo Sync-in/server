@@ -18,7 +18,7 @@ import { ACTION } from '../../../common/constants'
 import { FILE_OPERATION } from '../constants/operations'
 import { DownloadFileDto } from '../dto/file-operations.dto'
 import { FileEvent, FileTaskEvent } from '../events/file-events'
-import { FileError } from '../models/file-error'
+import { FileError, SourceCleanupError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
 import { FILE_ERROR_MESSAGES } from '../utils/errors'
 import { SendFile } from '../utils/send-file'
@@ -29,6 +29,7 @@ import * as taskUtils from '../utils/tasks'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesManager } from './files-manager.service'
 import { FilesQueries } from './files-queries.service'
+import { FilesTasksTransfer } from './tasks/files-tasks-transfer.service'
 import { Mock } from 'vitest'
 
 vi.mock('archiver', () => ({
@@ -42,6 +43,7 @@ vi.mock('node:dns/promises', () => ({
 
 describe(FilesManager.name, () => {
   let service: FilesManager
+  let filesTasksTransfer: { copy: Mock; move: Mock; delete: Mock }
   let http: { axiosRef: Mock }
   const lookupMock = lookup as Mock
   let filesQueries: { moveFiles: Mock; deleteFiles: Mock }
@@ -127,8 +129,9 @@ describe(FilesManager.name, () => {
     expect(filesUtils.copyFiles).not.toHaveBeenCalled()
     expect(filesUtils.moveFiles).not.toHaveBeenCalled()
     expect(filesUtils.removeFiles).not.toHaveBeenCalled()
-    expect(taskUtils.copyAbortable).not.toHaveBeenCalled()
-    expect(taskUtils.moveAbortable).not.toHaveBeenCalled()
+    expect(filesTasksTransfer.copy).not.toHaveBeenCalled()
+    expect(filesTasksTransfer.move).not.toHaveBeenCalled()
+    expect(filesTasksTransfer.delete).not.toHaveBeenCalled()
     expect(filesLockManager.create).not.toHaveBeenCalled()
     expect(filesLockManager.createOrRefresh).not.toHaveBeenCalled()
     expect(filesLockManager.checkConflicts).not.toHaveBeenCalled()
@@ -150,6 +153,27 @@ describe(FilesManager.name, () => {
     notificationsManager = {
       create: vi.fn().mockResolvedValue(undefined)
     }
+    filesTasksTransfer = {
+      copy: vi
+        .fn()
+        .mockImplementation(
+          async (
+            _user: any,
+            srcSpace: any,
+            _dstSpace: any,
+            overwrite: boolean,
+            _recursive: boolean,
+            _isDir: boolean,
+            _signal: AbortSignal,
+            deleteDestination: () => Promise<void>
+          ) => {
+            srcSpace.task.props = { ...srcSpace.task.props, progress: 40, size: 40, totalSize: 100 }
+            if (overwrite) await deleteDestination()
+          }
+        ),
+      move: vi.fn().mockResolvedValue(undefined),
+      delete: vi.fn().mockResolvedValue(undefined)
+    }
     filesLockManager = {
       create: vi.fn().mockResolvedValue([true, { key: 'lock-1' }]),
       checkConflicts: vi.fn().mockResolvedValue(undefined),
@@ -168,6 +192,7 @@ describe(FilesManager.name, () => {
         { provide: NotificationsManager, useValue: notificationsManager },
         { provide: HttpService, useValue: http },
         { provide: FilesLockManager, useValue: filesLockManager },
+        { provide: FilesTasksTransfer, useValue: filesTasksTransfer },
         FilesManager
       ]
     }).compile()
@@ -192,16 +217,7 @@ describe(FilesManager.name, () => {
     vi.spyOn(filesUtils, 'dirSize').mockResolvedValue([123, {}] as any)
     vi.spyOn(filesUtils, 'uniqueFilePathFromDir').mockResolvedValue('/tmp/unique-path.txt')
     vi.spyOn(filesUtils, 'uniqueDatedFilePath').mockResolvedValue({ isDir: false, path: '/trash/file-2026.txt' })
-    vi.spyOn(taskUtils, 'copyAbortable').mockImplementation(async (_srcPath, _dstPath, options) => {
-      options.onTransferStart?.('/tmp/task-transfer')
-      await options.beforeCommit?.()
-    })
     vi.spyOn(taskUtils, 'createTaskTemporaryDir').mockResolvedValue('/data/users/john/tmp/tasks/.task-d-archive')
-    vi.spyOn(taskUtils, 'moveAbortable').mockImplementation(async (_srcPath, _dstPath, options) => {
-      options.onTransferStart?.('/tmp/task-transfer')
-      await options.beforeCommit?.()
-      return undefined
-    })
     vi.spyOn(taskUtils, 'taskTemporaryPath').mockImplementation((parentPath, cacheKey, name) =>
       path.join(parentPath, `.${cacheKey}-${path.basename(name)}`)
     )
@@ -812,7 +828,7 @@ describe(FilesManager.name, () => {
 
       expect(filesLockManager.checkConflicts).toHaveBeenCalledWith(dst.dbFile, DEPTH.RESOURCE, { userId: 7, lockTokens: undefined })
       expect(filesUtils.copyFiles).toHaveBeenCalledWith(src.realPath, dst.realPath, false, false)
-      expect(taskUtils.copyAbortable).not.toHaveBeenCalled()
+      expect(filesTasksTransfer.copy).not.toHaveBeenCalled()
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space: dst, action: ACTION.ADD, rPath: dst.realPath })
     })
 
@@ -846,7 +862,7 @@ describe(FilesManager.name, () => {
       await service.copyMove(user, src, dst, true)
 
       expect(filesUtils.moveFiles).toHaveBeenCalledWith('/src-base/src.txt', '/dst-base/dst.txt', false)
-      expect(taskUtils.moveAbortable).not.toHaveBeenCalled()
+      expect(filesTasksTransfer.move).not.toHaveBeenCalled()
       expect(filesQueries.moveFiles).toHaveBeenCalledWith(src.dbFile, dst.dbFile, false)
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space: src, action: ACTION.DELETE_PERMANENTLY, rPath: '/src-base/src.txt' })
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space: dst, action: ACTION.ADD, rPath: '/dst-base/dst.txt' })
@@ -865,22 +881,13 @@ describe(FilesManager.name, () => {
         dbFile: { ownerId: 7, path: 'dst.txt', inTrash: false }
       })
       const signal = new AbortController().signal
-      const cleanupError = new taskUtils.SourceCleanupError(src.realPath, dst.realPath, { cause: new Error('cleanup failed') })
+      const cleanupError = new SourceCleanupError(src.realPath, dst.realPath, { cause: new Error('cleanup failed') })
       prepareFileTransfer(src.realPath, dst.realPath)
-      vi.mocked(taskUtils.moveAbortable).mockResolvedValueOnce(cleanupError)
+      filesTasksTransfer.move.mockResolvedValueOnce(cleanupError)
 
       await expect(service.copyMove(user, src, dst, true, false, false, undefined, signal)).rejects.toBe(cleanupError)
 
-      expect(taskUtils.moveAbortable).toHaveBeenCalledWith(
-        src.realPath,
-        dst.realPath,
-        expect.objectContaining({
-          cacheKey: 'task-move',
-          crossDevice: true,
-          signal,
-          stagingDir: user.tasksPath
-        })
-      )
+      expect(filesTasksTransfer.move).toHaveBeenCalledWith(user, src, dst, false, false, signal, expect.any(Function))
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(filesQueries.moveFiles).toHaveBeenCalledWith(src.dbFile, dst.dbFile, false)
     })
@@ -900,7 +907,7 @@ describe(FilesManager.name, () => {
       await service.copyMove(user, src, dst, true)
 
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(src.realPath, dst.realPath, false)
-      expect(taskUtils.moveAbortable).not.toHaveBeenCalled()
+      expect(filesTasksTransfer.move).not.toHaveBeenCalled()
     })
 
     it('should preserve the regular overwrite path outside a task context', async () => {
@@ -919,7 +926,7 @@ describe(FilesManager.name, () => {
 
       expect(deleteSpy).toHaveBeenCalledWith(user, dst)
       expect(filesUtils.copyFiles).toHaveBeenCalledWith(src.realPath, dst.realPath, true, false)
-      expect(taskUtils.copyAbortable).not.toHaveBeenCalled()
+      expect(filesTasksTransfer.copy).not.toHaveBeenCalled()
       expect(deleteSpy.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.copyFiles).mock.invocationCallOrder[0])
     })
 
@@ -939,18 +946,9 @@ describe(FilesManager.name, () => {
 
       await service.copyMove(user, src, dst, false, true, false, undefined, signal)
 
-      expect(taskUtils.copyAbortable).toHaveBeenCalledWith(
-        src.realPath,
-        dst.realPath,
-        expect.objectContaining({
-          beforeCommit: expect.any(Function),
-          cacheKey: 'task-copy',
-          overwrite: true,
-          signal,
-          stagingDir: user.tasksPath
-        })
-      )
+      expect(filesTasksTransfer.copy).toHaveBeenCalledWith(user, src, dst, true, false, false, signal, expect.any(Function))
       expect(deleteSpy).toHaveBeenCalledWith(user, dst)
+      expect(src.task.props).toMatchObject({ progress: 40, size: 40, totalSize: 100 })
     })
   })
 
@@ -991,23 +989,13 @@ describe(FilesManager.name, () => {
       })
       const trashFile = '/data/users/john/trash/documents/document.txt'
       const signal = new AbortController().signal
-      const cleanupError = new taskUtils.SourceCleanupError(space.realPath, trashFile, { cause: new Error('cleanup failed') })
+      const cleanupError = new SourceCleanupError(space.realPath, trashFile, { cause: new Error('cleanup failed') })
       prepareFileTransfer(space.realPath, trashFile)
-      vi.mocked(taskUtils.moveAbortable).mockResolvedValueOnce(cleanupError)
+      filesTasksTransfer.delete.mockResolvedValueOnce(cleanupError)
 
       await expect(service.delete(user, space, undefined, signal)).rejects.toBe(cleanupError)
 
-      expect(taskUtils.moveAbortable).toHaveBeenCalledWith(
-        space.realPath,
-        trashFile,
-        expect.objectContaining({
-          cacheKey: 'task-delete',
-          onTransferStart: expect.any(Function),
-          overwrite: true,
-          signal,
-          stagingDir: user.tasksPath
-        })
-      )
+      expect(filesTasksTransfer.delete).toHaveBeenCalledWith(user, space, trashFile, false, signal, expect.any(Function))
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(filesQueries.deleteFiles).toHaveBeenCalledWith(space.dbFile, false, false)
     })
@@ -1023,7 +1011,7 @@ describe(FilesManager.name, () => {
       await service.delete(user, space)
 
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(space.realPath, trashFile, true)
-      expect(taskUtils.moveAbortable).not.toHaveBeenCalled()
+      expect(filesTasksTransfer.delete).not.toHaveBeenCalled()
     })
   })
 

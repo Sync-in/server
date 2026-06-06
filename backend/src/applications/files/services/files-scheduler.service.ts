@@ -19,7 +19,7 @@ import { files } from '../schemas/files.schema'
 import { isPathExists, removeFiles } from '../utils/files'
 import { taskTemporaryPrefix } from '../utils/tasks'
 import { FilesContentIndexer } from './files-content-indexer.service'
-import { FilesTasksManager } from './files-tasks-manager.service'
+import { FilesTasksManager } from './tasks/files-tasks-manager.service'
 import { FilesQuotaManager } from './files-quota-manager.service'
 import { FilesTrashRetention } from './files-trash-retention.service'
 

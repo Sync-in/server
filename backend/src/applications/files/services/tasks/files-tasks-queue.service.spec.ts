@@ -1,7 +1,7 @@
 import { Mock } from 'vitest'
-import { Cache } from '../../../infrastructure/cache/cache.service'
-import { CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../constants/cache'
-import type { FileTaskQueueItem, FileTaskQueueStarter } from '../interfaces/file-task-queue.interface'
+import { Cache } from '../../../../infrastructure/cache/cache.service'
+import { CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../../constants/cache'
+import type { FileTaskQueueItem, FileTaskQueueStarter } from '../../interfaces/file-task-queue.interface'
 import { FilesTasksQueue } from './files-tasks-queue.service'
 
 describe(FilesTasksQueue.name, () => {

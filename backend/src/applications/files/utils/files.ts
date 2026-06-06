@@ -244,7 +244,7 @@ export function copyFileContent(srcPath: string, dstPath: string): Promise<void>
   return writeFromStream(dstPath, srcStream)
 }
 
-async function walkDir(
+export async function walkDir(
   rPath: string,
   onEntry: (entry: Dirent, entryPath: string) => Promise<void> | void,
   errors?: Record<string, string>
@@ -289,25 +289,6 @@ export async function dirSize(rPath: string): Promise<[number, any]> {
 
 export async function dirListFileNames(rPath: string): Promise<string[]> {
   return (await fs.readdir(rPath)).map((path: string) => fileName(path))
-}
-
-export async function countDirEntries(rPath: string): Promise<{ files: number; directories: number }> {
-  const entriesCount = { files: 0, directories: 0 }
-  const ignoredErrors: Record<string, string> = {}
-
-  await walkDir(
-    rPath,
-    (entry: Dirent) => {
-      if (entry.isDirectory()) {
-        entriesCount.directories++
-      } else {
-        entriesCount.files++
-      }
-    },
-    ignoredErrors
-  )
-
-  return entriesCount
 }
 
 export async function dirHasChildren(rPath: string, mustContainsDirs = true): Promise<boolean> {

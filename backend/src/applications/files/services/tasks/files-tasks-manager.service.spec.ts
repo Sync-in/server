@@ -1,21 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { HttpException, HttpStatus } from '@nestjs/common'
 import crypto from 'node:crypto'
-import { Cache } from '../../../infrastructure/cache/cache.service'
-import { SpacesManager } from '../../spaces/services/spaces-manager.service'
-import * as filesUtils from '../utils/files'
-import { FileTaskEvent } from '../events/file-events'
-import { SendFile } from '../utils/send-file'
-import { FILE_OPERATION } from '../constants/operations'
-import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../constants/cache'
-import { FileTaskStatus } from '../models/file-task'
-import { FilesMethods } from './files-methods.service'
+import { Cache } from '../../../../infrastructure/cache/cache.service'
+import { SpacesManager } from '../../../spaces/services/spaces-manager.service'
+import * as filesUtils from '../../utils/files'
+import * as tasksUtils from '../../utils/tasks'
+import { FileTaskEvent } from '../../events/file-events'
+import { SendFile } from '../../utils/send-file'
+import { FILE_OPERATION } from '../../constants/operations'
+import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../../constants/cache'
+import { FileTaskStatus } from '../../models/file-task'
+import { FilesMethods } from '../files-methods.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
 import { FilesTasksQueue } from './files-tasks-queue.service'
+import { FilesTasksWatcher } from './files-tasks-watcher.service'
 import { Mock } from 'vitest'
 
 describe(FilesTasksManager.name, () => {
   let filesTasksManager: FilesTasksManager
+  let filesTasksWatcher: FilesTasksWatcher
   let module: TestingModule
   let filesMethods: {
     doWork: Mock
@@ -90,6 +93,7 @@ describe(FilesTasksManager.name, () => {
       providers: [
         FilesTasksManager,
         FilesTasksQueue,
+        FilesTasksWatcher,
         {
           provide: Cache,
           useValue: cache
@@ -101,6 +105,7 @@ describe(FilesTasksManager.name, () => {
 
     module.useLogger(['fatal'])
     filesTasksManager = module.get<FilesTasksManager>(FilesTasksManager)
+    filesTasksWatcher = module.get<FilesTasksWatcher>(FilesTasksWatcher)
   })
 
   afterEach(async () => {
@@ -118,14 +123,14 @@ describe(FilesTasksManager.name, () => {
     const listenersBeforeDestroy = FileTaskEvent.listenerCount('startWatch')
     const space = { task: { cacheKey, props: {} } } as any
     cacheStore.set(cacheKey, { props: {} })
-    ;(filesTasksManager as any).startWatch(space, FILE_OPERATION.COPY, '/files/document.txt')
+    ;(filesTasksWatcher as any).startWatch(space, FILE_OPERATION.COPY, '/files/document.txt')
 
-    const watcher = (filesTasksManager as any).tasksWatcher[cacheKey] as NodeJS.Timeout
+    const watcher = (filesTasksWatcher as any).tasksWatcher[cacheKey] as NodeJS.Timeout
     expect(watcher.hasRef()).toBe(false)
 
-    filesTasksManager.onModuleDestroy()
+    filesTasksWatcher.onModuleDestroy()
 
-    expect((filesTasksManager as any).tasksWatcher).toEqual({})
+    expect((filesTasksWatcher as any).tasksWatcher).toEqual({})
     expect(FileTaskEvent.listenerCount('startWatch')).toBe(listenersBeforeDestroy - 1)
   })
 
@@ -139,7 +144,7 @@ describe(FilesTasksManager.name, () => {
             finishUpdate = resolve
           })
       )
-      ;(filesTasksManager as any).watchTask('task-1', update)
+      ;(filesTasksWatcher as any).watchTask('task-1', update)
 
       await vi.advanceTimersByTimeAsync(2000)
       expect(update).toHaveBeenCalledTimes(1)
@@ -148,7 +153,7 @@ describe(FilesTasksManager.name, () => {
       await Promise.resolve()
       await vi.advanceTimersByTimeAsync(1000)
       expect(update).toHaveBeenCalledTimes(2)
-      ;(filesTasksManager as any).stopWatch('task-1')
+      ;(filesTasksWatcher as any).stopWatch('task-1')
     } finally {
       vi.useRealTimers()
     }
@@ -214,7 +219,7 @@ describe(FilesTasksManager.name, () => {
   })
 
   it('should watch a temporary path while keeping the published file name', () => {
-    const startWatchSpy = vi.spyOn(filesTasksManager as any, 'startWatch').mockResolvedValueOnce(undefined)
+    const startWatchSpy = vi.spyOn(filesTasksWatcher as any, 'startWatch').mockResolvedValueOnce(undefined)
     const space = { url: 'files/personal/archive.zip', task: { cacheKey: 'task-1', props: {} } } as any
 
     FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, '/files/archive', '/tmp/archive-extract')
@@ -232,10 +237,10 @@ describe(FilesTasksManager.name, () => {
   it('should watch the published archive after the temporary archive has been moved', async () => {
     const pathExistsSpy = vi.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
     const fileSizeSpy = vi.spyOn(filesUtils, 'fileSize').mockResolvedValueOnce(42)
-    const updateTaskSpy = vi.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+    const updateTaskSpy = vi.spyOn(filesTasksWatcher as any, 'updateTask').mockResolvedValueOnce(undefined)
     const space = { task: { cacheKey: 'task-1', props: {} } } as any
 
-    await (filesTasksManager as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
+    await (filesTasksWatcher as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
 
     expect(pathExistsSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-compress-uuid')
     expect(pathExistsSpy).toHaveBeenNthCalledWith(2, '/files/archive.tgz')
@@ -248,10 +253,10 @@ describe(FilesTasksManager.name, () => {
     const missingError = Object.assign(new Error('missing temporary archive'), { code: 'ENOENT' })
     const pathExistsSpy = vi.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
     const fileSizeSpy = vi.spyOn(filesUtils, 'fileSize').mockRejectedValueOnce(missingError).mockResolvedValueOnce(42)
-    const updateTaskSpy = vi.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+    const updateTaskSpy = vi.spyOn(filesTasksWatcher as any, 'updateTask').mockResolvedValueOnce(undefined)
     const space = { task: { cacheKey: 'task-1', props: {} } } as any
 
-    await (filesTasksManager as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
+    await (filesTasksWatcher as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
 
     expect(pathExistsSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-compress-uuid')
     expect(pathExistsSpy).toHaveBeenNthCalledWith(2, '/files/archive.tgz')
@@ -264,32 +269,32 @@ describe(FilesTasksManager.name, () => {
   it('should retry the published directory when the temporary directory is moved while reading it', async () => {
     const pathExistsSpy = vi.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(true).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
     const countDirEntriesSpy = vi
-      .spyOn(filesUtils, 'countDirEntries')
-      .mockResolvedValueOnce({ files: 0, directories: 0 })
-      .mockResolvedValueOnce({ files: 2, directories: 1 })
-    const updateTaskSpy = vi.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+      .spyOn(tasksUtils, 'countDirEntriesAndSize')
+      .mockResolvedValueOnce({ files: 0, directories: 0, size: 0 })
+      .mockResolvedValueOnce({ files: 2, directories: 1, size: 42 })
+    const updateTaskSpy = vi.spyOn(filesTasksWatcher as any, 'updateTask').mockResolvedValueOnce(undefined)
     const space = { task: { cacheKey: 'task-1', props: {} } } as any
 
-    await (filesTasksManager as any).updateDecompressTask(space, '/tmp/archive-extract-uuid', '/files/archive')
+    await (filesTasksWatcher as any).updateDecompressTask(space, '/tmp/archive-extract-uuid', '/files/archive')
 
     expect(pathExistsSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-extract-uuid')
     expect(pathExistsSpy).toHaveBeenNthCalledWith(2, '/tmp/archive-extract-uuid')
     expect(pathExistsSpy).toHaveBeenNthCalledWith(3, '/files/archive')
     expect(countDirEntriesSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-extract-uuid')
     expect(countDirEntriesSpy).toHaveBeenNthCalledWith(2, '/files/archive')
-    expect(space.task.props).toEqual({ files: 2, directories: 1 })
-    expect(updateTaskSpy).toHaveBeenCalledWith('task-1', { files: 2, directories: 1 })
+    expect(space.task.props).toEqual({ files: 2, directories: 1, size: 42 })
+    expect(updateTaskSpy).toHaveBeenCalledWith('task-1', { files: 2, directories: 1, size: 42 })
   })
 
   it('should silently skip watcher update while temporary and published paths are missing', async () => {
     vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(false)
     const fileSizeSpy = vi.spyOn(filesUtils, 'fileSize')
-    const loggerErrorSpy = vi.spyOn((filesTasksManager as any).logger, 'error')
-    const stopWatchSpy = vi.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)
-    const updateTaskSpy = vi.spyOn(filesTasksManager as any, 'updateTask').mockResolvedValueOnce(undefined)
+    const loggerErrorSpy = vi.spyOn((filesTasksWatcher as any).logger, 'error')
+    const stopWatchSpy = vi.spyOn(filesTasksWatcher as any, 'stopWatch').mockResolvedValueOnce(undefined)
+    const updateTaskSpy = vi.spyOn(filesTasksWatcher as any, 'updateTask').mockResolvedValueOnce(undefined)
     const space = { task: { cacheKey: 'task-1', props: {} } } as any
 
-    await (filesTasksManager as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
+    await (filesTasksWatcher as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
 
     expect(loggerErrorSpy).not.toHaveBeenCalled()
     expect(stopWatchSpy).not.toHaveBeenCalled()
@@ -300,11 +305,11 @@ describe(FilesTasksManager.name, () => {
   it('should stop a watcher without staging when its path is missing', async () => {
     const missingError = Object.assign(new Error('missing archive'), { code: 'ENOENT' })
     vi.spyOn(filesUtils, 'fileSize').mockRejectedValueOnce(missingError)
-    const loggerErrorSpy = vi.spyOn((filesTasksManager as any).logger, 'error')
-    const stopWatchSpy = vi.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)
+    const loggerErrorSpy = vi.spyOn((filesTasksWatcher as any).logger, 'error')
+    const stopWatchSpy = vi.spyOn(filesTasksWatcher as any, 'stopWatch').mockResolvedValueOnce(undefined)
     const space = { task: { cacheKey: 'task-1', props: {} } } as any
 
-    await (filesTasksManager as any).updateCompressTask(space, '/files/archive.tgz')
+    await (filesTasksWatcher as any).updateCompressTask(space, '/files/archive.tgz')
 
     expect(loggerErrorSpy).toHaveBeenCalled()
     expect(stopWatchSpy).toHaveBeenCalledWith('task-1')
@@ -331,7 +336,7 @@ describe(FilesTasksManager.name, () => {
       return cacheStore.get(key)
     })
 
-    const updatePromise = (filesTasksManager as any).updateTask(cacheKey, { size: 20 })
+    const updatePromise = (filesTasksWatcher as any).updateTask(cacheKey, { size: 20 })
     await getStarted
     const completionPromise = (filesTasksManager as any).setTaskDone(cacheKey, FileTaskStatus.SUCCESS, 'done')
     releaseGet()
@@ -365,6 +370,67 @@ describe(FilesTasksManager.name, () => {
       props: { totalSize: 99 }
     })
     expect(storedTask.endedAt).toBeDefined()
+  })
+
+  it('should recalculate final copy properties from the published path', async () => {
+    const taskId = '77777777-7777-4777-8777-777777777777'
+    const user = { id: 7 } as any
+    const space = { url: 'files/personal/source' } as any
+    const result = { path: 'files/personal', name: 'destination', mime: 'directory' }
+    vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce(taskId)
+    filesMethods.doWork.mockResolvedValueOnce(result)
+    const getPathPropsSpy = vi.spyOn(filesTasksWatcher, 'getPathProps').mockResolvedValueOnce({ directories: 2, files: 3, size: 120 })
+
+    await filesTasksManager.createTask(FILE_OPERATION.COPY, user, space, null, 'doWork')
+    await flushPromises()
+
+    expect(spacesManager.spaceEnv).toHaveBeenCalledWith(user, ['files', 'personal', 'destination'])
+    expect(getPathPropsSpy).toHaveBeenCalledWith('/data/users/john/files/destination.txt')
+    expect(cacheStore.get(`${CACHE_TASK_PREFIX}-7-${taskId}`)).toMatchObject({
+      status: FileTaskStatus.SUCCESS,
+      path: result.path,
+      name: result.name,
+      props: {
+        directories: 2,
+        files: 3,
+        progress: 100,
+        size: 120
+      }
+    })
+  })
+
+  it('should finalize a fast delete task without waiting for a watcher tick', async () => {
+    const taskId = '66666666-6666-4666-8666-666666666666'
+    vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce(taskId)
+    filesMethods.doWork.mockImplementationOnce(async (_user, taskSpace) => {
+      taskSpace.task.props = {
+        directories: 2,
+        files: 3,
+        progress: 1,
+        size: 0,
+        totalSize: 120
+      }
+    })
+    const user = { id: 7 } as any
+    const space = {
+      inTrashRepository: true,
+      realPath: '/data/users/john/trash/document',
+      url: 'trash/personal/document'
+    } as any
+
+    await filesTasksManager.createTask(FILE_OPERATION.DELETE, user, space, null, 'doWork')
+    await flushPromises()
+
+    expect(cacheStore.get(`${CACHE_TASK_PREFIX}-7-${taskId}`)).toMatchObject({
+      status: FileTaskStatus.SUCCESS,
+      props: {
+        directories: 2,
+        files: 3,
+        progress: 100,
+        size: 120,
+        totalSize: 120
+      }
+    })
   })
 
   it('should create a task and mark it as error when the async method fails', async () => {
@@ -538,7 +604,7 @@ describe(FilesTasksManager.name, () => {
 
   it('should delete completed task, remove archive file and delete cache entry', async () => {
     const removeFilesSpy = vi.spyOn(filesUtils, 'removeFiles').mockResolvedValueOnce(undefined)
-    const stopWatchSpy = vi.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)
+    const stopWatchSpy = vi.spyOn(filesTasksWatcher as any, 'stopWatch').mockResolvedValueOnce(undefined)
     const user = { id: 22, tasksPath: '/tmp/tasks' } as any
     cacheStore.set(`${CACHE_TASK_PREFIX}-22-task-ok`, {
       id: 'task-ok',
@@ -556,7 +622,7 @@ describe(FilesTasksManager.name, () => {
 
   it('should ignore active tasks when deleting all tasks', async () => {
     const removeFilesSpy = vi.spyOn(filesUtils, 'removeFiles').mockResolvedValue(undefined)
-    const stopWatchSpy = vi.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValue(undefined)
+    const stopWatchSpy = vi.spyOn(filesTasksWatcher as any, 'stopWatch').mockResolvedValue(undefined)
     const user = { id: 31, tasksPath: '/tmp/tasks' } as any
     cacheStore.set(`${CACHE_TASK_PREFIX}-31-task-pending`, {
       id: 'task-pending',
