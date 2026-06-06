@@ -9,11 +9,13 @@ import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { UserModel } from '../../users/models/user.model'
 import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../constants/cache'
 import { FILE_OPERATION } from '../constants/operations'
+import { FileTaskEvent } from '../events/file-events'
+import type { FileTaskQueueItem } from '../interfaces/file-task-queue.interface'
 import { FileTask, FileTaskProps, FileTaskStatus } from '../models/file-task'
 import { countDirEntries, dirName, fileName, fileSize, isPathExists, isPathIsDir, removeFiles } from '../utils/files'
 import { SendFile } from '../utils/send-file'
 import { FilesMethods } from './files-methods.service'
-import { FileTaskEvent } from '../events/file-events'
+import { FilesTasksQueue } from './files-tasks-queue.service'
 
 @Injectable()
 export class FilesTasksManager implements OnModuleDestroy {
@@ -25,7 +27,8 @@ export class FilesTasksManager implements OnModuleDestroy {
 
   constructor(
     private readonly cache: Cache,
-    private readonly filesMethods: FilesMethods
+    private readonly filesMethods: FilesMethods,
+    private readonly filesTasksQueue: FilesTasksQueue
   ) {
     FileTaskEvent.on('startWatch', this.onStartWatch)
   }
@@ -52,23 +55,9 @@ export class FilesTasksManager implements OnModuleDestroy {
     const taskId: string = crypto.randomUUID()
     const cacheKey = FilesTasksManager.getCacheKey(user.id, taskId)
     const newTask = new FileTask(taskId, type, dirName(space.url), fileName(space.url))
-    await this.storeTask(cacheKey, newTask)
-    space.task = { cacheKey: cacheKey, props: {} }
-    const controller = this.watchCancellation(type, user.id, taskId, cacheKey)
-    const taskPromise = controller ? this.filesMethods[method](user, space, dto, controller.signal) : this.filesMethods[method](user, space, dto)
-    taskPromise
-      .then((data: any) => {
-        this.logger.debug({ tag: this.createTask.name, msg: `${newTask.name} : ${method} done` })
-        this.setTaskDone(cacheKey, FileTaskStatus.SUCCESS, data).catch((e: Error) => this.logger.error({ tag: this.createTask.name, msg: `${e}` }))
-      })
-      .catch((e: HttpException | any) => {
-        this.logger.error({ tag: this.createTask.name, msg: `${newTask.name} : ${method} : ${e}` })
-        this.setTaskDone(
-          cacheKey,
-          controller?.signal.aborted ? FileTaskStatus.CANCELLED : FileTaskStatus.ERROR,
-          controller?.signal.aborted ? 'Cancelled' : e.message
-        ).catch((e: Error) => this.logger.error({ tag: this.createTask.name, msg: `${e}` }))
-      })
+    await this.storeTask(cacheKey, newTask, FileTaskStatus.QUEUED)
+    space.task = { cacheKey, props: {} }
+    await this.filesTasksQueue.enqueue(user.id, { cacheKey, dto, method, space, task: newTask, user }, (task) => this.startQueuedTask(task))
     return newTask
   }
 
@@ -86,16 +75,11 @@ export class FilesTasksManager implements OnModuleDestroy {
 
   async deleteTasks(user: UserModel, taskId?: string): Promise<void> {
     const cacheKey = FilesTasksManager.getCacheKey(user.id, taskId)
-    let keys: string[]
-    if (taskId) {
-      keys = [cacheKey]
-    } else {
-      keys = await this.cache.keys(cacheKey)
-    }
+    const keys: string[] = taskId ? [cacheKey] : await this.cache.keys(cacheKey)
     if (!keys.length) return
     for (const key of keys) {
       const task: FileTask = await this.cache.get(key)
-      if (!task || task.status === FileTaskStatus.PENDING) continue
+      if (!task || this.isActiveStatus(task.status)) continue
       if (task.props.compressInDirectory === false) {
         // delete task file
         const rPath = path.join(user.tasksPath, task.name)
@@ -114,8 +98,13 @@ export class FilesTasksManager implements OnModuleDestroy {
     if (!task) {
       throw new HttpException('Task not found', HttpStatus.NOT_FOUND)
     }
-    if (task.status !== FileTaskStatus.PENDING || !this.canCancel(task.type)) {
+    if (!this.isActiveStatus(task.status) || !this.canCancel(task.type)) {
       throw new HttpException('Not applicable', HttpStatus.BAD_REQUEST)
+    }
+    if (task.status === FileTaskStatus.QUEUED) {
+      this.filesTasksQueue.remove(userId, taskId)
+      await this.setTaskDone(cacheKey, FileTaskStatus.CANCELLED, 'Cancelled')
+      return
     }
     const isStored = await this.cache.set(FilesTasksManager.getCancellationCacheKey(userId, taskId), true, CACHE_TASK_TTL)
     if (!isStored) {
@@ -139,9 +128,9 @@ export class FilesTasksManager implements OnModuleDestroy {
     return await sendFile.stream(req, res)
   }
 
-  private async storeTask(cacheKey: string, task: FileTask) {
+  private async storeTask(cacheKey: string, task: FileTask, status = FileTaskStatus.PENDING) {
     task.startedAt = currentTimeStamp(null, true)
-    task.status = FileTaskStatus.PENDING
+    task.status = status
     try {
       await this.cache.set(cacheKey, task, CACHE_TASK_TTL)
     } catch (e) {
@@ -168,6 +157,52 @@ export class FilesTasksManager implements OnModuleDestroy {
     await this.cache
       .del(cacheKey.replace(`${CACHE_TASK_PREFIX}-`, `${CACHE_TASK_CANCEL_PREFIX}-`))
       .catch((e: Error) => this.logger.error({ tag: this.setTaskDone.name, msg: `${e}` }))
+  }
+
+  private async startQueuedTask(task: FileTaskQueueItem): Promise<boolean> {
+    const storedTask: FileTask = await this.cache.get(task.cacheKey)
+    if (!storedTask || storedTask.status !== FileTaskStatus.QUEUED) return false
+    task.task.status = FileTaskStatus.PENDING
+    task.task.startedAt = currentTimeStamp(null, true)
+    task.space.task = { cacheKey: task.cacheKey, props: task.task.props }
+    await this.cache.set(task.cacheKey, task.task, CACHE_TASK_TTL)
+    this.runTask(task)
+    return true
+  }
+
+  private runTask(task: FileTaskQueueItem): void {
+    const controller = this.watchCancellation(task.task.type, task.user.id, task.task.id, task.cacheKey)
+    const taskPromise = controller
+      ? this.filesMethods[task.method](task.user, task.space, task.dto, controller.signal)
+      : this.filesMethods[task.method](task.user, task.space, task.dto)
+    taskPromise
+      .then((data: any) => {
+        this.logger.debug({ tag: this.runTask.name, msg: `${task.task.name} : ${task.method} done` })
+        this.completeTask(task.user.id, task.cacheKey, FileTaskStatus.SUCCESS, data).catch((e: Error) =>
+          this.logger.error({ tag: this.runTask.name, msg: `${e}` })
+        )
+      })
+      .catch((e: HttpException | any) => {
+        this.logger.error({ tag: this.runTask.name, msg: `${task.task.name} : ${task.method} : ${e}` })
+        this.completeTask(
+          task.user.id,
+          task.cacheKey,
+          controller?.signal.aborted ? FileTaskStatus.CANCELLED : FileTaskStatus.ERROR,
+          controller?.signal.aborted ? 'Cancelled' : e.message
+        ).catch((e: Error) => this.logger.error({ tag: this.runTask.name, msg: `${e}` }))
+      })
+  }
+
+  private async completeTask(userId: number, cacheKey: string, status: FileTaskStatus, result: any): Promise<void> {
+    try {
+      await this.setTaskDone(cacheKey, status, result)
+    } finally {
+      await this.filesTasksQueue.releaseAndDrain(userId)
+    }
+  }
+
+  private isActiveStatus(status: FileTaskStatus): boolean {
+    return status === FileTaskStatus.PENDING || status === FileTaskStatus.QUEUED
   }
 
   private async updateTask(cacheKey: string, props?: FileTaskProps, task?: Partial<FileTask>): Promise<void> {

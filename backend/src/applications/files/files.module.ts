@@ -16,6 +16,7 @@ import { FilesRecents } from './services/files-recents.service'
 import { FilesScheduler } from './services/files-scheduler.service'
 import { FilesSearchManager } from './services/files-search-manager.service'
 import { FilesTasksManager } from './services/files-tasks-manager.service'
+import { FilesTasksQueue } from './services/files-tasks-queue.service'
 import { FilesEventManager } from './services/files-event-manager.service'
 import { FilesQuotaManager } from './services/files-quota-manager.service'
 import { FilesTrashRetention } from './services/files-trash-retention.service'
@@ -32,6 +33,7 @@ import { FilesTrashRetention } from './services/files-trash-retention.service'
     FilesQueries,
     FilesLockManager,
     FilesTasksManager,
+    FilesTasksQueue,
     FilesScheduler,
     FilesRecents,
     FilesContentParser,

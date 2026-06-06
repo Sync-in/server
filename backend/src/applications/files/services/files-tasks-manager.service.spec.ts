@@ -6,10 +6,11 @@ import * as filesUtils from '../utils/files'
 import { FileTaskEvent } from '../events/file-events'
 import { SendFile } from '../utils/send-file'
 import { FILE_OPERATION } from '../constants/operations'
-import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../constants/cache'
+import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../constants/cache'
 import { FileTaskStatus } from '../models/file-task'
 import { FilesMethods } from './files-methods.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
+import { FilesTasksQueue } from './files-tasks-queue.service'
 import { Mock } from 'vitest'
 
 describe(FilesTasksManager.name, () => {
@@ -24,6 +25,7 @@ describe(FilesTasksManager.name, () => {
     get: Mock
     keys: Mock
     mget: Mock
+    increment: Mock
     del: Mock
   }
 
@@ -47,6 +49,11 @@ describe(FilesTasksManager.name, () => {
       get: vi.fn(async (key: string) => cacheStore.get(key)),
       keys: vi.fn(async (pattern: string) => [...cacheStore.keys()].filter((k) => createPatternRegex(pattern).test(k))),
       mget: vi.fn(async (keys: string[]) => keys.map((k) => cacheStore.get(k)).filter((v) => v !== undefined)),
+      increment: vi.fn(async (key: string, amount = 1) => {
+        const value = (Number(cacheStore.get(key)) || 0) + amount
+        cacheStore.set(key, value)
+        return value
+      }),
       del: vi.fn(async (key: string) => cacheStore.delete(key))
     }
     filesMethods = {
@@ -55,6 +62,7 @@ describe(FilesTasksManager.name, () => {
     module = await Test.createTestingModule({
       providers: [
         FilesTasksManager,
+        FilesTasksQueue,
         {
           provide: Cache,
           useValue: cache
@@ -97,6 +105,7 @@ describe(FilesTasksManager.name, () => {
     expect(FilesTasksManager.getCacheKey(10, 'task-1')).toBe(`${CACHE_TASK_PREFIX}-10-task-1`)
     expect(FilesTasksManager.getCacheKey(10)).toBe(`${CACHE_TASK_PREFIX}-10-*`)
     expect(FilesTasksManager.getCancellationCacheKey(10, 'task-1')).toBe(`${CACHE_TASK_CANCEL_PREFIX}-10-task-1`)
+    expect(FilesTasksQueue.getUserRunningTasksCacheKey(10)).toBe(`${CACHE_TASK_USER_PREFIX}-10`)
   })
 
   it('should request cancellation through cache for a pending supported task', async () => {
@@ -283,6 +292,89 @@ describe(FilesTasksManager.name, () => {
     expect(storedTask.result).toBe('operation failed')
   })
 
+  it('should queue tasks when a user already has three running tasks', async () => {
+    vi.spyOn(crypto, 'randomUUID')
+      .mockReturnValueOnce('11111111-1111-4111-8111-111111111111')
+      .mockReturnValueOnce('22222222-2222-4222-8222-222222222222')
+      .mockReturnValueOnce('33333333-3333-4333-8333-333333333333')
+      .mockReturnValueOnce('44444444-4444-4444-8444-444444444444')
+    filesMethods.doWork.mockImplementation(() => new Promise(() => undefined))
+    const user = { id: 7 } as any
+
+    await filesTasksManager.createTask(FILE_OPERATION.COPY, user, { url: 'files/personal/document-1.txt' } as any, null, 'doWork')
+    await filesTasksManager.createTask(FILE_OPERATION.COPY, user, { url: 'files/personal/document-2.txt' } as any, null, 'doWork')
+    await filesTasksManager.createTask(FILE_OPERATION.COPY, user, { url: 'files/personal/document-3.txt' } as any, null, 'doWork')
+    await filesTasksManager.createTask(FILE_OPERATION.COPY, user, { url: 'files/personal/document-4.txt' } as any, null, 'doWork')
+
+    expect(filesMethods.doWork).toHaveBeenCalledTimes(3)
+    expect(cacheStore.get(`${CACHE_TASK_PREFIX}-7-11111111-1111-4111-8111-111111111111`).status).toBe(FileTaskStatus.PENDING)
+    expect(cacheStore.get(`${CACHE_TASK_PREFIX}-7-44444444-4444-4444-8444-444444444444`).status).toBe(FileTaskStatus.QUEUED)
+    expect(cacheStore.get(`${CACHE_TASK_USER_PREFIX}-7`)).toBe(3)
+  })
+
+  it('should start the next queued task when a running task completes', async () => {
+    const resolveWork: (() => void)[] = []
+    vi.spyOn(crypto, 'randomUUID')
+      .mockReturnValueOnce('11111111-1111-4111-8111-111111111111')
+      .mockReturnValueOnce('22222222-2222-4222-8222-222222222222')
+      .mockReturnValueOnce('33333333-3333-4333-8333-333333333333')
+      .mockReturnValueOnce('44444444-4444-4444-8444-444444444444')
+    filesMethods.doWork.mockImplementation(() => new Promise<void>((resolve) => resolveWork.push(resolve)))
+    const user = { id: 7 } as any
+
+    await filesTasksManager.createTask(FILE_OPERATION.COPY, user, { url: 'files/personal/document-1.txt' } as any, null, 'doWork')
+    await filesTasksManager.createTask(FILE_OPERATION.COPY, user, { url: 'files/personal/document-2.txt' } as any, null, 'doWork')
+    await filesTasksManager.createTask(FILE_OPERATION.COPY, user, { url: 'files/personal/document-3.txt' } as any, null, 'doWork')
+    await filesTasksManager.createTask(FILE_OPERATION.COPY, user, { url: 'files/personal/document-4.txt' } as any, null, 'doWork')
+
+    resolveWork[0]()
+    await flushPromises()
+
+    expect(filesMethods.doWork).toHaveBeenCalledTimes(4)
+    expect(cacheStore.get(`${CACHE_TASK_PREFIX}-7-11111111-1111-4111-8111-111111111111`).status).toBe(FileTaskStatus.SUCCESS)
+    expect(cacheStore.get(`${CACHE_TASK_PREFIX}-7-44444444-4444-4444-8444-444444444444`).status).toBe(FileTaskStatus.PENDING)
+    expect(cacheStore.get(`${CACHE_TASK_USER_PREFIX}-7`)).toBe(3)
+  })
+
+  it('should cancel a queued cancellable task without starting it', async () => {
+    vi.spyOn(crypto, 'randomUUID')
+      .mockReturnValueOnce('11111111-1111-4111-8111-111111111111')
+      .mockReturnValueOnce('22222222-2222-4222-8222-222222222222')
+      .mockReturnValueOnce('33333333-3333-4333-8333-333333333333')
+      .mockReturnValueOnce('44444444-4444-4444-8444-444444444444')
+    filesMethods.doWork.mockImplementation(() => new Promise(() => undefined))
+    const user = { id: 7 } as any
+
+    await filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, { url: 'files/personal/document-1.txt' } as any, null, 'doWork')
+    await filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, { url: 'files/personal/document-2.txt' } as any, null, 'doWork')
+    await filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, { url: 'files/personal/document-3.txt' } as any, null, 'doWork')
+    await filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, { url: 'files/personal/document-4.txt' } as any, null, 'doWork')
+
+    await filesTasksManager.cancelTask(7, '44444444-4444-4444-8444-444444444444')
+
+    const storedTask = cacheStore.get(`${CACHE_TASK_PREFIX}-7-44444444-4444-4444-8444-444444444444`)
+    expect(filesMethods.doWork).toHaveBeenCalledTimes(3)
+    expect(storedTask.status).toBe(FileTaskStatus.CANCELLED)
+    expect(storedTask.result).toBe('Cancelled')
+  })
+
+  it('should cancel a cached queued cancellable task even when it is not in the local queue', async () => {
+    cacheStore.set(`${CACHE_TASK_PREFIX}-8-task-queued`, {
+      id: 'task-queued',
+      type: FILE_OPERATION.DOWNLOAD,
+      status: FileTaskStatus.QUEUED,
+      props: {}
+    })
+
+    await filesTasksManager.cancelTask(8, 'task-queued')
+
+    const storedTask = cacheStore.get(`${CACHE_TASK_PREFIX}-8-task-queued`)
+    expect(storedTask.status).toBe(FileTaskStatus.CANCELLED)
+    expect(storedTask.result).toBe('Cancelled')
+    expect(storedTask.endedAt).toBeDefined()
+    expect(cache.set).not.toHaveBeenCalledWith(`${CACHE_TASK_CANCEL_PREFIX}-8-task-queued`, true, CACHE_TASK_TTL)
+  })
+
   it('should return one task by id and throw when it does not exist', async () => {
     cacheStore.set(`${CACHE_TASK_PREFIX}-11-task-a`, { id: 'task-a' })
 
@@ -319,13 +411,18 @@ describe(FilesTasksManager.name, () => {
     expect(cache.del).toHaveBeenCalledWith(`${CACHE_TASK_PREFIX}-22-task-ok`)
   })
 
-  it('should ignore pending tasks when deleting all tasks', async () => {
+  it('should ignore active tasks when deleting all tasks', async () => {
     const removeFilesSpy = vi.spyOn(filesUtils, 'removeFiles').mockResolvedValue(undefined)
     const stopWatchSpy = vi.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValue(undefined)
     const user = { id: 31, tasksPath: '/tmp/tasks' } as any
     cacheStore.set(`${CACHE_TASK_PREFIX}-31-task-pending`, {
       id: 'task-pending',
       status: FileTaskStatus.PENDING,
+      props: { compressInDirectory: false }
+    })
+    cacheStore.set(`${CACHE_TASK_PREFIX}-31-task-queued`, {
+      id: 'task-queued',
+      status: FileTaskStatus.QUEUED,
       props: { compressInDirectory: false }
     })
     cacheStore.set(`${CACHE_TASK_PREFIX}-31-task-done`, {

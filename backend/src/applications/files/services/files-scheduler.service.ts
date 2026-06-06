@@ -4,6 +4,7 @@ import { isNotNull, sql } from 'drizzle-orm'
 import { unionAll } from 'drizzle-orm/mysql-core'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { currentTimeStamp } from '../../../common/shared'
 import { Cache } from '../../../infrastructure/cache/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
@@ -11,7 +12,7 @@ import { getTablesWithFileIdColumn } from '../../../infrastructure/database/util
 import { USER_PATH, USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { users } from '../../users/schemas/users.schema'
-import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX } from '../constants/cache'
+import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_USER_PREFIX } from '../constants/cache'
 import { FileTask, FileTaskStatus } from '../models/file-task'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { files } from '../schemas/files.schema'
@@ -260,6 +261,7 @@ export class FilesScheduler {
     try {
       let nb = 0
       let nbCancellationRequests = 0
+      let nbUserTaskCounters = 0
       const keys = await this.cache.keys(`${CACHE_TASK_PREFIX}-*`)
       for (const key of keys) {
         if (key.startsWith(`${CACHE_TASK_CANCEL_PREFIX}-`)) {
@@ -267,18 +269,31 @@ export class FilesScheduler {
           nbCancellationRequests++
           continue
         }
+        if (key.startsWith(`${CACHE_TASK_USER_PREFIX}-`)) {
+          await this.cache.del(key)
+          nbUserTaskCounters++
+          continue
+        }
         const task = await this.cache.get(key)
-        if (task && task.status === FileTaskStatus.PENDING) {
+        if (task && this.isInterruptedTaskStatus(task.status)) {
           task.status = FileTaskStatus.ERROR
           task.result = 'Interrupted'
+          task.endedAt = currentTimeStamp(null, true)
           nb++
           this.cache.set(key, task).catch((e: Error) => this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` }))
         }
       }
-      this.logger.log({ tag: this.cleanupInterruptedTasks.name, msg: `${nb} tasks cleaned, ${nbCancellationRequests} cancellation requests cleared` })
+      this.logger.log({
+        tag: this.cleanupInterruptedTasks.name,
+        msg: `${nb} tasks cleaned, ${nbCancellationRequests} cancellation requests cleared, ${nbUserTaskCounters} user task counters cleared`
+      })
     } catch (e) {
       this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` })
     }
+  }
+
+  private isInterruptedTaskStatus(status: FileTaskStatus): boolean {
+    return status === FileTaskStatus.PENDING || status === FileTaskStatus.QUEUED
   }
 
   private async resetContentIndexingState(): Promise<void> {

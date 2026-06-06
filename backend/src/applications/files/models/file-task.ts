@@ -4,7 +4,8 @@ export enum FileTaskStatus {
   PENDING,
   SUCCESS,
   ERROR,
-  CANCELLED
+  CANCELLED,
+  QUEUED
 }
 
 export interface FileTaskProps {
