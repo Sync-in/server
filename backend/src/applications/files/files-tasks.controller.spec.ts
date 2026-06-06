@@ -7,11 +7,12 @@ import { Mock } from 'vitest'
 
 describe(FilesTasksController.name, () => {
   let controller: FilesTasksController
-  let filesTasksManager: { getTasks: Mock; deleteTasks: Mock; downloadArchive: Mock }
+  let filesTasksManager: { getTasks: Mock; pollTasks: Mock; deleteTasks: Mock; downloadArchive: Mock }
 
   beforeAll(async () => {
     filesTasksManager = {
       getTasks: vi.fn(),
+      pollTasks: vi.fn(),
       deleteTasks: vi.fn(),
       downloadArchive: vi.fn()
     }
@@ -66,8 +67,22 @@ describe(FilesTasksController.name, () => {
     expect(result).toBe(expected)
   })
 
+  it('pollTasks should delegate tracked task ids to FilesTasksManager', () => {
+    const user = { id: 'user-3' } as any
+    const dto = { trackedIds: ['task-a', 'task-b'] }
+    const expected = { active: [], ended: [], missingIds: ['task-a', 'task-b'] }
+
+    filesTasksManager.pollTasks.mockReturnValueOnce(expected)
+
+    const result = controller.pollTasks(user, dto)
+
+    expect(filesTasksManager.pollTasks).toHaveBeenCalledTimes(1)
+    expect(filesTasksManager.pollTasks).toHaveBeenCalledWith('user-3', dto.trackedIds)
+    expect(result).toBe(expected)
+  })
+
   it('deleteTasks should call FilesTasksManager.deleteTasks with user and taskId and return the value', () => {
-    const user = { id: 'user-3', name: 'Alice' } as any
+    const user = { id: 'user-4', name: 'Alice' } as any
     const taskId = 'task-del-1'
     const expected = { deleted: true }
 
@@ -81,7 +96,7 @@ describe(FilesTasksController.name, () => {
   })
 
   it('deleteTasks without taskId must pass undefined', () => {
-    const user = { id: 'user-4' } as any
+    const user = { id: 'user-5' } as any
     const expected = { deletedAll: true }
 
     filesTasksManager.deleteTasks.mockReturnValueOnce(expected)
@@ -94,7 +109,7 @@ describe(FilesTasksController.name, () => {
   })
 
   it('downloadTaskFile should delegate to FilesTasksManager.downloadArchive and return the StreamableFile', async () => {
-    const user = { id: 'user-5' } as any
+    const user = { id: 'user-6' } as any
     const taskId = 'task-dl-42'
     const req = {} as any
     const res = {} as any

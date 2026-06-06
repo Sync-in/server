@@ -393,6 +393,45 @@ describe(FilesTasksManager.name, () => {
     expect(tasks).toEqual([{ id: 'task-1' }, { id: 'task-2' }])
   })
 
+  it('should ignore tasks that expire between cache key lookup and batch loading', async () => {
+    cache.keys.mockResolvedValueOnce([`${CACHE_TASK_PREFIX}-16-task-1`, `${CACHE_TASK_PREFIX}-16-expired`])
+    cache.mget.mockResolvedValueOnce([{ id: 'task-1' }, undefined])
+
+    const tasks = await filesTasksManager.getTasks(16)
+
+    expect(tasks).toEqual([{ id: 'task-1' }])
+  })
+
+  it('should classify active, ended and missing tracked tasks when polling', async () => {
+    cacheStore.set(`${CACHE_TASK_PREFIX}-17-task-pending`, {
+      id: 'task-pending',
+      status: FileTaskStatus.PENDING
+    })
+    cacheStore.set(`${CACHE_TASK_PREFIX}-17-task-queued`, {
+      id: 'task-queued',
+      status: FileTaskStatus.QUEUED
+    })
+    cacheStore.set(`${CACHE_TASK_PREFIX}-17-task-success`, {
+      id: 'task-success',
+      status: FileTaskStatus.SUCCESS
+    })
+    cacheStore.set(`${CACHE_TASK_PREFIX}-17-task-untracked`, {
+      id: 'task-untracked',
+      status: FileTaskStatus.ERROR
+    })
+
+    const result = await filesTasksManager.pollTasks(17, ['task-pending', 'task-success', 'task-missing'])
+
+    expect(result).toEqual({
+      active: [
+        { id: 'task-pending', status: FileTaskStatus.PENDING },
+        { id: 'task-queued', status: FileTaskStatus.QUEUED }
+      ],
+      ended: [{ id: 'task-success', status: FileTaskStatus.SUCCESS }],
+      missingIds: ['task-missing']
+    })
+  })
+
   it('should delete completed task, remove archive file and delete cache entry', async () => {
     const removeFilesSpy = vi.spyOn(filesUtils, 'removeFiles').mockResolvedValueOnce(undefined)
     const stopWatchSpy = vi.spyOn(filesTasksManager as any, 'stopWatch').mockResolvedValueOnce(undefined)

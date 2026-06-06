@@ -11,6 +11,7 @@ import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../
 import { FILE_OPERATION } from '../constants/operations'
 import { FileTaskEvent } from '../events/file-events'
 import type { FileTaskQueueItem } from '../interfaces/file-task-queue.interface'
+import type { FileTasksPollResponse } from '../interfaces/file-task.interface'
 import { FileTask, FileTaskProps, FileTaskStatus } from '../models/file-task'
 import { countDirEntries, dirName, fileName, fileSize, isPathExists, isPathIsDir, removeFiles } from '../utils/files'
 import { SendFile } from '../utils/send-file'
@@ -69,8 +70,25 @@ export class FilesTasksManager implements OnModuleDestroy {
       throw new HttpException('Task not found', HttpStatus.NOT_FOUND)
     } else {
       const keys = await this.cache.keys(cacheKey)
-      return keys.length ? await this.cache.mget(keys) : []
+      const tasks: FileTask[] = keys.length ? await this.cache.mget(keys) : []
+      return tasks.filter((task: FileTask | null | undefined): task is FileTask => task != null)
     }
+  }
+
+  async pollTasks(userId: number, trackedIds: string[]): Promise<FileTasksPollResponse> {
+    const tasks = (await this.getTasks(userId)) as FileTask[]
+    const trackedTaskIds = new Set(trackedIds)
+    const active: FileTask[] = []
+    const ended: FileTask[] = []
+    for (const task of tasks) {
+      if (this.isActiveStatus(task.status)) {
+        active.push(task)
+      } else if (trackedTaskIds.has(task.id)) {
+        ended.push(task)
+      }
+      trackedTaskIds.delete(task.id)
+    }
+    return { active, ended, missingIds: [...trackedTaskIds] }
   }
 
   async deleteTasks(user: UserModel, taskId?: string): Promise<void> {
@@ -179,11 +197,11 @@ export class FilesTasksManager implements OnModuleDestroy {
       .then((data: any) => {
         this.logger.debug({ tag: this.runTask.name, msg: `${task.task.name} : ${task.method} done` })
         this.completeTask(task.user.id, task.cacheKey, FileTaskStatus.SUCCESS, data).catch((e: Error) =>
-          this.logger.error({ tag: this.runTask.name, msg: `${e}` })
+          this.logger.warn({ tag: this.runTask.name, msg: `${e}` })
         )
       })
       .catch((e: HttpException | any) => {
-        this.logger.error({ tag: this.runTask.name, msg: `${task.task.name} : ${task.method} : ${e}` })
+        this.logger.warn({ tag: this.runTask.name, msg: `${task.task.name} : ${task.method} : ${e}` })
         this.completeTask(
           task.user.id,
           task.cacheKey,

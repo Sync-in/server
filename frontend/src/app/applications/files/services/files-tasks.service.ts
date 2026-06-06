@@ -1,12 +1,13 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
-import { API_FILES_TASKS, API_FILES_TASKS_CANCEL } from '@sync-in-server/backend/src/applications/files/constants/routes'
+import { API_FILES_TASKS, API_FILES_TASKS_CANCEL, API_FILES_TASKS_POLL } from '@sync-in-server/backend/src/applications/files/constants/routes'
+import type { FileTasksPollResponse } from '@sync-in-server/backend/src/applications/files/interfaces/file-task.interface'
 import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
-import { Subscription, timer } from 'rxjs'
-import { tap } from 'rxjs/operators'
+import { EMPTY, Observable, Subscription, timer } from 'rxjs'
+import { catchError, exhaustMap, map, tap } from 'rxjs/operators'
 import { genRandomUUID } from '../../../common/utils/functions'
 import { escapeRegexp } from '../../../common/utils/regexp'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
@@ -55,12 +56,20 @@ export class FilesTasksService {
   private currentUserId: number
   private cancellingTasks = new Set<string>()
   private uploadCancellationHandlers = new Map<string, () => void>()
+  private loadSubscription: Subscription = null
   private watcher: Subscription = null
-  private watch = timer(1000, 1000).pipe(tap(() => this.doWatch()))
+  private readonly watch = timer(1000, 1000).pipe(
+    exhaustMap(() => this.fetchActiveTasks()),
+    tap(({ activeTasks, endedTasks }) => this.reconcileServerTasks(activeTasks, endedTasks))
+  )
 
   constructor() {
     this.store.user.subscribe((u: UserType) => {
-      if (u && this.currentUserId !== u?.id) {
+      if (this.currentUserId !== u?.id) {
+        this.loadSubscription?.unsubscribe()
+        this.stopWatch(false)
+      }
+      if (u && this.currentUserId !== u.id) {
         // Load tasks when the user is defined and has changed to prevent interceptor redirects
         this.loadAll()
       }
@@ -70,10 +79,10 @@ export class FilesTasksService {
 
   addTask(task: FileTask) {
     if (this.isActiveStatus(task.status)) {
-      this.store.filesActiveTasks.next([task, ...this.store.filesActiveTasks.getValue()])
+      this.store.filesActiveTasks.next(this.prependUniqueTasks(this.store.filesActiveTasks.getValue(), [task]))
       this.startWatch()
     } else {
-      this.store.filesEndedTasks.next([task, ...this.store.filesEndedTasks.getValue()])
+      this.store.filesEndedTasks.next(this.prependUniqueTasks(this.store.filesEndedTasks.getValue(), [task]))
     }
   }
 
@@ -81,8 +90,8 @@ export class FilesTasksService {
     const task = new FileTask(genRandomUUID(), FILE_OPERATION.UPLOAD, path, name)
     task.status = FileTaskStatus.QUEUED
     task.startedAt = currentTimeStamp(null, true)
-    task.props = { progress: 1, size: 0, totalSize: totalSize }
-    this.store.filesActiveTasks.next([task, ...this.store.filesActiveTasks.getValue()])
+    task.props = { progress: 1, size: 0, totalSize }
+    this.store.filesActiveTasks.next(this.prependUniqueTasks(this.store.filesActiveTasks.getValue(), [task]))
     this.layout.showRSideBarTab(TAB_MENU.TASKS, true)
     return task
   }
@@ -153,18 +162,23 @@ export class FilesTasksService {
   }
 
   private loadAll() {
-    this.http.get<FileTask[]>(API_FILES_TASKS).subscribe({
-      next: (fileTasks: FileTask[]) => fileTasks.forEach((task: FileTask) => this.addTask(task)),
+    this.loadSubscription = this.http.get<FileTask[]>(API_FILES_TASKS).subscribe({
+      next: (fileTasks: FileTask[]) => {
+        const activeTasks: FileTask[] = []
+        const endedTasks: FileTask[] = []
+        for (const task of fileTasks) {
+          const target = this.isActiveStatus(task.status) ? activeTasks : endedTasks
+          target.push(task)
+        }
+        const uploads = this.store.filesActiveTasks.getValue().filter((task: FileTask) => task.type === FILE_OPERATION.UPLOAD)
+        this.store.filesActiveTasks.next([...uploads, ...activeTasks])
+        this.store.filesEndedTasks.next(endedTasks)
+        if (activeTasks.length) {
+          this.startWatch()
+        }
+      },
       error: (e) => console.error(e)
     })
-  }
-
-  private doWatch() {
-    if (this.store.filesActiveTasks.getValue().length) {
-      this.fetchActiveTasks()
-    } else {
-      this.stopWatch()
-    }
   }
 
   private startWatch() {
@@ -174,33 +188,76 @@ export class FilesTasksService {
     }
   }
 
-  private stopWatch() {
+  private stopWatch(hideSidebar = true) {
     if (!this.watcher || this.watcher.closed) return
-    this.layout.hideRSideBarTab(TAB_MENU.TASKS, 3000)
+    if (hideSidebar) {
+      this.layout.hideRSideBarTab(TAB_MENU.TASKS, 3000)
+    }
     this.watcher.unsubscribe()
   }
 
-  private fetchActiveTasks() {
-    for (const task of this.store.filesActiveTasks.getValue().filter((task: FileTask) => task.type !== FILE_OPERATION.UPLOAD)) {
-      this.http.get<FileTask>(`${API_FILES_TASKS}/${task.id}`).subscribe({
-        next: (task: FileTask) => this.updateTask(task),
-        error: (e) => {
-          if (e.status === 404) {
-            task.result = e.error.message
-            task.status = FileTaskStatus.ERROR
-            this.updateTask(task)
-          }
-          console.warn(e)
-        }
-      })
+  private fetchActiveTasks(): Observable<{ activeTasks: FileTask[]; endedTasks: FileTask[] }> {
+    const currentServerTasks = this.store.filesActiveTasks.getValue().filter((task: FileTask) => task.type !== FILE_OPERATION.UPLOAD)
+    if (!currentServerTasks.length) {
+      this.stopWatch(false)
+      return EMPTY
     }
+    return this.http
+      .post<FileTasksPollResponse>(API_FILES_TASKS_POLL, {
+        trackedIds: currentServerTasks.map((task: FileTask) => task.id)
+      })
+      .pipe(
+        map(({ active, ended, missingIds }: FileTasksPollResponse) => {
+          const currentTasksById = new Map(currentServerTasks.map((task: FileTask) => [task.id, task]))
+          const missingTasks = missingIds
+            .map((taskId: string) => currentTasksById.get(taskId))
+            .filter((task: FileTask | undefined): task is FileTask => task !== undefined)
+            .map((task: FileTask) => ({
+              ...task,
+              result: 'Task not found',
+              status: FileTaskStatus.ERROR
+            }))
+          return { activeTasks: active, endedTasks: [...ended, ...missingTasks] }
+        }),
+        catchError((e) => {
+          console.warn(e)
+          return EMPTY
+        })
+      )
   }
 
-  private findTask(taskId: string, active: boolean): FileTask {
-    if (active) {
-      return this.store.filesActiveTasks.getValue().find((task: FileTask) => task.id === taskId)
+  private reconcileServerTasks(activeTasks: FileTask[], endedTasks: FileTask[]) {
+    const currentTasks = this.store.filesActiveTasks.getValue()
+    const activeTasksById = new Map(activeTasks.map((task: FileTask) => [task.id, task]))
+    const nextTasks: FileTask[] = []
+    for (const task of currentTasks) {
+      if (task.type === FILE_OPERATION.UPLOAD) {
+        nextTasks.push(task)
+        continue
+      }
+      const updatedTask = activeTasksById.get(task.id)
+      if (updatedTask) {
+        Object.assign(task, updatedTask)
+        nextTasks.push(task)
+        activeTasksById.delete(task.id)
+      }
     }
-    return this.store.filesEndedTasks.getValue().find((task: FileTask) => task.id === taskId)
+    nextTasks.push(...activeTasksById.values())
+    this.store.filesActiveTasks.next(nextTasks)
+
+    if (endedTasks.length) {
+      for (const task of endedTasks) {
+        this.cancellingTasks.delete(task.id)
+      }
+      this.store.filesEndedTasks.next(this.prependUniqueTasks(this.store.filesEndedTasks.getValue(), endedTasks))
+      for (const task of endedTasks) {
+        this.taskDone(task)
+      }
+    }
+    const hasServerTasks = nextTasks.some((task: FileTask) => task.type !== FILE_OPERATION.UPLOAD)
+    if (!hasServerTasks) {
+      this.stopWatch(nextTasks.length === 0)
+    }
   }
 
   private isActiveStatus(status: FileTaskStatus): boolean {
@@ -209,10 +266,16 @@ export class FilesTasksService {
 
   private updateActiveTask(task: FileTask) {
     const activeTasks = this.store.filesActiveTasks.getValue()
-    const currentTask = this.findTask(task.id, true)
+    const currentTask = activeTasks.find((activeTask: FileTask) => activeTask.id === task.id)
     if (!currentTask) return
     Object.assign(currentTask, task)
     this.store.filesActiveTasks.next([...activeTasks])
+  }
+
+  private prependUniqueTasks(currentTasks: FileTask[], tasks: FileTask[]): FileTask[] {
+    if (!tasks.length) return currentTasks
+    const taskIds = new Set(tasks.map((task: FileTask) => task.id))
+    return [...tasks, ...currentTasks.filter((task: FileTask) => !taskIds.has(task.id))]
   }
 
   private deleteTask(taskId: string, active: boolean) {

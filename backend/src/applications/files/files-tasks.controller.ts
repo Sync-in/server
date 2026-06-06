@@ -1,9 +1,11 @@
-import { Controller, Delete, Get, Param, Post, Req, Res, StreamableFile } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Req, Res, StreamableFile } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { FastifySpaceRequest } from '../spaces/interfaces/space-request.interface'
 import { GetUser } from '../users/decorators/user.decorator'
 import { UserModel } from '../users/models/user.model'
 import { API_FILES_TASKS, FILES_ROUTE } from './constants/routes'
+import { FileTasksPollDto } from './dto/file-tasks-poll.dto'
+import type { FileTasksPollResponse } from './interfaces/file-task.interface'
 import { FilesTasksManager } from './services/files-tasks-manager.service'
 
 @Controller(API_FILES_TASKS)
@@ -13,6 +15,11 @@ export class FilesTasksController {
   @Get(':id?')
   getTasks(@GetUser() user: UserModel, @Param('id') taskId?: string) {
     return this.filesTasksManager.getTasks(user.id, taskId)
+  }
+
+  @Post(FILES_ROUTE.TASKS_POLL)
+  pollTasks(@GetUser() user: UserModel, @Body() fileTasksPollDto: FileTasksPollDto): Promise<FileTasksPollResponse> {
+    return this.filesTasksManager.pollTasks(user.id, fileTasksPollDto.trackedIds)
   }
 
   @Delete(':id?')
