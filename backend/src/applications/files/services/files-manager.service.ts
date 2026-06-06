@@ -66,6 +66,7 @@ import { ACTION } from '../../../common/constants'
 import { pipeline } from 'node:stream/promises'
 import { isMultipartFileTooLargeError, uploadTmpFilePath } from '../utils/upload-file'
 import { FILE_ERROR_MESSAGES, maxFileSizeExceededError } from '../utils/errors'
+import { copyAbortable, createTaskTemporaryDir, moveAbortable, SourceCleanupError, taskTemporaryPath } from '../utils/tasks'
 
 @Injectable()
 export class FilesManager {
@@ -382,8 +383,10 @@ export class FilesManager {
     isMove: boolean,
     overwrite = false,
     mkdirDstParentPath = false,
-    dav?: { depth: LOCK_DEPTH; lockTokens: string[] }
+    dav?: { depth: LOCK_DEPTH; lockTokens: string[] },
+    signal?: AbortSignal
   ): Promise<void> {
+    const isTaskContext = Boolean(srcSpace.task?.cacheKey)
     // checks
     this.checkNotTrashRepository(dstSpace)
     if (!canAccessToSpace(user, dstSpace)) {
@@ -472,35 +475,46 @@ export class FilesManager {
     // check destination
     await this.filesLockManager.checkConflicts(dstSpace.dbFile, depth, { userId: user.id, lockTokens: dav?.lockTokens })
 
-    // overwrite
-    if (overwrite && (await isPathExists(dstSpace.realPath))) {
-      // todo : versioning here
+    // Task transfers defer overwrite handling until their staged content is ready to commit.
+    if (!isTaskContext && overwrite && (await isPathExists(dstSpace.realPath))) {
       await this.delete(user, dstSpace)
-    }
-
-    // send it to task watcher
-    if (srcSpace.task?.cacheKey) {
-      if (!isDir) srcSpace.task.props.totalSize = await fileSize(srcSpace.realPath)
-      FileTaskEvent.emit('startWatch', srcSpace, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, dstSpace.realPath)
     }
 
     // do
     if (isMove) {
-      await moveFiles(srcSpace.realPath, dstSpace.realPath, overwrite)
+      let sourceCleanupError: SourceCleanupError | undefined
+      if (isTaskContext) {
+        sourceCleanupError = await this.moveAsTask(user, srcSpace, dstSpace, overwrite, isDir, signal)
+      } else {
+        await moveFiles(srcSpace.realPath, dstSpace.realPath, overwrite)
+      }
       // emit a file event when the source space is different from the destination space
       if (srcSpace.realBasePath !== dstSpace.realBasePath) {
         FileEvent.emit('event', { user, space: srcSpace, action: ACTION.DELETE_PERMANENTLY, rPath: srcSpace.realPath })
         FileEvent.emit('event', { user, space: dstSpace, action: ACTION.ADD, rPath: dstSpace.realPath })
       }
+      // A published cross-device destination is authoritative even if the obsolete source could not be removed.
       await this.filesQueries.moveFiles(srcSpace.dbFile, dstSpace.dbFile, isDir)
+      if (sourceCleanupError) {
+        this.logSourceCleanupError(sourceCleanupError)
+        throw sourceCleanupError
+      }
     } else {
-      await copyFiles(srcSpace.realPath, dstSpace.realPath, overwrite, recursive)
+      if (isTaskContext) {
+        if (!signal) {
+          throw new Error('An abort signal is required for a copy task')
+        }
+        await this.copyAsTask(user, srcSpace, dstSpace, overwrite, recursive, isDir, signal)
+      } else {
+        await copyFiles(srcSpace.realPath, dstSpace.realPath, overwrite, recursive)
+      }
       // emit file event
       FileEvent.emit('event', { user, space: dstSpace, action: ACTION.ADD, rPath: dstSpace.realPath })
     }
   }
 
-  async delete(user: UserModel, space: SpaceEnv, dav?: { lockTokens: string[] }): Promise<void> {
+  async delete(user: UserModel, space: SpaceEnv, dav?: { lockTokens: string[] }, signal?: AbortSignal): Promise<void> {
+    const isTaskContext = Boolean(space.task?.cacheKey)
     if (!(await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
     }
@@ -512,6 +526,7 @@ export class FilesManager {
     })
     // file system deletion
     let forceDeleteInDB = false
+    let sourceCleanupError: SourceCleanupError | undefined
     if (space.inTrashRepository) {
       await removeFiles(space.realPath)
       FileEvent.emit('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: space.realPath })
@@ -524,17 +539,12 @@ export class FilesManager {
         if (!(await isPathExists(trashDir))) {
           await makeDir(trashDir, true)
         }
-        if (await isPathExists(trashFile)) {
-          // if a resource already exists in the trash, rename it with the date
-          const dstTrash = await uniqueDatedFilePath(trashFile)
-          // move the resource on fs
-          await moveFiles(trashFile, dstTrash.path)
-          // move the resource in db
-          const trashFileDB: FileDBProps = { ...space.dbFile, inTrash: true }
-          const dstTrashFileDB: FileDBProps = { ...trashFileDB, path: path.join(dirName(trashFileDB.path), fileName(dstTrash.path)) }
-          await this.filesQueries.moveFiles(trashFileDB, dstTrashFileDB, dstTrash.isDir)
+        if (isTaskContext) {
+          sourceCleanupError = await this.deleteAsTask(user, space, trashFile, isDir, signal)
+        } else {
+          await this.moveExistingTrashFile(space, trashFile)
+          await moveFiles(space.realPath, trashFile, true)
         }
-        await moveFiles(space.realPath, trashFile, true)
         // emit file event
         if (space.dbFile.shareExternalId) {
           // deleted files from shares with external locations are moved to the owner’s trash
@@ -563,15 +573,22 @@ export class FilesManager {
     for (const lock of await this.filesLockManager.getLocksByPath(space.dbFile)) {
       this.filesLockManager.removeLock(lock.key).catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: `${e}` }))
     }
-    // delete or move to trash the files in db
+    // Keep the database aligned with the published trash copy before reporting a residual source.
     await this.filesQueries.deleteFiles(space.dbFile, isDir, forceDeleteInDB)
+    if (sourceCleanupError) {
+      this.logSourceCleanupError(sourceCleanupError)
+      throw sourceCleanupError
+    }
   }
 
   async downloadFromUrl(user: UserModel, space: SpaceEnv, downloadDto: DownloadFileDto, signal?: AbortSignal): Promise<void> {
+    const isTaskContext = Boolean(space.task?.cacheKey)
     this.checkNotTrashRepository(space)
     this.logger.log({ tag: this.downloadFromUrl.name, msg: `${downloadDto.url}` })
     const dstPath = await uniqueFilePathFromDir(space.realPath)
-    const tmpPath = tempFilePath(user.tmpPath, `${fileName(dstPath)}-download-`)
+    const tmpPath = isTaskContext
+      ? taskTemporaryPath(user.tasksPath, space.task!.cacheKey, dstPath)
+      : tempFilePath(user.tmpPath, `${fileName(dstPath)}-download-`)
     const dbFile = space.dbFile
     dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
 
@@ -598,6 +615,7 @@ export class FilesManager {
   }
 
   async compress(user: UserModel, space: SpaceEnv, dto: CompressFileDto, signal?: AbortSignal): Promise<void> {
+    const isTaskContext = Boolean(space.task?.cacheKey)
     // This method is currently used only by files-methods.service, which handles input sanitization.
     // If it is used in other services in the future, make sure to refactor accordingly to sanitize inputs properly.
     if (dto.compressInDirectory) {
@@ -606,7 +624,9 @@ export class FilesManager {
     const srcPath = dirName(space.realPath)
     const archiveExt = dto.name.endsWith(dto.extension) ? '' : `.${dto.extension}`
     const dstPath = await uniqueFilePathFromDir(path.join(dto.compressInDirectory ? srcPath : user.tasksPath, `${dto.name}${archiveExt}`))
-    const tmpPath = tempFilePath(user.tmpPath, `${fileName(dstPath)}-compress-`)
+    const tmpPath = isTaskContext
+      ? taskTemporaryPath(user.tasksPath, space.task!.cacheKey, dstPath)
+      : tempFilePath(user.tmpPath, `${fileName(dstPath)}-compress-`)
     // avoid using ZIP here because it can trigger high memory usage.
     const archive: Archiver = archiver(TAR_EXTENSION, {
       gzip: dto.extension === TAR_GZ_EXTENSION,
@@ -625,8 +645,8 @@ export class FilesManager {
       }
       fileLock = lock
     }
-    if (space.task?.cacheKey) {
-      space.task.props.compressInDirectory = dto.compressInDirectory
+    if (isTaskContext) {
+      space.task!.props.compressInDirectory = dto.compressInDirectory
       FileTaskEvent.emit('startWatch', space, FILE_OPERATION.COMPRESS, dstPath, tmpPath)
     }
     // do
@@ -672,6 +692,7 @@ export class FilesManager {
   }
 
   async decompress(user: UserModel, space: SpaceEnv, signal?: AbortSignal): Promise<void> {
+    const isTaskContext = Boolean(space.task?.cacheKey)
     // checks
     this.checkNotTrashRepository(space)
     if (!(await isPathExists(space.realPath))) {
@@ -683,7 +704,9 @@ export class FilesManager {
     }
     // make temporary extraction folder
     const dstPath = await uniqueFilePathFromDir(path.join(dirName(space.realPath), path.basename(space.realPath, extension)))
-    const tmpPath = await makeTempDir(user.tmpPath, `${fileName(dstPath)}-extract-`)
+    const tmpPath = isTaskContext
+      ? await createTaskTemporaryDir(user.tasksPath, space.task!.cacheKey, dstPath)
+      : await makeTempDir(user.tmpPath, `${fileName(dstPath)}-extract-`)
     let fileLock: FileLock | undefined
     try {
       // create lock
@@ -695,7 +718,7 @@ export class FilesManager {
       }
       fileLock = lock
       // tasking
-      if (space.task?.cacheKey) FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, dstPath, tmpPath)
+      if (isTaskContext) FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, dstPath, tmpPath)
       // do
       const maxExtractedSize = space.storageQuota === null ? undefined : Math.max(0, space.storageQuota - space.storageUsage)
       if (extension === '.zip') {
@@ -796,6 +819,118 @@ export class FilesManager {
     } else {
       return await fileSize(space.realPath)
     }
+  }
+
+  private async copyAsTask(
+    user: UserModel,
+    srcSpace: SpaceEnv,
+    dstSpace: SpaceEnv,
+    overwrite: boolean,
+    recursive: boolean,
+    isDir: boolean,
+    signal: AbortSignal
+  ): Promise<void> {
+    await this.setTaskTotalSize(srcSpace, isDir)
+    await copyAbortable(srcSpace.realPath, dstSpace.realPath, {
+      beforeCommit: this.prepareTaskDestination(user, srcSpace, dstSpace, overwrite),
+      cacheKey: srcSpace.task!.cacheKey,
+      onTransferStart: (watchPath) => this.startTransferTaskWatch(srcSpace, FILE_OPERATION.COPY, dstSpace.realPath, watchPath),
+      overwrite,
+      recursive,
+      signal,
+      stagingDir: user.tasksPath
+    })
+  }
+
+  private async moveAsTask(
+    user: UserModel,
+    srcSpace: SpaceEnv,
+    dstSpace: SpaceEnv,
+    overwrite: boolean,
+    isDir: boolean,
+    signal?: AbortSignal
+  ): Promise<SourceCleanupError | undefined> {
+    await this.setTaskTotalSize(srcSpace, isDir)
+    const beforeCommit = this.prepareTaskDestination(user, srcSpace, dstSpace, overwrite)
+    if (!signal) {
+      // Same-device moves stay on the regular atomic path and are therefore not cancellable.
+      this.startTransferTaskWatch(srcSpace, FILE_OPERATION.MOVE, dstSpace.realPath)
+      await beforeCommit?.()
+      await moveFiles(srcSpace.realPath, dstSpace.realPath, overwrite)
+      return
+    }
+    return moveAbortable(srcSpace.realPath, dstSpace.realPath, {
+      beforeCommit,
+      cacheKey: srcSpace.task!.cacheKey,
+      crossDevice: true,
+      onTransferStart: (watchPath) => this.startTransferTaskWatch(srcSpace, FILE_OPERATION.MOVE, dstSpace.realPath, watchPath),
+      overwrite,
+      signal,
+      stagingDir: user.tasksPath
+    })
+  }
+
+  private async deleteAsTask(
+    user: UserModel,
+    space: SpaceEnv,
+    trashFile: string,
+    isDir: boolean,
+    signal?: AbortSignal
+  ): Promise<SourceCleanupError | undefined> {
+    await this.setTaskTotalSize(space, isDir)
+    const beforeCommit = () => this.moveExistingTrashFile(space, trashFile)
+    if (!signal) {
+      // Moving to trash on the same device stays atomic; only cross-device deletes receive a signal.
+      this.startTransferTaskWatch(space, FILE_OPERATION.DELETE, trashFile)
+      await beforeCommit()
+      await moveFiles(space.realPath, trashFile, true)
+      return
+    }
+    return moveAbortable(space.realPath, trashFile, {
+      beforeCommit,
+      cacheKey: space.task!.cacheKey,
+      crossDevice: true,
+      onTransferStart: (watchPath) => this.startTransferTaskWatch(space, FILE_OPERATION.DELETE, trashFile, watchPath),
+      overwrite: true,
+      signal,
+      stagingDir: user.tasksPath
+    })
+  }
+
+  private prepareTaskDestination(user: UserModel, srcSpace: SpaceEnv, dstSpace: SpaceEnv, overwrite: boolean): (() => Promise<void>) | undefined {
+    if (!overwrite || srcSpace.realPath.toLowerCase() === dstSpace.realPath.toLowerCase()) return
+    // Preserve the current destination until the staged transfer reaches its commit phase.
+    return async () => {
+      if (await isPathExists(dstSpace.realPath)) {
+        await this.delete(user, dstSpace)
+      }
+    }
+  }
+
+  private async moveExistingTrashFile(space: SpaceEnv, trashFile: string): Promise<void> {
+    if (!(await isPathExists(trashFile))) return
+    const dstTrash = await uniqueDatedFilePath(trashFile)
+    await moveFiles(trashFile, dstTrash.path)
+    const trashFileDB: FileDBProps = { ...space.dbFile, inTrash: true }
+    const dstTrashFileDB: FileDBProps = { ...trashFileDB, path: path.join(dirName(trashFileDB.path), fileName(dstTrash.path)) }
+    await this.filesQueries.moveFiles(trashFileDB, dstTrashFileDB, dstTrash.isDir)
+  }
+
+  private async setTaskTotalSize(space: SpaceEnv, isDir: boolean): Promise<void> {
+    if (!isDir) {
+      space.task!.props.totalSize = await fileSize(space.realPath)
+    }
+  }
+
+  private startTransferTaskWatch(space: SpaceEnv, operation: FILE_OPERATION, publishedPath: string, watchPath?: string): void {
+    FileTaskEvent.emit('startWatch', space, operation, publishedPath, watchPath)
+  }
+
+  private logSourceCleanupError(error: SourceCleanupError): void {
+    this.logger.error({
+      tag: this.logSourceCleanupError.name,
+      msg: `${error.message}: ${error.srcPath} -> ${error.dstPath}: ${error.cause}`
+    })
   }
 
   private checkNotTrashRepository(space: SpaceEnv): void {

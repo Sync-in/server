@@ -55,19 +55,19 @@ export class FilesMethods {
     }
   }
 
-  copy(user: UserModel, space: SpaceEnv, copyMoveFileDto: CopyMoveFileDto): Promise<CopyMoveFileResponse> {
-    return this.copyMove(user, space, copyMoveFileDto, false)
+  copy(user: UserModel, space: SpaceEnv, copyMoveFileDto: CopyMoveFileDto, signal?: AbortSignal): Promise<CopyMoveFileResponse> {
+    return this.copyMove(user, space, copyMoveFileDto, false, signal)
   }
 
-  move(user: UserModel, space: SpaceEnv, copyMoveFileDto: CopyMoveFileDto): Promise<CopyMoveFileResponse> {
-    return this.copyMove(user, space, copyMoveFileDto, true)
+  move(user: UserModel, space: SpaceEnv, copyMoveFileDto: CopyMoveFileDto, signal?: AbortSignal): Promise<CopyMoveFileResponse> {
+    return this.copyMove(user, space, copyMoveFileDto, true, signal)
   }
 
-  async delete(user: UserModel, space: SpaceEnv): Promise<void> {
+  async delete(user: UserModel, space: SpaceEnv, _dto?: null, signal?: AbortSignal): Promise<void> {
     try {
-      return await this.filesManager.delete(user, space)
+      return await this.filesManager.delete(user, space, undefined, signal)
     } catch (e) {
-      this.handleError(space, FILE_OPERATION.DELETE, e)
+      this.handleError(space, FILE_OPERATION.DELETE, e, undefined, signal)
     }
   }
 
@@ -76,7 +76,7 @@ export class FilesMethods {
     try {
       return await this.filesManager.downloadFromUrl(user, space, downloadDto, signal)
     } catch (e) {
-      this.handleError(space, FILE_OPERATION.DOWNLOAD, e)
+      this.handleError(space, FILE_OPERATION.DOWNLOAD, e, undefined, signal)
     }
   }
 
@@ -109,7 +109,7 @@ export class FilesMethods {
       }
       return await this.filesManager.compress(user, space, compressFileDto, signal)
     } catch (e) {
-      this.handleError(space, FILE_OPERATION.COMPRESS, e)
+      this.handleError(space, FILE_OPERATION.COMPRESS, e, undefined, signal)
     }
   }
 
@@ -117,7 +117,7 @@ export class FilesMethods {
     try {
       return await this.filesManager.decompress(user, space, signal)
     } catch (e) {
-      this.handleError(space, FILE_OPERATION.DECOMPRESS, e)
+      this.handleError(space, FILE_OPERATION.DECOMPRESS, e, undefined, signal)
     }
   }
 
@@ -165,19 +165,28 @@ export class FilesMethods {
     }
   }
 
-  private async copyMove(user: UserModel, space: SpaceEnv, copyMoveFileDto: CopyMoveFileDto, isMove: boolean): Promise<CopyMoveFileResponse> {
-    const dstUrl = path.join(copyMoveFileDto.dstDirectory, copyMoveFileDto.dstName ? copyMoveFileDto.dstName : fileName(space.realPath))
+  private async copyMove(
+    user: UserModel,
+    space: SpaceEnv,
+    copyMoveFileDto: CopyMoveFileDto,
+    isMove: boolean,
+    signal?: AbortSignal
+  ): Promise<CopyMoveFileResponse> {
+    const dstUrl = path.join(copyMoveFileDto.dstDirectory, copyMoveFileDto.dstName || fileName(space.realPath))
     let dstSpace: SpaceEnv
     try {
       dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
-      await this.filesManager.copyMove(user, space, dstSpace, isMove, copyMoveFileDto.overwrite)
+      await this.filesManager.copyMove(user, space, dstSpace, isMove, copyMoveFileDto.overwrite, false, undefined, signal)
       return { path: dirName(dstUrl), name: fileName(dstUrl), mime: getMimeType(dstSpace.realPath, await isPathIsDir(dstSpace.realPath)) }
     } catch (e) {
-      this.handleError(space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, dstSpace)
+      this.handleError(space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, dstSpace, signal)
     }
   }
 
-  private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv): never {
+  private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv, signal?: AbortSignal): never {
+    if (signal && this.isCancellationError(e, signal)) {
+      throw signal.reason
+    }
     this.logger.error({ tag: this.handleError.name, msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}` })
     // Remove the last part to avoid exposing the path
     const errorMsg = e.message.split(',')[0]
@@ -187,5 +196,13 @@ export class FilesMethods {
       throw new HttpException(errorMsg, e.httpCode)
     }
     throw new HttpException(errorMsg, HttpStatus.INTERNAL_SERVER_ERROR)
+  }
+
+  private isCancellationError(error: unknown, signal?: AbortSignal): boolean {
+    if (!signal?.aborted) return false
+    if (error === signal.reason) return true
+    if (!(error instanceof Error)) return false
+    const code = (error as NodeJS.ErrnoException).code
+    return error.cause === signal.reason || error.name === 'AbortError' || code === 'ABORT_ERR' || code === 'ERR_CANCELED'
   }
 }

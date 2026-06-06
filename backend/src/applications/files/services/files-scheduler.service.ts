@@ -17,6 +17,7 @@ import { FileTask, FileTaskStatus } from '../models/file-task'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { files } from '../schemas/files.schema'
 import { isPathExists, removeFiles } from '../utils/files'
+import { taskTemporaryPrefix } from '../utils/tasks'
 import { FilesContentIndexer } from './files-content-indexer.service'
 import { FilesTasksManager } from './files-tasks-manager.service'
 import { FilesQuotaManager } from './files-quota-manager.service'
@@ -212,19 +213,26 @@ export class FilesScheduler {
     this.isQuotaUpdateIsRunning = false
   }
 
-  private async cleanupUserTaskFiles(userId: number, userTasksPath: string): Promise<void> {
+  private async cleanupUserTaskFiles(userId: number, userTasksPath: string, expiration: number): Promise<void> {
     try {
       const keys = await this.cache.keys(FilesTasksManager.getCacheKey(userId))
-      const excludeFiles = keys.length
-        ? (await this.cache.mget(keys))
-            .filter((task: FileTask) => task && task.status === FileTaskStatus.PENDING && task.props.compressInDirectory === false)
-            .map((task: FileTask) => task.name)
-        : []
-      for (const f of (await fs.readdir(userTasksPath)).filter((f: string) => excludeFiles.indexOf(f) === -1)) {
-        await this.removeTmpFile(path.join(userTasksPath, f))
+      const tasks: (FileTask | null | undefined)[] = keys.length ? await this.cache.mget(keys) : []
+      const protectedFiles = new Set<string>()
+      const protectedPrefixes: string[] = []
+      for (const task of tasks) {
+        if (!task || !this.isActiveTaskStatus(task.status)) continue
+        // QUEUED tasks are included because they may start after this cache snapshot.
+        protectedPrefixes.push(taskTemporaryPrefix(FilesTasksManager.getCacheKey(userId, task.id)))
+        // Exported archives are final results stored beside staging entries and do not use the task prefix.
+        if (task.props.compressInDirectory === false) protectedFiles.add(task.name)
+      }
+      for (const fileName of await fs.readdir(userTasksPath)) {
+        if (protectedFiles.has(fileName) || protectedPrefixes.some((prefix: string) => fileName.startsWith(prefix))) continue
+        // The age guard protects tasks created after the cache snapshot from being removed by this cleanup pass.
+        await this.removeTmpFile(path.join(userTasksPath, fileName), expiration)
       }
     } catch (e) {
-      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${userTasksPath} : ${e}` })
+      this.logger.error({ tag: this.cleanupUserTaskFiles.name, msg: `unable to browse ${userTasksPath} : ${e}` })
     }
   }
 
@@ -237,7 +245,7 @@ export class FilesScheduler {
       for (const f of await fs.readdir(userTmpPath)) {
         const rPath = path.join(userTmpPath, f)
         if (f === USER_PATH.TASKS) {
-          await this.cleanupUserTaskFiles(user.id, rPath)
+          await this.cleanupUserTaskFiles(user.id, rPath, expiration)
         } else {
           await this.removeTmpFile(rPath, expiration)
         }
@@ -275,7 +283,7 @@ export class FilesScheduler {
           continue
         }
         const task = await this.cache.get(key)
-        if (task && this.isInterruptedTaskStatus(task.status)) {
+        if (task && this.isActiveTaskStatus(task.status)) {
           task.status = FileTaskStatus.ERROR
           task.result = 'Interrupted'
           task.endedAt = currentTimeStamp(null, true)
@@ -292,7 +300,7 @@ export class FilesScheduler {
     }
   }
 
-  private isInterruptedTaskStatus(status: FileTaskStatus): boolean {
+  private isActiveTaskStatus(status: FileTaskStatus): boolean {
     return status === FileTaskStatus.PENDING || status === FileTaskStatus.QUEUED
   }
 

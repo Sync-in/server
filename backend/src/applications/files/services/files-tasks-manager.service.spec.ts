@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { HttpException, HttpStatus } from '@nestjs/common'
 import crypto from 'node:crypto'
 import { Cache } from '../../../infrastructure/cache/cache.service'
+import { SpacesManager } from '../../spaces/services/spaces-manager.service'
 import * as filesUtils from '../utils/files'
 import { FileTaskEvent } from '../events/file-events'
 import { SendFile } from '../utils/send-file'
@@ -19,6 +20,7 @@ describe(FilesTasksManager.name, () => {
   let filesMethods: {
     doWork: Mock
   }
+  let spacesManager: { spaceEnv: Mock }
   let cacheStore: Map<string, any>
   let cache: {
     set: Mock
@@ -39,6 +41,30 @@ describe(FilesTasksManager.name, () => {
     return new RegExp(`^${escapedPattern}$`)
   }
 
+  const runCancelledTask = async (taskId: `${string}-${string}-${string}-${string}-${string}`, rejection?: Error) => {
+    const user = { id: 7 } as any
+    const space = { url: 'files/personal/document.txt' } as any
+    const cacheKey = `${CACHE_TASK_PREFIX}-7-${taskId}`
+    const cancellationCacheKey = `${CACHE_TASK_CANCEL_PREFIX}-7-${taskId}`
+    let signal!: AbortSignal
+
+    vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce(taskId)
+    filesMethods.doWork.mockImplementationOnce((_user, _space, _dto, taskSignal?: AbortSignal) => {
+      if (!taskSignal) return Promise.reject(new Error('missing abort signal'))
+      signal = taskSignal
+      return new Promise((_resolve, reject) => {
+        taskSignal.addEventListener('abort', () => reject(rejection ?? taskSignal.reason), { once: true })
+      })
+    })
+
+    await filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, space, null, 'doWork')
+    cacheStore.set(cancellationCacheKey, true)
+    await vi.advanceTimersByTimeAsync(1000)
+    for (let i = 0; i < 6; i++) await Promise.resolve()
+
+    return { cancellationCacheKey, signal, storedTask: cacheStore.get(cacheKey) }
+  }
+
   beforeEach(async () => {
     cacheStore = new Map<string, any>()
     cache = {
@@ -56,8 +82,9 @@ describe(FilesTasksManager.name, () => {
       }),
       del: vi.fn(async (key: string) => cacheStore.delete(key))
     }
-    filesMethods = {
-      doWork: vi.fn()
+    filesMethods = { doWork: vi.fn() }
+    spacesManager = {
+      spaceEnv: vi.fn().mockResolvedValue({ realPath: '/data/users/john/files/destination.txt' })
     }
     module = await Test.createTestingModule({
       providers: [
@@ -67,6 +94,7 @@ describe(FilesTasksManager.name, () => {
           provide: Cache,
           useValue: cache
         },
+        { provide: SpacesManager, useValue: spacesManager },
         { provide: FilesMethods, useValue: filesMethods }
       ]
     }).compile()
@@ -99,6 +127,31 @@ describe(FilesTasksManager.name, () => {
 
     expect((filesTasksManager as any).tasksWatcher).toEqual({})
     expect(FileTaskEvent.listenerCount('startWatch')).toBe(listenersBeforeDestroy - 1)
+  })
+
+  it('should not overlap watcher updates', async () => {
+    vi.useFakeTimers()
+    try {
+      let finishUpdate: () => void
+      const update = vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            finishUpdate = resolve
+          })
+      )
+      ;(filesTasksManager as any).watchTask('task-1', update)
+
+      await vi.advanceTimersByTimeAsync(2000)
+      expect(update).toHaveBeenCalledTimes(1)
+
+      finishUpdate()
+      await Promise.resolve()
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(update).toHaveBeenCalledTimes(2)
+      ;(filesTasksManager as any).stopWatch('task-1')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('should build task cache key with and without task id', () => {
@@ -137,36 +190,24 @@ describe(FilesTasksManager.name, () => {
   it('should abort a cancellable task and store a cancelled status when cancellation is requested', async () => {
     vi.useFakeTimers()
     try {
-      const taskId = '33333333-3333-4333-8333-333333333333'
-      const user = { id: 7 } as any
-      const space = { url: 'files/personal/document.txt' } as any
-      const cacheKey = `${CACHE_TASK_PREFIX}-7-${taskId}`
-      const cancellationCacheKey = `${CACHE_TASK_CANCEL_PREFIX}-7-${taskId}`
-      let taskSignal!: AbortSignal
+      const { cancellationCacheKey, signal, storedTask } = await runCancelledTask('33333333-3333-4333-8333-333333333333')
 
-      vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce(taskId)
-      filesMethods.doWork.mockImplementationOnce((_user, _space, _dto, signal?: AbortSignal) => {
-        if (!signal) return Promise.reject(new Error('missing abort signal'))
-        taskSignal = signal
-        return new Promise((_resolve, reject) => {
-          signal.addEventListener('abort', () => reject(signal.reason), { once: true })
-        })
-      })
-
-      const task = await filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, space, null, 'doWork')
-      expect(task.cancellable).toBe(true)
-      cacheStore.set(cancellationCacheKey, true)
-
-      await vi.advanceTimersByTimeAsync(1000)
-      for (let i = 0; i < 6; i++) await Promise.resolve()
-
-      const storedTask = cacheStore.get(cacheKey)
-      expect(filesMethods.doWork).toHaveBeenCalledWith(user, space, null, expect.any(AbortSignal))
-      expect(taskSignal.aborted).toBe(true)
-      expect(storedTask.status).toBe(FileTaskStatus.CANCELLED)
-      expect(storedTask.result).toBe('Cancelled')
+      expect(signal.aborted).toBe(true)
+      expect(storedTask).toMatchObject({ status: FileTaskStatus.CANCELLED, result: 'Cancelled' })
       expect(cacheStore.has(cancellationCacheKey)).toBe(false)
       expect((filesTasksManager as any).tasksCancellationWatcher).toEqual({})
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('should keep a late task error when the signal was already aborted', async () => {
+    vi.useFakeTimers()
+    try {
+      const taskError = new Error('source cleanup failed')
+      const { storedTask } = await runCancelledTask('55555555-5555-4555-8555-555555555555', taskError)
+
+      expect(storedTask).toMatchObject({ status: FileTaskStatus.ERROR, result: taskError.message })
     } finally {
       vi.useRealTimers()
     }
@@ -269,6 +310,40 @@ describe(FilesTasksManager.name, () => {
     expect(stopWatchSpy).toHaveBeenCalledWith('task-1')
   })
 
+  it('should not let an in-flight progress update overwrite task completion', async () => {
+    const cacheKey = `${CACHE_TASK_PREFIX}-7-task-pending`
+    cacheStore.set(cacheKey, {
+      id: 'task-pending',
+      status: FileTaskStatus.PENDING,
+      props: { size: 10 }
+    })
+    let releaseGet: () => void
+    let notifyGetStarted: () => void
+    const getStarted = new Promise<void>((resolve) => {
+      notifyGetStarted = resolve
+    })
+    const resumeGet = new Promise<void>((resolve) => {
+      releaseGet = resolve
+    })
+    cache.get.mockImplementationOnce(async (key: string) => {
+      notifyGetStarted()
+      await resumeGet
+      return cacheStore.get(key)
+    })
+
+    const updatePromise = (filesTasksManager as any).updateTask(cacheKey, { size: 20 })
+    await getStarted
+    const completionPromise = (filesTasksManager as any).setTaskDone(cacheKey, FileTaskStatus.SUCCESS, 'done')
+    releaseGet()
+    await Promise.all([updatePromise, completionPromise])
+
+    expect(cacheStore.get(cacheKey)).toMatchObject({
+      status: FileTaskStatus.SUCCESS,
+      result: 'done',
+      props: { size: 10 }
+    })
+  })
+
   it('should create a task and mark it as success when the async method resolves', async () => {
     vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce('11111111-1111-4111-8111-111111111111')
     filesMethods.doWork.mockResolvedValueOnce({ props: { totalSize: 99 }, result: 'done' })
@@ -279,19 +354,17 @@ describe(FilesTasksManager.name, () => {
     await flushPromises()
 
     expect(task.id).toBe('11111111-1111-4111-8111-111111111111')
-    expect(task.cancellable).toBe(false)
+    expect(task.cancellable).toBe(true)
     expect(task.status).toBe(FileTaskStatus.SUCCESS)
     expect(space.task.cacheKey).toBe(`${CACHE_TASK_PREFIX}-7-11111111-1111-4111-8111-111111111111`)
-    expect(filesMethods.doWork).toHaveBeenCalledWith(user, space, { foo: 'bar' })
-    expect(cache.set).toHaveBeenCalledWith(
-      `${CACHE_TASK_PREFIX}-7-11111111-1111-4111-8111-111111111111`,
-      expect.objectContaining({ id: '11111111-1111-4111-8111-111111111111', status: FileTaskStatus.SUCCESS, result: 'done' }),
-      CACHE_TASK_TTL
-    )
+    expect(filesMethods.doWork).toHaveBeenCalledWith(user, space, { foo: 'bar' }, expect.any(AbortSignal))
     const storedTask = cacheStore.get(`${CACHE_TASK_PREFIX}-7-11111111-1111-4111-8111-111111111111`)
-    expect(storedTask.status).toBe(FileTaskStatus.SUCCESS)
+    expect(storedTask).toMatchObject({
+      status: FileTaskStatus.SUCCESS,
+      result: 'done',
+      props: { totalSize: 99 }
+    })
     expect(storedTask.endedAt).toBeDefined()
-    expect(storedTask.props.totalSize).toBe(99)
   })
 
   it('should create a task and mark it as error when the async method fails', async () => {
@@ -306,6 +379,20 @@ describe(FilesTasksManager.name, () => {
     const storedTask = cacheStore.get(`${CACHE_TASK_PREFIX}-7-22222222-2222-4222-8222-222222222222`)
     expect(storedTask.status).toBe(FileTaskStatus.ERROR)
     expect(storedTask.result).toBe('operation failed')
+  })
+
+  it('should run a non-cancellable task without an abort signal', async () => {
+    filesMethods.doWork.mockResolvedValueOnce(undefined)
+    const user = { id: 7 } as any
+    const space = { realPath: '/data/users/john/files/document.txt', url: 'files/personal/document.txt' } as any
+    const dto = { dstDirectory: 'files/personal' }
+
+    const task = await filesTasksManager.createTask(FILE_OPERATION.MOVE, user, space, dto, 'doWork')
+    await flushPromises()
+
+    expect(spacesManager.spaceEnv).toHaveBeenCalledWith(user, ['files', 'personal', 'document.txt'])
+    expect(task.cancellable).toBe(false)
+    expect(filesMethods.doWork).toHaveBeenCalledWith(user, space, dto)
   })
 
   it('should queue tasks when a user already has three running tasks', async () => {
