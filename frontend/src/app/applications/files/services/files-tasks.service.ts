@@ -69,7 +69,7 @@ export class FilesTasksService {
   }
 
   addTask(task: FileTask) {
-    if (task.status === FileTaskStatus.PENDING) {
+    if (this.isActiveStatus(task.status)) {
       this.store.filesActiveTasks.next([task, ...this.store.filesActiveTasks.getValue()])
       this.startWatch()
     } else {
@@ -79,7 +79,7 @@ export class FilesTasksService {
 
   createUploadTask(path: string, name: string, totalSize: number): FileTask {
     const task = new FileTask(genRandomUUID(), FILE_OPERATION.UPLOAD, path, name)
-    task.status = FileTaskStatus.PENDING
+    task.status = FileTaskStatus.QUEUED
     task.startedAt = currentTimeStamp(null, true)
     task.props = { progress: 1, size: 0, totalSize: totalSize }
     this.store.filesActiveTasks.next([task, ...this.store.filesActiveTasks.getValue()])
@@ -123,7 +123,7 @@ export class FilesTasksService {
 
   canCancel(task: FileTask): boolean {
     return (
-      task.status === FileTaskStatus.PENDING &&
+      this.isActiveStatus(task.status) &&
       !this.cancellingTasks.has(task.id) &&
       (task.type === FILE_OPERATION.DOWNLOAD ||
         task.type === FILE_OPERATION.COMPRESS ||
@@ -142,9 +142,8 @@ export class FilesTasksService {
   }
 
   updateTask(task: FileTask) {
-    if (task.status === FileTaskStatus.PENDING) {
-      const currentTask = this.findTask(task.id, true)
-      Object.assign(currentTask, task)
+    if (this.isActiveStatus(task.status)) {
+      this.updateActiveTask(task)
     } else {
       this.cancellingTasks.delete(task.id)
       this.deleteTask(task.id, true)
@@ -176,10 +175,9 @@ export class FilesTasksService {
   }
 
   private stopWatch() {
-    if (this.watcher || !this.watcher.closed) {
-      this.layout.hideRSideBarTab(TAB_MENU.TASKS, 3000)
-      this.watcher.unsubscribe()
-    }
+    if (!this.watcher || this.watcher.closed) return
+    this.layout.hideRSideBarTab(TAB_MENU.TASKS, 3000)
+    this.watcher.unsubscribe()
   }
 
   private fetchActiveTasks() {
@@ -203,6 +201,18 @@ export class FilesTasksService {
       return this.store.filesActiveTasks.getValue().find((task: FileTask) => task.id === taskId)
     }
     return this.store.filesEndedTasks.getValue().find((task: FileTask) => task.id === taskId)
+  }
+
+  private isActiveStatus(status: FileTaskStatus): boolean {
+    return status === FileTaskStatus.PENDING || status === FileTaskStatus.QUEUED
+  }
+
+  private updateActiveTask(task: FileTask) {
+    const activeTasks = this.store.filesActiveTasks.getValue()
+    const currentTask = this.findTask(task.id, true)
+    if (!currentTask) return
+    Object.assign(currentTask, task)
+    this.store.filesActiveTasks.next([...activeTasks])
   }
 
   private deleteTask(taskId: string, active: boolean) {

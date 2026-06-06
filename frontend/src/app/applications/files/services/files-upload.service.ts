@@ -1,8 +1,9 @@
 import { HttpClient, HttpEventType, HttpUploadProgressEvent } from '@angular/common/http'
-import { inject, Injectable } from '@angular/core'
+import { inject, Injectable, NgZone } from '@angular/core'
 import { API_FILES_OPERATION_UPLOAD } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
+import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
 import { Observable, Subscription } from 'rxjs'
 import { supportUploadDirectory } from '../../../common/utils/functions'
 import type { FileUpload, FileUploadTaskRequest } from '../interfaces/file-upload.interface'
@@ -16,7 +17,11 @@ export class FilesUploadService {
   private readonly http = inject(HttpClient)
   private readonly filesService = inject(FilesService)
   private readonly filesTasksService = inject(FilesTasksService)
+  private readonly ngZone = inject(NgZone)
   private readonly maxConcurrentUploads = 3
+  private readonly progressUpdateInterval = 1000
+  private readonly progressUpdateTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  private readonly progressUpdatedAt = new Map<string, number>()
   private queuedUploads: FileUploadTaskRequest[] = []
   private runningUploads = 0
 
@@ -98,6 +103,9 @@ export class FilesUploadService {
     const { controller, req, task } = taskReq
     if (taskReq.done) return
     taskReq.started = true
+    task.status = FileTaskStatus.PENDING
+    task.startedAt = currentTimeStamp(null, true)
+    this.updateTaskInAngular(task)
     try {
       await this.runUpload(task, req, controller.signal)
       task.props.progress = 100
@@ -115,43 +123,50 @@ export class FilesUploadService {
 
   private finishUploadTask(taskReq: FileUploadTaskRequest) {
     if (taskReq.done) return
+    this.clearProgressUpdate(taskReq.task.id)
     taskReq.done = true
+    if (taskReq.task.status !== FileTaskStatus.PENDING && taskReq.task.status !== FileTaskStatus.QUEUED) {
+      taskReq.task.endedAt = currentTimeStamp(null, true)
+    }
     this.filesTasksService.unregisterUploadCancellation(taskReq.task.id)
-    this.filesTasksService.updateTask(taskReq.task)
+    this.updateTaskInAngular(taskReq.task)
     taskReq.resolveCompleted()
   }
 
   private runUpload(task: FileTask, req: Observable<any>, signal: AbortSignal): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (signal.aborted) {
-        reject(signal.reason)
-        return
-      }
-      let settled = false
-      const subscription = new Subscription()
-      const onAbort = () => {
-        subscription.unsubscribe()
-        settle(() => reject(signal.reason))
-      }
-      const settle = (done: () => void) => {
-        if (settled) return
-        settled = true
-        signal.removeEventListener('abort', onAbort)
-        done()
-      }
-      signal.addEventListener('abort', onAbort, { once: true })
-      subscription.add(
-        req.subscribe({
-          next: (ev: any) => {
-            if (ev.type === HttpEventType.UploadProgress) {
-              this.updateProgress(task, ev)
-            }
-          },
-          error: (e) => settle(() => reject(e)),
-          complete: () => settle(resolve)
+    return this.ngZone.runOutsideAngular(
+      () =>
+        new Promise<void>((resolve, reject) => {
+          if (signal.aborted) {
+            reject(signal.reason)
+            return
+          }
+          let settled = false
+          const subscription = new Subscription()
+          const onAbort = () => {
+            subscription.unsubscribe()
+            settle(() => reject(signal.reason))
+          }
+          const settle = (done: () => void) => {
+            if (settled) return
+            settled = true
+            signal.removeEventListener('abort', onAbort)
+            done()
+          }
+          signal.addEventListener('abort', onAbort, { once: true })
+          subscription.add(
+            req.subscribe({
+              next: (ev: any) => {
+                if (ev.type === HttpEventType.UploadProgress) {
+                  this.updateProgress(task, ev)
+                }
+              },
+              error: (e) => settle(() => reject(e)),
+              complete: () => settle(resolve)
+            })
+          )
         })
-      )
-    })
+    )
   }
 
   private cancelUploadTask(taskReq: FileUploadTaskRequest) {
@@ -179,7 +194,42 @@ export class FilesUploadService {
 
   private updateProgress(task: FileTask, ev: HttpUploadProgressEvent) {
     task.props.size = ev.loaded
-    task.props.progress = Math.round((100 * ev.loaded) / ev.total)
+    task.props.progress = ev.total ? Math.round((100 * ev.loaded) / ev.total) : task.props.progress || 1
+    this.scheduleProgressUpdate(task)
+  }
+
+  private scheduleProgressUpdate(task: FileTask) {
+    const now = Date.now()
+    const lastUpdate = this.progressUpdatedAt.get(task.id) || 0
+    const elapsed = now - lastUpdate
+    if (elapsed >= this.progressUpdateInterval) {
+      this.emitProgressUpdate(task)
+      return
+    }
+    if (this.progressUpdateTimers.has(task.id)) return
+    const timer = setTimeout(() => {
+      this.progressUpdateTimers.delete(task.id)
+      this.emitProgressUpdate(task)
+    }, this.progressUpdateInterval - elapsed)
+    this.progressUpdateTimers.set(task.id, timer)
+  }
+
+  private emitProgressUpdate(task: FileTask) {
+    this.progressUpdatedAt.set(task.id, Date.now())
+    this.updateTaskInAngular(task)
+  }
+
+  private clearProgressUpdate(taskId: string) {
+    const timer = this.progressUpdateTimers.get(taskId)
+    if (timer) {
+      clearTimeout(timer)
+      this.progressUpdateTimers.delete(taskId)
+    }
+    this.progressUpdatedAt.delete(taskId)
+  }
+
+  private updateTaskInAngular(task: FileTask) {
+    this.ngZone.run(() => this.filesTasksService.updateTask(task))
   }
 
   private sortFiles(files: FileUpload[]): Record<string, { nb: number; size: number; form: FormData }> {
