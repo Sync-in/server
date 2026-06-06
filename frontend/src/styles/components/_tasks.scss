@@ -3,21 +3,25 @@ $task-progress-height: 1.35rem;
 .task-list {
   @include no-select-utility;
   border-bottom: .5px solid transparent;
-  border-left: 3px solid transparent;
+  border-right: 3px solid transparent;
   font-size: $font-size-sm;
   padding: .3rem .4rem;
-  transition: background-color .16s ease, border-left-color .16s ease;
+  transition: background-color .16s ease, border-right-color .16s ease;
 
   &--pending {
-    border-left-color: $warning;
+    border-right-color: $warning;
   }
 
   &--error {
-    border-left-color: $danger;
+    border-right-color: $danger;
   }
 
   &--cancelled {
-    border-left-color: $secondary;
+    border-right-color: $secondary;
+  }
+
+  &--queued {
+    border-right-color: $secondary;
   }
 
   &--interactive {

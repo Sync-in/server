@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy } from '@angular/core'
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnDestroy } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -23,23 +23,31 @@ import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
-import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
+import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
 import { ToBytesPipe } from '../../../../common/pipes/to-bytes.pipe'
 import { StoreService } from '../../../../store/store.service'
 import { SPACES_PATH } from '../../../spaces/spaces.constants'
+import type { FileTaskView, TaskProgressItem } from '../../interfaces/file-task-view.interface'
 import { FilesTasksService } from '../../services/files-tasks.service'
 import { FilesService } from '../../services/files.service'
 
 @Component({
   selector: 'app-files-tasks',
-  imports: [FaIconComponent, L10nTranslatePipe, AutoResizeDirective, TooltipModule, ProgressbarComponent, TimeAgoPipe, ToBytesPipe],
+  imports: [FaIconComponent, L10nTranslatePipe, AutoResizeDirective, TooltipModule, ProgressbarComponent, TimeDateFormatPipe, ToBytesPipe],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'files-tasks.component.html'
 })
 export class FilesTasksComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { faTrashAlt, faFlag, faClock, faFile, faFolderClosed, faStop }
-  protected readonly iconsStatus: IconDefinition[] = [faSpinner, faCheck, faExclamation, faBan]
-  protected readonly iconsOperation = {
+  protected readonly iconsStatus: Record<FileTaskStatus, IconDefinition> = {
+    [FileTaskStatus.PENDING]: faSpinner,
+    [FileTaskStatus.SUCCESS]: faCheck,
+    [FileTaskStatus.ERROR]: faExclamation,
+    [FileTaskStatus.CANCELLED]: faBan,
+    [FileTaskStatus.QUEUED]: faClock
+  }
+  protected readonly iconsOperation: Partial<Record<FILE_OPERATION, IconDefinition>> = {
     [FILE_OPERATION.DELETE]: faTrashCan,
     [FILE_OPERATION.MOVE]: faArrowsAlt,
     [FILE_OPERATION.COPY]: faClone,
@@ -51,11 +59,13 @@ export class FilesTasksComponent implements OnDestroy {
   protected nbActiveTasks = 0
   protected nbEndedTasks = 0
   protected nbTotalTasks = 0
-  protected tasks: FileTask[] = []
+  protected hasCancellableTasks = false
+  protected tasks: FileTaskView[] = []
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
   private readonly filesService = inject(FilesService)
   private readonly filesTasksService = inject(FilesTasksService)
+  private readonly cdr = inject(ChangeDetectorRef)
   private subscriptions: Subscription[] = []
 
   constructor() {
@@ -67,17 +77,19 @@ export class FilesTasksComponent implements OnDestroy {
     this.subscriptions.forEach((s) => s.unsubscribe())
   }
 
-  updateTasks(tasks: any[], active = false) {
+  updateTasks(tasks: FileTask[], active = false) {
     if (active) {
-      this.tasks = [...tasks, ...this.store.filesEndedTasks.getValue()]
+      this.tasks = this.sortTasksForDisplay([...tasks, ...this.store.filesEndedTasks.getValue()])
       this.nbActiveTasks = tasks.length
       this.nbEndedTasks = this.store.filesEndedTasks.getValue().length
     } else {
-      this.tasks = [...this.store.filesActiveTasks.getValue(), ...tasks]
+      this.tasks = this.sortTasksForDisplay([...this.store.filesActiveTasks.getValue(), ...tasks])
       this.nbEndedTasks = tasks.length
       this.nbActiveTasks = this.store.filesActiveTasks.getValue().length
     }
     this.nbTotalTasks = this.nbActiveTasks + this.nbEndedTasks
+    this.updateHasCancellableTasks()
+    this.cdr.markForCheck()
   }
 
   removeTasks() {
@@ -86,43 +98,83 @@ export class FilesTasksComponent implements OnDestroy {
 
   cancelTasks() {
     for (const task of this.tasks) {
-      if (this.canCancel(task)) {
+      if (task.ui.cancellable) {
         this.filesTasksService.cancel(task)
+        task.ui.cancellable = false
+      }
+    }
+    this.updateHasCancellableTasks()
+  }
+
+  cancelTask(event: MouseEvent, task: FileTaskView) {
+    event.stopPropagation()
+    if (!task.ui.cancellable) return
+    this.filesTasksService.cancel(task)
+    task.ui.cancellable = false
+    this.updateHasCancellableTasks()
+  }
+
+  private sortTasksForDisplay(tasks: FileTask[]): FileTaskView[] {
+    return tasks
+      .map((task: FileTask, index: number) => ({ index, task: this.createTaskView(task) }))
+      .sort((a, b) => a.task.ui.displayPriority - b.task.ui.displayPriority || a.index - b.index)
+      .map(({ task }) => task)
+  }
+
+  private createTaskView(task: FileTask): FileTaskView {
+    const pending = task.status === FileTaskStatus.PENDING
+    const queued = task.status === FileTaskStatus.QUEUED
+    const error = task.status === FileTaskStatus.ERROR
+    const cancelled = task.status === FileTaskStatus.CANCELLED
+    return {
+      ...task,
+      ui: {
+        cancelled,
+        cancellable: this.filesTasksService.canCancel(task),
+        displayPriority: pending ? 0 : queued ? 1 : 2,
+        error,
+        openable: task.status === FileTaskStatus.SUCCESS,
+        operationIcon: this.iconsOperation[task.type] || this.icons.faFlag,
+        pending,
+        progress: pending ? task.props.progress || 100 : queued ? 0 : 100,
+        progressItems: this.createProgressItems(task, pending, queued),
+        progressType: pending ? 'warning' : error ? 'danger' : null,
+        queued,
+        statusIcon: this.iconsStatus[task.status]
       }
     }
   }
 
-  cancelTask(event: MouseEvent, task: FileTask) {
-    event.stopPropagation()
-    this.filesTasksService.cancel(task)
+  private createProgressItems(task: FileTask, pending: boolean, queued: boolean): TaskProgressItem[] {
+    const items: TaskProgressItem[] = []
+    if (pending && task.props.totalSize) {
+      items.push({ type: 'currentSize', value: task.props.size ?? 0 }, { type: 'totalSize', value: task.props.totalSize })
+    } else if (pending && task.type === FILE_OPERATION.COMPRESS) {
+      items.push({ type: 'currentSize', value: task.props.size ?? 0 })
+    } else {
+      const size = queued ? task.props.totalSize || task.props.size : task.props.size || task.props.totalSize
+      if (size) {
+        items.push({ type: 'size', value: size })
+      }
+    }
+    if (task.props.directories) {
+      items.push({ icon: this.icons.faFolderClosed, type: 'directories', value: task.props.directories })
+    }
+    if (task.props.files) {
+      items.push({ icon: this.icons.faFile, type: 'files', value: task.props.files })
+    }
+    if (!pending && !queued && task.endedAt) {
+      items.push({ icon: this.icons.faClock, type: 'endedAt', value: task.endedAt })
+    }
+    return items
   }
 
-  canCancel(task: FileTask): boolean {
-    return this.filesTasksService.canCancel(task)
-  }
-
-  hasCancellableTasks(): boolean {
-    return this.tasks.some((task: FileTask) => this.canCancel(task))
-  }
-
-  canOpenTask(task: FileTask): boolean {
-    return task.status === FileTaskStatus.SUCCESS
-  }
-
-  isTaskPending(task: FileTask): boolean {
-    return task.status === FileTaskStatus.PENDING
-  }
-
-  isTaskError(task: FileTask): boolean {
-    return task.status === FileTaskStatus.ERROR
-  }
-
-  isTaskCancelled(task: FileTask): boolean {
-    return task.status === FileTaskStatus.CANCELLED
+  private updateHasCancellableTasks() {
+    this.hasCancellableTasks = this.tasks.some((task: FileTaskView) => task.ui.cancellable)
   }
 
   openTask(task: FileTask) {
-    if (!this.canOpenTask(task)) return
+    if (task.status !== FileTaskStatus.SUCCESS) return
     if (task.type === FILE_OPERATION.COMPRESS && task.props.compressInDirectory === false) {
       this.filesService.downloadTaskArchive(task.id)
       return
