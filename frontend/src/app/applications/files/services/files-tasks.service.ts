@@ -89,6 +89,7 @@ export class FilesTasksService {
   createUploadTask(path: string, name: string, totalSize: number): FileTask {
     const task = new FileTask(genRandomUUID(), FILE_OPERATION.UPLOAD, path, name)
     task.status = FileTaskStatus.QUEUED
+    task.cancellable = false
     task.startedAt = currentTimeStamp(null, true)
     task.props = { progress: 1, size: 0, totalSize }
     this.store.filesActiveTasks.next(this.prependUniqueTasks(this.store.filesActiveTasks.getValue(), [task]))
@@ -133,21 +134,27 @@ export class FilesTasksService {
   canCancel(task: FileTask): boolean {
     return (
       this.isActiveStatus(task.status) &&
+      task.cancellable &&
       !this.cancellingTasks.has(task.id) &&
-      (task.type === FILE_OPERATION.DOWNLOAD ||
-        task.type === FILE_OPERATION.COMPRESS ||
-        task.type === FILE_OPERATION.DECOMPRESS ||
-        (task.type === FILE_OPERATION.UPLOAD && this.uploadCancellationHandlers.has(task.id)))
+      (task.type !== FILE_OPERATION.UPLOAD || this.uploadCancellationHandlers.has(task.id))
     )
   }
 
   registerUploadCancellation(taskId: string, cancel: () => void) {
     this.uploadCancellationHandlers.set(taskId, cancel)
+    const task = this.store.filesActiveTasks.getValue().find((activeTask: FileTask) => activeTask.id === taskId)
+    if (task) {
+      task.cancellable = true
+    }
     this.store.filesActiveTasks.next([...this.store.filesActiveTasks.getValue()])
   }
 
   unregisterUploadCancellation(taskId: string) {
     this.uploadCancellationHandlers.delete(taskId)
+    const task = this.store.filesActiveTasks.getValue().find((activeTask: FileTask) => activeTask.id === taskId)
+    if (task) {
+      task.cancellable = false
+    }
   }
 
   updateTask(task: FileTask) {

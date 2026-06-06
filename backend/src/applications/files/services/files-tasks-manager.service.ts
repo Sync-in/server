@@ -55,7 +55,7 @@ export class FilesTasksManager implements OnModuleDestroy {
   async createTask(type: FILE_OPERATION, user: UserModel, space: SpaceEnv, dto: any, method: string): Promise<FileTask> {
     const taskId: string = crypto.randomUUID()
     const cacheKey = FilesTasksManager.getCacheKey(user.id, taskId)
-    const newTask = new FileTask(taskId, type, dirName(space.url), fileName(space.url))
+    const newTask = new FileTask(taskId, type, dirName(space.url), fileName(space.url), this.isCancellableType(type))
     await this.storeTask(cacheKey, newTask, FileTaskStatus.QUEUED)
     space.task = { cacheKey, props: {} }
     await this.filesTasksQueue.enqueue(user.id, { cacheKey, dto, method, space, task: newTask, user }, (task) => this.startQueuedTask(task))
@@ -116,7 +116,7 @@ export class FilesTasksManager implements OnModuleDestroy {
     if (!task) {
       throw new HttpException('Task not found', HttpStatus.NOT_FOUND)
     }
-    if (!this.isActiveStatus(task.status) || !this.canCancel(task.type)) {
+    if (!this.isActiveStatus(task.status) || !task.cancellable) {
       throw new HttpException('Not applicable', HttpStatus.BAD_REQUEST)
     }
     if (task.status === FileTaskStatus.QUEUED) {
@@ -285,7 +285,7 @@ export class FilesTasksManager implements OnModuleDestroy {
   }
 
   private watchCancellation(type: FILE_OPERATION, userId: number, taskId: string, cacheKey: string): AbortController | undefined {
-    if (!this.canCancel(type)) return
+    if (!this.isCancellableType(type)) return
     const controller = new AbortController()
     const cancellationCacheKey = FilesTasksManager.getCancellationCacheKey(userId, taskId)
     const watcher = setInterval(() => void this.abortTaskIfRequested(cacheKey, cancellationCacheKey, controller), this.watchInterval)
@@ -311,7 +311,7 @@ export class FilesTasksManager implements OnModuleDestroy {
     delete this.tasksCancellationWatcher[cacheKey]
   }
 
-  private canCancel(type: FILE_OPERATION): boolean {
+  private isCancellableType(type: FILE_OPERATION): boolean {
     return type === FILE_OPERATION.DOWNLOAD || type === FILE_OPERATION.COMPRESS || type === FILE_OPERATION.DECOMPRESS
   }
 

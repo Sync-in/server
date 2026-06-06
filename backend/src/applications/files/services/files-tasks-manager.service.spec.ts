@@ -112,12 +112,26 @@ describe(FilesTasksManager.name, () => {
     cacheStore.set(`${CACHE_TASK_PREFIX}-15-task-1`, {
       id: 'task-1',
       type: FILE_OPERATION.DOWNLOAD,
+      cancellable: true,
       status: FileTaskStatus.PENDING
     })
 
     await filesTasksManager.cancelTask(15, 'task-1')
 
     expect(cache.set).toHaveBeenCalledWith(`${CACHE_TASK_CANCEL_PREFIX}-15-task-1`, true, CACHE_TASK_TTL)
+  })
+
+  it('should reject cancellation for an active non-cancellable task', async () => {
+    cacheStore.set(`${CACHE_TASK_PREFIX}-15-task-2`, {
+      id: 'task-2',
+      type: FILE_OPERATION.DELETE,
+      cancellable: false,
+      status: FileTaskStatus.PENDING
+    })
+
+    await expect(filesTasksManager.cancelTask(15, 'task-2')).rejects.toEqual(new HttpException('Not applicable', HttpStatus.BAD_REQUEST))
+
+    expect(cache.set).not.toHaveBeenCalledWith(`${CACHE_TASK_CANCEL_PREFIX}-15-task-2`, true, CACHE_TASK_TTL)
   })
 
   it('should abort a cancellable task and store a cancelled status when cancellation is requested', async () => {
@@ -139,7 +153,8 @@ describe(FilesTasksManager.name, () => {
         })
       })
 
-      await filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, space, null, 'doWork')
+      const task = await filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, space, null, 'doWork')
+      expect(task.cancellable).toBe(true)
       cacheStore.set(cancellationCacheKey, true)
 
       await vi.advanceTimersByTimeAsync(1000)
@@ -264,6 +279,7 @@ describe(FilesTasksManager.name, () => {
     await flushPromises()
 
     expect(task.id).toBe('11111111-1111-4111-8111-111111111111')
+    expect(task.cancellable).toBe(false)
     expect(task.status).toBe(FileTaskStatus.SUCCESS)
     expect(space.task.cacheKey).toBe(`${CACHE_TASK_PREFIX}-7-11111111-1111-4111-8111-111111111111`)
     expect(filesMethods.doWork).toHaveBeenCalledWith(user, space, { foo: 'bar' })
@@ -362,6 +378,7 @@ describe(FilesTasksManager.name, () => {
     cacheStore.set(`${CACHE_TASK_PREFIX}-8-task-queued`, {
       id: 'task-queued',
       type: FILE_OPERATION.DOWNLOAD,
+      cancellable: true,
       status: FileTaskStatus.QUEUED,
       props: {}
     })
