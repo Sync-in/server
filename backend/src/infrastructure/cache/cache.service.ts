@@ -19,6 +19,8 @@ export abstract class Cache implements OnModuleInit, OnModuleDestroy {
 
   abstract mget(keys: string[]): Promise<any[]>
 
+  abstract increment(key: string, amount?: number, ttl?: number, minimum?: number): Promise<number>
+
   /* ttl (seconds):
       - 0: infinite expiration
       - undefined: default ttl
