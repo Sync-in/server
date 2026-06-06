@@ -9,7 +9,6 @@ import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
 import { EMPTY, Observable, Subscription, timer } from 'rxjs'
 import { catchError, exhaustMap, map, tap } from 'rxjs/operators'
 import { genRandomUUID } from '../../../common/utils/functions'
-import { escapeRegexp } from '../../../common/utils/regexp'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
@@ -329,17 +328,20 @@ export class FilesTasksService {
     if (deleteTask.path.startsWith(SPACE_REPOSITORY.SHARES)) {
       this.remove(deleteTask)
     } else if (deleteTask.path.startsWith(SPACE_REPOSITORY.TRASH)) {
-      for (const task of this.store.filesEndedTasks
-        .getValue()
-        .filter(
-          (task: FileTask) => task.id !== deleteTask.id && task.type === FILE_OPERATION.DELETE && task.path.startsWith(SPACE_REPOSITORY.FILES)
-        )) {
-        // find deleted child tasks to remove it
-        const taskPath = deleteTask.path.replace(SPACE_REPOSITORY.TRASH, SPACE_REPOSITORY.FILES)
-        const match = new RegExp(`^${escapeRegexp(`${taskPath}/${deleteTask.name}`)}(/|$)`)
-        if (match.test(`${task.path}/${task.name}`)) {
-          this.remove(task)
-        }
+      const deletedTrashPath = `${deleteTask.path}/${deleteTask.name}`
+      const deletedFilesPath = `${SPACE_REPOSITORY.FILES}${deletedTrashPath.slice(SPACE_REPOSITORY.TRASH.length)}`
+      const relatedTasks = this.store.filesEndedTasks.getValue().filter((task: FileTask) => {
+        if (task.id === deleteTask.id || task.type !== FILE_OPERATION.DELETE) return false
+        const taskPath = `${task.path}/${task.name}`
+        return (
+          taskPath === deletedTrashPath ||
+          taskPath.startsWith(`${deletedTrashPath}/`) ||
+          taskPath === deletedFilesPath ||
+          taskPath.startsWith(`${deletedFilesPath}/`)
+        )
+      })
+      for (const task of relatedTasks) {
+        this.remove(task)
       }
       this.remove(deleteTask)
     }
