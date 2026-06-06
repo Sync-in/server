@@ -206,7 +206,7 @@ export class FilesTasksManager implements OnModuleDestroy {
     taskPromise
       .then(async (data: any) => {
         this.logger.debug({ tag: this.runTask.name, msg: `${task.task.name} : ${task.method} done` })
-        const finalProps = await this.getFinalTransferProps(task, data)
+        const finalProps = await this.getFinalTaskProps(task, data)
         this.completeTask(task.user.id, task.cacheKey, FileTaskStatus.SUCCESS, data, finalProps).catch((e: Error) =>
           this.logger.warn({ tag: this.runTask.name, msg: `${e}` })
         )
@@ -231,7 +231,10 @@ export class FilesTasksManager implements OnModuleDestroy {
     }
   }
 
-  private async getFinalTransferProps(task: FileTaskQueueItem, result: any): Promise<FileTaskProps | undefined> {
+  private async getFinalTaskProps(task: FileTaskQueueItem, result: any): Promise<FileTaskProps | undefined> {
+    if (task.task.type === FILE_OPERATION.DOWNLOAD || task.task.type === FILE_OPERATION.COMPRESS || task.task.type === FILE_OPERATION.DECOMPRESS) {
+      return task.space.task?.props
+    }
     if (task.task.type === FILE_OPERATION.DELETE) {
       const props = task.space.task?.props
       return {
@@ -248,7 +251,7 @@ export class FilesTasksManager implements OnModuleDestroy {
       const props = await this.filesTasksWatcher.getPathProps(publishedSpace.realPath)
       return { ...props, progress: 100 }
     } catch (e) {
-      this.logger.warn({ tag: this.getFinalTransferProps.name, msg: `${e}` })
+      this.logger.warn({ tag: this.getFinalTaskProps.name, msg: `${e}` })
     }
   }
 

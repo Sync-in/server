@@ -1,6 +1,5 @@
 import { Cache } from '../../../../infrastructure/cache/cache.service'
 import { CACHE_TASK_TTL } from '../../constants/cache'
-import { FILE_OPERATION } from '../../constants/operations'
 import { FileTaskEvent } from '../../events/file-events'
 import { FileTaskStatus } from '../../models/file-task'
 import * as filesUtils from '../../utils/files'
@@ -65,22 +64,21 @@ describe(FilesTasksWatcher.name, () => {
   it('starts a download watcher with the published task metadata', async () => {
     const space = makeSpace()
     const updateTask = vi.spyOn(service as any, 'updateTask').mockResolvedValue(undefined)
-    const updateDownloadTask = vi.spyOn(service as any, 'updateDownloadTask').mockResolvedValue(undefined)
     const watchTask = vi.spyOn(service as any, 'watchTask').mockImplementation((_cacheKey: string, update: () => Promise<void>) => void update())
 
-    FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DOWNLOAD, '/files/report.txt', '/tmp/report.part')
+    FileTaskEvent.emit('startWatch', space, '/files/report.txt')
     await flushPromises()
 
     expect(updateTask).toHaveBeenCalledWith('task-1', {}, { name: 'report.txt', path: 'files/personal' })
     expect(watchTask).toHaveBeenCalledWith('task-1', expect.any(Function))
-    expect(updateDownloadTask).toHaveBeenCalledWith(space, '/tmp/report.part', '/files/report.txt')
+    expect(updateTask).toHaveBeenCalledWith('task-1', space.task.props)
   })
 
   it('does not start duplicate watchers for the same task', () => {
     const space = makeSpace()
     const watchTask = vi.spyOn(service as any, 'watchTask')
     ;(service as any).tasksWatcher['task-1'] = setInterval(() => undefined, 1000)
-    ;(service as any).startWatch(space, FILE_OPERATION.COPY, '/files/report.txt')
+    ;(service as any).startWatch(space, '/files/report.txt')
 
     expect(watchTask).not.toHaveBeenCalled()
   })
@@ -160,22 +158,5 @@ describe(FilesTasksWatcher.name, () => {
 
     service.endFinalization('task-1')
     expect((service as any).finalizingTasks.has('task-1')).toBe(false)
-  })
-
-  it('falls back to the published file and updates download progress', async () => {
-    const space = makeSpace('task-1', { size: 0, totalSize: 200 })
-    cacheStore.set('task-1', {
-      props: { size: 0, totalSize: 200 },
-      status: FileTaskStatus.PENDING
-    })
-    vi.spyOn(filesUtils, 'isPathExists').mockImplementation(async (rPath: string) => rPath === '/files/report.txt')
-    vi.spyOn(filesUtils, 'isPathIsDir').mockResolvedValueOnce(false)
-    vi.spyOn(filesUtils, 'fileSize').mockResolvedValueOnce(50)
-
-    await (service as any).updateDownloadTask(space, '/tmp/report.part', '/files/report.txt')
-
-    expect(filesUtils.fileSize).toHaveBeenCalledWith('/files/report.txt')
-    expect(space.task.props).toMatchObject({ progress: 25, size: 50, totalSize: 200 })
-    expect(cacheStore.get('task-1').props).toMatchObject({ progress: 25, size: 50, totalSize: 200 })
   })
 })

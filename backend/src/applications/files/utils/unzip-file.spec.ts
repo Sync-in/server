@@ -58,10 +58,13 @@ describe(extractZip.name, () => {
 
   it('extracts entries inside the output directory', async () => {
     const extractedPath = path.join(outputDir, 'safe.txt')
-    await writeFile(archivePath, createZip('safe.txt'))
+    const onEntry = vi.fn()
+    await writeFile(archivePath, createZip('safe.txt', Buffer.from('abc')))
 
-    await expect(extractZip(archivePath, outputDir)).resolves.toBeUndefined()
+    await expect(extractZip(archivePath, outputDir, undefined, undefined, onEntry)).resolves.toBeUndefined()
     await expect(access(extractedPath)).resolves.toBeUndefined()
+    expect(onEntry).toHaveBeenCalledWith({ path: 'safe.txt', isDirectory: false, size: 0 })
+    expect(onEntry).toHaveBeenCalledWith({ path: 'safe.txt', isDirectory: false, size: 3 })
   })
 
   it('rejects entries outside the output directory', async () => {

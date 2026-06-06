@@ -4,12 +4,19 @@ import { pipeline } from 'node:stream/promises'
 import { promisify } from 'node:util'
 import { Entry, open as openZip, Options, ZipFile } from 'yauzl'
 import { DEFAULT_HIGH_WATER_MARK } from '../constants/files'
+import type { FileTaskExtractionEntry } from '../interfaces/file-task.interface'
 import { storageQuotaExceededError } from './errors'
-import { isPathInside, makeDir } from './files'
+import { createProgressTransform, isPathInside, makeDir } from './files'
 
 const openZipAsync: (path: string, options: Options) => Promise<ZipFile> = promisify(openZip)
 
-export async function extractZip(filePath: string, outputDir: string, maxExtractedSize?: number, signal?: AbortSignal): Promise<void> {
+export async function extractZip(
+  filePath: string,
+  outputDir: string,
+  maxExtractedSize?: number,
+  signal?: AbortSignal,
+  onEntry?: (entry: FileTaskExtractionEntry) => void
+): Promise<void> {
   // Reject entries whose actual decompressed size differs from their metadata.
   const zipFile = await openZipAsync(filePath, { lazyEntries: true, validateEntrySizes: true })
   const openReadStream = promisify(zipFile.openReadStream.bind(zipFile))
@@ -44,12 +51,28 @@ export async function extractZip(filePath: string, outputDir: string, maxExtract
         }
         if (isDir) {
           await makeDir(fullPath, true)
+          onEntry?.({ path: entry.fileName, isDirectory: true, size: 0 })
           zipFile.readEntry()
         } else {
           // make sure parent exists
           await makeDir(path.dirname(fullPath), true)
           const readStream = await openReadStream(entry)
-          await pipeline(readStream, fs.createWriteStream(fullPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK }), { signal })
+          const writeStream = fs.createWriteStream(fullPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
+          if (onEntry) {
+            let extractedEntrySize = 0
+            onEntry({ path: entry.fileName, isDirectory: false, size: 0 })
+            await pipeline(
+              readStream,
+              createProgressTransform((bytes) => {
+                extractedEntrySize += bytes
+                onEntry({ path: entry.fileName, isDirectory: false, size: extractedEntrySize })
+              }),
+              writeStream,
+              { signal }
+            )
+          } else {
+            await pipeline(readStream, writeStream, { signal })
+          }
           zipFile.readEntry()
         }
       } catch (err) {

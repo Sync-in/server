@@ -2,7 +2,7 @@ import { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { FILE_OPERATION } from '../constants/operations'
-import { isPathExists, walkDir } from './files'
+import { isCrossDevice, walkDir } from './files'
 import type { FileTaskProps } from '../models/file-task'
 
 export function taskTemporaryPrefix(cacheKey: string): string {
@@ -20,21 +20,6 @@ export async function createTaskTemporaryDir(parentPath: string, cacheKey: strin
   return temporaryPath
 }
 
-async function existingParentPath(dstPath: string): Promise<string> {
-  let parentPath = path.dirname(dstPath)
-  while (!(await isPathExists(parentPath))) {
-    const nextParentPath = path.dirname(parentPath)
-    if (nextParentPath === parentPath) break
-    parentPath = nextParentPath
-  }
-  return parentPath
-}
-
-export async function isCrossDeviceMove(srcPath: string, dstPath: string): Promise<boolean> {
-  const [srcStats, dstParentStats] = await Promise.all([fs.lstat(srcPath), existingParentPath(dstPath).then((parentPath) => fs.stat(parentPath))])
-  return srcStats.dev !== dstParentStats.dev
-}
-
 export async function isTaskCancellable(type: FILE_OPERATION, srcPath: string, dstPath?: string): Promise<boolean> {
   switch (type) {
     case FILE_OPERATION.COPY:
@@ -46,7 +31,7 @@ export async function isTaskCancellable(type: FILE_OPERATION, srcPath: string, d
     case FILE_OPERATION.DELETE:
       if (!dstPath) return false
       try {
-        return await isCrossDeviceMove(srcPath, dstPath)
+        return await isCrossDevice(srcPath, dstPath)
       } catch {
         return false
       }

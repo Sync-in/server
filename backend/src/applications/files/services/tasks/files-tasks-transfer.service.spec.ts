@@ -53,9 +53,28 @@ describe(FilesTasksTransfer.name, () => {
     await expect(readFile(dstPath, 'utf8')).resolves.toBe(content)
   })
 
+  it('tracks extracted entries and implicit parent directories', () => {
+    const space = {
+      task: { cacheKey, props: { progress: 1 } }
+    } as any
+    const onEntry = service.createExtractionProgressHandler(space)
+
+    onEntry({ path: 'docs/guides/readme.txt', isDirectory: false, size: 7 })
+    onEntry({ path: 'docs/images/', isDirectory: true, size: 0 })
+    onEntry({ path: 'docs/guides/second.txt', isDirectory: false, size: 5 })
+    onEntry({ path: 'docs/guides/readme.txt', isDirectory: false, size: 9 })
+
+    expect(space.task.props).toEqual({
+      progress: 1,
+      files: 2,
+      directories: 3,
+      size: 14
+    })
+  })
+
   it('publishes a copied file only after the commit hook', async () => {
     const signal = new AbortController().signal
-    let temporaryPath = ''
+    const temporaryPath = path.join(stagingDir, `.${cacheKey}-destination.txt`)
     let transferredBytes = 0
     await writeFile(srcPath, 'content')
 
@@ -65,9 +84,7 @@ describe(FilesTasksTransfer.name, () => {
         await expect(readFile(temporaryPath, 'utf8')).resolves.toBe('content')
       },
       cacheKey,
-      onTransferStart: (value: string) => {
-        temporaryPath = value
-      },
+      onTransferStart: vi.fn(),
       onProgress: (bytes: number) => {
         transferredBytes += bytes
       },
@@ -95,7 +112,7 @@ describe(FilesTasksTransfer.name, () => {
 
   it('copies directly to a destination on another device', async () => {
     const signal = new AbortController().signal
-    let watchedPath = ''
+    let transferStarted = false
     let destinationPrepared = false
     await writeFile(srcPath, 'content')
     mockCrossDevice()
@@ -105,15 +122,15 @@ describe(FilesTasksTransfer.name, () => {
         destinationPrepared = true
       },
       cacheKey,
-      onTransferStart: (value: string) => {
+      onTransferStart: () => {
         expect(destinationPrepared).toBe(true)
-        watchedPath = value
+        transferStarted = true
       },
       signal,
       stagingDir
     })
 
-    expect(watchedPath).toBe(dstPath)
+    expect(transferStarted).toBe(true)
     await expect(readFile(dstPath, 'utf8')).resolves.toBe('content')
     await expect(readdir(stagingDir)).resolves.toEqual([])
   })

@@ -23,7 +23,6 @@ import { DEPTH, LOCK_DEPTH } from '../../webdav/constants/webdav'
 import { CACHE_LOCK_FILE_TTL } from '../constants/cache'
 import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '../constants/compress'
 import { COMPRESSION_EXTENSION, DEFAULT_HIGH_WATER_MARK } from '../constants/files'
-import { FILE_OPERATION } from '../constants/operations'
 import { ALL_DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPES, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
 import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
@@ -36,6 +35,7 @@ import {
   copyFileContent,
   copyFiles,
   createEmptyFile,
+  createProgressTransform,
   dirName,
   dirSize,
   fileName,
@@ -486,7 +486,7 @@ export class FilesManager {
     // do
     if (isMove) {
       let sourceCleanupError: SourceCleanupError | undefined
-      if (useTaskTransfer) {
+      if (useTaskTransfer && signal) {
         sourceCleanupError = await this.filesTasksTransfer.move(user, srcSpace, dstSpace, overwrite, isDir, signal, () => this.delete(user, dstSpace))
       } else {
         await moveFiles(srcSpace.realPath, dstSpace.realPath, overwrite)
@@ -604,7 +604,12 @@ export class FilesManager {
     }
 
     try {
-      await new DownloadFile(this.http).download(downloadDto, tmpPath, { space, publishedPath: dstPath, signal })
+      await new DownloadFile(this.http).download(downloadDto, tmpPath, {
+        space,
+        publishedPath: dstPath,
+        signal,
+        onProgress: isTaskContext ? this.filesTasksTransfer.createByteProgressHandler(space) : undefined
+      })
       signal?.throwIfAborted()
       await moveFiles(tmpPath, dstPath)
     } catch (e) {
@@ -652,7 +657,8 @@ export class FilesManager {
     }
     if (isTaskContext) {
       space.task!.props.compressInDirectory = dto.compressInDirectory
-      FileTaskEvent.emit('startWatch', space, FILE_OPERATION.COMPRESS, dstPath, tmpPath)
+      space.task!.props.size = 0
+      FileTaskEvent.emit('startWatch', space, dstPath)
     }
     // do
     let aborted = false
@@ -660,7 +666,12 @@ export class FilesManager {
     let entriesPromise: Promise<void> | undefined
     try {
       const dstStream = fs.createWriteStream(tmpPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
-      pipePromise = pipeline(archive, dstStream, { signal }) // handle archive errors + write stream
+      if (isTaskContext) {
+        const onProgress = this.filesTasksTransfer.createByteProgressHandler(space)
+        pipePromise = pipeline(archive, createProgressTransform(onProgress), dstStream, { signal })
+      } else {
+        pipePromise = pipeline(archive, dstStream, { signal })
+      }
       entriesPromise = (async () => {
         for (const f of dto.files) {
           signal?.throwIfAborted()
@@ -723,13 +734,14 @@ export class FilesManager {
       }
       fileLock = lock
       // tasking
-      if (isTaskContext) FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, dstPath, tmpPath)
+      const onEntry = isTaskContext ? this.filesTasksTransfer.createExtractionProgressHandler(space) : undefined
+      if (isTaskContext) FileTaskEvent.emit('startWatch', space, dstPath)
       // do
       const maxExtractedSize = space.storageQuota === null ? undefined : Math.max(0, space.storageQuota - space.storageUsage)
       if (extension === '.zip') {
-        await extractZip(space.realPath, tmpPath, maxExtractedSize, signal)
+        await extractZip(space.realPath, tmpPath, maxExtractedSize, signal, onEntry)
       } else {
-        await extractTar(space.realPath, tmpPath, COMPRESSION_EXTENSION.get(extension) === TAR_GZ_EXTENSION, maxExtractedSize, signal)
+        await extractTar(space.realPath, tmpPath, COMPRESSION_EXTENSION.get(extension) === TAR_GZ_EXTENSION, maxExtractedSize, signal, onEntry)
       }
       signal?.throwIfAborted()
       if (await isPathExists(dstPath)) {

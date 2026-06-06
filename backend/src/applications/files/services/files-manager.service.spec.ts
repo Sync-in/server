@@ -15,7 +15,6 @@ import * as spacesPathUtils from '../../spaces/utils/paths'
 import * as spacesPermsUtils from '../../spaces/utils/permissions'
 import { DEPTH } from '../../webdav/constants/webdav'
 import { ACTION } from '../../../common/constants'
-import { FILE_OPERATION } from '../constants/operations'
 import { DownloadFileDto } from '../dto/file-operations.dto'
 import { FileEvent, FileTaskEvent } from '../events/file-events'
 import { FileError, SourceCleanupError } from '../models/file-error'
@@ -43,7 +42,7 @@ vi.mock('node:dns/promises', () => ({
 
 describe(FilesManager.name, () => {
   let service: FilesManager
-  let filesTasksTransfer: { copy: Mock; move: Mock; delete: Mock }
+  let filesTasksTransfer: { copy: Mock; move: Mock; delete: Mock; createByteProgressHandler: Mock; createExtractionProgressHandler: Mock }
   let http: { axiosRef: Mock }
   const lookupMock = lookup as Mock
   let filesQueries: { moveFiles: Mock; deleteFiles: Mock }
@@ -172,7 +171,13 @@ describe(FilesManager.name, () => {
           }
         ),
       move: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn().mockResolvedValue(undefined)
+      delete: vi.fn().mockResolvedValue(undefined),
+      createByteProgressHandler: vi.fn((space) =>
+        vi.fn((bytes: number) => {
+          space.task.props.size = (space.task.props.size || 0) + bytes
+        })
+      ),
+      createExtractionProgressHandler: vi.fn().mockReturnValue(vi.fn())
     }
     filesLockManager = {
       create: vi.fn().mockResolvedValue([true, { key: 'lock-1' }]),
@@ -1054,17 +1059,19 @@ describe(FilesManager.name, () => {
 
       await service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })
 
-      expect(space.task.props.totalSize).toBe(55)
-      expect(taskEmitSpy).toHaveBeenCalledWith(
-        'startWatch',
-        space,
-        FILE_OPERATION.DOWNLOAD,
-        '/tmp/download.txt',
-        '/data/users/john/tmp/tasks/.task-1-download.txt'
-      )
+      expect(space.task.props).toMatchObject({ progress: 1, size: 0, totalSize: 55 })
+      expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/tmp/download.txt')
       expect(taskUtils.taskTemporaryPath).toHaveBeenCalledWith(user.tasksPath, 'task-1', '/tmp/download.txt')
       expect(filesUtils.tempFilePath).not.toHaveBeenCalled()
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith('/data/users/john/tmp/tasks/.task-1-download.txt', expect.anything(), 0, 55)
+      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(
+        '/data/users/john/tmp/tasks/.task-1-download.txt',
+        expect.anything(),
+        0,
+        55,
+        undefined,
+        expect.any(Function)
+      )
+      expect(filesTasksTransfer.createByteProgressHandler).toHaveBeenCalledWith(space)
       expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/tasks/.task-1-download.txt', '/tmp/download.txt')
       expect(filesLockManager.create).toHaveBeenCalledWith(
         user,
@@ -1129,6 +1136,9 @@ describe(FilesManager.name, () => {
   describe('compress', () => {
     it('should archive files and emit events', async () => {
       const archive = createArchiveMock()
+      archive.finalize.mockImplementationOnce(async () => {
+        archive.end('content')
+      })
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.tar.gz')
       vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p.endsWith('/dir'))
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: { cacheKey: 'task-c', props: {} } })
@@ -1149,18 +1159,13 @@ describe(FilesManager.name, () => {
       expect(archive.directory).toHaveBeenCalled()
       expect(archive.file).toHaveBeenCalled()
       expect(archive.finalize).toHaveBeenCalled()
-      expect(taskEmitSpy).toHaveBeenCalledWith(
-        'startWatch',
-        space,
-        FILE_OPERATION.COMPRESS,
-        '/tmp/archive.tar.gz',
-        '/data/users/john/tmp/tasks/.task-c-archive.tar.gz'
-      )
+      expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/tmp/archive.tar.gz')
       expect(taskUtils.taskTemporaryPath).toHaveBeenCalledWith(user.tasksPath, 'task-c', '/tmp/archive.tar.gz')
       expect(filesUtils.tempFilePath).not.toHaveBeenCalled()
       expect(fs.createWriteStream).toHaveBeenCalledWith('/data/users/john/tmp/tasks/.task-c-archive.tar.gz', {
         highWaterMark: expect.any(Number)
       })
+      expect(space.task.props.size).toBe(Buffer.byteLength('content'))
       expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/tasks/.task-c-archive.tar.gz', '/tmp/archive.tar.gz')
     })
 
@@ -1314,15 +1319,16 @@ describe(FilesManager.name, () => {
 
       expect(taskUtils.createTaskTemporaryDir).toHaveBeenCalledWith(user.tasksPath, 'task-d', '/data/users/john/files/archive')
       expect(filesUtils.makeTempDir).not.toHaveBeenCalled()
-      expect(unzipSpy).toHaveBeenCalledWith('/data/users/john/files/archive.zip', '/data/users/john/tmp/tasks/.task-d-archive', undefined, undefined)
-      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/tasks/.task-d-archive', '/data/users/john/files/archive')
-      expect(taskEmitSpy).toHaveBeenCalledWith(
-        'startWatch',
-        space,
-        FILE_OPERATION.DECOMPRESS,
-        '/data/users/john/files/archive',
-        '/data/users/john/tmp/tasks/.task-d-archive'
+      expect(filesTasksTransfer.createExtractionProgressHandler).toHaveBeenCalledWith(space)
+      expect(unzipSpy).toHaveBeenCalledWith(
+        '/data/users/john/files/archive.zip',
+        '/data/users/john/tmp/tasks/.task-d-archive',
+        undefined,
+        undefined,
+        expect.any(Function)
       )
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/tasks/.task-d-archive', '/data/users/john/files/archive')
+      expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/data/users/john/files/archive')
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
     })
 
@@ -1340,6 +1346,7 @@ describe(FilesManager.name, () => {
         '/data/users/john/tmp/archive-extract-123',
         true,
         undefined,
+        undefined,
         undefined
       )
       expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123', '/data/users/john/files/archive')
@@ -1354,7 +1361,13 @@ describe(FilesManager.name, () => {
 
       await service.decompress(user, space)
 
-      expect(unzipSpy).toHaveBeenCalledWith('/data/users/john/files/archive.zip', '/data/users/john/tmp/archive-extract-123', 60, undefined)
+      expect(unzipSpy).toHaveBeenCalledWith(
+        '/data/users/john/files/archive.zip',
+        '/data/users/john/tmp/archive-extract-123',
+        60,
+        undefined,
+        undefined
+      )
     })
 
     it('should remove partial extraction and skip add event on failure', async () => {

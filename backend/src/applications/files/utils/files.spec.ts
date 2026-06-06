@@ -1,11 +1,12 @@
 import { HttpStatus } from '@nestjs/common'
-import { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import fs, { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
+import fse from 'fs-extra'
 import { FileError } from '../models/file-error'
 import { FILE_ERROR_MESSAGES } from './errors'
-import { isPathInside, makeTempDir, tempFilePath, writeFromStream } from './files'
+import { isCrossDevice, isPathInside, makeTempDir, tempFilePath, writeFromStream } from './files'
 
 describe(isPathInside.name, () => {
   const basePath = path.join(path.sep, 'tmp', 'output')
@@ -26,6 +27,23 @@ describe(isPathInside.name, () => {
       expect(isPathInside(basePath, candidatePath)).toBe(false)
     }
   )
+})
+
+describe(isCrossDevice.name, () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('compares the source device with the nearest existing destination parent', async () => {
+    vi.spyOn(fs, 'lstat').mockResolvedValueOnce({ dev: 1 } as any)
+    const statSpy = vi.spyOn(fs, 'stat').mockResolvedValueOnce({ dev: 2 } as any)
+    vi.spyOn(fse, 'pathExists').mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    const dstPath = path.join(path.sep, 'missing', 'parent', 'destination.txt')
+
+    await expect(isCrossDevice('/source.txt', dstPath)).resolves.toBe(true)
+
+    expect(statSpy).toHaveBeenCalledWith(path.parse(dstPath).root)
+  })
 })
 
 describe(writeFromStream.name, () => {
@@ -74,6 +92,17 @@ describe(writeFromStream.name, () => {
     await expect(writeFromStream(filePath, Readable.from([Buffer.from('abc')]), 0, undefined, controller.signal)).rejects.toMatchObject({
       name: 'AbortError'
     })
+  })
+
+  it('reports bytes written through the progress callback', async () => {
+    const filePath = path.join(tmpDir, 'progress.txt')
+    const onProgress = vi.fn()
+
+    await writeFromStream(filePath, Readable.from([Buffer.from('abc'), Buffer.from('de')]), 0, 5, undefined, onProgress)
+
+    expect(onProgress).toHaveBeenCalledTimes(2)
+    expect(onProgress).toHaveBeenNthCalledWith(1, 3)
+    expect(onProgress).toHaveBeenNthCalledWith(2, 2)
   })
 })
 

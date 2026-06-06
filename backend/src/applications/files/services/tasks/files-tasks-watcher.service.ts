@@ -2,10 +2,9 @@ import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
 import { Cache } from '../../../../infrastructure/cache/cache.service'
 import { SpaceEnv } from '../../../spaces/models/space-env.model'
 import { CACHE_TASK_TTL } from '../../constants/cache'
-import { FILE_OPERATION } from '../../constants/operations'
 import { FileTaskEvent } from '../../events/file-events'
 import { FileTask, FileTaskProps, FileTaskStatus } from '../../models/file-task'
-import { dirName, fileName, fileSize, isPathExists, isPathIsDir } from '../../utils/files'
+import { dirName, fileName, fileSize, isPathIsDir } from '../../utils/files'
 import { countDirEntriesAndSize } from '../../utils/tasks'
 
 @Injectable()
@@ -47,47 +46,23 @@ export class FilesTasksWatcher implements OnModuleDestroy {
     return (await isPathIsDir(rPath)) ? countDirEntriesAndSize(rPath) : { size: await fileSize(rPath) }
   }
 
-  private readonly onStartWatch = (space: SpaceEnv, taskType: FILE_OPERATION, rPath: string, watchPath?: string): void => {
-    this.startWatch(space, taskType, watchPath || rPath, dirName(space.url), fileName(rPath), watchPath ? rPath : undefined)
+  private readonly onStartWatch = (space: SpaceEnv, rPath: string): void => {
+    this.startWatch(space, rPath)
   }
 
-  private startWatch(
-    space: SpaceEnv,
-    taskType: FILE_OPERATION,
-    rPath: string,
-    taskPath?: string,
-    taskName = fileName(rPath),
-    publishedPath?: string
-  ): void {
+  private startWatch(space: SpaceEnv, rPath: string): void {
     const taskContext = space.task
     if (!taskContext?.cacheKey || taskContext.cacheKey in this.tasksWatcher) return
     const { cacheKey, props } = taskContext
     this.updateTask(cacheKey, props, {
-      name: taskName,
-      path: taskPath
+      name: fileName(rPath),
+      path: dirName(space.url)
     }).catch((e: Error) => this.logger.error({ tag: this.startWatch.name, msg: `${e}` }))
-    switch (taskType) {
-      case FILE_OPERATION.COMPRESS:
-        this.watchTask(cacheKey, () => this.updateCompressTask(space, rPath, publishedPath))
-        return
-      case FILE_OPERATION.DECOMPRESS:
-        this.watchTask(cacheKey, () => this.updateDecompressTask(space, rPath, publishedPath))
-        return
-      case FILE_OPERATION.DOWNLOAD:
-        this.watchTask(cacheKey, () => this.updateDownloadTask(space, rPath, publishedPath))
-        return
-      case FILE_OPERATION.COPY:
-      case FILE_OPERATION.DELETE:
-      case FILE_OPERATION.MOVE:
-        this.watchTask(cacheKey, () => this.updateTask(cacheKey, space.task.props))
-        return
-      default:
-        this.logger.warn({ tag: this.startWatch.name, msg: `unknown task type ${taskType}` })
-    }
+    this.watchTask(cacheKey, () => this.updateTask(cacheKey, space.task.props))
   }
 
   private watchTask(cacheKey: string, update: () => Promise<void>): void {
-    // Directory scans may exceed the interval, so ticks use exhaust semantics.
+    // Cache updates may exceed the interval, so ticks use exhaust semantics.
     let updateInProgress = false
     const watcher = setInterval(() => {
       if (updateInProgress) return
@@ -130,72 +105,5 @@ export class FilesTasksWatcher implements OnModuleDestroy {
 
   private isActiveStatus(status: FileTaskStatus): boolean {
     return status === FileTaskStatus.PENDING || status === FileTaskStatus.QUEUED
-  }
-
-  private async updateCompressTask(space: SpaceEnv, rPath: string, publishedPath?: string): Promise<void> {
-    try {
-      const size = await this.readWatchedPath(rPath, publishedPath, fileSize)
-      if (size === undefined) return
-      space.task.props.size = size
-      await this.updateTask(space.task.cacheKey, space.task.props)
-    } catch (e) {
-      this.logger.error({ tag: this.updateCompressTask.name, msg: `${e}` })
-      this.stopWatch(space.task.cacheKey)
-    }
-  }
-
-  private async updateDecompressTask(space: SpaceEnv, rPath: string, publishedPath?: string): Promise<void> {
-    try {
-      const props = await this.readWatchedPath(rPath, publishedPath, countDirEntriesAndSize)
-      if (props === undefined) return
-      space.task.props = props
-      await this.updateTask(space.task.cacheKey, space.task.props)
-    } catch (e) {
-      this.logger.error({ tag: this.updateDecompressTask.name, msg: `${e}` })
-      this.stopWatch(space.task.cacheKey)
-    }
-  }
-
-  private async updateDownloadTask(space: SpaceEnv, rPath: string, publishedPath?: string): Promise<void> {
-    try {
-      if (!(await this.calcSizeAndProgressTask(space, rPath, publishedPath))) return
-      await this.updateTask(space.task.cacheKey, space.task.props)
-    } catch (e) {
-      this.logger.error({ tag: this.updateDownloadTask.name, msg: `${e}` })
-      this.stopWatch(space.task.cacheKey)
-    }
-  }
-
-  private async calcSizeAndProgressTask(space: SpaceEnv, rPath: string, publishedPath?: string): Promise<boolean> {
-    const isDir = await this.readWatchedPath(rPath, publishedPath, isPathIsDir)
-    if (isDir === undefined) return false
-    if (isDir) {
-      const props = await this.readWatchedPath(rPath, publishedPath, countDirEntriesAndSize)
-      if (props === undefined) return false
-      space.task.props = { ...space.task.props, ...props }
-    } else {
-      const size = await this.readWatchedPath(rPath, publishedPath, fileSize)
-      if (size === undefined) return false
-      space.task.props.size = size
-    }
-    if (space.task.props.totalSize) {
-      space.task.props.progress = (100 * space.task.props.size) / space.task.props.totalSize
-    }
-    return true
-  }
-
-  private async readWatchedPath<T>(rPath: string, publishedPath: string | undefined, read: (rPath: string) => Promise<T>): Promise<T | undefined> {
-    if (!publishedPath) return read(rPath)
-    if (await isPathExists(rPath)) {
-      try {
-        const value = await read(rPath)
-        // The temporary path may be moved atomically while it is being read.
-        if (await isPathExists(rPath)) return value
-      } catch (e) {
-        // Retry the published path only when the temporary path disappeared during publication.
-        if (e?.code !== 'ENOENT') throw e
-      }
-    }
-    if (await isPathExists(publishedPath)) return read(publishedPath)
   }
 }

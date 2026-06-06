@@ -4,7 +4,6 @@ import crypto from 'node:crypto'
 import { Cache } from '../../../../infrastructure/cache/cache.service'
 import { SpacesManager } from '../../../spaces/services/spaces-manager.service'
 import * as filesUtils from '../../utils/files'
-import * as tasksUtils from '../../utils/tasks'
 import { FileTaskEvent } from '../../events/file-events'
 import { SendFile } from '../../utils/send-file'
 import { FILE_OPERATION } from '../../constants/operations'
@@ -121,9 +120,9 @@ describe(FilesTasksManager.name, () => {
   it('should unref watchers and clear them on module destroy', async () => {
     const cacheKey = 'task-1'
     const listenersBeforeDestroy = FileTaskEvent.listenerCount('startWatch')
-    const space = { task: { cacheKey, props: {} } } as any
+    const space = { url: 'files/personal/document.txt', task: { cacheKey, props: {} } } as any
     cacheStore.set(cacheKey, { props: {} })
-    ;(filesTasksWatcher as any).startWatch(space, FILE_OPERATION.COPY, '/files/document.txt')
+    ;(filesTasksWatcher as any).startWatch(space, '/files/document.txt')
 
     const watcher = (filesTasksWatcher as any).tasksWatcher[cacheKey] as NodeJS.Timeout
     expect(watcher.hasRef()).toBe(false)
@@ -218,101 +217,13 @@ describe(FilesTasksManager.name, () => {
     }
   })
 
-  it('should watch a temporary path while keeping the published file name', () => {
+  it('should watch task props while keeping the published file metadata', () => {
     const startWatchSpy = vi.spyOn(filesTasksWatcher as any, 'startWatch').mockResolvedValueOnce(undefined)
     const space = { url: 'files/personal/archive.zip', task: { cacheKey: 'task-1', props: {} } } as any
 
-    FileTaskEvent.emit('startWatch', space, FILE_OPERATION.DECOMPRESS, '/files/archive', '/tmp/archive-extract')
+    FileTaskEvent.emit('startWatch', space, '/files/archive')
 
-    expect(startWatchSpy).toHaveBeenCalledWith(
-      space,
-      FILE_OPERATION.DECOMPRESS,
-      '/tmp/archive-extract',
-      'files/personal',
-      'archive',
-      '/files/archive'
-    )
-  })
-
-  it('should watch the published archive after the temporary archive has been moved', async () => {
-    const pathExistsSpy = vi.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(false).mockResolvedValueOnce(true)
-    const fileSizeSpy = vi.spyOn(filesUtils, 'fileSize').mockResolvedValueOnce(42)
-    const updateTaskSpy = vi.spyOn(filesTasksWatcher as any, 'updateTask').mockResolvedValueOnce(undefined)
-    const space = { task: { cacheKey: 'task-1', props: {} } } as any
-
-    await (filesTasksWatcher as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
-
-    expect(pathExistsSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-compress-uuid')
-    expect(pathExistsSpy).toHaveBeenNthCalledWith(2, '/files/archive.tgz')
-    expect(fileSizeSpy).toHaveBeenCalledWith('/files/archive.tgz')
-    expect(space.task.props.size).toBe(42)
-    expect(updateTaskSpy).toHaveBeenCalledWith('task-1', { size: 42 })
-  })
-
-  it('should retry the published archive when the temporary archive is moved before reading it', async () => {
-    const missingError = Object.assign(new Error('missing temporary archive'), { code: 'ENOENT' })
-    const pathExistsSpy = vi.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(true).mockResolvedValueOnce(true)
-    const fileSizeSpy = vi.spyOn(filesUtils, 'fileSize').mockRejectedValueOnce(missingError).mockResolvedValueOnce(42)
-    const updateTaskSpy = vi.spyOn(filesTasksWatcher as any, 'updateTask').mockResolvedValueOnce(undefined)
-    const space = { task: { cacheKey: 'task-1', props: {} } } as any
-
-    await (filesTasksWatcher as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
-
-    expect(pathExistsSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-compress-uuid')
-    expect(pathExistsSpy).toHaveBeenNthCalledWith(2, '/files/archive.tgz')
-    expect(fileSizeSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-compress-uuid')
-    expect(fileSizeSpy).toHaveBeenNthCalledWith(2, '/files/archive.tgz')
-    expect(space.task.props.size).toBe(42)
-    expect(updateTaskSpy).toHaveBeenCalledWith('task-1', { size: 42 })
-  })
-
-  it('should retry the published directory when the temporary directory is moved while reading it', async () => {
-    const pathExistsSpy = vi.spyOn(filesUtils, 'isPathExists').mockResolvedValueOnce(true).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
-    const countDirEntriesSpy = vi
-      .spyOn(tasksUtils, 'countDirEntriesAndSize')
-      .mockResolvedValueOnce({ files: 0, directories: 0, size: 0 })
-      .mockResolvedValueOnce({ files: 2, directories: 1, size: 42 })
-    const updateTaskSpy = vi.spyOn(filesTasksWatcher as any, 'updateTask').mockResolvedValueOnce(undefined)
-    const space = { task: { cacheKey: 'task-1', props: {} } } as any
-
-    await (filesTasksWatcher as any).updateDecompressTask(space, '/tmp/archive-extract-uuid', '/files/archive')
-
-    expect(pathExistsSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-extract-uuid')
-    expect(pathExistsSpy).toHaveBeenNthCalledWith(2, '/tmp/archive-extract-uuid')
-    expect(pathExistsSpy).toHaveBeenNthCalledWith(3, '/files/archive')
-    expect(countDirEntriesSpy).toHaveBeenNthCalledWith(1, '/tmp/archive-extract-uuid')
-    expect(countDirEntriesSpy).toHaveBeenNthCalledWith(2, '/files/archive')
-    expect(space.task.props).toEqual({ files: 2, directories: 1, size: 42 })
-    expect(updateTaskSpy).toHaveBeenCalledWith('task-1', { files: 2, directories: 1, size: 42 })
-  })
-
-  it('should silently skip watcher update while temporary and published paths are missing', async () => {
-    vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(false)
-    const fileSizeSpy = vi.spyOn(filesUtils, 'fileSize')
-    const loggerErrorSpy = vi.spyOn((filesTasksWatcher as any).logger, 'error')
-    const stopWatchSpy = vi.spyOn(filesTasksWatcher as any, 'stopWatch').mockResolvedValueOnce(undefined)
-    const updateTaskSpy = vi.spyOn(filesTasksWatcher as any, 'updateTask').mockResolvedValueOnce(undefined)
-    const space = { task: { cacheKey: 'task-1', props: {} } } as any
-
-    await (filesTasksWatcher as any).updateCompressTask(space, '/tmp/archive-compress-uuid', '/files/archive.tgz')
-
-    expect(loggerErrorSpy).not.toHaveBeenCalled()
-    expect(stopWatchSpy).not.toHaveBeenCalled()
-    expect(updateTaskSpy).not.toHaveBeenCalled()
-    expect(fileSizeSpy).not.toHaveBeenCalled()
-  })
-
-  it('should stop a watcher without staging when its path is missing', async () => {
-    const missingError = Object.assign(new Error('missing archive'), { code: 'ENOENT' })
-    vi.spyOn(filesUtils, 'fileSize').mockRejectedValueOnce(missingError)
-    const loggerErrorSpy = vi.spyOn((filesTasksWatcher as any).logger, 'error')
-    const stopWatchSpy = vi.spyOn(filesTasksWatcher as any, 'stopWatch').mockResolvedValueOnce(undefined)
-    const space = { task: { cacheKey: 'task-1', props: {} } } as any
-
-    await (filesTasksWatcher as any).updateCompressTask(space, '/files/archive.tgz')
-
-    expect(loggerErrorSpy).toHaveBeenCalled()
-    expect(stopWatchSpy).toHaveBeenCalledWith('task-1')
+    expect(startWatchSpy).toHaveBeenCalledWith(space, '/files/archive')
   })
 
   it('should not let an in-flight progress update overwrite task completion', async () => {
@@ -429,6 +340,31 @@ describe(FilesTasksManager.name, () => {
         progress: 100,
         size: 120,
         totalSize: 120
+      }
+    })
+  })
+
+  it('should finalize fast extraction metrics without waiting for a watcher tick', async () => {
+    const taskId = '77777777-7777-4777-8777-777777777777'
+    vi.spyOn(crypto, 'randomUUID').mockReturnValueOnce(taskId)
+    filesMethods.doWork.mockImplementationOnce(async (_user, taskSpace) => {
+      taskSpace.task.props = { directories: 2, files: 3, size: 120 }
+    })
+    const user = { id: 7 } as any
+    const space = {
+      realPath: '/data/users/john/files/archive.zip',
+      url: 'files/personal/archive.zip'
+    } as any
+
+    await filesTasksManager.createTask(FILE_OPERATION.DECOMPRESS, user, space, null, 'doWork')
+    await flushPromises()
+
+    expect(cacheStore.get(`${CACHE_TASK_PREFIX}-7-${taskId}`)).toMatchObject({
+      status: FileTaskStatus.SUCCESS,
+      props: {
+        directories: 2,
+        files: 3,
+        size: 120
       }
     })
   })
