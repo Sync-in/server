@@ -12,12 +12,12 @@ import { getTablesWithFileIdColumn } from '../../../infrastructure/database/util
 import { USER_PATH, USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { users } from '../../users/schemas/users.schema'
-import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_USER_PREFIX } from '../constants/cache'
+import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../constants/cache'
 import { FileTask, FileTaskStatus } from '../models/file-task'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { files } from '../schemas/files.schema'
 import { isPathExists, removeFiles } from '../utils/files'
-import { taskTemporaryPrefix } from '../utils/tasks'
+import { isActiveTaskStatus, taskTemporaryPrefix } from '../utils/tasks'
 import { FilesContentIndexer } from './files-content-indexer.service'
 import { FilesTasksManager } from './tasks/files-tasks-manager.service'
 import { FilesQuotaManager } from './files-quota-manager.service'
@@ -220,7 +220,8 @@ export class FilesScheduler {
       const protectedFiles = new Set<string>()
       const protectedPrefixes: string[] = []
       for (const task of tasks) {
-        if (!task || !this.isActiveTaskStatus(task.status)) continue
+        if (!task || !isActiveTaskStatus(task.status)) continue
+        // Active task staging files must survive tmp cleanup; the transfer may still publish or rollback them.
         // QUEUED tasks are included because they may start after this cache snapshot.
         protectedPrefixes.push(taskTemporaryPrefix(FilesTasksManager.getCacheKey(userId, task.id)))
         // Exported archives are final results stored beside staging entries and do not use the task prefix.
@@ -270,25 +271,29 @@ export class FilesScheduler {
       let nb = 0
       let nbCancellationRequests = 0
       let nbUserTaskCounters = 0
+      // The in-memory queue and abort watchers are lost on process restart; cached active tasks cannot be resumed safely.
       const keys = await this.cache.keys(`${CACHE_TASK_PREFIX}-*`)
       for (const key of keys) {
         if (key.startsWith(`${CACHE_TASK_CANCEL_PREFIX}-`)) {
+          // Cancellation requests only target live abort watchers, so they are stale after startup.
           await this.cache.del(key)
           nbCancellationRequests++
           continue
         }
         if (key.startsWith(`${CACHE_TASK_USER_PREFIX}-`)) {
+          // Running counters are runtime state; keeping them would block new tasks from claiming slots.
           await this.cache.del(key)
           nbUserTaskCounters++
           continue
         }
         const task = await this.cache.get(key)
-        if (task && this.isActiveTaskStatus(task.status)) {
+        if (task && isActiveTaskStatus(task.status)) {
+          // Do not requeue filesystem operations here: they are not guaranteed to be idempotent.
           task.status = FileTaskStatus.ERROR
           task.result = 'Interrupted'
           task.endedAt = currentTimeStamp(null, true)
           nb++
-          this.cache.set(key, task).catch((e: Error) => this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` }))
+          this.cache.set(key, task, CACHE_TASK_TTL).catch((e: Error) => this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` }))
         }
       }
       this.logger.log({
@@ -298,10 +303,6 @@ export class FilesScheduler {
     } catch (e) {
       this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` })
     }
-  }
-
-  private isActiveTaskStatus(status: FileTaskStatus): boolean {
-    return status === FileTaskStatus.PENDING || status === FileTaskStatus.QUEUED
   }
 
   private async resetContentIndexingState(): Promise<void> {

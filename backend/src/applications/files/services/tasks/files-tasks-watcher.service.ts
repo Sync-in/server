@@ -3,9 +3,9 @@ import { Cache } from '../../../../infrastructure/cache/cache.service'
 import { SpaceEnv } from '../../../spaces/models/space-env.model'
 import { CACHE_TASK_TTL } from '../../constants/cache'
 import { FileTaskEvent } from '../../events/file-events'
-import { FileTask, FileTaskProps, FileTaskStatus } from '../../models/file-task'
+import { FileTask, FileTaskProps } from '../../models/file-task'
 import { dirName, fileName, fileSize, isPathIsDir } from '../../utils/files'
-import { countDirEntriesAndSize } from '../../utils/tasks'
+import { countDirEntriesAndSize, isActiveTaskStatus } from '../../utils/tasks'
 
 @Injectable()
 export class FilesTasksWatcher implements OnModuleDestroy {
@@ -89,7 +89,7 @@ export class FilesTasksWatcher implements OnModuleDestroy {
           this.stopWatch(cacheKey)
           return
         }
-        if (!this.isActiveStatus(fileTask.status) || this.finalizingTasks.has(cacheKey)) {
+        if (!isActiveTaskStatus(fileTask.status) || this.finalizingTasks.has(cacheKey)) {
           this.stopWatch(cacheKey)
           return
         }
@@ -101,9 +101,5 @@ export class FilesTasksWatcher implements OnModuleDestroy {
     return update.finally(() => {
       if (this.pendingTaskUpdates.get(cacheKey) === update) this.pendingTaskUpdates.delete(cacheKey)
     })
-  }
-
-  private isActiveStatus(status: FileTaskStatus): boolean {
-    return status === FileTaskStatus.PENDING || status === FileTaskStatus.QUEUED
   }
 }

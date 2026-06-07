@@ -3,7 +3,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { FILE_OPERATION } from '../constants/operations'
 import { isCrossDevice, walkDir } from './files'
-import type { FileTaskProps } from '../models/file-task'
+import { FileTaskProps, FileTaskStatus } from '../models/file-task'
 
 export function taskTemporaryPrefix(cacheKey: string): string {
   return `.${cacheKey}-`
@@ -38,6 +38,10 @@ export async function isTaskCancellable(type: FILE_OPERATION, srcPath: string, d
     default:
       return false
   }
+}
+
+export function isActiveTaskStatus(status: FileTaskStatus): boolean {
+  return status === FileTaskStatus.PENDING || status === FileTaskStatus.QUEUED
 }
 
 export async function countDirEntriesAndSize(rPath: string): Promise<Pick<FileTaskProps, 'files' | 'directories' | 'size'>> {
