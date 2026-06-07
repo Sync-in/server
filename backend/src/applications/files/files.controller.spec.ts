@@ -7,7 +7,7 @@ import { FilesController } from './files.controller'
 import { FilesMethods } from './services/files-methods.service'
 import { FilesRecents } from './services/files-recents.service'
 import { FilesSearchManager } from './services/files-search-manager.service'
-import { FilesTasksManager } from './services/files-tasks-manager.service'
+import { FilesTasksManager } from './services/tasks/files-tasks-manager.service'
 import { FilesContentIndexer } from './services/files-content-indexer.service'
 
 describe(FilesController.name, () => {

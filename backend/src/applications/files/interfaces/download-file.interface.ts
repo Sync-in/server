@@ -12,4 +12,6 @@ export interface DownloadFileOptions {
   publishedPath?: string
   getContentInfo?: boolean
   maxSize?: number
+  onProgress?: (bytes: number) => void
+  signal?: AbortSignal
 }

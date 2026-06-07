@@ -3,7 +3,9 @@ import { FILE_OPERATION } from '../constants/operations'
 export enum FileTaskStatus {
   PENDING,
   SUCCESS,
-  ERROR
+  ERROR,
+  CANCELLED,
+  QUEUED
 }
 
 export interface FileTaskProps {
@@ -19,6 +21,7 @@ export interface FileTaskProps {
 export class FileTask {
   id: string
   type: FILE_OPERATION
+  cancellable: boolean
   status: FileTaskStatus
   path: string
   name: string
@@ -27,9 +30,10 @@ export class FileTask {
   startedAt: number
   endedAt: number
 
-  constructor(id: string, type: FILE_OPERATION, path: string, name: string) {
+  constructor(id: string, type: FILE_OPERATION, path: string, name: string, cancellable = false) {
     this.id = id
     this.type = type
+    this.cancellable = cancellable
     this.path = path
     this.name = name
     if (type === FILE_OPERATION.COPY || type === FILE_OPERATION.MOVE || type === FILE_OPERATION.DOWNLOAD) {

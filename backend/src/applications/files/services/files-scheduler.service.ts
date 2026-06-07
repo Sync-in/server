@@ -4,6 +4,7 @@ import { isNotNull, sql } from 'drizzle-orm'
 import { unionAll } from 'drizzle-orm/mysql-core'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { currentTimeStamp } from '../../../common/shared'
 import { Cache } from '../../../infrastructure/cache/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
@@ -11,13 +12,14 @@ import { getTablesWithFileIdColumn } from '../../../infrastructure/database/util
 import { USER_PATH, USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { users } from '../../users/schemas/users.schema'
-import { CACHE_TASK_PREFIX } from '../constants/cache'
+import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../constants/cache'
 import { FileTask, FileTaskStatus } from '../models/file-task'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { files } from '../schemas/files.schema'
 import { isPathExists, removeFiles } from '../utils/files'
+import { isActiveTaskStatus, taskTemporaryPrefix } from '../utils/tasks'
 import { FilesContentIndexer } from './files-content-indexer.service'
-import { FilesTasksManager } from './files-tasks-manager.service'
+import { FilesTasksManager } from './tasks/files-tasks-manager.service'
 import { FilesQuotaManager } from './files-quota-manager.service'
 import { FilesTrashRetention } from './files-trash-retention.service'
 
@@ -211,19 +213,27 @@ export class FilesScheduler {
     this.isQuotaUpdateIsRunning = false
   }
 
-  private async cleanupUserTaskFiles(userId: number, userTasksPath: string): Promise<void> {
+  private async cleanupUserTaskFiles(userId: number, userTasksPath: string, expiration: number): Promise<void> {
     try {
       const keys = await this.cache.keys(FilesTasksManager.getCacheKey(userId))
-      const excludeFiles = keys.length
-        ? (await this.cache.mget(keys))
-            .filter((task: FileTask) => task && task.status === FileTaskStatus.PENDING && task.props.compressInDirectory === false)
-            .map((task: FileTask) => task.name)
-        : []
-      for (const f of (await fs.readdir(userTasksPath)).filter((f: string) => excludeFiles.indexOf(f) === -1)) {
-        await this.removeTmpFile(path.join(userTasksPath, f))
+      const tasks: (FileTask | null | undefined)[] = keys.length ? await this.cache.mget(keys) : []
+      const protectedFiles = new Set<string>()
+      const protectedPrefixes: string[] = []
+      for (const task of tasks) {
+        if (!task || !isActiveTaskStatus(task.status)) continue
+        // Active task staging files must survive tmp cleanup; the transfer may still publish or rollback them.
+        // QUEUED tasks are included because they may start after this cache snapshot.
+        protectedPrefixes.push(taskTemporaryPrefix(FilesTasksManager.getCacheKey(userId, task.id)))
+        // Exported archives are final results stored beside staging entries and do not use the task prefix.
+        if (task.props.compressInDirectory === false) protectedFiles.add(task.name)
+      }
+      for (const fileName of await fs.readdir(userTasksPath)) {
+        if (protectedFiles.has(fileName) || protectedPrefixes.some((prefix: string) => fileName.startsWith(prefix))) continue
+        // The age guard protects tasks created after the cache snapshot from being removed by this cleanup pass.
+        await this.removeTmpFile(path.join(userTasksPath, fileName), expiration)
       }
     } catch (e) {
-      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${userTasksPath} : ${e}` })
+      this.logger.error({ tag: this.cleanupUserTaskFiles.name, msg: `unable to browse ${userTasksPath} : ${e}` })
     }
   }
 
@@ -236,7 +246,7 @@ export class FilesScheduler {
       for (const f of await fs.readdir(userTmpPath)) {
         const rPath = path.join(userTmpPath, f)
         if (f === USER_PATH.TASKS) {
-          await this.cleanupUserTaskFiles(user.id, rPath)
+          await this.cleanupUserTaskFiles(user.id, rPath, expiration)
         } else {
           await this.removeTmpFile(rPath, expiration)
         }
@@ -259,17 +269,37 @@ export class FilesScheduler {
   private async cleanupInterruptedTasks(): Promise<void> {
     try {
       let nb = 0
+      let nbCancellationRequests = 0
+      let nbUserTaskCounters = 0
+      // The in-memory queue and abort watchers are lost on process restart; cached active tasks cannot be resumed safely.
       const keys = await this.cache.keys(`${CACHE_TASK_PREFIX}-*`)
       for (const key of keys) {
+        if (key.startsWith(`${CACHE_TASK_CANCEL_PREFIX}-`)) {
+          // Cancellation requests only target live abort watchers, so they are stale after startup.
+          await this.cache.del(key)
+          nbCancellationRequests++
+          continue
+        }
+        if (key.startsWith(`${CACHE_TASK_USER_PREFIX}-`)) {
+          // Running counters are runtime state; keeping them would block new tasks from claiming slots.
+          await this.cache.del(key)
+          nbUserTaskCounters++
+          continue
+        }
         const task = await this.cache.get(key)
-        if (task && task.status === FileTaskStatus.PENDING) {
+        if (task && isActiveTaskStatus(task.status)) {
+          // Do not requeue filesystem operations here: they are not guaranteed to be idempotent.
           task.status = FileTaskStatus.ERROR
           task.result = 'Interrupted'
+          task.endedAt = currentTimeStamp(null, true)
           nb++
-          this.cache.set(key, task).catch((e: Error) => this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` }))
+          this.cache.set(key, task, CACHE_TASK_TTL).catch((e: Error) => this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` }))
         }
       }
-      this.logger.log({ tag: this.cleanupInterruptedTasks.name, msg: `${nb} tasks cleaned` })
+      this.logger.log({
+        tag: this.cleanupInterruptedTasks.name,
+        msg: `${nb} tasks cleaned, ${nbCancellationRequests} cancellation requests cleared, ${nbUserTaskCounters} user task counters cleared`
+      })
     } catch (e) {
       this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` })
     }

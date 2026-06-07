@@ -4,7 +4,6 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faCommentDots } from '@fortawesome/free-regular-svg-icons'
 import { faMagnifyingGlassMinus, faMagnifyingGlassPlus, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
-import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
 import { TAB_MENU } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
@@ -12,10 +11,11 @@ import { SPACES_PATH } from '../../../spaces/spaces.constants'
 import { UserAvatarComponent } from '../../../users/components/utils/user-avatar.component'
 import { CommentRecentModel } from '../../models/comment-recent.model'
 import { CommentsService } from '../../services/comments.service'
+import { LiveTimeAgoPipe } from '../../../../common/pipes/time-ago-live.pipe'
 
 @Component({
   selector: 'app-comments-recents-widget',
-  imports: [L10nTranslateDirective, FaIconComponent, TimeAgoPipe, UserAvatarComponent],
+  imports: [L10nTranslateDirective, FaIconComponent, UserAvatarComponent, LiveTimeAgoPipe],
   templateUrl: './comments-recents-widget.component.html',
   styleUrl: './comments-recents-widget.component.scss'
 })

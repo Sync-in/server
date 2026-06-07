@@ -52,6 +52,21 @@ export function isPathExists(rPath: string): Promise<boolean> {
   return fse.pathExists(rPath)
 }
 
+async function existingParentPath(rPath: string): Promise<string> {
+  let parentPath = path.dirname(rPath)
+  while (!(await isPathExists(parentPath))) {
+    const nextParentPath = path.dirname(parentPath)
+    if (nextParentPath === parentPath) break
+    parentPath = nextParentPath
+  }
+  return parentPath
+}
+
+export async function isCrossDevice(srcPath: string, dstPath: string): Promise<boolean> {
+  const [srcStats, dstParentStats] = await Promise.all([fs.lstat(srcPath), existingParentPath(dstPath).then((parentPath) => fs.stat(parentPath))])
+  return srcStats.dev !== dstParentStats.dev
+}
+
 export async function isPathIsReadable(rPath: string): Promise<boolean> {
   try {
     await fs.access(rPath, fs.constants.R_OK)
@@ -199,23 +214,40 @@ export async function checksumFile(filePath: string, alg: string): Promise<strin
   return hash.digest('hex')
 }
 
-export function writeFromStream(rPath: string, stream: Readable, start: number = 0, maxSize?: number): Promise<void> {
-  const dst: WriteStream = createWriteStream(rPath, { flags: start ? 'a' : 'w', start: start, highWaterMark: DEFAULT_HIGH_WATER_MARK })
-  if (maxSize === undefined) {
-    return pipeline(stream, dst)
-  }
-  let received = start
-  const limitSize = new Transform({
-    transform(chunk, _encoding, callback) {
-      received += chunk.length
-      if (received > maxSize) {
-        callback(maxFileSizeExceededError())
-        return
-      }
+export function createProgressTransform(onProgress: (bytes: number) => void): Transform {
+  return new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      onProgress(chunk.length)
       callback(null, chunk)
     }
   })
-  return pipeline(stream, limitSize, dst)
+}
+
+export function writeFromStream(
+  rPath: string,
+  stream: Readable,
+  start: number = 0,
+  maxSize?: number,
+  signal?: AbortSignal,
+  onProgress?: (bytes: number) => void
+): Promise<void> {
+  const dst: WriteStream = createWriteStream(rPath, { flags: start ? 'a' : 'w', start: start, highWaterMark: DEFAULT_HIGH_WATER_MARK })
+  if (maxSize === undefined && !onProgress) {
+    return pipeline(stream, dst, { signal })
+  }
+  let received = start
+  const progress = new Transform({
+    transform(chunk, _encoding, callback) {
+      received += chunk.length
+      if (maxSize !== undefined && received > maxSize) {
+        callback(maxFileSizeExceededError())
+        return
+      }
+      onProgress?.(chunk.length)
+      callback(null, chunk)
+    }
+  })
+  return pipeline(stream, progress, dst, { signal })
 }
 
 export async function writeFromStreamAndChecksum(rPath: string, stream: Readable, hasRange: number, alg: string): Promise<string> {
@@ -244,7 +276,7 @@ export function copyFileContent(srcPath: string, dstPath: string): Promise<void>
   return writeFromStream(dstPath, srcStream)
 }
 
-async function walkDir(
+export async function walkDir(
   rPath: string,
   onEntry: (entry: Dirent, entryPath: string) => Promise<void> | void,
   errors?: Record<string, string>
@@ -289,25 +321,6 @@ export async function dirSize(rPath: string): Promise<[number, any]> {
 
 export async function dirListFileNames(rPath: string): Promise<string[]> {
   return (await fs.readdir(rPath)).map((path: string) => fileName(path))
-}
-
-export async function countDirEntries(rPath: string): Promise<{ files: number; directories: number }> {
-  const entriesCount = { files: 0, directories: 0 }
-  const ignoredErrors: Record<string, string> = {}
-
-  await walkDir(
-    rPath,
-    (entry: Dirent) => {
-      if (entry.isDirectory()) {
-        entriesCount.directories++
-      } else {
-        entriesCount.files++
-      }
-    },
-    ignoredErrors
-  )
-
-  return entriesCount
 }
 
 export async function dirHasChildren(rPath: string, mustContainsDirs = true): Promise<boolean> {

@@ -52,6 +52,36 @@ export class RedisCacheAdapter implements Cache {
     return (await this.client.mGet(keys)).map((v) => this.deserialize(v))
   }
 
+  async increment(key: string, amount = 1, ttl?: number, minimum?: number): Promise<number> {
+    const exp = this.getTTL(ttl)
+    if (minimum !== undefined) {
+      const value = await this.client.eval(
+        `local value = redis.call('INCRBY', KEYS[1], ARGV[1])
+         if value < tonumber(ARGV[2]) then
+           value = tonumber(ARGV[2])
+           redis.call('SET', KEYS[1], value)
+         end
+         if tonumber(ARGV[3]) == -1 then
+           redis.call('PERSIST', KEYS[1])
+         else
+           redis.call('EXPIRE', KEYS[1], ARGV[3])
+         end
+         return value`,
+        { keys: [key], arguments: [String(amount), String(minimum), String(exp)] }
+      )
+      return Number(value)
+    }
+    const multi = this.client.multi()
+    multi.incrBy(key, amount)
+    if (exp === this.infiniteExpiration) {
+      multi.persist(key)
+    } else {
+      multi.expire(key, exp)
+    }
+    const [value] = await multi.exec()
+    return Number(value)
+  }
+
   async set(key: string, data: unknown, ttl?: number): Promise<boolean> {
     const exp = this.getTTL(ttl)
     return (await this.client.set(key, this.serialize(data), { expiration: { type: 'EX', value: exp === -1 ? undefined : exp } })) === 'OK'

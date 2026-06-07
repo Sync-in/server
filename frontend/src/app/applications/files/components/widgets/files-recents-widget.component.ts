@@ -4,15 +4,15 @@ import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFileLines } from '@fortawesome/free-regular-svg-icons'
 import { faMagnifyingGlassMinus, faMagnifyingGlassPlus, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
-import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
 import { StoreService } from '../../../../store/store.service'
 import { SPACES_PATH } from '../../../spaces/spaces.constants'
 import { FileRecentModel } from '../../models/file-recent.model'
 import { FilesService } from '../../services/files.service'
+import { LiveTimeAgoPipe } from '../../../../common/pipes/time-ago-live.pipe'
 
 @Component({
   selector: 'app-files-recents-widget',
-  imports: [L10nTranslateDirective, FaIconComponent, TimeAgoPipe],
+  imports: [L10nTranslateDirective, FaIconComponent, LiveTimeAgoPipe],
   templateUrl: './files-recents-widget.component.html',
   styleUrl: './files-recents-widget.component.scss'
 })

@@ -2,8 +2,9 @@ import { createReadStream } from 'node:fs'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { extract, type ReadEntry, type Unpack } from 'tar'
+import type { FileTaskExtractionEntry } from '../interfaces/file-task.interface'
 import { storageQuotaExceededError } from './errors'
-import { isPathInside } from './files'
+import { createProgressTransform, isPathInside } from './files'
 
 export function checkTarEntry(outputDir: string, entry: Pick<ReadEntry, 'type' | 'path' | 'linkpath'>): boolean {
   if (entry.type === 'Link') {
@@ -21,7 +22,18 @@ export function checkTarEntry(outputDir: string, entry: Pick<ReadEntry, 'type' |
   return true
 }
 
-export async function extractTar(filePath: string, outputDir: string, gzip: boolean, maxExtractedSize?: number): Promise<void> {
+export function isTarDirectory(type: ReadEntry['type']): boolean {
+  return type === 'Directory' || type === 'GNUDumpDir'
+}
+
+export async function extractTar(
+  filePath: string,
+  outputDir: string,
+  gzip: boolean,
+  maxExtractedSize?: number,
+  signal?: AbortSignal,
+  onEntry?: (entry: FileTaskExtractionEntry) => void
+): Promise<void> {
   let validationError: Error | undefined
   let extractedSize = 0
   const srcStream = createReadStream(filePath)
@@ -40,6 +52,15 @@ export async function extractTar(filePath: string, outputDir: string, gzip: bool
     preserveOwner: false,
     preservePaths: false,
     strict: true,
+    transform: onEntry
+      ? (entry) => {
+          let extractedEntrySize = 0
+          return createProgressTransform((bytes) => {
+            extractedEntrySize += bytes
+            onEntry({ path: entry.path, isDirectory: false, size: extractedEntrySize })
+          }) as unknown as ReadEntry
+        }
+      : undefined,
     filter: (_path, entry) => {
       if (validationError) return false
       try {
@@ -48,14 +69,17 @@ export async function extractTar(filePath: string, outputDir: string, gzip: bool
         if (maxExtractedSize !== undefined && extractedSize > maxExtractedSize) {
           throw storageQuotaExceededError()
         }
-        return !('type' in entry) || checkTarEntry(outputDir, entry)
+        if (!('type' in entry)) return true
+        if (!checkTarEntry(outputDir, entry)) return false
+        onEntry?.({ path: entry.path, isDirectory: isTarDirectory(entry.type), size: 0 })
+        return true
       } catch (e) {
         return abortExtraction(e as Error)
       }
     }
   })
   try {
-    await pipeline(srcStream, extractStream)
+    await pipeline(srcStream, extractStream, { signal })
   } catch (e) {
     throw validationError || e
   }

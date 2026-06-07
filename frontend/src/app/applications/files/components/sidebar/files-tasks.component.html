@@ -17,9 +17,16 @@
     }
   </div>
   @if (nbTotalTasks) {
-    <button (click)="removeTasks()" class="btn btn-sm btn-default">
-      <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
-    </button>
+    <div class="d-flex gap-1">
+      @if (hasCancellableTasks) {
+        <button type="button" (click)="cancelTasks()" [tooltip]="'Stop' | translate:locale.language" class="btn btn-sm btn-default" placement="top">
+          <fa-icon [icon]="icons.faStop"></fa-icon>
+        </button>
+      }
+      <button type="button" (click)="removeTasks()" class="btn btn-sm btn-default">
+        <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
+      </button>
+    </div>
   } @else {
     <div style="width: 35px"></div>
   }
@@ -27,41 +34,79 @@
 <!-- Inner menu: contains the tasks -->
 <div appAutoResize>
   @for (task of tasks; track task.id) {
-    <div class="task-list">
-      <div (click)="goToFile(task)" [tooltip]="task.result | translate:locale.language" class="text-truncate" placement="bottom">
-        <div>
-          <fa-icon [class.text-danger]="task.status >= 2" [icon]="iconsStatus[task.status]"
-                   [animation]="task.status === 0 ? 'spin-pulse' : null"></fa-icon>
-          <b>
-            <fa-icon [icon]="iconsOperation[task.type]" class="me-1"></fa-icon>
-          </b>
-          <span>{{ task.name }}</span>
+    <div class="task-list"
+         [class.task-list--cancelled]="task.ui.cancelled"
+         [class.task-list--error]="task.ui.error"
+         [class.task-list--interactive]="task.ui.openable"
+         [class.task-list--pending]="task.ui.pending"
+         [class.task-list--queued]="task.ui.queued"
+         [tooltip]="task.result ? (task.result | translate:locale.language) : ''"
+         (click)="openTask(task)"
+         placement="bottom">
+      <div class="task-list__content">
+        <div class="task-list__header">
+          <fa-icon class="task-list__status"
+                   [class.text-danger]="task.ui.error"
+                   [class.text-muted]="task.ui.cancelled || task.ui.queued"
+                   [icon]="task.ui.statusIcon"
+                   [animation]="task.ui.pending ? 'spin-pulse' : null"></fa-icon>
+          <span class="task-list__operation">
+            <fa-icon [icon]="task.ui.operationIcon"></fa-icon>
+          </span>
+          <span class="task-list__name">{{ task.name }}</span>
         </div>
-        @if (task.status === 2) {
-          <div [class.text-danger]="task.status >= 2" class="ms-2">{{ task.result | translate:locale.language }}</div>
+        @if (task.ui.error && task.result) {
+          <div class="text-danger task-list__result">
+            {{ task.result | translate:locale.language }}
+          </div>
         }
-        <div class="mt-1 fs-sm">
+      </div>
+      <div class="task-list__progress-row">
+        <div class="task-list__progress">
           <progressbar [max]="100"
-                       [value]="task.status > 0 ? 100 : task.props.progress || 100"
-                       [type]="task.status < 1 ? 'warning' : task.status === 2 ? 'danger' : null"
+                       [value]="task.ui.progress"
+                       [type]="task.ui.progressType"
+                       [class.custom-progress-bar--cancelled]="task.ui.cancelled"
                        class="custom-progress-bar position-relative">
-              <span class="d-flex align-items-center justify-content-center position-absolute mx-1 w-100">
-                @if (task.props.size) {
-                  <span>{{ task.props.size | toBytes:2 }}&nbsp;•&nbsp;</span>
+              <span class="task-list__progress-label d-flex align-items-center justify-content-center position-absolute w-100">
+                @for (item of task.ui.progressItems; track item.type) {
+                  @if (!$first) {
+                    <span>&nbsp;•&nbsp;</span>
+                  }
+                  @if (item.icon) {
+                    <fa-icon [icon]="item.icon"></fa-icon>
+                    <span>&nbsp;</span>
+                  }
+                  @switch (item.type) {
+                    @case ('currentSize') {
+                      <span>{{ item.value | toBytes:2 }}</span>
+                    }
+                    @case ('totalSize') {
+                      <span>{{ item.value | toBytes:2 }}</span>
+                    }
+                    @case ('size') {
+                      <span>{{ item.value | toBytes:2 }}</span>
+                    }
+                    @case ('endedAt') {
+                      <span>{{ item.value | amTimeAgo:true }}</span>
+                    }
+                    @default {
+                      <span>{{ item.value }}</span>
+                    }
+                  }
                 }
-                @if (task.props.directories) {
-                  <fa-icon [icon]="icons.faFolderClosed"></fa-icon>
-                  <span>&nbsp;{{ task.props.directories }}&nbsp;•&nbsp;</span>
-                }
-                @if (task.props.files) {
-                  <fa-icon [icon]="icons.faFile"></fa-icon>
-                  <span>&nbsp;{{ task.props.files }}&nbsp;•&nbsp;</span>
-                }
-                <fa-icon [icon]="icons.faClock"></fa-icon>
-                <span>&nbsp;{{ task.startedAt | amTimeAgo:true }}</span>
               </span>
           </progressbar>
         </div>
+        @if (task.ui.cancellable) {
+          <button type="button"
+                  (click)="cancelTask($event, task)"
+                  [tooltip]="'Stop' | translate:locale.language"
+                  class="btn btn-sm btn-default task-list__cancel"
+                  placement="top">
+            <fa-icon [icon]="icons.faStop"></fa-icon>
+          </button>
+        }
       </div>
     </div>
   }

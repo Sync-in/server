@@ -32,7 +32,6 @@ import { AutoResizeDirective } from '../../../common/directives/auto-resize.dire
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { CapitalizePipe } from '../../../common/pipes/capitalize.pipe'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
-import { TimeAgoPipe } from '../../../common/pipes/time-ago.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { LayoutService } from '../../../layout/layout.service'
@@ -47,6 +46,7 @@ import { SyncPathReportDialogComponent } from './dialogs/sync-path-report.dialog
 import { SyncPathSettingsDialogComponent } from './dialogs/sync-path-settings.dialog.component'
 import { SyncPathDirectionIconComponent } from './utils/sync-path-direction-icon.component'
 import { SyncPathSchedulerComponent } from './utils/sync-path-scheduler.component'
+import { LiveTimeAgoPipe } from '../../../common/pipes/time-ago-live.pipe'
 
 @Component({
   selector: 'app-sync-paths',
@@ -61,12 +61,12 @@ import { SyncPathSchedulerComponent } from './utils/sync-path-scheduler.componen
     SearchFilterPipe,
     SyncPathDirectionIconComponent,
     FaIconComponent,
-    TimeAgoPipe,
     KeyValuePipe,
     L10nTranslateDirective,
     SyncPathSchedulerComponent,
     VirtualScrollComponent,
-    CapitalizePipe
+    CapitalizePipe,
+    LiveTimeAgoPipe
   ],
   templateUrl: 'sync-paths.component.html'
 })

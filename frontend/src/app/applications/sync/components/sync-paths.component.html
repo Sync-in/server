@@ -215,7 +215,7 @@
                   @case ('lastSync') {
                     <span class="{{th.value.newly ? 'badge sync-newly-' + s[th.value.newly] : ''}}">
                       @if (s.newly) {
-                        {{ s.settings.lastSync | amTimeAgo:true }}
+                        {{ s.settings.lastSync | amLiveTimeAgo:true }}
                       } @else {
                         {{ 'never' | translate:locale.language }}
                       }

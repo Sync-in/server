@@ -247,7 +247,7 @@ describe(DownloadFile.name, () => {
       maxSize: 1024
     })
 
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 1024)
+    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 1024, undefined, undefined)
   })
 
   it('rejects missing content-length for space downloads even when maxSize is provided', async () => {
@@ -278,7 +278,21 @@ describe(DownloadFile.name, () => {
     })
 
     expect(space.willExceedQuota).toHaveBeenCalledWith(12)
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 12)
+    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 12, undefined, undefined)
+  })
+
+  it('forwards the progress callback to the stream writer', async () => {
+    const stream = Readable.from(['abc'])
+    const onProgress = vi.fn()
+    http.axiosRef
+      .mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '12' }))
+      .mockResolvedValueOnce({ ...response('8.8.8.8'), data: stream })
+
+    await new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', {
+      onProgress
+    })
+
+    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 12, undefined, onProgress)
   })
 
   it('allows zero content-length and guards the written stream at zero bytes', async () => {
@@ -289,7 +303,7 @@ describe(DownloadFile.name, () => {
 
     await new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
 
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 0)
+    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 0, undefined, undefined)
   })
 
   it('rejects redirects on GET after the HEAD URL has been resolved', async () => {
@@ -318,7 +332,7 @@ describe(DownloadFile.name, () => {
       allowPrivateIP: true
     })
 
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 12)
+    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 12, undefined, undefined)
     expect(http.axiosRef).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
@@ -343,6 +357,6 @@ describe(DownloadFile.name, () => {
       maxSize: 1024
     })
 
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 1024)
+    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 1024, undefined, undefined)
   })
 })

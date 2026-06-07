@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { CronJob } from 'cron'
-import { and, between, eq, exists, inArray, like, notBetween, SQL } from 'drizzle-orm'
+import { and, between, eq, exists, inArray, like, notBetween, SQL, sql } from 'drizzle-orm'
 import cluster from 'node:cluster'
 import { createCacheKeySlug, currentTimeStamp } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
@@ -94,6 +94,35 @@ export class MysqlCacheAdapter implements Cache {
       .from(cache)
       .where(and(inArray(cache.key, keys), this.whereNotExpired()))
     return vs.map((v: { value: any }) => v.value)
+  }
+
+  async increment(key: string, amount = 1, ttl?: number, minimum?: number): Promise<number> {
+    const now = currentTimeStamp()
+    const exp = this.getTTL(ttl)
+    const initialValue = minimum === undefined ? amount : Math.max(amount, minimum)
+    const incrementedValue = sql`IF(${cache.expiration} BETWEEN 0 AND ${now}, ${initialValue}, COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(${cache.value}, '$')) AS SIGNED), 0) + ${amount})`
+    const value = minimum === undefined ? incrementedValue : sql`GREATEST(${incrementedValue}, ${minimum})`
+    try {
+      /*
+       * INSERT ... ON DUPLICATE KEY UPDATE atomically creates or updates the counter while locking its row.
+       * Expired values restart from initialValue, and GREATEST optionally prevents the result from falling below minimum.
+       * On update, LAST_INSERT_ID(value) both stores the computed value and exposes it through the connection-scoped
+       * insertId returned by the driver, avoiding an additional SELECT. A new row returns initialValue directly.
+       */
+      const [result]: any = await this.db
+        .insert(cache)
+        .values({ key, value: initialValue, expiration: exp } satisfies MysqlCache)
+        .onDuplicateKeyUpdate({
+          set: {
+            value: sql`LAST_INSERT_ID(${value})`,
+            expiration: exp
+          } as Partial<MysqlCache>
+        })
+      return result.affectedRows === 1 && Number(result.insertId) === 0 ? initialValue : Number(result.insertId)
+    } catch (e) {
+      this.logger.error({ tag: this.increment.name, msg: `${e}` })
+      throw e
+    }
   }
 
   async set(key: string, data: unknown, ttl?: number): Promise<boolean> {

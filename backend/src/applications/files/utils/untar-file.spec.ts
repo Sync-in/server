@@ -3,7 +3,7 @@ import { access, mkdir, mkdtemp, readlink, rm, symlink, writeFile } from 'node:f
 import os from 'node:os'
 import path from 'node:path'
 import { create } from 'tar'
-import { checkTarEntry, extractTar } from './untar-file'
+import { checkTarEntry, extractTar, isTarDirectory } from './untar-file'
 
 describe(extractTar.name, () => {
   const baseOutputDir = path.join(path.sep, 'tmp', 'output')
@@ -18,6 +18,12 @@ describe(extractTar.name, () => {
     expect(() => checkTarEntry(baseOutputDir, { type: 'SymbolicLink', path: 'docs/latest', linkpath: '../../../outside' })).toThrow(
       'Tar symlink entry "docs/latest" would escape the output directory'
     )
+  })
+
+  it('recognizes regular and GNU dump directories', () => {
+    expect(isTarDirectory('Directory')).toBe(true)
+    expect(isTarDirectory('GNUDumpDir')).toBe(true)
+    expect(isTarDirectory('File')).toBe(false)
   })
 
   let tmpDir: string
@@ -40,12 +46,26 @@ describe(extractTar.name, () => {
   })
 
   it('extracts symbolic links targeting the output directory', async () => {
+    const onEntry = vi.fn()
     await symlink('./v2', path.join(sourceDir, 'docs', 'latest'))
     await createArchive()
 
-    await extractTar(archivePath, outputDir, false)
+    await extractTar(archivePath, outputDir, false, undefined, undefined, onEntry)
 
     await expect(readlink(path.join(outputDir, 'docs', 'latest'))).resolves.toBe('./v2')
+    expect(onEntry).toHaveBeenCalledWith({ path: 'docs/', isDirectory: true, size: 0 })
+    expect(onEntry).toHaveBeenCalledWith({ path: 'docs/latest', isDirectory: false, size: 0 })
+  })
+
+  it('reports decompressed file bytes through the entry transform', async () => {
+    const onEntry = vi.fn()
+    await writeFile(path.join(sourceDir, 'docs', 'file.txt'), 'abc')
+    await createArchive()
+
+    await extractTar(archivePath, outputDir, false, undefined, undefined, onEntry)
+
+    expect(onEntry).toHaveBeenCalledWith({ path: 'docs/file.txt', isDirectory: false, size: 0 })
+    expect(onEntry).toHaveBeenCalledWith({ path: 'docs/file.txt', isDirectory: false, size: 3 })
   })
 
   it('rejects symbolic links escaping the output directory', async () => {
