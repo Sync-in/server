@@ -99,11 +99,11 @@ const PlyrPlayer = plyrModule.default ?? plyrModule
   template: `
     <div class="files-viewer-media" [class.files-viewer-media--audio]="isAudio()" [style.height.px]="currentHeight()">
       @if (isAudio()) {
-        <audio #media class="files-viewer-media__player" preload="auto" autoplay controls>
+        <audio #media class="files-viewer-media__player" preload="none" autoplay controls>
           <source [src]="file().dataUrl" />
         </audio>
       } @else {
-        <video #media class="files-viewer-media__player" preload="auto" autoplay playsinline controls>
+        <video #media class="files-viewer-media__player" preload="none" autoplay playsinline controls>
           <source [src]="file().dataUrl" />
         </video>
       }
