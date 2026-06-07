@@ -88,7 +88,7 @@
                       <span>{{ item.value | toBytes:2 }}</span>
                     }
                     @case ('endedAt') {
-                      <span>{{ item.value | amDateFormat:'L HH:mm' }}</span>
+                      <span>{{ item.value | amTimeAgo:true }}</span>
                     }
                     @default {
                       <span>{{ item.value }}</span>

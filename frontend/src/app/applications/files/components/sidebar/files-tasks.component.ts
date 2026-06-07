@@ -23,17 +23,17 @@ import { ProgressbarComponent } from 'ngx-bootstrap/progressbar'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
-import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
 import { ToBytesPipe } from '../../../../common/pipes/to-bytes.pipe'
 import { StoreService } from '../../../../store/store.service'
 import { SPACES_PATH } from '../../../spaces/spaces.constants'
 import type { FileTaskView, TaskProgressItem } from '../../interfaces/file-task-view.interface'
 import { FilesTasksService } from '../../services/files-tasks.service'
 import { FilesService } from '../../services/files.service'
+import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
 
 @Component({
   selector: 'app-files-tasks',
-  imports: [FaIconComponent, L10nTranslatePipe, AutoResizeDirective, TooltipModule, ProgressbarComponent, TimeDateFormatPipe, ToBytesPipe],
+  imports: [FaIconComponent, L10nTranslatePipe, AutoResizeDirective, TooltipModule, ProgressbarComponent, ToBytesPipe, TimeAgoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'files-tasks.component.html'
 })
@@ -114,6 +114,22 @@ export class FilesTasksComponent implements OnDestroy {
     this.updateHasCancellableTasks()
   }
 
+  openTask(task: FileTask) {
+    if (task.status !== FileTaskStatus.SUCCESS) return
+    if (task.type === FILE_OPERATION.COMPRESS && task.props.compressInDirectory === false) {
+      this.filesService.downloadTaskArchive(task.id)
+      return
+    } else if (task.type === FILE_OPERATION.DELETE) {
+      if (task.path.startsWith(SPACES_PATH.FILES)) {
+        task.path = task.path.replace(SPACES_PATH.FILES, SPACES_PATH.TRASH)
+      } else if (task.path.startsWith(SPACES_PATH.SHARES)) {
+        // cannot access to the space referenced by the share
+        return
+      }
+    }
+    this.router.navigate([`${SPACES_PATH.SPACES}/${task.path}`], { queryParams: { select: task.name } }).catch(console.error)
+  }
+
   private sortTasksForDisplay(tasks: FileTask[]): FileTaskView[] {
     return tasks
       .map((task: FileTask, index: number) => ({ index, task: this.createTaskView(task) }))
@@ -171,21 +187,5 @@ export class FilesTasksComponent implements OnDestroy {
 
   private updateHasCancellableTasks() {
     this.hasCancellableTasks = this.tasks.some((task: FileTaskView) => task.ui.cancellable)
-  }
-
-  openTask(task: FileTask) {
-    if (task.status !== FileTaskStatus.SUCCESS) return
-    if (task.type === FILE_OPERATION.COMPRESS && task.props.compressInDirectory === false) {
-      this.filesService.downloadTaskArchive(task.id)
-      return
-    } else if (task.type === FILE_OPERATION.DELETE) {
-      if (task.path.startsWith(SPACES_PATH.FILES)) {
-        task.path = task.path.replace(SPACES_PATH.FILES, SPACES_PATH.TRASH)
-      } else if (task.path.startsWith(SPACES_PATH.SHARES)) {
-        // cannot access to the space referenced by the share
-        return
-      }
-    }
-    this.router.navigate([`${SPACES_PATH.SPACES}/${task.path}`], { queryParams: { select: task.name } }).catch(console.error)
   }
 }
