@@ -15,9 +15,9 @@
   } @else {
     <div class="text-bold mb-3" l10nTranslate>Do you want to replace the existing file(s)?</div>
     @for (f of files; track $index) {
-      <div class="d-flex align-items-center mb-1" draggable="true">
+      <div class="d-flex align-items-center mb-1">
         <img [src]="f.mimeUrl" alt="" height="24" width="24" (error)="f.fallBackMimeUrl()">
-        <div class="d-flex flex-column text-truncate ms-1">
+        <div class="d-flex flex-column ms-2">
           <span>{{ f.name }}</span>
         </div>
       </div>
