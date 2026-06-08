@@ -526,12 +526,10 @@
 <!--End Common Messages-->
 <!--Start Context Menu -->
 <context-menu #FileContextMenu>
-  @if (selection.length === 1) {
-    @if (selection[0]) {
-      <ng-template (execute)="shortcutOpen()" contextMenuItem>
-        <span l10nTranslate><fa-icon [icon]="selection[0].isDir ? icons.faFolderOpen : icons.faEye"></fa-icon>Open</span>
-      </ng-template>
-    }
+  @if (selection.length === 1 && selection[0]; as selectedFile) {
+    <ng-template (execute)="shortcutOpen()" contextMenuItem>
+      <span l10nTranslate><fa-icon [icon]="selectedFile.isDir ? icons.faFolderOpen : icons.faEye"></fa-icon>Open</span>
+    </ng-template>
   }
   @if (!hasDisabledItemsInSelection) {
     <ng-template (execute)="downloadFiles()" contextMenuItem>
