@@ -54,6 +54,7 @@ describe(FilesManager.name, () => {
   }
 
   const user = { id: 7, login: 'john', tmpPath: '/data/users/john/tmp', tasksPath: '/data/users/john/tmp/tasks' } as any
+  const taskPath = (cacheKey: string, name: string): string => path.join(user.tasksPath, `${taskUtils.taskTemporaryPrefix(cacheKey)}${name}`)
 
   const makeSpace = (overrides: Record<string, any> = {}) =>
     ({
@@ -195,9 +196,9 @@ describe(FilesManager.name, () => {
     vi.spyOn(filesUtils, 'dirSize').mockResolvedValue([123, {}] as any)
     vi.spyOn(filesUtils, 'uniqueFilePathFromDir').mockResolvedValue('/tmp/unique-path.txt')
     vi.spyOn(filesUtils, 'uniqueDatedFilePath').mockResolvedValue({ isDir: false, path: '/trash/file-2026.txt' })
-    vi.spyOn(taskUtils, 'createTaskTemporaryDir').mockResolvedValue('/data/users/john/tmp/tasks/.task-d-archive')
+    vi.spyOn(taskUtils, 'createTaskTemporaryDir').mockResolvedValue(taskPath('task-d', 'archive'))
     vi.spyOn(taskUtils, 'taskTemporaryPath').mockImplementation((parentPath, cacheKey, name) =>
-      path.join(parentPath, `.${cacheKey}-${path.basename(name)}`)
+      path.join(parentPath, `${taskUtils.taskTemporaryPrefix(cacheKey)}${path.basename(name)}`)
     )
     vi.spyOn(tarUtils, 'createTar').mockResolvedValue(undefined)
     vi.spyOn(filesUtils, 'getMimeType').mockReturnValue('image-png')
@@ -1038,7 +1039,7 @@ describe(FilesManager.name, () => {
       expect(taskUtils.taskTemporaryPath).toHaveBeenCalledWith(user.tasksPath, 'task-1', '/tmp/download.txt')
       expect(filesUtils.tempFilePath).not.toHaveBeenCalled()
       expect(filesUtils.writeFromStream).toHaveBeenCalledWith(
-        '/data/users/john/tmp/tasks/.task-1-download.txt',
+        taskPath('task-1', 'download.txt'),
         expect.anything(),
         0,
         55,
@@ -1046,7 +1047,7 @@ describe(FilesManager.name, () => {
         expect.any(Function)
       )
       expect(filesTasksTransfer.createByteProgressHandler).toHaveBeenCalledWith(space)
-      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/tasks/.task-1-download.txt', '/tmp/download.txt')
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(taskPath('task-1', 'download.txt'), '/tmp/download.txt')
       expect(filesLockManager.create).toHaveBeenCalledWith(
         user,
         expect.objectContaining({ path: 'download.txt' }),
@@ -1128,19 +1129,12 @@ describe(FilesManager.name, () => {
 
       await service.compress(user, space, dto)
 
-      expect(tarSpy).toHaveBeenCalledWith(
-        '/data/users/john/tmp/tasks/.task-c-archive.tgz',
-        dto.files,
-        true,
-        undefined,
-        expect.any(Function),
-        undefined
-      )
+      expect(tarSpy).toHaveBeenCalledWith(taskPath('task-c', 'archive.tgz'), dto.files, true, undefined, expect.any(Function), undefined)
       expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/tmp/archive.tgz')
       expect(taskUtils.taskTemporaryPath).toHaveBeenCalledWith(user.tasksPath, 'task-c', '/tmp/archive.tgz')
       expect(filesUtils.tempFilePath).not.toHaveBeenCalled()
       expect(space.task.props.size).toBe(Buffer.byteLength('content'))
-      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/tasks/.task-c-archive.tgz', '/tmp/archive.tgz')
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(taskPath('task-c', 'archive.tgz'), '/tmp/archive.tgz')
     })
 
     it('should allow archive export from trash when compressInDirectory is false', async () => {
@@ -1277,12 +1271,12 @@ describe(FilesManager.name, () => {
       expect(filesTasksTransfer.createExtractionProgressHandler).toHaveBeenCalledWith(space)
       expect(unzipSpy).toHaveBeenCalledWith(
         '/data/users/john/files/archive.zip',
-        '/data/users/john/tmp/tasks/.task-d-archive',
+        taskPath('task-d', 'archive'),
         undefined,
         undefined,
         expect.any(Function)
       )
-      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/tasks/.task-d-archive', '/data/users/john/files/archive')
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(taskPath('task-d', 'archive'), '/data/users/john/files/archive')
       expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/data/users/john/files/archive')
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
     })

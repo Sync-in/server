@@ -45,6 +45,7 @@ export class FilesScheduler {
     try {
       await this.resetContentIndexingState()
       await this.cleanupInterruptedTasks()
+      await this.cleanupUserTmpFiles()
       await this.clearRecentFiles()
       await this.updateQuotas()
       await this.cleanupTrashFiles()
@@ -215,22 +216,27 @@ export class FilesScheduler {
 
   private async cleanupUserTaskFiles(userId: number, userTasksPath: string, expiration: number): Promise<void> {
     try {
+      // Snapshot the directory first so files created by tasks registered during cache lookup are left for the next pass.
+      const fileNames = await fs.readdir(userTasksPath)
       const keys = await this.cache.keys(FilesTasksManager.getCacheKey(userId))
       const tasks: (FileTask | null | undefined)[] = keys.length ? await this.cache.mget(keys) : []
       const protectedFiles = new Set<string>()
       const protectedPrefixes: string[] = []
+      let hasActiveTasks = false
       for (const task of tasks) {
-        if (!task || !isActiveTaskStatus(task.status)) continue
+        if (!task) continue
+        // Exported archives remain downloadable while their completed task is still cached.
+        if (task.props.compressInDirectory === false) protectedFiles.add(task.name)
+        if (!isActiveTaskStatus(task.status)) continue
+        hasActiveTasks = true
         // Active task staging files must survive tmp cleanup; the transfer may still publish or rollback them.
         // QUEUED tasks are included because they may start after this cache snapshot.
         protectedPrefixes.push(taskTemporaryPrefix(FilesTasksManager.getCacheKey(userId, task.id)))
-        // Exported archives are final results stored beside staging entries and do not use the task prefix.
-        if (task.props.compressInDirectory === false) protectedFiles.add(task.name)
       }
-      for (const fileName of await fs.readdir(userTasksPath)) {
+      for (const fileName of fileNames) {
         if (protectedFiles.has(fileName) || protectedPrefixes.some((prefix: string) => fileName.startsWith(prefix))) continue
-        // The age guard protects tasks created after the cache snapshot from being removed by this cleanup pass.
-        await this.removeTmpFile(path.join(userTasksPath, fileName), expiration)
+        // An active task may have just published an unprefixed result before updating its cached name.
+        await this.removeTmpFile(path.join(userTasksPath, fileName), hasActiveTasks ? expiration : undefined)
       }
     } catch (e) {
       this.logger.error({ tag: this.cleanupUserTaskFiles.name, msg: `unable to browse ${userTasksPath} : ${e}` })
@@ -293,7 +299,7 @@ export class FilesScheduler {
           task.result = 'Interrupted'
           task.endedAt = currentTimeStamp(null, true)
           nb++
-          this.cache.set(key, task, CACHE_TASK_TTL).catch((e: Error) => this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` }))
+          await this.cache.set(key, task, CACHE_TASK_TTL)
         }
       }
       this.logger.log({

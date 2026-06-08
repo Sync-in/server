@@ -2,6 +2,7 @@ import fs, { access, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/p
 import os from 'node:os'
 import path from 'node:path'
 import * as filesUtils from '../../utils/files'
+import { taskTemporaryPrefix } from '../../utils/tasks'
 import { FilesTasksTransfer } from './files-tasks-transfer.service'
 import { SourceCleanupError } from '../../models/file-error'
 
@@ -74,7 +75,7 @@ describe(FilesTasksTransfer.name, () => {
 
   it('publishes a copied file only after the commit hook', async () => {
     const signal = new AbortController().signal
-    const temporaryPath = path.join(stagingDir, `.${cacheKey}-destination.txt`)
+    const temporaryPath = path.join(stagingDir, `${taskTemporaryPrefix(cacheKey)}destination.txt`)
     let transferredBytes = 0
     await writeFile(srcPath, 'content')
 
@@ -94,7 +95,7 @@ describe(FilesTasksTransfer.name, () => {
 
     expect(transferredBytes).toBe(Buffer.byteLength('content'))
     expect(path.dirname(temporaryPath)).toBe(stagingDir)
-    expect(path.basename(temporaryPath)).toBe(`.${cacheKey}-destination.txt`)
+    expect(path.basename(temporaryPath)).toBe(`${taskTemporaryPrefix(cacheKey)}destination.txt`)
     await expect(readFile(dstPath, 'utf8')).resolves.toBe('content')
     await expect(access(temporaryPath)).rejects.toMatchObject({ code: 'ENOENT' })
   })

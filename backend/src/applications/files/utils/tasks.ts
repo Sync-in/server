@@ -6,7 +6,7 @@ import { isCrossDevice, walkDir } from './files'
 import { FileTaskProps, FileTaskStatus } from '../models/file-task'
 
 export function taskTemporaryPrefix(cacheKey: string): string {
-  return `.${cacheKey}-`
+  return `~${cacheKey}-`
 }
 
 export function taskTemporaryPath(parentPath: string, cacheKey: string, name: string): string {

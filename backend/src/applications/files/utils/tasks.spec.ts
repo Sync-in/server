@@ -2,7 +2,7 @@ import fs, { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { FILE_OPERATION } from '../constants/operations'
-import { createTaskTemporaryDir, isTaskCancellable, taskTemporaryPath } from './tasks'
+import { createTaskTemporaryDir, isTaskCancellable, taskTemporaryPath, taskTemporaryPrefix } from './tasks'
 
 describe('file task utilities', () => {
   const cacheKey = 'ftask-7-task-id'
@@ -45,8 +45,8 @@ describe('file task utilities', () => {
     const filePath = taskTemporaryPath(tmpDir, cacheKey, '/destination/report.txt')
     const directoryPath = await createTaskTemporaryDir(tmpDir, cacheKey, '/destination/archive')
 
-    expect(path.basename(filePath)).toBe(`.${cacheKey}-report.txt`)
-    expect(path.basename(directoryPath)).toBe(`.${cacheKey}-archive`)
+    expect(path.basename(filePath)).toBe(`${taskTemporaryPrefix(cacheKey)}report.txt`)
+    expect(path.basename(directoryPath)).toBe(`${taskTemporaryPrefix(cacheKey)}archive`)
     expect((await fs.stat(directoryPath)).isDirectory()).toBe(true)
   })
 })
