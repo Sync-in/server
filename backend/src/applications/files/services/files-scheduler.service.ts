@@ -40,7 +40,7 @@ export class FilesScheduler {
     private readonly filesTrashRetention: FilesTrashRetention
   ) {}
 
-  @Timeout(10_000)
+  @Timeout(5_000)
   async onStartup(): Promise<void> {
     try {
       await this.resetContentIndexingState()
