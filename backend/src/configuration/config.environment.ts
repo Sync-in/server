@@ -25,6 +25,10 @@ export const exportConfiguration: (reload?: boolean) => GlobalConfig = (reload =
 
 function loadConfiguration(): GlobalConfig {
   const config: GlobalConfig = configLoader()
+  // LOGGER
+  if (config.logger.stdout === false) {
+    config.logger.colorize = false
+  }
   // AUTHENTICATION
   // CSRF & WS & 2FA settings
   config.auth.token[TOKEN_TYPE.CSRF] = { ...config.auth.token[TOKEN_TYPE.REFRESH], name: CSRF_KEY } satisfies AuthTokenRefreshConfig

@@ -16,10 +16,11 @@ logger:
   # level: `trace` | `debug` | `info` | `warn` | `error` | `fatal`
   # default: `info`
   level: info
-  # stdout: if false logs are written to the run directory
+  # stdout: if false logs are written to `filePath`
   # default: `true`
   stdout: true
   # Colorize output.
+  # Disabled by default when stdout is set to false.
   # default: `true`
   colorize: true
   # JSON output. When enabled, `colorize` is ignored.
