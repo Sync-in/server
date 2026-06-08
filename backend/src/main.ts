@@ -6,7 +6,7 @@ import { appBootstrap } from './app.bootstrap'
 import { AppService } from './app.service'
 import { configuration } from './configuration/config.environment'
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
   let logger: Logger
   try {
     const app: NestFastifyApplication = await appBootstrap()
