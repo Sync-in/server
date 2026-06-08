@@ -5,13 +5,15 @@ import { cpus } from 'node:os'
 import process from 'node:process'
 import { configuration } from './configuration/config.environment'
 import { SCHEDULER_ENV, SCHEDULER_STATE } from './infrastructure/scheduler/scheduler.constants'
+import { SERVER_NAME } from './common/shared'
 
 @Injectable()
 export class AppService {
-  private static readonly logger = new Logger(AppService.name)
   static schedulerPID: number
+  private static readonly logger = new Logger('SERVER')
 
-  static clusterize(bootstrap: () => void) {
+  static clusterize(bootstrap: () => Promise<void>) {
+    AppService.logger.localInstance['options']['prefix'] = SERVER_NAME
     if (cluster.isPrimary) {
       if (configuration.websocket.adapter === 'cluster') {
         // setup connections between the workers
@@ -32,7 +34,7 @@ export class AppService {
       })
     } else {
       AppService.logger.log(`[Worker:${process.pid}] started`)
-      bootstrap()
+      bootstrap().catch(() => process.exit(1))
     }
   }
 

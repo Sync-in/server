@@ -30,12 +30,20 @@ import * as schema from './schema'
 export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema & { session: { client: MySql2Client } }) {}
 
-  onModuleInit() {
+  async onModuleInit() {
     const pool: Pool = (this.db as any).$client
     pool.on('connection', (conn: Connection) => {
       // Force UTC timezone for every new MySQL connection.
       conn.query(`SET time_zone = '+00:00'`)
     })
+
+    // Ensure MySQL connection is healthy
+    try {
+      await pool.promise().query('SELECT 1')
+    } catch (error) {
+      await this.db.session.client.end()
+      throw error
+    }
   }
 
   async beforeApplicationShutdown() {

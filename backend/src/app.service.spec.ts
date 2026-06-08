@@ -30,7 +30,7 @@ describe(AppService.name, () => {
     configuration.websocket.adapter = 'cluster'
     configuration.server.restartOnFailure = true
 
-    const bootstrap = vi.fn()
+    const bootstrap = vi.fn().mockResolvedValue(undefined)
 
     // IMPORTANT: do NOT call bootstrap() from fork mock
     const fakeWorker = { process: { pid: 1 } } as any
