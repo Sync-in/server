@@ -1,14 +1,35 @@
-import fs from 'node:fs'
+import { BlobReader, type FileEntry, ZipReader } from '@zip.js/zip.js'
+import { createWriteStream, openAsBlob } from 'node:fs'
 import path from 'node:path'
+import { Writable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
-import { promisify } from 'node:util'
-import { Entry, open as openZip, Options, ZipFile } from 'yauzl'
 import { DEFAULT_HIGH_WATER_MARK } from '../constants/files'
 import type { FileTaskExtractionEntry } from '../interfaces/file-task.interface'
 import { storageQuotaExceededError } from './errors'
-import { createProgressTransform, isPathInside, makeDir } from './files'
+import { createProgressTransform, createSizeLimiter, isPathInside, makeDir } from './files'
 
-const openZipAsync: (path: string, options: Options) => Promise<ZipFile> = promisify(openZip)
+const UNIX_FILE_TYPE_MASK = 0o170000
+const UNIX_SYMBOLIC_LINK = 0o120000
+
+function abortReason(signal?: AbortSignal): Error {
+  return signal?.reason instanceof Error ? signal.reason : new Error('Cancelled')
+}
+
+function isSymbolicLink(entry: FileEntry): boolean {
+  // ZIP symlinks are rejected instead of being restored or silently extracted as regular files.
+  return entry.unixMode !== undefined && (entry.unixMode & UNIX_FILE_TYPE_MASK) === UNIX_SYMBOLIC_LINK
+}
+
+function normalizeEntryPath(entryPath: string): string {
+  const normalizedPath = entryPath.replace(/\\/g, '/')
+  if (normalizedPath.split('/').includes('..')) {
+    throw new Error(`invalid relative path: ${normalizedPath}`)
+  }
+  if (path.posix.isAbsolute(normalizedPath) || /^[a-zA-Z]:/.test(normalizedPath)) {
+    throw new Error(`absolute path: ${normalizedPath}`)
+  }
+  return normalizedPath
+}
 
 export async function extractZip(
   filePath: string,
@@ -17,81 +38,63 @@ export async function extractZip(
   signal?: AbortSignal,
   onEntry?: (entry: FileTaskExtractionEntry) => void
 ): Promise<void> {
-  // Reject entries whose actual decompressed size differs from their metadata.
-  const zipFile = await openZipAsync(filePath, { lazyEntries: true, validateEntrySizes: true })
-  const openReadStream = promisify(zipFile.openReadStream.bind(zipFile))
+  signal?.throwIfAborted()
+  const zipReader = new ZipReader(new BlobReader(await openAsBlob(filePath)), { signal, useWebWorkers: false })
   const resolvedOutputDir = path.resolve(outputDir)
-  let extractedSize = 0
+  const checkDeclaredSize = maxExtractedSize === undefined ? undefined : createSizeLimiter(maxExtractedSize, storageQuotaExceededError)
+  const checkExtractedSize = maxExtractedSize === undefined ? undefined : createSizeLimiter(maxExtractedSize, storageQuotaExceededError)
 
-  return new Promise((resolve, reject) => {
-    let settled = false
-    const cleanup = () => signal?.removeEventListener('abort', onAbort)
-    const rejectOnce = (err: unknown) => {
-      if (settled) return
-      settled = true
-      cleanup()
-      zipFile.close()
-      reject(err)
-    }
-    const onAbort = () => rejectOnce(signal?.reason)
-    signal?.addEventListener('abort', onAbort, { once: true })
-
-    zipFile.on('entry', async (entry: Entry) => {
-      try {
-        signal?.throwIfAborted()
-        // Check the cumulative size before opening the entry stream to avoid writing beyond the known quota.
-        extractedSize += entry.uncompressedSize
-        if (maxExtractedSize !== undefined && extractedSize > maxExtractedSize) {
-          throw storageQuotaExceededError()
-        }
-        const isDir = entry.fileName.endsWith('/')
-        const fullPath = path.resolve(resolvedOutputDir, entry.fileName)
-        if (!isPathInside(resolvedOutputDir, fullPath, isDir)) {
-          throw new Error(`Zip entry "${entry.fileName}" would escape the output directory`)
-        }
-        if (isDir) {
-          await makeDir(fullPath, true)
-          onEntry?.({ path: entry.fileName, isDirectory: true, size: 0 })
-          zipFile.readEntry()
-        } else {
-          // make sure parent exists
-          await makeDir(path.dirname(fullPath), true)
-          const readStream = await openReadStream(entry)
-          const writeStream = fs.createWriteStream(fullPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
-          if (onEntry) {
-            let extractedEntrySize = 0
-            onEntry({ path: entry.fileName, isDirectory: false, size: 0 })
-            await pipeline(
-              readStream,
-              createProgressTransform((bytes) => {
-                extractedEntrySize += bytes
-                onEntry({ path: entry.fileName, isDirectory: false, size: extractedEntrySize })
-              }),
-              writeStream,
-              { signal }
-            )
-          } else {
-            await pipeline(readStream, writeStream, { signal })
-          }
-          zipFile.readEntry()
-        }
-      } catch (err) {
-        rejectOnce(err)
-      }
-    })
-
-    zipFile.on('end', () => {
-      if (settled) return
-      settled = true
-      cleanup()
-      resolve()
-    })
-    zipFile.on('error', rejectOnce)
-    try {
+  try {
+    for await (const entry of zipReader.getEntriesGenerator()) {
       signal?.throwIfAborted()
-      zipFile.readEntry()
-    } catch (err) {
-      rejectOnce(err)
+      checkDeclaredSize?.(entry.uncompressedSize)
+      const entryPath = normalizeEntryPath(entry.filename)
+      const fullPath = path.resolve(resolvedOutputDir, entryPath)
+      if (!isPathInside(resolvedOutputDir, fullPath, entry.directory)) {
+        throw new Error(`Zip entry "${entryPath}" would escape the output directory`)
+      }
+
+      if (entry.directory) {
+        await makeDir(fullPath, true)
+        onEntry?.({ path: entryPath, isDirectory: true, size: 0 })
+        continue
+      }
+
+      const fileEntry = entry as FileEntry
+      if (isSymbolicLink(fileEntry)) {
+        throw new Error(`ZIP symbolic links are not supported: ${entryPath}`)
+      }
+      await makeDir(path.dirname(fullPath), true)
+      const writeStream = createWriteStream(fullPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
+      let extractedEntrySize = 0
+      const progressTransform =
+        onEntry || checkExtractedSize
+          ? createProgressTransform((bytes) => {
+              checkExtractedSize?.(bytes)
+              if (!onEntry) return
+              extractedEntrySize += bytes
+              onEntry({ path: entryPath, isDirectory: false, size: extractedEntrySize })
+            })
+          : undefined
+      const entryOutput = progressTransform ?? writeStream
+      const outputPromise = progressTransform ? pipeline(progressTransform, writeStream) : undefined
+      void outputPromise?.catch(() => undefined)
+      try {
+        onEntry?.({ path: entryPath, isDirectory: false, size: 0 })
+        await fileEntry.getData(Writable.toWeb(entryOutput), { signal })
+        await outputPromise
+      } catch (error) {
+        const reason = error instanceof Error ? error : new Error(String(error))
+        entryOutput.destroy(reason)
+        if (progressTransform) writeStream.destroy(reason)
+        await outputPromise?.catch(() => undefined)
+        throw error
+      }
     }
-  })
+  } catch (error) {
+    if (signal?.aborted) throw abortReason(signal)
+    throw error
+  } finally {
+    await zipReader.close()
+  }
 }

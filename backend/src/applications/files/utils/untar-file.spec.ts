@@ -1,26 +1,14 @@
 import fs from 'node:fs'
-import { access, mkdir, mkdtemp, readlink, rm, symlink, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { create } from 'tar'
 import { checkTarEntry, extractTar, isTarDirectory } from './untar-file'
 
 describe(extractTar.name, () => {
-  const baseOutputDir = path.join(path.sep, 'tmp', 'output')
-
-  it('rejects hard links', () => {
-    expect(() => checkTarEntry(baseOutputDir, { type: 'Link', path: 'docs/hard-link', linkpath: 'docs/target' })).toThrow(
-      'Tar entry "docs/hard-link" is a hard link'
-    )
-  })
-
-  it('rejects symbolic links escaping the output directory', () => {
-    expect(() => checkTarEntry(baseOutputDir, { type: 'SymbolicLink', path: 'docs/latest', linkpath: '../../../outside' })).toThrow(
-      'Tar symlink entry "docs/latest" would escape the output directory'
-    )
-  })
-
-  it('recognizes regular and GNU dump directories', () => {
+  it('classifies directories and rejects link entries', () => {
+    expect(() => checkTarEntry({ type: 'Link', path: 'docs/hard-link' })).toThrow('Tar entry "docs/hard-link" is a hard link')
+    expect(() => checkTarEntry({ type: 'SymbolicLink', path: 'docs/latest' })).toThrow('Tar entry "docs/latest" is a symbolic link')
     expect(isTarDirectory('Directory')).toBe(true)
     expect(isTarDirectory('GNUDumpDir')).toBe(true)
     expect(isTarDirectory('File')).toBe(false)
@@ -45,16 +33,12 @@ describe(extractTar.name, () => {
     await rm(tmpDir, { recursive: true, force: true })
   })
 
-  it('extracts symbolic links targeting the output directory', async () => {
-    const onEntry = vi.fn()
+  it('rejects symbolic links targeting the output directory', async () => {
     await symlink('./v2', path.join(sourceDir, 'docs', 'latest'))
     await createArchive()
 
-    await extractTar(archivePath, outputDir, false, undefined, undefined, onEntry)
-
-    await expect(readlink(path.join(outputDir, 'docs', 'latest'))).resolves.toBe('./v2')
-    expect(onEntry).toHaveBeenCalledWith({ path: 'docs/', isDirectory: true, size: 0 })
-    expect(onEntry).toHaveBeenCalledWith({ path: 'docs/latest', isDirectory: false, size: 0 })
+    await expect(extractTar(archivePath, outputDir, false)).rejects.toThrow('Tar entry "docs/latest" is a symbolic link')
+    await expect(access(path.join(outputDir, 'docs', 'latest'))).rejects.toMatchObject({ code: 'ENOENT' })
   })
 
   it('reports decompressed file bytes through the entry transform', async () => {
@@ -66,24 +50,6 @@ describe(extractTar.name, () => {
 
     expect(onEntry).toHaveBeenCalledWith({ path: 'docs/file.txt', isDirectory: false, size: 0 })
     expect(onEntry).toHaveBeenCalledWith({ path: 'docs/file.txt', isDirectory: false, size: 3 })
-  })
-
-  it('rejects symbolic links escaping the output directory', async () => {
-    const linkPath = path.join(outputDir, 'docs', 'latest')
-    await symlink('../../../outside', path.join(sourceDir, 'docs', 'latest'))
-    await createArchive()
-
-    await expect(extractTar(archivePath, outputDir, false)).rejects.toThrow('Tar symlink entry "docs/latest" would escape the output directory')
-    await expect(access(linkPath)).rejects.toMatchObject({ code: 'ENOENT' })
-  })
-
-  it('rejects entries exceeding the extracted size limit', async () => {
-    await writeFile(path.join(sourceDir, 'docs', 'large.txt'), 'ab')
-    await createArchive()
-    const destroySpy = vi.spyOn(fs.ReadStream.prototype, 'destroy')
-
-    await expect(extractTar(archivePath, outputDir, false, 1)).rejects.toThrow('Storage quota will be exceeded')
-    expect(destroySpy).toHaveBeenCalled()
   })
 
   it('aborts TAR.GZ extraction when the extracted size limit is exceeded', async () => {

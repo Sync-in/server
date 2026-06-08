@@ -652,12 +652,14 @@ export class FilesManager {
     }
     // do
     try {
+      const maxArchiveSize = space.storageQuota === null ? undefined : Math.max(0, space.storageQuota - space.storageUsage)
       await createTar(
         tmpPath,
         dto.files.map((entry) => ({ ...entry, path: entry.path! })),
         dto.extension === TAR_GZ_EXTENSION,
         signal,
-        isTaskContext ? this.filesTasksTransfer.createByteProgressHandler(space) : undefined
+        isTaskContext ? this.filesTasksTransfer.createByteProgressHandler(space) : undefined,
+        maxArchiveSize
       )
       await moveFiles(tmpPath, dstPath)
     } catch (e) {

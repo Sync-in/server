@@ -4,29 +4,42 @@ import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import fse from 'fs-extra'
+import type { MockInstance } from 'vitest'
 import { FileError } from '../models/file-error'
-import { FILE_ERROR_MESSAGES } from './errors'
-import { isCrossDevice, isPathInside, makeTempDir, tempFilePath, writeFromStream } from './files'
+import { FILE_ERROR_MESSAGES, storageQuotaExceededError } from './errors'
+import { createSizeLimiter, isCrossDevice, isPathInside, makeTempDir, tempFilePath, writeFromStream } from './files'
+
+describe(createSizeLimiter.name, () => {
+  it('rejects the call that makes the cumulative size exceed the limit', () => {
+    const checkSize = createSizeLimiter(5, storageQuotaExceededError)
+
+    expect(() => checkSize(3)).not.toThrow()
+    expect(() => checkSize(2)).not.toThrow()
+    let sizeError: unknown
+    try {
+      checkSize(1)
+    } catch (error) {
+      sizeError = error
+    }
+    expect(sizeError).toMatchObject({
+      httpCode: HttpStatus.INSUFFICIENT_STORAGE,
+      message: FILE_ERROR_MESSAGES.STORAGE_QUOTA_EXCEEDED,
+      name: FileError.name
+    })
+  })
+})
 
 describe(isPathInside.name, () => {
   const basePath = path.join(path.sep, 'tmp', 'output')
 
-  it('accepts paths inside the base path', () => {
+  it('accepts only paths inside the base path', () => {
     expect(isPathInside(basePath, path.join(basePath, 'safe', 'file.txt'))).toBe(true)
-  })
-
-  it('accepts the base path only when explicitly allowed', () => {
     expect(isPathInside(basePath, basePath)).toBe(false)
     expect(isPathInside(basePath, basePath, true)).toBe(true)
     expect(isPathInside(path.parse(basePath).root, path.parse(basePath).root)).toBe(false)
+    expect(isPathInside(basePath, path.join(basePath, '..', 'zip-slip-proof.txt'))).toBe(false)
+    expect(isPathInside(basePath, path.join(path.sep, 'tmp', 'output-evil', 'file.txt'))).toBe(false)
   })
-
-  it.each([path.join(basePath, '..', 'zip-slip-proof.txt'), path.join(path.sep, 'tmp', 'output-evil', 'file.txt')])(
-    'rejects path "%s"',
-    (candidatePath) => {
-      expect(isPathInside(basePath, candidatePath)).toBe(false)
-    }
-  )
 })
 
 describe(isCrossDevice.name, () => {
@@ -37,7 +50,8 @@ describe(isCrossDevice.name, () => {
   it('compares the source device with the nearest existing destination parent', async () => {
     vi.spyOn(fs, 'lstat').mockResolvedValueOnce({ dev: 1 } as any)
     const statSpy = vi.spyOn(fs, 'stat').mockResolvedValueOnce({ dev: 2 } as any)
-    vi.spyOn(fse, 'pathExists').mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    const pathExistsSpy = vi.spyOn(fse, 'pathExists') as unknown as MockInstance<(path: string) => Promise<boolean>>
+    pathExistsSpy.mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
     const dstPath = path.join(path.sep, 'missing', 'parent', 'destination.txt')
 
     await expect(isCrossDevice('/source.txt', dstPath)).resolves.toBe(true)
@@ -57,12 +71,16 @@ describe(writeFromStream.name, () => {
     await rm(tmpDir, { recursive: true, force: true })
   })
 
-  it('writes a stream matching the max size', async () => {
+  it('writes from an offset up to the max size and reports progress', async () => {
     const filePath = path.join(tmpDir, 'file.txt')
+    const onProgress = vi.fn()
+    await writeFile(filePath, 'abc')
 
-    await writeFromStream(filePath, Readable.from([Buffer.from('abc')]), 0, 3)
+    await writeFromStream(filePath, Readable.from([Buffer.from('de'), Buffer.from('f')]), 3, 6, undefined, onProgress)
 
-    await expect(readFile(filePath, 'utf8')).resolves.toBe('abc')
+    await expect(readFile(filePath, 'utf8')).resolves.toBe('abcdef')
+    expect(onProgress).toHaveBeenNthCalledWith(1, 2)
+    expect(onProgress).toHaveBeenNthCalledWith(2, 1)
   })
 
   it('rejects a stream exceeding the max size', async () => {
@@ -75,15 +93,6 @@ describe(writeFromStream.name, () => {
     })
   })
 
-  it('accounts for the existing start offset', async () => {
-    const filePath = path.join(tmpDir, 'file.txt')
-    await writeFile(filePath, 'abc')
-
-    await writeFromStream(filePath, Readable.from([Buffer.from('de')]), 3, 5)
-
-    await expect(readFile(filePath, 'utf8')).resolves.toBe('abcde')
-  })
-
   it('aborts a stream when its signal is already aborted', async () => {
     const filePath = path.join(tmpDir, 'file.txt')
     const controller = new AbortController()
@@ -92,17 +101,6 @@ describe(writeFromStream.name, () => {
     await expect(writeFromStream(filePath, Readable.from([Buffer.from('abc')]), 0, undefined, controller.signal)).rejects.toMatchObject({
       name: 'AbortError'
     })
-  })
-
-  it('reports bytes written through the progress callback', async () => {
-    const filePath = path.join(tmpDir, 'progress.txt')
-    const onProgress = vi.fn()
-
-    await writeFromStream(filePath, Readable.from([Buffer.from('abc'), Buffer.from('de')]), 0, 5, undefined, onProgress)
-
-    expect(onProgress).toHaveBeenCalledTimes(2)
-    expect(onProgress).toHaveBeenNthCalledWith(1, 3)
-    expect(onProgress).toHaveBeenNthCalledWith(2, 2)
   })
 })
 
@@ -129,7 +127,7 @@ describe(makeTempDir.name, () => {
 })
 
 describe(tempFilePath.name, () => {
-  it('returns distinct paths with the requested parent and prefix', () => {
+  it('returns safe distinct paths with the requested parent and prefix', () => {
     const parentPath = path.join(path.sep, 'tmp', 'user')
     const firstPath = tempFilePath(parentPath, 'archive-compress-')
     const secondPath = tempFilePath(parentPath, 'archive-compress-')
@@ -137,11 +135,6 @@ describe(tempFilePath.name, () => {
     expect(firstPath).not.toBe(secondPath)
     expect(path.dirname(firstPath)).toBe(parentPath)
     expect(path.basename(firstPath)).toMatch(/^archive-compress-/)
-  })
-
-  it('keeps paths with traversal prefixes inside the requested parent', () => {
-    const parentPath = path.join(path.sep, 'tmp', 'user')
-
     expect(path.dirname(tempFilePath(parentPath, path.join('..', 'archive-')))).toBe(parentPath)
   })
 })

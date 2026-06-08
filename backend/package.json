@@ -53,6 +53,7 @@
     "@nestjs/websockets": "^11.1.24",
     "@socket.io/cluster-adapter": "^0.3.0",
     "@socket.io/redis-adapter": "^8.3.0",
+    "@zip.js/zip.js": "^2.8.26",
     "bcryptjs": "^3.0.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
@@ -83,14 +84,13 @@
     "tesseract.js": "^7.0.0",
     "text-to-svg": "^3.1.5",
     "time2fa": "^1.4.2",
-    "unpdf": "^1.6.2",
-    "yauzl": "^3.3.2"
+    "unpdf": "^1.6.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
     "@faker-js/faker": "^10.4.0",
     "@golevelup/ts-vitest": "^4.0.0",
-    "@nestjs/cli": "^11.0.21",
+    "@nestjs/cli": "11.0.21",
     "@nestjs/schematics": "^11.1.0",
     "@nestjs/testing": "^11.1.24",
     "@swc/cli": "^0.8.1",
@@ -113,7 +113,6 @@
     "@types/supertest": "^7.2.0",
     "@types/tar": "^6.1.13",
     "@types/text-to-svg": "^3.1.4",
-    "@types/yauzl": "^2.10.3",
     "@vitest/coverage-v8": "^4.1.8",
     "chokidar": "^5.0.0",
     "eslint": "^9.39.4",

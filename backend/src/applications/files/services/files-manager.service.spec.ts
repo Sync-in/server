@@ -1128,7 +1128,14 @@ describe(FilesManager.name, () => {
 
       await service.compress(user, space, dto)
 
-      expect(tarSpy).toHaveBeenCalledWith('/data/users/john/tmp/tasks/.task-c-archive.tgz', dto.files, true, undefined, expect.any(Function))
+      expect(tarSpy).toHaveBeenCalledWith(
+        '/data/users/john/tmp/tasks/.task-c-archive.tgz',
+        dto.files,
+        true,
+        undefined,
+        expect.any(Function),
+        undefined
+      )
       expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/tmp/archive.tgz')
       expect(taskUtils.taskTemporaryPath).toHaveBeenCalledWith(user.tasksPath, 'task-c', '/tmp/archive.tgz')
       expect(filesUtils.tempFilePath).not.toHaveBeenCalled()
@@ -1154,7 +1161,14 @@ describe(FilesManager.name, () => {
 
       await expect(service.compress(user, space, dto)).resolves.toBeUndefined()
       expect(filesLockManager.create).not.toHaveBeenCalled()
-      expect(tarUtils.createTar).toHaveBeenCalledWith('/data/users/john/tmp/archive-trash.tgz-compress-uuid', dto.files, true, undefined, undefined)
+      expect(tarUtils.createTar).toHaveBeenCalledWith(
+        '/data/users/john/tmp/archive-trash.tgz-compress-uuid',
+        dto.files,
+        true,
+        undefined,
+        undefined,
+        undefined
+      )
       expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-trash.tgz-compress-uuid', '/tmp/archive-trash.tgz')
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/archive-trash.tgz' })
     })
@@ -1221,9 +1235,30 @@ describe(FilesManager.name, () => {
         dto.files,
         false,
         controller.signal,
+        undefined,
         undefined
       )
       expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar-compress-uuid')
+    })
+
+    it('should limit an archive to the known remaining quota', async () => {
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive.tar')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.tar-compress-uuid')
+      const space = makeSpace({
+        realPath: '/data/users/john/files/source.txt',
+        storageQuota: 100,
+        storageUsage: 40
+      })
+      const dto = {
+        name: 'archive',
+        extension: 'tar',
+        compressInDirectory: true,
+        files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
+      } as any
+
+      await service.compress(user, space, dto)
+
+      expect(tarUtils.createTar).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar-compress-uuid', dto.files, false, undefined, undefined, 60)
     })
   })
 

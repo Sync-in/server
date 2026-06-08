@@ -214,10 +214,29 @@ export async function checksumFile(filePath: string, alg: string): Promise<strin
   return hash.digest('hex')
 }
 
-export function createProgressTransform(onProgress: (bytes: number) => void): Transform {
+export function createSizeLimiter(maxSize: number, maxSizeError: () => Error = maxFileSizeExceededError): (bytes: number) => void {
+  let transferred = 0
+  return (bytes: number) => {
+    transferred += bytes
+    if (transferred > maxSize) throw maxSizeError()
+  }
+}
+
+export function createProgressTransform(
+  onProgress?: (bytes: number) => void,
+  maxSize?: number,
+  maxSizeError: () => Error = maxFileSizeExceededError
+): Transform {
+  const checkSize = maxSize === undefined ? undefined : createSizeLimiter(maxSize, maxSizeError)
   return new Transform({
     transform(chunk: Buffer, _encoding, callback) {
-      onProgress(chunk.length)
+      try {
+        checkSize?.(chunk.length)
+        onProgress?.(chunk.length)
+      } catch (error) {
+        callback(error as Error)
+        return
+      }
       callback(null, chunk)
     }
   })

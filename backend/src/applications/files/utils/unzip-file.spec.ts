@@ -1,10 +1,9 @@
 import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import * as filesUtils from './files'
 import { extractZip } from './unzip-file'
 
-function createZip(entryName: string, content = Buffer.alloc(0)): Buffer {
+function createZip(entryName: string, content = Buffer.alloc(0), unixMode?: number): Buffer {
   const encodedEntryName = Buffer.from(entryName)
   const localFileHeader = Buffer.alloc(30)
   localFileHeader.writeUInt32LE(0x04034b50, 0)
@@ -15,11 +14,12 @@ function createZip(entryName: string, content = Buffer.alloc(0)): Buffer {
 
   const centralDirectoryHeader = Buffer.alloc(46)
   centralDirectoryHeader.writeUInt32LE(0x02014b50, 0)
-  centralDirectoryHeader.writeUInt16LE(20, 4)
+  centralDirectoryHeader.writeUInt16LE(unixMode === undefined ? 20 : (3 << 8) | 20, 4)
   centralDirectoryHeader.writeUInt16LE(20, 6)
   centralDirectoryHeader.writeUInt32LE(content.length, 20)
   centralDirectoryHeader.writeUInt32LE(content.length, 24)
   centralDirectoryHeader.writeUInt16LE(encodedEntryName.length, 28)
+  if (unixMode !== undefined) centralDirectoryHeader.writeUInt32LE((unixMode << 16) >>> 0, 38)
 
   const endOfCentralDirectory = Buffer.alloc(22)
   endOfCentralDirectory.writeUInt32LE(0x06054b50, 0)
@@ -44,19 +44,22 @@ describe(extractZip.name, () => {
   })
 
   afterEach(async () => {
-    vi.restoreAllMocks()
     await rm(tmpDir, { recursive: true, force: true })
   })
 
-  it('rejects entries escaping the output directory', async () => {
+  it('rejects path traversal and symbolic links', async () => {
     const escapedPath = path.join(tmpDir, 'zip-slip-proof.txt')
     await writeFile(archivePath, createZip('../zip-slip-proof.txt'))
 
     await expect(extractZip(archivePath, outputDir)).rejects.toThrow('invalid relative path: ../zip-slip-proof.txt')
     await expect(access(escapedPath)).rejects.toMatchObject({ code: 'ENOENT' })
+
+    await writeFile(archivePath, createZip('link', Buffer.from('../../outside'), 0o120777))
+
+    await expect(extractZip(archivePath, outputDir)).rejects.toThrow('ZIP symbolic links are not supported: link')
   })
 
-  it('extracts entries inside the output directory', async () => {
+  it('extracts files and accepts a root directory entry', async () => {
     const extractedPath = path.join(outputDir, 'safe.txt')
     const onEntry = vi.fn()
     await writeFile(archivePath, createZip('safe.txt', Buffer.from('abc')))
@@ -65,22 +68,10 @@ describe(extractZip.name, () => {
     await expect(access(extractedPath)).resolves.toBeUndefined()
     expect(onEntry).toHaveBeenCalledWith({ path: 'safe.txt', isDirectory: false, size: 0 })
     expect(onEntry).toHaveBeenCalledWith({ path: 'safe.txt', isDirectory: false, size: 3 })
-  })
 
-  it('rejects entries outside the output directory', async () => {
-    await writeFile(archivePath, createZip('safe.txt'))
-    const isPathInsideSpy = vi.spyOn(filesUtils, 'isPathInside').mockReturnValueOnce(false)
-
-    await expect(extractZip(archivePath, outputDir)).rejects.toThrow('Zip entry "safe.txt" would escape the output directory')
-    expect(isPathInsideSpy).toHaveBeenCalledWith(outputDir, path.join(outputDir, 'safe.txt'), false)
-  })
-
-  it('accepts a root directory entry', async () => {
     await writeFile(archivePath, createZip('./'))
-    const isPathInsideSpy = vi.spyOn(filesUtils, 'isPathInside')
 
     await expect(extractZip(archivePath, outputDir)).resolves.toBeUndefined()
-    expect(isPathInsideSpy).toHaveBeenCalledWith(outputDir, outputDir, true)
   })
 
   it('rejects entries exceeding the extracted size limit', async () => {

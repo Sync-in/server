@@ -2,9 +2,10 @@ import { createWriteStream } from 'node:fs'
 import { lstat } from 'node:fs/promises'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
-import { create, type WriteEntry } from 'tar'
+import { create, type Pack, type WriteEntry } from 'tar'
 import { DEFAULT_HIGH_WATER_MARK } from '../constants/files'
-import { createProgressTransform, fileName } from './files'
+import { storageQuotaExceededError } from './errors'
+import { createProgressTransform, fileName, isPathInside } from './files'
 
 export interface TarFileEntry {
   name: string
@@ -23,7 +24,7 @@ function archiveRoots(entries: TarFileEntry[], directoryPaths: Set<string>): Tar
     .map((entry) => {
       const realPath = path.resolve(entry.path)
       const isDirectory = directoryPaths.has(realPath)
-      const archivePath = isDirectory ? (entries.length === 1 ? '' : fileName(realPath)) : entry.rootAlias ? entry.name : fileName(realPath)
+      const archivePath = isDirectory && entries.length === 1 ? '' : entry.rootAlias ? entry.name : fileName(realPath)
       return { archivePath, realPath }
     })
     .sort((a, b) => b.realPath.length - a.realPath.length)
@@ -43,19 +44,15 @@ function abortReason(signal?: AbortSignal): Error {
   return signal?.reason instanceof Error ? signal.reason : new Error('Cancelled')
 }
 
-function isPathInside(parentPath: string, candidatePath: string): boolean {
-  const relativePath = path.relative(parentPath, candidatePath)
-  return relativePath !== '' && !path.isAbsolute(relativePath) && relativePath !== '..' && !relativePath.startsWith(`..${path.sep}`)
-}
-
 export async function createTar(
   outputPath: string,
   entries: TarFileEntry[],
-  gzip: boolean,
+  compress: boolean,
   signal?: AbortSignal,
-  onProgress?: (bytes: number) => void
+  onProgress?: (bytes: number) => void,
+  maxArchiveSize?: number
 ): Promise<void> {
-  // Creates a TAR/TGZ archive while node-tar handles recursion, symlinks and file streaming.
+  // Creates a TAR/TGZ archive while node-tar handles recursion and file streaming.
   signal?.throwIfAborted()
   if (entries.length === 0) {
     throw new Error('Cannot create a TAR archive without entries')
@@ -65,9 +62,10 @@ export async function createTar(
   const stats = await Promise.all(resolvedPaths.map((entryPath) => lstat(entryPath)))
   signal?.throwIfAborted()
   const directoryPaths = new Set(resolvedPaths.filter((_entryPath, index) => stats[index].isDirectory()))
+  const selectedDirectoryPaths = [...directoryPaths]
   const selectedEntries = entries
     .map((entry, index) => ({ entry, realPath: resolvedPaths[index] }))
-    .filter(({ realPath }) => !resolvedPaths.some((parentPath) => directoryPaths.has(parentPath) && isPathInside(parentPath, realPath)))
+    .filter(({ realPath }) => !selectedDirectoryPaths.some((parentPath) => isPathInside(parentPath, realPath)))
   const roots = archiveRoots(
     selectedEntries.map(({ entry }) => entry),
     directoryPaths
@@ -81,17 +79,34 @@ export async function createTar(
     return relativePath || '.'
   })
   let activeEntry: WriteEntry | undefined
+  let validationError: Error | undefined
 
-  const archive = create(
+  const rejectEntry = (error: Error): false => {
+    if (!validationError) {
+      validationError = error
+      queueMicrotask(() => archive.destroy(error))
+    }
+    return false
+  }
+
+  const archive: Pack = create(
     {
       cwd,
-      filter: (_entryPath, entry) => {
-        // Archive hard links as independent files instead of TAR Link entries.
-        entry.nlink = 1
+      filter: (entryPath, entry) => {
+        const realPath = path.resolve(cwd, entryPath)
+        const entryType = 'type' in entry ? entry.type : undefined
+        const isSymbolicLink = 'type' in entry ? entry.type === 'SymbolicLink' : entry.isSymbolicLink()
+        const hasMultipleFileLinks = !('type' in entry) && entry.isFile() && entry.nlink > 1
+        if (isSymbolicLink) {
+          return rejectEntry(new Error(`TAR symbolic links are not supported: ${realPath}`))
+        }
+        if (entryType === 'Link' || hasMultipleFileLinks) {
+          return rejectEntry(new Error(`TAR hard links are not supported: ${realPath}`))
+        }
         return true
       },
       follow: false,
-      gzip: gzip ? { level: 9 } : false,
+      gzip: compress ? { level: 9 } : false,
       jobs: 1,
       maxReadSize: DEFAULT_HIGH_WATER_MARK,
       strict: true,
@@ -115,15 +130,15 @@ export async function createTar(
   signal?.addEventListener('abort', onAbort, { once: true })
   try {
     const output = createWriteStream(outputPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
-    if (onProgress) {
-      await pipeline(archive, createProgressTransform(onProgress), output)
+    if (onProgress || maxArchiveSize !== undefined) {
+      await pipeline(archive, createProgressTransform(onProgress, maxArchiveSize, storageQuotaExceededError), output)
     } else {
       await pipeline(archive, output)
     }
     signal?.throwIfAborted()
   } catch (error) {
     if (signal?.aborted) throw abortReason(signal)
-    throw error
+    throw validationError || error
   } finally {
     signal?.removeEventListener('abort', onAbort)
     activeEntry?.destroy()
