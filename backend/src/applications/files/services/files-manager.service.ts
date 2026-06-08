@@ -1,7 +1,5 @@
 import { HttpService } from '@nestjs/axios'
 import { HttpStatus, Injectable, Logger } from '@nestjs/common'
-import archiver, { Archiver } from 'archiver'
-import fs from 'node:fs'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
@@ -21,8 +19,8 @@ import { canAccessToSpace, haveSpaceEnvPermissions } from '../../spaces/utils/pe
 import { UserModel } from '../../users/models/user.model'
 import { DEPTH, LOCK_DEPTH } from '../../webdav/constants/webdav'
 import { CACHE_LOCK_FILE_TTL } from '../constants/cache'
-import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '../constants/compress'
-import { COMPRESSION_EXTENSION, DEFAULT_HIGH_WATER_MARK } from '../constants/files'
+import { TAR_GZ_EXTENSION } from '../constants/compress'
+import { COMPRESSION_EXTENSION } from '../constants/files'
 import { ALL_DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPES, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
 import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
@@ -35,7 +33,6 @@ import {
   copyFileContent,
   copyFiles,
   createEmptyFile,
-  createProgressTransform,
   dirName,
   dirSize,
   fileName,
@@ -63,11 +60,11 @@ import { FilesLockManager } from './files-lock-manager.service'
 import { FilesQueries } from './files-queries.service'
 import { FileEvent, FileTaskEvent } from '../events/file-events'
 import { ACTION } from '../../../common/constants'
-import { pipeline } from 'node:stream/promises'
 import { isMultipartFileTooLargeError, uploadTmpFilePath } from '../utils/upload-file'
 import { FILE_ERROR_MESSAGES, maxFileSizeExceededError } from '../utils/errors'
 import { createTaskTemporaryDir, taskTemporaryPath } from '../utils/tasks'
 import { FilesTasksTransfer } from './tasks/files-tasks-transfer.service'
+import { createTar } from '../utils/tar-file'
 
 @Injectable()
 export class FilesManager {
@@ -637,13 +634,6 @@ export class FilesManager {
     const tmpPath = isTaskContext
       ? taskTemporaryPath(user.tasksPath, space.task!.cacheKey, dstPath)
       : tempFilePath(user.tmpPath, `${fileName(dstPath)}-compress-`)
-    // avoid using ZIP here because it can trigger high memory usage.
-    const archive: Archiver = archiver(TAR_EXTENSION, {
-      gzip: dto.extension === TAR_GZ_EXTENSION,
-      gzipOptions: {
-        level: 9
-      }
-    })
     // create lock
     let fileLock: FileLock | undefined
     if (dto.compressInDirectory) {
@@ -661,41 +651,16 @@ export class FilesManager {
       FileTaskEvent.emit('startWatch', space, dstPath)
     }
     // do
-    let aborted = false
-    let pipePromise: Promise<void> | undefined
-    let entriesPromise: Promise<void> | undefined
     try {
-      const dstStream = fs.createWriteStream(tmpPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
-      if (isTaskContext) {
-        const onProgress = this.filesTasksTransfer.createByteProgressHandler(space)
-        pipePromise = pipeline(archive, createProgressTransform(onProgress), dstStream, { signal })
-      } else {
-        pipePromise = pipeline(archive, dstStream, { signal })
-      }
-      entriesPromise = (async () => {
-        for (const f of dto.files) {
-          signal?.throwIfAborted()
-          const isDir = await isPathIsDir(f.path)
-          if (aborted) return
-          if (isDir) {
-            archive.directory(f.path, dto.files.length > 1 ? fileName(f.path) : false)
-          } else {
-            archive.file(f.path, { name: f.rootAlias ? f.name : fileName(f.path) })
-          }
-        }
-        // The pipeline is the completion signal: finalize() may remain pending after abort().
-        if (!aborted) {
-          void archive.finalize().catch(() => undefined)
-        }
-      })()
-      await Promise.all([entriesPromise, pipePromise])
-      signal?.throwIfAborted()
+      await createTar(
+        tmpPath,
+        dto.files.map((entry) => ({ ...entry, path: entry.path! })),
+        dto.extension === TAR_GZ_EXTENSION,
+        signal,
+        isTaskContext ? this.filesTasksTransfer.createByteProgressHandler(space) : undefined
+      )
       await moveFiles(tmpPath, dstPath)
     } catch (e) {
-      aborted = true
-      archive.abort()
-      archive.destroy()
-      await Promise.allSettled([entriesPromise, pipePromise].filter((promise): promise is Promise<void> => !!promise))
       await removeFiles(tmpPath).catch((err: Error) => this.logger.error({ tag: this.compress.name, msg: `unable to remove ${tmpPath} : ${err}` }))
       throw e
     } finally {
