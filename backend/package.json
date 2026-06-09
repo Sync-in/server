@@ -90,7 +90,7 @@
     "@eslint/js": "^9.18.0",
     "@faker-js/faker": "^10.4.0",
     "@golevelup/ts-vitest": "^4.0.0",
-    "@nestjs/cli": "11.0.21",
+    "@nestjs/cli": "^11.0.23",
     "@nestjs/schematics": "^11.1.0",
     "@nestjs/testing": "^11.1.24",
     "@swc/cli": "^0.8.1",
