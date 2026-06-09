@@ -4,7 +4,7 @@ import path from 'node:path'
 import constants from 'node:constants'
 import os from 'node:os'
 import { Readable } from 'node:stream'
-import extract from 'extract-zip'
+import { Uint8ArrayReader, Uint8ArrayWriter, ZipReader } from '@zip.js/zip.js/index-native.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -26,6 +26,30 @@ async function checkPaths(paths) {
   }
 }
 
+async function extractZip(zipPath, destination) {
+  const zipData = await fs.readFile(zipPath)
+  const zipReader = new ZipReader(new Uint8ArrayReader(zipData))
+  const destinationPath = path.resolve(destination)
+
+  try {
+    const entries = await zipReader.getEntries()
+    for (const entry of entries) {
+      const entryPath = path.resolve(destinationPath, entry.filename)
+      if (entryPath !== destinationPath && !entryPath.startsWith(`${destinationPath}${path.sep}`)) {
+        throw new Error(`Invalid ZIP entry path: ${entry.filename}`)
+      }
+      if (entry.directory) {
+        await fs.mkdir(entryPath, { recursive: true })
+        continue
+      }
+      await fs.mkdir(path.dirname(entryPath), { recursive: true })
+      await fs.writeFile(entryPath, await entry.getData(new Uint8ArrayWriter()))
+    }
+  } finally {
+    await zipReader.close()
+  }
+}
+
 async function updatePdfjs() {
   console.log('pdfjs - update to the latest version:', latestDownloadURL)
   const tmpZip = path.join(os.tmpdir(), 'pdfjs-latest.zip')
@@ -33,8 +57,8 @@ async function updatePdfjs() {
   await fs.writeFile(tmpZip, Readable.fromWeb(response.body))
   console.log('pdfjs - downloaded:', tmpZip)
   await fs.rm(pdfjsAssetsDirectory, { recursive: true, force: true })
-  await extract(tmpZip, { dir: pdfjsAssetsDirectory })
-  console.log('pdfjs - unzipped:', pdfjsAssetsDirectory)
+  await extractZip(tmpZip, pdfjsAssetsDirectory)
+  console.log('pdfjs - extracted:', pdfjsAssetsDirectory)
   const viewerHtml = path.join(pdfjsAssetsDirectory, 'web', 'viewer.html')
   if (!(await checkPaths([viewerHtml]))) {
     console.warn(`${viewerHtml} is missing`)
