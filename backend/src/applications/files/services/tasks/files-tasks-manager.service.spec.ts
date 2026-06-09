@@ -31,6 +31,7 @@ describe(FilesTasksManager.name, () => {
     mget: Mock
     increment: Mock
     del: Mock
+    mdel: Mock
   }
 
   const flushPromises = async () => {
@@ -82,7 +83,11 @@ describe(FilesTasksManager.name, () => {
         cacheStore.set(key, value)
         return value
       }),
-      del: vi.fn(async (key: string) => cacheStore.delete(key))
+      del: vi.fn(async (key: string) => cacheStore.delete(key)),
+      mdel: vi.fn(async (keys: string[]) => {
+        for (const key of keys) cacheStore.delete(key)
+        return true
+      })
     }
     filesMethods = { doWork: vi.fn() }
     spacesManager = {
@@ -549,11 +554,20 @@ describe(FilesTasksManager.name, () => {
       props: { compressInDirectory: false }
     })
 
-    await filesTasksManager.deleteTasks(user, 'task-ok')
+    await filesTasksManager.deleteTasks(user, ['task-ok'])
 
     expect(removeFilesSpy).toHaveBeenCalledWith('/tmp/tasks/archive.tar')
     expect(stopWatchSpy).toHaveBeenCalledWith(`${CACHE_TASK_PREFIX}-22-task-ok`)
-    expect(cache.del).toHaveBeenCalledWith(`${CACHE_TASK_PREFIX}-22-task-ok`)
+    expect(cache.mget).toHaveBeenCalledWith([`${CACHE_TASK_PREFIX}-22-task-ok`])
+    expect(cache.mdel).toHaveBeenCalledWith([`${CACHE_TASK_PREFIX}-22-task-ok`])
+  })
+
+  it('should not delete all tasks when selected task ids are empty', async () => {
+    await filesTasksManager.deleteTasks({ id: 22 } as any, [])
+
+    expect(cache.keys).not.toHaveBeenCalled()
+    expect(cache.mget).not.toHaveBeenCalled()
+    expect(cache.mdel).not.toHaveBeenCalled()
   })
 
   it('should ignore active tasks when deleting all tasks', async () => {
@@ -580,10 +594,16 @@ describe(FilesTasksManager.name, () => {
     await filesTasksManager.deleteTasks(user)
 
     expect(cache.keys).toHaveBeenCalledWith(`${CACHE_TASK_PREFIX}-31-*`)
+    expect(cache.mget).toHaveBeenCalledWith([
+      `${CACHE_TASK_PREFIX}-31-task-pending`,
+      `${CACHE_TASK_PREFIX}-31-task-queued`,
+      `${CACHE_TASK_PREFIX}-31-task-done`
+    ])
     expect(removeFilesSpy).not.toHaveBeenCalled()
     expect(stopWatchSpy).toHaveBeenCalledTimes(1)
-    expect(cache.del).toHaveBeenCalledTimes(1)
-    expect(cache.del).toHaveBeenCalledWith(`${CACHE_TASK_PREFIX}-31-task-done`)
+    expect(cache.del).not.toHaveBeenCalled()
+    expect(cache.mdel).toHaveBeenCalledTimes(1)
+    expect(cache.mdel).toHaveBeenCalledWith([`${CACHE_TASK_PREFIX}-31-task-done`])
   })
 
   it('should reject archive download when task is not applicable', async () => {

@@ -81,21 +81,7 @@ describe(FilesTasksController.name, () => {
     expect(result).toBe(expected)
   })
 
-  it('deleteTasks should call FilesTasksManager.deleteTasks with user and taskId and return the value', () => {
-    const user = { id: 'user-4', name: 'Alice' } as any
-    const taskId = 'task-del-1'
-    const expected = { deleted: true }
-
-    filesTasksManager.deleteTasks.mockReturnValueOnce(expected)
-
-    const result = controller.deleteTasks(user, taskId)
-
-    expect(filesTasksManager.deleteTasks).toHaveBeenCalledTimes(1)
-    expect(filesTasksManager.deleteTasks).toHaveBeenCalledWith(user, 'task-del-1')
-    expect(result).toBe(expected)
-  })
-
-  it('deleteTasks without taskId must pass undefined', () => {
+  it('deleteTasks should delegate deletion of all tasks', () => {
     const user = { id: 'user-5' } as any
     const expected = { deletedAll: true }
 
@@ -104,12 +90,26 @@ describe(FilesTasksController.name, () => {
     const result = controller.deleteTasks(user)
 
     expect(filesTasksManager.deleteTasks).toHaveBeenCalledTimes(1)
-    expect(filesTasksManager.deleteTasks).toHaveBeenCalledWith(user, undefined)
+    expect(filesTasksManager.deleteTasks).toHaveBeenCalledWith(user)
+    expect(result).toBe(expected)
+  })
+
+  it('deleteSelectedTasks should delegate task ids to FilesTasksManager', () => {
+    const user = { id: 'user-6' } as any
+    const dto = { taskIds: ['task-a', 'task-b'] }
+    const expected = { deleted: true }
+
+    filesTasksManager.deleteTasks.mockReturnValueOnce(expected)
+
+    const result = controller.deleteSelectedTasks(user, dto)
+
+    expect(filesTasksManager.deleteTasks).toHaveBeenCalledTimes(1)
+    expect(filesTasksManager.deleteTasks).toHaveBeenCalledWith(user, dto.taskIds)
     expect(result).toBe(expected)
   })
 
   it('downloadTaskFile should delegate to FilesTasksManager.downloadArchive and return the StreamableFile', async () => {
-    const user = { id: 'user-6' } as any
+    const user = { id: 'user-7' } as any
     const taskId = 'task-dl-42'
     const req = {} as any
     const res = {} as any

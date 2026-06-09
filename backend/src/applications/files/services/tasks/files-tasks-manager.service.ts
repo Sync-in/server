@@ -93,23 +93,20 @@ export class FilesTasksManager implements OnModuleDestroy {
     return { active, ended, missingIds: [...trackedTaskIds] }
   }
 
-  async deleteTasks(user: UserModel, taskId?: string): Promise<void> {
-    const cacheKey = FilesTasksManager.getCacheKey(user.id, taskId)
-    const keys: string[] = taskId ? [cacheKey] : await this.cache.keys(cacheKey)
+  async deleteTasks(user: UserModel, taskIds?: string[]): Promise<void> {
+    const keys =
+      taskIds === undefined
+        ? await this.cache.keys(FilesTasksManager.getCacheKey(user.id))
+        : [...new Set(taskIds)].map((taskId: string) => FilesTasksManager.getCacheKey(user.id, taskId))
     if (!keys.length) return
-    for (const key of keys) {
-      const task: FileTask = await this.cache.get(key)
-      if (!task || this.isActiveStatus(task.status)) continue
-      if (task.props.compressInDirectory === false) {
-        // delete task file
-        const rPath = path.join(user.tasksPath, task.name)
-        removeFiles(rPath).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
-      }
-      // clear watcher
-      this.filesTasksWatcher.stopWatch(key)
-      // remove from cache
-      this.cache.del(key).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
-    }
+    const tasks = (await this.cache.mget(keys)).filter(
+      (task: FileTask | null | undefined): task is FileTask => task != null && !this.isActiveStatus(task.status)
+    )
+    if (!tasks.length) return
+
+    const endedKeys = tasks.map((task: FileTask) => FilesTasksManager.getCacheKey(user.id, task.id))
+    await Promise.all(tasks.map((task: FileTask, index: number) => this.cleanupTask(user, endedKeys[index], task)))
+    await this.cache.mdel(endedKeys)
   }
 
   async cancelTask(userId: number, taskId: string): Promise<void> {
@@ -146,6 +143,13 @@ export class FilesTasksManager implements OnModuleDestroy {
       throw new HttpException(e.message, e.httpCode)
     }
     return await sendFile.stream(req, res)
+  }
+
+  private async cleanupTask(user: UserModel, cacheKey: string, task: FileTask): Promise<void> {
+    this.filesTasksWatcher.stopWatch(cacheKey)
+    if (task.props.compressInDirectory === false) {
+      await removeFiles(path.join(user.tasksPath, task.name)).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
+    }
   }
 
   private async storeTask(cacheKey: string, task: FileTask, status = FileTaskStatus.PENDING) {

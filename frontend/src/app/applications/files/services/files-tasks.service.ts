@@ -1,7 +1,12 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
-import { API_FILES_TASKS, API_FILES_TASKS_CANCEL, API_FILES_TASKS_POLL } from '@sync-in-server/backend/src/applications/files/constants/routes'
+import {
+  API_FILES_TASKS,
+  API_FILES_TASKS_CANCEL,
+  API_FILES_TASKS_DELETE,
+  API_FILES_TASKS_POLL
+} from '@sync-in-server/backend/src/applications/files/constants/routes'
 import type { FileTasksPollResponse } from '@sync-in-server/backend/src/applications/files/interfaces/file-task.interface'
 import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -103,9 +108,14 @@ export class FilesTasksService {
     })
   }
 
-  remove(task: FileTask) {
-    this.http.delete(`${API_FILES_TASKS}/${task.id}`).subscribe({
-      next: () => this.deleteTask(task.id, false),
+  private removeSelectedTasks(tasks: FileTask[]) {
+    const taskIds = [...new Set(tasks.map((task: FileTask) => task.id))]
+    if (!taskIds.length) return
+    this.http.post<void>(API_FILES_TASKS_DELETE, { taskIds }).subscribe({
+      next: () => {
+        const removedTaskIds = new Set(taskIds)
+        this.store.filesEndedTasks.next(this.store.filesEndedTasks.getValue().filter((task: FileTask) => !removedTaskIds.has(task.id)))
+      },
       error: (e) => console.error(e)
     })
   }
@@ -326,7 +336,7 @@ export class FilesTasksService {
 
   private removeDeletedChildTasks(deleteTask: FileTask) {
     if (deleteTask.path.startsWith(SPACE_REPOSITORY.SHARES)) {
-      this.remove(deleteTask)
+      this.removeSelectedTasks([deleteTask])
     } else if (deleteTask.path.startsWith(SPACE_REPOSITORY.TRASH)) {
       const deletedTrashPath = `${deleteTask.path}/${deleteTask.name}`
       const deletedFilesPath = `${SPACE_REPOSITORY.FILES}${deletedTrashPath.slice(SPACE_REPOSITORY.TRASH.length)}`
@@ -340,10 +350,7 @@ export class FilesTasksService {
           taskPath.startsWith(`${deletedFilesPath}/`)
         )
       })
-      for (const task of relatedTasks) {
-        this.remove(task)
-      }
-      this.remove(deleteTask)
+      this.removeSelectedTasks([...relatedTasks, deleteTask])
     }
   }
 
