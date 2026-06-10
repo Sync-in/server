@@ -4,7 +4,10 @@ import { MIN_CHARS_TO_SEARCH } from '../constants/indexing'
 const regexMatchSearchBoolean = new RegExp(`([+-]?)(?:"([^"]+)"|(\\S+))`)
 const regexMatchesSearchBoolean = new RegExp(regexMatchSearchBoolean.source, 'g')
 const booleanOperators = new Set(['+', '-', '<', '>', '~', '*'])
-const BOUNDARY = '(?:\\b|_)'
+const UNICODE_WORD_CHAR = '[\\p{L}\\p{N}]'
+const LIKE_SEARCH_CHAR =
+  '[\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}\\p{Script=Thai}\\p{Script=Lao}\\p{Script=Khmer}\\p{Script=Myanmar}]'
+const regexRequiresLikeSearch = new RegExp(LIKE_SEARCH_CHAR, 'u')
 const accentToBaseMap = new Map<string, string>([
   ['a', '[aàáâä]'],
   ['e', '[eèéêë]'],
@@ -17,6 +20,11 @@ const accentToBaseMap = new Map<string, string>([
   ['z', '[zž]'],
   ['y', '[yýÿ]']
 ])
+
+export interface SearchTerm {
+  value: string
+  operator: 'required' | 'excluded' | 'optional'
+}
 
 export class MaxSortedList {
   public data: [number, string][] = []
@@ -32,7 +40,7 @@ export class MaxSortedList {
       return
     }
     // if score is smaller or the score already stored for another string ignore it and keep the first matches.
-    if (item[0] < this.data[this.data.length - 1][0] || (this.data.length === this.nbItems && this.data.find(([num]) => num === item[0]))) {
+    if (this.data.length === this.nbItems && (item[0] < this.data[this.data.length - 1][0] || this.data.some(([num]) => num === item[0]))) {
       return
     }
     // insert data ordered by highest score
@@ -49,7 +57,7 @@ export class MaxSortedList {
   }
 }
 
-export function analyzeTerms(search: string, onlyAllowNegative = false): string[] {
+export function analyzeTerms(search: string, onlyAllowNegative = false, escapeForRegexp = true): string[] {
   /* Get the positive or negative terms list */
   const matches: RegExpMatchArray | [] = search.match(regexMatchesSearchBoolean) || []
   if (!matches.length) {
@@ -72,7 +80,7 @@ export function analyzeTerms(search: string, onlyAllowNegative = false): string[
         term = term.substring(0, term.length - 1)
       }
 
-      return escapeString(term)
+      return escapeForRegexp ? escapeString(term) : term
     })
     .filter(Boolean)
 }
@@ -86,14 +94,52 @@ export function genRegexPositiveAndNegativeTerms(search: string): RegExp {
   const negativeTerms = analyzeTerms(search, true)
   const p = positiveTerms
     .map((t) => genAccentInsensitiveRegexpPattern(t))
-    .map((t) => `(?=.*${BOUNDARY}${t})`)
+    .map((t) => `(?=.*${termBoundaryPattern(t)})`)
     .join('')
-  if (!negativeTerms.length) return new RegExp(p, 'i')
+  if (!negativeTerms.length) return new RegExp(p, 'iu')
   const n = negativeTerms
     .map((t) => genAccentInsensitiveRegexpPattern(t))
-    .map((t) => `${BOUNDARY}${t}${BOUNDARY}`)
+    .map((t) => termBoundaryPattern(t, true))
     .join('|')
-  return new RegExp(`^${p}(?!.*(${n})).*$`, 'i')
+  return new RegExp(`^${p}(?!.*(${n})).*$`, 'iu')
+}
+
+export function requiresLikeSearch(input: string): boolean {
+  return regexRequiresLikeSearch.test(input)
+}
+
+export function parseSearchTerms(search: string): SearchTerm[] {
+  return (search.match(regexMatchesSearchBoolean) || []).flatMap((match: string) => {
+    const [, operator, quoted, unquoted] = match.match(regexMatchSearchBoolean)
+    let value = (quoted || unquoted).trim()
+    while (booleanOperators.has(value[0])) {
+      value = value.substring(1)
+    }
+    if (value[value.length - 1] === '*') {
+      value = value.substring(0, value.length - 1)
+    }
+    if (value.length < MIN_CHARS_TO_SEARCH) {
+      return []
+    }
+    const searchOperator: SearchTerm['operator'] = operator === '+' ? 'required' : operator === '-' ? 'excluded' : 'optional'
+    return [
+      {
+        value,
+        operator: searchOperator
+      }
+    ]
+  })
+}
+
+export function likeSearchTermStartPattern(): string {
+  return `(?=${LIKE_SEARCH_CHAR})`
+}
+
+function termBoundaryPattern(term: string, endBoundary = false): string {
+  if (requiresLikeSearch(term)) {
+    return term
+  }
+  return `(?<!${UNICODE_WORD_CHAR})${term}${endBoundary ? `(?!${UNICODE_WORD_CHAR})` : ''}`
 }
 
 function genAccentInsensitiveRegexpPattern(input: string): string {
