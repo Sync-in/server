@@ -6,7 +6,18 @@ import { DBSchema } from '../../../infrastructure/database/interfaces/database.i
 import { FilesContentStore } from '../models/files-content-store'
 import { FileContent, FileContentRecordMetadata, FileContentRecordMetadataMap } from '../schemas/file-content.interface'
 import { createTableFilesContent, FILES_CONTENT_TABLE_PREFIX } from '../schemas/files-content.schema'
-import { analyzeTerms, genTermsPattern, MaxSortedList } from '../utils/files-search'
+import {
+  analyzeTerms,
+  genTermsPattern,
+  likeSearchTermStartPattern,
+  MaxSortedList,
+  parseSearchTerms,
+  requiresLikeSearch,
+  SearchTerm
+} from '../utils/files-search'
+
+type SearchCandidate = Pick<FileContent, 'id' | 'score'> & { sourceIndex: string }
+type SearchRecord = FileContent & { sourceIndex: string }
 
 @Injectable()
 export class FilesContentStoreMySQL implements FilesContentStore {
@@ -118,34 +129,88 @@ export class FilesContentStoreMySQL implements FilesContentStore {
 
   async searchRecords(tableNames: string[], search: string, limit: number): Promise<FileContent[]> {
     const terms: string[] = analyzeTerms(search)
+    const searchTerms = parseSearchTerms(search)
+    const positiveTerms = searchTerms.filter(({ operator }) => operator !== 'excluded')
+    const requiredTerms = searchTerms.filter(({ operator }) => operator === 'required')
+    const optionalTerms = searchTerms.filter(({ operator }) => operator === 'optional')
+    const excludedTerms = searchTerms.filter(({ operator }) => operator === 'excluded')
+    const useLikeSearch = searchTerms.some(({ value }) => requiresLikeSearch(value))
     this.logger.verbose({ tag: this.searchRecords.name, msg: `convert ${search} -> ${JSON.stringify(terms)}` })
     if (!terms.length) {
       return []
     }
-    // todo: use row iterator for better performance
-    // mysql does not calculate MATCH results twice, can be used with select without worrying about performance
+    // Searches containing a script unsupported by FULLTEXT tokenization use LIKE for every term.
+    // Other searches keep the indexed FULLTEXT path.
     const q: SQL = sql
       .join(
-        tableNames.map(
-          (tableName) =>
-            sql`(SELECT id, path, name, mime, mtime, content, MATCH (content) AGAINST ( ${search} IN BOOLEAN MODE ) as score
+        tableNames.map((tableName) => {
+          if (useLikeSearch) {
+            const requiredMatch = createContentMatch(requiredTerms, ' AND ')
+            const optionalMatch = createContentMatch(optionalTerms, ' OR ')
+            const positiveMatch = requiredMatch || optionalMatch
+            const excludedMatch = createContentMatch(excludedTerms, ' AND ', true)
+            const score = positiveTerms.reduce<SQL>(
+              (value, term) => sql`${value} + IF(content LIKE ${toLikePattern(term.value)} ESCAPE '=', 1, 0)`,
+              sql.raw('0')
+            )
+            return sql`(SELECT ${tableName} as sourceIndex, id, ${score} as score
               FROM ${sql.raw(tableName)}
-              WHERE MATCH (content) AGAINST ( ${search} IN BOOLEAN MODE ) LIMIT ${limit})`
-        ),
+              WHERE (${positiveMatch})
+                ${excludedMatch ? sql`AND ${excludedMatch}` : sql``}
+              ORDER BY score DESC
+              LIMIT ${limit})`
+          }
+
+          const fullTextMatch = sql`MATCH (content) AGAINST ( ${search} IN BOOLEAN MODE )`
+          return sql`(SELECT ${tableName} as sourceIndex, id, ${fullTextMatch} as score
+              FROM ${sql.raw(tableName)}
+              WHERE ${fullTextMatch}
+              ORDER BY score DESC
+              LIMIT ${limit})`
+        }),
         sql.raw(' UNION ALL ')
       )
       .append(sql` ORDER BY score DESC LIMIT ${limit}`)
 
-    const [records]: FileContent[][] = (await this.db.execute(q)) as MySqlQueryResult
-    if (!records.length) {
+    const [candidateRecords]: SearchCandidate[][] = (await this.db.execute(q)) as MySqlQueryResult
+    const selectedCandidates = candidateRecords.slice(0, limit)
+    if (!selectedCandidates.length) {
       return []
     }
 
-    const termsPattern = `(${genTermsPattern(terms)})`
-    // const termsRegexp = new RegExp(`(?:\\b\\w+\\b[\\s\\W]){0,20}\\b${termsPattern}(?:\\s*\\S*){0,20}`, 'gi') // best performance
-    const termsRegexp = new RegExp(`(?:\\b\\w+\\b[\\s\\W]{0,4}){0,10}\\b${termsPattern}(?:\\s*\\S*){0,15}`, 'gi')
+    // Load LONGTEXT only for the final candidates to avoid carrying it through UNION and ORDER BY.
+    const idsByIndex = new Map<string, number[]>()
+    for (const candidate of selectedCandidates) {
+      const ids = idsByIndex.get(candidate.sourceIndex) || []
+      ids.push(candidate.id)
+      idsByIndex.set(candidate.sourceIndex, ids)
+    }
+    const recordsQuery = sql.join(
+      tableNames.flatMap((tableName) => {
+        const ids = idsByIndex.get(tableName)
+        if (!ids?.length) return []
+        return [
+          sql`SELECT ${tableName} as sourceIndex, id, path, name, mime, mtime, content
+              FROM ${sql.raw(tableName)}
+              WHERE id IN (${sql.join(
+                ids.map((id) => sql`${id}`),
+                sql.raw(', ')
+              )})`
+        ]
+      }),
+      sql.raw(' UNION ALL ')
+    )
+    const [loadedRecords]: SearchRecord[][] = (await this.db.execute(recordsQuery)) as MySqlQueryResult
+    const recordsByKey = new Map(loadedRecords.map((record) => [`${record.sourceIndex}:${record.id}`, record]))
+    const records = selectedCandidates.flatMap((candidate) => {
+      const record = recordsByKey.get(`${candidate.sourceIndex}:${candidate.id}`)
+      return record ? [{ ...record, score: candidate.score }] : []
+    })
 
-    const termsHighlightRegexp = new RegExp(termsPattern, 'gi')
+    const termsPattern = `(${genTermsPattern(terms)})`
+    const termsRegexp = new RegExp(`(?:\\b\\w+\\b[\\s\\W]{0,4}){0,10}(?:\\b|${likeSearchTermStartPattern()})${termsPattern}(?:\\s*\\S*){0,15}`, 'giu')
+
+    const termsHighlightRegexp = new RegExp(termsPattern, 'giu')
     for (const r of records) {
       const maxSortedList = new MaxSortedList(5)
       for (const i of r.content.matchAll(termsRegexp)) {
@@ -153,11 +218,11 @@ export class FilesContentStoreMySQL implements FilesContentStore {
         const nbDifferentWords: number = matches.length === 1 ? 1 : parseFloat(`${new Set(matches).size}.${matches.length}`)
         maxSortedList.insert([nbDifferentWords, i[0]])
       }
-      // clear content
+      // Do not expose the full indexed content in search results.
       r.content = undefined
       r.matches = maxSortedList.data.map(([_nb, content]) => content.replace(termsHighlightRegexp, '<mark>$1</mark>'))
     }
-    return records
+    return records.map(({ sourceIndex: _sourceIndex, ...record }) => record)
   }
 
   async cleanIndexes(tableSuffixes: string[]): Promise<void> {
@@ -189,4 +254,18 @@ export class FilesContentStoreMySQL implements FilesContentStore {
     }
     await this.db.execute(sql`ALTER TABLE ${sql.raw(tableName)} ADD COLUMN seen_run_id varchar(64), ADD INDEX seen_run_id (seen_run_id)`)
   }
+}
+
+function toLikePattern(term: string): string {
+  return `%${term.replaceAll('=', '==').replaceAll('%', '=%').replaceAll('_', '=_')}%`
+}
+
+function createContentMatch(terms: SearchTerm[], separator: ' AND ' | ' OR ', negate = false): SQL | null {
+  if (!terms.length) return null
+  return sql.join(
+    terms.map(({ value }) =>
+      negate ? sql`content NOT LIKE ${toLikePattern(value)} ESCAPE '='` : sql`content LIKE ${toLikePattern(value)} ESCAPE '='`
+    ),
+    sql.raw(separator)
+  )
 }

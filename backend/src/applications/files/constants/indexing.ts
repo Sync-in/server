@@ -1,4 +1,4 @@
-export const MIN_CHARS_TO_SEARCH = 3
+export const MIN_CHARS_TO_SEARCH = 2
 export const INDEXABLE_EXTENSIONS = new Set(['docx', 'pptx', 'xlsx', 'odt', 'odp', 'ods', 'pdf', 'txt', 'md', 'html', 'htm'])
 export const CACHE_INDEXING_EVENT_PREFIX = 'event-update-indexing' as const
 export const CACHE_INDEXING_EVENT_LAST_RUN_KEY = 'indexing-update-last-run' as const
