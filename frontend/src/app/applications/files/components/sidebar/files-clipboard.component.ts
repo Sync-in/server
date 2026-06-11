@@ -69,6 +69,7 @@ export class FilesClipboardComponent implements OnDestroy {
       const archiveProps: CompressFileDto = {
         name: this.files[0].name,
         compressInDirectory: this.operations[this.selectedAction].operation === FILE_OPERATION.COMPRESS,
+        compression: false,
         files: this.files.map((f: FileModel) => ({ name: f.name, rootAlias: f.root?.alias, path: f.path })),
         extension: TAR_EXTENSION
       }

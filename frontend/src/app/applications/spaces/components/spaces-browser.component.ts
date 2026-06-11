@@ -614,6 +614,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     const archiveProps: CompressFileDto = {
       name: this.selection[0].name,
       compressInDirectory: this.isTrashRepo || this.inSharesList ? false : inDir,
+      compression: false,
       files: this.selection.map((f: FileModel) => ({ name: f.name, rootAlias: f.root?.alias })),
       extension: TAR_EXTENSION
     }

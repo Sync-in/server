@@ -24,6 +24,7 @@ import * as untarUtils from '../utils/untar-file'
 import * as filesUtils from '../utils/files'
 import * as tarUtils from '../utils/tar-file'
 import * as taskUtils from '../utils/tasks'
+import * as zipUtils from '../utils/zip-file'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesManager } from './files-manager.service'
 import { FilesQueries } from './files-queries.service'
@@ -201,6 +202,7 @@ describe(FilesManager.name, () => {
       path.join(parentPath, `${taskUtils.taskTemporaryPrefix(cacheKey)}${path.basename(name)}`)
     )
     vi.spyOn(tarUtils, 'createTar').mockResolvedValue(undefined)
+    vi.spyOn(zipUtils, 'createZip').mockResolvedValue(undefined)
     vi.spyOn(filesUtils, 'getMimeType').mockReturnValue('image-png')
     vi.spyOn(spacesPermsUtils, 'canAccessToSpace').mockReturnValue(true)
     vi.spyOn(spacesPermsUtils, 'haveSpaceEnvPermissions').mockReturnValue(true)
@@ -747,7 +749,8 @@ describe(FilesManager.name, () => {
         run: (space: any) =>
           service.compress(user, space, {
             name: 'archive',
-            extension: 'tar.gz',
+            extension: 'tar',
+            compression: false,
             compressInDirectory: true,
             files: [{ name: 'file.txt', path: '/data/users/john/files/file.txt' }]
           } as any)
@@ -1118,7 +1121,8 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: { cacheKey: 'task-c', props: {} } })
       const dto = {
         name: 'archive',
-        extension: 'tgz',
+        extension: 'tar',
+        compression: true,
         compressInDirectory: false,
         files: [
           { path: '/data/users/john/files/dir', name: 'dir', rootAlias: null },
@@ -1148,7 +1152,8 @@ describe(FilesManager.name, () => {
       })
       const dto = {
         name: 'archive-trash',
-        extension: 'tgz',
+        extension: 'tar',
+        compression: true,
         compressInDirectory: false,
         files: [{ path: '/data/users/john/trash/source.txt', name: 'source.txt', rootAlias: null }]
       } as any
@@ -1176,7 +1181,8 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
       const dto = {
         name: 'archive',
-        extension: 'tgz',
+        extension: 'tar',
+        compression: true,
         compressInDirectory: false,
         files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
       } as any
@@ -1196,7 +1202,8 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
       const dto = {
         name: 'archive',
-        extension: 'tgz',
+        extension: 'tar',
+        compression: true,
         compressInDirectory: false,
         files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
       } as any
@@ -1218,6 +1225,7 @@ describe(FilesManager.name, () => {
       const dto = {
         name: 'archive',
         extension: 'tar',
+        compression: false,
         compressInDirectory: false,
         files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
       } as any
@@ -1246,6 +1254,7 @@ describe(FilesManager.name, () => {
       const dto = {
         name: 'archive',
         extension: 'tar',
+        compression: false,
         compressInDirectory: true,
         files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
       } as any
@@ -1253,6 +1262,32 @@ describe(FilesManager.name, () => {
       await service.compress(user, space, dto)
 
       expect(tarUtils.createTar).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar-compress-uuid', dto.files, false, undefined, undefined, 60)
+    })
+
+    it('should create a compressed ZIP archive', async () => {
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.zip')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.zip-compress-uuid')
+      const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
+      const dto = {
+        name: 'archive.zip',
+        extension: 'zip',
+        compression: true,
+        compressInDirectory: false,
+        files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
+      } as any
+
+      await service.compress(user, space, dto)
+
+      expect(zipUtils.createZip).toHaveBeenCalledWith(
+        '/data/users/john/tmp/archive.zip-compress-uuid',
+        dto.files,
+        true,
+        undefined,
+        undefined,
+        undefined
+      )
+      expect(tarUtils.createTar).not.toHaveBeenCalled()
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.zip-compress-uuid', '/tmp/archive.zip')
     })
   })
 

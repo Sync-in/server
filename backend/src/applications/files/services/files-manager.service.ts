@@ -19,7 +19,7 @@ import { canAccessToSpace, haveSpaceEnvPermissions } from '../../spaces/utils/pe
 import { UserModel } from '../../users/models/user.model'
 import { DEPTH, LOCK_DEPTH } from '../../webdav/constants/webdav'
 import { CACHE_LOCK_FILE_TTL } from '../constants/cache'
-import { TAR_GZ_EXTENSION } from '../constants/compress'
+import { TAR_EXTENSION, TAR_GZ_EXTENSION, ZIP_EXTENSION } from '../constants/compress'
 import { COMPRESSION_EXTENSION } from '../constants/files'
 import { ALL_DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPES, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
 import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto'
@@ -65,6 +65,7 @@ import { FILE_ERROR_MESSAGES, maxFileSizeExceededError } from '../utils/errors'
 import { createTaskTemporaryDir, taskTemporaryPath } from '../utils/tasks'
 import { FilesTasksTransfer } from './tasks/files-tasks-transfer.service'
 import { createTar } from '../utils/tar-file'
+import { createZip } from '../utils/zip-file'
 
 @Injectable()
 export class FilesManager {
@@ -629,7 +630,8 @@ export class FilesManager {
       this.checkNotTrashRepository(space)
     }
     const srcPath = dirName(space.realPath)
-    const archiveExt = dto.name.endsWith(dto.extension) ? '' : `.${dto.extension}`
+    const outputExtension = dto.extension === TAR_EXTENSION && dto.compression ? TAR_GZ_EXTENSION : dto.extension
+    const archiveExt = dto.name.endsWith(`.${outputExtension}`) ? '' : `.${outputExtension}`
     const dstPath = await uniqueFilePathFromDir(path.join(dto.compressInDirectory ? srcPath : user.tasksPath, `${dto.name}${archiveExt}`))
     const tmpPath = isTaskContext
       ? taskTemporaryPath(user.tasksPath, space.task!.cacheKey, dstPath)
@@ -653,14 +655,13 @@ export class FilesManager {
     // do
     try {
       const maxArchiveSize = space.storageQuota === null ? undefined : Math.max(0, space.storageQuota - space.storageUsage)
-      await createTar(
-        tmpPath,
-        dto.files.map((entry) => ({ ...entry, path: entry.path! })),
-        dto.extension === TAR_GZ_EXTENSION,
-        signal,
-        isTaskContext ? this.filesTasksTransfer.createByteProgressHandler(space) : undefined,
-        maxArchiveSize
-      )
+      const entries = dto.files.map((entry) => ({ ...entry, path: entry.path! }))
+      const onProgress = isTaskContext ? this.filesTasksTransfer.createByteProgressHandler(space) : undefined
+      if (dto.extension === ZIP_EXTENSION) {
+        await createZip(tmpPath, entries, dto.compression, signal, onProgress, maxArchiveSize)
+      } else {
+        await createTar(tmpPath, entries, dto.compression, signal, onProgress, maxArchiveSize)
+      }
       await moveFiles(tmpPath, dstPath)
     } catch (e) {
       await removeFiles(tmpPath).catch((err: Error) => this.logger.error({ tag: this.compress.name, msg: `unable to remove ${tmpPath} : ${err}` }))

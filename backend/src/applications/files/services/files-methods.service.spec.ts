@@ -101,6 +101,7 @@ describe(FilesMethods.name, () => {
     const compressFileDto: CompressFileDto = {
       name: '../../archive',
       compressInDirectory: false,
+      compression: false,
       files: [{ name: '../../foo', rootAlias: undefined }],
       extension: TAR_EXTENSION
     }

@@ -2,6 +2,7 @@ import type { TreeNode } from '@ali-hm/angular-tree-component'
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
+import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import {
   FILE_MODE,
   FILE_OPERATION,
@@ -177,7 +178,8 @@ export class FilesService {
 
   compress(op: CompressFileDto) {
     const dirPath = this.currentRoute
-    this.http.post<FileTask>(`${API_FILES_TASK_OPERATION_COMPRESS}/${dirPath}/${op.name}.${op.extension}`, op).subscribe({
+    const outputExtension = op.extension === TAR_EXTENSION && op.compression ? TAR_GZ_EXTENSION : op.extension
+    this.http.post<FileTask>(`${API_FILES_TASK_OPERATION_COMPRESS}/${dirPath}/${op.name}.${outputExtension}`, op).subscribe({
       next: (t: FileTask) => this.filesTasksService.addTask(t),
       error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Compression failed', op.name, e)
     })
