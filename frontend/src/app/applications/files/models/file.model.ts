@@ -135,6 +135,11 @@ export class FileModel implements File {
     this.newly = getNewly(mtime)
   }
 
+  updateSize(size: number) {
+    this.size = size
+    this.setHSize()
+  }
+
   createLock(lock: FileLockProps) {
     this.lock = lock
   }

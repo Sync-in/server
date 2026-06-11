@@ -102,6 +102,7 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
         } else {
           this.onSaveFinished()
         }
+        this.file().updateSize(new Blob([content]).size)
         this.file().updateHTimeAgo()
       },
       error: (e: HttpErrorResponse) => {
