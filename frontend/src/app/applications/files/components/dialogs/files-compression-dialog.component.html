@@ -15,15 +15,15 @@
 <div class="modal-body">
   <div class="input-group">
     <input [(ngModel)]="archiveProps.name" appAutofocus class="form-control" [placeholder]="'Archive name' | translate:locale.language" type="text">
-    <div class="input-group-text">
-      <span style="min-width: 40px">.{{ archiveProps.extension }}</span>
-    </div>
+    <select [(ngModel)]="archiveProps.extension" class="form-select flex-grow-0" style="width: 85px">
+      @for (extension of archiveExtensions; track extension) {
+        <option [ngValue]="extension">.{{ extensionLabel(extension) }}</option>
+      }
+    </select>
   </div>
   <div class="form-check mb-0 mt-3 ps-0">
     <label class="form-check-label ps-1">
-      <input [(ngModel)]="compression"
-             (ngModelChange)="setCompression($event)"
-             type="checkbox">
+      <input [(ngModel)]="archiveProps.compression" type="checkbox">
       <span class="me-1" l10nTranslate>Enable compression</span>
       <small l10nTranslate>(this may take longer)</small>
     </label>
