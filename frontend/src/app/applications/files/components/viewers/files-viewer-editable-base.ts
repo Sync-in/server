@@ -71,6 +71,10 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
     return
   }
 
+  protected onSaveFinished(): void {
+    return
+  }
+
   protected async toggleReadonly() {
     if (this.isReadonly()) {
       if (await this.lockFile()) {
@@ -88,31 +92,41 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
     const content = this.currentFileContent()
     this.filesUpload.uploadFileContent(this.file(), content, true).subscribe({
       next: () => {
+        if (this.isDestroyed) return
         this.onContentSaved(content)
         this.isModified.set(false)
         this.isSaving.set(false)
         this.warnOnUnsavedChanges.set(false)
         if (exit) {
           this.onClose().catch(console.error)
+        } else {
+          this.onSaveFinished()
         }
         this.file().updateHTimeAgo()
       },
       error: (e: HttpErrorResponse) => {
+        if (this.isDestroyed) return
         this.isSaving.set(false)
+        this.onSaveFinished()
         this.layout.sendNotification('error', 'Unable to save document', e.error.message)
       }
     })
   }
 
   protected canSave(): boolean {
-    return this.canEditContent() && this.isModified() && !this.isSaving()
+    return this.canEditContent() && this.isModified()
   }
 
   protected canEditContent(): boolean {
-    return !this.isReadonly() && this.isWriteable()
+    return !this.isReadonly() && this.isWriteable() && !this.isSaving()
+  }
+
+  protected canRestoreEditorFocus(): boolean {
+    return !document.activeElement?.closest('.files-viewer-search')
   }
 
   protected async onClose() {
+    if (this.isSaving()) return
     if (!this.isReadonly()) {
       await this.unlockFile()
     }

@@ -55,6 +55,7 @@ import { FilesViewerSearchComponent } from './components/files-viewer-search.com
 
 type MarkdownHeadingLevel = 1 | 2 | 3 | 4
 type MarkdownInlineMark = 'bold' | 'code' | 'italic' | 'strike' | 'underline'
+type MarkdownEditorMode = 'source' | 'visual'
 
 const ExitInlineCodeOnEnter = Extension.create({
   name: 'exitInlineCodeOnEnter',
@@ -159,12 +160,13 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   protected readonly headingLevels: MarkdownHeadingLevel[] = [1, 2, 3, 4]
   private readonly sourceEditor = viewChild<CodeEditor>('sourceEditor')
   private readonly imageFileInput = viewChild<ElementRef<HTMLInputElement>>('imageFileInput')
+  private focusRafId: number | null = null
   private savedContent = ''
 
   constructor() {
     super()
     effect(() => {
-      const editable = !this.isReadonly() && this.isWriteable() && this.isSupported()
+      const editable = this.canEditContent() && this.isSupported()
       if (!this.editor.isDestroyed) {
         this.editor.setEditable(editable, false)
       }
@@ -214,6 +216,9 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   override ngOnDestroy() {
     super.ngOnDestroy()
+    if (this.focusRafId !== null) {
+      cancelAnimationFrame(this.focusRafId)
+    }
     this.editor.destroy()
   }
 
@@ -260,12 +265,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
       this.setMarkdownContent(this.sourceContent)
     }
     this.isSourceMode.set(sourceMode)
-    setTimeout(() => {
-      if (sourceMode) {
-        this.sourceEditor()?.view?.requestMeasure?.()
-        this.sourceEditor()?.view?.focus()
-      }
-    })
+    this.scheduleEditorFocus(sourceMode ? 'source' : 'visual')
   }
 
   protected sourceContentChange() {
@@ -442,11 +442,15 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     this.sourceContent = content
     this.setMarkdownContent(content)
     this.isModified.set(false)
+    this.scheduleEditorFocus('visual', 'start')
   }
 
   protected override onContentSaved(content: string) {
-    this.sourceContent = content
     this.savedContent = content
+  }
+
+  protected override onSaveFinished() {
+    this.scheduleEditorFocus(this.isSourceMode() ? 'source' : 'visual', undefined, true)
   }
 
   private runEditorCommand(command: () => boolean) {
@@ -534,5 +538,33 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   private setMarkdownContent(content: string) {
     this.editor.chain().setMeta('addToHistory', false).setContent(content, { emitUpdate: false, contentType: 'markdown' }).run()
+  }
+
+  private scheduleEditorFocus(mode: MarkdownEditorMode, position?: 'start', onlyIfUnfocused = false) {
+    if (this.focusRafId !== null) {
+      cancelAnimationFrame(this.focusRafId)
+    }
+    this.focusRafId = requestAnimationFrame(() => {
+      this.focusRafId = null
+      const sourceMode = mode === 'source'
+      if (this.isSourceMode() !== sourceMode) return
+      if (onlyIfUnfocused && !this.canRestoreEditorFocus()) return
+      if (!sourceMode) {
+        if (!this.editor.isDestroyed) {
+          this.editor.commands.focus(position)
+        }
+        return
+      }
+      const view = this.sourceView
+      if (!view) return
+      view.requestMeasure({
+        read: () => undefined,
+        write: () => {
+          if (this.isSourceMode() && (!onlyIfUnfocused || this.canRestoreEditorFocus())) {
+            view.focus()
+          }
+        }
+      })
+    })
   }
 }

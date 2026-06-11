@@ -6,7 +6,7 @@
       [adaptivePosition]="true"
       class="btn {{ isReadonly() ? 'btn-warning' : 'btn-default' }} me-1"
       type="button"
-      [disabled]="!isSupported() || !isWriteable()">
+      [disabled]="!isSupported() || !isWriteable() || isSaving()">
       <fa-icon [icon]="isReadonly() ? icons.faLock : icons.faLockOpen"></fa-icon>
     </button>
     <button
@@ -333,6 +333,7 @@
               l10nTranslate>Save And Exit
       </button>
       <button (click)="onClose()"
+              [disabled]="isSaving()"
               class="btn btn-sm btn-danger me-2"
               data-dismiss="modal" type="button"
               l10nTranslate>Close Without Saving
@@ -349,7 +350,7 @@
     <div class="files-markdown-visual-pane">
       <tiptap-editor
         class="files-markdown-visual-editor"
-        [class.is-readonly]="isReadonly()"
+        [class.is-readonly]="!canEditContent()"
         [editor]="editor">
       </tiptap-editor>
     </div>
