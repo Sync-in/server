@@ -30,7 +30,7 @@ logger:
   filePath:
 mysql:
   # required
-  url: mysql://user:MySQLPassword@localhost:3306/database
+  url: 'mysql://user:MySQLPassword@localhost:3306/database'
   # default: `false`
   logQueries: false
 cache:
@@ -62,7 +62,7 @@ mail:
   # optional
   auth:
     user: user
-    pass: password
+    pass: 'password'
   # Defines if the connection should use SSL (if true) or not (if false)
   # Note: setting `secure: false` does not necessarily mean messages are sent in plaintext
   # If the server supports STARTTLS, the connection is usually upgraded to TLS automatically
@@ -87,7 +87,7 @@ auth:
   # Key used to encrypt user secret keys in the database
   # Optional but strongly recommended
   # Warning: do not change or remove the encryption key after MFA activation, or the codes will become invalid
-  encryptionKey: changeEncryptionKeyWithStrongKey
+  encryptionKey: 'changeEncryptionKeyWithStrongKey'
   # cookie sameSite setting: `lax` | `strict`
   # default: `strict`
   cookieSameSite: strict
@@ -95,14 +95,14 @@ auth:
     access:
       # Used for token and cookie signatures
       # required
-      secret: changeAccessWithStrongSecret
+      secret: 'changeAccessWithStrongSecret'
       # token expiration = cookie maxAge
       # default: `30m`
       expiration: 30m
     refresh:
       # Used for token and cookie signatures
       # required
-      secret: changeRefreshWithStrongSecret
+      secret: 'changeRefreshWithStrongSecret'
       # token expiration = cookie maxAge
       # default: `4h`
       expiration: 4h
@@ -217,7 +217,7 @@ auth:
     clientId:
     # clientSecret: OAuth 2.0 Client Secret obtained from your OIDC provider
     # required
-    clientSecret: changeOIDCClientSecret
+    clientSecret: 'changeOIDCClientSecret'
     # redirectUri: The callback URL where users are redirected after authentication
     # This URL must be registered in your OIDC provider's allowed redirect URIs
     # e.g.: (API callback): https://sync-in.domain.com/api/auth/oidc/callback
@@ -358,7 +358,7 @@ applications:
       enabled: false
       # Secret used for jwt tokens, it must be the same on the onlyoffice server
       # required
-      secret: onlyOfficeSecret
+      secret: 'onlyOfficeSecret'
       # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
       # If an external server is configured, it will be used instead.
       # Note: when using an external server (e.g.: https://onlyoffice.domain.com), make sure it is accessible from the client/browser.

@@ -1,12 +1,12 @@
 mysql:
-  url: mysql://root:MySQLRootPassword@mariadb:3306/sync_in
+  url: 'mysql://root:MySQLRootPassword@mariadb:3306/sync_in'
 auth:
-  encryptionKey: changeEncryptionKeyWithStrongKey
+  encryptionKey: 'changeEncryptionKeyWithStrongKey'
   token:
     access:
-      secret: changeAccessWithStrongSecret
+      secret: 'changeAccessWithStrongSecret'
     refresh:
-      secret: changeRefreshWithStrongSecret
+      secret: 'changeRefreshWithStrongSecret'
 applications:
   files:
     dataPath: /app/data
@@ -14,4 +14,4 @@ applications:
       enabled: false
     onlyoffice:
       enabled: false
-      secret: onlyOfficeSecret
+      secret: 'onlyOfficeSecret'

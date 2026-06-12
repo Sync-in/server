@@ -1,12 +1,12 @@
 mysql:
-  url: mysql://user:MySQLPassword@localhost:3306/database
+  url: 'mysql://user:MySQLPassword@localhost:3306/database'
 auth:
-  encryptionKey: changeEncryptionKeyWithStrongKey
+  encryptionKey: 'changeEncryptionKeyWithStrongKey'
   token:
     access:
-      secret: changeAccessWithStrongSecret
+      secret: 'changeAccessWithStrongSecret'
     refresh:
-      secret: changeRefreshWithStrongSecret
+      secret: 'changeRefreshWithStrongSecret'
 applications:
   files:
     dataPath: /home/sync-in/data

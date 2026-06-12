@@ -26,7 +26,7 @@ export const exportConfiguration: (reload?: boolean) => GlobalConfig = (reload =
 function loadConfiguration(): GlobalConfig {
   const config: GlobalConfig = configLoader()
   // LOGGER
-  if (config.logger.stdout === false) {
+  if (config.logger?.stdout === false) {
     config.logger.colorize = false
   }
   // AUTHENTICATION
