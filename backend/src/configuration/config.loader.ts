@@ -64,8 +64,8 @@ function hasEnvConfig(): boolean {
  * Parse a raw env-string into boolean, number or leave as string.
  */
 function parseEnvValue(value: string): any {
-  // remove first and last quote if exists
-  value = value.replace(/^"(.*)"$/, '$1')
+  // Remove a matching pair of surrounding single or double quotes.
+  value = value.replace(/^(["'])(.*)\1$/s, '$2')
   if (value === 'true') return true
   if (value === 'false') return false
   if (!isNaN(Number(value))) return Number(value)
