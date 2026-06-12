@@ -47,6 +47,7 @@ services:
 
 networks:
   sync_in_network:
+    name: sync_in_network
     driver: bridge
 
 volumes:
