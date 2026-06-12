@@ -3,7 +3,7 @@ import { USER_PERMISSION, USER_ROLE } from '../../../applications/users/constant
 import { User } from '../../../applications/users/schemas/user.interface'
 import { users } from '../../../applications/users/schemas/users.schema'
 import { hashPassword } from '../../../common/functions'
-import { capitalizeString } from '../../../common/shared'
+import { capitalizeString, stripMatchingQuotes } from '../../../common/shared'
 import { getDB } from './db'
 
 interface InitUser extends Partial<User> {
@@ -56,12 +56,13 @@ async function parseArgs(): Promise<InitUser> {
   }
 
   // 2. Derive and validate options with defaults
-  const login = raw.login || 'sync-in'
+  const login = stripMatchingQuotes(raw.login || '') || 'sync-in'
 
   const email = raw.email?.trim() || `${login}@sync-in.com`
 
-  const pwdPlain = raw.password && raw.password.length > 3 ? raw.password : 'sync-in'
-  if (!raw.password || raw.password.length <= 3) {
+  const rawPassword = stripMatchingQuotes(raw.password || '')
+  const pwdPlain = rawPassword.length > 3 ? rawPassword : 'sync-in'
+  if (rawPassword.length <= 3) {
     console.warn('Password invalid or not specified, using default.')
   }
 

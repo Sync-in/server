@@ -103,6 +103,10 @@ export function capitalizeString(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1)
 }
 
+export function stripMatchingQuotes(value: string): string {
+  return value.replace(/^(["'])(.*)\1$/s, '$2')
+}
+
 export function intersectPermissions(aPermissions: string, bPermissions: string, permissionsSeparator: string = SPACE_PERMS_SEP): string {
   const aPerms = aPermissions.split(permissionsSeparator)
   const bPerms = bPermissions.split(permissionsSeparator)

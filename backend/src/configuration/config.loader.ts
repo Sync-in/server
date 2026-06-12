@@ -2,6 +2,7 @@ import deepmerge from 'deepmerge'
 import * as yaml from 'js-yaml'
 import fs from 'node:fs'
 import path from 'node:path'
+import { stripMatchingQuotes } from '../common/shared'
 import {
   DEFAULT_LOG_FILE_PATH,
   ENVIRONMENT_DIST_FILE_NAME,
@@ -64,8 +65,7 @@ function hasEnvConfig(): boolean {
  * Parse a raw env-string into boolean, number or leave as string.
  */
 function parseEnvValue(value: string): any {
-  // Remove a matching pair of surrounding single or double quotes.
-  value = value.replace(/^(["'])(.*)\1$/s, '$2')
+  value = stripMatchingQuotes(value)
   if (value === 'true') return true
   if (value === 'false') return false
   if (!isNaN(Number(value))) return Number(value)
