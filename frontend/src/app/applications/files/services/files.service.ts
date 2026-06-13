@@ -19,6 +19,7 @@ import {
   API_FILES_TASK_OPERATION_DOWNLOAD,
   API_FILES_TASKS_DOWNLOAD
 } from '@sync-in-server/backend/src/applications/files/constants/routes'
+import { API_FAVORITES, API_FAVORITES_FROM_SPACE } from '@sync-in-server/backend/src/applications/favorites/constants/routes'
 import type {
   CompressFileDto,
   CopyMoveFileDto,
@@ -34,6 +35,8 @@ import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applica
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
+import type { FileFavorite } from '@sync-in-server/backend/src/applications/files/schemas/file-favorite.interface'
+import { FileFavoriteModel } from '../../favorites/models/file-favorite.model'
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -217,6 +220,40 @@ export class FilesService {
         },
         error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to load', e)
       })
+  }
+
+  loadFavorites(limit: number) {
+    this.http.get<FileFavorite[]>(API_FAVORITES, { params: new HttpParams().set('limit', limit) }).subscribe({
+      next: (fs: FileFavorite[]) => {
+        this.store.filesFavorites.set(fs.map((f) => new FileFavoriteModel(f)))
+      },
+      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to load favorites', e)
+    })
+  }
+
+  toggleFavorite(file: FileModel, add: boolean) {
+    if (add) {
+      this.http.post<FileFavorite>(`${API_FAVORITES_FROM_SPACE}/${file.path}`, {}).subscribe({
+        next: (favorite) => {
+          if (file.id !== favorite.id) file.id = favorite.id
+          this.store.filesFavorites.update((favorites) => [new FileFavoriteModel(favorite), ...favorites])
+        },
+        error: (e: HttpErrorResponse) => {
+          file.isFavorite = false
+          this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)
+        }
+      })
+    } else {
+      this.http.delete<void>(`${API_FAVORITES_FROM_SPACE}/${file.path}`).subscribe({
+        next: () => {
+          this.store.filesFavorites.update((files) => files.filter((f) => f.id !== file.id))
+        },
+        error: (e: HttpErrorResponse) => {
+          file.isFavorite = true
+          this.layout.sendNotification('error', 'Files', 'Unable to update favorite', e)
+        }
+      })
+    }
   }
 
   search(search: SearchFilesDto): Observable<FileContentModel[]> {

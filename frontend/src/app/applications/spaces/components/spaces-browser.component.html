@@ -167,6 +167,17 @@
           </a>
         </li>
       }
+      @if (selection.length === 1 && !isTrashRepo) {
+        <li role="menuitem">
+          <a (click)="toggleFavorite(selection[0], $event)" class="dropdown-item">
+            @if (selection[0].isFavorite) {
+              <span l10nTranslate><fa-icon [icon]="icons.faStar"></fa-icon>Remove from favorites</span>
+            } @else {
+              <span l10nTranslate><fa-icon [icon]="icons.faStarRegular"></fa-icon>Add to favorites</span>
+            }
+          </a>
+        </li>
+      }
       <li role="menuitem">
         <a (click)="layout.showRSideBarTab(TAB_MENU.SELECTION)" class="dropdown-item">
           <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
@@ -437,6 +448,11 @@
                           <fa-icon [icon]="icons.faCommentDots"></fa-icon>
                         </span>
                       }
+                      @if (f.isFavorite) {
+                        <span class="badge bg-warning me-1">
+                          <fa-icon [icon]="icons.faStar"></fa-icon>
+                        </span>
+                      }
                       @if (f.shares.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer me-1">
@@ -572,6 +588,15 @@
   @if (selection.length === 1 && !isTrashRepo) {
     <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" contextMenuItem>
       <span l10nTranslate><fa-icon [icon]="icons.faCommentDots"></fa-icon>Comment</span>
+    </ng-template>
+  }
+  @if (selection.length === 1 && !isTrashRepo) {
+    <ng-template (execute)="toggleFavorite(selection[0])" contextMenuItem>
+      @if (selection[0].isFavorite) {
+        <span l10nTranslate><fa-icon [icon]="icons.faStar"></fa-icon>Remove from favorites</span>
+      } @else {
+        <span l10nTranslate><fa-icon [icon]="icons.faStarRegular"></fa-icon>Add to favorites</span>
+      }
     </ng-template>
   }
   @if (!inSharesList) {

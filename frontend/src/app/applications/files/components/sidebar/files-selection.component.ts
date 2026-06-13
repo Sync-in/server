@@ -2,7 +2,8 @@ import { AsyncPipe } from '@angular/common'
 import { ChangeDetectionStrategy, Component, computed, inject, input, InputSignal, Signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faArrowsAlt, faClipboardCheck, faLock, faSpinner, faUnlock } from '@fortawesome/free-solid-svg-icons'
+import { faArrowsAlt, faClipboardCheck, faLock, faStar, faSpinner, faUnlock } from '@fortawesome/free-solid-svg-icons'
+import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { catchError, of, shareReplay } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -55,7 +56,9 @@ export class FilesSelectionComponent {
     faUnlock,
     faClipboardCheck,
     faArrowsAlt,
-    faSpinner
+    faSpinner,
+    faStar,
+    faStarRegular
   }
   private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)

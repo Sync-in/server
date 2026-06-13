@@ -7,6 +7,7 @@ import { FilesContentStore } from './models/files-content-store'
 import { CollaboraOnlineModule } from './editors/collabora-online/collabora-online.module'
 import { OnlyOfficeModule } from './editors/only-office/only-office.module'
 import { FilesContentIndexer } from './services/files-content-indexer.service'
+import { FilesFavorites } from './services/files-favorites.service'
 import { FilesLockManager } from './services/files-lock-manager.service'
 import { FilesManager } from './services/files-manager.service'
 import { FilesMethods } from './services/files-methods.service'
@@ -41,6 +42,7 @@ import { FilesTrashRetention } from './services/files-trash-retention.service'
     FilesScheduler,
     FilesRecents,
     FilesContentParser,
+    FilesFavorites,
     FilesContentIndexer,
     { provide: FilesContentStore, useClass: FilesContentStoreMySQL },
     FilesSearchManager,
@@ -48,6 +50,6 @@ import { FilesTrashRetention } from './services/files-trash-retention.service'
     FilesQuotaManager,
     FilesTrashRetention
   ],
-  exports: [FilesManager, FilesQueries, FilesLockManager, FilesQuotaManager, FilesMethods, FilesRecents]
+  exports: [FilesManager, FilesQueries, FilesLockManager, FilesQuotaManager, FilesMethods, FilesRecents, FilesFavorites]
 })
 export class FilesModule {}
