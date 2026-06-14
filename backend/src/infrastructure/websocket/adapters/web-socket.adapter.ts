@@ -8,6 +8,7 @@ import cluster from 'node:cluster'
 import { Namespace, ServerOptions, Socket } from 'socket.io'
 import { USERS_WS } from '../../../applications/users/constants/websocket'
 import { type JwtPayload } from '../../../authentication/interfaces/jwt-payload.interface'
+import { TOKEN_TYPE } from '../../../authentication/interfaces/token.interface'
 import { configuration } from '../../../configuration/config.environment'
 import { getClientAddress } from '../utils'
 import { ClusterAdapter } from './cluster.adapter'
@@ -85,6 +86,10 @@ export class WebSocketAdapter extends IoAdapter {
     }
     if (!payload) {
       this.onAuthError('Payload is missing', socket, next)
+      return
+    }
+    if (payload.tokenType !== TOKEN_TYPE.WS) {
+      this.onAuthError('Invalid token type', socket, next)
       return
     }
     Object.assign(socket, { user: payload.identity })

@@ -4,5 +4,7 @@ export enum TOKEN_TYPE {
   REFRESH = 'refresh',
   WS = 'ws',
   CSRF = 'csrf',
-  CSRF_2FA = 'csrf_2fa'
+  CSRF_2FA = 'csrf_2fa',
+  COLLABORA_ONLINE = 'collabora_online',
+  ONLY_OFFICE = 'only_office'
 }

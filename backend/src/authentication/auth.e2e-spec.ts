@@ -129,6 +129,7 @@ describe('Auth (e2e)', () => {
       })
       expect(decodedToken.iat).toBeCloseTo(currentTimeStamp(), -1)
       expect(decodedToken.exp).toBeCloseTo(currentTimeStamp() + convertHumanTimeToSeconds(authConfig.token[cookie.type].expiration), -1)
+      expect(decodedToken.tokenType).toBe(cookie.type)
       expect(decodedToken.identity.id).toBe(userTest.id)
       if (cookie.type === TOKEN_TYPE.REFRESH) {
         // needed for the following tests

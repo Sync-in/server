@@ -17,7 +17,8 @@ import { FastifyAuthenticatedRequest } from './interfaces/auth-request.interface
 import { TOKEN_TYPE } from './interfaces/token.interface'
 import type { AuthOIDCSettings } from './providers/oidc/auth-oidc.interfaces'
 import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service'
-import { AuthTwoFaGuard } from './providers/two-fa/auth-two-fa-guard'
+import { AuthTokenTwoFaGuard } from './providers/two-fa/guards/auth-token-two-fa.guard'
+import { AuthTwoFaVerificationGuard, AuthTwoFaVerificationWithoutPasswordGuard } from './providers/two-fa/guards/auth-two-fa-verification.guard'
 import { TwoFaResponseDto, TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './providers/two-fa/auth-two-fa.dtos'
 import { TwoFaSetup, TwoFaVerifyResult } from './providers/two-fa/auth-two-fa.interfaces'
 
@@ -50,7 +51,7 @@ export class AuthController {
 
   @Post(AUTH_ROUTE.TOKEN)
   @AuthTokenSkip()
-  @UseGuards(AuthLocalGuard)
+  @UseGuards(AuthLocalGuard, AuthTwoFaVerificationWithoutPasswordGuard)
   token(@GetUser() user: UserModel): Promise<TokenResponseDto> {
     return this.authManager.getTokens(user)
   }
@@ -92,7 +93,8 @@ export class AuthController {
   }
 
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_LOGIN_VERIFY}`)
-  @UseGuards(UserRolesGuard)
+  @AuthTokenSkip()
+  @UseGuards(AuthTokenTwoFaGuard, UserRolesGuard)
   @UserHaveRole(USER_ROLE.USER)
   async twoFaLogin(
     @Body() body: TwoFaVerifyDto,
@@ -110,7 +112,7 @@ export class AuthController {
   }
 
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_ADMIN_RESET_USER}/:id`)
-  @UseGuards(UserRolesGuard, AuthTwoFaGuard)
+  @UseGuards(UserRolesGuard, AuthTwoFaVerificationGuard)
   @UserHaveRole(USER_ROLE.ADMINISTRATOR)
   twoFaReset(@Param('id', ParseIntPipe) userId: number): Promise<TwoFaVerifyResult> {
     return this.authProvider2FA.adminResetUserTwoFa(userId)

@@ -33,6 +33,7 @@ describe(AuthTokenAccessGuard.name, () => {
   let reflector: Reflector
   let accessTokenWithoutCSRF: string
   let accessToken: string
+  let temporaryTwoFaToken: string
   let context: DeepMocked<ExecutionContext>
 
   beforeAll(async () => {
@@ -66,14 +67,24 @@ describe(AuthTokenAccessGuard.name, () => {
     authAccessGuard = new AuthTokenAccessGuard(reflector)
     authAnonymousStrategy = module.get<AuthAnonymousStrategy>(AuthAnonymousStrategy)
     authAnonymousGuard = module.get<AuthAnonymousGuard>(AuthAnonymousGuard)
-    accessToken = await jwtService.signAsync({ identity: { id: 1, login: 'foo' }, [TOKEN_TYPE.CSRF]: csrfToken } as JwtPayload, {
+    accessToken = await jwtService.signAsync(
+      { tokenType: TOKEN_TYPE.ACCESS, identity: { id: 1, login: 'foo' }, [TOKEN_TYPE.CSRF]: csrfToken } as JwtPayload,
+      {
+        secret: authConfig.token.access.secret,
+        expiresIn: 30
+      }
+    )
+    accessTokenWithoutCSRF = await jwtService.signAsync({ tokenType: TOKEN_TYPE.ACCESS, identity: { id: 1, login: 'foo' } } as JwtPayload, {
       secret: authConfig.token.access.secret,
       expiresIn: 30
     })
-    accessTokenWithoutCSRF = await jwtService.signAsync({ identity: { id: 1, login: 'foo' } } as JwtPayload, {
-      secret: authConfig.token.access.secret,
-      expiresIn: 30
-    })
+    temporaryTwoFaToken = await jwtService.signAsync(
+      { tokenType: TOKEN_TYPE.ACCESS_2FA, identity: { id: 1, login: 'foo', twoFaEnabled: true }, csrf: csrfToken } as JwtPayload,
+      {
+        secret: authConfig.token.access.secret,
+        expiresIn: 30
+      }
+    )
     context = createMock<ExecutionContext>()
   })
 
@@ -85,6 +96,7 @@ describe(AuthTokenAccessGuard.name, () => {
     expect(authAnonymousStrategy).toBeDefined()
     expect(accessToken).toBeDefined()
     expect(accessTokenWithoutCSRF).toBeDefined()
+    expect(temporaryTwoFaToken).toBeDefined()
     expect(csrfToken).toBeDefined()
   })
 
@@ -126,6 +138,16 @@ describe(AuthTokenAccessGuard.name, () => {
       raw: { user: '' },
       headers: {
         authorization: `Bearer bar`
+      }
+    })
+    await expect(authAccessGuard.canActivate(context)).rejects.toThrow('Unauthorized')
+  })
+
+  it('should reject a temporary 2FA token in the authorization header', async () => {
+    context.switchToHttp().getRequest.mockReturnValue({
+      raw: { user: '' },
+      headers: {
+        authorization: `Bearer ${temporaryTwoFaToken}`
       }
     })
     await expect(authAccessGuard.canActivate(context)).rejects.toThrow('Unauthorized')

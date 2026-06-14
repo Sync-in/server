@@ -21,6 +21,8 @@ import { AuthProvider } from './providers/auth-providers.models'
 import { selectAuthProvider } from './providers/auth-providers'
 import { AuthProviderOIDCModule } from './providers/oidc/auth-provider-oidc.module'
 import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service'
+import { AuthTokenTwoFaGuard } from './providers/two-fa/guards/auth-token-two-fa.guard'
+import { AuthTokenTwoFaStrategy } from './providers/two-fa/guards/auth-token-two-fa.strategy'
 
 @Global()
 @Module({
@@ -37,12 +39,14 @@ import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service
       useClass: AuthTokenAccessGuard
     },
     AuthTokenRefreshGuard,
+    AuthTokenTwoFaGuard,
     AuthLocalGuard,
     AuthBasicGuard,
     AuthAnonymousGuard,
     AuthLocalStrategy,
     AuthTokenAccessStrategy,
     AuthTokenRefreshStrategy,
+    AuthTokenTwoFaStrategy,
     AuthBasicStrategy,
     AuthAnonymousStrategy,
     AuthManager,

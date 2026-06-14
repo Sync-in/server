@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
@@ -27,6 +27,9 @@ export class AuthTokenAccessStrategy extends PassportStrategy(Strategy, 'tokenAc
   }
 
   validate(req: FastifyRequest, jwtPayload: JwtPayload): UserModel {
+    if (jwtPayload.tokenType !== TOKEN_TYPE.ACCESS) {
+      throw new UnauthorizedException()
+    }
     this.logger.assign({ user: jwtPayload.identity.login })
     this.authManager.csrfValidation(req, jwtPayload, TOKEN_TYPE.ACCESS)
     return new UserModel(jwtPayload.identity)

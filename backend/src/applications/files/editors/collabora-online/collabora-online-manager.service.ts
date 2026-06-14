@@ -4,6 +4,7 @@ import { FastifyReply } from 'fastify'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
 import { convertHumanTimeToSeconds } from '../../../../common/functions'
 import { configuration } from '../../../../configuration/config.environment'
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
@@ -39,7 +40,7 @@ import {
   COLLABORA_WOPI_SRC_QUERY_PARAM_NAME
 } from './collabora-online.constants'
 import { CollaboraOnlineReqDto, CollaboraSaveDocumentDto } from './collabora-online.dtos'
-import { CollaboraOnlineCheckFileInfo, FastifyCollaboraOnlineSpaceRequest, JwtCollaboraOnlinePayload } from './collabora-online.interface'
+import type { CollaboraOnlineCheckFileInfo, FastifyCollaboraOnlineSpaceRequest, JwtPayloadCollaboraOnline } from './collabora-online.interface'
 import { API_COLLABORA_ONLINE_FILES } from './collabora-online.routes'
 import { FileEvent } from '../../events/file-events'
 import { ACTION } from '../../../../common/constants'
@@ -228,6 +229,7 @@ export class CollaboraOnlineManager {
     // use refresh expiration to allow long sessions
     return this.jwt.signAsync(
       {
+        tokenType: TOKEN_TYPE.COLLABORA_ONLINE,
         identity: {
           id: user.id,
           login: user.login,
@@ -238,8 +240,8 @@ export class CollaboraOnlineManager {
           applications: user.applications,
           spaceUrl: space.url,
           dbFileHash: dbFileHash
-        } satisfies JwtCollaboraOnlinePayload
-      },
+        }
+      } satisfies Omit<JwtPayloadCollaboraOnline, 'exp'>,
       {
         secret: configuration.auth.token.access.secret,
         expiresIn: this.expiration

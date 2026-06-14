@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthManager } from '../../authentication/auth.service'
 import { AuthProvider2FA } from '../../authentication/providers/two-fa/auth-provider-two-fa.service'
-import { AuthTwoFaGuard } from '../../authentication/providers/two-fa/auth-two-fa-guard'
+import { AuthTwoFaVerificationGuard } from '../../authentication/providers/two-fa/guards/auth-two-fa-verification.guard'
 import { exportConfiguration } from '../../configuration/config.environment'
 import { Cache } from '../../infrastructure/cache/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../infrastructure/database/constants'
@@ -29,7 +29,7 @@ describe(AdminUsersController.name, () => {
           useValue: {}
         },
         { provide: AuthProvider2FA, useValue: {} },
-        { provide: AuthTwoFaGuard, useValue: {} },
+        { provide: AuthTwoFaVerificationGuard, useValue: {} },
         { provide: NotificationsManager, useValue: {} },
         {
           provide: FilesQuotaManager,

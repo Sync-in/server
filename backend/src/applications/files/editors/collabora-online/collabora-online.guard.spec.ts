@@ -3,7 +3,7 @@ import { ExecutionContext } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
-import { JwtPayload } from '../../../../authentication/interfaces/jwt-payload.interface'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
 import { configuration } from '../../../../configuration/config.environment'
 import { COLLABORA_TOKEN_QUERY_PARAM_NAME } from './collabora-online.constants'
 import { CollaboraOnlineGuard } from './collabora-online.guard'
@@ -14,7 +14,8 @@ describe(CollaboraOnlineGuard.name, () => {
   let jwtService: JwtService
   let filesCollaboraGuard: CollaboraOnlineGuard
   let context: DeepMocked<ExecutionContext>
-  let accessToken: string
+  let collaboraToken: string
+  let temporaryTwoFaToken: string
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -34,16 +35,27 @@ describe(CollaboraOnlineGuard.name, () => {
     jwtService = module.get<JwtService>(JwtService)
     filesCollaboraGuard = module.get<CollaboraOnlineGuard>(CollaboraOnlineGuard)
     context = createMock<ExecutionContext>()
-    accessToken = await jwtService.signAsync({ identity: { id: 1, login: 'foo' } } as JwtPayload, {
-      secret: configuration.auth.token.access.secret,
-      expiresIn: 30
-    })
+    collaboraToken = await jwtService.signAsync(
+      { tokenType: TOKEN_TYPE.COLLABORA_ONLINE, identity: { id: 1, login: 'foo' } },
+      {
+        secret: configuration.auth.token.access.secret,
+        expiresIn: 30
+      }
+    )
+    temporaryTwoFaToken = await jwtService.signAsync(
+      { tokenType: TOKEN_TYPE.ACCESS_2FA, identity: { id: 1, login: 'foo', twoFaEnabled: true } },
+      {
+        secret: configuration.auth.token.access.secret,
+        expiresIn: 30
+      }
+    )
   })
 
   it('should be defined', () => {
     expect(jwtService).toBeDefined()
     expect(filesCollaboraGuard).toBeDefined()
-    expect(accessToken).toBeDefined()
+    expect(collaboraToken).toBeDefined()
+    expect(temporaryTwoFaToken).toBeDefined()
   })
 
   it('should not pass without a valid token', async () => {
@@ -54,9 +66,12 @@ describe(CollaboraOnlineGuard.name, () => {
     await expect(filesCollaboraGuard.canActivate(context)).rejects.toThrow('Unauthorized')
   })
 
-  it('should pass with a (un)valid token', async () => {
+  it('should pass with a valid Collabora token and reject an invalid token', async () => {
     context.switchToHttp().getRequest.mockReturnValue({
-      url: `${API_COLLABORA_ONLINE_FILES}?${COLLABORA_TOKEN_QUERY_PARAM_NAME}=${accessToken}`,
+      url: `${API_COLLABORA_ONLINE_FILES}?${COLLABORA_TOKEN_QUERY_PARAM_NAME}=${collaboraToken}`,
+      cookies: {
+        [configuration.auth.token.access.name]: temporaryTwoFaToken
+      },
       raw: { user: '' }
     })
     expect(await filesCollaboraGuard.canActivate(context)).toBe(true)
@@ -64,6 +79,15 @@ describe(CollaboraOnlineGuard.name, () => {
       url: `${API_COLLABORA_ONLINE_FILES}?${COLLABORA_TOKEN_QUERY_PARAM_NAME}=unvalidToken`,
       raw: { user: '' }
     })
+    await expect(filesCollaboraGuard.canActivate(context)).rejects.toThrow('Unauthorized')
+  })
+
+  it('should reject a temporary 2FA token', async () => {
+    context.switchToHttp().getRequest.mockReturnValue({
+      url: `${API_COLLABORA_ONLINE_FILES}?${COLLABORA_TOKEN_QUERY_PARAM_NAME}=${temporaryTwoFaToken}`,
+      raw: { user: '' }
+    })
+
     await expect(filesCollaboraGuard.canActivate(context)).rejects.toThrow('Unauthorized')
   })
 })

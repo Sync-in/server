@@ -7,6 +7,7 @@ import crypto from 'node:crypto'
 import os from 'node:os'
 import path from 'node:path'
 import { JwtIdentityPayload } from '../../../../authentication/interfaces/jwt-payload.interface'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
 import { convertHumanTimeToSeconds } from '../../../../common/functions'
 import { encodeUrl } from '../../../../common/shared'
 import { configuration } from '../../../../configuration/config.environment'
@@ -236,6 +237,7 @@ export class OnlyOfficeManager {
     // use refresh expiration to allow long sessions
     return this.jwt.signAsync(
       {
+        tokenType: TOKEN_TYPE.ONLY_OFFICE,
         identity: {
           id: user.id,
           login: user.login,

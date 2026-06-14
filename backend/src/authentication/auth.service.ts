@@ -108,7 +108,7 @@ export class AuthManager {
     }
   }
 
-  csrfValidation(req: FastifyRequest, jwtPayload: JwtPayload, type: TOKEN_TYPE.ACCESS | TOKEN_TYPE.REFRESH): void {
+  csrfValidation(req: FastifyRequest, jwtPayload: JwtPayload, type: TOKEN_TYPE.ACCESS | TOKEN_TYPE.ACCESS_2FA | TOKEN_TYPE.REFRESH): void {
     // ignore safe methods
     if (HTTP_CSRF_IGNORED_METHODS.has(req.method)) {
       return
@@ -150,6 +150,7 @@ export class AuthManager {
   private jwtSign(user: UserModel, type: TOKEN_TYPE, expiration: number, csrfToken?: string): Promise<string> {
     return this.jwt.signAsync(
       {
+        tokenType: type,
         identity: {
           id: user.id,
           login: user.login,
@@ -176,6 +177,7 @@ export class AuthManager {
     // Restrict the temporary token to the minimum required information
     return this.jwt.signAsync(
       {
+        tokenType: type,
         identity: {
           id: user.id,
           login: user.login,

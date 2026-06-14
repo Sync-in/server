@@ -1,9 +1,15 @@
-import type { JwtIdentityPayload } from '../../../../authentication/interfaces/jwt-payload.interface'
+import type { JwtIdentityPayload, JwtPayloadBase } from '../../../../authentication/interfaces/jwt-payload.interface'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
 import type { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface'
 
-export interface JwtCollaboraOnlinePayload extends JwtIdentityPayload {
+export interface JwtIdentityCollaboraOnlinePayload extends JwtIdentityPayload {
   spaceUrl: string
   dbFileHash: string
+}
+
+export interface JwtPayloadCollaboraOnline extends JwtPayloadBase {
+  identity: JwtIdentityCollaboraOnlinePayload
+  tokenType: TOKEN_TYPE.COLLABORA_ONLINE
 }
 
 export interface FastifyCollaboraOnlineSpaceRequest extends FastifySpaceRequest {

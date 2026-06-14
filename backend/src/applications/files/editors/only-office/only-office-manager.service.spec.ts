@@ -4,6 +4,8 @@ import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AxiosResponse } from 'axios'
 import { Readable } from 'stream'
+import { Mocked } from 'vitest'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
 import { Cache } from '../../../../infrastructure/cache/cache.service'
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
 import type { SpaceEnv } from '../../../spaces/models/space-env.model'
@@ -15,7 +17,6 @@ import { FilesLockManager } from '../../services/files-lock-manager.service'
 import * as filesUtils from '../../utils/files'
 import { OnlyOfficeManager } from './only-office-manager.service'
 import { ONLY_OFFICE_APP_LOCK } from './only-office.constants'
-import { Mocked } from 'vitest'
 
 vi.mock('../../utils/files')
 vi.mock('../../../users/utils/avatar', () => ({
@@ -135,6 +136,12 @@ describe(OnlyOfficeManager.name, () => {
       expect(result.config.editorConfig.mode).toBe(FILE_MODE.EDIT)
       expect(result.config.document.permissions.edit).toBe(true)
       expect(result.hasLock).toBe(false)
+      expect(jwtService.signAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tokenType: TOKEN_TYPE.ONLY_OFFICE
+        }),
+        expect.any(Object)
+      )
     })
 
     it('should throw error if document does not exist', async () => {
