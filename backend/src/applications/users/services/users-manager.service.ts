@@ -59,6 +59,24 @@ export class UsersManager {
     return user ? new UserModel(user, true) : null
   }
 
+  async fromAuthToken(authUser: UserModel): Promise<UserModel | null> {
+    const user = await this.fromUserId(authUser.id)
+    if (!user?.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
+      return null
+    }
+    if (authUser.impersonatedFromId) {
+      const impersonatingUser = await this.fromUserId(authUser.impersonatedFromId)
+      if (!impersonatingUser?.isActive || !impersonatingUser.isAdmin || impersonatingUser.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
+        return null
+      }
+      user.impersonatedFromId = authUser.impersonatedFromId
+      user.impersonatedClientId = authUser.impersonatedClientId
+    }
+    user.clientId = authUser.clientId
+    user.exp = authUser.exp
+    return user
+  }
+
   async findUser(loginOrEmail: string, removePassword: false): Promise<UserModel>
   async findUser(loginOrEmail: string, removePassword?: true): Promise<Omit<UserModel, 'password'>>
   async findUser(loginOrEmail: string, removePassword: boolean = true): Promise<Omit<UserModel, 'password'>> {

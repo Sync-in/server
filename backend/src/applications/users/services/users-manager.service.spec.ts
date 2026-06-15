@@ -17,7 +17,7 @@ import { fileName, isPathExists } from '../../files/utils/files'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { GROUP_TYPE } from '../constants/group'
 import { MEMBER_TYPE } from '../constants/member'
-import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_ROLE } from '../constants/user'
+import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_PERMISSION, USER_ROLE } from '../constants/user'
 import { CreateUserDto } from '../dto/create-or-update-user.dto'
 import { DeleteUserDto } from '../dto/delete-user.dto'
 import { UserModel } from '../models/user.model'
@@ -148,6 +148,56 @@ describe(UsersManager.name, () => {
     const me2 = await usersManager.me(authUser)
     expect(me2.user.impersonated).toBe(true)
     expect(me2.user.clientId).toBe('CID')
+  })
+
+  it('should resolve token users from current database state', async () => {
+    const authUser = new UserModel({
+      ...generateUserTest(),
+      id: 42,
+      role: USER_ROLE.ADMINISTRATOR,
+      applications: Object.values(USER_PERMISSION),
+      clientId: 'client-id',
+      exp: 1234
+    } as any)
+    const currentUser = {
+      ...generateUserTest(),
+      id: 42,
+      role: USER_ROLE.USER,
+      permissions: USER_PERMISSION.SPACES
+    }
+    usersQueriesService.from = vi.fn().mockResolvedValue(currentUser)
+
+    const resolved = await usersManager.fromAuthToken(authUser)
+
+    expect(resolved.role).toBe(USER_ROLE.USER)
+    expect(resolved.applications).toEqual([USER_PERMISSION.SPACES])
+    expect(resolved.clientId).toBe('client-id')
+    expect(resolved.exp).toBe(1234)
+
+    usersQueriesService.from = vi.fn().mockResolvedValue({ ...currentUser, isActive: false })
+    await expect(usersManager.fromAuthToken(authUser)).resolves.toBeNull()
+  })
+
+  it('should validate the source administrator before restoring impersonation', async () => {
+    const authUser = new UserModel({
+      ...generateUserTest(),
+      id: 42,
+      impersonatedFromId: 1,
+      impersonatedClientId: 'admin-client'
+    } as any)
+    const currentUser = { ...generateUserTest(), id: 42 }
+    const admin = { ...generateUserTest(), id: 1, role: USER_ROLE.ADMINISTRATOR }
+    usersQueriesService.from = vi.fn().mockImplementation(async (id: number) => (id === authUser.id ? currentUser : admin))
+
+    const resolved = await usersManager.fromAuthToken(authUser)
+
+    expect(resolved.impersonatedFromId).toBe(admin.id)
+    expect(resolved.impersonatedClientId).toBe('admin-client')
+
+    const formerAdmin = { ...generateUserTest(), id: 1, role: USER_ROLE.USER }
+    usersQueriesService.from = vi.fn().mockImplementation(async (id: number) => (id === authUser.id ? currentUser : formerAdmin))
+
+    await expect(usersManager.fromAuthToken(authUser)).resolves.toBeNull()
   })
 
   it('paths + avatars (default/generate) + create/delete user', async () => {

@@ -1,5 +1,6 @@
 import 'reflect-metadata'
 import { Socket } from 'socket.io'
+import { UserModel } from '../../../applications/users/models/user.model'
 import { TOKEN_TYPE } from '../../../authentication/interfaces/token.interface'
 import { configuration } from '../../../configuration/config.environment'
 import { WebSocketAdapter } from './web-socket.adapter'
@@ -9,6 +10,7 @@ describe(WebSocketAdapter.name, () => {
   const identity = { id: 1, login: 'foo' }
   let adapter: WebSocketAdapter
   let jwtService: { verify: ReturnType<typeof vi.fn> }
+  let usersManager: { fromAuthToken: ReturnType<typeof vi.fn> }
   let socket: Socket
   let next: ReturnType<typeof vi.fn>
 
@@ -16,9 +18,13 @@ describe(WebSocketAdapter.name, () => {
     jwtService = {
       verify: vi.fn()
     }
+    usersManager = {
+      fromAuthToken: vi.fn(async (user: UserModel): Promise<UserModel | null> => user)
+    }
     adapter = Object.create(WebSocketAdapter.prototype)
     Object.assign(adapter, {
       jwtService,
+      usersManager,
       logger: {
         warn: vi.fn()
       }
@@ -41,31 +47,47 @@ describe(WebSocketAdapter.name, () => {
     next = vi.fn()
   })
 
-  it('should authenticate a socket with a WebSocket token', () => {
+  it('should authenticate a socket with a WebSocket token', async () => {
     jwtService.verify.mockReturnValue({
       tokenType: TOKEN_TYPE.WS,
       identity
     })
 
-    Reflect.apply(Reflect.get(adapter, 'authenticateSocket'), adapter, [socket, next])
+    await Reflect.apply(Reflect.get(adapter, 'authenticateSocket'), adapter, [socket, next])
 
     expect(jwtService.verify).toHaveBeenCalledWith(token, {
       secret: configuration.auth.token.ws.secret
     })
-    expect(socket).toHaveProperty('user', identity)
+    expect(usersManager.fromAuthToken).toHaveBeenCalledOnce()
+    expect(socket).toHaveProperty('user')
     expect(next).toHaveBeenCalledWith()
   })
 
-  it.each([TOKEN_TYPE.ACCESS, TOKEN_TYPE.REFRESH, undefined])('should reject a token with type %s', (tokenType) => {
+  it.each([TOKEN_TYPE.ACCESS, TOKEN_TYPE.REFRESH, undefined])('should reject a token with type %s', async (tokenType) => {
     jwtService.verify.mockReturnValue({
       tokenType,
       identity
     })
 
-    Reflect.apply(Reflect.get(adapter, 'authenticateSocket'), adapter, [socket, next])
+    await Reflect.apply(Reflect.get(adapter, 'authenticateSocket'), adapter, [socket, next])
 
     expect(socket).not.toHaveProperty('user')
     expect(next).toHaveBeenCalledOnce()
+    expect(next.mock.calls[0][0]).toMatchObject({
+      message: 'Unauthorized'
+    })
+  })
+
+  it('should reject a WebSocket token when the current user is unavailable', async () => {
+    jwtService.verify.mockReturnValue({
+      tokenType: TOKEN_TYPE.WS,
+      identity
+    })
+    usersManager.fromAuthToken.mockResolvedValue(null)
+
+    await Reflect.apply(Reflect.get(adapter, 'authenticateSocket'), adapter, [socket, next])
+
+    expect(socket).not.toHaveProperty('user')
     expect(next.mock.calls[0][0]).toMatchObject({
       message: 'Unauthorized'
     })

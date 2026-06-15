@@ -7,6 +7,8 @@ import { parse } from 'cookie'
 import cluster from 'node:cluster'
 import { Namespace, ServerOptions, Socket } from 'socket.io'
 import { USERS_WS } from '../../../applications/users/constants/websocket'
+import { UserModel } from '../../../applications/users/models/user.model'
+import { UsersManager } from '../../../applications/users/services/users-manager.service'
 import { type JwtPayload } from '../../../authentication/interfaces/jwt-payload.interface'
 import { TOKEN_TYPE } from '../../../authentication/interfaces/token.interface'
 import { configuration } from '../../../configuration/config.environment'
@@ -20,11 +22,13 @@ export class WebSocketAdapter extends IoAdapter {
   private readonly app: NestFastifyApplication
   private readonly logger: Logger = new Logger(WebSocketAdapter.name)
   private readonly jwtService: JwtService
+  private readonly usersManager: UsersManager
 
   constructor(app: NestFastifyApplication) {
     super(app)
     this.app = app
     this.jwtService = app.get<JwtService>(JwtService)
+    this.usersManager = app.get<UsersManager>(UsersManager)
   }
 
   async initAdapter() {
@@ -70,7 +74,7 @@ export class WebSocketAdapter extends IoAdapter {
     }
   }
 
-  private authenticateSocket(socket: Socket, next: (err?: Error) => void) {
+  private async authenticateSocket(socket: Socket, next: (err?: Error) => void) {
     const cookies = socket.request.headers.cookie ? parse(socket.request.headers.cookie) : {}
     const token = cookies[configuration.auth.token.ws.name]
     if (!token) {
@@ -92,7 +96,18 @@ export class WebSocketAdapter extends IoAdapter {
       this.onAuthError('Invalid token type', socket, next)
       return
     }
-    Object.assign(socket, { user: payload.identity })
+    let user: UserModel
+    try {
+      user = await this.usersManager.fromAuthToken(new UserModel(payload.identity))
+    } catch (e) {
+      this.onAuthError(e.message, socket, next)
+      return
+    }
+    if (!user) {
+      this.onAuthError('User is unavailable', socket, next)
+      return
+    }
+    Object.assign(socket, { user })
     next()
   }
 
