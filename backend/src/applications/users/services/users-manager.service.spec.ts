@@ -279,6 +279,8 @@ describe(UsersManager.name, () => {
     const u3 = new UserModel({ ...generateUserTest(), secrets: { twoFaSecret: 'secret' } } as any, false)
     await expect(usersManager.updateAccesses(u3, 'new.ip', true)).resolves.toBeUndefined()
     expect(usersQueriesService.updateAccesses).toHaveBeenCalledWith(u3.id, 'new.ip', 'preserve')
+    await expect(usersManager.updateAccesses(u3, 'new.ip', false)).resolves.toBeUndefined()
+    expect(usersQueriesService.updateAccesses).toHaveBeenCalledWith(u3.id, 'new.ip', 'increment')
 
     usersQueriesService.updateAccesses = vi.fn().mockResolvedValue(false)
     await expect(usersManager.updateAccesses(u1, 'new.ip', false)).rejects.toThrow('Unable to update user accesses')

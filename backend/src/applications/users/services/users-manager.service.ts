@@ -180,7 +180,7 @@ export class UsersManager {
   }
 
   async updateAccesses(user: UserModel, ip: string, success: boolean, isAuthTwoFa = false) {
-    const preservePasswordAttempts = !isAuthTwoFa && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
+    const preservePasswordAttempts = success && !isAuthTwoFa && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
     if (!(await this.usersQueries.updateAccesses(user.id, ip, preservePasswordAttempts ? 'preserve' : success ? 'reset' : 'increment'))) {
       throw new Error('Unable to update user accesses')
     }
