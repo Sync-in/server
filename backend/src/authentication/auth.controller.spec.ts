@@ -129,13 +129,16 @@ describe(AuthController.name, () => {
   })
 
   it('should refresh JWT in cookies', async () => {
-    userTest.exp = currentTimeStamp() + convertHumanTimeToSeconds('30s')
+    const currentTime = currentTimeStamp()
+    userTest.exp = currentTime + convertHumanTimeToSeconds('30s')
     const res: any = { setCookie: vi.fn() }
     const result = await authController.refreshCookies(userTest, res)
     expect(result).toBeDefined()
+    expect(result).toBeInstanceOf(LoginResponseDto)
+    expect(result.user).toBe(userTest)
     expect(res.setCookie).toHaveBeenCalledTimes(4)
-    expect(result.access_expiration).toBeCloseTo(convertHumanTimeToSeconds(authConfig.token.access.expiration) + currentTimeStamp(), -1)
-    expect(result.refresh_expiration).toBe(userTest.exp)
+    expect(result.token.access_expiration).toBeCloseTo(convertHumanTimeToSeconds(authConfig.token.access.expiration) + currentTime, -1)
+    expect(result.token.refresh_expiration).toBe(userTest.exp)
   })
 
   it('should not refresh JWT in cookies', async () => {

@@ -7,12 +7,13 @@ export default defineConfig({
     globals: true,
     root: './',
     testTimeout: 30000,
+    typecheck: {
+      enabled: true
+    },
     coverage: {
       provider: 'v8',
       reportsDirectory: '../coverage/e2e',
-      include: [
-        'src/**/*.controller.{ts,js}'
-      ]
+      include: ['src/**/*.controller.{ts,js}']
     }
   },
   plugins: [

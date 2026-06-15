@@ -45,7 +45,7 @@ export class AuthController {
   @Post(AUTH_ROUTE.REFRESH)
   @AuthTokenSkip()
   @UseGuards(AuthTokenRefreshGuard)
-  refreshCookies(@GetUser() user: UserModel, @Res({ passthrough: true }) res: FastifyReply): Promise<TokenResponseDto> {
+  refreshCookies(@GetUser() user: UserModel, @Res({ passthrough: true }) res: FastifyReply): Promise<LoginResponseDto> {
     return this.authManager.refreshCookies(user, res)
   }
 

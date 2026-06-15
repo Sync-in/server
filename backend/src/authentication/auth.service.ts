@@ -72,18 +72,16 @@ export class AuthManager {
     return response
   }
 
-  async refreshCookies(user: UserModel, res: FastifyReply): Promise<TokenResponseDto> {
-    const response = {} as TokenResponseDto
+  async refreshCookies(user: UserModel, res: FastifyReply): Promise<LoginResponseDto> {
+    const response = new LoginResponseDto(user, serverConfig)
     const currentTime = currentTimeStamp()
-    let refreshTokenExpiration: number
     // refresh cookie must have the `exp` attribute
     // reuse token expiration to make it final
-    if (user.exp && user.exp > currentTime) {
-      refreshTokenExpiration = user.exp - currentTime
-    } else {
+    if (!user.exp || user.exp <= currentTime) {
       this.logger.error({ tag: this.refreshCookies.name, msg: `token ${TOKEN_TYPE.REFRESH} has incorrect expiration : *${user.login}*` })
       throw new HttpException('Token has expired', HttpStatus.FORBIDDEN)
     }
+    const refreshTokenExpiration = user.exp - currentTime
     const csrfToken: string = crypto.randomUUID()
     for (const type of TOKEN_TYPES) {
       const tokenExpiration =
@@ -96,7 +94,7 @@ export class AuthManager {
         httpOnly: type !== TOKEN_TYPE.CSRF
       })
       if (type === TOKEN_TYPE.ACCESS || type === TOKEN_TYPE.REFRESH) {
-        response[`${type}_expiration`] = tokenExpiration + currentTime
+        response.token[`${type}_expiration`] = tokenExpiration + currentTime
       }
     }
     return response

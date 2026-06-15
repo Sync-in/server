@@ -15,7 +15,6 @@ import {
   API_TWO_FA_LOGIN_VERIFY
 } from '@sync-in-server/backend/src/authentication/constants/routes'
 import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
-import type { TokenResponseDto } from '@sync-in-server/backend/src/authentication/dto/token-response.dto'
 import type { AuthOIDCSettings } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc.interfaces'
 import type { TwoFaResponseDto, TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
@@ -129,10 +128,9 @@ export class AuthService {
   }
 
   refreshToken(): Observable<boolean> {
-    return this.http.post<TokenResponseDto>(API_AUTH_REFRESH, null).pipe(
+    return this.http.post<LoginResponseDto>(API_AUTH_REFRESH, null).pipe(
       map((r) => {
-        this.accessExpiration = r.access_expiration
-        this.refreshExpiration = r.refresh_expiration
+        this.initUserFromResponse(r)
         return true
       }),
       catchError((e: HttpErrorResponse) => {
