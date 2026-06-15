@@ -219,6 +219,14 @@ describe(AuthProvider2FA.name, () => {
       expect(usersManager.updateAccesses).toHaveBeenCalledWith(mockUser, mockRequest.ip, true, true)
     })
 
+    it('should wait for access tracking before returning the verification result', async () => {
+      usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
+      vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
+      usersManager.updateAccesses.mockRejectedValueOnce(new Error('access tracking failed'))
+
+      await expect(service.verify(verifyDto, mockRequest as FastifyAuthenticatedRequest)).rejects.toThrow('access tracking failed')
+    })
+
     it('should verify recovery code successfully', async () => {
       const recoveryDto: TwoFaVerifyDto = { code: 'code-1', isRecoveryCode: true }
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
@@ -327,6 +335,13 @@ describe(AuthProvider2FA.name, () => {
         new HttpException('Incorrect code or password', HttpStatus.BAD_REQUEST)
       )
       expect(usersManager.updateAccesses).toHaveBeenCalledWith(mockUser, '127.0.0.1', false, true)
+    })
+
+    it('should wait for access tracking after an incorrect password', async () => {
+      usersManager.compareUserPassword.mockResolvedValue(false)
+      usersManager.updateAccesses.mockRejectedValueOnce(new Error('access tracking failed'))
+
+      await expect(service.verifyUserPassword(mockUser as UserModel, 'wrong-password', '127.0.0.1')).rejects.toThrow('access tracking failed')
     })
   })
 

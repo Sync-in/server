@@ -180,21 +180,10 @@ export class UsersManager {
   }
 
   async updateAccesses(user: UserModel, ip: string, success: boolean, isAuthTwoFa = false) {
-    let passwordAttempts: number
-    if (!isAuthTwoFa && configuration.auth.mfa.totp.enabled && user.twoFaEnabled) {
-      // Do not reset password attempts if the login still requires 2FA validation
-      passwordAttempts = user.passwordAttempts
-    } else {
-      passwordAttempts = success ? 0 : Math.min(user.passwordAttempts + 1, USER_MAX_PASSWORD_ATTEMPTS)
+    const preservePasswordAttempts = !isAuthTwoFa && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
+    if (!(await this.usersQueries.updateAccesses(user.id, ip, preservePasswordAttempts ? 'preserve' : success ? 'reset' : 'increment'))) {
+      throw new Error('Unable to update user accesses')
     }
-    await this.usersQueries.updateUserOrGuest(user.id, {
-      lastAccess: user.currentAccess,
-      currentAccess: new Date(),
-      lastIp: user.currentIp,
-      currentIp: ip,
-      passwordAttempts: passwordAttempts,
-      isActive: user.isActive && passwordAttempts < USER_MAX_PASSWORD_ATTEMPTS
-    })
   }
 
   async getAvatar(userLogin: string, generate: true, generateIsNotExists?: boolean): Promise<undefined>

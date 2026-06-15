@@ -85,7 +85,7 @@ export class AuthProvider2FA {
     const auth = verifyDto.isRecoveryCode
       ? await this.validateRecoveryCode(req.user.id, verifyDto.code, user.secrets.recoveryCodes)
       : this.validateTwoFactorCode(verifyDto.code, secret)
-    this.usersManager.updateAccesses(user, req.ip, auth.success, true).catch((e: Error) => this.logger.error({ tag: this.verify.name, msg: `${e}` }))
+    await this.usersManager.updateAccesses(user, req.ip, auth.success, true)
     return fromLogin ? [auth, user] : auth
   }
 
@@ -116,9 +116,7 @@ export class AuthProvider2FA {
     // This function works with any authentication method, provided that
     // the authentication service implements proper user password updates in the database.
     if (!(await this.usersManager.compareUserPassword(user.id, password))) {
-      this.usersManager
-        .updateAccesses(user, ip, false, true)
-        .catch((e: Error) => this.logger.error({ tag: this.verifyUserPassword.name, msg: `${e}` }))
+      await this.usersManager.updateAccesses(user, ip, false, true)
       throw new HttpException('Incorrect code or password', HttpStatus.BAD_REQUEST)
     }
   }

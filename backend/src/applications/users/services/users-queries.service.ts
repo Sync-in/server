@@ -17,7 +17,7 @@ import {
 } from '../../../infrastructure/database/utils'
 import { GROUP_TYPE, GROUP_VISIBILITY } from '../constants/group'
 import { MEMBER_TYPE } from '../constants/member'
-import { USER_GROUP_ROLE, USER_ONLINE_STATUS, USER_PERMS_SEP, USER_ROLE } from '../constants/user'
+import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_ONLINE_STATUS, USER_PERMS_SEP, USER_ROLE } from '../constants/user'
 import { UserCreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
 import { CreateUserDto } from '../dto/create-or-update-user.dto'
 import { SearchMembersDto } from '../dto/search-members.dto'
@@ -173,6 +173,30 @@ export class UsersQueries {
         tag: this.updateUserOrGuest.name,
         msg: `user (${userId}) was not updated : ${JSON.stringify(anonymizePassword(set))} : ${e}`
       })
+      return false
+    }
+  }
+
+  async updateAccesses(userId: number, ip: string, passwordAttempts: 'preserve' | 'reset' | 'increment'): Promise<boolean> {
+    const set: Partial<Record<keyof User, any>> = {
+      lastAccess: users.currentAccess,
+      currentAccess: new Date(),
+      lastIp: users.currentIp,
+      currentIp: ip
+    }
+    if (passwordAttempts === 'reset') {
+      set.passwordAttempts = 0
+    } else if (passwordAttempts === 'increment') {
+      // Keep the increment and account lock in one UPDATE to avoid lost updates under concurrent authentication failures.
+      set.isActive = sql`IF(${users.passwordAttempts} >= ${USER_MAX_PASSWORD_ATTEMPTS - 1}, FALSE, ${users.isActive})`
+      set.passwordAttempts = sql`LEAST(${users.passwordAttempts} + 1, ${USER_MAX_PASSWORD_ATTEMPTS})`
+    }
+    try {
+      dbCheckAffectedRows(await this.db.update(users).set(set).where(eq(users.id, userId)), 1)
+      this.logger.verbose({ tag: this.updateAccesses.name, msg: `accesses for user (${userId}) were updated` })
+      return true
+    } catch (e) {
+      this.logger.error({ tag: this.updateAccesses.name, msg: `accesses for user (${userId}) were not updated : ${e}` })
       return false
     }
   }
