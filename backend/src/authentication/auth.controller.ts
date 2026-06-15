@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Req, Res, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Header, Param, ParseIntPipe, Post, Req, Res, UseGuards } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { USER_ROLE } from '../applications/users/constants/user'
 import { UserHaveRole } from '../applications/users/decorators/roles.decorator'
@@ -72,6 +72,7 @@ export class AuthController {
   /* TWO-FA Part */
 
   @Get(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_ENABLE}`)
+  @Header('Cache-Control', 'no-store')
   @UseGuards(UserRolesGuard)
   @UserHaveRole(USER_ROLE.USER)
   twoFaInit(@GetUser() user: UserModel): Promise<TwoFaSetup> {
