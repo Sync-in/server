@@ -115,6 +115,7 @@ describe(AuthProvider2FA.name, () => {
     it('should throw error if verification fails', async () => {
       cache.get.mockResolvedValue('encrypted-secret')
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
+      usersManager.compareUserPassword.mockResolvedValue(true)
       vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: false, message: 'Invalid code' })
 
       await expect(service.enableTwoFactor(enableDto, mockRequest as FastifyAuthenticatedRequest)).rejects.toThrow(
@@ -125,12 +126,15 @@ describe(AuthProvider2FA.name, () => {
     it('should throw error if password is incorrect', async () => {
       cache.get.mockResolvedValue('encrypted-secret')
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
+      const validateTwoFactorCodeSpy = vi.spyOn(service, 'validateTwoFactorCode')
       usersManager.compareUserPassword.mockResolvedValue(false)
 
       await expect(service.enableTwoFactor(enableDto, mockRequest as FastifyAuthenticatedRequest)).rejects.toThrow(
         new HttpException('Incorrect code or password', HttpStatus.BAD_REQUEST)
       )
+      expect(validateTwoFactorCodeSpy).not.toHaveBeenCalled()
+      expect(usersManager.updateAccesses).toHaveBeenCalledWith(mockUser, mockRequest.ip, false, true)
+      expect(usersManager.updateAccesses).not.toHaveBeenCalledWith(mockUser, mockRequest.ip, true, true)
     })
 
     it('should enable 2FA and return recovery codes on success', async () => {
@@ -165,6 +169,7 @@ describe(AuthProvider2FA.name, () => {
 
     it('should throw error if verification fails', async () => {
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
+      usersManager.compareUserPassword.mockResolvedValue(true)
       vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: false, message: 'Invalid code' })
 
       await expect(service.disableTwoFactor(disableDto, mockRequest as FastifyAuthenticatedRequest)).rejects.toThrow(
@@ -174,12 +179,15 @@ describe(AuthProvider2FA.name, () => {
 
     it('should throw error if password is incorrect', async () => {
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      vi.spyOn(service, 'validateTwoFactorCode').mockReturnValue({ success: true, message: '' })
+      const validateTwoFactorCodeSpy = vi.spyOn(service, 'validateTwoFactorCode')
       usersManager.compareUserPassword.mockResolvedValue(false)
 
       await expect(service.disableTwoFactor(disableDto, mockRequest as FastifyAuthenticatedRequest)).rejects.toThrow(
         new HttpException('Incorrect code or password', HttpStatus.BAD_REQUEST)
       )
+      expect(validateTwoFactorCodeSpy).not.toHaveBeenCalled()
+      expect(usersManager.updateAccesses).toHaveBeenCalledWith(mockUser, mockRequest.ip, false, true)
+      expect(usersManager.updateAccesses).not.toHaveBeenCalledWith(mockUser, mockRequest.ip, true, true)
     })
 
     it('should disable 2FA on success', async () => {

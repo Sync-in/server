@@ -41,12 +41,14 @@ export class AuthProvider2FA {
       throw new HttpException('The secret has expired', HttpStatus.BAD_REQUEST)
     }
     // load user
-    const [auth, user] = await this.verify(body, req, true, secret)
+    const user = await this.loadUser(req.user.id, req.ip)
+    // verify user password
+    await this.verifyUserPassword(user, body.password, req.ip)
+    const auth = await this.validateVerificationCode(body, user, secret)
+    await this.usersManager.updateAccesses(user, req.ip, auth.success, true)
     if (!auth.success) {
       throw new HttpException(auth.message, HttpStatus.FORBIDDEN)
     }
-    // verify user password
-    await this.verifyUserPassword(user, body.password, req.ip)
     // generate recovery codes
     const recoveryCodes = this.generateRecoveryCodes()
     // store and enable TwoFA & recovery codes
@@ -60,12 +62,14 @@ export class AuthProvider2FA {
 
   async disableTwoFactor(body: TwoFaVerifyWithPasswordDto, req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
     // load user
-    const [auth, user] = await this.verify(body, req, true)
+    const user = await this.loadUser(req.user.id, req.ip)
+    // verify user password
+    await this.verifyUserPassword(user, body.password, req.ip)
+    const auth = await this.validateVerificationCode(body, user)
+    await this.usersManager.updateAccesses(user, req.ip, auth.success, true)
     if (!auth.success) {
       throw new HttpException(auth.message, HttpStatus.FORBIDDEN)
     }
-    // verify user password
-    await this.verifyUserPassword(user, body.password, req.ip)
     // store and disable TwoFA & recovery codes
     await this.usersManager.updateSecrets(user.id, { twoFaSecret: undefined, recoveryCodes: undefined })
     this.sendEmailNotification(req, ACTION.DELETE)
@@ -81,10 +85,7 @@ export class AuthProvider2FA {
     secret?: string
   ): Promise<TwoFaVerifyResult | [TwoFaVerifyResult, UserModel]> {
     const user = await this.loadUser(req.user.id, req.ip)
-    secret = secret || user.secrets.twoFaSecret
-    const auth = verifyDto.isRecoveryCode
-      ? await this.validateRecoveryCode(req.user.id, verifyDto.code, user.secrets.recoveryCodes)
-      : this.validateTwoFactorCode(verifyDto.code, secret)
+    const auth = await this.validateVerificationCode(verifyDto, user, secret)
     await this.usersManager.updateAccesses(user, req.ip, auth.success, true)
     return fromLogin ? [auth, user] : auth
   }
@@ -119,6 +120,13 @@ export class AuthProvider2FA {
       await this.usersManager.updateAccesses(user, ip, false, true)
       throw new HttpException('Incorrect code or password', HttpStatus.BAD_REQUEST)
     }
+  }
+
+  private async validateVerificationCode(verifyDto: TwoFaVerifyDto, user: UserModel, secret?: string): Promise<TwoFaVerifyResult> {
+    secret = secret || user.secrets.twoFaSecret
+    return verifyDto.isRecoveryCode
+      ? await this.validateRecoveryCode(user.id, verifyDto.code, user.secrets.recoveryCodes)
+      : this.validateTwoFactorCode(verifyDto.code, secret)
   }
 
   validateTwoFactorCode(code: string, encryptedSecret: string): TwoFaVerifyResult {
