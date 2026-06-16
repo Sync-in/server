@@ -6,7 +6,7 @@ import { SYNC_FILE_NAME_PREFIX } from '../constants/sync'
 const MAX_PATH_FILTER_LENGTH = 200
 const MAX_PATH_FILTER_REPETITIONS = 25
 
-export function getTmpFilePath(rPath: string): string {
+export function getSyncTmpFilePath(rPath: string): string {
   return `${path.dirname(rPath)}/${SYNC_FILE_NAME_PREFIX}${path.basename(rPath)}`
 }
 

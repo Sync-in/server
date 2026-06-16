@@ -26,6 +26,7 @@ import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileLock } from '../interfaces/file-lock.interface'
 import { FileLockProps } from '../interfaces/file-props.interface'
+import { SaveStreamOptions } from '../interfaces/save-stream.interface'
 import { FileError, SourceCleanupError } from '../models/file-error'
 import { LockConflict } from '../models/file-lock-error'
 import {
@@ -90,18 +91,10 @@ export class FilesManager {
     user: UserModel,
     space: SpaceEnv,
     req: FastifyAuthenticatedRequest,
-    options: {
-      checksumAlg: string
-      tmpPath?: string
-    }
+    options: SaveStreamOptions & { checksumAlg: string }
   ): Promise<string>
   async saveStream(user: UserModel, space: SpaceEnv, req: FastifyAuthenticatedRequest, options?: any): Promise<boolean>
-  async saveStream(
-    user: UserModel,
-    space: SpaceEnv,
-    req: FastifyAuthenticatedRequest,
-    options?: { dav?: { depth: LOCK_DEPTH; lockTokens: string[] }; checksumAlg?: string; tmpPath?: string }
-  ): Promise<boolean | string> {
+  async saveStream(user: UserModel, space: SpaceEnv, req: FastifyAuthenticatedRequest, options?: SaveStreamOptions): Promise<boolean | string> {
     // If tmpPath is used, we lock the final destination during the transfer
     // space.realPath is replaced by tmpPath (if allowed). If the move operation failed, we remove the tmp file
     this.checkNotTrashRepository(space)
@@ -136,6 +129,7 @@ export class FilesManager {
       fileLock = lock
     }
     const fileEventAction = fExists ? ACTION.UPDATE : ACTION.ADD
+    let fileWritten = false
     try {
       // Check range
       let startRange = 0
@@ -162,25 +156,31 @@ export class FilesManager {
         await writeFromStream(options?.tmpPath || space.realPath, req.raw, startRange)
       }
       if (options?.tmpPath) {
+        await options.validateTmpFile?.({ tmpPath: options.tmpPath, realPath: space.realPath, checksum })
         try {
           // ensure parent path exists
           await makeDir(path.dirname(space.realPath), true)
           // move the uploaded file to destination
           await moveFiles(options.tmpPath, space.realPath, true)
+          fileWritten = true
         } catch (e) {
           // cleanup tmp file
           await removeFiles(options.tmpPath)
           this.logger.error({ tag: this.saveStream.name, msg: `unable to move ${options.tmpPath} -> ${space.realPath} : ${e}` })
           throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Unable to move tmp file to dst file')
         }
+      } else {
+        fileWritten = true
       }
       if (options?.checksumAlg) {
         return checksum
       }
       return fExists
     } finally {
-      // emit file event
-      FileEvent.emit('event', { user, space, action: fileEventAction, rPath: space.realPath })
+      if (fileWritten) {
+        // emit file event
+        FileEvent.emit('event', { user, space, action: fileEventAction, rPath: space.realPath })
+      }
       if (fileLock) {
         try {
           await this.filesLockManager.removeLock(fileLock.key)

@@ -264,6 +264,29 @@ describe(FilesManager.name, () => {
       expect(filesLockManager.create).not.toHaveBeenCalled()
       expect(filesUtils.writeFromStreamAndChecksum).toHaveBeenCalled()
     })
+
+    it('should validate tmp stream before moving it to the destination', async () => {
+      const space = makeSpace()
+      const tmpPath = '/data/users/john/tmp/sync-in-file.txt'
+      const validationError = new FileError(HttpStatus.BAD_REQUEST, 'Invalid sync upload')
+      const validateTmpFile = vi.fn().mockRejectedValue(validationError)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
+      setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true, [tmpPath]: true }, false)
+
+      await expect(
+        service.saveStream(user, space, { method: 'PUT', headers: {}, raw: Readable.from(['chunk']) } as any, {
+          tmpPath,
+          checksumAlg: 'sha256',
+          validateTmpFile
+        })
+      ).rejects.toEqual(validationError)
+
+      expect(validateTmpFile).toHaveBeenCalledWith({ tmpPath, realPath: space.realPath, checksum: 'sha256-abc' })
+      expect(filesUtils.writeFromStreamAndChecksum).toHaveBeenCalledWith(tmpPath, expect.anything(), 0, 'sha256')
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(tmpPath)
+      expect(emitSpy).not.toHaveBeenCalled()
+    })
   })
 
   describe('saveMultipart', () => {
