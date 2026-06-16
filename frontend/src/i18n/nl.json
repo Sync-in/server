@@ -132,7 +132,6 @@
   "Storage quota exceeded": "Opslagquotum overschreden",
   "File size limit exceeded": "Limiet voor bestandsgrootte overschreden",
   "The trash is read-only": "De prullenbak is alleen-lezen",
-  "Storage quota will be exceeded": "Opslagquotum wordt overschreden",
   "Access to internal IP addresses is forbidden": "Toegang tot interne IP-adressen is verboden",
   "Missing or invalid \"content-length\" header": "Ontbrekende of ongeldige \"content-length\"-header",
   "Maximum redirects exceeded": "Maximumaantal omleidingen overschreden",

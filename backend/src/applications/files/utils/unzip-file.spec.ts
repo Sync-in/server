@@ -77,6 +77,6 @@ describe(extractZip.name, () => {
   it('rejects entries exceeding the extracted size limit', async () => {
     await writeFile(archivePath, createZip('large.txt', Buffer.from('ab')))
 
-    await expect(extractZip(archivePath, outputDir, 1)).rejects.toThrow('Storage quota will be exceeded')
+    await expect(extractZip(archivePath, outputDir, 1)).rejects.toThrow('Storage quota exceeded')
   })
 })

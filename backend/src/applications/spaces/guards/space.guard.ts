@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { HTTP_METHOD } from '../../applications.constants'
+import { FILE_ERROR } from '../../files/constants/errors'
 import { COLLABORA_CONTEXT } from '../../files/editors/collabora-online/collabora-online.constants'
 import { COLLABORA_ONLINE_TO_SPACE_SEGMENTS } from '../../files/editors/collabora-online/collabora-online.utils'
 import { isPathExists, isPathIsDir } from '../../files/utils/files'
@@ -17,7 +18,6 @@ import { SpaceEnv } from '../models/space-env.model'
 import { SpacesManager } from '../services/spaces-manager.service'
 import { canAccessToSpaceUrl, haveSpaceEnvPermissions } from '../utils/permissions'
 import { PATH_TO_SPACE_SEGMENTS } from '../utils/routes'
-import { FILE_ERROR_MESSAGES } from '../../files/utils/errors'
 
 @Injectable()
 export class SpaceGuard implements CanActivate {
@@ -48,11 +48,11 @@ export class SpaceGuard implements CanActivate {
       }
       if (req.space.quotaIsExceeded) {
         logger.warn(`Storage quota exceeded for *${req.space.alias}* (${req.space.id})`)
-        throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)
+        throw new HttpException(FILE_ERROR.STORAGE_QUOTA_EXCEEDED, HttpStatus.INSUFFICIENT_STORAGE)
       } else if (req.space.storageQuota) {
         const contentLength = parseInt(req.headers['content-length'] || '0', 10) || 0
         if (req.space.willExceedQuota(contentLength)) {
-          throw new HttpException(FILE_ERROR_MESSAGES.STORAGE_QUOTA_EXCEEDED, HttpStatus.INSUFFICIENT_STORAGE)
+          throw new HttpException(FILE_ERROR.STORAGE_QUOTA_EXCEEDED, HttpStatus.INSUFFICIENT_STORAGE)
         }
       }
     }

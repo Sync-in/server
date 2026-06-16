@@ -109,7 +109,7 @@ describe(createTar.name, () => {
     await writeFile(sourceFile, 'content')
 
     await expect(createTar(archivePath, [{ path: sourceFile, name: 'file.txt' }], false, undefined, undefined, 1)).rejects.toThrow(
-      'Storage quota will be exceeded'
+      'Storage quota exceeded'
     )
   })
 

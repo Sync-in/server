@@ -132,7 +132,6 @@
   "Storage quota exceeded": "ストレージの割り当てを超えています",
   "File size limit exceeded": "ファイルサイズの上限を超えています",
   "The trash is read-only": "ゴミ箱は読み取り専用です",
-  "Storage quota will be exceeded": "ストレージの割り当てを超過する見込みです",
   "Access to internal IP addresses is forbidden": "内部 IP アドレスへのアクセスは禁止されています",
   "Missing or invalid \"content-length\" header": "\"content-length\" ヘッダーがないか無効です",
   "Maximum redirects exceeded": "最大リダイレクト数を超えました",

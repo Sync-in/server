@@ -2,6 +2,7 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { ACTION } from '../../../common/constants'
 import { currentTimeStamp } from '../../../common/shared'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
+import { FILE_ERROR } from '../../files/constants/errors'
 import type { FileProps } from '../../files/interfaces/file-props.interface'
 import { FilesQueries } from '../../files/services/files-queries.service'
 import { getProps, isPathExists, isPathIsDir } from '../../files/utils/files'
@@ -37,7 +38,7 @@ export class SyncPathsManager {
       throw new HttpException('Client id is missing', HttpStatus.BAD_REQUEST)
     }
     if (req.space.quotaIsExceeded) {
-      throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)
+      throw new HttpException(FILE_ERROR.STORAGE_QUOTA_EXCEEDED, HttpStatus.INSUFFICIENT_STORAGE)
     }
 
     // Check DB path

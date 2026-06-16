@@ -4,6 +4,7 @@ import fs from 'fs/promises'
 import { Dirent, Stats } from 'node:fs'
 import path from 'node:path'
 import { regExpPathPattern } from '../../../common/functions'
+import { FILE_ERROR } from '../../files/constants/errors'
 import { FILE_OPERATION } from '../../files/constants/operations'
 import { FileError } from '../../files/models/file-error'
 import { LockConflict } from '../../files/models/file-lock-error'
@@ -56,7 +57,7 @@ export class SyncManager {
             throw new FileError(HttpStatus.BAD_REQUEST, `sizes are not identical : ${tmpStats.size} != ${syncUploadDto.size}`)
           }
           if (req.space.storageQuota && req.space.willExceedQuota(tmpStats.size)) {
-            throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, 'Storage quota exceeded')
+            throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
           }
           if (syncUploadDto.checksum && checksum !== syncUploadDto.checksum) {
             throw new FileError(HttpStatus.BAD_REQUEST, 'checksums are not identical')
@@ -141,7 +142,7 @@ export class SyncManager {
       throw new HttpException('Space not found', HttpStatus.NOT_FOUND)
     }
     if (space.quotaIsExceeded) {
-      throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)
+      throw new HttpException(FILE_ERROR.STORAGE_QUOTA_EXCEEDED, HttpStatus.INSUFFICIENT_STORAGE)
     }
     if (!(await isPathExists(space.realPath))) {
       throw new HttpException(`Remote path not found : ${syncPathSettings.remotePath}`, HttpStatus.NOT_FOUND)

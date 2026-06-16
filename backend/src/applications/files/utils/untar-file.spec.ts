@@ -58,7 +58,7 @@ describe(extractTar.name, () => {
     await createArchive(true)
     const destroySpy = vi.spyOn(fs.ReadStream.prototype, 'destroy')
 
-    await expect(extractTar(archivePath, outputDir, true, 1)).rejects.toThrow('Storage quota will be exceeded')
+    await expect(extractTar(archivePath, outputDir, true, 1)).rejects.toThrow('Storage quota exceeded')
     expect(destroySpy).toHaveBeenCalled()
   })
 

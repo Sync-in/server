@@ -62,11 +62,12 @@ import { FilesQueries } from './files-queries.service'
 import { FileEvent, FileTaskEvent } from '../events/file-events'
 import { ACTION } from '../../../common/constants'
 import { isMultipartFileTooLargeError, uploadTmpFilePath } from '../utils/upload-file'
-import { FILE_ERROR_MESSAGES, maxFileSizeExceededError } from '../utils/errors'
+import { maxFileSizeExceededError } from '../utils/errors'
 import { createTaskTemporaryDir, taskTemporaryPath } from '../utils/tasks'
 import { FilesTasksTransfer } from './tasks/files-tasks-transfer.service'
 import { createTar } from '../utils/tar-file'
 import { createZip } from '../utils/zip-file'
+import { FILE_ERROR } from '../constants/errors'
 
 @Injectable()
 export class FilesManager {
@@ -403,7 +404,7 @@ export class FilesManager {
     }
     if (dstSpace.quotaIsExceeded) {
       this.logger.warn({ tag: this.copyMove.name, msg: `quota is exceeded for *${dstSpace.alias}* (${dstSpace.id})` })
-      throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, 'Quota is exceeded')
+      throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
     }
     if (!(await isPathExists(srcSpace.realPath))) {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
@@ -453,8 +454,8 @@ export class FilesManager {
       if (!isMove || (isMove && srcSpace.id !== dstSpace.id)) {
         const size = isDir ? (await dirSize(srcSpace.realPath))[0] : await fileSize(srcSpace.realPath)
         if (dstSpace.willExceedQuota(size)) {
-          this.logger.warn({ tag: this.copyMove.name, msg: `${FILE_ERROR_MESSAGES.STORAGE_QUOTA_EXCEEDED} for *${dstSpace.alias}* (${dstSpace.id})` })
-          throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR_MESSAGES.STORAGE_QUOTA_EXCEEDED)
+          this.logger.warn({ tag: this.copyMove.name, msg: `${FILE_ERROR.STORAGE_QUOTA_EXCEEDED} for *${dstSpace.alias}* (${dstSpace.id})` })
+          throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
         }
       }
     }

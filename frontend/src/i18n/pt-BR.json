@@ -132,7 +132,6 @@
   "Storage quota exceeded": "Cota de armazenamento excedida",
   "File size limit exceeded": "Limite de tamanho do arquivo excedido",
   "The trash is read-only": "A lixeira é somente leitura",
-  "Storage quota will be exceeded": "A cota de armazenamento será excedida",
   "Access to internal IP addresses is forbidden": "O acesso a endereços IP internos é proibido",
   "Missing or invalid \"content-length\" header": "Cabeçalho \"content-length\" ausente ou inválido",
   "Maximum redirects exceeded": "Número máximo de redirecionamentos excedido",

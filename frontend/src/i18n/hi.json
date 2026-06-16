@@ -132,7 +132,6 @@
   "Storage quota exceeded": "भंडारण कोटा पार हो गया",
   "File size limit exceeded": "फ़ाइल आकार की सीमा पार हो गई",
   "The trash is read-only": "ट्रैश केवल-पढ़ने योग्य है",
-  "Storage quota will be exceeded": "भंडारण कोटा पार हो जाएगा",
   "Access to internal IP addresses is forbidden": "आंतरिक IP पतों तक पहुँच निषिद्ध है",
   "Missing or invalid \"content-length\" header": "\"content-length\" हेडर मौजूद नहीं है या अमान्य है",
   "Maximum redirects exceeded": "रीडायरेक्ट की अधिकतम संख्या पार हो गई",

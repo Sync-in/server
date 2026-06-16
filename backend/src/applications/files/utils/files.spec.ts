@@ -6,8 +6,9 @@ import { Readable } from 'node:stream'
 import fse from 'fs-extra'
 import type { MockInstance } from 'vitest'
 import { FileError } from '../models/file-error'
-import { FILE_ERROR_MESSAGES, storageQuotaExceededError } from './errors'
+import { storageQuotaExceededError } from './errors'
 import { createSizeLimiter, isCrossDevice, isPathInside, makeTempDir, tempFilePath, writeFromStream } from './files'
+import { FILE_ERROR } from '../constants/errors'
 
 describe(createSizeLimiter.name, () => {
   it('rejects the call that makes the cumulative size exceed the limit', () => {
@@ -23,7 +24,7 @@ describe(createSizeLimiter.name, () => {
     }
     expect(sizeError).toMatchObject({
       httpCode: HttpStatus.INSUFFICIENT_STORAGE,
-      message: FILE_ERROR_MESSAGES.STORAGE_QUOTA_EXCEEDED,
+      message: FILE_ERROR.STORAGE_QUOTA_EXCEEDED,
       name: FileError.name
     })
   })
@@ -88,7 +89,7 @@ describe(writeFromStream.name, () => {
 
     await expect(writeFromStream(filePath, Readable.from([Buffer.from('abcd')]), 0, 3)).rejects.toMatchObject({
       httpCode: HttpStatus.PAYLOAD_TOO_LARGE,
-      message: FILE_ERROR_MESSAGES.MAX_FILE_SIZE_EXCEEDED,
+      message: FILE_ERROR.MAX_FILE_SIZE_EXCEEDED,
       name: FileError.name
     })
   })
