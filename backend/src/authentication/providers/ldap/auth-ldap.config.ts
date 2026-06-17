@@ -49,7 +49,7 @@ export class AuthProviderLDAPOptionsConfig {
 
   @IsOptional()
   @IsBoolean()
-  enablePasswordAuthFallback? = true
+  enablePasswordAuthFallback? = false
 }
 
 export class AuthProviderLDAPConfig {

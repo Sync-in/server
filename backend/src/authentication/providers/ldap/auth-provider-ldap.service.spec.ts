@@ -73,7 +73,7 @@ describe(AuthProviderLDAP.name, () => {
       options: {
         autoCreateUser: true,
         autoCreatePermissions: [],
-        enablePasswordAuthFallback: true
+        enablePasswordAuthFallback: false
       }
     }
     const next: AuthProviderLDAPConfig = {
@@ -216,6 +216,7 @@ describe(AuthProviderLDAP.name, () => {
   })
 
   it('should fallback to local auth when LDAP is unavailable and fallback is enabled', async () => {
+    setLdapConfig({ options: { enablePasswordAuthFallback: true } })
     const existingUser: any = buildUser({ id: 2 })
     usersManager.findUser.mockResolvedValue(existingUser)
     usersManager.logUser.mockResolvedValue(existingUser)

@@ -197,11 +197,11 @@ auth:
       # If not set, existing administrator users keep their role and it cannot be removed via LDAP.
       # optional
       adminGroup:
-      # enablePasswordAuthFallback: Allow local password authentication when LDAP authentication fails.
-      # When enabled, users can authenticate with their local password if the LDAP service is unavailable.
+      # enablePasswordAuthFallback: Allow local password authentication for regular users when the LDAP service is unavailable.
+      # Applies only to LDAP connection/DNS/timeout errors after all configured LDAP servers fail.
       # Always allowed for administrator users (break-glass access).
-      # default: true
-      enablePasswordAuthFallback: true
+      # default: false
+      enablePasswordAuthFallback: false
   oidc:
     # issuerUrl: The URL of the OIDC provider's discovery endpoint
     # e.g.:
