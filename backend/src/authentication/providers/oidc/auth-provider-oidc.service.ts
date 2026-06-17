@@ -516,6 +516,9 @@ export class AuthProviderOIDC implements AuthProvider {
     if (!email) {
       throw new HttpException('No email address found in the OIDC profile', HttpStatus.BAD_REQUEST)
     }
+    if (this.oidcConfig.security.requireVerifiedEmail && (userInfo as { email_verified?: boolean }).email_verified !== true) {
+      throw new HttpException('OIDC email must be verified', HttpStatus.BAD_REQUEST)
+    }
 
     const login = userInfo.preferred_username ?? (email ? email.split('@')[0] : undefined) ?? userInfo.sub
     if (!login) {

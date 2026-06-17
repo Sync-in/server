@@ -41,6 +41,7 @@ vi.mock('../../../configuration/config.environment', () => ({
           tokenEndpointAuthMethod: 'client_secret_basic',
           allowInsecureRequests: false,
           skipSubjectCheck: false,
+          requireVerifiedEmail: false,
           allowPrivateIpAvatarDownload: false
         },
         options: {
@@ -152,6 +153,7 @@ describe(AuthProviderOIDC.name, () => {
     ;(service as any).oidcConfig.security.supportPKCE = true
     ;(service as any).oidcConfig.security.allowInsecureRequests = false
     ;(service as any).oidcConfig.security.allowPrivateIpAvatarDownload = false
+    ;(service as any).oidcConfig.security.requireVerifiedEmail = false
     ;(service as any).oidcConfig.options.autoSyncAvatar = false
   })
 
@@ -255,10 +257,17 @@ describe(AuthProviderOIDC.name, () => {
     vi.spyOn(service, 'getConfig').mockResolvedValue(config as any)
     const processSpy = vi.spyOn(service as any, 'processUserInfo').mockResolvedValue({ id: 7 } as any)
     vi.mocked(authorizationCodeGrant).mockResolvedValue({
-      claims: () => ({ sub: 'subject-1' }),
-      access_token: 'access-token'
-    })
-    vi.mocked(fetchUserInfo).mockResolvedValue({ sub: 'subject-1', email: 'a@b.c', preferred_username: 'alice' })
+      claims: () => ({
+        iss: 'https://issuer.example.test',
+        aud: 'client-id',
+        iat: 1,
+        exp: 2,
+        sub: 'subject-1'
+      }),
+      access_token: 'access-token',
+      token_type: 'bearer'
+    } as unknown as Awaited<ReturnType<typeof authorizationCodeGrant>>)
+    vi.mocked(fetchUserInfo).mockResolvedValue({ sub: 'subject-1', email: 'a@b.c', email_verified: true, preferred_username: 'alice' })
     const req = {
       cookies: {
         [OAuthCookie.State]: 'state-1',
@@ -272,7 +281,7 @@ describe(AuthProviderOIDC.name, () => {
     const result = await service.handleCallback(req as any, reply as any, { code: 'abc' })
 
     expect(result).toEqual({ id: 7 })
-    expect(processSpy).toHaveBeenCalledWith({ sub: 'subject-1', email: 'a@b.c', preferred_username: 'alice' }, '127.0.0.1')
+    expect(processSpy).toHaveBeenCalledWith({ sub: 'subject-1', email: 'a@b.c', email_verified: true, preferred_username: 'alice' }, '127.0.0.1')
     expect(reply.clearCookie).toHaveBeenCalledWith(OAuthCookie.State, { path: '/' })
     expect(reply.clearCookie).toHaveBeenCalledWith(OAuthCookie.Nonce, { path: '/' })
     expect(reply.clearCookie).toHaveBeenCalledWith(OAuthCookie.CodeVerifier, { path: '/' })
@@ -320,7 +329,7 @@ describe(AuthProviderOIDC.name, () => {
     usersManager.findUser.mockResolvedValue(null)
     adminUsersManager.createUserOrGuest.mockResolvedValue({ id: 10, login: 'bob' })
     usersManager.fromUserId.mockResolvedValue({ id: 10, role: USER_ROLE.ADMINISTRATOR, login: 'bob', setFullName: vi.fn() } as any)
-    const userInfo = { sub: 'x', email: 'b@c.d', preferred_username: 'bob', groups: ['admins'] }
+    const userInfo = { sub: 'x', email: 'b@c.d', email_verified: true, preferred_username: 'bob', groups: ['admins'] }
 
     const result = await (service as any).processUserInfo(userInfo, '127.0.0.1')
 
@@ -331,13 +340,33 @@ describe(AuthProviderOIDC.name, () => {
     expect(result.role).toBe(USER_ROLE.ADMINISTRATOR)
   })
 
+  it('rejects OIDC profiles with unverified emails when verification is enabled', async () => {
+    ;(service as any).oidcConfig.security.requireVerifiedEmail = true
+
+    await expect(
+      (service as any).processUserInfo({ sub: 'x', email: 'alice@example.org', email_verified: false, preferred_username: 'alice' }, '127.0.0.1')
+    ).rejects.toMatchObject({ status: HttpStatus.BAD_REQUEST, message: 'OIDC email must be verified' })
+  })
+
+  it('allows OIDC profiles with unverified emails by default', async () => {
+    const existingUser = { id: 19, login: 'alice', email: 'alice@example.org', role: USER_ROLE.USER, setFullName: vi.fn() } as any
+    usersManager.findUser.mockResolvedValue(existingUser)
+
+    const result = await (service as any).processUserInfo(
+      { sub: 'x', email: 'alice@example.org', email_verified: false, preferred_username: 'alice' },
+      '127.0.0.1'
+    )
+
+    expect(result).toBe(existingUser)
+  })
+
   it('does not sync the user avatar by default', async () => {
     const existingUser = { id: 20, login: 'alice', email: 'alice@example.org', role: USER_ROLE.USER, setFullName: vi.fn() } as any
     usersManager.findUser.mockResolvedValue(existingUser)
     const updatePictureUrlSpy = vi.spyOn(service as any, 'updatePictureUrl').mockResolvedValue(undefined)
 
     await (service as any).processUserInfo(
-      { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', picture: 'https://cdn.example.test/avatar.jpg' },
+      { sub: 'x', email: 'alice@example.org', email_verified: true, preferred_username: 'alice', picture: 'https://cdn.example.test/avatar.jpg' },
       '127.0.0.1'
     )
 
@@ -347,7 +376,13 @@ describe(AuthProviderOIDC.name, () => {
   it('syncs the user avatar when enabled', async () => {
     ;(service as any).oidcConfig.options.autoSyncAvatar = true
     const existingUser = { id: 21, login: 'alice', email: 'alice@example.org', role: USER_ROLE.USER, setFullName: vi.fn() } as any
-    const userInfo = { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', picture: 'https://cdn.example.test/avatar.jpg' }
+    const userInfo = {
+      sub: 'x',
+      email: 'alice@example.org',
+      email_verified: true,
+      preferred_username: 'alice',
+      picture: 'https://cdn.example.test/avatar.jpg'
+    }
     usersManager.findUser.mockResolvedValue(existingUser)
     const updatePictureUrlSpy = vi.spyOn(service as any, 'updatePictureUrl').mockResolvedValue(undefined)
 
@@ -361,44 +396,56 @@ describe(AuthProviderOIDC.name, () => {
       {
         mode: 'create',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'sam@c.d', preferred_username: 'sam', [DEFAULT_STORAGE_QUOTA_FIELD]: '2048' },
+        profile: { sub: 'x', email: 'sam@c.d', email_verified: true, preferred_username: 'sam', [DEFAULT_STORAGE_QUOTA_FIELD]: '2048' },
         expectedQuota: 2048
       },
       {
         mode: 'create',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'sam0@c.d', preferred_username: 'sam0', [DEFAULT_STORAGE_QUOTA_FIELD]: 0 },
+        profile: { sub: 'x', email: 'sam0@c.d', email_verified: true, preferred_username: 'sam0', [DEFAULT_STORAGE_QUOTA_FIELD]: 0 },
         expectedQuota: null
       },
       {
         mode: 'create',
         claimName: 'quotaBytes',
-        profile: { sub: 'x', email: 'samq@c.d', preferred_username: 'samq', quotaBytes: '4096' },
+        profile: { sub: 'x', email: 'samq@c.d', email_verified: true, preferred_username: 'samq', quotaBytes: '4096' },
         expectedQuota: 4096
       },
       {
         mode: 'update',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice' },
+        profile: { sub: 'x', email: 'alice@example.org', email_verified: true, preferred_username: 'alice' },
         expectedUpdate: false
       },
       {
         mode: 'update',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', [DEFAULT_STORAGE_QUOTA_FIELD]: null },
+        profile: { sub: 'x', email: 'alice@example.org', email_verified: true, preferred_username: 'alice', [DEFAULT_STORAGE_QUOTA_FIELD]: null },
         expectedUpdate: true,
         expectedQuota: null
       },
       {
         mode: 'update',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', [DEFAULT_STORAGE_QUOTA_FIELD]: 'invalid' },
+        profile: {
+          sub: 'x',
+          email: 'alice@example.org',
+          email_verified: true,
+          preferred_username: 'alice',
+          [DEFAULT_STORAGE_QUOTA_FIELD]: 'invalid'
+        },
         expectedUpdate: false
       },
       {
         mode: 'update',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', [DEFAULT_STORAGE_QUOTA_FIELD]: '9007199254740992' },
+        profile: {
+          sub: 'x',
+          email: 'alice@example.org',
+          email_verified: true,
+          preferred_username: 'alice',
+          [DEFAULT_STORAGE_QUOTA_FIELD]: '9007199254740992'
+        },
         expectedUpdate: false
       }
     ] as const

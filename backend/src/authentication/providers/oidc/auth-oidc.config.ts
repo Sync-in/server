@@ -47,6 +47,10 @@ export class AuthProviderOIDCSecurityConfig {
 
   @IsOptional()
   @IsBoolean()
+  requireVerifiedEmail? = false
+
+  @IsOptional()
+  @IsBoolean()
   allowPrivateIpAvatarDownload? = false
 }
 

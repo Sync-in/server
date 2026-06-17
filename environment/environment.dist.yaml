@@ -312,6 +312,11 @@ auth:
       # Set to true only for non-compliant or legacy OIDC providers.
       # default: false
       skipSubjectCheck: false
+      # requireVerifiedEmail: Require the OIDC provider to mark profile emails as verified before account linking or profile synchronization.
+      # Recommended when your provider exposes a reliable `email_verified` claim.
+      # Some providers omit this claim unless specific scopes/mappers are configured.
+      # default: false
+      requireVerifiedEmail: false
       # allowPrivateIpAvatarDownload: Allow OIDC avatar downloads from private/internal IP ranges.
       # Set to true only when the OIDC provider returns trusted internal avatar URLs.
       # default: false
