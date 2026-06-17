@@ -385,6 +385,20 @@ applications:
         # If you use https, set to `true`.
         # default: false
         verifySSL: false
+      eurooffice:
+        # enable Euro-Office integration
+        # default: false
+        enabled: false
+        # Secret used for jwt tokens, it must be the same on the Euro-Office server
+        # required
+        secret: 'euroOfficeSecret'
+        # If an external server is configured, it will be used.
+        # Note: make sure it is accessible from the client/browser.
+        # default: null
+        externalServer:
+        # If you use https, set to `true`.
+        # default: false
+        verifySSL: false
       collabora:
         # enable collabora online integration
         # default: false

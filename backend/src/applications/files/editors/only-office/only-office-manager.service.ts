@@ -38,6 +38,7 @@ import {
   writeFromStream
 } from '../../utils/files'
 import {
+  EURO_OFFICE_APP_LOCK,
   ONLY_OFFICE_APP_LOCK,
   ONLY_OFFICE_CACHE_KEY,
   ONLY_OFFICE_CONVERT_ERROR,
@@ -55,8 +56,12 @@ import { ACTION } from '../../../../common/constants'
 @Injectable()
 export class OnlyOfficeManager {
   private logger = new Logger(OnlyOfficeManager.name)
-  private readonly externalOnlyOfficeServer = configuration.applications.files.editors.onlyoffice.externalServer || null
-  private readonly rejectUnauthorized: boolean = !configuration.applications.files.editors.onlyoffice?.verifySSL
+  private readonly officeConfig = configuration.applications.files.editors.onlyoffice.enabled
+    ? configuration.applications.files.editors.onlyoffice
+    : configuration.applications.files.editors.eurooffice
+  private readonly officeAppLock = configuration.applications.files.editors.onlyoffice.enabled ? ONLY_OFFICE_APP_LOCK : EURO_OFFICE_APP_LOCK
+  private readonly externalOnlyOfficeServer = this.officeConfig.externalServer || null
+  private readonly rejectUnauthorized: boolean = !this.officeConfig.verifySSL
   private readonly convertUrl = this.externalOnlyOfficeServer ? `${this.externalOnlyOfficeServer}/ConvertService.ashx` : null
   private readonly expiration = convertHumanTimeToSeconds(configuration.auth.token.refresh.expiration)
   private readonly mobileRegex: RegExp = /android|webos|iphone|ipad|ipod|blackberry|windows phone|opera mini|iemobile|mobile/i
@@ -87,7 +92,7 @@ export class OnlyOfficeManager {
       try {
         await this.filesLockManager.checkConflicts(space.dbFile, DEPTH.RESOURCE, {
           userId: user.id,
-          app: ONLY_OFFICE_APP_LOCK,
+          app: this.officeAppLock,
           lockScope: LOCK_SCOPE.SHARED
         })
       } catch (e) {
@@ -110,7 +115,7 @@ export class OnlyOfficeManager {
   }
 
   async callBack(user: UserModel, space: SpaceEnv, token: string) {
-    const callBackData: OnlyOfficeCallBack = await this.jwt.verifyAsync(token, { secret: configuration.applications.files.editors.onlyoffice.secret })
+    const callBackData: OnlyOfficeCallBack = await this.jwt.verifyAsync(token, { secret: this.officeConfig.secret })
     try {
       switch (callBackData.status) {
         case 1:
@@ -230,7 +235,7 @@ export class OnlyOfficeManager {
   }
 
   private genPayloadToken(payload: OnlyOfficeConfig | OnlyOfficeConvertForm): Promise<string> {
-    return this.jwt.signAsync(payload, { secret: configuration.applications.files.editors.onlyoffice.secret, expiresIn: 60 })
+    return this.jwt.signAsync(payload, { secret: this.officeConfig.secret, expiresIn: 60 })
   }
 
   private genAuthToken(user: UserModel): Promise<string> {
@@ -277,7 +282,7 @@ export class OnlyOfficeManager {
     const [ok, _fileLock] = await this.filesLockManager.create(
       user,
       space.dbFile,
-      ONLY_OFFICE_APP_LOCK,
+      this.officeAppLock,
       DEPTH.RESOURCE,
       {
         lockRoot: null,

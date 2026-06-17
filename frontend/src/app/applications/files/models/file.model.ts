@@ -182,13 +182,13 @@ export class FileModel implements File {
     if (extension === SHORT_MIME.PDF) {
       this.shortMime = SHORT_MIME.PDF
       this.isViewable = true
-      this.isEditable = editorConfig.onlyoffice === true
+      this.isEditable = editorConfig.onlyoffice === true || editorConfig.eurooffice === true
       return mime || mimeFile
     }
 
     if (
       (editorConfig.collabora === true && COLLABORA_ONLINE_EXTENSIONS.has(extension)) ||
-      (editorConfig.onlyoffice === true && ONLY_OFFICE_EXTENSIONS.has(extension))
+      ((editorConfig.onlyoffice === true || editorConfig.eurooffice === true) && ONLY_OFFICE_EXTENSIONS.has(extension))
     ) {
       this.shortMime = SHORT_MIME.DOCUMENT
       this.isEditable = true

@@ -17,6 +17,7 @@ export const serverConfig: ServerConfig = {
   files: {
     editors: {
       collabora: configuration.applications.files.editors.collabora.enabled,
+      eurooffice: configuration.applications.files.editors.eurooffice.enabled,
       onlyoffice: configuration.applications.files.editors.onlyoffice.enabled
     },
     sampleDocuments: getDocumentTypes(configuration.applications.files.sampleDocuments)

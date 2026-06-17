@@ -96,6 +96,14 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
     }
   }
 
+  protected get officeEditorName(): string {
+    return this.store.server().files.editors.onlyoffice ? 'OnlyOffice' : 'Euro-Office'
+  }
+
+  protected get editOfficeEditorText(): string {
+    return `Edit in ${this.officeEditorName}`
+  }
+
   private onResize() {
     this.currentHeight = window.innerHeight - this.offsetTop
   }

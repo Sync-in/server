@@ -70,6 +70,11 @@ export class FilesEditorsConfig {
 
   @IsNotEmptyObject()
   @ValidateNested()
+  @Type(() => OnlyOfficeConfig)
+  eurooffice: OnlyOfficeConfig = new OnlyOfficeConfig()
+
+  @IsNotEmptyObject()
+  @ValidateNested()
   @Type(() => CollaboraOnlineConfig)
   collabora: CollaboraOnlineConfig = new CollaboraOnlineConfig()
 }

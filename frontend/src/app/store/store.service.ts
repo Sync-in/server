@@ -31,7 +31,7 @@ export class StoreService {
     twoFaEnabled: false,
     mailServerEnabled: false,
     files: {
-      editors: { collabora: false, onlyoffice: false },
+      editors: { collabora: false, eurooffice: false, onlyoffice: false },
       sampleDocuments: ALL_DOCUMENT_TYPES
     }
   })

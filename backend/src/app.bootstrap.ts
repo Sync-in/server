@@ -61,7 +61,10 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
   /* SECURITY */
   await app.register(fastifyHelmet, {
     contentSecurityPolicy: CONTENT_SECURITY_POLICY(
-      configuration.applications.files.editors.onlyoffice.externalServer,
+      (configuration.applications.files.editors.onlyoffice.enabled
+        ? configuration.applications.files.editors.onlyoffice
+        : configuration.applications.files.editors.eurooffice
+      ).externalServer,
       configuration.applications.files.editors.collabora.externalServer
     )
   })
