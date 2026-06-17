@@ -267,6 +267,9 @@ auth:
       # Users must already exist locally and have a password set.
       # default: true
       enablePasswordAuth: true
+      # autoSyncAvatar: Automatically download and synchronize the user avatar from the OIDC `picture` claim.
+      # default: false
+      autoSyncAvatar: false
       # autoRedirect: Automatically redirect users to the OIDC login flow.
       # When enabled, the login page is skipped and users are sent directly to the OIDC provider.
       # default: false
@@ -309,6 +312,10 @@ auth:
       # Set to true only for non-compliant or legacy OIDC providers.
       # default: false
       skipSubjectCheck: false
+      # allowPrivateIpAvatarDownload: Allow OIDC avatar downloads from private/internal IP ranges.
+      # Set to true only when the OIDC provider returns trusted internal avatar URLs.
+      # default: false
+      allowPrivateIpAvatarDownload: false
 applications:
   users:
     # showUngroupedUsers: make users without a group globally visible to regular users/admins.

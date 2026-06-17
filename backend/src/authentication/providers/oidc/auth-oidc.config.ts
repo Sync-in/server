@@ -44,6 +44,10 @@ export class AuthProviderOIDCSecurityConfig {
   @IsOptional()
   @IsBoolean()
   skipSubjectCheck? = false
+
+  @IsOptional()
+  @IsBoolean()
+  allowPrivateIpAvatarDownload? = false
 }
 
 export class AuthProviderOIDCOptionsConfig {
@@ -63,6 +67,10 @@ export class AuthProviderOIDCOptionsConfig {
   @IsOptional()
   @IsBoolean()
   enablePasswordAuth? = true
+
+  @IsOptional()
+  @IsBoolean()
+  autoSyncAvatar? = false
 
   @IsOptional()
   @IsString()

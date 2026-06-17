@@ -40,11 +40,13 @@ vi.mock('../../../configuration/config.environment', () => ({
           userInfoSigningAlg: 'RS256',
           tokenEndpointAuthMethod: 'client_secret_basic',
           allowInsecureRequests: false,
-          skipSubjectCheck: false
+          skipSubjectCheck: false,
+          allowPrivateIpAvatarDownload: false
         },
         options: {
           enablePasswordAuth: false,
           autoCreateUser: true,
+          autoSyncAvatar: false,
           adminRoleOrGroup: 'admins',
           autoCreatePermissions: ['read']
         }
@@ -149,6 +151,8 @@ describe(AuthProviderOIDC.name, () => {
     ;(service as any).config = null
     ;(service as any).oidcConfig.security.supportPKCE = true
     ;(service as any).oidcConfig.security.allowInsecureRequests = false
+    ;(service as any).oidcConfig.security.allowPrivateIpAvatarDownload = false
+    ;(service as any).oidcConfig.options.autoSyncAvatar = false
   })
 
   it('returns null when user is not found', async () => {
@@ -327,6 +331,31 @@ describe(AuthProviderOIDC.name, () => {
     expect(result.role).toBe(USER_ROLE.ADMINISTRATOR)
   })
 
+  it('does not sync the user avatar by default', async () => {
+    const existingUser = { id: 20, login: 'alice', email: 'alice@example.org', role: USER_ROLE.USER, setFullName: vi.fn() } as any
+    usersManager.findUser.mockResolvedValue(existingUser)
+    const updatePictureUrlSpy = vi.spyOn(service as any, 'updatePictureUrl').mockResolvedValue(undefined)
+
+    await (service as any).processUserInfo(
+      { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', picture: 'https://cdn.example.test/avatar.jpg' },
+      '127.0.0.1'
+    )
+
+    expect(updatePictureUrlSpy).not.toHaveBeenCalled()
+  })
+
+  it('syncs the user avatar when enabled', async () => {
+    ;(service as any).oidcConfig.options.autoSyncAvatar = true
+    const existingUser = { id: 21, login: 'alice', email: 'alice@example.org', role: USER_ROLE.USER, setFullName: vi.fn() } as any
+    const userInfo = { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', picture: 'https://cdn.example.test/avatar.jpg' }
+    usersManager.findUser.mockResolvedValue(existingUser)
+    const updatePictureUrlSpy = vi.spyOn(service as any, 'updatePictureUrl').mockResolvedValue(undefined)
+
+    await (service as any).processUserInfo(userInfo, '127.0.0.1')
+
+    expect(updatePictureUrlSpy).toHaveBeenCalledWith(existingUser, userInfo)
+  })
+
   it('handles storage quota claim mapping cases', async () => {
     const scenarios = [
       {
@@ -486,10 +515,41 @@ describe(AuthProviderOIDC.name, () => {
         2,
         expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }),
         '/tmp/sync-in/alice/tmp/avatar.png',
-        { allowPrivateIP: true, maxSize: avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE }
+        { allowPrivateIP: false, maxSize: avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE }
       )
       expect(convertSpy).toHaveBeenCalledWith('/tmp/sync-in/alice/tmp/avatar.png', '/tmp/sync-in/users/alice/avatar.png')
       expect(metadataSpy).toHaveBeenCalledWith('alice', 'https://cdn.example.test/avatar.jpg', 128, 'Mon, 01 Jan 2024 00:00:00 GMT')
+    })
+
+    it('allows private IP avatar downloads when explicitly enabled', async () => {
+      ;(service as any).oidcConfig.security.allowPrivateIpAvatarDownload = true
+      const downloadSpy = vi
+        .spyOn(DownloadFile.prototype, 'download')
+        .mockResolvedValueOnce({
+          contentType: 'image/png',
+          contentLength: 128,
+          lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
+        } as any)
+        .mockResolvedValueOnce(undefined as any)
+      vi.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(false)
+      vi.spyOn(filesUtils, 'fileSize').mockResolvedValue(1024)
+      vi.spyOn(UserModel, 'getHomePath').mockReturnValue('/tmp/sync-in/users/alice')
+      vi.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+
+      await (service as any).updatePictureUrl(oidcUser, userInfo())
+
+      expect(downloadSpy).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }),
+        '/tmp/sync-in/alice/tmp/avatar.png',
+        { allowPrivateIP: true, getContentInfo: true }
+      )
+      expect(downloadSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }),
+        '/tmp/sync-in/alice/tmp/avatar.png',
+        { allowPrivateIP: true, maxSize: avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE }
+      )
     })
 
     it('downloads avatar when content length is missing and stores the actual downloaded size', async () => {

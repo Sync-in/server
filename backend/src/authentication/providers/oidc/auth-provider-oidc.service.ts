@@ -327,7 +327,9 @@ export class AuthProviderOIDC implements AuthProvider {
     // Create or update user
     user = await this.updateOrCreateUser(identity, user)
     // Update picture url (if it exists)
-    await this.updatePictureUrl(user, userInfo)
+    if (this.oidcConfig.options.autoSyncAvatar) {
+      await this.updatePictureUrl(user, userInfo)
+    }
     // Update user access log
     this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error({ tag: this.processUserInfo.name, msg: `${e}` }))
 
@@ -446,11 +448,12 @@ export class AuthProviderOIDC implements AuthProvider {
     let pictureContentLength: number | undefined
     let pictureLastModified: string | undefined
     const downloader = new DownloadFile(this.http)
+    const allowPrivateIP = this.oidcConfig.security.allowPrivateIpAvatarDownload
     try {
       const tmpPicturePath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
       // retrieve headers
       const { contentType, contentLength, lastModified } = await downloader.download(downloadDto, tmpPicturePath, {
-        allowPrivateIP: true, // trust the url source
+        allowPrivateIP,
         getContentInfo: true
       })
       pictureContentLength = contentLength ?? undefined
@@ -478,10 +481,10 @@ export class AuthProviderOIDC implements AuthProvider {
       this.logger.warn({ tag: this.updatePictureUrl.name, msg: `checks failed: ${e}` })
     }
 
-    // download avatar (trust the url source)
+    // download avatar
     const userAvatarTmpPath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
     try {
-      await downloader.download(downloadDto, userAvatarTmpPath, { allowPrivateIP: true, maxSize: USER_AVATAR_MAX_UPLOAD_SIZE })
+      await downloader.download(downloadDto, userAvatarTmpPath, { allowPrivateIP, maxSize: USER_AVATAR_MAX_UPLOAD_SIZE })
     } catch (e) {
       this.logger.warn({ tag: this.updatePictureUrl.name, msg: `download failed: ${e}` })
       return
