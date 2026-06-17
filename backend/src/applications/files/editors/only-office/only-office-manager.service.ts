@@ -55,8 +55,8 @@ import { ACTION } from '../../../../common/constants'
 @Injectable()
 export class OnlyOfficeManager {
   private logger = new Logger(OnlyOfficeManager.name)
-  private readonly externalOnlyOfficeServer = configuration.applications.files.onlyoffice.externalServer || null
-  private readonly rejectUnauthorized: boolean = !configuration.applications.files.onlyoffice?.verifySSL
+  private readonly externalOnlyOfficeServer = configuration.applications.files.editors.onlyoffice.externalServer || null
+  private readonly rejectUnauthorized: boolean = !configuration.applications.files.editors.onlyoffice?.verifySSL
   private readonly convertUrl = this.externalOnlyOfficeServer ? `${this.externalOnlyOfficeServer}/ConvertService.ashx` : null
   private readonly expiration = convertHumanTimeToSeconds(configuration.auth.token.refresh.expiration)
   private readonly mobileRegex: RegExp = /android|webos|iphone|ipad|ipod|blackberry|windows phone|opera mini|iemobile|mobile/i
@@ -110,7 +110,7 @@ export class OnlyOfficeManager {
   }
 
   async callBack(user: UserModel, space: SpaceEnv, token: string) {
-    const callBackData: OnlyOfficeCallBack = await this.jwt.verifyAsync(token, { secret: configuration.applications.files.onlyoffice.secret })
+    const callBackData: OnlyOfficeCallBack = await this.jwt.verifyAsync(token, { secret: configuration.applications.files.editors.onlyoffice.secret })
     try {
       switch (callBackData.status) {
         case 1:
@@ -230,7 +230,7 @@ export class OnlyOfficeManager {
   }
 
   private genPayloadToken(payload: OnlyOfficeConfig | OnlyOfficeConvertForm): Promise<string> {
-    return this.jwt.signAsync(payload, { secret: configuration.applications.files.onlyoffice.secret, expiresIn: 60 })
+    return this.jwt.signAsync(payload, { secret: configuration.applications.files.editors.onlyoffice.secret, expiresIn: 60 })
   }
 
   private genAuthToken(user: UserModel): Promise<string> {

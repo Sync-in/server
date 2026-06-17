@@ -369,30 +369,31 @@ applications:
     # use [] to only show Text and Markdown
     # default: [opendocument, microsoft]
     sampleDocuments: [opendocument, microsoft]
-    onlyoffice:
-      # enable onlyoffice integration
-      # default: false
-      enabled: false
-      # Secret used for jwt tokens, it must be the same on the onlyoffice server
-      # required
-      secret: 'onlyOfficeSecret'
-      # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
-      # If an external server is configured, it will be used instead.
-      # Note: when using an external server (e.g.: https://onlyoffice.domain.com), make sure it is accessible from the client/browser.
-      # default: null
-      externalServer:
-      # If you use https, set to `true`.
-      # default: false
-      verifySSL: false
-    collabora:
-      # enable collabora online integration
-      # default: false
-      enabled: false
-      # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
-      # If an external server is configured, it will be used instead.
-      # Note: when using an external server (e.g.: https://collabora.domain.com), make sure it is accessible from the client/browser.
-      # default: null
-      externalServer:
+    editors:
+      onlyoffice:
+        # enable onlyoffice integration
+        # default: false
+        enabled: false
+        # Secret used for jwt tokens, it must be the same on the onlyoffice server
+        # required
+        secret: 'onlyOfficeSecret'
+        # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
+        # If an external server is configured, it will be used instead.
+        # Note: when using an external server (e.g.: https://onlyoffice.domain.com), make sure it is accessible from the client/browser.
+        # default: null
+        externalServer:
+        # If you use https, set to `true`.
+        # default: false
+        verifySSL: false
+      collabora:
+        # enable collabora online integration
+        # default: false
+        enabled: false
+        # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
+        # If an external server is configured, it will be used instead.
+        # Note: when using an external server (e.g.: https://collabora.domain.com), make sure it is accessible from the client/browser.
+        # default: null
+        externalServer:
   # Client application repository configuration
   appStore:
     # repository: `public` | `local`

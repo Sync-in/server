@@ -35,9 +35,9 @@ describe(configLoader.name, () => {
   })
 
   it('should apply nested overrides while preserving camelCase keys', () => {
-    process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_ONLYOFFICE_EXTERNALSERVER`] = 'https://onlyoffice.example.com'
+    process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_EDITORS_ONLYOFFICE_EXTERNALSERVER`] = 'https://onlyoffice.example.com'
 
-    expect(configLoader().applications.files.onlyoffice.externalServer).toBe('https://onlyoffice.example.com')
+    expect(configLoader().applications.files.editors.onlyoffice.externalServer).toBe('https://onlyoffice.example.com')
   })
 
   it.each([`${ENVIRONMENT_PREFIX}UNKNOWN_PROPERTY`, `${ENVIRONMENT_PREFIX}LOGGER_UNKNOWN`])(
@@ -76,13 +76,13 @@ describe(configLoader.name, () => {
   })
 
   it('should merge an environment override without replacing sibling base configuration', () => {
-    const baseSecret = configLoader().applications.files.onlyoffice.secret
-    process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_ONLYOFFICE_ENABLED`] = 'true'
+    const baseSecret = configLoader().auth.token.access.secret
+    process.env[`${ENVIRONMENT_PREFIX}AUTH_TOKEN_ACCESS_EXPIRATION`] = '10m'
 
-    const onlyoffice = configLoader().applications.files.onlyoffice
+    const accessToken = configLoader().auth.token.access
 
-    expect(onlyoffice.enabled).toBe(true)
-    expect(onlyoffice.secret).toBe(baseSecret)
+    expect(accessToken.expiration).toBe('10m')
+    expect(accessToken.secret).toBe(baseSecret)
   })
 
   function clearSyncInEnv() {

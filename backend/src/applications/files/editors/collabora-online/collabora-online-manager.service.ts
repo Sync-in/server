@@ -48,7 +48,7 @@ import { ACTION } from '../../../../common/constants'
 @Injectable()
 export class CollaboraOnlineManager {
   private logger = new Logger(CollaboraOnlineManager.name)
-  private readonly externalCollaboraOnlineServer = configuration.applications.files.collabora.externalServer || null
+  private readonly externalCollaboraOnlineServer = configuration.applications.files.editors.collabora.externalServer || null
   private readonly expiration = convertHumanTimeToSeconds(configuration.auth.token.refresh.expiration)
 
   constructor(
