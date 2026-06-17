@@ -70,7 +70,7 @@ export class AuthProviderOIDCOptionsConfig {
 
   @IsOptional()
   @IsBoolean()
-  enablePasswordAuth? = true
+  enablePasswordAuth? = false
 
   @IsOptional()
   @IsBoolean()

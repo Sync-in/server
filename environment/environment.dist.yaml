@@ -108,6 +108,8 @@ auth:
       expiration: 4h
   # Multifactor authentication
   mfa:
+    # Sync-in MFA is enforced for local password authentication.
+    # When OIDC is used, MFA is expected to be enforced by the identity provider.
     # TOTP configuration
     totp:
       # Enable TOTP authentication
@@ -227,9 +229,6 @@ auth:
     #   - http://127.0.0.1:49153/oidc/callback
     #   - http://127.0.0.1:49154/oidc/callback
     #
-    # If your OIDC provider supports wildcards or regular expressions, you may instead register a single entry such as:
-    #   - http://127.0.0.1/*
-    #
     # required
     redirectUri: https://sync-in.domain.com/api/auth/oidc/callback
     options:
@@ -259,14 +258,16 @@ auth:
       adminRoleOrGroup:
       # enablePasswordAuth: Allow local password-based authentication when using OIDC.
       # When enabled, users may authenticate with their Sync-in password instead of OIDC.
+      # Sync-in MFA applies to this local password flow.
+      # OIDC logins rely on the identity provider to enforce MFA/SSO policies.
       # Local password authentication is always allowed for:
       # - guest users
       # - administrator users (break-glass access)
       # - application scopes (app passwords)
       # Regular users are allowed only when this option is enabled.
       # Users must already exist locally and have a password set.
-      # default: true
-      enablePasswordAuth: true
+      # default: false
+      enablePasswordAuth: false
       # autoSyncAvatar: Automatically download and synchronize the user avatar from the OIDC `picture` claim.
       # default: false
       autoSyncAvatar: false
