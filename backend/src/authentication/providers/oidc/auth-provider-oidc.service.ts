@@ -248,7 +248,7 @@ export class AuthProviderOIDC implements AuthProvider {
         },
         this.getTokenAuthMethod(this.oidcConfig.security.tokenEndpointAuthMethod, this.oidcConfig.clientSecret),
         {
-          execute: [allowInsecureRequests],
+          ...(this.oidcConfig.security.allowInsecureRequests ? { execute: [allowInsecureRequests] } : {}),
           timeout: 6000
         }
       )
@@ -256,17 +256,29 @@ export class AuthProviderOIDC implements AuthProvider {
       return config
     } catch (error) {
       this.logger.error({ tag: this.initializeOIDCClient.name, msg: `OIDC client initialization failed: ${error?.cause || error}` })
-      switch (error.cause?.code) {
-        case 'ECONNREFUSED':
-        case 'ENOTFOUND':
-          throw new HttpException('OIDC provider unavailable', HttpStatus.SERVICE_UNAVAILABLE)
+      throw this.mapOIDCInitializationError(error)
+    }
+  }
 
-        case 'ETIMEDOUT':
-          throw new HttpException('OIDC provider timeout', HttpStatus.GATEWAY_TIMEOUT)
+  private mapOIDCInitializationError(error: any): HttpException {
+    const code = error?.code ?? error?.cause?.code
+    switch (code) {
+      case 'OAUTH_HTTP_REQUEST_FORBIDDEN':
+        return new HttpException('OIDC issuer URL must use HTTPS unless allowInsecureRequests is enabled', HttpStatus.BAD_REQUEST)
 
-        default:
-          throw new HttpException('OIDC client initialization failed', HttpStatus.INTERNAL_SERVER_ERROR)
-      }
+      case 'OAUTH_TIMEOUT':
+      case 'ETIMEDOUT':
+        return new HttpException('OIDC provider timeout', HttpStatus.GATEWAY_TIMEOUT)
+
+      case 'ECONNREFUSED':
+      case 'ENOTFOUND':
+        return new HttpException('OIDC provider unavailable', HttpStatus.SERVICE_UNAVAILABLE)
+
+      default:
+        if (typeof code === 'string' && code.startsWith('OAUTH_')) {
+          return new HttpException('OIDC provider configuration error', HttpStatus.BAD_REQUEST)
+        }
+        return new HttpException('OIDC client initialization failed', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 

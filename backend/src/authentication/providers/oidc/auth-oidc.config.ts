@@ -25,6 +25,10 @@ export class AuthProviderOIDCSecurityConfig {
   @IsBoolean()
   supportPKCE? = true
 
+  @IsOptional()
+  @IsBoolean()
+  allowInsecureRequests? = false
+
   @Transform(({ value }) => value || OAuthTokenEndpoint.ClientSecretBasic)
   @IsEnum(OAuthTokenEndpoint)
   tokenEndpointAuthMethod: OAuthTokenEndpoint = OAuthTokenEndpoint.ClientSecretBasic

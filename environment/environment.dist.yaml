@@ -283,6 +283,10 @@ auth:
       # When true, PKCE is used if supported by the OIDC provider.
       # default: true
       supportPKCE: true
+      # allowInsecureRequests: Allow OIDC discovery and token requests over insecure HTTP.
+      # Set to true only for local development or trusted legacy providers.
+      # default: false
+      allowInsecureRequests: false
       # OAuth 2.0 / OIDC client authentication method used at the token endpoint.
       # Possible values:
       # - client_secret_basic (DEFAULT): HTTP Basic auth using client_id and client_secret.

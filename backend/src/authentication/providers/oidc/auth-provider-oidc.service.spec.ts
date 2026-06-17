@@ -2,9 +2,11 @@ import { HttpStatus } from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
 import { Test, TestingModule } from '@nestjs/testing'
 import {
+  allowInsecureRequests,
   authorizationCodeGrant,
   AuthorizationResponseError,
   calculatePKCECodeChallenge,
+  discovery,
   fetchUserInfo,
   randomNonce,
   randomPKCECodeVerifier,
@@ -37,6 +39,7 @@ vi.mock('../../../configuration/config.environment', () => ({
           tokenSigningAlg: 'RS256',
           userInfoSigningAlg: 'RS256',
           tokenEndpointAuthMethod: 'client_secret_basic',
+          allowInsecureRequests: false,
           skipSubjectCheck: false
         },
         options: {
@@ -110,6 +113,8 @@ describe(AuthProviderOIDC.name, () => {
     clearCookie: vi.fn()
   })
 
+  const codedError = (message: string, code: string) => Object.assign(new Error(message), { code })
+
   beforeAll(async () => {
     usersManager = {
       findUser: vi.fn(),
@@ -141,6 +146,9 @@ describe(AuthProviderOIDC.name, () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
+    ;(service as any).config = null
+    ;(service as any).oidcConfig.security.supportPKCE = true
+    ;(service as any).oidcConfig.security.allowInsecureRequests = false
   })
 
   it('returns null when user is not found', async () => {
@@ -162,6 +170,44 @@ describe(AuthProviderOIDC.name, () => {
 
     expect(usersManager.logUser).toHaveBeenCalledWith(guestUser, 'secret', undefined, undefined)
     expect(result).toBe(guestUser)
+  })
+
+  it('does not allow insecure OIDC requests by default during discovery', async () => {
+    vi.mocked(discovery).mockResolvedValue(makeConfig(true) as any)
+
+    await service.getConfig()
+
+    const discoveryOptions = vi.mocked(discovery).mock.calls[0][4] as Record<string, unknown>
+    expect(discoveryOptions).toEqual(expect.objectContaining({ timeout: 6000 }))
+    expect(discoveryOptions).not.toHaveProperty('execute')
+  })
+
+  it('allows insecure OIDC requests during discovery when explicitly enabled', async () => {
+    ;(service as any).oidcConfig.security.allowInsecureRequests = true
+    vi.mocked(discovery).mockResolvedValue(makeConfig(true) as any)
+
+    await service.getConfig()
+
+    const discoveryOptions = vi.mocked(discovery).mock.calls[0][4] as Record<string, unknown>
+    expect(discoveryOptions).toEqual(expect.objectContaining({ execute: [allowInsecureRequests], timeout: 6000 }))
+  })
+
+  it('maps insecure OIDC discovery requests to BAD_REQUEST', async () => {
+    vi.mocked(discovery).mockRejectedValue(codedError('only requests to HTTPS are allowed', 'OAUTH_HTTP_REQUEST_FORBIDDEN'))
+
+    await expect(service.getConfig()).rejects.toMatchObject({
+      status: HttpStatus.BAD_REQUEST,
+      message: 'OIDC issuer URL must use HTTPS unless allowInsecureRequests is enabled'
+    })
+  })
+
+  it('maps generic OAuth discovery errors to BAD_REQUEST', async () => {
+    vi.mocked(discovery).mockRejectedValue(codedError('unexpected HTTP response status code', 'OAUTH_RESPONSE_IS_NOT_CONFORM'))
+
+    await expect(service.getConfig()).rejects.toMatchObject({
+      status: HttpStatus.BAD_REQUEST,
+      message: 'OIDC provider configuration error'
+    })
   })
 
   it('builds the authorization url with PKCE data and cookies', async () => {
