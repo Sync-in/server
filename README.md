@@ -1,9 +1,8 @@
-<a href="#-license"><img src="https://img.shields.io/badge/Licence-AGPL%20v3.0-green.svg" alt="License"/></a>
+<a href="#license"><img src="https://img.shields.io/badge/License-AGPL%20v3.0-green.svg" alt="License"/></a>
 <a href="https://github.com/Sync-in/server/releases" target="_blank"><img src="https://img.shields.io/github/v/release/Sync-in/server?sort=semver&display_name=tag&style=flat&logo=github&label=Release" alt="GitHub Release"/></a>
 <a href="https://hub.docker.com/r/syncin/server" target="_blank"><img src="https://img.shields.io/docker/pulls/syncin/server?logo=docker&label=Docker%20Hub%20Pulls" alt="Docker pulls"/></a>
 <a href="https://www.npmjs.com/package/@sync-in/server" target="_blank"><img src="https://img.shields.io/npm/d18m/@sync-in/server.svg?logo=npm&label=NPM%20Downloads&color=cb3837" alt="NPM"/></a>
 <a href="https://discord.gg/qhJyzwaymT" target="_blank"><img src="https://img.shields.io/discord/1391081837849346088?logo=discord&label=Discord" alt="Discord"/></a>
-<a href="https://deepwiki.com/Sync-in/server"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 
 <a href="https://sync-in.com" target="_blank" rel="noopener">
 <picture>
@@ -12,103 +11,84 @@
 </picture>
 </a>
 
-_Welcome to the Sync-in Server repository!_
+<p align="left">
+  <a href="https://sync-in.com">Website</a> •
+  <a href="https://sync-in.com/docs">Documentation</a> •
+  <a href="https://sync-in.com/docs/demo">Demo</a> •
+  <a href="https://sync-in.com/docs/setup-guide/docker">Docker setup</a> •
+  <a href="https://sync-in.com/docs/setup-guide/npm">NPM setup</a> •
+  <a href="https://github.com/Sync-in/server">GitHub Server</a> •
+  <a href="https://github.com/Sync-in/desktop">GitHub Desktop & CLI</a>
+</p>
 
-- 🌍 [Website](https://sync-in.com)
-- 📄 [Documentation](https://sync-in.com/docs)
-- 🧪 [Try the demo](https://sync-in.com/docs/demo)
-- 🐳 [Deploy with Docker](https://sync-in.com/docs/setup-guide/docker)
-- 📦 [Deploy with NPM](https://sync-in.com/docs/setup-guide/npm)
-- 🗄️ [GitHub Server Repository](https://github.com/Sync-in/server)
-- 💻 [GitHub Desktop & CLI Repository](https://github.com/Sync-in/desktop)
+**Sync-in is a self-hosted platform for file storage, synchronization, and team collaboration.**
 
-**Sync-in is a self-hosted platform for file storage, synchronization, and collaboration.**
+Run your own workspace for files, documents, shares, and collaborative work without giving up control of your infrastructure or data.
 
-Designed to give individuals and organizations full control over their files and documents, Sync-in lets you host your own workspace to organize,
-access, and collaborate on content with your team, your community, or for personal use.
-
-It runs on your own infrastructure, keeping you in control of your data while enabling secure file sharing, collaborative workspaces, and fine-grained
-access control.
+Sync-in is designed to stay fast, lightweight, and centered on your data, keeping files readable on your filesystem while adding collaboration features only where they are needed.
 
 <picture>
   <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/server-dark.png" media="(prefers-color-scheme: dark)" />
   <img src="https://raw.githubusercontent.com/Sync-in/assets/main/server.png" alt="Sync-in" width="600"/>
 </picture>
 
-*This project is supported by the **Docker-Sponsored Open Source Program**.*
-
----
-
 ## Features
 
-- 🖥️ Modern, Fast, and High-Performance Interface
-    - Intuitive and responsive UI designed for productivity
-    - Optimized experience across devices
-- 🆔 Modern Identity & Authentication
-    - OpenID Connect (OIDC) support for federated authentication and Single Sign-On (SSO)
-    - LDAP integration for enterprise and organizational environments
-    - Multi-Factor Authentication (MFA), recovery codes, and application passwords
-    - Unified authentication across Web, Desktop, and CLI clients
-- 🔑 Advanced User Access Control
-    - Spaces & Shares with fine-grained permissions
-    - Role-based access control for secure collaboration
-- 🤝 Collaborative Editing
-    - Collabora Online and OnlyOffice integration
-    - Multi-editor support with automatic editor selection
-    - Comments, notifications, and file activity tracking
-- 🔎 Powerful Full-Text Search
-    - Deep document content indexing
-    - Multi-format search support
-- 📂 Document Management & File Protection
-    - Storage quotas and file locking
-    - Secure and controlled sharing environments
-- 🌍 Sovereign & Self-Hosted by Design
-    - Full control over infrastructure and data
-    - Deployable on-premise or private cloud
-    - Built on open standards and interoperable technologies
-- 🔗 WebDAV Access
-    - Native WebDAV support for remote file access and synchronization
-    - Integration with file explorers and third-party tools
-- 🖥️ [Desktop Client](https://github.com/Sync-in/desktop)
-    - Full-featured desktop application for enhanced productivity
-    - Cross-device file synchronization
-    - Multi-server support
+- 🖥️ Modern web interface with drag and drop, smart clipboard, gallery view, sorting, filtering, and enhanced file previews
+- 🆔 Authentication with local accounts, OIDC, LDAP, MFA, recovery codes, and application passwords
+- 🔑 Spaces, shares, guests, personal groups, roles, and fine-grained permissions for controlled collaboration
+- 🔐 Protected public links with access limits, expiration dates, passwords, and full control over shared content
+- 🤝 Online document editing with Collabora Online, OnlyOffice, and Euro-Office
+- 💬 Activity tracking, comments, notifications, file locking, and recent file updates in one workflow
+- 🔎 Full-text search with deep document content indexing across common office and document formats
+- 📂 Storage quotas, trash retention, file protection tools, and folder anchoring without duplication
+- 🌍 Self-hosted by design, deployable on-premise or in a private cloud
+- 🔗 WebDAV support for file explorers, network drives, mobile apps, and third-party clients
+- 🖥️ Desktop and CLI clients for Windows, macOS, and Linux, with multi-server synchronization workflows
 
 ---
 
-## 💛 Support
+## Sponsors
 
-Sync-in is an independent open source project.  
-If you find it useful, you can:
+Sync-in receives support from organizations that provide infrastructure, distribution, and security services to open source projects.
+
+<table>
+  <tr>
+    <td align="center" width="50%" valign="middle"><a href="https://www.docker.com/community/open-source/application/" target="_blank" rel="noopener"><img src="https://raw.githubusercontent.com/Sync-in/assets/main/sponsors/docker.png" alt="Docker" width="200" valign="middle" /></a></td>
+    <td align="center" width="50%" valign="middle"><a href="https://signpath.io/solutions/open-source-community" target="_blank" rel="noopener"><img src="https://raw.githubusercontent.com/Sync-in/assets/main/sponsors/signpath.png" alt="SignPath" width="200" valign="middle" /></a></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Docker-Sponsored Open Source Program</sub></td>
+    <td align="center"><sub>Free code signing on Windows provided by <a href="https://signpath.io/" target="_blank" rel="noopener">SignPath.io</a>, certificate by <a href="https://signpath.org/" target="_blank" rel="noopener">SignPath Foundation</a></sub></td>
+  </tr>
+</table>
+
+---
+
+## Support
+
+You can help by:
 
 - ⭐ Star the repositories
-- 🐛 Report issues and suggest improvements
-- 🤝 Contribute code, translations, or documentation
-- 💬 Join the community on :
-    - [GitHub Discussions](https://github.com/Sync-in/server/discussions)
-    - [Discord](https://discord.gg/qhJyzwaymT)
-- 💖 Support the project !
+- 🤝 Contribute through issues, documentation, translations, or pull requests
+- 💖 Support the project:
     - [GitHub Sponsors](https://github.com/sponsors/Sync-in)
     - [Other ways to support](https://sync-in.com/support)
 
 ---
 
-## 🤝 Contributing
+## Community Guidelines
 
-Before submitting your pull request, please confirm the following:
-
-- ✅ I have read and followed the [contribution guide](CONTRIBUTING.md).
-- ✅ I am submitting this pull request in good faith and to help improve Sync-in.
+- Use [GitHub Issues](https://github.com/Sync-in/server/issues) for bug reports and feature requests.
+- Use [GitHub Discussions](https://github.com/Sync-in/server/discussions), [Discord](https://discord.gg/qhJyzwaymT), or [Reddit](https://www.reddit.com/r/SyncInPlatform/) for questions and community support.
+- Report security vulnerabilities privately through GitHub Security Advisories.
+- Please read the [Code of Conduct](CODE_OF_CONDUCT.md) and [Contributing Guide](CONTRIBUTING.md) before contributing.
 
 ---
 
-## 📜 License
+## License
 
 This project is licensed under the **GNU Affero General Public License (AGPL-3.0-or-later)**.  
 See [LICENSE](LICENSE) for the full text.
 
 Sync-in® is a registered trademark, see our [Trademark Policy](https://sync-in.com/trademark).
-
----
-
-_Thank you for using **Sync-in** ! 🚀_
