@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common'
+import { SYNC_MAX_PATH_FILTER_PATTERN_LENGTH } from '../constants/sync'
 import { transformPathFilters } from './functions'
 
 describe(transformPathFilters.name, () => {
@@ -16,7 +17,7 @@ describe(transformPathFilters.name, () => {
   })
 
   it('rejects path filter patterns that are too long', () => {
-    const transform = () => transformPathFilters('a'.repeat(201))
+    const transform = () => transformPathFilters('a'.repeat(SYNC_MAX_PATH_FILTER_PATTERN_LENGTH + 1))
 
     expect(transform).toThrow(BadRequestException)
     expect(transform).toThrow('Path filter pattern is too long')

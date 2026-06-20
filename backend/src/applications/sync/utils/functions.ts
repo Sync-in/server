@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common'
 import path from 'node:path'
 import safeRegex from 'safe-regex2'
-import { SYNC_FILE_NAME_PREFIX, SYNC_MAX_PATH_FILTER_LENGTH, SYNC_MAX_PATH_FILTER_REPETITIONS } from '../constants/sync'
+import { SYNC_FILE_NAME_PREFIX, SYNC_MAX_PATH_FILTER_PATTERN_LENGTH, SYNC_MAX_PATH_FILTER_REPETITIONS } from '../constants/sync'
 
 export function getSyncTmpFilePath(rPath: string): string {
   return `${path.dirname(rPath)}/${SYNC_FILE_NAME_PREFIX}${path.basename(rPath)}`
@@ -12,7 +12,7 @@ export function transformPathFilters(value: unknown): RegExp | null {
     return null
   }
 
-  if (value.length > SYNC_MAX_PATH_FILTER_LENGTH) {
+  if (value.length > SYNC_MAX_PATH_FILTER_PATTERN_LENGTH) {
     throw new BadRequestException('Path filter pattern is too long')
   }
 
