@@ -6,6 +6,7 @@ import { AxiosResponse } from 'axios'
 import { Readable } from 'stream'
 import { Mocked } from 'vitest'
 import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
+import { configuration } from '../../../../configuration/config.environment'
 import { Cache } from '../../../../infrastructure/cache/cache.service'
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
 import type { SpaceEnv } from '../../../spaces/models/space-env.model'
@@ -29,6 +30,7 @@ describe(OnlyOfficeManager.name, () => {
   let httpService: Mocked<HttpService>
   let jwtService: Mocked<JwtService>
   let filesLockManager: Mocked<FilesLockManager>
+  let onlyOfficeEnabled: boolean
 
   const mockUser = {
     id: 1,
@@ -61,6 +63,9 @@ describe(OnlyOfficeManager.name, () => {
   } as any
 
   beforeEach(async () => {
+    onlyOfficeEnabled = configuration.applications.files.editors.onlyoffice.enabled
+    configuration.applications.files.editors.onlyoffice.enabled = true
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OnlyOfficeManager,
@@ -114,6 +119,7 @@ describe(OnlyOfficeManager.name, () => {
   })
 
   afterEach(() => {
+    configuration.applications.files.editors.onlyoffice.enabled = onlyOfficeEnabled
     vi.clearAllMocks()
   })
 
