@@ -1,4 +1,66 @@
 
+## [2.4.0](https://github.com/Sync-in/server/compare/v2.3.0...v2.4.0) (2026-06-22)
+
+
+### Features
+
+* **auth:** refresh browser user state with token renewal ([cad5f12](https://github.com/Sync-in/server/commit/cad5f12fe0a595034574bde61f7c59140fd92324))
+* **backend:auth:** add OIDC verified email enforcement option ([cd71b04](https://github.com/Sync-in/server/commit/cd71b04b65db320a3ff5c520394c60a15c3e1e82))
+* **backend:cache:** add atomic bounded counter increments ([c172825](https://github.com/Sync-in/server/commit/c172825205351064ae3dd175acd6f31916def2ea))
+* **backend:files:** add cancellable copy, move and delete tasks ([e23151e](https://github.com/Sync-in/server/commit/e23151ea16db3ee1f7a8b614418d02991cd05d77))
+* **backend:files:** add Euro-Office editor support ([9fe93bd](https://github.com/Sync-in/server/commit/9fe93bdd3898623d9505cac26662758e07ba2aca))
+* **backend:files:** improve task progress tracking for copy and move operations ([7939491](https://github.com/Sync-in/server/commit/79394910fd9455cddfa61f1c8ad2c7f23e297bee))
+* **backend:files:** queue and limit concurrent tasks per user ([395f841](https://github.com/Sync-in/server/commit/395f841a475568e2a4318db6bf2221d4a9e05b07))
+* **backend:files:** track download, compression and extraction progress ([caa6a92](https://github.com/Sync-in/server/commit/caa6a928580018cae49f18cf00fed4ef5d64a397))
+* **config:** group editor config under files.editors ([bd50a29](https://github.com/Sync-in/server/commit/bd50a298d64e7bebc420f36f511374e17bdf8a9c))
+* **files:** add ZIP archive creation with optional compression ([7c94d6a](https://github.com/Sync-in/server/commit/7c94d6a235d65c29169eb48e5102e0a02fcd346f))
+* **files:** batch active task polling ([e36af62](https://github.com/Sync-in/server/commit/e36af62b49464d4c27ad27c432849b6c881b3c09))
+* **files:** expose task cancellation capability ([14e5b9e](https://github.com/Sync-in/server/commit/14e5b9e81d7767cd9d495de1ac929af0dd3b5817))
+* **files:** make downloads and (de)compression abortable ([a43025e](https://github.com/Sync-in/server/commit/a43025eaa997df3c73c3e648c9c3df5ca15b3e0c))
+* **frontend:files:** add global task cancellation action ([8a044bd](https://github.com/Sync-in/server/commit/8a044bde0279d71ddc837e3b822359342ef74ceb))
+* **frontend:files:** cancel uploads from tasks sidebar ([b01dc90](https://github.com/Sync-in/server/commit/b01dc9047b482d00a30e10301fa462b02449c55e))
+* **frontend:files:** limit concurrent uploads ([81a95bc](https://github.com/Sync-in/server/commit/81a95bc7ea1b47580ed419018483afc1691805de))
+* **frontend:files:** track queued uploads and throttle progress updates ([a0ff216](https://github.com/Sync-in/server/commit/a0ff2166f1b29afdbc1493ab5cf762994cffe82b))
+
+
+### Bug Fixes
+
+* **backend:auth:** disable insecure OIDC requests by default ([9e59a09](https://github.com/Sync-in/server/commit/9e59a09e7aecb8758e55c71c76e7cd9c328fb606))
+* **backend:auth:** disable LDAP local password fallback by default ([d57c42d](https://github.com/Sync-in/server/commit/d57c42d01943f68982fe58458688ef5d821a0c31))
+* **backend:auth:** disable OIDC local password fallback by default ([315fc75](https://github.com/Sync-in/server/commit/315fc759954cb6a9a1ec98cff919a3bf14fc0335))
+* **backend:auth:** enforce 2FA and isolate JWT token types ([3ec74e2](https://github.com/Sync-in/server/commit/3ec74e2ea1f538fe1a3ac9487bdf24a19e548361))
+* **backend:auth:** harden OIDC avatar synchronization ([5024afa](https://github.com/Sync-in/server/commit/5024afa7c0ca88d445053db7cc10bba7f36b82ff))
+* **backend:auth:** increment failed attempts for 2FA-enabled users ([b13a4aa](https://github.com/Sync-in/server/commit/b13a4aad5c2b38fe8231a0d007cd08a086ec5bdb))
+* **backend:auth:** prevent 2FA password attempt counter bypass ([5f53f7f](https://github.com/Sync-in/server/commit/5f53f7f2685b3510aca80783d31bd7b72166005f))
+* **backend:auth:** tolerate OIDC avatar downloads using maxSize guard ([597afbf](https://github.com/Sync-in/server/commit/597afbf5533747f5f4c1137b767e2d8ac283aba3))
+* **backend:auth:** update failed login attempts atomically ([285b870](https://github.com/Sync-in/server/commit/285b8707b0e91d7a63c869ada3a6f3b8ac460988))
+* **backend:auth:** validate current user state for active sessions ([1022355](https://github.com/Sync-in/server/commit/10223551aef7f4bbe074227865b0ce9ea1045819))
+* **backend:config:** make logger optional and quote sensitive YAML values ([5390ba9](https://github.com/Sync-in/server/commit/5390ba9074f5f25302600392d77a50eeee0c6044))
+* **backend:config:** normalize quoted admin credentials ([5fea5b4](https://github.com/Sync-in/server/commit/5fea5b476164e97b6fbb65ae3f65997f4e1d2b9f))
+* **backend:config:** support single-quoted environment values ([715e761](https://github.com/Sync-in/server/commit/715e76114b2330532d11de01f254707018e46af4))
+* **backend:files:** align HEAD and GET encoding for downloads ([67667f6](https://github.com/Sync-in/server/commit/67667f6e538deaf6000eb460f34e8d037229b0f7))
+* **backend:files:** centralize path containment checks ([e96c3f1](https://github.com/Sync-in/server/commit/e96c3f1273e03899ae39432c5ff745efe9ce4556))
+* **backend:files:** clean orphan task files ([0d4b306](https://github.com/Sync-in/server/commit/0d4b306b87e1e03c653f2e265b823a47fe1ccbc2))
+* **backend:files:** clean up task watchers on module shutdown ([0ccf212](https://github.com/Sync-in/server/commit/0ccf2122b80bd03d0a876a748696d5e03beb84ea))
+* **backend:files:** enforce storage quota during archive extraction ([8fffc17](https://github.com/Sync-in/server/commit/8fffc17adf2142350b0c70fac22654f78f470d1c))
+* **backend:files:** extend scheduler cleanup to stale user tmp files ([c115ec2](https://github.com/Sync-in/server/commit/c115ec2bb3dd6e7f00f42021adb5edfd0e499b8b))
+* **backend:files:** harden archive extraction and clean up partial output ([9615ed0](https://github.com/Sync-in/server/commit/9615ed0ad238896710f7c1972f90b19b706826e8))
+* **backend:files:** improve filtered file selection behavior ([3ab86bc](https://github.com/Sync-in/server/commit/3ab86bcc36c0ad908a26cae7dd4892f6a7497720))
+* **backend:files:** stage archive extraction in user temp directory ([06f1425](https://github.com/Sync-in/server/commit/06f142564a567b6e7c7110cebe3af8df1b319602))
+* **backend:files:** stage downloads and archives in user tmp paths before publishing ([1363899](https://github.com/Sync-in/server/commit/1363899d1a905ebe21aa1990c84c8e5b7440cc0d))
+* **backend:files:** support multilingual full-text search ([9a462c5](https://github.com/Sync-in/server/commit/9a462c501f320d4715189b6420b9fc0b8bd40907))
+* **backend:sync:** add validation for path filter size, length, and repetitions ([0fdcda9](https://github.com/Sync-in/server/commit/0fdcda95cac6565acf7f3337c0e4ae7092c1a4ee))
+* **backend:sync:** limit gzip diff body size ([65acac1](https://github.com/Sync-in/server/commit/65acac184daf441a42acbd80d9d9a8e5613947dc))
+* **backend:sync:** update path filter length validation and add pattern length constant ([4355471](https://github.com/Sync-in/server/commit/43554716a862546029a191dd4eacd6fdfc67ba1f))
+* **backend:sync:** validate path filter regex before diff ([b1dcaa1](https://github.com/Sync-in/server/commit/b1dcaa1d1c1bb17ab6c31a404cc9cead7efdd979))
+* **backend:sync:** validate uploads before promoting temp files ([346f8cb](https://github.com/Sync-in/server/commit/346f8cbd245f7400089eff7df3d979e31bc50436))
+* **backend:users:** prevent path traversal through federated user logins ([c2dd22e](https://github.com/Sync-in/server/commit/c2dd22e6d8961db2b3951dc3d53cf955f9e4687b))
+* **backend:** improve connection checks and bootstrap resilience ([8c140d9](https://github.com/Sync-in/server/commit/8c140d94fe1402a89c24ce9cfebd5e37425dbcc3))
+* **frontend:files:** add missing constructor inheritance in files-viewer-text.component.ts ([965d0ce](https://github.com/Sync-in/server/commit/965d0cec0f04a69bc6de15e39c4bc0078faac7d6))
+* **frontend:files:** clean ended tasks for deleted trash folders ([6bd4604](https://github.com/Sync-in/server/commit/6bd46045175446716a1fa55691582774578b1cd5))
+* **frontend:files:** preserve editor focus and track text changes ([86fac72](https://github.com/Sync-in/server/commit/86fac72a20fb8fbf31fb7461b6adc522e6b774a5))
+* **frontend:files:** refresh file size after saving ([f11af14](https://github.com/Sync-in/server/commit/f11af14960bbcc409878c7ef1b190808ad2cbd29))
+
 ## [2.3.0](https://github.com/Sync-in/server/compare/v2.2.1...v2.3.0) (2026-05-22)
 
 
