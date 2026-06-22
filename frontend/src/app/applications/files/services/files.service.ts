@@ -335,31 +335,33 @@ export class FilesService {
       this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(file.lock))
     }
 
-    const editorProvider: FileEditorProviders = { collabora: false, onlyoffice: false }
+    const editorProvider: FileEditorProviders = { collabora: false, eurooffice: false, onlyoffice: false }
     if (hookedShortMime === SHORT_MIME.DOCUMENT) {
-      if (this.store.server().files.editors.collabora && this.store.server().files.editors.onlyoffice) {
+      const officeEditorProvider: keyof FileEditorProviders = this.store.server().files.editors.onlyoffice ? 'onlyoffice' : 'eurooffice'
+      const officeEditorEnabled = this.store.server().files.editors[officeEditorProvider]
+      if (this.store.server().files.editors.collabora && officeEditorEnabled) {
         // Case with multiple editors
         const collaboraHasExtension = COLLABORA_ONLINE_EXTENSIONS.has(file.getExtension())
-        const onlyofficeHasExtension = ONLY_OFFICE_EXTENSIONS.has(file.getExtension())
-        if (collaboraHasExtension && onlyofficeHasExtension) {
+        const officeEditorHasExtension = ONLY_OFFICE_EXTENSIONS.has(file.getExtension())
+        if (collaboraHasExtension && officeEditorHasExtension) {
           // Get user's saved preference
           const userEditorPreference = this.userService.getEditorProviderPreference()
-          if (userEditorPreference && userEditorPreference in editorProvider) {
+          if (userEditorPreference === 'collabora' || userEditorPreference === officeEditorProvider) {
             editorProvider[userEditorPreference] = true
           } else {
             // Both editors support this file extension, let the user choose
             await this.openSelectViewerDialog(file, editorProvider)
-            if (!editorProvider.onlyoffice && !editorProvider.collabora) return
+            if (!editorProvider.onlyoffice && !editorProvider.eurooffice && !editorProvider.collabora) return
           }
         } else {
           // Based on the supported extension
           editorProvider.collabora = collaboraHasExtension
-          editorProvider.onlyoffice = onlyofficeHasExtension
+          editorProvider[officeEditorProvider] = officeEditorHasExtension
         }
       } else {
         // Based on availability
         editorProvider.collabora = this.store.server().files.editors.collabora
-        editorProvider.onlyoffice = this.store.server().files.editors.onlyoffice
+        editorProvider[officeEditorProvider] = officeEditorEnabled
       }
     }
 

@@ -132,7 +132,6 @@
   "Storage quota exceeded": "存储配额已超出",
   "File size limit exceeded": "已超出文件大小限制",
   "The trash is read-only": "回收站是只读的",
-  "Storage quota will be exceeded": "存储配额将被超出",
   "Access to internal IP addresses is forbidden": "禁止访问内部 IP 地址",
   "Missing or invalid \"content-length\" header": "缺少或无效的 \"content-length\" 标头",
   "Maximum redirects exceeded": "已超出最大重定向次数",
@@ -710,5 +709,6 @@
   "size has changed since parsing": "自解析后大小已更改",
   "No synchronized folder": "没有同步文件夹",
   "Edit in OnlyOffice": "在OnlyOffice中编辑",
+  "Edit in Euro-Office": "在Euro-Office中编辑",
   "View in PDF.js": "在PDF.js中查看"
 }

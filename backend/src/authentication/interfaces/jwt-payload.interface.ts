@@ -1,3 +1,5 @@
+import { TOKEN_TYPE } from './token.interface'
+
 export class JwtIdentityPayload {
   id: number
   login: string
@@ -20,9 +22,18 @@ export class JwtIdentity2FaPayload {
   twoFaEnabled: true
 }
 
-export class JwtPayload {
-  identity: JwtIdentityPayload
+export interface JwtPayloadBase {
   csrf?: string
   iat?: number
   exp: number
 }
+
+export type JwtPayload =
+  | (JwtPayloadBase & {
+      identity: JwtIdentityPayload
+      tokenType: TOKEN_TYPE.ACCESS | TOKEN_TYPE.REFRESH | TOKEN_TYPE.WS | TOKEN_TYPE.ONLY_OFFICE
+    })
+  | (JwtPayloadBase & {
+      identity: JwtIdentity2FaPayload
+      tokenType: TOKEN_TYPE.ACCESS_2FA
+    })

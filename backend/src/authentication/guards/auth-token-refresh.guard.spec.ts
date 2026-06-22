@@ -7,6 +7,7 @@ import { PassportModule } from '@nestjs/passport'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
 import crypto from 'node:crypto'
+import { UserModel } from '../../applications/users/models/user.model'
 import { UsersManager } from '../../applications/users/services/users-manager.service'
 import { exportConfiguration } from '../../configuration/config.environment'
 import { AuthConfig } from '../auth.config'
@@ -24,7 +25,11 @@ describe(AuthTokenRefreshGuard.name, () => {
   let authRefreshGuard: AuthTokenRefreshGuard
   let refreshToken: string
   let refreshTokenWithoutCSRF: string
+  let accessTokenSignedWithRefreshSecret: string
   let context: DeepMocked<ExecutionContext>
+  const usersManager = {
+    fromAuthToken: vi.fn(async (user: UserModel): Promise<UserModel | null> => user)
+  }
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -33,7 +38,7 @@ describe(AuthTokenRefreshGuard.name, () => {
         AuthTokenRefreshGuard,
         AuthTokenRefreshStrategy,
         AuthManager,
-        { provide: UsersManager, useValue: {} },
+        { provide: UsersManager, useValue: usersManager },
         {
           provide: PinoLogger,
           useValue: {
@@ -46,14 +51,24 @@ describe(AuthTokenRefreshGuard.name, () => {
     authConfig = module.get<ConfigService>(ConfigService).get<AuthConfig>('auth')
     jwtService = module.get<JwtService>(JwtService)
     authRefreshGuard = module.get<AuthTokenRefreshGuard>(AuthTokenRefreshGuard)
-    refreshToken = await jwtService.signAsync({ identity: { id: 1, login: 'foo' }, [TOKEN_TYPE.CSRF]: csrfToken } as JwtPayload, {
+    refreshToken = await jwtService.signAsync(
+      { tokenType: TOKEN_TYPE.REFRESH, identity: { id: 1, login: 'foo' }, [TOKEN_TYPE.CSRF]: csrfToken } as JwtPayload,
+      {
+        secret: authConfig.token.refresh.secret,
+        expiresIn: 30
+      }
+    )
+    refreshTokenWithoutCSRF = await jwtService.signAsync({ tokenType: TOKEN_TYPE.REFRESH, identity: { id: 1, login: 'foo' } } as JwtPayload, {
       secret: authConfig.token.refresh.secret,
       expiresIn: 30
     })
-    refreshTokenWithoutCSRF = await jwtService.signAsync({ identity: { id: 1, login: 'foo' } } as JwtPayload, {
-      secret: authConfig.token.refresh.secret,
-      expiresIn: 30
-    })
+    accessTokenSignedWithRefreshSecret = await jwtService.signAsync(
+      { tokenType: TOKEN_TYPE.ACCESS, identity: { id: 1, login: 'foo' } } as JwtPayload,
+      {
+        secret: authConfig.token.refresh.secret,
+        expiresIn: 30
+      }
+    )
     context = createMock<ExecutionContext>()
   })
 
@@ -63,6 +78,7 @@ describe(AuthTokenRefreshGuard.name, () => {
     expect(authRefreshGuard).toBeDefined()
     expect(refreshToken).toBeDefined()
     expect(refreshTokenWithoutCSRF).toBeDefined()
+    expect(accessTokenSignedWithRefreshSecret).toBeDefined()
     expect(csrfToken).toBeDefined()
   })
 
@@ -87,6 +103,17 @@ describe(AuthTokenRefreshGuard.name, () => {
     expect(await authRefreshGuard.canActivate(context)).toBe(true)
   })
 
+  it('should reject a valid refresh token when the current user is unavailable', async () => {
+    usersManager.fromAuthToken.mockResolvedValueOnce(null)
+    context.switchToHttp().getRequest.mockReturnValue({
+      raw: { user: '' },
+      headers: {
+        authorization: `Bearer ${refreshToken}`
+      }
+    })
+    await expect(authRefreshGuard.canActivate(context)).rejects.toThrow('Unauthorized')
+  })
+
   it('should throw an error with an invalid refresh token in cookies', async () => {
     context.switchToHttp().getRequest.mockReturnValue({
       raw: { user: '' },
@@ -103,6 +130,16 @@ describe(AuthTokenRefreshGuard.name, () => {
       raw: { user: '' },
       headers: {
         authorization: `Bearer bar`
+      }
+    })
+    await expect(authRefreshGuard.canActivate(context)).rejects.toThrow('Unauthorized')
+  })
+
+  it('should reject a token with an invalid type', async () => {
+    context.switchToHttp().getRequest.mockReturnValue({
+      raw: { user: '' },
+      headers: {
+        authorization: `Bearer ${accessTokenSignedWithRefreshSecret}`
       }
     })
     await expect(authRefreshGuard.canActivate(context)).rejects.toThrow('Unauthorized')

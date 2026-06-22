@@ -132,7 +132,6 @@
   "Storage quota exceeded": "Depolama kotası aşıldı",
   "File size limit exceeded": "Dosya boyutu sınırı aşıldı",
   "The trash is read-only": "Çöp kutusu salt okunurdur",
-  "Storage quota will be exceeded": "Depolama kotası aşılacak",
   "Access to internal IP addresses is forbidden": "Dahili IP adreslerine erişim yasaktır",
   "Missing or invalid \"content-length\" header": "\"content-length\" başlığı eksik veya geçersiz",
   "Maximum redirects exceeded": "Maksimum yönlendirme sayısı aşıldı",
@@ -710,5 +709,6 @@
   "size has changed since parsing": "Boyut ayrıştırmadan beri değişti",
   "No synchronized folder": "Senkronize edilmiş klasör yok",
   "Edit in OnlyOffice": "OnlyOffice'te Düzenle",
+  "Edit in Euro-Office": "Euro-Office'te Düzenle",
   "View in PDF.js": "PDF.js'de Görüntüle"
 }

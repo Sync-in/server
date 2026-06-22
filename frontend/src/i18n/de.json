@@ -132,7 +132,6 @@
   "Storage quota exceeded": "Speicherkontingent überschritten",
   "File size limit exceeded": "Dateigrößenlimit überschritten",
   "The trash is read-only": "Der Papierkorb ist schreibgeschützt",
-  "Storage quota will be exceeded": "Speicherkontingent wird überschritten",
   "Access to internal IP addresses is forbidden": "Der Zugriff auf interne IP-Adressen ist verboten",
   "Missing or invalid \"content-length\" header": "Fehlender oder ungültiger \"content-length\"-Header",
   "Maximum redirects exceeded": "Maximale Anzahl an Weiterleitungen überschritten",
@@ -710,5 +709,6 @@
   "size has changed since parsing": "Die Größe hat sich seit dem Parsen geändert",
   "No synchronized folder": "Kein synchronisierter Ordner",
   "Edit in OnlyOffice": "In OnlyOffice bearbeiten",
+  "Edit in Euro-Office": "In Euro-Office bearbeiten",
   "View in PDF.js": "In PDF.js ansehen"
 }

@@ -142,7 +142,7 @@ describe(createZip.name, () => {
     await writeFile(sourceFile, 'content')
 
     await expect(createZip(archivePath, [{ path: sourceFile, name: 'file.txt' }], true, undefined, undefined, 1)).rejects.toThrow(
-      'Storage quota will be exceeded'
+      'Storage quota exceeded'
     )
   })
 

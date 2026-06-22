@@ -4,11 +4,12 @@ import fs from 'fs/promises'
 import { Dirent, Stats } from 'node:fs'
 import path from 'node:path'
 import { regExpPathPattern } from '../../../common/functions'
+import { FILE_ERROR } from '../../files/constants/errors'
 import { FILE_OPERATION } from '../../files/constants/operations'
 import { FileError } from '../../files/models/file-error'
 import { LockConflict } from '../../files/models/file-lock-error'
 import { FilesManager } from '../../files/services/files-manager.service'
-import { checksumFile, isPathExists, isPathIsDir, removeFiles, touchFile } from '../../files/utils/files'
+import { checksumFile, isPathExists, isPathIsDir, touchFile } from '../../files/utils/files'
 import { SendFile } from '../../files/utils/send-file'
 import { ParseDiffContext } from '../../spaces/interfaces/space-diff.interface'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface'
@@ -20,7 +21,7 @@ import { SyncCopyMoveDto, SyncDiffDto, SyncMakeDto, SyncPropsDto } from '../dtos
 import { SyncUploadDto } from '../dtos/sync-upload.dto'
 import { SyncFileSpecialStats, SyncFileStats } from '../interfaces/sync-diff.interface'
 import { SyncPathSettings } from '../interfaces/sync-path.interface'
-import { getTmpFilePath } from '../utils/functions'
+import { getSyncTmpFilePath } from '../utils/functions'
 import { SYNC_PATH_TO_SPACE_SEGMENTS } from '../utils/routes'
 import { SyncQueries } from './sync-queries.service'
 
@@ -45,29 +46,28 @@ export class SyncManager {
   }
 
   async upload(req: FastifySpaceRequest, syncUploadDto: SyncUploadDto): Promise<{ ino: number }> {
-    const tmpPath = getTmpFilePath(req.space.realPath)
+    const tmpPath = getSyncTmpFilePath(req.space.realPath)
     try {
-      if (syncUploadDto.checksum) {
-        const checksum = await this.filesManager.saveStream(req.user, req.space, req, { tmpPath: tmpPath, checksumAlg: SYNC_CHECKSUM_ALG })
-        if (checksum !== syncUploadDto.checksum) {
-          await removeFiles(tmpPath)
-          this.handleError(req.space, req.method, new FileError(HttpStatus.BAD_REQUEST, 'checksums are not identical'))
+      await this.filesManager.saveStream(req.user, req.space, req, {
+        tmpPath: tmpPath,
+        ...(syncUploadDto.checksum && { checksumAlg: SYNC_CHECKSUM_ALG }),
+        validateTmpFile: async ({ tmpPath, checksum }) => {
+          const tmpStats = await fs.stat(tmpPath)
+          if (tmpStats.size !== syncUploadDto.size) {
+            throw new FileError(HttpStatus.BAD_REQUEST, `sizes are not identical : ${tmpStats.size} != ${syncUploadDto.size}`)
+          }
+          if (req.space.storageQuota && req.space.willExceedQuota(tmpStats.size)) {
+            throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
+          }
+          if (syncUploadDto.checksum && checksum !== syncUploadDto.checksum) {
+            throw new FileError(HttpStatus.BAD_REQUEST, 'checksums are not identical')
+          }
         }
-      } else {
-        await this.filesManager.saveStream(req.user, req.space, req, { tmpPath: tmpPath })
-      }
-      const fileStats = await fs.stat(req.space.realPath)
-      if (fileStats.size !== syncUploadDto.size) {
-        await removeFiles(tmpPath)
-        this.handleError(
-          req.space,
-          req.method,
-          new FileError(HttpStatus.BAD_REQUEST, `sizes are not identical : ${fileStats.size} != ${syncUploadDto.size}`)
-        )
-      }
+      })
       // update mtime
       await touchFile(req.space.realPath, syncUploadDto.mtime)
       // return inode number
+      const fileStats = await fs.stat(req.space.realPath)
       return { ino: fileStats.ino }
     } catch (e) {
       this.handleError(req.space, req.method, e)
@@ -142,7 +142,7 @@ export class SyncManager {
       throw new HttpException('Space not found', HttpStatus.NOT_FOUND)
     }
     if (space.quotaIsExceeded) {
-      throw new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE)
+      throw new HttpException(FILE_ERROR.STORAGE_QUOTA_EXCEEDED, HttpStatus.INSUFFICIENT_STORAGE)
     }
     if (!(await isPathExists(space.realPath))) {
       throw new HttpException(`Remote path not found : ${syncPathSettings.remotePath}`, HttpStatus.NOT_FOUND)

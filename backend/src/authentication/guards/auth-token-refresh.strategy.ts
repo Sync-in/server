@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { UserModel } from '../../applications/users/models/user.model'
+import { UsersManager } from '../../applications/users/services/users-manager.service'
 import { configuration } from '../../configuration/config.environment'
 import { AuthManager } from '../auth.service'
 import { JwtPayload } from '../interfaces/jwt-payload.interface'
@@ -15,6 +16,7 @@ export class AuthTokenRefreshStrategy extends PassportStrategy(Strategy, 'tokenR
 
   constructor(
     private readonly authManager: AuthManager,
+    private readonly usersManager: UsersManager,
     private readonly logger: PinoLogger
   ) {
     super({
@@ -26,11 +28,17 @@ export class AuthTokenRefreshStrategy extends PassportStrategy(Strategy, 'tokenR
     AuthTokenRefreshStrategy.refreshCookieName = configuration.auth.token.refresh.name
   }
 
-  validate(req: FastifyRequest, jwtPayload: JwtPayload): UserModel {
+  async validate(req: FastifyRequest, jwtPayload: JwtPayload): Promise<UserModel> {
+    if (jwtPayload.tokenType !== TOKEN_TYPE.REFRESH) {
+      throw new UnauthorizedException()
+    }
     this.logger.assign({ user: jwtPayload.identity.login })
     this.authManager.csrfValidation(req, jwtPayload, TOKEN_TYPE.REFRESH)
-    // jwt expiration is used later to refresh cookies
-    return new UserModel({ ...jwtPayload.identity, exp: jwtPayload.exp })
+    const user = await this.usersManager.fromAuthToken(new UserModel({ ...jwtPayload.identity, exp: jwtPayload.exp }))
+    if (!user) {
+      throw new UnauthorizedException()
+    }
+    return user
   }
 
   private static extractJWTFromCookie(req: FastifyRequest): string | null {

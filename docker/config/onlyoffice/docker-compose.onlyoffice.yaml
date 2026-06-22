@@ -1,6 +1,6 @@
 services:
   onlyoffice:
-    image: onlyoffice/documentserver:9.3
+    image: onlyoffice/documentserver:9.3.1.2
     container_name: onlyoffice
     restart: always
     environment:

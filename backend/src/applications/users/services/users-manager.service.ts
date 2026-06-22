@@ -59,6 +59,24 @@ export class UsersManager {
     return user ? new UserModel(user, true) : null
   }
 
+  async fromAuthToken(authUser: UserModel): Promise<UserModel | null> {
+    const user = await this.fromUserId(authUser.id)
+    if (!user?.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
+      return null
+    }
+    if (authUser.impersonatedFromId) {
+      const impersonatingUser = await this.fromUserId(authUser.impersonatedFromId)
+      if (!impersonatingUser?.isActive || !impersonatingUser.isAdmin || impersonatingUser.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
+        return null
+      }
+      user.impersonatedFromId = authUser.impersonatedFromId
+      user.impersonatedClientId = authUser.impersonatedClientId
+    }
+    user.clientId = authUser.clientId
+    user.exp = authUser.exp
+    return user
+  }
+
   async findUser(loginOrEmail: string, removePassword: false): Promise<UserModel>
   async findUser(loginOrEmail: string, removePassword?: true): Promise<Omit<UserModel, 'password'>>
   async findUser(loginOrEmail: string, removePassword: boolean = true): Promise<Omit<UserModel, 'password'>> {
@@ -180,21 +198,10 @@ export class UsersManager {
   }
 
   async updateAccesses(user: UserModel, ip: string, success: boolean, isAuthTwoFa = false) {
-    let passwordAttempts: number
-    if (!isAuthTwoFa && configuration.auth.mfa.totp.enabled && user.twoFaEnabled) {
-      // Do not reset password attempts if the login still requires 2FA validation
-      passwordAttempts = user.passwordAttempts
-    } else {
-      passwordAttempts = success ? 0 : Math.min(user.passwordAttempts + 1, USER_MAX_PASSWORD_ATTEMPTS)
+    const preservePasswordAttempts = success && !isAuthTwoFa && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
+    if (!(await this.usersQueries.updateAccesses(user.id, ip, preservePasswordAttempts ? 'preserve' : success ? 'reset' : 'increment'))) {
+      throw new Error('Unable to update user accesses')
     }
-    await this.usersQueries.updateUserOrGuest(user.id, {
-      lastAccess: user.currentAccess,
-      currentAccess: new Date(),
-      lastIp: user.currentIp,
-      currentIp: ip,
-      passwordAttempts: passwordAttempts,
-      isActive: user.isActive && passwordAttempts < USER_MAX_PASSWORD_ATTEMPTS
-    })
   }
 
   async getAvatar(userLogin: string, generate: true, generateIsNotExists?: boolean): Promise<undefined>

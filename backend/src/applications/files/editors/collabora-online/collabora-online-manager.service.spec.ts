@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { FastifyReply } from 'fastify'
 import fs from 'node:fs/promises'
 import { Readable } from 'node:stream'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
 import { SPACE_OPERATION } from '../../../spaces/constants/spaces'
 import type { SpaceEnv } from '../../../spaces/models/space-env.model'
@@ -25,6 +26,7 @@ vi.mock('../../../users/utils/avatar')
 describe(CollaboraOnlineManager.name, () => {
   let service: CollaboraOnlineManager
   let filesLockManager: FilesLockManager
+  let jwtService: JwtService
 
   const mockUser: UserModel = {
     id: 1,
@@ -82,6 +84,7 @@ describe(CollaboraOnlineManager.name, () => {
     module.useLogger(['fatal'])
     service = module.get<CollaboraOnlineManager>(CollaboraOnlineManager)
     filesLockManager = module.get<FilesLockManager>(FilesLockManager)
+    jwtService = module.get<JwtService>(JwtService)
   })
 
   afterEach(() => {
@@ -122,6 +125,12 @@ describe(CollaboraOnlineManager.name, () => {
           app: COLLABORA_APP_LOCK,
           lockScope: LOCK_SCOPE.SHARED
         })
+      )
+      expect(jwtService.signAsync).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tokenType: TOKEN_TYPE.COLLABORA_ONLINE
+        }),
+        expect.any(Object)
       )
     })
 

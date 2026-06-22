@@ -1,0 +1,16 @@
+services:
+  eurooffice:
+    image: ghcr.io/euro-office/documentserver:v9.3.1
+    container_name: eurooffice
+    restart: always
+    environment:
+      - JWT_SECRET=euroOfficeSecret
+      - JWT_IN_BODY=true
+      - USE_UNAUTHORIZED_STORAGE=true
+    logging:
+      driver: json-file
+      options:
+        max-size: "25m"
+        max-file: "5"
+    networks:
+      - sync_in_network

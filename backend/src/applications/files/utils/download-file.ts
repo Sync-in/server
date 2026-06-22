@@ -13,8 +13,8 @@ import type { DownloadFileDto } from '../dto/file-operations.dto'
 import { FileTaskEvent } from '../events/file-events'
 import type { DownloadFileContentInfo, DownloadFileOptions } from '../interfaces/download-file.interface'
 import { FileError } from '../models/file-error'
-import { FILE_ERROR_MESSAGES } from './errors'
 import { writeFromStream } from './files'
+import { FILE_ERROR } from '../constants/errors'
 
 interface DownloadFileRequestOptions {
   allowPrivateIP?: boolean
@@ -60,7 +60,7 @@ export class DownloadFile {
 
     const maxSize = options?.space ? contentLength : (options?.maxSize ?? contentLength)
     if (maxSize === null || (contentLength === null && options?.space)) {
-      throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_INVALID_CONTENT_LENGTH)
+      throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_INVALID_CONTENT_LENGTH)
     }
     if (contentLength !== null) this.prepareSpace(options?.space, contentLength, options?.publishedPath || dstPath)
 
@@ -78,7 +78,7 @@ export class DownloadFile {
       .then((addresses) => {
         const family = options.family === 4 || options.family === 'IPv4' ? 4 : options.family === 6 || options.family === 'IPv6' ? 6 : null
         const matches = family ? addresses.filter((a) => a.family === family) : addresses
-        if (!matches.length) return cb(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP), '', 0)
+        if (!matches.length) return cb(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP), '', 0)
         if (options.all) {
           cb(null, matches)
         } else {
@@ -116,7 +116,7 @@ export class DownloadFile {
       response.data?.destroy?.()
       // Redirects are followed manually to re-run DNS and remote address checks on each hop.
       if (redirects >= (options.maxRedirects ?? DownloadFile.maxRedirects)) {
-        throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_MAX_REDIRECTS_EXCEEDED)
+        throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_MAX_REDIRECTS_EXCEEDED)
       }
       currentUrl = nextUrl
     }
@@ -125,11 +125,11 @@ export class DownloadFile {
   private redirectUrl(response: AxiosResponse, currentUrl: string): string | null {
     if (!DownloadFile.redirectStatus.has(response.status)) return null
     const location = response.headers.location as string | undefined
-    if (!location) throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_MISSING_REDIRECT_LOCATION)
+    if (!location) throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_MISSING_REDIRECT_LOCATION)
 
     const url = new URL(location, currentUrl)
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-      throw new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_UNSAFE_REDIRECT_LOCATION)
+      throw new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_UNSAFE_REDIRECT_LOCATION)
     }
     return url.toString()
   }
@@ -142,7 +142,7 @@ export class DownloadFile {
 
     const addresses = await lookup(key, DownloadFile.dnsOptions)
     if (!addresses.length || addresses.some((a) => this.isBlocked(a.address))) {
-      throw new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP)
+      throw new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP)
     }
     this.dnsCache.set(key, addresses)
     return addresses
@@ -154,7 +154,7 @@ export class DownloadFile {
 
   private checkRemote(response: AxiosResponse, allowPrivateIP?: boolean): void {
     if (!allowPrivateIP && this.isBlocked(response.request?.socket?.remoteAddress)) {
-      throw new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP)
+      throw new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP)
     }
   }
 
@@ -171,7 +171,7 @@ export class DownloadFile {
   private prepareSpace(space: SpaceEnv | undefined, contentLength: number, publishedPath: string): void {
     if (!space) return
     if (space.willExceedQuota(contentLength)) {
-      throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR_MESSAGES.STORAGE_QUOTA_EXCEEDED)
+      throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
     }
     if (space.task?.cacheKey) {
       space.task.props = { ...space.task.props, progress: 1, size: 0, totalSize: contentLength }

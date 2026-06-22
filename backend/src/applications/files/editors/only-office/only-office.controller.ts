@@ -1,9 +1,10 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request, Res, StreamableFile, UseInterceptors } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request, Res, StreamableFile, UseGuards, UseInterceptors } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor'
 import { SPACE_OPERATION } from '../../../spaces/constants/spaces'
 import { OverrideSpacePermission } from '../../../spaces/decorators/space-override-permission.decorator'
 import { GetSpace } from '../../../spaces/decorators/space.decorator'
+import { SpaceGuard } from '../../../spaces/guards/space.guard'
 import { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface'
 import { SpaceEnv } from '../../../spaces/models/space-env.model'
 import { GetUser } from '../../../users/decorators/user.decorator'
@@ -15,7 +16,6 @@ import type { OnlyOfficeReqDto } from './only-office.dtos'
 import { API_ONLY_OFFICE, ONLY_OFFICE_ROUTE } from './only-office.routes'
 
 @Controller(API_ONLY_OFFICE)
-@OnlyOfficeEnvironment()
 export class OnlyOfficeController {
   constructor(
     private readonly filesMethods: FilesMethods,
@@ -23,17 +23,20 @@ export class OnlyOfficeController {
   ) {}
 
   @Get(`${ONLY_OFFICE_ROUTE.SETTINGS}/*`)
+  @UseGuards(SpaceGuard)
   @UseInterceptors(ContextInterceptor)
   onlyOfficeSettings(@Request() req: FastifySpaceRequest): Promise<OnlyOfficeReqDto> {
     return this.filesOnlyOfficeManager.getSettings(req.user, req.space, req)
   }
 
   @Get(`${ONLY_OFFICE_ROUTE.DOCUMENT}/*`)
+  @OnlyOfficeEnvironment()
   onlyOfficeDocument(@Request() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<StreamableFile> {
     return this.filesMethods.headOrGet(req, res)
   }
 
   @Post(`${ONLY_OFFICE_ROUTE.CALLBACK}/*`)
+  @OnlyOfficeEnvironment()
   @OverrideSpacePermission(SPACE_OPERATION.MODIFY)
   @HttpCode(HttpStatus.OK)
   onlyOfficeCallBack(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body('token') token: string) {

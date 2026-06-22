@@ -25,6 +25,10 @@ export class AuthProviderOIDCSecurityConfig {
   @IsBoolean()
   supportPKCE? = true
 
+  @IsOptional()
+  @IsBoolean()
+  allowInsecureRequests? = false
+
   @Transform(({ value }) => value || OAuthTokenEndpoint.ClientSecretBasic)
   @IsEnum(OAuthTokenEndpoint)
   tokenEndpointAuthMethod: OAuthTokenEndpoint = OAuthTokenEndpoint.ClientSecretBasic
@@ -40,6 +44,14 @@ export class AuthProviderOIDCSecurityConfig {
   @IsOptional()
   @IsBoolean()
   skipSubjectCheck? = false
+
+  @IsOptional()
+  @IsBoolean()
+  requireVerifiedEmail? = false
+
+  @IsOptional()
+  @IsBoolean()
+  allowPrivateIpAvatarDownload? = false
 }
 
 export class AuthProviderOIDCOptionsConfig {
@@ -58,7 +70,11 @@ export class AuthProviderOIDCOptionsConfig {
 
   @IsOptional()
   @IsBoolean()
-  enablePasswordAuth? = true
+  enablePasswordAuth? = false
+
+  @IsOptional()
+  @IsBoolean()
+  autoSyncAvatar? = false
 
   @IsOptional()
   @IsString()

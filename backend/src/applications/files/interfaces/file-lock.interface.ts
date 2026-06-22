@@ -2,9 +2,14 @@ import { SERVER_NAME } from '../../../common/shared'
 import { Owner } from '../../users/interfaces/owner.interface'
 import { LOCK_DEPTH, LOCK_SCOPE, WEBDAV_APP_LOCK } from '../../webdav/constants/webdav'
 import { COLLABORA_APP_LOCK } from '../editors/collabora-online/collabora-online.constants'
-import { ONLY_OFFICE_APP_LOCK } from '../editors/only-office/only-office.constants'
+import { EURO_OFFICE_APP_LOCK, ONLY_OFFICE_APP_LOCK } from '../editors/only-office/only-office.constants'
 
-export type LOCK_APP = typeof WEBDAV_APP_LOCK | typeof COLLABORA_APP_LOCK | typeof ONLY_OFFICE_APP_LOCK | typeof SERVER_NAME
+export type LOCK_APP =
+  | typeof WEBDAV_APP_LOCK
+  | typeof COLLABORA_APP_LOCK
+  | typeof ONLY_OFFICE_APP_LOCK
+  | typeof EURO_OFFICE_APP_LOCK
+  | typeof SERVER_NAME
 
 // Optional lock parameters
 export interface FileLockOptions {

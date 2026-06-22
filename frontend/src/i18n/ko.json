@@ -132,7 +132,6 @@
   "Storage quota exceeded": "저장 할당량을 초과했습니다",
   "File size limit exceeded": "파일 크기 제한을 초과했습니다",
   "The trash is read-only": "휴지통은 읽기 전용입니다",
-  "Storage quota will be exceeded": "저장 할당량을 초과할 예정입니다",
   "Access to internal IP addresses is forbidden": "내부 IP 주소에 대한 접근이 금지되어 있습니다",
   "Missing or invalid \"content-length\" header": "\"content-length\" 헤더가 없거나 유효하지 않습니다",
   "Maximum redirects exceeded": "최대 리디렉션 수를 초과했습니다",
@@ -710,5 +709,6 @@
   "size has changed since parsing": "파싱 이후 크기가 변경되었습니다",
   "No synchronized folder": "동기화된 폴더 없음",
   "Edit in OnlyOffice": "OnlyOffice에서 편집",
+  "Edit in Euro-Office": "Euro-Office에서 편집",
   "View in PDF.js": "PDF.js에서 보기"
 }

@@ -2,6 +2,7 @@ import { Transform } from 'class-transformer'
 import { IsBoolean, IsDefined, IsInt, IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator'
 import { MakeFileDto } from '../../files/dto/file-operations.dto'
 import { SyncFileStats } from '../interfaces/sync-diff.interface'
+import { transformPathFilters } from '../utils/functions'
 import { NormalizedMap } from '../utils/normalizedMap'
 
 export class SyncDiffDto {
@@ -19,7 +20,7 @@ export class SyncDiffDto {
   defaultFilters: Set<string>
 
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' && value.length > 0 ? new RegExp(value, 'i') : null))
+  @Transform(({ value }) => transformPathFilters(value))
   pathFilters?: RegExp = null
 
   @IsOptional()

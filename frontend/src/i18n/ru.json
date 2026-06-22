@@ -132,7 +132,6 @@
   "Storage quota exceeded": "Превышена квота хранилища",
   "File size limit exceeded": "Превышен лимит размера файла",
   "The trash is read-only": "Корзина доступна только для чтения",
-  "Storage quota will be exceeded": "Квота хранилища будет превышена",
   "Access to internal IP addresses is forbidden": "Доступ к внутренним IP-адресам запрещён",
   "Missing or invalid \"content-length\" header": "Заголовок \"content-length\" отсутствует или недействителен",
   "Maximum redirects exceeded": "Превышено максимальное число перенаправлений",
@@ -710,5 +709,6 @@
   "size has changed since parsing": "Размер изменился с момента разбора",
   "No synchronized folder": "Нет синхронизированной папки",
   "Edit in OnlyOffice": "Редактировать в OnlyOffice",
+  "Edit in Euro-Office": "Редактировать в Euro-Office",
   "View in PDF.js": "Просмотр в PDF.js"
 }

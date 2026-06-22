@@ -248,7 +248,7 @@ export class AuthProviderOIDC implements AuthProvider {
         },
         this.getTokenAuthMethod(this.oidcConfig.security.tokenEndpointAuthMethod, this.oidcConfig.clientSecret),
         {
-          execute: [allowInsecureRequests],
+          ...(this.oidcConfig.security.allowInsecureRequests ? { execute: [allowInsecureRequests] } : {}),
           timeout: 6000
         }
       )
@@ -256,17 +256,29 @@ export class AuthProviderOIDC implements AuthProvider {
       return config
     } catch (error) {
       this.logger.error({ tag: this.initializeOIDCClient.name, msg: `OIDC client initialization failed: ${error?.cause || error}` })
-      switch (error.cause?.code) {
-        case 'ECONNREFUSED':
-        case 'ENOTFOUND':
-          throw new HttpException('OIDC provider unavailable', HttpStatus.SERVICE_UNAVAILABLE)
+      throw this.mapOIDCInitializationError(error)
+    }
+  }
 
-        case 'ETIMEDOUT':
-          throw new HttpException('OIDC provider timeout', HttpStatus.GATEWAY_TIMEOUT)
+  private mapOIDCInitializationError(error: any): HttpException {
+    const code = error?.code ?? error?.cause?.code
+    switch (code) {
+      case 'OAUTH_HTTP_REQUEST_FORBIDDEN':
+        return new HttpException('OIDC issuer URL must use HTTPS unless allowInsecureRequests is enabled', HttpStatus.BAD_REQUEST)
 
-        default:
-          throw new HttpException('OIDC client initialization failed', HttpStatus.INTERNAL_SERVER_ERROR)
-      }
+      case 'OAUTH_TIMEOUT':
+      case 'ETIMEDOUT':
+        return new HttpException('OIDC provider timeout', HttpStatus.GATEWAY_TIMEOUT)
+
+      case 'ECONNREFUSED':
+      case 'ENOTFOUND':
+        return new HttpException('OIDC provider unavailable', HttpStatus.SERVICE_UNAVAILABLE)
+
+      default:
+        if (typeof code === 'string' && code.startsWith('OAUTH_')) {
+          return new HttpException('OIDC provider configuration error', HttpStatus.BAD_REQUEST)
+        }
+        return new HttpException('OIDC client initialization failed', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
@@ -315,7 +327,9 @@ export class AuthProviderOIDC implements AuthProvider {
     // Create or update user
     user = await this.updateOrCreateUser(identity, user)
     // Update picture url (if it exists)
-    await this.updatePictureUrl(user, userInfo)
+    if (this.oidcConfig.options.autoSyncAvatar) {
+      await this.updatePictureUrl(user, userInfo)
+    }
     // Update user access log
     this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error({ tag: this.processUserInfo.name, msg: `${e}` }))
 
@@ -434,11 +448,12 @@ export class AuthProviderOIDC implements AuthProvider {
     let pictureContentLength: number | undefined
     let pictureLastModified: string | undefined
     const downloader = new DownloadFile(this.http)
+    const allowPrivateIP = this.oidcConfig.security.allowPrivateIpAvatarDownload
     try {
       const tmpPicturePath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
       // retrieve headers
       const { contentType, contentLength, lastModified } = await downloader.download(downloadDto, tmpPicturePath, {
-        allowPrivateIP: true, // trust the url source
+        allowPrivateIP,
         getContentInfo: true
       })
       pictureContentLength = contentLength ?? undefined
@@ -466,10 +481,10 @@ export class AuthProviderOIDC implements AuthProvider {
       this.logger.warn({ tag: this.updatePictureUrl.name, msg: `checks failed: ${e}` })
     }
 
-    // download avatar (trust the url source)
+    // download avatar
     const userAvatarTmpPath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
     try {
-      await downloader.download(downloadDto, userAvatarTmpPath, { allowPrivateIP: true, maxSize: USER_AVATAR_MAX_UPLOAD_SIZE })
+      await downloader.download(downloadDto, userAvatarTmpPath, { allowPrivateIP, maxSize: USER_AVATAR_MAX_UPLOAD_SIZE })
     } catch (e) {
       this.logger.warn({ tag: this.updatePictureUrl.name, msg: `download failed: ${e}` })
       return
@@ -500,6 +515,9 @@ export class AuthProviderOIDC implements AuthProvider {
     const email = userInfo.email ? userInfo.email.trim() : undefined
     if (!email) {
       throw new HttpException('No email address found in the OIDC profile', HttpStatus.BAD_REQUEST)
+    }
+    if (this.oidcConfig.security.requireVerifiedEmail && (userInfo as { email_verified?: boolean }).email_verified !== true) {
+      throw new HttpException('OIDC email must be verified', HttpStatus.BAD_REQUEST)
     }
 
     const login = userInfo.preferred_username ?? (email ? email.split('@')[0] : undefined) ?? userInfo.sub

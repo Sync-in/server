@@ -1,19 +1,19 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, mixin, Type } from '@nestjs/common'
-import { configuration } from '../../../configuration/config.environment'
-import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '../../constants/auth'
-import { FastifyAuthenticatedRequest } from '../../interfaces/auth-request.interface'
-import { AuthProvider2FA } from './auth-provider-two-fa.service'
+import { configuration } from '../../../../configuration/config.environment'
+import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '../../../constants/auth'
+import { FastifyAuthenticatedRequest } from '../../../interfaces/auth-request.interface'
+import { AuthProvider2FA } from '../auth-provider-two-fa.service'
 
-export const AuthTwoFaGuard = AuthTwoFaGuardFactory()
-export const AuthTwoFaGuardWithoutPassword = AuthTwoFaGuardFactory({ withPassword: false })
+export const AuthTwoFaVerificationGuard = AuthTwoFaVerificationGuardFactory()
+export const AuthTwoFaVerificationWithoutPasswordGuard = AuthTwoFaVerificationGuardFactory({ withPassword: false })
 
-interface TwoFaGuardOptions {
+interface TwoFaVerificationGuardOptions {
   withPassword?: boolean
 }
 
-function AuthTwoFaGuardFactory(options: TwoFaGuardOptions = { withPassword: true }): Type<CanActivate> {
+function AuthTwoFaVerificationGuardFactory(options: TwoFaVerificationGuardOptions = { withPassword: true }): Type<CanActivate> {
   @Injectable()
-  class MixinAuthTwoFaGuard implements CanActivate {
+  class MixinAuthTwoFaVerificationGuard implements CanActivate {
     constructor(private readonly authProvider2FA: AuthProvider2FA) {}
 
     async canActivate(ctx: ExecutionContext): Promise<boolean> {
@@ -45,5 +45,5 @@ function AuthTwoFaGuardFactory(options: TwoFaGuardOptions = { withPassword: true
     }
   }
 
-  return mixin(MixinAuthTwoFaGuard)
+  return mixin(MixinAuthTwoFaVerificationGuard)
 }

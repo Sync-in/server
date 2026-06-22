@@ -6,6 +6,7 @@ import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
+import { StoreService } from '../../../../store/store.service'
 import { UserService } from '../../../users/user.service'
 import { FileModel } from '../../models/file.model'
 
@@ -22,7 +23,16 @@ export class FilesViewerSelectDialog {
   protected readonly icons = { faFile, faFileWord, faArrowRight, faFileLines }
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
+  private readonly store = inject(StoreService)
   private readonly userService = inject(UserService)
+
+  protected get officeEditorProvider(): keyof FileEditorProviders {
+    return this.store.server().files.editors.onlyoffice ? 'onlyoffice' : 'eurooffice'
+  }
+
+  protected get officeEditorName(): string {
+    return this.officeEditorProvider === 'eurooffice' ? 'Euro-Office' : 'OnlyOffice'
+  }
 
   selectEditor(editor: keyof FileEditorProviders) {
     if (this.rememberChoice) {

@@ -1,6 +1,5 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { appBootstrap } from './app.bootstrap'
-import { dbCloseConnection } from './infrastructure/database/utils'
 
 describe('AppStaticFiles (e2e)', () => {
   let app: NestFastifyApplication
@@ -12,7 +11,6 @@ describe('AppStaticFiles (e2e)', () => {
   })
 
   afterAll(async () => {
-    await dbCloseConnection(app)
     await app.close()
   })
 

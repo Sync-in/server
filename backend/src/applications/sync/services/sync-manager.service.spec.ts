@@ -163,20 +163,27 @@ describe(SyncManager.name, () => {
       vi.mocked(touchFile).mockResolvedValue(undefined)
 
       const r = await service.upload(req as any, dto as any)
-      expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, { tmpPath: expect.any(String), checksumAlg: SYNC_CHECKSUM_ALG })
+      expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, {
+        tmpPath: expect.any(String),
+        checksumAlg: SYNC_CHECKSUM_ALG,
+        validateTmpFile: expect.any(Function)
+      })
       expect(touchFile).toHaveBeenCalledWith('/tmp/up.bin', 1710000000)
       expect(r).toEqual({ ino: 123 })
       expect(removeFiles).not.toHaveBeenCalled()
     })
 
-    it('should reject when checksum mismatches and remove tmp', async () => {
+    it('should reject when checksum mismatches and preserve tmp', async () => {
       const req = makeReq()
       const dto = { checksum: 'abc', size: 10, mtime: 1710000000 }
-      filesManager.saveStream.mockResolvedValue('bad')
+      filesManager.saveStream.mockImplementation(async (_user, _space, _req, options) => {
+        await options.validateTmpFile({ tmpPath: '/tmp/sync-in-file', realPath: req.space.realPath, checksum: 'bad' })
+      })
       fsPromises.stat.mockResolvedValue({ size: 10, ino: 123, mtime: new Date(1710000000 * 1000) })
 
       await expect(service.upload(req as any, dto as any)).rejects.toBeInstanceOf(HttpException)
-      expect(removeFiles).toHaveBeenCalledWith(expect.any(String))
+      expect(removeFiles).not.toHaveBeenCalled()
+      expect(touchFile).not.toHaveBeenCalled()
     })
 
     it('should upload without checksum', async () => {
@@ -186,19 +193,41 @@ describe(SyncManager.name, () => {
       fsPromises.stat.mockResolvedValue({ size: 5, ino: 321, mtime: new Date(1710000100 * 1000) })
 
       const r = await service.upload(req as any, dto as any)
-      expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, { tmpPath: expect.any(String) })
+      expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, {
+        tmpPath: expect.any(String),
+        validateTmpFile: expect.any(Function)
+      })
       expect(touchFile).toHaveBeenCalledWith('/tmp/up2.bin', 1710000100)
       expect(r).toEqual({ ino: 321 })
     })
 
-    it('should reject when size mismatches and remove tmp', async () => {
+    it('should reject when size mismatches and preserve tmp', async () => {
       const req = makeReq()
       const dto = { size: 10, mtime: 1710000100 }
-      filesManager.saveStream.mockResolvedValue(undefined)
+      filesManager.saveStream.mockImplementation(async (_user, _space, _req, options) => {
+        await options.validateTmpFile({ tmpPath: '/tmp/sync-in-file', realPath: req.space.realPath })
+      })
       fsPromises.stat.mockResolvedValue({ size: 99, ino: 321, mtime: new Date(1710000100 * 1000) })
 
       await expect(service.upload(req as any, dto as any)).rejects.toBeInstanceOf(HttpException)
-      expect(removeFiles).toHaveBeenCalledWith(expect.any(String))
+      expect(removeFiles).not.toHaveBeenCalled()
+      expect(touchFile).not.toHaveBeenCalled()
+    })
+
+    it('should reject when tmp file exceeds quota and preserve tmp', async () => {
+      const req = makeReq({
+        space: { realPath: '/tmp/up.bin', url: '/space/up.bin', storageQuota: 100, willExceedQuota: vi.fn().mockReturnValue(true) }
+      })
+      const dto = { size: 10, mtime: 1710000100 }
+      filesManager.saveStream.mockImplementation(async (_user, _space, _req, options) => {
+        await options.validateTmpFile({ tmpPath: '/tmp/sync-in-file', realPath: req.space.realPath })
+      })
+      fsPromises.stat.mockResolvedValue({ size: 10, ino: 321, mtime: new Date(1710000100 * 1000) })
+
+      await expect(service.upload(req as any, dto as any)).rejects.toBeInstanceOf(HttpException)
+      expect(req.space.willExceedQuota).toHaveBeenCalledWith(10)
+      expect(removeFiles).not.toHaveBeenCalled()
+      expect(touchFile).not.toHaveBeenCalled()
     })
   })
 

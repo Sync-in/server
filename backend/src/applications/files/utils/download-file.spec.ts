@@ -4,10 +4,10 @@ import { HttpStatus } from '@nestjs/common'
 import { Readable } from 'node:stream'
 import { HTTP_METHOD } from '../../applications.constants'
 import { FileError } from '../models/file-error'
-import { FILE_ERROR_MESSAGES } from './errors'
 import { writeFromStream } from './files'
 import { DownloadFile } from './download-file'
 import type { Mock } from 'vitest'
+import { FILE_ERROR } from '../constants/errors'
 
 vi.mock('./files', () => ({
   writeFromStream: vi.fn()
@@ -58,7 +58,7 @@ describe(DownloadFile.name, () => {
 
     await expect(
       new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
-    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
     expect(http.axiosRef).toHaveBeenCalledTimes(1)
     expect(http.axiosRef).toHaveBeenCalledWith(
@@ -72,7 +72,7 @@ describe(DownloadFile.name, () => {
 
     await expect(
       new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
-    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
     expect(lookupMock).toHaveBeenCalledWith('example.test', { all: true, order: 'verbatim' })
     expect(http.axiosRef).not.toHaveBeenCalled()
@@ -87,7 +87,7 @@ describe(DownloadFile.name, () => {
 
     await expect(
       new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
-    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
     expect(http.axiosRef).not.toHaveBeenCalled()
     expect(writeFromStream).not.toHaveBeenCalled()
@@ -124,7 +124,7 @@ describe(DownloadFile.name, () => {
 
     await expect(
       new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
-    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
     expect(http.axiosRef).toHaveBeenCalledTimes(1)
     expect(writeFromStream).not.toHaveBeenCalled()
@@ -135,7 +135,7 @@ describe(DownloadFile.name, () => {
 
     await expect(
       new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
-    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
     expect(http.axiosRef).toHaveBeenCalledTimes(1)
     expect(writeFromStream).not.toHaveBeenCalled()
@@ -185,7 +185,7 @@ describe(DownloadFile.name, () => {
 
     await expect(
       new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', { getContentInfo: true })
-    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
     expect(writeFromStream).not.toHaveBeenCalled()
   })
@@ -222,7 +222,7 @@ describe(DownloadFile.name, () => {
 
     await expect(
       new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
-    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR_MESSAGES.DOWNLOAD_PRIVATE_IP))
+    ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
     expect(destroySpy).toHaveBeenCalled()
     expect(writeFromStream).not.toHaveBeenCalled()
@@ -233,7 +233,7 @@ describe(DownloadFile.name, () => {
 
     await expect(
       new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
-    ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_INVALID_CONTENT_LENGTH))
+    ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_INVALID_CONTENT_LENGTH))
 
     expect(http.axiosRef).toHaveBeenCalledTimes(1)
     expect(writeFromStream).not.toHaveBeenCalled()
@@ -259,7 +259,7 @@ describe(DownloadFile.name, () => {
         space: space as any,
         maxSize: 1024
       })
-    ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_INVALID_CONTENT_LENGTH))
+    ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_INVALID_CONTENT_LENGTH))
 
     expect(space.willExceedQuota).not.toHaveBeenCalled()
     expect(writeFromStream).not.toHaveBeenCalled()
@@ -315,7 +315,7 @@ describe(DownloadFile.name, () => {
 
     await expect(
       new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
-    ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR_MESSAGES.DOWNLOAD_MAX_REDIRECTS_EXCEEDED))
+    ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_MAX_REDIRECTS_EXCEEDED))
 
     expect(http.axiosRef).toHaveBeenCalledTimes(2)
     expect(destroySpy).toHaveBeenCalled()

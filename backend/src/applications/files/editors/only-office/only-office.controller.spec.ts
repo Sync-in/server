@@ -1,11 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { GUARDS_METADATA } from '@nestjs/common/constants'
 import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor'
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
+import { SpaceGuard } from '../../../spaces/guards/space.guard'
 import { SpacesManager } from '../../../spaces/services/spaces-manager.service'
 import { FILE_MODE } from '../../constants/operations'
 import { FilesMethods } from '../../services/files-methods.service'
+import { ONLY_OFFICE_CONTEXT } from './only-office.constants'
 import { OnlyOfficeManager } from './only-office-manager.service'
 import { OnlyOfficeController } from './only-office.controller'
+import { OnlyOfficeGuard } from './only-office.guard'
 
 describe(OnlyOfficeController.name, () => {
   let controller: OnlyOfficeController
@@ -37,6 +41,16 @@ describe(OnlyOfficeController.name, () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined()
+  })
+
+  it('should use access authentication for settings and editor authentication for document routes', () => {
+    expect(Reflect.getMetadata(ONLY_OFFICE_CONTEXT, controller.onlyOfficeSettings)).toBeUndefined()
+    expect(Reflect.getMetadata(GUARDS_METADATA, controller.onlyOfficeSettings)).toEqual([SpaceGuard])
+
+    for (const handler of [controller.onlyOfficeDocument, controller.onlyOfficeCallBack]) {
+      expect(Reflect.getMetadata(ONLY_OFFICE_CONTEXT, handler)).toBe(true)
+      expect(Reflect.getMetadata(GUARDS_METADATA, handler)).toEqual([OnlyOfficeGuard, SpaceGuard])
+    }
   })
 
   describe('onlyOfficeSettings', () => {

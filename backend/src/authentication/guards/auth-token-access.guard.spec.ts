@@ -8,6 +8,7 @@ import { PassportModule } from '@nestjs/passport'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
 import crypto from 'node:crypto'
+import { UserModel } from '../../applications/users/models/user.model'
 import { UsersManager } from '../../applications/users/services/users-manager.service'
 import { WEB_DAV_CONTEXT, WebDAVContext } from '../../applications/webdav/decorators/webdav-context.decorator'
 import { exportConfiguration } from '../../configuration/config.environment'
@@ -33,7 +34,11 @@ describe(AuthTokenAccessGuard.name, () => {
   let reflector: Reflector
   let accessTokenWithoutCSRF: string
   let accessToken: string
+  let temporaryTwoFaToken: string
   let context: DeepMocked<ExecutionContext>
+  const usersManager = {
+    fromAuthToken: vi.fn(async (user: UserModel): Promise<UserModel | null> => user)
+  }
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -50,7 +55,7 @@ describe(AuthTokenAccessGuard.name, () => {
         AuthAnonymousStrategy,
         AuthAnonymousGuard,
         AuthManager,
-        { provide: UsersManager, useValue: {} },
+        { provide: UsersManager, useValue: usersManager },
         {
           provide: PinoLogger,
           useValue: {
@@ -66,14 +71,24 @@ describe(AuthTokenAccessGuard.name, () => {
     authAccessGuard = new AuthTokenAccessGuard(reflector)
     authAnonymousStrategy = module.get<AuthAnonymousStrategy>(AuthAnonymousStrategy)
     authAnonymousGuard = module.get<AuthAnonymousGuard>(AuthAnonymousGuard)
-    accessToken = await jwtService.signAsync({ identity: { id: 1, login: 'foo' }, [TOKEN_TYPE.CSRF]: csrfToken } as JwtPayload, {
+    accessToken = await jwtService.signAsync(
+      { tokenType: TOKEN_TYPE.ACCESS, identity: { id: 1, login: 'foo' }, [TOKEN_TYPE.CSRF]: csrfToken } as JwtPayload,
+      {
+        secret: authConfig.token.access.secret,
+        expiresIn: 30
+      }
+    )
+    accessTokenWithoutCSRF = await jwtService.signAsync({ tokenType: TOKEN_TYPE.ACCESS, identity: { id: 1, login: 'foo' } } as JwtPayload, {
       secret: authConfig.token.access.secret,
       expiresIn: 30
     })
-    accessTokenWithoutCSRF = await jwtService.signAsync({ identity: { id: 1, login: 'foo' } } as JwtPayload, {
-      secret: authConfig.token.access.secret,
-      expiresIn: 30
-    })
+    temporaryTwoFaToken = await jwtService.signAsync(
+      { tokenType: TOKEN_TYPE.ACCESS_2FA, identity: { id: 1, login: 'foo', twoFaEnabled: true }, csrf: csrfToken } as JwtPayload,
+      {
+        secret: authConfig.token.access.secret,
+        expiresIn: 30
+      }
+    )
     context = createMock<ExecutionContext>()
   })
 
@@ -85,6 +100,7 @@ describe(AuthTokenAccessGuard.name, () => {
     expect(authAnonymousStrategy).toBeDefined()
     expect(accessToken).toBeDefined()
     expect(accessTokenWithoutCSRF).toBeDefined()
+    expect(temporaryTwoFaToken).toBeDefined()
     expect(csrfToken).toBeDefined()
   })
 
@@ -109,6 +125,17 @@ describe(AuthTokenAccessGuard.name, () => {
     expect(await authAccessGuard.canActivate(context)).toBe(true)
   })
 
+  it('should reject a valid access token when the current user is unavailable', async () => {
+    usersManager.fromAuthToken.mockResolvedValueOnce(null)
+    context.switchToHttp().getRequest.mockReturnValue({
+      raw: { user: '' },
+      headers: {
+        authorization: `Bearer ${accessToken}`
+      }
+    })
+    await expect(authAccessGuard.canActivate(context)).rejects.toThrow('Unauthorized')
+  })
+
   it('should throw an error with an invalid access token in cookies', async () => {
     // Cookies test
     context.switchToHttp().getRequest.mockReturnValue({
@@ -126,6 +153,16 @@ describe(AuthTokenAccessGuard.name, () => {
       raw: { user: '' },
       headers: {
         authorization: `Bearer bar`
+      }
+    })
+    await expect(authAccessGuard.canActivate(context)).rejects.toThrow('Unauthorized')
+  })
+
+  it('should reject a temporary 2FA token in the authorization header', async () => {
+    context.switchToHttp().getRequest.mockReturnValue({
+      raw: { user: '' },
+      headers: {
+        authorization: `Bearer ${temporaryTwoFaToken}`
       }
     })
     await expect(authAccessGuard.canActivate(context)).rejects.toThrow('Unauthorized')

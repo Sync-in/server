@@ -62,6 +62,23 @@ export class FilesTrashRetentionConfig {
   spaces: number | false = false
 }
 
+export class FilesEditorsConfig {
+  @IsNotEmptyObject()
+  @ValidateNested()
+  @Type(() => OnlyOfficeConfig)
+  onlyoffice: OnlyOfficeConfig = new OnlyOfficeConfig()
+
+  @IsNotEmptyObject()
+  @ValidateNested()
+  @Type(() => OnlyOfficeConfig)
+  eurooffice: OnlyOfficeConfig = new OnlyOfficeConfig()
+
+  @IsNotEmptyObject()
+  @ValidateNested()
+  @Type(() => CollaboraOnlineConfig)
+  collabora: CollaboraOnlineConfig = new CollaboraOnlineConfig()
+}
+
 export class FilesConfig {
   @IsNotEmpty()
   @IsString()
@@ -110,11 +127,6 @@ export class FilesConfig {
 
   @IsNotEmptyObject()
   @ValidateNested()
-  @Type(() => OnlyOfficeConfig)
-  onlyoffice: OnlyOfficeConfig = new OnlyOfficeConfig()
-
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => CollaboraOnlineConfig)
-  collabora: CollaboraOnlineConfig = new CollaboraOnlineConfig()
+  @Type(() => FilesEditorsConfig)
+  editors: FilesEditorsConfig = new FilesEditorsConfig()
 }

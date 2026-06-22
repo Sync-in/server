@@ -59,10 +59,6 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
   protected readonly icons = { faCopy, faKey }
-  protected readonly editors: Record<string, keyof FileEditorProviders> = {
-    [COLLABORA_APP_LOCK]: 'collabora',
-    [ONLY_OFFICE_APP_LOCK]: 'onlyoffice'
-  }
   protected user: UserType
   protected userAvatar: string = null
   protected webdavUrl = `${window.location.origin}/${WEBDAV_BASE_PATH}`
@@ -89,9 +85,20 @@ export class UserAccountComponent implements OnInit, OnDestroy {
       translating: true,
       sameLink: true
     })
-    this.showEditorPreference = this.store.server().files.editors.collabora && this.store.server().files.editors.onlyoffice
+    this.showEditorPreference =
+      this.store.server().files.editors.collabora && (this.store.server().files.editors.onlyoffice || this.store.server().files.editors.eurooffice)
     if (this.showEditorPreference) {
-      this.userEditorPreference = this.userService.getEditorProviderPreference()
+      const preference = this.userService.getEditorProviderPreference()
+      this.userEditorPreference = Object.values(this.editors).includes(preference) ? preference : null
+    }
+  }
+
+  protected get editors(): Record<string, keyof FileEditorProviders> {
+    return {
+      [COLLABORA_APP_LOCK]: 'collabora',
+      [this.store.server().files.editors.onlyoffice ? ONLY_OFFICE_APP_LOCK : 'Euro-Office']: this.store.server().files.editors.onlyoffice
+        ? 'onlyoffice'
+        : 'eurooffice'
     }
   }
 

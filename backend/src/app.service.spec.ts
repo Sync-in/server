@@ -83,6 +83,7 @@ describe(AppService.name, () => {
     expect(conf.logger.colorize).toBe(true)
     const tmpSecretFile = path.join(os.tmpdir(), 'secret')
     fs.writeFileSync(tmpSecretFile, 'fooBAR8888')
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_ONLYOFFICE_SECRET`] = 'fooBAR'
     process.env[`${ENVIRONMENT_PREFIX}LOGGER_STDOUT`] = 'false'
     process.env[`${ENVIRONMENT_PREFIX}LOGGER_COLORIZE`] = '"false"'
@@ -91,7 +92,10 @@ describe(AppService.name, () => {
     // docker compose secret file
     process.env[`${ENVIRONMENT_PREFIX}AUTH_TOKEN_ACCESS_SECRET_FILE`] = tmpSecretFile
     conf = exportConfiguration(true)
-    expect(conf.applications.files.onlyoffice.secret).toBe('fooBAR')
+    expect(conf.applications.files.editors.onlyoffice.secret).toBe('fooBAR')
+    expect(warnSpy).toHaveBeenCalledWith(
+      `Environment variable "${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_ONLYOFFICE_SECRET" is deprecated. Please use "${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_EDITORS_ONLYOFFICE_SECRET" instead.`
+    )
     expect(conf.logger.stdout).toBe(false)
     expect(conf.logger.colorize).toBe(false)
     expect(conf.applications.files.maxUploadSize).toBe(8888)

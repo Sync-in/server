@@ -108,6 +108,8 @@ auth:
       expiration: 4h
   # Multifactor authentication
   mfa:
+    # Sync-in MFA is enforced for local password authentication.
+    # When OIDC is used, MFA is expected to be enforced by the identity provider.
     # TOTP configuration
     totp:
       # Enable TOTP authentication
@@ -197,11 +199,11 @@ auth:
       # If not set, existing administrator users keep their role and it cannot be removed via LDAP.
       # optional
       adminGroup:
-      # enablePasswordAuthFallback: Allow local password authentication when LDAP authentication fails.
-      # When enabled, users can authenticate with their local password if the LDAP service is unavailable.
+      # enablePasswordAuthFallback: Allow local password authentication for regular users when the LDAP service is unavailable.
+      # Applies only to LDAP connection/DNS/timeout errors after all configured LDAP servers fail.
       # Always allowed for administrator users (break-glass access).
-      # default: true
-      enablePasswordAuthFallback: true
+      # default: false
+      enablePasswordAuthFallback: false
   oidc:
     # issuerUrl: The URL of the OIDC provider's discovery endpoint
     # e.g.:
@@ -226,9 +228,6 @@ auth:
     #   - http://127.0.0.1:49152/oidc/callback
     #   - http://127.0.0.1:49153/oidc/callback
     #   - http://127.0.0.1:49154/oidc/callback
-    #
-    # If your OIDC provider supports wildcards or regular expressions, you may instead register a single entry such as:
-    #   - http://127.0.0.1/*
     #
     # required
     redirectUri: https://sync-in.domain.com/api/auth/oidc/callback
@@ -259,14 +258,19 @@ auth:
       adminRoleOrGroup:
       # enablePasswordAuth: Allow local password-based authentication when using OIDC.
       # When enabled, users may authenticate with their Sync-in password instead of OIDC.
+      # Sync-in MFA applies to this local password flow.
+      # OIDC logins rely on the identity provider to enforce MFA/SSO policies.
       # Local password authentication is always allowed for:
       # - guest users
       # - administrator users (break-glass access)
       # - application scopes (app passwords)
       # Regular users are allowed only when this option is enabled.
       # Users must already exist locally and have a password set.
-      # default: true
-      enablePasswordAuth: true
+      # default: false
+      enablePasswordAuth: false
+      # autoSyncAvatar: Automatically download and synchronize the user avatar from the OIDC `picture` claim.
+      # default: false
+      autoSyncAvatar: false
       # autoRedirect: Automatically redirect users to the OIDC login flow.
       # When enabled, the login page is skipped and users are sent directly to the OIDC provider.
       # default: false
@@ -283,6 +287,10 @@ auth:
       # When true, PKCE is used if supported by the OIDC provider.
       # default: true
       supportPKCE: true
+      # allowInsecureRequests: Allow OIDC discovery and token requests over insecure HTTP.
+      # Set to true only for local development or trusted legacy providers.
+      # default: false
+      allowInsecureRequests: false
       # OAuth 2.0 / OIDC client authentication method used at the token endpoint.
       # Possible values:
       # - client_secret_basic (DEFAULT): HTTP Basic auth using client_id and client_secret.
@@ -305,6 +313,15 @@ auth:
       # Set to true only for non-compliant or legacy OIDC providers.
       # default: false
       skipSubjectCheck: false
+      # requireVerifiedEmail: Require the OIDC provider to mark profile emails as verified before account linking or profile synchronization.
+      # Recommended when your provider exposes a reliable `email_verified` claim.
+      # Some providers omit this claim unless specific scopes/mappers are configured.
+      # default: false
+      requireVerifiedEmail: false
+      # allowPrivateIpAvatarDownload: Allow OIDC avatar downloads from private/internal IP ranges.
+      # Set to true only when the OIDC provider returns trusted internal avatar URLs.
+      # default: false
+      allowPrivateIpAvatarDownload: false
 applications:
   users:
     # showUngroupedUsers: make users without a group globally visible to regular users/admins.
@@ -352,30 +369,45 @@ applications:
     # use [] to only show Text and Markdown
     # default: [opendocument, microsoft]
     sampleDocuments: [opendocument, microsoft]
-    onlyoffice:
-      # enable onlyoffice integration
-      # default: false
-      enabled: false
-      # Secret used for jwt tokens, it must be the same on the onlyoffice server
-      # required
-      secret: 'onlyOfficeSecret'
-      # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
-      # If an external server is configured, it will be used instead.
-      # Note: when using an external server (e.g.: https://onlyoffice.domain.com), make sure it is accessible from the client/browser.
-      # default: null
-      externalServer:
-      # If you use https, set to `true`.
-      # default: false
-      verifySSL: false
-    collabora:
-      # enable collabora online integration
-      # default: false
-      enabled: false
-      # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
-      # If an external server is configured, it will be used instead.
-      # Note: when using an external server (e.g.: https://collabora.domain.com), make sure it is accessible from the client/browser.
-      # default: null
-      externalServer:
+    editors:
+      onlyoffice:
+        # enable onlyoffice integration
+        # default: false
+        enabled: false
+        # Secret used for jwt tokens, it must be the same on the onlyoffice server
+        # required
+        secret: 'onlyOfficeSecret'
+        # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
+        # If an external server is configured, it will be used instead.
+        # Note: when using an external server (e.g.: https://onlyoffice.domain.com), make sure it is accessible from the client/browser.
+        # default: null
+        externalServer:
+        # If you use https, set to `true`.
+        # default: false
+        verifySSL: false
+      eurooffice:
+        # enable Euro-Office integration
+        # default: false
+        enabled: false
+        # Secret used for jwt tokens, it must be the same on the Euro-Office server
+        # required
+        secret: 'euroOfficeSecret'
+        # If an external server is configured, it will be used.
+        # Note: make sure it is accessible from the client/browser.
+        # default: null
+        externalServer:
+        # If you use https, set to `true`.
+        # default: false
+        verifySSL: false
+      collabora:
+        # enable collabora online integration
+        # default: false
+        enabled: false
+        # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
+        # If an external server is configured, it will be used instead.
+        # Note: when using an external server (e.g.: https://collabora.domain.com), make sure it is accessible from the client/browser.
+        # default: null
+        externalServer:
   # Client application repository configuration
   appStore:
     # repository: `public` | `local`

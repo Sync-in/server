@@ -1,6 +1,8 @@
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
+import { Type } from 'class-transformer'
+import { IsInt, ValidateNested } from 'class-validator'
 import { appBootstrap } from '../app.bootstrap'
 import { USER_ROLE } from '../applications/users/constants/user'
 import { DeleteUserDto } from '../applications/users/dto/delete-user.dto'
@@ -16,6 +18,29 @@ import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH, API_AUTH_TOKEN, API_
 import { TokenResponseDto } from './dto/token-response.dto'
 import { JwtPayload } from './interfaces/jwt-payload.interface'
 import { TOKEN_TYPE } from './interfaces/token.interface'
+
+class BrowserRefreshUserResponseDto {
+  @IsInt()
+  id: number
+}
+
+class BrowserRefreshTokenResponseDto {
+  @IsInt()
+  access_expiration: number
+
+  @IsInt()
+  refresh_expiration: number
+}
+
+class BrowserRefreshResponseDto {
+  @ValidateNested()
+  @Type(() => BrowserRefreshUserResponseDto)
+  user: BrowserRefreshUserResponseDto
+
+  @ValidateNested()
+  @Type(() => BrowserRefreshTokenResponseDto)
+  token: BrowserRefreshTokenResponseDto
+}
 
 describe('Auth (e2e)', () => {
   let app: NestFastifyApplication
@@ -129,6 +154,7 @@ describe('Auth (e2e)', () => {
       })
       expect(decodedToken.iat).toBeCloseTo(currentTimeStamp(), -1)
       expect(decodedToken.exp).toBeCloseTo(currentTimeStamp() + convertHumanTimeToSeconds(authConfig.token[cookie.type].expiration), -1)
+      expect(decodedToken.tokenType).toBe(cookie.type)
       expect(decodedToken.identity.id).toBe(userTest.id)
       if (cookie.type === TOKEN_TYPE.REFRESH) {
         // needed for the following tests
@@ -209,6 +235,10 @@ describe('Auth (e2e)', () => {
       cookies: { [authConfig.token.refresh.name]: refreshToken }
     })
     expect(res.statusCode).toEqual(201)
+    const content = transformAndValidate(BrowserRefreshResponseDto, res.json())
+    expect(content.user.id).toBe(userTest.id)
+    const expectedAccessExpiration = currentTimeStamp() + convertHumanTimeToSeconds(authConfig.token.access.expiration)
+    expect(content.token.access_expiration).toBeCloseTo(expectedAccessExpiration, -1)
     const cookies: { type: TOKEN_TYPE; content: string[] }[] = getCookies(res.headers['set-cookie'] as string[])
     cookiesChecks(cookies)
   })

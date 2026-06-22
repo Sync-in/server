@@ -2,9 +2,11 @@ import { HttpStatus } from '@nestjs/common'
 import { HttpService } from '@nestjs/axios'
 import { Test, TestingModule } from '@nestjs/testing'
 import {
+  allowInsecureRequests,
   authorizationCodeGrant,
   AuthorizationResponseError,
   calculatePKCECodeChallenge,
+  discovery,
   fetchUserInfo,
   randomNonce,
   randomPKCECodeVerifier,
@@ -37,11 +39,15 @@ vi.mock('../../../configuration/config.environment', () => ({
           tokenSigningAlg: 'RS256',
           userInfoSigningAlg: 'RS256',
           tokenEndpointAuthMethod: 'client_secret_basic',
-          skipSubjectCheck: false
+          allowInsecureRequests: false,
+          skipSubjectCheck: false,
+          requireVerifiedEmail: false,
+          allowPrivateIpAvatarDownload: false
         },
         options: {
           enablePasswordAuth: false,
           autoCreateUser: true,
+          autoSyncAvatar: false,
           adminRoleOrGroup: 'admins',
           autoCreatePermissions: ['read']
         }
@@ -110,6 +116,8 @@ describe(AuthProviderOIDC.name, () => {
     clearCookie: vi.fn()
   })
 
+  const codedError = (message: string, code: string) => Object.assign(new Error(message), { code })
+
   beforeAll(async () => {
     usersManager = {
       findUser: vi.fn(),
@@ -141,6 +149,12 @@ describe(AuthProviderOIDC.name, () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
+    ;(service as any).config = null
+    ;(service as any).oidcConfig.security.supportPKCE = true
+    ;(service as any).oidcConfig.security.allowInsecureRequests = false
+    ;(service as any).oidcConfig.security.allowPrivateIpAvatarDownload = false
+    ;(service as any).oidcConfig.security.requireVerifiedEmail = false
+    ;(service as any).oidcConfig.options.autoSyncAvatar = false
   })
 
   it('returns null when user is not found', async () => {
@@ -162,6 +176,44 @@ describe(AuthProviderOIDC.name, () => {
 
     expect(usersManager.logUser).toHaveBeenCalledWith(guestUser, 'secret', undefined, undefined)
     expect(result).toBe(guestUser)
+  })
+
+  it('does not allow insecure OIDC requests by default during discovery', async () => {
+    vi.mocked(discovery).mockResolvedValue(makeConfig(true) as any)
+
+    await service.getConfig()
+
+    const discoveryOptions = vi.mocked(discovery).mock.calls[0][4] as Record<string, unknown>
+    expect(discoveryOptions).toEqual(expect.objectContaining({ timeout: 6000 }))
+    expect(discoveryOptions).not.toHaveProperty('execute')
+  })
+
+  it('allows insecure OIDC requests during discovery when explicitly enabled', async () => {
+    ;(service as any).oidcConfig.security.allowInsecureRequests = true
+    vi.mocked(discovery).mockResolvedValue(makeConfig(true) as any)
+
+    await service.getConfig()
+
+    const discoveryOptions = vi.mocked(discovery).mock.calls[0][4] as Record<string, unknown>
+    expect(discoveryOptions).toEqual(expect.objectContaining({ execute: [allowInsecureRequests], timeout: 6000 }))
+  })
+
+  it('maps insecure OIDC discovery requests to BAD_REQUEST', async () => {
+    vi.mocked(discovery).mockRejectedValue(codedError('only requests to HTTPS are allowed', 'OAUTH_HTTP_REQUEST_FORBIDDEN'))
+
+    await expect(service.getConfig()).rejects.toMatchObject({
+      status: HttpStatus.BAD_REQUEST,
+      message: 'OIDC issuer URL must use HTTPS unless allowInsecureRequests is enabled'
+    })
+  })
+
+  it('maps generic OAuth discovery errors to BAD_REQUEST', async () => {
+    vi.mocked(discovery).mockRejectedValue(codedError('unexpected HTTP response status code', 'OAUTH_RESPONSE_IS_NOT_CONFORM'))
+
+    await expect(service.getConfig()).rejects.toMatchObject({
+      status: HttpStatus.BAD_REQUEST,
+      message: 'OIDC provider configuration error'
+    })
   })
 
   it('builds the authorization url with PKCE data and cookies', async () => {
@@ -205,10 +257,17 @@ describe(AuthProviderOIDC.name, () => {
     vi.spyOn(service, 'getConfig').mockResolvedValue(config as any)
     const processSpy = vi.spyOn(service as any, 'processUserInfo').mockResolvedValue({ id: 7 } as any)
     vi.mocked(authorizationCodeGrant).mockResolvedValue({
-      claims: () => ({ sub: 'subject-1' }),
-      access_token: 'access-token'
-    })
-    vi.mocked(fetchUserInfo).mockResolvedValue({ sub: 'subject-1', email: 'a@b.c', preferred_username: 'alice' })
+      claims: () => ({
+        iss: 'https://issuer.example.test',
+        aud: 'client-id',
+        iat: 1,
+        exp: 2,
+        sub: 'subject-1'
+      }),
+      access_token: 'access-token',
+      token_type: 'bearer'
+    } as unknown as Awaited<ReturnType<typeof authorizationCodeGrant>>)
+    vi.mocked(fetchUserInfo).mockResolvedValue({ sub: 'subject-1', email: 'a@b.c', email_verified: true, preferred_username: 'alice' })
     const req = {
       cookies: {
         [OAuthCookie.State]: 'state-1',
@@ -222,7 +281,7 @@ describe(AuthProviderOIDC.name, () => {
     const result = await service.handleCallback(req as any, reply as any, { code: 'abc' })
 
     expect(result).toEqual({ id: 7 })
-    expect(processSpy).toHaveBeenCalledWith({ sub: 'subject-1', email: 'a@b.c', preferred_username: 'alice' }, '127.0.0.1')
+    expect(processSpy).toHaveBeenCalledWith({ sub: 'subject-1', email: 'a@b.c', email_verified: true, preferred_username: 'alice' }, '127.0.0.1')
     expect(reply.clearCookie).toHaveBeenCalledWith(OAuthCookie.State, { path: '/' })
     expect(reply.clearCookie).toHaveBeenCalledWith(OAuthCookie.Nonce, { path: '/' })
     expect(reply.clearCookie).toHaveBeenCalledWith(OAuthCookie.CodeVerifier, { path: '/' })
@@ -270,7 +329,7 @@ describe(AuthProviderOIDC.name, () => {
     usersManager.findUser.mockResolvedValue(null)
     adminUsersManager.createUserOrGuest.mockResolvedValue({ id: 10, login: 'bob' })
     usersManager.fromUserId.mockResolvedValue({ id: 10, role: USER_ROLE.ADMINISTRATOR, login: 'bob', setFullName: vi.fn() } as any)
-    const userInfo = { sub: 'x', email: 'b@c.d', preferred_username: 'bob', groups: ['admins'] }
+    const userInfo = { sub: 'x', email: 'b@c.d', email_verified: true, preferred_username: 'bob', groups: ['admins'] }
 
     const result = await (service as any).processUserInfo(userInfo, '127.0.0.1')
 
@@ -281,49 +340,112 @@ describe(AuthProviderOIDC.name, () => {
     expect(result.role).toBe(USER_ROLE.ADMINISTRATOR)
   })
 
+  it('rejects OIDC profiles with unverified emails when verification is enabled', async () => {
+    ;(service as any).oidcConfig.security.requireVerifiedEmail = true
+
+    await expect(
+      (service as any).processUserInfo({ sub: 'x', email: 'alice@example.org', email_verified: false, preferred_username: 'alice' }, '127.0.0.1')
+    ).rejects.toMatchObject({ status: HttpStatus.BAD_REQUEST, message: 'OIDC email must be verified' })
+  })
+
+  it('allows OIDC profiles with unverified emails by default', async () => {
+    const existingUser = { id: 19, login: 'alice', email: 'alice@example.org', role: USER_ROLE.USER, setFullName: vi.fn() } as any
+    usersManager.findUser.mockResolvedValue(existingUser)
+
+    const result = await (service as any).processUserInfo(
+      { sub: 'x', email: 'alice@example.org', email_verified: false, preferred_username: 'alice' },
+      '127.0.0.1'
+    )
+
+    expect(result).toBe(existingUser)
+  })
+
+  it('does not sync the user avatar by default', async () => {
+    const existingUser = { id: 20, login: 'alice', email: 'alice@example.org', role: USER_ROLE.USER, setFullName: vi.fn() } as any
+    usersManager.findUser.mockResolvedValue(existingUser)
+    const updatePictureUrlSpy = vi.spyOn(service as any, 'updatePictureUrl').mockResolvedValue(undefined)
+
+    await (service as any).processUserInfo(
+      { sub: 'x', email: 'alice@example.org', email_verified: true, preferred_username: 'alice', picture: 'https://cdn.example.test/avatar.jpg' },
+      '127.0.0.1'
+    )
+
+    expect(updatePictureUrlSpy).not.toHaveBeenCalled()
+  })
+
+  it('syncs the user avatar when enabled', async () => {
+    ;(service as any).oidcConfig.options.autoSyncAvatar = true
+    const existingUser = { id: 21, login: 'alice', email: 'alice@example.org', role: USER_ROLE.USER, setFullName: vi.fn() } as any
+    const userInfo = {
+      sub: 'x',
+      email: 'alice@example.org',
+      email_verified: true,
+      preferred_username: 'alice',
+      picture: 'https://cdn.example.test/avatar.jpg'
+    }
+    usersManager.findUser.mockResolvedValue(existingUser)
+    const updatePictureUrlSpy = vi.spyOn(service as any, 'updatePictureUrl').mockResolvedValue(undefined)
+
+    await (service as any).processUserInfo(userInfo, '127.0.0.1')
+
+    expect(updatePictureUrlSpy).toHaveBeenCalledWith(existingUser, userInfo)
+  })
+
   it('handles storage quota claim mapping cases', async () => {
     const scenarios = [
       {
         mode: 'create',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'sam@c.d', preferred_username: 'sam', [DEFAULT_STORAGE_QUOTA_FIELD]: '2048' },
+        profile: { sub: 'x', email: 'sam@c.d', email_verified: true, preferred_username: 'sam', [DEFAULT_STORAGE_QUOTA_FIELD]: '2048' },
         expectedQuota: 2048
       },
       {
         mode: 'create',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'sam0@c.d', preferred_username: 'sam0', [DEFAULT_STORAGE_QUOTA_FIELD]: 0 },
+        profile: { sub: 'x', email: 'sam0@c.d', email_verified: true, preferred_username: 'sam0', [DEFAULT_STORAGE_QUOTA_FIELD]: 0 },
         expectedQuota: null
       },
       {
         mode: 'create',
         claimName: 'quotaBytes',
-        profile: { sub: 'x', email: 'samq@c.d', preferred_username: 'samq', quotaBytes: '4096' },
+        profile: { sub: 'x', email: 'samq@c.d', email_verified: true, preferred_username: 'samq', quotaBytes: '4096' },
         expectedQuota: 4096
       },
       {
         mode: 'update',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice' },
+        profile: { sub: 'x', email: 'alice@example.org', email_verified: true, preferred_username: 'alice' },
         expectedUpdate: false
       },
       {
         mode: 'update',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', [DEFAULT_STORAGE_QUOTA_FIELD]: null },
+        profile: { sub: 'x', email: 'alice@example.org', email_verified: true, preferred_username: 'alice', [DEFAULT_STORAGE_QUOTA_FIELD]: null },
         expectedUpdate: true,
         expectedQuota: null
       },
       {
         mode: 'update',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', [DEFAULT_STORAGE_QUOTA_FIELD]: 'invalid' },
+        profile: {
+          sub: 'x',
+          email: 'alice@example.org',
+          email_verified: true,
+          preferred_username: 'alice',
+          [DEFAULT_STORAGE_QUOTA_FIELD]: 'invalid'
+        },
         expectedUpdate: false
       },
       {
         mode: 'update',
         claimName: DEFAULT_STORAGE_QUOTA_FIELD,
-        profile: { sub: 'x', email: 'alice@example.org', preferred_username: 'alice', [DEFAULT_STORAGE_QUOTA_FIELD]: '9007199254740992' },
+        profile: {
+          sub: 'x',
+          email: 'alice@example.org',
+          email_verified: true,
+          preferred_username: 'alice',
+          [DEFAULT_STORAGE_QUOTA_FIELD]: '9007199254740992'
+        },
         expectedUpdate: false
       }
     ] as const
@@ -440,10 +562,41 @@ describe(AuthProviderOIDC.name, () => {
         2,
         expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }),
         '/tmp/sync-in/alice/tmp/avatar.png',
-        { allowPrivateIP: true, maxSize: avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE }
+        { allowPrivateIP: false, maxSize: avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE }
       )
       expect(convertSpy).toHaveBeenCalledWith('/tmp/sync-in/alice/tmp/avatar.png', '/tmp/sync-in/users/alice/avatar.png')
       expect(metadataSpy).toHaveBeenCalledWith('alice', 'https://cdn.example.test/avatar.jpg', 128, 'Mon, 01 Jan 2024 00:00:00 GMT')
+    })
+
+    it('allows private IP avatar downloads when explicitly enabled', async () => {
+      ;(service as any).oidcConfig.security.allowPrivateIpAvatarDownload = true
+      const downloadSpy = vi
+        .spyOn(DownloadFile.prototype, 'download')
+        .mockResolvedValueOnce({
+          contentType: 'image/png',
+          contentLength: 128,
+          lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
+        } as any)
+        .mockResolvedValueOnce(undefined as any)
+      vi.spyOn(avatarUtils, 'isAvatarMetadataUnchanged').mockResolvedValue(false)
+      vi.spyOn(filesUtils, 'fileSize').mockResolvedValue(1024)
+      vi.spyOn(UserModel, 'getHomePath').mockReturnValue('/tmp/sync-in/users/alice')
+      vi.spyOn(imageUtils, 'convertTempImageToPng').mockResolvedValue(undefined)
+
+      await (service as any).updatePictureUrl(oidcUser, userInfo())
+
+      expect(downloadSpy).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }),
+        '/tmp/sync-in/alice/tmp/avatar.png',
+        { allowPrivateIP: true, getContentInfo: true }
+      )
+      expect(downloadSpy).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }),
+        '/tmp/sync-in/alice/tmp/avatar.png',
+        { allowPrivateIP: true, maxSize: avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE }
+      )
     })
 
     it('downloads avatar when content length is missing and stores the actual downloaded size', async () => {

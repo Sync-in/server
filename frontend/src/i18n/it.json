@@ -132,7 +132,6 @@
   "Storage quota exceeded": "Quota di archiviazione superata",
   "File size limit exceeded": "Limite di dimensione del file superato",
   "The trash is read-only": "Il cestino è di sola lettura",
-  "Storage quota will be exceeded": "La quota di archiviazione verrà superata",
   "Access to internal IP addresses is forbidden": "L'accesso agli indirizzi IP interni è vietato",
   "Missing or invalid \"content-length\" header": "Header \"content-length\" mancante o non valido",
   "Maximum redirects exceeded": "Numero massimo di reindirizzamenti superato",
@@ -710,5 +709,6 @@
   "size has changed since parsing": "La dimensione è cambiata dall'analisi",
   "No synchronized folder": "Nessuna cartella sincronizzata",
   "Edit in OnlyOffice": "Modifica in OnlyOffice",
+  "Edit in Euro-Office": "Modifica in Euro-Office",
   "View in PDF.js": "Visualizza in PDF.js"
 }

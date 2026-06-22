@@ -1,7 +1,10 @@
 import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Put, Res, Search, UseGuards } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
-import { AuthTwoFaGuard, AuthTwoFaGuardWithoutPassword } from '../../authentication/providers/two-fa/auth-two-fa-guard'
+import {
+  AuthTwoFaVerificationGuard,
+  AuthTwoFaVerificationWithoutPasswordGuard
+} from '../../authentication/providers/two-fa/guards/auth-two-fa-verification.guard'
 import { GROUP_TYPE } from './constants/group'
 import { ADMIN_USERS_ROUTE } from './constants/routes'
 import { USER_ROLE } from './constants/user'
@@ -37,7 +40,7 @@ export class AdminUsersController {
   }
 
   @Post(ADMIN_USERS_ROUTE.USERS)
-  @UseGuards(AuthTwoFaGuardWithoutPassword)
+  @UseGuards(AuthTwoFaVerificationWithoutPasswordGuard)
   createUser(@Body() createUserDto: CreateUserDto): Promise<AdminUser> {
     return this.adminUsersManager.createUserOrGuest(
       createUserDto,
@@ -47,13 +50,13 @@ export class AdminUsersController {
   }
 
   @Put(`${ADMIN_USERS_ROUTE.USERS}/:id`)
-  @UseGuards(AuthTwoFaGuardWithoutPassword)
+  @UseGuards(AuthTwoFaVerificationWithoutPasswordGuard)
   updateUser(@Param('id', ParseIntPipe) userId: number, @Body() updateUserDto: UpdateUserDto): Promise<AdminUser> {
     return this.adminUsersManager.updateUserOrGuest(userId, updateUserDto)
   }
 
   @Delete(`${ADMIN_USERS_ROUTE.USERS}/:id`)
-  @UseGuards(AuthTwoFaGuard)
+  @UseGuards(AuthTwoFaVerificationGuard)
   deleteUser(@Param('id', ParseIntPipe) userId: number, @Body() deleteUserDto: DeleteUserDto): Promise<void> {
     return this.adminUsersManager.deleteUserOrGuestFromAdmin(userId, { ...deleteUserDto, isGuest: false })
   }
@@ -69,19 +72,19 @@ export class AdminUsersController {
   }
 
   @Post(ADMIN_USERS_ROUTE.GUESTS)
-  @UseGuards(AuthTwoFaGuardWithoutPassword)
+  @UseGuards(AuthTwoFaVerificationWithoutPasswordGuard)
   createGuest(@GetUser() user: UserModel, @Body() createGuestDto: CreateUserDto): Promise<GuestUser> {
     return this.adminUsersManager.createGuest(user, createGuestDto)
   }
 
   @Put(`${ADMIN_USERS_ROUTE.GUESTS}/:id`)
-  @UseGuards(AuthTwoFaGuardWithoutPassword)
+  @UseGuards(AuthTwoFaVerificationWithoutPasswordGuard)
   updateGuest(@Param('id', ParseIntPipe) guestId: number, @Body() updateGuestDto: UpdateUserDto): Promise<GuestUser> {
     return this.adminUsersManager.updateGuest(guestId, updateGuestDto)
   }
 
   @Delete(`${ADMIN_USERS_ROUTE.GUESTS}/:id`)
-  @UseGuards(AuthTwoFaGuard)
+  @UseGuards(AuthTwoFaVerificationGuard)
   deleteGuest(@Param('id', ParseIntPipe) guestId: number, @Body() deleteUserDto: DeleteUserDto): Promise<void> {
     return this.adminUsersManager.deleteUserOrGuestFromAdmin(guestId, { ...deleteUserDto, isGuest: true })
   }
@@ -141,7 +144,7 @@ export class AdminUsersController {
   }
 
   @Post(`${ADMIN_USERS_ROUTE.IMPERSONATE}/:id`)
-  @UseGuards(AuthTwoFaGuard)
+  @UseGuards(AuthTwoFaVerificationGuard)
   impersonateUser(
     @GetUser() admin: UserModel,
     @Param('id', ParseIntPipe) userId: number,

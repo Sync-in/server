@@ -2,8 +2,15 @@ import { CallHandler, ExecutionContext, HttpException, HttpStatus } from '@nestj
 import { Test, TestingModule } from '@nestjs/testing'
 import { lastValueFrom, of } from 'rxjs'
 import { Readable } from 'stream'
-import zlib from 'zlib'
-import { SyncDiffGzipBodyInterceptor } from './sync-diff-gzip-body.interceptor'
+import zlib from 'node:zlib'
+import {
+  MAX_COMPRESSED_SYNC_DIFF_BODY_SIZE,
+  MAX_DECOMPRESSED_SYNC_DIFF_BODY_SIZE,
+  SyncDiffGzipBodyInterceptor
+} from './sync-diff-gzip-body.interceptor'
+
+const EXPECTED_MAX_COMPRESSED_SYNC_DIFF_BODY_SIZE = 25 * 1024 * 1024
+const EXPECTED_MAX_DECOMPRESSED_SYNC_DIFF_BODY_SIZE = 50 * 1024 * 1024
 
 describe('SyncDiffGzipBodyInterceptor', () => {
   let interceptor: SyncDiffGzipBodyInterceptor
@@ -35,6 +42,15 @@ describe('SyncDiffGzipBodyInterceptor', () => {
     }).compile()
 
     interceptor = module.get(SyncDiffGzipBodyInterceptor)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('should keep sync diff gzip body limits aligned with expected sizes', () => {
+    expect(MAX_COMPRESSED_SYNC_DIFF_BODY_SIZE).toBe(EXPECTED_MAX_COMPRESSED_SYNC_DIFF_BODY_SIZE)
+    expect(MAX_DECOMPRESSED_SYNC_DIFF_BODY_SIZE).toBe(EXPECTED_MAX_DECOMPRESSED_SYNC_DIFF_BODY_SIZE)
   })
 
   it('should gunzip and parse JSON body when Content-Encoding is gzip', async () => {
@@ -86,6 +102,70 @@ describe('SyncDiffGzipBodyInterceptor', () => {
     expect(next.handle).not.toHaveBeenCalled()
   })
 
+  it('should reject gzip body when compressed payload is too large', async () => {
+    const req: any = {
+      headers: { 'content-encoding': 'gzip' },
+      raw: createReadableFrom(Buffer.alloc(EXPECTED_MAX_COMPRESSED_SYNC_DIFF_BODY_SIZE + 1))
+    }
+    const ctx = createExecutionContextWithRequest(req)
+    const next = createCallHandler()
+
+    let error: unknown
+    try {
+      await interceptor.intercept(ctx, next)
+    } catch (e) {
+      error = e
+    }
+    expect(error).toBeInstanceOf(HttpException)
+    const ex = error as HttpException
+    expect(ex.getStatus()).toBe(HttpStatus.PAYLOAD_TOO_LARGE)
+    expect(ex.getResponse()).toBe('Gzip body is too large')
+    expect(next.handle).not.toHaveBeenCalled()
+  })
+
+  it('should pass decompressed output limit to gunzip', async () => {
+    const gzipped = zlib.gzipSync(Buffer.from(JSON.stringify({ ok: true })))
+    const gunzip = vi.spyOn(zlib, 'gunzip').mockImplementationOnce(((_body, options, callback) => {
+      expect(options).toMatchObject({ maxOutputLength: MAX_DECOMPRESSED_SYNC_DIFF_BODY_SIZE })
+      callback(null, Buffer.from(JSON.stringify({ ok: true })))
+    }) as typeof zlib.gunzip)
+    const req: any = {
+      headers: { 'content-encoding': 'gzip' },
+      raw: createReadableFrom(gzipped)
+    }
+    const ctx = createExecutionContextWithRequest(req)
+    const next = createCallHandler()
+
+    await interceptor.intercept(ctx, next)
+
+    expect(gunzip).toHaveBeenCalledTimes(1)
+    expect(next.handle).toHaveBeenCalledTimes(1)
+  })
+
+  it('should throw Payload Too Large when decompressed gzip body exceeds the limit', async () => {
+    vi.spyOn(zlib, 'gunzip').mockImplementationOnce(((_body, _options, callback) => {
+      callback(new Error('maxOutputLength exceeded'), null)
+    }) as typeof zlib.gunzip)
+    const req: any = {
+      headers: { 'content-encoding': 'gzip' },
+      raw: createReadableFrom(zlib.gzipSync(Buffer.from(JSON.stringify({ ok: true }))))
+    }
+    const ctx = createExecutionContextWithRequest(req)
+    const next = createCallHandler()
+
+    let error: unknown
+    try {
+      await interceptor.intercept(ctx, next)
+    } catch (e) {
+      error = e
+    }
+    expect(error).toBeInstanceOf(HttpException)
+    const ex = error as HttpException
+    expect(ex.getStatus()).toBe(HttpStatus.PAYLOAD_TOO_LARGE)
+    expect(ex.getResponse()).toBe('Invalid gzip body')
+    expect(next.handle).not.toHaveBeenCalled()
+  })
+
   it('should throw BadRequest when decoded JSON is invalid', async () => {
     // gzip-compressed invalid JSON (plain text)
     const gzippedInvalidJson = zlib.gzipSync(Buffer.from('not-json'))
@@ -96,15 +176,16 @@ describe('SyncDiffGzipBodyInterceptor', () => {
     const ctx = createExecutionContextWithRequest(req)
     const next = createCallHandler()
 
+    let error: unknown
     try {
       await interceptor.intercept(ctx, next)
-      fail('Expected interceptor to throw for invalid JSON')
     } catch (e) {
-      expect(e).toBeInstanceOf(HttpException)
-      const ex = e as HttpException
-      expect(ex.getStatus()).toBe(HttpStatus.BAD_REQUEST)
-      expect(String(ex.getResponse())).toContain('Invalid JSON')
-      expect(next.handle).not.toHaveBeenCalled()
+      error = e
     }
+    expect(error).toBeInstanceOf(HttpException)
+    const ex = error as HttpException
+    expect(ex.getStatus()).toBe(HttpStatus.BAD_REQUEST)
+    expect(String(ex.getResponse())).toContain('Invalid JSON')
+    expect(next.handle).not.toHaveBeenCalled()
   })
 })

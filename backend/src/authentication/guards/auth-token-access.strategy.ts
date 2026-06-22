@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
 import { ExtractJwt, Strategy } from 'passport-jwt'
 import { UserModel } from '../../applications/users/models/user.model'
+import { UsersManager } from '../../applications/users/services/users-manager.service'
 import { configuration } from '../../configuration/config.environment'
 import { AuthManager } from '../auth.service'
 import { JwtPayload } from '../interfaces/jwt-payload.interface'
@@ -15,6 +16,7 @@ export class AuthTokenAccessStrategy extends PassportStrategy(Strategy, 'tokenAc
 
   constructor(
     private readonly authManager: AuthManager,
+    private readonly usersManager: UsersManager,
     private readonly logger: PinoLogger
   ) {
     super({
@@ -26,10 +28,17 @@ export class AuthTokenAccessStrategy extends PassportStrategy(Strategy, 'tokenAc
     AuthTokenAccessStrategy.accessCookieName = configuration.auth.token.access.name
   }
 
-  validate(req: FastifyRequest, jwtPayload: JwtPayload): UserModel {
+  async validate(req: FastifyRequest, jwtPayload: JwtPayload): Promise<UserModel> {
+    if (jwtPayload.tokenType !== TOKEN_TYPE.ACCESS) {
+      throw new UnauthorizedException()
+    }
     this.logger.assign({ user: jwtPayload.identity.login })
     this.authManager.csrfValidation(req, jwtPayload, TOKEN_TYPE.ACCESS)
-    return new UserModel(jwtPayload.identity)
+    const user = await this.usersManager.fromAuthToken(new UserModel(jwtPayload.identity))
+    if (!user) {
+      throw new UnauthorizedException()
+    }
+    return user
   }
 
   static extractJWTFromCookie(req: FastifyRequest): string | null {
