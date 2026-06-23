@@ -7,9 +7,10 @@ import loadScript from './only-office.utils'
   template: '<div [id]="id"></div>'
 })
 export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() id: string
-  @Input() documentServerUrl: string
-  @Input() config: OnlyOfficeConfig
+  @Input({ required: true }) id: string
+  @Input({ required: true }) editorName: string
+  @Input({ required: true }) documentServerUrl: string
+  @Input({ required: true }) config: OnlyOfficeConfig
   @Output() loadError = new EventEmitter<{ title: string; message: string }>()
   @Output() wasSaved = new EventEmitter<string>()
   private isFirstOnChanges = true
@@ -54,6 +55,7 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
     try {
       if (!window.DocsAPI) {
         this.onError(-3)
+        return
       }
 
       if (window?.DocEditor?.instances[this.id]) {
@@ -75,15 +77,15 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private onError(errorCode: number) {
-    const error = { title: 'Unknown OnlyOffice error', message: `Code: ${errorCode}` }
+    const error = { title: `Unknown ${this.editorName} error`, message: `Code: ${errorCode}` }
 
     switch (errorCode) {
       case -2:
-        error.title = 'Unable to load OnlyOffice editor'
+        error.title = `Unable to load ${this.editorName} editor`
         error.message = 'The document server may be unreachable or the configuration is invalid'
         break
       case -3:
-        error.title = 'OnlyOffice editor failed to initialize'
+        error.title = `${this.editorName} editor failed to initialize`
         error.message = 'DocsAPI not available'
         break
     }

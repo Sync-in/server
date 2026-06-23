@@ -26,6 +26,7 @@ import { OnlyOfficeComponent } from '../utils/only-office.component'
       <div [style.height.px]="currentHeight()">
         <app-files-onlyoffice-document
           [id]="docId"
+          [editorName]="officeEditorName"
           [documentServerUrl]="documentConfig.documentServerUrl"
           [config]="documentConfig.config"
           (loadError)="loadError($event)"
@@ -44,6 +45,7 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
+  protected readonly officeEditorName = this.store.server().files.editors.onlyoffice ? ONLY_OFFICE_APP_LOCK : EURO_OFFICE_APP_LOCK
 
   ngOnInit() {
     this.docId = `viewer-doc-${this.file().id}`
@@ -81,7 +83,11 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
       },
       error: (e: HttpErrorResponse) => {
         this.layout.closeDialog()
-        this.layout.sendNotification('error', 'Unable to open document', e.status === 404 ? 'Unable to load OnlyOffice editor' : e.error.message)
+        this.layout.sendNotification(
+          'error',
+          'Unable to open document',
+          e.status === 404 ? `Unable to load ${this.officeEditorName} editor` : e.error.message
+        )
       }
     })
   }
