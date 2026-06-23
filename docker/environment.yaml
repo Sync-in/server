@@ -10,8 +10,12 @@ auth:
 applications:
   files:
     dataPath: /app/data
-    collabora:
-      enabled: false
-    onlyoffice:
-      enabled: false
-      secret: 'onlyOfficeSecret'
+    editors:
+      collabora:
+        enabled: false
+      onlyoffice:
+        enabled: false
+        secret: 'onlyOfficeSecret'
+      eurooffice:
+        enabled: false
+        secret: 'euroOfficeSecret'
