@@ -12,20 +12,17 @@ export class AuthProviderMySQL implements AuthProvider {
   constructor(private readonly usersManager: UsersManager) {}
 
   async validateUser(loginOrEmail: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
-    let user: UserModel
     try {
-      user = await this.usersManager.findUser(loginOrEmail, false)
+      return await this.usersManager.validateLocalPasswordByLogin(loginOrEmail, password, ip, scope)
     } catch (e) {
+      if (e instanceof HttpException) {
+        throw e
+      }
       this.logger.error({ tag: this.validateUser.name, msg: `${e}` })
       throw new HttpException(
         CONNECT_ERROR_CODE.has(e.cause?.code) ? 'Authentication service error' : e.cause?.code || e.message,
         HttpStatus.INTERNAL_SERVER_ERROR
       )
     }
-    if (!user) {
-      this.logger.warn({ tag: this.validateUser.name, msg: `login or email not found for *${loginOrEmail}*` })
-      return null
-    }
-    return await this.usersManager.logUser(user, password, ip, scope)
   }
 }

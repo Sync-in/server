@@ -7,6 +7,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { AuthManager } from '../../../authentication/auth.service'
+import { AUTH_SCOPE } from '../../../authentication/constants/scope'
 import { comparePassword } from '../../../common/functions'
 import * as imageModule from '../../../common/image'
 import { pngMimeType, svgMimeType } from '../../../common/image'
@@ -273,6 +274,69 @@ describe(UsersManager.name, () => {
     expect(out2).toBe(uGood)
     expect(updSpy3).toHaveBeenCalledWith(uGood, '8.8.8.8', true)
     expect(pathsSpy).toHaveBeenCalled()
+  })
+
+  it('local password validation burns time when user is missing or rejected by policy', async () => {
+    vi.mocked(comparePassword).mockResolvedValue(false)
+    usersQueriesService.from = vi.fn().mockResolvedValue(null)
+
+    await expect(usersManager.validateLocalPasswordByLogin('missing', 'pwd', '127.0.0.1')).resolves.toBeNull()
+    expect(comparePassword).toHaveBeenCalledWith('pwd', null)
+
+    await expect(usersManager.validateLocalPasswordForUser(null, 'missing', 'pwd', '127.0.0.1')).resolves.toBeNull()
+    expect(comparePassword).toHaveBeenLastCalledWith('pwd', null)
+
+    const localUser = new UserModel({ ...generateUserTest(), isActive: true, passwordAttempts: 0 }, false)
+    usersQueriesService.from = vi.fn().mockResolvedValue(localUser)
+
+    await expect(usersManager.validateLocalPasswordByLogin(localUser.login, 'pwd', '127.0.0.1', undefined, () => false)).resolves.toBeNull()
+    expect(comparePassword).toHaveBeenLastCalledWith('pwd', null)
+  })
+
+  it('scoped local password validation burns app password timing when no app password is checked', async () => {
+    vi.mocked(comparePassword).mockResolvedValue(false)
+    vi.mocked(comparePassword).mockClear()
+    usersQueriesService.from = vi.fn().mockResolvedValue(null)
+
+    await expect(usersManager.validateLocalPasswordByLogin('missing', 'pwd', '127.0.0.1', AUTH_SCOPE.WEBDAV)).resolves.toBeNull()
+    expect(comparePassword).toHaveBeenCalledTimes(2)
+    expect(comparePassword).toHaveBeenNthCalledWith(1, 'pwd', null)
+    expect(comparePassword).toHaveBeenNthCalledWith(2, 'pwd', null)
+
+    vi.mocked(comparePassword).mockClear()
+    const localUser = new UserModel({ ...generateUserTest(), role: USER_ROLE.USER, isActive: true, passwordAttempts: 0 }, false)
+    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue({ appPasswords: [] })
+
+    await expect(usersManager.validateAppPassword(localUser, 'pwd', '127.0.0.1', AUTH_SCOPE.WEBDAV)).resolves.toBe(false)
+    expect(comparePassword).toHaveBeenCalledTimes(1)
+    expect(comparePassword).toHaveBeenCalledWith('pwd', null)
+
+    vi.mocked(comparePassword).mockClear()
+    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue({
+      appPasswords: [{ app: AUTH_SCOPE.CLIENT, password: 'APP_HASH' }]
+    })
+
+    await expect(usersManager.validateAppPassword(localUser, 'pwd', '127.0.0.1', AUTH_SCOPE.WEBDAV)).resolves.toBe(false)
+    expect(comparePassword).toHaveBeenCalledTimes(1)
+    expect(comparePassword).toHaveBeenCalledWith('pwd', null)
+
+    vi.mocked(comparePassword).mockClear()
+    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue({
+      appPasswords: [{ app: AUTH_SCOPE.WEBDAV, password: 'APP_HASH', expiration: new Date(0) }]
+    })
+
+    await expect(usersManager.validateAppPassword(localUser, 'pwd', '127.0.0.1', AUTH_SCOPE.WEBDAV)).resolves.toBe(false)
+    expect(comparePassword).toHaveBeenCalledTimes(1)
+    expect(comparePassword).toHaveBeenCalledWith('pwd', null)
+
+    vi.mocked(comparePassword).mockClear()
+    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue({
+      appPasswords: [{ app: AUTH_SCOPE.WEBDAV, password: 'APP_HASH' }]
+    })
+
+    await expect(usersManager.validateAppPassword(localUser, 'pwd', '127.0.0.1', AUTH_SCOPE.WEBDAV)).resolves.toBe(false)
+    expect(comparePassword).toHaveBeenCalledTimes(1)
+    expect(comparePassword).toHaveBeenCalledWith('pwd', 'APP_HASH')
   })
 
   it('compareUserPassword + updateLanguage + updatePassword branches', async () => {

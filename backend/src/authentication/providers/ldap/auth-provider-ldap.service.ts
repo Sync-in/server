@@ -36,11 +36,12 @@ export class AuthProviderLDAP implements AuthProvider {
   async validateUser(loginOrEmail: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
     // Authenticate user via LDAP and sync local user state.
     // Find user from his login or email
-    let user: UserModel = await this.usersManager.findUser(this.dbLogin(loginOrEmail), false)
+    const localLogin = this.dbLogin(loginOrEmail)
+    let user: UserModel = await this.usersManager.findUser(localLogin, false)
     if (user) {
       if (user.isGuest || scope) {
         // Allow local password authentication for guest users and application scopes (app passwords)
-        return this.usersManager.logUser(user, password, ip, scope)
+        return this.usersManager.validateLocalPasswordForUser(user, localLogin, password, ip, scope)
       }
       if (!user.isActive) {
         this.logger.error({ tag: this.validateUser.name, msg: `user *${user.login}* is locked` })
@@ -62,8 +63,11 @@ export class AuthProviderLDAP implements AuthProvider {
       // Allow local password authentication for:
       // - admin users (break-glass access)
       // - regular users when password authentication fallback is enabled
-      if (user && (user.isAdmin || (Boolean(ldapErrorMessage) && this.ldapConfig.options.enablePasswordAuthFallback))) {
-        const localUser = await this.usersManager.logUser(user, password, ip)
+      const canUseLocalFallback = (candidate: UserModel): boolean =>
+        candidate.isAdmin || (Boolean(ldapErrorMessage) && this.ldapConfig.options.enablePasswordAuthFallback)
+      // Always pass through the local validator so missing or rejected fallback users take the dummy bcrypt path.
+      const localUser = await this.usersManager.validateLocalPasswordForUser(user, localLogin, password, ip, undefined, canUseLocalFallback)
+      if (user && canUseLocalFallback(user)) {
         if (localUser) return localUser
       }
 

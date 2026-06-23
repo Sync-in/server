@@ -20,6 +20,7 @@ import * as avatarUtils from '../../../applications/users/utils/avatar'
 import * as filesUtils from '../../../applications/files/utils/files'
 import { DownloadFile } from '../../../applications/files/utils/download-file'
 import * as imageUtils from '../../../common/image'
+import { AUTH_SCOPE } from '../../constants/scope'
 import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants'
 import { OAuthCookie } from './auth-oidc.constants'
 import { AuthProviderOIDC } from './auth-provider-oidc.service'
@@ -92,6 +93,7 @@ describe(AuthProviderOIDC.name, () => {
   let usersManager: {
     findUser: Mock
     logUser: Mock
+    validateLocalPasswordByLogin: Mock
     updateAccesses: Mock
     fromUserId: Mock
   }
@@ -122,6 +124,7 @@ describe(AuthProviderOIDC.name, () => {
     usersManager = {
       findUser: vi.fn(),
       logUser: vi.fn(),
+      validateLocalPasswordByLogin: vi.fn(),
       updateAccesses: vi.fn().mockResolvedValue(undefined),
       fromUserId: vi.fn()
     }
@@ -154,28 +157,45 @@ describe(AuthProviderOIDC.name, () => {
     ;(service as any).oidcConfig.security.allowInsecureRequests = false
     ;(service as any).oidcConfig.security.allowPrivateIpAvatarDownload = false
     ;(service as any).oidcConfig.security.requireVerifiedEmail = false
+    ;(service as any).oidcConfig.options.enablePasswordAuth = false
     ;(service as any).oidcConfig.options.autoSyncAvatar = false
   })
 
   it('returns null when user is not found', async () => {
-    usersManager.findUser.mockResolvedValue(null)
+    usersManager.validateLocalPasswordByLogin.mockResolvedValue(null)
 
     const result = await service.validateUser('john', 'secret')
 
     expect(result).toBeNull()
-    expect(usersManager.findUser).toHaveBeenCalledWith('john', false)
+    expect(usersManager.validateLocalPasswordByLogin).toHaveBeenCalledWith('john', 'secret', undefined, undefined, expect.any(Function))
     expect(usersManager.logUser).not.toHaveBeenCalled()
   })
 
-  it('allows local password auth for guest users', async () => {
-    const guestUser = { id: 1, isGuest: true, isAdmin: false } as any
-    usersManager.findUser.mockResolvedValue(guestUser)
-    usersManager.logUser.mockResolvedValue(guestUser)
+  it('passes the local password policy to UsersManager', async () => {
+    const regularUser = { id: 1, isGuest: false, isAdmin: false } as any
+    const guestUser = { id: 2, isGuest: true, isAdmin: false } as any
+    const adminUser = { id: 3, isGuest: false, isAdmin: true } as any
+    usersManager.validateLocalPasswordByLogin.mockResolvedValue(regularUser)
 
-    const result = await service.validateUser('guest', 'secret')
+    let result = await service.validateUser('regular', 'secret')
 
-    expect(usersManager.logUser).toHaveBeenCalledWith(guestUser, 'secret', undefined, undefined)
-    expect(result).toBe(guestUser)
+    let canAuthenticate = usersManager.validateLocalPasswordByLogin.mock.calls[0][4]
+    expect(canAuthenticate(guestUser)).toBe(true)
+    expect(canAuthenticate(adminUser)).toBe(true)
+    expect(canAuthenticate(regularUser)).toBe(false)
+    expect(result).toBe(regularUser)
+
+    await service.validateUser('regular', 'secret', undefined, AUTH_SCOPE.WEBDAV)
+
+    canAuthenticate = usersManager.validateLocalPasswordByLogin.mock.calls[1][4]
+    expect(usersManager.validateLocalPasswordByLogin.mock.calls[1][3]).toBe(AUTH_SCOPE.WEBDAV)
+    expect(canAuthenticate(regularUser)).toBe(true)
+    ;(service as any).oidcConfig.options.enablePasswordAuth = true
+    result = await service.validateUser('regular', 'secret')
+
+    canAuthenticate = usersManager.validateLocalPasswordByLogin.mock.calls[2][4]
+    expect(canAuthenticate(regularUser)).toBe(true)
+    expect(result).toBe(regularUser)
   })
 
   it('does not allow insecure OIDC requests by default during discovery', async () => {
