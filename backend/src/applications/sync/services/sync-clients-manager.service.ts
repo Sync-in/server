@@ -70,7 +70,7 @@ export class SyncClientsManager {
         const authRCode = await this.authProvider2FA.validateRecoveryCode(user.id, clientRegistrationDto.code, user.secrets.recoveryCodes)
         if (!authRCode.success) {
           this.logger.warn({ tag: this.register.name, msg: `two-fa recovery code for *${user.login}* (${user.id}) - ${authRCode.message}` })
-          this.usersManager.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error({ tag: this.register.name, msg: `${e}` }))
+          await this.usersManager.updateAccesses(user, ip, false)
           throw new HttpException(authCode.message, HttpStatus.UNAUTHORIZED)
         }
       }

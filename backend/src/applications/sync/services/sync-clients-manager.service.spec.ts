@@ -77,6 +77,7 @@ describe(SyncClientsManager.name, () => {
   let http: { axiosRef: Mock }
   let authManager: { setCookies: Mock; getTokens: Mock }
   let authProvider: { validateUser: Mock }
+  let authProvider2FA: { validateTwoFactorCode: Mock; validateRecoveryCode: Mock }
   let usersManager: { fromUserId: Mock; updateAccesses: Mock }
   let syncQueries: {
     getOrCreateClient: Mock
@@ -117,6 +118,7 @@ describe(SyncClientsManager.name, () => {
     http = { axiosRef: vi.fn() }
     authManager = { setCookies: vi.fn(), getTokens: vi.fn() }
     authProvider = { validateUser: vi.fn() }
+    authProvider2FA = { validateTwoFactorCode: vi.fn(), validateRecoveryCode: vi.fn() }
     usersManager = { fromUserId: vi.fn(), updateAccesses: vi.fn() }
     syncQueries = {
       getOrCreateClient: vi.fn(),
@@ -142,7 +144,7 @@ describe(SyncClientsManager.name, () => {
         { provide: UsersManager, useValue: usersManager },
         { provide: AuthManager, useValue: authManager },
         { provide: AuthProvider, useValue: authProvider },
-        { provide: AuthProvider2FA, useValue: {} }
+        { provide: AuthProvider2FA, useValue: authProvider2FA }
       ]
     }).compile()
 
@@ -166,6 +168,9 @@ describe(SyncClientsManager.name, () => {
     vi.mocked(readFile).mockReset()
     vi.mocked(syncQueries.updateClientInfo).mockResolvedValue(undefined)
     vi.mocked(usersManager.updateAccesses).mockResolvedValue(undefined)
+    vi.mocked(authProvider2FA.validateTwoFactorCode).mockReturnValue({ success: true, message: '' })
+    vi.mocked(authProvider2FA.validateRecoveryCode).mockResolvedValue({ success: true, message: '' })
+    ;(configuration as any).auth.mfa.totp.enabled = false
     ;(service as any).cache = cacheMock
     cacheMock.get.mockResolvedValue(undefined)
     cacheMock.get.mockClear()
@@ -195,6 +200,27 @@ describe(SyncClientsManager.name, () => {
       const r = await service.register(baseDto as any, '1.2.3.4')
       expect(r).toEqual({ clientId: 'client-1', clientToken: 'token-abc' } satisfies SyncClientAuthRegistration)
       expect(syncQueries.getOrCreateClient).toHaveBeenCalledWith(10, 'client-1', baseDto.info, '1.2.3.4')
+    })
+
+    it('should wait for access tracking before rejecting an invalid 2FA code', async () => {
+      const user = {
+        id: 10,
+        login: 'john',
+        twoFaEnabled: true,
+        secrets: { twoFaSecret: 'secret', recoveryCodes: ['recovery'] },
+        havePermission: () => true
+      }
+      ;(configuration as any).auth.mfa.totp.enabled = true
+      authProvider.validateUser.mockResolvedValue(user)
+      authProvider2FA.validateTwoFactorCode.mockReturnValue({ success: false, message: 'Invalid code' })
+      authProvider2FA.validateRecoveryCode.mockResolvedValue({ success: false, message: 'Invalid recovery code' })
+
+      await expect(service.register({ ...baseDto, code: '000000' } as any, '1.2.3.4')).rejects.toMatchObject({
+        status: HttpStatus.UNAUTHORIZED,
+        response: 'Invalid code'
+      })
+      expect(usersManager.updateAccesses).toHaveBeenCalledWith(user, '1.2.3.4', false)
+      expect(syncQueries.getOrCreateClient).not.toHaveBeenCalled()
     })
 
     it('should throw Internal Server Error when persistence fails', async () => {
