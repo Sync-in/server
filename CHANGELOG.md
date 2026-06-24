@@ -1,4 +1,17 @@
 
+## [2.4.1](https://github.com/Sync-in/server/compare/v2.4.0...v2.4.1) (2026-06-24)
+
+
+### Bug Fixes
+
+* **auth:** require step-up for app password mutations ([db19b3e](https://github.com/Sync-in/server/commit/db19b3ee4904675bd7703f183a3f473fc247b33a))
+* **backend:auth:** centralize local password timing mitigation ([b80efe0](https://github.com/Sync-in/server/commit/b80efe04574039a7a302c0e1007f03a7dbe6a633))
+* **backend:auth:** invalidate WebDAV cache on app password deletion ([6dae284](https://github.com/Sync-in/server/commit/6dae2848960c12397789a5d0a8f58893499e787c))
+* **backend:sync:** await usersManager.updateAccesses in 2FA recovery code validation ([8f55344](https://github.com/Sync-in/server/commit/8f553445df332272a1593d5afab133ff43cf5f0a))
+* **docker:** add editors section in `environment.yaml` ([1de3e09](https://github.com/Sync-in/server/commit/1de3e0934fbd8f323d28ef79adfa36578b035fed))
+* **docker:** add Euro-Office config to nginx volumes ([a864684](https://github.com/Sync-in/server/commit/a864684f09242ab862f69e25870e468188c0d6a5))
+* **frontend:files:** add support for dynamic editor naming in OnlyOffice components and error handling ([98031da](https://github.com/Sync-in/server/commit/98031da3e6d60a184f941763430a54e1c0d3aad9))
+
 ## [2.4.0](https://github.com/Sync-in/server/compare/v2.3.0...v2.4.0) (2026-06-22)
 
 
