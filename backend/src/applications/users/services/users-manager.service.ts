@@ -5,6 +5,7 @@ import { WriteStream } from 'fs'
 import { createWriteStream } from 'node:fs'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
+import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache'
 import { AUTH_SCOPE } from '../../../authentication/constants/scope'
 import { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
@@ -14,6 +15,7 @@ import { comparePassword, hashPassword } from '../../../common/functions'
 import { convertTempImageToPng, generateAvatar, imgMimeTypePrefix, pngMimeType, svgMimeType } from '../../../common/image'
 import { createLightSlug, genPassword } from '../../../common/shared'
 import { configuration, serverConfig } from '../../../configuration/config.environment'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { isPathExists, removeFiles, sanitizeName } from '../../files/utils/files'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
@@ -51,7 +53,8 @@ export class UsersManager {
   constructor(
     public readonly usersQueries: UsersQueries,
     private readonly adminUsersManager: AdminUsersManager,
-    private readonly notificationsManager: NotificationsManager
+    private readonly notificationsManager: NotificationsManager,
+    private readonly cache: Cache
   ) {}
 
   async fromUserId(id: number): Promise<UserModel> {
@@ -314,12 +317,16 @@ export class UsersManager {
 
   async deleteAppPassword(user: UserModel, passwordName: string): Promise<void> {
     const secrets = await this.usersQueries.getUserSecrets(user.id)
-    if (!Array.isArray(secrets.appPasswords) || !secrets.appPasswords.find((p: UserAppPassword) => p.name === passwordName)) {
+    const appPassword = Array.isArray(secrets.appPasswords) ? secrets.appPasswords.find((p: UserAppPassword) => p.name === passwordName) : undefined
+    if (!appPassword) {
       throw new HttpException('App password not found', HttpStatus.NOT_FOUND)
     }
     secrets.appPasswords = secrets.appPasswords.filter((p: UserAppPassword) => p.name !== passwordName)
     if (!(await this.usersQueries.updateUserOrGuest(user.id, { secrets: secrets }))) {
       throw new HttpException('Unable to delete app password', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+    if (appPassword.app === AUTH_SCOPE.WEBDAV) {
+      await this.clearWebDAVAuthCache(user.id).catch((e: Error) => this.logger.error({ tag: this.clearWebDAVAuthCache.name, msg: `${e}` }))
     }
   }
 
@@ -594,6 +601,20 @@ export class UsersManager {
 
   searchMembers(user: UserModel, searchMembersDto: SearchMembersDto): Promise<Member[]> {
     return this.usersQueries.searchUsersOrGroups(searchMembersDto, user.id)
+  }
+
+  private async clearWebDAVAuthCache(userId: number): Promise<void> {
+    const keys = await this.cache.keys(`${CACHE_AUTH_WEBDAV_PREFIX}-*`)
+    const keysToDelete: string[] = []
+    for (const key of keys) {
+      const cachedUser: null | undefined | Partial<UserModel> = await this.cache.get(key)
+      if (cachedUser?.id === userId) {
+        keysToDelete.push(key)
+      }
+    }
+    if (keysToDelete.length) {
+      await this.cache.mdel(keysToDelete)
+    }
   }
 
   private notifyAccountLocked(user: UserModel, ip: string) {
