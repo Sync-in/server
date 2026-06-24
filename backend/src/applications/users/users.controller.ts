@@ -2,7 +2,10 @@ import { Body, Controller, Delete, Get, Header, Param, ParseIntPipe, Patch, Post
 import { createReadStream } from 'fs'
 import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
 import { FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface'
-import { AuthTwoFaVerificationWithoutPasswordGuard } from '../../authentication/providers/two-fa/guards/auth-two-fa-verification.guard'
+import {
+  AuthTwoFaVerificationOrPasswordGuard,
+  AuthTwoFaVerificationWithoutPasswordGuard
+} from '../../authentication/providers/two-fa/guards/auth-two-fa-verification.guard'
 import { makeContentDispositionAttachment } from '../files/utils/send-file'
 import { USERS_ROUTE } from './constants/routes'
 import { USER_PERMISSION, USER_ROLE } from './constants/user'
@@ -38,20 +41,20 @@ export class UsersController {
 
   @Get(`${USERS_ROUTE.ME}/${USERS_ROUTE.APP_PASSWORDS}`)
   @UserHaveRole(USER_ROLE.USER)
-  @UseGuards(AuthTwoFaVerificationWithoutPasswordGuard)
   listAppPasswords(@GetUser() user: UserModel): Promise<Omit<UserAppPassword, 'password'>[]> {
     return this.usersManager.listAppPasswords(user)
   }
 
   @Post(`${USERS_ROUTE.ME}/${USERS_ROUTE.APP_PASSWORDS}`)
   @UserHaveRole(USER_ROLE.USER)
-  @UseGuards(AuthTwoFaVerificationWithoutPasswordGuard)
+  @UseGuards(AuthTwoFaVerificationOrPasswordGuard)
   generateAppPassword(@GetUser() user: UserModel, @Body() userAppPasswordDto: UserAppPasswordDto): Promise<UserAppPassword> {
     return this.usersManager.generateAppPassword(user, userAppPasswordDto)
   }
 
   @Delete(`${USERS_ROUTE.ME}/${USERS_ROUTE.APP_PASSWORDS}/:name`)
   @UserHaveRole(USER_ROLE.USER)
+  @UseGuards(AuthTwoFaVerificationOrPasswordGuard)
   deleteAppPassword(@GetUser() user: UserModel, @Param('name') name: string): Promise<void> {
     return this.usersManager.deleteAppPassword(user, name)
   }

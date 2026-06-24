@@ -64,8 +64,12 @@ export class UserAuthManageAppPasswordsDialogComponent {
     this.layout.closeDialog()
   }
 
-  deleteAppPassword(passwordName: string) {
-    this.userService.deleteAppPassword(passwordName).subscribe({
+  async deleteAppPassword(passwordName: string) {
+    const auth2FaHeaders: false | HttpHeaders = await this.userService.auth2FaVerifyDialog(false, true)
+    if (auth2FaHeaders === false) {
+      return
+    }
+    this.userService.deleteAppPassword(passwordName, auth2FaHeaders).subscribe({
       next: () => {
         this.appPasswords = this.appPasswords.filter((pwd) => pwd.name !== passwordName)
         this.nbAppPasswords.emit(this.appPasswords.length)
@@ -81,7 +85,7 @@ export class UserAuthManageAppPasswordsDialogComponent {
         return
       }
     }
-    const auth2FaHeaders: false | HttpHeaders = await this.userService.auth2FaVerifyDialog()
+    const auth2FaHeaders: false | HttpHeaders = await this.userService.auth2FaVerifyDialog(false, true)
     if (auth2FaHeaders === false) {
       return
     }

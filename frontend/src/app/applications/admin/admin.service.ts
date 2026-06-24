@@ -46,6 +46,8 @@ import {
 import type { IndexingStatus } from '@sync-in-server/backend/src/applications/files/interfaces/indexing.interface'
 import type { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 
+type OptionalTwoFaHeaders = HttpHeaders | undefined
+
 @Injectable({
   providedIn: 'root'
 })
@@ -68,19 +70,26 @@ export class AdminService {
       .pipe(map((u) => (isGuest ? new GuestUserModel(u) : new AdminUserModel(u))))
   }
 
-  createUser(createUserDto: CreateUserDto, twoFaHeaders: HttpHeaders, isGuest?: false): Observable<AdminUserModel>
-  createUser(createUserDto: CreateUserDto, twoFaHeaders: HttpHeaders, isGuest: true): Observable<GuestUserModel>
-  createUser(createUserDto: CreateUserDto, twoFaHeaders: HttpHeaders, isGuest = false): Observable<AdminUserModel | GuestUserModel> {
+  createUser(createUserDto: CreateUserDto, twoFaHeaders: OptionalTwoFaHeaders, isGuest?: false): Observable<AdminUserModel>
+  createUser(createUserDto: CreateUserDto, twoFaHeaders: OptionalTwoFaHeaders, isGuest: true): Observable<GuestUserModel>
+  createUser(createUserDto: CreateUserDto, twoFaHeaders: OptionalTwoFaHeaders, isGuest = false): Observable<AdminUserModel | GuestUserModel> {
     return this.http
-      .post<AdminUser | GuestUser>(isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS, createUserDto, { headers: twoFaHeaders })
+      .post<AdminUser | GuestUser>(isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS, createUserDto, twoFaHeaders ? { headers: twoFaHeaders } : undefined)
       .pipe(map((u) => (isGuest ? new GuestUserModel(u) : new AdminUserModel(u))))
   }
 
-  updateUser(userId: number, updateUserDto: UpdateUserDto, twoFaHeaders: HttpHeaders, isGuest?: false): Observable<AdminUserModel>
-  updateUser(userId: number, updateUserDto: UpdateUserDto, twoFaHeaders: HttpHeaders, isGuest: true): Observable<GuestUserModel>
-  updateUser(userId: number, updateUserDto: UpdateUserDto, twoFaHeaders: HttpHeaders, isGuest = false): Observable<AdminUserModel | GuestUserModel> {
+  updateUser(userId: number, updateUserDto: UpdateUserDto, twoFaHeaders: OptionalTwoFaHeaders, isGuest?: false): Observable<AdminUserModel>
+  updateUser(userId: number, updateUserDto: UpdateUserDto, twoFaHeaders: OptionalTwoFaHeaders, isGuest: true): Observable<GuestUserModel>
+  updateUser(
+    userId: number,
+    updateUserDto: UpdateUserDto,
+    twoFaHeaders: OptionalTwoFaHeaders,
+    isGuest = false
+  ): Observable<AdminUserModel | GuestUserModel> {
     return this.http
-      .put<AdminUser | GuestUser>(`${isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS}/${userId}`, updateUserDto, { headers: twoFaHeaders })
+      .put<
+        AdminUser | GuestUser
+      >(`${isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS}/${userId}`, updateUserDto, twoFaHeaders ? { headers: twoFaHeaders } : undefined)
       .pipe(map((u) => (isGuest ? new GuestUserModel(u) : new AdminUserModel(u))))
   }
 

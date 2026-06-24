@@ -6,8 +6,10 @@ import { AuthProvider2FA } from '../auth-provider-two-fa.service'
 
 export const AuthTwoFaVerificationGuard = AuthTwoFaVerificationGuardFactory()
 export const AuthTwoFaVerificationWithoutPasswordGuard = AuthTwoFaVerificationGuardFactory({ withPassword: false })
+export const AuthTwoFaVerificationOrPasswordGuard = AuthTwoFaVerificationGuardFactory({ passwordFallback: true, withPassword: false })
 
 interface TwoFaVerificationGuardOptions {
+  passwordFallback?: boolean
   withPassword?: boolean
 }
 
@@ -19,15 +21,16 @@ function AuthTwoFaVerificationGuardFactory(options: TwoFaVerificationGuardOption
     async canActivate(ctx: ExecutionContext): Promise<boolean> {
       const req: FastifyAuthenticatedRequest = ctx.switchToHttp().getRequest()
       const user = await this.authProvider2FA.loadUser(req.user.id, req.ip)
+      const twoFaEnabled = configuration.auth.mfa.totp.enabled && user.twoFaEnabled
 
-      if (options.withPassword) {
+      if (options.withPassword || (options.passwordFallback && !twoFaEnabled)) {
         if (!req.headers[TWO_FA_HEADER_PASSWORD]) {
           throw new HttpException('Missing TWO-FA password', HttpStatus.FORBIDDEN)
         }
         await this.authProvider2FA.verifyUserPassword(user, req.headers[TWO_FA_HEADER_PASSWORD] as string, req.ip)
       }
 
-      if (!configuration.auth.mfa.totp.enabled || !user.twoFaEnabled) {
+      if (!twoFaEnabled) {
         return true
       }
 

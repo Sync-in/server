@@ -238,11 +238,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   }
 
   async manageAppPasswords() {
-    const auth2FaHeaders: false | HttpHeaders = await this.userService.auth2FaVerifyDialog()
-    if (auth2FaHeaders === false) {
-      return
-    }
-    this.userService.listAppPasswords(auth2FaHeaders).subscribe({
+    this.userService.listAppPasswords().subscribe({
       next: (appPasswords: Omit<UserAppPassword, 'password'>[]) => {
         const modalRef: BsModalRef<UserAuthManageAppPasswordsDialogComponent> = this.layout.openDialog(
           UserAuthManageAppPasswordsDialogComponent,
