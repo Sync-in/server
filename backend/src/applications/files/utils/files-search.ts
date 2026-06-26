@@ -1,5 +1,6 @@
 import { regexpEscape } from '../../../common/functions'
 import { MIN_CHARS_TO_SEARCH } from '../constants/indexing'
+import { SEARCH_FILES_DEFAULT_LIMIT, SEARCH_FILES_MAX_LIMIT, SEARCH_FILES_MIN_LIMIT } from '../constants/search'
 
 const regexMatchSearchBoolean = new RegExp(`([+-]?)(?:"([^"]+)"|(\\S+))`)
 const regexMatchesSearchBoolean = new RegExp(regexMatchSearchBoolean.source, 'g')
@@ -133,6 +134,11 @@ export function parseSearchTerms(search: string): SearchTerm[] {
 
 export function likeSearchTermStartPattern(): string {
   return `(?=${LIKE_SEARCH_CHAR})`
+}
+
+export function normalizeSearchLimit(limit?: number): number {
+  if (!Number.isInteger(limit)) return SEARCH_FILES_DEFAULT_LIMIT
+  return Math.min(Math.max(limit, SEARCH_FILES_MIN_LIMIT), SEARCH_FILES_MAX_LIMIT)
 }
 
 function termBoundaryPattern(term: string, endBoundary = false): string {

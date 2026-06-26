@@ -4,6 +4,7 @@ import {
   genTermsPattern,
   likeSearchTermStartPattern,
   MaxSortedList,
+  normalizeSearchLimit,
   parseSearchTerms,
   requiresLikeSearch
 } from './files-search'
@@ -66,6 +67,15 @@ describe('files search utilities', () => {
 
     it('should not escape punctuation that is invalid in Unicode regular expressions', () => {
       expect(analyzeTerms('euro-office')).toEqual(['euro-office'])
+    })
+  })
+
+  describe(normalizeSearchLimit.name, () => {
+    it('should keep search limits within the accepted range', () => {
+      expect(normalizeSearchLimit(25)).toBe(25)
+      expect(normalizeSearchLimit(1000)).toBe(100)
+      expect(normalizeSearchLimit(0)).toBe(1)
+      expect(normalizeSearchLimit()).toBe(100)
     })
   })
 

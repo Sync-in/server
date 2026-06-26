@@ -1,0 +1,3 @@
+export const SEARCH_FILES_MIN_LIMIT = 1
+export const SEARCH_FILES_DEFAULT_LIMIT = 100
+export const SEARCH_FILES_MAX_LIMIT = 100
