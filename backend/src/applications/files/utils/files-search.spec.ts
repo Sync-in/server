@@ -152,22 +152,29 @@ describe('files search utilities', () => {
   describe(parseSearchTerms.name, () => {
     it('should classify boolean search terms and exact phrases', () => {
       expect(parseSearchTerms('+中文 -秘密 文档 "全文 搜索"')).toEqual([
-        { value: '中文', operator: 'required' },
-        { value: '秘密', operator: 'excluded' },
-        { value: '文档', operator: 'optional' },
-        { value: '全文 搜索', operator: 'optional' }
+        { rawValue: '中文', regexpValue: '中文', operator: 'required', requiresLike: true },
+        { rawValue: '秘密', regexpValue: '秘密', operator: 'excluded', requiresLike: true },
+        { rawValue: '文档', regexpValue: '文档', operator: 'optional', requiresLike: true },
+        { rawValue: '全文 搜索', regexpValue: '全文 搜索', operator: 'optional', requiresLike: true }
       ])
     })
 
     it('should remove nested modifiers and trailing wildcards', () => {
       expect(parseSearchTerms('++report file*')).toEqual([
-        { value: 'report', operator: 'required' },
-        { value: 'file', operator: 'optional' }
+        { rawValue: 'report', regexpValue: 'report', operator: 'required', requiresLike: false },
+        { rawValue: 'file', regexpValue: 'file', operator: 'optional', requiresLike: false }
       ])
     })
 
     it('should ignore terms below the minimum length', () => {
-      expect(parseSearchTerms('+a valid')).toEqual([{ value: 'valid', operator: 'optional' }])
+      expect(parseSearchTerms('+a valid')).toEqual([{ rawValue: 'valid', regexpValue: 'valid', operator: 'optional', requiresLike: false }])
+    })
+
+    it('should expose raw and regular expression values', () => {
+      expect(parseSearchTerms('file.txt euro-office')).toEqual([
+        { rawValue: 'file.txt', regexpValue: 'file\\.txt', operator: 'optional', requiresLike: false },
+        { rawValue: 'euro-office', regexpValue: 'euro-office', operator: 'optional', requiresLike: false }
+      ])
     })
   })
 

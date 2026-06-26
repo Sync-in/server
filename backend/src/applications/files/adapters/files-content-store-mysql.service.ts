@@ -6,15 +6,7 @@ import { DBSchema } from '../../../infrastructure/database/interfaces/database.i
 import { FilesContentStore } from '../models/files-content-store'
 import { FileContent, FileContentRecordMetadata, FileContentRecordMetadataMap } from '../schemas/file-content.interface'
 import { createTableFilesContent, FILES_CONTENT_TABLE_PREFIX } from '../schemas/files-content.schema'
-import {
-  analyzeTerms,
-  genTermsPattern,
-  likeSearchTermStartPattern,
-  MaxSortedList,
-  parseSearchTerms,
-  requiresLikeSearch,
-  SearchTerm
-} from '../utils/files-search'
+import { genTermsPattern, likeSearchTermStartPattern, MaxSortedList, parseSearchTerms, SearchTerm } from '../utils/files-search'
 
 type SearchCandidate = Pick<FileContent, 'id' | 'score'> & { sourceIndex: string }
 type SearchRecord = FileContent & { sourceIndex: string }
@@ -88,7 +80,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
       return new Map()
     }
     const [r]: { id: number; path: string; name: string; size: number }[][] = (await this.db.execute(
-      sql`SELECT id, path, name, size FROM ${sql.raw(tableName)} WHERE id IN (${sql.raw(ids.join(','))})`
+      sql`SELECT id, path, name, size FROM ${sql.raw(tableName)} WHERE id IN (${idsSqlList(ids)})`
     )) as MySqlQueryResult
     return new Map(
       r.map((row) => [row.id, { path: row.path, name: row.name, size: row.size }] satisfies [FileContent['id'], FileContentRecordMetadata])
@@ -98,7 +90,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   async markRecordsSeen(tableName: string, ids: number[], runId: string): Promise<boolean> {
     if (!ids.length) return true
     try {
-      await this.db.execute(sql`UPDATE ${sql.raw(tableName)} SET seen_run_id = ${runId} WHERE id IN (${sql.raw(ids.join(','))})`)
+      await this.db.execute(sql`UPDATE ${sql.raw(tableName)} SET seen_run_id = ${runId} WHERE id IN (${idsSqlList(ids)})`)
       return true
     } catch (e) {
       this.logger.error({ tag: this.markRecordsSeen.name, msg: `${tableName} : ${e}` })
@@ -108,7 +100,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
 
   async deleteRecords(tableName: string, ids: number[]): Promise<void> {
     try {
-      const [r] = await this.db.execute(sql`DELETE FROM ${sql.raw(tableName)} WHERE id IN (${sql.raw(ids.join(','))})`)
+      const [r] = await this.db.execute(sql`DELETE FROM ${sql.raw(tableName)} WHERE id IN (${idsSqlList(ids)})`)
       if (r.affectedRows !== ids.length) {
         this.logger.warn({ tag: this.deleteRecords.name, msg: `${tableName} - deleted : ${r.affectedRows}/${ids.length}` })
       }
@@ -128,13 +120,13 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   }
 
   async searchRecords(tableNames: string[], search: string, limit: number): Promise<FileContent[]> {
-    const terms: string[] = analyzeTerms(search)
     const searchTerms = parseSearchTerms(search)
     const positiveTerms = searchTerms.filter(({ operator }) => operator !== 'excluded')
     const requiredTerms = searchTerms.filter(({ operator }) => operator === 'required')
     const optionalTerms = searchTerms.filter(({ operator }) => operator === 'optional')
     const excludedTerms = searchTerms.filter(({ operator }) => operator === 'excluded')
-    const useLikeSearch = searchTerms.some(({ value }) => requiresLikeSearch(value))
+    const terms = positiveTerms.map(({ regexpValue }) => regexpValue)
+    const useLikeSearch = searchTerms.some(({ requiresLike }) => requiresLike)
     this.logger.verbose({ tag: this.searchRecords.name, msg: `convert ${search} -> ${JSON.stringify(terms)}` })
     if (!terms.length) {
       return []
@@ -150,7 +142,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
             const positiveMatch = requiredMatch || optionalMatch
             const excludedMatch = createContentMatch(excludedTerms, ' AND ', true)
             const score = positiveTerms.reduce<SQL>(
-              (value, term) => sql`${value} + IF(content LIKE ${toLikePattern(term.value)} ESCAPE '=', 1, 0)`,
+              (value, term) => sql`${value} + IF(content LIKE ${toLikePattern(term.rawValue)} ESCAPE '=', 1, 0)`,
               sql.raw('0')
             )
             return sql`(SELECT ${tableName} as sourceIndex, id, ${score} as score
@@ -192,10 +184,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
         return [
           sql`SELECT ${tableName} as sourceIndex, id, path, name, mime, mtime, content
               FROM ${sql.raw(tableName)}
-              WHERE id IN (${sql.join(
-                ids.map((id) => sql`${id}`),
-                sql.raw(', ')
-              )})`
+              WHERE id IN (${idsSqlList(ids)})`
         ]
       }),
       sql.raw(' UNION ALL ')
@@ -263,9 +252,16 @@ function toLikePattern(term: string): string {
 function createContentMatch(terms: SearchTerm[], separator: ' AND ' | ' OR ', negate = false): SQL | null {
   if (!terms.length) return null
   return sql.join(
-    terms.map(({ value }) =>
-      negate ? sql`content NOT LIKE ${toLikePattern(value)} ESCAPE '='` : sql`content LIKE ${toLikePattern(value)} ESCAPE '='`
+    terms.map(({ rawValue }) =>
+      negate ? sql`content NOT LIKE ${toLikePattern(rawValue)} ESCAPE '='` : sql`content LIKE ${toLikePattern(rawValue)} ESCAPE '='`
     ),
     sql.raw(separator)
+  )
+}
+
+function idsSqlList(ids: number[]): SQL {
+  return sql.join(
+    ids.map((id) => sql`${id}`),
+    sql.raw(', ')
   )
 }
