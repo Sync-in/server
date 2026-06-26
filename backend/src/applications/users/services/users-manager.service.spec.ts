@@ -7,6 +7,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { AuthManager } from '../../../authentication/auth.service'
+import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache'
+import { AUTH_SCOPE } from '../../../authentication/constants/scope'
 import { comparePassword } from '../../../common/functions'
 import * as imageModule from '../../../common/image'
 import { pngMimeType, svgMimeType } from '../../../common/image'
@@ -48,6 +50,7 @@ describe(UsersManager.name, () => {
   let adminUsersManager: AdminUsersManager
   let adminUsersQueries: AdminUsersQueries
   let usersQueriesService: UsersQueries
+  let cache: Cache
   let userTest: UserModel
   let deleteUserDto: DeleteUserDto
   let testDataPath: string
@@ -111,6 +114,7 @@ describe(UsersManager.name, () => {
     adminUsersManager = module.get(AdminUsersManager)
     adminUsersQueries = module.get(AdminUsersQueries)
     usersQueriesService = module.get(UsersQueries)
+    cache = module.get(Cache)
     userTest = new UserModel(generateUserTest(), false)
     deleteUserDto = { deleteSpace: true, isGuest: false } satisfies DeleteUserDto
   })
@@ -273,6 +277,112 @@ describe(UsersManager.name, () => {
     expect(out2).toBe(uGood)
     expect(updSpy3).toHaveBeenCalledWith(uGood, '8.8.8.8', true)
     expect(pathsSpy).toHaveBeenCalled()
+  })
+
+  it('local password validation burns time when user is missing or rejected by policy', async () => {
+    vi.mocked(comparePassword).mockResolvedValue(false)
+    usersQueriesService.from = vi.fn().mockResolvedValue(null)
+
+    await expect(usersManager.validateLocalPasswordByLogin('missing', 'pwd', '127.0.0.1')).resolves.toBeNull()
+    expect(comparePassword).toHaveBeenCalledWith('pwd', null)
+
+    await expect(usersManager.validateLocalPasswordForUser(null, 'missing', 'pwd', '127.0.0.1')).resolves.toBeNull()
+    expect(comparePassword).toHaveBeenLastCalledWith('pwd', null)
+
+    const localUser = new UserModel({ ...generateUserTest(), isActive: true, passwordAttempts: 0 }, false)
+    usersQueriesService.from = vi.fn().mockResolvedValue(localUser)
+
+    await expect(usersManager.validateLocalPasswordByLogin(localUser.login, 'pwd', '127.0.0.1', undefined, () => false)).resolves.toBeNull()
+    expect(comparePassword).toHaveBeenLastCalledWith('pwd', null)
+  })
+
+  it('scoped local password validation burns app password timing when no app password is checked', async () => {
+    vi.mocked(comparePassword).mockResolvedValue(false)
+    vi.mocked(comparePassword).mockClear()
+    usersQueriesService.from = vi.fn().mockResolvedValue(null)
+
+    await expect(usersManager.validateLocalPasswordByLogin('missing', 'pwd', '127.0.0.1', AUTH_SCOPE.WEBDAV)).resolves.toBeNull()
+    expect(comparePassword).toHaveBeenCalledTimes(2)
+    expect(comparePassword).toHaveBeenNthCalledWith(1, 'pwd', null)
+    expect(comparePassword).toHaveBeenNthCalledWith(2, 'pwd', null)
+
+    vi.mocked(comparePassword).mockClear()
+    const localUser = new UserModel({ ...generateUserTest(), role: USER_ROLE.USER, isActive: true, passwordAttempts: 0 }, false)
+    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue({ appPasswords: [] })
+
+    await expect(usersManager.validateAppPassword(localUser, 'pwd', '127.0.0.1', AUTH_SCOPE.WEBDAV)).resolves.toBe(false)
+    expect(comparePassword).toHaveBeenCalledTimes(1)
+    expect(comparePassword).toHaveBeenCalledWith('pwd', null)
+
+    vi.mocked(comparePassword).mockClear()
+    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue({
+      appPasswords: [{ app: AUTH_SCOPE.CLIENT, password: 'APP_HASH' }]
+    })
+
+    await expect(usersManager.validateAppPassword(localUser, 'pwd', '127.0.0.1', AUTH_SCOPE.WEBDAV)).resolves.toBe(false)
+    expect(comparePassword).toHaveBeenCalledTimes(1)
+    expect(comparePassword).toHaveBeenCalledWith('pwd', null)
+
+    vi.mocked(comparePassword).mockClear()
+    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue({
+      appPasswords: [{ app: AUTH_SCOPE.WEBDAV, password: 'APP_HASH', expiration: new Date(0) }]
+    })
+
+    await expect(usersManager.validateAppPassword(localUser, 'pwd', '127.0.0.1', AUTH_SCOPE.WEBDAV)).resolves.toBe(false)
+    expect(comparePassword).toHaveBeenCalledTimes(1)
+    expect(comparePassword).toHaveBeenCalledWith('pwd', null)
+
+    vi.mocked(comparePassword).mockClear()
+    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue({
+      appPasswords: [{ app: AUTH_SCOPE.WEBDAV, password: 'APP_HASH' }]
+    })
+
+    await expect(usersManager.validateAppPassword(localUser, 'pwd', '127.0.0.1', AUTH_SCOPE.WEBDAV)).resolves.toBe(false)
+    expect(comparePassword).toHaveBeenCalledTimes(1)
+    expect(comparePassword).toHaveBeenCalledWith('pwd', 'APP_HASH')
+  })
+
+  it('deletes WebDAV auth cache entries for the user when deleting a WebDAV app password', async () => {
+    const secrets = {
+      appPasswords: [
+        { name: 'webdav-client', app: AUTH_SCOPE.WEBDAV, password: 'HASH' },
+        { name: 'desktop-client', app: AUTH_SCOPE.CLIENT, password: 'HASH' }
+      ]
+    }
+    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue(secrets)
+    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(true)
+    cache.keys = vi
+      .fn()
+      .mockResolvedValue([`${CACHE_AUTH_WEBDAV_PREFIX}-match`, `${CACHE_AUTH_WEBDAV_PREFIX}-other`, `${CACHE_AUTH_WEBDAV_PREFIX}-failed`])
+    cache.get = vi
+      .fn()
+      .mockResolvedValueOnce({ id: userTest.id })
+      .mockResolvedValueOnce({ id: userTest.id + 1 })
+      .mockResolvedValueOnce(null)
+    cache.mdel = vi.fn().mockResolvedValue(true)
+
+    await expect(usersManager.deleteAppPassword(userTest, 'webdav-client')).resolves.toBeUndefined()
+
+    expect(usersQueriesService.updateUserOrGuest).toHaveBeenCalledWith(userTest.id, {
+      secrets: { appPasswords: [{ name: 'desktop-client', app: AUTH_SCOPE.CLIENT, password: 'HASH' }] }
+    })
+    expect(cache.keys).toHaveBeenCalledWith(`${CACHE_AUTH_WEBDAV_PREFIX}-*`)
+    expect(cache.mdel).toHaveBeenCalledWith([`${CACHE_AUTH_WEBDAV_PREFIX}-match`])
+  })
+
+  it('does not delete WebDAV auth cache entries when deleting another app password scope', async () => {
+    const secrets = {
+      appPasswords: [{ name: 'desktop-client', app: AUTH_SCOPE.CLIENT, password: 'HASH' }]
+    }
+    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue(secrets)
+    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(true)
+    cache.keys = vi.fn()
+    cache.mdel = vi.fn()
+
+    await expect(usersManager.deleteAppPassword(userTest, 'desktop-client')).resolves.toBeUndefined()
+
+    expect(cache.keys).not.toHaveBeenCalled()
+    expect(cache.mdel).not.toHaveBeenCalled()
   })
 
   it('compareUserPassword + updateLanguage + updatePassword branches', async () => {

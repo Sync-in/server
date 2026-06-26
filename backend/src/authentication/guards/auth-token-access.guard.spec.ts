@@ -8,8 +8,7 @@ import { PassportModule } from '@nestjs/passport'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
 import crypto from 'node:crypto'
-import { UserModel } from '../../applications/users/models/user.model'
-import { UsersManager } from '../../applications/users/services/users-manager.service'
+import { USER_PERMISSION, USER_ROLE } from '../../applications/users/constants/user'
 import { WEB_DAV_CONTEXT, WebDAVContext } from '../../applications/webdav/decorators/webdav-context.decorator'
 import { exportConfiguration } from '../../configuration/config.environment'
 import { AuthConfig } from '../auth.config'
@@ -17,7 +16,7 @@ import { AuthManager } from '../auth.service'
 import { CSRF_ERROR } from '../constants/auth'
 import { AuthTokenOptional } from '../decorators/auth-token-optional.decorator'
 import { AUTH_TOKEN_SKIP, AuthTokenSkip } from '../decorators/auth-token-skip.decorator'
-import { JwtPayload } from '../interfaces/jwt-payload.interface'
+import { JwtIdentityPayload, JwtPayload } from '../interfaces/jwt-payload.interface'
 import { TOKEN_TYPE } from '../interfaces/token.interface'
 import { AuthAnonymousGuard } from './auth-anonymous.guard'
 import { AuthAnonymousStrategy } from './auth-anonymous.strategy'
@@ -26,6 +25,15 @@ import { AuthTokenAccessStrategy } from './auth-token-access.strategy'
 
 describe(AuthTokenAccessGuard.name, () => {
   const csrfToken: string = crypto.randomUUID()
+  const accessTokenIdentity: JwtIdentityPayload = {
+    id: 1,
+    login: 'foo',
+    email: 'foo@sync-in.test',
+    fullName: 'Foo Bar',
+    language: 'fr',
+    role: USER_ROLE.USER,
+    applications: [USER_PERMISSION.DESKTOP_APP, USER_PERMISSION.PERSONAL_SPACE]
+  }
   let authConfig: AuthConfig
   let jwtService: JwtService
   let authAccessGuard: AuthTokenAccessGuard
@@ -36,9 +44,6 @@ describe(AuthTokenAccessGuard.name, () => {
   let accessToken: string
   let temporaryTwoFaToken: string
   let context: DeepMocked<ExecutionContext>
-  const usersManager = {
-    fromAuthToken: vi.fn(async (user: UserModel): Promise<UserModel | null> => user)
-  }
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -55,7 +60,6 @@ describe(AuthTokenAccessGuard.name, () => {
         AuthAnonymousStrategy,
         AuthAnonymousGuard,
         AuthManager,
-        { provide: UsersManager, useValue: usersManager },
         {
           provide: PinoLogger,
           useValue: {
@@ -72,13 +76,13 @@ describe(AuthTokenAccessGuard.name, () => {
     authAnonymousStrategy = module.get<AuthAnonymousStrategy>(AuthAnonymousStrategy)
     authAnonymousGuard = module.get<AuthAnonymousGuard>(AuthAnonymousGuard)
     accessToken = await jwtService.signAsync(
-      { tokenType: TOKEN_TYPE.ACCESS, identity: { id: 1, login: 'foo' }, [TOKEN_TYPE.CSRF]: csrfToken } as JwtPayload,
+      { tokenType: TOKEN_TYPE.ACCESS, identity: accessTokenIdentity, [TOKEN_TYPE.CSRF]: csrfToken } as JwtPayload,
       {
         secret: authConfig.token.access.secret,
         expiresIn: 30
       }
     )
-    accessTokenWithoutCSRF = await jwtService.signAsync({ tokenType: TOKEN_TYPE.ACCESS, identity: { id: 1, login: 'foo' } } as JwtPayload, {
+    accessTokenWithoutCSRF = await jwtService.signAsync({ tokenType: TOKEN_TYPE.ACCESS, identity: accessTokenIdentity } as JwtPayload, {
       secret: authConfig.token.access.secret,
       expiresIn: 30
     })
@@ -125,15 +129,19 @@ describe(AuthTokenAccessGuard.name, () => {
     expect(await authAccessGuard.canActivate(context)).toBe(true)
   })
 
-  it('should reject a valid access token when the current user is unavailable', async () => {
-    usersManager.fromAuthToken.mockResolvedValueOnce(null)
-    context.switchToHttp().getRequest.mockReturnValue({
+  it('should hydrate user from the access token identity', async () => {
+    const request = {
       raw: { user: '' },
       headers: {
         authorization: `Bearer ${accessToken}`
       }
-    })
-    await expect(authAccessGuard.canActivate(context)).rejects.toThrow('Unauthorized')
+    } as any
+    context.switchToHttp().getRequest.mockReturnValue(request)
+
+    expect(await authAccessGuard.canActivate(context)).toBe(true)
+    expect(request.user).toMatchObject(accessTokenIdentity)
+    expect(request.user.haveRole(USER_ROLE.USER)).toBe(true)
+    expect(request.user.havePermission(USER_PERMISSION.DESKTOP_APP)).toBe(true)
   })
 
   it('should throw an error with an invalid access token in cookies', async () => {

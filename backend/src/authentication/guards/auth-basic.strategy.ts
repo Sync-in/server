@@ -7,15 +7,13 @@ import { genHash } from '../../applications/files/utils/files'
 import { UserModel } from '../../applications/users/models/user.model'
 import { SERVER_NAME } from '../../common/shared'
 import { Cache } from '../../infrastructure/cache/cache.service'
+import { CACHE_AUTH_WEBDAV_PREFIX, CACHE_AUTH_WEBDAV_TTL } from '../constants/cache'
 import { AUTH_SCOPE } from '../constants/scope'
 import { AuthProvider } from '../providers/auth-providers.models'
 import { HttpBasicStrategy } from './implementations/http-basic.strategy'
 
 @Injectable()
 export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basic') implements AbstractStrategy {
-  private readonly CACHE_TTL = 900
-  private readonly CACHE_KEY_PREFIX = 'auth-webdav'
-
   constructor(
     private readonly authProvider: AuthProvider,
     private readonly cache: Cache,
@@ -27,7 +25,7 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
   async validate(req: FastifyRequest, loginOrEmail: string, password: string): Promise<Omit<UserModel, 'password'> | null> {
     loginOrEmail = loginOrEmail.trim()
     this.logger.assign({ user: loginOrEmail })
-    const basicAuthCacheKey = `${this.CACHE_KEY_PREFIX}-${genHash(`${loginOrEmail}\u0000${password}`, 'sha256')}`
+    const basicAuthCacheKey = `${CACHE_AUTH_WEBDAV_PREFIX}-${genHash(`${loginOrEmail}\u0000${password}`, 'sha256')}`
     const userFromCache: null | undefined | Partial<UserModel> = await this.cache.get(basicAuthCacheKey)
     if (userFromCache === null) {
       // not authorized
@@ -43,7 +41,9 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
       userFromDB.removePassword()
     }
     const userToCache: Record<string, any> | null = userFromDB ? instanceToPlain(userFromDB, { excludePrefixes: ['_'] }) : null
-    this.cache.set(basicAuthCacheKey, userToCache, this.CACHE_TTL).catch((e: Error) => this.logger.error({ tag: this.validate.name, msg: `${e}` }))
+    this.cache
+      .set(basicAuthCacheKey, userToCache, CACHE_AUTH_WEBDAV_TTL)
+      .catch((e: Error) => this.logger.error({ tag: this.validate.name, msg: `${e}` }))
     return userFromDB
   }
 }

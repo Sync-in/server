@@ -5,6 +5,7 @@ import { WriteStream } from 'fs'
 import { createWriteStream } from 'node:fs'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
+import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache'
 import { AUTH_SCOPE } from '../../../authentication/constants/scope'
 import { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
@@ -14,6 +15,7 @@ import { comparePassword, hashPassword } from '../../../common/functions'
 import { convertTempImageToPng, generateAvatar, imgMimeTypePrefix, pngMimeType, svgMimeType } from '../../../common/image'
 import { createLightSlug, genPassword } from '../../../common/shared'
 import { configuration, serverConfig } from '../../../configuration/config.environment'
+import { Cache } from '../../../infrastructure/cache/cache.service'
 import { isPathExists, removeFiles, sanitizeName } from '../../files/utils/files'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
@@ -51,7 +53,8 @@ export class UsersManager {
   constructor(
     public readonly usersQueries: UsersQueries,
     private readonly adminUsersManager: AdminUsersManager,
-    private readonly notificationsManager: NotificationsManager
+    private readonly notificationsManager: NotificationsManager,
+    private readonly cache: Cache
   ) {}
 
   async fromUserId(id: number): Promise<UserModel> {
@@ -82,6 +85,45 @@ export class UsersManager {
   async findUser(loginOrEmail: string, removePassword: boolean = true): Promise<Omit<UserModel, 'password'>> {
     const user: User = await this.usersQueries.from(null, loginOrEmail)
     return user ? new UserModel(user, removePassword) : null
+  }
+
+  async validateLocalPasswordByLogin(
+    loginOrEmail: string,
+    password: string,
+    ip?: string,
+    scope?: AUTH_SCOPE,
+    canAuthenticate?: (user: UserModel) => boolean
+  ): Promise<UserModel | null> {
+    const user: UserModel = await this.findUser(loginOrEmail, false)
+    return this.validateLocalPasswordForUser(user, loginOrEmail, password, ip, scope, canAuthenticate)
+  }
+
+  async validateLocalPasswordForUser(
+    user: UserModel | null,
+    loginOrEmail: string,
+    password: string,
+    ip?: string,
+    scope?: AUTH_SCOPE,
+    canAuthenticate?: (user: UserModel) => boolean
+  ): Promise<UserModel | null> {
+    if (!user) {
+      this.logger.warn({ tag: this.validateLocalPasswordForUser.name, msg: `login or email not found for *${loginOrEmail}*` })
+      await comparePassword(password, null)
+      if (scope) {
+        // Scoped auth can also check app passwords; burn that second bcrypt path too.
+        await comparePassword(password, null)
+      }
+      return null
+    }
+    if (canAuthenticate && !canAuthenticate(user)) {
+      await comparePassword(password, null)
+      if (scope) {
+        // Match the scoped wrong-password path without revealing why local auth was rejected.
+        await comparePassword(password, null)
+      }
+      return null
+    }
+    return this.logUser(user, password, ip, scope)
   }
 
   async logUser(user: UserModel, password: string, ip: string, scope?: AUTH_SCOPE): Promise<UserModel | null> {
@@ -275,23 +317,38 @@ export class UsersManager {
 
   async deleteAppPassword(user: UserModel, passwordName: string): Promise<void> {
     const secrets = await this.usersQueries.getUserSecrets(user.id)
-    if (!Array.isArray(secrets.appPasswords) || !secrets.appPasswords.find((p: UserAppPassword) => p.name === passwordName)) {
+    const appPassword = Array.isArray(secrets.appPasswords) ? secrets.appPasswords.find((p: UserAppPassword) => p.name === passwordName) : undefined
+    if (!appPassword) {
       throw new HttpException('App password not found', HttpStatus.NOT_FOUND)
     }
     secrets.appPasswords = secrets.appPasswords.filter((p: UserAppPassword) => p.name !== passwordName)
     if (!(await this.usersQueries.updateUserOrGuest(user.id, { secrets: secrets }))) {
       throw new HttpException('Unable to delete app password', HttpStatus.INTERNAL_SERVER_ERROR)
     }
+    if (appPassword.app === AUTH_SCOPE.WEBDAV) {
+      await this.clearWebDAVAuthCache(user.id).catch((e: Error) => this.logger.error({ tag: this.clearWebDAVAuthCache.name, msg: `${e}` }))
+    }
   }
 
   async validateAppPassword(user: UserModel, password: string, ip: string, scope: AUTH_SCOPE): Promise<boolean> {
-    if (!scope || !user.haveRole(USER_ROLE.USER)) return false
+    if (!scope) return false
+    if (!user.haveRole(USER_ROLE.USER)) {
+      // Keep scoped auth timing close even when app passwords cannot apply to this role.
+      await comparePassword(password, null)
+      return false
+    }
     const secrets = await this.usersQueries.getUserSecrets(user.id)
-    if (!Array.isArray(secrets.appPasswords)) return false
+    if (!Array.isArray(secrets.appPasswords)) {
+      // No candidate app password exists, but the scoped auth path should still do bcrypt work.
+      await comparePassword(password, null)
+      return false
+    }
+    let hasComparedAppPassword = false
     for (const p of secrets.appPasswords) {
       if (p.app !== scope) continue
       const expMs = p.expiration ? new Date(p.expiration) : null
       if (p.expiration && new Date() > expMs) continue // expired
+      hasComparedAppPassword = true
       if (await comparePassword(password, p.password)) {
         p.lastAccess = p.currentAccess
         p.currentAccess = new Date()
@@ -303,6 +360,10 @@ export class UsersManager {
           .catch((e: Error) => this.logger.error({ tag: this.validateAppPassword.name, msg: `${e}` }))
         return true
       }
+    }
+    if (!hasComparedAppPassword) {
+      // All app passwords were filtered out by scope/expiration, so compare against the dummy hash.
+      await comparePassword(password, null)
     }
     return false
   }
@@ -540,6 +601,20 @@ export class UsersManager {
 
   searchMembers(user: UserModel, searchMembersDto: SearchMembersDto): Promise<Member[]> {
     return this.usersQueries.searchUsersOrGroups(searchMembersDto, user.id)
+  }
+
+  private async clearWebDAVAuthCache(userId: number): Promise<void> {
+    const keys = await this.cache.keys(`${CACHE_AUTH_WEBDAV_PREFIX}-*`)
+    const keysToDelete: string[] = []
+    for (const key of keys) {
+      const cachedUser: null | undefined | Partial<UserModel> = await this.cache.get(key)
+      if (cachedUser?.id === userId) {
+        keysToDelete.push(key)
+      }
+    }
+    if (keysToDelete.length) {
+      await this.cache.mdel(keysToDelete)
+    }
   }
 
   private notifyAccountLocked(user: UserModel, ip: string) {

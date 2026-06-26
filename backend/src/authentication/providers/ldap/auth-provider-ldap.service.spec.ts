@@ -115,6 +115,7 @@ describe(AuthProviderLDAP.name, () => {
           useValue: {
             findUser: vi.fn(),
             logUser: vi.fn(),
+            validateLocalPasswordForUser: vi.fn(),
             updateAccesses: vi.fn().mockResolvedValue(undefined),
             validateAppPassword: vi.fn(),
             fromUserId: vi.fn()
@@ -157,24 +158,24 @@ describe(AuthProviderLDAP.name, () => {
     const guestUser: any = { id: 1, login: 'guest1', isGuest: true, isActive: true }
     usersManager.findUser.mockResolvedValue(guestUser)
     const dbAuthResult: any = { ...guestUser, token: 'jwt' }
-    usersManager.logUser.mockResolvedValue(dbAuthResult)
+    usersManager.validateLocalPasswordForUser.mockResolvedValue(dbAuthResult)
 
     const res = await authProviderLDAP.validateUser('guest1', 'pass', '127.0.0.1')
 
     expect(res).toEqual(dbAuthResult)
-    expect(usersManager.logUser).toHaveBeenCalledWith(guestUser, 'pass', '127.0.0.1', undefined)
+    expect(usersManager.validateLocalPasswordForUser).toHaveBeenCalledWith(guestUser, 'guest1', 'pass', '127.0.0.1', undefined)
     expect(Client).not.toHaveBeenCalled()
   })
 
   it('should bypass LDAP when scope is provided', async () => {
     const user = buildUser({ id: 12 })
     usersManager.findUser.mockResolvedValue(user)
-    usersManager.logUser.mockResolvedValue(user)
+    usersManager.validateLocalPasswordForUser.mockResolvedValue(user)
 
     const res = await authProviderLDAP.validateUser('john', 'app-password', '10.0.0.2', 'webdav' as any)
 
     expect(res).toBe(user)
-    expect(usersManager.logUser).toHaveBeenCalledWith(user, 'app-password', '10.0.0.2', 'webdav')
+    expect(usersManager.validateLocalPasswordForUser).toHaveBeenCalledWith(user, 'john', 'app-password', '10.0.0.2', 'webdav')
     expect(Client).not.toHaveBeenCalled()
   })
 
@@ -219,7 +220,7 @@ describe(AuthProviderLDAP.name, () => {
     setLdapConfig({ options: { enablePasswordAuthFallback: true } })
     const existingUser: any = buildUser({ id: 2 })
     usersManager.findUser.mockResolvedValue(existingUser)
-    usersManager.logUser.mockResolvedValue(existingUser)
+    usersManager.validateLocalPasswordForUser.mockResolvedValue(existingUser)
     const err = Object.assign(new Error('connect ECONNREFUSED'), { code: Array.from(CONNECT_ERROR_CODE)[0] })
     ldapClient.bind.mockRejectedValue({ errors: [err] })
     ldapClient.unbind.mockResolvedValue(undefined)
@@ -227,7 +228,20 @@ describe(AuthProviderLDAP.name, () => {
     const res = await authProviderLDAP.validateUser('john', 'pwd', '10.0.0.3')
 
     expect(res).toBe(existingUser)
-    expect(usersManager.logUser).toHaveBeenCalledWith(existingUser, 'pwd', '10.0.0.3')
+    expect(usersManager.validateLocalPasswordForUser).toHaveBeenCalledWith(existingUser, 'john', 'pwd', '10.0.0.3', undefined, expect.any(Function))
+  })
+
+  it('should burn local password timing when LDAP is unavailable and local user is missing', async () => {
+    setLdapConfig({ options: { enablePasswordAuthFallback: true } })
+    usersManager.findUser.mockResolvedValue(null)
+    usersManager.validateLocalPasswordForUser.mockResolvedValue(null)
+    const err = Object.assign(new Error('connect ECONNREFUSED'), { code: Array.from(CONNECT_ERROR_CODE)[0] })
+    ldapClient.bind.mockRejectedValue({ errors: [err] })
+    ldapClient.unbind.mockResolvedValue(undefined)
+
+    await expect(authProviderLDAP.validateUser('john', 'pwd', '10.0.0.4')).rejects.toThrow(/authentication service error/i)
+
+    expect(usersManager.validateLocalPasswordForUser).toHaveBeenCalledWith(null, 'john', 'pwd', '10.0.0.4', undefined, expect.any(Function))
   })
 
   it('should throw SERVICE_UNAVAILABLE when LDAP is unavailable and fallback is disabled', async () => {
@@ -245,7 +259,7 @@ describe(AuthProviderLDAP.name, () => {
     setLdapConfig({ options: { enablePasswordAuthFallback: false } })
     const existingUser: any = buildUser({ id: 4, isAdmin: true })
     usersManager.findUser.mockResolvedValue(existingUser)
-    usersManager.logUser.mockResolvedValue(existingUser)
+    usersManager.validateLocalPasswordForUser.mockResolvedValue(existingUser)
     const err = Object.assign(new Error('connect ECONNREFUSED'), { code: Array.from(CONNECT_ERROR_CODE)[0] })
     ldapClient.bind.mockRejectedValue({ errors: [err] })
     ldapClient.unbind.mockResolvedValue(undefined)
@@ -253,7 +267,7 @@ describe(AuthProviderLDAP.name, () => {
     const res = await authProviderLDAP.validateUser('john', 'pwd')
 
     expect(res).toBe(existingUser)
-    expect(usersManager.logUser).toHaveBeenCalledWith(existingUser, 'pwd', undefined)
+    expect(usersManager.validateLocalPasswordForUser).toHaveBeenCalledWith(existingUser, 'john', 'pwd', undefined, undefined, expect.any(Function))
   })
 
   it('should return null when LDAP entry lacks required fields', async () => {

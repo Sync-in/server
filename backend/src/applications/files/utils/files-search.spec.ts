@@ -4,6 +4,7 @@ import {
   genTermsPattern,
   likeSearchTermStartPattern,
   MaxSortedList,
+  normalizeSearchLimit,
   parseSearchTerms,
   requiresLikeSearch
 } from './files-search'
@@ -63,6 +64,19 @@ describe('files search utilities', () => {
       expect(analyzeTerms('file.txt')).toEqual(['file\\.txt'])
       expect(analyzeTerms('file.txt', false, false)).toEqual(['file.txt'])
     })
+
+    it('should not escape punctuation that is invalid in Unicode regular expressions', () => {
+      expect(analyzeTerms('euro-office')).toEqual(['euro-office'])
+    })
+  })
+
+  describe(normalizeSearchLimit.name, () => {
+    it('should keep search limits within the accepted range', () => {
+      expect(normalizeSearchLimit(25)).toBe(25)
+      expect(normalizeSearchLimit(1000)).toBe(100)
+      expect(normalizeSearchLimit(0)).toBe(1)
+      expect(normalizeSearchLimit()).toBe(100)
+    })
   })
 
   describe(genTermsPattern.name, () => {
@@ -72,6 +86,13 @@ describe('files search utilities', () => {
       expect(regexp.test('résumé')).toBe(true)
       expect(regexp.test('cañyon')).toBe(true)
       expect(regexp.test('other')).toBe(false)
+    })
+
+    it('should generate a Unicode regular expression compatible pattern with hyphenated terms', () => {
+      const regexp = new RegExp(`^(${genTermsPattern(['euro-office'])})$`, 'iu')
+
+      expect(regexp.test('eurô-office')).toBe(true)
+      expect(regexp.test('euro office')).toBe(false)
     })
   })
 
@@ -87,6 +108,13 @@ describe('files search utilities', () => {
 
       expect(regexp.test('мой_файл.txt')).toBe(true)
       expect(regexp.test('суперфайл.txt')).toBe(false)
+    })
+
+    it('should match hyphenated terms with Unicode-aware boundaries', () => {
+      const regexp = genRegexPositiveAndNegativeTerms('euro-office')
+
+      expect(regexp.test('archive/euro-office.pdf')).toBe(true)
+      expect(regexp.test('archive/euro office.pdf')).toBe(false)
     })
 
     it('should exclude negative CJK terms', () => {
@@ -124,22 +152,29 @@ describe('files search utilities', () => {
   describe(parseSearchTerms.name, () => {
     it('should classify boolean search terms and exact phrases', () => {
       expect(parseSearchTerms('+中文 -秘密 文档 "全文 搜索"')).toEqual([
-        { value: '中文', operator: 'required' },
-        { value: '秘密', operator: 'excluded' },
-        { value: '文档', operator: 'optional' },
-        { value: '全文 搜索', operator: 'optional' }
+        { rawValue: '中文', regexpValue: '中文', operator: 'required', requiresLike: true },
+        { rawValue: '秘密', regexpValue: '秘密', operator: 'excluded', requiresLike: true },
+        { rawValue: '文档', regexpValue: '文档', operator: 'optional', requiresLike: true },
+        { rawValue: '全文 搜索', regexpValue: '全文 搜索', operator: 'optional', requiresLike: true }
       ])
     })
 
     it('should remove nested modifiers and trailing wildcards', () => {
       expect(parseSearchTerms('++report file*')).toEqual([
-        { value: 'report', operator: 'required' },
-        { value: 'file', operator: 'optional' }
+        { rawValue: 'report', regexpValue: 'report', operator: 'required', requiresLike: false },
+        { rawValue: 'file', regexpValue: 'file', operator: 'optional', requiresLike: false }
       ])
     })
 
     it('should ignore terms below the minimum length', () => {
-      expect(parseSearchTerms('+a valid')).toEqual([{ value: 'valid', operator: 'optional' }])
+      expect(parseSearchTerms('+a valid')).toEqual([{ rawValue: 'valid', regexpValue: 'valid', operator: 'optional', requiresLike: false }])
+    })
+
+    it('should expose raw and regular expression values', () => {
+      expect(parseSearchTerms('file.txt euro-office')).toEqual([
+        { rawValue: 'file.txt', regexpValue: 'file\\.txt', operator: 'optional', requiresLike: false },
+        { rawValue: 'euro-office', regexpValue: 'euro-office', operator: 'optional', requiresLike: false }
+      ])
     })
   })
 

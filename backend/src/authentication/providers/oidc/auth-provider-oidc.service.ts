@@ -62,23 +62,15 @@ export class AuthProviderOIDC implements AuthProvider {
   ) {}
 
   async validateUser(login: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
-    // Local password authentication path (non-OIDC)
-    const user: UserModel = await this.usersManager.findUser(login, false)
+    // Non-OIDC fallback: allow local password authentication only for:
+    // - guest users
+    // - administrators (break-glass access)
+    // - scoped application access (app passwords)
+    // - regular users when password authentication is enabled
+    const canUseLocalPassword = (user: UserModel): boolean =>
+      user.isGuest || user.isAdmin || Boolean(scope) || this.oidcConfig.options.enablePasswordAuth
 
-    if (!user) {
-      return null
-    }
-
-    if (user.isGuest || user.isAdmin || scope || this.oidcConfig.options.enablePasswordAuth) {
-      // Allow local password authentication for:
-      // - guest users
-      // - admin users (break-glass access)
-      // - application scopes (app passwords)
-      // - regular users when password authentication is enabled
-      return this.usersManager.logUser(user, password, ip, scope)
-    }
-
-    return null
+    return this.usersManager.validateLocalPasswordByLogin(login, password, ip, scope, canUseLocalPassword)
   }
 
   async getConfig(): Promise<Configuration> {

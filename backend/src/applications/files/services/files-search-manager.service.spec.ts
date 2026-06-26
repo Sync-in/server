@@ -111,6 +111,16 @@ describe(FilesSearchManager.name, () => {
     expect(result).toEqual([fileContent('report.pdf')])
   })
 
+  it('should normalize search limit before routing', async () => {
+    const nameSearchSpy = vi.spyOn(service as any, 'searchFileNames').mockResolvedValue([])
+
+    await service.search({ id: 3, isAdmin: false } as any, { content: 'report', fullText: false, limit: 1000 } as any)
+    await service.search({ id: 3, isAdmin: false } as any, { content: 'report', fullText: false, limit: 0 } as any)
+    await service.search({ id: 3, isAdmin: false } as any, { content: 'report', fullText: false } as any)
+
+    expect(nameSearchSpy.mock.calls.map(([, , , , limit]) => limit)).toEqual([100, 1, 100])
+  })
+
   it('should return empty results when no full-text index exists', async () => {
     filesIndexer.existingIndexes.mockResolvedValueOnce([])
 
@@ -125,14 +135,11 @@ describe(FilesSearchManager.name, () => {
     filesIndexer.existingIndexes.mockResolvedValueOnce(['user_5'])
     filesIndexer.searchRecords.mockRejectedValueOnce(new Error('Invalid regular expression: /[/'))
 
-    try {
-      await (service as any).searchFullText(5, [], [], '[', 5)
-      fail('searchFullText should throw')
-    } catch (e) {
-      expect(e).toBeInstanceOf(HttpException)
-      expect((e as HttpException).getStatus()).toBe(HttpStatus.BAD_REQUEST)
-      expect((e as HttpException).message).toBe('SyntaxError (check special characters)')
-    }
+    const error = await (service as any).searchFullText(5, [], [], '[', 5).catch((e: HttpException) => e)
+
+    expect(error).toBeInstanceOf(HttpException)
+    expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST)
+    expect(error.message).toBe('SyntaxError (check special characters)')
   })
 
   it('should stop filename search when the limit is reached', async () => {
