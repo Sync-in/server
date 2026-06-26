@@ -63,6 +63,10 @@ describe('files search utilities', () => {
       expect(analyzeTerms('file.txt')).toEqual(['file\\.txt'])
       expect(analyzeTerms('file.txt', false, false)).toEqual(['file.txt'])
     })
+
+    it('should not escape punctuation that is invalid in Unicode regular expressions', () => {
+      expect(analyzeTerms('euro-office')).toEqual(['euro-office'])
+    })
   })
 
   describe(genTermsPattern.name, () => {
@@ -72,6 +76,13 @@ describe('files search utilities', () => {
       expect(regexp.test('résumé')).toBe(true)
       expect(regexp.test('cañyon')).toBe(true)
       expect(regexp.test('other')).toBe(false)
+    })
+
+    it('should generate a Unicode regular expression compatible pattern with hyphenated terms', () => {
+      const regexp = new RegExp(`^(${genTermsPattern(['euro-office'])})$`, 'iu')
+
+      expect(regexp.test('eurô-office')).toBe(true)
+      expect(regexp.test('euro office')).toBe(false)
     })
   })
 
@@ -87,6 +98,13 @@ describe('files search utilities', () => {
 
       expect(regexp.test('мой_файл.txt')).toBe(true)
       expect(regexp.test('суперфайл.txt')).toBe(false)
+    })
+
+    it('should match hyphenated terms with Unicode-aware boundaries', () => {
+      const regexp = genRegexPositiveAndNegativeTerms('euro-office')
+
+      expect(regexp.test('archive/euro-office.pdf')).toBe(true)
+      expect(regexp.test('archive/euro office.pdf')).toBe(false)
     })
 
     it('should exclude negative CJK terms', () => {

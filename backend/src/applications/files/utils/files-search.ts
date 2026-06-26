@@ -1,4 +1,4 @@
-import { escapeString } from '../../../common/functions'
+import { regexpEscape } from '../../../common/functions'
 import { MIN_CHARS_TO_SEARCH } from '../constants/indexing'
 
 const regexMatchSearchBoolean = new RegExp(`([+-]?)(?:"([^"]+)"|(\\S+))`)
@@ -80,7 +80,7 @@ export function analyzeTerms(search: string, onlyAllowNegative = false, escapeFo
         term = term.substring(0, term.length - 1)
       }
 
-      return escapeForRegexp ? escapeString(term) : term
+      return escapeForRegexp ? escapeSearchTermRegexp(term) : term
     })
     .filter(Boolean)
 }
@@ -148,4 +148,8 @@ function genAccentInsensitiveRegexpPattern(input: string): string {
     .split('')
     .map((char: string) => accentToBaseMap.get(char) || char)
     .join('')
+}
+
+function escapeSearchTermRegexp(input: string): string {
+  return input.replace(regexpEscape, '\\$&')
 }
