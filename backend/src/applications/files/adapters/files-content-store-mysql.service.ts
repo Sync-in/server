@@ -10,6 +10,8 @@ import { genTermsPattern, likeSearchTermStartPattern, MaxSortedList, parseSearch
 
 type SearchCandidate = Pick<FileContent, 'id' | 'score'> & { sourceIndex: string }
 type SearchRecord = FileContent & { sourceIndex: string }
+const HIGHLIGHT_CONTEXT_WORD = '(?<![\\p{L}\\p{N}])[\\p{L}\\p{N}]+(?![\\p{L}\\p{N}])'
+const HIGHLIGHT_CONTEXT_SEPARATOR = '[^\\p{L}\\p{N}]'
 
 @Injectable()
 export class FilesContentStoreMySQL implements FilesContentStore {
@@ -197,7 +199,10 @@ export class FilesContentStoreMySQL implements FilesContentStore {
     })
 
     const termsPattern = `(${genTermsPattern(terms)})`
-    const termsRegexp = new RegExp(`(?:\\b\\w+\\b[\\s\\W]{0,4}){0,10}(?:\\b|${likeSearchTermStartPattern()})${termsPattern}(?:\\s*\\S*){0,15}`, 'giu')
+    const termsRegexp = new RegExp(
+      `(?:${HIGHLIGHT_CONTEXT_WORD}${HIGHLIGHT_CONTEXT_SEPARATOR}{0,4}){0,10}(?:\\b|${likeSearchTermStartPattern()})${termsPattern}(?:\\s*\\S*){0,15}`,
+      'giu'
+    )
 
     const termsHighlightRegexp = new RegExp(termsPattern, 'giu')
     for (const r of records) {
