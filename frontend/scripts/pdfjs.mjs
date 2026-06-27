@@ -9,9 +9,10 @@ import { Uint8ArrayReader, Uint8ArrayWriter, ZipReader } from '@zip.js/zip.js/in
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-let latestVersion
-let latestDownloadURL
-const latestURL = 'https://api.github.com/repos/mozilla/pdf.js/releases/latest'
+const pdfjsVersion = 'v5.7.284'
+const pdfjsDownloadAsset = `pdfjs-${pdfjsVersion.slice(1)}-dist.zip`
+const pdfjsReleaseURL = `https://api.github.com/repos/mozilla/pdf.js/releases/tags/${pdfjsVersion}`
+let pdfjsDownloadURL
 const pdfjsAssetsDirectory = path.join(__dirname, '..', 'src', 'assets', 'pdfjs')
 const pdfjsAssetsVersionFile = path.join(pdfjsAssetsDirectory, 'version')
 
@@ -51,9 +52,13 @@ async function extractZip(zipPath, destination) {
 }
 
 async function updatePdfjs() {
-  console.log('pdfjs - update to the latest version:', latestDownloadURL)
-  const tmpZip = path.join(os.tmpdir(), 'pdfjs-latest.zip')
-  const response = await fetch(latestDownloadURL)
+  console.log('pdfjs - update to version:', pdfjsVersion, pdfjsDownloadURL)
+  const tmpZip = path.join(os.tmpdir(), `${pdfjsDownloadAsset}`)
+  const response = await fetch(pdfjsDownloadURL)
+  if (!response.ok) {
+    console.error('pdfjs - unable to download:', response.status, response.statusText, pdfjsDownloadURL)
+    return
+  }
   await fs.writeFile(tmpZip, Readable.fromWeb(response.body))
   console.log('pdfjs - downloaded:', tmpZip)
   await fs.rm(pdfjsAssetsDirectory, { recursive: true, force: true })
@@ -63,16 +68,20 @@ async function updatePdfjs() {
   if (!(await checkPaths([viewerHtml]))) {
     console.warn(`${viewerHtml} is missing`)
   }
-  await fs.writeFile(pdfjsAssetsVersionFile, latestVersion)
+  await fs.writeFile(pdfjsAssetsVersionFile, pdfjsVersion)
   console.log('pdfjs - assets update is done')
 }
 
 export async function checkPdfjs() {
   let response
   try {
-    response = await fetch(latestURL)
+    response = await fetch(pdfjsReleaseURL)
   } catch (e) {
-    console.error('pdfjs -', e.message, latestURL)
+    console.error('pdfjs -', e.message, pdfjsReleaseURL)
+    return
+  }
+  if (!response.ok) {
+    console.error('pdfjs - unable to check version:', response.status, response.statusText, pdfjsReleaseURL)
     return
   }
   let data
@@ -82,13 +91,17 @@ export async function checkPdfjs() {
     console.error('pdfjs - unable to check update:', e.message)
     return
   }
-  latestVersion = data.tag_name
-  latestDownloadURL = data.assets[0]['browser_download_url']
-  console.log('pdfjs - latest version:', latestVersion)
+  const asset = data.assets.find((a) => a.name === pdfjsDownloadAsset)
+  if (!asset) {
+    console.error('pdfjs - unable to find asset:', pdfjsDownloadAsset)
+    return
+  }
+  pdfjsDownloadURL = asset.browser_download_url
+  console.log('pdfjs - target version:', pdfjsVersion)
   if (await checkPaths([pdfjsAssetsDirectory, pdfjsAssetsVersionFile])) {
     const currentVersion = await fs.readFile(pdfjsAssetsVersionFile, { encoding: 'utf8' })
     console.log('pdfjs - current version:', currentVersion)
-    if (currentVersion === latestVersion) {
+    if (currentVersion === pdfjsVersion) {
       console.log('pdfjs - is up to date')
       return
     }

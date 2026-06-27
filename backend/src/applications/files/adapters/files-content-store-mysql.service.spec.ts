@@ -404,6 +404,52 @@ describe(FilesContentStoreMySQL.name, () => {
       expect(res[0].content).toBeUndefined()
       expect(res[0].matches).toEqual(['<mark>日本語</mark>の文書です。'])
     })
+
+    it('should highlight hyphenated full-text matches', async () => {
+      db.execute.mockResolvedValueOnce([[{ id: 4, sourceIndex: 'files_content_u_1', score: 1 }]])
+      db.execute.mockResolvedValueOnce([
+        [
+          {
+            id: 4,
+            sourceIndex: 'files_content_u_1',
+            path: '/docs',
+            name: 'euro-office.txt',
+            mime: 'text/plain',
+            mtime: 1730000000003,
+            content: 'Le dossier euro-office est prêt.'
+          }
+        ]
+      ])
+
+      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'euro-office', 10)
+
+      expect(db.execute).toHaveBeenCalledTimes(2)
+      expect(res[0].content).toBeUndefined()
+      expect(res[0].matches).toEqual(['Le dossier <mark>euro-office</mark> est prêt.'])
+    })
+
+    it('should keep Unicode words in the highlighted match context', async () => {
+      db.execute.mockResolvedValueOnce([[{ id: 5, sourceIndex: 'files_content_u_1', score: 1 }]])
+      db.execute.mockResolvedValueOnce([
+        [
+          {
+            id: 5,
+            sourceIndex: 'files_content_u_1',
+            path: '/docs',
+            name: 'resume.txt',
+            mime: 'text/plain',
+            mtime: 1730000000004,
+            content: 'Le résumé final mentionne budget.'
+          }
+        ]
+      ])
+
+      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'budget', 10)
+
+      expect(db.execute).toHaveBeenCalledTimes(2)
+      expect(res[0].content).toBeUndefined()
+      expect(res[0].matches).toEqual(['Le résumé final mentionne <mark>budget</mark>.'])
+    })
   })
 
   describe('cleanIndexes', () => {

@@ -1,5 +1,6 @@
-import { escapeString } from '../../../common/functions'
+import { regexpEscape } from '../../../common/functions'
 import { MIN_CHARS_TO_SEARCH } from '../constants/indexing'
+import { SEARCH_FILES_DEFAULT_LIMIT, SEARCH_FILES_MAX_LIMIT, SEARCH_FILES_MIN_LIMIT } from '../constants/search'
 
 const regexMatchSearchBoolean = new RegExp(`([+-]?)(?:"([^"]+)"|(\\S+))`)
 const regexMatchesSearchBoolean = new RegExp(regexMatchSearchBoolean.source, 'g')
@@ -22,8 +23,10 @@ const accentToBaseMap = new Map<string, string>([
 ])
 
 export interface SearchTerm {
-  value: string
+  rawValue: string
+  regexpValue: string
   operator: 'required' | 'excluded' | 'optional'
+  requiresLike: boolean
 }
 
 export class MaxSortedList {
@@ -58,31 +61,9 @@ export class MaxSortedList {
 }
 
 export function analyzeTerms(search: string, onlyAllowNegative = false, escapeForRegexp = true): string[] {
-  /* Get the positive or negative terms list */
-  const matches: RegExpMatchArray | [] = search.match(regexMatchesSearchBoolean) || []
-  if (!matches.length) {
-    return matches
-  }
-  return matches
-    .flatMap((match: string) => {
-      const [, operator, quoted, unquoted] = match.match(regexMatchSearchBoolean)
-      let term: string = (quoted || unquoted).trim()
-
-      if (term.length < MIN_CHARS_TO_SEARCH) return null
-
-      if ((onlyAllowNegative && operator !== '-') || (!onlyAllowNegative && (operator === '-' || operator === '~'))) return null
-
-      if (booleanOperators.has(term[0])) {
-        term = term.substring(1)
-      }
-
-      if (term[term.length - 1] === '*') {
-        term = term.substring(0, term.length - 1)
-      }
-
-      return escapeForRegexp ? escapeString(term) : term
-    })
-    .filter(Boolean)
+  return parseSearchTerms(search)
+    .filter(({ operator }) => (onlyAllowNegative ? operator === 'excluded' : operator !== 'excluded'))
+    .map((term) => (escapeForRegexp ? term.regexpValue : term.rawValue))
 }
 
 export function genTermsPattern(terms: string[]): string {
@@ -90,8 +71,9 @@ export function genTermsPattern(terms: string[]): string {
 }
 
 export function genRegexPositiveAndNegativeTerms(search: string): RegExp {
-  const positiveTerms = analyzeTerms(search)
-  const negativeTerms = analyzeTerms(search, true)
+  const searchTerms = parseSearchTerms(search)
+  const positiveTerms = searchTerms.filter(({ operator }) => operator !== 'excluded').map(({ regexpValue }) => regexpValue)
+  const negativeTerms = searchTerms.filter(({ operator }) => operator === 'excluded').map(({ regexpValue }) => regexpValue)
   const p = positiveTerms
     .map((t) => genAccentInsensitiveRegexpPattern(t))
     .map((t) => `(?=.*${termBoundaryPattern(t)})`)
@@ -111,21 +93,23 @@ export function requiresLikeSearch(input: string): boolean {
 export function parseSearchTerms(search: string): SearchTerm[] {
   return (search.match(regexMatchesSearchBoolean) || []).flatMap((match: string) => {
     const [, operator, quoted, unquoted] = match.match(regexMatchSearchBoolean)
-    let value = (quoted || unquoted).trim()
-    while (booleanOperators.has(value[0])) {
-      value = value.substring(1)
+    let rawValue = (quoted || unquoted).trim()
+    while (booleanOperators.has(rawValue[0])) {
+      rawValue = rawValue.substring(1)
     }
-    if (value[value.length - 1] === '*') {
-      value = value.substring(0, value.length - 1)
+    if (rawValue[rawValue.length - 1] === '*') {
+      rawValue = rawValue.substring(0, rawValue.length - 1)
     }
-    if (value.length < MIN_CHARS_TO_SEARCH) {
+    if (rawValue.length < MIN_CHARS_TO_SEARCH) {
       return []
     }
     const searchOperator: SearchTerm['operator'] = operator === '+' ? 'required' : operator === '-' ? 'excluded' : 'optional'
     return [
       {
-        value,
-        operator: searchOperator
+        rawValue,
+        regexpValue: escapeSearchTermRegexp(rawValue),
+        operator: searchOperator,
+        requiresLike: requiresLikeSearch(rawValue)
       }
     ]
   })
@@ -133,6 +117,11 @@ export function parseSearchTerms(search: string): SearchTerm[] {
 
 export function likeSearchTermStartPattern(): string {
   return `(?=${LIKE_SEARCH_CHAR})`
+}
+
+export function normalizeSearchLimit(limit?: number): number {
+  if (!Number.isInteger(limit)) return SEARCH_FILES_DEFAULT_LIMIT
+  return Math.min(Math.max(limit, SEARCH_FILES_MIN_LIMIT), SEARCH_FILES_MAX_LIMIT)
 }
 
 function termBoundaryPattern(term: string, endBoundary = false): string {
@@ -148,4 +137,8 @@ function genAccentInsensitiveRegexpPattern(input: string): string {
     .split('')
     .map((char: string) => accentToBaseMap.get(char) || char)
     .join('')
+}
+
+function escapeSearchTermRegexp(input: string): string {
+  return input.replace(regexpEscape, '\\$&')
 }

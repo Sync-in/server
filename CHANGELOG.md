@@ -1,4 +1,14 @@
 
+## [2.4.2](https://github.com/Sync-in/server/compare/v2.4.1...v2.4.2) (2026-06-26)
+
+
+### Bug Fixes
+
+* **backend:files:** bound search result limit ([4df1b8d](https://github.com/Sync-in/server/commit/4df1b8dac26f10231bf53066c1a8a6c6b62b904c))
+* **backend:files:** escape search terms for Unicode regex ([6b5a0c5](https://github.com/Sync-in/server/commit/6b5a0c526c50f6f7f9c5801cd8d1ffca024192ab))
+* **backend:files:** make highlight context Unicode-aware ([6e574c3](https://github.com/Sync-in/server/commit/6e574c3da1ca00ca00766b0bf807e61e35d4f5ab))
+* **frontend:** pin pdf.js viewer assets to v5.7.284 ([e342d01](https://github.com/Sync-in/server/commit/e342d01d67cfc5f14e1ba0f2a86874a455091bee))
+
 ## [2.4.1](https://github.com/Sync-in/server/compare/v2.4.0...v2.4.1) (2026-06-24)
 
 

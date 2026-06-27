@@ -10,7 +10,7 @@ import { SearchFilesDto } from '../dto/file-operations.dto'
 import { FilesContentStore } from '../models/files-content-store'
 import { FileContent } from '../schemas/file-content.interface'
 import { dirName, fileName, getMimeType } from '../utils/files'
-import { genRegexPositiveAndNegativeTerms } from '../utils/files-search'
+import { genRegexPositiveAndNegativeTerms, normalizeSearchLimit } from '../utils/files-search'
 import { FilesContentParser } from './files-content-parser.service'
 import { FILE_REPOSITORY } from '../constants/operations'
 import { genIndexingKey } from '../utils/indexing'
@@ -31,11 +31,12 @@ export class FilesSearchManager {
     if (search.fullText && !configuration.applications.files.contentIndexing.enabled) {
       throw new HttpException('Full-text search is disabled', HttpStatus.BAD_REQUEST)
     }
+    const limit = normalizeSearchLimit(search.limit)
     const [spaceIds, shareIds] = await Promise.all([this.spacesQueries.spaceIds(user.id), this.sharesQueries.shareIds(user.id, +user.isAdmin)])
     if (search.fullText) {
-      return await this.searchFullText(user.id, spaceIds, shareIds, search.content, search.limit)
+      return await this.searchFullText(user.id, spaceIds, shareIds, search.content, limit)
     } else {
-      return await this.searchFileNames(user.id, spaceIds, shareIds, search.content, search.limit)
+      return await this.searchFileNames(user.id, spaceIds, shareIds, search.content, limit)
     }
   }
 
