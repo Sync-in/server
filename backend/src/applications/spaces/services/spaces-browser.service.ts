@@ -39,6 +39,7 @@ export class SpacesBrowser {
       withSpacesAndShares?: boolean
       withSyncs?: boolean
       withHasComments?: boolean
+      withIsFavorite?: boolean
     } = {}
   ): Promise<SpaceFiles> {
     // check sync permission
@@ -60,6 +61,17 @@ export class SpacesBrowser {
       spaceFiles.files = [...rootFiles, ...fsFiles]
       spaceFiles.hasRoots = true
     } else {
+      // Stamp storage context on unindexed FS files so favorites/sharing work before next re-index
+      const { ownerId, spaceId, spaceExternalRootId, shareExternalId } = space.dbFile
+      const storageCtx = {
+        ownerId: ownerId ?? null,
+        spaceId: spaceId ?? null,
+        spaceExternalRootId: spaceExternalRootId ?? null,
+        shareExternalId: shareExternalId ?? null
+      }
+      for (const f of fsFiles) {
+        if (f.id < 0) Object.assign(f, storageCtx)
+      }
       await this.mergeSpaceRootFiles(space, rootFiles, fsFiles, spaceFiles)
     }
     if (options.withLocks && !space.inTrashRepository) {
@@ -83,10 +95,10 @@ export class SpacesBrowser {
   ): Promise<FileProps[]> {
     if (space.inFilesRepository && space.id && !space.root.alias) {
       // list roots in the space
-      return Promise.all((await this.spacesQueries.spaceRootFiles(user.id, space.id, options)).map((f) => this.updateRootFile(f, options)))
+      return Promise.all((await this.spacesQueries.spaceRootFiles(user.id, space.id, options)).map((f) => this.updateRootFile(f, options, space.id)))
     } else if (space.inSharesList) {
       // list shares as roots
-      return Promise.all((await this.sharesQueries.shareRootFiles(user, options)).map((f) => this.updateRootFile(f, options)))
+      return Promise.all((await this.sharesQueries.shareRootFiles(user, options)).map((f) => this.updateRootFile(f, options, undefined, f.root?.id)))
     }
     return []
   }
@@ -98,6 +110,7 @@ export class SpacesBrowser {
       withSpacesAndShares?: boolean
       withSyncs?: boolean
       withHasComments?: boolean
+      withIsFavorite?: boolean
     }
   ): Promise<FileProps[]> {
     if (space.inSharesList) return []
@@ -106,6 +119,7 @@ export class SpacesBrowser {
       withShares: options.withSpacesAndShares,
       withSyncs: options.withSyncs,
       withHasComments: options.withHasComments,
+      withIsFavorite: options.withIsFavorite,
       ignoreChildShares: !space.inSharesRepository
     }
     return this.filesQueries.browseFiles(userId, space.dbFile, dbOptions)
@@ -153,7 +167,9 @@ export class SpacesBrowser {
 
   private async updateRootFile(
     f: FileProps,
-    options: { withShares?: boolean; withHasComments?: boolean; withSyncs?: boolean; withLocks?: boolean }
+    options: { withShares?: boolean; withHasComments?: boolean; withSyncs?: boolean; withLocks?: boolean },
+    spaceId?: number,
+    shareExternalId?: number
   ): Promise<FileProps> {
     const realPath = realPathFromRootFile(f)
     const originalPath = f.path
@@ -196,6 +212,10 @@ export class SpacesBrowser {
           .compareAndUpdateFileProps(f, fileProps)
           .catch((e: Error) => this.logger.error({ tag: this.updateRootFile.name, msg: `${e}` }))
         fileProps.id = f.id
+      } else if (spaceId) {
+        fileProps.spaceId = spaceId
+      } else if (shareExternalId) {
+        fileProps.shareExternalId = shareExternalId
       }
       fileProps.root = {
         id: f.root.id,
@@ -221,6 +241,7 @@ export class SpacesBrowser {
       withSpacesAndShares?: boolean
       withSyncs?: boolean
       withHasComments?: boolean
+      withIsFavorite?: boolean
     }
   ) {
     for (const dbFile of dbFiles) {
@@ -237,6 +258,9 @@ export class SpacesBrowser {
         }
         if (options.withHasComments) {
           fsFile.hasComments = dbFile.hasComments
+        }
+        if (options.withIsFavorite) {
+          fsFile.isFavorite = dbFile.isFavorite
         }
         this.filesQueries
           .compareAndUpdateFileProps(dbFile, fsFile)

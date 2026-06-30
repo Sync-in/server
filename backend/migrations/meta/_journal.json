@@ -29,6 +29,13 @@
       "when": 1761385913473,
       "tag": "0003_giant_luckman",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1778485262445,
+      "tag": "0004_bumpy_donald_blake",
+      "breakpoints": true
     }
   ]
 }
