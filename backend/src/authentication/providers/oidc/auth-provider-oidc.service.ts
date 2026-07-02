@@ -134,7 +134,10 @@ export class AuthProviderOIDC implements AuthProvider {
     }
 
     if (!Array.isArray(rawGroups) && typeof rawGroups !== 'string') {
-      this.logger.warn({ tag: this.extractOIDCGroupNames.name, msg: `OIDC groups claim "${claimName}" is not an array or string; skipping group synchronization` })
+      this.logger.warn({
+        tag: this.extractOIDCGroupNames.name,
+        msg: `OIDC groups claim "${claimName}" is not an array or string; skipping group synchronization`
+      })
       return null
     }
 
@@ -181,7 +184,6 @@ export class AuthProviderOIDC implements AuthProvider {
     const rightSet = new Set(right)
     return left.every((value) => rightSet.has(value))
   }
-
 
   async getConfig(): Promise<Configuration> {
     if (!this.config) {

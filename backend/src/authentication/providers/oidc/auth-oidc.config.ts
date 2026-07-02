@@ -103,7 +103,6 @@ export class AuthProviderOIDCOptionsConfig {
   @Transform(({ value }) => value || DEFAULT_STORAGE_QUOTA_FIELD)
   storageQuotaClaim?: string = DEFAULT_STORAGE_QUOTA_FIELD
 
-
   @IsOptional()
   @IsObject()
   @ValidateNested()
