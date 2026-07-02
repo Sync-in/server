@@ -73,6 +73,116 @@ export class AuthProviderOIDC implements AuthProvider {
     return this.usersManager.validateLocalPasswordByLogin(login, password, ip, scope, canUseLocalPassword)
   }
 
+  private mergeTokenClaimsWithUserInfo(claims: IDToken, userInfo: UserInfoResponse): UserInfoResponse & Record<string, unknown> {
+    const tokenClaims = claims as unknown as Record<string, unknown>
+    const userInfoClaims = userInfo as unknown as Record<string, unknown>
+    const mergedUserInfo: Record<string, unknown> = { ...tokenClaims, ...userInfoClaims }
+    const groupClaim = this.oidcConfig.options.groups?.claim || 'groups'
+
+    for (const claimName of new Set([groupClaim, 'groups', 'roles'])) {
+      if (mergedUserInfo[claimName] === undefined && tokenClaims[claimName] !== undefined) {
+        mergedUserInfo[claimName] = tokenClaims[claimName]
+      }
+    }
+
+    return mergedUserInfo as UserInfoResponse & Record<string, unknown>
+  }
+
+  private async syncOIDCGroups(user: UserModel, userInfo: UserInfoResponse & Record<string, unknown>): Promise<void> {
+    const groupsConfig = this.oidcConfig.options.groups
+    if (!groupsConfig?.enabled) {
+      return
+    }
+
+    const groupFilter = this.getOIDCGroupFilter()
+    if (!groupFilter) {
+      return
+    }
+
+    const groupNames = this.extractOIDCGroupNames(userInfo, groupFilter)
+    if (groupNames === null) {
+      return
+    }
+
+    const targetGroupIds: number[] = []
+    for (const groupName of groupNames) {
+      const group = await this.adminUsersManager.getOrCreateUserGroupByName(groupName)
+      targetGroupIds.push(group.id)
+    }
+
+    const currentUser = await this.adminUsersManager.getUser(user.id)
+    const currentGroups = currentUser.groups ?? []
+    const preservedGroupIds = currentGroups.filter((group) => !groupFilter.test(group.name)).map((group) => group.id)
+    const finalGroupIds = [...new Set([...preservedGroupIds, ...targetGroupIds])]
+    const currentGroupIds = currentGroups.map((group) => group.id)
+
+    if (this.sameNumberSet(currentGroupIds, finalGroupIds)) {
+      return
+    }
+
+    await this.adminUsersManager.updateUserOrGuest(user.id, { groups: finalGroupIds })
+  }
+
+  private extractOIDCGroupNames(userInfo: UserInfoResponse & Record<string, unknown>, groupFilter: RegExp): string[] | null {
+    const groupsConfig = this.oidcConfig.options.groups
+    const claimName = groupsConfig?.claim || 'groups'
+    const rawGroups = userInfo[claimName]
+
+    if (rawGroups === undefined || rawGroups === null) {
+      this.logger.warn({ tag: this.extractOIDCGroupNames.name, msg: `OIDC groups claim "${claimName}" is missing; skipping group synchronization` })
+      return null
+    }
+
+    if (!Array.isArray(rawGroups) && typeof rawGroups !== 'string') {
+      this.logger.warn({ tag: this.extractOIDCGroupNames.name, msg: `OIDC groups claim "${claimName}" is not an array or string; skipping group synchronization` })
+      return null
+    }
+
+    return [
+      ...new Set(
+        this.normalizeOIDCStringListClaim(rawGroups, groupsConfig?.delimiter ?? ',')
+          .map((groupName) => groupName.trim())
+          .filter(Boolean)
+          .filter((groupName) => groupFilter.test(groupName))
+      )
+    ]
+  }
+
+  private normalizeOIDCStringListClaim(value: unknown, delimiter = ','): string[] {
+    if (Array.isArray(value)) {
+      return value.flatMap((entry) => this.normalizeOIDCStringListClaim(entry, delimiter))
+    }
+
+    if (typeof value === 'string') {
+      return delimiter === '' ? [value] : value.split(delimiter)
+    }
+
+    if (value === undefined || value === null) {
+      return []
+    }
+
+    return [String(value)]
+  }
+
+  private getOIDCGroupFilter(): RegExp | null {
+    try {
+      return new RegExp(this.oidcConfig.options.groups?.regex || '.*')
+    } catch (e) {
+      this.logger.warn({ tag: this.getOIDCGroupFilter.name, msg: `invalid OIDC groups regex: ${e}` })
+      return null
+    }
+  }
+
+  private sameNumberSet(left: number[], right: number[]): boolean {
+    if (left.length !== right.length) {
+      return false
+    }
+
+    const rightSet = new Set(right)
+    return left.every((value) => rightSet.has(value))
+  }
+
+
   async getConfig(): Promise<Configuration> {
     if (!this.config) {
       this.config = await this.initializeOIDCClient()
@@ -176,7 +286,8 @@ export class AuthProviderOIDC implements AuthProvider {
       }
 
       // Process the user info and create/update the user
-      return await this.processUserInfo(userInfo, req.ip)
+      const mergedUserInfo = this.mergeTokenClaimsWithUserInfo(claims, userInfo)
+      return await this.processUserInfo(mergedUserInfo, req.ip)
     } catch (error: AuthorizationResponseError | HttpException | any) {
       if (error instanceof AuthorizationResponseError) {
         this.logger.error({ tag: this.handleCallback.name, msg: `OIDC callback error: ${error.code} - ${error.error_description}` })
@@ -298,7 +409,7 @@ export class AuthProviderOIDC implements AuthProvider {
     return (this.oidcConfig.security.supportPKCE ?? true) && config.serverMetadata().supportsPKCE()
   }
 
-  private async processUserInfo(userInfo: UserInfoResponse, ip?: string): Promise<UserModel> {
+  private async processUserInfo(userInfo: UserInfoResponse & Record<string, unknown>, ip?: string): Promise<UserModel> {
     // Extract user information
     const { login, email } = this.extractLoginAndEmail(userInfo)
 
@@ -322,6 +433,13 @@ export class AuthProviderOIDC implements AuthProvider {
     if (this.oidcConfig.options.autoSyncAvatar) {
       await this.updatePictureUrl(user, userInfo)
     }
+
+    try {
+      await this.syncOIDCGroups(user, userInfo)
+    } catch (e) {
+      this.logger.warn({ tag: this.processUserInfo.name, msg: `unable to sync OIDC groups for *${user.login}* : ${e}` })
+    }
+
     // Update user access log
     this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error({ tag: this.processUserInfo.name, msg: `${e}` }))
 
@@ -334,8 +452,11 @@ export class AuthProviderOIDC implements AuthProvider {
     }
 
     // Check claims
-    const claims = [...(Array.isArray(userInfo.groups) ? userInfo.groups : []), ...(Array.isArray(userInfo.roles) ? userInfo.roles : [])]
-
+    const delimiter = this.oidcConfig.options.groups?.delimiter ?? ','
+    const claims = [
+      ...this.normalizeOIDCStringListClaim((userInfo as unknown as Record<string, unknown>).groups, delimiter),
+      ...this.normalizeOIDCStringListClaim((userInfo as unknown as Record<string, unknown>).roles, delimiter)
+    ]
     return claims.includes(this.oidcConfig.options.adminRoleOrGroup)
   }
 
