@@ -144,7 +144,7 @@ export class FilesScheduler {
   async indexContentFiles(): Promise<void> {
     // queue a full content indexing request, it will be consumed by the minute scheduler
     if (await this.filesContentIndexer.requestFullIndexing()) {
-      this.logger.log({ tag: this.indexContentFiles.name, msg: 'REQUESTED' })
+      this.logger.verbose({ tag: this.indexContentFiles.name, msg: 'full indexing requested' })
     }
   }
 
