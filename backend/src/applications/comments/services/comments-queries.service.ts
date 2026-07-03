@@ -12,6 +12,7 @@ import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
+import { USER_PERMISSION } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema'
 import { CommentRecent } from '../interfaces/comment-recent.interface'
@@ -151,6 +152,36 @@ export class CommentsQueries {
       .limit(limit)
   }
 
+  getRecentsFromPersonal(userId: number, limit: number) {
+    return this.db
+      .select({
+        id: comments.id,
+        content: comments.content,
+        modifiedAt: comments.modifiedAt,
+        author: { login: users.login, fullName: userFullNameSQL(users).as('fullName'), email: users.email },
+        file: {
+          name: files.name,
+          path: sql<string>`
+          CONCAT_WS('/', 
+            IF (${files.inTrash} = 0, '${sql.raw(SPACE_REPOSITORY.FILES)}', '${sql.raw(SPACE_REPOSITORY.TRASH)}'), 
+            '${sql.raw(SPACE_ALIAS.PERSONAL)}',
+            IF (${files.path} = '.', NULL, ${files.path})
+          )`.as('path'),
+          mime: files.mime,
+          inTrash: sql<number>`${files.inTrash}`.as('inTrash'),
+          fromSpace: sql<number>`0`.as('fromSpace'),
+          fromShare: sql<number>`0`.as('fromShare')
+        }
+      } satisfies CommentRecent | SelectedFields<any, any>)
+      .from(files)
+      .innerJoin(comments, and(eq(comments.fileId, files.id), ne(comments.userId, userId)))
+      .innerJoin(users, eq(users.id, comments.userId))
+      .where(eq(files.ownerId, userId))
+      .groupBy(comments.id)
+      .orderBy(desc(comments.id))
+      .limit(limit)
+  }
+
   getRecentsFromSpaces(userId: number, spaceIds: number[], limit: number) {
     const spaceRootFile: any = alias(files, 'spaceRootFile')
     return this.db
@@ -182,8 +213,6 @@ export class CommentsQueries {
       .leftJoin(
         files,
         or(
-          // all files from user
-          eq(files.ownerId, userId),
           // all files from spaces
           eq(files.spaceId, spaces.id),
           // all files from space roots
@@ -206,10 +235,21 @@ export class CommentsQueries {
   }
 
   async getRecentsFromUser(user: UserModel, limit = 10): Promise<CommentRecent[]> {
-    const [spaceIds, shareIds] = await Promise.all([this.spacesQueries.spaceIds(user.id), this.sharesQueries.shareIds(user.id, +user.isAdmin)])
-    const fromSpaces = this.getRecentsFromSpaces(user.id, spaceIds, limit * 2)
-    const fromShares = this.getRecentsFromShares(user.id, shareIds, limit * 2)
-    const unionAlias = union(fromSpaces, fromShares).as('unionAlias')
-    return this.db.select().from(unionAlias).groupBy(unionAlias.id).orderBy(desc(unionAlias.id)).limit(limit)
+    const hasPersonal = user.havePermission(USER_PERMISSION.PERSONAL_SPACE)
+    const [spaceIds, shareIds] = await Promise.all([
+      user.havePermission(USER_PERMISSION.SPACES) ? this.spacesQueries.spaceIds(user.id) : Promise.resolve([]),
+      user.havePermission(USER_PERMISSION.SHARES) ? this.sharesQueries.shareIds(user.id, +user.isAdmin) : Promise.resolve([])
+    ])
+    const hasSpaces = spaceIds.length > 0
+    const hasShares = shareIds.length > 0
+    const sourceCount = +hasPersonal + +hasSpaces + +hasShares
+    const sourceLimit = sourceCount > 1 ? limit * 2 : limit
+    const sources: Promise<CommentRecent[]>[] = [
+      ...(hasPersonal ? [this.getRecentsFromPersonal(user.id, sourceLimit) as Promise<CommentRecent[]>] : []),
+      ...(hasSpaces ? [this.getRecentsFromSpaces(user.id, spaceIds, sourceLimit) as Promise<CommentRecent[]>] : []),
+      ...(hasShares ? [this.getRecentsFromShares(user.id, shareIds, sourceLimit) as Promise<CommentRecent[]>] : [])
+    ]
+    const recents = (await Promise.all(sources)).flat().sort((a, b) => b.id - a.id)
+    return Array.from(new Map(recents.map((r) => [r.id, r])).values()).slice(0, limit)
   }
 }
