@@ -25,7 +25,7 @@ import { SpaceDialogComponent } from '../../spaces/components/dialogs/space-dial
 import type { SpaceModel } from '../../spaces/models/space.model'
 import { SpacesService } from '../../spaces/services/spaces.service'
 import { SPACES_ICON } from '../../spaces/spaces.constants'
-import { UserAvatarComponent } from '../../users/components/utils/user-avatar.component'
+import { UserAvatarStackComponent } from '../../users/components/utils/user-avatar-stack.component'
 import { ADMIN_ICON, ADMIN_PATH, ADMIN_TITLE } from '../admin.constants'
 import { AdminService } from '../admin.service'
 import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
@@ -36,7 +36,7 @@ import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
     KeyValuePipe,
     L10nTranslateDirective,
     FaIconComponent,
-    UserAvatarComponent,
+    UserAvatarStackComponent,
     VirtualScrollComponent,
     TooltipModule,
     L10nTranslatePipe,

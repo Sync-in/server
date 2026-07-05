@@ -34,7 +34,7 @@ import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { LayoutService } from '../../../layout/layout.service'
-import { UserAvatarComponent } from '../../users/components/utils/user-avatar.component'
+import { UserAvatarStackComponent } from '../../users/components/utils/user-avatar-stack.component'
 import { GuestUserModel } from '../../users/models/guest.model'
 import { UserService } from '../../users/user.service'
 import { ADMIN_ICON, ADMIN_PATH, ADMIN_TITLE } from '../admin.constants'
@@ -60,7 +60,7 @@ import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
     ContextMenuModule,
     ButtonCheckboxDirective,
     FormsModule,
-    UserAvatarComponent,
+    UserAvatarStackComponent,
     TapDirective,
     ToBytesPipe
   ],

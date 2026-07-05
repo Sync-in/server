@@ -36,7 +36,7 @@ import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
 import { SharedChildrenDialogComponent } from '../../shares/components/dialogs/shared-children-dialog.component'
-import { UserAvatarComponent } from '../../users/components/utils/user-avatar.component'
+import { UserAvatarStackComponent } from '../../users/components/utils/user-avatar-stack.component'
 import { UserService } from '../../users/user.service'
 import { SpaceModel } from '../models/space.model'
 import { SpacesService } from '../services/spaces.service'
@@ -50,7 +50,7 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
     KeyValuePipe,
     L10nTranslateDirective,
     FaIconComponent,
-    UserAvatarComponent,
+    UserAvatarStackComponent,
     VirtualScrollComponent,
     TooltipModule,
     L10nTranslatePipe,
