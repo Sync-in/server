@@ -1,3 +1,4 @@
+import { escapeUTF8 } from 'entities'
 import { ACTION } from '../../../common/constants'
 import { i18nLocale } from '../../../common/i18n'
 import { capitalizeString, SERVER_NAME } from '../../../common/shared'
@@ -27,7 +28,7 @@ export function commentMail(
 
   const content = `${mailAuthor(options.author)}${mailEventOnElement(tr.event, notification.element)}${mailItalicContent(options.content)}`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${urlFromSpaceFile(options.currentUrl, notification)}">${SERVER_NAME}</a><br>${tr.footer}<br>${tr.defaultFooter}`
+  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(urlFromSpaceFile(options.currentUrl, notification))}">${SERVER_NAME}</a><br>${tr.footer}<br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -51,7 +52,7 @@ export function spaceMail(
 
   const content = `${mailEventOnElement(tr.event, notification.element)}`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${spaceUrl}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
+  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(spaceUrl)}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -77,9 +78,9 @@ export function spaceRootMail(
   const spaceRootUrl =
     options.action === ACTION.ADD ? urlFromSpaceFile(options.currentUrl, notification) : urlFromSpace(options.currentUrl, spaceName)
 
-  const content = `${mailAuthor(options.author)}${mailEventOnElement(tr.event, notification.element)}&nbsp;${tr.originEvent}&nbsp;<b>${spaceName}</b>`
+  const content = `${mailAuthor(options.author)}${mailEventOnElement(tr.event, notification.element)}&nbsp;${tr.originEvent}&nbsp;<b>${escapeUTF8(spaceName)}</b>`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${spaceRootUrl}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
+  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(spaceRootUrl)}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(spaceName)}`, mailTemplate(content, footer)]
 }
@@ -102,7 +103,7 @@ export function shareMail(
 
   const content = `${options.author ? mailAuthor(options.author) : ''}${mailEventOnElement(tr.event, notification.element)}`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${urlFromSpaceFile(options.currentUrl, notification)}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
+  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(urlFromSpaceFile(options.currentUrl, notification))}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -128,10 +129,10 @@ export function linkMail(
   let content = `${options.author ? mailAuthor(options.author) : ''}${mailEventOnElement(tr.event, notification.element)}`
 
   if (options.linkPassword) {
-    content += `<br><br>${tr.passwordText}:&nbsp;<div style="border:1px solid #000; padding:8px; display:inline-block;">${options.linkPassword}</div>`
+    content += `<br><br>${tr.passwordText}:&nbsp;<div style="border:1px solid #000; padding:8px; display:inline-block;">${escapeUTF8(options.linkPassword)}</div>`
   }
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${urlFromLink(options.currentUrl, options.linkUUID)}">${SERVER_NAME}</a>`
+  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(urlFromLink(options.currentUrl, options.linkUUID))}">${SERVER_NAME}</a>`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -155,7 +156,7 @@ export function syncMail(
 
   const content = `${mailEventOnElement(tr.event, notification.element)}`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${syncUrl}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
+  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(syncUrl)}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -170,7 +171,7 @@ export function auth2FaMail(language: i18nLocale, notification: NotificationCont
     browser: 'Browser'
   })
 
-  const content = `${tr.event}<br><br>${tr.addressIp}:&nbsp;${notification.url}<br>${tr.browser}:&nbsp;${notification.element}`
+  const content = `${escapeUTF8(tr.event)}<br><br>${tr.addressIp}:&nbsp;${escapeUTF8(notification.url)}<br>${tr.browser}:&nbsp;${escapeUTF8(notification.element)}`
 
   const footer = `<br>${tr.footer}<br>`
 
@@ -186,7 +187,7 @@ export function authLockedMail(language: i18nLocale, notification: NotificationC
     addressIp: 'Address IP'
   })
 
-  const content = `${tr.event}<br><br>${tr.addressIp}:&nbsp;${notification.url}<br>`
+  const content = `${escapeUTF8(tr.event)}<br><br>${tr.addressIp}:&nbsp;${escapeUTF8(notification.url)}<br>`
 
   const footer = `<br>${tr.footer}<br>`
 
@@ -211,7 +212,7 @@ export function requestUnlockMail(
 
   const content = `${options.author ? mailAuthor(options.author) : ''}${mailEventOnElement(tr.event, notification.element)}`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${urlFromSpaceFile(options.currentUrl, notification)}">${SERVER_NAME}</a><br>${tr.footer}<br>${tr.defaultFooter}`
+  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(urlFromSpaceFile(options.currentUrl, notification))}">${SERVER_NAME}</a><br>${tr.footer}<br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -224,7 +225,7 @@ export function serverUpdateAvailableMail(language: i18nLocale, notification: No
     event: notification.event
   })
 
-  const content = `${tr.event}:&nbsp;<b><a href="${notification.externalUrl}" target="_blank" rel="noopener">${notification.element}</a></b>`
+  const content = `${escapeUTF8(tr.event)}:&nbsp;<b><a href="${escapeUTF8(notification.externalUrl ?? '')}" target="_blank" rel="noopener">${escapeUTF8(notification.element)}</a></b>`
 
   const footer = `<br>${tr.footer}<br>${tr.defaultFooter}`
 

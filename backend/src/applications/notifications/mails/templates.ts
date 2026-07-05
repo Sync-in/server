@@ -1,3 +1,4 @@
+import { escapeUTF8 } from 'entities'
 import { capitalizeString } from '../../../common/shared'
 import { UserModel } from '../../users/models/user.model'
 
@@ -18,8 +19,8 @@ ${footer}
 </html>`
 
 export const mailAuthor = (author: UserModel) =>
-  `<img style="border-radius: 50% !important; vertical-align: middle; object-fit: cover;" height="40" width="40" src="${author.avatarBase64}" alt="avatar">&nbsp;<b>${author.fullName}</b>&nbsp;`
+  `<img style="border-radius: 50% !important; vertical-align: middle; object-fit: cover;" height="40" width="40" src="${escapeUTF8(author.avatarBase64 ?? '')}" alt="avatar">&nbsp;<b>${escapeUTF8(author.fullName)}</b>&nbsp;`
 
-export const mailEventOnElement = (event: string, element: string) => `${event}:&nbsp;<b>${capitalizeString(element)}</b>`
+export const mailEventOnElement = (event: string, element: string) => `${escapeUTF8(event)}:&nbsp;<b>${escapeUTF8(capitalizeString(element))}</b>`
 
-export const mailItalicContent = (content: string) => `<p><i>${content}</i></p>`
+export const mailItalicContent = (content: string) => `<p><i>${escapeUTF8(content)}</i></p>`
