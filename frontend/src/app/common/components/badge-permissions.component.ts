@@ -19,13 +19,18 @@ interface FilePermissionEntry {
       <span l10nTranslate>No permissions</span>
     } @else {
       @if (permissionEntries.length) {
-        <span class="badge bg-secondary-alt permission-badge">
+        <span class="badge bg-secondary-alt permission-badge" [tooltip]="permissionsTooltip" [placement]="tooltipPlacement" [container]="'body'">
           @for (p of permissionEntries; track p.key) {
-            <span class="permission-icon" [tooltip]="p.value.text | translate: locale.language" [placement]="tooltipPlacement" [container]="'body'">
-              <fa-icon class="cursor-pointer" [icon]="p.value.icon"></fa-icon>
+            <span class="permission-icon">
+              <fa-icon [icon]="p.value.icon"></fa-icon>
             </span>
           }
         </span>
+        <ng-template #permissionsTooltip>
+          @for (p of permissionEntries; track p.key) {
+            <div>{{ p.value.text | translate: locale.language }}</div>
+          }
+        </ng-template>
       }
     }
   `,
