@@ -55,6 +55,12 @@ export class InputEditDirective implements OnInit {
     }
   }
 
+  @HostListener('pointerdown', ['$event'])
+  stopPointerEvent(ev: Event) {
+    // Prevent parent tap/drag handlers from stealing Chromium's text caret.
+    ev.stopPropagation()
+  }
+
   private initStyles() {
     this.renderer.setStyle(this.elementRef.nativeElement, 'display', 'inline')
     this.renderer.setStyle(this.elementRef.nativeElement, 'height', '100%')
