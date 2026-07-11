@@ -182,7 +182,7 @@ describe(SharesManager.name, () => {
 
     it('throws Forbidden when share is not found or not authorized', async () => {
       sharesQueriesMock.getShareWithMembers.mockResolvedValueOnce(null)
-      await expect(service.getShareWithMembers(user, 99, false)).rejects.toEqual(new HttpException('Not authorized', HttpStatus.FORBIDDEN))
+      await expect(service.getShareWithMembers(user, 99, false)).rejects.toEqual(new HttpException('Unauthorized', HttpStatus.FORBIDDEN))
     })
   })
 
@@ -217,7 +217,7 @@ describe(SharesManager.name, () => {
 
     it('throws Forbidden when link is not found', async () => {
       sharesQueriesMock.listShareLinks.mockResolvedValueOnce(null)
-      await expect(service.getShareLink(user, 123)).rejects.toEqual(new HttpException('Not authorized', HttpStatus.FORBIDDEN))
+      await expect(service.getShareLink(user, 123)).rejects.toEqual(new HttpException('Unauthorized', HttpStatus.FORBIDDEN))
     })
   })
 
@@ -468,7 +468,7 @@ describe(SharesManager.name, () => {
       sharesQueriesMock.shareExistsForOwner.mockResolvedValueOnce(false)
 
       await expect(service.deleteShare({ id: 2, isAdmin: false } as any, 123)).rejects.toEqual(
-        new HttpException('Not authorized', HttpStatus.FORBIDDEN)
+        new HttpException('Unauthorized', HttpStatus.FORBIDDEN)
       )
     })
 
@@ -516,7 +516,7 @@ describe(SharesManager.name, () => {
 
     it('throws Forbidden when not allowed to manage child share', async () => {
       sharesQueriesMock.childExistsForShareOwner.mockResolvedValueOnce(null)
-      await expect(service.getChildShare(user, 1, 2, false)).rejects.toEqual(new HttpException('Not authorized', HttpStatus.FORBIDDEN))
+      await expect(service.getChildShare(user, 1, 2, false)).rejects.toEqual(new HttpException('Unauthorized', HttpStatus.FORBIDDEN))
     })
   })
 

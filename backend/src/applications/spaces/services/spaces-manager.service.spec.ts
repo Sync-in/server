@@ -220,6 +220,6 @@ describe(SpacesManager.name, () => {
   it('should throw Forbidden when user is neither admin nor manager for space shares', async () => {
     vi.spyOn(spacesQueries, 'userIsAdminOrSpaceManager').mockResolvedValueOnce(false)
 
-    await expect(spacesManager.listSpaceShares(userTest, 10)).rejects.toEqual(new HttpException('Not authorized', HttpStatus.FORBIDDEN))
+    await expect(spacesManager.listSpaceShares(userTest, 10)).rejects.toEqual(new HttpException('Unauthorized', HttpStatus.FORBIDDEN))
   })
 })
