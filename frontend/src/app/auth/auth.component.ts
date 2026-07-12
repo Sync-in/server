@@ -29,7 +29,6 @@ export class AuthComponent {
   protected logoUrl = logoDarkUrl
   protected hasError: any = null
   protected submitted = false
-  protected OIDCSubmitted = false
   protected twoFaVerify = false
   private route = inject(ActivatedRoute)
   protected oidcSettings: AuthOIDCSettings | false = this.route.snapshot.data.authSettings
@@ -97,12 +96,10 @@ export class AuthComponent {
       window.location.assign(this.oidcSettings.loginUrl)
       return
     }
-    this.OIDCSubmitted = true
     try {
       const desktopPort = await this.auth.electron.startOIDCDesktopAuth()
 
       if (!desktopPort) {
-        this.OIDCSubmitted = false
         console.error('OIDC desktop auth failed')
         return
       }
@@ -120,7 +117,6 @@ export class AuthComponent {
           this.auth.electron.setActiveAndShow()
         })
         .catch((e: Error) => {
-          this.OIDCSubmitted = false
           console.error('Unavailable OIDC desktop callback params:', e)
         })
 
@@ -128,7 +124,6 @@ export class AuthComponent {
       // The backend sends the oidc cookies to desktop app before the redirection.
       window.location.assign(`${this.oidcSettings.loginUrl}?${this.auth.electron.genParamOIDCDesktopPort(desktopPort)}`)
     } catch (e) {
-      this.OIDCSubmitted = false
       console.error(e)
     }
   }

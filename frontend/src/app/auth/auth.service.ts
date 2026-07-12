@@ -290,7 +290,7 @@ export class AuthService {
               )
             }),
             catchError((e: HttpErrorResponse) => {
-              console.error(`${this.authOIDCDesktopClient.name} - ${e}`)
+              console.error(`${this.authOIDCDesktopClient.name} - ${e.error?.message ?? e}`)
               this.logout(true)
               return of(false)
             })
