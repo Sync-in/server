@@ -182,7 +182,8 @@ export class AuthProviderOIDC implements AuthProvider {
         this.logger.error({ tag: this.handleCallback.name, msg: `OIDC callback error: ${error.code} - ${error.error_description}` })
         throw new HttpException(error.error_description, HttpStatus.BAD_REQUEST)
       } else {
-        this.logger.error({ tag: this.handleCallback.name, msg: `OIDC callback error: ${error}` })
+        const errorMessage = await this.getOIDCErrorMessage(error)
+        this.logger.error({ tag: this.handleCallback.name, msg: `OIDC callback error: ${errorMessage}` })
         throw new HttpException(
           error.error_description ?? 'OIDC authentication failed',
           error instanceof HttpException ? error.getStatus() : (error.status ?? HttpStatus.INTERNAL_SERVER_ERROR)
@@ -247,7 +248,8 @@ export class AuthProviderOIDC implements AuthProvider {
       this.logger.log({ tag: this.initializeOIDCClient.name, msg: `OIDC client initialized successfully for issuer: ${this.oidcConfig.issuerUrl}` })
       return config
     } catch (error) {
-      this.logger.error({ tag: this.initializeOIDCClient.name, msg: `OIDC client initialization failed: ${error?.cause || error}` })
+      const errorMessage = await this.getOIDCErrorMessage(error)
+      this.logger.error({ tag: this.initializeOIDCClient.name, msg: `OIDC client initialization failed: ${errorMessage}` })
       throw this.mapOIDCInitializationError(error)
     }
   }
@@ -272,6 +274,19 @@ export class AuthProviderOIDC implements AuthProvider {
         }
         return new HttpException('OIDC client initialization failed', HttpStatus.INTERNAL_SERVER_ERROR)
     }
+  }
+
+  private async getOIDCErrorMessage(error: any): Promise<string> {
+    const cause = error?.cause
+    if (cause instanceof Response) {
+      try {
+        return await cause.clone().text()
+      } catch {
+        return `${cause}`
+      }
+    }
+
+    return `${cause || error}`
   }
 
   private getTokenAuthMethod(tokenEndpointAuthMethod: OAuthTokenEndpoint, clientSecret?: string) {
