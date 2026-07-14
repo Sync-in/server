@@ -4,6 +4,7 @@ import { currentTimeStamp } from '../../../common/shared'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
+import { USER_PERMISSION } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { FileProps } from '../interfaces/file-props.interface'
 import { FileRecentLocation } from '../interfaces/file-recent-location.interface'
@@ -21,8 +22,12 @@ export class FilesRecents {
   ) {}
 
   async getRecents(user: UserModel, limit: number): Promise<FileRecent[]> {
-    const [spaceIds, shareIds] = await Promise.all([this.spacesQueries.spaceIds(user.id), this.sharesQueries.shareIds(user.id, +user.isAdmin)])
-    return this.filesQueries.getRecentsFromUser(user.id, spaceIds, shareIds, limit)
+    const [spaceIds, shareIds] = await Promise.all([
+      user.havePermission(USER_PERMISSION.SPACES) ? this.spacesQueries.spaceIds(user.id) : Promise.resolve([]),
+      user.havePermission(USER_PERMISSION.SHARES) ? this.sharesQueries.shareIds(user.id, +user.isAdmin) : Promise.resolve([])
+    ])
+    const ownerId = user.havePermission(USER_PERMISSION.PERSONAL_SPACE) ? user.id : undefined
+    return this.filesQueries.getRecentsFromUser(ownerId, spaceIds, shareIds, limit)
   }
 
   async updateRecents(user: UserModel, space: SpaceEnv, files: FileProps[]): Promise<void> {

@@ -31,6 +31,7 @@ describe(OnlyOfficeManager.name, () => {
   let jwtService: Mocked<JwtService>
   let filesLockManager: Mocked<FilesLockManager>
   let onlyOfficeEnabled: boolean
+  let onlyOfficeExternalServer: string
 
   const mockUser = {
     id: 1,
@@ -64,7 +65,9 @@ describe(OnlyOfficeManager.name, () => {
 
   beforeEach(async () => {
     onlyOfficeEnabled = configuration.applications.files.editors.onlyoffice.enabled
+    onlyOfficeExternalServer = configuration.applications.files.editors.onlyoffice.externalServer
     configuration.applications.files.editors.onlyoffice.enabled = true
+    configuration.applications.files.editors.onlyoffice.externalServer = null
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -120,6 +123,7 @@ describe(OnlyOfficeManager.name, () => {
 
   afterEach(() => {
     configuration.applications.files.editors.onlyoffice.enabled = onlyOfficeEnabled
+    configuration.applications.files.editors.onlyoffice.externalServer = onlyOfficeExternalServer
     vi.clearAllMocks()
   })
 
@@ -246,6 +250,7 @@ describe(OnlyOfficeManager.name, () => {
 
   describe('callBack', () => {
     const mockToken = 'mock-callback-token'
+    const mockDocumentUrl = 'http://localhost:3000/onlyoffice/document.docx?md5=abc123&expires=1739400549&shardkey=-33120641&filename=document.docx'
 
     beforeEach(() => {
       filesLockManager.removeLock.mockResolvedValue(undefined)
@@ -259,40 +264,43 @@ describe(OnlyOfficeManager.name, () => {
       vi.mocked(filesUtils.removeFiles).mockResolvedValue(undefined)
     })
 
-    it('should handle status 1 (document being edited)', async () => {
-      jwtService.verifyAsync.mockResolvedValue({
-        status: 1,
-        actions: [],
-        users: ['1']
-      })
-
-      const result = await service.callBack(mockUser, mockSpaceEnv, mockToken)
-
-      expect(result).toEqual({ error: 0 })
-    })
-
-    it('should handle status 2 (document closed with changes)', async () => {
-      jwtService.verifyAsync.mockResolvedValue({
-        status: 2,
-        actions: [],
-        users: [],
-        notmodified: false,
-        url: 'http://onlyoffice/document.docx?md5=abc123&expires=1739400549&shardkey=-33120641&filename=document.docx'
-      })
-
-      const mockStream = Readable.from(['mock content'])
+    const mockSuccessfulDownload = () => {
       httpService.axiosRef.mockResolvedValue({
-        data: mockStream,
+        data: Readable.from(['mock content']),
         headers: { 'content-length': '12' },
         status: 200,
         statusText: 'OK',
         config: {} as any
       } as AxiosResponse)
+    }
+
+    const expectSuccessfulSaveCallback = async (url: string, callbackData: Record<string, any> = {}) => {
+      jwtService.verifyAsync.mockResolvedValue({
+        status: 2,
+        actions: [],
+        users: [],
+        notmodified: false,
+        url,
+        ...callbackData
+      })
+      mockSuccessfulDownload()
 
       const result = await service.callBack(mockUser, mockSpaceEnv, mockToken)
 
       expect(result).toEqual({ error: 0 })
-      expect(httpService.axiosRef).toHaveBeenCalled()
+      expect(httpService.axiosRef).toHaveBeenCalledWith(expect.objectContaining({ url, maxRedirects: 0 }))
+    }
+
+    it('should allow internal container document downloads when external server is not configured', async () => {
+      const internalDocumentUrl = 'http://onlyoffice/document.docx?md5=abc123&expires=1739400549&shardkey=-33120641&filename=document.docx'
+      await expectSuccessfulSaveCallback(internalDocumentUrl)
+    })
+
+    it('should allow document downloads from the external server origin with a rewritten path', async () => {
+      ;(service as any).externalOnlyOfficeServer = 'https://office.example.com/onlyoffice'
+      const rewrittenPathUrl =
+        'https://office.example.com/cache/files/document.docx?md5=abc123&expires=1739400549&shardkey=-33120641&filename=document.docx'
+      await expectSuccessfulSaveCallback(rewrittenPathUrl)
     })
 
     it('should handle status 2 (document closed without changes)', async () => {
@@ -310,25 +318,7 @@ describe(OnlyOfficeManager.name, () => {
     })
 
     it('should handle status 3 (error saving document)', async () => {
-      jwtService.verifyAsync.mockResolvedValue({
-        status: 3,
-        actions: [],
-        url: 'http://onlyoffice/document.docx?md5=abc123&expires=1739400549&shardkey=-33120641&filename=document.docx'
-      })
-
-      const mockStream = Readable.from(['mock content'])
-      httpService.axiosRef.mockResolvedValue({
-        data: mockStream,
-        headers: { 'content-length': '12' },
-        status: 200,
-        statusText: 'OK',
-        config: {} as any
-      } as AxiosResponse)
-
-      const result = await service.callBack(mockUser, mockSpaceEnv, mockToken)
-
-      expect(result).toEqual({ error: 0 })
-      expect(httpService.axiosRef).toHaveBeenCalled()
+      await expectSuccessfulSaveCallback(mockDocumentUrl, { status: 3 })
     })
 
     it('should handle status 4 (document closed with no changes)', async () => {
@@ -343,45 +333,11 @@ describe(OnlyOfficeManager.name, () => {
     })
 
     it('should handle status 6 (force save)', async () => {
-      jwtService.verifyAsync.mockResolvedValue({
-        status: 6,
-        actions: [],
-        url: 'http://onlyoffice/document.docx?md5=abc123&expires=1739400549&shardkey=-33120641&filename=document.docx'
-      })
-
-      const mockStream = Readable.from(['mock content'])
-      httpService.axiosRef.mockResolvedValue({
-        data: mockStream,
-        headers: { 'content-length': '12' },
-        status: 200,
-        statusText: 'OK',
-        config: {} as any
-      } as AxiosResponse)
-
-      const result = await service.callBack(mockUser, mockSpaceEnv, mockToken)
-
-      expect(result).toEqual({ error: 0 })
+      await expectSuccessfulSaveCallback(mockDocumentUrl, { status: 6 })
     })
 
     it('should handle status 7 (error force saving)', async () => {
-      jwtService.verifyAsync.mockResolvedValue({
-        status: 7,
-        actions: [],
-        url: 'http://onlyoffice/document.docx?md5=abc123&expires=1739400549&shardkey=-33120641&filename=document.docx'
-      })
-
-      const mockStream = Readable.from(['mock content'])
-      httpService.axiosRef.mockResolvedValue({
-        data: mockStream,
-        headers: { 'content-length': '12' },
-        status: 200,
-        statusText: 'OK',
-        config: {} as any
-      } as AxiosResponse)
-
-      const result = await service.callBack(mockUser, mockSpaceEnv, mockToken)
-
-      expect(result).toEqual({ error: 0 })
+      await expectSuccessfulSaveCallback(mockDocumentUrl, { status: 7 })
     })
 
     it('should handle user connect action (type 1)', async () => {
@@ -428,7 +384,7 @@ describe(OnlyOfficeManager.name, () => {
         status: 2,
         actions: [],
         notmodified: false,
-        url: 'http://onlyoffice/document.docx?md5=abc123&expires=1739400549&shardkey=-33120641&filename=document.docx'
+        url: mockDocumentUrl
       })
       httpService.axiosRef.mockRejectedValue(new Error('Network error'))
 
@@ -436,6 +392,22 @@ describe(OnlyOfficeManager.name, () => {
 
       expect(result).toHaveProperty('error')
       expect(result.error).not.toBe(0)
+    })
+
+    it('should reject document downloads from unexpected hosts when external server is configured', async () => {
+      ;(service as any).externalOnlyOfficeServer = 'http://localhost:3000/onlyoffice'
+      jwtService.verifyAsync.mockResolvedValue({
+        status: 2,
+        actions: [],
+        users: [],
+        notmodified: false,
+        url: 'http://internal-service.local/document.docx?md5=abc123&expires=1739400549&shardkey=-33120641&filename=document.docx'
+      })
+
+      const result = await service.callBack(mockUser, mockSpaceEnv, mockToken)
+
+      expect(result).toEqual({ error: 'document download url is not allowed' })
+      expect(httpService.axiosRef).not.toHaveBeenCalled()
     })
 
     it('should throw error when file lock creation fails', async () => {
@@ -451,9 +423,5 @@ describe(OnlyOfficeManager.name, () => {
       expect(result).toHaveProperty('error')
       expect(result.error).not.toBe(0)
     })
-  })
-
-  it('should be defined', () => {
-    expect(service).toBeDefined()
   })
 })

@@ -744,7 +744,7 @@ export class SpacesManager {
       const space: SpaceProps = await this.spacesQueries.getSpaceAsAdminOrManager(user, spaceId)
       if (!space) {
         this.logger.warn({ tag: this.userCanAccessSpace.name, msg: `space (${spaceId}) not found or not authorized for user (${user.id})` })
-        throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
+        throw new HttpException('Unauthorized', HttpStatus.FORBIDDEN)
       }
       return space
     } else {
@@ -762,7 +762,7 @@ export class SpacesManager {
       return true
     }
     this.logger.warn({ tag: this.userIsAdminOrSpaceManager.name, msg: `space (${spaceId}) not found or not authorized for user (${user.id})` })
-    throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
+    throw new HttpException('Unauthorized', HttpStatus.FORBIDDEN)
   }
 
   private async onSpaceActionForMembers(

@@ -119,7 +119,7 @@ export class SharesManager {
     // asAdmin: true if the user is the owner of the parent share or if the share is requested from the administration
     const share: ShareProps = await this.sharesQueries.getShareWithMembers(user, shareId, asAdmin)
     if (!share) {
-      throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
+      throw new HttpException('Unauthorized', HttpStatus.FORBIDDEN)
     }
     await this.setAllowedPermissions(user, share, asAdmin)
     return share
@@ -140,7 +140,7 @@ export class SharesManager {
     if (share.externalPath) {
       /* EXTERNAL PATH CASE */
       if (!user.isAdmin) {
-        throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
+        throw new HttpException('Unauthorized', HttpStatus.FORBIDDEN)
       }
       try {
         await checkExternalPath(share.externalPath)
@@ -271,7 +271,7 @@ export class SharesManager {
   async deleteShare(user: UserModel, shareId: number, asAdmin = false): Promise<void> {
     // asAdmin : true if the user is the owner of the parent share or if the share is requested from an admin
     if (!asAdmin && !user.isAdmin && !(await this.sharesQueries.shareExistsForOwner(user.id, shareId))) {
-      throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
+      throw new HttpException('Unauthorized', HttpStatus.FORBIDDEN)
     }
     try {
       await this.deleteAllLinkMembers(shareId, LINK_TYPE.SHARE)
@@ -545,7 +545,7 @@ export class SharesManager {
   async getShareLink(user: UserModel, shareId: number, asAdmin: boolean = false): Promise<ShareLink> {
     const shareLink: ShareLink = await this.sharesQueries.listShareLinks(user, shareId, asAdmin)
     if (!shareLink) {
-      throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
+      throw new HttpException('Unauthorized', HttpStatus.FORBIDDEN)
     }
     await this.setAllowedPermissions(user, shareLink, asAdmin)
     if (shareLink.file?.permissions) {
@@ -1051,7 +1051,7 @@ export class SharesManager {
         tag: this.checkChildSharePermissions.name,
         msg: `is not allowed to manage child share (${childId}) from share (${shareId})`
       })
-      throw new HttpException('Not authorized', HttpStatus.FORBIDDEN)
+      throw new HttpException('Unauthorized', HttpStatus.FORBIDDEN)
     }
     return true
   }

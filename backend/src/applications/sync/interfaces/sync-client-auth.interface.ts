@@ -9,3 +9,4 @@ export interface SyncClientAuthRegistration {
   clientId: string
   clientToken: string
 }
+export type SyncClientAuthenticatedRegistration = Pick<SyncClientAuthRegistration, 'clientId'>

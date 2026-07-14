@@ -31,7 +31,7 @@
                 </div>
               }
               @case ('media') {
-                <app-files-viewer-media [currentHeight]="cardImageSize" [file]="f"></app-files-viewer-media>
+                <app-files-viewer-media [currentHeight]="cardImageSize" [file]="f" [sidebarMode]="true"></app-files-viewer-media>
               }
               @default {
                 <img [src]="f.mimeUrl" alt="" [style.height.px]="cardImageSize" (error)="f.fallBackMimeUrl()">
@@ -175,4 +175,3 @@
     }
   </div>
 }
-

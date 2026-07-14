@@ -23,7 +23,7 @@ import { GuestUserModel } from '../models/guest.model'
 import { USER_ICON, USER_PATH, USER_TITLE } from '../user.constants'
 import { UserService } from '../user.service'
 import { UserGuestDialogComponent } from './dialogs/user-guest-dialog.component'
-import { UserAvatarComponent } from './utils/user-avatar.component'
+import { UserAvatarStackComponent } from './utils/user-avatar-stack.component'
 
 @Component({
   selector: 'app-user-guests',
@@ -38,7 +38,7 @@ import { UserAvatarComponent } from './utils/user-avatar.component'
     SearchFilterPipe,
     TimeDateFormatPipe,
     ContextMenuModule,
-    UserAvatarComponent,
+    UserAvatarStackComponent,
     TapDirective,
     TimeAgoPipe
   ],

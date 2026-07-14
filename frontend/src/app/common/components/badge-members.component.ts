@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core'
+import { ChangeDetectionStrategy, Component, inject, Input, OnChanges } from '@angular/core'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faLink, faUser, faUsers } from '@fortawesome/free-solid-svg-icons'
+import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
+import { TooltipModule } from 'ngx-bootstrap/tooltip'
 
 export interface BadgeMembersCounts {
   users?: number
@@ -10,6 +12,7 @@ export interface BadgeMembersCounts {
 
 interface BadgeEntry {
   key: keyof BadgeMembersCounts
+  label: string
   icon: typeof faUser
   value: number
 }
@@ -17,10 +20,10 @@ interface BadgeEntry {
 @Component({
   selector: 'app-badge-members',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FaIconComponent],
+  imports: [FaIconComponent, TooltipModule, L10nTranslatePipe],
   template: `
     @if (entries.length) {
-      <span class="members-summary" [attr.title]="tooltipText">
+      <span class="members-summary" [tooltip]="membersTooltip" [container]="'body'">
         <span class="members-breakdown">
           @for (entry of entries; track entry.key) {
             <span class="members-part">
@@ -30,6 +33,11 @@ interface BadgeEntry {
           }
         </span>
       </span>
+      <ng-template #membersTooltip>
+        @for (entry of entries; track entry.key) {
+          <div>{{ entry.label | translate: locale.language }}: {{ entry.value }}</div>
+        }
+      </ng-template>
     }
   `,
   styles: [
@@ -81,19 +89,18 @@ interface BadgeEntry {
 export class BadgeMembersComponent implements OnChanges {
   @Input({ required: true }) members: BadgeMembersCounts = { users: 0, groups: 0, links: 0 }
   protected entries: BadgeEntry[] = []
-  protected tooltipText = ''
+  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
 
   ngOnChanges() {
     this.entries = this.buildEntries()
-    this.tooltipText = this.entries.map((entry) => `${entry.key}: ${entry.value}`).join(' • ')
   }
 
   private buildEntries(): BadgeEntry[] {
     const members = this.members ?? {}
     const entries: BadgeEntry[] = [
-      { key: 'users', icon: faUser, value: members.users ?? 0 },
-      { key: 'groups', icon: faUsers, value: members.groups ?? 0 },
-      { key: 'links', icon: faLink, value: members.links ?? 0 }
+      { key: 'users', label: 'Users', icon: faUser, value: members.users ?? 0 },
+      { key: 'groups', label: 'Groups', icon: faUsers, value: members.groups ?? 0 },
+      { key: 'links', label: 'Links', icon: faLink, value: members.links ?? 0 }
     ]
 
     return entries.filter((entry) => entry.value > 0)

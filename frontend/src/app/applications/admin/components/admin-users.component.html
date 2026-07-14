@@ -107,11 +107,7 @@
                     </div>
                   }
                   @case ('managers') {
-                    <div class="avatar-stack">
-                      @for (m of u.managers; track m.mid) {
-                        <app-user-avatar [user]="m" [isMember]="true"></app-user-avatar>
-                      }
-                    </div>
+                    <app-user-avatar-stack [users]="u.managers" [isMember]="true"></app-user-avatar-stack>
                   }
                   @case ('storage') {
                     @if (u.storageUsage || u.storageQuota) {

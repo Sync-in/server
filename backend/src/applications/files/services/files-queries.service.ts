@@ -281,7 +281,15 @@ export class FilesQueries {
     }
   }
 
-  getRecentsFromUser(userId: number, spaceIds: number[], shareIds: number[], limit = 10): Promise<FileRecent[]> {
+  getRecentsFromUser(userId: number | undefined, spaceIds: number[], shareIds: number[], limit = 10): Promise<FileRecent[]> {
+    const where: SQL[] = [
+      ...(userId !== undefined ? [eq(filesRecents.ownerId, userId)] : []),
+      ...(spaceIds.length ? [inArray(filesRecents.spaceId, spaceIds)] : []),
+      ...(shareIds.length ? [inArray(filesRecents.shareId, shareIds)] : [])
+    ]
+    if (!where.length) {
+      return Promise.resolve([])
+    }
     return this.db
       .select({
         id: filesRecents.id,
@@ -294,7 +302,7 @@ export class FilesQueries {
         mtime: filesRecents.mtime
       } satisfies FileRecent | SelectedFields<any, any>)
       .from(filesRecents)
-      .where(or(eq(filesRecents.ownerId, userId), inArray(filesRecents.spaceId, spaceIds), inArray(filesRecents.shareId, shareIds)))
+      .where(or(...where))
       .groupBy(filesRecents.id)
       .orderBy(desc(filesRecents.mtime))
       .limit(limit)

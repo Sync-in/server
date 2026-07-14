@@ -362,7 +362,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
           this.forbiddenResource = e.status === 403
           this.locationNotFound = e.status === 404
           this.serverConnectionError = e.status === 0
-          this.layout.sendNotification('error', 'Files', e.error.message || this.serverConnectionErrorMessage)
+          this.layout.sendNotification('error', 'Files', e.error?.message || this.serverConnectionErrorMessage)
         }
         this.loading = false
       }

@@ -1,5 +1,14 @@
+function hasNonAscii(value: string): boolean {
+  for (let i = 0; i < value.length; i++) {
+    if (value.charCodeAt(i) > 0x7f) {
+      return true
+    }
+  }
+  return false
+}
+
 export class NormalizedMap<K extends string, V> extends Map<K, V> {
-  // NFC-normalized path → actual key
+  // NFC-normalized path -> actual key
   private index = new Map<string, K>()
 
   constructor(entries?: readonly (readonly [K, V])[] | null) {
@@ -12,11 +21,17 @@ export class NormalizedMap<K extends string, V> extends Map<K, V> {
   }
 
   private normalizeKey(key: string): string {
-    return key.normalize('NFC')
+    return hasNonAscii(key) ? key.normalize('NFC') : key
   }
 
   override set(key: K, value: V): this {
-    this.index.set(this.normalizeKey(key), key) // store the "real" key used
+    const normalizedKey = this.normalizeKey(key)
+    const previousKey = this.index.get(normalizedKey)
+    if (previousKey !== undefined && previousKey !== key) {
+      // Canonically equivalent Unicode paths are the same logical sync path.
+      super.delete(previousKey)
+    }
+    this.index.set(normalizedKey, key)
     return super.set(key, value)
   }
 
@@ -26,7 +41,7 @@ export class NormalizedMap<K extends string, V> extends Map<K, V> {
 
   override get(key: string): V | undefined {
     const resolved = this.getResolvedKey(key)
-    return resolved ? super.get(resolved) : undefined
+    return resolved !== undefined ? super.get(resolved) : undefined
   }
 
   override has(key: string): boolean {
@@ -34,11 +49,17 @@ export class NormalizedMap<K extends string, V> extends Map<K, V> {
   }
 
   override delete(key: string): boolean {
-    const resolved = this.getResolvedKey(key)
-    if (resolved) {
-      this.index.delete(this.normalizeKey(resolved))
+    const normalizedKey = this.normalizeKey(key)
+    const resolved = this.index.get(normalizedKey)
+    if (resolved !== undefined) {
+      this.index.delete(normalizedKey)
       return super.delete(resolved)
     }
     return false
+  }
+
+  override clear(): void {
+    this.index.clear()
+    super.clear()
   }
 }

@@ -84,15 +84,13 @@
               </span>
               @if (s.managers.length) {
                 <span class="label-bottom-left">
-                @for (m of s.managers; track m.mid) {
-                  <app-user-avatar
-                    [user]="m"
+                  <app-user-avatar-stack
+                    [users]="s.managers"
                     [isMember]="true"
                     [height]="galleryMode.dimensions / 3.5"
                     [width]="galleryMode.dimensions / 3.5"
                     [fontSize]="galleryMode.faSize / 2.5">
-                  </app-user-avatar>
-                }
+                  </app-user-avatar-stack>
                 </span>
               }
               <span class="label-bottom-right">
@@ -169,11 +167,7 @@
                       </div>
                     }
                     @case ('managers') {
-                      <div class="avatar-stack">
-                        @for (m of s.managers; track m.mid) {
-                          <app-user-avatar [user]="m" [isMember]="true" [container]="'body'"></app-user-avatar>
-                        }
-                      </div>
+                      <app-user-avatar-stack [users]="s.managers" [isMember]="true" [container]="'body'"></app-user-avatar-stack>
                     }
                     @case ('members') {
                       <app-badge-members [members]="s.counts"></app-badge-members>

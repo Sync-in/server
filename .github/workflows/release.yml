@@ -66,10 +66,22 @@ jobs:
             capture { print }
           ' CHANGELOG.md > latest-changelog.md
 
+      - name: Validate release GitHub token
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${GITHUB_TOKEN-}" ]; then
+            echo "::error::Missing RELEASE_GITHUB_TOKEN secret. Use a personal access token from the account that should appear as the GitHub release author."
+            exit 1
+          fi
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
         with:
           draft: true
           body_path: latest-changelog.md

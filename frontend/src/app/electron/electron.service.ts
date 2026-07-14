@@ -2,7 +2,11 @@ import { effect, inject, Injectable, NgZone } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import type { SyncClientAuthDto } from '@sync-in-server/backend/src/applications/sync/dtos/sync-client-auth.dto'
-import type { SyncClientAuthRegistration } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
+import type {
+  SyncClientAuthCookie,
+  SyncClientAuthenticatedRegistration,
+  SyncClientAuthRegistration
+} from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
 import { OAuthDesktopPortParam } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc-desktop.constants'
 import { combineLatest, from, map, Observable } from 'rxjs'
 import { NotificationModel } from '../applications/notifications/models/notification.model'
@@ -15,6 +19,10 @@ import { StoreService } from '../store/store.service'
 import { EVENT } from './constants/events'
 import { ElectronIpcRenderer } from './interface'
 import { checkIfElectronApp } from './utils'
+
+interface ServerAuthenticationErrorResponse {
+  error: string
+}
 
 declare global {
   interface Window {
@@ -66,9 +74,8 @@ export class Electron {
     return undefined
   }
 
-  authenticate(): Observable<SyncClientAuthDto> {
-    // Get information about client authentication
-    return from(this.invoke(EVENT.SERVER.AUTHENTICATION))
+  authenticate(): Observable<SyncClientAuthCookie | SyncClientAuthDto> {
+    return from(this.authenticateWithDesktop())
   }
 
   register(login: string, password: string, code?: string): Observable<AuthResult> {
@@ -86,6 +93,12 @@ export class Electron {
         return e.ok
       })
     )
+  }
+
+  registerAuthenticatedClient(): Observable<SyncClientAuthenticatedRegistration> {
+    // Updated desktops complete /register/auth in the main process and only expose
+    // the non-sensitive client id to this renderer.
+    return from(this.invoke(EVENT.SERVER.REGISTRATION_AUTH))
   }
 
   async startOIDCDesktopAuth(): Promise<number> {
@@ -157,6 +170,32 @@ export class Electron {
     this.invoke(EVENT.SYNC.ERRORS)
       .then((syncs: SyncStatus[]) => this.store.clientSyncsWithErrors.next(syncs))
       .catch(console.error)
+  }
+
+  private async authenticateWithDesktop(): Promise<SyncClientAuthCookie | SyncClientAuthDto> {
+    try {
+      // Updated desktops authenticate the server session in the main process and return the cookie auth payload.
+      const auth = await this.invoke(EVENT.SERVER.AUTHENTICATION_COOKIE)
+      if (this.isServerAuthenticationErrorResponse(auth)) {
+        throw new Error(auth.error)
+      }
+      return auth
+    } catch (e) {
+      if (this.secureDesktopAuthUnsupported(e, EVENT.SERVER.AUTHENTICATION_COOKIE)) {
+        // Transitional fallback for older desktops that still expose the raw client credential.
+        return await this.invoke(EVENT.SERVER.AUTHENTICATION)
+      }
+      throw e
+    }
+  }
+
+  private isServerAuthenticationErrorResponse(response: unknown): response is ServerAuthenticationErrorResponse {
+    return !!response && typeof response === 'object' && typeof (response as ServerAuthenticationErrorResponse).error === 'string'
+  }
+
+  private secureDesktopAuthUnsupported(e: unknown, channel: string): boolean {
+    const message = e instanceof Error ? e.message : String(e)
+    return message.includes(`Unauthorized ipcRenderer.invoke channel: ${channel}`) || message.includes(`No handler registered for '${channel}'`)
   }
 
   private updateSyncMenuIcon() {

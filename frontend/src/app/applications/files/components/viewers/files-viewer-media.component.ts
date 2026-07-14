@@ -99,11 +99,11 @@ const PlyrPlayer = plyrModule.default ?? plyrModule
   template: `
     <div class="files-viewer-media" [class.files-viewer-media--audio]="isAudio()" [style.height.px]="currentHeight()">
       @if (isAudio()) {
-        <audio #media class="files-viewer-media__player" preload="none" autoplay controls>
+        <audio #media class="files-viewer-media__player" preload="none" [autoplay]="!sidebarMode()" controls>
           <source [src]="file().dataUrl" />
         </audio>
       } @else {
-        <video #media class="files-viewer-media__player" preload="none" autoplay playsinline controls>
+        <video #media class="files-viewer-media__player" preload="none" [autoplay]="!sidebarMode()" playsinline controls>
           <source [src]="file().dataUrl" />
         </video>
       }
@@ -113,6 +113,7 @@ const PlyrPlayer = plyrModule.default ?? plyrModule
 export class FilesViewerMediaComponent implements AfterViewInit, OnDestroy {
   file = input.required<FileModel>()
   currentHeight = input<number>()
+  sidebarMode = input(false)
   protected readonly isAudio = computed(() => {
     const mime = this.file().mime?.trim().toLowerCase()
     if (!mime) return false
@@ -122,15 +123,21 @@ export class FilesViewerMediaComponent implements AfterViewInit, OnDestroy {
   private player?: PlyrInstance
 
   ngAfterViewInit() {
-    this.player = new PlyrPlayer(this.media().nativeElement, {
-      autoplay: true,
+    const sidebarMode = this.sidebarMode()
+    const options: PlyrOptions = {
+      autoplay: !sidebarMode,
       blankVideo: 'assets/plyr/blank.mp4',
-      controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'pip', 'airplay', 'fullscreen'],
+      controls: sidebarMode
+        ? ['play', 'progress', 'fullscreen']
+        : ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'pip', 'airplay', 'fullscreen'],
       iconUrl: 'assets/plyr/plyr.svg',
-      keyboard: { focused: true, global: true },
-      settings: ['speed', 'loop'],
-      speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }
-    })
+      keyboard: { focused: true, global: true }
+    }
+    if (!sidebarMode) {
+      options.settings = ['speed', 'loop']
+      options.speed = { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }
+    }
+    this.player = new PlyrPlayer(this.media().nativeElement, options)
   }
 
   ngOnDestroy() {

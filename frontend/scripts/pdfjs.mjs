@@ -9,7 +9,8 @@ import { Uint8ArrayReader, Uint8ArrayWriter, ZipReader } from '@zip.js/zip.js/in
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-const pdfjsVersion = 'v5.7.284'
+// stable: v5.4.394
+const pdfjsVersion = 'v5.6.205'
 const pdfjsDownloadAsset = `pdfjs-${pdfjsVersion.slice(1)}-dist.zip`
 const pdfjsReleaseURL = `https://api.github.com/repos/mozilla/pdf.js/releases/tags/${pdfjsVersion}`
 let pdfjsDownloadURL

@@ -2,7 +2,9 @@ export const EVENT = {
   // server
   SERVER: {
     REGISTRATION: 'server-registration',
+    REGISTRATION_AUTH: 'server-registration-auth',
     AUTHENTICATION: 'server-authentication',
+    AUTHENTICATION_COOKIE: 'server-authentication-cookie',
     AUTHENTICATION_FAILED: 'server-authentication-failed',
     AUTHENTICATION_TOKEN_UPDATE: 'server-authentication-token-update',
     AUTHENTICATION_TOKEN_EXPIRED: 'server-authentication-token-expired',
