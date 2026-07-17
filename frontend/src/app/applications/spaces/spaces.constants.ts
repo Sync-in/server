@@ -17,6 +17,7 @@ import { SPACES_BASE_ROUTE } from '@sync-in-server/backend/src/applications/spac
 import { SPACE_ALIAS, SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { AppMenu } from '../../layout/layout.interfaces'
+import { FAVORITES_ICON, FAVORITES_PATH, FAVORITES_TITLE } from '../favorites/favorites.constants'
 import { LINKS_PATH } from '../links/links.constants'
 import { RECENTS_ICON, RECENTS_PATH, RECENTS_TITLE } from '../recents/recents.constants'
 
@@ -85,12 +86,19 @@ export const SPACES_MENU: AppMenu = {
   title: SPACES_TITLE.FILES,
   icon: faFolderClosed,
   link: SPACES_PATH.PERSONAL_FILES,
-  matchLink: new RegExp(`^${SPACES_PATH.SPACES}|^${SPACES_PATH.TRASH}|^${SPACES_PATH.SHARES}|^${SPACES_PATH.SHARED}|^${SPACES_PATH.LINKS}`),
+  matchLink: new RegExp(
+    `^${SPACES_PATH.SPACES}|^${SPACES_PATH.TRASH}|^${SPACES_PATH.SHARES}|^${SPACES_PATH.SHARED}|^${SPACES_PATH.LINKS}|^${FAVORITES_PATH.BASE}|^${RECENTS_PATH.BASE}`
+  ),
   submenus: [
     {
       title: RECENTS_TITLE,
       icon: RECENTS_ICON,
       link: RECENTS_PATH.BASE
+    },
+    {
+      title: FAVORITES_TITLE,
+      icon: FAVORITES_ICON,
+      link: FAVORITES_PATH.BASE
     },
     {
       id: USER_PERMISSION.PERSONAL_SPACE,

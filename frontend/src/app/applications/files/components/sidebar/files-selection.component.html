@@ -115,6 +115,13 @@
               {{ (f.hasComments ? 'yes' : 'no') | translate:locale.language }}
             </span>
           </div>
+          <div class="d-flex align-items-center mb-1">
+            <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Favorite</div>
+            <span class="badge {{f.isFavorite ? 'bg-warning' : 'bg-default'}}">
+              <fa-icon [icon]="f.isFavorite ? icons.faStar : icons.faStarRegular"></fa-icon>
+              {{ (f.isFavorite ? 'yes' : 'no') | translate:locale.language }}
+            </span>
+          </div>
         </div>
         @if (f.root) {
           <hr class="my-1" />
