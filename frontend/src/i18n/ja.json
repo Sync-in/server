@@ -328,6 +328,8 @@
   "Sync already exists": "同期は既に存在します",
   "Sync was reset": "同期をリセットしました",
   "Sync deleted": "同期を削除しました",
+  "Client deleted": "クライアントを削除しました",
+  "Unable to delete client": "クライアントを削除できません",
   "This client": "このクライアント",
   "You are no longer synchronizing": "同期していません",
   "Compress": "圧縮",

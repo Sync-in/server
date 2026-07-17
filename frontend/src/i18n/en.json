@@ -21,5 +21,7 @@
   "no_selection": "no item selected",
   "one_selection": "{{ nb }} item selected",
   "nb_selections": "{{ nb }} items selected",
+  "Client deleted": "Client deleted",
+  "Unable to delete client": "Unable to delete client",
   "Cancelled": "Cancelled"
 }

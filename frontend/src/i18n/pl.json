@@ -328,6 +328,8 @@
   "Sync already exists": "Synchronizacja już istnieje",
   "Sync was reset": "Zresetowano synchronizację",
   "Sync deleted": "Usunięto synchronizację",
+  "Client deleted": "Usunięto klienta",
+  "Unable to delete client": "Nie można usunąć klienta",
   "This client": "Ten klient",
   "You are no longer synchronizing": "Nie synchronizujesz już",
   "Compress": "Skompresuj",
