@@ -365,7 +365,10 @@ describe(FilesManager.name, () => {
       expect(tmpWritePath.endsWith('-report.txt')).toBe(true)
       expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, expect.anything())
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, '/data/users/john/files/report.txt', true)
-      expect(emitSpy).toHaveBeenCalledWith('event', expect.objectContaining({ action: ACTION.UPDATE, rPath: '/data/users/john/files/report.txt' }))
+      expect(emitSpy).toHaveBeenCalledWith(
+        'event',
+        expect.objectContaining({ action: ACTION.UPDATE, rPath: '/data/users/john/files/report.txt', source: 'editor' })
+      )
     })
 
     it('should reject PATCH when destination does not exist', async () => {
@@ -416,6 +419,7 @@ describe(FilesManager.name, () => {
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, space.realPath, true)
       expect(filesUtils.removeFiles).not.toHaveBeenCalled()
       expect(emitSpy).toHaveBeenCalledWith('event', expect.objectContaining({ action: ACTION.UPDATE, rPath: space.realPath }))
+      expect(emitSpy).not.toHaveBeenCalledWith('event', expect.objectContaining({ source: 'editor' }))
     })
 
     it('should create missing destination directory and release created lock for POST nested upload', async () => {
@@ -1013,11 +1017,13 @@ describe(FilesManager.name, () => {
       })
       const trashFile = '/data/users/john/trash/documents/document.txt'
       prepareFileTransfer(space.realPath, trashFile)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await service.delete(user, space)
 
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(space.realPath, trashFile, true)
       expect(filesTasksTransfer.delete).not.toHaveBeenCalled()
+      expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.DELETE, rPath: trashFile })
     })
   })
 

@@ -11,8 +11,10 @@ import { Cache } from '../../../../infrastructure/cache/cache.service'
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
 import type { SpaceEnv } from '../../../spaces/models/space-env.model'
 import type { UserModel } from '../../../users/models/user.model'
+import { ACTION } from '../../../../common/constants'
 import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
 import { FILE_MODE } from '../../constants/operations'
+import { FileEvent } from '../../events/file-events'
 import { LockConflict } from '../../models/file-lock-error'
 import { FilesLockManager } from '../../services/files-lock-manager.service'
 import * as filesUtils from '../../utils/files'
@@ -275,6 +277,7 @@ describe(OnlyOfficeManager.name, () => {
     }
 
     const expectSuccessfulSaveCallback = async (url: string, callbackData: Record<string, any> = {}) => {
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
       jwtService.verifyAsync.mockResolvedValue({
         status: 2,
         actions: [],
@@ -288,6 +291,13 @@ describe(OnlyOfficeManager.name, () => {
       const result = await service.callBack(mockUser, mockSpaceEnv, mockToken)
 
       expect(result).toEqual({ error: 0 })
+      expect(emitSpy).toHaveBeenCalledWith('event', {
+        user: mockUser,
+        space: mockSpaceEnv,
+        action: ACTION.UPDATE,
+        rPath: mockSpaceEnv.realPath,
+        source: 'editor'
+      })
       expect(httpService.axiosRef).toHaveBeenCalledWith(expect.objectContaining({ url, maxRedirects: 0 }))
     }
 

@@ -306,7 +306,13 @@ export class FilesManager {
           if (fileWritten) {
             // Emit only after the final destination has been written or moved into place.
             const fileEventAction: ACTION = patchMethod || (dstExists && !dstIsDir) ? ACTION.UPDATE : ACTION.ADD
-            FileEvent.emit('event', { user, space, action: fileEventAction, rPath: dstFile })
+            FileEvent.emit('event', {
+              user,
+              space,
+              action: fileEventAction,
+              rPath: dstFile,
+              ...(patchMethod && { source: 'editor' as const })
+            })
           }
           if (!patchMethod && created) {
             // Remove the file lock only if it has not been refreshed
@@ -557,6 +563,10 @@ export class FilesManager {
           const userSpace = new SpaceEnv(SPACE_PERSONAL, null, false)
           userSpace.setup(user, SPACE_REPOSITORY.TRASH, null, [], [])
           FileEvent.emit('event', { user, space: userSpace, action: ACTION.ADD, rPath: trashFile })
+        } else {
+          // emit an event for the file or directory moved to the trash
+          // space keeps its original path and rPath is its new trash path
+          FileEvent.emit('event', { user, space, action: ACTION.DELETE, rPath: trashFile })
         }
       } else {
         // unsupported case: delete the file (this shouldn't happen)

@@ -384,7 +384,7 @@ export class OnlyOfficeManager {
     try {
       await copyFileContent(tmpFilePath, space.realPath)
       // emit file event
-      FileEvent.emit('event', { user: user, space: space, action: ACTION.UPDATE, rPath: space.realPath })
+      FileEvent.emit('event', { user: user, space: space, action: ACTION.UPDATE, rPath: space.realPath, source: 'editor' })
       await removeFiles(tmpFilePath)
     } catch (e) {
       throw new Error(`unable to save document : ${e.message}`)

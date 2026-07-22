@@ -9,10 +9,12 @@ import { getExtensionWithoutDot } from '../utils/files'
 import { CACHE_INDEXING_EVENT_TTL, INDEXABLE_EXTENSIONS } from '../constants/indexing'
 import { indexingUpdateCacheKeysFromSpace } from '../utils/indexing'
 import { configuration } from '../../../configuration/config.environment'
+import { FilesRecents } from './files-recents.service'
 
 @Injectable()
 export class FilesEventManager implements OnModuleDestroy {
   /* Used to:
+      - reconcile recents after deletions and editor saves
       - store cached events for storage usage updates
       - store indexing events for full-text index updates
       - todo: handle versioning
@@ -27,7 +29,10 @@ export class FilesEventManager implements OnModuleDestroy {
   private isFlushing = false
   private flushRequested = false
 
-  constructor(private readonly cache: Cache) {
+  constructor(
+    private readonly cache: Cache,
+    private readonly filesRecents: FilesRecents
+  ) {
     FileEvent.on('event', this.onFileEvent)
   }
 
@@ -48,6 +53,15 @@ export class FilesEventManager implements OnModuleDestroy {
       return
     }
     this.startFlushTimer()
+  }
+
+  private async processRecentEditorUpdate(event: FileEventType): Promise<void> {
+    try {
+      await this.filesRecents.updateRecentFromEditor(event.user, event.space, event.rPath)
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException)?.code === 'ENOENT') return
+      this.logger.warn({ tag: this.processRecentEditorUpdate.name, msg: `Could not update recent file ${event.space.url}: ${e}` })
+    }
   }
 
   private startFlushTimer(): void {
@@ -106,7 +120,45 @@ export class FilesEventManager implements OnModuleDestroy {
         this.logger.warn({ tag: this.processEvents.name, msg: `Could not process event: ${JSON.stringify(event)} - ${e}` })
       }
     }
-    await this.storeEventsInCache()
+    await Promise.all([this.storeEventsInCache(), this.processRecentEvents(fEvents)])
+  }
+
+  private async processRecentEvents(events: FileEventType[]): Promise<void> {
+    // Delete first, then let editor updates reinsert only files that still exist on disk.
+    await this.processRecentDeletes(events)
+    await this.processRecentEditorUpdates(events)
+  }
+
+  private async processRecentEditorUpdates(events: FileEventType[]): Promise<void> {
+    const updatesByPath = new Map<string, FileEventType>()
+    for (const event of events) {
+      // Only editor saves update recents from events; other updates are reconciled while browsing.
+      if (event.action !== ACTION.UPDATE || event.source !== 'editor') continue
+      const key = `${event.user.id}:${event.space.id}:${event.space.inPersonalSpace}:${event.space.inSharesRepository}:${event.space.url}`
+      // Keep the latest save per logical path to perform at most one stat and upsert per buffered batch.
+      updatesByPath.set(key, event)
+    }
+    await Promise.all([...updatesByPath.values()].map((event) => this.processRecentEditorUpdate(event)))
+  }
+
+  private async processRecentDeletes(events: FileEventType[]): Promise<void> {
+    const deletions = events
+      .filter(
+        ({ action, space }) => (action === ACTION.DELETE || action === ACTION.DELETE_PERMANENTLY) && !space.inTrashRepository && !space.inSharesList
+      )
+      .map(({ user, space }) => ({
+        userId: user.id,
+        spaceId: space.id,
+        inPersonalSpace: space.inPersonalSpace,
+        inSharesRepository: space.inSharesRepository,
+        path: space.url
+      }))
+    if (!deletions.length) return
+    try {
+      await this.filesRecents.deleteRecents(deletions)
+    } catch (e) {
+      this.logger.warn({ tag: this.processRecentDeletes.name, msg: `Could not delete recent files: ${e}` })
+    }
   }
 
   private async storeEventsInCache() {

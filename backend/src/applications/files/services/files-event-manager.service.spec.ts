@@ -10,16 +10,27 @@ import { quotaCacheKeyFromSpace } from '../utils/quota'
 import { indexingUpdateCacheKeysFromSpace } from '../utils/indexing'
 import { configuration } from '../../../configuration/config.environment'
 import type { Mock } from 'vitest'
+import { FilesRecents } from './files-recents.service'
 
 describe(FilesEventManager.name, () => {
   let service: FilesEventManager
   let cacheSetMock: Mock<(key: string, value: unknown, ttl?: number) => Promise<boolean>>
+  let deleteRecentsMock: Mock
+  let updateRecentFromEditorMock: Mock
   let contentIndexingEnabled: boolean
 
   const buildEvent = (props?: Partial<FileEventType>): FileEventType =>
     ({
       user: { id: 7, login: 'john' } as any,
-      space: { id: 13, alias: 'project', inPersonalSpace: false, inSharesRepository: false, root: {} } as any,
+      space: {
+        id: 13,
+        alias: 'project',
+        url: 'files/project/document.bin',
+        inTrashRepository: false,
+        inPersonalSpace: false,
+        inSharesRepository: false,
+        root: {}
+      } as any,
       action: ACTION.ADD,
       rPath: '/files/document.bin',
       ...props
@@ -27,12 +38,18 @@ describe(FilesEventManager.name, () => {
 
   beforeEach(async () => {
     cacheSetMock = vi.fn().mockResolvedValue(true)
+    deleteRecentsMock = vi.fn().mockResolvedValue(undefined)
+    updateRecentFromEditorMock = vi.fn().mockResolvedValue(undefined)
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FilesEventManager,
         {
           provide: Cache,
           useValue: { set: cacheSetMock }
+        },
+        {
+          provide: FilesRecents,
+          useValue: { deleteRecents: deleteRecentsMock, updateRecentFromEditor: updateRecentFromEditorMock }
         }
       ]
     }).compile()
@@ -44,13 +61,8 @@ describe(FilesEventManager.name, () => {
 
   afterEach(async () => {
     configuration.applications.files.contentIndexing.enabled = contentIndexingEnabled
-    vi.useRealTimers()
-    vi.clearAllMocks()
     await service.onModuleDestroy()
-  })
-
-  it('should be defined', () => {
-    expect(service).toBeDefined()
+    vi.restoreAllMocks()
   })
 
   it('should cache a quota key once for duplicate non-delete events', async () => {
@@ -62,17 +74,60 @@ describe(FilesEventManager.name, () => {
     expect(cacheSetMock).toHaveBeenCalledWith(quotaCacheKeyFromSpace(event.user.id, event.space, true), true, CACHE_QUOTA_TTL)
   })
 
+  it('should delete recents before processing only the latest editor update per path', async () => {
+    const callOrder: string[] = []
+    deleteRecentsMock.mockImplementationOnce(async () => {
+      callOrder.push('delete')
+    })
+    updateRecentFromEditorMock.mockImplementationOnce(async () => {
+      callOrder.push('update')
+    })
+    const first = buildEvent({ action: ACTION.UPDATE, source: 'editor', rPath: '/files/first.bin' })
+    const latest = { ...first, rPath: '/files/latest.bin' }
+
+    await (service as any).processEvents([first, buildEvent({ action: ACTION.UPDATE }), buildEvent({ action: ACTION.DELETE }), latest])
+
+    expect(deleteRecentsMock).toHaveBeenCalledWith([
+      { userId: 7, spaceId: 13, inPersonalSpace: false, inSharesRepository: false, path: 'files/project/document.bin' }
+    ])
+    expect(updateRecentFromEditorMock).toHaveBeenCalledOnce()
+    expect(updateRecentFromEditorMock).toHaveBeenCalledWith(latest.user, latest.space, latest.rPath)
+    expect(callOrder).toEqual(['delete', 'update'])
+  })
+
+  it('should ignore recent deletion errors', async () => {
+    deleteRecentsMock.mockRejectedValueOnce(new Error('database unavailable'))
+
+    await expect((service as any).processEvents([buildEvent({ action: ACTION.DELETE })])).resolves.toBeUndefined()
+  })
+
   it('should ignore quota cache update for delete events', async () => {
     await (service as any).processEvents([buildEvent({ action: ACTION.DELETE, rPath: '/files/deleted.tmp' })])
 
     expect(cacheSetMock).not.toHaveBeenCalled()
   })
 
+  it('should ignore deletes from trash and shares list for recents', async () => {
+    const event = buildEvent()
+    await (service as any).processEvents([
+      buildEvent({ action: ACTION.DELETE, space: { ...event.space, inTrashRepository: true } as any }),
+      buildEvent({ action: ACTION.DELETE, space: { ...event.space, inSharesList: true } as any })
+    ])
+
+    expect(deleteRecentsMock).not.toHaveBeenCalled()
+  })
+
   it('should cache quota and indexing keys for indexable files', async () => {
     configuration.applications.files.contentIndexing.enabled = true
     const event = buildEvent({
       rPath: '/shares/spec.pdf',
-      space: { id: 42, alias: 'shared-space', inPersonalSpace: false, inSharesRepository: true, root: {} } as any
+      space: {
+        id: 42,
+        alias: 'shared-space',
+        inPersonalSpace: false,
+        inSharesRepository: true,
+        root: {}
+      } as any
     })
     const quotaKey = quotaCacheKeyFromSpace(event.user.id, event.space, true)
     const indexingKeys = indexingUpdateCacheKeysFromSpace(event.user.id, event.space)
