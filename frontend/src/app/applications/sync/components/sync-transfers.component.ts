@@ -53,7 +53,7 @@ export class SyncTransfersComponent {
   protected tableHeaders: Record<'action' | 'sync' | 'file' | 'date', TableHeaderConfig> = {
     action: {
       label: 'Action',
-      width: 8,
+      width: 11,
       textCenter: false,
       class: '',
       show: true,
@@ -61,7 +61,7 @@ export class SyncTransfersComponent {
     },
     sync: {
       label: 'Synchronization',
-      width: 15,
+      width: 14,
       textCenter: false,
       class: '',
       show: true,
@@ -69,7 +69,7 @@ export class SyncTransfersComponent {
     },
     file: {
       label: 'File',
-      width: 55,
+      width: 48,
       textCenter: false,
       class: '',
       show: true,
