@@ -1,4 +1,4 @@
-import { SQL, sql } from 'drizzle-orm'
+import { SQL, sql, SQLWrapper } from 'drizzle-orm'
 import { AnyMySqlColumn, bigint, boolean, index, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
 import { escapeSQLRegexp } from '../../../common/functions'
 import { shares } from '../../shares/schemas/shares.schema'
@@ -46,7 +46,10 @@ export const files = mysqlTable(
 // supports the case where path = '.' or './sync-in' and removes '.' or './' if exists
 export const filePathSQL = (file: any): SQL<string> => sql`REGEXP_REPLACE(CONCAT(${file.path}, '/', ${file.name}), '^(\\\\.\\\\/){0,1}(.*)', '\\\\2')`
 
-export const childFilesFindRegexp = (path: string): SQL<string> => sql`${files.path}${sql.raw(`REGEXP '^${escapeSQLRegexp(path)}(/|$)'`)}`
+export const childPathFindRegexp = (pathSQL: SQLWrapper, path: string): SQL<string> =>
+  sql`${pathSQL}${sql.raw(`REGEXP '^${escapeSQLRegexp(path)}(/|$)'`)}`
+
+export const childFilesFindRegexp = (path: string): SQL<string> => childPathFindRegexp(files.path, path)
 
 export const childFilesReplaceRegexp = (srcPath: string, dstPath: string): SQL<string> =>
   sql`REGEXP_REPLACE(${files.path}, '^${sql.raw(escapeSQLRegexp(srcPath))}', '${sql.raw(escapeSQLRegexp(dstPath))}')`
