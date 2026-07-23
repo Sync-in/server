@@ -14,7 +14,8 @@ import {
   convertToWhere,
   dateTimeUTC,
   dbCheckAffectedRows,
-  dbGetInsertedId
+  dbGetInsertedId,
+  dbParseJson
 } from '../../../infrastructure/database/utils'
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
 import type { FileProps } from '../../files/interfaces/file-props.interface'
@@ -772,12 +773,12 @@ export class SharesQueries {
           alias: unionAlias.childShareAlias,
           name: unionAlias.childShareName,
           type: unionAlias.childShareType
-        })}, '[]')`.mapWith(JSON.parse),
+        })}, '[]')`.mapWith(dbParseJson),
         syncs: sql`IF (${sql.placeholder('withSyncs')}, ${concatDistinctObjectsInArray(unionAlias.syncPathId, {
           id: unionAlias.syncPathId,
           clientId: unionAlias.syncPathClientId,
           clientName: unionAlias.syncPathClientName
-        })}, '[]')`.mapWith(JSON.parse),
+        })}, '[]')`.mapWith(dbParseJson),
         hasComments: sql<boolean>`IF (${sql.placeholder('withHasComments')}, ${fileHasCommentsSubquerySQL(unionAlias.id)}, 0)`.mapWith(Boolean)
       }
       this.shareRootFilesQuery = this.db.select(select).from(unionAlias).groupBy(unionAlias.rootId).prepare()
