@@ -391,12 +391,25 @@
                   @switch (th.key) {
                     @case ('name') {
                       <div class="d-flex align-items-center" draggable="true">
-                        <img [src]="f.mimeUrl"
-                             alt=""
-                             draggable="false"
-                             height="30"
-                             width="30"
-                             (error)="f.fallBackMimeUrl()">
+                        <span class="file-selection-control">
+                          <img [src]="f.mimeUrl"
+                               alt=""
+                               draggable="false"
+                               height="30"
+                               width="30"
+                               (error)="f.fallBackMimeUrl()">
+                          <button (pointerdown)="$event.stopPropagation()"
+                                  (click)="toggleFileSelection($event, f)"
+                                  [attr.aria-label]="f.name"
+                                  [attr.aria-pressed]="f.isSelected"
+                                  [class.is-selected]="f.isSelected"
+                                  class="file-selection-overlay"
+                                  type="button">
+                            <span class="file-selection-indicator">
+                              <fa-icon [icon]="icons.faCheck"></fa-icon>
+                            </span>
+                          </button>
+                        </span>
                         @if (f.isRenamed) {
                           <input appInputEdit
                                  (renamingInProgress)="setRenamingInProgress($event)"

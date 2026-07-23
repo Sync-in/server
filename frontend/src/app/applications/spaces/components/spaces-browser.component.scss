@@ -1,0 +1,72 @@
+.file-selection-control {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  margin-right: .3rem;
+
+  > img {
+    margin-right: 0 !important;
+  }
+}
+
+.file-selection-overlay {
+  position: absolute;
+  inset: 0;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: rgba(255, 255, 255, .88);
+  background: transparent;
+  border: 0;
+  opacity: 0;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+  }
+
+  &.is-selected {
+    color: #fff;
+    opacity: 1;
+
+    .file-selection-indicator {
+      background-color: rgba(24, 27, 34, .95);
+    }
+  }
+}
+
+.file-selection-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background-color: rgba(32, 36, 45, .78);
+  border-radius: .25rem;
+  font-size: .55rem;
+
+  fa-icon {
+    margin-right: 0 !important;
+  }
+}
+
+.file-selection-control:hover .file-selection-overlay,
+.file-selection-overlay:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .file-selection-overlay {
+    opacity: 1;
+
+    .file-selection-indicator {
+      background-color: rgba(32, 36, 45, .68);
+    }
+  }
+}

@@ -10,6 +10,7 @@ import {
   faArrowsAlt,
   faArrowUp,
   faBan,
+  faCheck,
   faCircleInfo,
   faCirclePlus,
   faClipboardList,
@@ -108,7 +109,8 @@ import { SpaceAnchorFileDialogComponent } from './dialogs/space-anchor-file-dial
     TapDirective,
     FileLockFormatPipe
   ],
-  templateUrl: 'spaces-browser.component.html'
+  templateUrl: 'spaces-browser.component.html',
+  styleUrl: 'spaces-browser.component.scss'
 })
 export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: FileModel[]; scrollInto: (arg: FileModel | number) => void }
@@ -147,6 +149,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     faArrowsAlt,
     faCircleInfo,
     faBan,
+    faCheck,
     faArrowUp,
     faArrowDown,
     faLock,
@@ -391,6 +394,13 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     } else if (!ev.ctrlKey && !ev.metaKey) {
       this.setSelection([file], file, file)
     } else {
+      this.modifySelection(file)
+    }
+  }
+
+  toggleFileSelection(ev: MouseEvent, file: FileModel) {
+    ev.stopPropagation()
+    if (!this.loading) {
       this.modifySelection(file)
     }
   }
