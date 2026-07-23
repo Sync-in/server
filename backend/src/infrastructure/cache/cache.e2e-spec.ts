@@ -83,17 +83,4 @@ describe(Cache.name, () => {
   it('should create a slug key from parameters', () => {
     expect(cache.genSlugKey('foo', 'BAR', 12341)).toBe('foo-bar-12341')
   })
-
-  // it('should exit if maxConnectRetry is reached', () => {
-  //   const mockExit = jest.spyOn(process, 'exit').mockImplementation(() => {
-  //     throw new Error('process.exit')
-  //   })
-  //   expect(() => RedisCache.redisReconnectStrategy(RedisCache.redisReconnectOptions.maxAttempts + 1)).toThrow()
-  //   expect(mockExit).toHaveBeenCalledTimes(1)
-  //   mockExit.mockRestore()
-  // })
-  //
-  // it('should not exit if maxConnectRetry is not reached', () => {
-  //   expect(RedisCache.redisReconnectStrategy(1)).toBeGreaterThan(0)
-  // })
 })
