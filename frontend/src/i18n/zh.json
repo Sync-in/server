@@ -328,6 +328,8 @@
   "Sync already exists": "同步已存在",
   "Sync was reset": "同步已重置",
   "Sync deleted": "同步已删除",
+  "Client deleted": "客户端已删除",
+  "Unable to delete client": "无法删除客户端",
   "This client": "此客户端",
   "You are no longer synchronizing": "您已停止同步",
   "Compress": "压缩",

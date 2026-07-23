@@ -136,7 +136,7 @@ export class CollaboraOnlineManager {
     try {
       await copyFileContent(tmpFilePath, req.space.realPath)
       // emit file event
-      FileEvent.emit('event', { user: req.user, space: req.space, action: ACTION.UPDATE, rPath: req.space.realPath })
+      FileEvent.emit('event', { user: req.user, space: req.space, action: ACTION.UPDATE, rPath: req.space.realPath, source: 'editor' })
       await removeFiles(tmpFilePath)
       const fStats = await fs.stat(req.space.realPath)
       return { LastModifiedTime: fStats.mtime.toISOString() } satisfies CollaboraSaveDocumentDto

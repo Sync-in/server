@@ -63,6 +63,10 @@ export function convertToWhere<T>(table: T, filters: Partial<Record<keyof T, any
 
 export const dateTimeUTC = (dateField: Column): SQL<string> => sql`CONCAT(${sql`${dateField}`}, 'Z')`
 
+export function dbParseJson(value: unknown): any {
+  return typeof value === 'string' ? JSON.parse(value) : value
+}
+
 export function concatDistinctObjectsInArray(mustBeNotNull: Column, object: Record<string, Column | object>): SQL<any> {
   /* Concat json objects in array (only one nesting level is supported) */
   const expr: SQL<any> = sql`IFNULL(CONCAT('[', GROUP_CONCAT(DISTINCT IF(${mustBeNotNull} IS NULL, NULL, JSON_OBJECT(`
@@ -82,7 +86,7 @@ export function concatDistinctObjectsInArray(mustBeNotNull: Column, object: Reco
     }
   })
   expr.append(sql`))), ']'), JSON_ARRAY())`)
-  expr.mapWith(JSON.parse)
+  expr.mapWith(dbParseJson)
   return expr
 }
 

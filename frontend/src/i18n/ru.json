@@ -328,6 +328,8 @@
   "Sync already exists": "Синхронизация уже существует",
   "Sync was reset": "Синхронизация сброшена",
   "Sync deleted": "Синхронизация удалена",
+  "Client deleted": "Клиент удалён",
+  "Unable to delete client": "Не удалось удалить клиент",
   "This client": "Этот клиент",
   "You are no longer synchronizing": "Вы больше не синхронизируете",
   "Compress": "Сжать",

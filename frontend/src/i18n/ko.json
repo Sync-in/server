@@ -328,6 +328,8 @@
   "Sync already exists": "동기화가 이미 존재합니다",
   "Sync was reset": "동기화를 재설정했습니다",
   "Sync deleted": "동기화를 삭제했습니다",
+  "Client deleted": "클라이언트를 삭제했습니다",
+  "Unable to delete client": "클라이언트를 삭제할 수 없습니다",
   "This client": "이 클라이언트",
   "You are no longer synchronizing": "더 이상 동기화하지 않습니다",
   "Compress": "압축",

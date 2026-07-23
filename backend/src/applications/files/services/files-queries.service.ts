@@ -1,6 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { and, desc, eq, getTableColumns, inArray, isNull, or, SelectedFields, sql, SQL } from 'drizzle-orm'
-import { popFromObject } from '../../../common/shared'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { concatDistinctObjectsInArray, convertToWhere, dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils'
@@ -12,12 +11,11 @@ import { syncClients } from '../../sync/schemas/sync-clients.schema'
 import { syncPaths } from '../../sync/schemas/sync-paths.schema'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileProps } from '../interfaces/file-props.interface'
-import { FileRecentLocation } from '../interfaces/file-recent-location.interface'
-import { FileRecent } from '../schemas/file-recent.interface'
+import type { FileRecent, FileRecentLocation, FileRecentUpdate } from '../schemas/file-recent.interface'
 import { File } from '../schemas/file.interface'
 import { filesRecents } from '../schemas/files-recents.schema'
-import { childFilesFindRegexp, childFilesReplaceRegexp, filePathSQL, files } from '../schemas/files.schema'
-import { dirName, fileName } from '../utils/files'
+import { childFilesFindRegexp, childFilesReplaceRegexp, childPathFindRegexp, filePathSQL, files } from '../schemas/files.schema'
+import { dirName, fileName, isPathInside } from '../utils/files'
 
 @Injectable()
 export class FilesQueries {
@@ -308,7 +306,7 @@ export class FilesQueries {
       .limit(limit)
   }
 
-  getRecentsFromLocation(location: Partial<Record<keyof FileRecent, any>>): Promise<FileRecent[]> {
+  getRecentsFromLocation(location: FileRecentLocation): Promise<FileRecent[]> {
     const where: SQL[] = convertToWhere(filesRecents, location)
     return this.db
       .select(getTableColumns(filesRecents))
@@ -316,31 +314,73 @@ export class FilesQueries {
       .where(and(...where))
   }
 
-  async updateRecents(
-    location: FileRecentLocation,
-    add: Partial<FileRecent>[] | FileRecent[],
-    update: Record<string | 'object', Partial<FileProps> | FileProps>[],
-    remove: FileRecent['id'][]
-  ): Promise<void> {
+  async deleteRecents(locations: FileRecentLocation[]): Promise<void> {
+    const groups = new Map<string, { repository: Omit<FileRecentLocation, 'path'>; paths: Set<string> }>()
+    for (const { path: sourcePath, ...repository } of locations) {
+      const key = JSON.stringify(repository)
+      const group = groups.get(key)
+      if (group) {
+        group.paths.add(sourcePath)
+      } else {
+        groups.set(key, { repository, paths: new Set([sourcePath]) })
+      }
+    }
+
+    const batchSize = 50
+    for (const { repository, paths } of groups.values()) {
+      const compactPaths: string[] = []
+      for (const sourcePath of [...paths].sort((a, b) => a.length - b.length)) {
+        if (!compactPaths.some((parentPath) => isPathInside(parentPath, sourcePath, true))) compactPaths.push(sourcePath)
+      }
+      const where: SQL[] = convertToWhere(filesRecents, repository)
+      for (let offset = 0; offset < compactPaths.length; offset += batchSize) {
+        const batch = compactPaths.slice(offset, offset + batchSize)
+        try {
+          await this.db
+            .delete(filesRecents)
+            .where(and(...where, or(...batch.map((sourcePath) => childPathFindRegexp(filePathSQL(filesRecents), sourcePath)))))
+        } catch (e) {
+          this.logger.error({ tag: this.deleteRecents.name, msg: `${e}` })
+        }
+      }
+    }
+  }
+
+  async replaceRecents(location: FileRecentLocation, recents: FileRecent[]): Promise<void> {
+    const where: SQL[] = convertToWhere(filesRecents, location)
+    await this.db.transaction(async (tx) => {
+      await tx.delete(filesRecents).where(and(...where))
+      if (recents.length) await tx.insert(filesRecents).values(recents)
+    })
+  }
+
+  async upsertRecent(location: FileRecentLocation, recent: FileRecent): Promise<void> {
+    const where: SQL[] = convertToWhere(filesRecents, location)
+    await this.db.transaction(async (tx) => {
+      // The table has no unique key: replacing by logical location also removes a stale inode identity.
+      await tx.delete(filesRecents).where(and(...where, eq(filesRecents.name, recent.name)))
+      await tx.insert(filesRecents).values(recent)
+    })
+  }
+
+  async updateRecents(location: FileRecentLocation, add: FileRecent[], update: FileRecentUpdate[], remove: FileRecent['id'][]): Promise<void> {
     const where: SQL[] = convertToWhere(filesRecents, location)
     // add
     if (add.length) {
       try {
-        await this.db.insert(filesRecents).values(add as FileRecent[])
+        await this.db.insert(filesRecents).values(add)
       } catch (e) {
         this.logger.error({ tag: this.updateRecents.name, msg: `${e}` })
       }
     }
     // update
     if (update.length) {
-      for (const props of update) {
-        const f: FileProps = popFromObject('object', props)
+      for (const { id, ...props } of update) {
         try {
           await this.db
             .update(filesRecents)
-            .set({ ...props })
-            .where(and(...where, eq(filesRecents.id, f.id)))
-            .limit(1)
+            .set(props)
+            .where(and(...where, eq(filesRecents.id, id)))
         } catch (e) {
           this.logger.error({ tag: this.updateRecents.name, msg: `${e}` })
         }

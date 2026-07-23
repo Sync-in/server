@@ -9,8 +9,10 @@ import { ContextManager } from '../../../../infrastructure/context/services/cont
 import { SPACE_OPERATION } from '../../../spaces/constants/spaces'
 import type { SpaceEnv } from '../../../spaces/models/space-env.model'
 import type { UserModel } from '../../../users/models/user.model'
+import { ACTION } from '../../../../common/constants'
 import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
 import { FILE_MODE } from '../../constants/operations'
+import { FileEvent } from '../../events/file-events'
 import { FileLockProps } from '../../interfaces/file-props.interface'
 import { LockConflict } from '../../models/file-lock-error'
 import { FilesLockManager } from '../../services/files-lock-manager.service'
@@ -338,6 +340,7 @@ describe(CollaboraOnlineManager.name, () => {
 
       vi.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
       vi.spyOn(filesUtils, 'fileSize').mockResolvedValue(1024)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       const result = await service.saveDocument(mockRequest)
 
@@ -347,6 +350,13 @@ describe(CollaboraOnlineManager.name, () => {
       expect(filesUtils.writeFromStream).toHaveBeenCalledWith('/tmp/document-unique.docx', mockRequest.raw)
       expect(filesUtils.copyFileContent).toHaveBeenCalledWith('/tmp/document-unique.docx', mockSpace.realPath)
       expect(filesUtils.removeFiles).toHaveBeenCalledWith('/tmp/document-unique.docx')
+      expect(emitSpy).toHaveBeenCalledWith('event', {
+        user: mockUser,
+        space: mockSpace,
+        action: ACTION.UPDATE,
+        rPath: mockSpace.realPath,
+        source: 'editor'
+      })
     })
 
     it('should throw error when document size mismatch', async () => {

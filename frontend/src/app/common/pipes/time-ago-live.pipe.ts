@@ -6,7 +6,7 @@ import { dJs } from '../utils/time'
 export class LiveTimeAgoPipe implements PipeTransform, OnDestroy {
   private readonly cdRef = inject(ChangeDetectorRef)
   private ngZone = inject(NgZone)
-  private currentTimer: number | null
+  private currentTimer: number | null = null
   private lastTime: number
   private lastValue: any
   private lastOmitSuffix?: boolean
@@ -51,7 +51,6 @@ export class LiveTimeAgoPipe implements PipeTransform, OnDestroy {
       if (typeof window !== 'undefined') {
         return window.setTimeout(() => {
           this.lastText = this.formatFn(dJs(this.lastValue))
-
           this.currentTimer = null
           this.ngZone.run(() => this.cdRef.markForCheck())
         }, timeToUpdate)
@@ -71,11 +70,11 @@ export class LiveTimeAgoPipe implements PipeTransform, OnDestroy {
   private getSecondsUntilUpdate(dayJsInstance: Dayjs) {
     const howOld = Math.abs(dJs().diff(dayJsInstance, 'minute'))
     if (howOld < 5) {
+      return 20
+    } else if (howOld < 60) {
       return 60
-    } else if (howOld < 180) {
-      return 300
     } else {
-      return 3600
+      return 300
     }
   }
 

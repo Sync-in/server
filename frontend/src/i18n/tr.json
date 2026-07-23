@@ -328,6 +328,8 @@
   "Sync already exists": "Eşitleme zaten mevcut",
   "Sync was reset": "Eşitleme sıfırlandı",
   "Sync deleted": "Eşitleme silindi",
+  "Client deleted": "İstemci silindi",
+  "Unable to delete client": "İstemci silinemiyor",
   "This client": "Bu istemci",
   "You are no longer synchronizing": "Artık eşitleme yapmıyorsunuz",
   "Compress": "Sıkıştır",

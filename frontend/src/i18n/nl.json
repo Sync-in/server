@@ -328,6 +328,8 @@
   "Sync already exists": "Synchronisatie bestaat al",
   "Sync was reset": "Synchroniatie is opnieuw ingesteld",
   "Sync deleted": "Synchronisatie verwijderd",
+  "Client deleted": "Client verwijderd",
+  "Unable to delete client": "Kan client niet verwijderen",
   "This client": "Deze cliënt",
   "You are no longer synchronizing": "U synchroniseert niet meer",
   "Compress": "Comprimeren",

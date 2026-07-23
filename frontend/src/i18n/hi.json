@@ -328,6 +328,8 @@
   "Sync already exists": "सिंक पहले से मौजूद है",
   "Sync was reset": "सिंक रीसेट किया गया",
   "Sync deleted": "सिंक हटाया गया",
+  "Client deleted": "क्लाइंट हटाया गया",
+  "Unable to delete client": "क्लाइंट हटाया नहीं जा सका",
   "This client": "यह क्लाइंट",
   "You are no longer synchronizing": "आप अब सिंक नहीं कर रहे हैं",
   "Compress": "संपीड़ित करें",

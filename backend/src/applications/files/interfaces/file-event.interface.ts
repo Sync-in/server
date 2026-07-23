@@ -11,6 +11,7 @@ export interface FileEventType {
   space: SpaceEnv
   action: ACTION
   rPath: string
+  source?: 'editor'
 }
 
 export interface FileEventEmit {

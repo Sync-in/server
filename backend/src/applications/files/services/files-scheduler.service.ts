@@ -125,8 +125,9 @@ export class FilesScheduler {
           DELETE
           FROM ${filesRecents}
           WHERE ${fk} IS NOT NULL
-            AND id NOT IN (SELECT id
-                           FROM (SELECT id,
+            AND (${fk}, ${filesRecents.id}) NOT IN (SELECT repositoryId, id
+                           FROM (SELECT ${fk} AS repositoryId,
+                                        id,
                                         ROW_NUMBER() OVER (PARTITION BY ${fk} ORDER BY ${filesRecents.mtime} DESC) AS rn
                                  FROM ${filesRecents}
                                  WHERE ${fk} IS NOT NULL) AS ranked

@@ -13,7 +13,8 @@ import {
   convertToSelect,
   dateTimeUTC,
   dbCheckAffectedRows,
-  dbGetInsertedId
+  dbGetInsertedId,
+  dbParseJson
 } from '../../../infrastructure/database/utils'
 import { GROUP_TYPE, GROUP_VISIBILITY } from '../constants/group'
 import { MEMBER_TYPE } from '../constants/member'
@@ -589,7 +590,7 @@ export class UsersQueries {
     ) AS usersUnion
   `
     const [r] = await this.db.execute(userIds)
-    return JSON.parse(r[0].ids) || []
+    return dbParseJson(r[0].ids) || []
   }
 
   @CacheDecorator(1800)
@@ -620,7 +621,7 @@ export class UsersQueries {
         )
       )
     const [r] = await this.db.execute(q)
-    return JSON.parse(r[0].ids) || []
+    return dbParseJson(r[0].ids) || []
   }
 
   async clearWhiteListCaches(userIds: number[] | '*'): Promise<void> {

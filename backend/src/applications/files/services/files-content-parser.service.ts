@@ -92,19 +92,18 @@ export class FilesContentParser {
         continue
       }
       const spacePath: FileParseContext[] = [{ realPath: spaceFilesPath, pathPrefix: `${SPACE_REPOSITORY.FILES}/${space.alias}`, isDir: true }]
-      const rootPaths = space.roots.map(
-        (r: any): FileParseContext =>
-          r.externalPath
-            ? {
-                realPath: r.externalPath,
-                pathPrefix: `${SPACE_REPOSITORY.FILES}/${space.alias}/${r.alias}`,
-                isDir: r.isDir
-              }
-            : {
-                realPath: path.join(UserModel.getFilesPath(r.file.fromOwner), r.file.path),
-                pathPrefix: `${SPACE_REPOSITORY.FILES}/${space.alias}/${r.alias}`,
-                isDir: r.isDir
-              }
+      const rootPaths = space.roots.map((r: any): FileParseContext =>
+        r.externalPath
+          ? {
+              realPath: r.externalPath,
+              pathPrefix: `${SPACE_REPOSITORY.FILES}/${space.alias}/${r.alias}`,
+              isDir: r.isDir
+            }
+          : {
+              realPath: path.join(UserModel.getFilesPath(r.file.fromOwner), r.file.path),
+              pathPrefix: `${SPACE_REPOSITORY.FILES}/${space.alias}/${r.alias}`,
+              isDir: r.isDir
+            }
       )
       paths.push({ id: space.id, type: FILE_REPOSITORY.SPACE, paths: [...spacePath, ...rootPaths] })
     }

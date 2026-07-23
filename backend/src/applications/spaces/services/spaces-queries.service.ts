@@ -14,7 +14,8 @@ import {
   convertToWhere,
   dateTimeUTC,
   dbCheckAffectedRows,
-  dbGetInsertedId
+  dbGetInsertedId,
+  dbParseJson
 } from '../../../infrastructure/database/utils'
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
 import { FileDBProps } from '../../files/interfaces/file-db-props.interface'
@@ -91,7 +92,7 @@ export class SpacesQueries {
         alias: spaces.alias,
         storageUsage: spaces.storageUsage,
         storageQuota: spaces.storageQuota,
-        externalPaths: sql<string[]>`JSON_ARRAYAGG(${spacesRoots.externalPath})`.mapWith(JSON.parse).as('externalPaths')
+        externalPaths: sql<string[]>`JSON_ARRAYAGG(${spacesRoots.externalPath})`.mapWith(dbParseJson).as('externalPaths')
       })
       .from(spaces)
       .leftJoin(spacesRoots, and(eq(spacesRoots.spaceId, spaces.id), isNotNull(spacesRoots.externalPath)))
@@ -271,12 +272,12 @@ export class SpacesQueries {
           alias: shares.alias,
           name: shares.name,
           type: shares.type
-        })}, '[]')`.mapWith(JSON.parse),
+        })}, '[]')`.mapWith(dbParseJson),
         syncs: sql`IF (${sql.placeholder('withSyncs')}, ${concatDistinctObjectsInArray(syncPaths.id, {
           id: syncPaths.id,
           clientId: syncClients.id,
           clientName: sql`JSON_VALUE(${syncClients.info}, '$.node')`
-        })}, '[]')`.mapWith(JSON.parse),
+        })}, '[]')`.mapWith(dbParseJson),
         hasComments: sql<boolean>`IF (${sql.placeholder('withHasComments')}, ${fileHasCommentsSubquerySQL(files.id)}, 0)`.mapWith(Boolean)
       }
       this.spaceRootFilesQuery = this.db
