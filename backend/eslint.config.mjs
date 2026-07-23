@@ -1,7 +1,6 @@
 // @ts-check
 import eslint from '@eslint/js'
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
-import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
@@ -15,9 +14,6 @@ export default tseslint.config(
   //tseslint.configs.recommendedTypeChecked,
   {
     languageOptions: {
-      globals: {
-        ...globals.node
-      },
       ecmaVersion: 5,
       sourceType: 'module',
       parserOptions: {
@@ -26,6 +22,7 @@ export default tseslint.config(
       }
     },
     rules: {
+      'no-undef': 'off',
       'prefer-const': ['error', { destructuring: 'all' }],
       '@typescript-eslint/interface-name-prefix': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off',

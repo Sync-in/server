@@ -87,9 +87,11 @@ export class AdminService {
     isGuest = false
   ): Observable<AdminUserModel | GuestUserModel> {
     return this.http
-      .put<
-        AdminUser | GuestUser
-      >(`${isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS}/${userId}`, updateUserDto, twoFaHeaders ? { headers: twoFaHeaders } : undefined)
+      .put<AdminUser | GuestUser>(
+        `${isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS}/${userId}`,
+        updateUserDto,
+        twoFaHeaders ? { headers: twoFaHeaders } : undefined
+      )
       .pipe(map((u) => (isGuest ? new GuestUserModel(u) : new AdminUserModel(u))))
   }
 

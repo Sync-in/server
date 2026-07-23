@@ -5,11 +5,7 @@ import { COLLABORA_APP_LOCK } from '../editors/collabora-online/collabora-online
 import { EURO_OFFICE_APP_LOCK, ONLY_OFFICE_APP_LOCK } from '../editors/only-office/only-office.constants'
 
 export type LOCK_APP =
-  | typeof WEBDAV_APP_LOCK
-  | typeof COLLABORA_APP_LOCK
-  | typeof ONLY_OFFICE_APP_LOCK
-  | typeof EURO_OFFICE_APP_LOCK
-  | typeof SERVER_NAME
+  typeof WEBDAV_APP_LOCK | typeof COLLABORA_APP_LOCK | typeof ONLY_OFFICE_APP_LOCK | typeof EURO_OFFICE_APP_LOCK | typeof SERVER_NAME
 
 // Optional lock parameters
 export interface FileLockOptions {
