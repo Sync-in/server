@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt'
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { IoAdapter } from '@nestjs/platform-socket.io'
 import { WsException } from '@nestjs/websockets'
-import { parse } from 'cookie'
+import { type FastifyInstance } from 'fastify'
 import cluster from 'node:cluster'
 import { Namespace, ServerOptions, Socket } from 'socket.io'
 import { USERS_WS } from '../../../applications/users/constants/websocket'
@@ -20,6 +20,7 @@ import { RedisAdapter } from './redis.adapter'
 export class WebSocketAdapter extends IoAdapter {
   private adapter: RedisAdapter | ClusterAdapter
   private readonly app: NestFastifyApplication
+  private readonly fastify: FastifyInstance
   private readonly logger: Logger = new Logger(WebSocketAdapter.name)
   private readonly jwtService: JwtService
   private readonly usersManager: UsersManager
@@ -27,6 +28,7 @@ export class WebSocketAdapter extends IoAdapter {
   constructor(app: NestFastifyApplication) {
     super(app)
     this.app = app
+    this.fastify = app.getHttpAdapter().getInstance()
     this.jwtService = app.get<JwtService>(JwtService)
     this.usersManager = app.get<UsersManager>(UsersManager)
   }
@@ -75,7 +77,7 @@ export class WebSocketAdapter extends IoAdapter {
   }
 
   private async authenticateSocket(socket: Socket, next: (err?: Error) => void) {
-    const cookies = socket.request.headers.cookie ? parse(socket.request.headers.cookie) : {}
+    const cookies = socket.request.headers.cookie ? this.fastify.parseCookie(socket.request.headers.cookie) : {}
     const token = cookies[configuration.auth.token.ws.name]
     if (!token) {
       this.onAuthError('Authorization is missing', socket, next)

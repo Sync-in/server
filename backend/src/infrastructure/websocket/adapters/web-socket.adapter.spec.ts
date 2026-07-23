@@ -9,6 +9,7 @@ describe(WebSocketAdapter.name, () => {
   const token = 'signed-token'
   const identity = { id: 1, login: 'foo' }
   let adapter: WebSocketAdapter
+  let fastify: { parseCookie: ReturnType<typeof vi.fn> }
   let jwtService: { verify: ReturnType<typeof vi.fn> }
   let usersManager: { fromAuthToken: ReturnType<typeof vi.fn> }
   let socket: Socket
@@ -21,8 +22,12 @@ describe(WebSocketAdapter.name, () => {
     usersManager = {
       fromAuthToken: vi.fn(async (user: UserModel): Promise<UserModel | null> => user)
     }
+    fastify = {
+      parseCookie: vi.fn(() => ({ [configuration.auth.token.ws.name]: token }))
+    }
     adapter = Object.create(WebSocketAdapter.prototype)
     Object.assign(adapter, {
+      fastify,
       jwtService,
       usersManager,
       logger: {
@@ -55,6 +60,7 @@ describe(WebSocketAdapter.name, () => {
 
     await Reflect.apply(Reflect.get(adapter, 'authenticateSocket'), adapter, [socket, next])
 
+    expect(fastify.parseCookie).toHaveBeenCalledWith(`${configuration.auth.token.ws.name}=${token}`)
     expect(jwtService.verify).toHaveBeenCalledWith(token, {
       secret: configuration.auth.token.ws.secret
     })
