@@ -1,4 +1,34 @@
 
+## [2.4.3](https://github.com/Sync-in/server/compare/v2.4.2...v2.4.3) (2026-07-24)
+
+### Features
+
+* **backend:sync:** improve unicode path matching in NormalizedMap ([c860ead](https://github.com/Sync-in/server/commit/c860ead7489a5b2a145d2fb24dd7b410155742d2))
+* **frontend:common:** add reusable user avatar stack tooltip ([160ec66](https://github.com/Sync-in/server/commit/160ec6644f7d15442ed70e4b8651ce74cb83acf7))
+* **frontend:files:** disable sidebar media autoplay and simplify controls ([98a6346](https://github.com/Sync-in/server/commit/98a6346b60f4c0b47fd79599dcf52ec9a0f87493))
+* **frontend:space:** group permissions in a single tooltip ([dd8647e](https://github.com/Sync-in/server/commit/dd8647efc24d27f2fe03ef31cb2861d25d81471c))
+* **frontend:space:** show member counts in a translated tooltip ([4b1f97c](https://github.com/Sync-in/server/commit/4b1f97c98002b0309e3822d4ec535d54522dfb99))
+
+### Bug Fixes
+
+* **backend:auth:** improve OIDC response error logging ([4c04c98](https://github.com/Sync-in/server/commit/4c04c98c0bc6e7d48bc2bad94b3d81a8b05d8ad6))
+* **backend:cache:** propagate method errors without retrying ([6c07c42](https://github.com/Sync-in/server/commit/6c07c421c06a42c68e965baf6841d90706eeab86))
+* **backend:comments:** filter recent comments by user permissions ([48c6d7e](https://github.com/Sync-in/server/commit/48c6d7eb9bce18cd6d9de0804fbf338c7600ebb9))
+* **backend:database:** support pre-parsed JSON results from mysql2 ([98072f0](https://github.com/Sync-in/server/commit/98072f0757dccc781f3d7f8a9a75a674102e41f4))
+* **backend:files:** filter recents by user permissions ([406881f](https://github.com/Sync-in/server/commit/406881fa149cbe9bbf462cabd136b0792ac5476e))
+* **backend:files:** improve log clarity for full indexing requests ([31f9beb](https://github.com/Sync-in/server/commit/31f9beb26ed9b1855004b18ad1872593e60bd701))
+* **backend:files:** synchronize recent files after editor updates and deletions ([2b87607](https://github.com/Sync-in/server/commit/2b87607e871a10033f01dd220470942e2d9fbb34))
+* **backend:notifications:** harden HTML email template escaping ([b9909b3](https://github.com/Sync-in/server/commit/b9909b33b8db9a36317078e2d3893dc13a6a17b9))
+* **backend:onlyoffice:** validate document download origin ([d0de778](https://github.com/Sync-in/server/commit/d0de7787ed6e6d8ccf177ca604aeab9971e42891))
+* **backend:websocket:** use Fastify cookie parser for authentication ([38dbcea](https://github.com/Sync-in/server/commit/38dbceaeef060ff75918e054a9edd12acd1422a7))
+* **files:** downgrade PDF.js to v5.6.205 and allow viewer WASM in CSP ([5a868df](https://github.com/Sync-in/server/commit/5a868dfd5bb5a3de697b6e8852c3154da82a20e1))
+* **frontend:auth:** allow retrying OIDC login ([003b307](https://github.com/Sync-in/server/commit/003b307135565adb6976a5adf98271c104b78eb1))
+* **frontend:auth:** support desktop-handled auth flow ([d683438](https://github.com/Sync-in/server/commit/d6834388cf41c4deacdf4b83892e3168699d53f6))
+* **frontend:files:** remove unused spacer in sidebar header ([4ed55b3](https://github.com/Sync-in/server/commit/4ed55b3837ede01d4ddc93e3a90835d55328ef96))
+* **frontend:spaces:** handle optional error message in notification ([fa1cd08](https://github.com/Sync-in/server/commit/fa1cd0858324bac1c7730117ef50d044c7fd3862))
+* **frontend:sync:** adjust table column widths for better layout ([06245b9](https://github.com/Sync-in/server/commit/06245b98cad760f5a2104c67979d908a7cb86efb))
+* **frontend:** improve live relative time updates ([ef40ab0](https://github.com/Sync-in/server/commit/ef40ab004e259bdcf1846f6a4d53a63a4dba0cb8))
+* **frontend:** prevent Chromium caret loss during file rename ([f99b313](https://github.com/Sync-in/server/commit/f99b31300334a0762b947f0bb816798c69634dff))
 ## [2.4.2](https://github.com/Sync-in/server/compare/v2.4.1...v2.4.2) (2026-06-26)
 
 
