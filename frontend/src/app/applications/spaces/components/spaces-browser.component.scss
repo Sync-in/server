@@ -56,17 +56,12 @@
   }
 }
 
-.file-selection-control:hover .file-selection-overlay,
 .file-selection-overlay:focus-visible {
   opacity: 1;
 }
 
-@media (hover: none) {
-  .file-selection-overlay {
+@media (hover: hover) {
+  .file-selection-control:hover .file-selection-overlay {
     opacity: 1;
-
-    .file-selection-indicator {
-      background-color: rgba(32, 36, 45, .68);
-    }
   }
 }
