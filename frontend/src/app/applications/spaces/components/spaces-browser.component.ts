@@ -403,6 +403,11 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   toggleFileSelection(ev: MouseEvent, file: FileModel) {
     ev.stopPropagation()
     if (!this.loading) {
+      if (ev.shiftKey && (this.selection.length > 0 || this.selectionAnchor)) {
+        this.selectionControlMode = true
+        this.selectRangeFiles(file)
+        return
+      }
       if (!this.selectionControlMode && this.selection.length === 1) {
         this.selectionControlMode = true
         this.setSelection([file], file, file, true)
