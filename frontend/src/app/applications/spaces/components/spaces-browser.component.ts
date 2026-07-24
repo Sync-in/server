@@ -250,7 +250,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private focusOnSelect: string
   private selectionAnchor: FileModel | null = null
   private selectionFocus: FileModel | null = null
-  private imageSelectionMode = false
+  private selectionControlMode = false
   // Sort
   private readonly sortSettings: SortSettings = {
     default: [
@@ -403,13 +403,13 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   toggleFileSelection(ev: MouseEvent, file: FileModel) {
     ev.stopPropagation()
     if (!this.loading) {
-      if (!this.imageSelectionMode && this.selection.length === 1 && !file.isSelected) {
-        this.imageSelectionMode = true
+      if (!this.selectionControlMode && this.selection.length === 1) {
+        this.selectionControlMode = true
         this.setSelection([file], file, file, true)
         return
       }
       if (!this.selection.length) {
-        this.imageSelectionMode = true
+        this.selectionControlMode = true
       }
       this.modifySelection(file)
     }
@@ -824,17 +824,17 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     selection: FileModel[],
     selectionAnchor: FileModel | null = null,
     selectionFocus: FileModel | null = selectionAnchor,
-    keepImageSelectionMode = false
+    keepSelectionControlMode = false
   ) {
     const selected = new Set(selection)
     this.selection = this.files.filter((file: FileModel) => {
       file.isSelected = selected.has(file)
       return file.isSelected
     })
-    if (!keepImageSelectionMode || !this.selection.length) {
-      this.imageSelectionMode = false
+    if (!keepSelectionControlMode || !this.selection.length) {
+      this.selectionControlMode = false
     }
-    this.showSelectionChecks = this.selection.length > 1 || this.imageSelectionMode
+    this.showSelectionChecks = this.selection.length > 1 || this.selectionControlMode
     this.setSelectionCursor(selectionAnchor, selectionFocus)
     // update states
     this.hasSelection = !!this.selection.length
