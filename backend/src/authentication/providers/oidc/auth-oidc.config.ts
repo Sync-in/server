@@ -54,6 +54,24 @@ export class AuthProviderOIDCSecurityConfig {
   allowPrivateIpAvatarDownload? = false
 }
 
+export class AuthProviderOIDCGroupsConfig {
+  @IsOptional()
+  @IsBoolean()
+  enabled? = false
+
+  @IsOptional()
+  @IsString()
+  claim? = 'groups'
+
+  @IsOptional()
+  @IsString()
+  delimiter? = ','
+
+  @IsOptional()
+  @IsString()
+  regex? = '.*'
+}
+
 export class AuthProviderOIDCOptionsConfig {
   @IsOptional()
   @IsBoolean()
@@ -84,6 +102,12 @@ export class AuthProviderOIDCOptionsConfig {
   @IsString()
   @Transform(({ value }) => value || DEFAULT_STORAGE_QUOTA_FIELD)
   storageQuotaClaim?: string = DEFAULT_STORAGE_QUOTA_FIELD
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => AuthProviderOIDCGroupsConfig)
+  groups?: AuthProviderOIDCGroupsConfig = new AuthProviderOIDCGroupsConfig()
 
   @IsString()
   @IsNotEmpty()
