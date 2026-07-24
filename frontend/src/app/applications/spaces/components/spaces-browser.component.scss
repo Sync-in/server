@@ -5,6 +5,7 @@
   width: 30px;
   height: 30px;
   margin-right: .3rem;
+  overflow: visible;
 
   > img {
     margin-right: 0 !important;
@@ -13,15 +14,17 @@
 
 .file-selection-overlay {
   position: absolute;
-  inset: 0;
-  width: 30px;
-  height: 30px;
+  top: 50%;
+  left: calc(0px - var(--app-table-cell-inline-padding));
+  width: calc(30px + var(--app-table-cell-inline-padding));
+  height: var(--app-table-row-height);
   padding: 0;
   color: rgba(255, 255, 255, .88);
   background: transparent;
   border: 0;
   opacity: 0;
   cursor: pointer;
+  transform: translateY(-50%);
 
   &:focus-visible {
     outline: 2px solid currentColor;
@@ -40,8 +43,8 @@
 
 .file-selection-indicator {
   position: absolute;
-  top: 0;
-  left: 0;
+  top: calc((var(--app-table-row-height) - 30px) / 2);
+  left: var(--app-table-cell-inline-padding);
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -225,6 +225,9 @@
 }
 
 .app-table {
+  --app-table-cell-inline-padding: .5rem;
+  --app-table-row-height: 36px;
+
   @extend .table;
   @include no-select-utility;
   table-layout: fixed;
@@ -243,13 +246,13 @@
         white-space: nowrap;
         font-weight: 500;
         border: none;
-        padding: .25rem 0.5rem;
+        padding: .25rem var(--app-table-cell-inline-padding);
       }
     }
   }
 
   tbody tr {
-    height: 36px !important;
+    height: var(--app-table-row-height) !important;
     border-bottom: .5px solid;
 
     &:hover {
@@ -275,6 +278,7 @@
     vertical-align: middle;
     max-width: 0;
     padding-bottom: 1px;
+    padding-inline: var(--app-table-cell-inline-padding);
     padding-top: 1px;
 
     span {
