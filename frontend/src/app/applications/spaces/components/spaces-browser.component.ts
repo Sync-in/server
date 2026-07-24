@@ -173,6 +173,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   // Actions
   protected multipleSelection = false
   protected hasSelection = false
+  protected showSelectionChecks = false
   protected hasDisabledItemsInSelection = false
   protected canCompress = true
   protected renamingInProgress = false
@@ -249,6 +250,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private focusOnSelect: string
   private selectionAnchor: FileModel | null = null
   private selectionFocus: FileModel | null = null
+  private imageSelectionMode = false
   // Sort
   private readonly sortSettings: SortSettings = {
     default: [
@@ -401,6 +403,14 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   toggleFileSelection(ev: MouseEvent, file: FileModel) {
     ev.stopPropagation()
     if (!this.loading) {
+      if (!this.imageSelectionMode && this.selection.length === 1 && !file.isSelected) {
+        this.imageSelectionMode = true
+        this.setSelection([file], file, file, true)
+        return
+      }
+      if (!this.selection.length) {
+        this.imageSelectionMode = true
+      }
       this.modifySelection(file)
     }
   }
@@ -802,19 +812,29 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       this.setSelection(
         this.selection.filter((f) => f !== file),
         file,
-        file
+        file,
+        true
       )
     } else {
-      this.setSelection([file, ...this.selection], file, file)
+      this.setSelection([file, ...this.selection], file, file, true)
     }
   }
 
-  private setSelection(selection: FileModel[], selectionAnchor: FileModel | null = null, selectionFocus: FileModel | null = selectionAnchor) {
+  private setSelection(
+    selection: FileModel[],
+    selectionAnchor: FileModel | null = null,
+    selectionFocus: FileModel | null = selectionAnchor,
+    keepImageSelectionMode = false
+  ) {
     const selected = new Set(selection)
     this.selection = this.files.filter((file: FileModel) => {
       file.isSelected = selected.has(file)
       return file.isSelected
     })
+    if (!keepImageSelectionMode || !this.selection.length) {
+      this.imageSelectionMode = false
+    }
+    this.showSelectionChecks = this.selection.length > 1 || this.imageSelectionMode
     this.setSelectionCursor(selectionAnchor, selectionFocus)
     // update states
     this.hasSelection = !!this.selection.length
@@ -844,7 +864,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     const files = this.getFilteredFiles()
     const fileIndex = files.indexOf(file)
     if (fileIndex === -1) {
-      this.setSelection([file], file, file)
+      this.setSelection([file], file, file, true)
       return
     }
     let anchor = this.selectionAnchor
@@ -857,7 +877,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     const maxIndex = Math.max(anchorIndex, fileIndex)
     const filteredFiles = new Set(files)
     const hiddenSelection = this.selection.filter((f: FileModel) => !filteredFiles.has(f))
-    this.setSelection([...hiddenSelection, ...files.slice(minIndex, maxIndex + 1)], anchor, file)
+    this.setSelection([...hiddenSelection, ...files.slice(minIndex, maxIndex + 1)], anchor, file, true)
   }
 
   private getKeyboardNavigationTarget(files: FileModel[], keyCode: number, extendSelection: boolean): { file: FileModel; keyCode: number } {

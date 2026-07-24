@@ -402,7 +402,7 @@
                                   (click)="toggleFileSelection($event, f)"
                                   [attr.aria-label]="f.name"
                                   [attr.aria-pressed]="f.isSelected"
-                                  [class.is-selected]="f.isSelected"
+                                  [class.is-selected]="f.isSelected && showSelectionChecks"
                                   class="file-selection-overlay"
                                   type="button">
                             <span class="file-selection-indicator">
