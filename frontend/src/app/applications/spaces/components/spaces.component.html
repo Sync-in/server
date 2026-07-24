@@ -53,7 +53,11 @@
 <!--End Top Menu-->
 @if (galleryMode?.enabled) {
   <!--Start Gallery Content-->
-  <div class="app-thumbs">
+  <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
+       [style.--gallery-image-size]="galleryMode.image + 'px'"
+       [style.--gallery-icon-size]="galleryMode.faSize + 'px'"
+       [style.--gallery-text-size]="galleryMode.textSize + 'px'"
+       class="app-gallery">
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                         [childHeight]="galleryMode.dimensions"
                         [childWidth]="galleryMode.dimensions"
@@ -67,19 +71,14 @@
                (appTap)="browse(s)"
                [class.disabled]="!s.enabled"
                [class.selected]="s.id === selected?.id"
-               [style.height.px]="galleryMode.dimensions"
-               [style.width.px]="galleryMode.dimensions"
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
               <fa-icon [icon]="icons.SPACES"
-                       class="circle-primary-icon"
-                       [style.min-width.px]="galleryMode.image"
-                       [style.min-height.px]="galleryMode.image"
-                       [style.font-size.px]="galleryMode.faSize">
+                       class="circle-primary-icon gallery-icon">
               </fa-icon>
               <span class="label-top-right">
                 @if (s.newly) {
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge bg-purple">{{ s.hTimeAgo }}</span>
+                  <span class="badge bg-purple">{{ s.hTimeAgo }}</span>
                 }
               </span>
               @if (s.managers.length) {
@@ -109,7 +108,7 @@
               </span>
             </div>
             <div class="card-footer text-center text-truncate p-1">
-              <span [style.font-size.px]="galleryMode.textSize" class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
+              <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
             </div>
           </div>
         }
