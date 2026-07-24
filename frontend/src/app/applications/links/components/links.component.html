@@ -44,7 +44,10 @@
 <!--End Top Menu-->
 @if (galleryMode?.enabled) {
   <!--Start Gallery Content-->
-  <div class="app-thumbs">
+  <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
+       [style.--gallery-image-size]="galleryMode.image + 'px'"
+       [style.--gallery-text-size]="galleryMode.textSize + 'px'"
+       class="app-gallery">
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                         [childHeight]="galleryMode.dimensions"
                         [childWidth]="galleryMode.dimensions"
@@ -58,14 +61,12 @@
                (appTap)="openLinkDialog()"
                [class.selected]="s.id === selected?.id"
                [class.disabled]="!s.link.isActive"
-               [style.height.px]="galleryMode.dimensions"
-               [style.width.px]="galleryMode.dimensions"
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
-              <img [src]="s.mimeUrl" [height]="galleryMode.image" [width]="galleryMode.image" alt="" draggable="true" (error)="s.fallBackMimeUrl()">
+              <img [src]="s.mimeUrl" alt="" class="gallery-image" draggable="true" (error)="s.fallBackMimeUrl()">
               <span class="label-top-right">
                 @if (s.newly) {
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge bg-purple">
+                  <span class="badge bg-purple">
                     {{ s.hTimeAccessAgo }}
                   </span>
                 }
@@ -92,7 +93,7 @@
               </span>
             </div>
             <div class="card-footer text-center text-truncate p-1">
-              <span [style.font-size.px]="galleryMode.textSize" class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
+              <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
             </div>
           </div>
         }

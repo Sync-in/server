@@ -207,7 +207,11 @@
 <!--End Top Menu-->
 @if (galleryMode?.enabled) {
   <!--Start Gallery Content-->
-  <div class="app-thumbs">
+  <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
+       [style.--gallery-image-size]="galleryMode.image + 'px'"
+       [style.--gallery-selection-size]="galleryMode.dimensions / 2.5 + 'px'"
+       [style.--gallery-text-size]="galleryMode.textSize + 'px'"
+       class="app-gallery">
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                         [childHeight]="galleryMode.dimensions"
                         [childWidth]="galleryMode.dimensions"
@@ -223,22 +227,29 @@
                [class.disabled]="f.isDisabled"
                [class.deleted]="f.isBeingDeleted"
                [class.selected]="f.isSelected"
-               [style.height.px]="galleryMode.dimensions"
-               [style.width.px]="galleryMode.dimensions"
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
+              <button (pointerdown)="$event.stopPropagation()"
+                      (click)="toggleFileSelection($event, f)"
+                      [attr.aria-label]="f.name"
+                      [attr.aria-pressed]="f.isSelected"
+                      [class.is-selected]="f.isSelected && showSelectionChecks"
+                      class="file-selection-overlay gallery-file-selection-overlay"
+                      type="button">
+                <span class="file-selection-indicator">
+                  <fa-icon [icon]="icons.faCheck"></fa-icon>
+                </span>
+              </button>
               @if (f.isImage) {
                 <img src="{{f.thumbnailUrl}}?size={{galleryMode.imageRes}}"
-                     [style.max-height.px]="galleryMode.image"
                      alt=""
-                     class="img-fluid"
+                     class="img-fluid gallery-thumbnail"
                      draggable="true"
                      (error)="f.isImage = false">
               } @else {
                 <img [src]="f.mimeUrl"
-                     [height]="galleryMode.image"
-                     [width]="galleryMode.image"
                      alt=""
+                     class="gallery-image"
                      draggable="true"
                      (error)="f.fallBackMimeUrl()">
               }
@@ -252,21 +263,18 @@
                         <span (click)="openLockDialog(f)"
                               tooltip="{{f.lock | fileLockFormatPipe}}"
                               placement="auto"
-                              [style.font-size.px]="galleryMode.textSize"
                               class="badge bg-maroon cursor-pointer">
                           <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
                         </span>
                       }
                       @case ('comments') {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
-                              [style.font-size.px]="galleryMode.textSize"
                               class="badge bg-success cursor-pointer">
                           <fa-icon [icon]="icons.faCommentDots"></fa-icon>
                         </span>
                       }
                       @case ('shares') {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              [style.font-size.px]="galleryMode.textSize"
                               class="badge bg-primary cursor-pointer">
                           <fa-icon [icon]="icons.SHARES"></fa-icon>
                           {{ f.shares.length }}
@@ -274,7 +282,6 @@
                       }
                       @case ('spaces') {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              [style.font-size.px]="galleryMode.textSize"
                               class="badge bg-primary cursor-pointer">
                           <fa-icon [icon]="icons.SPACES"></fa-icon>
                           {{ f.spaces.length }}
@@ -282,7 +289,6 @@
                       }
                       @case ('links') {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              [style.font-size.px]="galleryMode.textSize"
                               class="badge bg-primary cursor-pointer">
                           <fa-icon [icon]="icons.LINKS"></fa-icon>
                           {{ f.links.length }}
@@ -290,7 +296,6 @@
                       }
                       @case ('syncs') {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              [style.font-size.px]="galleryMode.textSize"
                               class="badge bg-primary cursor-pointer">
                           <fa-icon [icon]="icons.SYNC"></fa-icon>
                           {{ f.syncs.length }}
@@ -301,7 +306,6 @@
                 }
                 @if (hiddenBadges > 0) {
                   <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                        [style.font-size.px]="galleryMode.textSize"
                         class="badge bg-primary cursor-pointer">
                     <fa-icon [icon]="icons.faCirclePlus"></fa-icon>
                     {{ hiddenBadges }}
@@ -320,7 +324,7 @@
               }
               @if (f.newly) {
                 <span class="label-top-right">
-                  <span [style.font-size.px]="galleryMode.textSize" class="badge bg-purple">{{ f.hTimeAgo }}</span>
+                  <span class="badge bg-purple">{{ f.hTimeAgo }}</span>
                 </span>
               }
             </div>
@@ -333,12 +337,10 @@
                        [textCenter]="true"
                        (renamingInProgress)="setRenamingInProgress($event)"
                        (updateObject)="renameFile($event)"
-                       [style.font-size.px]="galleryMode.textSize"
                        type="text"
                        required>
               } @else {
-                <span [style.font-size.px]="galleryMode.textSize" class="no-pointer-events text-file-name-preserve"
-                      draggable="false">{{ f.name }}</span>
+                <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ f.name }}</span>
               }
             </div>
           </div>
