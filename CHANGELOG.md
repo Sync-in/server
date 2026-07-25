@@ -1,4 +1,10 @@
 
+## [2.4.4](https://github.com/Sync-in/server/compare/v2.4.3...v2.4.4) (2026-07-25)
+
+### Bug Fixes
+
+* **backend:database:** prevent double decoding of JSON columns ([37f9d80](https://github.com/Sync-in/server/commit/37f9d8010789dda5f5cf4ca2e34ff37d958562f6))
+
 ## [2.4.3](https://github.com/Sync-in/server/compare/v2.4.2...v2.4.3) (2026-07-24)
 
 ### Features
@@ -29,6 +35,7 @@
 * **frontend:sync:** adjust table column widths for better layout ([06245b9](https://github.com/Sync-in/server/commit/06245b98cad760f5a2104c67979d908a7cb86efb))
 * **frontend:** improve live relative time updates ([ef40ab0](https://github.com/Sync-in/server/commit/ef40ab004e259bdcf1846f6a4d53a63a4dba0cb8))
 * **frontend:** prevent Chromium caret loss during file rename ([f99b313](https://github.com/Sync-in/server/commit/f99b31300334a0762b947f0bb816798c69634dff))
+
 ## [2.4.2](https://github.com/Sync-in/server/compare/v2.4.1...v2.4.2) (2026-06-26)
 
 
