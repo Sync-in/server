@@ -19,7 +19,7 @@
   background: transparent;
   border: 0;
   opacity: 0;
-  cursor: pointer;
+  cursor: default;
 
   &:focus-visible {
     outline: 2px solid currentColor;
@@ -113,7 +113,7 @@
 
 @media (hover: hover) {
   .file-selection-control:hover .file-selection-overlay,
-  .app-gallery .card:hover .gallery-file-selection-overlay {
+  .gallery-file-selection-overlay:hover {
     opacity: 1;
   }
 }
