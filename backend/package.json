@@ -68,7 +68,7 @@
     "js-yaml": "^5.0.0",
     "ldapts": "^9.0.0",
     "mime-types": "^3.0.2",
-    "mysql2": "^3.22.4",
+    "mysql2": "^3.23.1",
     "nestjs-pino": "^4.6.1",
     "nodemailer": "^9.0.1",
     "openid-client": "^6.8.4",
@@ -86,7 +86,7 @@
     "tesseract.js": "^7.0.0",
     "text-to-svg": "^3.1.5",
     "time2fa": "^1.4.2",
-    "unpdf": "^1.6.2"
+    "unpdf": "1.6.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",

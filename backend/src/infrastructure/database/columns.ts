@@ -8,18 +8,5 @@ export const jsonColumn = <T>() =>
     },
     toDriver(value) {
       return value == null ? null : JSON.stringify(value)
-    },
-    fromDriver(value) {
-      if (value == null) return null as unknown as T
-      if (typeof value === 'string') {
-        try {
-          return JSON.parse(value) as T
-        } catch {
-          // Corrupt or non-JSON value: returns null (or throws if you prefer)
-          return null as unknown as T
-        }
-      }
-      // In the (rare) case where the driver already returns an object
-      return value as unknown as T
     }
   })
