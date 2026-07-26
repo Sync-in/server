@@ -1,6 +1,6 @@
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, Component, ElementRef, HostListener, inject, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core'
+import { AfterViewInit, Component, ElementRef, inject, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -85,6 +85,10 @@ import { SpaceModel } from '../models/space.model'
 import { SpacesBrowserService } from '../services/spaces-browser.service'
 import { SPACES_ICON, SPACES_PATH } from '../spaces.constants'
 import { SpaceAnchorFileDialogComponent } from './dialogs/space-anchor-file-dialog.component'
+
+type KeyboardNavigationKey = 'ArrowLeft' | 'ArrowUp' | 'ArrowRight' | 'ArrowDown'
+
+const keyboardNavigationKeys: ReadonlySet<string> = new Set<KeyboardNavigationKey>(['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'])
 
 @Component({
   selector: 'app-spaces-browser',
@@ -293,40 +297,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.destroyEventHandlers()
     this.resetFilesSelection()
     this.subscriptions.forEach((s) => s.unsubscribe())
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyPress(ev: any) {
-    if (!((ev.target.id === 'table-files' || ev.target.id === 'thumb-files') && (ev.ctrlKey || ev.metaKey))) {
-      return
-    }
-    switch (ev.which || ev.keyCode) {
-      case 65:
-        // ctrl/cmd + a
-        // select all
-        ev.preventDefault()
-        ev.stopPropagation()
-        this.selectAllFiles()
-        return
-      case 67:
-      case 88:
-        // ctrl/cmd + c || ctrl/cmd + x
-        ev.preventDefault()
-        ev.stopPropagation()
-        if (this.selection.length) {
-          this.filesService.clipboardAction = ev.keyCode == 67 ? 'copyPaste' : 'cutPaste'
-          this.filesService.addToClipboard(this.selection)
-        }
-        return
-      case 86:
-        // ctrl/cmd + v
-        ev.preventDefault()
-        ev.stopPropagation()
-        this.filesService.onPasteClipboard()
-        return
-      default:
-        return
-    }
   }
 
   loadFiles() {
@@ -885,15 +855,19 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.setSelection([...hiddenSelection, ...files.slice(minIndex, maxIndex + 1)], anchor, file, true)
   }
 
-  private getKeyboardNavigationTarget(files: FileModel[], keyCode: number, extendSelection: boolean): { file: FileModel; keyCode: number } {
-    let direction = keyCode
+  private getKeyboardNavigationTarget(
+    files: FileModel[],
+    key: KeyboardNavigationKey,
+    extendSelection: boolean
+  ): { file: FileModel; key: KeyboardNavigationKey } {
+    let direction = key
     let useGalleryColumns = this.galleryMode.enabled
-    if (direction === 37) {
+    if (direction === 'ArrowLeft') {
       useGalleryColumns = false
-      direction = 38
-    } else if (direction === 39) {
+      direction = 'ArrowUp'
+    } else if (direction === 'ArrowRight') {
       useGalleryColumns = false
-      direction = 40
+      direction = 'ArrowDown'
     }
     const referenceIndexes = this.getSelectionReferenceIndexes(files, extendSelection)
     const step = useGalleryColumns
@@ -901,15 +875,15 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       : 1
     let index: number
     if (!referenceIndexes.length) {
-      index = direction === 38 ? files.length - 1 : 0
-    } else if (direction === 38) {
+      index = direction === 'ArrowUp' ? files.length - 1 : 0
+    } else if (direction === 'ArrowUp') {
       index = Math.min(...referenceIndexes) - step
       if (index <= -1) index = files.length - 1
     } else {
       index = Math.max(...referenceIndexes) + step
       if (index >= files.length) index = 0
     }
-    return { file: files[index], keyCode: direction }
+    return { file: files[index], key: direction }
   }
 
   private getSelectionReferenceIndexes(files: FileModel[], extendSelection: boolean): number[] {
@@ -935,7 +909,41 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-  private scrollKeyboardSelectionIntoView(file: FileModel, keyCode: number) {
+  private handleKeyboardShortcut(ev: KeyboardEvent): boolean {
+    if (!ev.ctrlKey && !ev.metaKey) {
+      return false
+    }
+    const key = ev.key.toLowerCase()
+    if (key !== 'a' && key !== 'c' && key !== 'x' && key !== 'v') {
+      return false
+    }
+    ev.preventDefault()
+    ev.stopPropagation()
+    this.zone.run(() => {
+      switch (key) {
+        case 'a':
+          this.selectAllFiles()
+          break
+        case 'c':
+        case 'x':
+          if (this.selection.length) {
+            this.filesService.clipboardAction = key === 'c' ? 'copyPaste' : 'cutPaste'
+            this.filesService.addToClipboard(this.selection)
+          }
+          break
+        case 'v':
+          this.filesService.onPasteClipboard()
+          break
+      }
+    })
+    return true
+  }
+
+  private isEditableKeyboardTarget(target: EventTarget | null): boolean {
+    return target instanceof Element && !!target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
+  }
+
+  private scrollKeyboardSelectionIntoView(file: FileModel, key: KeyboardNavigationKey) {
     if (this.scrollView.viewPortItems.indexOf(file) === -1) {
       setTimeout(() => this.scrollView.scrollInto(file), 0)
       return
@@ -945,9 +953,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       setTimeout(() => this.scrollView.scrollInto(file), 0)
       return
     }
-    const element: HTMLElement = keyCode === 38 ? selectedRows[0] : selectedRows[selectedRows.length - 1]
+    const element: HTMLElement = key === 'ArrowUp' ? selectedRows[0] : selectedRows[selectedRows.length - 1]
     if (!elementIsVisible(element)) {
-      element.scrollIntoView(keyCode === 38)
+      element.scrollIntoView(key === 'ArrowUp')
     }
   }
 
@@ -1041,14 +1049,18 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
           return false
         }
       })
-      this.eventKeysHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'keydown', (ev) => {
-        if (this.renamingInProgress) {
+      this.eventKeysHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'keydown', (ev: KeyboardEvent) => {
+        if (this.renamingInProgress || this.isEditableKeyboardTarget(ev.target)) {
           return
         }
-        const code = ev.keyCode || ev.which
-        if ([37, 38, 39, 40].indexOf(code) === -1) {
+        if (this.handleKeyboardShortcut(ev)) {
           return
-        } else if ((code === 37 || code === 39) && !this.galleryMode.enabled) {
+        }
+        if (!keyboardNavigationKeys.has(ev.key)) {
+          return
+        }
+        const key = ev.key as KeyboardNavigationKey
+        if ((key === 'ArrowLeft' || key === 'ArrowRight') && !this.galleryMode.enabled) {
           return
         }
         ev.preventDefault()
@@ -1057,9 +1069,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         if (!files.length) {
           return
         }
-        const target = this.getKeyboardNavigationTarget(files, code, ev.shiftKey)
+        const target = this.getKeyboardNavigationTarget(files, key, ev.shiftKey)
         this.zone.run(() => this.applyKeyboardSelection(ev, target.file))
-        this.scrollKeyboardSelectionIntoView(target.file, target.keyCode)
+        this.scrollKeyboardSelectionIntoView(target.file, target.key)
       })
     })
   }
