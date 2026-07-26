@@ -299,7 +299,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.subscriptions.forEach((s) => s.unsubscribe())
   }
 
-  loadFiles() {
+  loadFiles(focusView = false) {
+    // Preserve the initial focus to avoid stealing it if the user interacts while files are loading.
+    const focusOrigin = focusView ? document.activeElement : null
     this.loading = true
     this.forbiddenResource = false
     this.locationNotFound = false
@@ -328,6 +330,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
           this.focusOn(this.focusOnSelect)
         } else {
           this.scrollView.scrollInto(-1)
+        }
+        if (focusView) {
+          setTimeout(() => this.focusFilesView(focusOrigin), 0)
         }
       },
       error: (e: HttpErrorResponse) => {
@@ -656,7 +661,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.inSharesList = this.isSharesRepo && this.inRootSpace
     this.spacesBrowser.setEnvironment(route.repository, route.routes)
     this.isPersonalSpace = this.spacesBrowser.inPersonalSpace
-    this.loadFiles()
+    this.loadFiles(true)
   }
 
   private onFileEvent(ev: FileEvent) {
@@ -941,6 +946,21 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private isEditableKeyboardTarget(target: EventTarget | null): boolean {
     return target instanceof Element && !!target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
+  }
+
+  private focusFilesView(focusOrigin: Element | null) {
+    const activeElement = document.activeElement
+    // Focus the files view only if focus stayed unchanged or fell back to the body after the previous view disappeared.
+    if (
+      (activeElement !== focusOrigin && activeElement !== document.body) ||
+      this.isEditableKeyboardTarget(activeElement) ||
+      (activeElement instanceof Element && !!activeElement.closest('.modal.show, [role="dialog"][aria-modal="true"]'))
+    ) {
+      return
+    }
+    const selector = this.galleryMode.enabled ? '#thumb-files' : '#table-files'
+    const filesView = this.scrollView.element.nativeElement.querySelector(selector) as HTMLElement | null
+    filesView?.focus({ preventScroll: true })
   }
 
   private scrollKeyboardSelectionIntoView(file: FileModel, key: KeyboardNavigationKey) {
