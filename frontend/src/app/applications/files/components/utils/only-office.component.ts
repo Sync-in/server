@@ -12,7 +12,6 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
   @Input({ required: true }) documentServerUrl: string
   @Input({ required: true }) config: OnlyOfficeConfig
   @Output() loadError = new EventEmitter<{ title: string; message: string }>()
-  @Output() wasSaved = new EventEmitter<string>()
   private isFirstOnChanges = true
 
   ngOnInit(): void {
@@ -68,7 +67,6 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
       }
 
       const config: OnlyOfficeConfig = JSON.parse(JSON.stringify(this.config))
-      config.events = { onDocumentStateChange: (e: { data: boolean }) => (e.data ? this.wasSaved.emit() : null) }
       window.DocEditor.instances[this.id] = window.DocsAPI.DocEditor(this.id, config)
     } catch (err) {
       console.error(err)

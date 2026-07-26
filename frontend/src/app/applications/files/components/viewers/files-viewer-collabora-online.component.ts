@@ -8,6 +8,7 @@ import { API_COLLABORA_ONLINE_SETTINGS } from '@sync-in-server/backend/src/appli
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
 import { FileModel } from '../../models/file.model'
+import { FilesService } from '../../services/files.service'
 import { fileLockPropsToString } from '../utils/file-lock.utils'
 
 @Component({
@@ -40,9 +41,11 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
   currentHeight = input<number>()
   protected documentServerUrl: SafeResourceUrl = null
   private readonly http = inject(HttpClient)
+  private readonly filesService = inject(FilesService)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
   private readonly sanitizer = inject(DomSanitizer)
+  private shouldReconcileMetadata = false
 
   ngOnInit() {
     this.http.get<CollaboraOnlineReqDto>(`${API_COLLABORA_ONLINE_SETTINGS}/${this.file().path}`).subscribe({
@@ -61,6 +64,7 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
           }
         }
         this.isReadonly.set(data.mode === FILE_MODE.VIEW)
+        this.shouldReconcileMetadata = !this.isReadonly()
         if (!this.isReadonly() && !this.file().lock) {
           // Set lock on file
           this.file().createLock({
@@ -83,6 +87,9 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    if (this.shouldReconcileMetadata) {
+      this.filesService.reconcileMetadataAfterEditorClose(this.file())
+    }
     if (!this.isReadonly() && this.file().lock && this.file().lock.owner.login === this.store.user.getValue().login) {
       // Remove lock
       this.file().removeLock()

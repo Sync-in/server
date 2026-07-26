@@ -1,5 +1,5 @@
 import type { TreeNode } from '@ali-hm/angular-tree-component'
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
+import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { DomSanitizer } from '@angular/platform-browser'
 import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
@@ -39,7 +39,7 @@ import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
 import { BsModalRef } from 'ngx-bootstrap/modal'
-import { EMPTY, firstValueFrom, map, Observable, Subject } from 'rxjs'
+import { catchError, EMPTY, filter, firstValueFrom, map, Observable, Subject, switchMap, timer } from 'rxjs'
 import { downloadWithAnchor } from '../../../common/utils/functions'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
@@ -67,6 +67,7 @@ export class FilesService {
   public clipboardAction: 'copyPaste' | 'cutPaste' = 'copyPaste'
   // Files
   public currentRoute: string
+  private readonly editorMetadataReconciliationDelay = 2_000
   private readonly textFileSizeLimitExceededMessage = 'File size limit exceeded'
   private readonly textBinaryProbeBytes = 4096
   private readonly http = inject(HttpClient)
@@ -303,10 +304,24 @@ export class FilesService {
       await this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions).catch((e) => this.sendOpenDocumentError(file, e))
       return
     }
-    this.http.head(file.dataUrl).subscribe({
-      next: () => this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions).catch((e) => this.sendOpenDocumentError(file, e)),
+    this.http.head(file.dataUrl, { observe: 'response' }).subscribe({
+      next: (response) => {
+        this.syncFileMetadata(file, response)
+        this.openViewerAfterAvailabilityCheck(file, directoryFiles, permissions).catch((e) => this.sendOpenDocumentError(file, e))
+      },
       error: (e: HttpErrorResponse | any) => this.sendOpenDocumentError(file, e)
     })
+  }
+
+  reconcileMetadataAfterEditorClose(file: FileModel, delay = this.editorMetadataReconciliationDelay): void {
+    const fileDirectory = file.path.split('/').slice(0, -1).join('/')
+    timer(delay)
+      .pipe(
+        filter(() => this.currentRoute === fileDirectory),
+        switchMap(() => this.http.head(file.dataUrl, { observe: 'response' })),
+        catchError(() => EMPTY)
+      )
+      .subscribe((response) => this.syncFileMetadata(file, response))
   }
 
   private async openViewerAfterAvailabilityCheck(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<void> {
@@ -384,6 +399,21 @@ export class FilesService {
       e.message = e.status in SEND_FILE_ERROR_MSG ? SEND_FILE_ERROR_MSG[e.status] : e.statusText
     }
     this.layout.sendNotification('error', 'Unable to open document', file?.name, e)
+  }
+
+  private syncFileMetadata(file: FileModel, response: HttpResponse<unknown>): void {
+    const lastModified = response.headers.get('last-modified')
+    const contentLength = response.headers.get('content-length')
+    const mtime = lastModified ? Date.parse(lastModified) : NaN
+    const size = contentLength !== null ? Number(contentLength) : NaN
+    const mtimeChanged = Number.isFinite(mtime) && mtime !== Math.floor(file.mtime / 1_000) * 1_000
+    const sizeChanged = Number.isFinite(size) && size !== file.size
+    if (!mtimeChanged && !sizeChanged) return
+    if (Number.isFinite(mtime)) {
+      file.mtime = mtime
+      file.updateHTimeAgo(mtime)
+    }
+    if (Number.isFinite(size)) file.updateSize(size)
   }
 
   private async viewerHook(file: FileModel): Promise<ViewerHookResult> {
