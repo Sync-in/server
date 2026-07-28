@@ -280,7 +280,7 @@ export class FileModel implements File {
   }
 
   private setHSize() {
-    this.hSize = this.isDir ? '●' : convertBytesToText(this.size, 0, true)
+    this.hSize = this.isDir && this.size === 0 ? '●' : convertBytesToText(this.size, 0, true)
   }
 
   private setShares(shares: { id: number; alias: string; name: string; type: number }[]) {

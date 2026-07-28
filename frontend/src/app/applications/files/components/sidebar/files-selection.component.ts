@@ -9,7 +9,6 @@ import { map } from 'rxjs/operators'
 import { BadgePermissionsComponent } from '../../../../common/components/badge-permissions.component'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
-import { convertBytesToText } from '../../../../common/utils/functions'
 import { defaultCardImageSize, defaultResizeOffset } from '../../../../layout/layout.constants'
 import { TAB_MENU } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -100,7 +99,10 @@ export class FilesSelectionComponent {
     if (!f.isDir) return of(f.hSize)
     if (!f.hDirSize) {
       f.hDirSize = this.filesService.getSize(f).pipe(
-        map((size) => convertBytesToText(size, 0, true)),
+        map((size) => {
+          f.updateSize(size)
+          return f.hSize
+        }),
         catchError(() => (f.hDirSize = of(f.hSize))),
         shareReplay(1)
       )
