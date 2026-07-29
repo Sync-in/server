@@ -4,7 +4,7 @@ import { toObservable } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faChevronDown, faChevronUp, faLock, faSpinner, faUnlock } from '@fortawesome/free-solid-svg-icons'
+import { faLock, faSpinner, faTimes, faUnlock } from '@fortawesome/free-solid-svg-icons'
 import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -14,7 +14,7 @@ import { BadgePermissionsComponent } from '../../../../common/components/badge-p
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
 import { ToBytesPipe } from '../../../../common/pipes/to-bytes.pipe'
-import { defaultCardImageSize, defaultResizeOffset } from '../../../../layout/layout.constants'
+import { defaultCardImageSize } from '../../../../layout/layout.constants'
 import { TAB_MENU } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { SPACES_ICON, SPACES_PATH } from '../../../spaces/spaces.constants'
@@ -54,9 +54,7 @@ export class FilesSelectionComponent {
   private readonly layout = inject(LayoutService)
   private readonly filesService = inject(FilesService)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly resizeOffset = defaultResizeOffset
   protected readonly cardImageSize = defaultCardImageSize
-  protected filesListExpanded = false
   protected selectedAction: SelectionAction = 'clipboard'
   protected readonly selectionStats = computed(() => {
     const files = this.files()
@@ -83,8 +81,7 @@ export class FilesSelectionComponent {
         ),
         startWith(initial)
       )
-    }),
-    shareReplay(1)
+    })
   )
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
@@ -94,8 +91,7 @@ export class FilesSelectionComponent {
     faLock,
     faUnlock,
     faSpinner,
-    faChevronDown,
-    faChevronUp
+    faTimes
   }
 
   goToShare(share: { type: number; name: string }) {
@@ -115,6 +111,10 @@ export class FilesSelectionComponent {
   addToClipboard() {
     this.filesService.addToClipboard(this.files())
     this.layout.showRSideBarTab(TAB_MENU.CLIPBOARD, true)
+  }
+
+  removeFromSelection(file: FileModel) {
+    this.filesService.fileSelectionRemove.next(file)
   }
 
   doAction() {

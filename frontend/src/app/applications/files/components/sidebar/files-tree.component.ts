@@ -123,11 +123,9 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
     this.initRoot()
     if (this.enableCopyMove) {
       this.subscriptions.push(
-        this.filesService.treeCopyMoveOn.subscribe((copyMoveOn) => {
-          if (copyMoveOn) {
-            this.onCopyMove()
-            this.filesService.consumeTreeCopyMove()
-          }
+        this.filesService.treeCopyMoveOn.subscribe(() => {
+          this.onCopyMove()
+          this.filesService.consumeTreeCopyMove()
         })
       )
     }

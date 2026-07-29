@@ -39,7 +39,7 @@ import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
 import { BsModalRef } from 'ngx-bootstrap/modal'
-import { BehaviorSubject, catchError, EMPTY, filter, firstValueFrom, map, Observable, switchMap, timer } from 'rxjs'
+import { BehaviorSubject, catchError, EMPTY, filter, firstValueFrom, map, Observable, Subject, switchMap, timer } from 'rxjs'
 import { downloadWithAnchor } from '../../../common/utils/functions'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
@@ -63,7 +63,9 @@ export class FilesService {
   // Tree section
   public treeNodeSelected: TreeNode = null
   private readonly treeCopyMoveRequested = new BehaviorSubject(false)
-  public readonly treeCopyMoveOn = this.treeCopyMoveRequested.asObservable()
+  public readonly treeCopyMoveOn = this.treeCopyMoveRequested.pipe(filter(Boolean))
+  // Selection section
+  public readonly fileSelectionRemove = new Subject<FileModel>()
   // Clipboard section
   public clipboardAction: 'copyPaste' | 'cutPaste' = 'copyPaste'
   // Files

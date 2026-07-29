@@ -287,6 +287,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.activatedRoute.queryParams.subscribe((params) => this.focusOn(params.select))
     this.activatedRoute.data.subscribe((route: Data) => this.setSpace(route as { repository: SPACE_REPOSITORY; routes: UrlSegment[] }))
     this.subscriptions.push(this.store.filesOnEvent.subscribe((update: FileEvent) => this.onFileEvent(update)))
+    this.subscriptions.push(
+      this.filesService.fileSelectionRemove.subscribe((file) => this.setSelection(this.selection.filter((selected) => selected !== file)))
+    )
   }
 
   ngAfterViewInit() {
