@@ -68,7 +68,7 @@ export class FileModel implements File {
   mimeUrl: string
   hSize: string
   hTimeAgo: string
-  hDirSize: Observable<string>
+  dirSize: Observable<number | null>
   nbBadges = 0
   galleryBadges: ('lock' | 'shares' | 'spaces' | 'links' | 'syncs' | 'comments')[] = []
 

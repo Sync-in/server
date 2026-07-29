@@ -433,8 +433,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   copyMoveFiles() {
-    this.layout.showRSideBarTab(TAB_MENU.TREE, true)
-    setTimeout(() => this.filesService.treeCopyMoveOn.next(), 100)
+    this.filesService.openTreeCopyMove()
   }
 
   downloadFiles() {

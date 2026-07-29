@@ -1,25 +1,67 @@
 @if (files().length) {
-  @if (multiple()) {
-    <div class="fs-sm">
-      <div class="d-flex justify-content-center mt-3">
-        <button (click)="addToClipboard()" class="btn btn-sm btn-primary me-1" type="button" l10nTranslate>
-          <fa-icon [icon]="icons.faClipboardCheck"></fa-icon>
-          Send to Clipboard
+  <div appAutoResize class="fs-sm" [resizeOffset]="resizeOffset">
+    @if (files().length > 1) {
+      @let stats = selectionStats();
+      @let totalSize = (selectionSize | async);
+      <div class="p-2">
+        <div class="mb-2 text-center text-bold">
+          {{ 'nb_selections' | translate:locale.language:{ nb: files().length } }}
+        </div>
+        <div class="d-flex justify-content-center mb-1">
+          @if (stats.directories) {
+            <span>
+              {{ stats.directories }}
+              {{ (stats.directories > 1 ? 'directories' : 'directory') | translate:locale.language }}
+            </span>
+          }
+          @if (stats.directories && stats.files) {
+            <span class="mx-2">·</span>
+          }
+          @if (stats.files) {
+            <span>
+              {{ stats.files }}
+              {{ (stats.files > 1 ? 'files' : 'file') | translate:locale.language }}
+            </span>
+          }
+        </div>
+        <div class="d-flex justify-content-center align-items-center mb-3">
+          <span class="text-bold" l10nTranslate>Total</span>&nbsp;:&nbsp;
+          @if (totalSize !== null) {
+            @if (totalSize.pendingDirectories || totalSize.hasError) {
+              <span>≥&nbsp;</span>
+            }
+            <span>{{ totalSize.size | toBytes:0:true }}</span>
+          }
+        </div>
+        <div class="d-flex">
+          <select [(ngModel)]="selectedAction" class="form-select form-select-sm">
+            <option value="clipboard" l10nTranslate>Send to Clipboard</option>
+            <option value="copyMove" l10nTranslate>Copy · Move</option>
+            <option value="download" l10nTranslate>Download</option>
+            <option value="compress" l10nTranslate>Compress</option>
+          </select>
+          <button (click)="doAction()" class="btn btn-sm btn-primary ms-1" type="button" l10nTranslate>Confirm</button>
+        </div>
+        <button (click)="filesListExpanded = !filesListExpanded"
+                class="btn btn-sm btn-default d-flex align-items-center mt-2 w-100"
+                type="button"
+                [attr.aria-expanded]="filesListExpanded">
+          <span l10nTranslate>Elements</span>
+          <span class="ms-1">({{ files().length }})</span>
+          <fa-icon class="ms-auto" [icon]="filesListExpanded ? icons.faChevronUp : icons.faChevronDown"></fa-icon>
         </button>
       </div>
-    </div>
-    <hr class="mx-0 mt-3 mb-1">
-  }
-  <div appAutoResize class="fs-sm" [resizeOffset]=resizeOffset()>
-    @if (multiple()) {
-      <div class="flex-column p-2 w-100">
-        @for (f of files(); track f.id) {
-          <div class="d-inline-flex w-100 align-content-center align-items-center mx-1">
-            <img [src]="f.mimeUrl" alt="" class="me-1" height="28" width="auto" (error)="f.fallBackMimeUrl()">
-            <span class="text-truncate">{{ f.name }}</span>
-          </div>
-        }
-      </div>
+      @if (filesListExpanded) {
+        <hr class="mx-0 my-1">
+        <div class="flex-column p-2 w-100">
+          @for (f of files(); track f.id) {
+            <div class="d-inline-flex w-100 align-content-center align-items-center mx-1">
+              <img [src]="f.mimeUrl" alt="" class="me-1" height="28" width="auto" (error)="f.fallBackMimeUrl()">
+              <span class="text-truncate">{{ f.name }}</span>
+            </div>
+          }
+        </div>
+      }
     } @else {
       @for (f of files(); track f.id) {
         <div class="card px-1 pt-1">
@@ -47,12 +89,11 @@
           </div>
           <div class="d-flex mb-1">
             <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Size</div>
-              @let size = (getSizeLazy(f) | async);
-              @if (size === null) {
-                <fa-icon [icon]="icons.faSpinner" animation="spin-pulse"></fa-icon>
-              } @else {
-                {{ size }}
-              }
+            @if (f.isDir && (getSizeLazy(f) | async) === null) {
+              <fa-icon [icon]="icons.faSpinner" animation="spin-pulse"></fa-icon>
+            } @else {
+              {{ f.hSize }}
+            }
           </div>
           <div class="d-flex mb-1">
             <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Created</div>
