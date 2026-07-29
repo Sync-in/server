@@ -806,7 +806,10 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     selectionFocus: FileModel | null = selectionAnchor,
     keepSelectionControlMode = false
   ) {
-    const selected = new Set(selection)
+    const enabledSelection = selection.filter((file: FileModel) => !file.isDisabled)
+    const focusedDisabledFile = selectionFocus?.isDisabled && selection.includes(selectionFocus) ? selectionFocus : null
+    const normalizedSelection = enabledSelection.length ? enabledSelection : focusedDisabledFile ? [focusedDisabledFile] : selection.slice(0, 1)
+    const selected = new Set(normalizedSelection)
     this.selection = this.files.filter((file: FileModel) => {
       file.isSelected = selected.has(file)
       return file.isSelected
@@ -815,7 +818,12 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       this.selectionControlMode = false
     }
     this.showSelectionChecks = this.selection.length > 1 || this.selectionControlMode
-    this.setSelectionCursor(selectionAnchor, selectionFocus)
+    const normalizedAnchor = selectionAnchor && selected.has(selectionAnchor) ? selectionAnchor : this.selection[0] || null
+    const normalizedFocus =
+      selectionFocus && (selected.has(selectionFocus) || (keepSelectionControlMode && this.files.includes(selectionFocus)))
+        ? selectionFocus
+        : normalizedAnchor
+    this.setSelectionCursor(normalizedAnchor, normalizedFocus)
     // update states
     this.hasSelection = !!this.selection.length
     this.hasDisabledItemsInSelection = !!this.selection.find((f: FileModel) => f.isDisabled)
