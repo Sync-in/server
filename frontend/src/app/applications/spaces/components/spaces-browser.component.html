@@ -507,15 +507,18 @@
 }
 <!--Start Foot Content-->
 <div class="app-foot-menu">
-  <div>
+  <div class="d-flex align-items-center">
     @if (stats.dirs) {
-      <span class="me-2">{{ stats.dirs }} {{ (stats.dirs > 1 ? 'directories' : 'directory') | translate:locale.language }}</span>
+      <span>{{ stats.dirs }} {{ (stats.dirs > 1 ? 'directories' : 'directory') | translate:locale.language }}</span>
+    }
+    @if (stats.dirs && stats.files) {
+      <span class="mx-1 lh-1">•</span>
     }
     @if (stats.files) {
       <span>{{ stats.files }} {{ (stats.files > 1 ? 'files' : 'file') | translate:locale.language }}</span>
     }
   </div>
-  <div class="ms-auto"><span l10nTranslate>Total</span>&nbsp;{{ stats.size | toBytes }}</div>
+  <div class="ms-auto">{{ stats.size | toBytes }}</div>
 </div>
 <!--End Foot Content-->
 <!--Start Common Messages-->

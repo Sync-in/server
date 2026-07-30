@@ -373,7 +373,6 @@
   "files": "फ़ाइलें",
   "directory": "निर्देशिका",
   "directories": "निर्देशिकाएँ",
-  "Total": "कुल",
   "no_selection": "कोई तत्व चयनित नहीं",
   "one_selection": "{{ nb }} तत्व चयनित",
   "nb_selections": "{{ nb }} तत्व चयनित",

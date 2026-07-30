@@ -373,7 +373,6 @@
   "files": "文件",
   "directory": "目录",
   "directories": "目录",
-  "Total": "总计",
   "no_selection": "未选择任何项目",
   "one_selection": "已选择 {{ nb }} 个项目",
   "nb_selections": "已选择 {{ nb }} 个项目",

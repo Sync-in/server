@@ -373,7 +373,6 @@
   "files": "ファイル",
   "directory": "ディレクトリ",
   "directories": "ディレクトリ",
-  "Total": "合計",
   "no_selection": "選択なし",
   "one_selection": "{{ nb }} 個選択",
   "nb_selections": "{{ nb }} 個選択",

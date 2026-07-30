@@ -373,7 +373,6 @@
   "files": "bestanden",
   "directory": "map",
   "directories": "mappen",
-  "Total": "Totaal",
   "no_selection": "geen item geselecteerd",
   "one_selection": "{{ nb }} item geselecteerd",
   "nb_selections": "{{ nb }} items geselecteerd",

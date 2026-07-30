@@ -373,7 +373,6 @@
   "files": "dosyalar",
   "directory": "dizin",
   "directories": "dizinler",
-  "Total": "Toplam",
   "no_selection": "seçim yok",
   "one_selection": "{{ nb }} öğe seçildi",
   "nb_selections": "{{ nb }} öğe seçildi",

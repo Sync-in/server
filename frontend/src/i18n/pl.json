@@ -373,7 +373,6 @@
   "files": "pliki",
   "directory": "katalog",
   "directories": "katalogi",
-  "Total": "Razem",
   "no_selection": "brak zaznaczenia",
   "one_selection": "Zaznaczono {{ nb }} element",
   "nb_selections": "Zaznaczono {{ nb }} elementów",

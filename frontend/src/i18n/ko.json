@@ -373,7 +373,6 @@
   "files": "파일",
   "directory": "디렉터리",
   "directories": "디렉터리",
-  "Total": "총계",
   "no_selection": "선택 없음",
   "one_selection": "{{ nb }}개 선택됨",
   "nb_selections": "{{ nb }}개 선택됨",

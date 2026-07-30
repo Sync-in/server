@@ -373,7 +373,6 @@
   "files": "файлы",
   "directory": "каталог",
   "directories": "каталоги",
-  "Total": "Всего",
   "no_selection": "ничего не выбрано",
   "one_selection": "выбран {{ nb }} элемент",
   "nb_selections": "выбрано {{ nb }} элементов",

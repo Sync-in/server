@@ -373,7 +373,6 @@
   "files": "dateien",
   "directory": "verzeichnis",
   "directories": "verzeichnisse",
-  "Total": "Gesamt",
   "no_selection": "kein Element ausgewählt",
   "one_selection": "{{ nb }} Element ausgewählt",
   "nb_selections": "{{ nb }} Elemente ausgewählt",

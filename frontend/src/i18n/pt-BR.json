@@ -373,7 +373,6 @@
   "files": "arquivos",
   "directory": "diretório",
   "directories": "diretórios",
-  "Total": "Total",
   "no_selection": "nenhum item selecionado",
   "one_selection": "{{ nb }} item selecionado",
   "nb_selections": "{{ nb }} itens selecionados",

@@ -3,33 +3,18 @@
     @let stats = selectionStats();
     @let totalSize = selectionSize | async;
     <div class="p-2 fs-sm">
-      <div class="mb-2 text-center text-bold">
-        {{ 'nb_selections' | translate:locale.language:{ nb: files().length } }}
-      </div>
-      <div class="d-flex justify-content-center mb-1">
-        @if (stats.directories) {
-          <span>
-            {{ stats.directories }}
-            {{ (stats.directories > 1 ? 'directories' : 'directory') | translate:locale.language }}
-          </span>
-        }
-        @if (stats.directories && stats.files) {
-          <span class="mx-2">·</span>
-        }
-        @if (stats.files) {
-          <span>
-            {{ stats.files }}
-            {{ (stats.files > 1 ? 'files' : 'file') | translate:locale.language }}
-          </span>
-        }
-      </div>
-      <div class="d-flex justify-content-center align-items-center mb-3">
-        <span class="text-bold" l10nTranslate>Total</span>&nbsp;:&nbsp;
+      <div class="app-small-card rounded d-flex justify-content-center align-items-center text-nowrap py-2 mb-3">
+        <span><span class="text-bold">{{ stats.directories }}</span> {{ (stats.directories === 1 ? 'directory' : 'directories') | translate:locale.language }}</span>
+        <span class="mx-1 lh-1">•</span>
+        <span><span class="text-bold">{{ stats.files }}</span> {{ (stats.files === 1 ? 'file' : 'files') | translate:locale.language }}</span>
         @if (totalSize !== null) {
-          @if (totalSize.pendingDirectories || totalSize.hasError) {
-            <span>≥&nbsp;</span>
-          }
-          <span>{{ totalSize.size | toBytes:0:true }}</span>
+          <span class="mx-1 lh-1">•</span>
+          <span>
+            @if (totalSize.pendingDirectories || totalSize.hasError) {
+              ≥&nbsp;
+            }
+            {{ totalSize.size | toBytes:0:true }}
+          </span>
         }
       </div>
       <div class="d-flex">
