@@ -179,6 +179,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
+    if (!this.isActiveDialog()) return
     if (event.key === 'Escape' || event.key === 'Esc') {
       event.preventDefault()
       event.stopPropagation()

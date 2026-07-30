@@ -67,6 +67,7 @@ export class LayoutService {
   private readonly screenMediumSize = 767 // px
   private readonly screenSmallSize = 576 // px
   private collapseRSideBarTimeoutId: ReturnType<typeof setTimeout> | null = null
+  private escapeCloseInProgress = false
   // Network events
   private _networkIsOnline = new BehaviorSubject<boolean>(navigator.onLine)
   public networkIsOnline: Observable<boolean> = this._networkIsOnline
@@ -181,6 +182,10 @@ export class LayoutService {
     return modal
   }
 
+  isDialogActive(id: number | string): boolean {
+    return this.getLastOpenDialogId() === id
+  }
+
   closeDialog(delay: number | null = null, id: number | string = null, all = false) {
     if (all) {
       this.bsModal.hide()
@@ -189,14 +194,9 @@ export class LayoutService {
       return
     }
     if (!id) {
-      let last: string | number
-      const minimizedIds: (string | number)[] = this.windows.getValue().map((w) => w.id)
-      for (const value of this.modalRefs.keys()) {
-        if (minimizedIds.indexOf(value) > -1) continue
-        last = value
-      }
-      if (last !== undefined) {
-        id = last
+      const lastOpenDialogId = this.getLastOpenDialogId()
+      if (lastOpenDialogId !== null) {
+        id = lastOpenDialogId
       } else {
         console.warn('Last modal id not found')
         return
@@ -336,8 +336,14 @@ export class LayoutService {
       }
       return Promise.reject('blocked-by-interceptor')
     } else if (reason === 'esc') {
-      // Manual closing to keep `modalIds` up to date
-      this.closeDialog()
+      // Each modal listens to Escape. Closing one updates the modal count synchronously,
+      // which can make the same event close the next modal as it continues propagating.
+      if (!this.escapeCloseInProgress && this.atLeastOneModalOpen()) {
+        this.escapeCloseInProgress = true
+        queueMicrotask(() => (this.escapeCloseInProgress = false))
+        // Manual closing to keep `modalRefs` up to date
+        this.closeDialog()
+      }
       return Promise.reject('blocked-by-interceptor')
     } else {
       // Allow closing in all other cases
@@ -353,6 +359,17 @@ export class LayoutService {
     }
     console.warn(`Modal ${modalId} not found`)
     return null
+  }
+
+  private getLastOpenDialogId(): number | string | null {
+    let lastOpenDialogId: number | string | null = null
+    const minimizedIds = new Set(this.windows.getValue().map((window) => window.id))
+    for (const id of this.modalRefs.keys()) {
+      if (!minimizedIds.has(id)) {
+        lastOpenDialogId = id
+      }
+    }
+    return lastOpenDialogId
   }
 
   private atLeastOneModalOpen(): boolean {

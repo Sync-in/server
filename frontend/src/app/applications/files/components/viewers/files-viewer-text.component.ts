@@ -75,6 +75,7 @@ export class FilesViewerTextComponent extends FilesViewerEditableBase implements
 
   @HostListener('document:keydown', ['$event'])
   onKeyDown(event: KeyboardEvent) {
+    if (!this.isActiveDialog()) return
     // ESC
     if (event.key === 'Escape' || event.key === 'Esc') {
       event.preventDefault()

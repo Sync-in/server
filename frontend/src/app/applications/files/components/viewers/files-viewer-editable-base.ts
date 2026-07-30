@@ -126,6 +126,10 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
     return !document.activeElement?.closest('.files-viewer-search')
   }
 
+  protected isActiveDialog(): boolean {
+    return this.layout.isDialogActive(this.file().id)
+  }
+
   protected async onClose() {
     if (this.isSaving()) return
     if (!this.isReadonly()) {
