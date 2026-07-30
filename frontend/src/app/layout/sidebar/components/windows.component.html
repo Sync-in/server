@@ -8,11 +8,11 @@
 </div>
 <div class="sidebar-item" appAutoResize>
   @for (modal of windows; track modal.id) {
-    <div class="sidebar-item-container" (click)="onMaximize(modal)">
+    <div class="sidebar-item-container cursor-pointer" (click)="onMaximize(modal)">
       <div class="sidebar-item-content">
         <img [ngSrc]="modal.element.mimeUrl" alt="" width="28" height="28">
-        <div class="text-truncate fs-sm mx-1">{{ modal.element.name }}</div>
-        <button (click)="onClose($event, modal)" class="btn btn-xs btn-danger ms-auto">
+        <div class="text-truncate fs-sm">{{ modal.element.name }}</div>
+        <button (click)="onClose($event, modal)" class="btn btn-xs btn-default ms-auto">
           <fa-icon [icon]="icons.faTimes"></fa-icon>
         </button>
       </div>

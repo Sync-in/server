@@ -1,6 +1,6 @@
 import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, Component, ElementRef, HostListener, inject, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core'
+import { AfterViewInit, Component, ElementRef, inject, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
@@ -10,6 +10,7 @@ import {
   faArrowsAlt,
   faArrowUp,
   faBan,
+  faCheck,
   faCircleInfo,
   faCirclePlus,
   faClipboardList,
@@ -85,6 +86,10 @@ import { SpacesBrowserService } from '../services/spaces-browser.service'
 import { SPACES_ICON, SPACES_PATH } from '../spaces.constants'
 import { SpaceAnchorFileDialogComponent } from './dialogs/space-anchor-file-dialog.component'
 
+type KeyboardNavigationKey = 'ArrowLeft' | 'ArrowUp' | 'ArrowRight' | 'ArrowDown'
+
+const keyboardNavigationKeys: ReadonlySet<string> = new Set<KeyboardNavigationKey>(['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'])
+
 @Component({
   selector: 'app-spaces-browser',
   imports: [
@@ -108,7 +113,8 @@ import { SpaceAnchorFileDialogComponent } from './dialogs/space-anchor-file-dial
     TapDirective,
     FileLockFormatPipe
   ],
-  templateUrl: 'spaces-browser.component.html'
+  templateUrl: 'spaces-browser.component.html',
+  styleUrl: 'spaces-browser.component.scss'
 })
 export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: FileModel[]; scrollInto: (arg: FileModel | number) => void }
@@ -147,6 +153,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     faArrowsAlt,
     faCircleInfo,
     faBan,
+    faCheck,
     faArrowUp,
     faArrowDown,
     faLock,
@@ -170,6 +177,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   // Actions
   protected multipleSelection = false
   protected hasSelection = false
+  protected showSelectionChecks = false
   protected hasDisabledItemsInSelection = false
   protected canCompress = true
   protected renamingInProgress = false
@@ -246,6 +254,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private focusOnSelect: string
   private selectionAnchor: FileModel | null = null
   private selectionFocus: FileModel | null = null
+  private selectionControlMode = false
   // Sort
   private readonly sortSettings: SortSettings = {
     default: [
@@ -278,6 +287,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.activatedRoute.queryParams.subscribe((params) => this.focusOn(params.select))
     this.activatedRoute.data.subscribe((route: Data) => this.setSpace(route as { repository: SPACE_REPOSITORY; routes: UrlSegment[] }))
     this.subscriptions.push(this.store.filesOnEvent.subscribe((update: FileEvent) => this.onFileEvent(update)))
+    this.subscriptions.push(
+      this.filesService.fileSelectionRemove.subscribe((file) => this.setSelection(this.selection.filter((selected) => selected !== file)))
+    )
   }
 
   ngAfterViewInit() {
@@ -290,41 +302,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.subscriptions.forEach((s) => s.unsubscribe())
   }
 
-  @HostListener('window:keydown', ['$event'])
-  onKeyPress(ev: any) {
-    if (!((ev.target.id === 'table-files' || ev.target.id === 'thumb-files') && (ev.ctrlKey || ev.metaKey))) {
-      return
-    }
-    switch (ev.which || ev.keyCode) {
-      case 65:
-        // ctrl/cmd + a
-        // select all
-        ev.preventDefault()
-        ev.stopPropagation()
-        this.selectAllFiles()
-        return
-      case 67:
-      case 88:
-        // ctrl/cmd + c || ctrl/cmd + x
-        ev.preventDefault()
-        ev.stopPropagation()
-        if (this.selection.length) {
-          this.filesService.clipboardAction = ev.keyCode == 67 ? 'copyPaste' : 'cutPaste'
-          this.filesService.addToClipboard(this.selection)
-        }
-        return
-      case 86:
-        // ctrl/cmd + v
-        ev.preventDefault()
-        ev.stopPropagation()
-        this.filesService.onPasteClipboard()
-        return
-      default:
-        return
-    }
-  }
-
-  loadFiles() {
+  loadFiles(focusView = false) {
+    // Preserve the initial focus to avoid stealing it if the user interacts while files are loading.
+    const focusOrigin = focusView ? document.activeElement : null
     this.loading = true
     this.forbiddenResource = false
     this.locationNotFound = false
@@ -353,6 +333,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
           this.focusOn(this.focusOnSelect)
         } else {
           this.scrollView.scrollInto(-1)
+        }
+        if (focusView) {
+          setTimeout(() => this.focusFilesView(focusOrigin), 0)
         }
       },
       error: (e: HttpErrorResponse) => {
@@ -395,6 +378,23 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
+  toggleFileSelection(ev: MouseEvent, file: FileModel) {
+    ev.stopPropagation()
+    if (this.loading) return
+    if (ev.shiftKey && (this.selection.length > 0 || this.selectionAnchor)) {
+      this.selectionControlMode = true
+      this.selectRangeFiles(file)
+      return
+    }
+    if (!this.selectionControlMode && this.selection.length === 1) {
+      this.selectionControlMode = true
+      this.setSelection([file], file, file, true)
+      return
+    }
+    if (!this.selection.length) this.selectionControlMode = true
+    this.modifySelection(file)
+  }
+
   onContextMenu(ev: MouseEvent | Event) {
     ev.preventDefault()
     ev.stopPropagation()
@@ -433,8 +433,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   copyMoveFiles() {
-    this.layout.showRSideBarTab(TAB_MENU.TREE, true)
-    setTimeout(() => this.filesService.treeCopyMoveOn.next(), 100)
+    this.filesService.openTreeCopyMove()
   }
 
   downloadFiles() {
@@ -661,7 +660,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.inSharesList = this.isSharesRepo && this.inRootSpace
     this.spacesBrowser.setEnvironment(route.repository, route.routes)
     this.isPersonalSpace = this.spacesBrowser.inPersonalSpace
-    this.loadFiles()
+    this.loadFiles(true)
   }
 
   private onFileEvent(ev: FileEvent) {
@@ -788,24 +787,33 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private modifySelection(file: FileModel) {
     if (!file) return
-    if (file.isSelected) {
-      this.setSelection(
-        this.selection.filter((f) => f !== file),
-        file,
-        file
-      )
-    } else {
-      this.setSelection([file, ...this.selection], file, file)
-    }
+    this.setSelection(file.isSelected ? this.selection.filter((selected) => selected !== file) : [file, ...this.selection], file, file, true)
   }
 
-  private setSelection(selection: FileModel[], selectionAnchor: FileModel | null = null, selectionFocus: FileModel | null = selectionAnchor) {
-    const selected = new Set(selection)
+  private setSelection(
+    selection: FileModel[],
+    selectionAnchor: FileModel | null = null,
+    selectionFocus: FileModel | null = selectionAnchor,
+    keepSelectionControlMode = false
+  ) {
+    const enabledSelection = selection.filter((file: FileModel) => !file.isDisabled)
+    const focusedDisabledFile = selectionFocus?.isDisabled && selection.includes(selectionFocus) ? selectionFocus : null
+    const normalizedSelection = enabledSelection.length ? enabledSelection : focusedDisabledFile ? [focusedDisabledFile] : selection.slice(0, 1)
+    const selected = new Set(normalizedSelection)
     this.selection = this.files.filter((file: FileModel) => {
       file.isSelected = selected.has(file)
       return file.isSelected
     })
-    this.setSelectionCursor(selectionAnchor, selectionFocus)
+    if (!keepSelectionControlMode || !this.selection.length) {
+      this.selectionControlMode = false
+    }
+    this.showSelectionChecks = this.selection.length > 1 || this.selectionControlMode
+    const normalizedAnchor = selectionAnchor && selected.has(selectionAnchor) ? selectionAnchor : this.selection[0] || null
+    const normalizedFocus =
+      selectionFocus && (selected.has(selectionFocus) || (keepSelectionControlMode && this.files.includes(selectionFocus)))
+        ? selectionFocus
+        : normalizedAnchor
+    this.setSelectionCursor(normalizedAnchor, normalizedFocus)
     // update states
     this.hasSelection = !!this.selection.length
     this.hasDisabledItemsInSelection = !!this.selection.find((f: FileModel) => f.isDisabled)
@@ -834,7 +842,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     const files = this.getFilteredFiles()
     const fileIndex = files.indexOf(file)
     if (fileIndex === -1) {
-      this.setSelection([file], file, file)
+      this.setSelection([file], file, file, true)
       return
     }
     let anchor = this.selectionAnchor
@@ -847,18 +855,22 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     const maxIndex = Math.max(anchorIndex, fileIndex)
     const filteredFiles = new Set(files)
     const hiddenSelection = this.selection.filter((f: FileModel) => !filteredFiles.has(f))
-    this.setSelection([...hiddenSelection, ...files.slice(minIndex, maxIndex + 1)], anchor, file)
+    this.setSelection([...hiddenSelection, ...files.slice(minIndex, maxIndex + 1)], anchor, file, true)
   }
 
-  private getKeyboardNavigationTarget(files: FileModel[], keyCode: number, extendSelection: boolean): { file: FileModel; keyCode: number } {
-    let direction = keyCode
+  private getKeyboardNavigationTarget(
+    files: FileModel[],
+    key: KeyboardNavigationKey,
+    extendSelection: boolean
+  ): { file: FileModel; key: KeyboardNavigationKey } {
+    let direction = key
     let useGalleryColumns = this.galleryMode.enabled
-    if (direction === 37) {
+    if (direction === 'ArrowLeft') {
       useGalleryColumns = false
-      direction = 38
-    } else if (direction === 39) {
+      direction = 'ArrowUp'
+    } else if (direction === 'ArrowRight') {
       useGalleryColumns = false
-      direction = 40
+      direction = 'ArrowDown'
     }
     const referenceIndexes = this.getSelectionReferenceIndexes(files, extendSelection)
     const step = useGalleryColumns
@@ -866,15 +878,15 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       : 1
     let index: number
     if (!referenceIndexes.length) {
-      index = direction === 38 ? files.length - 1 : 0
-    } else if (direction === 38) {
+      index = direction === 'ArrowUp' ? files.length - 1 : 0
+    } else if (direction === 'ArrowUp') {
       index = Math.min(...referenceIndexes) - step
       if (index <= -1) index = files.length - 1
     } else {
       index = Math.max(...referenceIndexes) + step
       if (index >= files.length) index = 0
     }
-    return { file: files[index], keyCode: direction }
+    return { file: files[index], key: direction }
   }
 
   private getSelectionReferenceIndexes(files: FileModel[], extendSelection: boolean): number[] {
@@ -900,7 +912,56 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-  private scrollKeyboardSelectionIntoView(file: FileModel, keyCode: number) {
+  private handleKeyboardShortcut(ev: KeyboardEvent): boolean {
+    if (!ev.ctrlKey && !ev.metaKey) {
+      return false
+    }
+    const key = ev.key.toLowerCase()
+    if (key !== 'a' && key !== 'c' && key !== 'x' && key !== 'v') {
+      return false
+    }
+    ev.preventDefault()
+    ev.stopPropagation()
+    this.zone.run(() => {
+      switch (key) {
+        case 'a':
+          this.selectAllFiles()
+          break
+        case 'c':
+        case 'x':
+          if (this.selection.length) {
+            this.filesService.clipboardAction = key === 'c' ? 'copyPaste' : 'cutPaste'
+            this.filesService.addToClipboard(this.selection)
+          }
+          break
+        case 'v':
+          this.filesService.onPasteClipboard()
+          break
+      }
+    })
+    return true
+  }
+
+  private isEditableKeyboardTarget(target: EventTarget | null): boolean {
+    return target instanceof Element && !!target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
+  }
+
+  private focusFilesView(focusOrigin: Element | null) {
+    const activeElement = document.activeElement
+    // Focus the files view only if focus stayed unchanged or fell back to the body after the previous view disappeared.
+    if (
+      (activeElement !== focusOrigin && activeElement !== document.body) ||
+      this.isEditableKeyboardTarget(activeElement) ||
+      (activeElement instanceof Element && !!activeElement.closest('.modal.show, [role="dialog"][aria-modal="true"]'))
+    ) {
+      return
+    }
+    const selector = this.galleryMode.enabled ? '#thumb-files' : '#table-files'
+    const filesView = this.scrollView.element.nativeElement.querySelector(selector) as HTMLElement | null
+    filesView?.focus({ preventScroll: true })
+  }
+
+  private scrollKeyboardSelectionIntoView(file: FileModel, key: KeyboardNavigationKey) {
     if (this.scrollView.viewPortItems.indexOf(file) === -1) {
       setTimeout(() => this.scrollView.scrollInto(file), 0)
       return
@@ -910,9 +971,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       setTimeout(() => this.scrollView.scrollInto(file), 0)
       return
     }
-    const element: HTMLElement = keyCode === 38 ? selectedRows[0] : selectedRows[selectedRows.length - 1]
+    const element: HTMLElement = key === 'ArrowUp' ? selectedRows[0] : selectedRows[selectedRows.length - 1]
     if (!elementIsVisible(element)) {
-      element.scrollIntoView(keyCode === 38)
+      element.scrollIntoView(key === 'ArrowUp')
     }
   }
 
@@ -1006,14 +1067,18 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
           return false
         }
       })
-      this.eventKeysHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'keydown', (ev) => {
-        if (this.renamingInProgress) {
+      this.eventKeysHandler = this.renderer.listen(this.scrollView.element.nativeElement, 'keydown', (ev: KeyboardEvent) => {
+        if (this.renamingInProgress || this.isEditableKeyboardTarget(ev.target)) {
           return
         }
-        const code = ev.keyCode || ev.which
-        if ([37, 38, 39, 40].indexOf(code) === -1) {
+        if (this.handleKeyboardShortcut(ev)) {
           return
-        } else if ((code === 37 || code === 39) && !this.galleryMode.enabled) {
+        }
+        if (!keyboardNavigationKeys.has(ev.key)) {
+          return
+        }
+        const key = ev.key as KeyboardNavigationKey
+        if ((key === 'ArrowLeft' || key === 'ArrowRight') && !this.galleryMode.enabled) {
           return
         }
         ev.preventDefault()
@@ -1022,9 +1087,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         if (!files.length) {
           return
         }
-        const target = this.getKeyboardNavigationTarget(files, code, ev.shiftKey)
+        const target = this.getKeyboardNavigationTarget(files, key, ev.shiftKey)
         this.zone.run(() => this.applyKeyboardSelection(ev, target.file))
-        this.scrollKeyboardSelectionIntoView(target.file, target.keyCode)
+        this.scrollKeyboardSelectionIntoView(target.file, target.key)
       })
     })
   }

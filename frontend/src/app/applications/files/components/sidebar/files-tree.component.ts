@@ -120,10 +120,15 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    if (this.enableCopyMove) {
-      this.subscriptions.push(this.filesService.treeCopyMoveOn.subscribe(() => this.onCopyMove()))
-    }
     this.initRoot()
+    if (this.enableCopyMove) {
+      this.subscriptions.push(
+        this.filesService.treeCopyMoveOn.subscribe(() => {
+          this.onCopyMove()
+          this.filesService.consumeTreeCopyMove()
+        })
+      )
+    }
     setTimeout(() => this.focusLastNode(), 100)
   }
 

@@ -40,7 +40,6 @@
   .sidebar-item {
     .sidebar-item-container {
       display: flex;
-      cursor: pointer;
 
       .sidebar-item-content {
         display: flex;
@@ -49,6 +48,11 @@
         height: 40px;
         padding: .2rem .4rem .2rem .4rem;
         border-bottom: .5px solid transparent;
+        user-select: none;
+
+        > img {
+          margin-right: .3rem;
+        }
       }
     }
   }

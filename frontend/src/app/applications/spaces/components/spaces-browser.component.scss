@@ -1,0 +1,122 @@
+.file-selection-control {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  margin-right: .3rem;
+  overflow: visible;
+
+  > img {
+    margin-right: 0 !important;
+  }
+}
+
+.file-selection-overlay {
+  position: absolute;
+  padding: 0;
+  color: rgba(255, 255, 255, .88);
+  background: transparent;
+  border: 0;
+  opacity: 0;
+  cursor: default;
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+    opacity: 1;
+  }
+
+  &.is-selected {
+    color: #fff;
+    opacity: 1;
+
+    .file-selection-indicator {
+      background-color: rgba(24, 27, 34, .95);
+      opacity: 1;
+    }
+  }
+}
+
+.file-selection-control > .file-selection-overlay {
+  top: 50%;
+  left: calc(0px - var(--app-table-cell-inline-padding));
+  width: calc(30px + var(--app-table-cell-inline-padding));
+  height: var(--app-table-row-height);
+  transform: translateY(-50%);
+}
+
+.file-selection-indicator {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(32, 36, 45, .78);
+  border-radius: .25rem;
+  opacity: 0.85;
+
+  fa-icon {
+    margin-right: 0 !important;
+  }
+}
+
+.file-selection-control .file-selection-indicator {
+  top: calc((var(--app-table-row-height) - 30px) / 2);
+  left: var(--app-table-cell-inline-padding);
+  width: 16px;
+  height: 16px;
+  font-size: .55rem;
+}
+
+.gallery-file-selection-overlay {
+  z-index: 2;
+  top: 0;
+  left: 0;
+  width: var(--gallery-selection-size);
+  height: var(--gallery-selection-size);
+  font-size: var(--gallery-text-size);
+
+  .file-selection-indicator {
+    top: .25em;
+    left: .25em;
+    width: 1.85em;
+    height: 1.85em;
+    font-size: inherit;
+
+    fa-icon {
+      font-size: .9em;
+    }
+  }
+}
+
+:host-context(body.theme-dark) {
+  .file-selection-overlay:not(.is-selected) {
+    color: rgba(255, 255, 255, .68);
+
+    .file-selection-indicator {
+      background-color: rgba(24, 27, 34, .68);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .15);
+      opacity: 1;
+    }
+  }
+
+  .file-selection-overlay.is-selected .file-selection-indicator {
+    background-color: rgba(10, 15, 22, .96);
+    box-shadow:
+      0 0 0 1px rgba(132, 157, 185, .22),
+      0 1px 3px rgba(0, 0, 0, .4);
+  }
+}
+
+@media (hover: hover) {
+  .file-selection-control:hover .file-selection-overlay,
+  .gallery-file-selection-overlay:hover {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .gallery-file-selection-overlay {
+    opacity: 1;
+  }
+}

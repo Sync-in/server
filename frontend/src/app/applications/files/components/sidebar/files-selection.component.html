@@ -1,26 +1,51 @@
 @if (files().length) {
-  @if (multiple()) {
-    <div class="fs-sm">
-      <div class="d-flex justify-content-center mt-3">
-        <button (click)="addToClipboard()" class="btn btn-sm btn-primary me-1" type="button" l10nTranslate>
-          <fa-icon [icon]="icons.faClipboardCheck"></fa-icon>
-          Send to Clipboard
-        </button>
-      </div>
-    </div>
-    <hr class="mx-0 mt-3 mb-1">
-  }
-  <div appAutoResize class="fs-sm" [resizeOffset]=resizeOffset()>
-    @if (multiple()) {
-      <div class="flex-column p-2 w-100">
-        @for (f of files(); track f.id) {
-          <div class="d-inline-flex w-100 align-content-center align-items-center mx-1">
-            <img [src]="f.mimeUrl" alt="" class="me-1" height="28" width="auto" (error)="f.fallBackMimeUrl()">
-            <span class="text-truncate">{{ f.name }}</span>
-          </div>
+  @if (files().length > 1) {
+    @let stats = selectionStats();
+    @let totalSize = selectionSize | async;
+    <div class="p-2 fs-sm">
+      <div class="app-small-card rounded d-flex justify-content-center align-items-center text-nowrap py-2 mb-3">
+        <span><span class="text-bold">{{ stats.directories }}</span> {{ (stats.directories === 1 ? 'directory' : 'directories') | translate:locale.language }}</span>
+        <span class="mx-1 lh-1">•</span>
+        <span><span class="text-bold">{{ stats.files }}</span> {{ (stats.files === 1 ? 'file' : 'files') | translate:locale.language }}</span>
+        @if (totalSize !== null) {
+          <span class="mx-1 lh-1">•</span>
+          <span>
+            @if (totalSize.pendingDirectories || totalSize.hasError) {
+              ≥&nbsp;
+            }
+            {{ totalSize.size | toBytes:0:true }}
+          </span>
         }
       </div>
-    } @else {
+      <div class="d-flex">
+        <select [(ngModel)]="selectedAction" class="form-select form-select-sm">
+          <option value="clipboard" l10nTranslate>Clipboard</option>
+          <option value="copyMove" l10nTranslate>Copy · Move</option>
+          <option value="download" l10nTranslate>Download</option>
+          <option value="compress" l10nTranslate>Compress</option>
+        </select>
+        <button (click)="doAction()" class="btn btn-sm btn-primary ms-1" type="button" l10nTranslate>Confirm</button>
+      </div>
+    </div>
+    <hr class="mx-0 my-1">
+    <div appAutoResize class="sidebar-item" [resizeOffset]="200">
+      @for (f of files(); track f.id) {
+        <div class="sidebar-item-container">
+          <div class="sidebar-item-content">
+            <img [src]="f.mimeUrl" alt="" height="28" width="28" (error)="f.fallBackMimeUrl()">
+            <div class="text-truncate fs-sm">{{ f.name }}</div>
+            <button (click)="removeFromSelection(f)"
+                    class="btn btn-xs btn-default ms-auto"
+                    type="button"
+                    [attr.aria-label]="'Remove' | translate:locale.language">
+              <fa-icon [icon]="icons.faTimes"></fa-icon>
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div appAutoResize class="fs-sm">
       @for (f of files(); track f.id) {
         <div class="card px-1 pt-1">
           <div class="card-body align-self-center p-0 my-1">
@@ -40,19 +65,18 @@
           </div>
         </div>
         <hr class="my-1" />
-        <div class="fs-sm p-2">
+        <div class="p-2">
           <div class="d-flex mb-1">
             <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Name</div>
             <div class="word-break-all">{{ f.name }}</div>
           </div>
           <div class="d-flex mb-1">
             <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Size</div>
-              @let size = (getSizeLazy(f) | async);
-              @if (size === null) {
-                <fa-icon [icon]="icons.faSpinner" animation="spin-pulse"></fa-icon>
-              } @else {
-                {{ size }}
-              }
+            @if (f.isDir && (getSizeLazy(f) | async) === null) {
+              <fa-icon [icon]="icons.faSpinner" animation="spin-pulse"></fa-icon>
+            } @else {
+              {{ f.hSize }}
+            }
           </div>
           <div class="d-flex mb-1">
             <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Created</div>
@@ -137,7 +161,7 @@
         }
         @if (f.lock || f.spaces.length || f.shares.length || f.links.length || f.syncs.length) {
           <hr class="mt-1 mb-2" />
-          <div class="d-flex flex-wrap align-items-center p-2 fs-sm">
+          <div class="d-flex flex-wrap align-items-center p-2">
             @if (f.lock) {
               <div (click)="openLockDialog(f)"
                    class="badge white-space-normal bg-maroon cursor-pointer mb-2">
@@ -172,6 +196,6 @@
           </div>
         }
       }
-    }
-  </div>
+    </div>
+  }
 }

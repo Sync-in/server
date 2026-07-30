@@ -161,7 +161,7 @@
 <!--Start Foot Content-->
 <div class="app-foot-menu">
   <div>{{ users.length }} {{ (guestsView ? 'guests' : 'users') | translate:locale.language }}</div>
-  <div class="ms-auto"><span l10nTranslate>Total</span>&nbsp;{{ storageUsage | toBytes }}</div>
+  <div class="ms-auto">{{ storageUsage | toBytes }}</div>
 </div>
 <!--End Foot Content-->
 <!--Start Context Menu -->

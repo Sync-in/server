@@ -18,9 +18,6 @@
   "scheduler_unit_hour": "hours",
   "scheduler_unit_minute": "minutes",
   "scheduler_unit_day": "days",
-  "no_selection": "no item selected",
-  "one_selection": "{{ nb }} item selected",
-  "nb_selections": "{{ nb }} items selected",
   "Client deleted": "Client deleted",
   "Unable to delete client": "Unable to delete client",
   "Cancelled": "Cancelled"

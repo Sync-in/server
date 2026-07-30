@@ -1,0 +1,104 @@
+.app-gallery {
+  @extend .container-fluid;
+  padding-top: .4rem;
+  margin-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+
+  .row {
+    margin-right: .4rem;
+    margin-left: .4rem;
+    font-size: $font-size-xs;
+
+    .card {
+      width: var(--gallery-card-size);
+      height: var(--gallery-card-size);
+      margin-right: .2rem;
+      margin-bottom: .2rem;
+      border-width: .5px;
+      border-color: transparent;
+
+      &.selected {
+        background-color: transparent;
+
+        .card-footer {
+          background-color: transparent;
+        }
+      }
+
+      &.deleted {
+        opacity: .3;
+      }
+
+      &.disabled {
+        opacity: .5;
+      }
+
+      .card-body {
+        display: flex;
+        align-items: center;
+        align-self: center;
+        border-top-left-radius: $border-radius-base;
+        border-top-right-radius: $border-radius-base;
+        padding: .3rem;
+
+        .label-bottom-right {
+          display: flex;
+          flex-direction: column;
+          position: absolute;
+          right: .2rem;
+          bottom: 28px;
+          font-style: normal;
+          font-weight: 500;
+
+          > span {
+            margin-top: .15rem;
+          }
+        }
+
+        .label-bottom-left {
+          position: absolute;
+          bottom: 28px;
+          left: .2rem;
+          font-style: normal;
+          font-weight: 500;
+        }
+
+        .label-top-right {
+          position: absolute;
+          top: .2rem;
+          right: .2rem;
+          font-style: normal;
+          font-weight: 500;
+        }
+
+      }
+
+      .card-footer {
+        background-color: transparent;
+        border-top: .5px solid;
+      }
+    }
+  }
+
+  .badge,
+  .card-footer,
+  .card-footer input {
+    font-size: var(--gallery-text-size);
+  }
+}
+
+.gallery-image {
+  width: var(--gallery-image-size);
+  height: var(--gallery-image-size);
+}
+
+.gallery-thumbnail {
+  max-height: var(--gallery-image-size);
+}
+
+.gallery-icon {
+  min-width: var(--gallery-image-size);
+  min-height: var(--gallery-image-size);
+  font-size: var(--gallery-icon-size);
+}
