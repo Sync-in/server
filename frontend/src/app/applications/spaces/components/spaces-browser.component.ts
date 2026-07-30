@@ -380,22 +380,19 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   toggleFileSelection(ev: MouseEvent, file: FileModel) {
     ev.stopPropagation()
-    if (!this.loading) {
-      if (ev.shiftKey && (this.selection.length > 0 || this.selectionAnchor)) {
-        this.selectionControlMode = true
-        this.selectRangeFiles(file)
-        return
-      }
-      if (!this.selectionControlMode && this.selection.length === 1) {
-        this.selectionControlMode = true
-        this.setSelection([file], file, file, true)
-        return
-      }
-      if (!this.selection.length) {
-        this.selectionControlMode = true
-      }
-      this.modifySelection(file)
+    if (this.loading) return
+    if (ev.shiftKey && (this.selection.length > 0 || this.selectionAnchor)) {
+      this.selectionControlMode = true
+      this.selectRangeFiles(file)
+      return
     }
+    if (!this.selectionControlMode && this.selection.length === 1) {
+      this.selectionControlMode = true
+      this.setSelection([file], file, file, true)
+      return
+    }
+    if (!this.selection.length) this.selectionControlMode = true
+    this.modifySelection(file)
   }
 
   onContextMenu(ev: MouseEvent | Event) {
@@ -790,16 +787,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private modifySelection(file: FileModel) {
     if (!file) return
-    if (file.isSelected) {
-      this.setSelection(
-        this.selection.filter((f) => f !== file),
-        file,
-        file,
-        true
-      )
-    } else {
-      this.setSelection([file, ...this.selection], file, file, true)
-    }
+    this.setSelection(file.isSelected ? this.selection.filter((selected) => selected !== file) : [file, ...this.selection], file, file, true)
   }
 
   private setSelection(

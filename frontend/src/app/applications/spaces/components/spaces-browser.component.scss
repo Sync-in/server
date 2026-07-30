@@ -24,6 +24,7 @@
   &:focus-visible {
     outline: 2px solid currentColor;
     outline-offset: 2px;
+    opacity: 1;
   }
 
   &.is-selected {
@@ -107,13 +108,15 @@
   }
 }
 
-.file-selection-overlay:focus-visible {
-  opacity: 1;
-}
-
 @media (hover: hover) {
   .file-selection-control:hover .file-selection-overlay,
   .gallery-file-selection-overlay:hover {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .gallery-file-selection-overlay {
     opacity: 1;
   }
 }

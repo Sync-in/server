@@ -72,10 +72,10 @@ export class FilesSelectionComponent {
       return from(directories).pipe(
         concatMap((directory) => this.getSizeLazy(directory)),
         scan(
-          (total: SelectionSize, size: number | null): SelectionSize => ({
+          (total: SelectionSize, size: number | undefined): SelectionSize => ({
             size: total.size + (size ?? 0),
             pendingDirectories: total.pendingDirectories - 1,
-            hasError: total.hasError || size === null
+            hasError: total.hasError || size === undefined
           }),
           initial
         ),
@@ -151,7 +151,7 @@ export class FilesSelectionComponent {
   getSizeLazy(f: FileModel) {
     return (f.dirSize ??= this.filesService.getSize(f).pipe(
       tap((size) => f.updateSize(size)),
-      catchError(() => of(null)),
+      catchError(() => of(undefined)),
       shareReplay(1)
     ))
   }
