@@ -661,11 +661,11 @@
   "Fullscreen": "全屏",
   "Dimensions": "尺寸",
   "Start Slideshow": "开始幻灯片放映",
-  "Unable to load OnlyOffice editor": "无法加载 OnlyOffice 编辑器",
+  "office_editor_load_error": "无法加载 {{ editor }} 编辑器",
   "The document server may be unreachable or the configuration is invalid": "文档服务器可能无法访问，或者配置无效",
-  "OnlyOffice editor failed to initialize": "OnlyOffice 编辑器初始化失败",
+  "office_editor_init_error": "{{ editor }} 编辑器初始化失败",
   "DocsAPI not available": "DocsAPI 不可用",
-  "Unknown OnlyOffice error": "未知的 OnlyOffice 错误",
+  "office_editor_unknown_error": "未知的 {{ editor }} 错误",
   "No editor found": "未找到编辑器",
   "Choose which editor you want to use to open this document.": "选择您要使用哪个编辑器来打开此文档。",
   "Open-source office suite built on LibreOffice.": "基于 LibreOffice 的开源办公套件。",
@@ -706,7 +706,6 @@
   "checksums are not identical": "校验和不一致",
   "size has changed since parsing": "自解析后大小已更改",
   "No synchronized folder": "没有同步文件夹",
-  "Edit in OnlyOffice": "在OnlyOffice中编辑",
-  "Edit in Euro-Office": "在Euro-Office中编辑",
+  "edit_in_office_editor": "在{{ editor }}中编辑",
   "View in PDF.js": "在PDF.js中查看"
 }

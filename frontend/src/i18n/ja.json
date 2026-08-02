@@ -661,11 +661,11 @@
   "Fullscreen": "全画面表示",
   "Dimensions": "サイズ",
   "Start Slideshow": "スライドショーを開始",
-  "Unable to load OnlyOffice editor": "OnlyOffice エディタを読み込めませんでした",
+  "office_editor_load_error": "{{ editor }} エディタを読み込めませんでした",
   "The document server may be unreachable or the configuration is invalid": "ドキュメントサーバーに接続できないか、設定が無効です",
-  "OnlyOffice editor failed to initialize": "OnlyOffice エディタの初期化に失敗しました",
+  "office_editor_init_error": "{{ editor }} エディタの初期化に失敗しました",
   "DocsAPI not available": "DocsAPI を利用できません",
-  "Unknown OnlyOffice error": "不明な OnlyOffice エラーです",
+  "office_editor_unknown_error": "不明な {{ editor }} エラーです",
   "No editor found": "エディタが見つかりません",
   "Choose which editor you want to use to open this document.": "このドキュメントを開くために使用するエディタを選択してください。",
   "Open-source office suite built on LibreOffice.": "LibreOffice をベースにしたオープンソースのオフィススイート。",
@@ -706,7 +706,6 @@
   "checksums are not identical": "チェックサムが一致しません",
   "size has changed since parsing": "解析後にサイズが変更されました",
   "No synchronized folder": "同期されたフォルダーはありません",
-  "Edit in OnlyOffice": "OnlyOfficeで編集",
-  "Edit in Euro-Office": "Euro-Officeで編集",
+  "edit_in_office_editor": "{{ editor }}で編集",
   "View in PDF.js": "PDF.jsで表示"
 }

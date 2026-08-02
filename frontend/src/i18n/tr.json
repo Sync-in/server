@@ -661,11 +661,11 @@
   "Fullscreen": "Tam ekran",
   "Dimensions": "Boyutlar",
   "Start Slideshow": "Slayt gösterisini başlat",
-  "Unable to load OnlyOffice editor": "OnlyOffice düzenleyici yüklenemedi",
+  "office_editor_load_error": "{{ editor }} düzenleyici yüklenemedi",
   "The document server may be unreachable or the configuration is invalid": "Belge sunucusuna ulaşılamıyor olabilir veya yapılandırma geçersiz",
-  "OnlyOffice editor failed to initialize": "OnlyOffice düzenleyici başlatılamadı",
+  "office_editor_init_error": "{{ editor }} düzenleyici başlatılamadı",
   "DocsAPI not available": "DocsAPI kullanılamıyor",
-  "Unknown OnlyOffice error": "Bilinmeyen OnlyOffice hatası",
+  "office_editor_unknown_error": "Bilinmeyen {{ editor }} hatası",
   "No editor found": "Düzenleyici bulunamadı",
   "Choose which editor you want to use to open this document.": "Bu belgeyi açmak için hangi düzenleyiciyi kullanmak istediğinizi seçin.",
   "Open-source office suite built on LibreOffice.": "LibreOffice tabanlı açık kaynak ofis paketi.",
@@ -706,7 +706,6 @@
   "checksums are not identical": "Sağlama toplamları aynı değil",
   "size has changed since parsing": "Boyut ayrıştırmadan beri değişti",
   "No synchronized folder": "Senkronize edilmiş klasör yok",
-  "Edit in OnlyOffice": "OnlyOffice'te Düzenle",
-  "Edit in Euro-Office": "Euro-Office'te Düzenle",
+  "edit_in_office_editor": "{{ editor }}'te Düzenle",
   "View in PDF.js": "PDF.js'de Görüntüle"
 }

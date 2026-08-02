@@ -89,15 +89,15 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
         this.layout.sendNotification(
           'error',
           'Unable to open document',
-          e.status === 404 ? `Unable to load ${this.officeEditorName} editor` : e.error.message
+          e.status === 404 ? this.layout.translateString('office_editor_load_error', { editor: this.officeEditorName }) : e.error.message
         )
       }
     })
   }
 
-  loadError(e: { title: string; message: string }): void {
+  loadError(e: { title: string; titleArgs: { editor: string }; message: string }): void {
     this.layout.closeDialog()
-    this.layout.sendNotification('error', e.title, e.message)
+    this.layout.sendNotification('error', this.layout.translateString(e.title, e.titleArgs), e.message)
   }
 
   ngOnDestroy() {

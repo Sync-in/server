@@ -100,8 +100,10 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
     return this.store.server().files.editors.onlyoffice ? 'OnlyOffice' : 'Euro-Office'
   }
 
-  protected get editOfficeEditorText(): string {
-    return `Edit in ${this.officeEditorName}`
+  protected get toggleViewerText(): string {
+    return this.isReadonly()
+      ? this.layout.translateString('edit_in_office_editor', { editor: this.officeEditorName })
+      : this.layout.translateString('View in PDF.js')
   }
 
   private onResize() {

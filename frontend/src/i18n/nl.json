@@ -661,11 +661,11 @@
   "Fullscreen": "Volledig scherm",
   "Dimensions": "Afmetingen",
   "Start Slideshow": "Diavoorstelling starten",
-  "Unable to load OnlyOffice editor": "Kan OnlyOffice-editor niet laden",
+  "office_editor_load_error": "Kan {{ editor }}-editor niet laden",
   "The document server may be unreachable or the configuration is invalid": "De documentserver is mogelijk niet bereikbaar of de configuratie is ongeldig",
-  "OnlyOffice editor failed to initialize": "OnlyOffice-editor kon niet worden geïnitialiseerd",
+  "office_editor_init_error": "{{ editor }}-editor kon niet worden geïnitialiseerd",
   "DocsAPI not available": "DocsAPI is niet beschikbaar",
-  "Unknown OnlyOffice error": "Onbekende fout met OnlyOffice",
+  "office_editor_unknown_error": "Onbekende fout met {{ editor }}",
   "No editor found": "Geen Editor gevonden",
   "Choose which editor you want to use to open this document.": "Kies de editor die u wilt gebruiken om dit document te openen.",
   "Open-source office suite built on LibreOffice.": "Open-source kantoorsuite gebouwd op basis van LibreOffice.",
@@ -706,7 +706,6 @@
   "checksums are not identical": "controlesommen komen niet overeen",
   "size has changed since parsing": "grootte is gewijzigd sinds verwerking",
   "No synchronized folder": "Geen gesynchroniseerde map",
-  "Edit in OnlyOffice": "Bewerken in OnlyOffice",
-  "Edit in Euro-Office": "Bewerken in Euro-Office",
+  "edit_in_office_editor": "Bewerken in {{ editor }}",
   "View in PDF.js": "Weergeven in PDF.js"
 }

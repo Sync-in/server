@@ -18,7 +18,8 @@
   "scheduler_unit_hour": "hours",
   "scheduler_unit_minute": "minutes",
   "scheduler_unit_day": "days",
-  "Client deleted": "Client deleted",
-  "Unable to delete client": "Unable to delete client",
-  "Cancelled": "Cancelled"
+  "office_editor_load_error": "Unable to load {{ editor }} editor",
+  "office_editor_init_error": "{{ editor }} editor failed to initialize",
+  "office_editor_unknown_error": "Unknown {{ editor }} error",
+  "edit_in_office_editor": "Edit in {{ editor }}"
 }

@@ -661,11 +661,11 @@
   "Fullscreen": "Pantalla completa",
   "Dimensions": "Dimensiones",
   "Start Slideshow": "Iniciar presentación",
-  "Unable to load OnlyOffice editor": "No se pudo cargar el editor de OnlyOffice",
+  "office_editor_load_error": "No se pudo cargar el editor de {{ editor }}",
   "The document server may be unreachable or the configuration is invalid": "Es posible que el servidor de documentos no sea accesible o que la configuración sea inválida",
-  "OnlyOffice editor failed to initialize": "No se pudo inicializar el editor de OnlyOffice",
+  "office_editor_init_error": "No se pudo inicializar el editor de {{ editor }}",
   "DocsAPI not available": "DocsAPI no está disponible",
-  "Unknown OnlyOffice error": "Error desconocido de OnlyOffice",
+  "office_editor_unknown_error": "Error desconocido de {{ editor }}",
   "No editor found": "No se encontró un editor",
   "Choose which editor you want to use to open this document.": "Elija qué editor desea utilizar para abrir este documento.",
   "Open-source office suite built on LibreOffice.": "Suite ofimática de código abierto basada en LibreOffice.",
@@ -706,7 +706,6 @@
   "checksums are not identical": "Las sumas de comprobación no son idénticas",
   "size has changed since parsing": "El tamaño ha cambiado desde el análisis",
   "No synchronized folder": "Ninguna carpeta sincronizada",
-  "Edit in OnlyOffice": "Editar en OnlyOffice",
-  "Edit in Euro-Office": "Editar en Euro-Office",
+  "edit_in_office_editor": "Editar en {{ editor }}",
   "View in PDF.js": "Ver en PDF.js"
 }

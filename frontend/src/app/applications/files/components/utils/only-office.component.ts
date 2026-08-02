@@ -11,7 +11,7 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
   @Input({ required: true }) editorName: string
   @Input({ required: true }) documentServerUrl: string
   @Input({ required: true }) config: OnlyOfficeConfig
-  @Output() loadError = new EventEmitter<{ title: string; message: string }>()
+  @Output() loadError = new EventEmitter<{ title: string; titleArgs: { editor: string }; message: string }>()
   private isFirstOnChanges = true
 
   ngOnInit(): void {
@@ -75,15 +75,19 @@ export class OnlyOfficeComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private onError(errorCode: number) {
-    const error = { title: `Unknown ${this.editorName} error`, message: `Code: ${errorCode}` }
+    const error = {
+      title: 'office_editor_unknown_error',
+      titleArgs: { editor: this.editorName },
+      message: `Code: ${errorCode}`
+    }
 
     switch (errorCode) {
       case -2:
-        error.title = `Unable to load ${this.editorName} editor`
+        error.title = 'office_editor_load_error'
         error.message = 'The document server may be unreachable or the configuration is invalid'
         break
       case -3:
-        error.title = `${this.editorName} editor failed to initialize`
+        error.title = 'office_editor_init_error'
         error.message = 'DocsAPI not available'
         break
     }

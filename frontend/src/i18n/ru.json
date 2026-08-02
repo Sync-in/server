@@ -661,11 +661,11 @@
   "Fullscreen": "Полный экран",
   "Dimensions": "Размеры",
   "Start Slideshow": "Запустить слайд‑шоу",
-  "Unable to load OnlyOffice editor": "Не удалось загрузить редактор OnlyOffice",
+  "office_editor_load_error": "Не удалось загрузить редактор {{ editor }}",
   "The document server may be unreachable or the configuration is invalid": "Сервер документов может быть недоступен или конфигурация неверна",
-  "OnlyOffice editor failed to initialize": "Не удалось инициализировать редактор OnlyOffice",
+  "office_editor_init_error": "Не удалось инициализировать редактор {{ editor }}",
   "DocsAPI not available": "DocsAPI недоступен",
-  "Unknown OnlyOffice error": "Неизвестная ошибка OnlyOffice",
+  "office_editor_unknown_error": "Неизвестная ошибка {{ editor }}",
   "No editor found": "Редактор не найден",
   "Choose which editor you want to use to open this document.": "Выберите редактор, который вы хотите использовать для открытия этого документа.",
   "Open-source office suite built on LibreOffice.": "Офисный пакет с открытым исходным кодом на основе LibreOffice.",
@@ -706,7 +706,6 @@
   "checksums are not identical": "Контрольные суммы не совпадают",
   "size has changed since parsing": "Размер изменился с момента разбора",
   "No synchronized folder": "Нет синхронизированной папки",
-  "Edit in OnlyOffice": "Редактировать в OnlyOffice",
-  "Edit in Euro-Office": "Редактировать в Euro-Office",
+  "edit_in_office_editor": "Редактировать в {{ editor }}",
   "View in PDF.js": "Просмотр в PDF.js"
 }
