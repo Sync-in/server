@@ -27,7 +27,7 @@
   display: grid !important;
   white-space: nowrap;
   margin-bottom: 15px;
-  font-size: $font-size-sm;
+  font-size: 0.75rem;
 
   .node-wrapper {
     cursor: default;
@@ -35,6 +35,7 @@
     align-items: center;
     justify-content: flex-start;
     padding: 4px;
+    height: 38px;
     line-height: 0;
     width: 100%;
 
@@ -54,7 +55,7 @@
   .node-content-wrapper {
     display: flex;
     white-space: nowrap;
-    margin-left: 5px;
+    margin-left: 0.3rem;
     margin-right: 30px;
     box-shadow: none;
     transition: none;
