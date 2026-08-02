@@ -118,6 +118,6 @@
     "esbuild@0.25.12": true,
     "esbuild@0.28.1": true,
     "@parcel/watcher@2.6.0": true,
-    "@swc/core@1.15.46": true
+    "@swc/core@1.15.47": true
   }
 }
