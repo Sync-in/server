@@ -110,6 +110,7 @@ export class FilesSelectionComponent {
 
   addToClipboard() {
     this.filesService.addToClipboard(this.files())
+    this.filesService.fileSelectionClear.next()
     this.layout.showRSideBarTab(TAB_MENU.CLIPBOARD, true)
   }
 

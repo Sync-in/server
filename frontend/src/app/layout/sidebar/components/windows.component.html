@@ -1,10 +1,13 @@
-<div class="sidebar-component-title">
-  @if (windows.length) {
-    <button (click)="onCloseAll()" class="btn btn-default">
-      <fa-icon [icon]="icons.faXmark"></fa-icon>
-    </button>
-  }
-  <span l10nTranslate>Windows Manager</span>
+<div class="sidebar-component-title justify-content-between position-relative">
+  <div class="sidebar-component-title-side"></div>
+  <div class="sidebar-component-title-label" l10nTranslate>Windows Manager</div>
+  <div class="sidebar-component-title-side">
+    @if (windows.length) {
+      <button (click)="onCloseAll()" class="btn btn-sm btn-default" type="button" aria-label="Close all windows">
+        <fa-icon [icon]="icons.faTimes"></fa-icon>
+      </button>
+    }
+  </div>
 </div>
 <div class="sidebar-item" appAutoResize>
   @for (modal of windows; track modal.id) {

@@ -1,3 +1,17 @@
+<div class="sidebar-component-title justify-content-between position-relative">
+  <div class="sidebar-component-title-side"></div>
+  <div class="sidebar-component-title-label" l10nTranslate>Selection</div>
+  <div class="sidebar-component-title-side">
+    @if (selectionType() === SPACES_PATH.FILES && store.filesSelection().length > 1) {
+      <button (click)="clearSelection()"
+              class="btn btn-sm btn-default"
+              type="button"
+              aria-label="Clear selection">
+        <fa-icon [icon]="faTimes"></fa-icon>
+      </button>
+    }
+  </div>
+</div>
 @switch (selectionType()) {
   @case (SPACES_PATH.FILES) {
     <app-files-selection [files]="store.filesSelection()"></app-files-selection>

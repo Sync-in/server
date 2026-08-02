@@ -1,14 +1,18 @@
-<div class="sidebar-component-title  justify-content-between">
-  <fa-icon class="cursor-pointer"
-           [icon]="icons.faQuestion"
-           [tooltip]="'Actions will be performed in the current folder' | translate:locale.language"
-           container="body"
-           placement="left">
-  </fa-icon>
-  <div l10nTranslate>Clipboard</div>
-  <button (click)="clearAll()" class="btn btn-sm btn-default">
-    <fa-icon [icon]="icons.faTrashCan"></fa-icon>
-  </button>
+<div class="sidebar-component-title justify-content-between position-relative">
+  <div class="sidebar-component-title-side">
+    <fa-icon class="cursor-pointer"
+             [icon]="icons.faQuestion"
+             [tooltip]="'Actions will be performed in the current folder' | translate:locale.language"
+             container="body"
+             placement="left">
+    </fa-icon>
+  </div>
+  <div class="sidebar-component-title-label" l10nTranslate>Clipboard</div>
+  <div class="sidebar-component-title-side">
+    <button (click)="clearAll()" class="btn btn-sm btn-default" type="button">
+      <fa-icon [icon]="icons.faTimes"></fa-icon>
+    </button>
+  </div>
 </div>
 @if (files.length) {
   <div class="px-2 pt-2 pb-2 fs-xs">

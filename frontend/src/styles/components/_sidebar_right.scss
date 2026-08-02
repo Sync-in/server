@@ -35,6 +35,26 @@
       margin-right: auto;
       margin-left: auto;
     }
+
+    > .sidebar-component-title-label {
+      position: absolute;
+      left: 50%;
+      max-width: calc(100% - 90px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+
+    > .sidebar-component-title-side {
+      display: flex;
+      align-items: center;
+      min-width: 35px;
+
+      &:last-child {
+        justify-content: flex-end;
+      }
+    }
   }
 
   .sidebar-item {

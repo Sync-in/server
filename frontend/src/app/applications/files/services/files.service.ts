@@ -66,6 +66,7 @@ export class FilesService {
   public readonly treeCopyMoveOn = this.treeCopyMoveRequested.pipe(filter(Boolean))
   // Selection section
   public readonly fileSelectionRemove = new Subject<FileModel>()
+  public readonly fileSelectionClear = new Subject<void>()
   // Clipboard section
   public clipboardAction: 'copyPaste' | 'cutPaste' = 'copyPaste'
   // Files

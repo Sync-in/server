@@ -1,8 +1,8 @@
 import { Component, computed, inject, OnDestroy } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { RouterOutlet } from '@angular/router'
-import { faCommentDots } from '@fortawesome/free-regular-svg-icons'
-import { faClipboardList, faFolderTree, faInfo } from '@fortawesome/free-solid-svg-icons'
+import { faCommentDots, faRectangleList, faSquareCheck } from '@fortawesome/free-regular-svg-icons'
+import { faFolderTree } from '@fortawesome/free-solid-svg-icons'
 import { map } from 'rxjs/operators'
 import { TAB_GROUP, TAB_MENU, TabMenu } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
@@ -22,11 +22,12 @@ export class SpacesNavComponent implements OnDestroy {
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
   private tabs: TabMenu[] = [
+    { label: TAB_MENU.TREE, components: [FilesTreeComponent], loadComponent: true, icon: faFolderTree, title: null, active: false },
     {
       label: TAB_MENU.SELECTION,
       components: [SelectionComponent],
       loadComponent: false,
-      icon: faInfo,
+      icon: faSquareCheck,
       count: {
         value: toObservable(
           computed(() =>
@@ -35,21 +36,20 @@ export class SpacesNavComponent implements OnDestroy {
         ),
         level: 'primary'
       },
-      title: 'Info',
+      title: null,
       active: false
     },
-    { label: TAB_MENU.TREE, components: [FilesTreeComponent], loadComponent: true, icon: faFolderTree, title: null, active: false },
-    { label: TAB_MENU.COMMENTS, components: [CommentsSelectionComponent], loadComponent: false, icon: faCommentDots, title: null, active: false },
     {
       label: TAB_MENU.CLIPBOARD,
       components: [FilesClipboardComponent],
       loadComponent: false,
-      icon: faClipboardList,
+      icon: faRectangleList,
       count: { value: this.store.filesClipboard.pipe(map((files: FileModel[]) => files.length)), level: 'maroon' },
       showOnCount: true,
       title: null,
       active: false
-    }
+    },
+    { label: TAB_MENU.COMMENTS, components: [CommentsSelectionComponent], loadComponent: false, icon: faCommentDots, title: null, active: false }
   ]
 
   constructor() {

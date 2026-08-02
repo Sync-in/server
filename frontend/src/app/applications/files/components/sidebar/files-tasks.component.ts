@@ -14,7 +14,7 @@ import {
   faGlobe,
   faSpinner,
   faStop,
-  faTrashAlt
+  faTimes
 } from '@fortawesome/free-solid-svg-icons'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
@@ -39,7 +39,7 @@ import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
 })
 export class FilesTasksComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly icons = { faTrashAlt, faFlag, faClock, faFile, faFolderClosed, faStop }
+  protected readonly icons = { faTimes, faFlag, faClock, faFile, faFolderClosed, faStop }
   protected readonly iconsStatus: Record<FileTaskStatus, IconDefinition> = {
     [FileTaskStatus.PENDING]: faSpinner,
     [FileTaskStatus.SUCCESS]: faCheck,

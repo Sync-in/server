@@ -290,6 +290,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.subscriptions.push(
       this.filesService.fileSelectionRemove.subscribe((file) => this.setSelection(this.selection.filter((selected) => selected !== file)))
     )
+    this.subscriptions.push(this.filesService.fileSelectionClear.subscribe(() => this.resetFilesSelection()))
   }
 
   ngAfterViewInit() {

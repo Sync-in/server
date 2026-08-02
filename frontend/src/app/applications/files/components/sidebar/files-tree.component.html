@@ -1,15 +1,18 @@
 @if (sideBarHeader) {
-  <div class="sidebar-component-title justify-content-between">
-    <div>
+  <div class="sidebar-component-title justify-content-between position-relative">
+    <div class="sidebar-component-title-side"></div>
+    <div class="sidebar-component-title-label">
       @if (errorMsg) {
         <span class="text-danger fs-sm p-1" l10nTranslate>{{ errorMsg }}</span>
       } @else {
-        <span l10nTranslate>Navigation Tree</span>
+        <span l10nTranslate>Navigation</span>
       }
     </div>
-    <button (click)="onRefresh()" class="btn btn-sm btn-default">
-      <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
-    </button>
+    <div class="sidebar-component-title-side">
+      <button (click)="onRefresh()" class="btn btn-sm btn-default" type="button">
+        <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
+      </button>
+    </div>
   </div>
 }
 @if (copyMoveOn) {

@@ -1,13 +1,13 @@
 <div class="sidebar-component-title justify-content-between position-relative">
-  <div class="d-flex align-items-center justify-content-start" style="min-width: 35px">
+  <div class="sidebar-component-title-side">
     @if (store.notifications().length) {
       <div class="badge bg-warning">{{ store.notifications().length }}</div>
     }
   </div>
-  <div class="position-absolute start-50 translate-middle-x" l10nTranslate>Notifications</div>
-  <div class="d-flex align-items-center justify-content-end" style="min-width: 35px">
+  <div class="sidebar-component-title-label" l10nTranslate>Notifications</div>
+  <div class="sidebar-component-title-side">
     @if (store.notifications().length) {
-      <button (click)="removeAll()" class="btn btn-sm btn-default">
+      <button (click)="removeAll()" class="btn btn-sm btn-default" type="button">
         <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
       </button>
     }
