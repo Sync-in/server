@@ -196,6 +196,10 @@
       @include text-truncate-utility;
     }
 
+    .fs-xs {
+      line-height: 1.25;
+    }
+
     .badge {
       max-width: 100%;
     }
