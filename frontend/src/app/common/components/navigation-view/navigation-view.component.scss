@@ -1,0 +1,44 @@
+.navigation-view-menu {
+  min-width: 12.5rem !important;
+}
+
+.navigation-view-mode-selector,
+.navigation-view-size-selector {
+  display: grid;
+  gap: .25rem;
+}
+
+.navigation-view-mode-selector {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.navigation-view-option,
+.navigation-view-size-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  margin: 0;
+
+  &:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: -2px;
+  }
+}
+
+.navigation-view-option {
+  gap: .4rem;
+  padding: .4rem .5rem;
+
+  fa-icon {
+    font-size: .875rem;
+  }
+}
+
+.navigation-view-size-selector {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.navigation-view-size-option {
+  padding: .35rem .15rem;
+}

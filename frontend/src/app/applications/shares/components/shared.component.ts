@@ -130,7 +130,6 @@ export class SharedComponent implements OnInit {
       sortable: true
     }
   }
-  protected btnSortFields = { name: 'Name', created: 'Created' }
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly store = inject(StoreService)
   private readonly sharesService = inject(SharesService)

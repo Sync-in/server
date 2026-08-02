@@ -82,7 +82,6 @@ export class TrashComponent implements OnInit {
       sortable: true
     }
   }
-  protected btnSortFields = { name: 'Name', nb: 'Elements', mtime: 'Modified' }
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
   private readonly spacesService = inject(SpacesService)

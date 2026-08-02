@@ -1,28 +1,43 @@
-<div class="btn-group" dropdown>
-  <button class="btn btn-default dropdown-toggle" dropdownToggle type="button">
-    <fa-icon [icon]="icons.faSliders"></fa-icon>
+<div [insideClick]="true" class="btn-group" dropdown>
+  <button aria-label="Display" class="btn btn-default dropdown-toggle" dropdownToggle type="button">
+    <fa-icon [icon]="galleryModeEnabled ? icons.faTableCellsLarge : icons.faThList"></fa-icon>
   </button>
-  <ul *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu">
+  <ul *dropdownMenu class="dropdown-menu dropdown-menu-right navigation-view-menu">
     <li class="dropdown-header text-bold" l10nTranslate>Display</li>
-    @for (view of viewsMode | keyvalue: originalOrderKeyValue; track view.key) {
-      <li role="menuitem">
-        <a (click)="setView(view.key)" class="dropdown-item">
-        <span><fa-icon [icon]="view.value.icon"></fa-icon>
-          {{ view.value.text }}</span>
-        </a>
-      </li>
-    }
-    <li class="dropdown-header text-bold mt-1" l10nTranslate>Sort by</li>
-    @for (field of sortFields | keyvalue: originalOrderKeyValue; track field.key) {
-      <li role="menuitem">
-        <a (click)="sortBy.emit(field.key)" class="dropdown-item">
-        <span class="me-2" l10nTranslate>
-          {{ field.value }}
-          @if (sortParams.column === field.key) {
-            <fa-icon [icon]="sortParams.asc ? icons.faArrowDown : icons.faArrowUp" size="xs" class="ms-1"></fa-icon>
+    <li class="px-1">
+      <div aria-label="Display mode" class="navigation-view-mode-selector" role="group">
+        <button (click)="setView('tl')"
+                [attr.aria-pressed]="!galleryModeEnabled"
+                [class.active]="!galleryModeEnabled"
+                class="dropdown-item navigation-view-option"
+                type="button">
+          <fa-icon [icon]="icons.faThList"></fa-icon>
+          <span l10nTranslate>List</span>
+        </button>
+        <button (click)="selectGalleryMode()"
+                [attr.aria-pressed]="galleryModeEnabled"
+                [class.active]="galleryModeEnabled"
+                class="dropdown-item navigation-view-option"
+                type="button">
+          <fa-icon [icon]="icons.faTableCellsLarge"></fa-icon>
+          <span l10nTranslate>Gallery</span>
+        </button>
+      </div>
+    </li>
+    @if (galleryModeEnabled) {
+      <li class="dropdown-header text-bold mt-1" l10nTranslate>Size</li>
+      <li class="px-1">
+        <div aria-label="Gallery size" class="navigation-view-size-selector" role="group">
+          @for (view of galleryViewOptions; track view.key) {
+            <button (click)="setView(view.key)"
+                    [attr.aria-pressed]="viewMode === view.key"
+                    [class.active]="viewMode === view.key"
+                    class="dropdown-item navigation-view-size-option"
+                    type="button">
+              {{ view.label }}
+            </button>
           }
-        </span>
-        </a>
+        </div>
       </li>
     }
   </ul>

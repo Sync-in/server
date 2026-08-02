@@ -229,7 +229,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       sortable: true
     }
   }
-  protected btnSortFields = { name: 'Name', isDir: 'Type', size: 'Size', mtime: 'Modified' }
   protected galleryMode: ViewMode
   // Data
   protected files: FileModel[] = []

@@ -138,7 +138,6 @@ export class LinksComponent implements OnInit {
       sortable: true
     }
   }
-  protected btnSortFields = { name: 'Name', link: 'Link', accessed: 'Accessed' }
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly store = inject(StoreService)
   private readonly linksService = inject(LinksService)

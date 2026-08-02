@@ -33,10 +33,7 @@
     </div>
     <!--End Filter Button-->
     <!--Start View Button-->
-    <app-navigation-view [sortParams]="sortTable.sortParam"
-                         [sortFields]="btnSortFields"
-                         (sortBy)="sortBy($event)"
-                         (switchView)="galleryMode = $event">
+    <app-navigation-view (switchView)="galleryMode = $event">
     </app-navigation-view>
     <!--End View Button-->
   </div>

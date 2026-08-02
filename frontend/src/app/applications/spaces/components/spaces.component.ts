@@ -133,7 +133,6 @@ export class SpacesComponent implements OnInit {
       sortable: true
     }
   }
-  protected btnSortFields = { name: 'Name', managers: 'Managers', permissions: 'Permissions', modified: 'Modified' }
   protected loading = false
   protected spaces: SpaceModel[] = []
   protected selected: SpaceModel = null
