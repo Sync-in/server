@@ -18,10 +18,20 @@ import { StoreService } from '../../../../store/store.service'
 import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 import { FilesCompressionDialogComponent } from '../dialogs/files-compression-dialog.component'
+import { FilesSummaryComponent } from '../utils/files-summary.component'
 
 @Component({
   selector: 'app-files-clipboard',
-  imports: [AutoResizeDirective, FaIconComponent, L10nTranslatePipe, TooltipModule, L10nTranslateDirective, KeyValuePipe, FormsModule],
+  imports: [
+    AutoResizeDirective,
+    FaIconComponent,
+    L10nTranslatePipe,
+    TooltipModule,
+    L10nTranslateDirective,
+    KeyValuePipe,
+    FormsModule,
+    FilesSummaryComponent
+  ],
   templateUrl: 'files-clipboard.component.html'
 })
 export class FilesClipboardComponent implements OnDestroy {

@@ -39,7 +39,7 @@ import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
 import { BsModalRef } from 'ngx-bootstrap/modal'
-import { BehaviorSubject, catchError, EMPTY, filter, firstValueFrom, map, Observable, Subject, switchMap, timer } from 'rxjs'
+import { BehaviorSubject, catchError, EMPTY, filter, firstValueFrom, map, Observable, of, shareReplay, Subject, switchMap, tap, timer } from 'rxjs'
 import { downloadWithAnchor } from '../../../common/utils/functions'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
@@ -261,6 +261,14 @@ export class FilesService {
 
   getSize(file: FileModel): Observable<number> {
     return this.http.get<{ size: number }>(`${API_FILES_OPERATION}/${FILE_OPERATION.GET_SIZE}/${file.path}`).pipe(map((r) => r.size))
+  }
+
+  getSizeLazy(file: FileModel): Observable<number | undefined> {
+    return (file.dirSize ??= this.getSize(file).pipe(
+      tap((size) => file.updateSize(size)),
+      catchError(() => of(undefined)),
+      shareReplay(1)
+    ))
   }
 
   openLockDialog(file: FileModel): void {

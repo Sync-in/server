@@ -16,7 +16,8 @@
 </div>
 @if (files.length) {
   <div class="px-2 pt-2 pb-2 fs-xs">
-    <div class="d-flex justify-content-between mt-2">
+    <app-files-summary [files]="files" class="mb-2"></app-files-summary>
+    <div class="d-flex justify-content-between">
       <select [(ngModel)]="selectedAction" class="form-select form-select-sm">
         @for (item of operations| keyvalue: originalOrderKeyValue; track item.key) {
           <option [ngValue]="item.key" l10nTranslate>{{ item.value.text }}</option>
@@ -26,7 +27,7 @@
     </div>
   </div>
   <hr class="mx-0 my-2">
-  <div appAutoResize class="sidebar-item" [resizeOffset]=120>
+  <div appAutoResize class="sidebar-item" [resizeOffset]="170">
     @for (f of files; track f.id) {
       <div class="sidebar-item-container">
         <div class="sidebar-item-content" [tooltip]="f.path">

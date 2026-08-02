@@ -1,22 +1,7 @@
 @if (files().length) {
   @if (files().length > 1) {
-    @let stats = selectionStats();
-    @let totalSize = selectionSize | async;
     <div class="p-2 fs-sm">
-      <div class="app-small-card rounded d-flex justify-content-center align-items-center text-nowrap py-2 mb-3">
-        <span><span class="text-bold">{{ stats.directories }}</span> {{ (stats.directories === 1 ? 'directory' : 'directories') | translate:locale.language }}</span>
-        <span class="mx-1 lh-1">•</span>
-        <span><span class="text-bold">{{ stats.files }}</span> {{ (stats.files === 1 ? 'file' : 'files') | translate:locale.language }}</span>
-        @if (totalSize !== null) {
-          <span class="mx-1 lh-1">•</span>
-          <span>
-            @if (totalSize.pendingDirectories || totalSize.hasError) {
-              ≥&nbsp;
-            }
-            {{ totalSize.size | toBytes:0:true }}
-          </span>
-        }
-      </div>
+      <app-files-summary [files]="files()" class="mb-2"></app-files-summary>
       <div class="d-flex">
         <select [(ngModel)]="selectedAction" class="form-select form-select-sm">
           <option value="clipboard" l10nTranslate>Clipboard</option>
@@ -28,7 +13,7 @@
       </div>
     </div>
     <hr class="mx-0 my-1">
-    <div appAutoResize class="sidebar-item" [resizeOffset]="200">
+    <div appAutoResize class="sidebar-item" [resizeOffset]="170">
       @for (f of files(); track f.id) {
         <div class="sidebar-item-container">
           <div class="sidebar-item-content">
