@@ -67,6 +67,13 @@ export class SideBarLeftComponent implements OnDestroy {
 
   navigateToMenu(menu: AppMenu) {
     this.navigateToUrl([menu.link])
+    this.closeSideBarOnMobile()
+  }
+
+  closeSideBarOnMobile() {
+    if (this.layout.isSmallerMediumScreen()) {
+      this.layout.toggleLeftSideBar.next(2)
+    }
   }
 
   previewMenuTitle(title: string) {
