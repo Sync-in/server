@@ -11,6 +11,8 @@ export interface FileContent {
   matches?: string[]
   // used for search
   score?: number
+  // used for search display
+  displayRootName?: string
 }
 
 export type FileContentRecordMetadata = Pick<FileContent, 'name' | 'path' | 'size'>

@@ -20,10 +20,10 @@ describe(FilesSearchManager.name, () => {
     allPaths: Mock
   }
   let spacesQueries: {
-    spaceIds: Mock
+    spaceIdentities: Mock
   }
   let sharesQueries: {
-    shareIds: Mock
+    shareIdentities: Mock
   }
   let contentIndexingEnabled: boolean
 
@@ -45,10 +45,10 @@ describe(FilesSearchManager.name, () => {
       allPaths: vi.fn()
     }
     spacesQueries = {
-      spaceIds: vi.fn().mockResolvedValue([])
+      spaceIdentities: vi.fn().mockResolvedValue([])
     }
     sharesQueries = {
-      shareIds: vi.fn().mockResolvedValue([])
+      shareIdentities: vi.fn().mockResolvedValue([])
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -88,27 +88,47 @@ describe(FilesSearchManager.name, () => {
 
   it('should route to full-text search with space and share ids', async () => {
     configuration.applications.files.contentIndexing.enabled = true
-    spacesQueries.spaceIds.mockResolvedValueOnce([1, 2])
-    sharesQueries.shareIds.mockResolvedValueOnce([4])
+    spacesQueries.spaceIdentities.mockResolvedValueOnce([
+      { id: 1, alias: 'first', name: 'First' },
+      { id: 2, alias: 'second', name: 'Second' }
+    ])
+    sharesQueries.shareIdentities.mockResolvedValueOnce([{ id: 4, alias: 'shared', name: 'Shared' }])
     const fullTextSpy = vi.spyOn(service as any, 'searchFullText').mockResolvedValueOnce([fileContent('match.md')])
 
     const result = await service.search({ id: 10, isAdmin: true } as any, { content: 'match', fullText: true, limit: 5 } as any)
 
-    expect(spacesQueries.spaceIds).toHaveBeenCalledWith(10)
-    expect(sharesQueries.shareIds).toHaveBeenCalledWith(10, 1)
+    expect(spacesQueries.spaceIdentities).toHaveBeenCalledWith(10)
+    expect(sharesQueries.shareIdentities).toHaveBeenCalledWith(10, 1)
     expect(fullTextSpy).toHaveBeenCalledWith(10, [1, 2], [4], 'match', 5)
     expect(result).toEqual([fileContent('match.md')])
   })
 
   it('should route to filename search when fullText is false', async () => {
-    spacesQueries.spaceIds.mockResolvedValueOnce([6])
-    sharesQueries.shareIds.mockResolvedValueOnce([8, 9])
+    spacesQueries.spaceIdentities.mockResolvedValueOnce([{ id: 6, alias: 'reports', name: 'Reports' }])
+    sharesQueries.shareIdentities.mockResolvedValueOnce([
+      { id: 8, alias: 'first-share', name: 'First share' },
+      { id: 9, alias: 'second-share', name: 'Second share' }
+    ])
     const nameSearchSpy = vi.spyOn(service as any, 'searchFileNames').mockResolvedValueOnce([fileContent('report.pdf')])
 
     const result = await service.search({ id: 3, isAdmin: false } as any, { content: 'report', fullText: false, limit: 2 } as any)
 
     expect(nameSearchSpy).toHaveBeenCalledWith(3, [6], [8, 9], 'report', 2)
     expect(result).toEqual([fileContent('report.pdf')])
+  })
+
+  it('adds current space and share names to search results', async () => {
+    spacesQueries.spaceIdentities.mockResolvedValueOnce([{ id: 6, alias: 'communication', name: 'Communication' }])
+    sharesQueries.shareIdentities.mockResolvedValueOnce([{ id: 8, alias: 'public-access', name: 'Public access' }])
+    vi.spyOn(service as any, 'searchFileNames').mockResolvedValueOnce([
+      { ...fileContent('space.md'), path: 'files/communication/docs' },
+      { ...fileContent('share.md'), path: 'shares/public-access/docs' },
+      { ...fileContent('personal.md'), path: 'files/personal/docs' }
+    ])
+
+    const result = await service.search({ id: 3, isAdmin: false } as any, { content: 'docs', fullText: false, limit: 3 } as any)
+
+    expect(result.map(({ displayRootName }) => displayRootName)).toEqual(['Communication', 'Public access', undefined])
   })
 
   it('should normalize search limit before routing', async () => {

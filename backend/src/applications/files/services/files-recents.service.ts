@@ -23,12 +23,17 @@ export class FilesRecents {
   ) {}
 
   async getRecents(user: UserModel, limit: number): Promise<FileRecent[]> {
-    const [spaceIds, shareIds] = await Promise.all([
-      user.havePermission(USER_PERMISSION.SPACES) ? this.spacesQueries.spaceIds(user.id) : Promise.resolve([]),
-      user.havePermission(USER_PERMISSION.SHARES) ? this.sharesQueries.shareIds(user.id, +user.isAdmin) : Promise.resolve([])
+    const [spaces, shares] = await Promise.all([
+      user.havePermission(USER_PERMISSION.SPACES) ? this.spacesQueries.spaceIdentities(user.id) : Promise.resolve([]),
+      user.havePermission(USER_PERMISSION.SHARES) ? this.sharesQueries.shareIdentities(user.id, +user.isAdmin) : Promise.resolve([])
     ])
     const ownerId = user.havePermission(USER_PERMISSION.PERSONAL_SPACE) ? user.id : undefined
-    return this.filesQueries.getRecentsFromUser(ownerId, spaceIds, shareIds, limit)
+    return this.filesQueries.getRecentsFromUser(
+      ownerId,
+      spaces.map(({ id }) => id),
+      shares.map(({ id }) => id),
+      limit
+    )
   }
 
   async updateRecents(user: UserModel, space: SpaceEnv, files: FileProps[]): Promise<void> {
