@@ -60,7 +60,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
     animateExpand: false,
     levelPadding: 10,
     useVirtualScroll: false,
-    nodeHeight: 38,
+    nodeHeight: 36,
     dropSlotHeight: 0,
     allowDrag: false,
     allowDrop: false,
