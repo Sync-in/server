@@ -13,6 +13,7 @@ export class FileRecentModel implements FileRecent {
   path: string
   shareId: number
   spaceId: number
+  displayRootName?: string
 
   // Computed
   mimeUrl: string
@@ -24,7 +25,10 @@ export class FileRecentModel implements FileRecent {
   constructor(props: Partial<FileRecent>) {
     Object.assign(this, props)
     this.mimeUrl = getAssetsMimeUrl(this.mime)
-    const location = resolveFileLocation(this.path, { repository: this.shareId ? 'share' : this.spaceId ? 'space' : 'personal' })
+    const location = resolveFileLocation(this.path, {
+      repository: this.shareId ? 'share' : this.spaceId ? 'space' : 'personal',
+      displayRootName: this.displayRootName
+    })
     this.iconClass = location.iconClass
     this.icon = location.icon
     this.showedPath = location.relativePath

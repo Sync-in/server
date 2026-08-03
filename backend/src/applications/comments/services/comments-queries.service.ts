@@ -118,7 +118,8 @@ export class CommentsQueries {
           mime: files.mime,
           inTrash: sql<number>`0`.as('inTrash'),
           fromSpace: sql<number>`0`.as('fromSpace'),
-          fromShare: sql<number>`1`.as('fromShare')
+          fromShare: sql<number>`1`.as('fromShare'),
+          displayRootName: shares.name
         }
       } satisfies CommentRecent | SelectedFields<any, any>)
       .from(shares)
@@ -204,7 +205,8 @@ export class CommentsQueries {
           mime: files.mime,
           inTrash: sql<number>`${files.inTrash}`.as('inTrash'),
           fromSpace: sql<number>`IF (${files.ownerId} = ${userId}, 0, 1)`.as('fromSpace'),
-          fromShare: sql<number>`0`.as('fromShare')
+          fromShare: sql<number>`0`.as('fromShare'),
+          displayRootName: sql<string>`IF (${files.ownerId} = ${userId}, NULL, ${spaces.name})`.as('displayRootName')
         }
       } satisfies CommentRecent | SelectedFields<any, any>)
       .from(spaces)

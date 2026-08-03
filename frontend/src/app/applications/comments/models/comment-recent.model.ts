@@ -10,7 +10,7 @@ export class CommentRecentModel implements CommentRecent {
   content: string
   modifiedAt: Date
   author: OwnerType
-  file: { name: string; path: string; mime: string; inTrash: number; fromSpace: number; fromShare: number }
+  file: { name: string; path: string; mime: string; inTrash: number; fromSpace: number; fromShare: number; displayRootName?: string }
 
   // Computed
   mimeUrl: string
@@ -27,7 +27,8 @@ export class CommentRecentModel implements CommentRecent {
     this.mimeUrl = getAssetsMimeUrl(this.file.mime)
     const location = resolveFileLocation(this.file.path, {
       repository: this.file.fromShare ? 'share' : this.file.fromSpace ? 'space' : 'personal',
-      appendName: this.file.name
+      appendName: this.file.name,
+      displayRootName: this.file.displayRootName
     })
     this.icon = location.icon
     this.iconClass = location.iconClass
