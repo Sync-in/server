@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faArrowsAlt, faClone, faDownload, faQuestion, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
-import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_OPERATION, FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
+import { SPACE_ALIAS } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -15,9 +16,11 @@ import { AutoResizeDirective } from '../../../../common/directives/auto-resize.d
 import { originalOrderKeyValue } from '../../../../common/utils/functions'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
+import { SPACES_TITLE } from '../../../spaces/spaces.constants'
 import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 import { FilesCompressionDialogComponent } from '../dialogs/files-compression-dialog.component'
+import { resolveFileLocation } from '../utils/file-location.utils'
 import { FilesSummaryComponent } from '../utils/files-summary.component'
 
 @Component({
@@ -70,6 +73,18 @@ export class FilesClipboardComponent implements OnDestroy {
     } else {
       this.filesService.removeFromClipboard(file)
     }
+  }
+
+  protected fileLocation(file: FileModel): string {
+    const location = resolveFileLocation(file.path)
+    if (!location) return file.path
+    const repositoryTitle =
+      location.repository === SPACE_ALIAS.PERSONAL
+        ? SPACES_TITLE.PERSONAL_FILES
+        : location.repository === FILE_REPOSITORY.SHARE
+          ? SPACES_TITLE.SHARES
+          : SPACES_TITLE.SPACES
+    return [this.layout.translateString(repositoryTitle), location.relativePath].filter(Boolean).join('/')
   }
 
   doAction() {

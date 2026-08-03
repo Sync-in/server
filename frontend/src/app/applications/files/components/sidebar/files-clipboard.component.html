@@ -17,20 +17,20 @@
 @if (files.length) {
   <div class="px-2 pt-2 pb-2 fs-xs">
     <app-files-summary [files]="files" class="mb-2"></app-files-summary>
-    <div class="d-flex justify-content-between">
+    <div class="d-flex">
       <select [(ngModel)]="selectedAction" class="form-select form-select-sm">
         @for (item of operations| keyvalue: originalOrderKeyValue; track item.key) {
           <option [ngValue]="item.key" l10nTranslate>{{ item.value.text }}</option>
         }
       </select>
-      <button (click)="doAction()" class="btn btn-xs btn-primary ms-1" type="button" l10nTranslate>Confirm</button>
+      <button (click)="doAction()" class="btn btn-sm btn-primary ms-1" type="button" l10nTranslate>Confirm</button>
     </div>
   </div>
-  <hr class="mx-0 my-2">
+  <hr class="mx-0 my-1">
   <div appAutoResize class="sidebar-item" [resizeOffset]="170">
     @for (f of files; track f.id) {
       <div class="sidebar-item-container">
-        <div class="sidebar-item-content" [tooltip]="f.path">
+        <div class="sidebar-item-content" [tooltip]="fileLocation(f)">
           <img [src]="f.mimeUrl" alt="" height="28" width="28" (error)="f.fallBackMimeUrl()">
           <div class="text-truncate fs-sm">{{ f.name }}</div>
           <button (click)="remove(f)" class="btn btn-xs btn-default ms-auto">

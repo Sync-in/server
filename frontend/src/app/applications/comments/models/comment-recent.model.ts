@@ -1,5 +1,7 @@
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import type { CommentRecent } from '@sync-in-server/backend/src/applications/comments/interfaces/comment-recent.interface'
+import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { SPACE_ALIAS } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { resolveFileLocation } from '../../files/components/utils/file-location.utils'
 import { getAssetsMimeUrl } from '../../files/files.constants'
 import { OwnerType } from '../../users/interfaces/owner.interface'
@@ -26,7 +28,7 @@ export class CommentRecentModel implements CommentRecent {
     }
     this.mimeUrl = getAssetsMimeUrl(this.file.mime)
     const location = resolveFileLocation(this.file.path, {
-      repository: this.file.fromShare ? 'share' : this.file.fromSpace ? 'space' : 'personal',
+      repository: this.file.fromShare ? FILE_REPOSITORY.SHARE : this.file.fromSpace ? FILE_REPOSITORY.SPACE : SPACE_ALIAS.PERSONAL,
       appendName: this.file.name,
       displayRootName: this.file.displayRootName
     })

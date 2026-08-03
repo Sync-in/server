@@ -6,7 +6,7 @@ import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFile } from '@fortawesome/free-regular-svg-icons'
 import { faArrowRotateRight, faArrowsAlt, faClone, faFolder, faObjectGroup, faQuestion, faSpinner, faTimes } from '@fortawesome/free-solid-svg-icons'
-import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
+import { FILE_OPERATION, FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import { SPACE_ALIAS, SPACE_ALL_OPERATIONS, SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -192,7 +192,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
     const selection = this.selection
     if (!selection) return null
     return resolveFileLocation(selection.data.path, {
-      repository: selection.data.inShare ? 'share' : undefined,
+      repository: selection.data.inShare ? FILE_REPOSITORY.SHARE : undefined,
       excludeLeaf: true,
       displayRootName: this.getRepositoryRootName(selection)
     })

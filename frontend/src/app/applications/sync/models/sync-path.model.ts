@@ -1,4 +1,5 @@
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { SyncPathFromClient, SyncPathSettings } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-path.interface'
 import type { SyncPath } from '@sync-in-server/backend/src/applications/sync/schemas/sync-path.interface'
 import { popFromObject } from '@sync-in-server/backend/src/common/shared'
@@ -97,6 +98,6 @@ export class SyncPathModel implements Partial<SyncPath> {
     this.showedPath = location.relativePath
     this.iconClass = location.iconClass
     this.icon = location.icon
-    this.mime = location.repository === 'share' ? mimeDirectoryShare : mimeDirectory
+    this.mime = location.repository === FILE_REPOSITORY.SHARE ? mimeDirectoryShare : mimeDirectory
   }
 }
