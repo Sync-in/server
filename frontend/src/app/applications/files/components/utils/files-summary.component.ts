@@ -22,18 +22,18 @@ interface FilesSummarySize {
   template: `
     @let fileStats = stats();
     @let sizeSummary = totalSize | async;
-    <div class="app-small-card rounded d-flex justify-content-center align-items-center text-nowrap fs-sm py-2">
+    <div class="app-small-card files-summary-card border rounded d-flex justify-content-center align-items-center text-nowrap fs-sm px-2 py-2">
       <span>
         <span class="text-bold">{{ fileStats.directories }}</span>
         {{ (fileStats.directories === 1 ? 'directory' : 'directories') | translate: locale.language }}
       </span>
-      <span class="mx-1 lh-1">•</span>
+      <span class="mx-2 lh-1 text-muted">•</span>
       <span>
         <span class="text-bold">{{ fileStats.files }}</span>
         {{ (fileStats.files === 1 ? 'file' : 'files') | translate: locale.language }}
       </span>
       @if (sizeSummary !== null) {
-        <span class="mx-1 lh-1">•</span>
+        <span class="mx-2 lh-1 text-muted">•</span>
         <span>
           @if (sizeSummary.pendingDirectories || sizeSummary.hasError) {
             ≥&nbsp;

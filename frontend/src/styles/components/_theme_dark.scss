@@ -460,6 +460,10 @@
   .app-small-card {
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 2%);
   }
+  .files-summary-card {
+    background-color: $sidebar-dark-apps-menu-title-bg;
+    border-color: $sidebar-dark-icons-menu-border-color !important;
+  }
   .wizard {
     tbody tr {
       &:hover {

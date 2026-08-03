@@ -485,6 +485,10 @@
   .app-small-card {
     background-color: $light-sidebar-mini-bg;
   }
+  .files-summary-card {
+    background-color: $theme-light-panel-bg;
+    border-color: $secondary !important;
+  }
   .wizard {
     background-color: lighten($primary, 50%);
 
