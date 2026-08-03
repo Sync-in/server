@@ -1,12 +1,13 @@
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
-import { SPACES_ICON } from '../../../spaces/spaces.constants'
+import { SPACES_ICON, SPACES_TITLE } from '../../../spaces/spaces.constants'
 
 type FileLocationRepository = SPACE_ALIAS.PERSONAL | FILE_REPOSITORY.SPACE | FILE_REPOSITORY.SHARE
 
 interface FileLocationPresentation {
   repository: FileLocationRepository
+  repositoryTitle: string
   relativePath: string
   icon: IconDefinition
   iconClass: 'primary' | 'purple'
@@ -19,10 +20,14 @@ interface FileLocationOptions {
   displayRootName?: string
 }
 
-const FILE_LOCATION_PRESENTATION: Record<FileLocationRepository, Pick<FileLocationPresentation, 'icon' | 'iconClass'>> = {
-  [SPACE_ALIAS.PERSONAL]: { icon: SPACES_ICON.PERSONAL, iconClass: 'primary' },
-  [FILE_REPOSITORY.SPACE]: { icon: SPACES_ICON.SPACES, iconClass: 'primary' },
-  [FILE_REPOSITORY.SHARE]: { icon: SPACES_ICON.SHARES, iconClass: 'purple' }
+const FILE_LOCATION_PRESENTATION: Record<FileLocationRepository, Pick<FileLocationPresentation, 'repositoryTitle' | 'icon' | 'iconClass'>> = {
+  [SPACE_ALIAS.PERSONAL]: {
+    repositoryTitle: SPACES_TITLE.PERSONAL_FILES,
+    icon: SPACES_ICON.PERSONAL,
+    iconClass: 'primary'
+  },
+  [FILE_REPOSITORY.SPACE]: { repositoryTitle: SPACES_TITLE.SPACES, icon: SPACES_ICON.SPACES, iconClass: 'primary' },
+  [FILE_REPOSITORY.SHARE]: { repositoryTitle: SPACES_TITLE.SHARES, icon: SPACES_ICON.SHARES, iconClass: 'purple' }
 }
 
 export function resolveFileLocation(path: string, options: FileLocationOptions & { repository: FileLocationRepository }): FileLocationPresentation

@@ -899,19 +899,26 @@ export class SharesQueries {
     return r.length ? r[0].count : 0
   }
 
-  async clearCachePermissions(shareAlias: string, userIds: number[]) {
+  async clearCacheIdentities(userIds?: number[]) {
+    for (const userId of userIds ?? ['*']) {
+      const pattern = this.cache.genSlugKey(this.constructor.name, this.shareIdentities.name, userId, '*')
+      const keys = await this.cache.keys(pattern)
+      if (keys.length) {
+        this.logger.verbose({ tag: this.clearCacheIdentities.name, msg: `${JSON.stringify(keys)}` })
+        this.cache.mdel(keys).catch((e: Error) => this.logger.error({ tag: this.clearCacheIdentities.name, msg: `${e}` }))
+      }
+    }
+  }
+
+  async clearCachePermissions(shareAlias: string, userIds?: number[]) {
     // `permissions` argument must match with `this.permissions.name` function
-    for (const userId of userIds) {
-      const patterns = [
-        this.cache.genSlugKey(this.constructor.name, this.permissions.name, userId, shareAlias, '*'),
-        this.cache.genSlugKey(this.constructor.name, this.shareIdentities.name, userId, '*')
-      ]
-      for (const pattern of patterns) {
-        const keys = await this.cache.keys(pattern)
-        if (keys.length) {
-          this.logger.verbose({ tag: this.clearCachePermissions.name, msg: `${JSON.stringify(keys)}` })
-          this.cache.mdel(keys).catch((e: Error) => this.logger.error({ tag: this.clearCachePermissions.name, msg: `${e}` }))
-        }
+    await this.clearCacheIdentities(userIds)
+    for (const userId of userIds ?? ['*']) {
+      const pattern = this.cache.genSlugKey(this.constructor.name, this.permissions.name, userId, shareAlias, '*')
+      const keys = await this.cache.keys(pattern)
+      if (keys.length) {
+        this.logger.verbose({ tag: this.clearCachePermissions.name, msg: `${JSON.stringify(keys)}` })
+        this.cache.mdel(keys).catch((e: Error) => this.logger.error({ tag: this.clearCachePermissions.name, msg: `${e}` }))
       }
     }
   }

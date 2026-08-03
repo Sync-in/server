@@ -234,12 +234,14 @@ export class SharesManager {
     // asAdmin: true if the user is the owner of the parent share or if the share is requested from the administration
     const share: ShareProps = await this.getShareWithMembers(user, shareId, asAdmin)
     // check and update share info
+    let renamedShareAlias: string
     const shareDiffProps: Partial<ShareProps> = { modifiedAt: new Date() }
     const props: (keyof CreateOrUpdateShareDto)[] = ['name', 'description', 'enabled', 'storageQuota', 'storageIndexing']
     for (const prop of props) {
       if (createOrUpdateShareDto[prop] !== share[prop]) {
         shareDiffProps[prop] = createOrUpdateShareDto[prop]
         if (prop === 'name') {
+          renamedShareAlias = share.alias
           shareDiffProps.alias = await this.sharesQueries.uniqueShareAlias(shareDiffProps.name)
         } else if (prop === 'enabled') {
           shareDiffProps.disabledAt = shareDiffProps[prop] ? null : new Date()
@@ -249,6 +251,9 @@ export class SharesManager {
     // update in db
     if (!(await this.sharesQueries.updateShare(shareId, shareDiffProps))) {
       throw new HttpException('Unable to update share', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+    if (renamedShareAlias) {
+      void this.sharesQueries.clearCachePermissions(renamedShareAlias)
     }
     // update quota in cache
     if ('storageQuota' in shareDiffProps) {
@@ -683,6 +688,9 @@ export class SharesManager {
     }
     try {
       await this.linksQueries.updateLinkFromSpaceOrShare(link, spaceOrShareId, updateUser, updateLink, updateShare, updateMember)
+      if ('name' in updateShare) {
+        void this.sharesQueries.clearCacheIdentities()
+      }
       this.logger.debug({
         tag: this.updateLinkFromSpaceOrShare.name,
         msg: `link (${linkId}) updated : ${JSON.stringify({

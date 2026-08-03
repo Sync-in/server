@@ -12,7 +12,7 @@ export class CommentRecentModel implements CommentRecent {
   content: string
   modifiedAt: Date
   author: OwnerType
-  file: { name: string; path: string; mime: string; inTrash: number; fromSpace: number; fromShare: number; displayRootName?: string }
+  file: CommentRecent['file']
 
   // Computed
   mimeUrl: string

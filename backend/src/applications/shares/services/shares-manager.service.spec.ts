@@ -96,6 +96,7 @@ describe(SharesManager.name, () => {
     updateMembers: vi.fn(),
     shareExistsForOwner: vi.fn(),
     childExistsForShareOwner: vi.fn(),
+    clearCacheIdentities: vi.fn().mockResolvedValue(true),
     clearCachePermissions: vi.fn().mockResolvedValue(true)
   }
 
