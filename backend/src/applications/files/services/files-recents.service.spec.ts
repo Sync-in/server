@@ -21,10 +21,10 @@ describe(FilesRecents.name, () => {
     upsertRecent: Mock
   }
   let spacesQueries: {
-    spaceIds: Mock
+    spaceIdentities: Mock
   }
   let sharesQueries: {
-    shareIds: Mock
+    shareIdentities: Mock
   }
 
   beforeEach(async () => {
@@ -38,10 +38,10 @@ describe(FilesRecents.name, () => {
       upsertRecent: vi.fn().mockResolvedValue(undefined)
     }
     spacesQueries = {
-      spaceIds: vi.fn().mockResolvedValue([])
+      spaceIdentities: vi.fn().mockResolvedValue([])
     }
     sharesQueries = {
-      shareIds: vi.fn().mockResolvedValue([])
+      shareIdentities: vi.fn().mockResolvedValue([])
     }
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -74,8 +74,11 @@ describe(FilesRecents.name, () => {
 
   it('should load recents from user accessible spaces and shares', async () => {
     const recents = [{ id: 1, name: 'a.txt' }]
-    spacesQueries.spaceIds.mockResolvedValueOnce([10, 11])
-    sharesQueries.shareIds.mockResolvedValueOnce([20])
+    spacesQueries.spaceIdentities.mockResolvedValueOnce([
+      { id: 10, alias: 'first', name: 'First' },
+      { id: 11, alias: 'second', name: 'Second' }
+    ])
+    sharesQueries.shareIdentities.mockResolvedValueOnce([{ id: 20, alias: 'shared', name: 'Shared' }])
     filesQueries.getRecentsFromUser.mockResolvedValueOnce(recents)
 
     const result = await service.getRecents(
@@ -83,8 +86,8 @@ describe(FilesRecents.name, () => {
       25
     )
 
-    expect(spacesQueries.spaceIds).toHaveBeenCalledWith(7)
-    expect(sharesQueries.shareIds).toHaveBeenCalledWith(7, 1)
+    expect(spacesQueries.spaceIdentities).toHaveBeenCalledWith(7)
+    expect(sharesQueries.shareIdentities).toHaveBeenCalledWith(7, 1)
     expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(7, [10, 11], [20], 25)
     expect(result).toBe(recents)
   })
@@ -92,36 +95,36 @@ describe(FilesRecents.name, () => {
   it('should only load personal recents when user only has personal space permission', async () => {
     await service.getRecents(userWithPermissions([USER_PERMISSION.PERSONAL_SPACE]), 10)
 
-    expect(spacesQueries.spaceIds).not.toHaveBeenCalled()
-    expect(sharesQueries.shareIds).not.toHaveBeenCalled()
+    expect(spacesQueries.spaceIdentities).not.toHaveBeenCalled()
+    expect(sharesQueries.shareIdentities).not.toHaveBeenCalled()
     expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(7, [], [], 10)
   })
 
   it('should only load space recents when user only has spaces permission', async () => {
-    spacesQueries.spaceIds.mockResolvedValueOnce([10])
+    spacesQueries.spaceIdentities.mockResolvedValueOnce([{ id: 10, alias: 'space', name: 'Space' }])
 
     await service.getRecents(userWithPermissions([USER_PERMISSION.SPACES]), 10)
 
-    expect(spacesQueries.spaceIds).toHaveBeenCalledWith(7)
-    expect(sharesQueries.shareIds).not.toHaveBeenCalled()
+    expect(spacesQueries.spaceIdentities).toHaveBeenCalledWith(7)
+    expect(sharesQueries.shareIdentities).not.toHaveBeenCalled()
     expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(undefined, [10], [], 10)
   })
 
   it('should only load share recents when user only has shares permission', async () => {
-    sharesQueries.shareIds.mockResolvedValueOnce([20])
+    sharesQueries.shareIdentities.mockResolvedValueOnce([{ id: 20, alias: 'share', name: 'Share' }])
 
     await service.getRecents(userWithPermissions([USER_PERMISSION.SHARES]), 10)
 
-    expect(spacesQueries.spaceIds).not.toHaveBeenCalled()
-    expect(sharesQueries.shareIds).toHaveBeenCalledWith(7, 0)
+    expect(spacesQueries.spaceIdentities).not.toHaveBeenCalled()
+    expect(sharesQueries.shareIdentities).toHaveBeenCalledWith(7, 0)
     expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(undefined, [], [20], 10)
   })
 
   it('should not load any recents source without matching permission', async () => {
     await service.getRecents(userWithPermissions(), 10)
 
-    expect(spacesQueries.spaceIds).not.toHaveBeenCalled()
-    expect(sharesQueries.shareIds).not.toHaveBeenCalled()
+    expect(spacesQueries.spaceIdentities).not.toHaveBeenCalled()
+    expect(sharesQueries.shareIdentities).not.toHaveBeenCalled()
     expect(filesQueries.getRecentsFromUser).toHaveBeenCalledWith(undefined, [], [], 10)
   })
 

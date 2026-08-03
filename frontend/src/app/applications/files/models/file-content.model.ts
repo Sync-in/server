@@ -11,6 +11,7 @@ export class FileContentModel implements FileContent {
   size: number
   mtime: number
   matches: string[]
+  displayRootName?: string
 
   // Computed
   mimeUrl: string
@@ -29,7 +30,7 @@ export class FileContentModel implements FileContent {
   }
 
   private setProperties() {
-    const location = resolveFileLocation(this.path)
+    const location = resolveFileLocation(this.path, { displayRootName: this.displayRootName })
     if (!location) return
     this.showedPath = location.relativePath
     this.iconClass = location.iconClass

@@ -18,6 +18,7 @@ import { StoreService } from '../../../../store/store.service'
 import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 import { FilesCompressionDialogComponent } from '../dialogs/files-compression-dialog.component'
+import { resolveFileLocation } from '../utils/file-location.utils'
 import { FilesSummaryComponent } from '../utils/files-summary.component'
 
 @Component({
@@ -70,6 +71,12 @@ export class FilesClipboardComponent implements OnDestroy {
     } else {
       this.filesService.removeFromClipboard(file)
     }
+  }
+
+  protected fileLocation(file: FileModel): string {
+    const location = resolveFileLocation(file.path)
+    if (!location) return file.path
+    return [this.layout.translateString(location.repositoryTitle), location.relativePath].filter(Boolean).join('/')
   }
 
   doAction() {

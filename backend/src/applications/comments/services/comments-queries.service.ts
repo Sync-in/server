@@ -118,7 +118,8 @@ export class CommentsQueries {
           mime: files.mime,
           inTrash: sql<number>`0`.as('inTrash'),
           fromSpace: sql<number>`0`.as('fromSpace'),
-          fromShare: sql<number>`1`.as('fromShare')
+          fromShare: sql<number>`1`.as('fromShare'),
+          displayRootName: shares.name
         }
       } satisfies CommentRecent | SelectedFields<any, any>)
       .from(shares)
@@ -204,7 +205,8 @@ export class CommentsQueries {
           mime: files.mime,
           inTrash: sql<number>`${files.inTrash}`.as('inTrash'),
           fromSpace: sql<number>`IF (${files.ownerId} = ${userId}, 0, 1)`.as('fromSpace'),
-          fromShare: sql<number>`0`.as('fromShare')
+          fromShare: sql<number>`0`.as('fromShare'),
+          displayRootName: sql<string>`IF (${files.ownerId} = ${userId}, NULL, ${spaces.name})`.as('displayRootName')
         }
       } satisfies CommentRecent | SelectedFields<any, any>)
       .from(spaces)
@@ -236,10 +238,12 @@ export class CommentsQueries {
 
   async getRecentsFromUser(user: UserModel, limit = 10): Promise<CommentRecent[]> {
     const hasPersonal = user.havePermission(USER_PERMISSION.PERSONAL_SPACE)
-    const [spaceIds, shareIds] = await Promise.all([
-      user.havePermission(USER_PERMISSION.SPACES) ? this.spacesQueries.spaceIds(user.id) : Promise.resolve([]),
-      user.havePermission(USER_PERMISSION.SHARES) ? this.sharesQueries.shareIds(user.id, +user.isAdmin) : Promise.resolve([])
+    const [spaces, shares] = await Promise.all([
+      user.havePermission(USER_PERMISSION.SPACES) ? this.spacesQueries.spaceIdentities(user.id) : Promise.resolve([]),
+      user.havePermission(USER_PERMISSION.SHARES) ? this.sharesQueries.shareIdentities(user.id, +user.isAdmin) : Promise.resolve([])
     ])
+    const spaceIds = spaces.map(({ id }) => id)
+    const shareIds = shares.map(({ id }) => id)
     const hasSpaces = spaceIds.length > 0
     const hasShares = shareIds.length > 0
     const sourceCount = +hasPersonal + +hasSpaces + +hasShares

@@ -12,6 +12,7 @@ export class FileRecent implements FileRecentSchema {
   name: string
   mime: string
   mtime: number
+  displayRootName?: string
 }
 
 export interface FileRecentLocation {

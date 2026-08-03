@@ -43,7 +43,12 @@ export class SpacesBrowser {
   ): Promise<SpaceFiles> {
     // check sync permission
     options.withSyncs = options.withSyncs && user.havePermission(USER_PERMISSION.DESKTOP_APP) && user.havePermission(USER_PERMISSION.DESKTOP_APP_SYNC)
-    const spaceFiles: SpaceFiles = { files: [], hasRoots: false, permissions: space.browsePermissions() }
+    const spaceFiles: SpaceFiles = {
+      space: { alias: space.alias, name: space.name },
+      files: [],
+      hasRoots: false,
+      permissions: space.browsePermissions()
+    }
     const [fsFiles, dbFiles, rootFiles] = await Promise.all([
       this.parseFS(space),
       this.parseDB(user.id, space, options),

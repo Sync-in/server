@@ -52,7 +52,7 @@ import { shares } from '../schemas/shares.schema'
 export class SharesQueries {
   private readonly logger = new Logger(SharesQueries.name)
   private sharesListQuery: MySql2PreparedQuery<any> = null
-  private shareIdsQuery: MySql2PreparedQuery<any> = null
+  private shareIdentitiesQuery: MySql2PreparedQuery<any> = null
   private shareLinksListQuery: MySql2PreparedQuery<any> = null
   private shareWithMembersQuery: MySql2PreparedQuery<any> = null
   private sharePermissionsQuery: MySql2PreparedQuery<any> = null
@@ -473,16 +473,17 @@ export class SharesQueries {
   }
 
   @CacheDecorator()
-  async shareIds(userId: number, isAdmin: number): Promise<number[]> {
-    if (!this.shareIdsQuery) {
-      const unionAlias = union(
-        this.fromUserQuery({ id: shares.id }),
-        this.fromGroupsQuery({ id: shares.id }),
-        this.fromAdminSharesQuery({ id: shares.id })
-      ).as('unionAlias')
-      this.shareIdsQuery = this.db.select({ id: unionAlias.id }).from(unionAlias).groupBy(unionAlias.id).prepare()
+  async shareIdentities(userId: number, isAdmin: number): Promise<Pick<Share, 'id' | 'alias' | 'name'>[]> {
+    if (!this.shareIdentitiesQuery) {
+      const select = { id: shares.id, alias: shares.alias, name: shares.name }
+      const unionAlias = union(this.fromUserQuery(select), this.fromGroupsQuery(select), this.fromAdminSharesQuery(select)).as('unionAlias')
+      this.shareIdentitiesQuery = this.db
+        .select({ id: unionAlias.id, alias: unionAlias.alias, name: unionAlias.name })
+        .from(unionAlias)
+        .groupBy(unionAlias.id, unionAlias.alias, unionAlias.name)
+        .prepare()
     }
-    return (await this.shareIdsQuery.execute({ userId: userId, isAdmin: +isAdmin })).map((r: { id: number }) => r.id)
+    return this.shareIdentitiesQuery.execute({ userId: userId, isAdmin: +isAdmin })
   }
 
   async listShares(user: UserModel): Promise<ShareFile[]> {
@@ -898,9 +899,21 @@ export class SharesQueries {
     return r.length ? r[0].count : 0
   }
 
-  async clearCachePermissions(shareAlias: string, userIds: number[]) {
+  async clearCacheIdentities(userIds?: number[]) {
+    for (const userId of userIds ?? ['*']) {
+      const pattern = this.cache.genSlugKey(this.constructor.name, this.shareIdentities.name, userId, '*')
+      const keys = await this.cache.keys(pattern)
+      if (keys.length) {
+        this.logger.verbose({ tag: this.clearCacheIdentities.name, msg: `${JSON.stringify(keys)}` })
+        this.cache.mdel(keys).catch((e: Error) => this.logger.error({ tag: this.clearCacheIdentities.name, msg: `${e}` }))
+      }
+    }
+  }
+
+  async clearCachePermissions(shareAlias: string, userIds?: number[]) {
     // `permissions` argument must match with `this.permissions.name` function
-    for (const userId of userIds) {
+    await this.clearCacheIdentities(userIds)
+    for (const userId of userIds ?? ['*']) {
       const pattern = this.cache.genSlugKey(this.constructor.name, this.permissions.name, userId, shareAlias, '*')
       const keys = await this.cache.keys(pattern)
       if (keys.length) {

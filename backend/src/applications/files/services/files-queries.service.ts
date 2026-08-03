@@ -297,9 +297,12 @@ export class FilesQueries {
         path: filesRecents.path,
         name: filesRecents.name,
         mime: filesRecents.mime,
-        mtime: filesRecents.mtime
+        mtime: filesRecents.mtime,
+        displayRootName: sql<string>`COALESCE(${spaces.name}, ${shares.name})`.as('displayRootName')
       } satisfies FileRecent | SelectedFields<any, any>)
       .from(filesRecents)
+      .leftJoin(spaces, eq(spaces.id, filesRecents.spaceId))
+      .leftJoin(shares, eq(shares.id, filesRecents.shareId))
       .where(or(...where))
       .groupBy(filesRecents.id)
       .orderBy(desc(filesRecents.mtime))

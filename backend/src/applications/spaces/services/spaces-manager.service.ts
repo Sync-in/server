@@ -237,12 +237,14 @@ export class SpacesManager {
     const space: SpaceProps = await this.userCanAccessSpace(user, spaceId, true)
     // check and update space info
     let mustInvalidateCache = false
+    let renamedSpaceAlias: string
     const spaceDiffProps: Partial<SpaceProps> = { modifiedAt: new Date() }
     const props: (keyof CreateOrUpdateSpaceDto)[] = ['name', 'description', 'enabled', 'storageQuota', 'storageIndexing']
     for (const prop of props) {
       if (createOrUpdateSpaceDto[prop] !== space[prop]) {
         spaceDiffProps[prop] = createOrUpdateSpaceDto[prop]
         if (prop === 'name') {
+          renamedSpaceAlias = space.alias
           spaceDiffProps.alias = await this.uniqueSpaceAlias(spaceDiffProps.name, true)
           if (space.alias !== spaceDiffProps.alias) {
             // must move the space to match the new alias
@@ -261,6 +263,9 @@ export class SpacesManager {
     // update in db
     if (!(await this.spacesQueries.updateSpace(spaceId, spaceDiffProps))) {
       throw new HttpException('Unable to update space', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+    if (renamedSpaceAlias) {
+      void this.spacesQueries.clearCachePermissions(renamedSpaceAlias)
     }
     // update quota in cache
     if ('storageQuota' in spaceDiffProps) {

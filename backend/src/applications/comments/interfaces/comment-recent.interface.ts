@@ -5,5 +5,5 @@ export interface CommentRecent {
   content: string
   modifiedAt: Date
   author: Owner
-  file: { name: string; path: string; mime: string; inTrash: number; fromSpace: number; fromShare: number }
+  file: { name: string; path: string; mime: string; inTrash: number; fromSpace: number; fromShare: number; displayRootName?: string }
 }

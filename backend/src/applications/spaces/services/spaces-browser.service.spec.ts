@@ -4,6 +4,7 @@ import { exportConfiguration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/cache.service'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
 import { FilesQueries } from '../../files/services/files-queries.service'
 import { FilesRecents } from '../../files/services/files-recents.service'
@@ -11,11 +12,12 @@ import { LinksQueries } from '../../links/services/links-queries.service'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { SharesManager } from '../../shares/services/shares-manager.service'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
+import type { UserModel } from '../../users/models/user.model'
 import { UsersQueries } from '../../users/services/users-queries.service'
+import type { SpaceEnv } from '../models/space-env.model'
 import { SpacesBrowser } from './spaces-browser.service'
 import { SpacesManager } from './spaces-manager.service'
 import { SpacesQueries } from './spaces-queries.service'
-import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
 
 describe(SpacesBrowser.name, () => {
   let spacesBrowserService: SpacesBrowser
@@ -53,5 +55,25 @@ describe(SpacesBrowser.name, () => {
 
   it('should be defined', () => {
     expect(spacesBrowserService).toBeDefined()
+  })
+
+  it('should expose the space name while preserving its alias', async () => {
+    const user = { id: 1 } as UserModel
+    const space = {
+      alias: 'communication',
+      name: 'Communication',
+      inSharesList: false,
+      inTrashRepository: false,
+      browsePermissions: vi.fn().mockReturnValue('a:m')
+    } as unknown as SpaceEnv
+
+    vi.spyOn(spacesBrowserService as any, 'parseFS').mockResolvedValue([])
+    vi.spyOn(spacesBrowserService as any, 'parseDB').mockResolvedValue([])
+    vi.spyOn(spacesBrowserService as any, 'parseRootFiles').mockResolvedValue([])
+    vi.spyOn((spacesBrowserService as any).filesRecents, 'updateRecents').mockResolvedValue(undefined)
+
+    const result = await spacesBrowserService.browse(user, space)
+
+    expect(result.space).toEqual({ alias: 'communication', name: 'Communication' })
   })
 })

@@ -4,6 +4,7 @@ import { Stats } from 'node:fs'
 import path from 'node:path'
 import { configuration } from '../../../configuration/config.environment'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
+import { SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { UserModel } from '../../users/models/user.model'
 import { SearchFilesDto } from '../dto/file-operations.dto'
@@ -32,12 +33,16 @@ export class FilesSearchManager {
       throw new HttpException('Full-text search is disabled', HttpStatus.BAD_REQUEST)
     }
     const limit = normalizeSearchLimit(search.limit)
-    const [spaceIds, shareIds] = await Promise.all([this.spacesQueries.spaceIds(user.id), this.sharesQueries.shareIds(user.id, +user.isAdmin)])
-    if (search.fullText) {
-      return await this.searchFullText(user.id, spaceIds, shareIds, search.content, limit)
-    } else {
-      return await this.searchFileNames(user.id, spaceIds, shareIds, search.content, limit)
-    }
+    const [userSpaces, userShares] = await Promise.all([
+      this.spacesQueries.spaceIdentities(user.id),
+      this.sharesQueries.shareIdentities(user.id, +user.isAdmin)
+    ])
+    const spaceIds = userSpaces.map((space) => space.id)
+    const shareIds = userShares.map((share) => share.id)
+    const fileContents = await (search.fullText
+      ? this.searchFullText(user.id, spaceIds, shareIds, search.content, limit)
+      : this.searchFileNames(user.id, spaceIds, shareIds, search.content, limit))
+    return this.setDisplayRootNames(fileContents, userSpaces, userShares)
   }
 
   private async searchFullText(userId: number, spaceIds: number[], shareIds: number[], search: string, limit: number): Promise<FileContent[]> {
@@ -73,6 +78,7 @@ export class FilesSearchManager {
           const f = await this.analyzeFile(p.realPath, p.pathPrefix, regexBasePath, regexpTerms)
           if (f !== null) {
             fileContents.push(f)
+            if (fileContents.length >= limit) return fileContents
           }
           continue
         }
@@ -116,5 +122,26 @@ export class FilesSearchManager {
       size: stats.size,
       mtime: stats.mtime.getTime()
     }
+  }
+
+  private setDisplayRootNames(
+    fileContents: FileContent[],
+    userSpaces: { alias?: string; name?: string }[],
+    userShares: { alias?: string; name?: string }[]
+  ): FileContent[] {
+    if (fileContents.length === 0) return fileContents
+    const displayRootNames = new Map<string, string>()
+    for (const { alias, name } of userSpaces) {
+      if (alias && name) displayRootNames.set(`${SPACE_REPOSITORY.FILES}/${alias}`, name)
+    }
+    for (const { alias, name } of userShares) {
+      if (alias && name) displayRootNames.set(`${SPACE_REPOSITORY.SHARES}/${alias}`, name)
+    }
+    for (const fileContent of fileContents) {
+      const [repository, alias] = fileContent.path.split('/', 2)
+      const displayRootName = displayRootNames.get(`${repository}/${alias}`)
+      if (displayRootName) fileContent.displayRootName = displayRootName
+    }
+    return fileContents
   }
 }

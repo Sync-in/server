@@ -54,7 +54,7 @@ export class SpacesQueries {
   private spaceAndRootPermissionsQuery: MySql2PreparedQuery<any> = null
   private spacesWithDetailsQuery: MySql2PreparedQuery<any> = null
   private spacesQuery: MySql2PreparedQuery<any> = null
-  private spaceIdsQuery: MySql2PreparedQuery<any> = null
+  private spaceIdentitiesQuery: MySql2PreparedQuery<any> = null
   private spaceQuery: MySql2PreparedQuery<any> = null
   private spacesWithPermissionsQuery: MySql2PreparedQuery<any> = null
   private spaceFromIdWithPermissionsQuery: MySql2PreparedQuery<any> = null
@@ -476,13 +476,17 @@ export class SpacesQueries {
   }
 
   @CacheDecorator()
-  async spaceIds(userId: number): Promise<number[]> {
-    if (!this.spaceIdsQuery) {
-      const unionAlias = this.fromUserAndGroups({ id: spaces.id })
-      this.spaceIdsQuery = this.db.select({ id: unionAlias.id }).from(unionAlias).groupBy(unionAlias.id).prepare()
+  async spaceIdentities(userId: number): Promise<Pick<Space, 'id' | 'alias' | 'name'>[]> {
+    if (!this.spaceIdentitiesQuery) {
+      const unionAlias = this.fromUserAndGroups({ id: spaces.id, alias: spaces.alias, name: spaces.name })
+      this.spaceIdentitiesQuery = this.db
+        .select({ id: unionAlias.id, alias: unionAlias.alias, name: unionAlias.name })
+        .from(unionAlias)
+        .groupBy(unionAlias.id, unionAlias.alias, unionAlias.name)
+        .prepare()
     }
     // `userId` is used in `fromUserAndGroups` function
-    return (await this.spaceIdsQuery.execute({ userId })).map((r: { id: number }) => r.id)
+    return this.spaceIdentitiesQuery.execute({ userId })
   }
 
   @CacheDecorator()
@@ -712,6 +716,8 @@ export class SpacesQueries {
         // clear cache on space root
         rootAliases.forEach((rAlias: string) => patterns.push(this.cache.genSlugKey(...basePattern, rAlias)))
       } else {
+        // clear cache on accessible space identities
+        patterns.push(this.cache.genSlugKey(this.constructor.name, this.spaceIdentities.name, uid))
         // clear cache on spaces list
         patterns.push(this.cache.genSlugKey(...[this.constructor.name, this.spaces.name, uid]))
         patterns.push(this.cache.genSlugKey(...[this.constructor.name, this.spaces.name, uid, '*']))
