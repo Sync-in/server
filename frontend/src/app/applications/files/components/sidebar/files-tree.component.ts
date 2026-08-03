@@ -20,7 +20,7 @@ import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
 import { SPACES_PATH, SPACES_TITLE } from '../../../spaces/spaces.constants'
 import { UserService } from '../../../users/user.service'
-import { resolveFileLocation } from '../../file-location.utils'
+import { resolveFileLocation } from '../utils/file-location.utils'
 import { mimeDirectory } from '../../files.constants'
 import type { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
@@ -194,8 +194,14 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
     return resolveFileLocation(selection.data.path, {
       repository: selection.data.inShare ? 'share' : undefined,
       excludeLeaf: true,
-      displayLeafName: selection.parent?.data?.name
+      displayRootName: this.getRepositoryRootName(selection)
     })
+  }
+
+  private getRepositoryRootName(selection: TreeNode): string | undefined {
+    let repositoryRoot = selection
+    while (repositoryRoot.parent && ![0, -1, -2].includes(repositoryRoot.parent.data?.id)) repositoryRoot = repositoryRoot.parent
+    return [-1, -2].includes(repositoryRoot.parent?.data?.id) ? repositoryRoot.data.name : undefined
   }
 
   private initRoot() {

@@ -1,13 +1,7 @@
 @if (sideBarHeader) {
   <div class="sidebar-component-title justify-content-between position-relative">
     <div class="sidebar-component-title-side"></div>
-    <div class="sidebar-component-title-label">
-      @if (errorMsg && !srcAllowed) {
-        <span class="text-danger fs-sm p-1" l10nTranslate>{{ errorMsg }}</span>
-      } @else {
-        <span l10nTranslate>Navigation</span>
-      }
-    </div>
+    <div class="sidebar-component-title-label" l10nTranslate>Navigation</div>
     <div class="sidebar-component-title-side">
       <button (click)="onRefresh()" class="btn btn-sm btn-default" type="button">
         <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
@@ -21,13 +15,13 @@
   <div #copyMovePanel class="bg-white p-2 fs-sm">
     <div class="d-flex">
       <div class="d-flex flex-column align-items-center me-2 text-muted">
-        <span class="border rounded-circle d-flex align-items-center justify-content-center p-1 lh-1">
+        <span class="border rounded-circle d-flex align-items-center justify-content-center p-2 lh-1">
           <fa-icon
             [icon]="files.length === 1 ? (files[0].isDir ? icons.faFolder : icons.faFile) : files.length > 1 ? icons.faObjectGroup : icons.faQuestion"
             [fixedWidth]="true">
           </fa-icon>
         </span>
-        <span class="border-start flex-grow-1"></span>
+        <span class="copy-move-connector border-start flex-grow-1"></span>
       </div>
       <div class="flex-grow-1 overflow-hidden pb-2">
         <div class="text-muted mb-1">
@@ -66,12 +60,15 @@
             <app-files-summary [files]="files"></app-files-summary>
           }
         }
+        @if (errorMsg && !srcAllowed) {
+          <div class="text-danger mt-1" l10nTranslate>{{ errorMsg }}</div>
+        }
       </div>
     </div>
 
     <div class="d-flex">
       <div class="d-flex flex-column align-items-center me-2 text-muted">
-        <span class="border rounded-circle d-flex align-items-center justify-content-center p-1 lh-1">
+        <span class="border rounded-circle d-flex align-items-center justify-content-center p-2 lh-1">
           <fa-icon [icon]="destination?.icon || icons.faQuestion" [fixedWidth]="true"></fa-icon>
         </span>
       </div>
@@ -84,18 +81,19 @@
           }
         </div>
         <div class="app-small-card files-summary-card border rounded d-flex align-items-center px-2 py-2">
-          @if (errorMsg && !dstAllowed) {
-            <span class="text-danger text-truncate mx-auto" l10nTranslate>{{ errorMsg }}</span>
-          } @else if (selection && dstAllowed) {
+          @if (selection && dstAllowed) {
             <span class="text-bold text-truncate">{{ selection.data.name }}</span>
           } @else {
             <fa-icon [icon]="icons.faQuestion" class="text-muted mx-auto"></fa-icon>
           }
         </div>
+        @if (errorMsg && !dstAllowed) {
+          <div class="text-danger mt-1" l10nTranslate>{{ errorMsg }}</div>
+        }
       </div>
     </div>
 
-    <div class="d-flex gap-2 pt-1 w-100 mt-2">
+    <div class="d-flex gap-2 w-100 mt-3">
       <button (click)="actionMove()"
               [disabled]="!selection || !files.length || !srcAllowed || !dstAllowed"
               class="btn btn-sm btn-warning flex-fill"
@@ -134,6 +132,9 @@
            class="node-wrapper">
         <tree-node-expander [class.toggle-children-file]="!node.data.isDir"
                             [class.toggle-children-shared]="node.data.inShare"
+                            [class.tree-root-personal]="node.data.id === 0"
+                            [class.tree-root-shares]="node.data.id === -2"
+                            [class.tree-root-spaces]="node.data.id === -1"
                             [node]="node">
         </tree-node-expander>
         <div [class.node-content-wrapper-active]="node.isActive" class="node-content-wrapper">

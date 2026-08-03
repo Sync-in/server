@@ -11,7 +11,7 @@ import {
   mimeDirectoryShare,
   mimeDirectorySync
 } from '../../files/files.constants'
-import { resolveFileLocation } from '../../files/file-location.utils'
+import { resolveFileLocation } from '../../files/components/utils/file-location.utils'
 import { hasWritePermission } from '../sync.utils'
 
 export class SyncPathModel implements Partial<SyncPath> {

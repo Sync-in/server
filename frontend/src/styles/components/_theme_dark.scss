@@ -69,6 +69,10 @@
       color: $gray-light;
     }
 
+    .copy-move-connector {
+      border-color: $dark-surface-border !important;
+    }
+
     hr {
       border-top-color: $dark-control-sidebar-separator-color !important;
       opacity: 1;

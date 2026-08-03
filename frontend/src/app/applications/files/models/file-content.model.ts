@@ -1,6 +1,6 @@
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
-import { resolveFileLocation } from '../file-location.utils'
+import { resolveFileLocation } from '../components/utils/file-location.utils'
 import { defaultMimeUrl, getAssetsMimeUrl } from '../files.constants'
 
 export class FileContentModel implements FileContent {

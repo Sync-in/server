@@ -2,6 +2,10 @@
   @return "rgb(#{red($hexColor)},#{green($hexColor)},#{blue($hexColor)})";
 }
 
+$tree-root-personal-icon: 'M448 448L64 448c-35.3 0-64-28.7-64-64l0-176 512 0 0 176c0 35.3-28.7 64-64 64zm64-288L0 160 0 96C0 60.7 28.7 32 64 32l138.7 0c13.8 0 27.3 4.5 38.4 12.8l38.4 28.8c5.5 4.2 12.3 6.4 19.2 6.4L448 80c35.3 0 64 28.7 64 64l0 16z';
+$tree-root-spaces-icon: 'M232.5 5.2c14.9-6.9 32.1-6.9 47 0l218.6 101c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0L13.9 149.8C5.4 145.8 0 137.3 0 128s5.4-17.9 13.9-21.8L232.5 5.2zM48.1 218.4l164.3 75.9c27.7 12.8 59.6 12.8 87.3 0l164.3-75.9 34.1 15.8c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0L13.9 277.8C5.4 273.8 0 265.3 0 256s5.4-17.9 13.9-21.8l34.1-15.8zM13.9 362.2l34.1-15.8 164.3 75.9c27.7 12.8 59.6 12.8 87.3 0l164.3-75.9 34.1 15.8c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0L13.9 405.8C5.4 401.8 0 393.3 0 384s5.4-17.9 13.9-21.8z';
+$tree-root-shares-icon: 'M384 192c53 0 96-43 96-96s-43-96-96-96-96 43-96 96c0 5.4 .5 10.8 1.3 16L159.6 184.1c-16.9-15-39.2-24.1-63.6-24.1-53 0-96 43-96 96s43 96 96 96c24.4 0 46.6-9.1 63.6-24.1L289.3 400c-.9 5.2-1.3 10.5-1.3 16 0 53 43 96 96 96s96-43 96-96-43-96-96-96c-24.4 0-46.6 9.1-63.6 24.1L190.7 272c.9-5.2 1.3-10.5 1.3-16s-.5-10.8-1.3-16l129.7-72.1c16.9 15 39.2 24.1 63.6 24.1z';
+
 @mixin directory($color) {
   content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#{hexToRGBString($color)}" d="M64 480H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H288c-10.1 0-19.6-4.7-25.6-12.8L243.2 57.6C231.1 41.5 212.1 32 192 32H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64z"/></svg>');
   display: inline-block;
@@ -11,10 +15,40 @@
 @mixin caret($color) {
   content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="#{hexToRGBString($color)}" d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg>');
   display: inline-block;
-  width: 10px;
+  width: 8px;
   position: absolute;
-  left: 3px;
-  top: 4px;
+  left: 4px;
+  top: 6px;
+}
+
+@mixin tree-root-icon($color, $path) {
+  content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#{hexToRGBString($color)}" d="#{$path}"/></svg>');
+  width: 13px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@mixin tree-root($color, $path) {
+  .toggle-children-wrapper .toggle-children {
+    width: 26px;
+    height: 24px;
+    border-radius: 0.25rem;
+    background-color: $color;
+
+    &:before {
+      @include tree-root-icon($gray, $path);
+    }
+
+    &:after {
+      content: none;
+    }
+  }
+
+  .toggle-children-wrapper-expanded .toggle-children:before {
+    @include tree-root-icon(white, $path);
+  }
 }
 
 @mixin file($color) {
@@ -122,6 +156,18 @@
     &:after {
       @include directory($primary);
     }
+  }
+
+  .tree-root-personal {
+    @include tree-root($primary, $tree-root-personal-icon);
+  }
+
+  .tree-root-spaces {
+    @include tree-root($primary, $tree-root-spaces-icon);
+  }
+
+  .tree-root-shares {
+    @include tree-root($purple, $tree-root-shares-icon);
   }
 
   .toggle-children-shared {

@@ -1,6 +1,6 @@
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
-import { SPACES_ICON } from '../spaces/spaces.constants'
+import { SPACES_ICON } from '../../../spaces/spaces.constants'
 
 type FileLocationRepository = 'personal' | 'space' | 'share'
 
@@ -15,7 +15,7 @@ interface FileLocationOptions {
   repository?: FileLocationRepository
   appendName?: string
   excludeLeaf?: boolean
-  displayLeafName?: string
+  displayRootName?: string
 }
 
 const FILE_LOCATION_PRESENTATION: Record<FileLocationRepository, Pick<FileLocationPresentation, 'icon' | 'iconClass'>> = {
@@ -32,7 +32,7 @@ export function resolveFileLocation(path: string, options: FileLocationOptions =
   if (!repository) return undefined
   const relativeSegments = segments.slice(segments[1] === SPACE_ALIAS.PERSONAL ? 2 : segments.length ? 1 : 0)
   if (options.excludeLeaf) relativeSegments.pop()
-  if (options.displayLeafName && relativeSegments.length) relativeSegments[relativeSegments.length - 1] = options.displayLeafName
+  if (repository !== 'personal' && options.displayRootName && relativeSegments.length) relativeSegments[0] = options.displayRootName
   if (options.appendName) relativeSegments.push(options.appendName)
   return {
     repository,

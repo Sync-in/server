@@ -1,7 +1,7 @@
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
-import { resolveFileLocation } from '../file-location.utils'
+import { resolveFileLocation } from '../components/utils/file-location.utils'
 import { defaultMimeUrl, getAssetsMimeUrl } from '../files.constants'
 
 export class FileRecentModel implements FileRecent {

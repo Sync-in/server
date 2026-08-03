@@ -1,6 +1,6 @@
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import type { CommentRecent } from '@sync-in-server/backend/src/applications/comments/interfaces/comment-recent.interface'
-import { resolveFileLocation } from '../../files/file-location.utils'
+import { resolveFileLocation } from '../../files/components/utils/file-location.utils'
 import { getAssetsMimeUrl } from '../../files/files.constants'
 import { OwnerType } from '../../users/interfaces/owner.interface'
 import { userAvatarUrl } from '../../users/user.functions'
