@@ -1,5 +1,4 @@
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SyncPathFromClient, SyncPathSettings } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-path.interface'
 import type { SyncPath } from '@sync-in-server/backend/src/applications/sync/schemas/sync-path.interface'
 import { popFromObject } from '@sync-in-server/backend/src/common/shared'
@@ -12,7 +11,7 @@ import {
   mimeDirectoryShare,
   mimeDirectorySync
 } from '../../files/files.constants'
-import { SPACES_ICON, SPACES_PATH } from '../../spaces/spaces.constants'
+import { resolveFileLocation } from '../../files/file-location.utils'
 import { hasWritePermission } from '../sync.utils'
 
 export class SyncPathModel implements Partial<SyncPath> {
@@ -89,22 +88,15 @@ export class SyncPathModel implements Partial<SyncPath> {
   private setProperties() {
     this.isWriteable = hasWritePermission(this.settings?.permissions)
     this.newly = getNewly(this.settings.lastSync || 0, true)
-    const repository = this.settings.remotePath.split('/')[0]
-    this.showedPath = this.settings.remotePath.split('/').slice(1).join('/')
-    this.iconClass = repository === SPACE_REPOSITORY.SHARES ? 'purple' : 'primary'
-    switch (repository) {
-      case SPACES_PATH.PERSONAL:
-        this.icon = SPACES_ICON.PERSONAL
-        this.mime = mimeDirectory
-        break
-      case SPACES_PATH.SPACES:
-        this.icon = SPACES_ICON.SPACES
-        this.mime = mimeDirectory
-        break
-      case SPACES_PATH.SHARES:
-        this.icon = SPACES_ICON.SHARES
-        this.mime = mimeDirectoryShare
-        break
+    const location = resolveFileLocation(this.settings.remotePath)
+    if (!location) {
+      this.showedPath = this.settings.remotePath.split('/').slice(1).join('/')
+      this.iconClass = 'primary'
+      return
     }
+    this.showedPath = location.relativePath
+    this.iconClass = location.iconClass
+    this.icon = location.icon
+    this.mime = location.repository === 'share' ? mimeDirectoryShare : mimeDirectory
   }
 }

@@ -2,7 +2,7 @@
   <div class="sidebar-component-title justify-content-between position-relative">
     <div class="sidebar-component-title-side"></div>
     <div class="sidebar-component-title-label">
-      @if (errorMsg) {
+      @if (errorMsg && !srcAllowed) {
         <span class="text-danger fs-sm p-1" l10nTranslate>{{ errorMsg }}</span>
       } @else {
         <span l10nTranslate>Navigation</span>
@@ -16,50 +16,104 @@
   </div>
 }
 @if (copyMoveOn) {
-  <div class="bg-white px-2 pt-2 pb-0 fs-sm">
-    <div class="text-start text-truncate">
-      <span class="fs-sm text-bold me-2" l10nTranslate><span l10nTranslate>Source</span>:</span>
-      @switch (store.filesSelection().length) {
-        @case (1) {
-          <span>
-            <span>{{ store.filesSelection()[0].name }}</span>
-          </span>
+  @let files = store.filesSelection();
+  @let destination = destinationLocation;
+  <div #copyMovePanel class="bg-white p-2 fs-sm">
+    <div class="d-flex">
+      <div class="d-flex flex-column align-items-center me-2 text-muted">
+        <span class="border rounded-circle d-flex align-items-center justify-content-center p-1 lh-1">
+          <fa-icon
+            [icon]="files.length === 1 ? (files[0].isDir ? icons.faFolder : icons.faFile) : files.length > 1 ? icons.faObjectGroup : icons.faQuestion"
+            [fixedWidth]="true">
+          </fa-icon>
+        </span>
+        <span class="border-start flex-grow-1"></span>
+      </div>
+      <div class="flex-grow-1 overflow-hidden pb-2">
+        <div class="text-muted mb-1">
+          <span l10nTranslate>Source</span>
+          @if (files.length === 1) {
+            <span class="mx-1 lh-1 text-muted">•</span>
+            @if (files[0].isDir) {
+              @let directorySize = getSizeLazy(files[0]) | async;
+              @if (directorySize === null) {
+                <fa-icon [icon]="icons.faSpinner" animation="spin-pulse"></fa-icon>
+              } @else if (directorySize === undefined) {
+                <fa-icon [icon]="icons.faQuestion"></fa-icon>
+              } @else {
+                <span>{{ directorySize | toBytes:0:true }}</span>
+              }
+            } @else {
+              <span>{{ files[0].hSize }}</span>
+            }
+          } @else {
+            <span class="mx-1 lh-1 text-muted">•</span>
+            <span>{{ files.length }}</span>&nbsp;<span l10nTranslate>items</span>
+          }
+        </div>
+        @switch (files.length) {
+          @case (1) {
+            <div class="app-small-card files-summary-card border rounded d-flex align-items-center px-2 py-2">
+              <span class="text-truncate">{{ files[0].name }}</span>
+            </div>
+          }
+          @case (0) {
+            <div class="app-small-card files-summary-card border rounded d-flex justify-content-center align-items-center px-2 py-2">
+              <fa-icon [icon]="icons.faQuestion" class="text-muted"></fa-icon>
+            </div>
+          }
+          @default {
+            <app-files-summary [files]="files"></app-files-summary>
+          }
         }
-        @case (0) {
-          <span>
-            <fa-icon [icon]="icons.faQuestion" class="text-bold me-1"></fa-icon>
-          </span>
-        }
-        @default {
-          <span>
-            <span>{{ store.filesSelection().length }}</span>&nbsp;<span l10nTranslate>items</span>
-          </span>
-        }
-      }
+      </div>
     </div>
-    <div class="text-start text-truncate mt-1">
-      <span class="fs-sm text-bold me-2" l10nTranslate><span l10nTranslate>Destination</span>:</span>
-      <span>{{ selection?.data.name || '' }}</span>
+
+    <div class="d-flex">
+      <div class="d-flex flex-column align-items-center me-2 text-muted">
+        <span class="border rounded-circle d-flex align-items-center justify-content-center p-1 lh-1">
+          <fa-icon [icon]="destination?.icon || icons.faQuestion" [fixedWidth]="true"></fa-icon>
+        </span>
+      </div>
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="text-muted mb-1 d-flex align-items-center overflow-hidden">
+          <span class="flex-shrink-0" l10nTranslate>Destination</span>
+          @if (selection && dstAllowed && destination?.relativePath) {
+            <span class="mx-1 lh-1 text-muted">•</span>
+            <span class="text-truncate">{{ destination.relativePath }}</span>
+          }
+        </div>
+        <div class="app-small-card files-summary-card border rounded d-flex align-items-center px-2 py-2">
+          @if (errorMsg && !dstAllowed) {
+            <span class="text-danger text-truncate mx-auto" l10nTranslate>{{ errorMsg }}</span>
+          } @else if (selection && dstAllowed) {
+            <span class="text-bold text-truncate">{{ selection.data.name }}</span>
+          } @else {
+            <fa-icon [icon]="icons.faQuestion" class="text-muted mx-auto"></fa-icon>
+          }
+        </div>
+      </div>
     </div>
+
     <div class="d-flex gap-2 pt-1 w-100 mt-2">
       <button (click)="actionMove()"
-              [disabled]="!selection || !store.filesSelection().length || !srcAllowed || !dstAllowed"
-              class="btn btn-xs btn-warning flex-fill"
+              [disabled]="!selection || !files.length || !srcAllowed || !dstAllowed"
+              class="btn btn-sm btn-warning flex-fill"
               type="button"
               l10nTranslate>
         <fa-icon [icon]="icons.faArrowsAlt"></fa-icon>
         Move
       </button>
       <button (click)="actionCopy()"
-              [disabled]="!selection || !store.filesSelection().length || !dstAllowed"
-              class="btn btn-xs btn-primary flex-fill"
+              [disabled]="!selection || !files.length || !dstAllowed"
+              class="btn btn-sm btn-primary flex-fill"
               type="button"
               l10nTranslate>
         <fa-icon [icon]="icons.faClone"></fa-icon>
         Copy
       </button>
       <button (click)="actionCancel()"
-              class="btn btn-xs btn-secondary flex-fill"
+              class="btn btn-sm btn-secondary flex-fill"
               type="button"
               l10nTranslate>
         <fa-icon [icon]="icons.faTimes"></fa-icon>
@@ -67,9 +121,9 @@
       </button>
     </div>
   </div>
-  <hr class="mx-0 mt-2 mb-0">
+  <hr class="mx-0 my-0">
 }
-<div appAutoResize [overFlowX]="'auto'" [resizeOffset]="resizeOffset" [useMaxHeight]="false">
+<div appAutoResize [overFlowX]="'auto'" [resizeOffset]="treeResizeOffset" [useMaxHeight]="false">
   <tree-root #tree [nodes]="nodes" [options]="options">
     <ng-template #treeNodeWrapperTemplate let-index="index" let-node>
       <div (click)="node.mouseAction('click', $event)"

@@ -1,7 +1,6 @@
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
-import { SPACE_ALIAS, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
-import { SPACES_ICON } from '../../spaces/spaces.constants'
+import { resolveFileLocation } from '../file-location.utils'
 import { defaultMimeUrl, getAssetsMimeUrl } from '../files.constants'
 
 export class FileContentModel implements FileContent {
@@ -30,13 +29,10 @@ export class FileContentModel implements FileContent {
   }
 
   private setProperties() {
-    const repository = this.path.split('/')[0]
-    const isPersonal = this.path.split('/')[1] === SPACE_ALIAS.PERSONAL
-    this.showedPath = this.path
-      .split('/')
-      .slice(isPersonal ? 2 : 1)
-      .join('/')
-    this.iconClass = repository === SPACE_REPOSITORY.SHARES ? 'purple' : 'primary'
-    this.icon = repository === SPACE_REPOSITORY.SHARES ? SPACES_ICON.SHARES : isPersonal ? SPACES_ICON.PERSONAL : SPACES_ICON.SPACES
+    const location = resolveFileLocation(this.path)
+    if (!location) return
+    this.showedPath = location.relativePath
+    this.iconClass = location.iconClass
+    this.icon = location.icon
   }
 }
