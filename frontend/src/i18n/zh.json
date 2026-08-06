@@ -612,6 +612,7 @@
   "Overwrite Existing File(s)": "覆盖现有文件",
   "Replace Existing File": "替换现有文件",
   "Do you want to replace the existing file(s)?": "是否要替换现有文件？",
+  "Skip existing files": "跳过现有文件",
   "RenameFileToExisting": "您确定要将 <b>{{ old }}</b> 重命名为 <b>{{ new }}</b> 吗？",
   "Save": "保存",
   "Line Wrap": "自动换行",

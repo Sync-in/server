@@ -5,6 +5,8 @@ import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } fr
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
 
+export type FilesOverwriteAction = 'cancel' | 'skip' | 'overwrite'
+
 @Component({
   selector: 'app-files-overwrite-dialog',
   imports: [FaIconComponent, L10nTranslateDirective, L10nTranslatePipe],
@@ -13,15 +15,15 @@ import { FileModel } from '../../models/file.model'
 export class FilesOverwriteDialogComponent {
   @Input({ required: true }) files: FileModel[] = []
   @Input() renamedTo: string
-  public overwrite = output<boolean>()
+  public action = output<FilesOverwriteAction>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
   protected readonly icons = { faFileShield }
   protected submitted = false
 
-  onAction(overwrite: boolean) {
-    this.submitted = overwrite
-    this.overwrite.emit(overwrite)
+  onAction(action: FilesOverwriteAction) {
+    this.submitted = true
+    this.action.emit(action)
     this.layout.closeDialog()
   }
 }

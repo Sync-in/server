@@ -612,6 +612,7 @@
   "Overwrite Existing File(s)": "Bestaande bestanden overschrijven",
   "Replace Existing File": "Bestaand bestand vervangen",
   "Do you want to replace the existing file(s)?": "Wilt u bestaande bestanden vervangen?",
+  "Skip existing files": "Bestaande bestanden overslaan",
   "RenameFileToExisting": "Wilt u <b>{{ old }}</b> hernoemen tot <b>{{ new }}</b>?",
   "Save": "Opslaan",
   "Line Wrap": "Regelomslag",

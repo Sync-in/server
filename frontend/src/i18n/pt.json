@@ -612,6 +612,7 @@
   "Overwrite Existing File(s)": "Sobrescrever arquivo(s) existente(s)",
   "Replace Existing File": "Substituir arquivo existente",
   "Do you want to replace the existing file(s)?": "Deseja substituir o(s) arquivo(s) existente(s)?",
+  "Skip existing files": "Ignorar ficheiros existentes",
   "RenameFileToExisting": "Deseja renomear <b>{{ old }}</b> para <b>{{ new }}</b>?",
   "Save": "Salvar",
   "Line Wrap": "Quebra de linha automática",

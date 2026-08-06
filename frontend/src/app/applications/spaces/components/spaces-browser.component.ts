@@ -481,8 +481,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     let overwrite = false
     const fileExists: FileModel = this.files.find((file) => file.name.toLowerCase() === renamedTo.toLowerCase() && file.id !== f.id)
     if (fileExists) {
-      overwrite = await this.filesService.openOverwriteDialog([f], renamedTo)
-      if (!overwrite) return
+      const action = await this.filesService.openOverwriteDialog([f], renamedTo)
+      if (action !== 'overwrite') return
+      overwrite = true
     }
     this.filesService
       .rename(f, renamedTo, overwrite)
@@ -577,25 +578,18 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   async onUploadFiles(ev: { files: File[] }, isDirectory = false) {
-    let overwrite = false
     const selectedFiles = [...ev.files]
+    let exist: FileModel[] = []
     if (isDirectory) {
       const dirName = selectedFiles[0].webkitRelativePath.split('/')[0].normalize()
       const dirExists = this.files.find((f) => f.name.normalize().toLowerCase() === dirName.normalize().toLowerCase())
       if (dirExists) {
-        overwrite = await this.filesService.openOverwriteDialog([dirExists])
-        if (!overwrite) return
+        exist = [dirExists]
       }
     } else {
-      const exist: FileModel[] = this.files.filter((x: FileModel) =>
-        selectedFiles.some((f) => f.name.normalize().toLowerCase() === x.name.normalize().toLowerCase())
-      )
-      if (exist.length > 0) {
-        overwrite = await this.filesService.openOverwriteDialog(exist)
-        if (!overwrite) return
-      }
+      exist = this.files.filter((x: FileModel) => selectedFiles.some((f) => f.name.normalize().toLowerCase() === x.name.normalize().toLowerCase()))
     }
-    this.filesUpload.addFiles(selectedFiles, overwrite).catch(console.error)
+    this.filesUpload.addFilesWithConflictResolution(selectedFiles, exist).catch(console.error)
   }
 
   onDropFiles(ev: { dataTransfer: { files: File[] } }) {

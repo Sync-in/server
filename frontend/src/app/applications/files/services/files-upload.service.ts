@@ -42,6 +42,26 @@ export class FilesUploadService {
     await Promise.all(taskReqs.map((taskReq: FileUploadTaskRequest) => taskReq.completed))
   }
 
+  async addFilesWithConflictResolution(files: FileUpload[], exist: FileModel[]): Promise<void> {
+    let filesToUpload = files
+    let overwrite = false
+    if (exist.length) {
+      const action = await this.filesService.openOverwriteDialog(exist)
+      if (action === 'cancel') return
+      overwrite = action === 'overwrite'
+      if (action === 'skip') {
+        const existingNames = new Set(exist.map((file) => file.name.normalize().toLowerCase()))
+        filesToUpload = files.filter((file) => {
+          const relativePath = file.relativePath || file.webkitRelativePath
+          const topLevelName = relativePath ? relativePath.split('/')[0] : file.name
+          return !existingNames.has(topLevelName.normalize().toLowerCase())
+        })
+        if (!filesToUpload.length) return
+      }
+    }
+    await this.addFiles(filesToUpload, overwrite)
+  }
+
   onDropFiles(ev: any, exist: FileModel[]) {
     /*
      Important: dataTransfer.items must be accessed synchronously before any async operation; overwrite is handled after all analyses.
@@ -50,7 +70,7 @@ export class FilesUploadService {
     if (ev.dataTransfer.items && ev.dataTransfer.items[0]?.webkitGetAsEntry) {
       this.webkitReadDataTransfer(ev, exist)
     } else {
-      this.addFiles(ev.dataTransfer.files, exist.length > 0).catch(console.error)
+      this.addFilesWithConflictResolution([...ev.dataTransfer.files], exist).catch(console.error)
     }
   }
 
@@ -279,18 +299,7 @@ export class FilesUploadService {
     }
     const decrement = () => {
       if (--queue == 0) {
-        if (exist.length <= 0) {
-          this.addFiles(files, false).catch(console.error)
-          return
-        }
-        this.filesService
-          .openOverwriteDialog(exist)
-          .then((overwrite) => {
-            if (overwrite) {
-              this.addFiles(files, true).catch(console.error)
-            }
-          })
-          .catch(console.error)
+        this.addFilesWithConflictResolution(files, exist).catch(console.error)
       }
     }
 

@@ -46,7 +46,7 @@ import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
 import { UserService } from '../../users/user.service'
 import { FilesLockDialogComponent } from '../components/dialogs/files-lock-dialog.component'
-import { FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
+import { type FilesOverwriteAction, FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
 import { FilesViewerDialogComponent } from '../components/dialogs/files-viewer-dialog.component'
 import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
 import { fileLockPropsToString } from '../components/utils/file-lock.utils'
@@ -134,14 +134,20 @@ export class FilesService {
 
   async copyMove(files: FileModel[], dstDirectory: string, type: FILE_OPERATION.COPY | FILE_OPERATION.MOVE): Promise<void> {
     let overwrite = false
+    let filesToProcess = files
     const dstFiles = await this.getTreeNode(dstDirectory, true)
     const exist: FileModel[] = files.filter((f: FileModel) => dstFiles.some((x) => x.name.toLowerCase() === f.name.toLowerCase()))
     if (exist.length > 0) {
-      overwrite = await this.openOverwriteDialog(exist)
-      if (!overwrite) return
+      const action = await this.openOverwriteDialog(exist)
+      if (action === 'cancel') return
+      overwrite = action === 'overwrite'
+      if (action === 'skip') {
+        filesToProcess = files.filter((file) => !exist.includes(file))
+        if (!filesToProcess.length) return
+      }
     }
     const isMove = type === FILE_OPERATION.MOVE
-    for (const file of files) {
+    for (const file of filesToProcess) {
       if (isMove) file.isBeingDeleted = true
       const op: CopyMoveFileDto = { dstDirectory: dstDirectory, overwrite: overwrite }
       this.http.request<FileTask>(type, file.taskUrl, { body: op }).subscribe({
@@ -279,26 +285,26 @@ export class FilesService {
     })
   }
 
-  async openOverwriteDialog(files: File[] | FileModel[], renamedTo?: string): Promise<boolean> {
+  async openOverwriteDialog(files: File[] | FileModel[], renamedTo?: string): Promise<FilesOverwriteAction> {
     const modalRef: BsModalRef<FilesOverwriteDialogComponent> = this.layout.openDialog(FilesOverwriteDialogComponent, null, {
       initialState: { files, renamedTo } as FilesOverwriteDialogComponent
     })
-    return new Promise<boolean>((resolve) => {
+    return new Promise<FilesOverwriteAction>((resolve) => {
       let resolved = false
-      const subOverwrite = modalRef.content!.overwrite.subscribe((value: boolean) => {
+      const subAction = modalRef.content!.action.subscribe((action: FilesOverwriteAction) => {
         resolved = true
         cleanup()
-        resolve(value)
+        resolve(action)
       })
       // Triggered when the modal is closed (close button, backdrop click, ESC key, or programmatic hide)
       const subHidden = modalRef.onHidden?.subscribe(() => {
         if (!resolved) {
           cleanup()
-          resolve(false)
+          resolve('cancel')
         }
       })
       const cleanup = () => {
-        subOverwrite.unsubscribe()
+        subAction.unsubscribe()
         subHidden?.unsubscribe()
       }
     })

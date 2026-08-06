@@ -25,6 +25,13 @@
   }
 </div>
 <div class="modal-footer">
-  <button (click)="onAction(false)" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onAction(true)" [disabled]="submitted" class="btn btn-danger" type="button" l10nTranslate>Confirm</button>
+  <button (click)="onAction('cancel')" [disabled]="submitted" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>
+    Cancel
+  </button>
+  @if (!renamedTo) {
+    <button (click)="onAction('skip')" [disabled]="submitted" class="btn btn-primary" type="button" l10nTranslate>
+      Skip existing files
+    </button>
+  }
+  <button (click)="onAction('overwrite')" [disabled]="submitted" class="btn btn-danger" type="button" l10nTranslate>Confirm</button>
 </div>
