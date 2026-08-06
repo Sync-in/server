@@ -15,7 +15,7 @@
   <div #copyMovePanel class="bg-white p-2 fs-sm">
     <div class="d-flex">
       <div class="d-flex flex-column align-items-center me-2 text-muted">
-        <span class="border rounded-circle d-flex align-items-center justify-content-center p-2 lh-1">
+        <span class="copy-move-location-icon border rounded-circle d-flex align-items-center justify-content-center lh-1">
           <fa-icon
             [icon]="files.length === 1 ? (files[0].isDir ? icons.faFolder : icons.faFile) : files.length > 1 ? icons.faObjectGroup : icons.faQuestion"
             [fixedWidth]="true">
@@ -24,7 +24,7 @@
         <span class="copy-move-connector border-start flex-grow-1"></span>
       </div>
       <div class="flex-grow-1 overflow-hidden pb-2">
-        <div class="text-muted mb-1">
+        <div class="copy-move-location-label text-muted mb-1">
           <span l10nTranslate>Source</span>
           @if (files.length === 1) {
             <span class="mx-1 lh-1 text-muted">•</span>
@@ -68,12 +68,12 @@
 
     <div class="d-flex">
       <div class="d-flex flex-column align-items-center me-2 text-muted">
-        <span class="border rounded-circle d-flex align-items-center justify-content-center p-2 lh-1">
+        <span class="copy-move-location-icon border rounded-circle d-flex align-items-center justify-content-center lh-1">
           <fa-icon [icon]="destination?.icon || icons.faQuestion" [fixedWidth]="true"></fa-icon>
         </span>
       </div>
       <div class="flex-grow-1 overflow-hidden">
-        <div class="text-muted mb-1 d-flex align-items-center overflow-hidden">
+        <div class="copy-move-location-label text-muted mb-1 overflow-hidden">
           <span class="flex-shrink-0" l10nTranslate>Destination</span>
           @if (selection && dstAllowed && destination?.relativePath) {
             <span class="mx-1 lh-1 text-muted">•</span>

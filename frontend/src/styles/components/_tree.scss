@@ -57,6 +57,22 @@ $tree-root-shares-icon: 'M384 192c53 0 96-43 96-96s-43-96-96-96-96 43-96 96c0 5.
   width: 24px;
 }
 
+.copy-move-location-icon {
+  flex: 0 0 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+
+  fa-icon {
+    font-size: 0.875em;
+  }
+}
+
+.copy-move-location-label {
+  display: flex;
+  align-items: center;
+  min-height: 1.5rem;
+}
+
 .angular-tree-component {
   display: grid !important;
   white-space: nowrap;
