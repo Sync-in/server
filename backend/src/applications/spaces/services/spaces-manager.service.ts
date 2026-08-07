@@ -5,7 +5,7 @@ import path from 'node:path'
 import { ACTION } from '../../../common/constants'
 import { convertDiffUpdate, diffCollection, differencePermissions } from '../../../common/functions'
 import type { Entries } from '../../../common/interfaces'
-import { createSlug, regExpNumberSuffix } from '../../../common/shared'
+import { createSlug, InvalidSlugError, regExpNumberSuffix } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { FileError } from '../../files/models/file-error'
@@ -245,7 +245,7 @@ export class SpacesManager {
         spaceDiffProps[prop] = createOrUpdateSpaceDto[prop]
         if (prop === 'name') {
           renamedSpaceAlias = space.alias
-          spaceDiffProps.alias = await this.uniqueSpaceAlias(spaceDiffProps.name, true)
+          spaceDiffProps.alias = await this.uniqueSpaceAlias(spaceDiffProps.name, true, space.id)
           if (space.alias !== spaceDiffProps.alias) {
             // must move the space to match the new alias
             const spaceLocationWasRenamed: boolean = await this.renameSpaceLocation(space.alias, spaceDiffProps.alias)
@@ -360,16 +360,20 @@ export class SpacesManager {
     }
   }
 
-  async uniqueRootAlias(spaceId: number, alias: string, aliasesAndNames: string[], replaceCount = false): Promise<string> {
+  async uniqueRootAlias(spaceId: number, alias: string, aliasesAndNames: string[], replaceCount = false, excludedRootId?: number): Promise<string> {
     /* for some webdav clients the root alias is displayed instead of the file name.
      * This is why a root alias must be unique for files too */
-    if (aliasesAndNames.find((fName: string) => alias.toLowerCase() === fName.toLowerCase())) {
+    const aliasExists = (candidate: string): boolean => {
+      const normalizedCandidate = candidate.toLowerCase()
+      return aliasesAndNames.some((aliasOrName: string) => normalizedCandidate === aliasOrName.toLowerCase())
+    }
+    if (aliasExists(alias) || (await this.spacesQueries.spaceRootExistsForAlias(spaceId, alias, excludedRootId))) {
       const aliasExtension = path.extname(alias)
       const aliasWithoutExtension = path.basename(alias, aliasExtension)
-      const originalAlias = createSlug(aliasWithoutExtension, replaceCount)
+      const originalAlias = this.createAliasSlug(aliasWithoutExtension, replaceCount)
       let count = 1
       let newAlias = `${originalAlias}-${count}${aliasExtension}`
-      while (await this.spacesQueries.spaceRootExistsForAlias(spaceId, newAlias)) {
+      while (aliasExists(newAlias) || (await this.spacesQueries.spaceRootExistsForAlias(spaceId, newAlias, excludedRootId))) {
         count += 1
         newAlias = `${originalAlias}-${count}${aliasExtension}`
       }
@@ -557,19 +561,38 @@ export class SpacesManager {
 
     // update
     for (const props of toUpdate) {
+      const root = props.object as SpaceRootProps
       if ('alias' in props) {
-        props.alias.new = (await this.uniqueRootAlias(space.id, props.alias.new, aliases.concat(names), true)) || props.alias.new
+        const aliasesAndNames = aliases.concat(names)
+        const currentName = 'name' in props ? props.name.old : root.name
+        for (const currentValue of [props.alias.old, currentName]) {
+          const currentValueIndex = aliasesAndNames.findIndex((aliasOrName: string) => aliasOrName.toLowerCase() === currentValue.toLowerCase())
+          if (currentValueIndex > -1) {
+            aliasesAndNames.splice(currentValueIndex, 1)
+          }
+        }
+        props.alias.new = (await this.uniqueRootAlias(space.id, props.alias.new, aliasesAndNames, true, root.id)) || props.alias.new
         // remove from space cache permissions
         this.spacesQueries
           .clearCachePermissions(space.alias, [props.alias.old, props.alias.new])
           .catch((e: Error) => this.logger.error({ tag: this.updateRoots.name, msg: `${e}` }))
         // update aliases list for next roots
-        aliases.push(props.alias.new)
+        const currentAliasIndex = aliases.indexOf(props.alias.old)
+        if (currentAliasIndex > -1) {
+          aliases.splice(currentAliasIndex, 1, props.alias.new)
+        } else {
+          aliases.push(props.alias.new)
+        }
       }
       if ('name' in props) {
         props.name.new = this.uniqueRootName(props.name.new, names) || props.name.new
         // update names list for next roots
-        names.push(props.name.new)
+        const currentNameIndex = names.lastIndexOf(props.name.old)
+        if (currentNameIndex > -1) {
+          names.splice(currentNameIndex, 1, props.name.new)
+        } else {
+          names.push(props.name.new)
+        }
       }
     }
 
@@ -726,19 +749,31 @@ export class SpacesManager {
     }
   }
 
-  private async uniqueSpaceAlias(name: string, replaceCount = false): Promise<string> {
-    let alias = createSlug(name, replaceCount)
+  private async uniqueSpaceAlias(name: string, replaceCount = false, excludedSpaceId?: number): Promise<string> {
+    const originalAlias = this.createAliasSlug(name, replaceCount)
+    let alias = originalAlias
     let count = 0
     // Personal space name is reserved
     if (alias === SPACE_ALIAS.PERSONAL) {
       count += 1
-      alias = `${name}-${count}`
+      alias = `${originalAlias}-${count}`
     }
-    while (await this.spacesQueries.spaceExistsForAlias(alias)) {
+    while (await this.spacesQueries.spaceExistsForAlias(alias, excludedSpaceId)) {
       count += 1
-      alias = `${name}-${count}`
+      alias = `${originalAlias}-${count}`
     }
     return alias
+  }
+
+  private createAliasSlug(name: string, replaceCount = false): string {
+    try {
+      return createSlug(name, replaceCount)
+    } catch (e) {
+      if (e instanceof InvalidSlugError) {
+        throw new HttpException(e.message, HttpStatus.BAD_REQUEST)
+      }
+      throw e
+    }
   }
 
   private async userCanAccessSpace(user: UserModel, spaceId: number, asManager: true): Promise<SpaceProps>

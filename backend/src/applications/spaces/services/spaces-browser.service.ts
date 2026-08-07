@@ -291,7 +291,8 @@ export class SpacesBrowser {
         space.id,
         f.root.alias,
         fsFiles.map((f) => f.name),
-        true
+        true,
+        f.root.id
       )
       if (newAlias) {
         this.logger.log({ tag: this.mergeSpaceRootFiles.name, msg: `update space root alias (${f.root.id}) : ${f.root.alias} -> ${newAlias}` })

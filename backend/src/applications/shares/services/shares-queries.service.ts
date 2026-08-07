@@ -63,13 +63,13 @@ export class SharesQueries {
     public readonly cache: Cache
   ) {}
 
-  async uniqueShareAlias(name: string): Promise<string> {
-    let alias = createSlug(name, true)
+  async uniqueShareAlias(name: string, excludedShareId?: number): Promise<string> {
+    const originalAlias = createSlug(name, true)
+    let alias = originalAlias
     let count = 0
-    // Personal space name is reserved
-    while (await this.shareExistsForAlias(alias)) {
+    while (await this.shareExistsForAlias(alias, excludedShareId)) {
       count += 1
-      alias = `${name}-${count}`
+      alias = `${originalAlias}-${count}`
     }
     return alias
   }
@@ -923,8 +923,11 @@ export class SharesQueries {
     }
   }
 
-  private shareExistsForAlias(alias: string): any | undefined {
-    return this.db.query.shares.findFirst({ columns: { id: true }, where: eq(shares.alias, alias) })
+  private shareExistsForAlias(alias: string, excludedShareId?: number): any | undefined {
+    return this.db.query.shares.findFirst({
+      columns: { id: true },
+      where: excludedShareId === undefined ? eq(shares.alias, alias) : and(eq(shares.alias, alias), ne(shares.id, excludedShareId))
+    })
   }
 
   private fromUserQuery(select: SelectedFields<any, any>, filters: SQL[] = []) {

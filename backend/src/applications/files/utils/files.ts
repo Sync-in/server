@@ -33,9 +33,9 @@ export function isPathInside(basePath: string, candidatePath: string, allowBaseP
 
 export function sanitizeName(name: string): string {
   return name
-    .replace(/^\s+|[. ]+$/g, '') // trimStart + trimEnd + strip trailing dots
     .replace(/[/\\]/g, '') // remove slashes
     .replace(/\.\./g, '') // remove '..'
+    .replace(/^\s+|[. ]+$/g, '') // trimStart + trimEnd + strip trailing dots
 }
 
 export function checkFileName(fPath: string): string {

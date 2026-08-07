@@ -3,7 +3,7 @@ import { Component, ElementRef, inject, Input, OnDestroy, OnInit, ViewChild } fr
 import { FormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faPen, faTimes } from '@fortawesome/free-solid-svg-icons'
-import { createSlug, regExpNumberSuffix } from '@sync-in-server/backend/src/common/shared'
+import { createSlug, InvalidSlugError, regExpNumberSuffix } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonsModule } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -12,6 +12,7 @@ import { InputEditDirective } from '../../../../common/directives/input-edit.dir
 import { PathSlice } from '../../../../common/pipes/path-slice'
 import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
 import { originalOrderKeyValue, uniqueNameFromCollection } from '../../../../common/utils/functions'
+import { LayoutService } from '../../../../layout/layout.service'
 import { FileTreeEvent } from '../../../files/components/dialogs/files-tree-dialog.component'
 import { UserAvatarComponent } from '../../../users/components/utils/user-avatar.component'
 import { OwnerType } from '../../../users/interfaces/owner.interface'
@@ -48,6 +49,7 @@ export class SpaceManageRootsComponent implements OnInit, OnDestroy {
   protected readonly icons = { faTimes, faPen }
   protected readonly SPACES_PERMISSIONS_TEXT = SPACES_PERMISSIONS_TEXT
   protected readonly originalOrderKeyValue = originalOrderKeyValue
+  private readonly layout = inject(LayoutService)
   private subscription: Subscription = null
 
   ngOnInit() {
@@ -90,8 +92,18 @@ export class SpaceManageRootsComponent implements OnInit, OnDestroy {
 
   onRenameRoot(ev: { object: SpaceRootModel; name: string }): void {
     const spaceRoot: SpaceRootModel = ev.object
+    let alias: string
+    try {
+      alias = createSlug(ev.name, true)
+    } catch (e) {
+      if (e instanceof InvalidSlugError) {
+        this.layout.sendNotification('error', 'Invalid name', e.message)
+        return
+      }
+      throw e
+    }
     spaceRoot.alias = uniqueNameFromCollection(
-      createSlug(ev.name, true),
+      alias,
       'alias',
       this.space.roots.filter((r: SpaceRootModel) => r.id !== spaceRoot.id)
     ).toLowerCase()
@@ -108,8 +120,7 @@ export class SpaceManageRootsComponent implements OnInit, OnDestroy {
 
   setRenamed(root: SpaceRootModel) {
     if (root.isRenamed) {
-      this.onRenameRoot({ object: root, name: this.inputRename.nativeElement.value })
-      root.isRenamed = false
+      this.inputRename.nativeElement.blur()
     } else {
       root.isRenamed = true
     }

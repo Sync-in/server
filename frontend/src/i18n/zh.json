@@ -588,6 +588,8 @@
   "Secret copied": "密钥已复制",
   "Recovery codes copied": "恢复代码已复制",
   "Invalid code": "无效代码",
+  "Invalid name": "名称无效",
+  "Name must contain at least one letter or number": "名称必须至少包含一个字母或数字",
   "Incorrect code or password": "代码或密码不正确",
   "Application Passwords": "应用专用密码",
   "Generate a new app password": "生成新的应用专用密码",

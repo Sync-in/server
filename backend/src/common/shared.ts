@@ -17,6 +17,13 @@ export const regExpPreventPathTraversal = /^(\.\.(\/|\\|$))+/
 export const regExpNumberSuffix = /-\d+$/
 export const forbiddenChars = '\\ / : * ? " < > |'
 
+export class InvalidSlugError extends Error {
+  constructor() {
+    super('Name must contain at least one letter or number')
+    this.name = InvalidSlugError.name
+  }
+}
+
 export function isValidFileName(fileName: string) {
   if (regExpInvalidFileName.test(fileName)) {
     throw new Error('Forbidden characters')
@@ -32,19 +39,24 @@ export function currentDate(value?: string): Date {
 }
 
 export function createSlug(input: string, replaceCount = false): string {
-  const r = input
-    .toLowerCase()
-    .trim()
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-  if (replaceCount) return r.replace(regExpNumberSuffix, '')
-  return r
+  let slug = createLightSlug(input)
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-|-$/g, '')
+
+  if (replaceCount) {
+    slug = slug.replace(regExpNumberSuffix, '')
+  }
+  if (!slug) {
+    throw new InvalidSlugError()
+  }
+  return slug
 }
 
 export function createCacheKeySlug(args: unknown[]) {
-  return createSlug(args.map((arg) => (arg == null ? 'null' : String(arg))).join(' '))
+  // Cache patterns intentionally preserve metacharacters such as `*`.
+  return createLightSlug(args.map((arg) => (arg == null ? 'null' : String(arg))).join(' '))
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 }
 
 export function createLightSlug(input: string) {

@@ -588,6 +588,8 @@
   "Secret copied": "Gizli anahtar kopyalandı",
   "Recovery codes copied": "Kurtarma kodları kopyalandı",
   "Invalid code": "Geçersiz kod",
+  "Invalid name": "Geçersiz ad",
+  "Name must contain at least one letter or number": "Ad en az bir harf veya rakam içermelidir",
   "Incorrect code or password": "Kod veya parola yanlış",
   "Application Passwords": "Uygulama Parolaları",
   "Generate a new app password": "Yeni uygulama parolası oluştur",

@@ -96,6 +96,7 @@ describe(SharesManager.name, () => {
     updateMembers: vi.fn(),
     shareExistsForOwner: vi.fn(),
     childExistsForShareOwner: vi.fn(),
+    uniqueShareAlias: vi.fn(),
     clearCacheIdentities: vi.fn().mockResolvedValue(true),
     clearCachePermissions: vi.fn().mockResolvedValue(true)
   }
@@ -559,6 +560,18 @@ describe(SharesManager.name, () => {
       expect(uuid).toBe('only-one')
       expect(linksQueriesMock.isUniqueUUID).toHaveBeenCalledTimes(1)
       expect(linksQueriesMock.isUniqueUUID).toHaveBeenCalledWith(user.id, 'only-one')
+    })
+  })
+
+  describe('alias generation', () => {
+    const currentShareId = 42
+    const uniqueShareAlias = (name: string): Promise<string> => (service as any).uniqueShareAlias(name, currentShareId)
+
+    it('should exclude the current share when checking its alias', async () => {
+      sharesQueriesMock.uniqueShareAlias.mockResolvedValueOnce('leba-est-chez-moi')
+
+      await expect(uniqueShareAlias('Lébà est chez moi')).resolves.toBe('leba-est-chez-moi')
+      expect(sharesQueriesMock.uniqueShareAlias).toHaveBeenCalledWith('Lébà est chez moi', currentShareId)
     })
   })
 })

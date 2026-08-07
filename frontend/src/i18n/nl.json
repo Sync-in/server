@@ -588,6 +588,8 @@
   "Secret copied": "Geheime sleutel gekopieerd",
   "Recovery codes copied": "Herstelcodes gekopieerd",
   "Invalid code": "Incorrecte code",
+  "Invalid name": "Ongeldige naam",
+  "Name must contain at least one letter or number": "De naam moet ten minste één letter of cijfer bevatten",
   "Incorrect code or password": "Incorrecte code of wachtwoord",
   "Application Passwords": "Toepassingswachtwoorden",
   "Generate a new app password": "Nieuw App-wachtwoord genereren",

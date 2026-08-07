@@ -588,6 +588,8 @@
   "Secret copied": "시크릿이 복사되었습니다",
   "Recovery codes copied": "복구 코드가 복사되었습니다",
   "Invalid code": "잘못된 코드",
+  "Invalid name": "잘못된 이름",
+  "Name must contain at least one letter or number": "이름에는 문자 또는 숫자가 하나 이상 포함되어야 합니다",
   "Incorrect code or password": "코드 또는 비밀번호가 올바르지 않습니다",
   "Application Passwords": "애플리케이션 비밀번호",
   "Generate a new app password": "새 앱 비밀번호 생성",

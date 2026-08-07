@@ -588,6 +588,8 @@
   "Secret copied": "シークレットをコピーしました",
   "Recovery codes copied": "復旧コードをコピーしました",
   "Invalid code": "無効なコード",
+  "Invalid name": "無効な名前",
+  "Name must contain at least one letter or number": "名前には少なくとも1つの文字または数字を含める必要があります",
   "Incorrect code or password": "コードまたはパスワードが正しくありません",
   "Application Passwords": "アプリケーションパスワード",
   "Generate a new app password": "新しいアプリパスワードを生成",

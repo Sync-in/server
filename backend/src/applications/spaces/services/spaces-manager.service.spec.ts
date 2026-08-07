@@ -222,4 +222,28 @@ describe(SpacesManager.name, () => {
 
     await expect(spacesManager.listSpaceShares(userTest, 10)).rejects.toEqual(new HttpException('Unauthorized', HttpStatus.FORBIDDEN))
   })
+
+  describe('alias generation', () => {
+    const currentSpaceId = 42
+    const currentRootId = 24
+    const name = 'Lébà est chez moi'
+    const alias = 'leba-est-chez-moi'
+    const uniqueSpaceAlias = (value: string): Promise<string> => (spacesManager as any).uniqueSpaceAlias(value, true, currentSpaceId)
+
+    it('should preserve the current space alias when the renamed name produces the same slug', async () => {
+      const spaceExistsSpy = vi.spyOn(spacesQueries, 'spaceExistsForAlias').mockResolvedValueOnce(undefined)
+
+      await expect(uniqueSpaceAlias(name)).resolves.toBe(alias)
+      expect(spaceExistsSpy).toHaveBeenCalledWith(alias, currentSpaceId)
+      spaceExistsSpy.mockRestore()
+    })
+
+    it('should exclude the current root when checking its alias', async () => {
+      const rootExistsSpy = vi.spyOn(spacesQueries, 'spaceRootExistsForAlias').mockResolvedValueOnce(undefined)
+
+      await expect(spacesManager.uniqueRootAlias(1, alias, [], true, currentRootId)).resolves.toBeNull()
+      expect(rootExistsSpy).toHaveBeenCalledWith(1, alias, currentRootId)
+      rootExistsSpy.mockRestore()
+    })
+  })
 })

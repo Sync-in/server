@@ -10,7 +10,7 @@ import {
   hashPassword
 } from '../../../common/functions'
 import type { Entries } from '../../../common/interfaces'
-import { intersectPermissions } from '../../../common/shared'
+import { intersectPermissions, InvalidSlugError } from '../../../common/shared'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import type { FileProps } from '../../files/interfaces/file-props.interface'
 import { FileError } from '../../files/models/file-error'
@@ -128,7 +128,7 @@ export class SharesManager {
   async createShare(user: UserModel, createOrUpdateShareDto: CreateOrUpdateShareDto): Promise<ShareProps> {
     const share: Partial<Share> = {
       name: createOrUpdateShareDto.name,
-      alias: await this.sharesQueries.uniqueShareAlias(createOrUpdateShareDto.name),
+      alias: await this.uniqueShareAlias(createOrUpdateShareDto.name),
       description: createOrUpdateShareDto.description,
       externalPath: createOrUpdateShareDto.externalPath,
       enabled: createOrUpdateShareDto.enabled,
@@ -242,7 +242,7 @@ export class SharesManager {
         shareDiffProps[prop] = createOrUpdateShareDto[prop]
         if (prop === 'name') {
           renamedShareAlias = share.alias
-          shareDiffProps.alias = await this.sharesQueries.uniqueShareAlias(shareDiffProps.name)
+          shareDiffProps.alias = await this.uniqueShareAlias(shareDiffProps.name, shareId)
         } else if (prop === 'enabled') {
           shareDiffProps.disabledAt = shareDiffProps[prop] ? null : new Date()
         }
@@ -387,7 +387,7 @@ export class SharesManager {
 
     const share: Partial<Share> = {
       name: createOrUpdateShareDto.name,
-      alias: await this.sharesQueries.uniqueShareAlias(createOrUpdateShareDto.name),
+      alias: await this.uniqueShareAlias(createOrUpdateShareDto.name),
       ownerId: user.id,
       spaceId: pShareEnv.spaceId,
       spaceRootId: pShareEnv.spaceRootId,
@@ -667,7 +667,7 @@ export class SharesManager {
             break
           case 'shareName':
             updateShare.name = v
-            updateShare.alias = await this.sharesQueries.uniqueShareAlias(v)
+            updateShare.alias = await this.uniqueShareAlias(v, spaceOrShareId)
             break
           case 'shareDescription':
             updateShare.description = v
@@ -748,6 +748,17 @@ export class SharesManager {
 
   async deleteLinkMembers(members: SpaceMemberDto[] | ShareMemberDto[]): Promise<void> {
     await this.deleteGuestLinks(members)
+  }
+
+  private async uniqueShareAlias(name: string, excludedShareId?: number): Promise<string> {
+    try {
+      return await this.sharesQueries.uniqueShareAlias(name, excludedShareId)
+    } catch (e) {
+      if (e instanceof InvalidSlugError) {
+        throw new HttpException(e.message, HttpStatus.BAD_REQUEST)
+      }
+      throw e
+    }
   }
 
   private async updateMembers(user: UserModel, share: Partial<Share>, oldMembers: ShareMemberDto[], currentMembers: ShareMemberDto[]) {

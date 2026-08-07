@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { and, countDistinct, eq, isNotNull, isNull, max, or, SelectedFields, SQL, sql } from 'drizzle-orm'
+import { and, countDistinct, eq, isNotNull, isNull, max, ne, or, SelectedFields, SQL, sql } from 'drizzle-orm'
 import { alias, union } from 'drizzle-orm/mysql-core'
 import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { ACTION } from '../../../common/constants'
@@ -66,14 +66,20 @@ export class SpacesQueries {
     private readonly filesQueries: FilesQueries
   ) {}
 
-  spaceExistsForAlias(alias: string): any | undefined {
-    return this.db.query.spaces.findFirst({ columns: { id: true }, where: eq(spaces.alias, alias) })
+  spaceExistsForAlias(alias: string, excludedSpaceId?: number): any | undefined {
+    return this.db.query.spaces.findFirst({
+      columns: { id: true },
+      where: excludedSpaceId === undefined ? eq(spaces.alias, alias) : and(eq(spaces.alias, alias), ne(spaces.id, excludedSpaceId))
+    })
   }
 
-  spaceRootExistsForAlias(spaceId: number, rootAlias: string): any | undefined {
+  spaceRootExistsForAlias(spaceId: number, rootAlias: string, excludedRootId?: number): any | undefined {
     return this.db.query.spacesRoots.findFirst({
       columns: { id: true },
-      where: and(eq(spacesRoots.spaceId, spaceId), eq(spacesRoots.alias, rootAlias))
+      where:
+        excludedRootId === undefined
+          ? and(eq(spacesRoots.spaceId, spaceId), eq(spacesRoots.alias, rootAlias))
+          : and(eq(spacesRoots.spaceId, spaceId), eq(spacesRoots.alias, rootAlias), ne(spacesRoots.id, excludedRootId))
     })
   }
 

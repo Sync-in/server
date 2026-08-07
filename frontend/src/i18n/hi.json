@@ -588,6 +588,8 @@
   "Secret copied": "सीक्रेट कॉपी हुआ",
   "Recovery codes copied": "रिकवरी कोड कॉपी हुए",
   "Invalid code": "अमान्य कोड",
+  "Invalid name": "अमान्य नाम",
+  "Name must contain at least one letter or number": "नाम में कम से कम एक अक्षर या संख्या होनी चाहिए",
   "Incorrect code or password": "गलत कोड या पासवर्ड",
   "Application Passwords": "एप्लिकेशन पासवर्ड",
   "Generate a new app password": "नया ऐप पासवर्ड जनरेट करें",

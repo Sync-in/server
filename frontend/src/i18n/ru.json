@@ -588,6 +588,8 @@
   "Secret copied": "Секрет скопирован",
   "Recovery codes copied": "Коды восстановления скопированы",
   "Invalid code": "Неверный код",
+  "Invalid name": "Недопустимое имя",
+  "Name must contain at least one letter or number": "Имя должно содержать хотя бы одну букву или цифру",
   "Incorrect code or password": "Неверный код или пароль",
   "Application Passwords": "Пароли приложений",
   "Generate a new app password": "Создать новый пароль приложения",

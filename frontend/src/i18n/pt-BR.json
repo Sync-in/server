@@ -588,6 +588,8 @@
   "Secret copied": "Segredo copiado",
   "Recovery codes copied": "Códigos de recuperação copiados",
   "Invalid code": "Código inválido",
+  "Invalid name": "Nome inválido",
+  "Name must contain at least one letter or number": "O nome deve conter pelo menos uma letra ou um número",
   "Incorrect code or password": "Código ou senha incorretos",
   "Application Passwords": "Senhas de aplicativo",
   "Generate a new app password": "Gerar nova senha de aplicativo",

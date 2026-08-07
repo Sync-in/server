@@ -7,7 +7,7 @@ import fse from 'fs-extra'
 import type { MockInstance } from 'vitest'
 import { FileError } from '../models/file-error'
 import { storageQuotaExceededError } from './errors'
-import { createSizeLimiter, isCrossDevice, isPathInside, makeTempDir, tempFilePath, writeFromStream } from './files'
+import { createSizeLimiter, isCrossDevice, isPathInside, makeTempDir, sanitizeName, tempFilePath, writeFromStream } from './files'
 import { FILE_ERROR } from '../constants/errors'
 
 describe(createSizeLimiter.name, () => {
@@ -40,6 +40,15 @@ describe(isPathInside.name, () => {
     expect(isPathInside(path.parse(basePath).root, path.parse(basePath).root)).toBe(false)
     expect(isPathInside(basePath, path.join(basePath, '..', 'zip-slip-proof.txt'))).toBe(false)
     expect(isPathInside(basePath, path.join(path.sep, 'tmp', 'output-evil', 'file.txt'))).toBe(false)
+  })
+})
+
+describe(sanitizeName.name, () => {
+  it('removes separators before stripping trailing path segments', () => {
+    expect(sanitizeName('./')).toBe('')
+    expect(sanitizeName('.\\')).toBe('')
+    expect(sanitizeName('folder./')).toBe('folder')
+    expect(sanitizeName('archive.tar.gz')).toBe('archive.tar.gz')
   })
 })
 
