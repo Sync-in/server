@@ -1,21 +1,22 @@
 import { Pipe, PipeTransform } from '@angular/core'
+import { escapeUTF8 } from 'entities/escape'
 
 @Pipe({ name: 'highlight' })
 export class HighlightPipe implements PipeTransform {
-  transform(text: string, search: string, reset = false): string {
-    if (reset && search.length < 1) {
-      return text
+  transform(text: string, search: string): string {
+    const sourceText = text || ''
+    const pattern = (search || '')
+      .replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
+      .split(' ')
+      .filter((term) => term.length > 0)
+      .join('|')
+    if (!pattern) {
+      return escapeUTF8(sourceText)
     }
-    if (search && text) {
-      let pattern = search.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&')
-      pattern = pattern
-        .split(' ')
-        .filter((t) => t.length > 0)
-        .join('|')
-      const regex = new RegExp(pattern, 'gi')
-      return text.replace(regex, (match) => `<b>${match}</b>`)
-    } else {
-      return text
-    }
+
+    return sourceText
+      .split(new RegExp(`(${pattern})`, 'gi'))
+      .map((part, index) => (index % 2 ? `<b>${escapeUTF8(part)}</b>` : escapeUTF8(part)))
+      .join('')
   }
 }

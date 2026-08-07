@@ -63,9 +63,9 @@
         <fa-icon [icon]="itemIcon" [fixedWidth]="false"></fa-icon>
       </span>
       <div class="d-flex flex-column text-truncate">
-        <span class="text-truncate" [innerHtml]="sanitize(o.name | highlight:i)"></span>
+        <span class="text-truncate" [innerHTML]="o.name | highlight:i"></span>
         @if (o.description) {
-          <span class="text-truncate fs-xs text-muted" [innerHtml]="sanitize(o.description | highlight:i)"></span>
+          <span class="text-truncate fs-xs text-muted" [innerHTML]="o.description | highlight:i"></span>
         }
       </div>
     </div>

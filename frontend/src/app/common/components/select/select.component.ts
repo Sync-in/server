@@ -1,7 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common'
 import { Component, ElementRef, EventEmitter, forwardRef, inject, Input, OnDestroy, OnInit, Output, TemplateRef } from '@angular/core'
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms'
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faQuestion, faXmark } from '@fortawesome/free-solid-svg-icons'
@@ -48,7 +47,6 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
   public inputValue = ''
   protected onChange: any = Function.prototype
   protected onTouched: any = Function.prototype
-  private readonly sanitizer = inject(DomSanitizer)
   private subscription: Subscription
   private behavior: GenericBehavior
 
@@ -126,10 +124,6 @@ export class SelectComponent implements OnInit, OnDestroy, ControlValueAccessor 
               description: selectedItem[this.descriptionField]
             })
     }
-  }
-
-  public sanitize(html: string): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(html)
   }
 
   public inputEvent(e: any, isUpMode = false) {
