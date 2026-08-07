@@ -1,7 +1,6 @@
 import type { TreeNode } from '@ali-hm/angular-tree-component'
 import { HttpClient, HttpErrorResponse, HttpParams, HttpResponse } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
-import { DomSanitizer } from '@angular/platform-browser'
 import { TAR_EXTENSION, TAR_GZ_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import {
   FILE_MODE,
@@ -77,7 +76,6 @@ export class FilesService {
   private readonly http = inject(HttpClient)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
-  private readonly sanitizer = inject(DomSanitizer)
   private readonly filesTasksService = inject(FilesTasksService)
   private readonly userService = inject(UserService)
 
@@ -240,16 +238,7 @@ export class FilesService {
   }
 
   search(search: SearchFilesDto): Observable<FileContentModel[]> {
-    return this.http.request<FileContent[]>('search', API_FILES_SEARCH, { body: search }).pipe(
-      map((fs) =>
-        fs.map((f) => {
-          if (f.content) {
-            f.content = this.sanitizer.bypassSecurityTrustHtml(f.content) as string
-          }
-          return new FileContentModel(f)
-        })
-      )
-    )
+    return this.http.request<FileContent[]>('search', API_FILES_SEARCH, { body: search }).pipe(map((fs) => fs.map((f) => new FileContentModel(f))))
   }
 
   lock(file: FileModel): Observable<FileLockProps> {
