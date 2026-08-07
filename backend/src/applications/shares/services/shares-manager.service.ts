@@ -181,6 +181,13 @@ export class SharesManager {
         // compute space permissions
         const space: SpaceEnv = new SpaceEnv(spacePermissions)
         space.setPermissions(true)
+        if (!havePermission(space.envPermissions, SPACE_OPERATION.SHARE_OUTSIDE)) {
+          this.logger.warn({
+            tag: this.createShare.name,
+            msg: `is not allowed to share outside of : *${space.alias}* (${space.id})`
+          })
+          throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
+        }
         // intersect space permissions for members
         for (const m of createOrUpdateShareDto.members) {
           m.permissions = intersectPermissions(space.envPermissions, m.permissions)

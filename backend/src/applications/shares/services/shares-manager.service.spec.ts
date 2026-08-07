@@ -7,6 +7,7 @@ import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { LINK_TYPE } from '../../links/constants/links'
 import { LinksQueries } from '../../links/services/links-queries.service'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
+import { SPACE_OPERATION } from '../../spaces/constants/spaces'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import * as permissionsUtils from '../../spaces/utils/permissions'
 import { GUEST_PERMISSION } from '../../users/constants/user'
@@ -167,6 +168,34 @@ describe(SharesManager.name, () => {
     it('throws Bad Request when missing required information', async () => {
       const share: any = { file: {}, parent: {} }
       await expect(service.setAllowedPermissions(user, share)).rejects.toEqual(new HttpException('Missing information', HttpStatus.BAD_REQUEST))
+    })
+  })
+
+  describe('createShare', () => {
+    it('forbids creating a share from a space without the share outside permission', async () => {
+      sharesQueriesMock.uniqueShareAlias.mockResolvedValueOnce('shared-file')
+      spacesQueriesMock.permissions.mockResolvedValueOnce({ id: 7, alias: 'space-1' })
+      vi.mocked(permissionsUtils.havePermission).mockReturnValueOnce(false)
+
+      const createShareDto: any = {
+        name: 'Shared file',
+        enabled: true,
+        externalPath: null,
+        file: {
+          id: 42,
+          ownerId: null,
+          path: 'root/file.txt',
+          space: { alias: 'space-1', root: { alias: 'root' } }
+        },
+        members: [],
+        links: []
+      }
+
+      await expect(service.createShare(user, createShareDto)).rejects.toEqual(
+        new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
+      )
+      expect(permissionsUtils.havePermission).toHaveBeenCalledWith('ENV_PERMS', SPACE_OPERATION.SHARE_OUTSIDE)
+      expect(sharesQueriesMock.createShare).not.toHaveBeenCalled()
     })
   })
 
