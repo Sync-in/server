@@ -12,8 +12,6 @@ import { decodeUrl } from './shared'
 const DUMMY_PASSWORD_HASH = '$2a$10$tjgA0v/cGe.vAfAJgNHpZeNrIdMxu82i0kGEjbtYkaVUCDkVzHRjG'
 
 export const regexpEscape = /[.*+?^${}()|[\]\\]/g
-export const regexSpecialChars = /[-[\]{}()*+!<=:?./\\^$|#,]/g
-export const regexSpecialCharsWithSpace = /[-[\]{}()*+!<=:?./\\^$|#\s,]/g
 
 export async function loadOptionalModule(moduleName: string): Promise<any> {
   return await import(moduleName)
@@ -21,14 +19,6 @@ export async function loadOptionalModule(moduleName: string): Promise<any> {
 
 export async function sleep(ms: number): Promise<void> {
   await setTimeout(ms)
-}
-
-export function escapeSQLRegexp(input: string): string {
-  return input.replace(regexSpecialCharsWithSpace, '\\\\$&').replaceAll("'", "''")
-}
-
-export function escapeString(input: string): string {
-  return input.replace(regexSpecialChars, '\\$&')
 }
 
 export function escapePath(path: string): string {

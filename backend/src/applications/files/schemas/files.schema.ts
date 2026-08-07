@@ -1,6 +1,5 @@
 import { SQL, sql, SQLWrapper } from 'drizzle-orm'
 import { AnyMySqlColumn, bigint, boolean, index, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
-import { escapeSQLRegexp } from '../../../common/functions'
 import { shares } from '../../shares/schemas/shares.schema'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
@@ -46,10 +45,13 @@ export const files = mysqlTable(
 // supports the case where path = '.' or './sync-in' and removes '.' or './' if exists
 export const filePathSQL = (file: any): SQL<string> => sql`REGEXP_REPLACE(CONCAT(${file.path}, '/', ${file.name}), '^(\\\\.\\\\/){0,1}(.*)', '\\\\2')`
 
-export const childPathFindRegexp = (pathSQL: SQLWrapper, path: string): SQL<string> =>
-  sql`${pathSQL}${sql.raw(`REGEXP '^${escapeSQLRegexp(path)}(/|$)'`)}`
+// Appending '/' handles both an exact path and its descendants while keeping trailing spaces significant with PAD SPACE collations.
+export const childPathMatch = (pathSQL: SQLWrapper, path: string): SQL<string> =>
+  sql`LEFT(CONCAT(${pathSQL}, '/'), CHAR_LENGTH(${path}) + 1) = CONCAT(${path}, '/')`
 
-export const childFilesFindRegexp = (path: string): SQL<string> => childPathFindRegexp(files.path, path)
+// Applies the literal path-boundary match to the path stored on file records.
+export const childFilesMatch = (path: string): SQL<string> => childPathMatch(files.path, path)
 
-export const childFilesReplaceRegexp = (srcPath: string, dstPath: string): SQL<string> =>
-  sql`REGEXP_REPLACE(${files.path}, '^${sql.raw(escapeSQLRegexp(srcPath))}', '${sql.raw(escapeSQLRegexp(dstPath))}')`
+// Replaces a previously matched source prefix while preserving the remaining child-path suffix.
+export const childFilesReplacePath = (srcPath: string, dstPath: string): SQL<string> =>
+  sql`CONCAT(${dstPath}, SUBSTRING(${files.path}, CHAR_LENGTH(${srcPath}) + 1))`

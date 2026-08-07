@@ -14,7 +14,7 @@ import { FileProps } from '../interfaces/file-props.interface'
 import type { FileRecent, FileRecentLocation, FileRecentUpdate } from '../schemas/file-recent.interface'
 import { File } from '../schemas/file.interface'
 import { filesRecents } from '../schemas/files-recents.schema'
-import { childFilesFindRegexp, childFilesReplaceRegexp, childPathFindRegexp, filePathSQL, files } from '../schemas/files.schema'
+import { childFilesMatch, childFilesReplacePath, childPathMatch, filePathSQL, files } from '../schemas/files.schema'
 import { dirName, fileName, isPathInside } from '../utils/files'
 
 @Injectable()
@@ -186,7 +186,7 @@ export class FilesQueries {
     }
 
     // prepare (or not) the child files update/delete
-    const childFiles = isDir ? childFilesFindRegexp(props.path) : null
+    const childFiles = isDir ? childFilesMatch(props.path) : null
     if (fileProps.inTrash || force) {
       // delete file
       await this.db.delete(files).where(and(...convertToWhere(files, fileProps)))
@@ -247,10 +247,10 @@ export class FilesQueries {
       .where(and(...convertToWhere(files, srcFileDB)))
     if (isDir) {
       // prepare child file props update
-      const childFiles: SQL<string> = childFilesFindRegexp(srcProps.path)
+      const childFiles: SQL<string> = childFilesMatch(srcProps.path)
       const childProps: Omit<FileDBProps, 'path'> & { path: SQL<string> } = {
         ...dstCommonProps,
-        path: childFilesReplaceRegexp(srcProps.path, dstProps.path)
+        path: childFilesReplacePath(srcProps.path, dstProps.path)
       }
       // update child file props
       await this.db
@@ -341,7 +341,7 @@ export class FilesQueries {
         try {
           await this.db
             .delete(filesRecents)
-            .where(and(...where, or(...batch.map((sourcePath) => childPathFindRegexp(filePathSQL(filesRecents), sourcePath)))))
+            .where(and(...where, or(...batch.map((sourcePath) => childPathMatch(filePathSQL(filesRecents), sourcePath)))))
         } catch (e) {
           this.logger.error({ tag: this.deleteRecents.name, msg: `${e}` })
         }
