@@ -42,6 +42,29 @@ export class AdminUsersManager {
     this.checkUser(user, true)
     return user
   }
+  async getOrCreateUserGroupByName(name: string): Promise<AdminGroup> {
+    const existingGroup = await this.adminQueries.groupFromName(name)
+
+    if (existingGroup) {
+      if (existingGroup.type !== GROUP_TYPE.USER) {
+        throw new HttpException(`Group name already exists but is not a user group: ${name}`, HttpStatus.CONFLICT)
+      }
+
+      return this.getGroup(existingGroup.id)
+    }
+
+    try {
+      return await this.createGroup({ name })
+    } catch (e) {
+      // Handle a possible race when two OIDC logins create the same group at the same time.
+      const createdByAnotherLogin = await this.adminQueries.groupFromName(name)
+      if (createdByAnotherLogin?.type === GROUP_TYPE.USER) {
+        return this.getGroup(createdByAnotherLogin.id)
+      }
+
+      throw e
+    }
+  }
 
   async getGuest(guestId: number): Promise<GuestUser> {
     const user: GuestUser = await this.adminQueries.usersQueries.listGuests(guestId, 0, true)

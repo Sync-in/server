@@ -249,6 +249,20 @@ auth:
       # If the claim exists with null or 0, local storageQuota is set to null (unlimited).
       # default: `storageQuota`
       storageQuotaClaim: storageQuota
+      # groups: Synchronize OIDC groups as Sync-in user groups.
+      # When enabled, groups from the configured OIDC claim are created automatically
+      # and the current user's memberships are synchronized on every OIDC login.
+      # Supported claim formats: array, or delimiter-separated string.
+      # Environment variables:
+      # - SYNCIN_AUTH_OIDC_OPTIONS_GROUPS_ENABLED=true
+      # - SYNCIN_AUTH_OIDC_OPTIONS_GROUPS_CLAIM=groups
+      # - SYNCIN_AUTH_OIDC_OPTIONS_GROUPS_DELIMITER=,
+      # - SYNCIN_AUTH_OIDC_OPTIONS_GROUPS_REGEX=^(FG_|FA_)
+      groups:
+        enabled: false
+        claim: groups
+        delimiter: ','
+        regex: '.*'
       # adminRoleOrGroup: Name of the role or group that grants Sync-in administrator access
       # Users with this value will be granted administrator privileges.
       # The value is matched against `roles` or `groups` claims provided by the IdP.
