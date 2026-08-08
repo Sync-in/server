@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { MySqlDialect } from 'drizzle-orm/mysql-core'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { FilesContentStoreMySQL } from './files-content-store-mysql.service'
 import { Mock } from 'vitest'
@@ -7,6 +8,7 @@ describe(FilesContentStoreMySQL.name, () => {
   let module: TestingModule
   let filesIndexerMySQL: FilesContentStoreMySQL
   let db: { execute: Mock }
+  const dialect = new MySqlDialect()
 
   const sqlText = (query: any): string => {
     if (typeof query === 'string') return query
@@ -40,30 +42,41 @@ describe(FilesContentStoreMySQL.name, () => {
   })
 
   describe('indexesList', () => {
-    it('should list tables starting with prefix', async () => {
-      db.execute.mockResolvedValueOnce([[{ t: 'files_content_u_1' }, { t: 'files_content_s_2' }]])
+    it('should list only managed content index tables', async () => {
+      db.execute.mockResolvedValueOnce([[{ t: 'files_content_user_1' }, { t: 'filesXcontentYuser_2' }]])
 
       const res = await filesIndexerMySQL.indexesList()
-      expect(res).toEqual(['files_content_u_1', 'files_content_s_2'])
+      expect(res).toEqual(['files_content_user_1'])
       expect(db.execute).toHaveBeenCalledTimes(1)
     })
   })
 
   describe('getIndexName', () => {
     it('should build table name with prefix', () => {
-      expect(filesIndexerMySQL.getIndexName('u_123')).toBe('files_content_u_123')
+      expect(filesIndexerMySQL.getIndexName('user_123')).toBe('files_content_user_123')
     })
   })
 
   describe('existingIndexes', () => {
     it('should filter suffixes to existing tables', async () => {
-      db.execute.mockResolvedValueOnce([[{ t: 'files_content_u_1' }, { t: 'files_content_s_2' }]])
-      const res = await filesIndexerMySQL.existingIndexes(['u_1', 's_3', 's_2'])
-      expect(res.sort()).toEqual(['files_content_s_2', 'files_content_u_1'].sort())
+      db.execute.mockResolvedValueOnce([[{ t: 'files_content_user_1' }, { t: 'files_content_space_2' }]])
+      const res = await filesIndexerMySQL.existingIndexes(['user_1', 'space_3', 'space_2'])
+      expect(res.sort()).toEqual(['files_content_space_2', 'files_content_user_1'].sort())
     })
   })
 
   describe('createIndex', () => {
+    it('should escape the table name as an identifier', async () => {
+      db.execute.mockResolvedValueOnce([{}])
+      db.execute.mockResolvedValueOnce([[{ Field: 'seen_run_id' }]])
+      const tableName = 'files_content_user_1`; DROP TABLE users; --'
+
+      await expect(filesIndexerMySQL.createIndex(tableName)).resolves.toBe(true)
+
+      const query = dialect.sqlToQuery(db.execute.mock.calls[0][0])
+      expect(query.sql).toContain('CREATE TABLE IF NOT EXISTS `files_content_user_1``; DROP TABLE users; --`')
+    })
+
     it('should return true when creation succeeds', async () => {
       db.execute.mockResolvedValueOnce([{}])
       db.execute.mockResolvedValueOnce([[{ Field: 'seen_run_id' }]])
@@ -87,15 +100,20 @@ describe(FilesContentStoreMySQL.name, () => {
   })
 
   describe('dropIndex', () => {
+    it('should reject unmanaged table names', async () => {
+      await expect(filesIndexerMySQL.dropIndex('filesXcontentYuser_2')).resolves.toBe(false)
+      expect(db.execute).not.toHaveBeenCalled()
+    })
+
     it('should return true when drop succeeds', async () => {
       db.execute.mockResolvedValueOnce([{}])
-      await expect(filesIndexerMySQL.dropIndex('files_content_u_1')).resolves.toBe(true)
+      await expect(filesIndexerMySQL.dropIndex('files_content_user_1')).resolves.toBe(true)
       expect(db.execute).toHaveBeenCalledTimes(1)
     })
 
     it('should return false when drop fails', async () => {
       db.execute.mockRejectedValueOnce(new Error('boom'))
-      await expect(filesIndexerMySQL.dropIndex('files_content_u_1')).resolves.toBe(false)
+      await expect(filesIndexerMySQL.dropIndex('files_content_user_1')).resolves.toBe(false)
     })
   })
 
@@ -455,11 +473,11 @@ describe(FilesContentStoreMySQL.name, () => {
   describe('cleanIndexes', () => {
     it('should drop tables that are not in provided suffixes', async () => {
       // existing tables
-      db.execute.mockResolvedValueOnce([[{ t: 'files_content_u_1' }, { t: 'files_content_u_2' }, { t: 'files_content_s_1' }]])
+      db.execute.mockResolvedValueOnce([[{ t: 'files_content_user_1' }, { t: 'files_content_user_2' }, { t: 'files_content_space_1' }]])
       // each drop returns something
       db.execute.mockResolvedValue([{}])
 
-      await filesIndexerMySQL.cleanIndexes(['u_1']) // keep only files_content_u_1; drop the others
+      await filesIndexerMySQL.cleanIndexes(['user_1']) // keep only files_content_user_1; drop the other managed indexes
 
       // 1 call for indexesList + 2 drops expected
       expect(db.execute).toHaveBeenCalledTimes(3)

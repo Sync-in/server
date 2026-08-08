@@ -46,13 +46,12 @@ export class AdminUsersQueries {
           lastName: users.lastName,
           notification: users.notification,
           permissions: users.permissions,
-          twoFaEnabled:
-            sql<boolean>`JSON_UNQUOTE(JSON_EXTRACT(${users.secrets}, ${sql.raw(`'$.${USER_SECRET.TWO_FA_SECRET}'`)})) IS NOT NULL`.mapWith(Boolean),
+          twoFaEnabled: sql<boolean>`JSON_UNQUOTE(JSON_EXTRACT(${users.secrets}, ${`$.${USER_SECRET.TWO_FA_SECRET}`})) IS NOT NULL`.mapWith(Boolean),
           groups: concatDistinctObjectsInArray(groups.id, {
             id: groups.id,
             name: groups.name,
             description: groups.description,
-            type: sql.raw(`'${MEMBER_TYPE.GROUP}'`),
+            type: sql`${MEMBER_TYPE.GROUP}`,
             permissions: groups.permissions,
             createdAt: dateTimeUTC(usersGroups.createdAt)
           } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'description' | 'type' | 'permissions' | 'createdAt'>, any>)

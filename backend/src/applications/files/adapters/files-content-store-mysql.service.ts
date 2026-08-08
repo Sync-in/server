@@ -3,6 +3,7 @@ import { SQL, sql } from 'drizzle-orm'
 import { MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
+import { FILE_REPOSITORY } from '../constants/operations'
 import { FilesContentStore } from '../models/files-content-store'
 import { FileContent, FileContentRecordMetadata, FileContentRecordMetadataMap } from '../schemas/file-content.interface'
 import { createTableFilesContent, FILES_CONTENT_TABLE_PREFIX } from '../schemas/files-content.schema'
@@ -12,6 +13,7 @@ type SearchCandidate = Pick<FileContent, 'id' | 'score'> & { sourceIndex: string
 type SearchRecord = FileContent & { sourceIndex: string }
 const HIGHLIGHT_CONTEXT_WORD = '(?<![\\p{L}\\p{N}])[\\p{L}\\p{N}]+(?![\\p{L}\\p{N}])'
 const HIGHLIGHT_CONTEXT_SEPARATOR = '[^\\p{L}\\p{N}]'
+const FILES_CONTENT_TABLE_PATTERN = new RegExp(`^${FILES_CONTENT_TABLE_PREFIX}(?:${Object.values(FILE_REPOSITORY).join('|')})_[0-9]+$`)
 
 @Injectable()
 export class FilesContentStoreMySQL implements FilesContentStore {
@@ -20,11 +22,13 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 
   async indexesList(): Promise<string[]> {
-    return (await this.getIndexes()).flatMap((r: Record<string, string>) => Object.values(r))
+    return (await this.getIndexes())
+      .flatMap((r: Record<string, string>) => Object.values(r))
+      .filter((tableName) => FILES_CONTENT_TABLE_PATTERN.test(tableName))
   }
 
   async indexesCount(): Promise<number> {
-    return (await this.getIndexes()).length
+    return (await this.indexesList()).length
   }
 
   getIndexName(tableSuffix: string): string {
@@ -48,8 +52,12 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   }
 
   async dropIndex(tableName: string): Promise<boolean> {
+    if (!FILES_CONTENT_TABLE_PATTERN.test(tableName)) {
+      this.logger.error({ tag: this.dropIndex.name, msg: `refusing to drop unmanaged table: ${tableName}` })
+      return false
+    }
     try {
-      await this.db.execute(sql`DROP TABLE IF EXISTS ${sql.raw(tableName)} `)
+      await this.db.execute(sql`DROP TABLE IF EXISTS ${sql.identifier(tableName)} `)
       return true
     } catch (e) {
       this.logger.error({ tag: this.dropIndex.name, msg: `${tableName} : ${e}` })
@@ -60,7 +68,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   async insertRecord(tableName: string, fc: FileContent, runId: string): Promise<boolean> {
     try {
       await this.db.execute(sql`
-          INSERT INTO ${sql.raw(tableName)} (id, path, name, mime, size, mtime, content, seen_run_id)
+          INSERT INTO ${sql.identifier(tableName)} (id, path, name, mime, size, mtime, content, seen_run_id)
           VALUES ${sql`(${fc.id}, ${fc.path}, ${fc.name}, ${fc.mime}, ${fc.size}, ${fc.mtime}, ${fc.content}, ${runId})`}
           ON DUPLICATE KEY UPDATE path    = VALUES(path),
                                   name    = VALUES(name),
@@ -82,7 +90,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
       return new Map()
     }
     const [r]: { id: number; path: string; name: string; size: number }[][] = (await this.db.execute(
-      sql`SELECT id, path, name, size FROM ${sql.raw(tableName)} WHERE id IN (${idsSqlList(ids)})`
+      sql`SELECT id, path, name, size FROM ${sql.identifier(tableName)} WHERE id IN (${idsSqlList(ids)})`
     )) as MySqlQueryResult
     return new Map(
       r.map((row) => [row.id, { path: row.path, name: row.name, size: row.size }] satisfies [FileContent['id'], FileContentRecordMetadata])
@@ -92,7 +100,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   async markRecordsSeen(tableName: string, ids: number[], runId: string): Promise<boolean> {
     if (!ids.length) return true
     try {
-      await this.db.execute(sql`UPDATE ${sql.raw(tableName)} SET seen_run_id = ${runId} WHERE id IN (${idsSqlList(ids)})`)
+      await this.db.execute(sql`UPDATE ${sql.identifier(tableName)} SET seen_run_id = ${runId} WHERE id IN (${idsSqlList(ids)})`)
       return true
     } catch (e) {
       this.logger.error({ tag: this.markRecordsSeen.name, msg: `${tableName} : ${e}` })
@@ -102,7 +110,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
 
   async deleteRecords(tableName: string, ids: number[]): Promise<void> {
     try {
-      const [r] = await this.db.execute(sql`DELETE FROM ${sql.raw(tableName)} WHERE id IN (${idsSqlList(ids)})`)
+      const [r] = await this.db.execute(sql`DELETE FROM ${sql.identifier(tableName)} WHERE id IN (${idsSqlList(ids)})`)
       if (r.affectedRows !== ids.length) {
         this.logger.warn({ tag: this.deleteRecords.name, msg: `${tableName} - deleted : ${r.affectedRows}/${ids.length}` })
       }
@@ -113,7 +121,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
 
   async deleteUnseenRecords(tableName: string, runId: string): Promise<number> {
     try {
-      const [r] = await this.db.execute(sql`DELETE FROM ${sql.raw(tableName)} WHERE seen_run_id IS NULL OR seen_run_id <> ${runId}`)
+      const [r] = await this.db.execute(sql`DELETE FROM ${sql.identifier(tableName)} WHERE seen_run_id IS NULL OR seen_run_id <> ${runId}`)
       return r.affectedRows ?? 0
     } catch (e) {
       this.logger.error({ tag: this.deleteUnseenRecords.name, msg: `${tableName} : ${e}` })
@@ -145,10 +153,10 @@ export class FilesContentStoreMySQL implements FilesContentStore {
             const excludedMatch = createContentMatch(excludedTerms, ' AND ', true)
             const score = positiveTerms.reduce<SQL>(
               (value, term) => sql`${value} + IF(content LIKE ${toLikePattern(term.rawValue)} ESCAPE '=', 1, 0)`,
-              sql.raw('0')
+              sql`0`
             )
             return sql`(SELECT ${tableName} as sourceIndex, id, ${score} as score
-              FROM ${sql.raw(tableName)}
+              FROM ${sql.identifier(tableName)}
               WHERE (${positiveMatch})
                 ${excludedMatch ? sql`AND ${excludedMatch}` : sql``}
               ORDER BY score DESC
@@ -157,12 +165,12 @@ export class FilesContentStoreMySQL implements FilesContentStore {
 
           const fullTextMatch = sql`MATCH (content) AGAINST ( ${search} IN BOOLEAN MODE )`
           return sql`(SELECT ${tableName} as sourceIndex, id, ${fullTextMatch} as score
-              FROM ${sql.raw(tableName)}
+              FROM ${sql.identifier(tableName)}
               WHERE ${fullTextMatch}
               ORDER BY score DESC
               LIMIT ${limit})`
         }),
-        sql.raw(' UNION ALL ')
+        sql` UNION ALL `
       )
       .append(sql` ORDER BY score DESC LIMIT ${limit}`)
 
@@ -185,11 +193,11 @@ export class FilesContentStoreMySQL implements FilesContentStore {
         if (!ids?.length) return []
         return [
           sql`SELECT ${tableName} as sourceIndex, id, path, name, mime, mtime, content
-              FROM ${sql.raw(tableName)}
+              FROM ${sql.identifier(tableName)}
               WHERE id IN (${idsSqlList(ids)})`
         ]
       }),
-      sql.raw(' UNION ALL ')
+      sql` UNION ALL `
     )
     const [loadedRecords]: SearchRecord[][] = (await this.db.execute(recordsQuery)) as MySqlQueryResult
     const recordsByKey = new Map(loadedRecords.map((record) => [`${record.sourceIndex}:${record.id}`, record]))
@@ -231,22 +239,22 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   }
 
   async dropAllIndexes(): Promise<void> {
-    for (const i of (await this.getIndexes()).flatMap((r: Record<string, string>) => Object.values(r))) {
+    for (const i of await this.indexesList()) {
       await this.dropIndex(i)
     }
   }
 
   private async getIndexes(): Promise<Record<string, string>[]> {
-    return (await this.db.execute(sql`SHOW TABLES LIKE '${sql.raw(FILES_CONTENT_TABLE_PREFIX)}%'`))[0] as any
+    return (await this.db.execute(sql`SHOW TABLES LIKE ${`${FILES_CONTENT_TABLE_PREFIX}%`}`))[0] as any
   }
 
   private async ensureRunIdColumn(tableName: string): Promise<void> {
     // migration for old versions of the application
-    const [columns] = (await this.db.execute(sql`SHOW COLUMNS FROM ${sql.raw(tableName)} LIKE 'seen_run_id'`)) as MySqlQueryResult
+    const [columns] = (await this.db.execute(sql`SHOW COLUMNS FROM ${sql.identifier(tableName)} LIKE 'seen_run_id'`)) as MySqlQueryResult
     if ((columns as unknown[]).length) {
       return
     }
-    await this.db.execute(sql`ALTER TABLE ${sql.raw(tableName)} ADD COLUMN seen_run_id varchar(64), ADD INDEX seen_run_id (seen_run_id)`)
+    await this.db.execute(sql`ALTER TABLE ${sql.identifier(tableName)} ADD COLUMN seen_run_id varchar(64), ADD INDEX seen_run_id (seen_run_id)`)
   }
 }
 
@@ -260,13 +268,13 @@ function createContentMatch(terms: SearchTerm[], separator: ' AND ' | ' OR ', ne
     terms.map(({ rawValue }) =>
       negate ? sql`content NOT LIKE ${toLikePattern(rawValue)} ESCAPE '='` : sql`content LIKE ${toLikePattern(rawValue)} ESCAPE '='`
     ),
-    sql.raw(separator)
+    separator === ' AND ' ? sql` AND ` : sql` OR `
   )
 }
 
 function idsSqlList(ids: number[]): SQL {
   return sql.join(
     ids.map((id) => sql`${id}`),
-    sql.raw(', ')
+    sql`, `
   )
 }

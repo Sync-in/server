@@ -270,7 +270,7 @@ export class SharesQueries {
           linkId: links.id,
           login: linkUsers.login,
           name: links.name,
-          type: sql.raw(`'${MEMBER_TYPE.USER}'`),
+          type: sql`${MEMBER_TYPE.USER}`,
           description: links.email,
           permissions: shareMembers.permissions,
           createdAt: dateTimeUTC(shareMembers.createdAt)
@@ -691,7 +691,7 @@ export class SharesQueries {
       const filters: SQL[] = [or(isNull(shares.ownerId), ne(shares.ownerId, sql.placeholder('userId')))]
       const fromUser = this.fromUserQuery(selectUnion, filters).$dynamic()
       const fromGroups = this.fromGroupsQuery(selectUnion, filters).$dynamic()
-      const fromAdminShares = this.fromAdminSharesQuery({ ...selectUnion, rootPermissions: sql.raw(`'${SHARE_ALL_OPERATIONS}'`) }, filters).$dynamic()
+      const fromAdminShares = this.fromAdminSharesQuery({ ...selectUnion, rootPermissions: sql`${SHARE_ALL_OPERATIONS}` }, filters).$dynamic()
       for (const q of [fromUser, fromGroups, fromAdminShares]) {
         q.leftJoin(shareSpaceRoot, and(isNull(shares.externalPath), isNull(shares.fileId), eq(shareSpaceRoot.id, shares.spaceRootId)))
           .leftJoin(
@@ -707,7 +707,7 @@ export class SharesQueries {
           .leftJoin(
             childShare,
             and(
-              eq(sql.placeholder('withShares'), sql.raw('1')),
+              eq(sql.placeholder('withShares'), sql`1`),
               eq(childShare.ownerId, sql.placeholder('userId')),
               eq(childShare.parentId, shares.id),
               or(
@@ -722,11 +722,11 @@ export class SharesQueries {
               )
             )
           )
-          .leftJoin(syncClients, and(eq(sql.placeholder('withSyncs'), sql.raw('1')), eq(syncClients.ownerId, sql.placeholder('userId'))))
+          .leftJoin(syncClients, and(eq(sql.placeholder('withSyncs'), sql`1`), eq(syncClients.ownerId, sql.placeholder('userId'))))
           .leftJoin(
             syncPaths,
             and(
-              eq(sql.placeholder('withSyncs'), sql.raw('1')),
+              eq(sql.placeholder('withSyncs'), sql`1`),
               eq(syncPaths.clientId, syncClients.id),
               isNull(syncPaths.fileId),
               eq(syncPaths.shareId, shares.id)
@@ -823,7 +823,7 @@ export class SharesQueries {
       const filters: SQL[] = [eq(shares.alias, sql.placeholder('shareAlias'))]
       const fromUser = this.fromUserQuery(selectUnion, filters).$dynamic()
       const fromGroups = this.fromGroupsQuery(selectUnion, filters).$dynamic()
-      const fromAdminShares = this.fromAdminSharesQuery({ ...selectUnion, permissions: sql.raw(`'${SHARE_ALL_OPERATIONS}'`) }, filters).$dynamic()
+      const fromAdminShares = this.fromAdminSharesQuery({ ...selectUnion, permissions: sql`${SHARE_ALL_OPERATIONS}` }, filters).$dynamic()
       for (const q of [fromUser, fromGroups, fromAdminShares]) {
         q.leftJoin(shareSpaceRoot, and(isNull(shares.externalPath), isNull(shares.fileId), eq(shareSpaceRoot.id, shares.spaceRootId)))
           .leftJoin(
@@ -950,7 +950,7 @@ export class SharesQueries {
   }
 
   private fromAdminSharesQuery(select: SelectedFields<any, any>, filters: SQL[] = []) {
-    const where: SQL[] = [eq(sql.placeholder('isAdmin'), sql.raw('1')), isNull(shares.ownerId), ...filters]
+    const where: SQL[] = [eq(sql.placeholder('isAdmin'), sql`1`), isNull(shares.ownerId), ...filters]
     return this.db
       .select(select)
       .from(shares)

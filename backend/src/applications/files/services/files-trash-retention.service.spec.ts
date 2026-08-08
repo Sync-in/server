@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { MySqlDialect } from 'drizzle-orm/mysql-core'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -14,6 +15,7 @@ describe(FilesTrashRetention.name, () => {
   let module: TestingModule
   let service: FilesTrashRetention
   let db: { execute: Mock }
+  const dialect = new MySqlDialect()
 
   const asyncGen = <T>(items: T[]) =>
     (async function* () {
@@ -74,12 +76,20 @@ describe(FilesTrashRetention.name, () => {
   })
 
   it('should create trash tables with a seen run id column', () => {
-    const schema = createTableFilesTrash('files_trash_user_1')
+    const schema = dialect.sqlToQuery(createTableFilesTrash('files_trash_user_1')).sql
 
     expect(schema).toContain('deletedAt date')
     expect(schema).toContain('INDEX is_dir_deleted_at (isDir, deletedAt)')
     expect(schema).toContain('seen_run_id varchar(64)')
     expect(schema).toContain('INDEX seen_run_id (seen_run_id)')
+  })
+
+  it('should escape trash table names as identifiers', () => {
+    const tableName = 'files_trash_user_1`; DROP TABLE users; --'
+
+    const query = dialect.sqlToQuery(createTableFilesTrash(tableName))
+
+    expect(query.sql).toContain('CREATE TABLE IF NOT EXISTS `files_trash_user_1``; DROP TABLE users; --`')
   })
 
   it('should process trash files by batches of 1000 and delete unseen records', async () => {
@@ -205,12 +215,12 @@ describe(FilesTrashRetention.name, () => {
 
     await expect((service as any).getExpiredRecords('files_trash_user_1', true, 30)).resolves.toEqual([])
 
-    const query = sqlText(db.execute.mock.calls[0][0])
-    expect(query).toContain('NOT EXISTS')
-    expect(query).toContain('FROM files_trash_user_1 AS child')
-    expect(query).toContain('child.path LIKE CONCAT')
-    expect(query).toContain("ESCAPE '='")
-    expect(query).toContain('ORDER BY trash_record.deletedAt, trash_record.id')
+    const query = dialect.sqlToQuery(db.execute.mock.calls[0][0])
+    expect(query.sql).toContain('NOT EXISTS')
+    expect(query.sql).toContain('FROM `files_trash_user_1` AS child')
+    expect(query.sql).toContain('child.path LIKE CONCAT')
+    expect(query.sql).toContain("ESCAPE '='")
+    expect(query.sql).toContain('ORDER BY trash_record.deletedAt, trash_record.id')
   })
 
   it('should resolve trash record paths inside the trash root only', () => {

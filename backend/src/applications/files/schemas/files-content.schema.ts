@@ -1,9 +1,11 @@
+import { SQL, sql } from 'drizzle-orm'
+
 export const FILES_CONTENT_TABLE_PREFIX = 'files_content_' as const
 
 // The utf8mb4_uca1400_ai_ci COLLATE is better for precision but slower
-export function createTableFilesContent(tableName: string): string {
-  return `
-      CREATE TABLE IF NOT EXISTS ${tableName}
+export function createTableFilesContent(tableName: string): SQL {
+  return sql`
+      CREATE TABLE IF NOT EXISTS ${sql.identifier(tableName)}
       (
           id      bigint unsigned NOT NULL,
           path    varchar(4096)   NOT NULL,

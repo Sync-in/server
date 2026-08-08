@@ -3,7 +3,7 @@ import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { FILE_REPOSITORY } from '../constants/operations'
 import { users } from '../../users/schemas/users.schema'
-import { and, eq, inArray, lte, sql } from 'drizzle-orm'
+import { and, eq, inArray, lte, SQL, sql } from 'drizzle-orm'
 import { USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { isPathExists, isPathInside, removeFiles } from '../utils/files'
@@ -226,7 +226,7 @@ export class FilesTrashRetention {
 
   private async dropTable(tableName: string): Promise<boolean> {
     try {
-      await this.db.execute(sql`DROP TABLE IF EXISTS ${sql.raw(tableName)} `)
+      await this.db.execute(sql`DROP TABLE IF EXISTS ${sql.identifier(tableName)} `)
       return true
     } catch (e) {
       this.logger.error({ tag: this.dropTable.name, msg: `${tableName} : ${e}` })
@@ -239,7 +239,7 @@ export class FilesTrashRetention {
       return new Map()
     }
     const [r]: { id: number; path: string; isDir: boolean }[][] = (await this.db.execute(
-      sql`SELECT id, path, isDir FROM ${sql.raw(tableName)} WHERE id IN (${sql.raw(ids.join(','))})`
+      sql`SELECT id, path, isDir FROM ${sql.identifier(tableName)} WHERE id IN (${idsSqlList(ids)})`
     )) as MySqlQueryResult
     return new Map(r.map((row) => [row.id, { path: row.path, isDir: Boolean(row.isDir) }] satisfies [FileTrash['id'], FileTrashRecordMetadata]))
   }
@@ -247,7 +247,7 @@ export class FilesTrashRetention {
   private async markRecordsSeen(tableName: string, ids: number[], runId: string): Promise<boolean> {
     if (!ids.length) return true
     try {
-      await this.db.execute(sql`UPDATE ${sql.raw(tableName)} SET seen_run_id = ${runId} WHERE id IN (${sql.raw(ids.join(','))})`)
+      await this.db.execute(sql`UPDATE ${sql.identifier(tableName)} SET seen_run_id = ${runId} WHERE id IN (${idsSqlList(ids)})`)
       return true
     } catch (e) {
       this.logger.error({ tag: this.markRecordsSeen.name, msg: `${tableName} : ${e}` })
@@ -258,7 +258,7 @@ export class FilesTrashRetention {
   private async insertRecord(tableName: string, ft: FileTrash, runId: string): Promise<boolean> {
     try {
       await this.db.execute(sql`
-          INSERT INTO ${sql.raw(tableName)} (id, path, isDir, seen_run_id)
+          INSERT INTO ${sql.identifier(tableName)} (id, path, isDir, seen_run_id)
           VALUES ${sql`(${ft.id}, ${ft.path}, ${ft.isDir}, ${runId})`}
           -- If an inode is reused or moved inside trash, restart retention for the new metadata.
           ON DUPLICATE KEY UPDATE path    = VALUES(path),
@@ -275,7 +275,7 @@ export class FilesTrashRetention {
 
   private async deleteUnseenRecords(tableName: string, runId: string): Promise<number | null> {
     try {
-      const [r] = await this.db.execute(sql`DELETE FROM ${sql.raw(tableName)} WHERE seen_run_id IS NULL OR seen_run_id <> ${runId}`)
+      const [r] = await this.db.execute(sql`DELETE FROM ${sql.identifier(tableName)} WHERE seen_run_id IS NULL OR seen_run_id <> ${runId}`)
       return r.affectedRows ?? 0
     } catch (e) {
       this.logger.error({ tag: this.deleteUnseenRecords.name, msg: `${tableName} : ${e}` })
@@ -341,14 +341,14 @@ export class FilesTrashRetention {
   }
 
   private async getExpiredRecords(tableName: string, isDir: boolean, retentionDays: number, ignoredIds: number[] = []): Promise<FileTrash[]> {
-    const ignoredRecordsFilter = ignoredIds.length ? sql`AND trash_record.id NOT IN (${sql.raw(ignoredIds.join(','))})` : sql``
+    const ignoredRecordsFilter = ignoredIds.length ? sql`AND trash_record.id NOT IN (${idsSqlList(ignoredIds)})` : sql``
     const escapedRecordPath = sql`REPLACE(REPLACE(REPLACE(trash_record.path, '=', '=='), '%', '=%'), '_', '=_')`
     // Directories are eligible only after their indexed children are gone.
     // Once selected, removeFiles can delete any remaining filesystem content recursively.
     const emptyDirectoryFilter = isDir
       ? sql`
           AND NOT EXISTS (SELECT 1
-                          FROM ${sql.raw(tableName)} AS child
+                          FROM ${sql.identifier(tableName)} AS child
                           WHERE child.id <> trash_record.id
                             AND child.path LIKE CONCAT(${escapedRecordPath}, '/%') ESCAPE '=')
       `
@@ -356,7 +356,7 @@ export class FilesTrashRetention {
     // Keep the predicate and ordering aligned with the (isDir, deletedAt) index.
     const req = sql`
       SELECT trash_record.id, trash_record.path, trash_record.isDir, trash_record.deletedAt
-      FROM ${sql.raw(tableName)} AS trash_record
+      FROM ${sql.identifier(tableName)} AS trash_record
       WHERE trash_record.deletedAt < DATE_SUB(CURRENT_DATE, INTERVAL ${retentionDays} DAY)
         AND trash_record.isDir = ${isDir}
         ${ignoredRecordsFilter}
@@ -373,7 +373,7 @@ export class FilesTrashRetention {
       return 0
     }
     try {
-      const [r] = await this.db.execute(sql`DELETE FROM ${sql.raw(tableName)} WHERE id IN (${sql.raw(ids.join(','))})`)
+      const [r] = await this.db.execute(sql`DELETE FROM ${sql.identifier(tableName)} WHERE id IN (${idsSqlList(ids)})`)
       if (r.affectedRows !== ids.length) {
         this.logger.warn({ tag: this.deleteRecordsByIds.name, msg: `${tableName} - deleted : ${r.affectedRows}/${ids.length}` })
       }
@@ -407,4 +407,11 @@ export class FilesTrashRetention {
 
     throw new Error(`${realPath} is outside trash path ${basePath}`)
   }
+}
+
+function idsSqlList(ids: number[]): SQL {
+  return sql.join(
+    ids.map((id) => sql`${id}`),
+    sql`, `
+  )
 }

@@ -31,5 +31,5 @@ export const spaces = mysqlTable(
   (table) => [uniqueIndex('alias_idx').on(table.alias)]
 )
 
-export const spaceGroupConcatPermissions = (column: any, separator = SPACE_PERMS_SEP): SQL<string> =>
-  sql`IFNULL(GROUP_CONCAT(DISTINCT(IF(${column} = '', null, ${column})) SEPARATOR ${sql.raw(`'${separator}'`)}), '')`
+export const spaceGroupConcatPermissions = (column: any): SQL<string> =>
+  sql`IFNULL(GROUP_CONCAT(DISTINCT(IF(${column} = '', null, ${column})) SEPARATOR ${SPACE_PERMS_SEP}), '')`

@@ -109,7 +109,7 @@ export class CommentsQueries {
         file: {
           name: sql<string>`IF (${files.id} = ${shareFile.id}, ${shares.name}, ${files.name})`.as('name'),
           path: sql<string>`
-          CONCAT_WS('/', '${sql.raw(SPACE_REPOSITORY.SHARES)}',
+          CONCAT_WS('/', ${SPACE_REPOSITORY.SHARES},
             IF (${shareFile.id} IS NOT NULL,
               IF (${files.id} = ${shareFile.id}, NULL, REGEXP_REPLACE(${files.path}, ${filePathSQL(shareFile)}, ${shares.alias})),
               CONCAT_WS('/', ${shares.alias}, IF (${files.path} = '.', NULL, ${files.path}))
@@ -164,8 +164,8 @@ export class CommentsQueries {
           name: files.name,
           path: sql<string>`
           CONCAT_WS('/', 
-            IF (${files.inTrash} = 0, '${sql.raw(SPACE_REPOSITORY.FILES)}', '${sql.raw(SPACE_REPOSITORY.TRASH)}'), 
-            '${sql.raw(SPACE_ALIAS.PERSONAL)}',
+            IF (${files.inTrash} = 0, ${SPACE_REPOSITORY.FILES}, ${SPACE_REPOSITORY.TRASH}),
+            ${SPACE_ALIAS.PERSONAL},
             IF (${files.path} = '.', NULL, ${files.path})
           )`.as('path'),
           mime: files.mime,
@@ -195,8 +195,8 @@ export class CommentsQueries {
           name: sql<string>`IF (${files.id} = ${spacesRoots.fileId}, ${spacesRoots.name}, ${files.name})`.as('name'),
           path: sql<string>`
           CONCAT_WS('/', 
-            IF (${files.inTrash} = 0, '${sql.raw(SPACE_REPOSITORY.FILES)}', '${sql.raw(SPACE_REPOSITORY.TRASH)}'), 
-            IF (${files.ownerId} = ${userId}, '${sql.raw(SPACE_ALIAS.PERSONAL)}', ${spaces.alias}),
+            IF (${files.inTrash} = 0, ${SPACE_REPOSITORY.FILES}, ${SPACE_REPOSITORY.TRASH}),
+            IF (${files.ownerId} = ${userId}, ${SPACE_ALIAS.PERSONAL}, ${spaces.alias}),
             IF (${spaceRootFile.id} IS NOT NULL,
                 IF (${files.id} = ${spaceRootFile.id}, NULL, IF (${files.path} = '.', NULL, REGEXP_REPLACE(${files.path}, ${filePathSQL(spaceRootFile)}, ${spacesRoots.alias}))),
                 NULLIF(CONCAT_WS('/', IF (${files.spaceExternalRootId} = ${spacesRoots.id}, ${spacesRoots.alias}, NULL), IF (${files.path} = '.', NULL, ${files.path})), '')

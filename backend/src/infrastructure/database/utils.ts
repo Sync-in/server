@@ -73,13 +73,13 @@ export function concatDistinctObjectsInArray(mustBeNotNull: Column, object: Reco
   const keys = Object.keys(object)
   keys.forEach((k, index) => {
     if (object[k].constructor.name === 'Object') {
-      expr.append(sql`${sql.raw(`'${k}'`)},JSON_OBJECT(`)
+      expr.append(sql`${k},JSON_OBJECT(`)
       const subKeys = Object.keys(object[k])
       subKeys.forEach((subK, subIndex) => {
-        expr.append(sql`${sql.raw(`'${subK}'`)},${sql`${object[k][subK]}`}${subIndex === subKeys.length - 1 ? sql`)` : sql`,`}`)
+        expr.append(sql`${subK},${sql`${object[k][subK]}`}${subIndex === subKeys.length - 1 ? sql`)` : sql`,`}`)
       })
     } else {
-      expr.append(sql`${sql.raw(`'${k}'`)},${sql`${object[k]}`}`)
+      expr.append(sql`${k},${sql`${object[k]}`}`)
     }
     if (index !== keys.length - 1) {
       expr.append(sql`,`)

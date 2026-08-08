@@ -179,7 +179,7 @@ export class SpacesQueries {
             id: linkUsers.id,
             linkId: links.id,
             name: links.name,
-            type: sql.raw(`'${MEMBER_TYPE.USER}'`),
+            type: sql`${MEMBER_TYPE.USER}`,
             spaceRole: sql`${SPACE_ROLE.IS_MEMBER}`,
             description: links.email,
             permissions: otherMembers.permissions,
@@ -294,18 +294,18 @@ export class SpacesQueries {
         .leftJoin(
           shares,
           and(
-            eq(sql.placeholder('withShares'), sql.raw('1')),
+            eq(sql.placeholder('withShares'), sql`1`),
             eq(shares.ownerId, sql.placeholder('userId')),
             isNull(shares.fileId),
             isNull(shares.parentId),
             eq(shares.spaceRootId, spacesRoots.id)
           )
         )
-        .leftJoin(syncClients, and(eq(sql.placeholder('withSyncs'), sql.raw('1')), eq(syncClients.ownerId, sql.placeholder('userId'))))
+        .leftJoin(syncClients, and(eq(sql.placeholder('withSyncs'), sql`1`), eq(syncClients.ownerId, sql.placeholder('userId'))))
         .leftJoin(
           syncPaths,
           and(
-            eq(sql.placeholder('withSyncs'), sql.raw('1')),
+            eq(sql.placeholder('withSyncs'), sql`1`),
             eq(syncPaths.clientId, syncClients.id),
             eq(syncPaths.spaceId, sql.placeholder('spaceId')),
             eq(syncPaths.spaceRootId, spacesRoots.id),
@@ -584,7 +584,7 @@ export class SpacesQueries {
           login: managers.login,
           name: userFullNameSQL(managers),
           description: managers.email,
-          type: sql.raw(`'${MEMBER_TYPE.USER}'`),
+          type: sql`${MEMBER_TYPE.USER}`,
           spaceRole: spacesMembers.role,
           permissions: sql<string>`''`,
           createdAt: dateTimeUTC(spacesMembers.createdAt)
@@ -632,7 +632,7 @@ export class SpacesQueries {
         login: managers.login,
         name: userFullNameSQL(managers),
         description: managers.email,
-        type: sql.raw(`'${MEMBER_TYPE.USER}'`),
+        type: sql`${MEMBER_TYPE.USER}`,
         spaceRole: spacesMembers.role,
         permissions: sql<string>`''`,
         createdAt: dateTimeUTC(spacesMembers.createdAt)

@@ -278,7 +278,7 @@ export class UsersQueries {
         name: userFullNameSQL(users).as('name'),
         description: users.email,
         createdAt: usersGroups.createdAt,
-        type: sql<MEMBER_TYPE>`IF(${users.role} = ${USER_ROLE.GUEST}, ${sql.raw(`'${MEMBER_TYPE.GUEST}'`)}, ${sql.raw(`'${MEMBER_TYPE.USER}'`)})`,
+        type: sql<MEMBER_TYPE>`IF(${users.role} = ${USER_ROLE.GUEST}, ${MEMBER_TYPE.GUEST}, ${MEMBER_TYPE.USER})`,
         groupRole: sql<USER_GROUP_ROLE>`${usersGroups.role}`
       } satisfies Member | SelectedFields<any, any>)
       .from(groups)
@@ -335,13 +335,13 @@ export class UsersQueries {
         description: groups.description,
         createdAt: groups.createdAt,
         modifiedAt: groups.modifiedAt,
-        type: sql<MEMBER_TYPE>`IF(${groups.type} = ${GROUP_TYPE.USER}, ${sql.raw(`'${MEMBER_TYPE.GROUP}'`)}, ${sql.raw(`'${MEMBER_TYPE.PGROUP}'`)})`,
+        type: sql<MEMBER_TYPE>`IF(${groups.type} = ${GROUP_TYPE.USER}, ${MEMBER_TYPE.GROUP}, ${MEMBER_TYPE.PGROUP})`,
         members: concatDistinctObjectsInArray(users.id, {
           id: users.id,
           login: users.login,
           name: userFullNameSQL(users),
           description: users.email,
-          type: sql<MEMBER_TYPE>`IF(${users.role} = ${USER_ROLE.GUEST}, ${sql.raw(`'${MEMBER_TYPE.GUEST}'`)}, ${sql.raw(`'${MEMBER_TYPE.USER}'`)})`,
+          type: sql<MEMBER_TYPE>`IF(${users.role} = ${USER_ROLE.GUEST}, ${MEMBER_TYPE.GUEST}, ${MEMBER_TYPE.USER})`,
           groupRole: usersGroupsAlias.role,
           createdAt: dateTimeUTC(usersGroupsAlias.createdAt)
         } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'login' | 'description' | 'type' | 'groupRole' | 'createdAt'>, any>)
@@ -467,7 +467,7 @@ export class UsersQueries {
           id: managersAlias.id,
           login: managersAlias.login,
           name: userFullNameSQL(managersAlias),
-          type: sql.raw(`'${MEMBER_TYPE.USER}'`),
+          type: sql`${MEMBER_TYPE.USER}`,
           description: managersAlias.email,
           createdAt: dateTimeUTC(managersGuestAlias.createdAt)
         } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'login' | 'description' | 'type' | 'createdAt'>, any>),
@@ -476,7 +476,7 @@ export class UsersQueries {
             id: groups.id,
             name: groups.name,
             description: groups.description,
-            type: sql.raw(`'${MEMBER_TYPE.PGROUP}'`),
+            type: sql`${MEMBER_TYPE.PGROUP}`,
             permissions: groups.permissions,
             createdAt: dateTimeUTC(usersGroups.createdAt)
           } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'description' | 'type' | 'permissions' | 'createdAt'>, any>)
@@ -549,7 +549,7 @@ export class UsersQueries {
         ON ${usersGroups.userId} = ${users.id}
       INNER JOIN visible_groups
         ON visible_groups.id = ${usersGroups.groupId}
-      WHERE ${users.role} <= ${sql.raw(`${lowerOrEqualUserRole}`)}
+      WHERE ${users.role} <= ${lowerOrEqualUserRole}
 
       UNION
 
@@ -559,7 +559,7 @@ export class UsersQueries {
       WHERE
         ${showUngroupedUsers} = 1
         AND
-        ${users.role} <= ${sql.raw(`${lowerOrEqualUserRole}`)}
+        ${users.role} <= ${lowerOrEqualUserRole}
         -- Guests without (personal) groups are not globally visible.
         -- They are allowed only through part 1 (shared visible group) or part 3 (manager relation).
         AND ${users.role} != ${USER_ROLE.GUEST}
