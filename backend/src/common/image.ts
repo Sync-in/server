@@ -5,24 +5,33 @@ import { Readable } from 'node:stream'
 import { promisify } from 'node:util'
 import sharp from 'sharp'
 import TextToSVG from 'text-to-svg'
+import { maxFileSizeExceededError } from '../applications/files/utils/errors'
 import { moveFiles } from '../applications/files/utils/files'
 
 // Sharp settings
 sharp.cache(false)
 sharp.concurrency(Math.min(2, os.cpus()?.length || 1))
+// SVG files must only be loaded from buffers so librsvg has no base directory
+// from which it can resolve local external resources.
+sharp.block({ operation: ['VipsForeignLoadSvgFile'] })
 
 // Constants
 export const imgMimeTypePrefix = 'image/'
 export const pngMimeType = 'image/png'
 export const svgMimeType = 'image/svg+xml'
 export const webpMimeType = 'image/webp'
+export const maxThumbnailInputSize = 50 * 1024 * 1024
 const avatarSize = 512
 const fontPath = path.join(__dirname, 'fonts', 'avatar.ttf')
 const loadTextToSVG = promisify(TextToSVG.load.bind(TextToSVG))
 let textToSvgCache: Promise<TextToSVG> | null = null
 
 export async function generateThumbnail(filePath: string, size: number): Promise<Readable> {
-  return sharp(filePath, {
+  if ((await fs.stat(filePath)).size > maxThumbnailInputSize) {
+    throw maxFileSizeExceededError()
+  }
+  const input = path.extname(filePath).toLowerCase() === '.svg' ? await fs.readFile(filePath) : filePath
+  return sharp(input, {
     failOn: 'none',
     sequentialRead: true, // sequential read = more efficient I/O
     limitInputPixels: 268e6 // protects against extremely large images

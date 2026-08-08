@@ -741,7 +741,8 @@ export class FilesManager {
     if (!(await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
     }
-    if (getMimeType(space.realPath, false).indexOf('image') === -1) {
+    const mimeType = getMimeType(space.realPath, false)
+    if (!mimeType.startsWith('image-')) {
       throw new FileError(HttpStatus.BAD_REQUEST, 'File is not an image')
     }
     try {

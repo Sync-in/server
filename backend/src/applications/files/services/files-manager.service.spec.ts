@@ -1448,6 +1448,19 @@ describe(FilesManager.name, () => {
 
       expect(result).toBe(stream)
     })
+
+    it('should pass SVG files to the thumbnail renderer', async () => {
+      const space = makeSpace({ realPath: '/data/users/john/files/image.svg' })
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
+      vi.mocked(filesUtils.getMimeType).mockReturnValueOnce('image-svg+xml')
+      const stream = Readable.from(['img'])
+      const generateThumbnailSpy = vi.spyOn(imageUtils, 'generateThumbnail').mockReturnValueOnce(stream as any)
+
+      const result = await service.generateThumbnail(space, 256)
+
+      expect(result).toBe(stream)
+      expect(generateThumbnailSpy).toHaveBeenCalledWith(space.realPath, 256)
+    })
   })
 
   describe('locking', () => {
