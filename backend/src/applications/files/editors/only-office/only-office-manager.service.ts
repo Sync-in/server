@@ -60,7 +60,7 @@ export class OnlyOfficeManager {
     : configuration.applications.files.editors.eurooffice
   private readonly officeAppLock = configuration.applications.files.editors.onlyoffice.enabled ? ONLY_OFFICE_APP_LOCK : EURO_OFFICE_APP_LOCK
   private readonly externalOnlyOfficeServer = this.officeConfig.externalServer || null
-  private readonly rejectUnauthorized: boolean = !this.officeConfig.verifySSL
+  private readonly rejectUnauthorized: boolean = this.officeConfig.verifySSL
   private readonly convertUrl = this.externalOnlyOfficeServer ? `${this.externalOnlyOfficeServer}/ConvertService.ashx` : null
   private readonly expiration = convertHumanTimeToSeconds(configuration.auth.token.refresh.expiration)
   private readonly mobileRegex: RegExp = /android|webos|iphone|ipad|ipod|blackberry|windows phone|opera mini|iemobile|mobile/i
