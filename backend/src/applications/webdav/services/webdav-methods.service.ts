@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { currentTimeStamp, encodeUrl } from '../../../common/shared'
-import { HTTP_VERSION } from '../../applications.constants'
+import { HTTP_METHOD, HTTP_VERSION } from '../../applications.constants'
 import { FileLock, FileLockOptions } from '../../files/interfaces/file-lock.interface'
 import { FileError } from '../../files/models/file-error'
 import { LockConflict } from '../../files/models/file-lock-error'
@@ -519,7 +519,15 @@ export class WebDAVMethods {
     if (e instanceof LockConflict) {
       return DAV_ERROR_RES(HttpStatus.LOCKED, PRECONDITION.LOCK_CONFLICT, res, e.lock.options?.lockRoot || e.lock.dbFilePath)
     } else if (e instanceof FileError) {
-      return res.status(e.httpCode).send(errorMsg)
+      // A quota or size limit may reject a PUT before its body is fully consumed.
+      // Mark the HTTP/1 connection as non-reusable instead of draining the remaining payload.
+      const reply =
+        req.method === HTTP_METHOD.PUT &&
+        req.raw.httpVersionMajor === 1 &&
+        (e.httpCode === HttpStatus.INSUFFICIENT_STORAGE || e.httpCode === HttpStatus.PAYLOAD_TOO_LARGE)
+          ? res.header('Connection', 'close')
+          : res
+      return reply.status(e.httpCode).send(errorMsg)
     }
     throw new HttpException(errorMsg, HttpStatus.INTERNAL_SERVER_ERROR)
   }

@@ -30,6 +30,11 @@ export class AuthInterceptor implements HttpInterceptor {
         if (e.status === 401) {
           return this.handleAuthorizationError(request, next, e)
         } else if (e.status === 0) {
+          // Do not retry multipart uploads on a transport error: the connection may have
+          // been closed after a quota or size rejection, and replaying would resend all files.
+          if (request.body instanceof FormData) {
+            return throwError(() => e)
+          }
           return this.handleRetries(request, next, e)
         }
         return throwError(() => e)

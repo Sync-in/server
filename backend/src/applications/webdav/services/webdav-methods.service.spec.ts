@@ -79,6 +79,7 @@ describe('WebDAVMethods', () => {
     ({
       method: 'GET',
       headers: {},
+      raw: { httpVersionMajor: 1 },
       user: { id: 1, login: 'test-user', fullName: 'Test User', email: 'test-user@sync-in.com', tmpPath: '/tmp/test-user' },
       dav: {
         url: '/webdav/test/file.txt',

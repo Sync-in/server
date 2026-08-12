@@ -42,7 +42,8 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
 
   /* PARSER */
   // Keep unknown binary payloads available through req.raw.
-  // Fastify's bodyLimit still protects buffered parsers; upload consumers meter this raw stream.
+  // This parser does not consume or meter the payload: bodyLimit only protects buffered parsers,
+  // while raw and multipart consumers meter their own streams.
   fastifyInstance.addContentTypeParser('*', (_req: FastifyRequest, _payload: FastifyRequest['raw'], done) => done(null))
 
   /* INTERCEPTORS */

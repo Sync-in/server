@@ -35,11 +35,11 @@ export class FilesMethods {
     }
   }
 
-  async upload(req: FastifySpaceRequest): Promise<void> {
+  async upload(req: FastifySpaceRequest, res: FastifyReply): Promise<void> {
     try {
       await this.filesManager.saveMultipart(req.user, req.space, req)
     } catch (e) {
-      this.handleError(req.space, FILE_OPERATION.UPLOAD, e)
+      this.handleError(req.space, FILE_OPERATION.UPLOAD, e, undefined, undefined, res)
     }
   }
 
@@ -183,17 +183,37 @@ export class FilesMethods {
     }
   }
 
-  private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv, signal?: AbortSignal): never {
-    if (signal && this.isCancellationError(e, signal)) {
+  private handleError(
+    space: SpaceEnv,
+    action: FILE_OPERATION | string,
+    error: unknown,
+    dstSpace?: SpaceEnv,
+    signal?: AbortSignal,
+    res?: FastifyReply
+  ): void {
+    if (signal && this.isCancellationError(error, signal)) {
       throw signal.reason
     }
-    this.logger.error({ tag: this.handleError.name, msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}` })
+    this.logger.error({
+      tag: this.handleError.name,
+      msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${error}`
+    })
+    const normalizedError = error instanceof Error ? error : new Error(String(error))
     // Remove the last part to avoid exposing the path
-    const errorMsg = e.message.split(',')[0]
-    if (e instanceof LockConflict) {
+    const errorMsg = normalizedError.message.split(',')[0]
+    if (normalizedError instanceof LockConflict) {
       throw new HttpException('The file is locked', HttpStatus.LOCKED)
-    } else if (e instanceof FileError) {
-      throw new HttpException(errorMsg, e.httpCode)
+    } else if (normalizedError instanceof FileError) {
+      // A quota or size limit may reject a multipart upload before its body is fully consumed.
+      // Mark the HTTP/1 connection as non-reusable instead of draining the remaining payload.
+      if (
+        res &&
+        res.request.raw.httpVersionMajor === 1 &&
+        (normalizedError.httpCode === HttpStatus.INSUFFICIENT_STORAGE || normalizedError.httpCode === HttpStatus.PAYLOAD_TOO_LARGE)
+      ) {
+        void res.header('Connection', 'close')
+      }
+      throw new HttpException(errorMsg, normalizedError.httpCode)
     }
     throw new HttpException(errorMsg, HttpStatus.INTERNAL_SERVER_ERROR)
   }
