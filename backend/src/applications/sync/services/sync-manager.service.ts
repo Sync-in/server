@@ -50,14 +50,12 @@ export class SyncManager {
     try {
       await this.filesManager.saveStream(req.user, req.space, req, {
         tmpPath: tmpPath,
+        expectedUploadSize: syncUploadDto.size,
         ...(syncUploadDto.checksum && { checksumAlg: SYNC_CHECKSUM_ALG }),
         validateTmpFile: async ({ tmpPath, checksum }) => {
           const tmpStats = await fs.stat(tmpPath)
           if (tmpStats.size !== syncUploadDto.size) {
             throw new FileError(HttpStatus.BAD_REQUEST, `sizes are not identical : ${tmpStats.size} != ${syncUploadDto.size}`)
-          }
-          if (req.space.storageQuota && req.space.willExceedQuota(tmpStats.size)) {
-            throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
           }
           if (syncUploadDto.checksum && checksum !== syncUploadDto.checksum) {
             throw new FileError(HttpStatus.BAD_REQUEST, 'checksums are not identical')

@@ -6,7 +6,7 @@ import { FileError } from '../../files/models/file-error'
 import { LockConflict } from '../../files/models/file-lock-error'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
 import { FilesManager } from '../../files/services/files-manager.service'
-import { dirName, genEtag, isPathExists } from '../../files/utils/files'
+import { dirName, genEtag, isPathExists, removeFiles } from '../../files/utils/files'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import * as PathsUtils from '../../spaces/utils/paths'
 import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
@@ -22,7 +22,10 @@ vi.mock('../../files/utils/files', () => ({
   isPathIsDir: vi.fn(),
   fileName: vi.fn().mockReturnValue('fileName'),
   dirName: vi.fn(),
-  genEtag: vi.fn().mockReturnValue('W/"etag-123"')
+  genEtag: vi.fn().mockReturnValue('W/"etag-123"'),
+  removeFiles: vi.fn(() => Promise.resolve()),
+  tempFilePath: vi.fn().mockReturnValue('/tmp/test-user/file.txt-upload-id'),
+  temporaryPathPrefix: vi.fn().mockReturnValue('file.txt-upload-')
 }))
 
 vi.mock('../../spaces/utils/permissions', () => ({
@@ -75,7 +78,8 @@ describe('WebDAVMethods', () => {
   const createBaseRequest = (overrides: Partial<any> = {}) =>
     ({
       method: 'GET',
-      user: { id: 1, login: 'test-user', fullName: 'Test User', email: 'test-user@sync-in.com' },
+      headers: {},
+      user: { id: 1, login: 'test-user', fullName: 'Test User', email: 'test-user@sync-in.com', tmpPath: '/tmp/test-user' },
       dav: {
         url: '/webdav/test/file.txt',
         depth: '0',
@@ -631,7 +635,12 @@ describe('WebDAVMethods', () => {
 
         const result = await service.put(req, res)
 
-        expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, expect.objectContaining({ dav: expect.any(Object) }))
+        expect(filesManager.saveStream).toHaveBeenCalledWith(
+          req.user,
+          req.space,
+          req,
+          expect.objectContaining({ dav: expect.any(Object), tmpPath: '/tmp/test-user/file.txt-upload-id' })
+        )
         expect(res.statusCode).toBe(HttpStatus.NO_CONTENT)
         expect(res.headers['etag']).toBeDefined()
         expect(result).toBe(res)
@@ -641,9 +650,11 @@ describe('WebDAVMethods', () => {
         filesManager.saveStream.mockResolvedValue(false) // file didn't exist
         const req = createBaseRequest({ method: 'PUT' })
         const res = createMockResponse()
+        vi.mocked(isPathExists).mockImplementation(async (rPath: string) => rPath === '/real/path/to')
 
         const result = await service.put(req, res)
 
+        expect(filesManager.saveStream.mock.calls[0][3]).not.toHaveProperty('tmpPath')
         expect(res.statusCode).toBe(HttpStatus.CREATED)
         expect(res.headers['etag']).toBeDefined()
         expect(result).toBe(res)
@@ -673,6 +684,16 @@ describe('WebDAVMethods', () => {
             })
           })
         )
+      })
+
+      it('should write content-range updates directly to preserve resumability', async () => {
+        filesManager.saveStream.mockResolvedValue(true)
+        const req = createBaseRequest({ method: 'PUT', headers: { 'content-range': 'bytes 4-7/8' } })
+        const res = createMockResponse()
+
+        await service.put(req, res)
+
+        expect(filesManager.saveStream.mock.calls[0][3]).not.toHaveProperty('tmpPath')
       })
     })
 
@@ -704,6 +725,17 @@ describe('WebDAVMethods', () => {
 
         expect(res.statusCode).toBe(409)
         expect(res.body).toBe('File conflict')
+        expect(removeFiles).toHaveBeenCalledWith('/tmp/test-user/file.txt-upload-id')
+      })
+
+      it('should not clean up direct content-range updates after an error', async () => {
+        filesManager.saveStream.mockRejectedValue(new FileError(HttpStatus.BAD_REQUEST, 'Interrupted upload'))
+        const req = createBaseRequest({ method: 'PUT', headers: { 'content-range': 'bytes 4-7/8' } })
+        const res = createMockResponse()
+
+        await service.put(req, res)
+
+        expect(removeFiles).not.toHaveBeenCalled()
       })
 
       it('should throw HttpException for unexpected errors', async () => {
@@ -1524,7 +1556,7 @@ describe('WebDAVMethods', () => {
 
     describe('haveLock condition', () => {
       it('should return true when haveLock matches (lock exists, mustMatch=true)', async () => {
-        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1, inTrash: false })
         filesLockManager.getLocksByPath.mockResolvedValue([{ key: 'lock1' }] as any)
         const req = createBaseRequest({
           dav: {
@@ -1540,7 +1572,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return true when haveLock matches (no lock, mustMatch=false)', async () => {
-        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1, inTrash: false })
         filesLockManager.getLocksByPath.mockResolvedValue([])
         const req = createBaseRequest({
           dav: {
@@ -1556,7 +1588,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return false with 412 when haveLock mismatches (lock exists, mustMatch=false)', async () => {
-        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1, inTrash: false })
         filesLockManager.getLocksByPath.mockResolvedValue([{ key: 'lock1' }] as any)
         const req = createBaseRequest({
           dav: {
@@ -1573,7 +1605,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return false with 412 when haveLock mismatches (no lock, mustMatch=true)', async () => {
-        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1, inTrash: false })
         filesLockManager.getLocksByPath.mockResolvedValue([])
         const req = createBaseRequest({
           dav: {
@@ -1590,7 +1622,7 @@ describe('WebDAVMethods', () => {
       })
 
       it('should return false with 412 when haveLock lookup throws error', async () => {
-        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1, inTrash: false })
         filesLockManager.getLocksByPath.mockRejectedValue(new Error('Database error'))
         const req = createBaseRequest({
           dav: {
@@ -1797,7 +1829,7 @@ describe('WebDAVMethods', () => {
     describe('Multiple conditions', () => {
       it('should evaluate multiple conditions and return true if any matches', async () => {
         vi.mocked(isPathExists).mockResolvedValue(true)
-        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1 })
+        vi.mocked(PathsUtils.dbFileFromSpace).mockReturnValue({ path: 'file.txt', spaceId: 1, inTrash: false })
         filesLockManager.getLocksByPath.mockResolvedValue([])
         const req = createBaseRequest({
           dav: {

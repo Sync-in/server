@@ -1,5 +1,5 @@
 import { Transform } from 'class-transformer'
-import { IsDefined, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { IsDefined, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator'
 
 export class SyncUploadDto {
   @IsOptional()
@@ -17,5 +17,6 @@ export class SyncUploadDto {
   @IsNotEmpty()
   @Transform(({ value }) => parseInt(value))
   @IsInt()
+  @Min(0)
   size: number
 }

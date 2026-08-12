@@ -4,7 +4,7 @@ import { Agent as HttpsAgent } from 'node:https'
 import type { LookupAddress } from 'node:dns'
 import type { LookupFunction } from 'node:net'
 import type { HttpService } from '@nestjs/axios'
-import { HttpStatus } from '@nestjs/common'
+import { HttpStatus, Logger } from '@nestjs/common'
 import { AxiosHeaders, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import ipaddr from 'ipaddr.js'
 import { HTTP_METHOD } from '../../applications.constants'
@@ -13,15 +13,19 @@ import type { DownloadFileDto } from '../dto/file-operations.dto'
 import { FileTaskEvent } from '../events/file-events'
 import type { DownloadFileContentInfo, DownloadFileOptions } from '../interfaces/download-file.interface'
 import { FileError } from '../models/file-error'
-import { writeFromStream } from './files'
+import { writeUploadFromStream } from './files'
 import { FILE_ERROR } from '../constants/errors'
+import { createUploadStreamLimiter } from './upload-file'
 
 interface DownloadFileRequestOptions {
   allowPrivateIP?: boolean
   maxRedirects?: number
 }
 
+type DownloadStage = 'head' | 'validation' | 'get' | 'stream'
+
 export class DownloadFile {
+  private readonly logger = new Logger(DownloadFile.name)
   private static readonly dnsOptions = { all: true, order: 'verbatim' } as const
   private static readonly maxRedirects = 1
   private static readonly redirectStatus = new Set([301, 302, 303, 307, 308])
@@ -41,36 +45,76 @@ export class DownloadFile {
   async download(downloadDto: DownloadFileDto, dstPath: string, options?: DownloadFileOptions & { getContentInfo?: false | undefined }): Promise<void>
   async download(downloadDto: DownloadFileDto, dstPath: string, options?: DownloadFileOptions): Promise<void | DownloadFileContentInfo> {
     const identityEncodingConfig = { decompress: false, headers: { 'Accept-Encoding': 'identity' } }
+    let stage: DownloadStage = 'head'
+    let currentUrl = downloadDto.url
+    let contentLength: number | null | undefined
+    let maxSize: number | undefined
 
-    const { response: headRes, url } = await this.request(
-      downloadDto.url,
-      { method: HTTP_METHOD.HEAD, signal: options?.signal, ...identityEncodingConfig },
-      { allowPrivateIP: options?.allowPrivateIP }
-    )
+    try {
+      const { response: headRes, url } = await this.request(
+        currentUrl,
+        { method: HTTP_METHOD.HEAD, signal: options?.signal, ...identityEncodingConfig },
+        { allowPrivateIP: options?.allowPrivateIP }
+      )
+      currentUrl = url
 
-    const headers = AxiosHeaders.from(headRes.headers)
-    const contentLength = this.contentLength(headers)
-    if (options?.getContentInfo) {
-      return {
-        contentLength,
-        contentType: `${headers.getContentType()}`,
-        lastModified: headers.get('last-modified') as string | undefined
-      } satisfies DownloadFileContentInfo
+      stage = 'validation'
+      const headers = AxiosHeaders.from(headRes.headers)
+      contentLength = this.contentLength(headers)
+      if (options?.getContentInfo) {
+        return {
+          contentLength,
+          contentType: `${headers.getContentType()}`,
+          lastModified: headers.get('last-modified') as string | undefined
+        } satisfies DownloadFileContentInfo
+      }
+
+      // An explicit maximum allows chunked downloads; otherwise HEAD content-length is the stream boundary.
+      const streamMaxSize = options?.maxSize ?? contentLength
+      if (streamMaxSize === null || streamMaxSize === undefined) {
+        throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_INVALID_CONTENT_LENGTH)
+      }
+      maxSize = streamMaxSize
+      const fileLimiter = createUploadStreamLimiter(options?.space, streamMaxSize).createFileLimiter()
+      if (contentLength !== null) {
+        fileLimiter.assertKnownSize(contentLength)
+      }
+      this.prepareSpaceTask(options?.space, contentLength, options?.publishedPath || dstPath)
+
+      // The HEAD request resolved redirects; the GET must target that final URL directly.
+      stage = 'get'
+      const { response: getRes } = await this.request(
+        currentUrl,
+        { method: HTTP_METHOD.GET, responseType: 'stream', signal: options?.signal, ...identityEncodingConfig },
+        { allowPrivateIP: options?.allowPrivateIP, maxRedirects: 0 }
+      )
+      stage = 'stream'
+      try {
+        const getContentLength = this.contentLength(AxiosHeaders.from(getRes.headers))
+        if (getContentLength !== null) {
+          fileLimiter.assertKnownSize(getContentLength)
+        }
+      } catch (e) {
+        getRes.data?.destroy?.()
+        throw e
+      }
+      await writeUploadFromStream(dstPath, getRes.data, {
+        limiter: fileLimiter,
+        signal: options?.signal,
+        onProgress: options?.onProgress
+      })
+    } catch (e) {
+      this.logFailure(stage, currentUrl, e, options?.signal, contentLength, maxSize ?? options?.maxSize)
+      throw e
     }
+  }
 
-    const maxSize = options?.space ? contentLength : (options?.maxSize ?? contentLength)
-    if (maxSize === null || (contentLength === null && options?.space)) {
-      throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_INVALID_CONTENT_LENGTH)
-    }
-    if (contentLength !== null) this.prepareSpace(options?.space, contentLength, options?.publishedPath || dstPath)
-
-    // The HEAD request resolved redirects; the GET must target that final URL directly.
-    const { response: getRes } = await this.request(
-      url,
-      { method: HTTP_METHOD.GET, responseType: 'stream', signal: options?.signal, ...identityEncodingConfig },
-      { allowPrivateIP: options?.allowPrivateIP, maxRedirects: 0 }
-    )
-    await writeFromStream(dstPath, getRes.data, 0, maxSize, options?.signal, options?.onProgress)
+  private logFailure(stage: DownloadStage, url: string, error: unknown, signal?: AbortSignal, contentLength?: number | null, maxSize?: number): void {
+    if (signal?.aborted) return
+    const host = URL.canParse(url) ? new URL(url).hostname || 'unknown' : 'invalid'
+    const sizeContext =
+      stage === 'validation' || stage === 'stream' ? ` (contentLength=${contentLength ?? 'missing'}, maxSize=${maxSize ?? 'unset'})` : ''
+    this.logger.warn({ tag: this.download.name, msg: `${stage} failed for host *${host}*${sizeContext}: ${error}` })
   }
 
   private safeLookup(hostname: string, options: Parameters<LookupFunction>[1], cb: Parameters<LookupFunction>[2]): void {
@@ -163,18 +207,29 @@ export class DownloadFile {
   }
 
   private contentLength(headers: AxiosHeaders): number | null {
-    const value = headers.getContentLength(/^\d+$/)?.[0]
-    const contentLength = Number(value)
-    return Number.isSafeInteger(contentLength) ? contentLength : null
+    const value = headers.get('content-length')
+    if (value === undefined || value === null) return null
+
+    const normalized = typeof value === 'number' ? String(value) : typeof value === 'string' ? value.trim() : ''
+    if (!/^\d+$/.test(normalized)) {
+      throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_INVALID_CONTENT_LENGTH)
+    }
+    const contentLength = Number(normalized)
+    if (!Number.isSafeInteger(contentLength)) {
+      throw new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_INVALID_CONTENT_LENGTH)
+    }
+    return contentLength
   }
 
-  private prepareSpace(space: SpaceEnv | undefined, contentLength: number, publishedPath: string): void {
+  private prepareSpaceTask(space: SpaceEnv | undefined, contentLength: number | null, publishedPath: string): void {
     if (!space) return
-    if (space.willExceedQuota(contentLength)) {
-      throw new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
-    }
     if (space.task?.cacheKey) {
-      space.task.props = { ...space.task.props, progress: 1, size: 0, totalSize: contentLength }
+      space.task.props = {
+        ...space.task.props,
+        progress: 1,
+        size: 0,
+        totalSize: contentLength ?? undefined
+      }
       FileTaskEvent.emit('startWatch', space, publishedPath)
     }
   }

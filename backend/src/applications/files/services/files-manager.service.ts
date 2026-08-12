@@ -5,6 +5,7 @@ import { Readable } from 'node:stream'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { generateThumbnail } from '../../../common/image'
 import { SERVER_NAME } from '../../../common/shared'
+import { configuration } from '../../../configuration/config.environment'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { HTTP_METHOD } from '../../applications.constants'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
@@ -47,11 +48,12 @@ import {
   moveFiles,
   removeFiles,
   tempFilePath,
+  temporaryPathPrefix,
   touchFile,
   uniqueDatedFilePath,
   uniqueFilePathFromDir,
-  writeFromStream,
-  writeFromStreamAndChecksum
+  writeUploadFromStream,
+  writeUploadFromStreamAndChecksum
 } from '../utils/files'
 import { SendFile } from '../utils/send-file'
 import { extractZip } from '../utils/unzip-file'
@@ -61,7 +63,13 @@ import { FilesLockManager } from './files-lock-manager.service'
 import { FilesQueries } from './files-queries.service'
 import { FileEvent, FileTaskEvent } from '../events/file-events'
 import { ACTION } from '../../../common/constants'
-import { isMultipartFileTooLargeError, uploadTmpFilePath } from '../utils/upload-file'
+import {
+  createUploadStreamLimiter,
+  isMultipartFileTooLargeError,
+  parseContentLength,
+  parseContentRange,
+  uploadTmpFilePath
+} from '../utils/upload-file'
 import { maxFileSizeExceededError } from '../utils/errors'
 import { createTaskTemporaryDir, taskTemporaryPath } from '../utils/tasks'
 import { FilesTasksTransfer } from './tasks/files-tasks-transfer.service'
@@ -71,7 +79,7 @@ import { FILE_ERROR } from '../constants/errors'
 
 @Injectable()
 export class FilesManager {
-  /* Spaces permissions are checked in the space guard, except for the copy/move destination */
+  // Spaces permissions are checked in the space guard, except for the copy/move destination
   private logger = new Logger(FilesManager.name)
 
   constructor(
@@ -107,13 +115,41 @@ export class FilesManager {
     if (fExists && (await isPathIsDir(space.realPath))) {
       throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'The location is a directory')
     }
+
+    // Resolve the final file-size boundary and reject a known oversized body
+    // before creating directories or acquiring a lock.
+    let startRange = 0
+    const contentRange = req.headers['content-range']
+    if (contentRange !== undefined) {
+      // With PUT method, some webdav clients use the `content-range` header,
+      // which is normally reserved for a response to a request containing the `range` header.
+      // However, for more compatibility let's accept it.
+      startRange = parseContentRange(contentRange).start
+      // Ranged PUTs are append-only resumes. A missing file has size zero, so it can only
+      // be created by a first range starting at offset zero.
+      const currentSize = fExists || fTmpExists ? await fileSize(options?.tmpPath || space.realPath) : 0
+      if (startRange !== currentSize) {
+        throw new FileError(HttpStatus.BAD_REQUEST, 'Content-range : start offset does not match the current file size')
+      }
+    }
+    const maxUploadSize = configuration.applications.files.maxUploadSize
+    const maxSize = Math.min(maxUploadSize, options?.maxSize ?? maxUploadSize)
+    const fileLimiter = createUploadStreamLimiter(space, maxSize).createFileLimiter(startRange)
+    const contentLength = parseContentLength(req.headers['content-length'])
+    if (contentLength !== undefined) {
+      fileLimiter.assertKnownSize(contentLength)
+    }
+    if (options?.expectedUploadSize !== undefined) {
+      fileLimiter.assertFinalSize(options.expectedUploadSize)
+    }
+
     if (options?.tmpPath) {
       // Ensure tmpPath parent dir exists
       await makeDir(dirName(options.tmpPath), true)
     } else if (!(await isPathExists(dirName(space.realPath)))) {
       throw new FileError(HttpStatus.CONFLICT, 'Parent must exists')
     }
-    /* File Lock */
+    // File Lock
     let fileLock: FileLock | undefined
     if (options?.dav) {
       // Check locks
@@ -132,29 +168,17 @@ export class FilesManager {
     const fileEventAction = fExists ? ACTION.UPDATE : ACTION.ADD
     let fileWritten = false
     try {
-      // Check range
-      let startRange = 0
-      if ((fExists || fTmpExists) && req.headers['content-range']) {
-        // With PUT method, some webdav clients use the `content-range` header,
-        // which is normally reserved for a response to a request containing the `range` header.
-        // However, for more compatibility let's accept it.
-        const match = /\d+/.exec(req.headers['content-range'])
-        if (!match.length) {
-          throw new FileError(HttpStatus.BAD_REQUEST, 'Content-range : header is malformed')
-        }
-        startRange = parseInt(match[0], 10)
-        const size = await fileSize(options?.tmpPath || space.realPath)
-        if (startRange !== size) {
-          throw new FileError(HttpStatus.BAD_REQUEST, 'Content-range : start offset does not match the current file size')
-        }
-      }
       // todo: check file in db to update
       // todo : versioning here
       let checksum: string
       if (options?.checksumAlg) {
-        checksum = await writeFromStreamAndChecksum(options?.tmpPath || space.realPath, req.raw, startRange, options.checksumAlg)
+        checksum = await writeUploadFromStreamAndChecksum(options?.tmpPath || space.realPath, req.raw, options.checksumAlg, {
+          limiter: fileLimiter
+        })
       } else {
-        await writeFromStream(options?.tmpPath || space.realPath, req.raw, startRange)
+        await writeUploadFromStream(options?.tmpPath || space.realPath, req.raw, {
+          limiter: fileLimiter
+        })
       }
       if (options?.tmpPath) {
         await options.validateTmpFile?.({ tmpPath: options.tmpPath, realPath: space.realPath, checksum })
@@ -205,6 +229,7 @@ export class FilesManager {
     const patchMethod = req.method === HTTP_METHOD.PATCH
     const postMethod = req.method === HTTP_METHOD.POST
     const realParentPath = dirName(space.realPath)
+    const uploadLimiter = createUploadStreamLimiter(space, configuration.applications.files.maxUploadSize)
 
     // For POST, space.realPath can be either the final file path or the root directory for a folder upload.
     if (postMethod && (await isPathExists(space.realPath))) {
@@ -272,7 +297,8 @@ export class FilesManager {
         let fileWritten = false
         // Do
         try {
-          await writeFromStream(writePath, part.file)
+          const fileLimiter = uploadLimiter.createFileLimiter()
+          await writeUploadFromStream(writePath, part.file, { limiter: fileLimiter })
           // With throwFileSizeLimit disabled, multipart marks the file stream as truncated instead of rejecting.
           if (part.file.truncated) {
             throw maxFileSizeExceededError()
@@ -456,7 +482,7 @@ export class FilesManager {
     const isDir = await isPathIsDir(srcSpace.realPath)
 
     if (dstSpace.storageQuota) {
-      /* Skip validation when moving to the same space; for copy operations, run all checks. */
+      // Skip validation when moving to the same space; for copy operations, run all checks.
       if (!isMove || (isMove && srcSpace.id !== dstSpace.id)) {
         const size = isDir ? (await dirSize(srcSpace.realPath))[0] : await fileSize(srcSpace.realPath)
         if (dstSpace.willExceedQuota(size)) {
@@ -602,7 +628,7 @@ export class FilesManager {
     const dstPath = await uniqueFilePathFromDir(space.realPath)
     const tmpPath = isTaskContext
       ? taskTemporaryPath(user.tasksPath, space.task!.cacheKey, dstPath)
-      : tempFilePath(user.tmpPath, `${fileName(dstPath)}-download-`)
+      : tempFilePath(user.tmpPath, temporaryPathPrefix(dstPath, 'download'))
     const dbFile = space.dbFile
     dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
 
@@ -616,6 +642,7 @@ export class FilesManager {
       await new DownloadFile(this.http).download(downloadDto, tmpPath, {
         space,
         publishedPath: dstPath,
+        maxSize: configuration.applications.files.maxUploadSize,
         signal,
         onProgress: isTaskContext ? this.filesTasksTransfer.createByteProgressHandler(space) : undefined
       })
@@ -646,7 +673,7 @@ export class FilesManager {
     const dstPath = await uniqueFilePathFromDir(path.join(dto.compressInDirectory ? srcPath : user.tasksPath, `${dto.name}${archiveExt}`))
     const tmpPath = isTaskContext
       ? taskTemporaryPath(user.tasksPath, space.task!.cacheKey, dstPath)
-      : tempFilePath(user.tmpPath, `${fileName(dstPath)}-compress-`)
+      : tempFilePath(user.tmpPath, temporaryPathPrefix(dstPath, 'compress'))
     // create lock
     let fileLock: FileLock | undefined
     if (dto.compressInDirectory) {
@@ -701,7 +728,7 @@ export class FilesManager {
     const dstPath = await uniqueFilePathFromDir(path.join(dirName(space.realPath), path.basename(space.realPath, extension)))
     const tmpPath = isTaskContext
       ? await createTaskTemporaryDir(user.tasksPath, space.task!.cacheKey, dstPath)
-      : await makeTempDir(user.tmpPath, `${fileName(dstPath)}-extract-`)
+      : await makeTempDir(user.tmpPath, temporaryPathPrefix(dstPath, 'extract'))
     let fileLock: FileLock | undefined
     try {
       // create lock

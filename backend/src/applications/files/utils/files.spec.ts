@@ -7,8 +7,21 @@ import fse from 'fs-extra'
 import type { MockInstance } from 'vitest'
 import { FileError } from '../models/file-error'
 import { storageQuotaExceededError } from './errors'
-import { createSizeLimiter, isCrossDevice, isPathInside, makeTempDir, sanitizeName, tempFilePath, writeFromStream } from './files'
+import {
+  createSizeLimiter,
+  isCrossDevice,
+  isPathInside,
+  makeTempDir,
+  sanitizeName,
+  tempFilePath,
+  temporaryPathPrefix,
+  writeFromStream,
+  writeFromStreamAndChecksum,
+  writeUploadFromStream,
+  writeUploadFromStreamAndChecksum
+} from './files'
 import { FILE_ERROR } from '../constants/errors'
+import { UploadStreamLimiter } from './upload-file'
 
 describe(createSizeLimiter.name, () => {
   it('rejects the call that makes the cumulative size exceed the limit', () => {
@@ -81,24 +94,30 @@ describe(writeFromStream.name, () => {
     await rm(tmpDir, { recursive: true, force: true })
   })
 
-  it('writes from an offset up to the max size and reports progress', async () => {
+  it('writes from an offset and accounts each chunk', async () => {
     const filePath = path.join(tmpDir, 'file.txt')
-    const onProgress = vi.fn()
+    const accountBytes = vi.fn()
     await writeFile(filePath, 'abc')
 
-    await writeFromStream(filePath, Readable.from([Buffer.from('de'), Buffer.from('f')]), 3, 6, undefined, onProgress)
+    await writeFromStream(filePath, Readable.from([Buffer.from('de'), Buffer.from('f')]), { start: 3, accountBytes })
 
     await expect(readFile(filePath, 'utf8')).resolves.toBe('abcdef')
-    expect(onProgress).toHaveBeenNthCalledWith(1, 2)
-    expect(onProgress).toHaveBeenNthCalledWith(2, 1)
+    expect(accountBytes).toHaveBeenNthCalledWith(1, 2)
+    expect(accountBytes).toHaveBeenNthCalledWith(2, 1)
   })
 
-  it('rejects a stream exceeding the max size', async () => {
+  it('propagates a byte accounting error', async () => {
     const filePath = path.join(tmpDir, 'file.txt')
 
-    await expect(writeFromStream(filePath, Readable.from([Buffer.from('abcd')]), 0, 3)).rejects.toMatchObject({
-      httpCode: HttpStatus.PAYLOAD_TOO_LARGE,
-      message: FILE_ERROR.MAX_FILE_SIZE_EXCEEDED,
+    await expect(
+      writeFromStream(filePath, Readable.from([Buffer.from('abcd')]), {
+        accountBytes: () => {
+          throw storageQuotaExceededError()
+        }
+      })
+    ).rejects.toMatchObject({
+      httpCode: HttpStatus.INSUFFICIENT_STORAGE,
+      message: FILE_ERROR.STORAGE_QUOTA_EXCEEDED,
       name: FileError.name
     })
   })
@@ -108,8 +127,85 @@ describe(writeFromStream.name, () => {
     const controller = new AbortController()
     controller.abort()
 
-    await expect(writeFromStream(filePath, Readable.from([Buffer.from('abc')]), 0, undefined, controller.signal)).rejects.toMatchObject({
+    await expect(writeFromStream(filePath, Readable.from([Buffer.from('abc')]), { signal: controller.signal })).rejects.toMatchObject({
       name: 'AbortError'
+    })
+  })
+})
+
+describe(writeFromStreamAndChecksum.name, () => {
+  let tmpDir: string
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(path.join(os.tmpdir(), 'write-from-stream-checksum-'))
+  })
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true })
+  })
+
+  it('propagates a byte accounting error in checksum mode', async () => {
+    const filePath = path.join(tmpDir, 'file.txt')
+
+    await expect(
+      writeFromStreamAndChecksum(filePath, Readable.from([Buffer.from('abcd')]), 'sha256', {
+        accountBytes: () => {
+          throw storageQuotaExceededError()
+        }
+      })
+    ).rejects.toMatchObject({
+      httpCode: HttpStatus.INSUFFICIENT_STORAGE,
+      message: FILE_ERROR.STORAGE_QUOTA_EXCEEDED,
+      name: FileError.name
+    })
+  })
+})
+
+describe('upload stream writers', () => {
+  let tmpDir: string
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(path.join(os.tmpdir(), 'write-upload-from-stream-'))
+  })
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true })
+  })
+
+  it('uses the limiter offset and reports only accepted chunks', async () => {
+    const filePath = path.join(tmpDir, 'file.txt')
+    const onProgress = vi.fn()
+    const limiter = new UploadStreamLimiter(6).createFileLimiter(3)
+    await writeFile(filePath, 'abc')
+
+    await writeUploadFromStream(filePath, Readable.from([Buffer.from('de'), Buffer.from('f')]), { limiter, onProgress })
+
+    await expect(readFile(filePath, 'utf8')).resolves.toBe('abcdef')
+    expect(onProgress).toHaveBeenNthCalledWith(1, 2)
+    expect(onProgress).toHaveBeenNthCalledWith(2, 1)
+  })
+
+  it('does not report a chunk rejected by the limiter', async () => {
+    const filePath = path.join(tmpDir, 'file.txt')
+    const onProgress = vi.fn()
+    const limiter = new UploadStreamLimiter(3).createFileLimiter()
+
+    await expect(writeUploadFromStream(filePath, Readable.from([Buffer.from('abcd')]), { limiter, onProgress })).rejects.toMatchObject({
+      httpCode: HttpStatus.PAYLOAD_TOO_LARGE,
+      message: FILE_ERROR.MAX_FILE_SIZE_EXCEEDED,
+      name: FileError.name
+    })
+    expect(onProgress).not.toHaveBeenCalled()
+  })
+
+  it('enforces the limiter in checksum mode', async () => {
+    const filePath = path.join(tmpDir, 'file.txt')
+    const limiter = new UploadStreamLimiter(3).createFileLimiter()
+
+    await expect(writeUploadFromStreamAndChecksum(filePath, Readable.from([Buffer.from('abcd')]), 'sha256', { limiter })).rejects.toMatchObject({
+      httpCode: HttpStatus.PAYLOAD_TOO_LARGE,
+      message: FILE_ERROR.MAX_FILE_SIZE_EXCEEDED,
+      name: FileError.name
     })
   })
 })
@@ -146,5 +242,13 @@ describe(tempFilePath.name, () => {
     expect(path.dirname(firstPath)).toBe(parentPath)
     expect(path.basename(firstPath)).toMatch(/^archive-compress-/)
     expect(path.dirname(tempFilePath(parentPath, path.join('..', 'archive-')))).toBe(parentPath)
+  })
+})
+
+describe(temporaryPathPrefix.name, () => {
+  it('uses the destination name and operation', () => {
+    expect(temporaryPathPrefix('/destination/report.pdf', 'upload')).toBe('report.pdf-upload-')
+    expect(temporaryPathPrefix('/destination', 'extract')).toBe('destination-extract-')
+    expect(temporaryPathPrefix('', 'download')).toBe('file-download-')
   })
 })

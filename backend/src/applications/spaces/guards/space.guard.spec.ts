@@ -350,16 +350,17 @@ describe(SpaceGuard.name, () => {
     await expect(spacesGuard.canActivate(context)).rejects.toEqual(expect.objectContaining({ status: HttpStatus.INSUFFICIENT_STORAGE }))
   })
 
-  it('should fail if request content-length header exceed the quota', async () => {
+  it('should leave generic content-length quota enforcement to the upload consumer', async () => {
     userTest.role = USER_ROLE.USER
     const storageQuota = 12
     const storageUsage = 11
+    const willExceedQuota = vi.fn((contentLength: number) => contentLength > storageQuota - storageUsage)
     spacesManager.spaceEnv = vi.fn().mockReturnValue({
       enabled: true,
       envPermissions: `${SPACE_OPERATION.ADD}`,
       storageQuota: storageQuota,
       storageUsage: storageUsage,
-      willExceedQuota: (contentLength: number) => contentLength > storageQuota - storageUsage
+      willExceedQuota
     } as Partial<SpaceEnv>)
     context.switchToHttp().getRequest.mockReturnValueOnce({
       method: 'POST',
@@ -367,14 +368,8 @@ describe(SpaceGuard.name, () => {
       user: userTest,
       params: { '*': 'files/personal' }
     })
-    await expect(spacesGuard.canActivate(context)).rejects.toEqual(expect.objectContaining({ status: HttpStatus.INSUFFICIENT_STORAGE }))
-    context.switchToHttp().getRequest.mockReturnValueOnce({
-      method: 'POST',
-      user: userTest,
-      headers: {},
-      params: { '*': 'files/personal' }
-    })
     expect(await spacesGuard.canActivate(context)).toBe(true)
+    expect(willExceedQuota).not.toHaveBeenCalled()
   })
 
   it('should fail for add and modify operations in trash repository', async () => {

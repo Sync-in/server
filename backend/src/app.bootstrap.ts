@@ -22,13 +22,13 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
       ignoreTrailingSlash: true,
       maxParamLength: 256
     },
-    bodyLimit: 26214400 /* 25 MB */
+    bodyLimit: 26214400 // 25 MB
   })
   const app: NestFastifyApplication = await NestFactory.create<NestFastifyApplication>(AppModule, fastifyAdapter, {
     bufferLogs: true
   })
 
-  /* NestJS starts listening for shutdown hooks */
+  // NestJS starts listening for shutdown hooks
   app.enableShutdownHooks()
 
   /* Fastify instance */
@@ -41,8 +41,9 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
   bootstrapWebDAV(app, fastifyInstance)
 
   /* PARSER */
-  // '*' body parser allow binary data as a stream (unlimited body size)
-  fastifyInstance.addContentTypeParser('*', { bodyLimit: 0 }, (_req: FastifyRequest, _payload: FastifyRequest['raw'], done) => done(null))
+  // Keep unknown binary payloads available through req.raw.
+  // Fastify's bodyLimit still protects buffered parsers; upload consumers meter this raw stream.
+  fastifyInstance.addContentTypeParser('*', (_req: FastifyRequest, _payload: FastifyRequest['raw'], done) => done(null))
 
   /* INTERCEPTORS */
   app.useGlobalInterceptors(

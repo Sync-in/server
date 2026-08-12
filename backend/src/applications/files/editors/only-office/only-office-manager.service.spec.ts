@@ -17,6 +17,7 @@ import { FILE_MODE } from '../../constants/operations'
 import { FileEvent } from '../../events/file-events'
 import { LockConflict } from '../../models/file-lock-error'
 import { FilesLockManager } from '../../services/files-lock-manager.service'
+import { maxFileSizeExceededError } from '../../utils/errors'
 import * as filesUtils from '../../utils/files'
 import { OnlyOfficeManager } from './only-office-manager.service'
 import { ONLY_OFFICE_APP_LOCK } from './only-office.constants'
@@ -260,7 +261,7 @@ describe(OnlyOfficeManager.name, () => {
       filesLockManager.isPathLocked.mockResolvedValue(false)
       cache.del.mockResolvedValue(true)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValue('/tmp/temp-file.docx')
-      vi.mocked(filesUtils.writeFromStream).mockResolvedValue(undefined)
+      vi.mocked(filesUtils.writeUploadFromStream).mockResolvedValue(undefined)
       vi.mocked(filesUtils.fileSize).mockResolvedValue(12)
       vi.mocked(filesUtils.copyFileContent).mockResolvedValue(undefined)
       vi.mocked(filesUtils.removeFiles).mockResolvedValue(undefined)
@@ -299,6 +300,11 @@ describe(OnlyOfficeManager.name, () => {
         source: 'editor'
       })
       expect(httpService.axiosRef).toHaveBeenCalledWith(expect.objectContaining({ url, maxRedirects: 0 }))
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        expect.stringContaining('sync-in-onlyoffice-'),
+        expect.anything(),
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
     }
 
     it('should allow internal container document downloads when external server is not configured', async () => {
@@ -402,6 +408,41 @@ describe(OnlyOfficeManager.name, () => {
 
       expect(result).toHaveProperty('error')
       expect(result.error).not.toBe(0)
+    })
+
+    it('should reject an oversized editor document and remove the temporary file', async () => {
+      jwtService.verifyAsync.mockResolvedValue({
+        status: 2,
+        actions: [],
+        notmodified: false,
+        url: mockDocumentUrl
+      })
+      mockSuccessfulDownload()
+      vi.mocked(filesUtils.writeUploadFromStream).mockRejectedValueOnce(maxFileSizeExceededError())
+
+      const result = await service.callBack(mockUser, mockSpaceEnv, mockToken)
+
+      expect(result).toEqual({ error: 'unable to download document : File size limit exceeded' })
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(expect.stringContaining('sync-in-onlyoffice-'))
+      expect(filesUtils.copyFileContent).not.toHaveBeenCalled()
+    })
+
+    it('should reject an editor document above the remaining quota before writing', async () => {
+      const quotaSpace = { ...mockSpaceEnv, storageQuota: 12, storageUsage: 1 } as unknown as SpaceEnv
+      jwtService.verifyAsync.mockResolvedValue({
+        status: 2,
+        actions: [],
+        notmodified: false,
+        url: mockDocumentUrl
+      })
+      mockSuccessfulDownload()
+
+      const result = await service.callBack(mockUser, quotaSpace, mockToken)
+
+      expect(result).toEqual({ error: 'unable to download document : Storage quota exceeded' })
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(expect.stringContaining('sync-in-onlyoffice-'))
+      expect(filesUtils.copyFileContent).not.toHaveBeenCalled()
     })
 
     it('should reject document downloads from unexpected hosts when external server is configured', async () => {

@@ -29,6 +29,8 @@ export function bootstrapWebDAV(app: NestFastifyApplication, fastifyInstance: Fa
    * WebDAV clients may send JSON/XML files with a Content-Type that triggers
    * Fastify's body parsers (application/json, text/plain, application/xml...).
    * For PUT uploads we must always treat the payload as a raw binary stream.
+   * Sync uploads are intentionally not handled here: the Sync client contract
+   * requires application/octet-stream, while other Sync POST routes use parsed bodies.
    *
    * This hook forces `application/octet-stream` for WebDAV PUT requests only,
    * leaving XML-based WebDAV methods unaffected.

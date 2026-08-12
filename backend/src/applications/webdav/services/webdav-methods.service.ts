@@ -7,7 +7,7 @@ import { FileError } from '../../files/models/file-error'
 import { LockConflict } from '../../files/models/file-lock-error'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
 import { FilesManager } from '../../files/services/files-manager.service'
-import { dirName, fileName, genEtag, isPathExists, isPathIsDir } from '../../files/utils/files'
+import { dirName, fileName, genEtag, isPathExists, isPathIsDir, removeFiles, tempFilePath, temporaryPathPrefix } from '../../files/utils/files'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { dbFileFromSpace } from '../../spaces/utils/paths'
@@ -216,15 +216,33 @@ export class WebDAVMethods {
 
   @IfHeaderDecorator()
   async put(req: FastifyDAVRequest, res: FastifyReply): Promise<FastifyReply> {
+    const isRangeUpload = req.headers['content-range'] !== undefined
+    let tmpPath: string | undefined
     let rExists: boolean
     try {
+      // saveStream creates the parent of a supplied tmpPath, so keep the WebDAV destination
+      // parent check here to preserve the expected 409 response.
+      if (!(await isPathExists(dirName(req.space.realPath)))) {
+        throw new FileError(HttpStatus.CONFLICT, 'Parent must exists')
+      }
+      // Stage only complete overwrites to preserve the previous file on failure. New files and
+      // ranged uploads write directly because their partial content is the checkpoint used to resume.
+      if (!isRangeUpload && (await isPathExists(req.space.realPath))) {
+        tmpPath = tempFilePath(req.user.tmpPath, temporaryPathPrefix(req.space.realPath, 'upload'))
+      }
       rExists = await this.filesManager.saveStream(req.user, req.space, req, {
+        ...(tmpPath && { tmpPath }),
         dav: {
           depth: req.dav.depth,
           lockTokens: extractAllTokens(req.dav.ifHeaders)
         }
       })
     } catch (e) {
+      if (tmpPath) {
+        await removeFiles(tmpPath).catch((cleanupError: Error) =>
+          this.logger.error({ tag: this.put.name, msg: `Unable to remove WebDAV staging file ${tmpPath}: ${cleanupError}` })
+        )
+      }
       return this.handleError(req, res, e)
     }
     return res

@@ -331,7 +331,7 @@ applications:
   files:
     # required
     dataPath: /home/sync-in
-    # maxUploadSize: Maximum upload file size.
+    # maxUploadSize: Maximum size in bytes for a file received through uploads, WebDAV, sync, remote downloads, or editor callbacks.
     # default: 5368709120 (5 GB)
     maxUploadSize: 5368709120
     contentIndexing:

@@ -16,6 +16,7 @@ import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
 import { FILE_MODE } from '../../constants/operations'
 import { FileLockOptions } from '../../interfaces/file-lock.interface'
 import { FileLockProps } from '../../interfaces/file-props.interface'
+import { FileError } from '../../models/file-error'
 import { LockConflict } from '../../models/file-lock-error'
 import { FilesLockManager } from '../../services/files-lock-manager.service'
 import {
@@ -28,7 +29,7 @@ import {
   isPathIsDir,
   removeFiles,
   uniqueFilePathFromDir,
-  writeFromStream
+  writeUploadFromStream
 } from '../../utils/files'
 import {
   COLLABORA_APP_LOCK,
@@ -44,10 +45,12 @@ import type { CollaboraOnlineCheckFileInfo, FastifyCollaboraOnlineSpaceRequest, 
 import { API_COLLABORA_ONLINE_FILES } from './collabora-online.routes'
 import { FileEvent } from '../../events/file-events'
 import { ACTION } from '../../../../common/constants'
+import { createUploadStreamLimiter, parseContentLength } from '../../utils/upload-file'
 
 @Injectable()
 export class CollaboraOnlineManager {
   private logger = new Logger(CollaboraOnlineManager.name)
+  private readonly maxUploadSize = configuration.applications.files.maxUploadSize
   private readonly externalCollaboraOnlineServer = configuration.applications.files.editors.collabora.externalServer || null
   private readonly expiration = convertHumanTimeToSeconds(configuration.auth.token.refresh.expiration)
 
@@ -116,33 +119,48 @@ export class CollaboraOnlineManager {
     await this.checkSpace(req.space)
     await this.checkTimeStampFromHeaders(req)
     const tmpFilePath = await uniqueFilePathFromDir(path.join(os.tmpdir(), fileName(req.space.realPath)))
+    let contentLength: number | undefined
     try {
-      await writeFromStream(tmpFilePath, req.raw)
-    } catch (e) {
-      throw new Error(`unable to save document : ${e.message}`)
-    }
-    // try to verify the downloaded size
-    const contentLength = parseInt(req.headers['content-length'], 10)
-    if (!isNaN(contentLength) && contentLength !== 0) {
-      const tmpFileSize = await fileSize(tmpFilePath)
-      if (tmpFileSize !== contentLength) {
-        this.logger.error({ tag: this.saveDocument.name, msg: `document size differs (${tmpFileSize} != ${contentLength})` })
-        throw new HttpException('Size Mismatch', HttpStatus.BAD_REQUEST)
+      try {
+        const fileLimiter = createUploadStreamLimiter(req.space, this.maxUploadSize).createFileLimiter()
+        contentLength = parseContentLength(req.headers['content-length'])
+        if (contentLength !== undefined) {
+          fileLimiter.assertKnownSize(contentLength)
+        }
+        await writeUploadFromStream(tmpFilePath, req.raw, { limiter: fileLimiter })
+      } catch (e) {
+        if (e instanceof FileError) {
+          throw new HttpException(e.message, e.httpCode)
+        }
+        throw new Error(`unable to save document : ${e.message}`)
       }
-    } else if (contentLength === 0) {
-      this.logger.warn({ tag: this.saveDocument.name, msg: `content length is 0 : ${req.space.url}` })
-    }
-    // copy contents to avoid inode changes (dbFileHash in some cases)
-    try {
-      await copyFileContent(tmpFilePath, req.space.realPath)
-      // emit file event
-      FileEvent.emit('event', { user: req.user, space: req.space, action: ACTION.UPDATE, rPath: req.space.realPath, source: 'editor' })
-      await removeFiles(tmpFilePath)
-      const fStats = await fs.stat(req.space.realPath)
-      return { LastModifiedTime: fStats.mtime.toISOString() } satisfies CollaboraSaveDocumentDto
-    } catch (e) {
-      this.logger.error({ tag: this.saveDocument.name, msg: `unable to save document: ${e}` })
-      throw new HttpException('Unable to save document', HttpStatus.INTERNAL_SERVER_ERROR)
+      // try to verify the downloaded size
+      if (contentLength !== undefined && contentLength !== 0) {
+        const tmpFileSize = await fileSize(tmpFilePath)
+        if (tmpFileSize !== contentLength) {
+          this.logger.error({ tag: this.saveDocument.name, msg: `document size differs (${tmpFileSize} != ${contentLength})` })
+          throw new HttpException('Size Mismatch', HttpStatus.BAD_REQUEST)
+        }
+      } else if (contentLength === 0) {
+        this.logger.warn({ tag: this.saveDocument.name, msg: `content length is 0 : ${req.space.url}` })
+      }
+      // copy contents to avoid inode changes (dbFileHash in some cases)
+      try {
+        await copyFileContent(tmpFilePath, req.space.realPath)
+        // emit file event
+        FileEvent.emit('event', { user: req.user, space: req.space, action: ACTION.UPDATE, rPath: req.space.realPath, source: 'editor' })
+        const fStats = await fs.stat(req.space.realPath)
+        return { LastModifiedTime: fStats.mtime.toISOString() } satisfies CollaboraSaveDocumentDto
+      } catch (e) {
+        this.logger.error({ tag: this.saveDocument.name, msg: `unable to save document: ${e}` })
+        throw new HttpException('Unable to save document', HttpStatus.INTERNAL_SERVER_ERROR)
+      }
+    } finally {
+      try {
+        await removeFiles(tmpFilePath)
+      } catch (e) {
+        this.logger.error({ tag: this.saveDocument.name, msg: `failed to remove temporary document ${tmpFilePath}: ${e.message}` })
+      }
     }
   }
 

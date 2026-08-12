@@ -34,7 +34,7 @@ import {
   isPathExists,
   isPathIsDir,
   removeFiles,
-  writeFromStream
+  writeUploadFromStream
 } from '../../utils/files'
 import {
   EURO_OFFICE_APP_LOCK,
@@ -51,10 +51,12 @@ import { OnlyOfficeCallBack, OnlyOfficeConfig, OnlyOfficeConvertForm } from './o
 import { API_ONLY_OFFICE_CALLBACK, API_ONLY_OFFICE_DOCUMENT } from './only-office.routes'
 import { FileEvent } from '../../events/file-events'
 import { ACTION } from '../../../../common/constants'
+import { createUploadStreamLimiter, parseContentLength } from '../../utils/upload-file'
 
 @Injectable()
 export class OnlyOfficeManager {
   private logger = new Logger(OnlyOfficeManager.name)
+  private readonly maxUploadSize = configuration.applications.files.maxUploadSize
   private readonly officeConfig = configuration.applications.files.editors.onlyoffice.enabled
     ? configuration.applications.files.editors.onlyoffice
     : configuration.applications.files.editors.eurooffice
@@ -350,17 +352,25 @@ export class OnlyOfficeManager {
       }
 
       // download file
-      let res: AxiosResponse
+      let downloadStream: AxiosResponse['data'] | undefined
+      let contentLength: number | undefined
       try {
-        res = await this.http.axiosRef({
+        const res: AxiosResponse = await this.http.axiosRef({
           method: HTTP_METHOD.GET,
           url: finalDownloadUrl,
           responseType: 'stream',
           maxRedirects: 0,
           httpsAgent: new https.Agent({ rejectUnauthorized: this.rejectUnauthorized })
         })
-        await writeFromStream(tmpFilePath, res.data)
+        downloadStream = res.data
+        const fileLimiter = createUploadStreamLimiter(space, this.maxUploadSize).createFileLimiter()
+        contentLength = parseContentLength(res.headers['content-length'])
+        if (contentLength !== undefined) {
+          fileLimiter.assertKnownSize(contentLength)
+        }
+        await writeUploadFromStream(tmpFilePath, downloadStream, { limiter: fileLimiter })
       } catch (e) {
+        downloadStream?.destroy?.()
         this.logger.error({
           tag: this.saveDocument.name,
           msg: `failed to download document from ${finalParsedDownloadUrl.origin}${finalParsedDownloadUrl.pathname} : ${space.url} - ${e.message}`
@@ -369,8 +379,7 @@ export class OnlyOfficeManager {
       }
 
       // try to verify the downloaded size
-      const contentLength = Number(res.headers['content-length'])
-      if (!isNaN(contentLength) && contentLength !== 0) {
+      if (contentLength !== undefined && contentLength !== 0) {
         const tmpFileSize = await fileSize(tmpFilePath)
         if (tmpFileSize !== contentLength) {
           throw new Error(`document size differs (${tmpFileSize} != ${contentLength})`)

@@ -9,6 +9,9 @@ export interface SaveStreamTmpFileValidationContext {
 export interface SaveStreamOptions {
   dav?: { depth: LOCK_DEPTH; lockTokens: string[] }
   checksumAlg?: string
+  // Expected final file size, including any resumed range.
+  expectedUploadSize?: number
+  maxSize?: number
   tmpPath?: string
   validateTmpFile?: (ctx: SaveStreamTmpFileValidationContext) => Promise<void>
 }

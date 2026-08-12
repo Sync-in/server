@@ -49,11 +49,6 @@ export class SpaceGuard implements CanActivate {
       if (req.space.quotaIsExceeded) {
         logger.warn(`Storage quota exceeded for *${req.space.alias}* (${req.space.id})`)
         throw new HttpException(FILE_ERROR.STORAGE_QUOTA_EXCEEDED, HttpStatus.INSUFFICIENT_STORAGE)
-      } else if (req.space.storageQuota) {
-        const contentLength = parseInt(req.headers['content-length'] || '0', 10) || 0
-        if (req.space.willExceedQuota(contentLength)) {
-          throw new HttpException(FILE_ERROR.STORAGE_QUOTA_EXCEEDED, HttpStatus.INSUFFICIENT_STORAGE)
-        }
       }
     }
   }

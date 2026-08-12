@@ -6,6 +6,7 @@ import path from 'node:path'
 import { Readable } from 'node:stream'
 import { transformAndValidate } from '../../../common/functions'
 import * as imageUtils from '../../../common/image'
+import { configuration } from '../../../configuration/config.environment'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service'
@@ -95,8 +96,8 @@ describe(FilesManager.name, () => {
     })
 
   const expectNoWriteOperations = () => {
-    expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
-    expect(filesUtils.writeFromStreamAndChecksum).not.toHaveBeenCalled()
+    expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
+    expect(filesUtils.writeUploadFromStreamAndChecksum).not.toHaveBeenCalled()
     expect(filesUtils.makeDir).not.toHaveBeenCalled()
     expect(filesUtils.createEmptyFile).not.toHaveBeenCalled()
     expect(filesUtils.copyFileContent).not.toHaveBeenCalled()
@@ -185,8 +186,8 @@ describe(FilesManager.name, () => {
     vi.spyOn(filesUtils, 'makeDir').mockResolvedValue('/tmp' as any)
     vi.spyOn(filesUtils, 'makeTempDir').mockResolvedValue('/tmp/extract')
     vi.spyOn(filesUtils, 'tempFilePath').mockReturnValue('/tmp/staged-file')
-    vi.spyOn(filesUtils, 'writeFromStream').mockResolvedValue(undefined)
-    vi.spyOn(filesUtils, 'writeFromStreamAndChecksum').mockResolvedValue('sha256-abc')
+    vi.spyOn(filesUtils, 'writeUploadFromStream').mockResolvedValue(undefined)
+    vi.spyOn(filesUtils, 'writeUploadFromStreamAndChecksum').mockResolvedValue('sha256-abc')
     vi.spyOn(filesUtils, 'moveFiles').mockResolvedValue(undefined)
     vi.spyOn(filesUtils, 'copyFiles').mockResolvedValue(undefined)
     vi.spyOn(filesUtils, 'removeFiles').mockResolvedValue(undefined)
@@ -243,9 +244,53 @@ describe(FilesManager.name, () => {
 
       expect(result).toBe(false)
       expect(filesLockManager.create).toHaveBeenCalledWith(user, space.dbFile, 'Sync-in', DEPTH.RESOURCE)
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(space.realPath, expect.anything(), 0)
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        space.realPath,
+        expect.anything(),
+        expect.objectContaining({ limiter: expect.objectContaining({ initialFileSize: 0, consume: expect.any(Function) }) })
+      )
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: space.realPath })
+    })
+
+    it('should short-circuit a known body above a stricter max size supplied by the caller', async () => {
+      const space = makeSpace()
+      setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
+
+      await expect(
+        service.saveStream(user, space, { method: 'PUT', headers: { 'content-length': '5' }, raw: Readable.from(['hello']) } as any, {
+          maxSize: 4
+        })
+      ).rejects.toEqual(new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_FILE_SIZE_EXCEEDED))
+
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
+      expect(filesLockManager.create).not.toHaveBeenCalled()
+    })
+
+    it('should stop an upload without content-length when streamed bytes exceed the remaining quota', async () => {
+      const space = makeSpace({ storageQuota: 10, storageUsage: 9 })
+      setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
+      vi.mocked(filesUtils.writeUploadFromStream).mockImplementationOnce(async (_path, _stream, options) => {
+        options.limiter.consume(2)
+      })
+
+      await expect(service.saveStream(user, space, { method: 'PUT', headers: {}, raw: Readable.from(['xx']) } as any)).rejects.toEqual(
+        new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
+      )
+
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+    })
+
+    it('should short-circuit a known body above the remaining quota', async () => {
+      const space = makeSpace({ storageQuota: 10, storageUsage: 9 })
+      setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
+
+      await expect(
+        service.saveStream(user, space, { method: 'PUT', headers: { 'content-length': '2' }, raw: Readable.from(['xx']) } as any)
+      ).rejects.toEqual(new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED))
+
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
+      expect(filesLockManager.create).not.toHaveBeenCalled()
     })
 
     it('should use DAV conflict checks and checksum mode when requested', async () => {
@@ -262,7 +307,70 @@ describe(FilesManager.name, () => {
       expect(checksum).toBe('sha256-abc')
       expect(filesLockManager.checkConflicts).toHaveBeenCalledWith(space.dbFile, DEPTH.RESOURCE, { userId: 7, lockTokens: ['token'] })
       expect(filesLockManager.create).not.toHaveBeenCalled()
-      expect(filesUtils.writeFromStreamAndChecksum).toHaveBeenCalled()
+      expect(filesUtils.writeUploadFromStreamAndChecksum).toHaveBeenCalledWith(
+        space.realPath,
+        expect.anything(),
+        'sha256',
+        expect.objectContaining({ limiter: expect.objectContaining({ initialFileSize: 100, consume: expect.any(Function) }) })
+      )
+    })
+
+    it('should accept a content range starting at zero for a new file', async () => {
+      const space = makeSpace()
+      setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
+
+      const result = await service.saveStream(
+        user,
+        space,
+        { method: 'PUT', headers: { 'content-range': 'bytes 0-4/5' }, raw: Readable.from(['hello']) } as any,
+        { dav: { depth: DEPTH.RESOURCE, lockTokens: [] } }
+      )
+
+      expect(result).toBe(false)
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        space.realPath,
+        expect.anything(),
+        expect.objectContaining({ limiter: expect.objectContaining({ initialFileSize: 0, consume: expect.any(Function) }) })
+      )
+    })
+
+    it('should interpret the expected upload size as the final size of a resumed upload', async () => {
+      const space = makeSpace({ storageQuota: 10, storageUsage: 8 })
+      const tmpPath = '/data/users/john/tmp/sync-in-file.txt'
+      setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true, [tmpPath]: true }, false)
+      vi.mocked(filesUtils.fileSize).mockResolvedValueOnce(8)
+
+      await expect(
+        service.saveStream(
+          user,
+          space,
+          {
+            method: 'PUT',
+            headers: { 'content-range': 'bytes 8-9/10', 'content-length': '2' },
+            raw: Readable.from(['xx'])
+          } as any,
+          { tmpPath, expectedUploadSize: 10 }
+        )
+      ).resolves.toBe(false)
+
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        tmpPath,
+        expect.anything(),
+        expect.objectContaining({ limiter: expect.objectContaining({ initialFileSize: 8, consume: expect.any(Function) }) })
+      )
+    })
+
+    it('should reject a non-zero content range when the file does not exist', async () => {
+      const space = makeSpace()
+      setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
+
+      await expect(
+        service.saveStream(user, space, { method: 'PUT', headers: { 'content-range': 'bytes 5-9/10' }, raw: Readable.from(['hello']) } as any, {
+          dav: { depth: DEPTH.RESOURCE, lockTokens: [] }
+        })
+      ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, 'Content-range : start offset does not match the current file size'))
+
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
     })
 
     it('should validate tmp stream before moving it to the destination', async () => {
@@ -282,7 +390,12 @@ describe(FilesManager.name, () => {
       ).rejects.toEqual(validationError)
 
       expect(validateTmpFile).toHaveBeenCalledWith({ tmpPath, realPath: space.realPath, checksum: 'sha256-abc' })
-      expect(filesUtils.writeFromStreamAndChecksum).toHaveBeenCalledWith(tmpPath, expect.anything(), 0, 'sha256')
+      expect(filesUtils.writeUploadFromStreamAndChecksum).toHaveBeenCalledWith(
+        tmpPath,
+        expect.anything(),
+        'sha256',
+        expect.objectContaining({ limiter: expect.objectContaining({ initialFileSize: 0, consume: expect.any(Function) }) })
+      )
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(tmpPath)
       expect(emitSpy).not.toHaveBeenCalled()
@@ -359,11 +472,15 @@ describe(FilesManager.name, () => {
 
       await service.saveMultipart(user, space, req as any)
 
-      const tmpWritePath = vi.mocked(filesUtils.writeFromStream).mock.calls[0][0] as string
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
       expect(filesLockManager.createOrRefresh).toHaveBeenCalled()
       expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
-      expect(tmpWritePath.endsWith('-report.txt')).toBe(true)
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, expect.anything())
+      expect(path.basename(tmpWritePath)).toMatch(/^report\.txt-upload-/)
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        tmpWritePath,
+        expect.anything(),
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, '/data/users/john/files/report.txt', true)
       expect(emitSpy).toHaveBeenCalledWith(
         'event',
@@ -390,7 +507,7 @@ describe(FilesManager.name, () => {
 
       await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(new FileError(HttpStatus.NOT_FOUND, 'Location not found'))
 
-      expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(filesUtils.removeFiles).not.toHaveBeenCalled()
       expect(filesLockManager.createOrRefresh).not.toHaveBeenCalled()
@@ -413,9 +530,13 @@ describe(FilesManager.name, () => {
 
       await service.saveMultipart(user, space, req as any)
 
-      const tmpWritePath = vi.mocked(filesUtils.writeFromStream).mock.calls[0][0] as string
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
       expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, file)
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        tmpWritePath,
+        file,
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, space.realPath, true)
       expect(filesUtils.removeFiles).not.toHaveBeenCalled()
       expect(emitSpy).toHaveBeenCalledWith('event', expect.objectContaining({ action: ACTION.UPDATE, rPath: space.realPath }))
@@ -451,9 +572,40 @@ describe(FilesManager.name, () => {
       await service.saveMultipart(user, space, req as any)
 
       expect(filesUtils.makeDir).toHaveBeenCalledWith(dstDir, true)
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(dstFile, file)
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        dstFile,
+        file,
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-created')
       expect(emitSpy).toHaveBeenCalledWith('event', expect.objectContaining({ action: ACTION.ADD, rPath: dstFile }))
+    })
+
+    it('should share the remaining quota across multipart files', async () => {
+      const space = makeSpace({ storageQuota: 5, storageUsage: 0 })
+      const parentPath = path.dirname(space.realPath)
+      const firstPath = path.join(parentPath, 'one.bin')
+      const secondPath = path.join(parentPath, 'two.bin')
+      setPathExists({ [space.realPath]: false, [parentPath]: true, [firstPath]: false, [secondPath]: false }, false)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p === parentPath)
+      vi.mocked(filesUtils.writeUploadFromStream).mockImplementation(async (_path, _stream, options) => {
+        options.limiter.consume(3)
+      })
+
+      const req = {
+        method: 'POST',
+        files: async function* () {
+          yield { filename: 'one.bin', file: Readable.from(['one']) }
+          yield { filename: 'two.bin', file: Readable.from(['two']) }
+        }
+      }
+
+      await expect(service.saveMultipart(user, space, req as any)).rejects.toEqual(
+        new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED)
+      )
+
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledTimes(2)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(secondPath)
     })
 
     it('should reject POST when resolved multipart destination already exists', async () => {
@@ -484,7 +636,7 @@ describe(FilesManager.name, () => {
         new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'Resource already exists')
       )
 
-      expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(filesUtils.removeFiles).not.toHaveBeenCalled()
       expect(filesLockManager.createOrRefresh).not.toHaveBeenCalled()
@@ -510,7 +662,7 @@ describe(FilesManager.name, () => {
 
       expect(filesUtils.isPathExists).not.toHaveBeenCalledWith(forbiddenFile)
       expect(filesUtils.isPathIsDir).not.toHaveBeenCalledWith(forbiddenFile)
-      expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(filesLockManager.createOrRefresh).not.toHaveBeenCalled()
       expect(emitSpy).not.toHaveBeenCalled()
@@ -535,9 +687,13 @@ describe(FilesManager.name, () => {
         new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_FILE_SIZE_EXCEEDED)
       )
 
-      const tmpWritePath = vi.mocked(filesUtils.writeFromStream).mock.calls[0][0] as string
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
       expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, file)
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        tmpWritePath,
+        file,
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
       expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpWritePath)
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(space.realPath)
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
@@ -565,7 +721,11 @@ describe(FilesManager.name, () => {
       )
 
       expect(req.files).toHaveBeenCalled()
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(dstFile, file)
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        dstFile,
+        file,
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
       expect(filesUtils.removeFiles).toHaveBeenCalledWith(dstFile)
       expect(emitSpy).not.toHaveBeenCalled()
     })
@@ -588,7 +748,7 @@ describe(FilesManager.name, () => {
         new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_FILE_SIZE_EXCEEDED)
       )
 
-      expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
     })
 
     it('should not map non-file-size multipart 413 errors to file size limit', async () => {
@@ -607,7 +767,7 @@ describe(FilesManager.name, () => {
 
       await expect(service.saveMultipart(user, space, req as any)).rejects.toBe(error)
 
-      expect(filesUtils.writeFromStream).not.toHaveBeenCalled()
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
     })
 
     it.each([
@@ -649,13 +809,17 @@ describe(FilesManager.name, () => {
 
       await expect(service.saveMultipart(user, space, req as any)).rejects.toBe(error)
 
-      const tmpWritePath = vi.mocked(filesUtils.writeFromStream).mock.calls[0][0] as string
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(tmpWritePath, file)
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        tmpWritePath,
+        file,
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
       expect(deleteSpy).toHaveBeenCalledTimes(1)
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, expect.stringContaining(path.basename(partFileName)), true)
       expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpWritePath)
       expect(emitSpy).not.toHaveBeenCalled()
-      expect(vi.mocked(filesUtils.writeFromStream).mock.invocationCallOrder[0]).toBeLessThan(deleteSpy.mock.invocationCallOrder[0])
+      expect(vi.mocked(filesUtils.writeUploadFromStream).mock.invocationCallOrder[0]).toBeLessThan(deleteSpy.mock.invocationCallOrder[0])
       expect(deleteSpy.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.moveFiles).mock.invocationCallOrder[0])
     })
 
@@ -685,7 +849,7 @@ describe(FilesManager.name, () => {
 
       await service.saveMultipart(user, space, req as any)
 
-      const tmpWritePath = vi.mocked(filesUtils.writeFromStream).mock.calls[0][0] as string
+      const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
       expect(deleteSpy).toHaveBeenCalledTimes(1)
       expect(filesUtils.makeDir).toHaveBeenCalledWith(dstDir, true)
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, dstFile, true)
@@ -1070,13 +1234,10 @@ describe(FilesManager.name, () => {
       expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/tmp/download.txt')
       expect(taskUtils.taskTemporaryPath).toHaveBeenCalledWith(user.tasksPath, 'task-1', '/tmp/download.txt')
       expect(filesUtils.tempFilePath).not.toHaveBeenCalled()
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith(
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
         taskPath('task-1', 'download.txt'),
         expect.anything(),
-        0,
-        55,
-        undefined,
-        expect.any(Function)
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }), onProgress: expect.any(Function) })
       )
       expect(filesTasksTransfer.createByteProgressHandler).toHaveBeenCalledWith(space)
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(taskPath('task-1', 'download.txt'), '/tmp/download.txt')
@@ -1090,12 +1251,32 @@ describe(FilesManager.name, () => {
       expect(fileEmitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
     })
 
+    it('should reject a remote download exceeding maxUploadSize before GET', async () => {
+      const space = makeSpace()
+      const tmpPath = '/data/users/john/tmp/download.txt-download-uuid'
+      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
+      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce(tmpPath)
+      http.axiosRef.mockResolvedValueOnce({
+        headers: { 'content-length': `${configuration.applications.files.maxUploadSize + 1}` },
+        request: { socket: { remoteAddress: '8.8.8.8' } }
+      })
+
+      await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toEqual(
+        new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_FILE_SIZE_EXCEEDED)
+      )
+
+      expect(http.axiosRef).toHaveBeenCalledTimes(1)
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(tmpPath)
+      expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
+    })
+
     it('should cleanup partial file and skip ADD event when download write fails', async () => {
       const error = new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_FILE_SIZE_EXCEEDED)
       const space = makeSpace()
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
       vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
-      vi.mocked(filesUtils.writeFromStream).mockRejectedValueOnce(error)
+      vi.mocked(filesUtils.writeUploadFromStream).mockRejectedValueOnce(error)
       http.axiosRef
         .mockResolvedValueOnce({
           headers: { 'content-length': '55' },

@@ -15,6 +15,7 @@ import type { FileDBProps } from '../interfaces/file-db-props.interface'
 import type { FileProps } from '../interfaces/file-props.interface'
 import { FileError } from '../models/file-error'
 import { maxFileSizeExceededError } from './errors'
+import type { UploadFileStreamLimiter } from './upload-file'
 
 export function sanitizePath(fPath: string): string {
   return path.normalize(fPath).replace(regExpPreventPathTraversal, '')
@@ -116,6 +117,10 @@ export async function makeTempDir(parentPath: string, prefix: string): Promise<s
 
 export function tempFilePath(parentPath: string, prefix: string): string {
   return path.join(parentPath, `${path.basename(prefix)}${crypto.randomUUID()}`)
+}
+
+export function temporaryPathPrefix(targetPath: string, operation: 'upload' | 'download' | 'compress' | 'extract'): string {
+  return `${fileName(targetPath) || 'file'}-${operation}-`
 }
 
 export function getMimeType(fPath: string, isDir: boolean): string {
@@ -242,52 +247,88 @@ export function createProgressTransform(
   })
 }
 
-export function writeFromStream(
-  rPath: string,
-  stream: Readable,
-  start: number = 0,
-  maxSize?: number,
-  signal?: AbortSignal,
-  onProgress?: (bytes: number) => void
-): Promise<void> {
+export interface WriteFromStreamOptions {
+  start?: number
+  signal?: AbortSignal
+  // Called before forwarding a chunk to the destination. Throwing aborts the pipeline.
+  accountBytes?: (bytes: number) => void
+}
+
+export function writeFromStream(rPath: string, stream: Readable, options: WriteFromStreamOptions = {}): Promise<void> {
+  const { start = 0, signal, accountBytes } = options
   const dst: WriteStream = createWriteStream(rPath, { flags: start ? 'a' : 'w', start: start, highWaterMark: DEFAULT_HIGH_WATER_MARK })
-  if (maxSize === undefined && !onProgress) {
+  if (!accountBytes) {
     return pipeline(stream, dst, { signal })
   }
-  let received = start
-  const progress = new Transform({
+  const accounting = new Transform({
     transform(chunk, _encoding, callback) {
-      received += chunk.length
-      if (maxSize !== undefined && received > maxSize) {
-        callback(maxFileSizeExceededError())
+      try {
+        accountBytes(chunk.length)
+      } catch (error) {
+        callback(error as Error)
         return
       }
-      onProgress?.(chunk.length)
       callback(null, chunk)
     }
   })
-  return pipeline(stream, progress, dst, { signal })
+  return pipeline(stream, accounting, dst, { signal })
 }
 
-export async function writeFromStreamAndChecksum(rPath: string, stream: Readable, hasRange: number, alg: string): Promise<string> {
+export async function writeFromStreamAndChecksum(
+  rPath: string,
+  stream: Readable,
+  alg: string,
+  options: WriteFromStreamOptions = {}
+): Promise<string> {
+  const { start = 0, signal, accountBytes } = options
   const hash = crypto.createHash(alg)
-  if (hasRange) {
+  if (start) {
+    // Seed the hash with the existing prefix so the result covers the complete resumed file.
     const src = createReadStream(rPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
-    await pipeline(src, hash, { end: false })
+    await pipeline(src, hash, { end: false, signal })
   }
-  const dst = createWriteStream(rPath, { flags: hasRange ? 'a' : 'w', highWaterMark: DEFAULT_HIGH_WATER_MARK })
+  const dst = createWriteStream(rPath, { flags: start ? 'a' : 'w', highWaterMark: DEFAULT_HIGH_WATER_MARK })
   await pipeline(
     stream,
     async function* (source) {
       for await (const chunk of source) {
+        accountBytes?.(chunk.length)
         hash.update(chunk)
         yield chunk
       }
     },
-    dst
+    dst,
+    { signal }
   )
   hash.end()
   return hash.digest('hex')
+}
+
+export interface WriteUploadStreamOptions {
+  limiter: UploadFileStreamLimiter
+  signal?: AbortSignal
+  // Receives only bytes accepted by the limiter.
+  onProgress?: (bytes: number) => void
+}
+
+function uploadWriteOptions({ limiter, signal, onProgress }: WriteUploadStreamOptions): WriteFromStreamOptions {
+  return {
+    start: limiter.initialFileSize,
+    signal,
+    accountBytes: (bytes) => {
+      // Progress must only include chunks accepted by both the file-size and quota boundaries.
+      limiter.consume(bytes)
+      onProgress?.(bytes)
+    }
+  }
+}
+
+export function writeUploadFromStream(rPath: string, stream: Readable, options: WriteUploadStreamOptions): Promise<void> {
+  return writeFromStream(rPath, stream, uploadWriteOptions(options))
+}
+
+export function writeUploadFromStreamAndChecksum(rPath: string, stream: Readable, alg: string, options: WriteUploadStreamOptions): Promise<string> {
+  return writeFromStreamAndChecksum(rPath, stream, alg, uploadWriteOptions(options))
 }
 
 export function copyFileContent(srcPath: string, dstPath: string): Promise<void> {

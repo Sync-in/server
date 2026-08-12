@@ -83,6 +83,7 @@ describe(AppService.name, () => {
     expect(conf.logger.colorize).toBe(true)
     const tmpSecretFile = path.join(os.tmpdir(), 'secret')
     fs.writeFileSync(tmpSecretFile, 'fooBAR8888')
+    vi.spyOn(console, 'log').mockImplementation(() => undefined)
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
     process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_ONLYOFFICE_SECRET`] = 'fooBAR'
     process.env[`${ENVIRONMENT_PREFIX}LOGGER_STDOUT`] = 'false'

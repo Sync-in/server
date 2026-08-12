@@ -1,16 +1,17 @@
 import { lookup } from 'node:dns/promises'
 import { HttpService } from '@nestjs/axios'
-import { HttpStatus } from '@nestjs/common'
+import { HttpStatus, Logger } from '@nestjs/common'
 import { Readable } from 'node:stream'
 import { HTTP_METHOD } from '../../applications.constants'
 import { FileError } from '../models/file-error'
-import { writeFromStream } from './files'
+import { writeUploadFromStream } from './files'
 import { DownloadFile } from './download-file'
 import type { Mock } from 'vitest'
 import { FILE_ERROR } from '../constants/errors'
 
 vi.mock('./files', () => ({
-  writeFromStream: vi.fn()
+  writeUploadFromStream: vi.fn(),
+  temporaryPathPrefix: vi.fn()
 }))
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn()
@@ -44,13 +45,15 @@ describe(DownloadFile.name, () => {
   })
 
   beforeEach(() => {
+    vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined)
     http = { axiosRef: vi.fn() }
     lookupMock.mockResolvedValue([{ address: '8.8.8.8', family: 4 }])
-    vi.mocked(writeFromStream).mockResolvedValue(undefined)
+    vi.mocked(writeUploadFromStream).mockResolvedValue(undefined)
   })
 
   afterEach(() => {
     vi.clearAllMocks()
+    vi.restoreAllMocks()
   })
 
   it.each(blockedRemoteAddresses)('rejects blocked remote address "%s" on HEAD by default', async (remoteAddress) => {
@@ -64,7 +67,7 @@ describe(DownloadFile.name, () => {
     expect(http.axiosRef).toHaveBeenCalledWith(
       expect.objectContaining({ method: HTTP_METHOD.HEAD, url: 'https://example.test/file.txt', maxRedirects: 0 })
     )
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it('rejects blocked DNS resolutions before calling HEAD', async () => {
@@ -76,7 +79,7 @@ describe(DownloadFile.name, () => {
 
     expect(lookupMock).toHaveBeenCalledWith('example.test', { all: true, order: 'verbatim' })
     expect(http.axiosRef).not.toHaveBeenCalled()
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it('rejects mixed DNS resolutions when one address is blocked', async () => {
@@ -90,7 +93,7 @@ describe(DownloadFile.name, () => {
     ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
     expect(http.axiosRef).not.toHaveBeenCalled()
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it('follows a safe redirect manually', async () => {
@@ -115,7 +118,7 @@ describe(DownloadFile.name, () => {
       2,
       expect.objectContaining({ method: HTTP_METHOD.HEAD, url: 'https://cdn.example.test/file.txt', maxRedirects: 0 })
     )
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it('rejects a redirect to a blocked DNS resolution before following it', async () => {
@@ -127,7 +130,7 @@ describe(DownloadFile.name, () => {
     ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
     expect(http.axiosRef).toHaveBeenCalledTimes(1)
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it('rejects a missing remote address on HEAD by default', async () => {
@@ -138,7 +141,7 @@ describe(DownloadFile.name, () => {
     ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
     expect(http.axiosRef).toHaveBeenCalledTimes(1)
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it.each(publicRemoteAddresses)('allows public remote address "%s" on HEAD by default', async (remoteAddress) => {
@@ -161,7 +164,7 @@ describe(DownloadFile.name, () => {
         httpsAgent: expect.any(Object)
       })
     )
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it('uses a guarded agent lookup for connection-time resolutions', async () => {
@@ -187,7 +190,7 @@ describe(DownloadFile.name, () => {
       new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', { getContentInfo: true })
     ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it('allows private IPs on HEAD when allowPrivateIP is enabled for content info', async () => {
@@ -210,7 +213,7 @@ describe(DownloadFile.name, () => {
       lastModified: 'Mon, 01 Jan 2024 00:00:00 GMT'
     })
     expect(http.axiosRef).toHaveBeenCalledTimes(1)
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it('rejects private IPs on GET by default and closes the stream', async () => {
@@ -225,7 +228,7 @@ describe(DownloadFile.name, () => {
     ).rejects.toEqual(new FileError(HttpStatus.FORBIDDEN, FILE_ERROR.DOWNLOAD_PRIVATE_IP))
 
     expect(destroySpy).toHaveBeenCalled()
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it.each(['', '-1', '1.5', 'Infinity', '9007199254740992', 'abc'])('rejects invalid content-length "%s"', async (contentLength) => {
@@ -236,7 +239,18 @@ describe(DownloadFile.name, () => {
     ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_INVALID_CONTENT_LENGTH))
 
     expect(http.axiosRef).toHaveBeenCalledTimes(1)
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
+  })
+
+  it('rejects a missing content-length when no explicit maximum is available', async () => {
+    http.axiosRef.mockResolvedValueOnce(response('8.8.8.8'))
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
+    ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_INVALID_CONTENT_LENGTH))
+
+    expect(http.axiosRef).toHaveBeenCalledTimes(1)
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it('allows missing content-length when maxSize is provided', async () => {
@@ -247,27 +261,30 @@ describe(DownloadFile.name, () => {
       maxSize: 1024
     })
 
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 1024, undefined, undefined)
+    expect(writeUploadFromStream).toHaveBeenCalledWith(
+      '/tmp/file.txt',
+      stream,
+      expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+    )
   })
 
-  it('rejects missing content-length for space downloads even when maxSize is provided', async () => {
-    const space = { willExceedQuota: vi.fn() }
-    http.axiosRef.mockResolvedValueOnce(response('8.8.8.8'))
-
-    await expect(
-      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', {
-        space: space as any,
-        maxSize: 1024
-      })
-    ).rejects.toEqual(new FileError(HttpStatus.BAD_REQUEST, FILE_ERROR.DOWNLOAD_INVALID_CONTENT_LENGTH))
-
-    expect(space.willExceedQuota).not.toHaveBeenCalled()
-    expect(writeFromStream).not.toHaveBeenCalled()
-  })
-
-  it('keeps content-length as the stream guard for space downloads even when maxSize is provided', async () => {
+  it('allows missing content-length for space downloads when maxSize is provided', async () => {
     const stream = Readable.from(['abc'])
-    const space = { willExceedQuota: vi.fn().mockReturnValue(false) }
+    const space = { storageQuota: 10, storageUsage: 7 }
+    http.axiosRef.mockResolvedValueOnce(response('8.8.8.8')).mockResolvedValueOnce({ ...response('8.8.8.8'), data: stream })
+
+    await new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', {
+      space: space as any,
+      maxSize: 1024
+    })
+
+    const options = vi.mocked(writeUploadFromStream).mock.calls[0][2]
+    expect(() => options.limiter.consume(4)).toThrow(new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED))
+  })
+
+  it('accepts a known content-length within the remaining quota', async () => {
+    const stream = Readable.from(['abc'])
+    const space = { storageQuota: 100, storageUsage: 88 }
     http.axiosRef
       .mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '12' }))
       .mockResolvedValueOnce({ ...response('8.8.8.8'), data: stream })
@@ -277,8 +294,41 @@ describe(DownloadFile.name, () => {
       maxSize: 1024
     })
 
-    expect(space.willExceedQuota).toHaveBeenCalledWith(12)
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 12, undefined, undefined)
+    expect(writeUploadFromStream).toHaveBeenCalledWith(
+      '/tmp/file.txt',
+      stream,
+      expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+    )
+  })
+
+  it('rejects a known content-length above the remaining quota before GET', async () => {
+    const space = { storageQuota: 100, storageUsage: 89 }
+    http.axiosRef.mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '12' }))
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', {
+        space: space as any,
+        maxSize: 1024
+      })
+    ).rejects.toEqual(new FileError(HttpStatus.INSUFFICIENT_STORAGE, FILE_ERROR.STORAGE_QUOTA_EXCEEDED))
+
+    expect(http.axiosRef).toHaveBeenCalledTimes(1)
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
+  })
+
+  it('rejects a space download exceeding maxSize before starting the GET request', async () => {
+    const space = { storageQuota: null, storageUsage: 0 }
+    http.axiosRef.mockResolvedValueOnce(response('8.8.8.8', { 'content-length': '1025' }))
+
+    await expect(
+      new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt', {
+        space: space as any,
+        maxSize: 1024
+      })
+    ).rejects.toEqual(new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_FILE_SIZE_EXCEEDED))
+
+    expect(http.axiosRef).toHaveBeenCalledTimes(1)
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it('forwards the progress callback to the stream writer', async () => {
@@ -292,7 +342,11 @@ describe(DownloadFile.name, () => {
       onProgress
     })
 
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 12, undefined, onProgress)
+    expect(writeUploadFromStream).toHaveBeenCalledWith(
+      '/tmp/file.txt',
+      stream,
+      expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }), onProgress })
+    )
   })
 
   it('allows zero content-length and guards the written stream at zero bytes', async () => {
@@ -303,7 +357,11 @@ describe(DownloadFile.name, () => {
 
     await new DownloadFile(http as unknown as HttpService).download({ url: 'https://example.test/file.txt' }, '/tmp/file.txt')
 
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 0, undefined, undefined)
+    expect(writeUploadFromStream).toHaveBeenCalledWith(
+      '/tmp/file.txt',
+      stream,
+      expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+    )
   })
 
   it('rejects redirects on GET after the HEAD URL has been resolved', async () => {
@@ -319,7 +377,7 @@ describe(DownloadFile.name, () => {
 
     expect(http.axiosRef).toHaveBeenCalledTimes(2)
     expect(destroySpy).toHaveBeenCalled()
-    expect(writeFromStream).not.toHaveBeenCalled()
+    expect(writeUploadFromStream).not.toHaveBeenCalled()
   })
 
   it('allows private IPs on GET when allowPrivateIP is enabled', async () => {
@@ -332,7 +390,11 @@ describe(DownloadFile.name, () => {
       allowPrivateIP: true
     })
 
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 12, undefined, undefined)
+    expect(writeUploadFromStream).toHaveBeenCalledWith(
+      '/tmp/file.txt',
+      stream,
+      expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+    )
     expect(http.axiosRef).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({
@@ -357,6 +419,10 @@ describe(DownloadFile.name, () => {
       maxSize: 1024
     })
 
-    expect(writeFromStream).toHaveBeenCalledWith('/tmp/file.txt', stream, 0, 1024, undefined, undefined)
+    expect(writeUploadFromStream).toHaveBeenCalledWith(
+      '/tmp/file.txt',
+      stream,
+      expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+    )
   })
 })

@@ -14,6 +14,7 @@ import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
 import { FILE_MODE } from '../../constants/operations'
 import { FileEvent } from '../../events/file-events'
 import { FileLockProps } from '../../interfaces/file-props.interface'
+import { FileError } from '../../models/file-error'
 import { LockConflict } from '../../models/file-lock-error'
 import { FilesLockManager } from '../../services/files-lock-manager.service'
 import * as filesUtils from '../../utils/files'
@@ -319,7 +320,7 @@ describe(CollaboraOnlineManager.name, () => {
       vi.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
       vi.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
       vi.spyOn(filesUtils, 'uniqueFilePathFromDir').mockResolvedValue('/tmp/document-unique.docx')
-      vi.spyOn(filesUtils, 'writeFromStream').mockResolvedValue(undefined)
+      vi.spyOn(filesUtils, 'writeUploadFromStream').mockResolvedValue(undefined)
       vi.spyOn(filesUtils, 'copyFileContent').mockResolvedValue(undefined)
       vi.spyOn(filesUtils, 'removeFiles').mockResolvedValue(undefined)
     })
@@ -347,7 +348,11 @@ describe(CollaboraOnlineManager.name, () => {
       expect(result).toEqual({
         LastModifiedTime: '2024-01-01T11:00:00.000Z'
       })
-      expect(filesUtils.writeFromStream).toHaveBeenCalledWith('/tmp/document-unique.docx', mockRequest.raw)
+      expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
+        '/tmp/document-unique.docx',
+        mockRequest.raw,
+        expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }) })
+      )
       expect(filesUtils.copyFileContent).toHaveBeenCalledWith('/tmp/document-unique.docx', mockSpace.realPath)
       expect(filesUtils.removeFiles).toHaveBeenCalledWith('/tmp/document-unique.docx')
       expect(emitSpy).toHaveBeenCalledWith('event', {
@@ -374,6 +379,36 @@ describe(CollaboraOnlineManager.name, () => {
       vi.spyOn(fs, 'stat').mockResolvedValue({ mtime: new Date('2024-01-01T10:00:00.000Z') } as any)
 
       await expect(service.saveDocument(mockRequest)).rejects.toThrow(new HttpException('Size Mismatch', HttpStatus.BAD_REQUEST))
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/tmp/document-unique.docx')
+    })
+
+    it('should reject a known document size above the remaining quota before writing', async () => {
+      const mockRequest = {
+        user: mockUser,
+        space: { ...mockSpace, storageQuota: 10, storageUsage: 9 },
+        headers: { 'content-length': '2' },
+        raw: new Readable()
+      } as unknown as FastifyCollaboraOnlineSpaceRequest
+
+      await expect(service.saveDocument(mockRequest)).rejects.toThrow(new HttpException('Storage quota exceeded', HttpStatus.INSUFFICIENT_STORAGE))
+
+      expect(filesUtils.writeUploadFromStream).not.toHaveBeenCalled()
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/tmp/document-unique.docx')
+    })
+
+    it('should preserve the upload size error and remove the temporary file', async () => {
+      const mockRequest = {
+        user: mockUser,
+        space: mockSpace,
+        headers: {},
+        raw: new Readable()
+      } as unknown as FastifyCollaboraOnlineSpaceRequest
+
+      vi.mocked(filesUtils.writeUploadFromStream).mockRejectedValueOnce(new FileError(HttpStatus.PAYLOAD_TOO_LARGE, 'File size limit exceeded'))
+
+      await expect(service.saveDocument(mockRequest)).rejects.toThrow(new HttpException('File size limit exceeded', HttpStatus.PAYLOAD_TOO_LARGE))
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/tmp/document-unique.docx')
+      expect(filesUtils.copyFileContent).not.toHaveBeenCalled()
     })
 
     it('should throw error when timestamp mismatch', async () => {

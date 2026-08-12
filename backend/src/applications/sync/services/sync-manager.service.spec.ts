@@ -165,6 +165,7 @@ describe(SyncManager.name, () => {
       const r = await service.upload(req as any, dto as any)
       expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, {
         tmpPath: expect.any(String),
+        expectedUploadSize: 10,
         checksumAlg: SYNC_CHECKSUM_ALG,
         validateTmpFile: expect.any(Function)
       })
@@ -195,6 +196,7 @@ describe(SyncManager.name, () => {
       const r = await service.upload(req as any, dto as any)
       expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, {
         tmpPath: expect.any(String),
+        expectedUploadSize: 5,
         validateTmpFile: expect.any(Function)
       })
       expect(touchFile).toHaveBeenCalledWith('/tmp/up2.bin', 1710000100)
@@ -214,9 +216,10 @@ describe(SyncManager.name, () => {
       expect(touchFile).not.toHaveBeenCalled()
     })
 
-    it('should reject when tmp file exceeds quota and preserve tmp', async () => {
+    it('should delegate the declared size to the streaming limiter without a post-write quota check', async () => {
+      const willExceedQuota = vi.fn().mockReturnValue(true)
       const req = makeReq({
-        space: { realPath: '/tmp/up.bin', url: '/space/up.bin', storageQuota: 100, willExceedQuota: vi.fn().mockReturnValue(true) }
+        space: { realPath: '/tmp/up.bin', url: '/space/up.bin', storageQuota: 100, willExceedQuota }
       })
       const dto = { size: 10, mtime: 1710000100 }
       filesManager.saveStream.mockImplementation(async (_user, _space, _req, options) => {
@@ -224,10 +227,11 @@ describe(SyncManager.name, () => {
       })
       fsPromises.stat.mockResolvedValue({ size: 10, ino: 321, mtime: new Date(1710000100 * 1000) })
 
-      await expect(service.upload(req as any, dto as any)).rejects.toBeInstanceOf(HttpException)
-      expect(req.space.willExceedQuota).toHaveBeenCalledWith(10)
+      await expect(service.upload(req as any, dto as any)).resolves.toEqual({ ino: 321 })
+      expect(filesManager.saveStream).toHaveBeenCalledWith(req.user, req.space, req, expect.objectContaining({ expectedUploadSize: 10 }))
+      expect(willExceedQuota).not.toHaveBeenCalled()
       expect(removeFiles).not.toHaveBeenCalled()
-      expect(touchFile).not.toHaveBeenCalled()
+      expect(touchFile).toHaveBeenCalled()
     })
   })
 
@@ -585,7 +589,7 @@ describe(SyncManager.name, () => {
       await expect(
         (async () => {
           for await (const _ of iter) {
-            /* consume */
+            // consume
           }
         })()
       ).rejects.toThrow('Unable to parse path')
