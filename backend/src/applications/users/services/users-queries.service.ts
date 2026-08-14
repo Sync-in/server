@@ -510,6 +510,7 @@ export class UsersQueries {
   @CacheDecorator(1800)
   async usersWhitelist(userId: number, lowerOrEqualUserRole: USER_ROLE = USER_ROLE.GUEST): Promise<number[]> {
     /* Get the list of user ids allowed to the current user
+       - the current user, when their role is lower than or equal to lowerOrEqualUserRole
        - users with no groups only when applications.users.showUngroupedUsers = true
          (guest accounts are excluded from this global branch, and guest requesters never get this branch)
          (also excludes users with a role higher than lowerOrEqualUserRole)
@@ -542,6 +543,14 @@ export class UsersQueries {
     )
     SELECT JSON_ARRAYAGG(id) AS ids
     FROM (
+      -- 0) Current user
+      SELECT ${users.id} AS id
+      FROM ${users}
+      WHERE ${users.id} = ${userId}
+        AND ${users.role} <= ${lowerOrEqualUserRole}
+
+      UNION
+
       -- 1) Users from groups visible to the current user
       SELECT ${users.id} AS id
       FROM ${users}
