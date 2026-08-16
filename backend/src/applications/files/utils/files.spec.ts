@@ -17,6 +17,7 @@ import {
   temporaryFileName,
   temporaryFilePath,
   temporaryFilePrefix,
+  uniqueDatedFilePath,
   writeFromStream,
   writeFromStreamAndChecksum,
   writeUploadFromStream,
@@ -98,6 +99,54 @@ describe(isCrossDevice.name, () => {
     await expect(isCrossDevice('/source.txt', dstPath)).resolves.toBe(true)
 
     expect(statSpy).toHaveBeenCalledWith(path.parse(dstPath).root)
+  })
+})
+
+describe(uniqueDatedFilePath.name, () => {
+  let tmpDir: string
+
+  beforeEach(async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-08-16T10:20:30.123Z'))
+    tmpDir = await mkdtemp(path.join(os.tmpdir(), 'unique-dated-path-'))
+  })
+
+  afterEach(async () => {
+    vi.useRealTimers()
+    await rm(tmpDir, { recursive: true, force: true })
+  })
+
+  it('increments an existing dated file name without changing its extension', async () => {
+    const source = path.join(tmpDir, 'report.txt')
+    const dated = path.join(tmpDir, 'report-2026.08.16 10-20-30.123.txt')
+    const firstCollision = path.join(tmpDir, 'report-2026.08.16 10-20-30.123 (1).txt')
+    await Promise.all([writeFile(source, 'source'), writeFile(dated, 'collision'), writeFile(firstCollision, 'collision')])
+
+    await expect(uniqueDatedFilePath(source)).resolves.toEqual({
+      isDir: false,
+      path: path.join(tmpDir, 'report-2026.08.16 10-20-30.123 (2).txt')
+    })
+  })
+
+  it('increments an existing dated directory name after its complete name', async () => {
+    const source = path.join(tmpDir, 'documents.v1')
+    const dated = path.join(tmpDir, 'documents.v1-2026.08.16 10-20-30.123')
+    await Promise.all([fs.mkdir(source), fs.mkdir(dated), fs.mkdir(`${dated} (1)`)])
+
+    await expect(uniqueDatedFilePath(source)).resolves.toEqual({
+      isDir: true,
+      path: `${dated} (2)`
+    })
+  })
+
+  it('uses the known destination type when the protected trash source has a different type', async () => {
+    const protectedDirectory = path.join(tmpDir, 'report.txt')
+    await fs.mkdir(protectedDirectory)
+
+    await expect(uniqueDatedFilePath(protectedDirectory, false)).resolves.toEqual({
+      isDir: false,
+      path: path.join(tmpDir, 'report-2026.08.16 10-20-30.123.txt')
+    })
   })
 })
 

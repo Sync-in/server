@@ -1156,7 +1156,7 @@ describe(FilesManager.name, () => {
 
       await service.copyMove(user, src, dst, true, true)
 
-      expect(filesUtils.uniqueDatedFilePath).toHaveBeenCalledWith(dst.realPath)
+      expect(filesUtils.uniqueDatedFilePath).toHaveBeenCalledWith(src.realPath, false)
       expect(filesUtils.moveFiles).toHaveBeenCalledTimes(2)
       expect(filesUtils.moveFiles).toHaveBeenNthCalledWith(1, dst.realPath, datedTrashFile, true)
       expect(filesUtils.moveFiles).toHaveBeenNthCalledWith(2, src.realPath, dst.realPath, true)

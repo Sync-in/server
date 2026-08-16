@@ -69,7 +69,8 @@ For a resource whose target is a managed trash, deletion performs the following 
 
 1. Resolve the managed trash and its temporary root from the source space.
 2. Recreate the source's relative parent path in that trash when required.
-3. If the destination name already exists, preserve the existing trash entry under a dated unique name in both the filesystem and database.
+3. If the destination name already exists, preserve the existing trash entry under a dated unique name in both the filesystem and database. A numeric
+   suffix is added when that dated name is already occupied.
 4. Move the resource to the selected trash.
 5. Move the corresponding database records into the trash's canonical scope and remove their locks.
 

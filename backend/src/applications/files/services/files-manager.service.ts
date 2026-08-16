@@ -588,8 +588,8 @@ export class FilesManager {
         // During an overwrite from trash, this path can be the active copy/move source.
         // Keep that source stable and archive the overwritten destination under a dated name instead.
         if (options?.protectedTrashPath && path.resolve(options.protectedTrashPath) === path.resolve(trashFile)) {
-          const datedDestination = await uniqueDatedFilePath(space.realPath)
-          trashFile = path.join(trashDir, fileName(datedDestination.path))
+          const datedDestination = await uniqueDatedFilePath(trashFile, isDir)
+          trashFile = datedDestination.path
           destinationDbFile = { ...destinationDbFile, path: path.join(dirName(destinationDbFile.path), fileName(trashFile)) }
         }
         trashDbFile = destinationDbFile

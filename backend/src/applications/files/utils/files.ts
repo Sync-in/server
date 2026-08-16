@@ -467,15 +467,20 @@ export async function uniqueFilePathFromDir(rPath: string): Promise<string> {
   return rPath
 }
 
-export async function uniqueDatedFilePath(rPath: string): Promise<{ isDir: boolean; path: string }> {
+export async function uniqueDatedFilePath(rPath: string, knownIsDir?: boolean): Promise<{ isDir: boolean; path: string }> {
   const date = formatDateISOString(new Date())
-  if (await isPathIsDir(rPath)) {
-    return { isDir: true, path: `${rPath}-${date}` }
-  } else {
-    const extension = path.extname(rPath)
-    const nameWithoutExtension = path.basename(rPath, extension)
-    return { isDir: false, path: path.join(path.dirname(rPath), `${nameWithoutExtension}-${date}${extension}`) }
+  const isDir = knownIsDir ?? (await isPathIsDir(rPath))
+  const extension = isDir ? '' : path.extname(rPath)
+  const nameWithoutExtension = path.basename(rPath, extension)
+  const datedName = `${nameWithoutExtension}-${date}`
+  const parentDir = path.dirname(rPath)
+  let candidate = path.join(parentDir, `${datedName}${extension}`)
+  let count = 1
+  while (await isPathExists(candidate)) {
+    candidate = path.join(parentDir, `${datedName} (${count})${extension}`)
+    count++
   }
+  return { isDir, path: candidate }
 }
 
 export async function checkExternalPath(rPath: string) {
