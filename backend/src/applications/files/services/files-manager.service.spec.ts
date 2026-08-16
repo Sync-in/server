@@ -1302,16 +1302,25 @@ describe(FilesManager.name, () => {
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: '/data/users/john/trash/old.txt' })
     })
 
-    it('should force delete when trash path is not available', async () => {
+    it('should reject before deleting when the trash target is not available', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/no-trash.txt', inTrashRepository: false })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
       vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(false)
       vi.mocked(spacesPathUtils.trashTargetFromSpace).mockReturnValueOnce(null)
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
 
-      await service.delete(user, space)
+      await expect(service.delete(user, space)).rejects.toMatchObject({
+        name: FileError.name,
+        httpCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: 'Unable to resolve trash target'
+      })
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/files/no-trash.txt')
-      expect(filesQueries.deleteFiles).toHaveBeenCalledWith(space.dbFile, false, true)
+      expect(filesUtils.makeDir).not.toHaveBeenCalled()
+      expect(filesUtils.removeFiles).not.toHaveBeenCalled()
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(filesTasksTransfer.delete).not.toHaveBeenCalled()
+      expect(filesQueries.deleteFiles).not.toHaveBeenCalled()
+      expect(emitSpy).not.toHaveBeenCalled()
     })
 
     it('should permanently delete an external share without resolving a trash path', async () => {

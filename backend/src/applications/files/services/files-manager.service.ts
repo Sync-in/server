@@ -574,7 +574,14 @@ export class FilesManager {
       FileEvent.emit('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: space.realPath })
     } else {
       const trashTarget = trashTargetFromSpace(user, space)
-      if (trashTarget?.mode === 'trash') {
+      if (!trashTarget) {
+        this.logger.error({
+          tag: this.delete.name,
+          msg: `Unable to resolve trash target for space - *${space.alias}* (${space.id}) : refusing to delete : ${space.realPath}`
+        })
+        throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Unable to resolve trash target')
+      }
+      if (trashTarget.mode === 'trash') {
         let destinationDbFile: FileDBProps = { ...trashTarget.dbScope, path: space.dbFile.path }
         const name = fileName(space.realPath)
         const trashDir = path.join(trashTarget.path, dirName(space.dbFile.path))
@@ -601,18 +608,13 @@ export class FilesManager {
         // emit an event for the file or directory moved to the trash
         // space keeps its original path and rPath is its new trash path
         FileEvent.emit('event', { user, space, action: ACTION.DELETE, rPath: trashFile })
-      } else {
-        if (!trashTarget) {
-          // unsupported case: delete the file (this shouldn't happen)
-          this.logger.error({
-            tag: this.delete.name,
-            msg: `Unable to find trash path for space - *${space.alias}* (${space.id}) : delete permanently : ${space.realPath}`
-          })
-        }
+      } else if (trashTarget.mode === 'permanent') {
         forceDeleteInDB = true
         await removeFiles(space.realPath)
         // emit file event
         FileEvent.emit('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: space.realPath })
+      } else {
+        throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Unsupported trash target mode')
       }
     }
     // remove locks, these locks have already been checked in the `checkConflicts` function
