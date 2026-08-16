@@ -87,6 +87,10 @@ Moving an entry into trash updates its existing database record rather than dele
 therefore preserved. A collision is resolved against the canonical destination scope before the incoming record is moved into it. In particular,
 entries from different external roots converge on the same native-space trash scope.
 
+When a resource is restored with overwrite to the location from which it was deleted, its own trash path is protected for the duration of the
+operation. The overwritten destination is archived under a dated name instead, so the active restore source keeps the same filesystem path and
+database identity.
+
 For an external share, deletion skips this lifecycle and removes the source directly from the filesystem and database.
 
 Deleting a resource that is already under `trash/...` removes it permanently from the filesystem and database. The trash itself is a protected virtual

@@ -76,6 +76,10 @@ import { createTar } from '../utils/tar-file'
 import { createZip } from '../utils/zip-file'
 import { FILE_ERROR } from '../constants/errors'
 
+interface DeleteOptions {
+  protectedTrashPath?: string
+}
+
 @Injectable()
 export class FilesManager {
   // Spaces permissions are checked in the space guard, except for the copy/move destination
@@ -510,16 +514,21 @@ export class FilesManager {
     // check destination
     await this.filesLockManager.checkConflicts(dstSpace.dbFile, depth, { userId: user.id, lockTokens: dav?.lockTokens })
 
+    const deleteDestination = (): Promise<void> =>
+      srcSpace.inTrashRepository
+        ? this.delete(user, dstSpace, undefined, undefined, { protectedTrashPath: srcSpace.realPath })
+        : this.delete(user, dstSpace)
+
     // Task transfers defer overwrite handling until their staged content is ready to commit.
     if (!useTaskTransfer && overwrite && (await isPathExists(dstSpace.realPath))) {
-      await this.delete(user, dstSpace)
+      await deleteDestination()
     }
 
     // do
     if (isMove) {
       let sourceCleanupError: SourceCleanupError | undefined
       if (useTaskTransfer && signal) {
-        sourceCleanupError = await this.filesTasksTransfer.move(user, srcSpace, dstSpace, overwrite, isDir, signal, () => this.delete(user, dstSpace))
+        sourceCleanupError = await this.filesTasksTransfer.move(user, srcSpace, dstSpace, overwrite, isDir, signal, deleteDestination)
       } else {
         await moveFiles(srcSpace.realPath, dstSpace.realPath, overwrite)
       }
@@ -539,7 +548,7 @@ export class FilesManager {
         if (!signal) {
           throw new Error('An abort signal is required for a copy task')
         }
-        await this.filesTasksTransfer.copy(user, srcSpace, dstSpace, overwrite, recursive, isDir, signal, () => this.delete(user, dstSpace))
+        await this.filesTasksTransfer.copy(user, srcSpace, dstSpace, overwrite, recursive, isDir, signal, deleteDestination)
       } else {
         await copyFiles(srcSpace.realPath, dstSpace.realPath, overwrite, recursive)
       }
@@ -548,7 +557,7 @@ export class FilesManager {
     }
   }
 
-  async delete(user: UserModel, space: SpaceEnv, dav?: { lockTokens: string[] }, signal?: AbortSignal): Promise<void> {
+  async delete(user: UserModel, space: SpaceEnv, dav?: { lockTokens: string[] }, signal?: AbortSignal, options?: DeleteOptions): Promise<void> {
     const isTaskContext = Boolean(space.task?.cacheKey)
     if (!(await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
@@ -569,14 +578,21 @@ export class FilesManager {
     } else {
       const trashTarget = trashTargetFromSpace(user, space)
       if (trashTarget?.mode === 'trash') {
-        const destinationDbFile: FileDBProps = { ...trashTarget.dbScope, path: space.dbFile.path }
-        trashDbFile = destinationDbFile
+        let destinationDbFile: FileDBProps = { ...trashTarget.dbScope, path: space.dbFile.path }
         const name = fileName(space.realPath)
         const trashDir = path.join(trashTarget.path, dirName(space.dbFile.path))
-        const trashFile = path.join(trashDir, name)
+        let trashFile = path.join(trashDir, name)
         if (!(await isPathExists(trashDir))) {
           await makeDir(trashDir, true)
         }
+        // During an overwrite from trash, this path can be the active copy/move source.
+        // Keep that source stable and archive the overwritten destination under a dated name instead.
+        if (options?.protectedTrashPath && path.resolve(options.protectedTrashPath) === path.resolve(trashFile)) {
+          const datedDestination = await uniqueDatedFilePath(space.realPath)
+          trashFile = path.join(trashDir, fileName(datedDestination.path))
+          destinationDbFile = { ...destinationDbFile, path: path.join(dirName(destinationDbFile.path), fileName(trashFile)) }
+        }
+        trashDbFile = destinationDbFile
         if (isTaskContext) {
           sourceCleanupError = await this.filesTasksTransfer.delete(space, trashFile, trashTarget.temporaryRoot, isDir, signal, () =>
             this.moveExistingTrashFile(trashFile, destinationDbFile)

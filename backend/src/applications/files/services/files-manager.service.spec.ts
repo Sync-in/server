@@ -984,6 +984,61 @@ describe(FilesManager.name, () => {
   })
 
   describe('copyMove', () => {
+    const prepareExternalRootOverwriteRestore = (task?: Record<string, any>) => {
+      const trashDbScope = { ownerId: null, spaceId: 11, spaceExternalRootId: null, shareExternalId: null, inTrash: true }
+      const src = makeSpace({
+        id: 11,
+        repository: 'trash',
+        url: 'trash/project/documents/report.txt',
+        inTrashRepository: true,
+        inPersonalSpace: false,
+        realPath: '/data/spaces/project/trash/documents/report.txt',
+        realBasePath: '/data/spaces/project/trash',
+        dbFile: { ...trashDbScope, path: 'documents/report.txt' },
+        task
+      })
+      const dst = makeSpace({
+        id: 11,
+        url: 'files/project/archive/documents/report.txt',
+        inPersonalSpace: false,
+        realPath: '/mnt/archive/documents/report.txt',
+        realBasePath: '/mnt/archive',
+        dbFile: {
+          ownerId: null,
+          spaceId: 11,
+          spaceExternalRootId: 22,
+          shareExternalId: null,
+          path: 'documents/report.txt',
+          inTrash: false
+        }
+      })
+      const datedTrashFile = '/data/spaces/project/trash/documents/report-2026.txt'
+      vi.mocked(spacesPathUtils.trashTargetFromSpace).mockReturnValueOnce({
+        dbScope: trashDbScope,
+        mode: 'trash',
+        path: '/data/spaces/project/trash',
+        temporaryRoot: '/data/spaces/project/tmp/users/7'
+      })
+      setPathExists(
+        {
+          [src.realPath]: true,
+          [path.dirname(src.realPath)]: true,
+          [path.dirname(dst.realPath)]: true,
+          [dst.realPath]: true,
+          [datedTrashFile]: false
+        },
+        false
+      )
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(false)
+      vi.mocked(filesUtils.uniqueDatedFilePath).mockResolvedValueOnce({ isDir: false, path: datedTrashFile })
+      return {
+        datedTrashDb: { ...trashDbScope, path: 'documents/report-2026.txt' },
+        datedTrashFile,
+        dst,
+        src
+      }
+    }
+
     it('should copy file and emit add event', async () => {
       const src = makeSpace({
         id: 10,
@@ -1094,6 +1149,52 @@ describe(FilesManager.name, () => {
 
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(src.realPath, dst.realPath, false)
       expect(filesQueries.moveFiles).toHaveBeenCalledWith(src.dbFile, dst.dbFile, false)
+    })
+
+    it('should preserve the trash source while restoring over its occupied external-root destination', async () => {
+      const { datedTrashDb, datedTrashFile, dst, src } = prepareExternalRootOverwriteRestore()
+
+      await service.copyMove(user, src, dst, true, true)
+
+      expect(filesUtils.uniqueDatedFilePath).toHaveBeenCalledWith(dst.realPath)
+      expect(filesUtils.moveFiles).toHaveBeenCalledTimes(2)
+      expect(filesUtils.moveFiles).toHaveBeenNthCalledWith(1, dst.realPath, datedTrashFile, true)
+      expect(filesUtils.moveFiles).toHaveBeenNthCalledWith(2, src.realPath, dst.realPath, true)
+      expect(filesQueries.moveFiles).toHaveBeenCalledTimes(2)
+      expect(filesQueries.moveFiles).toHaveBeenNthCalledWith(1, dst.dbFile, datedTrashDb, false)
+      expect(filesQueries.moveFiles).toHaveBeenNthCalledWith(2, src.dbFile, dst.dbFile, false)
+    })
+
+    it('should preserve the trash source while copying over its occupied external-root destination', async () => {
+      const { datedTrashDb, datedTrashFile, dst, src } = prepareExternalRootOverwriteRestore()
+
+      await service.copyMove(user, src, dst, false, true)
+
+      expect(filesUtils.moveFiles).toHaveBeenCalledOnce()
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(dst.realPath, datedTrashFile, true)
+      expect(filesUtils.copyFiles).toHaveBeenCalledWith(src.realPath, dst.realPath, true, false)
+      expect(filesQueries.moveFiles).toHaveBeenCalledOnce()
+      expect(filesQueries.moveFiles).toHaveBeenCalledWith(dst.dbFile, datedTrashDb, false)
+    })
+
+    it('should preserve the trash source until an overwrite move task commits', async () => {
+      const task = { id: 'task-restore', type: FILE_OPERATION.MOVE, cacheKey: 'task-restore', props: {} }
+      const { datedTrashDb, datedTrashFile, dst, src } = prepareExternalRootOverwriteRestore(task)
+      const signal = new AbortController().signal
+      filesTasksTransfer.move.mockImplementationOnce(async (...args: any[]) => {
+        const deleteDestination = args[6] as () => Promise<void>
+        await deleteDestination()
+        return undefined
+      })
+
+      await service.copyMove(user, src, dst, true, true, false, undefined, signal)
+
+      expect(filesTasksTransfer.move).toHaveBeenCalledWith(user, src, dst, true, false, signal, expect.any(Function))
+      expect(filesUtils.moveFiles).toHaveBeenCalledOnce()
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(dst.realPath, datedTrashFile, true)
+      expect(filesQueries.moveFiles).toHaveBeenCalledTimes(2)
+      expect(filesQueries.moveFiles).toHaveBeenNthCalledWith(1, dst.dbFile, datedTrashDb, false)
+      expect(filesQueries.moveFiles).toHaveBeenNthCalledWith(2, src.dbFile, dst.dbFile, false)
     })
 
     it('should update the database before reporting an abortable move source cleanup failure', async () => {
