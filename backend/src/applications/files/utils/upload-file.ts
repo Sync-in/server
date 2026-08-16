@@ -1,24 +1,11 @@
 import { HttpStatus } from '@nestjs/common'
 import { FileError } from '../models/file-error'
+import type { UploadFileStreamLimiter, UploadQuotaSnapshot } from '../interfaces/upload-file.interface'
 import { maxFileSizeExceededError, storageQuotaExceededError } from './errors'
 import { temporaryFilePath } from './files'
 import { FILE_OPERATION } from '../constants/operations'
 
 const FASTIFY_MULTIPART_FILE_TOO_LARGE_CODE = 'FST_REQ_FILE_TOO_LARGE' as const
-
-export interface UploadFileStreamLimiter {
-  readonly initialFileSize: number
-  // Checks the number of bytes the current stream is expected to append.
-  assertKnownSize: (bytes: number) => void
-  // Checks the expected final file size, including the current range offset.
-  assertFinalSize: (bytes: number) => void
-  consume: (bytes: number) => void
-}
-
-export interface UploadQuotaSnapshot {
-  storageQuota?: number | null
-  storageUsage?: number
-}
 
 /**
  * Request-scoped upload limiter. It deliberately does not coordinate quota

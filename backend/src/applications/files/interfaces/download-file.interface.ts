@@ -15,3 +15,10 @@ export interface DownloadFileOptions {
   onProgress?: (bytes: number) => void
   signal?: AbortSignal
 }
+
+export interface DownloadFileRequestOptions {
+  allowPrivateIP?: boolean
+  maxRedirects?: number
+}
+
+export type DownloadStage = 'head' | 'validation' | 'get' | 'stream'

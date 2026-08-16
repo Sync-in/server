@@ -14,9 +14,9 @@ import { DEFAULT_CHECKSUM_ALGORITHM, DEFAULT_HIGH_WATER_MARK, EXTRA_MIMES_TYPE, 
 import { SYNC_TEMPORARY_FILE_PREFIX } from '../../sync/constants/sync'
 import type { FileDBProps } from '../interfaces/file-db-props.interface'
 import type { FileProps } from '../interfaces/file-props.interface'
+import type { WriteFromStreamOptions, WriteUploadStreamOptions } from '../interfaces/write-stream.interface'
 import { FileError } from '../models/file-error'
 import { maxFileSizeExceededError } from './errors'
-import type { UploadFileStreamLimiter } from './upload-file'
 
 export function sanitizePath(fPath: string): string {
   return path.normalize(fPath).replace(regExpPreventPathTraversal, '')
@@ -304,13 +304,6 @@ export function createProgressTransform(
   })
 }
 
-export interface WriteFromStreamOptions {
-  start?: number
-  signal?: AbortSignal
-  // Called before forwarding a chunk to the destination. Throwing aborts the pipeline.
-  accountBytes?: (bytes: number) => void
-}
-
 export function writeFromStream(rPath: string, stream: Readable, options: WriteFromStreamOptions = {}): Promise<void> {
   const { start = 0, signal, accountBytes } = options
   const dst: WriteStream = createWriteStream(rPath, { flags: start ? 'a' : 'w', start: start, highWaterMark: DEFAULT_HIGH_WATER_MARK })
@@ -359,13 +352,6 @@ export async function writeFromStreamAndChecksum(
   )
   hash.end()
   return hash.digest('hex')
-}
-
-export interface WriteUploadStreamOptions {
-  limiter: UploadFileStreamLimiter
-  signal?: AbortSignal
-  // Receives only bytes accepted by the limiter.
-  onProgress?: (bytes: number) => void
 }
 
 function uploadWriteOptions({ limiter, signal, onProgress }: WriteUploadStreamOptions): WriteFromStreamOptions {

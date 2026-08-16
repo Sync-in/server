@@ -25,6 +25,7 @@ import { COMPRESSION_EXTENSION } from '../constants/files'
 import { FILE_OPERATION } from '../constants/operations'
 import { ALL_DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPES, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
 import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto'
+import type { DeleteFileOptions } from '../interfaces/delete-file.interface'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileLock } from '../interfaces/file-lock.interface'
 import { FileLockProps } from '../interfaces/file-props.interface'
@@ -75,10 +76,6 @@ import { FilesTasksTransfer } from './tasks/files-tasks-transfer.service'
 import { createTar } from '../utils/tar-file'
 import { createZip } from '../utils/zip-file'
 import { FILE_ERROR } from '../constants/errors'
-
-interface DeleteOptions {
-  protectedTrashPath?: string
-}
 
 @Injectable()
 export class FilesManager {
@@ -557,7 +554,7 @@ export class FilesManager {
     }
   }
 
-  async delete(user: UserModel, space: SpaceEnv, dav?: { lockTokens: string[] }, signal?: AbortSignal, options?: DeleteOptions): Promise<void> {
+  async delete(user: UserModel, space: SpaceEnv, dav?: { lockTokens: string[] }, signal?: AbortSignal, options?: DeleteFileOptions): Promise<void> {
     const isTaskContext = Boolean(space.task?.cacheKey)
     if (!(await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')

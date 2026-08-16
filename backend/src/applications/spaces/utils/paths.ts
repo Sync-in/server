@@ -8,6 +8,7 @@ import { TEMPORARY_PATH } from '../../files/constants/files'
 import { isInternalTemporaryEntry, isInternalTemporaryPath, isPathInside } from '../../files/utils/files'
 import { UserModel } from '../../users/models/user.model'
 import { SPACE_REPOSITORY } from '../constants/spaces'
+import type { TrashTarget, TrashTargetResolution } from '../interfaces/space-trash.interface'
 import { SpaceEnv } from '../models/space-env.model'
 import { SpaceModel } from '../models/space.model'
 
@@ -79,20 +80,6 @@ export function realPathFromSpace(user: UserModel, space: SpaceEnv, withBasePath
   }
   return withBasePath ? [bPath, rPath] : rPath
 }
-
-export interface TrashTarget {
-  dbScope: Omit<FileDBProps, 'path'>
-  mode: 'trash'
-  path: string
-  temporaryRoot: string
-}
-
-export interface PermanentDeleteTarget {
-  mode: 'permanent'
-  reason: 'external-share'
-}
-
-export type TrashTargetResolution = TrashTarget | PermanentDeleteTarget
 
 export function trashTargetFromSpace(user: UserModel, space: SpaceEnv): TrashTargetResolution | null {
   const baseDbScope: Omit<FileDBProps, 'path'> = {

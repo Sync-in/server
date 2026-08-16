@@ -11,18 +11,11 @@ import { HTTP_METHOD } from '../../applications.constants'
 import type { SpaceEnv } from '../../spaces/models/space-env.model'
 import type { DownloadFileDto } from '../dto/file-operations.dto'
 import { FileTaskEvent } from '../events/file-events'
-import type { DownloadFileContentInfo, DownloadFileOptions } from '../interfaces/download-file.interface'
+import type { DownloadFileContentInfo, DownloadFileOptions, DownloadFileRequestOptions, DownloadStage } from '../interfaces/download-file.interface'
 import { FileError } from '../models/file-error'
 import { writeUploadFromStream } from './files'
 import { FILE_ERROR } from '../constants/errors'
 import { createUploadStreamLimiter } from './upload-file'
-
-interface DownloadFileRequestOptions {
-  allowPrivateIP?: boolean
-  maxRedirects?: number
-}
-
-type DownloadStage = 'head' | 'validation' | 'get' | 'stream'
 
 export class DownloadFile {
   private readonly logger = new Logger(DownloadFile.name)

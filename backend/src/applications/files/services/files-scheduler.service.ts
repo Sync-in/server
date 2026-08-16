@@ -18,6 +18,7 @@ import { UserModel } from '../../users/models/user.model'
 import { users } from '../../users/schemas/users.schema'
 import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../constants/cache'
 import { TEMPORARY_FILE_PREFIX, TEMPORARY_PATH } from '../constants/files'
+import type { TemporaryDirectoriesByUser, TemporaryDirectory, TemporaryDirectorySnapshot } from '../interfaces/file-scheduler.interface'
 import { FileTask, FileTaskStatus } from '../models/file-task'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { files } from '../schemas/files.schema'
@@ -27,18 +28,6 @@ import { FilesContentIndexer } from './files-content-indexer.service'
 import { FilesTasksManager } from './tasks/files-tasks-manager.service'
 import { FilesQuotaManager } from './files-quota-manager.service'
 import { FilesTrashRetention } from './files-trash-retention.service'
-
-interface TemporaryDirectory {
-  includeLegacyEntries: boolean
-  path: string
-}
-
-interface TemporaryDirectorySnapshot {
-  fileNames: string[]
-  path: string
-}
-
-type TemporaryDirectoriesByUser = Map<number, Map<string, TemporaryDirectory>>
 
 @Injectable()
 export class FilesScheduler {
