@@ -63,6 +63,20 @@ An external root attached to a native space deliberately uses the native space's
 deleted permanently, regardless of the actor type. There is no fallback to
 `<external-root>/.trash/` and no migration from such a directory.
 
+### Trash permissions and anchored roots
+
+Anchored root endpoints are virtual and cannot be deleted through file operations. Operations on their children use the intersection of the member's
+space permissions and the root permissions.
+
+When a root is anchored to a file or directory in a user's personal storage, deleting one of its children moves that entry to the personal trash of
+the root owner. It does not enter the native space trash, and other space members do not gain control over it through their space permissions. Native
+space files that are not anchored continue to use the native space trash.
+
+External roots are the exception. Deleting a child from an external root still requires the effective `DELETE` permission in the source context, but
+the entry then becomes owned by the native space trash. Its external-root identity and root permissions are not retained there, so subsequent trash
+operations use the space permissions. A member with `DELETE` on the space can therefore move the entry out of trash or delete it permanently. Moving
+it to another repository, including restoring it to an external root, additionally requires `ADD` on the destination.
+
 ## Deletion lifecycle
 
 For a resource whose target is a managed trash, deletion performs the following operations:
