@@ -31,7 +31,7 @@ export class SpaceEnv implements Pick<Space, 'id' | 'alias' | 'name' | 'enabled'
     owner?: { id: number; login: string }
     // root.externalPath or share.externalPath
     externalPath?: string
-    // in share case, if defined, it's an external child share with a parent
+    // in share case, if defined, it's an external child share and this is its highest parent share id
     externalParentShareId?: number
     file?: {
       // space and root are only used when the space is a share

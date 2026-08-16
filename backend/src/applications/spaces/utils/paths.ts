@@ -206,7 +206,7 @@ export function dbFileFromSpace(userId: number, space: SpaceEnv): FileDBProps {
     dbFile.spaceExternalRootId = space.inSharesRepository ? null : space.root.id
     if (space.inSharesRepository) {
       // in this case space.id is the share.id
-      // if the `externalParentShareId` property is defined, it's an external child share that must use the parent id
+      // if the `externalParentShareId` property is defined, the external child share must use its highest parent share id
       dbFile.shareExternalId = space.root?.externalParentShareId ? space.root.externalParentShareId : space.id
     } else {
       dbFile.shareExternalId = null
