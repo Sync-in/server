@@ -562,12 +562,15 @@ export class FilesManager {
     // file system deletion
     let forceDeleteInDB = false
     let sourceCleanupError: SourceCleanupError | undefined
+    let trashDbFile: FileDBProps | undefined
     if (space.inTrashRepository) {
       await removeFiles(space.realPath)
       FileEvent.emit('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: space.realPath })
     } else {
       const trashTarget = trashTargetFromSpace(user, space)
       if (trashTarget?.mode === 'trash') {
+        const destinationDbFile: FileDBProps = { ...trashTarget.dbScope, path: space.dbFile.path }
+        trashDbFile = destinationDbFile
         const name = fileName(space.realPath)
         const trashDir = path.join(trashTarget.path, dirName(space.dbFile.path))
         const trashFile = path.join(trashDir, name)
@@ -576,10 +579,10 @@ export class FilesManager {
         }
         if (isTaskContext) {
           sourceCleanupError = await this.filesTasksTransfer.delete(space, trashFile, trashTarget.temporaryRoot, isDir, signal, () =>
-            this.moveExistingTrashFile(space, trashFile)
+            this.moveExistingTrashFile(trashFile, destinationDbFile)
           )
         } else {
-          await this.moveExistingTrashFile(space, trashFile)
+          await this.moveExistingTrashFile(trashFile, destinationDbFile)
           await moveFiles(space.realPath, trashFile, true)
         }
         // emit an event for the file or directory moved to the trash
@@ -607,7 +610,11 @@ export class FilesManager {
       this.filesLockManager.removeLock(lock.key).catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: `${e}` }))
     }
     // Keep the database aligned with the completed filesystem operation before reporting a residual source.
-    await this.filesQueries.deleteFiles(space.dbFile, isDir, forceDeleteInDB)
+    if (trashDbFile) {
+      await this.filesQueries.moveFiles(space.dbFile, trashDbFile, isDir)
+    } else {
+      await this.filesQueries.deleteFiles(space.dbFile, isDir, forceDeleteInDB)
+    }
     if (sourceCleanupError) {
       this.logSourceCleanupError(sourceCleanupError)
       throw sourceCleanupError
@@ -843,11 +850,10 @@ export class FilesManager {
     }
   }
 
-  private async moveExistingTrashFile(space: SpaceEnv, trashFile: string): Promise<void> {
+  private async moveExistingTrashFile(trashFile: string, trashFileDB: FileDBProps): Promise<void> {
     if (!(await isPathExists(trashFile))) return
     const dstTrash = await uniqueDatedFilePath(trashFile)
     await moveFiles(trashFile, dstTrash.path)
-    const trashFileDB: FileDBProps = { ...space.dbFile, inTrash: true }
     const dstTrashFileDB: FileDBProps = { ...trashFileDB, path: path.join(dirName(trashFileDB.path), fileName(dstTrash.path)) }
     await this.filesQueries.moveFiles(trashFileDB, dstTrashFileDB, dstTrash.isDir)
   }

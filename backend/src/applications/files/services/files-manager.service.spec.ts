@@ -57,6 +57,7 @@ describe(FilesManager.name, () => {
 
   const user = { id: 7, login: 'john', tmpPath: '/data/users/john/tmp' } as any
   const targetTmpRoot = '/data/users/john/.sync-in-tmp/users/7'
+  const targetTrashDbScope = { ownerId: 7, spaceId: null, spaceExternalRootId: null, shareExternalId: null, inTrash: true }
   const temporaryPath = (operation: FILE_OPERATION, executionId: string, name: string, parentPath = targetTmpRoot): string =>
     path.join(parentPath, `${filesUtils.temporaryFilePrefix(operation, executionId)}${path.basename(name)}`)
 
@@ -211,6 +212,7 @@ describe(FilesManager.name, () => {
     vi.spyOn(spacesPermsUtils, 'canAccessToSpace').mockReturnValue(true)
     vi.spyOn(spacesPermsUtils, 'haveSpaceEnvPermissions').mockReturnValue(true)
     vi.spyOn(spacesPathUtils, 'trashTargetFromSpace').mockReturnValue({
+      dbScope: targetTrashDbScope,
       mode: 'trash',
       path: '/data/users/john/trash',
       temporaryRoot: targetTmpRoot
@@ -1053,6 +1055,47 @@ describe(FilesManager.name, () => {
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space: dst, action: ACTION.ADD, rPath: '/dst-base/dst.txt' })
     })
 
+    it('should restore a space-trash entry into an external root with the destination db scope', async () => {
+      const src = makeSpace({
+        id: 11,
+        repository: 'trash',
+        url: 'trash/project/documents/report.txt',
+        inTrashRepository: true,
+        inPersonalSpace: false,
+        realPath: '/data/spaces/project/trash/documents/report.txt',
+        realBasePath: '/data/spaces/project/trash',
+        dbFile: {
+          ownerId: null,
+          spaceId: 11,
+          spaceExternalRootId: null,
+          shareExternalId: null,
+          path: 'documents/report.txt',
+          inTrash: true
+        }
+      })
+      const dst = makeSpace({
+        id: 11,
+        url: 'files/project/archive/restored/report.txt',
+        inPersonalSpace: false,
+        realPath: '/mnt/archive/restored/report.txt',
+        realBasePath: '/mnt/archive',
+        dbFile: {
+          ownerId: null,
+          spaceId: 11,
+          spaceExternalRootId: 22,
+          shareExternalId: null,
+          path: 'restored/report.txt',
+          inTrash: false
+        }
+      })
+      prepareFileTransfer(src.realPath, dst.realPath)
+
+      await service.copyMove(user, src, dst, true)
+
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(src.realPath, dst.realPath, false)
+      expect(filesQueries.moveFiles).toHaveBeenCalledWith(src.dbFile, dst.dbFile, false)
+    })
+
     it('should update the database before reporting an abortable move source cleanup failure', async () => {
       const src = makeSpace({
         url: 'files/source/src.txt',
@@ -1139,7 +1182,11 @@ describe(FilesManager.name, () => {
 
   describe('delete', () => {
     it('should remove trash file, locks and db entries', async () => {
-      const space = makeSpace({ inTrashRepository: true, realPath: '/data/users/john/trash/old.txt' })
+      const space = makeSpace({
+        inTrashRepository: true,
+        realPath: '/data/users/john/trash/old.txt',
+        dbFile: { ...targetTrashDbScope, path: 'old.txt' }
+      })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
       vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(true)
       filesLockManager.getLocksByPath.mockResolvedValueOnce([{ key: 'lk-1' }])
@@ -1201,7 +1248,8 @@ describe(FilesManager.name, () => {
 
       expect(filesTasksTransfer.delete).toHaveBeenCalledWith(space, trashFile, targetTmpRoot, false, signal, expect.any(Function))
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
-      expect(filesQueries.deleteFiles).toHaveBeenCalledWith(space.dbFile, false, false)
+      expect(filesQueries.moveFiles).toHaveBeenCalledWith(space.dbFile, { ...targetTrashDbScope, path: 'documents/document.txt' }, false)
+      expect(filesQueries.deleteFiles).not.toHaveBeenCalled()
     })
 
     it('should keep the regular move path outside a task context', async () => {
@@ -1217,7 +1265,47 @@ describe(FilesManager.name, () => {
 
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(space.realPath, trashFile, true)
       expect(filesTasksTransfer.delete).not.toHaveBeenCalled()
+      expect(filesQueries.moveFiles).toHaveBeenCalledWith(space.dbFile, { ...targetTrashDbScope, path: 'documents/document.txt' }, false)
+      expect(filesQueries.deleteFiles).not.toHaveBeenCalled()
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.DELETE, rPath: trashFile })
+    })
+
+    it('should move an external-root db entry into the canonical space-trash scope and preserve a collision', async () => {
+      const sourceDb = {
+        ownerId: null,
+        spaceId: 11,
+        spaceExternalRootId: 22,
+        shareExternalId: null,
+        path: 'documents/report.txt',
+        inTrash: false
+      }
+      const trashDbScope = { ownerId: null, spaceId: 11, spaceExternalRootId: null, shareExternalId: null, inTrash: true }
+      const trashDb = { ...trashDbScope, path: sourceDb.path }
+      const space = makeSpace({
+        id: 11,
+        alias: 'project',
+        inPersonalSpace: false,
+        realPath: '/mnt/archive/documents/report.txt',
+        dbFile: sourceDb
+      })
+      const trashFile = '/data/spaces/project/trash/documents/report.txt'
+      const renamedTrashFile = '/data/spaces/project/trash/documents/report-2026.txt'
+      vi.mocked(spacesPathUtils.trashTargetFromSpace).mockReturnValueOnce({
+        dbScope: trashDbScope,
+        mode: 'trash',
+        path: '/data/spaces/project/trash',
+        temporaryRoot: '/data/spaces/project/tmp/users/7'
+      })
+      prepareFileTransfer(space.realPath, trashFile, true)
+      vi.mocked(filesUtils.uniqueDatedFilePath).mockResolvedValueOnce({ isDir: false, path: renamedTrashFile })
+
+      await service.delete(user, space)
+
+      expect(filesUtils.moveFiles).toHaveBeenNthCalledWith(1, trashFile, renamedTrashFile)
+      expect(filesUtils.moveFiles).toHaveBeenNthCalledWith(2, space.realPath, trashFile, true)
+      expect(filesQueries.moveFiles).toHaveBeenNthCalledWith(1, trashDb, { ...trashDbScope, path: 'documents/report-2026.txt' }, false)
+      expect(filesQueries.moveFiles).toHaveBeenNthCalledWith(2, sourceDb, trashDb, false)
+      expect(filesQueries.deleteFiles).not.toHaveBeenCalled()
     })
   })
 

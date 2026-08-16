@@ -17,6 +17,7 @@ vi.mock('../../../configuration/config.environment', () => ({
 
 describe('temporary path resolution', () => {
   const user = new UserModel({ id: 42, login: 'alice', role: USER_ROLE.USER } as any)
+  const emptyTrashDbScope = { ownerId: null, spaceId: null, spaceExternalRootId: null, shareExternalId: null, inTrash: true }
 
   it('places personal-space artifacts in the personal storage root', () => {
     expect(temporaryRootFromSpace(user, { inPersonalSpace: true } as any)).toBe('/data/users/alice/.sync-in-tmp/users/42')
@@ -58,28 +59,44 @@ describe('temporary path resolution', () => {
 
   it('resolves trash and staging together from the target space', () => {
     expect(trashTargetFromSpace(user, { inPersonalSpace: true } as any)).toEqual({
+      dbScope: { ...emptyTrashDbScope, ownerId: 42 },
       mode: 'trash',
       path: '/data/users/alice/trash',
       temporaryRoot: '/data/users/alice/.sync-in-tmp/users/42'
     })
-    expect(trashTargetFromSpace(user, { alias: 'project' } as any)).toEqual({
+    expect(trashTargetFromSpace(user, { id: 1, alias: 'project' } as any)).toEqual({
+      dbScope: { ...emptyTrashDbScope, spaceId: 1 },
       mode: 'trash',
       path: '/data/spaces/project/trash',
       temporaryRoot: '/data/spaces/project/tmp/users/42'
     })
     expect(
       trashTargetFromSpace(user, {
+        id: 1,
         alias: 'project',
         root: { externalPath: '/mnt/archive' },
         inFilesRepository: true,
         inSharesRepository: false
       } as any)
     ).toEqual({
+      dbScope: { ...emptyTrashDbScope, spaceId: 1 },
       mode: 'trash',
       path: '/data/spaces/project/trash',
       temporaryRoot: '/data/spaces/project/tmp/users/42'
     })
     expect(trashTargetFromSpace(user, { root: { file: { space: { id: 1, alias: 'project' } } } } as any)).toEqual({
+      dbScope: { ...emptyTrashDbScope, spaceId: 1 },
+      mode: 'trash',
+      path: '/data/spaces/project/trash',
+      temporaryRoot: '/data/spaces/project/tmp/users/42'
+    })
+    expect(
+      trashTargetFromSpace(user, {
+        root: { externalPath: '/mnt/archive', file: { space: { id: 1, alias: 'project' } } },
+        inSharesRepository: true
+      } as any)
+    ).toEqual({
+      dbScope: { ...emptyTrashDbScope, spaceId: 1 },
       mode: 'trash',
       path: '/data/spaces/project/trash',
       temporaryRoot: '/data/spaces/project/tmp/users/42'
@@ -91,7 +108,8 @@ describe('temporary path resolution', () => {
       mode: 'permanent',
       reason: 'external-share'
     })
-    expect(trashTargetFromSpace(user, { root: { file: { path: 'documents' }, owner: { login: 'bob' } } } as any)).toEqual({
+    expect(trashTargetFromSpace(user, { root: { file: { path: 'documents' }, owner: { id: 7, login: 'bob' } } } as any)).toEqual({
+      dbScope: { ...emptyTrashDbScope, ownerId: 7 },
       mode: 'trash',
       path: '/data/users/bob/trash',
       temporaryRoot: '/data/users/bob/.sync-in-tmp/users/42'

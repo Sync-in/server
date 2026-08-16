@@ -81,6 +81,7 @@ export function realPathFromSpace(user: UserModel, space: SpaceEnv, withBasePath
 }
 
 export interface TrashTarget {
+  dbScope: Omit<FileDBProps, 'path'>
   mode: 'trash'
   path: string
   temporaryRoot: string
@@ -94,12 +95,21 @@ export interface PermanentDeleteTarget {
 export type TrashTargetResolution = TrashTarget | PermanentDeleteTarget
 
 export function trashTargetFromSpace(user: UserModel, space: SpaceEnv): TrashTargetResolution | null {
-  const userTarget = (login: string): TrashTarget => ({
+  const baseDbScope: Omit<FileDBProps, 'path'> = {
+    ownerId: null,
+    spaceId: null,
+    spaceExternalRootId: null,
+    shareExternalId: null,
+    inTrash: true
+  }
+  const userTarget = (ownerId: number, login: string): TrashTarget => ({
+    dbScope: { ...baseDbScope, ownerId },
     mode: 'trash',
     path: UserModel.getTrashPath(login),
     temporaryRoot: temporaryRootFromStorage(UserModel.getHomePath(login), user.id)
   })
-  const spaceTarget = (alias: string): TrashTarget => ({
+  const spaceTarget = (spaceId: number, alias: string): TrashTarget => ({
+    dbScope: { ...baseDbScope, spaceId },
     mode: 'trash',
     path: SpaceModel.getTrashPath(alias),
     temporaryRoot: SpaceModel.getUserTmpPath(alias, user.id)
@@ -107,14 +117,14 @@ export function trashTargetFromSpace(user: UserModel, space: SpaceEnv): TrashTar
 
   if (space.inPersonalSpace) {
     // personal user space
-    return userTarget(user.login)
+    return userTarget(user.id, user.login)
   } else if (space.root?.externalPath) {
     // external path from space or share
     // space case: use the space trash
     if (space.root.file?.space?.alias) {
-      return spaceTarget(space.root.file.space.alias)
+      return spaceTarget(space.root.file.space.id, space.root.file.space.alias)
     } else if (space.inFilesRepository && !space.inSharesRepository) {
-      return spaceTarget(space.alias)
+      return spaceTarget(space.id, space.alias)
     }
     // external shares have no managed owner and are deleted permanently
     if (space.inSharesRepository) {
@@ -123,13 +133,13 @@ export function trashTargetFromSpace(user: UserModel, space: SpaceEnv): TrashTar
     return null
   } else if (space.root?.file?.path && space.root.owner?.login) {
     // space root is linked to a file in a personal space
-    return userTarget(space.root.owner.login)
+    return userTarget(space.root.owner.id, space.root.owner.login)
   } else if (space.root?.file?.space?.id) {
     // share linked to a space (with an external path or not)
-    return spaceTarget(space.root.file.space.alias)
+    return spaceTarget(space.root.file.space.id, space.root.file.space.alias)
   } else if (space.alias) {
     // space files (no root)
-    return spaceTarget(space.alias)
+    return spaceTarget(space.id, space.alias)
   }
   return null
 }
