@@ -4,7 +4,8 @@ import path from 'node:path'
 import { FileDBProps } from '../../files/interfaces/file-db-props.interface'
 import { FileProps } from '../../files/interfaces/file-props.interface'
 import { FileError } from '../../files/models/file-error'
-import { isPathInside } from '../../files/utils/files'
+import { TEMPORARY_PATH } from '../../files/constants/files'
+import { isInternalTemporaryEntry, isInternalTemporaryPath, isPathInside } from '../../files/utils/files'
 import { UserModel } from '../../users/models/user.model'
 import { SPACE_REPOSITORY } from '../constants/spaces'
 import { SpaceEnv } from '../models/space-env.model'
@@ -70,34 +71,103 @@ export function realPathFromSpace(user: UserModel, space: SpaceEnv, withBasePath
   if (!isPathInside(bPath, rPath, true)) {
     throw new FileError(HttpStatus.FORBIDDEN, 'Location is not allowed')
   }
+  const externalBasePathContainsInternalEntry =
+    Boolean(space.root?.externalPath || space.root?.file?.root?.id) && path.resolve(bPath).split(path.sep).some(isInternalTemporaryEntry)
+  const rootFilePathContainsInternalEntry = space.root?.file?.path?.split(/[/\\]/).some(isInternalTemporaryEntry)
+  if (externalBasePathContainsInternalEntry || rootFilePathContainsInternalEntry || isInternalTemporaryPath(bPath, rPath)) {
+    throw new FileError(HttpStatus.FORBIDDEN, 'Internal temporary locations are not accessible')
+  }
   return withBasePath ? [bPath, rPath] : rPath
 }
 
-export function realTrashPathFromSpace(user: UserModel, space: SpaceEnv) {
+export interface TrashTarget {
+  mode: 'trash'
+  path: string
+  temporaryRoot: string
+}
+
+export interface PermanentDeleteTarget {
+  mode: 'permanent'
+  reason: 'external-share'
+}
+
+export type TrashTargetResolution = TrashTarget | PermanentDeleteTarget
+
+export function trashTargetFromSpace(user: UserModel, space: SpaceEnv): TrashTargetResolution | null {
+  const userTarget = (login: string): TrashTarget => ({
+    mode: 'trash',
+    path: UserModel.getTrashPath(login),
+    temporaryRoot: temporaryRootFromStorage(UserModel.getHomePath(login), user.id)
+  })
+  const spaceTarget = (alias: string): TrashTarget => ({
+    mode: 'trash',
+    path: SpaceModel.getTrashPath(alias),
+    temporaryRoot: SpaceModel.getUserTmpPath(alias, user.id)
+  })
+
   if (space.inPersonalSpace) {
     // personal user space
-    return UserModel.getTrashPath(user.login)
+    return userTarget(user.login)
   } else if (space.root?.externalPath) {
     // external path from space or share
     // space case: use the space trash
     if (space.root.file?.space?.alias) {
-      return SpaceModel.getTrashPath(space.root.file.space.alias)
+      return spaceTarget(space.root.file.space.alias)
     } else if (space.inFilesRepository && !space.inSharesRepository) {
-      return SpaceModel.getTrashPath(space.alias)
+      return spaceTarget(space.alias)
     }
-    // share case: use the user's trash because this type of share has no owner
-    return UserModel.getTrashPath(user.login)
+    // external shares have no managed owner and are deleted permanently
+    if (space.inSharesRepository) {
+      return { mode: 'permanent', reason: 'external-share' }
+    }
+    return null
   } else if (space.root?.file?.path && space.root.owner?.login) {
     // space root is linked to a file in a personal space
-    return UserModel.getTrashPath(space.root.owner.login)
+    return userTarget(space.root.owner.login)
   } else if (space.root?.file?.space?.id) {
     // share linked to a space (with an external path or not)
-    return SpaceModel.getTrashPath(space.root.file.space.alias)
+    return spaceTarget(space.root.file.space.alias)
   } else if (space.alias) {
     // space files (no root)
-    return SpaceModel.getTrashPath(space.alias)
+    return spaceTarget(space.alias)
   }
   return null
+}
+
+export function temporaryRootFromStorage(storageRoot: string, userId: number): string {
+  if (!Number.isSafeInteger(userId) || userId <= 0) {
+    throw new FileError(HttpStatus.BAD_REQUEST, 'Invalid temporary-file owner')
+  }
+  const rootPath = path.resolve(storageRoot)
+  const usersTmpPath = path.resolve(rootPath, TEMPORARY_PATH.STORAGE, TEMPORARY_PATH.ACTORS)
+  const userTmpPath = path.resolve(usersTmpPath, String(userId))
+  if (!isPathInside(rootPath, usersTmpPath) || !isPathInside(usersTmpPath, userTmpPath)) {
+    throw new FileError(HttpStatus.FORBIDDEN, 'Temporary location is not allowed')
+  }
+  return userTmpPath
+}
+
+export function temporaryRootFromSpace(user: UserModel, space: SpaceEnv): string {
+  // resolve an actor-isolated temporary directory on the same storage as the target
+  if (space.inPersonalSpace) {
+    return temporaryRootFromStorage(UserModel.getHomePath(user.login), user.id)
+  }
+  if (space.root?.externalPath) {
+    return temporaryRootFromStorage(space.root.externalPath, user.id)
+  }
+  if (space.root?.file?.path && space.root.owner?.login) {
+    return temporaryRootFromStorage(UserModel.getHomePath(space.root.owner.login), user.id)
+  }
+  if (space.root?.file?.space?.id) {
+    if (space.root.file.root?.id) {
+      return temporaryRootFromStorage(space.root.file.root.externalPath, user.id)
+    }
+    return SpaceModel.getUserTmpPath(space.root.file.space.alias, user.id)
+  }
+  if (space.alias) {
+    return SpaceModel.getUserTmpPath(space.alias, user.id)
+  }
+  throw new FileError(HttpStatus.NOT_FOUND, 'Space root not found')
 }
 
 export function realPathFromRootFile(f: FileProps): string {

@@ -1,24 +1,8 @@
 import { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
-import path from 'node:path'
 import { FILE_OPERATION } from '../constants/operations'
-import { isCrossDevice, walkDir } from './files'
+import { isCrossDevice, isInternalTemporaryEntry, walkDir } from './files'
 import { FileTaskProps, FileTaskStatus } from '../models/file-task'
-
-export function taskTemporaryPrefix(cacheKey: string): string {
-  return `~${cacheKey}-`
-}
-
-export function taskTemporaryPath(parentPath: string, cacheKey: string, name: string): string {
-  return path.join(parentPath, `${taskTemporaryPrefix(cacheKey)}${path.basename(name)}`)
-}
-
-export async function createTaskTemporaryDir(parentPath: string, cacheKey: string, name: string): Promise<string> {
-  await fs.mkdir(parentPath, { recursive: true })
-  const temporaryPath = taskTemporaryPath(parentPath, cacheKey, name)
-  await fs.mkdir(temporaryPath)
-  return temporaryPath
-}
 
 export async function isTaskCancellable(type: FILE_OPERATION, srcPath: string, dstPath?: string): Promise<boolean> {
   switch (type) {
@@ -63,7 +47,8 @@ export async function countDirEntriesAndSize(rPath: string): Promise<Pick<FileTa
         }
       }
     },
-    ignoredErrors
+    ignoredErrors,
+    (entry) => !isInternalTemporaryEntry(entry.name)
   )
 
   return entriesCount

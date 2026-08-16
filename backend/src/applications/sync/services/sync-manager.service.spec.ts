@@ -27,6 +27,7 @@ vi.mock('fs/promises', () => ({
 vi.mock('../../files/utils/files', () => ({
   __esModule: true,
   checksumFile: vi.fn(),
+  isInternalTemporaryEntry: vi.fn((name: string) => name === '.sync-in-tmp' || name.startsWith('.sync-in.')),
   isPathExists: vi.fn(),
   isPathIsDir: vi.fn(),
   removeFiles: vi.fn(),
@@ -529,6 +530,8 @@ describe(SyncManager.name, () => {
         if (dir === base) {
           return [
             makeDirent('special', base, 'other'),
+            makeDirent('.sync-in-tmp', base, 'dir'),
+            makeDirent('.sync-in.file4', base, 'file'),
             makeDirent('dir1', base, 'dir'),
             makeDirent('ignoredName', base, 'file'),
             makeDirent('fileStatError', base, 'file'),
@@ -578,6 +581,7 @@ describe(SyncManager.name, () => {
 
       const computed = results.find((o) => o['/file4'])?.['/file4']
       expect(computed[F_STAT.CHECKSUM]).toBe('computed-hash')
+      expect(fsPromises.readdir.mock.calls.map(([directory]) => directory)).not.toContain(path.join(base, '.sync-in-tmp'))
     })
 
     it('should throw a generic error when readdir fails', async () => {

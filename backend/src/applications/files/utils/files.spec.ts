@@ -1,5 +1,5 @@
 import { HttpStatus } from '@nestjs/common'
-import fs, { access, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import fs, { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
@@ -10,11 +10,13 @@ import { storageQuotaExceededError } from './errors'
 import {
   createSizeLimiter,
   isCrossDevice,
+  isInternalTemporaryEntry,
+  isInternalTemporaryPath,
   isPathInside,
-  makeTempDir,
   sanitizeName,
-  tempFilePath,
-  temporaryPathPrefix,
+  temporaryFileName,
+  temporaryFilePath,
+  temporaryFilePrefix,
   writeFromStream,
   writeFromStreamAndChecksum,
   writeUploadFromStream,
@@ -53,6 +55,22 @@ describe(isPathInside.name, () => {
     expect(isPathInside(path.parse(basePath).root, path.parse(basePath).root)).toBe(false)
     expect(isPathInside(basePath, path.join(basePath, '..', 'zip-slip-proof.txt'))).toBe(false)
     expect(isPathInside(basePath, path.join(path.sep, 'tmp', 'output-evil', 'file.txt'))).toBe(false)
+  })
+})
+
+describe(isInternalTemporaryEntry.name, () => {
+  it('reserves storage and Sync temporary names only', () => {
+    expect(isInternalTemporaryEntry('.sync-in-tmp')).toBe(true)
+    expect(isInternalTemporaryEntry('.sync-in.uploading')).toBe(true)
+    expect(isInternalTemporaryEntry('.sync-in')).toBe(false)
+    expect(isInternalTemporaryEntry('.sync-in-tmp-user')).toBe(false)
+  })
+
+  it('checks path segments relative to the exposed repository root', () => {
+    const basePath = path.join(path.sep, 'data', 'users', '.sync-in.user')
+
+    expect(isInternalTemporaryPath(basePath, path.join(basePath, 'documents', '.sync-in.uploading'))).toBe(true)
+    expect(isInternalTemporaryPath(basePath, path.join(basePath, 'documents'))).toBe(false)
   })
 })
 
@@ -210,45 +228,18 @@ describe('upload stream writers', () => {
   })
 })
 
-describe(makeTempDir.name, () => {
-  let tmpDir: string
+describe(temporaryFilePath.name, () => {
+  it('uses the operation, execution id and sanitized basename', () => {
+    const parentPath = path.join(path.sep, 'storage', '.sync-in-tmp', 'users', '42')
 
-  beforeEach(async () => {
-    tmpDir = await mkdtemp(path.join(os.tmpdir(), 'make-temp-dir-'))
+    expect(temporaryFilePath(parentPath, '../report.pdf', 'upload', 'task/id')).toBe(path.join(parentPath, '~tmp-upload-task-id-report.pdf'))
+    expect(temporaryFilePrefix('compress', 'task-id')).toBe('~tmp-compress-task-id-')
   })
 
-  afterEach(async () => {
-    await rm(tmpDir, { recursive: true, force: true })
-  })
+  it('keeps generated names within the filesystem byte limit while preserving the extension', () => {
+    const name = temporaryFileName(`${'é'.repeat(200)}.tar.gz`, 'compress', 'task-id')
 
-  it('creates distinct directories with the requested prefix', async () => {
-    const firstPath = await makeTempDir(tmpDir, 'extract-')
-    const secondPath = await makeTempDir(tmpDir, 'extract-')
-
-    expect(firstPath).not.toBe(secondPath)
-    expect(path.basename(firstPath)).toMatch(/^extract-/)
-    await expect(access(firstPath)).resolves.toBeUndefined()
-    await expect(access(secondPath)).resolves.toBeUndefined()
-  })
-})
-
-describe(tempFilePath.name, () => {
-  it('returns safe distinct paths with the requested parent and prefix', () => {
-    const parentPath = path.join(path.sep, 'tmp', 'user')
-    const firstPath = tempFilePath(parentPath, 'archive-compress-')
-    const secondPath = tempFilePath(parentPath, 'archive-compress-')
-
-    expect(firstPath).not.toBe(secondPath)
-    expect(path.dirname(firstPath)).toBe(parentPath)
-    expect(path.basename(firstPath)).toMatch(/^archive-compress-/)
-    expect(path.dirname(tempFilePath(parentPath, path.join('..', 'archive-')))).toBe(parentPath)
-  })
-})
-
-describe(temporaryPathPrefix.name, () => {
-  it('uses the destination name and operation', () => {
-    expect(temporaryPathPrefix('/destination/report.pdf', 'upload')).toBe('report.pdf-upload-')
-    expect(temporaryPathPrefix('/destination', 'extract')).toBe('destination-extract-')
-    expect(temporaryPathPrefix('', 'download')).toBe('file-download-')
+    expect(Buffer.byteLength(name)).toBeLessThanOrEqual(255)
+    expect(name.endsWith('.gz')).toBe(true)
   })
 })

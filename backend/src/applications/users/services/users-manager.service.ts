@@ -16,7 +16,7 @@ import { convertTempImageToPng, generateAvatar, imgMimeTypePrefix, pngMimeType, 
 import { createLightSlug, genPassword } from '../../../common/shared'
 import { configuration, serverConfig } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/cache.service'
-import { isPathExists, removeFiles, sanitizeName } from '../../files/utils/files'
+import { isPathExists, removeFiles, sanitizeName, temporaryFilePath } from '../../files/utils/files'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { GROUP_TYPE } from '../constants/group'
@@ -207,7 +207,7 @@ export class UsersManager {
     if (!part.mimetype.startsWith(imgMimeTypePrefix)) {
       throw new HttpException('Unsupported file type', HttpStatus.BAD_REQUEST)
     }
-    const tmpPath = path.join(req.user.tmpPath, USER_AVATAR_FILE_NAME)
+    const tmpPath = temporaryFilePath(req.user.tmpPath, USER_AVATAR_FILE_NAME, 'avatar')
     try {
       await pipeline(part.file, createWriteStream(tmpPath))
     } catch (e) {
@@ -596,7 +596,7 @@ export class UsersManager {
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
     }
     // guest has no space but a temporary directory
-    return this.adminUsersManager.deleteUserOrGuest(guest.id, guest.login, { deleteSpace: true, isGuest: true })
+    return this.adminUsersManager.deleteUserOrGuest(guest.id, guest.login, { deleteSpace: true })
   }
 
   searchMembers(user: UserModel, searchMembersDto: SearchMembersDto): Promise<Member[]> {

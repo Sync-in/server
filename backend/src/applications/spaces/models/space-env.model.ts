@@ -1,6 +1,7 @@
 import { uniquePermissions } from '../../../common/functions'
 import { FileDBProps } from '../../files/interfaces/file-db-props.interface'
 import { FileTaskProps } from '../../files/models/file-task'
+import { FILE_OPERATION } from '../../files/constants/operations'
 import { UserModel } from '../../users/models/user.model'
 import { SPACE_ALIAS, SPACE_ALL_OPERATIONS, SPACE_OPERATION, SPACE_PERMS_SEP, SPACE_REPOSITORY, SPACE_ROLE } from '../constants/spaces'
 import { Space } from '../schemas/space.interface'
@@ -62,7 +63,7 @@ export class SpaceEnv implements Pick<Space, 'id' | 'alias' | 'name' | 'enabled'
   storageQuota: number
   quotaIsExceeded = false
   // event
-  task?: { cacheKey: string; props: FileTaskProps }
+  task?: { id: string; type: FILE_OPERATION; cacheKey: string; props: FileTaskProps }
 
   constructor(props: Partial<SpaceEnv>, rootAlias = '', mustHaveRoot = true) {
     Object.assign(this, props)

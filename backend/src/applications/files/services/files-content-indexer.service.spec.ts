@@ -451,6 +451,8 @@ describe(FilesContentIndexer.name, () => {
     const readdirSpy = vi.spyOn(fs, 'readdir')
     readdirSpy.mockResolvedValueOnce([
       { parentPath: '/root', name: 'sub', isDirectory: () => true },
+      { parentPath: '/root', name: '.sync-in-tmp', isDirectory: () => true },
+      { parentPath: '/root', name: '.sync-in.document.txt', isDirectory: () => false },
       { parentPath: '/root', name: 'a.txt', isDirectory: () => false }
     ] as any)
     readdirSpy.mockResolvedValueOnce([{ parentPath: '/root/sub', name: 'b.txt', isDirectory: () => false }] as any)
@@ -468,6 +470,7 @@ describe(FilesContentIndexer.name, () => {
     }
 
     expect(yielded.map((f) => f.name)).toEqual(['b.txt', 'a.txt'])
+    expect(readdirSpy.mock.calls.map(([directory]) => directory)).not.toContain('/root/.sync-in-tmp')
   })
 
   it('should skip non-indexable files in getFileMetadata', async () => {

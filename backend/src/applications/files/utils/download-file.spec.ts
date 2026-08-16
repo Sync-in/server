@@ -10,8 +10,7 @@ import type { Mock } from 'vitest'
 import { FILE_ERROR } from '../constants/errors'
 
 vi.mock('./files', () => ({
-  writeUploadFromStream: vi.fn(),
-  temporaryPathPrefix: vi.fn()
+  writeUploadFromStream: vi.fn()
 }))
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn()

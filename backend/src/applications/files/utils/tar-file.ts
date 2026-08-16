@@ -5,7 +5,7 @@ import { pipeline } from 'node:stream/promises'
 import { create, type Pack, type WriteEntry } from 'tar'
 import { DEFAULT_HIGH_WATER_MARK } from '../constants/files'
 import { storageQuotaExceededError } from './errors'
-import { createProgressTransform, fileName, isPathInside } from './files'
+import { createProgressTransform, fileName, isInternalTemporaryEntry, isPathInside } from './files'
 
 export interface TarFileEntry {
   name: string
@@ -58,12 +58,16 @@ export async function createTar(
     throw new Error('Cannot create a TAR archive without entries')
   }
 
-  const resolvedPaths = entries.map(({ path: entryPath }) => path.resolve(entryPath))
+  const archiveEntries = entries.filter(({ path: entryPath }) => !isInternalTemporaryEntry(path.basename(path.resolve(entryPath))))
+  if (archiveEntries.length === 0) {
+    throw new Error('Cannot create a TAR archive without entries')
+  }
+  const resolvedPaths = archiveEntries.map(({ path: entryPath }) => path.resolve(entryPath))
   const stats = await Promise.all(resolvedPaths.map((entryPath) => lstat(entryPath)))
   signal?.throwIfAborted()
   const directoryPaths = new Set(resolvedPaths.filter((_entryPath, index) => stats[index].isDirectory()))
   const selectedDirectoryPaths = [...directoryPaths]
-  const selectedEntries = entries
+  const selectedEntries = archiveEntries
     .map((entry, index) => ({ entry, realPath: resolvedPaths[index] }))
     .filter(({ realPath }) => !selectedDirectoryPaths.some((parentPath) => isPathInside(parentPath, realPath)))
   const roots = archiveRoots(
@@ -94,6 +98,7 @@ export async function createTar(
       cwd,
       filter: (entryPath, entry) => {
         const realPath = path.resolve(cwd, entryPath)
+        if (isInternalTemporaryEntry(path.basename(realPath))) return false
         const entryType = 'type' in entry ? entry.type : undefined
         const isSymbolicLink = 'type' in entry ? entry.type === 'SymbolicLink' : entry.isSymbolicLink()
         const hasMultipleFileLinks = !('type' in entry) && entry.isFile() && entry.nlink > 1

@@ -58,7 +58,7 @@ export class AdminUsersController {
   @Delete(`${ADMIN_USERS_ROUTE.USERS}/:id`)
   @UseGuards(AuthTwoFaVerificationGuard)
   deleteUser(@Param('id', ParseIntPipe) userId: number, @Body() deleteUserDto: DeleteUserDto): Promise<void> {
-    return this.adminUsersManager.deleteUserOrGuestFromAdmin(userId, { ...deleteUserDto, isGuest: false })
+    return this.adminUsersManager.deleteUserFromAdmin(userId, deleteUserDto)
   }
 
   @Get(`${ADMIN_USERS_ROUTE.GUESTS}/${ADMIN_USERS_ROUTE.LIST}`)
@@ -85,8 +85,8 @@ export class AdminUsersController {
 
   @Delete(`${ADMIN_USERS_ROUTE.GUESTS}/:id`)
   @UseGuards(AuthTwoFaVerificationGuard)
-  deleteGuest(@Param('id', ParseIntPipe) guestId: number, @Body() deleteUserDto: DeleteUserDto): Promise<void> {
-    return this.adminUsersManager.deleteUserOrGuestFromAdmin(guestId, { ...deleteUserDto, isGuest: true })
+  deleteGuest(@Param('id', ParseIntPipe) guestId: number): Promise<void> {
+    return this.adminUsersManager.deleteGuestFromAdmin(guestId)
   }
 
   @Search(ADMIN_USERS_ROUTE.MEMBERS)

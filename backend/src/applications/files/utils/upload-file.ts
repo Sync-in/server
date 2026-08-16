@@ -1,9 +1,8 @@
 import { HttpStatus } from '@nestjs/common'
-import path from 'node:path'
-import { randomUUID } from 'node:crypto'
 import { FileError } from '../models/file-error'
 import { maxFileSizeExceededError, storageQuotaExceededError } from './errors'
-import { temporaryPathPrefix } from './files'
+import { temporaryFilePath } from './files'
+import { FILE_OPERATION } from '../constants/operations'
 
 const FASTIFY_MULTIPART_FILE_TOO_LARGE_CODE = 'FST_REQ_FILE_TOO_LARGE' as const
 
@@ -128,5 +127,5 @@ export function isMultipartFileTooLargeError(e: any): boolean {
 }
 
 export function uploadTmpFilePath(tmpPath: string, partFileName: string): string {
-  return path.join(tmpPath, `${temporaryPathPrefix(partFileName, 'upload')}${randomUUID()}`)
+  return temporaryFilePath(tmpPath, partFileName, FILE_OPERATION.UPLOAD)
 }

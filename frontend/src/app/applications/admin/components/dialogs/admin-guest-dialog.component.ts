@@ -4,7 +4,6 @@ import { Component, inject } from '@angular/core'
 import { ReactiveFormsModule } from '@angular/forms'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
-import type { DeleteUserDto } from '@sync-in-server/backend/src/applications/users/dto/delete-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
 import { L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TabDirective, TabHeadingDirective, TabsetComponent } from 'ngx-bootstrap/tabs'
@@ -76,7 +75,7 @@ export class AdminGuestDialogComponent extends UserGuestDialogComponent {
       if (auth2FaHeaders === false) {
         return
       }
-      this.adminService.deleteUser(this.guest.id, { deleteSpace: true, isGuest: true } satisfies DeleteUserDto, auth2FaHeaders).subscribe({
+      this.adminService.deleteGuest(this.guest.id, auth2FaHeaders).subscribe({
         next: () => {
           this.guestChange.emit(['delete', this.guest])
           this.layout.sendNotification('success', 'Guest deleted', this.guest.login)

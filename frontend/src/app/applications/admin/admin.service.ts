@@ -96,10 +96,14 @@ export class AdminService {
   }
 
   deleteUser(userId: number, deleteUserDto: DeleteUserDto, twoFaHeaders: HttpHeaders): Observable<void> {
-    return this.http.request<void>('delete', `${deleteUserDto.isGuest ? API_ADMIN_GUESTS : API_ADMIN_USERS}/${userId}`, {
+    return this.http.request<void>('delete', `${API_ADMIN_USERS}/${userId}`, {
       headers: twoFaHeaders,
       body: deleteUserDto
     })
+  }
+
+  deleteGuest(guestId: number, twoFaHeaders: HttpHeaders): Observable<void> {
+    return this.http.delete<void>(`${API_ADMIN_GUESTS}/${guestId}`, { headers: twoFaHeaders })
   }
 
   browseGroup(name?: string, personalGroups = false): Observable<GroupBrowseModel> {

@@ -16,6 +16,8 @@ import { SHARE_ALL_OPERATIONS } from '../constants/shares'
 import { SharesManager } from './shares-manager.service'
 import { SharesQueries } from './shares-queries.service'
 import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
+import * as filesUtils from '../../files/utils/files'
+import { UserModel } from '../../users/models/user.model'
 
 // Mock classes and utility modules used by SharesManager
 vi.mock('../../spaces/models/space-env.model', () => ({
@@ -511,6 +513,31 @@ describe(SharesManager.name, () => {
 
       expect(deleteLinksSpy).toHaveBeenCalledWith(456, expect.anything())
       expect(removeSpy).toHaveBeenCalledWith(456, 'all', false, user.id)
+    })
+  })
+
+  describe('deleteLinkMembers', () => {
+    it('keeps the link user record when its home cannot be removed', async () => {
+      const cleanupError = new Error('cleanup failed')
+      vi.spyOn(UserModel, 'getLinkHomePath').mockReturnValue('/data/links/42')
+      vi.spyOn(filesUtils, 'removeFiles').mockRejectedValueOnce(cleanupError)
+
+      await expect(service.deleteLinkMembers([{ id: 42, linkId: 7 }] as any)).rejects.toBe(cleanupError)
+
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/links/42')
+      expect(usersQueriesMock.deleteGuestLink).not.toHaveBeenCalled()
+    })
+
+    it('removes the link user only after its home was removed', async () => {
+      vi.spyOn(UserModel, 'getLinkHomePath').mockReturnValue('/data/links/42')
+      const removeHome = vi.spyOn(filesUtils, 'removeFiles').mockResolvedValueOnce(undefined)
+      usersQueriesMock.deleteGuestLink.mockResolvedValueOnce(undefined)
+
+      await service.deleteLinkMembers([{ id: 42, linkId: 7 }] as any)
+
+      expect(removeHome).toHaveBeenCalledWith('/data/links/42')
+      expect(usersQueriesMock.deleteGuestLink).toHaveBeenCalledWith(42)
+      expect(removeHome.mock.invocationCallOrder[0]).toBeLessThan(usersQueriesMock.deleteGuestLink.mock.invocationCallOrder[0])
     })
   })
 

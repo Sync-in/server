@@ -17,7 +17,7 @@ import { FilesContentStore } from '../models/files-content-store'
 import { FileContent, FileContentMetadata } from '../schemas/file-content.interface'
 import { docTextify } from '../utils/doc-textify/doc-textify'
 import { OCRManager } from '../utils/doc-textify/utils/ocr'
-import { getExtensionWithoutDot, getMimeType } from '../utils/files'
+import { getExtensionWithoutDot, getMimeType, isInternalTemporaryEntry } from '../utils/files'
 import { FilesContentParser } from './files-content-parser.service'
 import { genIndexingKey, genRunId } from '../utils/indexing'
 import { FILE_REPOSITORY } from '../constants/operations'
@@ -236,6 +236,7 @@ export class FilesContentIndexer {
     }
 
     for (const p of paths) {
+      if (isInternalTemporaryEntry(path.basename(p.realPath))) continue
       context.regexBasePath = new RegExp(`^/?${escapePath(p.realPath)}/?`)
       context.pathPrefix = p.pathPrefix || ''
       if (!p.isDir) {
@@ -319,6 +320,7 @@ export class FilesContentIndexer {
   private async *parseFileMetadata(dir: string, context: FileContentIndexContext): AsyncGenerator<FileContentMetadata> {
     try {
       for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+        if (isInternalTemporaryEntry(entry.name)) continue
         const realPath = path.join(entry.parentPath, entry.name)
         if (entry.isDirectory()) {
           yield* this.parseFileMetadata(realPath, context)

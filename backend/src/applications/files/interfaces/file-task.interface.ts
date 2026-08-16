@@ -1,4 +1,5 @@
 import type { FileTask } from '../models/file-task'
+import type { FILE_OPERATION } from '../constants/operations'
 
 export interface FileTasksPollResponse {
   active: FileTask[]
@@ -7,10 +8,11 @@ export interface FileTasksPollResponse {
 }
 export interface FileTaskTransferOptions {
   beforeCommit?: () => Promise<void>
-  cacheKey: string
   crossDevice?: boolean
+  executionId: string
   onTransferStart?: () => void
   onProgress?: (bytes: number) => void
+  operation: FILE_OPERATION
   overwrite?: boolean
   signal: AbortSignal
   stagingDir?: string

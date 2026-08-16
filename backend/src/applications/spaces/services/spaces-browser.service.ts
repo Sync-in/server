@@ -8,7 +8,7 @@ import { FileProps } from '../../files/interfaces/file-props.interface'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
 import { FilesQueries } from '../../files/services/files-queries.service'
 import { FilesRecents } from '../../files/services/files-recents.service'
-import { dirName, fileName, getProps } from '../../files/utils/files'
+import { dirName, fileName, getProps, isInternalTemporaryEntry } from '../../files/utils/files'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { USER_PERMISSION } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
@@ -59,13 +59,14 @@ export class SpacesBrowser {
         withLocks: options.withLocks
       })
     ])
+    const visibleRootFiles = rootFiles.filter((file) => !isInternalTemporaryEntry(file.name))
     this.updateDBFiles(user, space, dbFiles, fsFiles, options)
     if (space.inSharesList) {
       // the share space includes shares as root files
-      spaceFiles.files = [...rootFiles, ...fsFiles]
+      spaceFiles.files = [...visibleRootFiles, ...fsFiles]
       spaceFiles.hasRoots = true
     } else {
-      await this.mergeSpaceRootFiles(space, rootFiles, fsFiles, spaceFiles)
+      await this.mergeSpaceRootFiles(space, visibleRootFiles, fsFiles, spaceFiles)
     }
     if (options.withLocks && !space.inTrashRepository) {
       // locks were removed when files were moved to the trash, no need to parse locks
@@ -135,6 +136,10 @@ export class SpacesBrowser {
     try {
       for (const element of await fs.readdir(space.realPath, { withFileTypes: true })) {
         const isDir = element.isDirectory()
+        if (isInternalTemporaryEntry(element.name)) {
+          this.logger.verbose({ tag: this.parsePath.name, msg: `ignore internal temporary entry : ${element.name}` })
+          continue
+        }
         if (!isDir && !element.isFile()) {
           this.logger.log({ tag: this.parsePath.name, msg: `ignore special file : ${element.name}` })
           continue
@@ -229,6 +234,7 @@ export class SpacesBrowser {
     }
   ) {
     for (const dbFile of dbFiles) {
+      if (isInternalTemporaryEntry(dbFile.name)) continue
       const fsFile = fsFiles.find((f: FileProps) => dbFile.name === f.name)
       if (fsFile) {
         /* important: inherits from the file id in database */

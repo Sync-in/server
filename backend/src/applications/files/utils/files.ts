@@ -10,7 +10,8 @@ import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { formatDateISOString } from '../../../common/functions'
 import { currentTimeStamp, isValidFileName, regExpPreventPathTraversal } from '../../../common/shared'
-import { DEFAULT_CHECKSUM_ALGORITHM, DEFAULT_HIGH_WATER_MARK, EXTRA_MIMES_TYPE } from '../constants/files'
+import { DEFAULT_CHECKSUM_ALGORITHM, DEFAULT_HIGH_WATER_MARK, EXTRA_MIMES_TYPE, TEMPORARY_FILE_PREFIX, TEMPORARY_PATH } from '../constants/files'
+import { SYNC_TEMPORARY_FILE_PREFIX } from '../../sync/constants/sync'
 import type { FileDBProps } from '../interfaces/file-db-props.interface'
 import type { FileProps } from '../interfaces/file-props.interface'
 import { FileError } from '../models/file-error'
@@ -30,6 +31,16 @@ export function isPathInside(basePath: string, candidatePath: string, allowBaseP
   }
   const basePathPrefix = resolvedBasePath.endsWith(path.sep) ? resolvedBasePath : `${resolvedBasePath}${path.sep}`
   return resolvedCandidatePath.startsWith(basePathPrefix)
+}
+
+export function isInternalTemporaryEntry(name: string): boolean {
+  return name === TEMPORARY_PATH.STORAGE || name.startsWith(SYNC_TEMPORARY_FILE_PREFIX)
+}
+
+export function isInternalTemporaryPath(basePath: string, candidatePath: string): boolean {
+  const relativePath = path.relative(path.resolve(basePath), path.resolve(candidatePath))
+  if (!relativePath || path.isAbsolute(relativePath) || relativePath.startsWith(`..${path.sep}`) || relativePath === '..') return false
+  return relativePath.split(path.sep).some(isInternalTemporaryEntry)
 }
 
 export function sanitizeName(name: string): string {
@@ -110,17 +121,58 @@ export function makeDir(rPath: string, recursive?: boolean): Promise<string> {
   return fs.mkdir(rPath, { recursive: recursive })
 }
 
-export async function makeTempDir(parentPath: string, prefix: string): Promise<string> {
+const MAX_TEMPORARY_FILE_NAME_BYTES = 255
+
+function temporaryNameSegment(value: string, label: string): string {
+  const segment = value.replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '')
+  if (!segment) throw new Error(`Invalid temporary-file ${label}`)
+  return segment
+}
+
+function truncateUtf8(value: string, maxBytes: number): string {
+  let result = ''
+  let length = 0
+  for (const character of value) {
+    const characterLength = Buffer.byteLength(character)
+    if (length + characterLength > maxBytes) break
+    result += character
+    length += characterLength
+  }
+  return result
+}
+
+function truncateTemporaryBasename(name: string, maxBytes: number): string {
+  if (Buffer.byteLength(name) <= maxBytes) return name
+  const extension = path.extname(name)
+  const extensionLength = Buffer.byteLength(extension)
+  if (extension && extensionLength < maxBytes) {
+    const stem = path.basename(name, extension)
+    return `${truncateUtf8(stem, maxBytes - extensionLength)}${extension}`
+  }
+  return truncateUtf8(name, maxBytes)
+}
+
+export function temporaryFilePrefix(operation: string, executionId: string): string {
+  return `${TEMPORARY_FILE_PREFIX}${temporaryNameSegment(operation, 'operation')}-${temporaryNameSegment(executionId, 'execution id')}-`
+}
+
+export function temporaryFileName(targetPath: string, operation: string, executionId: string = crypto.randomUUID()): string {
+  const prefix = temporaryFilePrefix(operation, executionId)
+  const basename = sanitizeName(fileName(targetPath)) || 'file'
+  const basenameBytes = MAX_TEMPORARY_FILE_NAME_BYTES - Buffer.byteLength(prefix)
+  if (basenameBytes < 1) throw new Error('Temporary-file prefix exceeds the filesystem filename limit')
+  return `${prefix}${truncateTemporaryBasename(basename, basenameBytes)}`
+}
+
+export function temporaryFilePath(parentPath: string, targetPath: string, operation: string, executionId?: string): string {
+  return path.join(parentPath, temporaryFileName(targetPath, operation, executionId))
+}
+
+export async function makeTemporaryDirectory(parentPath: string, targetPath: string, operation: string, executionId?: string): Promise<string> {
   await makeDir(parentPath, true)
-  return fs.mkdtemp(path.join(parentPath, prefix))
-}
-
-export function tempFilePath(parentPath: string, prefix: string): string {
-  return path.join(parentPath, `${path.basename(prefix)}${crypto.randomUUID()}`)
-}
-
-export function temporaryPathPrefix(targetPath: string, operation: 'upload' | 'download' | 'compress' | 'extract'): string {
-  return `${fileName(targetPath) || 'file'}-${operation}-`
+  const temporaryPath = temporaryFilePath(parentPath, targetPath, operation, executionId)
+  await fs.mkdir(temporaryPath)
+  return temporaryPath
 }
 
 export function getMimeType(fPath: string, isDir: boolean): string {
@@ -201,7 +253,12 @@ export async function copyFiles(srcPath: string, dstPath: string, overwrite = fa
       await fs.utimes(dstPath, stat.atime, stat.mtime)
     }
   } else {
-    await fse.copy(srcPath, dstPath, { overwrite, preserveTimestamps: preserveTimestamps })
+    const resolvedSrcPath = path.resolve(srcPath)
+    await fse.copy(srcPath, dstPath, {
+      overwrite,
+      preserveTimestamps,
+      filter: (entryPath) => path.resolve(entryPath) === resolvedSrcPath || !isInternalTemporaryEntry(path.basename(entryPath))
+    })
   }
 }
 
@@ -339,7 +396,8 @@ export function copyFileContent(srcPath: string, dstPath: string): Promise<void>
 export async function walkDir(
   rPath: string,
   onEntry: (entry: Dirent, entryPath: string) => Promise<void> | void,
-  errors?: Record<string, string>
+  errors?: Record<string, string>,
+  includeEntry?: (entry: Dirent, entryPath: string) => boolean
 ): Promise<void> {
   let entries: Dirent[]
 
@@ -353,9 +411,10 @@ export async function walkDir(
 
   for (const entry of entries) {
     const entryPath = path.join(rPath, entry.name)
+    if (includeEntry && !includeEntry(entry, entryPath)) continue
     await onEntry(entry, entryPath)
     if (entry.isDirectory()) {
-      await walkDir(entryPath, onEntry, errors)
+      await walkDir(entryPath, onEntry, errors, includeEntry)
     }
   }
 }

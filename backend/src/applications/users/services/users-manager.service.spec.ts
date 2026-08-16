@@ -58,7 +58,7 @@ describe(UsersManager.name, () => {
     dataPath: configuration.applications.files.dataPath,
     usersPath: configuration.applications.files.usersPath,
     spacesPath: configuration.applications.files.spacesPath,
-    tmpPath: configuration.applications.files.tmpPath
+    linksPath: configuration.applications.files.linksPath
   }
   const flush = () => new Promise<void>((r) => setImmediate(r))
   const okStream = (d = 'OK') => {
@@ -91,7 +91,7 @@ describe(UsersManager.name, () => {
     configuration.applications.files.dataPath = testDataPath
     configuration.applications.files.usersPath = path.join(testDataPath, 'users')
     configuration.applications.files.spacesPath = path.join(testDataPath, 'spaces')
-    configuration.applications.files.tmpPath = path.join(testDataPath, 'tmp')
+    configuration.applications.files.linksPath = path.join(testDataPath, 'links')
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -116,7 +116,7 @@ describe(UsersManager.name, () => {
     usersQueriesService = module.get(UsersQueries)
     cache = module.get(Cache)
     userTest = new UserModel(generateUserTest(), false)
-    deleteUserDto = { deleteSpace: true, isGuest: false } satisfies DeleteUserDto
+    deleteUserDto = { deleteSpace: true } satisfies DeleteUserDto
   })
 
   afterEach(() => vi.restoreAllMocks())
@@ -126,7 +126,7 @@ describe(UsersManager.name, () => {
     configuration.applications.files.dataPath = initialFilesPaths.dataPath
     configuration.applications.files.usersPath = initialFilesPaths.usersPath
     configuration.applications.files.spacesPath = initialFilesPaths.spacesPath
-    configuration.applications.files.tmpPath = initialFilesPaths.tmpPath
+    configuration.applications.files.linksPath = initialFilesPaths.linksPath
     await fs.rm(testDataPath, { recursive: true, force: true })
   })
 
@@ -508,8 +508,10 @@ describe(UsersManager.name, () => {
 
     convertTempImageToPngMock.mockResolvedValueOnce(undefined)
     await expect(usersManager.updateAvatar(mkReq('image/png', okStream()) as any)).resolves.toBeUndefined()
-    const expectedSrc = path.join(userTest.tmpPath, 'avatar.png')
+    const expectedSrc = convertTempImageToPngMock.mock.calls[convertTempImageToPngMock.mock.calls.length - 1][0]
     const expectedDst = path.join(userTest.homePath, 'avatar.png')
+    expect(path.dirname(expectedSrc)).toBe(userTest.tmpPath)
+    expect(path.basename(expectedSrc)).toMatch(/^~tmp-avatar-[a-z0-9-]+-avatar\.png$/)
     expect(convertTempImageToPngMock).toHaveBeenLastCalledWith(expectedSrc, expectedDst)
   })
 
@@ -852,7 +854,7 @@ describe(UsersManager.name, () => {
     usersQueriesService.isGuestManager = vi.fn().mockResolvedValue({ id: 9, login: 'guest' })
     const delSpy = vi.spyOn(adminUsersManager, 'deleteUserOrGuest').mockResolvedValue(undefined)
     await expect(usersManager.deleteGuest(userTest, 9)).resolves.toBeUndefined()
-    expect(delSpy).toHaveBeenCalledWith(9, 'guest', { deleteSpace: true, isGuest: true })
+    expect(delSpy).toHaveBeenCalledWith(9, 'guest', { deleteSpace: true })
   })
 
   it('proxies forward search + online + whitelist', async () => {

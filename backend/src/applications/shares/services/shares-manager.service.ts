@@ -14,7 +14,7 @@ import { intersectPermissions, InvalidSlugError } from '../../../common/shared'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import type { FileProps } from '../../files/interfaces/file-props.interface'
 import { FileError } from '../../files/models/file-error'
-import { checkExternalPath, getProps, isPathExists } from '../../files/utils/files'
+import { checkExternalPath, getProps, isPathExists, removeFiles } from '../../files/utils/files'
 import { LINK_TYPE } from '../../links/constants/links'
 import type { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto'
 import type { LinkGuest } from '../../links/interfaces/link-guest.interface'
@@ -1131,14 +1131,19 @@ export class SharesManager {
   }
 
   private async deleteGuestLinks(guestLinks: Partial<{ id: number; linkId: number }>[]) {
+    let deletionError: unknown
     for (const guestLink of guestLinks) {
       try {
+        // Keep the database record when filesystem cleanup fails so the deletion can be retried.
+        await removeFiles(UserModel.getLinkHomePath(guestLink.id))
         await this.usersQueries.deleteGuestLink(guestLink.id)
         this.logger.log({ tag: this.deleteGuestLinks.name, msg: `guest (${guestLink.id}) (link: ${guestLink.linkId}) was removed` })
       } catch (e) {
+        deletionError ??= e
         this.logger.error({ tag: this.deleteGuestLinks.name, msg: `guest (${guestLink.id}) (link: ${guestLink.linkId}) was not removed : ${e}` })
       }
     }
+    if (deletionError) throw deletionError
   }
 
   /* MANAGE CACHE PERMISSIONS AND NOTIFY */

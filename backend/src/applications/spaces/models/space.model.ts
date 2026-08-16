@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { configuration } from '../../../configuration/config.environment'
+import { TEMPORARY_PATH } from '../../files/constants/files'
 import { isPathInside } from '../../files/utils/files'
 import { SPACE_REPOSITORY } from '../constants/spaces'
 import { SpaceRoot } from '../schemas/space-root.interface'
@@ -49,6 +50,26 @@ export class SpaceModel implements Space {
 
   static getTrashPath(spaceAlias: string) {
     return path.join(SpaceModel.getHomePath(spaceAlias), SPACE_REPOSITORY.TRASH)
+  }
+
+  static getTmpPath(spaceAlias: string) {
+    return path.join(SpaceModel.getHomePath(spaceAlias), 'tmp')
+  }
+
+  static getUsersTmpPath(spaceAlias: string) {
+    return path.join(SpaceModel.getTmpPath(spaceAlias), TEMPORARY_PATH.ACTORS)
+  }
+
+  static getUserTmpPath(spaceAlias: string, userId: number) {
+    if (!Number.isSafeInteger(userId) || userId <= 0) {
+      throw new Error('User id must be a positive safe integer')
+    }
+    const usersTmpPath = SpaceModel.getUsersTmpPath(spaceAlias)
+    const userTmpPath = path.resolve(usersTmpPath, String(userId))
+    if (!isPathInside(usersTmpPath, userTmpPath)) {
+      throw new Error('User id resolves outside space temporary directory')
+    }
+    return userTmpPath
   }
 
   static getRepositoryPath(spaceAlias: string, inTrash = false) {

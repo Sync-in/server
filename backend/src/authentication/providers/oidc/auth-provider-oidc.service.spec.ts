@@ -158,6 +158,7 @@ describe(AuthProviderOIDC.name, () => {
     ;(service as any).oidcConfig.security.allowPrivateIpAvatarDownload = false
     ;(service as any).oidcConfig.security.requireVerifiedEmail = false
     ;(service as any).oidcConfig.options.enablePasswordAuth = false
+    vi.spyOn(filesUtils, 'temporaryFilePath').mockReturnValue('/tmp/sync-in/alice/tmp/~tmp-avatar-test-id-avatar.png')
     ;(service as any).oidcConfig.options.autoSyncAvatar = false
   })
 
@@ -521,6 +522,7 @@ describe(AuthProviderOIDC.name, () => {
 
   describe('updatePictureUrl', () => {
     const oidcUser = { login: 'alice', tmpPath: '/tmp/sync-in/alice/tmp' } as UserModel
+    const avatarTmpPath = '/tmp/sync-in/alice/tmp/~tmp-avatar-test-id-avatar.png'
     const userInfo = (picture = 'https://cdn.example.test/avatar.jpg') => ({ picture }) as any
 
     it('returns when picture url is invalid', async () => {
@@ -578,13 +580,11 @@ describe(AuthProviderOIDC.name, () => {
       await (service as any).updatePictureUrl(oidcUser, userInfo())
 
       expect(downloadSpy).toHaveBeenCalledTimes(2)
-      expect(downloadSpy).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }),
-        '/tmp/sync-in/alice/tmp/avatar.png',
-        { allowPrivateIP: false, maxSize: avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE }
-      )
-      expect(convertSpy).toHaveBeenCalledWith('/tmp/sync-in/alice/tmp/avatar.png', '/tmp/sync-in/users/alice/avatar.png')
+      expect(downloadSpy).toHaveBeenNthCalledWith(2, expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }), avatarTmpPath, {
+        allowPrivateIP: false,
+        maxSize: avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE
+      })
+      expect(convertSpy).toHaveBeenCalledWith(avatarTmpPath, '/tmp/sync-in/users/alice/avatar.png')
       expect(metadataSpy).toHaveBeenCalledWith('alice', 'https://cdn.example.test/avatar.jpg', 128, 'Mon, 01 Jan 2024 00:00:00 GMT')
     })
 
@@ -605,18 +605,14 @@ describe(AuthProviderOIDC.name, () => {
 
       await (service as any).updatePictureUrl(oidcUser, userInfo())
 
-      expect(downloadSpy).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }),
-        '/tmp/sync-in/alice/tmp/avatar.png',
-        { allowPrivateIP: true, getContentInfo: true }
-      )
-      expect(downloadSpy).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }),
-        '/tmp/sync-in/alice/tmp/avatar.png',
-        { allowPrivateIP: true, maxSize: avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE }
-      )
+      expect(downloadSpy).toHaveBeenNthCalledWith(1, expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }), avatarTmpPath, {
+        allowPrivateIP: true,
+        getContentInfo: true
+      })
+      expect(downloadSpy).toHaveBeenNthCalledWith(2, expect.objectContaining({ url: 'https://cdn.example.test/avatar.jpg' }), avatarTmpPath, {
+        allowPrivateIP: true,
+        maxSize: avatarUtils.USER_AVATAR_MAX_UPLOAD_SIZE
+      })
     })
 
     it('downloads avatar when content length is missing and stores the actual downloaded size', async () => {
@@ -638,7 +634,7 @@ describe(AuthProviderOIDC.name, () => {
 
       expect(downloadSpy).toHaveBeenCalledTimes(2)
       expect(metadataUnchangedSpy).not.toHaveBeenCalled()
-      expect(convertSpy).toHaveBeenCalledWith('/tmp/sync-in/alice/tmp/avatar.png', '/tmp/sync-in/users/alice/avatar.png')
+      expect(convertSpy).toHaveBeenCalledWith(avatarTmpPath, '/tmp/sync-in/users/alice/avatar.png')
       expect(metadataSpy).toHaveBeenCalledWith('alice', 'https://cdn.example.test/avatar.jpg', 1024, 'Mon, 01 Jan 2024 00:00:00 GMT')
     })
 

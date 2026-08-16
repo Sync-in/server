@@ -39,7 +39,7 @@ export class AdminUserDeleteDialogComponent {
       this.onClose()
       return
     }
-    this.adminService.deleteUser(this.user.id, { deleteSpace: this.deleteSpace, isGuest: false } satisfies DeleteUserDto, auth2FaHeaders).subscribe({
+    this.adminService.deleteUser(this.user.id, { deleteSpace: this.deleteSpace } satisfies DeleteUserDto, auth2FaHeaders).subscribe({
       next: () => {
         this.wasDeleted.emit(true)
         this.layout.sendNotification('success', 'Delete user', this.user.login)

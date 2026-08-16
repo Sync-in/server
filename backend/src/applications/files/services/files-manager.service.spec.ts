@@ -23,7 +23,6 @@ import * as unzipUtils from '../utils/unzip-file'
 import * as untarUtils from '../utils/untar-file'
 import * as filesUtils from '../utils/files'
 import * as tarUtils from '../utils/tar-file'
-import * as taskUtils from '../utils/tasks'
 import * as zipUtils from '../utils/zip-file'
 import { FilesLockManager } from './files-lock-manager.service'
 import { FilesManager } from './files-manager.service'
@@ -31,6 +30,7 @@ import { FilesQueries } from './files-queries.service'
 import { FilesTasksTransfer } from './tasks/files-tasks-transfer.service'
 import { Mock } from 'vitest'
 import { FILE_ERROR } from '../constants/errors'
+import { FILE_OPERATION } from '../constants/operations'
 
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn()
@@ -55,8 +55,10 @@ describe(FilesManager.name, () => {
     removeChildLocks: Mock
   }
 
-  const user = { id: 7, login: 'john', tmpPath: '/data/users/john/tmp', tasksPath: '/data/users/john/tmp/tasks' } as any
-  const taskPath = (cacheKey: string, name: string): string => path.join(user.tasksPath, `${taskUtils.taskTemporaryPrefix(cacheKey)}${name}`)
+  const user = { id: 7, login: 'john', tmpPath: '/data/users/john/tmp' } as any
+  const targetTmpRoot = '/data/users/john/.sync-in-tmp/users/7'
+  const temporaryPath = (operation: FILE_OPERATION, executionId: string, name: string, parentPath = targetTmpRoot): string =>
+    path.join(parentPath, `${filesUtils.temporaryFilePrefix(operation, executionId)}${path.basename(name)}`)
 
   const makeSpace = (overrides: Record<string, any> = {}) =>
     ({
@@ -67,6 +69,7 @@ describe(FilesManager.name, () => {
       realPath: '/data/users/john/files/file.txt',
       realBasePath: '/data/users/john/files',
       dbFile: { ownerId: 7, path: 'file.txt', inTrash: false },
+      inPersonalSpace: true,
       inTrashRepository: false,
       quotaIsExceeded: false,
       storageQuota: null,
@@ -184,8 +187,12 @@ describe(FilesManager.name, () => {
     vi.spyOn(filesUtils, 'isPathExists').mockResolvedValue(true)
     vi.spyOn(filesUtils, 'isPathIsDir').mockResolvedValue(false)
     vi.spyOn(filesUtils, 'makeDir').mockResolvedValue('/tmp' as any)
-    vi.spyOn(filesUtils, 'makeTempDir').mockResolvedValue('/tmp/extract')
-    vi.spyOn(filesUtils, 'tempFilePath').mockReturnValue('/tmp/staged-file')
+    vi.spyOn(filesUtils, 'temporaryFilePath').mockImplementation((parentPath, targetPath, operation, executionId = 'direct-id') =>
+      temporaryPath(operation as FILE_OPERATION, executionId, targetPath, parentPath)
+    )
+    vi.spyOn(filesUtils, 'makeTemporaryDirectory').mockImplementation(async (parentPath, targetPath, operation, executionId = 'direct-id') =>
+      temporaryPath(operation as FILE_OPERATION, executionId, targetPath, parentPath)
+    )
     vi.spyOn(filesUtils, 'writeUploadFromStream').mockResolvedValue(undefined)
     vi.spyOn(filesUtils, 'writeUploadFromStreamAndChecksum').mockResolvedValue('sha256-abc')
     vi.spyOn(filesUtils, 'moveFiles').mockResolvedValue(undefined)
@@ -198,16 +205,17 @@ describe(FilesManager.name, () => {
     vi.spyOn(filesUtils, 'dirSize').mockResolvedValue([123, {}] as any)
     vi.spyOn(filesUtils, 'uniqueFilePathFromDir').mockResolvedValue('/tmp/unique-path.txt')
     vi.spyOn(filesUtils, 'uniqueDatedFilePath').mockResolvedValue({ isDir: false, path: '/trash/file-2026.txt' })
-    vi.spyOn(taskUtils, 'createTaskTemporaryDir').mockResolvedValue(taskPath('task-d', 'archive'))
-    vi.spyOn(taskUtils, 'taskTemporaryPath').mockImplementation((parentPath, cacheKey, name) =>
-      path.join(parentPath, `${taskUtils.taskTemporaryPrefix(cacheKey)}${path.basename(name)}`)
-    )
     vi.spyOn(tarUtils, 'createTar').mockResolvedValue(undefined)
     vi.spyOn(zipUtils, 'createZip').mockResolvedValue(undefined)
     vi.spyOn(filesUtils, 'getMimeType').mockReturnValue('image-png')
     vi.spyOn(spacesPermsUtils, 'canAccessToSpace').mockReturnValue(true)
     vi.spyOn(spacesPermsUtils, 'haveSpaceEnvPermissions').mockReturnValue(true)
-    vi.spyOn(spacesPathUtils, 'realTrashPathFromSpace').mockReturnValue('/data/users/john/trash')
+    vi.spyOn(spacesPathUtils, 'trashTargetFromSpace').mockReturnValue({
+      mode: 'trash',
+      path: '/data/users/john/trash',
+      temporaryRoot: targetTmpRoot
+    })
+    vi.spyOn(spacesPathUtils, 'temporaryRootFromSpace').mockReturnValue(targetTmpRoot)
   })
 
   afterEach(() => {
@@ -474,8 +482,8 @@ describe(FilesManager.name, () => {
 
       const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
       expect(filesLockManager.createOrRefresh).toHaveBeenCalled()
-      expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
-      expect(path.basename(tmpWritePath)).toMatch(/^report\.txt-upload-/)
+      expect(tmpWritePath.startsWith(`${targetTmpRoot}${path.sep}`)).toBe(true)
+      expect(path.basename(tmpWritePath)).toMatch(/^~tmp-upload-[a-z0-9-]+-report\.txt$/)
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
         tmpWritePath,
         expect.anything(),
@@ -531,7 +539,7 @@ describe(FilesManager.name, () => {
       await service.saveMultipart(user, space, req as any)
 
       const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
-      expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
+      expect(tmpWritePath.startsWith(`${targetTmpRoot}${path.sep}`)).toBe(true)
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
         tmpWritePath,
         file,
@@ -688,7 +696,7 @@ describe(FilesManager.name, () => {
       )
 
       const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
-      expect(tmpWritePath.startsWith(`${user.tmpPath}${path.sep}`)).toBe(true)
+      expect(tmpWritePath.startsWith(`${targetTmpRoot}${path.sep}`)).toBe(true)
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
         tmpWritePath,
         file,
@@ -850,11 +858,14 @@ describe(FilesManager.name, () => {
       await service.saveMultipart(user, space, req as any)
 
       const tmpWritePath = vi.mocked(filesUtils.writeUploadFromStream).mock.calls[0][0] as string
+      const makeDirMock = vi.mocked(filesUtils.makeDir)
+      const dstDirMakeCallIndex = makeDirMock.mock.calls.findIndex(([rPath]) => rPath === dstDir)
       expect(deleteSpy).toHaveBeenCalledTimes(1)
       expect(filesUtils.makeDir).toHaveBeenCalledWith(dstDir, true)
       expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpWritePath, dstFile, true)
-      expect(deleteSpy.mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.makeDir).mock.invocationCallOrder[0])
-      expect(vi.mocked(filesUtils.makeDir).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(filesUtils.moveFiles).mock.invocationCallOrder[0])
+      expect(dstDirMakeCallIndex).toBeGreaterThanOrEqual(0)
+      expect(deleteSpy.mock.invocationCallOrder[0]).toBeLessThan(makeDirMock.mock.invocationCallOrder[dstDirMakeCallIndex])
+      expect(makeDirMock.mock.invocationCallOrder[dstDirMakeCallIndex]).toBeLessThan(vi.mocked(filesUtils.moveFiles).mock.invocationCallOrder[0])
     })
   })
 
@@ -1047,7 +1058,7 @@ describe(FilesManager.name, () => {
         url: 'files/source/src.txt',
         realPath: '/src-base/src.txt',
         dbFile: { ownerId: 7, path: 'src.txt', inTrash: false },
-        task: { cacheKey: 'task-move', props: {} }
+        task: { id: 'task-move', type: FILE_OPERATION.MOVE, cacheKey: 'task-move', props: {} }
       })
       const dst = makeSpace({
         url: 'files/destination/dst.txt',
@@ -1070,7 +1081,7 @@ describe(FilesManager.name, () => {
       const src = makeSpace({
         realPath: '/data/users/john/files/src.txt',
         dbFile: { ownerId: 7, path: 'src.txt', inTrash: false },
-        task: { cacheKey: 'task-move', props: {} }
+        task: { id: 'task-move', type: FILE_OPERATION.MOVE, cacheKey: 'task-move', props: {} }
       })
       const dst = makeSpace({
         realPath: '/data/users/john/files/dst.txt',
@@ -1108,7 +1119,7 @@ describe(FilesManager.name, () => {
       const src = makeSpace({
         realPath: '/data/users/john/files/src.txt',
         dbFile: { ownerId: 7, path: 'src.txt', inTrash: false },
-        task: { cacheKey: 'task-copy', props: {} }
+        task: { id: 'task-copy', type: FILE_OPERATION.COPY, cacheKey: 'task-copy', props: {} }
       })
       const dst = makeSpace({
         realPath: '/data/users/john/files/dst.txt',
@@ -1147,7 +1158,7 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/no-trash.txt', inTrashRepository: false })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
       vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(false)
-      vi.mocked(spacesPathUtils.realTrashPathFromSpace).mockReturnValueOnce(null)
+      vi.mocked(spacesPathUtils.trashTargetFromSpace).mockReturnValueOnce(null)
 
       await service.delete(user, space)
 
@@ -1155,11 +1166,30 @@ describe(FilesManager.name, () => {
       expect(filesQueries.deleteFiles).toHaveBeenCalledWith(space.dbFile, false, true)
     })
 
+    it('should permanently delete an external share without resolving a trash path', async () => {
+      const space = makeSpace({
+        realPath: '/mnt/share/document.txt',
+        dbFile: { shareExternalId: 12, path: 'document.txt', inTrash: false }
+      })
+      vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValueOnce(false)
+      vi.mocked(spacesPathUtils.trashTargetFromSpace).mockReturnValueOnce({ mode: 'permanent', reason: 'external-share' })
+      const emitSpy = vi.spyOn(FileEvent, 'emit')
+
+      await service.delete(user, space)
+
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(space.realPath)
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(filesTasksTransfer.delete).not.toHaveBeenCalled()
+      expect(filesQueries.deleteFiles).toHaveBeenCalledWith(space.dbFile, false, true)
+      expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: space.realPath })
+    })
+
     it('should update the database before reporting an abortable delete source cleanup failure', async () => {
       const space = makeSpace({
         realPath: '/data/users/john/files/document.txt',
         dbFile: { ownerId: 7, path: 'documents/document.txt', inTrash: false },
-        task: { cacheKey: 'task-delete', props: {} }
+        task: { id: 'task-delete', type: FILE_OPERATION.DELETE, cacheKey: 'task-delete', props: {} }
       })
       const trashFile = '/data/users/john/trash/documents/document.txt'
       const signal = new AbortController().signal
@@ -1169,7 +1199,7 @@ describe(FilesManager.name, () => {
 
       await expect(service.delete(user, space, undefined, signal)).rejects.toBe(cleanupError)
 
-      expect(filesTasksTransfer.delete).toHaveBeenCalledWith(user, space, trashFile, false, signal, expect.any(Function))
+      expect(filesTasksTransfer.delete).toHaveBeenCalledWith(space, trashFile, targetTmpRoot, false, signal, expect.any(Function))
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(filesQueries.deleteFiles).toHaveBeenCalledWith(space.dbFile, false, false)
     })
@@ -1214,7 +1244,7 @@ describe(FilesManager.name, () => {
     })
 
     it('should handle HEAD+GET and emit task watch/event', async () => {
-      const space = makeSpace({ task: { cacheKey: 'task-1', props: {} } })
+      const space = makeSpace({ task: { id: 'task-1', type: FILE_OPERATION.DOWNLOAD, cacheKey: 'task-1', props: {} } })
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
       http.axiosRef
         .mockResolvedValueOnce({
@@ -1232,15 +1262,14 @@ describe(FilesManager.name, () => {
 
       expect(space.task.props).toMatchObject({ progress: 1, size: 0, totalSize: 55 })
       expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/tmp/download.txt')
-      expect(taskUtils.taskTemporaryPath).toHaveBeenCalledWith(user.tasksPath, 'task-1', '/tmp/download.txt')
-      expect(filesUtils.tempFilePath).not.toHaveBeenCalled()
+      expect(filesUtils.temporaryFilePath).toHaveBeenCalledWith(targetTmpRoot, '/tmp/download.txt', FILE_OPERATION.DOWNLOAD, 'task-1')
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
-        taskPath('task-1', 'download.txt'),
+        temporaryPath(FILE_OPERATION.DOWNLOAD, 'task-1', 'download.txt'),
         expect.anything(),
         expect.objectContaining({ limiter: expect.objectContaining({ consume: expect.any(Function) }), onProgress: expect.any(Function) })
       )
       expect(filesTasksTransfer.createByteProgressHandler).toHaveBeenCalledWith(space)
-      expect(filesUtils.moveFiles).toHaveBeenCalledWith(taskPath('task-1', 'download.txt'), '/tmp/download.txt')
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(temporaryPath(FILE_OPERATION.DOWNLOAD, 'task-1', 'download.txt'), '/tmp/download.txt')
       expect(filesLockManager.create).toHaveBeenCalledWith(
         user,
         expect.objectContaining({ path: 'download.txt' }),
@@ -1253,9 +1282,9 @@ describe(FilesManager.name, () => {
 
     it('should reject a remote download exceeding maxUploadSize before GET', async () => {
       const space = makeSpace()
-      const tmpPath = '/data/users/john/tmp/download.txt-download-uuid'
+      const tmpPath = `${targetTmpRoot}/~tmp-download-direct-id-download.txt`
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
-      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce(tmpPath)
+      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(tmpPath)
       http.axiosRef.mockResolvedValueOnce({
         headers: { 'content-length': `${configuration.applications.files.maxUploadSize + 1}` },
         request: { socket: { remoteAddress: '8.8.8.8' } }
@@ -1275,7 +1304,7 @@ describe(FilesManager.name, () => {
       const error = new FileError(HttpStatus.PAYLOAD_TOO_LARGE, FILE_ERROR.MAX_FILE_SIZE_EXCEEDED)
       const space = makeSpace()
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
-      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
+      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(`${targetTmpRoot}/~tmp-download-direct-id-download.txt`)
       vi.mocked(filesUtils.writeUploadFromStream).mockRejectedValueOnce(error)
       http.axiosRef
         .mockResolvedValueOnce({
@@ -1290,7 +1319,7 @@ describe(FilesManager.name, () => {
 
       await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/download.txt-download-uuid')
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-download-direct-id-download.txt`)
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
       expect(fileEmitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
@@ -1300,7 +1329,7 @@ describe(FilesManager.name, () => {
       const error = new Error('move failed')
       const space = makeSpace()
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/download.txt')
-      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/download.txt-download-uuid')
+      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(`${targetTmpRoot}/~tmp-download-direct-id-download.txt`)
       vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(error)
       http.axiosRef
         .mockResolvedValueOnce({
@@ -1315,20 +1344,25 @@ describe(FilesManager.name, () => {
 
       await expect(service.downloadFromUrl(user, space, { url: 'https://example.org/file.txt' })).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/download.txt-download-uuid')
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-download-direct-id-download.txt`)
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
       expect(fileEmitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/download.txt' })
     })
   })
 
   describe('compress', () => {
+    const compressionTask = (id = 'task-export') => ({ id, type: FILE_OPERATION.COMPRESS, cacheKey: id, props: {} })
+
     it('should archive files and emit events', async () => {
       const tarSpy = vi.mocked(tarUtils.createTar).mockImplementationOnce(async (_outputPath, _entries, _gzip, _signal, onProgress) => {
         onProgress?.(Buffer.byteLength('content'))
       })
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.tgz')
       vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (p: string) => p.endsWith('/dir'))
-      const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: { cacheKey: 'task-c', props: {} } })
+      const space = makeSpace({
+        realPath: '/data/users/john/files/source.txt',
+        task: { id: 'task-c', type: FILE_OPERATION.COMPRESS, cacheKey: 'task-c', props: {} }
+      })
       const dto = {
         name: 'archive',
         extension: 'tar',
@@ -1343,22 +1377,40 @@ describe(FilesManager.name, () => {
 
       await service.compress(user, space, dto)
 
-      expect(tarSpy).toHaveBeenCalledWith(taskPath('task-c', 'archive.tgz'), dto.files, true, undefined, expect.any(Function), undefined)
-      expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/tmp/archive.tgz')
-      expect(taskUtils.taskTemporaryPath).toHaveBeenCalledWith(user.tasksPath, 'task-c', '/tmp/archive.tgz')
-      expect(filesUtils.tempFilePath).not.toHaveBeenCalled()
+      const archivePath = temporaryPath(FILE_OPERATION.COMPRESS, 'task-c', 'archive.tgz', user.tmpPath)
+      expect(tarSpy).toHaveBeenCalledWith(archivePath, dto.files, true, undefined, expect.any(Function), undefined)
+      expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, path.join(user.tmpPath, 'archive.tgz'))
+      expect(filesUtils.temporaryFilePath).toHaveBeenCalledWith(user.tmpPath, 'archive.tgz', FILE_OPERATION.COMPRESS, 'task-c')
       expect(space.task.props.size).toBe(Buffer.byteLength('content'))
-      expect(filesUtils.moveFiles).toHaveBeenCalledWith(taskPath('task-c', 'archive.tgz'), '/tmp/archive.tgz')
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
     })
 
-    it('should allow archive export from trash when compressInDirectory is false', async () => {
-      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive-trash.tgz')
-      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive-trash.tgz-compress-uuid')
+    it('should require an explicit task for an archive export', async () => {
+      const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
+      const dto = {
+        name: 'archive',
+        extension: 'tar',
+        compression: true,
+        compressInDirectory: false,
+        files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
+      } as any
+
+      await expect(service.compress(user, space, dto)).rejects.toEqual(
+        new FileError(HttpStatus.BAD_REQUEST, 'Archive export requires an explicit task')
+      )
+      expect(tarUtils.createTar).not.toHaveBeenCalled()
+      expect(zipUtils.createZip).not.toHaveBeenCalled()
+    })
+
+    it('should allow archive export from trash as an explicit task', async () => {
+      const archivePath = '/data/users/john/tmp/~tmp-compress-task-export-archive-trash.tgz'
+      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
       const space = makeTrashSpace({
         url: 'trash/personal/source.txt',
         realPath: '/data/users/john/trash/source.txt',
-        dbFile: { ownerId: 7, path: 'source.txt', inTrash: true }
+        dbFile: { ownerId: 7, path: 'source.txt', inTrash: true },
+        task: compressionTask()
       })
       const dto = {
         name: 'archive-trash',
@@ -1370,22 +1422,16 @@ describe(FilesManager.name, () => {
 
       await expect(service.compress(user, space, dto)).resolves.toBeUndefined()
       expect(filesLockManager.create).not.toHaveBeenCalled()
-      expect(tarUtils.createTar).toHaveBeenCalledWith(
-        '/data/users/john/tmp/archive-trash.tgz-compress-uuid',
-        dto.files,
-        true,
-        undefined,
-        undefined,
-        undefined
-      )
-      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-trash.tgz-compress-uuid', '/tmp/archive-trash.tgz')
-      expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/archive-trash.tgz' })
+      expect(tarUtils.createTar).toHaveBeenCalledWith(archivePath, dto.files, true, undefined, expect.any(Function), undefined)
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+      expect(emitSpy).not.toHaveBeenCalled()
     })
 
     it('should cleanup temporary archive and skip ADD event when publishing archive fails', async () => {
       const error = new Error('move failed')
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.tgz')
-      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.tgz-compress-uuid')
+      const archivePath = `${targetTmpRoot}/~tmp-compress-direct-id-archive.tgz`
+      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
       vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(error)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
       const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
@@ -1393,23 +1439,23 @@ describe(FilesManager.name, () => {
         name: 'archive',
         extension: 'tar',
         compression: true,
-        compressInDirectory: false,
+        compressInDirectory: true,
         files: [{ path: '/data/users/john/files/source.txt', name: 'source.txt', rootAlias: null }]
       } as any
 
       await expect(service.compress(user, space, dto)).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.tgz-compress-uuid')
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(archivePath)
       expect(emitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/archive.tgz' })
     })
 
     it('should cleanup temporary archive when TAR creation fails', async () => {
       const error = new Error('archive failed')
-      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.tgz')
-      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.tgz-compress-uuid')
+      const archivePath = '/data/users/john/tmp/~tmp-compress-task-export-archive.tgz'
+      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
       vi.mocked(tarUtils.createTar).mockRejectedValueOnce(error)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
-      const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
+      const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: compressionTask() })
       const dto = {
         name: 'archive',
         extension: 'tar',
@@ -1420,7 +1466,7 @@ describe(FilesManager.name, () => {
 
       await expect(service.compress(user, space, dto)).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.tgz-compress-uuid')
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(archivePath)
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
       expect(emitSpy).not.toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: '/tmp/archive.tgz' })
     })
@@ -1428,10 +1474,10 @@ describe(FilesManager.name, () => {
     it('should preserve task cancellation while cleaning the temporary archive', async () => {
       const controller = new AbortController()
       const reason = new Error('Cancelled')
-      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.tar')
-      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.tar-compress-uuid')
+      const archivePath = '/data/users/john/tmp/~tmp-compress-task-export-archive.tar'
+      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
       vi.mocked(tarUtils.createTar).mockRejectedValueOnce(reason)
-      const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
+      const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: compressionTask() })
       const dto = {
         name: 'archive',
         extension: 'tar',
@@ -1442,20 +1488,14 @@ describe(FilesManager.name, () => {
 
       controller.abort(reason)
       await expect(service.compress(user, space, dto, controller.signal)).rejects.toBe(reason)
-      expect(tarUtils.createTar).toHaveBeenCalledWith(
-        '/data/users/john/tmp/archive.tar-compress-uuid',
-        dto.files,
-        false,
-        controller.signal,
-        undefined,
-        undefined
-      )
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar-compress-uuid')
+      expect(tarUtils.createTar).toHaveBeenCalledWith(archivePath, dto.files, false, controller.signal, expect.any(Function), undefined)
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(archivePath)
     })
 
     it('should limit an archive to the known remaining quota', async () => {
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive.tar')
-      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.tar-compress-uuid')
+      const archivePath = `${targetTmpRoot}/~tmp-compress-direct-id-archive.tar`
+      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
       const space = makeSpace({
         realPath: '/data/users/john/files/source.txt',
         storageQuota: 100,
@@ -1471,13 +1511,13 @@ describe(FilesManager.name, () => {
 
       await service.compress(user, space, dto)
 
-      expect(tarUtils.createTar).toHaveBeenCalledWith('/data/users/john/tmp/archive.tar-compress-uuid', dto.files, false, undefined, undefined, 60)
+      expect(tarUtils.createTar).toHaveBeenCalledWith(archivePath, dto.files, false, undefined, undefined, 60)
     })
 
     it('should create a compressed ZIP archive', async () => {
-      vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/tmp/archive.zip')
-      vi.mocked(filesUtils.tempFilePath).mockReturnValueOnce('/data/users/john/tmp/archive.zip-compress-uuid')
-      const space = makeSpace({ realPath: '/data/users/john/files/source.txt' })
+      const archivePath = '/data/users/john/tmp/~tmp-compress-task-export-archive.zip'
+      vi.mocked(filesUtils.temporaryFilePath).mockReturnValueOnce(archivePath)
+      const space = makeSpace({ realPath: '/data/users/john/files/source.txt', task: compressionTask() })
       const dto = {
         name: 'archive.zip',
         extension: 'zip',
@@ -1488,22 +1528,18 @@ describe(FilesManager.name, () => {
 
       await service.compress(user, space, dto)
 
-      expect(zipUtils.createZip).toHaveBeenCalledWith(
-        '/data/users/john/tmp/archive.zip-compress-uuid',
-        dto.files,
-        true,
-        undefined,
-        undefined,
-        undefined
-      )
+      expect(zipUtils.createZip).toHaveBeenCalledWith(archivePath, dto.files, true, undefined, expect.any(Function), undefined)
       expect(tarUtils.createTar).not.toHaveBeenCalled()
-      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive.zip-compress-uuid', '/tmp/archive.zip')
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
     })
   })
 
   describe('decompress', () => {
     it('should extract zip and release lock', async () => {
-      const space = makeSpace({ realPath: '/data/users/john/files/archive.zip', task: { cacheKey: 'task-d', props: {} } })
+      const space = makeSpace({
+        realPath: '/data/users/john/files/archive.zip',
+        task: { id: 'task-d', type: FILE_OPERATION.DECOMPRESS, cacheKey: 'task-d', props: {} }
+      })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
       const unzipSpy = vi.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
@@ -1511,17 +1547,16 @@ describe(FilesManager.name, () => {
 
       await service.decompress(user, space)
 
-      expect(taskUtils.createTaskTemporaryDir).toHaveBeenCalledWith(user.tasksPath, 'task-d', '/data/users/john/files/archive')
-      expect(filesUtils.makeTempDir).not.toHaveBeenCalled()
-      expect(filesTasksTransfer.createExtractionProgressHandler).toHaveBeenCalledWith(space)
-      expect(unzipSpy).toHaveBeenCalledWith(
-        '/data/users/john/files/archive.zip',
-        taskPath('task-d', 'archive'),
-        undefined,
-        undefined,
-        expect.any(Function)
+      const extractionPath = temporaryPath(FILE_OPERATION.DECOMPRESS, 'task-d', 'archive')
+      expect(filesUtils.makeTemporaryDirectory).toHaveBeenCalledWith(
+        targetTmpRoot,
+        '/data/users/john/files/archive',
+        FILE_OPERATION.DECOMPRESS,
+        'task-d'
       )
-      expect(filesUtils.moveFiles).toHaveBeenCalledWith(taskPath('task-d', 'archive'), '/data/users/john/files/archive')
+      expect(filesTasksTransfer.createExtractionProgressHandler).toHaveBeenCalledWith(space)
+      expect(unzipSpy).toHaveBeenCalledWith('/data/users/john/files/archive.zip', extractionPath, undefined, undefined, expect.any(Function))
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(extractionPath, '/data/users/john/files/archive')
       expect(taskEmitSpy).toHaveBeenCalledWith('startWatch', space, '/data/users/john/files/archive')
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
     })
@@ -1530,34 +1565,34 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.tar.gz' })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
-      vi.mocked(filesUtils.makeTempDir).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
       const untarSpy = vi.spyOn(untarUtils, 'extractTar').mockResolvedValueOnce(undefined)
 
       await service.decompress(user, space)
 
       expect(untarSpy).toHaveBeenCalledWith(
         '/data/users/john/files/archive.tar.gz',
-        '/data/users/john/tmp/archive-extract-123',
+        `${targetTmpRoot}/~tmp-decompress-direct-id-archive`,
         true,
         undefined,
         undefined,
         undefined
       )
-      expect(filesUtils.moveFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123', '/data/users/john/files/archive')
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`, '/data/users/john/files/archive')
     })
 
     it('should limit extracted size to the known remaining quota', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip', storageQuota: 100, storageUsage: 40 })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
-      vi.mocked(filesUtils.makeTempDir).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
       const unzipSpy = vi.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
 
       await service.decompress(user, space)
 
       expect(unzipSpy).toHaveBeenCalledWith(
         '/data/users/john/files/archive.zip',
-        '/data/users/john/tmp/archive-extract-123',
+        `${targetTmpRoot}/~tmp-decompress-direct-id-archive`,
         60,
         undefined,
         undefined
@@ -1568,14 +1603,14 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
-      vi.mocked(filesUtils.makeTempDir).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
       const error = new Error('extraction failed')
       vi.spyOn(unzipUtils, 'extractZip').mockRejectedValueOnce(error)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await expect(service.decompress(user, space)).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123')
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith('/data/users/john/files/archive')
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
       expect(emitSpy).not.toHaveBeenCalledWith('event', {
@@ -1590,14 +1625,14 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(false)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
-      vi.mocked(filesUtils.makeTempDir).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
       const error = new Error('move failed')
       vi.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
       vi.mocked(filesUtils.moveFiles).mockRejectedValueOnce(error)
 
       await expect(service.decompress(user, space)).rejects.toBe(error)
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123')
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith('/data/users/john/files/archive')
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
     })
@@ -1606,12 +1641,12 @@ describe(FilesManager.name, () => {
       const space = makeSpace({ realPath: '/data/users/john/files/archive.zip' })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true).mockResolvedValueOnce(true)
       vi.mocked(filesUtils.uniqueFilePathFromDir).mockResolvedValueOnce('/data/users/john/files/archive')
-      vi.mocked(filesUtils.makeTempDir).mockResolvedValueOnce('/data/users/john/tmp/archive-extract-123')
+      vi.mocked(filesUtils.makeTemporaryDirectory).mockResolvedValueOnce(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
       vi.spyOn(unzipUtils, 'extractZip').mockResolvedValueOnce(undefined)
 
       await expect(service.decompress(user, space)).rejects.toEqual(new FileError(HttpStatus.CONFLICT, 'The destination already exists'))
 
-      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/tmp/archive-extract-123')
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(`${targetTmpRoot}/~tmp-decompress-direct-id-archive`)
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith('/data/users/john/files/archive')
       expect(filesUtils.moveFiles).not.toHaveBeenCalled()
     })

@@ -5,23 +5,40 @@ import { unionAll } from 'drizzle-orm/mysql-core'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { currentTimeStamp } from '../../../common/shared'
+import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { getTablesWithFileIdColumn } from '../../../infrastructure/database/utils'
-import { USER_PATH, USER_ROLE } from '../../users/constants/user'
+import { SharesQueries } from '../../shares/services/shares-queries.service'
+import { SpaceModel } from '../../spaces/models/space.model'
+import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
+import { USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { users } from '../../users/schemas/users.schema'
 import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../constants/cache'
+import { TEMPORARY_FILE_PREFIX, TEMPORARY_PATH } from '../constants/files'
 import { FileTask, FileTaskStatus } from '../models/file-task'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { files } from '../schemas/files.schema'
-import { isPathExists, removeFiles } from '../utils/files'
-import { isActiveTaskStatus, taskTemporaryPrefix } from '../utils/tasks'
+import { isPathExists, removeFiles, temporaryFilePrefix } from '../utils/files'
+import { isActiveTaskStatus } from '../utils/tasks'
 import { FilesContentIndexer } from './files-content-indexer.service'
 import { FilesTasksManager } from './tasks/files-tasks-manager.service'
 import { FilesQuotaManager } from './files-quota-manager.service'
 import { FilesTrashRetention } from './files-trash-retention.service'
+
+interface TemporaryDirectory {
+  includeLegacyEntries: boolean
+  path: string
+}
+
+interface TemporaryDirectorySnapshot {
+  fileNames: string[]
+  path: string
+}
+
+type TemporaryDirectoriesByUser = Map<number, Map<string, TemporaryDirectory>>
 
 @Injectable()
 export class FilesScheduler {
@@ -37,7 +54,9 @@ export class FilesScheduler {
     private readonly cache: Cache,
     private readonly filesContentIndexer: FilesContentIndexer,
     private readonly filesQuotaManager: FilesQuotaManager,
-    private readonly filesTrashRetention: FilesTrashRetention
+    private readonly filesTrashRetention: FilesTrashRetention,
+    private readonly spacesQueries: SpacesQueries,
+    private readonly sharesQueries: SharesQueries
   ) {}
 
   @Timeout(5_000)
@@ -98,19 +117,53 @@ export class FilesScheduler {
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async cleanupUserTmpFiles(): Promise<void> {
     this.logger.log({ tag: this.cleanupUserTmpFiles.name, msg: `START` })
+    const expiration = Date.now() - this.TMP_FILE_MAX_AGE
+    const temporaryDirectories: TemporaryDirectoriesByUser = new Map()
     try {
-      const expiration = Date.now() - this.TMP_FILE_MAX_AGE
-      for (const user of await this.db
+      const appUsers = await this.db
         .select({
           id: users.id,
           login: users.login,
           role: users.role
         })
-        .from(users)) {
-        await this.cleanupUserTmpFilesForUser(user, expiration)
+        .from(users)
+
+      for (const user of appUsers) {
+        const homeTmpPath = user.role === USER_ROLE.LINK ? UserModel.getLinkTmpPath(user.id) : UserModel.getTmpPath(user.login)
+        this.registerTemporaryDirectory(temporaryDirectories, user.id, homeTmpPath, true)
+        if (user.role !== USER_ROLE.LINK) {
+          await this.discoverTemporaryUsersRoot(
+            path.join(UserModel.getHomePath(user.login), TEMPORARY_PATH.STORAGE, TEMPORARY_PATH.ACTORS),
+            temporaryDirectories
+          )
+        }
+      }
+
+      if (await isPathExists(configuration.applications.files.spacesPath)) {
+        for (const entry of await fs.readdir(configuration.applications.files.spacesPath, { withFileTypes: true })) {
+          if (entry.isDirectory()) {
+            await this.discoverTemporaryUsersRoot(SpaceModel.getUsersTmpPath(entry.name), temporaryDirectories)
+          }
+        }
+      }
+
+      const externalRoots = new Set<string>()
+      for (const space of await this.spacesQueries.spacesQuotaPaths()) {
+        for (const externalPath of space.externalPaths || []) {
+          if (typeof externalPath === 'string' && externalPath) externalRoots.add(path.resolve(externalPath))
+        }
+      }
+      for (const share of await this.sharesQueries.sharesQuotaExternalPaths()) {
+        if (typeof share.externalPath === 'string' && share.externalPath) externalRoots.add(path.resolve(share.externalPath))
+      }
+      for (const externalRoot of externalRoots) {
+        await this.discoverTemporaryUsersRoot(path.join(externalRoot, TEMPORARY_PATH.STORAGE, TEMPORARY_PATH.ACTORS), temporaryDirectories)
       }
     } catch (e) {
       this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `${e}` })
+    }
+    for (const [userId, directories] of temporaryDirectories) {
+      await this.cleanupTemporaryDirectories(userId, [...directories.values()], expiration)
     }
     this.logger.log({ tag: this.cleanupUserTmpFiles.name, msg: `END` })
   }
@@ -215,52 +268,77 @@ export class FilesScheduler {
     this.isQuotaUpdateIsRunning = false
   }
 
-  private async cleanupUserTaskFiles(userId: number, userTasksPath: string, expiration: number): Promise<void> {
+  private registerTemporaryDirectory(
+    temporaryDirectories: TemporaryDirectoriesByUser,
+    userId: number,
+    temporaryPath: string,
+    includeLegacyEntries = false
+  ): void {
+    let userDirectories = temporaryDirectories.get(userId)
+    if (!userDirectories) {
+      userDirectories = new Map()
+      temporaryDirectories.set(userId, userDirectories)
+    }
+    const existingDirectory = userDirectories.get(temporaryPath)
+    userDirectories.set(temporaryPath, {
+      path: temporaryPath,
+      includeLegacyEntries: includeLegacyEntries || existingDirectory?.includeLegacyEntries === true
+    })
+  }
+
+  private async discoverTemporaryUsersRoot(usersTmpPath: string, temporaryDirectories: TemporaryDirectoriesByUser): Promise<void> {
     try {
-      // Snapshot the directory first so files created by tasks registered during cache lookup are left for the next pass.
-      const fileNames = await fs.readdir(userTasksPath)
-      const keys = await this.cache.keys(FilesTasksManager.getCacheKey(userId))
-      const tasks: (FileTask | null | undefined)[] = keys.length ? await this.cache.mget(keys) : []
-      const protectedFiles = new Set<string>()
-      const protectedPrefixes: string[] = []
-      let hasActiveTasks = false
-      for (const task of tasks) {
-        if (!task) continue
-        // Exported archives remain downloadable while their completed task is still cached.
-        if (task.props.compressInDirectory === false) protectedFiles.add(task.name)
-        if (!isActiveTaskStatus(task.status)) continue
-        hasActiveTasks = true
-        // Active task staging files must survive tmp cleanup; the transfer may still publish or rollback them.
-        // QUEUED tasks are included because they may start after this cache snapshot.
-        protectedPrefixes.push(taskTemporaryPrefix(FilesTasksManager.getCacheKey(userId, task.id)))
-      }
-      for (const fileName of fileNames) {
-        if (protectedFiles.has(fileName) || protectedPrefixes.some((prefix: string) => fileName.startsWith(prefix))) continue
-        // An active task may have just published an unprefixed result before updating its cached name.
-        await this.removeTmpFile(path.join(userTasksPath, fileName), hasActiveTasks ? expiration : undefined)
+      if (!(await isPathExists(usersTmpPath))) return
+      for (const entry of await fs.readdir(usersTmpPath, { withFileTypes: true })) {
+        const userId = Number(entry.name)
+        if (!entry.isDirectory() || !Number.isSafeInteger(userId) || userId <= 0) continue
+        this.registerTemporaryDirectory(temporaryDirectories, userId, path.join(usersTmpPath, entry.name))
       }
     } catch (e) {
-      this.logger.error({ tag: this.cleanupUserTaskFiles.name, msg: `unable to browse ${userTasksPath} : ${e}` })
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${usersTmpPath} : ${e}` })
     }
   }
 
-  private async cleanupUserTmpFilesForUser(user: { id: number; login: string; role: number }, expiration: number): Promise<void> {
-    const userTmpPath = UserModel.getTmpPath(user.login, user.role === USER_ROLE.GUEST, user.role === USER_ROLE.LINK)
+  private async snapshotTemporaryDirectory(directory: TemporaryDirectory): Promise<TemporaryDirectorySnapshot | undefined> {
     try {
-      if (!(await isPathExists(userTmpPath))) {
-        return
-      }
-      for (const f of await fs.readdir(userTmpPath)) {
-        const rPath = path.join(userTmpPath, f)
-        if (f === USER_PATH.TASKS) {
-          await this.cleanupUserTaskFiles(user.id, rPath, expiration)
-        } else {
-          await this.removeTmpFile(rPath, expiration)
-        }
-      }
+      if (!(await isPathExists(directory.path))) return
+      const fileNames = await fs.readdir(directory.path)
+      const candidates = directory.includeLegacyEntries ? fileNames : fileNames.filter((fileName) => fileName.startsWith(TEMPORARY_FILE_PREFIX))
+      return candidates.length === 0 ? undefined : { fileNames: candidates, path: directory.path }
     } catch (e) {
-      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${userTmpPath} : ${e}` })
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${directory.path} : ${e}` })
     }
+  }
+
+  private async cleanupTemporaryDirectories(userId: number, directories: TemporaryDirectory[], expiration: number): Promise<void> {
+    const snapshots: TemporaryDirectorySnapshot[] = []
+    for (const directory of directories) {
+      const snapshot = await this.snapshotTemporaryDirectory(directory)
+      if (snapshot) snapshots.push(snapshot)
+    }
+    if (snapshots.length === 0) return
+
+    let protectedPrefixes: string[]
+    try {
+      // Tasks are stored before their staging entries are created. Reading the cache after all
+      // snapshots guarantees that concurrent entries are either protected or left for the next pass.
+      protectedPrefixes = await this.taskPrefixes(userId)
+    } catch (e) {
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to resolve temporary files for user ${userId} : ${e}` })
+      return
+    }
+    for (const snapshot of snapshots) {
+      for (const fileName of snapshot.fileNames) {
+        if (protectedPrefixes.some((prefix) => fileName.startsWith(prefix))) continue
+        await this.removeTmpFile(path.join(snapshot.path, fileName), expiration)
+      }
+    }
+  }
+
+  private async taskPrefixes(userId: number): Promise<string[]> {
+    const keys = await this.cache.keys(FilesTasksManager.getCacheKey(userId))
+    const tasks: (FileTask | null | undefined)[] = keys.length ? await this.cache.mget(keys) : []
+    return tasks.filter((task): task is FileTask => Boolean(task?.id && task?.type)).map((task) => temporaryFilePrefix(task.type, task.id))
   }
 
   private async removeTmpFile(rPath: string, expiration?: number): Promise<void> {

@@ -52,7 +52,7 @@ function loadConfiguration(): GlobalConfig {
   }
   config.applications.files.usersPath = join(config.applications.files.dataPath, 'users')
   config.applications.files.spacesPath = join(config.applications.files.dataPath, 'spaces')
-  config.applications.files.tmpPath = join(config.applications.files.dataPath, 'tmp')
+  config.applications.files.linksPath = join(config.applications.files.dataPath, 'links')
   // DEPRECATIONS
   deprecatedFilesEditorsConfig(config)
   deprecatedFilesContentIndexingConfig(config)

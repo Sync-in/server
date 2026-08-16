@@ -11,17 +11,18 @@ import { HTTP_METHOD } from '../../applications.constants'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
 import { NotificationContent } from '../../notifications/interfaces/notification-properties.interface'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
-import { SPACE_OPERATION, SPACE_PERSONAL, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
+import { SPACE_OPERATION } from '../../spaces/constants/spaces'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service'
-import { realTrashPathFromSpace } from '../../spaces/utils/paths'
+import { temporaryRootFromSpace, trashTargetFromSpace } from '../../spaces/utils/paths'
 import { canAccessToSpace, haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
 import { UserModel } from '../../users/models/user.model'
 import { DEPTH, LOCK_DEPTH } from '../../webdav/constants/webdav'
 import { CACHE_LOCK_FILE_TTL } from '../constants/cache'
 import { TAR_EXTENSION, TAR_GZ_EXTENSION, ZIP_EXTENSION } from '../constants/compress'
 import { COMPRESSION_EXTENSION } from '../constants/files'
+import { FILE_OPERATION } from '../constants/operations'
 import { ALL_DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPES, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
 import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
@@ -44,11 +45,10 @@ import {
   isPathInside,
   isPathIsDir,
   makeDir,
-  makeTempDir,
+  makeTemporaryDirectory,
   moveFiles,
   removeFiles,
-  tempFilePath,
-  temporaryPathPrefix,
+  temporaryFilePath,
   touchFile,
   uniqueDatedFilePath,
   uniqueFilePathFromDir,
@@ -71,7 +71,6 @@ import {
   uploadTmpFilePath
 } from '../utils/upload-file'
 import { maxFileSizeExceededError } from '../utils/errors'
-import { createTaskTemporaryDir, taskTemporaryPath } from '../utils/tasks'
 import { FilesTasksTransfer } from './tasks/files-tasks-transfer.service'
 import { createTar } from '../utils/tar-file'
 import { createZip } from '../utils/zip-file'
@@ -229,6 +228,7 @@ export class FilesManager {
     const patchMethod = req.method === HTTP_METHOD.PATCH
     const postMethod = req.method === HTTP_METHOD.POST
     const realParentPath = dirName(space.realPath)
+    const temporaryRoot = overwrite || patchMethod ? temporaryRootFromSpace(user, space) : undefined
     const uploadLimiter = createUploadStreamLimiter(space, configuration.applications.files.maxUploadSize)
 
     // For POST, space.realPath can be either the final file path or the root directory for a folder upload.
@@ -262,7 +262,7 @@ export class FilesManager {
           throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
         }
         // PUT/PATCH write outside the destination first, so a failed upload does not corrupt an existing file.
-        const tmpFile = overwrite || patchMethod ? uploadTmpFilePath(user.tmpPath, partFileName) : undefined
+        const tmpFile = temporaryRoot ? uploadTmpFilePath(temporaryRoot, partFileName) : undefined
         const writePath = tmpFile || dstFile
 
         const dstDir = dirName(dstFile)
@@ -283,8 +283,9 @@ export class FilesManager {
             dstParentSpaceToDeleteBeforeMove = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
           }
         }
-        // Create the destination directory only when writing directly; user.tmpPath already exists.
-        if (!tmpFile && !(await isPathExists(dstDir))) {
+        if (tmpFile) {
+          await makeDir(dirName(tmpFile), true)
+        } else if (!(await isPathExists(dstDir))) {
           await makeDir(dstDir, true)
         }
 
@@ -565,41 +566,33 @@ export class FilesManager {
       await removeFiles(space.realPath)
       FileEvent.emit('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: space.realPath })
     } else {
-      const baseTrashPath = realTrashPathFromSpace(user, space)
-      if (baseTrashPath) {
+      const trashTarget = trashTargetFromSpace(user, space)
+      if (trashTarget?.mode === 'trash') {
         const name = fileName(space.realPath)
-        const trashDir = path.join(baseTrashPath, dirName(space.dbFile.path))
+        const trashDir = path.join(trashTarget.path, dirName(space.dbFile.path))
         const trashFile = path.join(trashDir, name)
         if (!(await isPathExists(trashDir))) {
           await makeDir(trashDir, true)
         }
         if (isTaskContext) {
-          sourceCleanupError = await this.filesTasksTransfer.delete(user, space, trashFile, isDir, signal, () =>
+          sourceCleanupError = await this.filesTasksTransfer.delete(space, trashFile, trashTarget.temporaryRoot, isDir, signal, () =>
             this.moveExistingTrashFile(space, trashFile)
           )
         } else {
           await this.moveExistingTrashFile(space, trashFile)
           await moveFiles(space.realPath, trashFile, true)
         }
-        // emit file event
-        if (space.dbFile.shareExternalId) {
-          // deleted files from shares with external locations are moved to the owner’s trash
-          FileEvent.emit('event', { user, space, action: ACTION.DELETE_PERMANENTLY, rPath: space.realPath })
-          // emit an event for the file newly moved to the owner’s trash space
-          const userSpace = new SpaceEnv(SPACE_PERSONAL, null, false)
-          userSpace.setup(user, SPACE_REPOSITORY.TRASH, null, [], [])
-          FileEvent.emit('event', { user, space: userSpace, action: ACTION.ADD, rPath: trashFile })
-        } else {
-          // emit an event for the file or directory moved to the trash
-          // space keeps its original path and rPath is its new trash path
-          FileEvent.emit('event', { user, space, action: ACTION.DELETE, rPath: trashFile })
-        }
+        // emit an event for the file or directory moved to the trash
+        // space keeps its original path and rPath is its new trash path
+        FileEvent.emit('event', { user, space, action: ACTION.DELETE, rPath: trashFile })
       } else {
-        // unsupported case: delete the file (this shouldn't happen)
-        this.logger.error({
-          tag: this.delete.name,
-          msg: `Unable to find trash path for space - *${space.alias}* (${space.id}) : delete permanently : ${space.realPath}`
-        })
+        if (!trashTarget) {
+          // unsupported case: delete the file (this shouldn't happen)
+          this.logger.error({
+            tag: this.delete.name,
+            msg: `Unable to find trash path for space - *${space.alias}* (${space.id}) : delete permanently : ${space.realPath}`
+          })
+        }
         forceDeleteInDB = true
         await removeFiles(space.realPath)
         // emit file event
@@ -613,7 +606,7 @@ export class FilesManager {
     for (const lock of await this.filesLockManager.getLocksByPath(space.dbFile)) {
       this.filesLockManager.removeLock(lock.key).catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: `${e}` }))
     }
-    // Keep the database aligned with the published trash copy before reporting a residual source.
+    // Keep the database aligned with the completed filesystem operation before reporting a residual source.
     await this.filesQueries.deleteFiles(space.dbFile, isDir, forceDeleteInDB)
     if (sourceCleanupError) {
       this.logSourceCleanupError(sourceCleanupError)
@@ -626,9 +619,8 @@ export class FilesManager {
     this.checkNotTrashRepository(space)
     this.logger.log({ tag: this.downloadFromUrl.name, msg: `${downloadDto.url}` })
     const dstPath = await uniqueFilePathFromDir(space.realPath)
-    const tmpPath = isTaskContext
-      ? taskTemporaryPath(user.tasksPath, space.task!.cacheKey, dstPath)
-      : tempFilePath(user.tmpPath, temporaryPathPrefix(dstPath, 'download'))
+    const temporaryRoot = temporaryRootFromSpace(user, space)
+    const tmpPath = temporaryFilePath(temporaryRoot, dstPath, FILE_OPERATION.DOWNLOAD, space.task?.id)
     const dbFile = space.dbFile
     dbFile.path = path.join(dirName(dbFile.path), fileName(dstPath))
 
@@ -639,6 +631,7 @@ export class FilesManager {
     }
 
     try {
+      await makeDir(temporaryRoot, true)
       await new DownloadFile(this.http).download(downloadDto, tmpPath, {
         space,
         publishedPath: dstPath,
@@ -664,16 +657,19 @@ export class FilesManager {
     const isTaskContext = Boolean(space.task?.cacheKey)
     // This method is currently used only by files-methods.service, which handles input sanitization.
     // If it is used in other services in the future, make sure to refactor accordingly to sanitize inputs properly.
+    if (!dto.compressInDirectory && !isTaskContext) {
+      throw new FileError(HttpStatus.BAD_REQUEST, 'Archive export requires an explicit task')
+    }
     if (dto.compressInDirectory) {
       this.checkNotTrashRepository(space)
     }
     const srcPath = dirName(space.realPath)
     const outputExtension = dto.extension === TAR_EXTENSION && dto.compression ? TAR_GZ_EXTENSION : dto.extension
     const archiveExt = dto.name.endsWith(`.${outputExtension}`) ? '' : `.${outputExtension}`
-    const dstPath = await uniqueFilePathFromDir(path.join(dto.compressInDirectory ? srcPath : user.tasksPath, `${dto.name}${archiveExt}`))
-    const tmpPath = isTaskContext
-      ? taskTemporaryPath(user.tasksPath, space.task!.cacheKey, dstPath)
-      : tempFilePath(user.tmpPath, temporaryPathPrefix(dstPath, 'compress'))
+    const archiveName = `${dto.name}${archiveExt}`
+    const dstPath = dto.compressInDirectory ? await uniqueFilePathFromDir(path.join(srcPath, archiveName)) : path.join(user.tmpPath, archiveName)
+    const temporaryRoot = dto.compressInDirectory ? temporaryRootFromSpace(user, space) : user.tmpPath
+    const tmpPath = temporaryFilePath(temporaryRoot, archiveName, FILE_OPERATION.COMPRESS, space.task?.id)
     // create lock
     let fileLock: FileLock | undefined
     if (dto.compressInDirectory) {
@@ -692,6 +688,7 @@ export class FilesManager {
     }
     // do
     try {
+      await makeDir(temporaryRoot, true)
       const maxArchiveSize = space.storageQuota === null ? undefined : Math.max(0, space.storageQuota - space.storageUsage)
       const entries = dto.files.map((entry) => ({ ...entry, path: entry.path! }))
       const onProgress = isTaskContext ? this.filesTasksTransfer.createByteProgressHandler(space) : undefined
@@ -700,7 +697,9 @@ export class FilesManager {
       } else {
         await createTar(tmpPath, entries, dto.compression, signal, onProgress, maxArchiveSize)
       }
-      await moveFiles(tmpPath, dstPath)
+      if (dto.compressInDirectory) {
+        await moveFiles(tmpPath, dstPath)
+      }
     } catch (e) {
       await removeFiles(tmpPath).catch((err: Error) => this.logger.error({ tag: this.compress.name, msg: `unable to remove ${tmpPath} : ${err}` }))
       throw e
@@ -709,8 +708,9 @@ export class FilesManager {
         await this.filesLockManager.removeLock(fileLock.key)
       }
     }
-    // emit file event
-    FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
+    if (dto.compressInDirectory) {
+      FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
+    }
   }
 
   async decompress(user: UserModel, space: SpaceEnv, signal?: AbortSignal): Promise<void> {
@@ -726,9 +726,7 @@ export class FilesManager {
     }
     // make temporary extraction folder
     const dstPath = await uniqueFilePathFromDir(path.join(dirName(space.realPath), path.basename(space.realPath, extension)))
-    const tmpPath = isTaskContext
-      ? await createTaskTemporaryDir(user.tasksPath, space.task!.cacheKey, dstPath)
-      : await makeTempDir(user.tmpPath, temporaryPathPrefix(dstPath, 'extract'))
+    const tmpPath = await makeTemporaryDirectory(temporaryRootFromSpace(user, space), dstPath, FILE_OPERATION.DECOMPRESS, space.task?.id)
     let fileLock: FileLock | undefined
     try {
       // create lock

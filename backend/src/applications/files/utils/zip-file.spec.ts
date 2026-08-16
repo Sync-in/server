@@ -35,7 +35,10 @@ describe(createZip.name, () => {
   it('archives files and empty directories with the requested compression', async () => {
     const directory = path.join(sourceDir, 'docs')
     await mkdir(path.join(directory, 'empty'), { recursive: true })
+    await mkdir(path.join(directory, '.sync-in-tmp', 'users'), { recursive: true })
     await writeFile(path.join(directory, 'file.txt'), 'content')
+    await writeFile(path.join(directory, '.sync-in.partial'), 'partial')
+    await writeFile(path.join(directory, '.sync-in-tmp', 'users', 'staging.bin'), 'staging')
 
     await createZip(archivePath, [{ path: directory, name: 'docs' }], true)
 
@@ -45,6 +48,7 @@ describe(createZip.name, () => {
       compressionMethod: 8,
       content: Buffer.from('content')
     })
+    expect(archiveEntries.some(({ path: entryPath }) => entryPath.includes('.sync-in'))).toBe(false)
 
     await createZip(archivePath, [{ path: path.join(directory, 'file.txt'), name: 'file.txt' }], false)
 

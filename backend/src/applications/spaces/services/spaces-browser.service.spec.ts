@@ -1,6 +1,7 @@
 import { ConfigModule } from '@nestjs/config'
 import { Test, TestingModule } from '@nestjs/testing'
-import { exportConfiguration } from '../../../configuration/config.environment'
+import fs from 'node:fs/promises'
+import { configuration, exportConfiguration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/cache.service'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
@@ -53,6 +54,10 @@ describe(SpacesBrowser.name, () => {
     spacesBrowserService = module.get<SpacesBrowser>(SpacesBrowser)
   })
 
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('should be defined', () => {
     expect(spacesBrowserService).toBeDefined()
   })
@@ -75,5 +80,33 @@ describe(SpacesBrowser.name, () => {
     const result = await spacesBrowserService.browse(user, space)
 
     expect(result.space).toEqual({ alias: 'communication', name: 'Communication' })
+  })
+
+  it('always hides internal temporary entries from filesystem browsing', async () => {
+    const showHiddenFiles = configuration.applications.files.showHiddenFiles
+    configuration.applications.files.showHiddenFiles = true
+    vi.spyOn(fs, 'readdir').mockResolvedValue([
+      { name: '.sync-in-tmp', isDirectory: () => true, isFile: () => false },
+      { name: '.sync-in.uploading', isDirectory: () => false, isFile: () => true },
+      { name: '.visible', isDirectory: () => false, isFile: () => true }
+    ] as any)
+    vi.spyOn(fs, 'stat').mockResolvedValue({
+      ino: 1,
+      size: 7,
+      birthtime: new Date(0),
+      mtime: new Date(0),
+      isDirectory: () => false
+    } as any)
+    const names: string[] = []
+
+    try {
+      for await (const file of (spacesBrowserService as any).parsePath({ realPath: '/storage', relativeUrl: '/space' })) {
+        names.push(file.name)
+      }
+    } finally {
+      configuration.applications.files.showHiddenFiles = showHiddenFiles
+    }
+
+    expect(names).toEqual(['.visible'])
   })
 })

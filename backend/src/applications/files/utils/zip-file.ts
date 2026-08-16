@@ -6,7 +6,7 @@ import { Writable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { DEFAULT_HIGH_WATER_MARK } from '../constants/files'
 import { storageQuotaExceededError } from './errors'
-import { createProgressTransform, fileName, isPathInside } from './files'
+import { createProgressTransform, fileName, isInternalTemporaryEntry, isPathInside } from './files'
 
 export interface ZipFileEntry {
   name: string
@@ -50,6 +50,7 @@ async function addPath(archive: ZipWriter<unknown>, root: ZipRoot, realPath: str
     const directory = await opendir(realPath)
     for await (const entry of directory) {
       signal?.throwIfAborted()
+      if (isInternalTemporaryEntry(entry.name)) continue
       const entryPath = path.join(realPath, entry.name)
       await addPath(archive, root, entryPath, await lstat(entryPath), signal)
     }
@@ -80,11 +81,15 @@ export async function createZip(
     throw new Error('Cannot create a ZIP archive without entries')
   }
 
-  const resolvedPaths = entries.map(({ path: entryPath }) => path.resolve(entryPath))
+  const archiveEntries = entries.filter(({ path: entryPath }) => !isInternalTemporaryEntry(path.basename(path.resolve(entryPath))))
+  if (archiveEntries.length === 0) {
+    throw new Error('Cannot create a ZIP archive without entries')
+  }
+  const resolvedPaths = archiveEntries.map(({ path: entryPath }) => path.resolve(entryPath))
   const stats = await Promise.all(resolvedPaths.map((entryPath) => lstat(entryPath)))
   signal?.throwIfAborted()
   const selectedDirectoryPaths = resolvedPaths.filter((_entryPath, index) => stats[index].isDirectory())
-  const selectedEntries = entries
+  const selectedEntries = archiveEntries
     .map((entry, index) => ({ entry, realPath: resolvedPaths[index], stats: stats[index] }))
     .filter(({ realPath }) => !selectedDirectoryPaths.some((parentPath) => isPathInside(parentPath, realPath)))
   const roots = archiveRoots(selectedEntries)

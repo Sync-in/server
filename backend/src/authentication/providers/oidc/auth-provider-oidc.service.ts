@@ -46,7 +46,7 @@ import { HttpService } from '@nestjs/axios'
 import { DownloadFileDto } from '../../../applications/files/dto/file-operations.dto'
 import { DownloadFile } from '../../../applications/files/utils/download-file'
 import { convertTempImageToPng, imgMimeTypePrefix } from '../../../common/image'
-import { fileSize } from '../../../applications/files/utils/files'
+import { fileSize, temporaryFilePath } from '../../../applications/files/utils/files'
 
 @Injectable()
 export class AuthProviderOIDC implements AuthProvider {
@@ -456,10 +456,10 @@ export class AuthProviderOIDC implements AuthProvider {
     let pictureLastModified: string | undefined
     const downloader = new DownloadFile(this.http)
     const allowPrivateIP = this.oidcConfig.security.allowPrivateIpAvatarDownload
+    const userAvatarTmpPath = temporaryFilePath(user.tmpPath, USER_AVATAR_FILE_NAME, 'avatar')
     try {
-      const tmpPicturePath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
       // retrieve headers
-      const { contentType, contentLength, lastModified } = await downloader.download(downloadDto, tmpPicturePath, {
+      const { contentType, contentLength, lastModified } = await downloader.download(downloadDto, userAvatarTmpPath, {
         allowPrivateIP,
         getContentInfo: true
       })
@@ -489,7 +489,6 @@ export class AuthProviderOIDC implements AuthProvider {
     }
 
     // download avatar
-    const userAvatarTmpPath = path.join(user.tmpPath, USER_AVATAR_FILE_NAME)
     try {
       await downloader.download(downloadDto, userAvatarTmpPath, { allowPrivateIP, maxSize: USER_AVATAR_MAX_UPLOAD_SIZE })
     } catch (e) {

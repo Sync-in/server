@@ -1,6 +1,11 @@
 export const DEFAULT_CHECKSUM_ALGORITHM = 'sha512-256'
 export const DEFAULT_HIGH_WATER_MARK = 1024 * 1024
 export const DEFAULT_MIME_TYPE = 'application/octet-stream'
+export const TEMPORARY_FILE_PREFIX = '~tmp-'
+export const TEMPORARY_PATH = {
+  STORAGE: '.sync-in-tmp',
+  ACTORS: 'users'
+} as const
 export const EXTRA_MIMES_TYPE = new Map([
   ['.go', 'text-x-go'],
   ['.gz', 'application-gzip'],

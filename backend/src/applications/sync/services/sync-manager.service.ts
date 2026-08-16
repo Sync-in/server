@@ -9,7 +9,7 @@ import { FILE_OPERATION } from '../../files/constants/operations'
 import { FileError } from '../../files/models/file-error'
 import { LockConflict } from '../../files/models/file-lock-error'
 import { FilesManager } from '../../files/services/files-manager.service'
-import { checksumFile, isPathExists, isPathIsDir, touchFile } from '../../files/utils/files'
+import { checksumFile, isInternalTemporaryEntry, isPathExists, isPathIsDir, touchFile } from '../../files/utils/files'
 import { SendFile } from '../../files/utils/send-file'
 import { ParseDiffContext } from '../../spaces/interfaces/space-diff.interface'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface'
@@ -178,6 +178,10 @@ export class SyncManager {
     try {
       for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
         const realPath = path.join(entry.parentPath, entry.name)
+        if (isInternalTemporaryEntry(entry.name)) {
+          this.logger.verbose({ tag: this.parseFiles.name, msg: `ignore internal temporary entry: ${realPath}` })
+          continue
+        }
         if (!entry.isDirectory() && !entry.isFile()) {
           this.logger.log({ tag: this.parseFiles.name, msg: `ignore special file: ${realPath}` })
           continue

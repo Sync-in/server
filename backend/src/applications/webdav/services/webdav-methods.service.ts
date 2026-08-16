@@ -7,10 +7,11 @@ import { FileError } from '../../files/models/file-error'
 import { LockConflict } from '../../files/models/file-lock-error'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
 import { FilesManager } from '../../files/services/files-manager.service'
-import { dirName, fileName, genEtag, isPathExists, isPathIsDir, removeFiles, tempFilePath, temporaryPathPrefix } from '../../files/utils/files'
+import { dirName, fileName, genEtag, isPathExists, isPathIsDir, removeFiles, temporaryFilePath } from '../../files/utils/files'
+import { FILE_OPERATION } from '../../files/constants/operations'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
-import { dbFileFromSpace } from '../../spaces/utils/paths'
+import { dbFileFromSpace, temporaryRootFromSpace } from '../../spaces/utils/paths'
 import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
 import {
   DEPTH,
@@ -228,7 +229,7 @@ export class WebDAVMethods {
       // Stage only complete overwrites to preserve the previous file on failure. New files and
       // ranged uploads write directly because their partial content is the checkpoint used to resume.
       if (!isRangeUpload && (await isPathExists(req.space.realPath))) {
-        tmpPath = tempFilePath(req.user.tmpPath, temporaryPathPrefix(req.space.realPath, 'upload'))
+        tmpPath = temporaryFilePath(temporaryRootFromSpace(req.user, req.space), req.space.realPath, FILE_OPERATION.UPLOAD)
       }
       rExists = await this.filesManager.saveStream(req.user, req.space, req, {
         ...(tmpPath && { tmpPath }),

@@ -102,7 +102,7 @@ export class AdminUsersManager {
           if (await this.adminQueries.usersQueries.checkUserExists(v)) {
             throw new HttpException('Login already used', HttpStatus.FORBIDDEN)
           }
-          if (userRole === USER_ROLE.USER) {
+          if (userRole === USER_ROLE.USER || userRole === USER_ROLE.GUEST) {
             if (!(await this.renameUserSpace(user.login, v))) {
               throw new HttpException('Unable to rename user space', HttpStatus.INTERNAL_SERVER_ERROR)
             }
@@ -186,7 +186,7 @@ export class AdminUsersManager {
         this.logger.error({ tag: this.deleteUserOrGuest.name, msg: `*${userLogin}* (${userId}) was not deleted : not found` })
       }
       if (deleteUserDto.deleteSpace) {
-        await this.deleteUserSpace(userLogin, deleteUserDto.isGuest)
+        await this.deleteUserSpace(userLogin)
       }
     } catch (e) {
       this.logger.error({ tag: this.deleteUserOrGuest.name, msg: `unable to delete *${userLogin}* (${userId}) : ${e}` })
@@ -194,15 +194,20 @@ export class AdminUsersManager {
     }
   }
 
-  async deleteUserOrGuestFromAdmin(userId: number, deleteUserDto: DeleteUserDto): Promise<void> {
+  async deleteUserFromAdmin(userId: number, deleteUserDto: DeleteUserDto): Promise<void> {
     const userToDelete: UserModel = this.checkUser(await this.adminQueries.usersQueries.from(userId))
-    if (userToDelete.isGuest !== deleteUserDto.isGuest) {
+    if (!userToDelete.isUser) {
       throw new HttpException('User mismatch', HttpStatus.BAD_REQUEST)
     }
-    await this.deleteUserOrGuest(userToDelete.id, userToDelete.login, {
-      deleteSpace: deleteUserDto.isGuest ? true : deleteUserDto.deleteSpace,
-      isGuest: deleteUserDto.isGuest
-    } satisfies DeleteUserDto)
+    await this.deleteUserOrGuest(userToDelete.id, userToDelete.login, deleteUserDto)
+  }
+
+  async deleteGuestFromAdmin(guestId: number): Promise<void> {
+    const guestToDelete: UserModel = this.checkUser(await this.adminQueries.usersQueries.from(guestId))
+    if (!guestToDelete.isGuest) {
+      throw new HttpException('User mismatch', HttpStatus.BAD_REQUEST)
+    }
+    await this.deleteUserOrGuest(guestToDelete.id, guestToDelete.login, { deleteSpace: true })
   }
 
   listGuests(): Promise<AdminUser[]> {
@@ -338,8 +343,8 @@ export class AdminUsersManager {
     return this.authManager.setCookies(admin, res)
   }
 
-  async deleteUserSpace(userLogin: string, isGuest = false): Promise<void> {
-    const userSpace: string = UserModel.getHomePath(userLogin, isGuest)
+  async deleteUserSpace(userLogin: string): Promise<void> {
+    const userSpace: string = UserModel.getHomePath(userLogin)
     try {
       if (await isPathExists(userSpace)) {
         await removeFiles(userSpace)

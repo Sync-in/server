@@ -67,7 +67,6 @@ export class LinksManager {
       this.logger.log({ tag: this.linkAccess.name, msg: `*${user.login}* (${user.id}) is logged` })
       this.incrementLinkNbAccess(link)
       this.usersManager.updateAccesses(user, req.ip, true).catch((e: Error) => this.logger.error({ tag: this.linkAccess.name, msg: `${e}` }))
-      await user.makePaths()
       return this.authManager.setCookies(user, res)
     }
     // Already authenticated
@@ -117,7 +116,6 @@ export class LinksManager {
     }
     // authenticate user to allow access
     this.logger.log({ tag: this.linkAuthentication.name, msg: `*${user.login}* (${user.id}) is logged` })
-    await user.makePaths()
     return this.authManager.setCookies(user, res)
   }
 

@@ -2,10 +2,9 @@ import fs, { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { FILE_OPERATION } from '../constants/operations'
-import { createTaskTemporaryDir, isTaskCancellable, taskTemporaryPath, taskTemporaryPrefix } from './tasks'
+import { countDirEntriesAndSize, isTaskCancellable } from './tasks'
 
 describe('file task utilities', () => {
-  const cacheKey = 'ftask-7-task-id'
   let tmpDir: string
   let srcPath: string
   let dstPath: string
@@ -41,12 +40,23 @@ describe('file task utilities', () => {
     expect(lstatSpy).toHaveBeenCalledWith(srcPath)
   })
 
-  it('uses a uniform task staging name for files and directories', async () => {
-    const filePath = taskTemporaryPath(tmpDir, cacheKey, '/destination/report.txt')
-    const directoryPath = await createTaskTemporaryDir(tmpDir, cacheKey, '/destination/archive')
+  it('counts task content while ignoring internal temporary entries', async () => {
+    const sourceDir = path.join(tmpDir, 'source')
+    await fs.mkdir(path.join(sourceDir, 'docs'), { recursive: true })
+    await fs.mkdir(path.join(sourceDir, '.sync-in-tmp', 'users', '7'), { recursive: true })
+    await fs.mkdir(path.join(sourceDir, '.sync-in.partial-dir'), { recursive: true })
+    await Promise.all([
+      writeFile(path.join(sourceDir, 'report.txt'), 'report'),
+      writeFile(path.join(sourceDir, 'docs', 'notes.txt'), 'notes'),
+      writeFile(path.join(sourceDir, '.sync-in.report.txt'), 'ignored'),
+      writeFile(path.join(sourceDir, '.sync-in-tmp', 'users', '7', 'staging.bin'), 'ignored'),
+      writeFile(path.join(sourceDir, '.sync-in.partial-dir', 'chunk.bin'), 'ignored')
+    ])
 
-    expect(path.basename(filePath)).toBe(`${taskTemporaryPrefix(cacheKey)}report.txt`)
-    expect(path.basename(directoryPath)).toBe(`${taskTemporaryPrefix(cacheKey)}archive`)
-    expect((await fs.stat(directoryPath)).isDirectory()).toBe(true)
+    await expect(countDirEntriesAndSize(sourceDir)).resolves.toEqual({
+      directories: 1,
+      files: 2,
+      size: Buffer.byteLength('reportnotes')
+    })
   })
 })

@@ -9,7 +9,7 @@ import { createSlug, InvalidSlugError, regExpNumberSuffix } from '../../../commo
 import { configuration } from '../../../configuration/config.environment'
 import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { FileError } from '../../files/models/file-error'
-import { dirListFileNames, getProps, isPathExists, moveFiles, removeFiles } from '../../files/utils/files'
+import { dirListFileNames, getProps, isInternalTemporaryEntry, isPathExists, moveFiles, removeFiles } from '../../files/utils/files'
 import { LINK_TYPE } from '../../links/constants/links'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
 import { NotificationContent } from '../../notifications/interfaces/notification-properties.interface'
@@ -178,7 +178,9 @@ export class SpacesManager {
     for (const space of [...(await this.listSpaces(user.id)), personalTrash] as SpaceTrash[]) {
       const rPath = space.alias === SPACE_ALIAS.PERSONAL ? user.trashPath : SpaceModel.getTrashPath(space.alias)
       try {
-        space.nb = (await fs.readdir(rPath)).filter((f) => configuration.applications.files.showHiddenFiles || f[0] !== '.').length
+        space.nb = (await fs.readdir(rPath)).filter(
+          (f) => !isInternalTemporaryEntry(f) && (configuration.applications.files.showHiddenFiles || f[0] !== '.')
+        ).length
         if (space.nb) {
           const stats = await fs.stat(rPath)
           space.mtime = stats.mtime.getTime()

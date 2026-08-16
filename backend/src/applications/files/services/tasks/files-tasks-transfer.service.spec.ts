@@ -2,12 +2,14 @@ import fs, { access, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/p
 import os from 'node:os'
 import path from 'node:path'
 import * as filesUtils from '../../utils/files'
-import { taskTemporaryPrefix } from '../../utils/tasks'
+import * as spacesPathUtils from '../../../spaces/utils/paths'
+import { FILE_OPERATION } from '../../constants/operations'
 import { FilesTasksTransfer } from './files-tasks-transfer.service'
 import { SourceCleanupError } from '../../models/file-error'
 
 describe(FilesTasksTransfer.name, () => {
   const cacheKey = 'ftask-7-task-id'
+  const taskId = 'task-id'
   let service: FilesTasksTransfer
   let tmpDir: string
   let srcPath: string
@@ -20,6 +22,7 @@ describe(FilesTasksTransfer.name, () => {
     srcPath = path.join(tmpDir, 'source.txt')
     dstPath = path.join(tmpDir, 'destination.txt')
     stagingDir = path.join(tmpDir, 'tasks')
+    vi.spyOn(spacesPathUtils, 'temporaryRootFromSpace').mockReturnValue(stagingDir)
   })
 
   afterEach(async () => {
@@ -27,8 +30,10 @@ describe(FilesTasksTransfer.name, () => {
     vi.restoreAllMocks()
   })
 
-  const copyAbortable = (options: Record<string, any>) => (service as any).copyAbortable(srcPath, dstPath, options)
-  const moveAbortable = (options: Record<string, any>) => (service as any).moveAbortable(srcPath, dstPath, options)
+  const copyAbortable = (options: Record<string, any>) =>
+    (service as any).copyAbortable(srcPath, dstPath, { executionId: taskId, operation: FILE_OPERATION.COPY, ...options })
+  const moveAbortable = (options: Record<string, any>) =>
+    (service as any).moveAbortable(srcPath, dstPath, { executionId: taskId, operation: FILE_OPERATION.MOVE, ...options })
 
   const mockCrossDevice = () => {
     vi.spyOn(fs, 'lstat').mockResolvedValueOnce({ dev: 1 } as any)
@@ -39,12 +44,12 @@ describe(FilesTasksTransfer.name, () => {
     const content = 'content'
     const srcSpace = {
       realPath: srcPath,
-      task: { cacheKey, props: {} }
+      task: { id: taskId, type: FILE_OPERATION.COPY, cacheKey, props: {} }
     } as any
     const dstSpace = { realPath: dstPath } as any
     await writeFile(srcPath, content)
 
-    await service.copy({ tasksPath: stagingDir } as any, srcSpace, dstSpace, false, false, false, new AbortController().signal, vi.fn())
+    await service.copy({ id: 7 } as any, srcSpace, dstSpace, false, false, false, new AbortController().signal, vi.fn())
 
     expect(srcSpace.task.props).toMatchObject({
       progress: 100,
@@ -52,6 +57,19 @@ describe(FilesTasksTransfer.name, () => {
       totalSize: Buffer.byteLength(content)
     })
     await expect(readFile(dstPath, 'utf8')).resolves.toBe(content)
+  })
+
+  it('ignores internal temporary entries during recursive task copies', async () => {
+    srcPath = path.join(tmpDir, 'source')
+    dstPath = path.join(tmpDir, 'destination')
+    await fs.mkdir(path.join(srcPath, '.sync-in-tmp', 'users'), { recursive: true })
+    await writeFile(path.join(srcPath, 'report.txt'), 'report')
+    await writeFile(path.join(srcPath, '.sync-in.partial'), 'partial')
+    await writeFile(path.join(srcPath, '.sync-in-tmp', 'users', 'staging.bin'), 'staging')
+
+    await (service as any).copyEntry(srcPath, dstPath, true, true, new AbortController().signal)
+
+    await expect(readdir(dstPath)).resolves.toEqual(['report.txt'])
   })
 
   it('tracks extracted entries and implicit parent directories', () => {
@@ -75,7 +93,7 @@ describe(FilesTasksTransfer.name, () => {
 
   it('publishes a copied file only after the commit hook', async () => {
     const signal = new AbortController().signal
-    const temporaryPath = path.join(stagingDir, `${taskTemporaryPrefix(cacheKey)}destination.txt`)
+    const temporaryPath = filesUtils.temporaryFilePath(stagingDir, dstPath, FILE_OPERATION.COPY, taskId)
     let transferredBytes = 0
     await writeFile(srcPath, 'content')
 
@@ -84,7 +102,6 @@ describe(FilesTasksTransfer.name, () => {
         await expect(access(dstPath)).rejects.toMatchObject({ code: 'ENOENT' })
         await expect(readFile(temporaryPath, 'utf8')).resolves.toBe('content')
       },
-      cacheKey,
       onTransferStart: vi.fn(),
       onProgress: (bytes: number) => {
         transferredBytes += bytes
@@ -95,7 +112,7 @@ describe(FilesTasksTransfer.name, () => {
 
     expect(transferredBytes).toBe(Buffer.byteLength('content'))
     expect(path.dirname(temporaryPath)).toBe(stagingDir)
-    expect(path.basename(temporaryPath)).toBe(`${taskTemporaryPrefix(cacheKey)}destination.txt`)
+    expect(path.basename(temporaryPath)).toBe(`${filesUtils.temporaryFilePrefix(FILE_OPERATION.COPY, taskId)}destination.txt`)
     await expect(readFile(dstPath, 'utf8')).resolves.toBe('content')
     await expect(access(temporaryPath)).rejects.toMatchObject({ code: 'ENOENT' })
   })
@@ -105,7 +122,7 @@ describe(FilesTasksTransfer.name, () => {
     await writeFile(srcPath, 'content')
     controller.abort()
 
-    await expect(copyAbortable({ cacheKey, signal: controller.signal, stagingDir })).rejects.toMatchObject({ name: 'AbortError' })
+    await expect(copyAbortable({ signal: controller.signal, stagingDir })).rejects.toMatchObject({ name: 'AbortError' })
 
     await expect(access(dstPath)).rejects.toMatchObject({ code: 'ENOENT' })
     await expect(readdir(stagingDir)).resolves.toEqual([])
@@ -122,7 +139,6 @@ describe(FilesTasksTransfer.name, () => {
       beforeCommit: async () => {
         destinationPrepared = true
       },
-      cacheKey,
       onTransferStart: () => {
         expect(destinationPrepared).toBe(true)
         transferStarted = true
@@ -142,7 +158,7 @@ describe(FilesTasksTransfer.name, () => {
     await writeFile(dstPath, 'existing content')
     mockCrossDevice()
 
-    await expect(copyAbortable({ cacheKey, signal, stagingDir })).rejects.toMatchObject({ code: 'EEXIST' })
+    await expect(copyAbortable({ signal, stagingDir })).rejects.toMatchObject({ code: 'EEXIST' })
 
     await expect(readFile(dstPath, 'utf8')).resolves.toBe('existing content')
   })
@@ -156,7 +172,7 @@ describe(FilesTasksTransfer.name, () => {
     controller.abort()
     mockCrossDevice()
 
-    await expect(copyAbortable({ beforeCommit, cacheKey, overwrite: true, signal: controller.signal, stagingDir })).rejects.toMatchObject({
+    await expect(copyAbortable({ beforeCommit, overwrite: true, signal: controller.signal, stagingDir })).rejects.toMatchObject({
       name: 'AbortError'
     })
 
@@ -175,14 +191,14 @@ describe(FilesTasksTransfer.name, () => {
     vi.spyOn(fs, 'stat').mockResolvedValueOnce({ dev: 2 } as any)
     vi.spyOn(filesUtils, 'removeFiles').mockRejectedValueOnce(new Error('cleanup failed'))
 
-    await expect(copyAbortable({ cacheKey, signal, stagingDir })).rejects.toBe(transferError)
+    await expect(copyAbortable({ signal, stagingDir })).rejects.toBe(transferError)
   })
 
   it('copies then removes the source for a cross-device move', async () => {
     const signal = new AbortController().signal
     await writeFile(srcPath, 'content')
 
-    await moveAbortable({ cacheKey, crossDevice: true, signal, stagingDir })
+    await moveAbortable({ crossDevice: true, signal, stagingDir })
 
     await expect(readFile(dstPath, 'utf8')).resolves.toBe('content')
     await expect(access(srcPath)).rejects.toMatchObject({ code: 'ENOENT' })
@@ -195,7 +211,7 @@ describe(FilesTasksTransfer.name, () => {
     await writeFile(srcPath, 'content')
     vi.spyOn(filesUtils, 'removeFiles').mockRejectedValueOnce(error)
 
-    const cleanupError = await moveAbortable({ cacheKey, crossDevice: true, signal, stagingDir })
+    const cleanupError = await moveAbortable({ crossDevice: true, signal, stagingDir })
 
     expect(cleanupError).toBeInstanceOf(SourceCleanupError)
     expect(cleanupError).toMatchObject({

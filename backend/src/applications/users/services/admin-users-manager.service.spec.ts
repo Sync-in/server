@@ -5,7 +5,6 @@ import { GROUP_TYPE } from '../constants/group'
 import { USER_GROUP_ROLE, USER_ROLE } from '../constants/user'
 import type { CreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
 import type { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto'
-import type { DeleteUserDto } from '../dto/delete-user.dto'
 import type { SearchMembersDto } from '../dto/search-members.dto'
 import { UserModel } from '../models/user.model'
 import { AdminUsersManager } from './admin-users-manager.service'
@@ -366,7 +365,7 @@ describe(AdminUsersManager.name, () => {
       adminQueriesMock.deleteUser.mockResolvedValueOnce(true)
       fs.isPathExists.mockResolvedValueOnce(true)
       fs.removeFiles.mockResolvedValueOnce(undefined)
-      await expect(service.deleteUserOrGuest(10, 'john', { deleteSpace: true, isGuest: false })).resolves.toBeUndefined()
+      await expect(service.deleteUserOrGuest(10, 'john', { deleteSpace: true })).resolves.toBeUndefined()
       expect(adminQueriesMock.deleteUser).toHaveBeenCalledWith(10, 'john')
       expect(fs.isPathExists).toHaveBeenCalled()
       expect(fs.removeFiles).toHaveBeenCalled()
@@ -376,16 +375,41 @@ describe(AdminUsersManager.name, () => {
     })
   })
 
-  describe('deleteUserFromAdmin', () => {
-    it('admin password incorrect / deletion ok', async () => {
-      adminQueriesMock.usersQueries.compareUserPassword.mockResolvedValueOnce(false)
-      await expectHttp(service.deleteUserOrGuestFromAdmin(10, { isGuest: false } as DeleteUserDto))
-
-      adminQueriesMock.usersQueries.compareUserPassword.mockResolvedValueOnce(true)
-      adminQueriesMock.usersQueries.from.mockResolvedValueOnce({ id: 10, login: 'to-del' } as any)
+  describe('deleteUserFromAdmin / deleteGuestFromAdmin', () => {
+    it('deletes a user from the user endpoint', async () => {
+      adminQueriesMock.usersQueries.from.mockResolvedValueOnce({ id: 10, login: 'to-del', role: USER_ROLE.USER } as any)
       adminQueriesMock.deleteUser.mockResolvedValueOnce(true)
-      await service.deleteUserOrGuestFromAdmin(10, { isGuest: false, deleteSpace: true } as DeleteUserDto)
+
+      await service.deleteUserFromAdmin(10, { deleteSpace: true })
+
       expect(adminQueriesMock.deleteUser).toHaveBeenCalledWith(10, 'to-del')
+    })
+
+    it.each([USER_ROLE.GUEST, USER_ROLE.LINK])('rejects role %s from the user endpoint', async (role) => {
+      adminQueriesMock.usersQueries.from.mockResolvedValueOnce({ id: 10, login: 'mismatch', role } as any)
+
+      await expectHttp(service.deleteUserFromAdmin(10, { deleteSpace: false }))
+
+      expect(adminQueriesMock.deleteUser).not.toHaveBeenCalled()
+    })
+
+    it('deletes a guest and always removes its home', async () => {
+      adminQueriesMock.usersQueries.from.mockResolvedValueOnce({ id: 11, login: 'guest', role: USER_ROLE.GUEST } as any)
+      adminQueriesMock.deleteUser.mockResolvedValueOnce(true)
+      fs.isPathExists.mockResolvedValueOnce(false)
+
+      await service.deleteGuestFromAdmin(11)
+
+      expect(adminQueriesMock.deleteUser).toHaveBeenCalledWith(11, 'guest')
+      expect(fs.isPathExists).toHaveBeenCalled()
+    })
+
+    it('rejects a regular user from the guest endpoint', async () => {
+      adminQueriesMock.usersQueries.from.mockResolvedValueOnce({ id: 10, login: 'user', role: USER_ROLE.USER } as any)
+
+      await expectHttp(service.deleteGuestFromAdmin(10))
+
+      expect(adminQueriesMock.deleteUser).not.toHaveBeenCalled()
     })
   })
 

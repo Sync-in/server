@@ -10,7 +10,7 @@ import { UserModel } from '../../users/models/user.model'
 import { SearchFilesDto } from '../dto/file-operations.dto'
 import { FilesContentStore } from '../models/files-content-store'
 import { FileContent } from '../schemas/file-content.interface'
-import { dirName, fileName, getMimeType } from '../utils/files'
+import { dirName, fileName, getMimeType, isInternalTemporaryEntry } from '../utils/files'
 import { genRegexPositiveAndNegativeTerms, normalizeSearchLimit } from '../utils/files-search'
 import { FilesContentParser } from './files-content-parser.service'
 import { FILE_REPOSITORY } from '../constants/operations'
@@ -73,6 +73,7 @@ export class FilesSearchManager {
     const regexpTerms = genRegexPositiveAndNegativeTerms(search)
     for (const { paths } of await this.filesParser.allPaths([userId], spaceIds, shareIds)) {
       for (const p of paths) {
+        if (isInternalTemporaryEntry(path.basename(p.realPath))) continue
         const regexBasePath = new RegExp(`^/?${escapePath(p.realPath)}/?`)
         if (!p.isDir) {
           const f = await this.analyzeFile(p.realPath, p.pathPrefix, regexBasePath, regexpTerms)
@@ -96,6 +97,7 @@ export class FilesSearchManager {
   private async *parseFileNames(dir: string, pathPrefix: string, regexBasePath: RegExp, regexpTerms: RegExp): AsyncGenerator<FileContent> {
     try {
       for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+        if (isInternalTemporaryEntry(entry.name)) continue
         const realPath = path.join(entry.parentPath, entry.name)
         const fileContent = await this.analyzeFile(realPath, pathPrefix, regexBasePath, regexpTerms)
         if (fileContent !== null) {

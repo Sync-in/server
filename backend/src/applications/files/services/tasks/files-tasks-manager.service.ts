@@ -7,7 +7,7 @@ import { currentTimeStamp } from '../../../../common/shared'
 import { Cache } from '../../../../infrastructure/cache/cache.service'
 import { SpaceEnv } from '../../../spaces/models/space-env.model'
 import { SpacesManager } from '../../../spaces/services/spaces-manager.service'
-import { realTrashPathFromSpace } from '../../../spaces/utils/paths'
+import { trashTargetFromSpace } from '../../../spaces/utils/paths'
 import { UserModel } from '../../../users/models/user.model'
 import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../../constants/cache'
 import { FILE_OPERATION } from '../../constants/operations'
@@ -15,7 +15,7 @@ import { CopyMoveFileDto } from '../../dto/file-operations.dto'
 import type { FileTaskQueueItem } from '../../interfaces/file-task-queue.interface'
 import type { FileTasksPollResponse } from '../../interfaces/file-task.interface'
 import { FileTask, FileTaskProps, FileTaskStatus } from '../../models/file-task'
-import { dirName, fileName, removeFiles } from '../../utils/files'
+import { dirName, fileName, removeFiles, temporaryFilePath } from '../../utils/files'
 import { SendFile } from '../../utils/send-file'
 import { isTaskCancellable } from '../../utils/tasks'
 import { FilesMethods } from '../files-methods.service'
@@ -59,7 +59,7 @@ export class FilesTasksManager implements OnModuleDestroy {
     const cancellable = await isTaskCancellable(type, space.realPath, dstPath)
     const newTask = new FileTask(taskId, type, dirName(space.url), fileName(space.url), cancellable)
     await this.storeTask(cacheKey, newTask, FileTaskStatus.QUEUED)
-    space.task = { cacheKey, props: {} }
+    space.task = { id: taskId, type, cacheKey, props: {} }
     await this.filesTasksQueue.enqueue(user.id, { cacheKey, dto, method, space, task: newTask, user }, (task) => this.startQueuedTask(task))
     return newTask
   }
@@ -135,8 +135,8 @@ export class FilesTasksManager implements OnModuleDestroy {
     if (!task || task.status !== FileTaskStatus.SUCCESS || task.props.compressInDirectory !== false) {
       throw new HttpException('Not applicable', HttpStatus.BAD_REQUEST)
     }
-    const rPath = path.join(user.tasksPath, task.name)
-    const sendFile = new SendFile(rPath)
+    const rPath = this.downloadableArchivePath(user, task)
+    const sendFile = new SendFile(rPath, task.name)
     try {
       await sendFile.checks()
     } catch (e) {
@@ -148,8 +148,12 @@ export class FilesTasksManager implements OnModuleDestroy {
   private async cleanupTask(user: UserModel, cacheKey: string, task: FileTask): Promise<void> {
     this.filesTasksWatcher.stopWatch(cacheKey)
     if (task.props.compressInDirectory === false) {
-      await removeFiles(path.join(user.tasksPath, task.name)).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
+      await removeFiles(this.downloadableArchivePath(user, task)).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
     }
+  }
+
+  private downloadableArchivePath(user: UserModel, task: FileTask): string {
+    return temporaryFilePath(user.tmpPath, task.name, task.type, task.id)
   }
 
   private async storeTask(cacheKey: string, task: FileTask, status = FileTaskStatus.PENDING) {
@@ -195,7 +199,7 @@ export class FilesTasksManager implements OnModuleDestroy {
     if (!storedTask || storedTask.status !== FileTaskStatus.QUEUED) return false
     task.task.status = FileTaskStatus.PENDING
     task.task.startedAt = currentTimeStamp(null, true)
-    task.space.task = { cacheKey: task.cacheKey, props: task.task.props }
+    task.space.task = { id: task.task.id, type: task.task.type, cacheKey: task.cacheKey, props: task.task.props }
     await this.cache.set(task.cacheKey, task.task, CACHE_TASK_TTL)
     this.runTask(task)
     return true
@@ -275,9 +279,9 @@ export class FilesTasksManager implements OnModuleDestroy {
         return (await this.spacesManager.spaceEnv(user, dstUrl.split('/'))).realPath
       }
       if (type === FILE_OPERATION.DELETE && !space.inTrashRepository) {
-        const baseTrashPath = realTrashPathFromSpace(user, space)
-        if (baseTrashPath) {
-          return path.join(baseTrashPath, dirName(space.dbFile.path), fileName(space.realPath))
+        const trashTarget = trashTargetFromSpace(user, space)
+        if (trashTarget?.mode === 'trash') {
+          return path.join(trashTarget.path, dirName(space.dbFile.path), fileName(space.realPath))
         }
       }
     } catch {
