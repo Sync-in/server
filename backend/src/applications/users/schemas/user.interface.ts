@@ -7,6 +7,7 @@ export class User implements UserSchema {
   id: number
   email: string
   login: string
+  externalId: string | null
   firstName: string
   lastName: string
   password: string

@@ -34,6 +34,8 @@ export class UserModel implements User {
   createdAt: Date
   // exclusions
   @Exclude()
+  externalId: string | null
+  @Exclude()
   password: string
   @Exclude()
   secrets: UserSecrets

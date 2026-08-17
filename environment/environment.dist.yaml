@@ -205,6 +205,11 @@ auth:
       # default: false
       enablePasswordAuthFallback: false
   oidc:
+    # OIDC authentication, including MFA, is delegated to the identity provider.
+    # Sync-in TOTP applies only to local password authentication.
+    # Users are resolved by the OIDC `sub` first, then by email only when no external identity is linked yet.
+    # The first successful email match stores `sub` as the user's external identity for subsequent logins.
+    # `preferred_username` initializes the local login for a new user but does not rename an existing local login.
     # issuerUrl: The URL of the OIDC provider's discovery endpoint
     # e.g.:
     # - Keycloak:  https://auth.example.com/realms/my-realm
@@ -233,7 +238,7 @@ auth:
     redirectUri: https://sync-in.domain.com/api/auth/oidc/callback
     options:
       # autoCreateUser: Automatically create a local user account on first successful OIDC login.
-      # When enabled, the user `login` is derived from OIDC claims: preferred_username, then the email local-part, with `sub` as a last-resort fallback.
+      # When enabled, the user `login` is derived from `preferred_username`, or from the email local-part when that claim is absent.
       # When disabled, only existing users are allowed to authenticate via OIDC.
       # default: true
       autoCreateUser: true
@@ -316,8 +321,8 @@ auth:
       # requireVerifiedEmail: Require the OIDC provider to mark profile emails as verified before account linking or profile synchronization.
       # Recommended when your provider exposes a reliable `email_verified` claim.
       # Some providers omit this claim unless specific scopes/mappers are configured.
-      # default: false
-      requireVerifiedEmail: false
+      # default: true
+      requireVerifiedEmail: true
       # allowPrivateIpAvatarDownload: Allow OIDC avatar downloads from private/internal IP ranges.
       # Set to true only when the OIDC provider returns trusted internal avatar URLs.
       # default: false

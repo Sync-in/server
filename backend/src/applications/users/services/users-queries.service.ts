@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { and, countDistinct, eq, inArray, isNotNull, like, lte, ne, notInArray, or, SelectedFields, SQL, sql } from 'drizzle-orm'
+import { and, countDistinct, desc, eq, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, SelectedFields, SQL, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/mysql-core'
 import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { anonymizePassword, comparePassword, uniquePermissions } from '../../../common/functions'
@@ -39,6 +39,7 @@ import { userFullNameSQL, users } from '../schemas/users.schema'
 @Injectable()
 export class UsersQueries {
   private readonly logger = new Logger(UsersQueries.name)
+  private fromExternalIdOrEmailPermissionsQuery: MySql2PreparedQuery<any> = null
   private fromLoginOrEmailPermissionsQuery: MySql2PreparedQuery<any> = null
   private fromIdPermissionsQuery: MySql2PreparedQuery<any> = null
 
@@ -128,6 +129,31 @@ export class UsersQueries {
     return user
   }
 
+  async fromExternalIdOrEmail(externalId: string, email: string): Promise<User> {
+    if (!this.fromExternalIdOrEmailPermissionsQuery) {
+      const externalIdPlaceholder = sql.placeholder('externalId')
+      const emailPlaceholder = sql.placeholder('email')
+      this.fromExternalIdOrEmailPermissionsQuery = this.db
+        .select({
+          user: users,
+          groupsPermissions: sql`GROUP_CONCAT(DISTINCT (${groups.permissions}) SEPARATOR ${USER_PERMS_SEP})`
+        })
+        .from(users)
+        .leftJoin(usersGroups, eq(usersGroups.userId, users.id))
+        .leftJoin(groups, and(eq(groups.id, usersGroups.groupId), ne(groups.permissions, '')))
+        .where(or(eq(users.externalId, externalIdPlaceholder), eq(users.email, emailPlaceholder)))
+        .groupBy(users.id)
+        .orderBy(desc(eq(users.externalId, externalIdPlaceholder)))
+        .limit(1)
+        .prepare()
+    }
+    const r = await this.fromExternalIdOrEmailPermissionsQuery.execute({ externalId, email })
+    if (!r.length) return null
+    const [user, groupsPermissions] = [r[0].user, r[0].groupsPermissions]
+    user.permissions = uniquePermissions(`${user.permissions},${groupsPermissions}`, USER_PERMS_SEP)
+    return user
+  }
+
   async getUserSecrets(userId: number): Promise<UserSecrets> {
     const [r]: { secrets: UserSecrets }[] = await this.db.select({ secrets: users.secrets }).from(users).where(eq(users.id, userId)).limit(1)
     return r.secrets || {}
@@ -194,6 +220,46 @@ export class UsersQueries {
         tag: this.updateUserOrGuest.name,
         msg: `user (${userId}) was not updated : ${JSON.stringify(anonymizePassword(set))} : ${e}`
       })
+      return false
+    }
+  }
+
+  async bindExternalId(userId: number, externalId: string): Promise<boolean> {
+    try {
+      const isBound = await this.db.transaction(async (tx) => {
+        const [user]: Pick<User, 'externalId'>[] = await tx
+          .select({ externalId: users.externalId })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1)
+          .for('update')
+
+        if (!user) {
+          return false
+        }
+
+        if (user.externalId !== null) {
+          return user.externalId === externalId
+        }
+
+        dbCheckAffectedRows(
+          await tx
+            .update(users)
+            .set({ externalId })
+            .where(and(eq(users.id, userId), isNull(users.externalId))),
+          1
+        )
+        return true
+      })
+
+      if (isBound) {
+        this.logger.verbose({ tag: this.bindExternalId.name, msg: `external identity was bound to user (${userId})` })
+      } else {
+        this.logger.warn({ tag: this.bindExternalId.name, msg: `external identity binding was rejected for user (${userId})` })
+      }
+      return isBound
+    } catch (e) {
+      this.logger.error({ tag: this.bindExternalId.name, msg: `external identity was not bound to user (${userId}) : ${e}` })
       return false
     }
   }

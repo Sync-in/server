@@ -47,7 +47,7 @@ export class AuthProviderOIDCSecurityConfig {
 
   @IsOptional()
   @IsBoolean()
-  requireVerifiedEmail? = false
+  requireVerifiedEmail? = true
 
   @IsOptional()
   @IsBoolean()

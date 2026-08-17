@@ -176,7 +176,7 @@ export class AuthProviderOIDC implements AuthProvider {
       }
 
       // Process the user info and create/update the user
-      return await this.processUserInfo(userInfo, req.ip)
+      return await this.processUserInfo(userInfo, claims.sub, req.ip)
     } catch (error: AuthorizationResponseError | HttpException | any) {
       if (error instanceof AuthorizationResponseError) {
         this.logger.error({ tag: this.handleCallback.name, msg: `OIDC callback error: ${error.code} - ${error.error_description}` })
@@ -313,12 +313,30 @@ export class AuthProviderOIDC implements AuthProvider {
     return (this.oidcConfig.security.supportPKCE ?? true) && config.serverMetadata().supportsPKCE()
   }
 
-  private async processUserInfo(userInfo: UserInfoResponse, ip?: string): Promise<UserModel> {
+  private async processUserInfo(userInfo: UserInfoResponse, externalId: string, ip?: string): Promise<UserModel> {
     // Extract user information
     const { login, email } = this.extractLoginAndEmail(userInfo)
 
-    // Check if user exists
-    let user: UserModel = await this.usersManager.findUser(email || login, false)
+    // Resolve an already linked external identity first, then fall back to email for existing OIDC users.
+    let user: UserModel = await this.usersManager.findUserByExternalIdOrEmail(externalId, email, false)
+
+    if (user?.externalId && user.externalId !== externalId) {
+      this.logger.warn({ tag: this.processUserInfo.name, msg: `OIDC email is already linked to another external identity` })
+      throw new HttpException('OIDC identity mismatch', HttpStatus.UNAUTHORIZED)
+    }
+
+    // Enforce the local account status before binding an unlinked external identity.
+    if (user && !user.isActive) {
+      this.logger.warn({ tag: this.processUserInfo.name, msg: `OIDC login rejected for disabled user *${user.login}*` })
+      throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
+    }
+
+    if (user && !user.externalId) {
+      if (!(await this.usersManager.usersQueries.bindExternalId(user.id, externalId))) {
+        throw new HttpException('Unable to link OIDC identity', HttpStatus.UNAUTHORIZED)
+      }
+      user.externalId = externalId
+    }
 
     if (!user && !this.oidcConfig.options.autoCreateUser) {
       this.logger.warn({ tag: this.processUserInfo.name, msg: `User not found and autoCreateUser is disabled` })
@@ -332,7 +350,7 @@ export class AuthProviderOIDC implements AuthProvider {
     const identity = this.createIdentity(login, email, userInfo, isAdmin)
 
     // Create or update user
-    user = await this.updateOrCreateUser(identity, user)
+    user = await this.updateOrCreateUser(identity, user, externalId)
     // Update picture url (if it exists)
     if (this.oidcConfig.options.autoSyncAvatar) {
       await this.updatePictureUrl(user, userInfo)
@@ -382,14 +400,19 @@ export class AuthProviderOIDC implements AuthProvider {
     return identity
   }
 
-  private async updateOrCreateUser(identity: Omit<CreateUserDto, 'password'> & { password?: string }, user: UserModel | null): Promise<UserModel> {
+  private async updateOrCreateUser(
+    identity: Omit<CreateUserDto, 'password'> & { password?: string },
+    user: UserModel | null,
+    externalId: string
+  ): Promise<UserModel> {
     if (user === null) {
       // Create new user with a random password (required by the system but not used for OIDC login)
       const userWithPassword = {
         ...identity,
+        externalId,
         password: generateShortUUID(24),
         permissions: this.oidcConfig.options.autoCreatePermissions.join(',')
-      } as CreateUserDto
+      } as CreateUserDto & { externalId: string }
       const createdUser = await this.adminUsersManager.createUserOrGuest(userWithPassword, identity.role)
       const freshUser = await this.usersManager.fromUserId(createdUser.id)
       if (!freshUser) {
@@ -399,10 +422,10 @@ export class AuthProviderOIDC implements AuthProvider {
       return freshUser
     }
 
-    // Check if user information has changed (excluding password)
+    // Check if user information has changed. The local login is initialized once and remains stable.
     const identityHasChanged: UpdateUserDto = Object.fromEntries(
       Object.keys(identity)
-        .filter((key) => key !== 'password')
+        .filter((key) => key !== 'password' && key !== 'login')
         .map((key: string) => (identity[key] !== user[key] ? [key, identity[key]] : null))
         .filter(Boolean)
     )

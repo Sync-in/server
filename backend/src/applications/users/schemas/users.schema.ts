@@ -29,6 +29,7 @@ export const users = mysqlTable(
     id: bigint('id', { mode: 'number', unsigned: true }).autoincrement().primaryKey(),
     email: varchar('email', { length: 255 }).notNull(),
     login: varchar('login', { length: 255 }).notNull(),
+    externalId: varchar('externalId', { length: 255 }),
     firstName: varchar('firstName', { length: 255 }),
     lastName: varchar('lastName', { length: 255 }),
     password: varchar('password', { length: 255 }).notNull(),
@@ -51,7 +52,12 @@ export const users = mysqlTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull()
   },
-  (table) => [uniqueIndex('email_idx').on(table.email), uniqueIndex('login_idx').on(table.login), index('role_idx').on(table.role)]
+  (table) => [
+    uniqueIndex('email_idx').on(table.email),
+    uniqueIndex('login_idx').on(table.login),
+    uniqueIndex('external_id_idx').on(table.externalId),
+    index('role_idx').on(table.role)
+  ]
 )
 
 export const userFullNameSQL = (user: any): SQL<string> => sql`TRIM(CONCAT(${user.firstName}, ' ', ${user.lastName}))`

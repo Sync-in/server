@@ -87,6 +87,13 @@ export class UsersManager {
     return user ? new UserModel(user, removePassword) : null
   }
 
+  async findUserByExternalIdOrEmail(externalId: string, email: string, removePassword: false): Promise<UserModel>
+  async findUserByExternalIdOrEmail(externalId: string, email: string, removePassword?: true): Promise<Omit<UserModel, 'password'>>
+  async findUserByExternalIdOrEmail(externalId: string, email: string, removePassword: boolean = true): Promise<Omit<UserModel, 'password'>> {
+    const user: User = await this.usersQueries.fromExternalIdOrEmail(externalId, email)
+    return user ? new UserModel(user, removePassword) : null
+  }
+
   async validateLocalPasswordByLogin(
     loginOrEmail: string,
     password: string,
