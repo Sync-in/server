@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
-import path from 'node:path'
+import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
+import path from 'node:path'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import {
   allowInsecureRequests,
@@ -41,7 +42,7 @@ import { AuthProvider } from '../auth-providers.models'
 import { applyStorageQuotaToIdentity } from '../auth-providers.utils'
 import { OAuthDesktopCallBackURI, OAuthDesktopLoopbackPorts, OAuthDesktopPortParam } from './auth-oidc-desktop.constants'
 import type { AuthProviderOIDCConfig } from './auth-oidc.config'
-import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint } from './auth-oidc.constants'
+import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint, OIDC_LOGIN_HASH_LENGTH, OIDC_LOGIN_MAX_LENGTH } from './auth-oidc.constants'
 import { HttpService } from '@nestjs/axios'
 import { DownloadFileDto } from '../../../applications/files/dto/file-operations.dto'
 import { DownloadFile } from '../../../applications/files/utils/download-file'
@@ -406,20 +407,7 @@ export class AuthProviderOIDC implements AuthProvider {
     externalId: string
   ): Promise<UserModel> {
     if (user === null) {
-      // Create new user with a random password (required by the system but not used for OIDC login)
-      const userWithPassword = {
-        ...identity,
-        externalId,
-        password: generateShortUUID(24),
-        permissions: this.oidcConfig.options.autoCreatePermissions.join(',')
-      } as CreateUserDto & { externalId: string }
-      const createdUser = await this.adminUsersManager.createUserOrGuest(userWithPassword, identity.role)
-      const freshUser = await this.usersManager.fromUserId(createdUser.id)
-      if (!freshUser) {
-        this.logger.error({ tag: this.updateOrCreateUser.name, msg: `user was not found : ${createdUser.login} (${createdUser.id})` })
-        throw new HttpException('User not found', HttpStatus.NOT_FOUND)
-      }
-      return freshUser
+      return this.createUser(identity, externalId)
     }
 
     // Check if user information has changed. The local login is initialized once and remains stable.
@@ -455,6 +443,30 @@ export class AuthProviderOIDC implements AuthProvider {
     }
 
     return user
+  }
+
+  private async createUser(identity: Omit<CreateUserDto, 'password'> & { password?: string }, externalId: string): Promise<UserModel> {
+    let login = identity.login
+    if (await this.usersManager.usersQueries.checkUserExists(login)) {
+      const suffix = crypto.createHash('sha256').update(externalId).digest('hex').slice(0, OIDC_LOGIN_HASH_LENGTH)
+      login = `${login.slice(0, OIDC_LOGIN_MAX_LENGTH - suffix.length - 1)}-${suffix}`
+    }
+
+    // A random password remains required by the local model but is not used for OIDC authentication.
+    const userWithPassword = {
+      ...identity,
+      login,
+      externalId,
+      password: generateShortUUID(24),
+      permissions: this.oidcConfig.options.autoCreatePermissions.join(',')
+    } as CreateUserDto & { externalId: string }
+    const createdUser = await this.adminUsersManager.createUserOrGuest(userWithPassword, identity.role)
+    const freshUser = await this.usersManager.fromUserId(createdUser.id)
+    if (!freshUser) {
+      this.logger.error({ tag: this.createUser.name, msg: `user was not found : ${createdUser.login} (${createdUser.id})` })
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND)
+    }
+    return freshUser
   }
 
   private async updatePictureUrl(user: UserModel, userInfo: UserInfoResponse): Promise<void> {

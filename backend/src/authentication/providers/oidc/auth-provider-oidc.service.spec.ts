@@ -91,7 +91,7 @@ vi.mock('openid-client', () => {
 describe(AuthProviderOIDC.name, () => {
   let service: AuthProviderOIDC
   let usersManager: {
-    usersQueries: { bindExternalId: Mock }
+    usersQueries: { bindExternalId: Mock; checkUserExists: Mock }
     findUser: Mock
     findUserByExternalIdOrEmail: Mock
     logUser: Mock
@@ -124,7 +124,7 @@ describe(AuthProviderOIDC.name, () => {
 
   beforeAll(async () => {
     usersManager = {
-      usersQueries: { bindExternalId: vi.fn().mockResolvedValue(true) },
+      usersQueries: { bindExternalId: vi.fn().mockResolvedValue(true), checkUserExists: vi.fn().mockResolvedValue(null) },
       findUser: vi.fn(),
       findUserByExternalIdOrEmail: vi.fn(),
       logUser: vi.fn(),
@@ -156,6 +156,7 @@ describe(AuthProviderOIDC.name, () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     vi.clearAllMocks()
+    usersManager.usersQueries.checkUserExists.mockReset().mockResolvedValue(null)
     ;(service as any).config = null
     ;(service as any).oidcConfig.security.supportPKCE = true
     ;(service as any).oidcConfig.security.allowInsecureRequests = false
@@ -363,10 +364,41 @@ describe(AuthProviderOIDC.name, () => {
     const result = await (service as any).processUserInfo(userInfo, userInfo.sub, '127.0.0.1')
 
     expect(adminUsersManager.createUserOrGuest).toHaveBeenCalledWith(
-      expect.objectContaining({ externalId: 'EXTERNAL-X', role: USER_ROLE.ADMINISTRATOR }),
+      expect.objectContaining({ externalId: 'EXTERNAL-X', login: 'bob', role: USER_ROLE.ADMINISTRATOR }),
       USER_ROLE.ADMINISTRATOR
     )
     expect(result.role).toBe(USER_ROLE.ADMINISTRATOR)
+  })
+
+  it('adds a deterministic subject suffix when the initial OIDC login is already used', async () => {
+    usersManager.findUserByExternalIdOrEmail.mockResolvedValue(null)
+    usersManager.usersQueries.checkUserExists.mockResolvedValueOnce({ login: 'bob' })
+    adminUsersManager.createUserOrGuest.mockResolvedValue({ id: 11, login: 'bob-e0274d686d67' })
+    usersManager.fromUserId.mockResolvedValue({ id: 11, role: USER_ROLE.USER, login: 'bob-e0274d686d67', setFullName: vi.fn() } as any)
+    const userInfo = { sub: 'EXTERNAL-X', email: 'b@c.d', email_verified: true, preferred_username: 'bob' }
+
+    await (service as any).processUserInfo(userInfo, userInfo.sub, '127.0.0.1')
+
+    expect(usersManager.usersQueries.checkUserExists).toHaveBeenNthCalledWith(1, 'bob')
+    expect(adminUsersManager.createUserOrGuest).toHaveBeenCalledWith(
+      expect.objectContaining({ externalId: 'EXTERNAL-X', login: 'bob-e0274d686d67' }),
+      USER_ROLE.USER
+    )
+  })
+
+  it('truncates the initial login before adding the subject suffix', async () => {
+    const baseLogin = 'a'.repeat(255)
+    const expectedLogin = `${'a'.repeat(242)}-e0274d686d67`
+    usersManager.findUserByExternalIdOrEmail.mockResolvedValue(null)
+    usersManager.usersQueries.checkUserExists.mockResolvedValueOnce({ login: baseLogin })
+    adminUsersManager.createUserOrGuest.mockResolvedValue({ id: 12, login: expectedLogin })
+    usersManager.fromUserId.mockResolvedValue({ id: 12, role: USER_ROLE.USER, login: expectedLogin, setFullName: vi.fn() } as any)
+    const userInfo = { sub: 'EXTERNAL-X', email: 'b@c.d', email_verified: true, preferred_username: baseLogin }
+
+    await (service as any).processUserInfo(userInfo, userInfo.sub, '127.0.0.1')
+
+    expect(expectedLogin).toHaveLength(255)
+    expect(adminUsersManager.createUserOrGuest).toHaveBeenCalledWith(expect.objectContaining({ login: expectedLogin }), USER_ROLE.USER)
   })
 
   it('rejects OIDC profiles with unverified emails when verification is enabled', async () => {
@@ -493,6 +525,7 @@ describe(AuthProviderOIDC.name, () => {
     )
 
     expect(existingUser.login).toBe('alice')
+    expect(usersManager.usersQueries.checkUserExists).not.toHaveBeenCalled()
     expect(adminUsersManager.updateUserOrGuest).not.toHaveBeenCalled()
   })
 

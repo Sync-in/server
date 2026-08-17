@@ -79,7 +79,7 @@ Unless specified otherwise, claims in this table are read from the UserInfo resp
 | UserInfo `sub` | Yes | Checked against the ID token subject unless `skipSubjectCheck` is enabled. |
 | `email` | Yes | Trimmed, used for legacy account linking, and synchronized to the local profile. |
 | `email_verified` | By default | Must be the boolean `true` when `requireVerifiedEmail` is enabled. |
-| `preferred_username` | No | Initializes a new local login after trimming and lowercasing. |
+| `preferred_username` | No | Supplies the trimmed and lowercased base for a new local login. |
 | `given_name` / `family_name` | No | Synchronize the local first and last names. |
 | `name` | No | Split into first and last names only when both structured name claims are absent. |
 | `groups` / `roles` | No | Top-level arrays inspected for an exact `adminRoleOrGroup` match. |
@@ -116,7 +116,7 @@ existing `externalId` values before users authenticate against the replacement p
 
 When `autoCreateUser` is enabled, a first successful login creates a local user with:
 
-- the normalized `preferred_username`, or the email local-part, as `login`;
+- the normalized `preferred_username`, or the email local-part, as the base `login`;
 - the required OIDC email;
 - the mapped first and last names;
 - the unchanged ID token `sub` as `externalId`;
@@ -135,8 +135,11 @@ For an existing user, each successful OIDC login can synchronize:
 - avatar, when enabled.
 
 The local `login`, password, and permissions are not synchronized. In particular, `preferred_username` initializes the login but does not rename it on
-later authentications. Automatic provisioning does not currently generate an alternative login when the derived value conflicts with an existing
-unique local login.
+later authentications.
+
+OIDC does not guarantee that `preferred_username` is unique or stable. When the derived base login is already used, Sync-in appends a deterministic
+lowercase hexadecimal SHA-256 suffix derived from the validated ID token `sub`; the raw subject is not exposed in the login. The base is truncated
+when necessary to keep the generated login within 255 characters. The database unique index remains the final authority for the generated login.
 
 Profile update failures are logged without invalidating an otherwise successful OIDC authentication. Creation-time permissions are never reapplied
 to an existing user.
@@ -238,4 +241,4 @@ existing IdP SSO session can authenticate the browser again without prompting fo
 - Public clients without a client secret are not exposed by the current validated configuration.
 - IdP tokens are not retained or refreshed; Sync-in issues and refreshes its own local tokens.
 - RP-initiated logout, front-channel logout, back-channel logout, and IdP token revocation are not implemented.
-- Login renaming and automatic login collision resolution are not implemented.
+- Login renaming is not implemented; the login assigned during OIDC account creation remains stable.

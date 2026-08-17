@@ -209,7 +209,8 @@ auth:
     # Sync-in TOTP applies only to local password authentication.
     # Users are resolved by the OIDC `sub` first, then by email only when no external identity is linked yet.
     # The first successful email match stores `sub` as the user's external identity for subsequent logins.
-    # `preferred_username` initializes the local login for a new user but does not rename an existing local login.
+    # `preferred_username` initializes the local login for a new user. A deterministic `sub`-based suffix resolves collisions.
+    # The assigned local login remains stable on subsequent authentications.
     # issuerUrl: The URL of the OIDC provider's discovery endpoint
     # e.g.:
     # - Keycloak:  https://auth.example.com/realms/my-realm
