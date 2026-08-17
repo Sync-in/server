@@ -4,7 +4,8 @@ services:
     container_name: onlyoffice
     restart: always
     environment:
-      - JWT_SECRET=onlyOfficeSecret
+      # Must match applications.files.editors.onlyoffice.secret in environment.yaml.
+      - JWT_SECRET=
       - JWT_IN_BODY=true
       - USE_UNAUTHORIZED_STORAGE=true
     logging:

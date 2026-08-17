@@ -88,6 +88,7 @@ cp environment/environment.dist.yaml environment/environment.yaml
 ```
 
 > [!CAUTION]
+> Set `auth.token.access.secret` and `auth.token.refresh.secret` to distinct, long, randomly generated values.
 > The `mysql.url` in the `environment.yaml` should match the mariadb credentials and
 > the `applications.files.dataPath` path should be writable.
 

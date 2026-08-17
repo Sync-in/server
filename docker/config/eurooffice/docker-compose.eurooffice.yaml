@@ -4,7 +4,8 @@ services:
     container_name: eurooffice
     restart: always
     environment:
-      - JWT_SECRET=euroOfficeSecret
+      # Must match applications.files.editors.eurooffice.secret in environment.yaml.
+      - JWT_SECRET=
       - JWT_IN_BODY=true
       - USE_UNAUTHORIZED_STORAGE=true
     logging:

@@ -1,12 +1,17 @@
 mysql:
   url: 'mysql://root:MySQLRootPassword@mariadb:3306/sync_in'
 auth:
-  encryptionKey: 'changeEncryptionKeyWithStrongKey'
+  # Key used to encrypt MFA secrets at rest.
+  # Optional but strongly recommended.
+  # Use a long, randomly generated value and do not change it after enabling MFA.
+  encryptionKey:
   token:
     access:
-      secret: 'changeAccessWithStrongSecret'
+      # Required. Use a long, randomly generated secret.
+      secret:
     refresh:
-      secret: 'changeRefreshWithStrongSecret'
+      # Required. Use a different long, randomly generated secret.
+      secret:
 applications:
   files:
     dataPath: /app/data
@@ -15,7 +20,9 @@ applications:
         enabled: false
       onlyoffice:
         enabled: false
-        secret: 'onlyOfficeSecret'
+        # Required when enabled. Must match JWT_SECRET in the OnlyOffice container.
+        secret:
       eurooffice:
         enabled: false
-        secret: 'euroOfficeSecret'
+        # Required when enabled. Must match JWT_SECRET in the Euro-Office container.
+        secret:

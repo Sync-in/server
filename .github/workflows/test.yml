@@ -27,4 +27,8 @@ jobs:
           sed -i "s|dataPath: /home/|dataPath: /tmp/|" environment/environment.yaml
 
       - name: Run unit tests
+        env:
+          SYNCIN_AUTH_ENCRYPTIONKEY: ci-encryption-key
+          SYNCIN_AUTH_TOKEN_ACCESS_SECRET: ci-access-secret
+          SYNCIN_AUTH_TOKEN_REFRESH_SECRET: ci-refresh-secret
         run: npm run test

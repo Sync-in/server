@@ -87,7 +87,7 @@ auth:
   # Key used to encrypt user secret keys in the database
   # Optional but strongly recommended
   # Warning: do not change or remove the encryption key after MFA activation, or the codes will become invalid
-  encryptionKey: 'changeEncryptionKeyWithStrongKey'
+  encryptionKey:
   # cookie sameSite setting: `lax` | `strict`
   # default: `strict`
   cookieSameSite: strict
@@ -95,14 +95,14 @@ auth:
     access:
       # Used for token and cookie signatures
       # required
-      secret: 'changeAccessWithStrongSecret'
+      secret:
       # token expiration = cookie maxAge
       # default: `30m`
       expiration: 30m
     refresh:
       # Used for token and cookie signatures
       # required
-      secret: 'changeRefreshWithStrongSecret'
+      secret:
       # token expiration = cookie maxAge
       # default: `4h`
       expiration: 4h
@@ -382,7 +382,7 @@ applications:
         enabled: false
         # Secret used for jwt tokens, it must be the same on the onlyoffice server
         # required
-        secret: 'onlyOfficeSecret'
+        secret:
         # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
         # If an external server is configured, it will be used instead.
         # Note: when using an external server (e.g.: https://onlyoffice.domain.com), make sure it is accessible from the client/browser.
@@ -397,7 +397,7 @@ applications:
         enabled: false
         # Secret used for jwt tokens, it must be the same on the Euro-Office server
         # required
-        secret: 'euroOfficeSecret'
+        secret:
         # If an external server is configured, it will be used.
         # Note: make sure it is accessible from the client/browser.
         # default: null

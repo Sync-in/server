@@ -1,12 +1,17 @@
 mysql:
   url: 'mysql://user:MySQLPassword@localhost:3306/database'
 auth:
-  encryptionKey: 'changeEncryptionKeyWithStrongKey'
+  # Key used to encrypt MFA secrets at rest.
+  # Optional but strongly recommended.
+  # Use a long, randomly generated value and do not change it after enabling MFA.
+  encryptionKey:
   token:
     access:
-      secret: 'changeAccessWithStrongSecret'
+      # Required. Use a long, randomly generated secret.
+      secret:
     refresh:
-      secret: 'changeRefreshWithStrongSecret'
+      # Required. Use a different long, randomly generated secret.
+      secret:
 applications:
   files:
     dataPath: /home/sync-in/data
