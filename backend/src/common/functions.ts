@@ -87,19 +87,18 @@ export function splitFullName(fullName?: string): { firstName: string; lastName:
   return { firstName, lastName }
 }
 
-function formatValidationErrors(errors: ValidationError[]): string[] {
+function formatValidationErrors(errors: ValidationError[], parentPath = ''): string[] {
   const messages: string[] = []
-  const walk = (items: ValidationError[]) => {
-    for (const error of items) {
-      if (error.constraints) {
-        messages.push(...Object.values(error.constraints))
-      }
-      if (error.children && error.children.length > 0) {
-        walk(error.children)
-      }
+  for (const error of errors) {
+    const propertyPath = [parentPath, error.property].filter(Boolean).join('.')
+    if (error.constraints) {
+      const constraints = Object.values(error.constraints).join(', ')
+      messages.push(propertyPath ? `${propertyPath}: ${constraints}` : constraints)
+    }
+    if (error.children && error.children.length > 0) {
+      messages.push(...formatValidationErrors(error.children, propertyPath))
     }
   }
-  walk(errors)
   return messages
 }
 
@@ -115,8 +114,8 @@ export function transformAndValidate<T extends object>(
   const errors: ValidationError[] = validateSync(instance, validatorOptions)
   if (errors.length > 0) {
     const messages = formatValidationErrors(errors)
-    const message = messages.length > 0 ? messages.join('; ') : errors.toString()
-    throw new Error(context ? `${context}: ${message}` : message)
+    const details = messages.length > 0 ? messages : [errors.toString()]
+    throw new Error(context ? `${context}:\n- ${details.join('\n- ')}` : details.join('; '))
   }
   return instance
 }
