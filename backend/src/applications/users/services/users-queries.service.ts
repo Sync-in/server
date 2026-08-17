@@ -133,6 +133,26 @@ export class UsersQueries {
     return r.secrets || {}
   }
 
+  async mutateUserSecrets<T>(userId: number, mutate: (secrets: UserSecrets) => { result: T; secrets?: UserSecrets }): Promise<T> {
+    // Every secrets writer must use the latest document while holding the same row lock.
+    return this.db.transaction(async (tx) => {
+      const [user]: { secrets: UserSecrets }[] = await tx
+        .select({ secrets: users.secrets })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1)
+        .for('update')
+      if (!user) {
+        throw new Error(`User (${userId}) not found`)
+      }
+      const mutation = mutate(user.secrets || {})
+      if (mutation.secrets !== undefined) {
+        dbCheckAffectedRows(await tx.update(users).set({ secrets: mutation.secrets }).where(eq(users.id, userId)), 1)
+      }
+      return mutation.result
+    })
+  }
+
   selectUsers(fields: Partial<keyof User>[] = ['id', 'login', 'email'], where: SQL[]): Promise<Partial<User>[]> {
     const select: Record<keyof User, any> = convertToSelect(users, fields)
     return this.db
@@ -158,7 +178,7 @@ export class UsersQueries {
     return userId
   }
 
-  async updateUserOrGuest(userId: number, set: Partial<Record<keyof User, any>>, userRole?: USER_ROLE): Promise<boolean> {
+  async updateUserOrGuest(userId: number, set: Partial<Record<Exclude<keyof User, 'secrets'>, any>>, userRole?: USER_ROLE): Promise<boolean> {
     try {
       dbCheckAffectedRows(
         await this.db

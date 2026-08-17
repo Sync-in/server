@@ -4,17 +4,24 @@ import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { Type } from 'class-transformer'
 import { IsInt, ValidateNested } from 'class-validator'
 import { appBootstrap } from '../app.bootstrap'
-import { USER_ROLE } from '../applications/users/constants/user'
+import { genHash } from '../applications/files/utils/files'
+import { USER_PERMISSION, USER_ROLE } from '../applications/users/constants/user'
 import { DeleteUserDto } from '../applications/users/dto/delete-user.dto'
 import { UserModel } from '../applications/users/models/user.model'
 import { AdminUsersManager } from '../applications/users/services/admin-users-manager.service'
+import { UsersManager } from '../applications/users/services/users-manager.service'
+import { UsersQueries } from '../applications/users/services/users-queries.service'
 import { generateUserTest } from '../applications/users/utils/test'
+import { XML_CONTENT_TYPE } from '../applications/webdav/constants/webdav'
 import { convertHumanTimeToSeconds, transformAndValidate } from '../common/functions'
 import { currentTimeStamp, decodeUrl } from '../common/shared'
+import { Cache } from '../infrastructure/cache/cache.service'
 import { dbCheckConnection } from '../infrastructure/database/utils'
 import { AuthConfig } from './auth.config'
 import { CSRF_ERROR, TOKEN_PATHS, TOKEN_TYPES } from './constants/auth'
+import { CACHE_AUTH_WEBDAV_PREFIX } from './constants/cache'
 import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH, API_AUTH_TOKEN, API_AUTH_TOKEN_REFRESH } from './constants/routes'
+import { AUTH_SCOPE } from './constants/scope'
 import { TokenResponseDto } from './dto/token-response.dto'
 import { JwtPayload } from './interfaces/jwt-payload.interface'
 import { TOKEN_TYPE } from './interfaces/token.interface'
@@ -47,6 +54,9 @@ describe('Auth (e2e)', () => {
   let authConfig: AuthConfig
   let jwtService: JwtService
   let adminUsersManager: AdminUsersManager
+  let usersManager: UsersManager
+  let usersQueries: UsersQueries
+  let cache: Cache
   let userTest: UserModel
   let refreshToken: string
   let csrfToken: string
@@ -58,6 +68,9 @@ describe('Auth (e2e)', () => {
     authConfig = app.get<ConfigService>(ConfigService).get<AuthConfig>('auth')
     jwtService = app.get<JwtService>(JwtService)
     adminUsersManager = app.get<AdminUsersManager>(AdminUsersManager)
+    usersManager = app.get<UsersManager>(UsersManager)
+    usersQueries = app.get<UsersQueries>(UsersQueries)
+    cache = app.get<Cache>(Cache)
     userTest = new UserModel(generateUserTest(false), false)
   })
 
@@ -72,6 +85,9 @@ describe('Auth (e2e)', () => {
     expect(authConfig).toBeDefined()
     expect(jwtService).toBeDefined()
     expect(adminUsersManager).toBeDefined()
+    expect(usersManager).toBeDefined()
+    expect(usersQueries).toBeDefined()
+    expect(cache).toBeDefined()
     expect(userTest).toBeDefined()
   })
 
@@ -89,7 +105,7 @@ describe('Auth (e2e)', () => {
   })
 
   it(`POST ${API_AUTH_LOGIN} => 201`, async () => {
-    const userId = (await adminUsersManager.createUserOrGuest({ ...userTest }, USER_ROLE.USER)).id
+    const userId = (await adminUsersManager.createUserOrGuest({ ...userTest, permissions: USER_PERMISSION.WEBDAV }, USER_ROLE.USER)).id
     expect(userId).toBeDefined()
     userTest.id = userId
     const res = await app.inject({
@@ -306,6 +322,65 @@ describe('Auth (e2e)', () => {
     expect(() => transformAndValidate(TokenResponseDto, res.json())).not.toThrow()
   })
 
+  it('should invalidate cached WebDAV app-password authentication after revocation', async () => {
+    const passwordName = 'webdav-cache-revocation'
+    const appPassword = await usersManager.generateAppPassword(userTest, { name: passwordName, app: AUTH_SCOPE.WEBDAV })
+    const cacheKey = webDAVAuthCacheKey(appPassword.password)
+
+    try {
+      const authenticated = await webDAVRequest(appPassword.password)
+      expect(authenticated.statusCode).toBe(207)
+      await vi.waitFor(async () => {
+        expect(await cache.get(cacheKey)).toEqual(expect.objectContaining({ id: userTest.id }))
+      })
+
+      await usersManager.deleteAppPassword(userTest, passwordName)
+
+      expect(await cache.get(cacheKey)).toBeUndefined()
+      const revoked = await webDAVRequest(appPassword.password)
+      expect(revoked.statusCode).toBe(401)
+      await vi.waitFor(async () => {
+        expect(await cache.get(cacheKey)).toBeNull()
+      })
+    } finally {
+      await deleteAppPasswordIfPresent(passwordName)
+      await cache.del(cacheKey)
+    }
+  })
+
+  it('should not restore a revoked app password when WebDAV authentication is in flight', async () => {
+    const passwordName = 'webdav-in-flight-revocation'
+    const appPassword = await usersManager.generateAppPassword(userTest, { name: passwordName, app: AUTH_SCOPE.WEBDAV })
+    const cacheKey = webDAVAuthCacheKey(appPassword.password)
+    const getUserSecrets = usersQueries.getUserSecrets.bind(usersQueries)
+    let secretsRead: () => void
+    const secretsWereRead = new Promise<void>((resolve) => (secretsRead = resolve))
+    let resumeValidation: () => void
+    const revocationCompleted = new Promise<void>((resolve) => (resumeValidation = resolve))
+    // Keep the stale read suspended until revocation commits, then let validation enter its bcrypt comparison.
+    const getUserSecretsSpy = vi.spyOn(usersQueries, 'getUserSecrets').mockImplementationOnce(async (userId) => {
+      const secrets = await getUserSecrets(userId)
+      secretsRead()
+      await revocationCompleted
+      return secrets
+    })
+
+    try {
+      const authentication = webDAVRequest(appPassword.password)
+      await secretsWereRead
+      await usersManager.deleteAppPassword(userTest, passwordName)
+      resumeValidation()
+
+      expect((await authentication).statusCode).toBe(401)
+      expect(await usersManager.listAppPasswords(userTest)).not.toEqual(expect.arrayContaining([expect.objectContaining({ name: passwordName })]))
+    } finally {
+      resumeValidation()
+      getUserSecretsSpy.mockRestore()
+      await deleteAppPasswordIfPresent(passwordName)
+      await cache.del(cacheKey)
+    }
+  })
+
   function getCookies(setCookie: string[]): { type: TOKEN_TYPE; content: string[] }[] {
     const cookies: { type: TOKEN_TYPE; content: string[] }[] = []
     for (const c of setCookie) {
@@ -348,6 +423,26 @@ describe('Auth (e2e)', () => {
         expect(parseInt(cookie.content[1].split('=')[1])).toBeCloseTo(convertHumanTimeToSeconds(authConfig.token[cookie.type].expiration), -1)
         expect(cookie.content[0].split('=')[1]).not.toBe('')
       }
+    }
+  }
+
+  function webDAVRequest(password: string) {
+    const authorization = Buffer.from(`${userTest.login}:${password}`).toString('base64')
+    return app.inject({
+      method: 'PROPFIND',
+      url: '/webdav',
+      headers: { authorization: `Basic ${authorization}`, 'content-type': XML_CONTENT_TYPE, depth: '0' },
+      body: '<?xml version="1.0" encoding="utf-8"?><propfind xmlns="DAV:"><allprop/></propfind>'
+    } as any)
+  }
+
+  function webDAVAuthCacheKey(password: string): string {
+    return `${CACHE_AUTH_WEBDAV_PREFIX}-${genHash(`${userTest.login}\u0000${password}`, 'sha256')}`
+  }
+
+  async function deleteAppPasswordIfPresent(passwordName: string): Promise<void> {
+    if ((await usersManager.listAppPasswords(userTest)).some(({ name }) => name === passwordName)) {
+      await usersManager.deleteAppPassword(userTest, passwordName)
     }
   }
 })

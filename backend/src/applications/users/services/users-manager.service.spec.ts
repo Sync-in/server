@@ -22,6 +22,7 @@ import { MEMBER_TYPE } from '../constants/member'
 import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_PERMISSION, USER_ROLE } from '../constants/user'
 import { CreateUserDto } from '../dto/create-or-update-user.dto'
 import { DeleteUserDto } from '../dto/delete-user.dto'
+import { UserSecrets } from '../interfaces/user-secrets.interface'
 import { UserModel } from '../models/user.model'
 import { generateUserTest } from '../utils/test'
 import { AdminUsersManager } from './admin-users-manager.service'
@@ -80,6 +81,15 @@ describe(UsersManager.name, () => {
     if (!(await isPathExists(userTest.homePath))) {
       await userTest.makePaths()
     }
+  }
+  const mockSecretsMutation = (initialSecrets: UserSecrets) => {
+    let currentSecrets = initialSecrets
+    usersQueriesService.mutateUserSecrets = vi.fn().mockImplementation(async (_userId, mutate) => {
+      const mutation = mutate(currentSecrets)
+      if (mutation.secrets !== undefined) currentSecrets = mutation.secrets
+      return mutation.result
+    })
+    return () => currentSecrets
   }
 
   const notificationsManager = {
@@ -342,15 +352,79 @@ describe(UsersManager.name, () => {
     expect(comparePassword).toHaveBeenCalledWith('pwd', 'APP_HASH')
   })
 
+  it('rechecks a matched app password against the locked secrets before authenticating', async () => {
+    const localUser = new UserModel({ ...generateUserTest(), role: USER_ROLE.USER, isActive: true, passwordAttempts: 0 }, false)
+    const matchedPassword = {
+      name: 'webdav-client',
+      app: AUTH_SCOPE.WEBDAV,
+      password: 'APP_HASH',
+      expiration: null,
+      currentAccess: new Date('2026-01-02T00:00:00.000Z'),
+      lastAccess: null,
+      currentIp: '127.0.0.1',
+      lastIp: null,
+      createdAt: new Date('2026-01-01T00:00:00.000Z')
+    }
+    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue({ appPasswords: [matchedPassword] })
+    vi.mocked(comparePassword).mockResolvedValue(true)
+    const getCurrentSecrets = mockSecretsMutation({ twoFaSecret: 'two-fa', appPasswords: [matchedPassword] })
+
+    await expect(usersManager.validateAppPassword(localUser, 'pwd', '192.0.2.10', AUTH_SCOPE.WEBDAV)).resolves.toBe(true)
+
+    expect(getCurrentSecrets().twoFaSecret).toBe('two-fa')
+    expect(getCurrentSecrets().appPasswords[0]).toEqual(
+      expect.objectContaining({
+        name: matchedPassword.name,
+        lastAccess: matchedPassword.currentAccess,
+        currentIp: '192.0.2.10',
+        lastIp: matchedPassword.currentIp
+      })
+    )
+
+    mockSecretsMutation({ twoFaSecret: 'two-fa', appPasswords: [] })
+    await expect(usersManager.validateAppPassword(localUser, 'pwd', '192.0.2.10', AUTH_SCOPE.WEBDAV)).resolves.toBe(false)
+  })
+
+  it('updates independent secrets and consumes recovery codes from the locked state', async () => {
+    const appPasswords = [{ name: 'webdav-client', app: AUTH_SCOPE.WEBDAV, password: 'HASH' }] as any
+    const getCurrentSecrets = mockSecretsMutation({ twoFaSecret: 'old-secret', recoveryCodes: ['code-1', 'code-2'], appPasswords })
+
+    await expect(usersManager.updateSecrets(userTest.id, { twoFaSecret: 'new-secret' })).resolves.toBeUndefined()
+    await expect(usersManager.consumeRecoveryCode(userTest.id, 'code-1')).resolves.toBe(true)
+    await expect(usersManager.consumeRecoveryCode(userTest.id, 'code-1')).resolves.toBe(false)
+
+    expect(getCurrentSecrets()).toEqual({
+      twoFaSecret: 'new-secret',
+      recoveryCodes: ['code-2'],
+      appPasswords
+    })
+  })
+
+  it('generates an app password from the locked secrets and enforces name uniqueness there', async () => {
+    const existingPassword = { name: 'existing', app: AUTH_SCOPE.CLIENT, password: 'EXISTING_HASH' } as any
+    const getCurrentSecrets = mockSecretsMutation({ twoFaSecret: 'two-fa', appPasswords: [existingPassword] })
+
+    const generated = await usersManager.generateAppPassword(userTest, { name: 'new password', app: AUTH_SCOPE.WEBDAV })
+
+    expect(generated.name).toBe('new password')
+    expect(generated.password).not.toBe('hashed-password')
+    expect(getCurrentSecrets().twoFaSecret).toBe('two-fa')
+    expect(getCurrentSecrets().appPasswords).toEqual([
+      expect.objectContaining({ name: 'new password', password: 'hashed-password' }),
+      existingPassword
+    ])
+    await expect(usersManager.generateAppPassword(userTest, { name: 'new password', app: AUTH_SCOPE.WEBDAV })).rejects.toThrow('Name already used')
+  })
+
   it('deletes WebDAV auth cache entries for the user when deleting a WebDAV app password', async () => {
     const secrets = {
+      twoFaSecret: 'two-fa',
       appPasswords: [
         { name: 'webdav-client', app: AUTH_SCOPE.WEBDAV, password: 'HASH' },
         { name: 'desktop-client', app: AUTH_SCOPE.CLIENT, password: 'HASH' }
       ]
     }
-    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue(secrets)
-    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(true)
+    const getCurrentSecrets = mockSecretsMutation(secrets as UserSecrets)
     cache.keys = vi
       .fn()
       .mockResolvedValue([`${CACHE_AUTH_WEBDAV_PREFIX}-match`, `${CACHE_AUTH_WEBDAV_PREFIX}-other`, `${CACHE_AUTH_WEBDAV_PREFIX}-failed`])
@@ -363,8 +437,9 @@ describe(UsersManager.name, () => {
 
     await expect(usersManager.deleteAppPassword(userTest, 'webdav-client')).resolves.toBeUndefined()
 
-    expect(usersQueriesService.updateUserOrGuest).toHaveBeenCalledWith(userTest.id, {
-      secrets: { appPasswords: [{ name: 'desktop-client', app: AUTH_SCOPE.CLIENT, password: 'HASH' }] }
+    expect(getCurrentSecrets()).toEqual({
+      twoFaSecret: 'two-fa',
+      appPasswords: [{ name: 'desktop-client', app: AUTH_SCOPE.CLIENT, password: 'HASH' }]
     })
     expect(cache.keys).toHaveBeenCalledWith(`${CACHE_AUTH_WEBDAV_PREFIX}-*`)
     expect(cache.mdel).toHaveBeenCalledWith([`${CACHE_AUTH_WEBDAV_PREFIX}-match`])
@@ -374,8 +449,7 @@ describe(UsersManager.name, () => {
     const secrets = {
       appPasswords: [{ name: 'desktop-client', app: AUTH_SCOPE.CLIENT, password: 'HASH' }]
     }
-    usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue(secrets)
-    usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(true)
+    mockSecretsMutation(secrets as UserSecrets)
     cache.keys = vi.fn()
     cache.mdel = vi.fn()
 
@@ -466,6 +540,31 @@ describe(UsersManager.name, () => {
     const preserve = set.mock.calls[2][0]
     expect(preserve.passwordAttempts).toBeUndefined()
     expect(preserve.isActive).toBeUndefined()
+  })
+
+  it('should lock the user row while mutating secrets', async () => {
+    const lock = vi.fn().mockResolvedValue([{ secrets: { twoFaSecret: 'old-secret', appPasswords: [{ name: 'existing' }] } }])
+    const selectLimit = vi.fn().mockReturnValue({ for: lock })
+    const selectWhere = vi.fn().mockReturnValue({ limit: selectLimit })
+    const from = vi.fn().mockReturnValue({ where: selectWhere })
+    const select = vi.fn().mockReturnValue({ from })
+    const updateWhere = vi.fn().mockResolvedValue([{ affectedRows: 1 }])
+    const set = vi.fn().mockReturnValue({ where: updateWhere })
+    const update = vi.fn().mockReturnValue({ set })
+    const tx = { select, update }
+    const transaction = vi.fn().mockImplementation(async (callback) => callback(tx))
+    const usersQueries = new UsersQueries({ transaction } as any, {} as Cache)
+
+    const result = await usersQueries.mutateUserSecrets(userTest.id, (secrets) => ({
+      result: 'updated',
+      secrets: { ...secrets, twoFaSecret: 'new-secret' }
+    }))
+
+    expect(result).toBe('updated')
+    expect(lock).toHaveBeenCalledWith('update')
+    expect(set).toHaveBeenCalledWith({
+      secrets: { twoFaSecret: 'new-secret', appPasswords: [{ name: 'existing' }] }
+    })
   })
 
   it('avatars advanced: generateIsNotExists, failure branches, base64 fallback', async () => {

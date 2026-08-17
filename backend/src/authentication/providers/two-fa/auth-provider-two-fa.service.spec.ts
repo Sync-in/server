@@ -54,7 +54,8 @@ describe(AuthProvider2FA.name, () => {
             validateUserAccess: vi.fn(),
             compareUserPassword: vi.fn(),
             updateAccesses: vi.fn().mockResolvedValue(undefined),
-            updateSecrets: vi.fn()
+            updateSecrets: vi.fn(),
+            consumeRecoveryCode: vi.fn()
           }
         },
         {
@@ -238,11 +239,23 @@ describe(AuthProvider2FA.name, () => {
     it('should verify recovery code successfully', async () => {
       const recoveryDto: TwoFaVerifyDto = { code: 'code-1', isRecoveryCode: true }
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      usersManager.updateSecrets.mockResolvedValue(undefined)
+      usersManager.consumeRecoveryCode.mockResolvedValue(true)
 
       await service.verify(recoveryDto, mockRequest as FastifyAuthenticatedRequest)
 
-      expect(usersManager.updateSecrets).toHaveBeenCalled()
+      expect(usersManager.consumeRecoveryCode).toHaveBeenCalledWith(mockUser.id, 'encrypted-code-1')
+      expect(usersManager.updateSecrets).not.toHaveBeenCalled()
+    })
+
+    it('should reject a recovery code already consumed by another request', async () => {
+      const recoveryDto: TwoFaVerifyDto = { code: 'code-1', isRecoveryCode: true }
+      usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
+      usersManager.consumeRecoveryCode.mockResolvedValue(false)
+
+      const result = await service.verify(recoveryDto, mockRequest as FastifyAuthenticatedRequest)
+
+      expect(result.success).toBe(false)
+      expect(result.message).toBe('Invalid code')
     })
 
     it('should fail when recovery codes are empty', async () => {
@@ -269,7 +282,7 @@ describe(AuthProvider2FA.name, () => {
     it('should handle errors during recovery code validation', async () => {
       const recoveryDto: TwoFaVerifyDto = { code: 'code-1', isRecoveryCode: true }
       usersManager.fromUserId.mockResolvedValue(mockUser as UserModel)
-      usersManager.updateSecrets.mockRejectedValue(new Error())
+      usersManager.consumeRecoveryCode.mockRejectedValue(new Error())
 
       const result = await service.verify(recoveryDto, mockRequest as FastifyAuthenticatedRequest)
 

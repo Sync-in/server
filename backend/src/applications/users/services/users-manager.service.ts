@@ -232,11 +232,30 @@ export class UsersManager {
   }
 
   async updateSecrets(userId: number, secrets: UserSecrets) {
-    const userSecrets = await this.usersQueries.getUserSecrets(userId)
-    const updatedSecrets = { ...userSecrets, ...secrets }
-    if (!(await this.usersQueries.updateUserOrGuest(userId, { secrets: updatedSecrets }))) {
+    try {
+      await this.usersQueries.mutateUserSecrets(userId, (userSecrets) => ({
+        result: undefined,
+        secrets: { ...userSecrets, ...secrets }
+      }))
+    } catch (e) {
+      this.logger.error({ tag: this.updateSecrets.name, msg: `Unable to update secrets for user (${userId}) : ${e}` })
       throw new HttpException('Unable to update secrets', HttpStatus.INTERNAL_SERVER_ERROR)
     }
+  }
+
+  consumeRecoveryCode(userId: number, encryptedCode: string): Promise<boolean> {
+    // Only the transaction that still finds the code can consume it successfully.
+    return this.usersQueries.mutateUserSecrets(userId, (secrets) => {
+      const recoveryCodes = Array.isArray(secrets.recoveryCodes) ? secrets.recoveryCodes : []
+      const codeIndex = recoveryCodes.indexOf(encryptedCode)
+      if (codeIndex === -1) return { result: false }
+      const updatedRecoveryCodes = [...recoveryCodes]
+      updatedRecoveryCodes.splice(codeIndex, 1)
+      return {
+        result: true,
+        secrets: { ...secrets, recoveryCodes: updatedRecoveryCodes }
+      }
+    })
   }
 
   async updateAccesses(user: UserModel, ip: string, success: boolean, isAuthTwoFa = false) {
@@ -288,14 +307,10 @@ export class UsersManager {
   }
 
   async generateAppPassword(user: UserModel, userAppPasswordDto: UserAppPasswordDto): Promise<UserAppPassword> {
-    const secrets = await this.usersQueries.getUserSecrets(user.id)
     const slugName = createLightSlug(sanitizeName(userAppPasswordDto.name))
     if (!slugName) throw new HttpException('Invalid name', HttpStatus.BAD_REQUEST)
-    if (Array.isArray(secrets.appPasswords) && secrets.appPasswords.find((p: UserAppPassword) => p.name === slugName)) {
-      throw new HttpException('Name already used', HttpStatus.BAD_REQUEST)
-    }
-    secrets.appPasswords = Array.isArray(secrets.appPasswords) ? secrets.appPasswords : []
     const clearPassword = genPassword(24)
+    // Hash before acquiring the row lock: only the final read/check/write must be serialized.
     const appPassword: UserAppPassword = {
       name: slugName,
       app: userAppPasswordDto.app,
@@ -307,8 +322,20 @@ export class UsersManager {
       lastIp: null,
       lastAccess: null
     }
-    secrets.appPasswords.unshift(appPassword)
-    if (!(await this.usersQueries.updateUserOrGuest(user.id, { secrets: secrets }))) {
+    try {
+      await this.usersQueries.mutateUserSecrets(user.id, (secrets) => {
+        const appPasswords = Array.isArray(secrets.appPasswords) ? secrets.appPasswords : []
+        if (appPasswords.some((p: UserAppPassword) => p.name === slugName)) {
+          throw new HttpException('Name already used', HttpStatus.BAD_REQUEST)
+        }
+        return {
+          result: undefined,
+          secrets: { ...secrets, appPasswords: [appPassword, ...appPasswords] }
+        }
+      })
+    } catch (e) {
+      if (e instanceof HttpException) throw e
+      this.logger.error({ tag: this.generateAppPassword.name, msg: `Unable to update app passwords for user (${user.id}) : ${e}` })
       throw new HttpException('Unable to update app passwords', HttpStatus.INTERNAL_SERVER_ERROR)
     }
     // return clear password only once
@@ -316,16 +343,26 @@ export class UsersManager {
   }
 
   async deleteAppPassword(user: UserModel, passwordName: string): Promise<void> {
-    const secrets = await this.usersQueries.getUserSecrets(user.id)
-    const appPassword = Array.isArray(secrets.appPasswords) ? secrets.appPasswords.find((p: UserAppPassword) => p.name === passwordName) : undefined
+    let appPassword: UserAppPassword | null
+    try {
+      appPassword = await this.usersQueries.mutateUserSecrets<UserAppPassword | null>(user.id, (secrets) => {
+        const appPasswords = Array.isArray(secrets.appPasswords) ? secrets.appPasswords : []
+        const currentAppPassword = appPasswords.find((p: UserAppPassword) => p.name === passwordName)
+        if (!currentAppPassword) return { result: null }
+        return {
+          result: currentAppPassword,
+          secrets: { ...secrets, appPasswords: appPasswords.filter((p: UserAppPassword) => p.name !== passwordName) }
+        }
+      })
+    } catch (e) {
+      this.logger.error({ tag: this.deleteAppPassword.name, msg: `Unable to delete app password for user (${user.id}) : ${e}` })
+      throw new HttpException('Unable to delete app password', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
     if (!appPassword) {
       throw new HttpException('App password not found', HttpStatus.NOT_FOUND)
     }
-    secrets.appPasswords = secrets.appPasswords.filter((p: UserAppPassword) => p.name !== passwordName)
-    if (!(await this.usersQueries.updateUserOrGuest(user.id, { secrets: secrets }))) {
-      throw new HttpException('Unable to delete app password', HttpStatus.INTERNAL_SERVER_ERROR)
-    }
     if (appPassword.app === AUTH_SCOPE.WEBDAV) {
+      // mutateUserSecrets has committed the revocation; cached Basic-auth results can now be discarded.
       await this.clearWebDAVAuthCache(user.id).catch((e: Error) => this.logger.error({ tag: this.clearWebDAVAuthCache.name, msg: `${e}` }))
     }
   }
@@ -350,15 +387,30 @@ export class UsersManager {
       if (p.expiration && new Date() > expMs) continue // expired
       hasComparedAppPassword = true
       if (await comparePassword(password, p.password)) {
-        p.lastAccess = p.currentAccess
-        p.currentAccess = new Date()
-        p.lastIp = p.currentIp
-        p.currentIp = ip
-        // update accesses
-        this.usersQueries
-          .updateUserOrGuest(user.id, { secrets: secrets })
-          .catch((e: Error) => this.logger.error({ tag: this.validateAppPassword.name, msg: `${e}` }))
-        return true
+        // Keep bcrypt outside the transaction, then recheck that the matched credential still exists under the row lock.
+        return this.usersQueries.mutateUserSecrets(user.id, (currentSecrets) => {
+          const appPasswords = Array.isArray(currentSecrets.appPasswords) ? currentSecrets.appPasswords : []
+          const passwordIndex = appPasswords.findIndex(
+            (currentPassword: UserAppPassword) =>
+              currentPassword.name === p.name && currentPassword.app === scope && currentPassword.password === p.password
+          )
+          if (passwordIndex === -1) return { result: false }
+          const currentPassword = appPasswords[passwordIndex]
+          const currentExpiration = currentPassword.expiration ? new Date(currentPassword.expiration) : null
+          if (currentExpiration && new Date() > currentExpiration) return { result: false }
+          const updatedAppPasswords = [...appPasswords]
+          updatedAppPasswords[passwordIndex] = {
+            ...currentPassword,
+            lastAccess: currentPassword.currentAccess,
+            currentAccess: new Date(),
+            lastIp: currentPassword.currentIp,
+            currentIp: ip
+          }
+          return {
+            result: true,
+            secrets: { ...currentSecrets, appPasswords: updatedAppPasswords }
+          }
+        })
       }
     }
     if (!hasComparedAppPassword) {
@@ -604,6 +656,8 @@ export class UsersManager {
   }
 
   private async clearWebDAVAuthCache(userId: number): Promise<void> {
+    // Cache keys contain a hash of login + clear password, which cannot be rebuilt from the stored bcrypt hash.
+    // Inspect cached values instead and remove every positive WebDAV authentication entry for this user.
     const keys = await this.cache.keys(`${CACHE_AUTH_WEBDAV_PREFIX}-*`)
     const keysToDelete: string[] = []
     for (const key of keys) {

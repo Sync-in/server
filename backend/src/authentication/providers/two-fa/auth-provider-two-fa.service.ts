@@ -152,24 +152,23 @@ export class AuthProvider2FA {
       return auth
     }
     try {
+      let matchedEncryptedCode: string
       for (const encCode of encryptedCodes) {
         const decryptedCode = this.decryptSecret(encCode)
         if (code === decryptedCode) {
-          auth.success = true
-          // removed used code
-          encryptedCodes.splice(encryptedCodes.indexOf(encCode), 1)
+          matchedEncryptedCode = encCode
           break
         }
       }
-      if (auth.success) {
-        // update recovery codes
-        await this.usersManager.updateSecrets(userId, { recoveryCodes: encryptedCodes })
+      if (matchedEncryptedCode) {
+        auth.success = await this.usersManager.consumeRecoveryCode(userId, matchedEncryptedCode)
+        if (!auth.success) auth.message = 'Invalid code'
       } else {
         auth.message = 'Invalid code'
       }
     } catch (e) {
       this.logger.error({ tag: this.validateRecoveryCode.name, msg: `${e}` })
-      auth.message = e.message
+      auth.message = e.message || 'Invalid code'
     }
     return auth
   }
