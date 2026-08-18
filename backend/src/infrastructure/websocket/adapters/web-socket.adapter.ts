@@ -40,9 +40,6 @@ export class WebSocketAdapter extends IoAdapter {
   createIOServer(port: number, options?: ServerOptions) {
     const server = this.adapter.createIOServer(port, {
       ...options,
-      cors: {
-        origin: configuration.websocket.corsOrigin
-      },
       transports: ['websocket']
     } satisfies ServerOptions)
     // Authentication

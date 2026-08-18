@@ -11,8 +11,4 @@ export class WebSocketConfig {
   @IsNotEmpty()
   // requires optional dependency: @socket.io/redis-adapter
   redis: string = 'redis://127.0.0.1:6379'
-
-  @IsString()
-  @IsNotEmpty()
-  corsOrigin: string = '*'
 }

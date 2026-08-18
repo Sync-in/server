@@ -47,9 +47,6 @@ websocket:
   # adapter: `cluster` (Node.js Workers: default) | `redis`
   # default: `cluster`
   adapter: cluster
-  # Cors origin allowed
-  # default: `*`
-  corsOrigin: '*'
   # Redis adapter url
   # default: `redis://127.0.0.1:6379`
   redis: redis://127.0.0.1:6379
