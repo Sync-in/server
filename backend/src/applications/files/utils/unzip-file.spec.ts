@@ -1,3 +1,4 @@
+import { ERR_UNSAFE_FILENAME } from '@zip.js/zip.js'
 import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -50,6 +51,11 @@ describe(extractZip.name, () => {
   it('rejects path traversal and symbolic links', async () => {
     const escapedPath = path.join(tmpDir, 'zip-slip-proof.txt')
     await writeFile(archivePath, createZip('../zip-slip-proof.txt'))
+
+    await expect(extractZip(archivePath, outputDir)).rejects.toThrow(ERR_UNSAFE_FILENAME)
+    await expect(access(escapedPath)).rejects.toMatchObject({ code: 'ENOENT' })
+
+    await writeFile(archivePath, createZip('..\\zip-slip-proof.txt'))
 
     await expect(extractZip(archivePath, outputDir)).rejects.toThrow('invalid relative path: ../zip-slip-proof.txt')
     await expect(access(escapedPath)).rejects.toMatchObject({ code: 'ENOENT' })

@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises'
 import sharp from 'sharp'
 import { extractImages, getDocumentProxy } from 'unpdf'
-import type { PDFDocumentProxy } from 'unpdf/pdfjs'
 import type { DocTextifyOCRWorkerLike, DocTextifyOptions } from '../interfaces/doc-textify.interfaces'
 
 const ignorePdfBadFormat = new Set([0x0000, 0x0001])
@@ -120,7 +119,7 @@ async function extractTextFromImages(images: ExtractedImages, options: DocTextif
 }
 
 export async function parsePdf(filePath: string, options: DocTextifyOptions): Promise<string> {
-  let doc: PDFDocumentProxy | undefined
+  let doc: Awaited<ReturnType<typeof getDocumentProxy>> | undefined
   const buffer = await readFile(filePath)
   const canUseOcr = !!options.ocrWorker
 
@@ -176,6 +175,6 @@ export async function parsePdf(filePath: string, options: DocTextifyOptions): Pr
     }
     return content
   } finally {
-    await doc?.destroy().catch(() => undefined)
+    await doc?.loadingTask.destroy().catch(() => undefined)
   }
 }
