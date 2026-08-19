@@ -357,6 +357,43 @@ describe(UsersManager.name, () => {
     expect(comparePassword).toHaveBeenCalledWith('pwd', 'APP_HASH')
   })
 
+  it('requires app passwords for WebDAV when TOTP is enabled without affecting client scope', async () => {
+    const previousTotpEnabled = configuration.auth.mfa.totp.enabled
+    configuration.auth.mfa.totp.enabled = true
+    try {
+      const twoFaUser = new UserModel(
+        {
+          ...generateUserTest(),
+          role: USER_ROLE.USER,
+          isActive: true,
+          passwordAttempts: 0,
+          password: 'ACCOUNT_HASH',
+          secrets: { twoFaSecret: 'two-fa' }
+        } as any,
+        false
+      )
+      vi.spyOn(usersManager, 'updateAccesses').mockResolvedValue(undefined)
+      vi.spyOn(twoFaUser, 'makePaths').mockResolvedValue(undefined)
+      vi.mocked(comparePassword).mockImplementation(async (_password, hash) => hash === 'ACCOUNT_HASH' || hash === 'APP_HASH')
+
+      usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue({ appPasswords: [] })
+      await expect(usersManager.logUser(twoFaUser, 'account-password', '192.0.2.20', AUTH_SCOPE.WEBDAV)).resolves.toBeNull()
+
+      const appPassword = {
+        name: 'webdav-client',
+        app: AUTH_SCOPE.WEBDAV,
+        password: 'APP_HASH'
+      } as any
+      usersQueriesService.getUserSecrets = vi.fn().mockResolvedValue({ appPasswords: [appPassword] })
+      mockSecretsMutation({ twoFaSecret: 'two-fa', appPasswords: [appPassword] })
+      await expect(usersManager.logUser(twoFaUser, 'app-password', '192.0.2.21', AUTH_SCOPE.WEBDAV)).resolves.toBe(twoFaUser)
+
+      await expect(usersManager.logUser(twoFaUser, 'account-password', '192.0.2.22', AUTH_SCOPE.CLIENT)).resolves.toBe(twoFaUser)
+    } finally {
+      configuration.auth.mfa.totp.enabled = previousTotpEnabled
+    }
+  })
+
   it('rechecks a matched app password against the locked secrets before authenticating', async () => {
     const localUser = new UserModel({ ...generateUserTest(), role: USER_ROLE.USER, isActive: true, passwordAttempts: 0 }, false)
     const matchedPassword = {

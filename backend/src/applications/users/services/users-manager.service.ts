@@ -135,7 +135,10 @@ export class UsersManager {
 
   async logUser(user: UserModel, password: string, ip: string, scope?: AUTH_SCOPE): Promise<UserModel | null> {
     this.validateUserAccess(user, ip)
-    let authSuccess: boolean = await comparePassword(password, user.password)
+    const webDAVRequiresAppPassword = scope === AUTH_SCOPE.WEBDAV && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
+    // Keep the primary-password bcrypt path for scoped auth timing, but never accept it for 2FA WebDAV.
+    const primaryPasswordMatches: boolean = await comparePassword(password, user.password)
+    let authSuccess: boolean = webDAVRequiresAppPassword ? false : primaryPasswordMatches
     if (!authSuccess && scope) {
       authSuccess = await this.validateAppPassword(user, password, ip, scope)
     }
