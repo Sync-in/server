@@ -36,7 +36,8 @@ export class AuthProvider2FA {
 
   async enableTwoFactor(body: TwoFaVerifyWithPasswordDto, req: FastifyAuthenticatedRequest): Promise<TwoFaEnableResult> {
     // retrieve encrypted secret from cache
-    const secret: string = await this.cache.get(this.getCacheKey(req.user.id))
+    const cacheKey = this.getCacheKey(req.user.id)
+    const secret: string = await this.cache.get(cacheKey)
     if (!secret) {
       throw new HttpException('The secret has expired', HttpStatus.BAD_REQUEST)
     }
@@ -56,6 +57,7 @@ export class AuthProvider2FA {
       twoFaSecret: secret,
       recoveryCodes: recoveryCodes.map((code) => this.encryptSecret(code))
     })
+    await this.cache.del(cacheKey)
     this.sendEmailNotification(req, ACTION.ADD)
     return { ...auth, recoveryCodes: recoveryCodes }
   }

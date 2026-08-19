@@ -44,7 +44,8 @@ describe(AuthProvider2FA.name, () => {
           provide: Cache,
           useValue: {
             get: vi.fn(),
-            set: vi.fn()
+            set: vi.fn(),
+            del: vi.fn().mockResolvedValue(true)
           }
         },
         {
@@ -152,6 +153,7 @@ describe(AuthProvider2FA.name, () => {
         twoFaSecret: 'encrypted-secret',
         recoveryCodes: expect.any(Array)
       })
+      expect(cache.del).toHaveBeenCalledWith(`auth-2fa-pending-user-${mockUser.id}`)
       expect(notificationsManager.sendEmailNotification).toHaveBeenCalledWith([mockRequest.user], {
         app: 'auth_2fa',
         event: 'Two-factor authentication (2FA) on your account has been enabled',
