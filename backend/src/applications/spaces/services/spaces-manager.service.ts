@@ -7,7 +7,6 @@ import { convertDiffUpdate, diffCollection, differencePermissions } from '../../
 import type { Entries } from '../../../common/interfaces'
 import { createSlug, InvalidSlugError, regExpNumberSuffix } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { FileError } from '../../files/models/file-error'
 import { dirListFileNames, getProps, isInternalTemporaryEntry, isPathExists, moveFiles, removeFiles } from '../../files/utils/files'
 import { LINK_TYPE } from '../../links/constants/links'
@@ -54,7 +53,6 @@ export class SpacesManager {
   private readonly logger = new Logger(SpacesManager.name)
 
   constructor(
-    private readonly contextManager: ContextManager,
     private readonly spacesQueries: SpacesQueries,
     private readonly usersQueries: UsersQueries,
     private readonly sharesManager: SharesManager,
@@ -861,7 +859,6 @@ export class SpacesManager {
         }
         this.notificationsManager
           .create(memberIds, notification, {
-            currentUrl: this.contextManager.headerOriginUrl(),
             action: action
           })
           .catch((e: Error) => this.logger.error({ tag: this.clearCachePermissionsAndOrNotify.name, msg: `${e}` }))
@@ -897,7 +894,6 @@ export class SpacesManager {
           }
           this.notificationsManager
             .create(spaceUserIds, notification, {
-              currentUrl: this.contextManager.headerOriginUrl(),
               author: user,
               action: action
             })

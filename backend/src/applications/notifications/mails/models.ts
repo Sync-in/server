@@ -9,12 +9,16 @@ import { NotificationContent } from '../interfaces/notification-properties.inter
 import { defaultFooter, mailAuthor, mailEventOnElement, mailItalicContent, mailTemplate } from './templates'
 import { urlFromLink, urlFromSpace, urlFromSpaceFile, urlFromSync } from './urls'
 
+function mailActionLink(urlText: string, url?: string): string {
+  return `<br>${urlText}&nbsp;${url ? `<a href="${escapeUTF8(url)}">${SERVER_NAME}</a>` : SERVER_NAME}`
+}
+
 export function commentMail(
   language: i18nLocale,
   notification: NotificationContent,
   options: {
     content: string
-    currentUrl: string
+    publicUrl?: string
     author: UserModel
   }
 ): [string, string] {
@@ -28,7 +32,8 @@ export function commentMail(
 
   const content = `${mailAuthor(options.author)}${mailEventOnElement(tr.event, notification.element)}${mailItalicContent(options.content)}`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(urlFromSpaceFile(options.currentUrl, notification))}">${SERVER_NAME}</a><br>${tr.footer}<br>${tr.defaultFooter}`
+  const notificationUrl = options.publicUrl ? urlFromSpaceFile(options.publicUrl, notification) : undefined
+  const footer = `${mailActionLink(tr.urlText, notificationUrl)}<br>${tr.footer}<br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -37,7 +42,7 @@ export function spaceMail(
   language: i18nLocale,
   notification: NotificationContent,
   options: {
-    currentUrl: string
+    publicUrl?: string
     action: ACTION
   }
 ): [string, string] {
@@ -48,11 +53,11 @@ export function spaceMail(
     event: notification.event
   })
 
-  const spaceUrl = urlFromSpace(options.currentUrl, options.action === ACTION.ADD ? notification.element : undefined)
+  const spaceUrl = options.publicUrl ? urlFromSpace(options.publicUrl, options.action === ACTION.ADD ? notification.element : undefined) : undefined
 
   const content = `${mailEventOnElement(tr.event, notification.element)}`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(spaceUrl)}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
+  const footer = `${mailActionLink(tr.urlText, spaceUrl)}<br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -61,7 +66,7 @@ export function spaceRootMail(
   language: i18nLocale,
   notification: NotificationContent,
   options: {
-    currentUrl: string
+    publicUrl?: string
     author: UserModel
     action: ACTION
   }
@@ -75,12 +80,15 @@ export function spaceRootMail(
   })
 
   const spaceName = fileName(notification.url)
-  const spaceRootUrl =
-    options.action === ACTION.ADD ? urlFromSpaceFile(options.currentUrl, notification) : urlFromSpace(options.currentUrl, spaceName)
+  const spaceRootUrl = options.publicUrl
+    ? options.action === ACTION.ADD
+      ? urlFromSpaceFile(options.publicUrl, notification)
+      : urlFromSpace(options.publicUrl, spaceName)
+    : undefined
 
   const content = `${mailAuthor(options.author)}${mailEventOnElement(tr.event, notification.element)}&nbsp;${tr.originEvent}&nbsp;<b>${escapeUTF8(spaceName)}</b>`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(spaceRootUrl)}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
+  const footer = `${mailActionLink(tr.urlText, spaceRootUrl)}<br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(spaceName)}`, mailTemplate(content, footer)]
 }
@@ -89,7 +97,7 @@ export function shareMail(
   language: i18nLocale,
   notification: NotificationContent,
   options: {
-    currentUrl: string
+    publicUrl?: string
     author: UserModel
     action: ACTION
   }
@@ -103,7 +111,8 @@ export function shareMail(
 
   const content = `${options.author ? mailAuthor(options.author) : ''}${mailEventOnElement(tr.event, notification.element)}`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(urlFromSpaceFile(options.currentUrl, notification))}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
+  const notificationUrl = options.publicUrl ? urlFromSpaceFile(options.publicUrl, notification) : undefined
+  const footer = `${mailActionLink(tr.urlText, notificationUrl)}<br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -112,7 +121,7 @@ export function linkMail(
   language: i18nLocale,
   notification: NotificationContent,
   options: {
-    currentUrl: string
+    publicUrl?: string
     author: UserModel
     action: ACTION
     linkUUID: string
@@ -132,7 +141,8 @@ export function linkMail(
     content += `<br><br>${tr.passwordText}:&nbsp;<div style="border:1px solid #000; padding:8px; display:inline-block;">${escapeUTF8(options.linkPassword)}</div>`
   }
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(urlFromLink(options.currentUrl, options.linkUUID))}">${SERVER_NAME}</a>`
+  const notificationUrl = options.publicUrl ? urlFromLink(options.publicUrl, options.linkUUID) : undefined
+  const footer = mailActionLink(tr.urlText, notificationUrl)
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -141,7 +151,7 @@ export function syncMail(
   language: i18nLocale,
   notification: NotificationContent,
   options: {
-    currentUrl: string
+    publicUrl?: string
     action: ACTION
   }
 ): [string, string] {
@@ -152,11 +162,11 @@ export function syncMail(
     event: notification.event
   })
 
-  const syncUrl = urlFromSync(options.currentUrl)
+  const syncUrl = options.publicUrl ? urlFromSync(options.publicUrl) : undefined
 
   const content = `${mailEventOnElement(tr.event, notification.element)}`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(syncUrl)}">${SERVER_NAME}</a><br>${tr.defaultFooter}`
+  const footer = `${mailActionLink(tr.urlText, syncUrl)}<br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
@@ -198,7 +208,7 @@ export function requestUnlockMail(
   language: i18nLocale,
   notification: NotificationContent,
   options: {
-    currentUrl: string
+    publicUrl?: string
     author: UserModel
   }
 ): [string, string] {
@@ -212,7 +222,8 @@ export function requestUnlockMail(
 
   const content = `${options.author ? mailAuthor(options.author) : ''}${mailEventOnElement(tr.event, notification.element)}`
 
-  const footer = `<br>${tr.urlText}&nbsp;<a href="${escapeUTF8(urlFromSpaceFile(options.currentUrl, notification))}">${SERVER_NAME}</a><br>${tr.footer}<br>${tr.defaultFooter}`
+  const notificationUrl = options.publicUrl ? urlFromSpaceFile(options.publicUrl, notification) : undefined
+  const footer = `${mailActionLink(tr.urlText, notificationUrl)}<br>${tr.footer}<br>${tr.defaultFooter}`
 
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }

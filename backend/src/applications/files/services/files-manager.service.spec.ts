@@ -7,7 +7,6 @@ import { Readable } from 'node:stream'
 import { transformAndValidate } from '../../../common/functions'
 import * as imageUtils from '../../../common/image'
 import { configuration } from '../../../configuration/config.environment'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service'
 import * as spacesPathUtils from '../../spaces/utils/paths'
@@ -43,7 +42,6 @@ describe(FilesManager.name, () => {
   const lookupMock = lookup as Mock
   let filesQueries: { moveFiles: Mock; deleteFiles: Mock }
   let spacesManager: { spaceEnv: Mock }
-  let contextManager: { headerOriginUrl: Mock }
   let notificationsManager: { create: Mock }
   let filesLockManager: {
     create: Mock
@@ -126,9 +124,6 @@ describe(FilesManager.name, () => {
     spacesManager = {
       spaceEnv: vi.fn().mockResolvedValue(makeSpace())
     }
-    contextManager = {
-      headerOriginUrl: vi.fn().mockReturnValue('https://sync-in.example')
-    }
     notificationsManager = {
       create: vi.fn().mockResolvedValue(undefined)
     }
@@ -173,7 +168,6 @@ describe(FilesManager.name, () => {
       providers: [
         { provide: FilesQueries, useValue: filesQueries },
         { provide: SpacesManager, useValue: spacesManager },
-        { provide: ContextManager, useValue: contextManager },
         { provide: NotificationsManager, useValue: notificationsManager },
         { provide: HttpService, useValue: http },
         { provide: FilesLockManager, useValue: filesLockManager },
@@ -1909,7 +1903,7 @@ describe(FilesManager.name, () => {
       expect(notificationsManager.create).toHaveBeenCalledWith(
         [42],
         expect.objectContaining({ element: 'file.txt', url: 'files/personal' }),
-        expect.objectContaining({ author: user, currentUrl: 'https://sync-in.example' })
+        expect.objectContaining({ author: user })
       )
     })
   })

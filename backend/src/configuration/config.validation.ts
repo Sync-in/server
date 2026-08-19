@@ -9,6 +9,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  IsUrl,
   Max,
   Min,
   ValidateNested
@@ -31,6 +32,18 @@ export class ServerConfig {
   @Min(1024)
   @Max(65535)
   port: number = 8080
+
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim().replace(/\/+$/, '') || undefined : value))
+  @IsOptional()
+  @IsUrl({
+    protocols: ['http', 'https'],
+    require_protocol: true,
+    require_tld: false,
+    disallow_auth: true,
+    allow_query_components: false,
+    allow_fragments: false
+  })
+  publicUrl?: string
 
   @Transform(({ value }) => (value === 0 || value === 'auto' ? cpus().length : Math.max(Number(value), 1)))
   @IsInt()

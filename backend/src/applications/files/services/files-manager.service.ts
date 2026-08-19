@@ -6,7 +6,6 @@ import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/
 import { generateThumbnail } from '../../../common/image'
 import { SERVER_NAME } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { HTTP_METHOD } from '../../applications.constants'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
 import { NotificationContent } from '../../notifications/interfaces/notification-properties.interface'
@@ -86,7 +85,6 @@ export class FilesManager {
     private readonly http: HttpService,
     private readonly filesQueries: FilesQueries,
     private readonly spacesManager: SpacesManager,
-    private readonly contextManager: ContextManager,
     private readonly notificationsManager: NotificationsManager,
     public readonly filesLockManager: FilesLockManager,
     private readonly filesTasksTransfer: FilesTasksTransfer
@@ -846,8 +844,7 @@ export class FilesManager {
         }
         this.notificationsManager
           .create([lock.owner.id], notification, {
-            author: user,
-            currentUrl: this.contextManager.headerOriginUrl()
+            author: user
           })
           .catch((e: Error) => this.logger.error({ tag: this.unlockRequest.name, msg: `${e}` }))
       }

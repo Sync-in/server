@@ -3,6 +3,12 @@ server:
   host: 0.0.0.0
   # default port : `8080`
   port: 8080
+  # publicUrl: Canonical public URL used to build links in notification emails.
+  # When unset, notification emails are sent without action links.
+  # It will become required in a future major release.
+  # e.g.: https://sync-in.domain.com
+  # optional
+  publicUrl:
   # workers: `auto` or `0` (use all cpus) | number of CPUs to use
   # default: 1
   workers: 1

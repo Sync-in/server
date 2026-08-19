@@ -35,7 +35,7 @@ describe('mail templates escaping', () => {
       } as any,
       {
         content: payload,
-        currentUrl: 'https://sync-in.test',
+        publicUrl: 'https://sync-in.test',
         author: { fullName: payload, avatarBase64: 'avatar', login: 'attacker' } as any
       }
     )
@@ -44,5 +44,25 @@ describe('mail templates escaping', () => {
     expect(html).toContain(`space/${escapedUrlPayload}`)
     expect(html).toContain(`select=file%20${escapedUrlPayload}.txt`)
     expect(html).not.toContain('<img src=x onerror=')
+  })
+
+  it('omits the action link when publicUrl is not configured', () => {
+    const [, html] = commentMail(
+      language,
+      {
+        app: 'comments',
+        event: 'created',
+        element: 'file.txt',
+        url: 'space'
+      } as any,
+      {
+        content: 'content',
+        publicUrl: undefined,
+        author: { fullName: 'Author', login: 'author' } as any
+      }
+    )
+
+    expect(html).not.toContain('<a href=')
+    expect(html).not.toContain('undefined')
   })
 })

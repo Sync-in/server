@@ -1,5 +1,4 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import type { FileProps } from '../../files/interfaces/file-props.interface'
 import { FilesQueries } from '../../files/services/files-queries.service'
 import { dirName, fileName, getProps, isPathExists } from '../../files/utils/files'
@@ -19,7 +18,6 @@ export class CommentsManager {
   private readonly logger = new Logger(CommentsManager.name)
 
   constructor(
-    private readonly contextManager: ContextManager,
     private readonly commentQueries: CommentsQueries,
     private readonly filesQueries: FilesQueries,
     private readonly notificationsManager: NotificationsManager
@@ -115,7 +113,6 @@ export class CommentsManager {
     this.notificationsManager
       .create(members, notification, {
         author: fromUser,
-        currentUrl: this.contextManager.headerOriginUrl(),
         content: comment
       })
       .catch((e: Error) => this.logger.error({ tag: this.notify.name, msg: `${e}` }))

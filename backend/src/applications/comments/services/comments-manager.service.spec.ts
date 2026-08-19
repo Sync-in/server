@@ -1,8 +1,8 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Cache } from '../../../infrastructure/cache/cache.service'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
+import type { FileProps } from '../../files/interfaces/file-props.interface'
 import { FilesQueries } from '../../files/services/files-queries.service'
 import { dirName, fileName, getProps, isPathExists } from '../../files/utils/files'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
@@ -22,7 +22,6 @@ vi.mock('../../files/utils/files', () => ({
 
 describe(CommentsManager.name, () => {
   let commentsManager: CommentsManager
-  let contextManager: { headerOriginUrl: Mock }
   let commentQueries: {
     getComments: Mock
     createComment: Mock
@@ -68,10 +67,6 @@ describe(CommentsManager.name, () => {
     notificationsManager = {
       create: vi.fn().mockResolvedValue(undefined)
     }
-    contextManager = {
-      headerOriginUrl: vi.fn().mockReturnValue('https://app.local/path')
-    }
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         {
@@ -80,7 +75,6 @@ describe(CommentsManager.name, () => {
         },
         { provide: Cache, useValue: {} },
         { provide: NotificationsManager, useValue: notificationsManager },
-        { provide: ContextManager, useValue: contextManager },
         { provide: CommentsManager, useClass: CommentsManager },
         { provide: CommentsQueries, useValue: commentQueries },
         { provide: FilesQueries, useValue: filesQueries },
@@ -95,7 +89,7 @@ describe(CommentsManager.name, () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(isPathExists).mockResolvedValue(true)
-    vi.mocked(getProps).mockResolvedValue({ name: 'file.txt', path: 'folder' })
+    vi.mocked(getProps).mockResolvedValue({ name: 'file.txt', path: 'folder' } as FileProps)
     vi.mocked(dirName).mockReturnValue('/space/folder')
     vi.mocked(fileName).mockReturnValue('file.txt')
   })
@@ -237,7 +231,6 @@ describe(CommentsManager.name, () => {
       expect(dirName).toHaveBeenCalledWith(space.url)
       expect(data).toMatchObject({
         author: user,
-        currentUrl: 'https://app.local/path',
         content: 'c'
       })
     })

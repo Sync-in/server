@@ -14,7 +14,6 @@ export interface NotificationContent {
 
 export interface NotificationOptions {
   author?: UserModel
-  currentUrl?: string
   content?: string
   action?: ACTION
   linkUUID?: string

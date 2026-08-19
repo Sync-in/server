@@ -24,6 +24,10 @@ vi.mock('../../users/utils/avatar', () => ({
   getAvatarBase64: vi.fn()
 }))
 
+vi.mock('../../../configuration/config.environment', () => ({
+  configuration: { server: { publicUrl: 'https://sync-in.example' } }
+}))
+
 describe(NotificationsManager.name, () => {
   let service: NotificationsManager
 
@@ -189,7 +193,7 @@ describe(NotificationsManager.name, () => {
         { id: 1, email: 'a@test', language: 'en' },
         { id: 2, email: 'b@test', language: 'fr' }
       ]
-      const options: any = { author: { id: 9, login: 'jdoe' }, content: 'hello', currentUrl: 'https://app.test/path' }
+      const options: any = { author: { id: 9, login: 'jdoe' }, content: 'hello' }
       const content = { app: NOTIFICATION_APP.COMMENTS } as any
       await service.sendEmailNotification(toUsers as any, content, options)
       expect(getAvatarBase64).toHaveBeenCalledWith('jdoe')
@@ -216,23 +220,23 @@ describe(NotificationsManager.name, () => {
         name: 'COMMENTS',
         app: NOTIFICATION_APP.COMMENTS,
         fn: 'commentMail',
-        options: { content: 'c', currentUrl: 'u', author: { id: 1, login: 'x' } }
+        options: { content: 'c', author: { id: 1, login: 'x' } }
       },
-      { name: 'SPACES', app: NOTIFICATION_APP.SPACES, fn: 'spaceMail', options: { currentUrl: 'u', action: 'A' } },
+      { name: 'SPACES', app: NOTIFICATION_APP.SPACES, fn: 'spaceMail', options: { action: 'A' } },
       {
         name: 'SPACE_ROOTS',
         app: NOTIFICATION_APP.SPACE_ROOTS,
         fn: 'spaceRootMail',
-        options: { currentUrl: 'u', author: { id: 2, login: 'y' }, action: 'B' }
+        options: { author: { id: 2, login: 'y' }, action: 'B' }
       },
-      { name: 'SHARES', app: NOTIFICATION_APP.SHARES, fn: 'shareMail', options: { currentUrl: 'u', author: { id: 3, login: 'z' }, action: 'C' } },
+      { name: 'SHARES', app: NOTIFICATION_APP.SHARES, fn: 'shareMail', options: { author: { id: 3, login: 'z' }, action: 'C' } },
       {
         name: 'LINKS',
         app: NOTIFICATION_APP.LINKS,
         fn: 'linkMail',
-        options: { currentUrl: 'u', author: { id: 4, login: 'w' }, linkUUID: 'uuid', action: 'D' }
+        options: { author: { id: 4, login: 'w' }, linkUUID: 'uuid', action: 'D' }
       },
-      { name: 'SYNC', app: NOTIFICATION_APP.SYNC, fn: 'syncMail', options: { currentUrl: 'u', action: 'E' } }
+      { name: 'SYNC', app: NOTIFICATION_APP.SYNC, fn: 'syncMail', options: { action: 'E' } }
     ] as const
 
     it.each(cases)('uses $fn for $name', ({ app, fn, options }) => {
@@ -242,6 +246,19 @@ describe(NotificationsManager.name, () => {
         `${fn.replace('Mail', '')} html`.replace('spaceRoot', 'spaceRoot')
       ])
       expect((mailModels as any)[fn]).toHaveBeenCalled()
+      expect((mailModels as any)[fn].mock.calls[0][2]).toMatchObject({ publicUrl: 'https://sync-in.example' })
+    })
+
+    it('ignores a URL supplied through notification options', () => {
+      ;(service as any).genMail(
+        'en',
+        { app: NOTIFICATION_APP.COMMENTS } as any,
+        { content: 'c', currentUrl: 'https://attacker.example', author: { id: 1, login: 'x' } } as any
+      )
+
+      const mailOptions = vi.mocked(mailModels.commentMail).mock.calls[0][2]
+      expect(mailOptions).toMatchObject({ publicUrl: 'https://sync-in.example' })
+      expect(mailOptions).not.toHaveProperty('currentUrl')
     })
 
     it('logs error for unhandled app', () => {

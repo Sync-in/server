@@ -11,7 +11,6 @@ import {
 } from '../../../common/functions'
 import type { Entries } from '../../../common/interfaces'
 import { intersectPermissions, InvalidSlugError } from '../../../common/shared'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import type { FileProps } from '../../files/interfaces/file-props.interface'
 import { FileError } from '../../files/models/file-error'
 import { checkExternalPath, getProps, isPathExists, removeFiles } from '../../files/utils/files'
@@ -55,7 +54,6 @@ export class SharesManager {
   private readonly logger = new Logger(SharesManager.name)
 
   constructor(
-    private readonly contextManager: ContextManager,
     private readonly notificationsManager: NotificationsManager,
     private readonly filesQuotaManager: FilesQuotaManager,
     private readonly sharesQueries: SharesQueries,
@@ -1172,7 +1170,6 @@ export class SharesManager {
       }
       this.notificationsManager
         .create(memberIds, notification, {
-          currentUrl: this.contextManager.headerOriginUrl(),
           author: user,
           action: action
         })
@@ -1204,7 +1201,6 @@ export class SharesManager {
           author: user,
           linkUUID: link.linkSettings.uuid,
           linkPassword: link.linkSettings.password,
-          currentUrl: this.contextManager.headerOriginUrl(),
           action: action
         } satisfies NotificationOptions
       )

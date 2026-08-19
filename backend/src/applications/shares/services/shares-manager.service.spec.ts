@@ -2,7 +2,6 @@ import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import * as commonFunctions from '../../../common/functions'
 import { intersectPermissions } from '../../../common/shared'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { LINK_TYPE } from '../../links/constants/links'
 import { LinksQueries } from '../../links/services/links-queries.service'
@@ -56,10 +55,6 @@ describe(SharesManager.name, () => {
   let service: SharesManager
 
   // Mocks
-  const contextManagerMock = {
-    headerOriginUrl: vi.fn()
-  }
-
   const notificationsManagerMock = {
     create: vi.fn().mockResolvedValue(undefined),
     sendEmailNotification: vi.fn().mockResolvedValue(undefined)
@@ -114,7 +109,6 @@ describe(SharesManager.name, () => {
           provide: FilesQuotaManager,
           useValue: { updateStorageQuota: () => vi.fn() }
         },
-        { provide: ContextManager, useValue: contextManagerMock },
         { provide: NotificationsManager, useValue: notificationsManagerMock },
         { provide: SpacesQueries, useValue: spacesQueriesMock },
         { provide: UsersQueries, useValue: usersQueriesMock },

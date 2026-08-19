@@ -7,7 +7,6 @@ import path from 'node:path'
 import { transformAndValidate } from '../../../common/functions'
 import { exportConfiguration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/cache.service'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { FilesConfig } from '../../files/files.config'
 import { FileError } from '../../files/models/file-error'
@@ -48,7 +47,6 @@ describe(SpacesManager.name, () => {
           provide: Cache,
           useValue: { get: () => null }
         },
-        { provide: ContextManager, useValue: {} },
         {
           provide: NotificationsManager,
           useValue: {}

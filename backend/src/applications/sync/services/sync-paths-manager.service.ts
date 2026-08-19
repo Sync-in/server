@@ -1,7 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { ACTION } from '../../../common/constants'
 import { currentTimeStamp } from '../../../common/shared'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { FILE_ERROR } from '../../files/constants/errors'
 import type { FileProps } from '../../files/interfaces/file-props.interface'
 import { FilesQueries } from '../../files/services/files-queries.service'
@@ -26,7 +25,6 @@ export class SyncPathsManager {
   private readonly logger = new Logger(SyncPathsManager.name)
 
   constructor(
-    private readonly contextManager: ContextManager,
     private readonly spacesManager: SpacesManager,
     private readonly filesQueries: FilesQueries,
     private readonly syncQueries: SyncQueries,
@@ -236,7 +234,6 @@ export class SyncPathsManager {
     }
     this.notificationsManager
       .create([userId], notification, {
-        currentUrl: this.contextManager.headerOriginUrl(),
         action: action
       })
       .catch((e: Error) => this.logger.error({ tag: this.notify.name, msg: `${e}` }))

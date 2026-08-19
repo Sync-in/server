@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { i18nLocale } from '../../../common/i18n'
+import { configuration } from '../../../configuration/config.environment'
 import { MailProps } from '../../../infrastructure/mailer/interfaces/mail.interface'
 import { Mailer } from '../../../infrastructure/mailer/mailer.service'
 import { USER_NOTIFICATION } from '../../users/constants/user'
@@ -27,12 +28,17 @@ import { NotificationsQueries } from './notifications-queries.service'
 @Injectable()
 export class NotificationsManager {
   private readonly logger = new Logger(NotificationsManager.name)
+  private readonly publicUrl = configuration.server.publicUrl
 
   constructor(
     private readonly mailer: Mailer,
     private readonly notificationsQueries: NotificationsQueries,
     private readonly webSocketNotifications: WebSocketNotifications
-  ) {}
+  ) {
+    if (this.mailer.available && !this.publicUrl) {
+      this.logger.warn('Notification email action links are disabled because server.publicUrl is not configured.')
+    }
+  }
 
   list(user: UserModel, onlyUnread: boolean = false): Promise<NotificationFromUser[]> {
     return this.notificationsQueries.list(user.id, onlyUnread)
@@ -104,29 +110,29 @@ export class NotificationsManager {
   private genMail(language: i18nLocale, content: NotificationContent, options?: NotificationOptions): [string, string] {
     switch (content.app) {
       case NOTIFICATION_APP.COMMENTS:
-        return commentMail(language, content, { content: options.content, currentUrl: options.currentUrl, author: options.author })
+        return commentMail(language, content, { content: options.content, publicUrl: this.publicUrl, author: options.author })
       case NOTIFICATION_APP.SPACES:
-        return spaceMail(language, content, { currentUrl: options.currentUrl, action: options.action })
+        return spaceMail(language, content, { publicUrl: this.publicUrl, action: options.action })
       case NOTIFICATION_APP.SPACE_ROOTS:
-        return spaceRootMail(language, content, { currentUrl: options.currentUrl, author: options.author, action: options.action })
+        return spaceRootMail(language, content, { publicUrl: this.publicUrl, author: options.author, action: options.action })
       case NOTIFICATION_APP.SHARES:
-        return shareMail(language, content, { currentUrl: options.currentUrl, author: options.author, action: options.action })
+        return shareMail(language, content, { publicUrl: this.publicUrl, author: options.author, action: options.action })
       case NOTIFICATION_APP.LINKS:
         return linkMail(language, content, {
-          currentUrl: options.currentUrl,
+          publicUrl: this.publicUrl,
           author: options.author,
           linkUUID: options.linkUUID,
           linkPassword: options.linkPassword,
           action: options.action
         })
       case NOTIFICATION_APP.SYNC:
-        return syncMail(language, content, { currentUrl: options.currentUrl, action: options.action })
+        return syncMail(language, content, { publicUrl: this.publicUrl, action: options.action })
       case NOTIFICATION_APP.AUTH_2FA:
         return auth2FaMail(language, content)
       case NOTIFICATION_APP.AUTH_LOCKED:
         return authLockedMail(language, content)
       case NOTIFICATION_APP.UNLOCK_REQUEST:
-        return requestUnlockMail(language, content, { currentUrl: options.currentUrl, author: options.author })
+        return requestUnlockMail(language, content, { publicUrl: this.publicUrl, author: options.author })
       case NOTIFICATION_APP.UPDATE_AVAILABLE:
         return serverUpdateAvailableMail(language, content)
       default:
