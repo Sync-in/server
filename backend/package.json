@@ -26,7 +26,7 @@
     "start:debug": "NODE_ENV=development nest start --debug --watch",
     "start:dev": "NODE_ENV=development nest start --watch",
     "start:prod": "nest build && nest start",
-    "test": "NODE_ENV=test vitest run",
+    "test": "SYNCIN_AUTH_ENCRYPTIONKEY=test-encryption-key SYNCIN_AUTH_TOKEN_ACCESS_SECRET=test-access-secret SYNCIN_AUTH_TOKEN_REFRESH_SECRET=test-refresh-secret NODE_ENV=test vitest run",
     "test:cov": "NODE_ENV=test vitest run --coverage",
     "test:debug": "NODE_ENV=test vitest --inspect-brk --inspect --logHeapUsage --no-file-parallelism",
     "test:e2e": "NODE_ENV=test vitest run --config vitest-e2e.config.mts",

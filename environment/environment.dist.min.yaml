@@ -1,3 +1,7 @@
+server:
+  # It will become required in a future major release.
+  # e.g.: https://sync-in.domain.com
+  publicUrl:
 mysql:
   url: 'mysql://user:MySQLPassword@localhost:3306/database'
 auth:
