@@ -76,6 +76,7 @@ export class UsersManager {
       user.impersonatedClientId = authUser.impersonatedClientId
     }
     user.clientId = authUser.clientId
+    user.authSession = authUser.authSession
     user.exp = authUser.exp
     return user
   }
@@ -172,6 +173,7 @@ export class UsersManager {
     }
     user.impersonated = !!authUser.impersonatedFromId
     user.clientId = authUser.clientId
+    user.authSession = authUser.authSession
     return { user: user, server: serverConfig }
   }
 

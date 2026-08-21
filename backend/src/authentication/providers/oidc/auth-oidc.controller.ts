@@ -5,6 +5,7 @@ import { AuthManager } from '../../auth.service'
 import { AUTH_ROUTE } from '../../constants/routes'
 import { AuthTokenSkip } from '../../decorators/auth-token-skip.decorator'
 import type { LoginResponseDto } from '../../dto/login-response.dto'
+import { AUTH_SESSION } from '../auth-providers.constants'
 import { OAuthDesktopPortParam } from './auth-oidc-desktop.constants'
 import { AuthProviderOIDC } from './auth-provider-oidc.service'
 
@@ -27,7 +28,7 @@ export class AuthOIDCController {
   @AuthTokenSkip()
   async oidcCallback(@Query() query: Record<string, string>, @Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
     const user: UserModel = await this.authProviderOIDC.handleCallback(req, res, query)
-    const r: LoginResponseDto = await this.authManager.setCookies(user, res, false)
+    const r: LoginResponseDto = await this.authManager.setCookies(user, res, false, AUTH_SESSION.OIDC)
     return res.redirect(this.authProviderOIDC.getRedirectCallbackUrl(r.token.access_expiration, r.token.refresh_expiration), HttpStatus.FOUND)
   }
 }

@@ -115,6 +115,14 @@ Some authentication flows are non-interactive and pass an `AUTH_SCOPE` to the co
 Scoped authentication can validate app passwords stored in user secrets. App passwords are scoped to one application and do not grant access to other
 scopes.
 
+### App passwords
+
+Generating and revoking app passwords are self-service actions. Regular users whose current browser session was created through OIDC do not need to
+pass a Sync-in step-up challenge for these actions. Sync-in relies on the IdP authentication policy that issued the local session.
+
+Local password sessions, administrators, and non-OIDC sessions must still pass the usual Sync-in step-up: TOTP when enabled, otherwise local password
+confirmation.
+
 ### WebDAV and TOTP
 
 WebDAV uses HTTP Basic authentication and cannot complete the interactive Sync-in TOTP challenge. For that reason, the WebDAV password rule is:
@@ -145,11 +153,13 @@ Client tokens are long-lived registration credentials, not user passwords. Their
 MySQL delegates password checks directly to the local user manager.
 
 LDAP authenticates regular users against LDAP. Local password authentication is still used for guest users and application scopes. Administrators can
-use local password fallback as break-glass access when LDAP authentication fails according to the configured fallback rules.
+use local password fallback as break-glass access when LDAP authentication fails according to the configured fallback rules. Administrator accounts
+should therefore have a local Sync-in password configured and kept available for break-glass recovery.
 
 OIDC browser login delegates the primary authentication and MFA policy to the identity provider. Sync-in does not add its local TOTP challenge after a
 successful OIDC callback. Local password paths can still exist with OIDC selected for guests, administrators, scoped application authentication, and
-regular users when explicitly enabled. See `providers/oidc/oidc.md`.
+regular users when explicitly enabled. Administrator accounts should have a local Sync-in password configured and kept available for break-glass
+recovery. See `providers/oidc/oidc.md`.
 
 ## Access updates and password attempts
 

@@ -14,7 +14,7 @@ import { LoginResponseDto, LoginVerify2FaDto } from './dto/login-response.dto'
 import { TokenResponseDto } from './dto/token-response.dto'
 import { JwtIdentity2FaPayload, JwtIdentityPayload, JwtPayload } from './interfaces/jwt-payload.interface'
 import { TOKEN_TYPE } from './interfaces/token.interface'
-import { AUTH_PROVIDER } from './providers/auth-providers.constants'
+import { AUTH_PROVIDER, AUTH_SESSION } from './providers/auth-providers.constants'
 import type { AuthOIDCSettings } from './providers/oidc/auth-oidc.interfaces'
 
 @Injectable()
@@ -39,11 +39,17 @@ export class AuthManager {
     }
   }
 
-  async setCookies(user: UserModel, res: FastifyReply, init2FaVerify: true): Promise<LoginVerify2FaDto>
-  async setCookies(user: UserModel, res: FastifyReply, init2FaVerify?: false): Promise<LoginResponseDto>
-  async setCookies(user: UserModel, res: FastifyReply, init2FaVerify = false): Promise<LoginResponseDto | LoginVerify2FaDto> {
+  async setCookies(user: UserModel, res: FastifyReply, init2FaVerify: true, authSession?: AUTH_SESSION): Promise<LoginVerify2FaDto>
+  async setCookies(user: UserModel, res: FastifyReply, init2FaVerify?: false, authSession?: AUTH_SESSION): Promise<LoginResponseDto>
+  async setCookies(
+    user: UserModel,
+    res: FastifyReply,
+    init2FaVerify = false,
+    authSession: AUTH_SESSION = AUTH_SESSION.LOCAL
+  ): Promise<LoginResponseDto | LoginVerify2FaDto> {
     // If `verify2Fa` is true, it sets the cookies and response required for valid 2FA authentication.
     const verify2Fa = init2FaVerify && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
+    user.authSession = authSession
     const response = verify2Fa ? new LoginVerify2FaDto(serverConfig) : new LoginResponseDto(user, serverConfig)
     const currentTime = currentTimeStamp()
     const csrfToken: string = crypto.randomUUID()
@@ -159,6 +165,7 @@ export class AuthManager {
           applications: user.applications,
           impersonatedFromId: user.impersonatedFromId || undefined,
           impersonatedClientId: user.impersonatedClientId || undefined,
+          authSession: user.authSession || AUTH_SESSION.LOCAL,
           clientId: user.clientId || undefined,
           twoFaEnabled: user.twoFaEnabled || undefined
         } satisfies JwtIdentityPayload,

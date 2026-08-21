@@ -46,6 +46,8 @@ import type {
   UserOnline
 } from '@sync-in-server/backend/src/applications/users/interfaces/websocket.interface'
 import { API_TWO_FA_ADMIN_RESET_USER, API_TWO_FA_DISABLE, API_TWO_FA_ENABLE } from '@sync-in-server/backend/src/authentication/constants/routes'
+import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
+import { AUTH_SESSION } from '@sync-in-server/backend/src/authentication/providers/auth-providers.constants'
 import type { TwoFaVerifyWithPasswordDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
 import type {
   TwoFaEnableResult,
@@ -67,7 +69,6 @@ import { GuestUserModel } from './models/guest.model'
 import { MemberModel } from './models/member.model'
 import { UserOnlineModel } from './models/user-online.model'
 import { myAvatarUrl } from './user.functions'
-import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 
 type Auth2FaVerifyDialogResult = false | HttpHeaders | undefined
 
@@ -316,12 +317,12 @@ export class UserService {
     return this.http.get<Omit<UserAppPassword, 'password'>[]>(API_USERS_MY_APP_PASSWORDS)
   }
 
-  generateAppPassword(userAppPasswordDto: UserAppPasswordDto, twoFaHeaders: HttpHeaders): Observable<UserAppPassword> {
-    return this.http.post<UserAppPassword>(API_USERS_MY_APP_PASSWORDS, userAppPasswordDto, { headers: twoFaHeaders })
+  generateAppPassword(userAppPasswordDto: UserAppPasswordDto, twoFaHeaders?: HttpHeaders): Observable<UserAppPassword> {
+    return this.http.post<UserAppPassword>(API_USERS_MY_APP_PASSWORDS, userAppPasswordDto, twoFaHeaders ? { headers: twoFaHeaders } : undefined)
   }
 
-  deleteAppPassword(name: string, twoFaHeaders: HttpHeaders): Observable<void> {
-    return this.http.delete<void>(`${API_USERS_MY_APP_PASSWORDS}/${name}`, { headers: twoFaHeaders })
+  deleteAppPassword(name: string, twoFaHeaders?: HttpHeaders): Observable<void> {
+    return this.http.delete<void>(`${API_USERS_MY_APP_PASSWORDS}/${name}`, twoFaHeaders ? { headers: twoFaHeaders } : undefined)
   }
 
   init2Fa(): Observable<TwoFaSetup> {
@@ -338,6 +339,10 @@ export class UserService {
 
   adminResetUser2Fa(userId: number, twoFaHeaders: HttpHeaders): Observable<TwoFaVerifyResult> {
     return this.http.post<TwoFaVerifyResult>(`${API_TWO_FA_ADMIN_RESET_USER}/${userId}`, null, { headers: twoFaHeaders })
+  }
+
+  async authAppPasswordVerifyDialog(): Promise<Auth2FaVerifyDialogResult> {
+    return this.canSkipAppPasswordStepUp(this.user) ? undefined : this.auth2FaVerifyDialog(false, true)
   }
 
   async auth2FaVerifyDialog(withPassword: true, passwordFallback?: boolean): Promise<false | HttpHeaders>
@@ -361,6 +366,10 @@ export class UserService {
       })
     }
     return undefined
+  }
+
+  private canSkipAppPasswordStepUp(user: UserType): boolean {
+    return user?.authSession === AUTH_SESSION.OIDC && user.isUser && !user.isAdmin
   }
 
   private checkQuota(user: UserType) {

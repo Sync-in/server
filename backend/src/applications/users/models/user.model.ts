@@ -1,6 +1,7 @@
 import { Exclude, Expose } from 'class-transformer'
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import type { AUTH_SESSION } from '../../../authentication/providers/auth-providers.constants'
 import { popFromObject } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
 import { isPathInside } from '../../files/utils/files'
@@ -49,6 +50,7 @@ export class UserModel implements User {
   // outside db schema
   fullName: string
   impersonated?: boolean
+  authSession?: AUTH_SESSION
   avatarBase64?: string
   // permissions as a list
   applications: string[] = []

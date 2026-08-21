@@ -178,7 +178,7 @@ Downloads from private or internal IP ranges are blocked by default to limit ser
 ## Local password authentication and MFA
 
 OIDC login trusts the authentication policy enforced by the identity provider. Sync-in does not add its local TOTP challenge after a successful OIDC
-callback. Administrators must require MFA, when needed, in the IdP policy assigned to the Sync-in client or application.
+callback. Administrators should enforce MFA, when needed, in the IdP policy assigned to the Sync-in client or application.
 
 A successful IdP authentication does not override local account access: an existing user disabled in Sync-in is rejected before external identity
 binding or profile synchronization.
@@ -190,7 +190,21 @@ Sync-in TOTP still applies to interactive local password authentication. With th
 - scoped application or app-password authentication;
 - regular users when `options.enablePasswordAuth` is enabled.
 
+Administrator accounts should have a local Sync-in password configured and kept available so they can use break-glass access if the identity provider
+is unavailable or misconfigured.
+
 Scoped application authentication is non-interactive and does not invoke a TOTP challenge.
+
+### App passwords
+
+App passwords remain local Sync-in secrets used for scoped application authentication, such as WebDAV or client access. They are not OIDC tokens and
+they are not synchronized with the identity provider.
+
+For self-service generation or revocation, regular users do not need to pass a Sync-in step-up challenge when their current browser session was
+created through OIDC. The OIDC provider is expected to enforce the primary authentication and MFA policy before issuing the Sync-in browser session.
+
+This exception does not apply to administrators or to local password sessions, including regular users who authenticate locally when
+`options.enablePasswordAuth` is enabled. Those sessions must still pass the usual Sync-in step-up before app passwords can be generated or revoked.
 
 The Sync-in logout endpoint clears only the local session cookies. It does not currently call the IdP end-session or token revocation endpoints, so an
 existing IdP SSO session can authenticate the browser again without prompting for credentials.

@@ -11,6 +11,7 @@ import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applicatio
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
 import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '@sync-in-server/backend/src/authentication/constants/auth'
+import { AUTH_SESSION } from '@sync-in-server/backend/src/authentication/providers/auth-providers.constants'
 import type { TwoFaSetup } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.interfaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
@@ -65,6 +66,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   // password
   protected oldPassword: string
   protected newPassword: string
+  protected showTwoFaSettings = true
   protected readonly store = inject(StoreService)
   protected showEditorPreference = false
   protected userEditorPreference: keyof FileEditorProviders
@@ -76,7 +78,12 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = []
 
   constructor() {
-    this.subscriptions.push(this.store.user.subscribe((user: UserType) => (this.user = user)))
+    this.subscriptions.push(
+      this.store.user.subscribe((user: UserType) => {
+        this.user = user
+        this.showTwoFaSettings = !user || user.authSession !== AUTH_SESSION.OIDC || user.isAdmin
+      })
+    )
     this.subscriptions.push(this.store.userAvatarUrl.subscribe((avatarUrl) => (this.userAvatar = avatarUrl)))
     this.layout.setBreadcrumbIcon(USER_ICON.ACCOUNT)
     this.layout.setBreadcrumbNav({

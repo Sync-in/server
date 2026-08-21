@@ -252,27 +252,29 @@
               <div class="card-body">
                 <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Security</div>
                 <div class="d-flex flex-column gap-3">
-                  <div class="row g-2 align-items-center">
-                    <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Two-Factor Authentication</label>
-                    <div class="col-12 col-md-6 d-flex flex-wrap align-items-center gap-2">
-                      <button (click)="enable2Fa()"
-                              [disabled]="!store.server().twoFaEnabled"
-                              class="btn btn-primary"
-                              type="button"
-                              l10nTranslate>
-                        {{ user.twoFaEnabled ? 'Reset' : 'Enable' }}
-                      </button>
-                      @if (user.twoFaEnabled) {
-                        <button (click)="disable2Fa()"
+                  @if (showTwoFaSettings) {
+                    <div class="row g-2 align-items-center">
+                      <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Two-Factor Authentication</label>
+                      <div class="col-12 col-md-6 d-flex flex-wrap align-items-center gap-2">
+                        <button (click)="enable2Fa()"
                                 [disabled]="!store.server().twoFaEnabled"
-                                class="btn btn-danger"
+                                class="btn btn-primary"
                                 type="button"
                                 l10nTranslate>
-                          Disable
+                          {{ user.twoFaEnabled ? 'Reset' : 'Enable' }}
                         </button>
-                      }
+                        @if (user.twoFaEnabled) {
+                          <button (click)="disable2Fa()"
+                                  [disabled]="!store.server().twoFaEnabled"
+                                  class="btn btn-danger"
+                                  type="button"
+                                  l10nTranslate>
+                            Disable
+                          </button>
+                        }
+                      </div>
                     </div>
-                  </div>
+                  }
 
                   <div class="row g-2 align-items-center">
                     <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Application Passwords</label>

@@ -1,3 +1,4 @@
+import type { AUTH_SESSION } from '../providers/auth-providers.constants'
 import { TOKEN_TYPE } from './token.interface'
 
 export class JwtIdentityPayload {
@@ -10,6 +11,7 @@ export class JwtIdentityPayload {
   applications: string[]
   impersonatedFromId?: number
   impersonatedClientId?: string
+  authSession?: AUTH_SESSION
   clientId?: string
   twoFaEnabled?: boolean
 }

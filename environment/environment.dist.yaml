@@ -205,6 +205,7 @@ auth:
       # enablePasswordAuthFallback: Allow local password authentication for regular users when the LDAP service is unavailable.
       # Applies only to LDAP connection/DNS/timeout errors after all configured LDAP servers fail.
       # Always allowed for administrator users (break-glass access).
+      # Administrator accounts should have a local Sync-in password configured and kept available for break-glass recovery.
       # default: false
       enablePasswordAuthFallback: false
   oidc:
@@ -275,6 +276,7 @@ auth:
       # - application scopes (app passwords)
       # Regular users are allowed only when this option is enabled.
       # Users must already exist locally and have a password set.
+      # Administrator accounts should have a local Sync-in password configured and kept available for break-glass recovery.
       # default: false
       enablePasswordAuth: false
       # autoSyncAvatar: Automatically download and synchronize the user avatar from the OIDC `picture` claim.

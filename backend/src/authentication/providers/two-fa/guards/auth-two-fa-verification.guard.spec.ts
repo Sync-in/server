@@ -6,6 +6,7 @@ import { UserModel } from '../../../../applications/users/models/user.model'
 import { configuration } from '../../../../configuration/config.environment'
 import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '../../../constants/auth'
 import { FastifyAuthenticatedRequest } from '../../../interfaces/auth-request.interface'
+import { AUTH_SESSION } from '../../auth-providers.constants'
 import { AuthProvider2FA } from '../auth-provider-two-fa.service'
 import type { TwoFaVerifyDto } from '../auth-two-fa.dtos'
 import type { TwoFaVerifyResult } from '../auth-two-fa.interfaces'
@@ -17,6 +18,9 @@ describe(AuthTwoFaVerificationOrPasswordGuard.name, () => {
   const originalTotpEnabled = configuration.auth.mfa.totp.enabled
   const userWithTotp = { id: 1, twoFaEnabled: true } as UserModel
   const userWithoutTotp = { id: 1, twoFaEnabled: false } as UserModel
+  const regularUserWithoutTotp = { id: 1, isAdmin: false, isUser: true, twoFaEnabled: false } as UserModel
+  const regularUserWithTotp = { id: 1, isAdmin: false, isUser: true, twoFaEnabled: true } as UserModel
+  const adminWithTotp = { id: 1, isAdmin: true, isUser: true, twoFaEnabled: true } as UserModel
   let guard: CanActivate
   let authProvider2FA: DeepMocked<AuthProvider2FA>
 
@@ -75,6 +79,28 @@ describe(AuthTwoFaVerificationOrPasswordGuard.name, () => {
     expect(authProvider2FA.verify).not.toHaveBeenCalled()
   })
 
+  it.each([
+    ['without TOTP', regularUserWithoutTotp],
+    ['with TOTP', regularUserWithTotp]
+  ])('should skip app-password step-up for regular OIDC sessions %s', async (_, user) => {
+    authProvider2FA.loadUser.mockResolvedValue(user)
+
+    await expect(guard.canActivate(makeContext({}, { authSession: AUTH_SESSION.OIDC }))).resolves.toBe(true)
+    expect(authProvider2FA.verifyUserPassword).not.toHaveBeenCalled()
+    expect(authProvider2FA.verify).not.toHaveBeenCalled()
+  })
+
+  it('should keep TOTP verification for OIDC administrators with TOTP', async () => {
+    authProvider2FA.loadUser.mockResolvedValue(adminWithTotp)
+    mockVerifyResult(authProvider2FA, { success: true, message: '' })
+
+    const context = makeContext({ [TWO_FA_HEADER_CODE]: '123456' }, { authSession: AUTH_SESSION.OIDC })
+
+    await expect(guard.canActivate(context)).resolves.toBe(true)
+    expect(authProvider2FA.verifyUserPassword).not.toHaveBeenCalled()
+    expect(authProvider2FA.verify).toHaveBeenCalledWith({ code: '123456' }, context.switchToHttp().getRequest())
+  })
+
   it('should reject the request when the password fallback is missing', async () => {
     authProvider2FA.loadUser.mockResolvedValue(userWithoutTotp)
 
@@ -114,10 +140,10 @@ function mockVerifyResult(authProvider2FA: DeepMocked<AuthProvider2FA>, result: 
   ;(authProvider2FA.verify as unknown as MockInstance<VerifyWithoutLogin>).mockResolvedValue(result)
 }
 
-function makeContext(headers: Record<string, string> = {}): DeepMocked<ExecutionContext> {
+function makeContext(headers: Record<string, string> = {}, user: Partial<UserModel> = {}): DeepMocked<ExecutionContext> {
   const context = createMock<ExecutionContext>()
   context.switchToHttp().getRequest.mockReturnValue({
-    user: { id: 1 },
+    user: { id: 1, ...user },
     ip: '127.0.0.1',
     headers
   } as FastifyAuthenticatedRequest)
