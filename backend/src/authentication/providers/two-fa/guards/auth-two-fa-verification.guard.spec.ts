@@ -18,9 +18,6 @@ describe(AuthTwoFaVerificationOrPasswordGuard.name, () => {
   const originalTotpEnabled = configuration.auth.mfa.totp.enabled
   const userWithTotp = { id: 1, twoFaEnabled: true } as UserModel
   const userWithoutTotp = { id: 1, twoFaEnabled: false } as UserModel
-  const regularUserWithoutTotp = { id: 1, isAdmin: false, isUser: true, twoFaEnabled: false } as UserModel
-  const regularUserWithTotp = { id: 1, isAdmin: false, isUser: true, twoFaEnabled: true } as UserModel
-  const adminWithTotp = { id: 1, isAdmin: true, isUser: true, twoFaEnabled: true } as UserModel
   let guard: CanActivate
   let authProvider2FA: DeepMocked<AuthProvider2FA>
 
@@ -60,6 +57,20 @@ describe(AuthTwoFaVerificationOrPasswordGuard.name, () => {
     expect(authProvider2FA.verify).toHaveBeenCalledWith({ code: '123456' }, context.switchToHttp().getRequest())
   })
 
+  it('should not skip step-up verification for OIDC sessions', async () => {
+    authProvider2FA.loadUser.mockResolvedValueOnce(userWithTotp).mockResolvedValueOnce(userWithoutTotp)
+    authProvider2FA.verifyUserPassword.mockResolvedValue(undefined)
+    mockVerifyResult(authProvider2FA, { success: true, message: '' })
+
+    const totpContext = makeContext({ [TWO_FA_HEADER_CODE]: '123456' }, { authSession: AUTH_SESSION.OIDC })
+    await expect(guard.canActivate(totpContext)).resolves.toBe(true)
+    expect(authProvider2FA.verify).toHaveBeenCalledWith({ code: '123456' }, totpContext.switchToHttp().getRequest())
+
+    await expect(guard.canActivate(makeContext({ [TWO_FA_HEADER_PASSWORD]: 'password' }, { authSession: AUTH_SESSION.OIDC }))).resolves.toBe(true)
+    expect(authProvider2FA.verifyUserPassword).toHaveBeenCalledWith(userWithoutTotp, 'password', '127.0.0.1')
+    expect(authProvider2FA.verify).toHaveBeenCalledTimes(1)
+  })
+
   it('should require the current password instead of TOTP when the user has no TOTP enabled', async () => {
     authProvider2FA.loadUser.mockResolvedValue(userWithoutTotp)
     authProvider2FA.verifyUserPassword.mockResolvedValue(undefined)
@@ -77,28 +88,6 @@ describe(AuthTwoFaVerificationOrPasswordGuard.name, () => {
     await expect(guard.canActivate(makeContext({ [TWO_FA_HEADER_PASSWORD]: 'password' }))).resolves.toBe(true)
     expect(authProvider2FA.verifyUserPassword).toHaveBeenCalledWith(userWithTotp, 'password', '127.0.0.1')
     expect(authProvider2FA.verify).not.toHaveBeenCalled()
-  })
-
-  it.each([
-    ['without TOTP', regularUserWithoutTotp],
-    ['with TOTP', regularUserWithTotp]
-  ])('should skip app-password step-up for regular OIDC sessions %s', async (_, user) => {
-    authProvider2FA.loadUser.mockResolvedValue(user)
-
-    await expect(guard.canActivate(makeContext({}, { authSession: AUTH_SESSION.OIDC }))).resolves.toBe(true)
-    expect(authProvider2FA.verifyUserPassword).not.toHaveBeenCalled()
-    expect(authProvider2FA.verify).not.toHaveBeenCalled()
-  })
-
-  it('should keep TOTP verification for OIDC administrators with TOTP', async () => {
-    authProvider2FA.loadUser.mockResolvedValue(adminWithTotp)
-    mockVerifyResult(authProvider2FA, { success: true, message: '' })
-
-    const context = makeContext({ [TWO_FA_HEADER_CODE]: '123456' }, { authSession: AUTH_SESSION.OIDC })
-
-    await expect(guard.canActivate(context)).resolves.toBe(true)
-    expect(authProvider2FA.verifyUserPassword).not.toHaveBeenCalled()
-    expect(authProvider2FA.verify).toHaveBeenCalledWith({ code: '123456' }, context.switchToHttp().getRequest())
   })
 
   it('should reject the request when the password fallback is missing', async () => {

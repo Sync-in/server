@@ -162,6 +162,7 @@
   "Update": "Обновить",
   "current password": "текущий пароль",
   "new password": "новый пароль",
+  "local password": "локальный пароль",
   "Change me !": "Измените меня!",
   "Current password missing !": "Не указан текущий пароль!",
   "New password missing !": "Не указан новый пароль!",

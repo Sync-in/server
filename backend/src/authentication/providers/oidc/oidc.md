@@ -124,6 +124,9 @@ When `autoCreateUser` is enabled, a first successful login creates a local user 
 - the mapped administrator role and storage quota, when present;
 - an internal random password required by the local user model but not used for OIDC authentication.
 
+Users authenticated through OIDC can later set a known local password from their profile. That password can be used for local password authentication
+when enabled, and for password-fallback step-up when no TOTP secret is active.
+
 When automatic creation is disabled, authentication succeeds only for an already linked account or a compatible existing account found by email.
 
 For an existing user, each successful OIDC login can synchronize:
@@ -178,7 +181,8 @@ Downloads from private or internal IP ranges are blocked by default to limit ser
 ## Local password authentication and MFA
 
 OIDC login trusts the authentication policy enforced by the identity provider. Sync-in does not add its local TOTP challenge after a successful OIDC
-callback. Administrators should enforce MFA, when needed, in the IdP policy assigned to the Sync-in client or application.
+callback. Users can still configure Sync-in TOTP from their profile while authenticated through OIDC; enable, reset, and disable flows verify the local
+Sync-in password. Administrators should enforce MFA, when needed, in the IdP policy assigned to the Sync-in client or application.
 
 A successful IdP authentication does not override local account access: an existing user disabled in Sync-in is rejected before external identity
 binding or profile synchronization.
@@ -190,6 +194,9 @@ Sync-in TOTP still applies to interactive local password authentication. With th
 - scoped application or app-password authentication;
 - regular users when `options.enablePasswordAuth` is enabled.
 
+OIDC-created users start with an internal random password. To use local password authentication later, or password-fallback step-up when no TOTP
+secret is active, they must first set a known local password from their profile while authenticated through OIDC.
+
 Administrator accounts should have a local Sync-in password configured and kept available so they can use break-glass access if the identity provider
 is unavailable or misconfigured.
 
@@ -200,11 +207,7 @@ Scoped application authentication is non-interactive and does not invoke a TOTP 
 App passwords remain local Sync-in secrets used for scoped application authentication, such as WebDAV or client access. They are not OIDC tokens and
 they are not synchronized with the identity provider.
 
-For self-service generation or revocation, regular users do not need to pass a Sync-in step-up challenge when their current browser session was
-created through OIDC. The OIDC provider is expected to enforce the primary authentication and MFA policy before issuing the Sync-in browser session.
-
-This exception does not apply to administrators or to local password sessions, including regular users who authenticate locally when
-`options.enablePasswordAuth` is enabled. Those sessions must still pass the usual Sync-in step-up before app passwords can be generated or revoked.
+Self-service app-password generation and revocation require the usual Sync-in step-up: TOTP when enabled, otherwise local password confirmation.
 
 The Sync-in logout endpoint clears only the local session cookies. It does not currently call the IdP end-session or token revocation endpoints, so an
 existing IdP SSO session can authenticate the browser again without prompting for credentials.

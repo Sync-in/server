@@ -120,10 +120,7 @@ scopes.
 
 ### App passwords
 
-Generating and revoking app passwords are self-service actions. Regular users whose current browser session was created through OIDC do not need to
-pass a Sync-in step-up challenge for these actions. Sync-in relies on the IdP authentication policy that issued the local session.
-
-Local password sessions, administrators, and non-OIDC sessions must still pass the usual Sync-in step-up: TOTP when enabled, otherwise local password
+Generating and revoking app passwords are self-service actions protected by the usual Sync-in step-up: TOTP when enabled, otherwise local password
 confirmation.
 
 ### WebDAV and TOTP
@@ -161,8 +158,10 @@ should therefore have a local Sync-in password configured and kept available for
 
 OIDC browser login delegates the primary authentication and MFA policy to the identity provider. Sync-in does not add its local TOTP challenge after a
 successful OIDC callback. Local password paths can still exist with OIDC selected for guests, administrators, scoped application authentication, and
-regular users when explicitly enabled. Administrator accounts should have a local Sync-in password configured and kept available for break-glass
-recovery. See `providers/oidc/oidc.md`.
+regular users when explicitly enabled. OIDC-created users can set a known local password from their profile while authenticated through OIDC, for
+local password access or password-fallback step-up. Users authenticated through OIDC can also configure Sync-in TOTP from their profile; enable,
+reset, and disable flows still verify the local Sync-in password. Administrator accounts should have a local Sync-in password configured and kept
+available for break-glass recovery. See `providers/oidc/oidc.md`.
 
 ## Access updates and password attempts
 

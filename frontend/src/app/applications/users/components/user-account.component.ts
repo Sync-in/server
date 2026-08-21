@@ -66,7 +66,6 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   // password
   protected oldPassword: string
   protected newPassword: string
-  protected showTwoFaSettings = true
   protected readonly store = inject(StoreService)
   protected showEditorPreference = false
   protected userEditorPreference: keyof FileEditorProviders
@@ -78,12 +77,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = []
 
   constructor() {
-    this.subscriptions.push(
-      this.store.user.subscribe((user: UserType) => {
-        this.user = user
-        this.showTwoFaSettings = !user || user.authSession !== AUTH_SESSION.OIDC || user.isAdmin
-      })
-    )
+    this.subscriptions.push(this.store.user.subscribe((user: UserType) => (this.user = user)))
     this.subscriptions.push(this.store.userAvatarUrl.subscribe((avatarUrl) => (this.userAvatar = avatarUrl)))
     this.layout.setBreadcrumbIcon(USER_ICON.ACCOUNT)
     this.layout.setBreadcrumbNav({
@@ -121,6 +115,10 @@ export class UserAccountComponent implements OnInit, OnDestroy {
     })
   }
 
+  get requiresCurrentPassword() {
+    return this.user?.authSession !== AUTH_SESSION.OIDC
+  }
+
   ngOnInit() {
     this.userService.refreshUser()
   }
@@ -142,7 +140,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   }
 
   async submitPassword() {
-    if (!this.oldPassword) {
+    if (this.requiresCurrentPassword && !this.oldPassword) {
       this.layout.sendNotification('error', 'Configuration', 'Current password missing !')
       return
     }
@@ -158,7 +156,8 @@ export class UserAccountComponent implements OnInit, OnDestroy {
     if (auth2FaHeaders === false) {
       return
     }
-    this.userService.changePassword({ oldPassword: this.oldPassword, newPassword: this.newPassword }, auth2FaHeaders).subscribe({
+    const oldPassword = this.requiresCurrentPassword ? this.oldPassword : this.newPassword
+    this.userService.changePassword({ oldPassword, newPassword: this.newPassword }, auth2FaHeaders).subscribe({
       next: () => {
         this.oldPassword = ''
         this.newPassword = ''

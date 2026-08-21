@@ -214,19 +214,23 @@
                   }
                 </div>
                 <div class="d-flex flex-column gap-2">
-                  <div class="row g-2 align-items-center">
-                    <label for="" class="form-label col-12 col-md-6 mb-0">{{ 'current password' | translate:locale.language | capitalize }}</label>
-                    <div class="col-12 col-md-6">
-                      <app-input-password [(password)]="oldPassword"></app-input-password>
+                  @if (requiresCurrentPassword) {
+                    <div class="row g-2 align-items-center">
+                      <label for="" class="form-label col-12 col-md-6 mb-0">{{ 'current password' | translate:locale.language | capitalize }}</label>
+                      <div class="col-12 col-md-6">
+                        <app-input-password [(password)]="oldPassword"></app-input-password>
+                      </div>
                     </div>
-                  </div>
+                  }
 
                   <div class="row g-2 align-items-center">
-                    <label for="" class="form-label col-12 col-md-6 mb-0">{{ 'new password' | translate:locale.language | capitalize }}</label>
+                    <label for="" class="form-label col-12 col-md-6 mb-0">
+                      {{ (requiresCurrentPassword ? 'new password' : 'local password') | translate:locale.language | capitalize }}
+                    </label>
                     <div class="col-12 col-md-6">
                       <app-input-password [(password)]="newPassword"
-                                          [disabled]="!oldPassword?.length"
-                                          [isRequired]="!!oldPassword?.length"
+                                          [disabled]="requiresCurrentPassword && !oldPassword?.length"
+                                          [isRequired]="requiresCurrentPassword && !!oldPassword?.length"
                                           [passwordMinLength]="passwordMinLength"
                                           [showGenerator]="true">
                       </app-input-password>
@@ -235,7 +239,7 @@
 
                   <div class="row g-2">
                     <div class="col-12 col-md-6 offset-md-6">
-                      <button [disabled]="!newPassword || !oldPassword || newPassword.length < passwordMinLength"
+                      <button [disabled]="!newPassword || (requiresCurrentPassword && !oldPassword) || newPassword.length < passwordMinLength"
                               (click)="submitPassword()"
                               class="btn btn-primary text-nowrap"
                               type="button"
@@ -252,29 +256,27 @@
               <div class="card-body">
                 <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Security</div>
                 <div class="d-flex flex-column gap-3">
-                  @if (showTwoFaSettings) {
-                    <div class="row g-2 align-items-center">
-                      <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Two-Factor Authentication</label>
-                      <div class="col-12 col-md-6 d-flex flex-wrap align-items-center gap-2">
-                        <button (click)="enable2Fa()"
+                  <div class="row g-2 align-items-center">
+                    <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Two-Factor Authentication</label>
+                    <div class="col-12 col-md-6 d-flex flex-wrap align-items-center gap-2">
+                      <button (click)="enable2Fa()"
+                              [disabled]="!store.server().twoFaEnabled"
+                              class="btn btn-primary"
+                              type="button"
+                              l10nTranslate>
+                        {{ user.twoFaEnabled ? 'Reset' : 'Enable' }}
+                      </button>
+                      @if (user.twoFaEnabled) {
+                        <button (click)="disable2Fa()"
                                 [disabled]="!store.server().twoFaEnabled"
-                                class="btn btn-primary"
+                                class="btn btn-danger"
                                 type="button"
                                 l10nTranslate>
-                          {{ user.twoFaEnabled ? 'Reset' : 'Enable' }}
+                          Disable
                         </button>
-                        @if (user.twoFaEnabled) {
-                          <button (click)="disable2Fa()"
-                                  [disabled]="!store.server().twoFaEnabled"
-                                  class="btn btn-danger"
-                                  type="button"
-                                  l10nTranslate>
-                            Disable
-                          </button>
-                        }
-                      </div>
+                      }
                     </div>
-                  }
+                  </div>
 
                   <div class="row g-2 align-items-center">
                     <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Application Passwords</label>

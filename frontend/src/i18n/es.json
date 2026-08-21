@@ -162,6 +162,7 @@
   "Update": "Actualizar",
   "current password": "contraseña actual",
   "new password": "nueva contraseña",
+  "local password": "contraseña local",
   "Change me !": "¡Cámbiame!",
   "Current password missing !": "¡Falta la contraseña actual!",
   "New password missing !": "¡Falta la nueva contraseña!",

@@ -53,6 +53,9 @@ The route is authenticated and limited to regular users. It returns:
 
 Sync-in stores the pending setup secret in cache for five minutes. The response disables caching with `Cache-Control: no-store`.
 
+Users whose browser session was created through OIDC can open this setup flow from their profile. The final enable or reset request still verifies the
+current local Sync-in password; OIDC-created users must set a known local password first.
+
 The user completes setup with:
 
 ```text
@@ -125,9 +128,6 @@ sync-in-two-fa-code
 
 When global TOTP is disabled, or when the loaded user has no TOTP secret, guards that allow password fallback use the current local password instead
 of a TOTP code. Guards without password fallback simply allow the request when TOTP is inactive.
-
-Regular users whose current browser session was created through OIDC can skip the app-password step-up guard. Administrators cannot skip it; an OIDC
-administrator with TOTP enabled must still pass TOTP verification for app-password step-up.
 
 ## API tokens and client registration
 

@@ -9,6 +9,7 @@ import { Readable } from 'node:stream'
 import { AuthManager } from '../../../authentication/auth.service'
 import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache'
 import { AUTH_SCOPE } from '../../../authentication/constants/scope'
+import { AUTH_SESSION } from '../../../authentication/providers/auth-providers.constants'
 import { comparePassword } from '../../../common/functions'
 import * as imageModule from '../../../common/image'
 import { pngMimeType, svgMimeType } from '../../../common/image'
@@ -161,12 +162,16 @@ describe(UsersManager.name, () => {
     await expect(usersManager.me({ id: 0 } as UserModel)).rejects.toThrow()
     usersQueriesService.from = vi.fn().mockResolvedValue(null)
     await expect(usersManager.fromUserId(123)).resolves.toBeNull()
-    const authUser = new UserModel({ ...generateUserTest(), id: 42, clientId: 'CID', impersonatedFromId: 1 } as any, true)
+    const authUser = new UserModel(
+      { ...generateUserTest(), id: 42, clientId: 'CID', authSession: AUTH_SESSION.OIDC, impersonatedFromId: 1 } as any,
+      true
+    )
     const fromUser = new UserModel({ ...generateUserTest(), id: 42 }, true)
     usersQueriesService.from = vi.fn().mockResolvedValue(fromUser)
     const me2 = await usersManager.me(authUser)
     expect(me2.user.impersonated).toBe(true)
     expect(me2.user.clientId).toBe('CID')
+    expect(me2.user.authSession).toBe(AUTH_SESSION.OIDC)
   })
 
   it('should resolve token users from current database state', async () => {
@@ -176,6 +181,7 @@ describe(UsersManager.name, () => {
       role: USER_ROLE.ADMINISTRATOR,
       applications: Object.values(USER_PERMISSION),
       clientId: 'client-id',
+      authSession: AUTH_SESSION.OIDC,
       exp: 1234
     } as any)
     const currentUser = {
@@ -191,6 +197,7 @@ describe(UsersManager.name, () => {
     expect(resolved.role).toBe(USER_ROLE.USER)
     expect(resolved.applications).toEqual([USER_PERMISSION.SPACES])
     expect(resolved.clientId).toBe('client-id')
+    expect(resolved.authSession).toBe(AUTH_SESSION.OIDC)
     expect(resolved.exp).toBe(1234)
 
     usersQueriesService.from = vi.fn().mockResolvedValue({ ...currentUser, isActive: false })
@@ -517,11 +524,22 @@ describe(UsersManager.name, () => {
     usersQueriesService.selectUserProperties = vi.fn().mockResolvedValue({ password: 'HASH' })
     vi.mocked(comparePassword).mockResolvedValue(false)
     await expect(usersManager.updatePassword(userTest, { oldPassword: 'a', newPassword: 'b' })).rejects.toThrow('Password mismatch')
+    vi.mocked(comparePassword).mockClear()
+    await expect(usersManager.updatePassword(userTest, { oldPassword: 'same-password', newPassword: 'same-password' })).rejects.toThrow(
+      'Password mismatch'
+    )
+    expect(comparePassword).toHaveBeenCalledWith('same-password', 'HASH')
     vi.mocked(comparePassword).mockResolvedValue(true)
     ;(bcrypt.hash as unknown as Mock).mockResolvedValue('HASHED')
     usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(true)
     await expect(usersManager.updatePassword(userTest, { oldPassword: 'a', newPassword: 'b' })).resolves.toBeUndefined()
     expect(usersQueriesService.updateUserOrGuest).toHaveBeenCalledWith(userTest.id, { password: 'HASHED' })
+    const oidcUser = new UserModel({ ...generateUserTest(), authSession: AUTH_SESSION.OIDC } as any, false)
+    vi.mocked(comparePassword).mockClear()
+    ;(bcrypt.hash as unknown as Mock).mockResolvedValue('OIDC_HASHED')
+    await expect(usersManager.updatePassword(oidcUser, { oldPassword: 'local-password', newPassword: 'local-password' })).resolves.toBeUndefined()
+    expect(comparePassword).not.toHaveBeenCalled()
+    expect(usersQueriesService.updateUserOrGuest).toHaveBeenCalledWith(oidcUser.id, { password: 'OIDC_HASHED' })
     usersQueriesService.updateUserOrGuest = vi.fn().mockResolvedValue(false)
     usersQueriesService.selectUserProperties = vi.fn().mockResolvedValue({ password: 'HASH' })
     vi.mocked(comparePassword).mockResolvedValue(true)

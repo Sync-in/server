@@ -10,6 +10,7 @@ import { AUTH_SCOPE } from '../../../authentication/constants/scope'
 import { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface'
+import { AUTH_SESSION } from '../../../authentication/providers/auth-providers.constants'
 import { ACTION } from '../../../common/constants'
 import { comparePassword, hashPassword } from '../../../common/functions'
 import { convertTempImageToPng, generateAvatar, imgMimeTypePrefix, pngMimeType, svgMimeType } from '../../../common/image'
@@ -193,7 +194,8 @@ export class UsersManager {
     if (!r) {
       throw new HttpException('Unable to check password', HttpStatus.NOT_FOUND)
     }
-    if (!(await comparePassword(userPasswordDto.oldPassword, r.password))) {
+    const canSetLocalPasswordFromOIDC = user.authSession === AUTH_SESSION.OIDC && userPasswordDto.oldPassword === userPasswordDto.newPassword
+    if (!canSetLocalPasswordFromOIDC && !(await comparePassword(userPasswordDto.oldPassword, r.password))) {
       throw new HttpException('Password mismatch', HttpStatus.BAD_REQUEST)
     }
     const hash = await bcrypt.hash(userPasswordDto.newPassword, 10)

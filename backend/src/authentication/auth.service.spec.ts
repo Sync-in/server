@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { USER_ROLE } from '../applications/users/constants/user'
 import { UserModel } from '../applications/users/models/user.model'
+import { currentTimeStamp } from '../common/shared'
 import { AuthManager } from './auth.service'
 import { AUTH_SESSION } from './providers/auth-providers.constants'
 
@@ -41,6 +42,31 @@ describe(AuthManager.name, () => {
     const res = { setCookie: vi.fn() }
 
     const response = await authManager.setCookies(user, res as any, false, AUTH_SESSION.OIDC)
+
+    expect(response.user.authSession).toBe(AUTH_SESSION.OIDC)
+    expect(jwtService.signAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        identity: expect.objectContaining({ authSession: AUTH_SESSION.OIDC })
+      }),
+      expect.any(Object)
+    )
+  })
+
+  it('should preserve the authentication method when refreshing cookies', async () => {
+    const user = new UserModel({
+      id: 1,
+      login: 'alice',
+      email: 'alice@example.com',
+      firstName: 'Alice',
+      lastName: 'Doe',
+      language: 'en',
+      role: USER_ROLE.USER,
+      authSession: AUTH_SESSION.OIDC,
+      exp: currentTimeStamp() + 3600
+    } as any)
+    const res = { setCookie: vi.fn() }
+
+    const response = await authManager.refreshCookies(user, res as any)
 
     expect(response.user.authSession).toBe(AUTH_SESSION.OIDC)
     expect(jwtService.signAsync).toHaveBeenCalledWith(
