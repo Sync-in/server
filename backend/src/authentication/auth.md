@@ -14,6 +14,9 @@ Sync-in supports three authentication providers:
 Regardless of provider, Sync-in authorizes requests with local user records, roles, permissions, and locally issued tokens after authentication
 succeeds.
 
+Link pseudo-users are excluded from normal authentication lookups. They can only authenticate through the public link flow, using the link UUID and
+optional link password.
+
 ## Browser session flow
 
 The browser login endpoint is:

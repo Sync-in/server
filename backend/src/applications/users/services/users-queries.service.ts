@@ -102,7 +102,10 @@ export class UsersQueries {
     if (!pQuery) {
       const where = userId
         ? eq(users.id, sql.placeholder('userId'))
-        : or(eq(users.login, sql.placeholder('loginOrEmail')), eq(users.email, sql.placeholder('loginOrEmail')))
+        : and(
+            lte(users.role, USER_ROLE.GUEST),
+            or(eq(users.login, sql.placeholder('loginOrEmail')), eq(users.email, sql.placeholder('loginOrEmail')))
+          )
       pQuery = this.db
         .select({
           user: users,
@@ -141,7 +144,7 @@ export class UsersQueries {
         .from(users)
         .leftJoin(usersGroups, eq(usersGroups.userId, users.id))
         .leftJoin(groups, and(eq(groups.id, usersGroups.groupId), ne(groups.permissions, '')))
-        .where(or(eq(users.externalId, externalIdPlaceholder), eq(users.email, emailPlaceholder)))
+        .where(and(lte(users.role, USER_ROLE.GUEST), or(eq(users.externalId, externalIdPlaceholder), eq(users.email, emailPlaceholder))))
         .groupBy(users.id)
         .orderBy(desc(eq(users.externalId, externalIdPlaceholder)))
         .limit(1)
