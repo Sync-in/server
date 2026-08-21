@@ -73,18 +73,18 @@ This is appropriate for the current single-IdP model; it is not an issuer-and-su
 
 Unless specified otherwise, claims in this table are read from the UserInfo response.
 
-| Claim | Required | Usage |
-| --- | --- | --- |
-| ID token `sub` | Yes | Stored unchanged as the local `externalId`. |
-| UserInfo `sub` | Yes | Checked against the ID token subject unless `skipSubjectCheck` is enabled. |
-| `email` | Yes | Trimmed, used for legacy account linking, and synchronized to the local profile. |
-| `email_verified` | By default | Must be the boolean `true` when `requireVerifiedEmail` is enabled. |
-| `preferred_username` | No | Supplies the trimmed and lowercased base for a new local login. |
-| `given_name` / `family_name` | No | Synchronize the local first and last names. |
-| `name` | No | Split into first and last names only when both structured name claims are absent. |
-| `groups` / `roles` | No | Top-level arrays inspected for an exact `adminRoleOrGroup` match. |
-| `picture` | No | HTTP(S) avatar URL used when automatic avatar synchronization is enabled. |
-| Configured quota claim | No | Synchronizes the local storage quota in bytes. |
+| Claim                        | Required   | Usage                                                                             |
+|------------------------------|------------|-----------------------------------------------------------------------------------|
+| ID token `sub`               | Yes        | Stored unchanged as the local `externalId`.                                       |
+| UserInfo `sub`               | Yes        | Checked against the ID token subject unless `skipSubjectCheck` is enabled.        |
+| `email`                      | Yes        | Trimmed, used for legacy account linking, and synchronized to the local profile.  |
+| `email_verified`             | By default | Must be the boolean `true` when `requireVerifiedEmail` is enabled.                |
+| `preferred_username`         | No         | Supplies the trimmed and lowercased base for a new local login.                   |
+| `given_name` / `family_name` | No         | Synchronize the local first and last names.                                       |
+| `name`                       | No         | Split into first and last names only when both structured name claims are absent. |
+| `groups` / `roles`           | No         | Top-level arrays inspected for an exact `adminRoleOrGroup` match.                 |
+| `picture`                    | No         | HTTP(S) avatar URL used when automatic avatar synchronization is enabled.         |
+| Configured quota claim       | No         | Synchronizes the local storage quota in bytes.                                    |
 
 If `preferred_username` is absent, the email local-part initializes the login. Because email is required, the UserInfo `sub` is not normally used as
 the login fallback.
@@ -141,8 +141,8 @@ OIDC does not guarantee that `preferred_username` is unique or stable. When the 
 lowercase hexadecimal SHA-256 suffix derived from the validated ID token `sub`; the raw subject is not exposed in the login. The base is truncated
 when necessary to keep the generated login within 255 characters. The database unique index remains the final authority for the generated login.
 
-Profile update failures are logged without invalidating an otherwise successful OIDC authentication. Creation-time permissions are never reapplied
-to an existing user.
+Profile update failures are logged without invalidating an otherwise successful OIDC authentication. Creation-time permissions are never reapplied to
+an existing user.
 
 ## Administrator role mapping
 
@@ -168,9 +168,9 @@ Nested or provider-specific role structures are not interpreted. They must be ma
 
 When `options.autoSyncAvatar` is enabled, Sync-in reads the UserInfo `picture` URL after a successful login. The URL must use HTTP or HTTPS.
 
-Before installing the avatar, Sync-in checks the content type and enforces a 5 MiB maximum. The image is downloaded to a temporary location,
-converted to PNG, and stored as the local user avatar. Source URL, size, and last-modified metadata are retained so an unchanged remote avatar can be
-skipped on subsequent logins.
+Before installing the avatar, Sync-in checks the content type and enforces a 5 MiB maximum. The image is downloaded to a temporary location, converted
+to PNG, and stored as the local user avatar. Source URL, size, and last-modified metadata are retained so an unchanged remote avatar can be skipped on
+subsequent logins.
 
 Downloads from private or internal IP ranges are blocked by default to limit server-side request forgery exposure.
 `security.allowPrivateIpAvatarDownload` should be enabled only when the IdP returns trusted internal URLs.
@@ -213,39 +213,39 @@ existing IdP SSO session can authenticate the browser again without prompting fo
 
 ### Client settings
 
-| Setting | Default | Description |
-| --- | --- | --- |
-| `issuerUrl` | Required | Provider issuer URL used for discovery. |
-| `clientId` | Required | OIDC client identifier. |
-| `clientSecret` | Required | OIDC confidential-client secret. |
-| `redirectUri` | Required | Web callback URI registered at the provider. |
+| Setting        | Default  | Description                                  |
+|----------------|----------|----------------------------------------------|
+| `issuerUrl`    | Required | Provider issuer URL used for discovery.      |
+| `clientId`     | Required | OIDC client identifier.                      |
+| `clientSecret` | Required | OIDC confidential-client secret.             |
+| `redirectUri`  | Required | Web callback URI registered at the provider. |
 
 ### Functional options
 
-| Setting | Default | Description |
-| --- | --- | --- |
-| `options.autoCreateUser` | `true` | Create a local account when no compatible user exists. |
-| `options.autoCreatePermissions` | `[]` | Permissions assigned only when automatically creating an account. |
-| `options.autoRedirect` | `false` | Tell the login UI to start OIDC automatically. |
-| `options.enablePasswordAuth` | `false` | Permit regular users to use their local password alongside OIDC. |
-| `options.autoSyncAvatar` | `false` | Synchronize the UserInfo `picture` at login. |
-| `options.adminRoleOrGroup` | Unset | Exact top-level role or group value granting administrator access. |
-| `options.storageQuotaClaim` | `storageQuota` | UserInfo claim containing the quota in bytes. |
-| `options.buttonText` | `Continue with OpenID Connect` | Label exposed to the login UI. |
+| Setting                         | Default                        | Description                                                        |
+|---------------------------------|--------------------------------|--------------------------------------------------------------------|
+| `options.autoCreateUser`        | `true`                         | Create a local account when no compatible user exists.             |
+| `options.autoCreatePermissions` | `[]`                           | Permissions assigned only when automatically creating an account.  |
+| `options.autoRedirect`          | `false`                        | Tell the login UI to start OIDC automatically.                     |
+| `options.enablePasswordAuth`    | `false`                        | Permit regular users to use their local password alongside OIDC.   |
+| `options.autoSyncAvatar`        | `false`                        | Synchronize the UserInfo `picture` at login.                       |
+| `options.adminRoleOrGroup`      | Unset                          | Exact top-level role or group value granting administrator access. |
+| `options.storageQuotaClaim`     | `storageQuota`                 | UserInfo claim containing the quota in bytes.                      |
+| `options.buttonText`            | `Continue with OpenID Connect` | Label exposed to the login UI.                                     |
 
 ### Security options
 
-| Setting | Default | Description |
-| --- | --- | --- |
-| `security.scope` | `openid email profile` | Space-separated scopes; `openid` is mandatory. |
-| `security.supportPKCE` | `true` | Use PKCE S256 when the provider metadata advertises support. |
-| `security.allowInsecureRequests` | `false` | Permit HTTP discovery and OIDC requests. Intended only for controlled environments. |
-| `security.tokenEndpointAuthMethod` | `client_secret_basic` | Token endpoint authentication; supports `client_secret_basic` or `client_secret_post`. |
-| `security.tokenSigningAlg` | `RS256` | Expected ID token signing algorithm. |
-| `security.userInfoSigningAlg` | Unset | Request and validate a signed UserInfo response with the configured algorithm. |
-| `security.skipSubjectCheck` | `false` | Skip the UserInfo-to-ID-token subject comparison for a legacy provider. |
-| `security.requireVerifiedEmail` | `true` | Require UserInfo `email_verified` to be exactly `true`. |
-| `security.allowPrivateIpAvatarDownload` | `false` | Permit avatar URLs resolving to private or internal addresses. |
+| Setting                                 | Default                | Description                                                                            |
+|-----------------------------------------|------------------------|----------------------------------------------------------------------------------------|
+| `security.scope`                        | `openid email profile` | Space-separated scopes; `openid` is mandatory.                                         |
+| `security.supportPKCE`                  | `true`                 | Use PKCE S256 when the provider metadata advertises support.                           |
+| `security.allowInsecureRequests`        | `false`                | Permit HTTP discovery and OIDC requests. Intended only for controlled environments.    |
+| `security.tokenEndpointAuthMethod`      | `client_secret_basic`  | Token endpoint authentication; supports `client_secret_basic` or `client_secret_post`. |
+| `security.tokenSigningAlg`              | `RS256`                | Expected ID token signing algorithm.                                                   |
+| `security.userInfoSigningAlg`           | Unset                  | Request and validate a signed UserInfo response with the configured algorithm.         |
+| `security.skipSubjectCheck`             | `false`                | Skip the UserInfo-to-ID-token subject comparison for a legacy provider.                |
+| `security.requireVerifiedEmail`         | `true`                 | Require UserInfo `email_verified` to be exactly `true`.                                |
+| `security.allowPrivateIpAvatarDownload` | `false`                | Permit avatar URLs resolving to private or internal addresses.                         |
 
 ## Current boundaries
 
