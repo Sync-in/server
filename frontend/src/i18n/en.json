@@ -21,5 +21,15 @@
   "office_editor_load_error": "Unable to load {{ editor }} editor",
   "office_editor_init_error": "{{ editor }} editor failed to initialize",
   "office_editor_unknown_error": "Unknown {{ editor }} error",
-  "edit_in_office_editor": "Edit in {{ editor }}"
+  "edit_in_office_editor": "Edit in {{ editor }}",
+  "personal_space": "Personal space access",
+  "spaces_access": "Spaces access",
+  "spaces_admin": "Spaces administration",
+  "shares_access": "Shares access",
+  "shares_admin": "Shares administration",
+  "guests_admin": "Guests administration",
+  "personal_groups_admin": "Personal groups administration",
+  "desktop_app_access": "Desktop app access",
+  "desktop_app_sync": "Desktop app synchronization",
+  "webdav_access": "WebDAV access"
 }
