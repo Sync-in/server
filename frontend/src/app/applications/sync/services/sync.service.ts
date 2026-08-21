@@ -155,7 +155,7 @@ export class SyncService {
     }
     segments[0] =
       segments[0] === SPACES_PATH.PERSONAL
-        ? this.layout.translateString(SPACES_TITLE.PERSONAL_FILES)
+        ? this.layout.translateString(SPACES_TITLE.PERSONAL_SPACE)
         : this.layout.translateString(capitalizeString(segments[0]))
     return segments.join('/')
   }

@@ -209,7 +209,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
     if (this.user.userHavePermission(USER_PERMISSION.PERSONAL_SPACE)) {
       const node: FileTree | TreeNode = {
         id: 0,
-        name: this.layout.translateString(SPACES_TITLE.PERSONAL_FILES),
+        name: this.layout.translateString(SPACES_TITLE.PERSONAL_SPACE),
         path: `${SPACES_PATH.FILES}/${SPACE_ALIAS.PERSONAL}`,
         isDir: true,
         inShare: false,
@@ -226,7 +226,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
     if (this.allowSpaces && this.user.userHavePermission(USER_PERMISSION.SPACES)) {
       const node: FileTree | TreeNode = {
         id: -1,
-        name: this.layout.translateString(SPACES_TITLE.SPACES),
+        name: this.layout.translateString(SPACES_TITLE.COLLABORATIVE_SPACES),
         path: SPACES_PATH.SPACES,
         isDir: true,
         mime: mimeDirectory,

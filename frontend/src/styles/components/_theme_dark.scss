@@ -29,6 +29,14 @@
         border-right: .5px solid $sidebar-dark-icons-menu-border-color;
       }
 
+      .menu-separator {
+        color: rgba(146, 173, 204, 0.14);
+
+        &.has-label {
+          color: rgba(154, 177, 189, 0.78);
+        }
+      }
+
       .menu {
         > a {
           color: $sidebar-dark-apps-menu-border-color;
@@ -44,10 +52,6 @@
             }
           }
         }
-      }
-
-      .sidebar-apps-footer {
-        color: $secondary;
       }
     }
   }

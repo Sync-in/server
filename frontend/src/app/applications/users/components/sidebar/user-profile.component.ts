@@ -6,6 +6,7 @@ import { faCircleHalfStroke, faCog, faPowerOff, faThumbTack, faThumbTackSlash, f
 import { APP_URL } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { Subscription } from 'rxjs'
+import { APP_VERSION } from '../../../../app.constants'
 import { AuthService } from '../../../../auth/auth.service'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
@@ -29,6 +30,7 @@ export class UserProfileComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly USER_PATH = USER_PATH
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
+  protected readonly appVersion = APP_VERSION
   protected appBaseUrl = `${APP_URL.WEBSITE}`
   protected readonly icons = { faUserAlt, faCircleHalfStroke, faCog, faPowerOff, faUserSecret, faThumbTack, faThumbTackSlash }
   protected user: UserType

@@ -43,7 +43,7 @@ export class SyncWizardServerComponent {
     this.userService.userHavePermission(USER_PERMISSION.PERSONAL_SPACE)
       ? new SyncWizardPath({
           id: 0,
-          name: this.layout.translateString(SPACES_TITLE.PERSONAL_FILES),
+          name: this.layout.translateString(SPACES_TITLE.PERSONAL_SPACE),
           path: `${SPACES_PATH.FILES}/${SPACES_PATH.PERSONAL}`,
           icon: SPACES_ICON.PERSONAL,
           hasChildren: true,
@@ -54,7 +54,7 @@ export class SyncWizardServerComponent {
     this.userService.userHavePermission(USER_PERMISSION.SPACES)
       ? new SyncWizardPath({
           id: -1,
-          name: this.layout.translateString(SPACES_TITLE.SPACES),
+          name: this.layout.translateString(SPACES_TITLE.COLLABORATIVE_SPACES),
           path: SPACES_PATH.SPACES,
           icon: SPACES_ICON.SPACES,
           hasChildren: true,

@@ -56,7 +56,7 @@ import type {
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Socket } from 'ngx-socket-io'
 import { catchError, map, Observable, of } from 'rxjs'
-import { AppMenu } from '../../layout/layout.interfaces'
+import { AppMenu, AppMenuEntry, isAppMenu, isAppMenuSeparator } from '../../layout/layout.interfaces'
 import { LayoutService } from '../../layout/layout.service'
 import { StoreService } from '../../store/store.service'
 import { NotificationsService } from '../notifications/notifications.service'
@@ -264,8 +264,11 @@ export class UserService {
     )
   }
 
-  setMenusVisibility(menus: AppMenu[]) {
+  setMenusVisibility(menus: AppMenuEntry[]) {
     for (const menu of menus) {
+      if (isAppMenuSeparator(menu)) {
+        continue
+      }
       if (menu.id) {
         menu.hide = !this.userHavePermission(menu.id)
         if (menu.hide) continue
@@ -276,17 +279,19 @@ export class UserService {
       if (menu.submenus?.length) {
         this.setMenusVisibility(menu.submenus)
       }
-      menu.hasSubmenus = !!menu.submenus?.some((submenu) => !submenu.hide)
+      menu.hasSubmenus = !!menu.submenus?.some((submenu) => isAppMenu(submenu) && !submenu.hide)
       // updates the files menu link based on user permissions
       if (menu.title === SPACES_TITLE.FILES) {
-        for (const submenu of menu.submenus) {
-          if (!submenu.hide) {
-            menu.link = submenu.link
-            break
-          }
+        const defaultMenu = this.findFirstVisibleMenu(menu.submenus, true) ?? this.findFirstVisibleMenu(menu.submenus)
+        if (defaultMenu) {
+          menu.link = defaultMenu.link
         }
       }
     }
+  }
+
+  private findFirstVisibleMenu(menus: AppMenuEntry[] | undefined, defaultLinkCandidate = false): AppMenu | undefined {
+    return menus?.find((menu): menu is AppMenu => isAppMenu(menu) && !menu.hide && (!defaultLinkCandidate || !!menu.defaultLinkCandidate))
   }
 
   refreshAvatar() {

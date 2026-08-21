@@ -16,15 +16,17 @@ import {
 import { SPACES_BASE_ROUTE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_ALIAS, SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
-import { AppMenu } from '../../layout/layout.interfaces'
+import { AppMenu, AppMenuSeparator } from '../../layout/layout.interfaces'
 import { LINKS_PATH } from '../links/links.constants'
 import { RECENTS_ICON, RECENTS_PATH, RECENTS_TITLE } from '../recents/recents.constants'
 
 export const SPACES_TITLE = {
   RECENTS: 'Recents',
   FILES: 'Files',
-  PERSONAL_FILES: 'Personal files',
-  SHORT_PERSONAL_FILES: 'Personal',
+  PERSONAL_SPACE: 'Personal space',
+  SHORT_PERSONAL_SPACE: 'Personal',
+  COLLABORATIVE_SPACES: 'Collaborative spaces',
+  SHORT_COLLABORATIVE_SPACES: 'Collaborative',
   TRASH: 'Trash',
   SPACES: 'Spaces',
   SHARES: 'Shares',
@@ -81,60 +83,75 @@ export const SPACES_PERMISSIONS_MODEL: Record<SPACE_OPERATION, boolean> = {
   so: false
 } as const
 
+const SPACES_MENU_SECTION = {
+  SPACES: { separator: true, title: SPACES_TITLE.SPACES },
+  SHARED: { separator: true, title: SPACES_TITLE.SHARED },
+  BOTTOM_SEPARATOR: { separator: true, placement: 'bottom', wide: true }
+} as const satisfies Record<string, AppMenuSeparator>
+
 export const SPACES_MENU: AppMenu = {
   title: SPACES_TITLE.FILES,
   icon: faFolderClosed,
   link: SPACES_PATH.PERSONAL_FILES,
-  matchLink: new RegExp(`^${SPACES_PATH.SPACES}|^${SPACES_PATH.TRASH}|^${SPACES_PATH.SHARES}|^${SPACES_PATH.SHARED}|^${SPACES_PATH.LINKS}`),
+  matchLink: new RegExp(
+    `^${RECENTS_PATH.BASE}|^${SPACES_PATH.SPACES}|^${SPACES_PATH.TRASH}|^${SPACES_PATH.SHARES}|^${SPACES_PATH.SHARED}|^${SPACES_PATH.LINKS}`
+  ),
   submenus: [
     {
       title: RECENTS_TITLE,
       icon: RECENTS_ICON,
       link: RECENTS_PATH.BASE
     },
+    SPACES_MENU_SECTION.SPACES,
     {
       id: USER_PERMISSION.PERSONAL_SPACE,
-      title: SPACES_TITLE.SHORT_PERSONAL_FILES,
+      title: SPACES_TITLE.SHORT_PERSONAL_SPACE,
       icon: SPACES_ICON.PERSONAL,
       link: SPACES_PATH.PERSONAL_FILES,
-      matchLink: new RegExp(`^${SPACES_PATH.PERSONAL_FILES}[/|?]`)
+      matchLink: new RegExp(`^${SPACES_PATH.PERSONAL_FILES}[/|?]`),
+      defaultLinkCandidate: true
     },
     {
       id: USER_PERMISSION.SPACES,
-      title: SPACES_TITLE.SPACES,
+      title: SPACES_TITLE.SHORT_COLLABORATIVE_SPACES,
       icon: SPACES_ICON.SPACES,
       link: SPACES_PATH.SPACES,
-      matchLink: new RegExp(`^${SPACES_PATH.SPACES}(\\?|$)|^${SPACES_PATH.SPACES}/${SPACES_PATH.FILES}/(?!${SPACES_PATH.PERSONAL}(/|\\?|$))`)
+      matchLink: new RegExp(`^${SPACES_PATH.SPACES}(\\?|$)|^${SPACES_PATH.SPACES}/${SPACES_PATH.FILES}/(?!${SPACES_PATH.PERSONAL}(/|\\?|$))`),
+      defaultLinkCandidate: true
     },
+    SPACES_MENU_SECTION.SHARED,
     {
       id: USER_PERMISSION.SHARES,
-      title: SPACES_TITLE.SHARED,
-      icon: SPACES_ICON.SHARES,
+      title: SPACES_TITLE.SHARED_WITH_ME_SHORT,
+      icon: SPACES_ICON.SHARED_WITH_ME,
       link: SPACES_PATH.SPACES_SHARES,
-      matchLink: new RegExp(`^${SPACES_PATH.SPACES_SHARES}|^${SPACES_PATH.SHARED}|^${SPACES_PATH.LINKS}`),
-      hasSubmenus: true,
-      submenus: [
-        {
-          id: USER_PERMISSION.SHARES_ADMIN,
-          title: SPACES_TITLE.SHARED_WITH_ME_SHORT,
-          icon: SPACES_ICON.SHARED_WITH_ME,
-          link: SPACES_PATH.SPACES_SHARES
-        },
-        {
-          id: USER_PERMISSION.SHARES_ADMIN,
-          title: SPACES_TITLE.SHARED_WITH_OTHER_SHORT,
-          icon: SPACES_ICON.SHARED_WITH_OTHERS,
-          link: SPACES_PATH.SHARED
-        },
-        { id: USER_PERMISSION.SHARES_ADMIN, title: SPACES_TITLE.SHARED_BY_LINKS_SHORT, icon: SPACES_ICON.LINKS, link: SPACES_PATH.LINKS }
-      ]
+      matchLink: new RegExp(`^${SPACES_PATH.SPACES_SHARES}`),
+      defaultLinkCandidate: true
     },
+    {
+      id: USER_PERMISSION.SHARES_ADMIN,
+      title: SPACES_TITLE.SHARED_WITH_OTHER_SHORT,
+      icon: SPACES_ICON.SHARED_WITH_OTHERS,
+      link: SPACES_PATH.SHARED,
+      matchLink: new RegExp(`^${SPACES_PATH.SHARED}`),
+      defaultLinkCandidate: true
+    },
+    {
+      id: USER_PERMISSION.SHARES_ADMIN,
+      title: SPACES_TITLE.SHARED_BY_LINKS_SHORT,
+      icon: SPACES_ICON.LINKS,
+      link: SPACES_PATH.LINKS,
+      matchLink: new RegExp(`^${SPACES_PATH.LINKS}`),
+      defaultLinkCandidate: true
+    },
+    SPACES_MENU_SECTION.BOTTOM_SEPARATOR,
     {
       id: USER_PERMISSION.PERSONAL_SPACE,
       title: SPACES_TITLE.TRASH,
       icon: SPACES_ICON.TRASH,
       link: SPACES_PATH.TRASH,
-      matchLink: new RegExp(`^${SPACES_PATH.SPACES}/${SPACES_PATH.TRASH}/`)
+      matchLink: new RegExp(`^${SPACES_PATH.SPACES}/${SPACES_PATH.TRASH}/`),
+      placement: 'bottom'
     }
   ]
 } as const

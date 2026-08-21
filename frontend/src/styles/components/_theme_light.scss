@@ -35,6 +35,14 @@
         border-right: .5px solid $sidebar-light-apps-menu-border-color;
       }
 
+      .menu-separator {
+        color: mix($sidebar-light-apps-menu-border-color, $light-sidebar-mini-bg, 42%);
+
+        &.has-label {
+          color: mix($sidebar-light-apps-menu-color, $sidebar-light-apps-menu-border-color, 70%);
+        }
+      }
+
       .menu {
         > a {
           color: $sidebar-light-apps-menu-hover-color;
@@ -59,10 +67,6 @@
             }
           }
         }
-      }
-
-      .sidebar-apps-footer {
-        color: $sidebar-light-apps-menu-color;
       }
     }
   }

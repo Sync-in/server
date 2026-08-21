@@ -19,7 +19,6 @@
       height: $sidebar-apps-height;
       min-width: $sidebar-apps-menus-width;
       font-size: $font-size-xs;
-      cursor: pointer;
       background: $sidebar-light-apps-menu-title-bg;
       border-bottom: .5px solid $sidebar-light-apps-menu-title-bg;
 
@@ -50,8 +49,8 @@
         padding: 0;
         border: none;
         border-radius: 50%;
-        margin-right: .4rem;
-        margin-left: .4rem;
+        margin-right: .55rem;
+        margin-left: .5rem;
         background: $black;
         cursor: pointer;
 
@@ -61,20 +60,28 @@
         }
       }
 
+      .sidebar-brand {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 2px;
+        min-width: 0;
+        margin-right: auto;
+        line-height: 1.12;
+      }
+
+      .sidebar-app-name {
+        @include text-truncate-utility;
+        color: $white;
+        font-size: $font-size-base;
+        font-weight: 600;
+      }
+
       .sidebar-title {
         @include text-truncate-utility;
-        text-transform: uppercase;
-        margin-right: auto;
+        color: rgba($white, .68);
         font-size: $font-size-xs;
-
-        > span {
-          @include text-truncate-utility;
-        }
-
-        > fa-icon {
-          margin-right: .25rem;
-          font-size: $font-size-lg;
-        }
+        font-weight: 500;
       }
     }
 
@@ -142,9 +149,62 @@
     }
 
     .menus-group {
-      overflow-y: auto;
-      overflow-x: hidden;
-      scrollbar-width: thin;
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+
+      .menus-top {
+        flex: 0 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        scrollbar-width: thin;
+      }
+
+      .menus-bottom {
+        flex: 0 0 auto;
+        margin-top: auto;
+        padding-bottom: 6px;
+      }
+
+      .menu-separator {
+        display: flex;
+        align-items: center;
+        min-width: $sidebar-apps-menus-width;
+        height: 8px;
+        pointer-events: none;
+
+        &.has-label {
+          height: 24px;
+          align-items: flex-end;
+          padding: 0 16px 4px;
+
+          > span {
+            @include text-truncate-utility;
+            font-size: $font-size-2xs;
+            font-weight: 700;
+            line-height: 1;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+          }
+        }
+
+        &:not(.has-label)::before {
+          content: '';
+          display: block;
+          width: calc(100% - 16px);
+          height: .5px;
+          margin: 0 8px;
+          background: currentColor;
+        }
+
+        &.is-wide:not(.has-label)::before {
+          width: 100%;
+          margin-inline: 0;
+        }
+      }
 
       .menu {
         display: flex;
@@ -193,21 +253,6 @@
           }
         }
 
-      }
-    }
-
-    .sidebar-apps-footer {
-      @media screen and ((height < 350px) or (width < map-get($grid-breakpoints, md))) {
-        display: none !important;
-      }
-      display: flex;
-      padding: 4px;
-      margin-left: auto;
-      margin-top: auto;
-
-      span {
-        @include no-select-utility;
-        font-size: $font-size-2xs;
       }
     }
   }

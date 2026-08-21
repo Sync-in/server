@@ -50,8 +50,9 @@
     <div class="mt-auto">
       <hr class="my-0 w-100" />
       <div class="profile-sync-in-footer">
-        <div class="mb-1">
+        <div class="profile-sync-in-brand">
           <img alt="" height="30" [src]="this.layout.switchTheme.getValue() === themeLight ? logoUrl: logoDarkUrl">
+          <span class="profile-sync-in-version">v{{ appVersion }}</span>
         </div>
         <div class="d-flex">
           <a class="text-primary cursor-pointer" (click)="openLink('website')" l10nTranslate>Website</a>

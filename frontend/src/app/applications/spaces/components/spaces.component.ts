@@ -159,7 +159,7 @@ export class SpacesComponent implements OnInit {
     this.loadSpaces()
     this.canCreateSpace = this.userService.userHavePermission(USER_PERMISSION.SPACES_ADMIN)
     this.layout.setBreadcrumbIcon(SPACES_ICON.SPACES)
-    this.layout.setBreadcrumbNav({ url: `/${SPACES_PATH.SPACES}/${SPACES_TITLE.SPACES}`, translating: true, sameLink: true })
+    this.layout.setBreadcrumbNav({ url: `/${SPACES_PATH.SPACES}/${SPACES_TITLE.COLLABORATIVE_SPACES}`, translating: true, sameLink: true })
     this.activatedRoute.queryParams.subscribe((params) => (this.focusOnSelect = params.select))
   }
 

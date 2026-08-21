@@ -38,6 +38,18 @@
   font-size: $font-size-sm;
 }
 
+.profile-sync-in-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: .25rem;
+}
+
+.profile-sync-in-version {
+  font-size: $font-size-2xs;
+  opacity: .72;
+}
+
 .profile-user-img {
   margin: 0 auto;
   width: 100px;

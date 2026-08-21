@@ -56,7 +56,7 @@ export class SpacesBrowserService {
     const mutateLevel: NonNullable<BreadCrumbUrl['mutateLevel']> = {}
     if (this.inPersonalSpace && !this.breadCrumbFilesRepo && !this.inRootSpace) {
       mutateLevel[0] = {
-        setTitle: SPACES_TITLE.PERSONAL_FILES,
+        setTitle: SPACES_TITLE.PERSONAL_SPACE,
         translateTitle: true
       }
     } else if (spaceName && !this.inPersonalSpace && !(this.inShareRepo && this.inRootSpace)) {
@@ -65,7 +65,7 @@ export class SpacesBrowserService {
     return {
       url:
         this.inPersonalSpace && this.inRootSpace
-          ? `${this.breadCrumbUrl}/${SPACES_TITLE.SHORT_PERSONAL_FILES}`
+          ? `${this.breadCrumbUrl}/${SPACES_TITLE.PERSONAL_SPACE}`
           : this.inShareRepo && this.inRootSpace
             ? `${this.breadCrumbUrl}/${SPACES_TITLE.SHARED_WITH_ME}`
             : this.breadCrumbUrl,

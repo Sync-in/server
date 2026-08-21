@@ -79,7 +79,7 @@ export class ShareRepositoryComponent implements OnInit, OnChanges {
     } else if (this.share.file?.ownerId) {
       this.repository = {
         icon: SPACES_ICON.PERSONAL,
-        label: SPACES_TITLE.PERSONAL_FILES,
+        label: SPACES_TITLE.PERSONAL_SPACE,
         class: 'circle-primary-icon',
         translate: true
       }
@@ -120,7 +120,7 @@ export class ShareRepositoryComponent implements OnInit, OnChanges {
         }
       }
     }
-    if (this.repository.label === SPACES_TITLE.PERSONAL_FILES) {
+    if (this.repository.label === SPACES_TITLE.PERSONAL_SPACE) {
       this.repository.label = this.layout.translateString(this.repository.label)
     }
     if (paths.length) {

@@ -22,11 +22,11 @@ interface FileLocationOptions {
 
 const FILE_LOCATION_PRESENTATION: Record<FileLocationRepository, Pick<FileLocationPresentation, 'repositoryTitle' | 'icon' | 'iconClass'>> = {
   [SPACE_ALIAS.PERSONAL]: {
-    repositoryTitle: SPACES_TITLE.PERSONAL_FILES,
+    repositoryTitle: SPACES_TITLE.PERSONAL_SPACE,
     icon: SPACES_ICON.PERSONAL,
     iconClass: 'primary'
   },
-  [FILE_REPOSITORY.SPACE]: { repositoryTitle: SPACES_TITLE.SPACES, icon: SPACES_ICON.SPACES, iconClass: 'primary' },
+  [FILE_REPOSITORY.SPACE]: { repositoryTitle: SPACES_TITLE.COLLABORATIVE_SPACES, icon: SPACES_ICON.SPACES, iconClass: 'primary' },
   [FILE_REPOSITORY.SHARE]: { repositoryTitle: SPACES_TITLE.SHARES, icon: SPACES_ICON.SHARES, iconClass: 'purple' }
 }
 
