@@ -11,8 +11,8 @@ import type { AuthOIDCSettings } from '@sync-in-server/backend/src/authenticatio
 import type { TwoFaResponseDto, TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { finalize } from 'rxjs/operators'
+import { APP_PATH } from '../app.constants'
 import { logoDarkUrl } from '../applications/files/files.constants'
-import { RECENTS_PATH } from '../applications/recents/recents.constants'
 import { AutofocusDirective } from '../common/directives/auto-focus.directive'
 import type { AuthResult } from './auth.interface'
 import { AuthService } from './auth.service'
@@ -157,7 +157,7 @@ export class AuthComponent {
           this.loginForm.reset()
         })
       } else {
-        this.router.navigate([RECENTS_PATH.BASE]).then(() => this.loginForm.reset())
+        this.router.navigate([APP_PATH.HOME]).then(() => this.loginForm.reset())
       }
     } else {
       this.hasError = res.message || 'Server connection error'

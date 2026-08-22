@@ -165,12 +165,7 @@ export class AuthService {
       return of(false)
     } else if (!this.store.user.getValue()) {
       return this.userService.loadUser().pipe(
-        tap((r: Omit<LoginResponseDto, 'token'>) => {
-          this.initUser(r)
-          if (authFromOIDC) {
-            this.router.navigate([]).catch(console.error)
-          }
-        }),
+        tap((r: Omit<LoginResponseDto, 'token'>) => this.initUser(r)),
         map(() => true),
         catchError((e: HttpErrorResponse) => {
           if (e.status === 401) {

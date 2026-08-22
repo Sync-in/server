@@ -6,7 +6,8 @@ export const APP_NAME = productName
 export const APP_VERSION = version
 
 export const APP_PATH = {
-  BASE: ''
+  BASE: '',
+  HOME: 'home'
 } as const
 
 export const APP_MENU: AppMenu = {

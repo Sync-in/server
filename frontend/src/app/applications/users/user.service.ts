@@ -60,7 +60,8 @@ import { AppMenu, AppMenuEntry, isAppMenu, isAppMenuSeparator } from '../../layo
 import { LayoutService } from '../../layout/layout.service'
 import { StoreService } from '../../store/store.service'
 import { NotificationsService } from '../notifications/notifications.service'
-import { SPACES_TITLE } from '../spaces/spaces.constants'
+import { RECENTS_PATH } from '../recents/recents.constants'
+import { SPACES_MENU, SPACES_TITLE } from '../spaces/spaces.constants'
 import { UserAuth2FaVerifyDialogComponent } from './components/dialogs/user-auth-2fa-verify-dialog.component'
 import { UserType } from './interfaces/user.interface'
 import { GroupBrowseModel } from './models/group-browse.model'
@@ -262,6 +263,11 @@ export class UserService {
       map((members: Member[]) => members.map((m: Member) => new MemberModel(m, omitPermissions))),
       catchError(() => of([]))
     )
+  }
+
+  getDefaultLandingPath(): string {
+    this.setMenusVisibility([SPACES_MENU])
+    return SPACES_MENU.link || RECENTS_PATH.BASE
   }
 
   setMenusVisibility(menus: AppMenuEntry[]) {
