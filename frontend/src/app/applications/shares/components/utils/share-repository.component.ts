@@ -4,7 +4,6 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faQuestion } from '@fortawesome/free-solid-svg-icons'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { ViewMode } from '../../../../common/components/navigation-view/navigation-view.component'
-import { LayoutService } from '../../../../layout/layout.service'
 import { ShareLinkModel } from '../../../links/models/share-link.model'
 import { SPACES_ICON, SPACES_TITLE } from '../../../spaces/spaces.constants'
 import { ShareFileModel } from '../../models/share-file.model'
@@ -52,7 +51,6 @@ export class ShareRepositoryComponent implements OnInit, OnChanges {
   @Input() showFullPath = false
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected repository: ShareRepository
-  private readonly layout = inject(LayoutService)
   private unknownRepository: ShareRepository = {
     icon: faQuestion,
     label: '',
@@ -120,10 +118,10 @@ export class ShareRepositoryComponent implements OnInit, OnChanges {
         }
       }
     }
-    if (this.repository.label === SPACES_TITLE.PERSONAL_SPACE) {
-      this.repository.label = this.layout.translateString(this.repository.label)
-    }
-    if (paths.length) {
+    if (this.repository.label === SPACES_TITLE.PERSONAL_SPACE && paths.length) {
+      this.repository.label = paths.join('/')
+      this.repository.translate = false
+    } else if (paths.length) {
       this.repository.label = `${this.repository.label}/${paths.join('/')}`
     }
   }
