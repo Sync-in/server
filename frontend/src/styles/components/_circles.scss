@@ -1,67 +1,120 @@
-.circle-icon {
+@mixin circle-icon-vars(
+  $tone,
+  $light-text: null,
+  $light-bg-mix: 84%,
+  $light-border-mix: 66%
+) {
+  $light-bg: mix(rgba($white, 0.92), mix($white, $tone, $light-bg-mix), 72%);
+  $light-border: mix($white, $tone, $light-border-mix);
+  $light-fg: mix($tone, $black, 90%);
+
+  @if $light-text != null {
+    $light-fg: $light-text;
+  }
+
+  --circle-icon-bg: #{$light-bg};
+  --circle-icon-border: #{$light-border};
+  --circle-icon-fg: #{$light-fg};
+}
+
+@mixin circle-icon-dark-vars($tone) {
+  --circle-icon-bg: #{semantic-dark($tone, bg)};
+  --circle-icon-border: #{semantic-dark($tone, border)};
+  --circle-icon-fg: #{semantic-dark($tone, fg)};
+}
+
+.circle-icon,
+.circle-icon-sm,
+.circle-gray-icon,
+.circle-gray-icon-sm,
+.circle-primary-icon,
+.circle-primary-icon-sm,
+.circle-enabled-icon,
+.circle-purple-icon,
+.circle-purple-icon-sm,
+.circle-sync-icon,
+.circle-error-icon,
+.circle-error-icon-sm,
+.circle-disabled-icon {
   @include circle-icon-utility;
 }
 
-.circle-icon-sm {
+.circle-icon-sm,
+.circle-gray-icon-sm,
+.circle-primary-icon-sm,
+.circle-purple-icon-sm,
+.circle-error-icon-sm {
   @include circle-icon-sm-utility;
 }
 
-.circle-gray-icon {
-  @include circle-icon-utility;
-  background-color: darken($gray-light, 2%);
-  color: black;
+.circle-icon,
+.circle-icon-sm,
+.circle-gray-icon,
+.circle-gray-icon-sm,
+.circle-disabled-icon {
+  @include circle-icon-vars(
+    semantic-tone('gray-dark'),
+    semantic-ink('gray-dark', 88%),
+    82%,
+    62%
+  );
 }
 
-.circle-gray-icon-sm {
-  @include circle-icon-sm-utility;
-  background-color: darken($gray-light, 2%);
-  color: black;
+.circle-primary-icon,
+.circle-primary-icon-sm,
+.circle-enabled-icon {
+  @include circle-icon-vars(
+    semantic-tone('primary'),
+    semantic-ink('primary', 86%)
+  );
 }
 
-.circle-primary-icon, .circle-enabled-icon {
-  @include circle-icon-utility;
-  background: linear-gradient(#0086d7, #00456f);
-  color: whitesmoke;
-}
-
-.circle-primary-icon-sm {
-  @include circle-icon-sm-utility;
-  background: linear-gradient(#0086d7, #00456f);
-  color: whitesmoke;
-}
-
-.circle-purple-icon {
-  @include circle-icon-utility;
-  background: linear-gradient(#965ab4, #5a3778);
-  color: whitesmoke;
-}
-
+.circle-purple-icon,
 .circle-purple-icon-sm {
-  @include circle-icon-sm-utility;
-  background: linear-gradient(#965ab4, #5a3778);
-  color: whitesmoke;
+  @include circle-icon-vars(
+    semantic-tone('purple'),
+    semantic-ink('purple', 88%)
+  );
 }
 
 .circle-sync-icon {
-  @include circle-icon-utility;
-  background: linear-gradient(#f06400, #962800);
-  color: whitesmoke;
+  @include circle-icon-vars(
+    semantic-tone('warning'),
+    #a35400
+  );
 }
 
-.circle-error-icon {
-  @include circle-icon-utility;
-  background: linear-gradient(#e63228, #c80f0a);
-  color: whitesmoke;
-}
-
+.circle-error-icon,
 .circle-error-icon-sm {
-  @include circle-icon-sm-utility;
-  background: linear-gradient(#e63228, #c80f0a);
-  color: whitesmoke;
+  @include circle-icon-vars(semantic-tone('danger'));
 }
 
-.circle-disabled-icon {
-  @include circle-icon-utility;
-  background: linear-gradient(#818181, #434343);
-  color: whitesmoke;
+body.theme-dark {
+  .circle-icon,
+  .circle-icon-sm,
+  .circle-gray-icon,
+  .circle-gray-icon-sm,
+  .circle-disabled-icon {
+    @include circle-icon-dark-vars('gray-dark');
+  }
+
+  .circle-primary-icon,
+  .circle-primary-icon-sm,
+  .circle-enabled-icon {
+    @include circle-icon-dark-vars('primary');
+  }
+
+  .circle-purple-icon,
+  .circle-purple-icon-sm {
+    @include circle-icon-dark-vars('purple');
+  }
+
+  .circle-sync-icon {
+    @include circle-icon-dark-vars('warning');
+  }
+
+  .circle-error-icon,
+  .circle-error-icon-sm {
+    @include circle-icon-dark-vars('danger');
+  }
 }

@@ -69,17 +69,23 @@
 }
 
 @mixin circle-icon-utility {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
   min-width: 32px;
   min-height: 32px;
+  border: 1px solid var(--circle-icon-border, transparent);
+  background-color: var(--circle-icon-bg, transparent);
+  color: var(--circle-icon-fg, inherit);
   font-size: $font-size-lg;
+  line-height: 1;
+  vertical-align: middle;
   border-radius: 50%;
 }
 
 @mixin circle-icon-sm-utility {
-  @include circle-icon-utility;
   min-width: 23px;
   min-height: 23px;
   font-size: $font-size-sm;
