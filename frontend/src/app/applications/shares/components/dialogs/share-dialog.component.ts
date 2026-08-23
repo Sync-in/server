@@ -70,7 +70,6 @@ export class ShareDialogComponent implements OnInit {
   protected readonly layout = inject(LayoutService)
   protected readonly icons = {
     SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
-    SHARES: SPACES_ICON.SHARES,
     LINKS: SPACES_ICON.LINKS,
     faPlus,
     faSpinner,

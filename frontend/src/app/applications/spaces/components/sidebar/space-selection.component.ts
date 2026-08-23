@@ -34,7 +34,7 @@ export class SpaceSelectionComponent {
   space: InputSignal<SpaceModel> = input.required<SpaceModel>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly SPACE_ROLE = SPACE_ROLE
-  protected readonly icons = { SPACES: SPACES_ICON.SPACES, ANCHORED: SPACES_ICON.ANCHORED, SHARED: SPACES_ICON.SHARED_WITH_OTHERS }
+  protected readonly icons = { SPACES: SPACES_ICON.SPACES, ANCHORED: SPACES_ICON.ANCHORED, SHARES: SPACES_ICON.SHARES }
   protected readonly cardImageSize = defaultCardImageSize
   protected resizeOffset = defaultResizeOffset
   private readonly userService = inject(UserService)

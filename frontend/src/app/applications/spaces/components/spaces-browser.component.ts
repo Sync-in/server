@@ -128,7 +128,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   // Static
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
-    SHARES: SPACES_ICON.SHARES,
+    SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
     TRASH: SPACES_ICON.TRASH,
     PERSONAL: SPACES_ICON.PERSONAL,
     LINKS: SPACES_ICON.LINKS,

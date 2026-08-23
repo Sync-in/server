@@ -31,7 +31,7 @@
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Child shares</div>
         @if (share().counts.shares) {
           <span (click)="childShareDialog(share())" class="badge bg-purple cursor-pointer me-1">
-            <fa-icon [icon]="iconShared"></fa-icon>
+            <fa-icon [icon]="iconShares"></fa-icon>
             {{ share().counts.shares }}
           </span>
         } @else {
@@ -54,7 +54,6 @@
     </div>
   </div>
 }
-
 
 
 

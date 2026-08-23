@@ -24,7 +24,7 @@
           class="btn btn-default me-1"
           [tooltip]="'Edit children shares' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.SHARED"></fa-icon>
+    <fa-icon [icon]="icons.SHARES"></fa-icon>
   </button>
   <button (click)="goTo()"
           [disabled]="!selected"
@@ -87,7 +87,7 @@
                 @if (s.counts.shares) {
                   <div (click)="openChildShareDialog(s)"
                        class="badge bg-purple cursor-pointer">
-                    <fa-icon [icon]="icons.SHARED"></fa-icon>
+                    <fa-icon [icon]="icons.SHARES"></fa-icon>
                     {{ s.counts.shares }}
                   </div>
                 }
@@ -164,7 +164,7 @@
                     @case ('info') {
                       @if (s.counts.shares) {
                         <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
-                          <fa-icon [icon]="icons.SHARED"></fa-icon>
+                          <fa-icon [icon]="icons.SHARES"></fa-icon>
                           {{ s.counts.shares }}
                         </span>
                       }
@@ -214,7 +214,7 @@
   </ng-template>
   @if (!!selected?.counts.shares) {
     <ng-template (execute)="openChildShareDialog()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.SHARED"></fa-icon>Edit children shares</span>
+      <span l10nTranslate><fa-icon [icon]="icons.SHARES"></fa-icon>Edit children shares</span>
     </ng-template>
   }
   <ng-template [divider]="true" contextMenuItem></ng-template>

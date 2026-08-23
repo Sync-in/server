@@ -34,7 +34,7 @@ export class SharedChildrenDialogComponent implements OnInit {
   @Input() fromAdmin = false
   @Output() sharesCountEvent = new EventEmitter<number>()
   protected readonly layout = inject(LayoutService)
-  protected readonly icons = { SHARED: SPACES_ICON.SHARED_WITH_OTHERS, LINKS: SPACES_ICON.LINKS }
+  protected readonly icons = { SHARES: SPACES_ICON.SHARES, LINKS: SPACES_ICON.LINKS }
   protected loading = false
   protected childSharesLength = 0
   protected childShares: ShareChildModel[]

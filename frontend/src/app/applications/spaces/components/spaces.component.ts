@@ -78,7 +78,7 @@ export class SpacesComponent implements OnInit {
   protected readonly TAB_MENU = TAB_MENU
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
-    SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
+    SHARES: SPACES_ICON.SHARES,
     faAnchor,
     faArrowDown,
     faArrowUp,

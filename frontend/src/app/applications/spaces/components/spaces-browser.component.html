@@ -63,12 +63,12 @@
               class="btn btn-default dropdown-toggle"
               [tooltip]="'Share' | translate:locale.language"
               type="button">
-        <fa-icon [icon]="icons.SHARES"></fa-icon>
+        <fa-icon [icon]="icons.SHARED"></fa-icon>
       </button>
       <ul *dropdownMenu class="dropdown-menu" role="menu">
         <li role="menuitem">
           <a (click)="openShareDialog()" class="dropdown-item">
-            <span l10nTranslate><fa-icon [icon]="icons.SHARES"></fa-icon>New share</span>
+            <span l10nTranslate><fa-icon [icon]="icons.SHARED"></fa-icon>New share</span>
           </a>
         </li>
         <li role="menuitem">
@@ -273,29 +273,37 @@
                       @case ('shares') {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer">
-                          <fa-icon [icon]="icons.SHARES"></fa-icon>
-                          {{ f.shares.length }}
+                          <fa-icon [icon]="icons.SHARED"></fa-icon>
+                          @if (f.shares.length > 1) {
+                            {{ f.shares.length }}
+                          }
                         </span>
                       }
                       @case ('spaces') {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer">
                           <fa-icon [icon]="icons.SPACES"></fa-icon>
-                          {{ f.spaces.length }}
+                          @if (f.spaces.length > 1) {
+                            {{ f.spaces.length }}
+                          }
                         </span>
                       }
                       @case ('links') {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer">
                           <fa-icon [icon]="icons.LINKS"></fa-icon>
-                          {{ f.links.length }}
+                          @if (f.links.length > 1) {
+                            {{ f.links.length }}
+                          }
                         </span>
                       }
                       @case ('syncs') {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer">
                           <fa-icon [icon]="icons.SYNC"></fa-icon>
-                          {{ f.syncs.length }}
+                          @if (f.syncs.length > 1) {
+                            {{ f.syncs.length }}
+                          }
                         </span>
                       }
                     }
@@ -452,29 +460,37 @@
                       @if (f.shares.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.SHARES"></fa-icon>
-                          {{ f.shares.length }}
+                          <fa-icon [icon]="icons.SHARED"></fa-icon>
+                          @if (f.shares.length > 1) {
+                            {{ f.shares.length }}
+                          }
                         </span>
                       }
                       @if (f.links.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer me-1">
                           <fa-icon [icon]="icons.LINKS"></fa-icon>
-                          {{ f.links.length }}
+                          @if (f.links.length > 1) {
+                            {{ f.links.length }}
+                          }
                         </span>
                       }
                       @if (f.spaces.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer me-1">
                           <fa-icon [icon]="icons.SPACES"></fa-icon>
-                          {{ f.spaces.length }}
+                          @if (f.spaces.length > 1) {
+                            {{ f.spaces.length }}
+                          }
                         </span>
                       }
                       @if (f.syncs.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
                               class="badge bg-primary cursor-pointer">
                           <fa-icon [icon]="icons.SYNC"></fa-icon>
-                          {{ f.syncs.length }}
+                          @if (f.syncs.length > 1) {
+                            {{ f.syncs.length }}
+                          }
                         </span>
                       }
                     }
@@ -572,7 +588,7 @@
     }
     @if (canShare.outside || inSharesList && selection[0]?.canBeReShared) {
       <ng-template [subMenu]="ShareContextMenu" contextMenuItem>
-        <span l10nTranslate><fa-icon [icon]="icons.SHARES"></fa-icon>Share</span>
+        <span l10nTranslate><fa-icon [icon]="icons.SHARED"></fa-icon>Share</span>
       </ng-template>
     }
   }
@@ -599,7 +615,7 @@
 </context-menu>
 <context-menu #ShareContextMenu>
   <ng-template (execute)="openShareDialog()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.SHARES"></fa-icon>New share</span>
+    <span l10nTranslate><fa-icon [icon]="icons.SHARED"></fa-icon>New share</span>
   </ng-template>
   <ng-template (execute)="openShareLinkDialog()" contextMenuItem>
     <span l10nTranslate><fa-icon [icon]="icons.faLink"></fa-icon>New share link</span>

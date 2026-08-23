@@ -55,7 +55,7 @@ export class FilesSelectionComponent {
   protected selectedAction: SelectionAction = 'clipboard'
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
-    SHARES: SPACES_ICON.SHARES,
+    SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
     LINKS: SPACES_ICON.LINKS,
     SYNC: SYNC_ICON.SYNC,
     faLock,

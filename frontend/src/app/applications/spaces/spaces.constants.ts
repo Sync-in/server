@@ -10,23 +10,28 @@ import {
   faLink,
   faShare,
   faShareNodes,
-  faTrashCan,
-  faUser
+  faTrashCan
 } from '@fortawesome/free-solid-svg-icons'
 import { SPACES_BASE_ROUTE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
-import { SPACE_ALIAS, SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
+import {
+  SPACE_ALIAS,
+  SPACE_OPERATION,
+  SPACE_PERSONAL_TITLE,
+  SPACE_REPOSITORY
+} from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { AppMenu, AppMenuSeparator } from '../../layout/layout.interfaces'
+import { FAVORITES_ICON, FAVORITES_PATH, FAVORITES_TITLE } from '../favorites/favorites.constants'
 import { LINKS_PATH } from '../links/links.constants'
 import { RECENTS_ICON, RECENTS_PATH, RECENTS_TITLE } from '../recents/recents.constants'
 
 export const SPACES_TITLE = {
   RECENTS: 'Recents',
   FILES: 'Files',
-  PERSONAL_SPACE: 'Personal space',
-  SHORT_PERSONAL_SPACE: 'Personal',
+  PERSONAL_SPACE: SPACE_PERSONAL_TITLE,
+  PERSONAL_SPACE_SHORT: 'Personal',
   COLLABORATIVE_SPACES: 'Collaborative spaces',
-  SHORT_COLLABORATIVE_SPACES: 'Collaborative',
+  COLLABORATIVE_SPACES_SHORT: 'Collaborative',
   TRASH: 'Trash',
   SPACES: 'Spaces',
   SHARES: 'Shares',
@@ -43,7 +48,7 @@ export const SPACES_ICON = {
   PERSONAL: faFolderClosed,
   SPACES: faLayerGroup,
   SHARES: faShareNodes,
-  SHARED_WITH_ME: faUser,
+  SHARED_WITH_ME: faShareNodes,
   SHARED_WITH_OTHERS: faShare,
   ANCHORED: faAnchor,
   LINKS: faLink,
@@ -72,7 +77,7 @@ export const SPACES_PERMISSIONS_TEXT: Record<SPACE_OPERATION, { text: string; ic
   m: { text: 'Edit', icon: faFilePen },
   d: { text: 'Delete', icon: faFileCircleMinus },
   si: { text: 'Share inside', icon: SPACES_ICON.ANCHORED },
-  so: { text: 'Share outside', icon: SPACES_ICON.SHARES }
+  so: { text: 'Share outside', icon: SPACES_ICON.SHARED_WITH_OTHERS }
 } as const
 
 export const SPACES_PERMISSIONS_MODEL: Record<SPACE_OPERATION, boolean> = {
@@ -94,7 +99,7 @@ export const SPACES_MENU: AppMenu = {
   icon: faFolderClosed,
   link: SPACES_PATH.PERSONAL_FILES,
   matchLink: new RegExp(
-    `^${RECENTS_PATH.BASE}|^${SPACES_PATH.SPACES}|^${SPACES_PATH.TRASH}|^${SPACES_PATH.SHARES}|^${SPACES_PATH.SHARED}|^${SPACES_PATH.LINKS}`
+    `^${RECENTS_PATH.BASE}|^${FAVORITES_PATH.BASE}|^${SPACES_PATH.SPACES}|^${SPACES_PATH.TRASH}|^${SPACES_PATH.SHARES}|^${SPACES_PATH.SHARED}|^${SPACES_PATH.LINKS}`
   ),
   submenus: [
     {
@@ -105,7 +110,7 @@ export const SPACES_MENU: AppMenu = {
     SPACES_MENU_SECTION.SPACES,
     {
       id: USER_PERMISSION.PERSONAL_SPACE,
-      title: SPACES_TITLE.SHORT_PERSONAL_SPACE,
+      title: SPACES_TITLE.PERSONAL_SPACE_SHORT,
       icon: SPACES_ICON.PERSONAL,
       link: SPACES_PATH.PERSONAL_FILES,
       matchLink: new RegExp(`^${SPACES_PATH.PERSONAL_FILES}[/|?]`),
@@ -113,7 +118,7 @@ export const SPACES_MENU: AppMenu = {
     },
     {
       id: USER_PERMISSION.SPACES,
-      title: SPACES_TITLE.SHORT_COLLABORATIVE_SPACES,
+      title: SPACES_TITLE.COLLABORATIVE_SPACES_SHORT,
       icon: SPACES_ICON.SPACES,
       link: SPACES_PATH.SPACES,
       matchLink: new RegExp(`^${SPACES_PATH.SPACES}(\\?|$)|^${SPACES_PATH.SPACES}/${SPACES_PATH.FILES}/(?!${SPACES_PATH.PERSONAL}(/|\\?|$))`),

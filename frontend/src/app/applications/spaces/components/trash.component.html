@@ -54,12 +54,10 @@
               </span>
             </div>
             <div class="card-footer text-center text-truncate p-1">
-              <span class="no-pointer-events text-file-name-preserve" draggable="false">
-                @if (t.isPersonal) {
-                  {{ t.name | translate:locale.language }}
-                } @else {
-                  {{ t.name }}
-                }
+              <span
+                class="no-pointer-events text-file-name-preserve"
+                draggable="false"
+                [textContent]="t.isPersonal ? (t.name | translate:locale.language) : t.name">
               </span>
             </div>
           </div>
@@ -111,12 +109,10 @@
                     @case ('name') {
                       <div class="d-flex align-items-center">
                         <fa-icon [icon]="t.isPersonal ? icons.PERSONAL : icons.SPACES" class="circle-primary-icon"></fa-icon>
-                        <span class="no-pointer-events text-file-name-preserve" draggable="false">
-                          @if (t.isPersonal) {
-                            {{ t.name | translate:locale.language }}
-                          } @else {
-                            {{ t.name }}
-                          }
+                        <span
+                          class="no-pointer-events text-file-name-preserve"
+                          draggable="false"
+                          [textContent]="t.isPersonal ? (t.name | translate:locale.language) : t.name">
                         </span>
                       </div>
                     }

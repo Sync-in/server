@@ -94,7 +94,7 @@
             <div class="d-flex col-7 col-sm-7">
               @if (f.shares.length || f.links.length) {
                 <span class="badge bg-primary">
-                  <fa-icon [icon]="icons.SHARES"></fa-icon>
+                  <fa-icon [icon]="icons.SHARED"></fa-icon>
                   {{ f.shares.length + f.links.length }}
                 </span>
               } @else {
@@ -162,7 +162,7 @@
             }
             @for (share of f.shares; track share.id) {
               <div (click)="goToShare(share)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
-                <fa-icon [icon]="icons.SHARES"></fa-icon>
+                <fa-icon [icon]="icons.SHARED"></fa-icon>
                 {{ share.name }}
               </div>
             }

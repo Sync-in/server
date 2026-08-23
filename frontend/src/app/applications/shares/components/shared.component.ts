@@ -77,6 +77,7 @@ export class SharedComponent implements OnInit {
   protected readonly layout = inject(LayoutService)
   protected readonly icons = {
     SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
+    SHARES: SPACES_ICON.SHARES,
     faArrowRotateRight,
     faArrowDown,
     faArrowUp,

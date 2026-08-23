@@ -51,7 +51,7 @@
           <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Child shares</div>
           @if (space().counts.shares) {
             <span (click)="openChildShareDialog(space())" class="badge bg-purple cursor-pointer me-1">
-            <fa-icon [icon]="icons.SHARED"></fa-icon>
+            <fa-icon [icon]="icons.SHARES"></fa-icon>
             {{ space().counts.shares }}
           </span>
           } @else {
@@ -79,6 +79,5 @@
     </div>
   </div>
 }
-
 
 

@@ -31,7 +31,7 @@ import { ShareRepositoryComponent } from '../utils/share-repository.component'
 export class ShareSelectionComponent {
   share: InputSignal<ShareFileModel> = input.required<ShareFileModel>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly iconShared = SPACES_ICON.SHARED_WITH_OTHERS
+  protected readonly iconShares = SPACES_ICON.SHARES
   protected readonly cardImageSize = defaultCardImageSize
   protected readonly resizeOffset = defaultResizeOffset
   private readonly layout = inject(LayoutService)

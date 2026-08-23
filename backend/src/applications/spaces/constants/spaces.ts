@@ -23,6 +23,8 @@ export enum SPACE_ALIAS {
   TRASH = SPACE_REPOSITORY.TRASH
 }
 
+export const SPACE_PERSONAL_TITLE = 'Personal space'
+
 export enum SPACE_ROLE {
   IS_MEMBER,
   IS_MANAGER
