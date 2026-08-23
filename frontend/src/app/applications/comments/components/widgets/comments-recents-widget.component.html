@@ -18,13 +18,7 @@
         </span>
         <span class="recent-item-card__content">
           <span class="recent-item-card__title">{{ c.content }}</span>
-          <span class="recent-item-card__path text-{{c.iconClass}}">
-            @if (c.file.inTrash) {
-              <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
-            }
-            <fa-icon [icon]="c.icon" class="me-1"></fa-icon>
-            <span>{{ c.showedPath }}</span>
-          </span>
+          <app-file-location class="recent-item-card__path" [location]="c"></app-file-location>
         </span>
         <span class="recent-item-card__time">{{ c.modifiedAt | amLiveTimeAgo }}</span>
       </button>

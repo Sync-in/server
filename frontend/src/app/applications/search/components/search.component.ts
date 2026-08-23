@@ -17,6 +17,7 @@ import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { filterArray } from '../../../common/utils/functions'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
+import { FileLocationComponent } from '../../files/components/utils/file-location.component'
 import { FileContentModel } from '../../files/models/file-content.model'
 import { FilesService } from '../../files/services/files.service'
 import { SPACES_PATH } from '../../spaces/spaces.constants'
@@ -35,7 +36,8 @@ import { SEARCH_ICON, SEARCH_PATH } from '../search.constants'
     TooltipDirective,
     SearchFilterPipe,
     L10nTranslateDirective,
-    TapDirective
+    TapDirective,
+    FileLocationComponent
   ],
   templateUrl: './search.component.html'
 })

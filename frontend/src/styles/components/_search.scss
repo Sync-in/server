@@ -55,18 +55,7 @@
 .search-result-path {
   min-width: 0;
   line-height: 1.15;
-}
-
-.search-result-path-icon {
   font-size: $font-size-sm;
-  flex: 0 0 auto;
-  margin-right: 0.25rem;
-}
-
-.search-result-path-text {
-  font-size: $font-size-sm;
-  min-width: 0;
-  user-select: none;
 }
 
 .search-result-matches {

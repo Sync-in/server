@@ -20,6 +20,8 @@ export class CommentRecentModel implements CommentRecent {
   icon: IconDefinition
   iconClass: 'primary' | 'purple'
   showedPath: string
+  repositoryTitle: string
+  inTrash: boolean
 
   constructor(props: CommentRecent) {
     Object.assign(this, props)
@@ -35,5 +37,7 @@ export class CommentRecentModel implements CommentRecent {
     this.icon = location.icon
     this.iconClass = location.iconClass
     this.showedPath = location.relativePath
+    this.repositoryTitle = location.repositoryTitle
+    this.inTrash = !!this.file.inTrash
   }
 }

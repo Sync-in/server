@@ -3,9 +3,9 @@ import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SPACES_ICON, SPACES_TITLE } from '../../../spaces/spaces.constants'
 
-type FileLocationRepository = SPACE_ALIAS.PERSONAL | FILE_REPOSITORY.SPACE | FILE_REPOSITORY.SHARE
+export type FileLocationRepository = SPACE_ALIAS.PERSONAL | FILE_REPOSITORY.SPACE | FILE_REPOSITORY.SHARE
 
-interface FileLocationPresentation {
+export interface FileLocationPresentation {
   repository: FileLocationRepository
   repositoryTitle: string
   relativePath: string

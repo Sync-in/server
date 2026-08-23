@@ -56,10 +56,7 @@
         <img [src]="f.mimeUrl" (error)="f.fallBackMimeUrl()" alt="" draggable="false" class="search-result-mime">
         <div class="search-result-meta d-flex flex-column">
           <span class="search-result-name text-truncate">{{ f.name }}</span>
-          <div class="search-result-path d-flex align-items-center text-{{f.iconClass}}">
-            <fa-icon [icon]="f.icon" class="search-result-path-icon"></fa-icon>
-            <span class="text-truncate search-result-path-text">{{ f.showedPath }}</span>
-          </div>
+          <app-file-location class="search-result-path" [location]="f"></app-file-location>
         </div>
       </div>
       @if (f.matches?.length) {

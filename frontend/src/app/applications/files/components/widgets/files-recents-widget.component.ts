@@ -2,23 +2,24 @@ import { Component, computed, inject, Signal } from '@angular/core'
 import { Router } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import { faFileLines } from '@fortawesome/free-regular-svg-icons'
-import { faMagnifyingGlassMinus, faMagnifyingGlassPlus, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
+import { faMagnifyingGlassMinus, faMagnifyingGlassPlus } from '@fortawesome/free-solid-svg-icons'
 import { L10nTranslateDirective } from 'angular-l10n'
+import { LiveTimeAgoPipe } from '../../../../common/pipes/time-ago-live.pipe'
 import { StoreService } from '../../../../store/store.service'
 import { SPACES_PATH } from '../../../spaces/spaces.constants'
 import { FileRecentModel } from '../../models/file-recent.model'
 import { FilesService } from '../../services/files.service'
-import { LiveTimeAgoPipe } from '../../../../common/pipes/time-ago-live.pipe'
+import { FileLocationComponent } from '../utils/file-location.component'
 
 @Component({
   selector: 'app-files-recents-widget',
-  imports: [L10nTranslateDirective, FaIconComponent, LiveTimeAgoPipe],
+  imports: [L10nTranslateDirective, FaIconComponent, LiveTimeAgoPipe, FileLocationComponent],
   templateUrl: './files-recents-widget.component.html',
   styleUrl: './files-recents-widget.component.scss'
 })
 export class FilesRecentsWidgetComponent {
   protected moreElements = false
-  protected readonly icons = { faFileLines, faMagnifyingGlassPlus, faMagnifyingGlassMinus, faTrashAlt }
+  protected readonly icons = { faFileLines, faMagnifyingGlassPlus, faMagnifyingGlassMinus }
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
   private readonly filesService = inject(FilesService)
