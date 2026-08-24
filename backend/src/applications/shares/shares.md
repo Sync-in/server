@@ -3,6 +3,55 @@
 The `shares` module exposes existing storage through share aliases. A share does not copy its source and does not become the owner of the underlying
 storage.
 
+## Access and permission model
+
+Receiving and managing shares are separate application capabilities. `SHARES` allows a user or guest to browse `shares/<share-alias>/...`, while
+`SHARES_ADMIN` allows an authorized user account to create, update, disable, and delete shares and their links. Effective membership can be granted
+directly, through a group, or through a link pseudo-user.
+
+Members can read an enabled share. Additional operations reuse the space permission model, except that `SHARE_INSIDE` does not apply:
+
+| Operation | Backend permission | Meaning                                                   |
+|-----------|--------------------|-----------------------------------------------------------|
+| Add       | `ADD`              | Create, upload, copy, or move content into a directory    |
+| Modify    | `MODIFY`           | Edit content and manage locks                             |
+| Delete    | `DELETE`           | Delete content or move it out of its current location     |
+| Share     | `SHARE_OUTSIDE`    | Create a child share or a link from the exposed content   |
+
+A move requires `DELETE` on the source and `ADD` on the destination. Permissions granted to members, groups, guests, links, and child shares are
+intersected with the creator's effective permissions on the source. Personal content starts with the owner's full file permissions; content reached
+through a collaborative space or parent share remains capped by that context.
+
+The source provenance is required internally for authorization, quota, path, and deletion routing, but recipient-facing views must not expose whether
+the source came from personal files or a collaborative space. Owner and administration views may expose the source context for management purposes.
+
+## Share identity and lifecycle
+
+A common share is addressed by its globally unique `alias`; `name` is the display name shown to recipients and may differ from the source name.
+Description and enabled state also belong to the share definition. Disabling a share preserves its source, memberships, descendants, and settings but
+makes the endpoint unavailable until it is enabled again.
+
+File-backed shares retain source identity through `shares.fileId`, while gateway shares use `spaceRootId` or `externalPath`. Renaming or moving a
+file-backed source within the same logical repository updates the existing file record, so the share remains attached without copying data. Permanently
+deleting the source removes dependent share definitions through their database relations.
+
+The share owner can manage the share and its descendant hierarchy. Managers of an originating collaborative space can also administer shares created
+from that space. Deleting or disabling a share definition is distinct from deleting content while browsing the share; those behaviors are detailed
+below.
+
+## External locations
+
+An administrator can expose an existing server directory as a root external share. The share stores the directory in `shares.externalPath`, has no
+backing `fileId`, and sets `ownerId` to `null` because no managed user or native space owns that storage. No content is copied, and the share alias is
+only the virtual entry point into the external directory.
+
+External-share creation verifies that the path exists and that the operating-system account running the server can read and write it. These shares
+are visible and manageable by administrators. Their canonical root owns the share-level quota and indexing configuration; nested shares preserve the
+external provenance but reuse the highest ancestor's storage scope.
+
+Because an external share has no managed storage owner, the current backend does not route deletions to the actor's personal trash. Content deleted
+through the share is removed permanently according to the policy described below.
+
 ## Storage provenance
 
 The share keeps enough provenance to resolve the physical source and its managed storage owner:
@@ -46,6 +95,20 @@ repository routing must all use the same canonical `files.shareExternalId`. A co
 If the highest external ancestor cannot be resolved, the operation must fail before modifying the filesystem. It must not fall back to the immediate
 parent, the current descendant, or the authenticated actor.
 
+## Quota routing
+
+Quota enforcement follows the storage provenance rather than the actor or the share currently being browsed:
+
+| Shared storage                            | Applied quota                                      |
+|-------------------------------------------|----------------------------------------------------|
+| Personal files                            | Source owner's personal quota                      |
+| Native-space files                        | Origin space quota                                 |
+| External root attached to a native space  | Origin space quota                                 |
+| Root external share and its descendants   | Highest external ancestor share quota              |
+
+Share-level `storageUsage`, `storageQuota`, and `storageIndexing` are meaningful only for the canonical external root. Descendant share rows may retain
+the external path for resolution, but operations reuse the highest external ancestor and must not establish independent quota ownership.
+
 ## Child-share permission delegation
 
 Creating a child share requires the effective `SHARE_OUTSIDE` permission on its immediate parent. Requested member and link permissions are
@@ -54,6 +117,20 @@ intersected with the creator's effective permissions on that parent, so a child 
 Member and link permissions are stored on each share. Permission removals on a parent are propagated through the descendant branches created from that
 delegation. New permissions on a parent do not automatically expand existing descendant grants. Removing a member from a parent can also remove child
 shares owned through that delegation unless another effective membership still grants the required share permission.
+
+The owner of an ancestor share retains management visibility over descendant shares. Removing a member who created child shares removes the branches
+owned through that delegation. Losing `SHARE_OUTSIDE` only blocks future delegation; existing child shares remain until explicitly removed or until
+their parent membership or permission propagation invalidates them.
+
+## Share links
+
+A share link is represented by a link identity attached as a share member with its own effective permissions. Links created from a share are managed
+from that share rather than from the global list of file-origin links. Deleting the share removes its associated links together with the memberships
+that grant access.
+
+Public-link validation combines the link and pseudo-user state. A link may be disabled, limited by an expiration date or access count, protected by a
+password, and associated with a recipient name, email, and language. Successful file downloads or folder accesses increment its access counter. Link
+permissions remain capped by the share permissions exactly like any other membership.
 
 ## Deleting a share and deleting shared content
 
@@ -97,5 +174,4 @@ scheduler. If the external location cannot be modified, the deletion fails inste
 The permanent-deletion rule is the current policy until external trash is implemented as a first-class repository. Such a repository must be
 explicitly addressable by the file browser and must define empty, restore, and retention lifecycles before external-share deletion can target it.
 
-The managed trash layout and lifecycle are specified in
-[`spaces.md`](../spaces/spaces.md).
+The managed trash layout and lifecycle are specified in `spaces.md`.

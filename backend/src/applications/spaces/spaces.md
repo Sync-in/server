@@ -2,6 +2,51 @@
 
 The `spaces` module manages collaborative spaces, anchored roots, external roots, and the logical repositories used to browse their files and trash.
 
+## Collaboration and access model
+
+A collaborative space is an independent ownership and permission boundary. Its managed files, trash, quota, content-indexing setting, members, roots,
+and shares are attached to the space rather than to an individual member. Access requires both the corresponding application permission and an
+effective membership obtained directly, through a group, as a guest, or through a space link.
+
+Members can read an accessible space. Additional operations are granted independently:
+
+| Operation | Backend permission | Meaning                                                 |
+|-----------|--------------------|---------------------------------------------------------|
+| Add       | `ADD`              | Create, upload, copy, or move content into a location   |
+| Modify    | `MODIFY`           | Edit content and manage locks                           |
+| Delete    | `DELETE`           | Delete content or move it out of its current location   |
+| Anchor    | `SHARE_INSIDE`     | Add personal content as a virtual root inside the space |
+| Share     | `SHARE_OUTSIDE`    | Create a share from content exposed by the space        |
+
+A move requires `DELETE` on the source and `ADD` on the destination. Space managers receive every space-level operation and can manage the space, its
+members, roots, quota, indexing setting, and shares. This does not bypass the permissions attached to an anchored root.
+
+## Anchored root model
+
+An anchored root exposes a file or directory from a member's personal files at the top level of a collaborative space. The `spaces_roots.fileId`
+reference preserves the source identity: no content is copied and the personal repository remains the storage owner. Moving or renaming the source
+inside that repository updates the same file record, so the anchor remains valid.
+
+The root `alias` is its unique path segment inside the space, while `name` is its display name. Both can differ from the source name without renaming
+the backing resource. Removing the root only removes this virtual exposure; it does not delete the source content. The anchored endpoint itself is
+protected from file deletion, while its children remain subject to the effective file permissions described below.
+
+Anchoring requires `SHARE_INSIDE`. The permissions effective below the root are the intersection of the member's space permissions and the root
+permissions defined by its owner. Denial from either side denies the operation, including for space managers. Creating a share from anchored content
+likewise requires `SHARE_OUTSIDE` in both permission sets, and a member cannot delegate permissions they do not effectively hold.
+
+Anchored roots are first-class virtual locations for browser, search, WebDAV, synchronization, comments, and favorites consumers. These consumers must
+resolve the backing file identity and canonical storage scope instead of treating the root alias as a physical directory.
+
+Removing an anchored root also removes shares tied to that root, including their descendant shares. Roots owned by a member are removed when that
+member leaves the space. For a regular member, losing `SHARE_INSIDE` blocks further root management, while losing `SHARE_OUTSIDE` prevents new shares;
+neither permission loss removes the corresponding existing roots or shares by itself.
+
+## Space lifecycle
+
+A manager can deactivate a space, while an administrator can delete it immediately. A disabled space is inaccessible to its members and its trash is
+not browsable. Reactivation restores access before expiry; otherwise the scheduler permanently removes a space after 30 disabled days.
+
 ## Managed space storage
 
 A native space has a managed home under the configured spaces path:
@@ -26,6 +71,20 @@ An external root is only a view of an existing filesystem location. Sync-in does
 
 In particular, `<external-root>/.trash/` is not part of the storage layout. Such a directory would not correspond to a logical trash repository, so
 the trash list, browser, restore operations, and retention scheduler could not discover or empty it.
+
+## External locations
+
+An external location is an existing server directory exposed at the top level of a collaborative space through a `spaces_roots.externalPath` record.
+It has no backing `fileId` and must not be confused with a member-owned anchor from personal files. No data is copied into the managed space home; the
+root alias remains a virtual path segment while all content stays under the configured external directory.
+
+Only an administrator can register an external location. The administration preflight verifies that the path exists and that the operating-system
+account running the server can read and write it. Those filesystem permissions must remain valid after registration. The raw external path is hidden
+from non-administrator space responses.
+
+External-root usage is included in the native space's `storageUsage` together with its managed home and other external roots. The native space quota
+therefore remains authoritative even though the content is physically outside that home. Deleting a child from the external location moves it into
+the native space trash, removes its external-root storage identity, and makes it subject to the space's trash permissions and retention policy.
 
 ## Logical trash repositories
 
@@ -66,11 +125,18 @@ deleted permanently, regardless of the actor type. There is no fallback to
 ### Trash permissions and anchored roots
 
 Anchored root endpoints are virtual and cannot be deleted through file operations. Operations on their children use the intersection of the member's
-space permissions and the root permissions.
+space permissions and the root permissions. This protection applies to the endpoint exposed by the space; it does not make the backing source
+immutable in its original repository.
 
 When a root is anchored to a file or directory in a user's personal storage, deleting one of its children moves that entry to the personal trash of
 the root owner. It does not enter the native space trash, and other space members do not gain control over it through their space permissions. Native
 space files that are not anchored continue to use the native space trash.
+
+An anchored descendant is resolvable only while it remains in the same canonical storage scope as the backing root. This scope includes `ownerId`,
+`spaceId`, `spaceExternalRootId`, `shareExternalId`, and `inTrash`, in addition to the descendant path. Moving a child to the owner's personal trash
+changes that scope and places it in a different logical and physical repository. The child therefore leaves the anchored tree immediately: the root
+endpoint remains active, but the deleted child cannot be reached through it or through the native space trash. Only an actor with access to the
+owner's personal trash can resolve the moved entry there.
 
 External roots are the exception. Deleting a child from an external root still requires the effective `DELETE` permission in the source context, but
 the entry then becomes owned by the native space trash. Its external-root identity and root permissions are not retained there, so subsequent trash
