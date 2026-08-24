@@ -36,15 +36,18 @@ import { UserModel } from '../users/models/user.model'
 import { FILE_OPERATION, FORCE_AS_FILE_OWNER } from './constants/operations'
 import { FILES_ROUTE } from './constants/routes'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto, SearchFilesDto } from './dto/file-operations.dto'
+import { DeleteFileFavoriteDto, FileFavoriteDto } from './dto/file-favorite.dto'
 import { FileLockProps } from './interfaces/file-props.interface'
 import { FileTask } from './models/file-task'
 import { FileContent } from './schemas/file-content.interface'
+import type { FileFavorite, FileFavoriteIdentity } from './schemas/file-favorite.interface'
 import { FileRecent } from './schemas/file-recent.interface'
 import { FilesMethods } from './services/files-methods.service'
 import { FilesRecents } from './services/files-recents.service'
 import { FilesSearchManager } from './services/files-search-manager.service'
 import { FilesTasksManager } from './services/tasks/files-tasks-manager.service'
 import { FilesContentIndexer } from './services/files-content-indexer.service'
+import { FilesFavoritesManager } from './services/files-favorites-manager.service'
 import { UserHaveRole } from '../users/decorators/roles.decorator'
 import { USER_ROLE } from '../users/constants/user'
 import { UserRolesGuard } from '../users/guards/roles.guard'
@@ -61,7 +64,8 @@ export class FilesController {
     private readonly filesTasksManager: FilesTasksManager,
     private readonly filesRecents: FilesRecents,
     private readonly filesSearch: FilesSearchManager,
-    private readonly filesContentIndexer: FilesContentIndexer
+    private readonly filesContentIndexer: FilesContentIndexer,
+    private readonly filesFavoritesManager: FilesFavoritesManager
   ) {}
 
   // OPERATIONS
@@ -183,6 +187,33 @@ export class FilesController {
   @Delete(`${FILES_ROUTE.TASK_OPERATION}/*`)
   async deleteAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<FileTask> {
     return this.filesTasksManager.createTask(FILE_OPERATION.DELETE, user, space, null, this.filesMethods.delete.name)
+  }
+
+  // FAVORITES
+
+  @Get(FILES_ROUTE.FAVORITES)
+  @SkipSpaceGuard()
+  @UserHaveRole(USER_ROLE.GUEST)
+  @UseGuards(UserRolesGuard)
+  getFavorites(@GetUser() user: UserModel): Promise<FileFavorite[]> {
+    return this.filesFavoritesManager.getFavorites(user)
+  }
+
+  @Post(`${FILES_ROUTE.FAVORITES}/*`)
+  // only writes user metadata; SpaceGuard still resolves and validates access to the requested location.
+  @SkipSpacePermissionsCheck()
+  @UserHaveRole(USER_ROLE.GUEST)
+  @UseGuards(UserRolesGuard)
+  addFavorite(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() favoriteDto: FileFavoriteDto): Promise<FileFavoriteIdentity> {
+    return this.filesFavoritesManager.addFavorite(user, space, favoriteDto.fileId)
+  }
+
+  @Delete(FILES_ROUTE.FAVORITES)
+  @SkipSpaceGuard()
+  @UserHaveRole(USER_ROLE.GUEST)
+  @UseGuards(UserRolesGuard)
+  removeFavorite(@GetUser() user: UserModel, @Body() favoriteDto: DeleteFileFavoriteDto): Promise<void> {
+    return this.filesFavoritesManager.removeFavorite(user, favoriteDto.fileId)
   }
 
   // RECENT FILES

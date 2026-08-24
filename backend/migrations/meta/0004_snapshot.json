@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "2f63e809-e21d-48a9-bcb6-1d64255bd1b1",
+  "id": "0e329e81-02d6-4c0d-8c44-641efb30b285",
   "prevId": "da1a6d68-b222-46e6-bda9-2a917b447be2",
   "tables": {
     "cache": {
@@ -1661,6 +1661,89 @@
           "name": "files_id",
           "columns": [
             "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "files_favorites": {
+      "name": "files_favorites",
+      "columns": {
+        "userId": {
+          "name": "userId",
+          "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fileId": {
+          "name": "fileId",
+          "type": "bigint unsigned",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "CURRENT_TIMESTAMP"
+        }
+      },
+      "indexes": {
+        "file_idx": {
+          "name": "file_idx",
+          "columns": [
+            "fileId"
+          ],
+          "isUnique": false
+        },
+        "user_created_idx": {
+          "name": "user_created_idx",
+          "columns": [
+            "userId",
+            "createdAt"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "files_favorites_userId_users_id_fk": {
+          "name": "files_favorites_userId_users_id_fk",
+          "tableFrom": "files_favorites",
+          "tableTo": "users",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "files_favorites_fileId_files_id_fk": {
+          "name": "files_favorites_fileId_files_id_fk",
+          "tableFrom": "files_favorites",
+          "tableTo": "files",
+          "columnsFrom": [
+            "fileId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "files_favorites_userId_fileId_pk": {
+          "name": "files_favorites_userId_fileId_pk",
+          "columns": [
+            "userId",
+            "fileId"
           ]
         }
       },

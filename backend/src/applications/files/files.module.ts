@@ -22,6 +22,8 @@ import { FilesTasksWatcher } from './services/tasks/files-tasks-watcher.service'
 import { FilesEventManager } from './services/files-event-manager.service'
 import { FilesQuotaManager } from './services/files-quota-manager.service'
 import { FilesTrashRetention } from './services/files-trash-retention.service'
+import { FilesFavoritesManager } from './services/files-favorites-manager.service'
+import { FilesFavoritesQueries } from './services/files-favorites-queries.service'
 
 @Module({
   imports: [
@@ -48,7 +50,9 @@ import { FilesTrashRetention } from './services/files-trash-retention.service'
     FilesSearchManager,
     FilesEventManager,
     FilesQuotaManager,
-    FilesTrashRetention
+    FilesTrashRetention,
+    FilesFavoritesQueries,
+    FilesFavoritesManager
   ],
   exports: [FilesManager, FilesQueries, FilesLockManager, FilesQuotaManager, FilesMethods, FilesRecents]
 })

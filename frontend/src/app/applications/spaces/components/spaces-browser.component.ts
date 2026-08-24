@@ -66,6 +66,7 @@ import { dragClass, tableTrSelectedClass } from '../../../layout/layout.constant
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
+import { FAVORITES_ICON } from '../../favorites/favorites.constants'
 import { FilesCompressionDialogComponent } from '../../files/components/dialogs/files-compression-dialog.component'
 import { FilesNewDialogComponent } from '../../files/components/dialogs/files-new-dialog.component'
 import { FilesTrashDialogComponent } from '../../files/components/dialogs/files-trash-dialog.component'
@@ -133,6 +134,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     PERSONAL: SPACES_ICON.PERSONAL,
     LINKS: SPACES_ICON.LINKS,
     SYNC: SYNC_ICON.SYNC,
+    FAVORITES: FAVORITES_ICON,
     faArrowRotateRight,
     faPlus,
     faCirclePlus,
@@ -179,6 +181,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   protected hasSelection = false
   protected showSelectionChecks = false
   protected hasDisabledItemsInSelection = false
+  protected canManageFavorite = false
   protected canCompress = true
   protected renamingInProgress = false
   // Upload
@@ -314,6 +317,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.spacesBrowser.loadFiles().subscribe({
       next: (spacesFiles: SpaceFiles) => {
         this.spacePermissions = spacesFiles.permissions
+        this.canManageFavorite = !this.store.user.getValue()?.isLink && !this.isTrashRepo
         this.canShare.outside = this.spacePermissions.indexOf(SPACE_OPERATION.SHARE_OUTSIDE) > -1
         // todo: share inside is not used, this should allow the file anchor dialog to add a personal file to the current space (?)
         this.canShare.inside = this.spacePermissions.indexOf(SPACE_OPERATION.SHARE_INSIDE) > -1
@@ -514,6 +518,16 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
 
   addToClipboard() {
     this.filesService.addToClipboard(this.selection)
+  }
+
+  toggleFavorite(file: FileModel = this.selection[0]) {
+    if (!this.canManageFavorite || !file) return
+    this.filesService
+      .toggleFavorite(file)
+      .pipe(take(1))
+      .subscribe({
+        error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Favorites', file.name, e)
+      })
   }
 
   openShareDialog() {

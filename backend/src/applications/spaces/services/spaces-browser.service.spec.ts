@@ -13,6 +13,7 @@ import { LinksQueries } from '../../links/services/links-queries.service'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { SharesManager } from '../../shares/services/shares-manager.service'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
+import { USER_PERMISSION } from '../../users/constants/user'
 import type { UserModel } from '../../users/models/user.model'
 import { UsersQueries } from '../../users/services/users-queries.service'
 import type { SpaceEnv } from '../models/space-env.model'
@@ -73,13 +74,51 @@ describe(SpacesBrowser.name, () => {
     } as unknown as SpaceEnv
 
     vi.spyOn(spacesBrowserService as any, 'parseFS').mockResolvedValue([])
-    vi.spyOn(spacesBrowserService as any, 'parseDB').mockResolvedValue([])
-    vi.spyOn(spacesBrowserService as any, 'parseRootFiles').mockResolvedValue([])
+    const parseDB = vi.spyOn(spacesBrowserService as any, 'parseDB').mockResolvedValue([])
+    const parseRootFiles = vi.spyOn(spacesBrowserService as any, 'parseRootFiles').mockResolvedValue([])
     vi.spyOn((spacesBrowserService as any).filesRecents, 'updateRecents').mockResolvedValue(undefined)
 
     const result = await spacesBrowserService.browse(user, space)
 
     expect(result.space).toEqual({ alias: 'communication', name: 'Communication' })
+    expect(parseDB).toHaveBeenCalledWith(user.id, space, null)
+    expect(parseRootFiles).toHaveBeenCalledWith(user, space, null)
+  })
+
+  it.each([
+    {
+      name: 'regular user with sync permissions',
+      isLink: false,
+      permissions: [USER_PERMISSION.DESKTOP_APP, USER_PERMISSION.DESKTOP_APP_SYNC],
+      syncs: true,
+      favorites: true
+    },
+    { name: 'regular user without all sync permissions', isLink: false, permissions: [USER_PERMISSION.DESKTOP_APP], syncs: false, favorites: true },
+    { name: 'link user', isLink: true, permissions: [], syncs: false, favorites: false }
+  ])('resolves and propagates browse details for a $name', async ({ isLink, permissions, syncs, favorites }) => {
+    const user = {
+      id: 1,
+      isLink,
+      havePermission: vi.fn((permission: USER_PERMISSION) => permissions.includes(permission))
+    } as unknown as UserModel
+    const space = {
+      alias: 'communication',
+      name: 'Communication',
+      inSharesList: false,
+      inTrashRepository: true,
+      browsePermissions: vi.fn().mockReturnValue('a:m')
+    } as unknown as SpaceEnv
+    const parseDB = vi.spyOn(spacesBrowserService as any, 'parseDB').mockResolvedValue([])
+    const parseRootFiles = vi.spyOn(spacesBrowserService as any, 'parseRootFiles').mockResolvedValue([])
+    vi.spyOn(spacesBrowserService as any, 'parseFS').mockResolvedValue([])
+    vi.spyOn((spacesBrowserService as any).filesRecents, 'updateRecents').mockResolvedValue(undefined)
+
+    await spacesBrowserService.browse(user, space, true)
+
+    const details = { syncs, favorites }
+    expect(parseDB).toHaveBeenCalledWith(user.id, space, details)
+    expect(parseRootFiles).toHaveBeenCalledWith(user, space, details)
+    expect(parseDB.mock.calls[0][2]).toBe(parseRootFiles.mock.calls[0][2])
   })
 
   it('always hides internal temporary entries from filesystem browsing', async () => {

@@ -146,6 +146,8 @@ export class CommentsQueries {
           and(
             isNotNull(shareFile.id),
             eq(shareFile.isDir, true),
+            // A file moved to trash leaves the storage scope of its former share root.
+            eq(files.inTrash, shareFile.inTrash),
             sql`${files.spaceId} <=> ${shareFile.spaceId}`,
             sql`${files.ownerId} <=> ${shareFile.ownerId}`,
             sql`${files.spaceExternalRootId} <=> ${shareFile.spaceExternalRootId}`,
@@ -232,6 +234,8 @@ export class CommentsQueries {
           and(
             isNotNull(spaceRootFile.id),
             eq(spaceRootFile.isDir, true),
+            // A file moved to trash leaves the storage scope of its former anchored root.
+            eq(files.inTrash, spaceRootFile.inTrash),
             sql`${files.ownerId} <=> ${spaceRootFile.ownerId}`,
             sql`${files.path} REGEXP CONCAT('^', IF(${spaceRootFile.path} = '.', CONCAT(${spaceRootFile.name}, '(/.*|)$'), CONCAT(${spaceRootFile.path}, '/')))`
           )

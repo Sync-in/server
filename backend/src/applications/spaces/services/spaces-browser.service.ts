@@ -12,7 +12,7 @@ import { dirName, fileName, getProps, isInternalTemporaryEntry } from '../../fil
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { USER_PERMISSION } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
-import { SpaceFiles } from '../interfaces/space-files.interface'
+import { SpaceBrowseDetails, SpaceFiles } from '../interfaces/space-files.interface'
 import { SpaceEnv } from '../models/space-env.model'
 import { IsRealPathIsDirAndExists, realPathFromRootFile } from '../utils/paths'
 import { SpacesManager } from './spaces-manager.service'
@@ -31,18 +31,13 @@ export class SpacesBrowser {
     private readonly filesRecents: FilesRecents
   ) {}
 
-  async browse(
-    user: UserModel,
-    space: SpaceEnv,
-    options: {
-      withLocks?: boolean
-      withSpacesAndShares?: boolean
-      withSyncs?: boolean
-      withHasComments?: boolean
-    } = {}
-  ): Promise<SpaceFiles> {
-    // check sync permission
-    options.withSyncs = options.withSyncs && user.havePermission(USER_PERMISSION.DESKTOP_APP) && user.havePermission(USER_PERMISSION.DESKTOP_APP_SYNC)
+  async browse(user: UserModel, space: SpaceEnv, withDetails = false): Promise<SpaceFiles> {
+    const details: SpaceBrowseDetails = withDetails
+      ? {
+          syncs: user.havePermission(USER_PERMISSION.DESKTOP_APP) && user.havePermission(USER_PERMISSION.DESKTOP_APP_SYNC),
+          favorites: !user.isLink
+        }
+      : null
     const spaceFiles: SpaceFiles = {
       space: { alias: space.alias, name: space.name },
       files: [],
@@ -51,16 +46,11 @@ export class SpacesBrowser {
     }
     const [fsFiles, dbFiles, rootFiles] = await Promise.all([
       this.parseFS(space),
-      this.parseDB(user.id, space, options),
-      this.parseRootFiles(user, space, {
-        withShares: options.withSpacesAndShares,
-        withHasComments: options.withHasComments,
-        withSyncs: options.withSyncs,
-        withLocks: options.withLocks
-      })
+      this.parseDB(user.id, space, details),
+      this.parseRootFiles(user, space, details)
     ])
     const visibleRootFiles = rootFiles.filter((file) => !isInternalTemporaryEntry(file.name))
-    this.updateDBFiles(user, space, dbFiles, fsFiles, options)
+    this.updateDBFiles(user, space, dbFiles, fsFiles, details)
     if (space.inSharesList) {
       // the share space includes shares as root files
       spaceFiles.files = [...visibleRootFiles, ...fsFiles]
@@ -68,7 +58,7 @@ export class SpacesBrowser {
     } else {
       await this.mergeSpaceRootFiles(space, visibleRootFiles, fsFiles, spaceFiles)
     }
-    if (options.withLocks && !space.inTrashRepository) {
+    if (details && !space.inTrashRepository) {
       // locks were removed when files were moved to the trash, no need to parse locks
       await this.enrichWithLocks(space, spaceFiles.files)
     }
@@ -77,44 +67,20 @@ export class SpacesBrowser {
     return spaceFiles
   }
 
-  private async parseRootFiles(
-    user: UserModel,
-    space: SpaceEnv,
-    options: {
-      withShares?: boolean
-      withHasComments?: boolean
-      withSyncs?: boolean
-      withLocks?: boolean
-    }
-  ): Promise<FileProps[]> {
+  private async parseRootFiles(user: UserModel, space: SpaceEnv, details: SpaceBrowseDetails): Promise<FileProps[]> {
     if (space.inFilesRepository && space.id && !space.root.alias) {
       // list roots in the space
-      return Promise.all((await this.spacesQueries.spaceRootFiles(user.id, space.id, options)).map((f) => this.updateRootFile(f, options)))
+      return Promise.all((await this.spacesQueries.spaceRootFiles(user.id, space.id, details)).map((f) => this.updateRootFile(f, details)))
     } else if (space.inSharesList) {
       // list shares as roots
-      return Promise.all((await this.sharesQueries.shareRootFiles(user, options)).map((f) => this.updateRootFile(f, options)))
+      return Promise.all((await this.sharesQueries.shareRootFiles(user, details)).map((f) => this.updateRootFile(f, details)))
     }
     return []
   }
 
-  private async parseDB(
-    userId: number,
-    space: SpaceEnv,
-    options: {
-      withSpacesAndShares?: boolean
-      withSyncs?: boolean
-      withHasComments?: boolean
-    }
-  ): Promise<FileProps[]> {
+  private async parseDB(userId: number, space: SpaceEnv, details: SpaceBrowseDetails): Promise<FileProps[]> {
     if (space.inSharesList) return []
-    const dbOptions = {
-      withSpaces: options.withSpacesAndShares && space.inPersonalSpace,
-      withShares: options.withSpacesAndShares,
-      withSyncs: options.withSyncs,
-      withHasComments: options.withHasComments,
-      ignoreChildShares: !space.inSharesRepository
-    }
-    return this.filesQueries.browseFiles(userId, space.dbFile, dbOptions)
+    return this.filesQueries.browseFiles(userId, space, details)
   }
 
   private async parseFS(space: SpaceEnv): Promise<FileProps[]> {
@@ -161,25 +127,23 @@ export class SpacesBrowser {
     }
   }
 
-  private async updateRootFile(
-    f: FileProps,
-    options: { withShares?: boolean; withHasComments?: boolean; withSyncs?: boolean; withLocks?: boolean }
-  ): Promise<FileProps> {
+  private async updateRootFile(f: FileProps, details: SpaceBrowseDetails): Promise<FileProps> {
     const realPath = realPathFromRootFile(f)
     const originalPath = f.path
     f.path = f.root.name
     try {
       const fileProps: FileProps = await getProps(realPath, f.path)
-      if (options.withShares) {
+      if (details) {
         fileProps.shares = f.shares
-      }
-      if (options.withHasComments) {
         fileProps.hasComments = f.hasComments
       }
-      if (options.withSyncs) {
+      if (details?.favorites) {
+        fileProps.isFavorite = f.isFavorite
+      }
+      if (details?.syncs) {
         fileProps.syncs = f.syncs
       }
-      if (options.withLocks && (f.origin || f.root?.owner)) {
+      if (details && (f.origin || f.root?.owner)) {
         // `f.origin` is used for shares
         // `f.root.owner` is used for anchored files in spaces
         // all other files are handled in the `enrichWithLocks` function
@@ -197,7 +161,7 @@ export class SpacesBrowser {
           fileProps.lock = this.filesLockManager.convertLockToFileLockProps(locks[0])
         }
       }
-      // `owner.id` is only used in the `withLocks` condition
+      // `owner.id` is only used for lock details
       delete f.root.owner?.id
       // check `f.id`; it can be null for external roots
       if (f.id) {
@@ -222,39 +186,30 @@ export class SpacesBrowser {
     }
   }
 
-  private updateDBFiles(
-    user: UserModel,
-    space: SpaceEnv,
-    dbFiles: FileProps[],
-    fsFiles: FileProps[],
-    options: {
-      withSpacesAndShares?: boolean
-      withSyncs?: boolean
-      withHasComments?: boolean
-    }
-  ) {
+  private updateDBFiles(user: UserModel, space: SpaceEnv, dbFiles: FileProps[], fsFiles: FileProps[], details: SpaceBrowseDetails) {
     for (const dbFile of dbFiles) {
       if (isInternalTemporaryEntry(dbFile.name)) continue
       const fsFile = fsFiles.find((f: FileProps) => dbFile.name === f.name)
       if (fsFile) {
         /* important: inherits from the file id in database */
         fsFile.id = dbFile.id
-        if (options.withSpacesAndShares) {
+        if (details) {
           fsFile.spaces = dbFile.spaces
           fsFile.shares = dbFile.shares
+          fsFile.hasComments = dbFile.hasComments
         }
-        if (options.withSyncs) {
+        if (details?.syncs) {
           fsFile.syncs = dbFile.syncs
         }
-        if (options.withHasComments) {
-          fsFile.hasComments = dbFile.hasComments
+        if (details?.favorites) {
+          fsFile.isFavorite = dbFile.isFavorite
         }
         this.filesQueries
           .compareAndUpdateFileProps(dbFile, fsFile)
           .catch((e: Error) => this.logger.error({ tag: this.updateDBFiles.name, msg: `${e}` }))
       } else {
         this.logger.warn({ tag: this.updateDBFiles.name, msg: `missing ${dbFile.path}/${dbFile.name} (${dbFile.id}) from fs, delete it from db` })
-        if (options.withSpacesAndShares) {
+        if (details) {
           if (dbFile.spaces) {
             for (const space of dbFile.spaces) {
               this.logger.warn({

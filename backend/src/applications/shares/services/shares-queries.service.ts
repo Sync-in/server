@@ -650,13 +650,11 @@ export class SharesQueries {
     return r
   }
 
-  async shareRootFiles(user: UserModel, options: { withShares?: boolean; withHasComments?: boolean; withSyncs?: boolean }): Promise<FileProps[]> {
+  async shareRootFiles(user: UserModel, details: SpaceBrowseDetails): Promise<FileProps[]> {
     if (!this.shareRootFilesQuery) {
       const shareSpaceRoot: any = alias(spacesRoots, 'shareSpaceRoot')
       const originOwner: any = alias(users, 'originOwner')
       const childShare: any = alias(shares, 'childShare')
-      const externalParentShare: any = alias(shares, 'externalParentShare')
-      const externalRootScopeAlias = 'externalRootScope'
       const selectUnion: FileProps | SelectedFields<any, any> = {
         id: files.id,
         path: sql`IF (${files.id} IS NOT NULL, ${filePathSQL(files)}, '')`.as('path'),
@@ -726,7 +724,7 @@ export class SharesQueries {
           .leftJoin(
             childShare,
             and(
-              eq(sql.placeholder('withShares'), sql`1`),
+              eq(sql.placeholder('withDetails'), sql`1`),
               eq(childShare.ownerId, sql.placeholder('userId')),
               eq(childShare.parentId, shares.id),
               or(
@@ -788,7 +786,7 @@ export class SharesQueries {
             fullName: unionAlias.rootOwnerFullName
           } satisfies Owner
         },
-        shares: sql`IF (${sql.placeholder('withShares')}, ${concatDistinctObjectsInArray(unionAlias.childShareId, {
+        shares: sql`IF (${sql.placeholder('withDetails')}, ${concatDistinctObjectsInArray(unionAlias.childShareId, {
           id: unionAlias.childShareId,
           alias: unionAlias.childShareAlias,
           name: unionAlias.childShareName,
@@ -799,12 +797,21 @@ export class SharesQueries {
           clientId: unionAlias.syncPathClientId,
           clientName: unionAlias.syncPathClientName
         })}, '[]')`.mapWith(dbParseJson),
-        hasComments: sql<boolean>`IF (${sql.placeholder('withHasComments')}, ${fileHasCommentsSubquerySQL(unionAlias.id)}, 0)`.mapWith(Boolean)
+        hasComments: sql<boolean>`IF (${sql.placeholder('withDetails')}, ${fileHasCommentsSubquerySQL(unionAlias.id)}, 0)`.mapWith(Boolean),
+        isFavorite: isNotNull(filesFavorites.fileId).mapWith(Boolean)
       }
       this.shareRootFilesQuery = this.db
         .select(select)
         .from(unionAlias)
-        .leftJoin(externalRootScope, eq(externalRootScopeTargetId, unionAlias.rootId))
+        .leftJoin(
+          filesFavorites,
+          and(
+            eq(sql.placeholder('withFavorites'), sql`1`),
+            eq(filesFavorites.userId, sql.placeholder('userId')),
+            eq(filesFavorites.fileId, unionAlias.id)
+          )
+        )
+        .leftJoin(externalRootScope.table, eq(externalRootScope.targetShareId, unionAlias.rootId))
         // Non-external shares do not need this scope. An external share must
         // resolve one: otherwise omit it so `updateRootFile()` cannot mistake
         // the share-record owner for the owner of its external storage.
@@ -815,9 +822,9 @@ export class SharesQueries {
     const fps: FileProps[] = await this.shareRootFilesQuery.execute({
       userId: user.id,
       isAdmin: +user.isAdmin,
-      withHasComments: +!!options.withHasComments,
-      withShares: +!!options.withShares,
-      withSyncs: +!!options.withSyncs
+      withDetails: +!!details,
+      withFavorites: +(details?.favorites ?? false),
+      withSyncs: +(details?.syncs ?? false)
     })
     for (const f of fps) {
       f.root.permissions = uniquePermissions(f.root.permissions)

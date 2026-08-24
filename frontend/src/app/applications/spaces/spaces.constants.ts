@@ -107,6 +107,12 @@ export const SPACES_MENU: AppMenu = {
       icon: RECENTS_ICON,
       link: RECENTS_PATH.BASE
     },
+    {
+      title: FAVORITES_TITLE,
+      icon: FAVORITES_ICON,
+      link: FAVORITES_PATH.BASE,
+      checks: [{ negate: true, prop: 'user', value: 'isLink' }]
+    },
     SPACES_MENU_SECTION.SPACES,
     {
       id: USER_PERMISSION.PERSONAL_SPACE,

@@ -20,6 +20,7 @@ import {
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
 import { FileDBProps } from '../../files/interfaces/file-db-props.interface'
 import { FileProps } from '../../files/interfaces/file-props.interface'
+import { filesFavorites } from '../../files/schemas/files-favorites.schema'
 import { File } from '../../files/schemas/file.interface'
 import { filePathSQL, files } from '../../files/schemas/files.schema'
 import { FilesQueries } from '../../files/services/files-queries.service'
@@ -37,6 +38,7 @@ import { usersGroups } from '../../users/schemas/users-groups.schema'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema'
 import { SPACE_ROLE } from '../constants/spaces'
 import { SpaceMemberDto } from '../dto/create-or-update-space.dto'
+import type { SpaceBrowseDetails } from '../interfaces/space-files.interface'
 import { SpaceEnv } from '../models/space-env.model'
 import { SpaceProps } from '../models/space-props.model'
 import { SpaceRootProps } from '../models/space-root-props.model'
@@ -246,15 +248,7 @@ export class SpacesQueries {
     }
   }
 
-  async spaceRootFiles(
-    userId: number,
-    spaceId: number,
-    options: {
-      withShares?: boolean
-      withHasComments?: boolean
-      withSyncs?: boolean
-    }
-  ): Promise<FileProps[]> {
+  async spaceRootFiles(userId: number, spaceId: number, details: SpaceBrowseDetails): Promise<FileProps[]> {
     if (!this.spaceRootFilesQuery) {
       const select: FileProps | SelectedFields<any, any> = {
         id: files.id,
@@ -273,7 +267,7 @@ export class SpacesQueries {
           permissions: spacesRoots.permissions,
           owner: { id: users.id, login: users.login, email: users.email, fullName: userFullNameSQL(users) }
         },
-        shares: sql`IF (${sql.placeholder('withShares')}, ${concatDistinctObjectsInArray(shares.id, {
+        shares: sql`IF (${sql.placeholder('withDetails')}, ${concatDistinctObjectsInArray(shares.id, {
           id: shares.id,
           alias: shares.alias,
           name: shares.name,
@@ -284,7 +278,8 @@ export class SpacesQueries {
           clientId: syncClients.id,
           clientName: sql`JSON_VALUE(${syncClients.info}, '$.node')`
         })}, '[]')`.mapWith(dbParseJson),
-        hasComments: sql<boolean>`IF (${sql.placeholder('withHasComments')}, ${fileHasCommentsSubquerySQL(files.id)}, 0)`.mapWith(Boolean)
+        hasComments: sql<boolean>`IF (${sql.placeholder('withDetails')}, ${fileHasCommentsSubquerySQL(files.id)}, 0)`.mapWith(Boolean),
+        isFavorite: isNotNull(filesFavorites.fileId).mapWith(Boolean)
       }
       this.spaceRootFilesQuery = this.db
         .select(select)
@@ -292,9 +287,13 @@ export class SpacesQueries {
         .leftJoin(files, eq(files.id, spacesRoots.fileId))
         .leftJoin(users, eq(users.id, files.ownerId))
         .leftJoin(
+          filesFavorites,
+          and(eq(sql.placeholder('withFavorites'), sql`1`), eq(filesFavorites.userId, sql.placeholder('userId')), eq(filesFavorites.fileId, files.id))
+        )
+        .leftJoin(
           shares,
           and(
-            eq(sql.placeholder('withShares'), sql`1`),
+            eq(sql.placeholder('withDetails'), sql`1`),
             eq(shares.ownerId, sql.placeholder('userId')),
             isNull(shares.fileId),
             isNull(shares.parentId),
@@ -319,9 +318,9 @@ export class SpacesQueries {
     return this.spaceRootFilesQuery.execute({
       userId,
       spaceId,
-      withHasComments: +!!options.withHasComments,
-      withShares: +!!options.withShares,
-      withSyncs: +!!options.withSyncs
+      withDetails: +!!details,
+      withFavorites: +(details?.favorites ?? false),
+      withSyncs: +(details?.syncs ?? false)
     })
   }
 

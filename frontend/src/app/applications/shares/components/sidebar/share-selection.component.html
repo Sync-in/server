@@ -40,9 +40,12 @@
       </div>
       <div class="d-flex align-items-center mb-1">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Comments</div>
-        <span (click)="goToComments()" class="badge {{share().hasComments ? 'bg-success' : 'bg-default'}} cursor-pointer">
-          {{ (share().hasComments ? 'yes' : 'no') | translate:locale.language }}
-        </span>
+        <button (click)="goToComments()"
+                class="badge {{share().hasComments ? 'bg-success' : 'bg-default'}} cursor-pointer"
+                type="button"
+                [attr.aria-label]="'Comments' | translate:locale.language">
+          <fa-icon [icon]="faCommentDots"></fa-icon>
+        </button>
       </div>
     </div>
     <hr class="my-1" />
@@ -54,6 +57,5 @@
     </div>
   </div>
 }
-
 
 

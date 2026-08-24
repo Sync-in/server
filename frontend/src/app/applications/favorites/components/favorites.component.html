@@ -1,0 +1,194 @@
+<!--Start Top Menu-->
+<div class="app-top-menu">
+  <button (click)="loadFavorites()"
+          class="d-none d-sm-block btn btn-default me-1"
+          [tooltip]="'Refresh' | translate:locale.language"
+          type="button">
+    <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
+  </button>
+  <button (click)="goTo()"
+          [disabled]="!selected || selected.isDisabled"
+          class="btn btn-default me-1"
+          [tooltip]="'Go to' | translate:locale.language"
+          type="button">
+    <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
+  </button>
+  <button (click)="removeFavorite()"
+          [disabled]="!selected"
+          class="btn btn-default me-1"
+          [tooltip]="'Remove from favorites' | translate:locale.language"
+          type="button">
+    <fa-icon [icon]="icons.REMOVE_FAVORITE"></fa-icon>
+  </button>
+  <div class="ms-auto">
+    <div class="btn-group me-1">
+      <app-input-filter class="d-none d-sm-block"></app-input-filter>
+    </div>
+    <app-navigation-view (switchView)="galleryMode = $event"></app-navigation-view>
+  </div>
+</div>
+<!--End Top Menu-->
+@if (galleryMode?.enabled) {
+  <!--Start Gallery Content-->
+  <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
+       [style.--gallery-image-size]="galleryMode.image + 'px'"
+       [style.--gallery-text-size]="galleryMode.textSize + 'px'"
+       class="app-gallery">
+    <app-virtual-scroll (contextmenu)="onContextMenu($event)"
+                        [childHeight]="galleryMode.dimensions"
+                        [childWidth]="galleryMode.dimensions"
+                        [items]="favorites | searchFilter:inputFilter.search()"
+                        [galleryMode]="true"
+                        [resizeOffset]="110">
+      <div *ngTemplateOutlet="CommonMessages"></div>
+      <div class="row g-0" tabindex="-1">
+        @for (f of scrollView?.viewPortItems; track f.fileId) {
+          <div (click)="onSelect(f)"
+               (contextmenu)="onTargetContextMenu($event, f)"
+               (appTap)="goTo(f)"
+               [class.disabled]="f.isDisabled"
+               [class.selected]="f.fileId === selected?.fileId"
+               class="card">
+            <div [attr.rowIndex]="$index" class="card-body">
+              <img [src]="f.mimeUrl"
+                   alt=""
+                   class="gallery-image"
+                   draggable="false"
+                   (error)="f.fallBackMimeUrl()">
+              @if (f.newly) {
+                <span class="label-top-right">
+                  <span class="badge bg-purple">{{ f.hTimeAgo }}</span>
+                </span>
+              }
+              @if (f.isDisabled) {
+                <span class="label-bottom-left">
+                  <span class="badge bg-warning text-dark" l10nTranslate>
+                    <fa-icon [icon]="icons.faTriangleExclamation"></fa-icon>
+                    No longer accessible
+                  </span>
+                </span>
+              }
+            </div>
+            <div class="card-footer text-center text-truncate p-1">
+              <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ f.name }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </app-virtual-scroll>
+  </div>
+  <!--End Gallery Content-->
+} @else {
+  <!--Start Table Files Content-->
+  <table class="app-table">
+    <thead>
+    <tr>
+      @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
+        @if (th.value.show) {
+          <th (click)="sortBy(th.key)"
+              [style.width.%]="th.value.width"
+              [class.text-align-center]="th.value.textCenter"
+              [class.cursor-pointer]="th.value.sortable"
+              class="{{th.value.class}}"
+              l10nTranslate>
+            {{ th.value.label }}
+            @if (sortTable.sortParam.column === th.key) {
+              <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp"></fa-icon>
+            }
+          </th>
+        }
+      }
+    </tr>
+    </thead>
+  </table>
+  <app-virtual-scroll (contextmenu)="onContextMenu($event)"
+                      [bufferAmount]="5"
+                      [items]="favorites | searchFilter:inputFilter.search()">
+    <div *ngTemplateOutlet="CommonMessages"></div>
+    <table class="app-table">
+      <tbody tabindex="-1">
+        @for (f of scrollView?.viewPortItems; track f.fileId) {
+          <tr (click)="onSelect(f)"
+              (contextmenu)="onTargetContextMenu($event, f)"
+              (appTap)="goTo(f)"
+              [class.disabled]="f.isDisabled"
+              [class.selected]="f.fileId === selected?.fileId">
+            @for (th of tableHeaders | keyvalue: originalOrderKeyValue; track th.key) {
+              @if (th.value.show) {
+                <td [style.width.%]="th.value.width"
+                    [class.text-align-center]="th.value.textCenter"
+                    class="{{th.value.class}}">
+                  @switch (th.key) {
+                    @case ('name') {
+                      <div class="d-flex align-items-center">
+                        <img [src]="f.mimeUrl" alt="" draggable="false" height="30" width="30" (error)="f.fallBackMimeUrl()">
+                        <div class="d-flex flex-column text-truncate">
+                          <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ f.name }}</span>
+                          @if (f.isDisabled) {
+                            <span class="text-warning fs-xs" l10nTranslate>No longer accessible</span>
+                          }
+                        </div>
+                      </div>
+                    }
+                    @case ('location') {
+                      @if (f.isDisabled) {
+                        <span class="text-warning" l10nTranslate>
+                          <fa-icon [icon]="icons.faTriangleExclamation"></fa-icon>
+                          No longer accessible
+                        </span>
+                      } @else {
+                        <app-file-location [location]="f" [displayAsRepository]="true"></app-file-location>
+                      }
+                    }
+                    @case ('size') {
+                      <span>{{ f.isDir && f.size === 0 ? '●' : (f.size | toBytes:0:true) }}</span>
+                    }
+                    @case ('modified') {
+                      <span>{{ f.mtime | amLiveTimeAgo }}</span>
+                    }
+                    @case ('created') {
+                      <span>{{ f.createdAt | amLiveTimeAgo }}</span>
+                    }
+                  }
+                </td>
+              }
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </app-virtual-scroll>
+  <!--End Table Files Content-->
+}
+<!--Start Foot Content-->
+<div class="app-foot-menu">
+  <span class="mx-auto">{{ favorites.length }} {{ 'favorites' | translate:locale.language }}</span>
+</div>
+<!--End Foot Content-->
+<!--Start Common Messages-->
+<ng-template #CommonMessages>
+  @if (!loading && !favorites.length) {
+    <div class="fs-base text-center text-gray fw-bold no-select p-4">
+      <span l10nTranslate>No favorites</span>
+    </div>
+  }
+</ng-template>
+<!--End Common Messages-->
+<!--Start Context Menu -->
+<context-menu #MainContextMenu>
+  <ng-template (execute)="loadFavorites()" contextMenuItem>
+    <span l10nTranslate><fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>Refresh</span>
+  </ng-template>
+</context-menu>
+<context-menu #TargetContextMenu>
+  @if (!selected?.isDisabled) {
+    <ng-template (execute)="goTo()" contextMenuItem>
+      <span l10nTranslate><fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>Go to</span>
+    </ng-template>
+    <ng-template [divider]="true" contextMenuItem></ng-template>
+  }
+  <ng-template (execute)="removeFavorite()" contextMenuItem>
+    <span l10nTranslate><fa-icon [icon]="icons.REMOVE_FAVORITE"></fa-icon>Remove from favorites</span>
+  </ng-template>
+</context-menu>
+<!--End Context Menu-->

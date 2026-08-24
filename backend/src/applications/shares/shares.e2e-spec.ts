@@ -6,6 +6,13 @@ import { DB_TOKEN_PROVIDER } from '../../infrastructure/database/constants'
 import { DatabaseModule } from '../../infrastructure/database/database.module'
 import type { DBSchema } from '../../infrastructure/database/interfaces/database.interface'
 import { dbGetInsertedId } from '../../infrastructure/database/utils'
+import { comments } from '../comments/schemas/comments.schema'
+import { CommentsQueries } from '../comments/services/comments-queries.service'
+import { filesFavorites } from '../files/schemas/files-favorites.schema'
+import { files } from '../files/schemas/files.schema'
+import { FilesFavoritesQueries } from '../files/services/files-favorites-queries.service'
+import { FilesQueries } from '../files/services/files-queries.service'
+import { SpacesQueries } from '../spaces/services/spaces-queries.service'
 import type { UserModel } from '../users/models/user.model'
 import { users } from '../users/schemas/users.schema'
 import { SharesQueries } from './services/shares-queries.service'
@@ -17,11 +24,13 @@ describe('Shares (e2e)', () => {
   let db: DBSchema
   let sharesQueries: SharesQueries
   let actorId: number | undefined
+  let childActorId: number | undefined
   let ownerId: number | undefined
   let externalRootId: number | undefined
   let childId: number | undefined
   let grandchildId: number | undefined
   let internalRootId: number | undefined
+  let externalFileId: number | undefined
 
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12)
   const aliases = {
@@ -49,6 +58,13 @@ describe('Shares (e2e)', () => {
       await db.insert(users).values({
         login: `e2e-share-actor-${suffix}`,
         email: `e2e-share-actor-${suffix}@example.test`,
+        password: 'password'
+      })
+    )
+    childActorId = dbGetInsertedId(
+      await db.insert(users).values({
+        login: `e2e-share-child-actor-${suffix}`,
+        email: `e2e-share-child-actor-${suffix}@example.test`,
         password: 'password'
       })
     )
@@ -104,8 +120,16 @@ describe('Shares (e2e)', () => {
       { shareId: externalRootId, userId: actorId, permissions: 'a:d:m:so' },
       { shareId: childId, userId: actorId, permissions: 'd:m' },
       { shareId: grandchildId, userId: actorId, permissions: 'm' },
-      { shareId: malformedChildId, userId: actorId, permissions: 'd:m' }
+      { shareId: malformedChildId, userId: actorId, permissions: 'd:m' },
+      { shareId: childId, userId: childActorId, permissions: 'd:m' },
+      { shareId: grandchildId, userId: childActorId, permissions: 'm' }
     ])
+
+    externalFileId = dbGetInsertedId(
+      await db.insert(files).values({ shareExternalId: externalRootId, path: '.', name: 'external-file.txt', isDir: false })
+    )
+    await db.insert(filesFavorites).values({ userId: childActorId, fileId: externalFileId })
+    await db.insert(comments).values({ userId: ownerId, fileId: externalFileId, content: 'External child comment' })
   })
 
   afterAll(async () => {
@@ -114,7 +138,7 @@ describe('Shares (e2e)', () => {
       if (rootIds.length) {
         await db.delete(shares).where(inArray(shares.id, rootIds))
       }
-      const userIds = [actorId, ownerId].filter((id): id is number => Number.isInteger(id))
+      const userIds = [actorId, childActorId, ownerId].filter((id): id is number => Number.isInteger(id))
       if (userIds.length) {
         await db.delete(users).where(inArray(users.id, userIds))
       }
@@ -147,7 +171,7 @@ describe('Shares (e2e)', () => {
   })
 
   it('uses the same external root scope without replacing each listed share permissions', async () => {
-    const roots = await sharesQueries.shareRootFiles({ id: actorId, isAdmin: false } as UserModel, {})
+    const roots = await sharesQueries.shareRootFiles({ id: actorId, isAdmin: false } as UserModel, null)
     const child = roots.find((root) => root.root.alias === aliases.child)
     const grandchild = roots.find((root) => root.root.alias === aliases.grandchild)
 
@@ -159,10 +183,30 @@ describe('Shares (e2e)', () => {
     await expect(sharesQueries.permissions(actorId, aliases.unauthorizedChild)).resolves.toBeUndefined()
   })
 
+  it('resolves favorite and recent-comment locations through an external child only', async () => {
+    const favoritesQueries = new FilesFavoritesQueries(db)
+    const spacesQueries = new SpacesQueries(db, noCache, new FilesQueries(db))
+    const commentsQueries = new CommentsQueries(db, spacesQueries, sharesQueries)
+    const shareIds = (await sharesQueries.shareIdentities(childActorId, 0)).map(({ id }) => id)
+
+    expect(shareIds).toEqual(expect.arrayContaining([childId, grandchildId]))
+    expect(shareIds).not.toContain(externalRootId)
+
+    const favorites = await favoritesQueries.getFavoriteLocationsFromShares(childActorId, shareIds)
+    const recentComments = await commentsQueries.getRecentsFromShares(childActorId, shareIds, 10)
+
+    expect(favorites).toEqual([
+      expect.objectContaining({ fileId: externalFileId, path: `shares/${aliases.child}`, displayRootName: 'External child' })
+    ])
+    expect(recentComments).toEqual([
+      expect.objectContaining({ file: expect.objectContaining({ path: `shares/${aliases.child}`, displayRootName: 'External child' }) })
+    ])
+  })
+
   it('fails closed when an external child has a non-external parent', async () => {
     await expect(sharesQueries.permissions(actorId, aliases.malformedChild)).resolves.toBeUndefined()
 
-    const roots = await sharesQueries.shareRootFiles({ id: actorId, isAdmin: false } as UserModel, {})
+    const roots = await sharesQueries.shareRootFiles({ id: actorId, isAdmin: false } as UserModel, null)
     expect(roots.some((root) => root.root.alias === aliases.malformedChild)).toBe(false)
   })
 })

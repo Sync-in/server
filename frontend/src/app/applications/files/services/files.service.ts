@@ -9,6 +9,7 @@ import {
   SEND_FILE_ERROR_MSG
 } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import {
+  API_FILES_FAVORITES,
   API_FILES_OPERATION,
   API_FILES_OPERATION_MAKE,
   API_FILES_RECENTS,
@@ -18,6 +19,7 @@ import {
   API_FILES_TASK_OPERATION_DOWNLOAD,
   API_FILES_TASKS_DOWNLOAD
 } from '@sync-in-server/backend/src/applications/files/constants/routes'
+import type { DeleteFileFavoriteDto, FileFavoriteDto } from '@sync-in-server/backend/src/applications/files/dto/file-favorite.dto'
 import type {
   CompressFileDto,
   CopyMoveFileDto,
@@ -33,6 +35,7 @@ import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applica
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
+import type { FileFavorite, FileFavoriteIdentity } from '@sync-in-server/backend/src/applications/files/schemas/file-favorite.interface'
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -51,6 +54,7 @@ import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-sele
 import { fileLockPropsToString } from '../components/utils/file-lock.utils'
 import { MAX_TEXT_FILE_SIZE, SHORT_MIME } from '../files.constants'
 import { FileContentModel } from '../models/file-content.model'
+import { FileFavoriteModel } from '../models/file-favorite.model'
 import { FileRecentModel } from '../models/file-recent.model'
 import { FileModel } from '../models/file.model'
 import { FilesTasksService } from './files-tasks.service'
@@ -223,6 +227,44 @@ export class FilesService {
 
   downloadTaskArchive(taskId: string) {
     downloadWithAnchor(`${API_FILES_TASKS_DOWNLOAD}/${taskId}`)
+  }
+
+  listFavorites(): Observable<FileFavoriteModel[]> {
+    return this.http.get<FileFavorite[]>(API_FILES_FAVORITES).pipe(map((files) => files.map((file) => new FileFavoriteModel(file))))
+  }
+
+  addFavorite(file: FileModel): Observable<FileFavoriteIdentity> {
+    const body = { fileId: file.id } satisfies FileFavoriteDto
+    return this.http.post<FileFavoriteIdentity>(`${API_FILES_FAVORITES}/${file.encodedPath}`, body)
+  }
+
+  removeFavorite(fileId: number): Observable<void> {
+    const body = { fileId } satisfies DeleteFileFavoriteDto
+    return this.http.request<void>('delete', API_FILES_FAVORITES, { body })
+  }
+
+  toggleFavorite(file: FileModel): Observable<boolean> {
+    if (file.isFavorite) {
+      return this.removeFavorite(file.id).pipe(
+        tap(() => this.updateFavoriteState(file, false)),
+        map(() => false)
+      )
+    }
+    return this.addFavorite(file).pipe(
+      tap(({ fileId }) => {
+        if (file.id < 0) file.id = fileId
+        this.updateFavoriteState(file, true)
+      }),
+      map(() => true)
+    )
+  }
+
+  private updateFavoriteState(file: FileModel, isFavorite: boolean) {
+    file.isFavorite = isFavorite
+    file.updateNbBadges()
+    if (this.store.filesSelection().includes(file)) {
+      this.store.filesSelection.update((files) => [...files])
+    }
   }
 
   loadRecents(limit: number) {

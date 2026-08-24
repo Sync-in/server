@@ -4,6 +4,7 @@ import { ContextManager } from '../../infrastructure/context/services/context-ma
 import { SpaceGuard } from '../spaces/guards/space.guard'
 import { FILE_OPERATION } from './constants/operations'
 import { FilesController } from './files.controller'
+import { FilesFavoritesManager } from './services/files-favorites-manager.service'
 import { FilesMethods } from './services/files-methods.service'
 import { FilesRecents } from './services/files-recents.service'
 import { FilesSearchManager } from './services/files-search-manager.service'
@@ -55,6 +56,7 @@ describe(FilesController.name, () => {
         { provide: FilesSearchManager, useValue: filesSearchMock },
         { provide: ContextManager, useValue: filesSearchMock },
         { provide: FilesContentIndexer, useValue: {} },
+        { provide: FilesFavoritesManager, useValue: {} },
         ContextInterceptor
       ]
     })

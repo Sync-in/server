@@ -46,6 +46,7 @@ export class FileModel implements File {
 
   // Extra properties
   hasComments: boolean
+  isFavorite = false
   root?: {
     id: number
     alias: string
@@ -70,7 +71,7 @@ export class FileModel implements File {
   hTimeAgo: string
   dirSize: Observable<number | undefined>
   nbBadges = 0
-  galleryBadges: ('lock' | 'shares' | 'spaces' | 'links' | 'syncs' | 'comments')[] = []
+  galleryBadges: ('lock' | 'favorites' | 'shares' | 'spaces' | 'links' | 'syncs' | 'comments')[] = []
 
   // States
   newly = 0
@@ -156,6 +157,7 @@ export class FileModel implements File {
   updateNbBadges() {
     this.galleryBadges = []
     if (this.lock) this.galleryBadges.push('lock')
+    if (this.isFavorite) this.galleryBadges.push('favorites')
     if (this.shares.length) this.galleryBadges.push('shares')
     if (this.spaces.length) this.galleryBadges.push('spaces')
     if (this.links.length) this.galleryBadges.push('links')

@@ -134,6 +134,17 @@
           </a>
         </li>
       }
+      @if (selection.length === 1 && canManageFavorite) {
+        <li role="menuitem">
+          <a (click)="toggleFavorite(selection[0])" class="dropdown-item">
+            @if (selection[0].isFavorite) {
+              <span l10nTranslate><fa-icon [icon]="icons.FAVORITES"></fa-icon>Remove from favorites</span>
+            } @else {
+              <span l10nTranslate><fa-icon [icon]="icons.FAVORITES"></fa-icon>Add to favorites</span>
+            }
+          </a>
+        </li>
+      }
       @if (!isTrashRepo && canCompress) {
         <li role="menuitem">
           <a (click)="openCompressionDialog()" class="dropdown-item">
@@ -262,6 +273,12 @@
                               placement="auto"
                               class="badge bg-maroon cursor-pointer">
                           <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
+                        </span>
+                      }
+                      @case ('favorites') {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                              class="badge bg-warning cursor-pointer">
+                          <fa-icon [icon]="icons.FAVORITES"></fa-icon>
                         </span>
                       }
                       @case ('comments') {
@@ -451,6 +468,12 @@
                           <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faLockOpen"></fa-icon>
                         </span>
                       }
+                      @if (f.isFavorite) {
+                        <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
+                              class="badge bg-warning cursor-pointer me-1">
+                          <fa-icon [icon]="icons.FAVORITES"></fa-icon>
+                        </span>
+                      }
                       @if (f.hasComments) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
                               class="badge bg-success cursor-pointer me-1">
@@ -598,6 +621,15 @@
   @if (selection.length === 1 && !isTrashRepo && isElectronApp && selection[0].isDir) {
     <ng-template (execute)="addToSync()" contextMenuItem>
       <span l10nTranslate><fa-icon [icon]="icons.faRotate"></fa-icon>Synchronize</span>
+    </ng-template>
+  }
+  @if (selection.length === 1 && canManageFavorite) {
+    <ng-template (execute)="toggleFavorite(selection[0])" contextMenuItem>
+      @if (selection[0].isFavorite) {
+        <span l10nTranslate><fa-icon [icon]="icons.FAVORITES"></fa-icon>Remove from favorites</span>
+      } @else {
+        <span l10nTranslate><fa-icon [icon]="icons.FAVORITES"></fa-icon>Add to favorites</span>
+      }
     </ng-template>
   }
   @if (selection.length === 1 && !isTrashRepo) {

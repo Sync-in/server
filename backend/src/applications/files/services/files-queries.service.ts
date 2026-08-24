@@ -1,10 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { and, desc, eq, getTableColumns, inArray, isNull, or, SelectedFields, sql, SQL } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, or, SelectedFields, sql, SQL } from 'drizzle-orm'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { concatDistinctObjectsInArray, convertToWhere, dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils'
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
 import { shares } from '../../shares/schemas/shares.schema'
+import type { SpaceBrowseContext, SpaceBrowseDetails } from '../../spaces/interfaces/space-files.interface'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
 import { syncClients } from '../../sync/schemas/sync-clients.schema'
@@ -13,6 +14,7 @@ import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileProps } from '../interfaces/file-props.interface'
 import type { FileRecent, FileRecentLocation, FileRecentUpdate } from '../schemas/file-recent.interface'
 import { File } from '../schemas/file.interface'
+import { filesFavorites } from '../schemas/files-favorites.schema'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { childFilesMatch, childFilesReplacePath, childPathMatch, filePathSQL, files } from '../schemas/files.schema'
 import { dirName, fileName, isPathInside } from '../utils/files'
@@ -23,17 +25,8 @@ export class FilesQueries {
 
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 
-  browseFiles(
-    userId: number,
-    dbFile: FileDBProps,
-    options: {
-      withSpaces?: boolean
-      withShares?: boolean
-      withSyncs?: boolean
-      withHasComments?: boolean
-      ignoreChildShares?: boolean
-    }
-  ): Promise<FileProps[]> {
+  browseFiles(userId: number, context: SpaceBrowseContext, details: SpaceBrowseDetails): Promise<FileProps[]> {
+    const withSpaces = !!details && context.inPersonalSpace
     const q = this.db
       .select({
         id: files.id,
@@ -44,8 +37,8 @@ export class FilesQueries {
         size: files.size,
         mtime: files.mtime,
         ctime: files.ctime,
-        ...(options.withSpaces && { spaces: concatDistinctObjectsInArray(spaces.id, { id: spaces.id, alias: spaces.alias, name: spaces.name }) }),
-        ...(options.withShares && {
+        ...(withSpaces && { spaces: concatDistinctObjectsInArray(spaces.id, { id: spaces.id, alias: spaces.alias, name: spaces.name }) }),
+        ...(!!details && {
           shares: concatDistinctObjectsInArray(shares.id, {
             id: shares.id,
             alias: shares.alias,
@@ -53,32 +46,36 @@ export class FilesQueries {
             type: shares.type
           })
         }),
-        ...(options.withSyncs && {
+        ...(details?.syncs && {
           syncs: concatDistinctObjectsInArray(syncPaths.id, {
             id: syncPaths.id,
             clientId: syncClients.id,
             clientName: sql`JSON_VALUE(${syncClients.info}, '$.node')`
           })
         }),
-        ...(options.withHasComments && { hasComments: sql`${fileHasCommentsSubquerySQL(files.id)}`.mapWith(Boolean) })
+        ...(!!details && { hasComments: sql`${fileHasCommentsSubquerySQL(files.id)}`.mapWith(Boolean) }),
+        ...(details?.favorites && { isFavorite: isNotNull(filesFavorites.fileId).mapWith(Boolean) })
       })
       .from(files)
-      .where(and(...convertToWhere(files, dbFile)))
+      .where(and(...convertToWhere(files, context.dbFile)))
       .groupBy(files.id)
-    if (options.withSpaces) {
+    if (withSpaces) {
       // show spaces for files in personal space
       q.leftJoin(spacesRoots, eq(spacesRoots.fileId, files.id))
       q.leftJoin(spaces, eq(spaces.id, spacesRoots.spaceId))
     }
-    if (options.withShares) {
+    if (details) {
       q.leftJoin(
         shares,
-        and(...[eq(shares.ownerId, userId), eq(shares.fileId, files.id)], ...(options.ignoreChildShares ? [isNull(shares.parentId)] : []))
+        and(...[eq(shares.ownerId, userId), eq(shares.fileId, files.id)], ...(!context.inSharesRepository ? [isNull(shares.parentId)] : []))
       )
     }
-    if (options.withSyncs) {
+    if (details?.syncs) {
       q.leftJoin(syncClients, eq(syncClients.ownerId, userId))
       q.leftJoin(syncPaths, and(eq(syncPaths.clientId, syncClients.id), eq(syncPaths.fileId, files.id)))
+    }
+    if (details?.favorites) {
+      q.leftJoin(filesFavorites, and(eq(filesFavorites.userId, userId), eq(filesFavorites.fileId, files.id)))
     }
     return q
   }
