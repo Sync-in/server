@@ -42,8 +42,19 @@ export const files = mysqlTable(
   ]
 )
 
-// supports the case where path = '.' or './sync-in' and removes '.' or './' if exists
-export const filePathSQL = (file: any): SQL<string> => sql`REGEXP_REPLACE(CONCAT(${file.path}, '/', ${file.name}), '^(\\\\.\\\\/){0,1}(.*)', '\\\\2')`
+// Supports path = '.' and removes one leading './' without invoking the regex engine.
+// CHAR_LENGTH keeps the exact-dot case safe with PAD SPACE collations.
+export const filePathSQL = (file: any): SQL<string> => sql`
+  IF (
+    CHAR_LENGTH(${file.path}) = 1 AND ${file.path} = '.',
+    ${file.name},
+    CONCAT(
+      IF (LEFT(${file.path}, 2) = './', SUBSTRING(${file.path}, 3), ${file.path}),
+      '/',
+      ${file.name}
+    )
+  )
+`
 
 // Appending '/' handles both an exact path and its descendants while keeping trailing spaces significant with PAD SPACE collations.
 export const childPathMatch = (pathSQL: SQLWrapper, path: string): SQL<string> =>
