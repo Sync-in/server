@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { configuration } from '../../configuration/config.environment'
 import { FilesContentStoreMySQL } from './adapters/files-content-store-mysql.service'
+import { FilesOperationsController } from './files-operations.controller'
 import { FilesTasksController } from './files-tasks.controller'
 import { FilesController } from './files.controller'
 import { FilesContentStore } from './models/files-content-store'
@@ -32,7 +33,7 @@ import { FilesFavoritesQueries } from './services/files-favorites-queries.servic
       : []),
     ...(configuration.applications.files.editors.collabora.enabled ? [CollaboraOnlineModule] : [])
   ],
-  controllers: [FilesController, FilesTasksController],
+  controllers: [FilesOperationsController, FilesController, FilesTasksController],
   providers: [
     FilesMethods,
     FilesManager,

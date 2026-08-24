@@ -1,0 +1,173 @@
+import {
+  Body,
+  Controller,
+  Copy,
+  Delete,
+  Get,
+  Head,
+  Lock,
+  Logger,
+  Move,
+  ParseBoolPipe,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Put,
+  Query,
+  Req,
+  Res,
+  StreamableFile,
+  Unlock,
+  UseGuards,
+  UseInterceptors
+} from '@nestjs/common'
+import { FastifyReply } from 'fastify'
+import { webpMimeType } from '../../common/image'
+import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
+import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator'
+import { GetSpace } from '../spaces/decorators/space.decorator'
+import { SpaceGuard } from '../spaces/guards/space.guard'
+import { FastifySpaceRequest } from '../spaces/interfaces/space-request.interface'
+import { SpaceEnv } from '../spaces/models/space-env.model'
+import { GetUser } from '../users/decorators/user.decorator'
+import { UserModel } from '../users/models/user.model'
+import { FILE_OPERATION, FORCE_AS_FILE_OWNER } from './constants/operations'
+import { FILES_ROUTE } from './constants/routes'
+import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto } from './dto/file-operations.dto'
+import type { CopyMoveFileResponse } from './interfaces/copy-move-file.interface'
+import { FileLockProps } from './interfaces/file-props.interface'
+import { FileTask } from './models/file-task'
+import { FilesMethods } from './services/files-methods.service'
+import { FilesTasksManager } from './services/tasks/files-tasks-manager.service'
+
+@Controller(FILES_ROUTE.BASE)
+@UseGuards(SpaceGuard)
+export class FilesOperationsController {
+  private readonly logger = new Logger(FilesOperationsController.name)
+
+  constructor(
+    private readonly filesMethods: FilesMethods,
+    private readonly filesTasksManager: FilesTasksManager
+  ) {}
+
+  // OPERATIONS
+
+  @Head(`${FILES_ROUTE.OPERATION}/*`)
+  async head(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<StreamableFile> {
+    return this.filesMethods.headOrGet(req, res)
+  }
+
+  @Get(`${FILES_ROUTE.OPERATION}/*`)
+  async download(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<StreamableFile> {
+    return this.filesMethods.headOrGet(req, res)
+  }
+
+  @Post(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.MAKE}/*`)
+  async make(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() makeFileDto: MakeFileDto): Promise<void> {
+    return this.filesMethods.make(user, space, makeFileDto)
+  }
+
+  @Post(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
+  async uploadCreate(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
+    return this.filesMethods.upload(req, res)
+  }
+
+  @Put(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
+  async uploadOverwrite(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
+    return this.filesMethods.upload(req, res)
+  }
+
+  @Patch(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UPLOAD}/*`)
+  async uploadContent(@Req() req: FastifySpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<void> {
+    return this.filesMethods.upload(req, res)
+  }
+
+  @Copy(`${FILES_ROUTE.OPERATION}/*`)
+  async copy(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() copyMoveFileDto: CopyMoveFileDto): Promise<CopyMoveFileResponse> {
+    return this.filesMethods.copy(user, space, copyMoveFileDto)
+  }
+
+  @Move(`${FILES_ROUTE.OPERATION}/*`)
+  async move(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() copyMoveFileDto: CopyMoveFileDto): Promise<CopyMoveFileResponse> {
+    return this.filesMethods.move(user, space, copyMoveFileDto)
+  }
+
+  @Delete(`${FILES_ROUTE.OPERATION}/*`)
+  async delete(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<void> {
+    return this.filesMethods.delete(user, space)
+  }
+
+  @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.THUMBNAIL}/*`)
+  async genThumbnail(
+    @GetSpace() space: SpaceEnv,
+    @Query('size', new ParseIntPipe({ optional: true })) size = 256,
+    @Res() res: FastifyReply
+  ): Promise<StreamableFile> {
+    if (size > 1024) size = 1024
+    const thumb = await this.filesMethods.genThumbnail(space, size)
+    res.type(webpMimeType)
+    return res.send(thumb)
+  }
+
+  @Lock(`${FILES_ROUTE.OPERATION}/*`)
+  async lock(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<FileLockProps> {
+    return this.filesMethods.lock(user, space)
+  }
+
+  @Unlock(`${FILES_ROUTE.OPERATION}/*`)
+  async unlock(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Query(FORCE_AS_FILE_OWNER, new ParseBoolPipe({ optional: true })) forceAsFileOwner?: boolean
+  ): Promise<void> {
+    return this.filesMethods.unlock(user, space, forceAsFileOwner)
+  }
+
+  @Unlock(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UNLOCK_REQUEST}/*`)
+  @UseInterceptors(ContextInterceptor)
+  async unlockRequest(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<void> {
+    return this.filesMethods.unlockRequest(user, space)
+  }
+
+  @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.GET_SIZE}/*`)
+  async getSize(@GetSpace() space: SpaceEnv): Promise<{ size: number }> {
+    return this.filesMethods.getSize(space)
+  }
+
+  // TASKS OPERATIONS
+
+  @Post(`${FILES_ROUTE.TASK_OPERATION}/${FILE_OPERATION.DOWNLOAD}/*`)
+  async downloadFromUrlAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() downloadFileDto: DownloadFileDto): Promise<FileTask> {
+    return this.filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, space, downloadFileDto, this.filesMethods.downloadFromUrl.name)
+  }
+
+  @Post(`${FILES_ROUTE.TASK_OPERATION}/${FILE_OPERATION.COMPRESS}/*`)
+  @SkipSpacePermissionsCheck()
+  // Can be used to create or download an archive of files; permissions are checked later
+  async compressAsTask(@Req() req: FastifySpaceRequest, @Body() compressFileDto: CompressFileDto): Promise<FileTask> {
+    if (compressFileDto.compressInDirectory) {
+      await SpaceGuard.checkPermissions(req, this.logger)
+    }
+    return this.filesTasksManager.createTask(FILE_OPERATION.COMPRESS, req.user, req.space, compressFileDto, this.filesMethods.compress.name)
+  }
+
+  @Post(`${FILES_ROUTE.TASK_OPERATION}/${FILE_OPERATION.DECOMPRESS}/*`)
+  async decompressAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<FileTask> {
+    return this.filesTasksManager.createTask(FILE_OPERATION.DECOMPRESS, user, space, null, this.filesMethods.decompress.name)
+  }
+
+  @Copy(`${FILES_ROUTE.TASK_OPERATION}/*`)
+  async copyAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() copyMoveFileDto: CopyMoveFileDto): Promise<FileTask> {
+    return this.filesTasksManager.createTask(FILE_OPERATION.COPY, user, space, copyMoveFileDto, this.filesMethods.copy.name)
+  }
+
+  @Move(`${FILES_ROUTE.TASK_OPERATION}/*`)
+  async moveAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() copyMoveFileDto: CopyMoveFileDto): Promise<FileTask> {
+    return this.filesTasksManager.createTask(FILE_OPERATION.MOVE, user, space, copyMoveFileDto, this.filesMethods.move.name)
+  }
+
+  @Delete(`${FILES_ROUTE.TASK_OPERATION}/*`)
+  async deleteAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<FileTask> {
+    return this.filesTasksManager.createTask(FILE_OPERATION.DELETE, user, space, null, this.filesMethods.delete.name)
+  }
+}
