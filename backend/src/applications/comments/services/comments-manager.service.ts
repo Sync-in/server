@@ -36,7 +36,7 @@ export class CommentsManager {
       // If path is empty a file with path = '.' and name = '.' will be created
       // The space browser does not support this kind of file and will remove it
       // Maybe to implement later
-      throw new HttpException(`Not supported on this kind of ${space.dbFile.spaceExternalRootId ? 'space root' : 'share'}`, HttpStatus.BAD_REQUEST)
+      throw new HttpException('Not supported on this kind of location', HttpStatus.BAD_REQUEST)
     }
     let fileId: number
     if (createCommentDto.fileId > 0) {

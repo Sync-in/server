@@ -20,8 +20,10 @@ import {
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
 import type { FileProps } from '../../files/interfaces/file-props.interface'
 import type { FileSpace } from '../../files/interfaces/file-space.interface'
+import { filesFavorites } from '../../files/schemas/files-favorites.schema'
 import { filePathSQL, files } from '../../files/schemas/files.schema'
 import { links } from '../../links/schemas/links.schema'
+import type { SpaceBrowseDetails } from '../../spaces/interfaces/space-files.interface'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaceGroupConcatPermissions, spaces } from '../../spaces/schemas/spaces.schema'
@@ -47,6 +49,7 @@ import type { ShareMembers } from '../schemas/share-members.interface'
 import type { Share } from '../schemas/share.interface'
 import { sharesMembers } from '../schemas/shares-members.schema'
 import { shares } from '../schemas/shares.schema'
+import { externalShareScopeSQL } from '../utils/external-share-scope.sql'
 
 @Injectable()
 export class SharesQueries {
@@ -704,37 +707,7 @@ export class SharesQueries {
       // For A -> B -> C, the result maps A, B and C to the storage scope A.
       // A missing or non-external parent stops the traversal, leaving the
       // malformed external share without a scope so it can be filtered below.
-      const externalRootScope = sql`
-        (
-          WITH RECURSIVE targetShares (id, parentId, externalPath) AS
-                           (${externalShareTargets}),
-                         ancestors (targetId, id, parentId, externalPath) AS
-                           (SELECT targetShares.id,
-                                   targetShares.id,
-                                   targetShares.parentId,
-                                   targetShares.externalPath
-                            FROM targetShares
-                            UNION
-                            SELECT ancestors.targetId,
-                                   ${externalParentShare.id},
-                                   ${externalParentShare.parentId},
-                                   ${externalParentShare.externalPath}
-                            FROM ${shares} AS externalParentShare
-                                   INNER JOIN ancestors ON ${externalParentShare.id} = ancestors.parentId
-                            WHERE ${externalParentShare.externalPath} IS NOT NULL),
-                         rootShare (targetId, externalRootShareId) AS
-                           (SELECT ancestors.targetId,
-                                   ancestors.id
-                            FROM ancestors
-                            WHERE ancestors.parentId IS NULL
-                              AND ancestors.externalPath IS NOT NULL)
-          SELECT rootShare.targetId,
-                 rootShare.externalRootShareId
-          FROM rootShare
-        ) AS ${sql.identifier(externalRootScopeAlias)}
-      `
-      const externalRootScopeTargetId = sql<number>`${sql.identifier(externalRootScopeAlias)}.${sql.identifier('targetId')}`
-      const externalRootShareId = sql<number | null>`${sql.identifier(externalRootScopeAlias)}.${sql.identifier('externalRootShareId')}`
+      const externalRootScope = externalShareScopeSQL(externalShareTargets, 'shareRootExternalScope')
       const fromUser = this.fromUserQuery(selectUnion, filters).$dynamic()
       const fromGroups = this.fromGroupsQuery(selectUnion, filters).$dynamic()
       const fromAdminShares = this.fromAdminSharesQuery({ ...selectUnion, rootPermissions: sql`${SHARE_ALL_OPERATIONS}` }, filters).$dynamic()
@@ -798,7 +771,7 @@ export class SharesQueries {
           spaceAlias: unionAlias.originSpaceAlias,
           spaceExternalRootId: unionAlias.originSpaceExternalRootId,
           spaceRootExternalPath: unionAlias.originSpaceRootExternalPath,
-          shareExternalId: externalRootShareId
+          shareExternalId: externalRootScope.storageShareId
         },
         root: {
           id: unionAlias.rootId,
@@ -835,7 +808,7 @@ export class SharesQueries {
         // Non-external shares do not need this scope. An external share must
         // resolve one: otherwise omit it so `updateRootFile()` cannot mistake
         // the share-record owner for the owner of its external storage.
-        .where(or(isNull(unionAlias.rootExternalPath), isNotNull(externalRootShareId)))
+        .where(or(isNull(unionAlias.rootExternalPath), isNotNull(externalRootScope.storageShareId)))
         .groupBy(unionAlias.rootId)
         .prepare()
     }
@@ -856,8 +829,6 @@ export class SharesQueries {
   async permissions(userId: number, shareAlias: string, isAdmin: number = 0): Promise<Partial<SpaceEnv>> {
     if (!this.sharePermissionsQuery) {
       const shareSpaceRoot: any = alias(spacesRoots, 'shareSpaceRoot')
-      const permissionParentShare: any = alias(shares, 'permissionParentShare')
-      const externalRootScopeAlias = 'externalRootScope'
       // Make every file operation through a nested external share address the
       // same file records and locks as an operation through its external root.
       // This storage ancestry is independent from permission inheritance:
@@ -867,47 +838,11 @@ export class SharesQueries {
       // a null `externalParentShareId` and retain their existing fallback scope.
       // A missing or non-external parent produces no root row, so the inner join
       // denies access to a malformed external child before any file operation.
-      const externalRootScope = sql`
-        (
-          WITH RECURSIVE targetShare (id, parentId, externalPath) AS
-                           (SELECT ${shares.id},
-                                   ${shares.parentId},
-                                   ${shares.externalPath}
-                            FROM ${shares}
-                            WHERE ${shares.alias} = ${sql.placeholder('shareAlias')}),
-                         ancestors (targetId, id, parentId, externalPath) AS
-                           (SELECT targetShare.id,
-                                   targetShare.id,
-                                   targetShare.parentId,
-                                   targetShare.externalPath
-                            FROM targetShare
-                            WHERE targetShare.externalPath IS NOT NULL
-                              AND targetShare.parentId IS NOT NULL
-                            UNION
-                            SELECT ancestors.targetId,
-                                   ${permissionParentShare.id},
-                                   ${permissionParentShare.parentId},
-                                   ${permissionParentShare.externalPath}
-                            FROM ${shares} AS permissionParentShare
-                                   INNER JOIN ancestors ON ${permissionParentShare.id} = ancestors.parentId
-                            WHERE ${permissionParentShare.externalPath} IS NOT NULL),
-                         rootShare (targetId, externalRootShareId) AS
-                           (SELECT ancestors.targetId,
-                                   ancestors.id
-                            FROM ancestors
-                            WHERE ancestors.parentId IS NULL
-                              AND ancestors.externalPath IS NOT NULL)
-          SELECT targetShare.id AS targetId,
-                 rootShare.externalRootShareId
-          FROM targetShare
-                 LEFT JOIN rootShare ON rootShare.targetId = targetShare.id
-          WHERE targetShare.externalPath IS NULL
-             OR targetShare.parentId IS NULL
-             OR rootShare.externalRootShareId IS NOT NULL
-        ) AS ${sql.identifier(externalRootScopeAlias)}
-      `
-      const externalRootScopeTargetId = sql<number>`${sql.identifier(externalRootScopeAlias)}.${sql.identifier('targetId')}`
-      const externalRootShareId = sql<number | null>`${sql.identifier(externalRootScopeAlias)}.${sql.identifier('externalRootShareId')}`
+      const targetShare = this.db
+        .select({ id: shares.id, parentId: shares.parentId, externalPath: shares.externalPath })
+        .from(shares)
+        .where(eq(shares.alias, sql.placeholder('shareAlias')))
+      const externalRootScope = externalShareScopeSQL(targetShare, 'permissionExternalScope', { mapExternalRootToSelf: false })
       const selectUnion: SpaceEnv | SelectedFields<any, any> = {
         id: shares.id,
         alias: shares.alias,
@@ -970,13 +905,13 @@ export class SharesQueries {
             root: { id: unionAlias.rootSpaceRootId, externalPath: unionAlias.rootSpaceRootExternalPath }
           },
           externalPath: unionAlias.rootExternalPath,
-          externalParentShareId: externalRootShareId
+          externalParentShareId: externalRootScope.storageShareId
         }
       }
       this.sharePermissionsQuery = this.db
         .select(select)
         .from(unionAlias)
-        .innerJoin(externalRootScope, eq(externalRootScopeTargetId, unionAlias.id))
+        .innerJoin(externalRootScope.table, eq(externalRootScope.targetShareId, unionAlias.id))
         .groupBy(unionAlias.id)
         .limit(1)
         .prepare()

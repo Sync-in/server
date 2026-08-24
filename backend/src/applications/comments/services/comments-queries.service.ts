@@ -7,6 +7,7 @@ import { dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/da
 import { filePathSQL, files } from '../../files/schemas/files.schema'
 import { UserMailNotification } from '../../notifications/interfaces/user-mail-notification.interface'
 import { shares } from '../../shares/schemas/shares.schema'
+import { externalShareScopeSQL } from '../../shares/utils/external-share-scope.sql'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
@@ -40,7 +41,7 @@ export class CommentsQueries {
     return this.db
       .select({
         ...getTableColumns(comments),
-        author: { login: users.login, fullName: userFullNameSQL(users), email: users.email, isAuthor: sql`${users.id} = ${userId}`.mapWith(Boolean) },
+        author: { login: users.login, fullName: userFullNameSQL(users), email: users.email, isAuthor: eq(users.id, userId).mapWith(Boolean) },
         isFileOwner: sql`${+isFileOwner}`.mapWith(Boolean)
       })
       .from(comments)
@@ -100,6 +101,13 @@ export class CommentsQueries {
 
   getRecentsFromShares(userId: number, shareIds: number[], limit: number) {
     const shareFile: any = alias(files, 'shareFile')
+    const externalShareTargets = this.db
+      .select({ id: shares.id, parentId: shares.parentId, externalPath: shares.externalPath })
+      .from(shares)
+      .where(and(isNull(shares.fileId), isNotNull(shares.externalPath), inArray(shares.id, shareIds)))
+    const externalShareScope = externalShareScopeSQL(externalShareTargets, 'commentExternalShareScope', {
+      oneTargetPerStorage: true
+    })
     return this.db
       .select({
         id: comments.id,
@@ -126,13 +134,14 @@ export class CommentsQueries {
       .leftJoin(shareFile, eq(shareFile.id, shares.fileId))
       .leftJoin(spaces, eq(spaces.id, shareFile.spaceId))
       .leftJoin(spacesRoots, eq(spacesRoots.spaceId, spaces.id))
+      .leftJoin(externalShareScope.table, eq(externalShareScope.targetShareId, shares.id))
       .leftJoin(
         files,
         or(
           // file linked to the share
           eq(files.id, shareFile.id),
           // all files with an external share id
-          and(isNull(shareFile.id), eq(files.shareExternalId, shares.id)),
+          and(isNull(shareFile.id), eq(files.shareExternalId, externalShareScope.storageShareId)),
           // all files under the share
           and(
             isNotNull(shareFile.id),
