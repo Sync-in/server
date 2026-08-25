@@ -4,19 +4,42 @@ import { MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { FILE_REPOSITORY } from '../constants/operations'
+import type { FilesSearchTerm } from '../interfaces/files-search-query.interface'
 import { FilesContentStore } from '../models/files-content-store'
 import { FileContent, FileContentRecordMetadata, FileContentRecordMetadataMap } from '../schemas/file-content.interface'
 import { createTableFilesContent, FILES_CONTENT_TABLE_PREFIX } from '../schemas/files-content.schema'
-import { genTermsPattern, likeSearchTermStartPattern, MaxSortedList, parseSearchTerms, SearchTerm } from '../utils/files-search'
+import { genTermsPattern, likeSearchTermStartPattern, MaxSortedList, parseFilesSearchQuery } from '../utils/files-search'
 
 type SearchCandidate = Pick<FileContent, 'id' | 'score'> & { sourceIndex: string }
 type SearchRecord = FileContent & { sourceIndex: string }
-const HIGHLIGHT_CONTEXT_WORD = '(?<![\\p{L}\\p{N}])[\\p{L}\\p{N}]+(?![\\p{L}\\p{N}])'
-const HIGHLIGHT_CONTEXT_SEPARATOR = '[^\\p{L}\\p{N}]'
+interface HighlightMatch {
+  index: number
+  value: string
+}
+interface HighlightContext {
+  start: number
+  end: number
+  matches: HighlightMatch[]
+}
+const HIGHLIGHT_WORD_CHAR = '[\\p{L}\\p{M}\\p{N}]'
+const HIGHLIGHT_TERM_START = `(?<!${HIGHLIGHT_WORD_CHAR})`
+const HIGHLIGHT_TERM_END = `(?!${HIGHLIGHT_WORD_CHAR})`
+const HIGHLIGHT_CONTEXT_SEPARATOR = '[^\\p{L}\\p{M}\\p{N}]'
+const HIGHLIGHT_UNICODE_WORD_CHARACTER_PATTERN = /[\p{L}\p{M}\p{N}]/uy
+const HIGHLIGHT_CONTEXT_WORDS_BEFORE = 10
+const HIGHLIGHT_CONTEXT_WORDS_AFTER = 15
+const HIGHLIGHT_CONTEXT_CHARS_BEFORE = 512
+const HIGHLIGHT_CONTEXT_CHARS_AFTER = 768
 const FILES_CONTENT_TABLE_PATTERN = new RegExp(`^${FILES_CONTENT_TABLE_PREFIX}(?:${Object.values(FILE_REPOSITORY).join('|')})_[0-9]+$`)
 
 @Injectable()
 export class FilesContentStoreMySQL implements FilesContentStore {
+  private static readonly INVALID_TRAILING_FULL_TEXT_OPERATORS = new Set(['+', '-'])
+  private static readonly FULL_TEXT_WHITESPACE_PATTERN = /\s/u
+  private static readonly FULL_TEXT_TERM_CHARACTER_PATTERN = /[\p{L}\p{M}\p{N}]/u
+  private static readonly FULL_TEXT_COMPOUND_TERM_PATTERN =
+    /(^|[\s(])([+-]?)([\p{L}\p{M}\p{N}]+(?:[^\p{L}\p{M}\p{N}\s"]+[\p{L}\p{M}\p{N}]+)+)(?=[\s),.!?;:]|$)/gu
+  private static readonly FULL_TEXT_TERM_TOKEN_PATTERN = /[\p{L}\p{M}\p{N}]+/gu
   private readonly logger = new Logger(FilesContentStoreMySQL.name)
 
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
@@ -36,8 +59,8 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   }
 
   async existingIndexes(tableSuffixes: string[]): Promise<string[]> {
-    const currentTables = await this.indexesList()
-    return tableSuffixes.map((suffix) => this.getIndexName(suffix)).filter((table) => currentTables.indexOf(table) > -1)
+    const currentTables = new Set(await this.indexesList())
+    return tableSuffixes.map((suffix) => this.getIndexName(suffix)).filter((table) => currentTables.has(table))
   }
 
   async createIndex(tableName: string): Promise<boolean> {
@@ -130,14 +153,11 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   }
 
   async searchRecords(tableNames: string[], search: string, limit: number): Promise<FileContent[]> {
-    const searchTerms = parseSearchTerms(search)
-    const positiveTerms = searchTerms.filter(({ operator }) => operator !== 'excluded')
-    const requiredTerms = searchTerms.filter(({ operator }) => operator === 'required')
-    const optionalTerms = searchTerms.filter(({ operator }) => operator === 'optional')
-    const excludedTerms = searchTerms.filter(({ operator }) => operator === 'excluded')
+    const normalizedSearch = FilesContentStoreMySQL.normalizeFullTextSearch(search)
+    const { terms: searchTerms, positiveTerms, requiredTerms, optionalTerms, excludedTerms } = parseFilesSearchQuery(normalizedSearch)
     const terms = positiveTerms.map(({ regexpValue }) => regexpValue)
     const useLikeSearch = searchTerms.some(({ requiresLike }) => requiresLike)
-    this.logger.verbose({ tag: this.searchRecords.name, msg: `convert ${search} -> ${JSON.stringify(terms)}` })
+    this.logger.verbose({ tag: this.searchRecords.name, msg: `convert ${search} -> ${normalizedSearch} -> ${JSON.stringify(terms)}` })
     if (!terms.length) {
       return []
     }
@@ -151,9 +171,9 @@ export class FilesContentStoreMySQL implements FilesContentStore {
             const optionalMatch = createContentMatch(optionalTerms, ' OR ')
             const positiveMatch = requiredMatch || optionalMatch
             const excludedMatch = createContentMatch(excludedTerms, ' AND ', true)
-            const score = positiveTerms.reduce<SQL>(
+            const score = optionalTerms.reduce<SQL>(
               (value, term) => sql`${value} + IF(content LIKE ${toLikePattern(term.rawValue)} ESCAPE '=', 1, 0)`,
-              sql`0`
+              sql`${requiredTerms.length}`
             )
             return sql`(SELECT ${tableName} as sourceIndex, id, ${score} as score
               FROM ${sql.identifier(tableName)}
@@ -163,7 +183,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
               LIMIT ${limit})`
           }
 
-          const fullTextMatch = sql`MATCH (content) AGAINST ( ${search} IN BOOLEAN MODE )`
+          const fullTextMatch = sql`MATCH (content) AGAINST ( ${normalizedSearch} IN BOOLEAN MODE )`
           return sql`(SELECT ${tableName} as sourceIndex, id, ${fullTextMatch} as score
               FROM ${sql.identifier(tableName)}
               WHERE ${fullTextMatch}
@@ -175,14 +195,13 @@ export class FilesContentStoreMySQL implements FilesContentStore {
       .append(sql` ORDER BY score DESC LIMIT ${limit}`)
 
     const [candidateRecords]: SearchCandidate[][] = (await this.db.execute(q)) as MySqlQueryResult
-    const selectedCandidates = candidateRecords.slice(0, limit)
-    if (!selectedCandidates.length) {
+    if (!candidateRecords.length) {
       return []
     }
 
     // Load LONGTEXT only for the final candidates to avoid carrying it through UNION and ORDER BY.
     const idsByIndex = new Map<string, number[]>()
-    for (const candidate of selectedCandidates) {
+    for (const candidate of candidateRecords) {
       const ids = idsByIndex.get(candidate.sourceIndex) || []
       ids.push(candidate.id)
       idsByIndex.set(candidate.sourceIndex, ids)
@@ -201,28 +220,16 @@ export class FilesContentStoreMySQL implements FilesContentStore {
     )
     const [loadedRecords]: SearchRecord[][] = (await this.db.execute(recordsQuery)) as MySqlQueryResult
     const recordsByKey = new Map(loadedRecords.map((record) => [`${record.sourceIndex}:${record.id}`, record]))
-    const records = selectedCandidates.flatMap((candidate) => {
+    const records = candidateRecords.flatMap((candidate) => {
       const record = recordsByKey.get(`${candidate.sourceIndex}:${candidate.id}`)
       return record ? [{ ...record, score: candidate.score }] : []
     })
 
-    const termsPattern = `(${genTermsPattern(terms)})`
-    const termsRegexp = new RegExp(
-      `(?:${HIGHLIGHT_CONTEXT_WORD}${HIGHLIGHT_CONTEXT_SEPARATOR}{0,4}){0,10}(?:\\b|${likeSearchTermStartPattern()})${termsPattern}(?:\\s*\\S*){0,15}`,
-      'giu'
-    )
-
-    const termsHighlightRegexp = new RegExp(termsPattern, 'giu')
+    const termsHighlightRegexp = new RegExp(`(${FilesContentStoreMySQL.genFullTextHighlightPattern(positiveTerms)})`, 'giu')
     for (const r of records) {
-      const maxSortedList = new MaxSortedList(5)
-      for (const i of r.content.matchAll(termsRegexp)) {
-        const matches: string[] = i[0].match(termsHighlightRegexp).map((term) => term.toLowerCase())
-        const nbDifferentWords: number = matches.length === 1 ? 1 : parseFloat(`${new Set(matches).size}.${matches.length}`)
-        maxSortedList.insert([nbDifferentWords, i[0]])
-      }
+      r.matches = FilesContentStoreMySQL.extractHighlightedMatches(r.content, termsHighlightRegexp)
       // Do not expose the full indexed content in search results.
       r.content = undefined
-      r.matches = maxSortedList.data.map(([_nb, content]) => content.replace(termsHighlightRegexp, '<mark>$1</mark>'))
     }
     return records.map(({ sourceIndex: _sourceIndex, ...record }) => record)
   }
@@ -244,6 +251,169 @@ export class FilesContentStoreMySQL implements FilesContentStore {
     }
   }
 
+  private static normalizeFullTextSearch(search: string): string {
+    const searchWithQuotedCompounds = this.quoteUnquotedFullTextCompoundTerms(search)
+    let normalizedSearch = ''
+    let quoted = false
+    for (let index = 0; index < searchWithQuotedCompounds.length; index++) {
+      const character = searchWithQuotedCompounds[index]
+      if (character === '"') {
+        quoted = !quoted
+        normalizedSearch += character
+        continue
+      }
+      if (!quoted && this.INVALID_TRAILING_FULL_TEXT_OPERATORS.has(character)) {
+        let operatorEnd = index + 1
+        while (this.INVALID_TRAILING_FULL_TEXT_OPERATORS.has(searchWithQuotedCompounds[operatorEnd])) {
+          operatorEnd++
+        }
+        const previousCharacter = searchWithQuotedCompounds[index - 1]
+        const isLeadingOperator = index === 0 || previousCharacter === '(' || this.FULL_TEXT_WHITESPACE_PATTERN.test(previousCharacter)
+        const nextCodePoint = searchWithQuotedCompounds.codePointAt(operatorEnd)
+        const nextCharacter = nextCodePoint === undefined ? undefined : String.fromCodePoint(nextCodePoint)
+        const hasValidTarget =
+          nextCharacter !== undefined &&
+          (this.FULL_TEXT_TERM_CHARACTER_PATTERN.test(nextCharacter) || (isLeadingOperator && (nextCharacter === '(' || nextCharacter === '"')))
+        if (!hasValidTarget) {
+          index = operatorEnd - 1
+          continue
+        }
+        normalizedSearch += isLeadingOperator ? character : searchWithQuotedCompounds.slice(index, operatorEnd)
+        index = operatorEnd - 1
+        continue
+      }
+      normalizedSearch += character
+    }
+    return normalizedSearch
+  }
+
+  private static quoteUnquotedFullTextCompoundTerms(search: string): string {
+    let normalizedSearch = ''
+    let quoted = false
+    let segmentStart = 0
+    for (let index = 0; index < search.length; index++) {
+      if (search[index] !== '"') continue
+      const segment = search.slice(segmentStart, index)
+      normalizedSearch += quoted ? segment : segment.replace(this.FULL_TEXT_COMPOUND_TERM_PATTERN, '$1$2"$3"')
+      normalizedSearch += '"'
+      quoted = !quoted
+      segmentStart = index + 1
+    }
+    const segment = search.slice(segmentStart)
+    return normalizedSearch + (quoted ? segment : segment.replace(this.FULL_TEXT_COMPOUND_TERM_PATTERN, '$1$2"$3"'))
+  }
+
+  private static genFullTextHighlightPattern(terms: FilesSearchTerm[]): string {
+    const termStart = `(?:${HIGHLIGHT_TERM_START}|${likeSearchTermStartPattern()})`
+    const patterns = terms.map(({ rawValue, regexpValue, requiresLike, wildcard }) => {
+      const tokens = rawValue.match(this.FULL_TEXT_TERM_TOKEN_PATTERN) || []
+      const termPattern = tokens.length
+        ? tokens.map((token) => genTermsPattern([token])).join(`${HIGHLIGHT_CONTEXT_SEPARATOR}+`)
+        : genTermsPattern([regexpValue])
+      return `${termStart}${termPattern}${requiresLike || wildcard ? '' : HIGHLIGHT_TERM_END}`
+    })
+    return [...new Set(patterns)].sort((left, right) => right.length - left.length).join('|')
+  }
+
+  private static extractHighlightedMatches(content: string, termsRegexp: RegExp): string[] {
+    const maxSortedList = new MaxSortedList<HighlightContext>(5)
+    let previousContextEnd = 0
+    termsRegexp.lastIndex = 0
+    let match = termsRegexp.exec(content)
+    while (match !== null) {
+      const contextStart = Math.max(this.findHighlightContextStart(content, match.index), previousContextEnd)
+      let contextEnd = this.findHighlightContextEnd(content, match.index + match[0].length)
+      const matches: HighlightMatch[] = [{ index: match.index, value: match[0] }]
+      const distinctTerms = new Set([match[0].toLowerCase()])
+
+      let nextMatch = termsRegexp.exec(content)
+      while (nextMatch !== null && nextMatch.index < contextEnd) {
+        matches.push({ index: nextMatch.index, value: nextMatch[0] })
+        distinctTerms.add(nextMatch[0].toLowerCase())
+        contextEnd = Math.max(contextEnd, nextMatch.index + nextMatch[0].length)
+        nextMatch = termsRegexp.exec(content)
+      }
+      const score = distinctTerms.size * 1000 + Math.min(matches.length, 999)
+      maxSortedList.insert([score, { start: contextStart, end: contextEnd, matches }])
+      previousContextEnd = contextEnd
+      match = nextMatch
+    }
+    termsRegexp.lastIndex = 0
+    return maxSortedList.data.map(([_score, context]) => this.renderHighlightedContext(content, context))
+  }
+
+  private static renderHighlightedContext(content: string, context: HighlightContext): string {
+    const highlightedParts: string[] = []
+    let cursor = context.start
+    for (const match of context.matches) {
+      highlightedParts.push(content.slice(cursor, match.index), '<mark>', match.value, '</mark>')
+      cursor = match.index + match.value.length
+    }
+    highlightedParts.push(content.slice(cursor, context.end))
+    return highlightedParts.join('')
+  }
+
+  private static findHighlightContextStart(content: string, matchStart: number): number {
+    if (matchStart === 0) return 0
+    const previousIndex = this.previousCharacterIndex(content, matchStart)
+    if (this.isHighlightWordCharacterAt(content, previousIndex)) return matchStart
+
+    const minIndex = Math.max(0, matchStart - HIGHLIGHT_CONTEXT_CHARS_BEFORE)
+    let index = matchStart
+    let insideWord = false
+    let words = 0
+    while (index > minIndex) {
+      const characterIndex = this.previousCharacterIndex(content, index)
+      const isWordCharacter = this.isHighlightWordCharacterAt(content, characterIndex)
+      if (!isWordCharacter && insideWord && ++words === HIGHLIGHT_CONTEXT_WORDS_BEFORE) break
+      index = characterIndex
+      insideWord = isWordCharacter
+    }
+    return index
+  }
+
+  private static findHighlightContextEnd(content: string, matchEnd: number): number {
+    const maxIndex = Math.min(content.length, matchEnd + HIGHLIGHT_CONTEXT_CHARS_AFTER)
+    let index = matchEnd
+    let insideWord = matchEnd > 0 && this.isHighlightWordCharacterAt(content, this.previousCharacterIndex(content, matchEnd))
+    let words = 0
+    while (index < maxIndex) {
+      const characterEnd = this.nextCharacterIndex(content, index)
+      const isWordCharacter = this.isHighlightWordCharacterAt(content, index)
+      if (isWordCharacter && !insideWord) {
+        if (words === HIGHLIGHT_CONTEXT_WORDS_AFTER) break
+        words++
+      }
+      index = characterEnd
+      insideWord = isWordCharacter
+    }
+    return index
+  }
+
+  private static previousCharacterIndex(value: string, index: number): number {
+    const characterIndex = index - 1
+    if (characterIndex === 0) return 0
+    const character = value.charCodeAt(characterIndex)
+    const previousCharacter = value.charCodeAt(characterIndex - 1)
+    return character >= 0xdc00 && character <= 0xdfff && previousCharacter >= 0xd800 && previousCharacter <= 0xdbff
+      ? characterIndex - 1
+      : characterIndex
+  }
+
+  private static nextCharacterIndex(value: string, index: number): number {
+    const codePoint = value.codePointAt(index)
+    return index + (codePoint !== undefined && codePoint > 0xffff ? 2 : 1)
+  }
+
+  private static isHighlightWordCharacterAt(value: string, index: number): boolean {
+    const codeUnit = value.charCodeAt(index)
+    if (codeUnit <= 0x7f) {
+      return (codeUnit >= 0x30 && codeUnit <= 0x39) || (codeUnit >= 0x41 && codeUnit <= 0x5a) || (codeUnit >= 0x61 && codeUnit <= 0x7a)
+    }
+    HIGHLIGHT_UNICODE_WORD_CHARACTER_PATTERN.lastIndex = index
+    return HIGHLIGHT_UNICODE_WORD_CHARACTER_PATTERN.test(value)
+  }
+
   private async getIndexes(): Promise<Record<string, string>[]> {
     return (await this.db.execute(sql`SHOW TABLES LIKE ${`${FILES_CONTENT_TABLE_PREFIX}%`}`))[0] as any
   }
@@ -262,7 +432,7 @@ function toLikePattern(term: string): string {
   return `%${term.replaceAll('=', '==').replaceAll('%', '=%').replaceAll('_', '=_')}%`
 }
 
-function createContentMatch(terms: SearchTerm[], separator: ' AND ' | ' OR ', negate = false): SQL | null {
+function createContentMatch(terms: FilesSearchTerm[], separator: ' AND ' | ' OR ', negate = false): SQL | null {
   if (!terms.length) return null
   return sql.join(
     terms.map(({ rawValue }) =>

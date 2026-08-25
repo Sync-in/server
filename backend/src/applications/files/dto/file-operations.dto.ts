@@ -1,9 +1,23 @@
 import { Transform } from 'class-transformer'
-import { ArrayMinSize, IsArray, IsBoolean, IsDefined, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, Max, Min } from 'class-validator'
+import {
+  ArrayMinSize,
+  IsArray,
+  IsBoolean,
+  IsDefined,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Max,
+  MaxLength,
+  Min
+} from 'class-validator'
 import { RejectIfMatch } from '../../../common/decorators'
 import { regExpInvalidFileName } from '../../../common/shared'
 import { TAR_EXTENSION, ZIP_EXTENSION } from '../constants/compress'
-import { SEARCH_FILES_DEFAULT_LIMIT, SEARCH_FILES_MAX_LIMIT, SEARCH_FILES_MIN_LIMIT } from '../constants/search'
+import { SEARCH_FILES_DEFAULT_LIMIT, SEARCH_FILES_MAX_LIMIT, SEARCH_FILES_MAX_QUERY_LENGTH, SEARCH_FILES_MIN_LIMIT } from '../constants/search'
 
 export class CopyMoveFileDto {
   @IsNotEmpty()
@@ -70,6 +84,7 @@ export class CompressFileDto {
 export class SearchFilesDto {
   @IsNotEmpty()
   @IsString()
+  @MaxLength(SEARCH_FILES_MAX_QUERY_LENGTH)
   @Transform(({ value }) => (value ? value.trim() : null))
   content: string
 

@@ -57,12 +57,13 @@ export class FilesSearchManager {
     try {
       return await this.filesIndexer.searchRecords(indexNames, search, limit)
     } catch (e) {
-      this.logger.error({ tag: this.searchFullText.name, msg: `${JSON.stringify(indexNames)} - ${search} : ${e}` })
+      const error = e instanceof Error ? e : new Error(`${e}`)
+      this.logger.error({ tag: this.searchFullText.name, msg: `${JSON.stringify(indexNames)} - ${search}`, err: error })
       let msg: string
-      if (/Invalid regular expression/.test(e.message)) {
+      if (/Invalid regular expression/.test(error.message)) {
         msg = 'SyntaxError (check special characters)'
       } else {
-        msg = e.message
+        msg = 'Unable to perform full-text search'
       }
       throw new HttpException(msg, HttpStatus.BAD_REQUEST)
     }

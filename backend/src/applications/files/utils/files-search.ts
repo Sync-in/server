@@ -1,48 +1,36 @@
 import { regexpEscape } from '../../../common/functions'
 import { MIN_CHARS_TO_SEARCH } from '../constants/indexing'
 import { SEARCH_FILES_DEFAULT_LIMIT, SEARCH_FILES_MAX_LIMIT, SEARCH_FILES_MIN_LIMIT } from '../constants/search'
+import type { FilesSearchQuery, FilesSearchTerm } from '../interfaces/files-search-query.interface'
 
-const regexMatchSearchBoolean = new RegExp(`([+-]?)(?:"([^"]+)"|(\\S+))`)
-const regexMatchesSearchBoolean = new RegExp(regexMatchSearchBoolean.source, 'g')
-const booleanOperators = new Set(['+', '-', '<', '>', '~', '*'])
-const UNICODE_WORD_CHAR = '[\\p{L}\\p{N}]'
+const SEARCH_TERMS_PATTERN = /([+-]?)(?:"([^"]+)"|(\S+))/g
+const LEADING_BOOLEAN_OPERATORS = new Set(['+', '-', '<', '>', '~', '*'])
+const UNICODE_WORD_CHAR = '[\\p{L}\\p{M}\\p{N}]'
 const LIKE_SEARCH_CHAR =
   '[\\p{Script=Han}\\p{Script=Hiragana}\\p{Script=Katakana}\\p{Script=Hangul}\\p{Script=Thai}\\p{Script=Lao}\\p{Script=Khmer}\\p{Script=Myanmar}]'
-const regexRequiresLikeSearch = new RegExp(LIKE_SEARCH_CHAR, 'u')
-const accentToBaseMap = new Map<string, string>([
-  ['a', '[aàáâä]'],
-  ['e', '[eèéêë]'],
-  ['i', '[iìíîï]'],
-  ['o', '[oòóôö]'],
-  ['u', '[uùúûü]'],
-  ['c', '[cç]'],
-  ['n', '[nñ]'],
-  ['s', '[sš]'],
-  ['z', '[zž]'],
-  ['y', '[yýÿ]']
-])
+const REQUIRES_LIKE_SEARCH_PATTERN = new RegExp(LIKE_SEARCH_CHAR, 'u')
+const ACCENT_INSENSITIVE_CHARACTER_GROUPS = ['aàáâä', 'eèéêë', 'iìíîï', 'oòóôö', 'uùúûü', 'cç', 'nñ', 'sš', 'zž', 'yýÿ']
+const ACCENT_INSENSITIVE_PATTERN_BY_CHARACTER = new Map<string, string>(
+  ACCENT_INSENSITIVE_CHARACTER_GROUPS.flatMap((characters) => {
+    const pattern = `[${characters}]`
+    return [...characters].map((character) => [character, pattern] as const)
+  })
+)
 
-export interface SearchTerm {
-  rawValue: string
-  regexpValue: string
-  operator: 'required' | 'excluded' | 'optional'
-  requiresLike: boolean
-}
-
-export class MaxSortedList {
-  public data: [number, string][] = []
+export class MaxSortedList<T = string> {
+  public data: [number, T][] = []
   public nbItems: number
 
   constructor(nbItems: number) {
     this.nbItems = nbItems
   }
 
-  insert(item: [number, string]) {
+  insert(item: [number, T]) {
     if (this.data.length === 0) {
       this.data.push(item)
       return
     }
-    // if score is smaller or the score already stored for another string ignore it and keep the first matches.
+    // If the score is smaller or already stored for another item, keep the first matches.
     if (this.data.length === this.nbItems && (item[0] < this.data[this.data.length - 1][0] || this.data.some(([num]) => num === item[0]))) {
       return
     }
@@ -86,33 +74,47 @@ export function genRegexPositiveAndNegativeTerms(search: string): RegExp {
   return new RegExp(`^${p}(?!.*(${n})).*$`, 'iu')
 }
 
-export function requiresLikeSearch(input: string): boolean {
-  return regexRequiresLikeSearch.test(input)
+export function parseFilesSearchQuery(search: string): FilesSearchQuery {
+  const terms = parseSearchTerms(search)
+  return {
+    terms,
+    positiveTerms: terms.filter(({ operator }) => operator !== 'excluded'),
+    requiredTerms: terms.filter(({ operator }) => operator === 'required'),
+    optionalTerms: terms.filter(({ operator }) => operator === 'optional'),
+    excludedTerms: terms.filter(({ operator }) => operator === 'excluded')
+  }
 }
 
-export function parseSearchTerms(search: string): SearchTerm[] {
-  return (search.match(regexMatchesSearchBoolean) || []).flatMap((match: string) => {
-    const [, operator, quoted, unquoted] = match.match(regexMatchSearchBoolean)
-    let rawValue = (quoted || unquoted).trim()
-    while (booleanOperators.has(rawValue[0])) {
+export function parseSearchTerms(search: string): FilesSearchTerm[] {
+  const terms: FilesSearchTerm[] = []
+  for (const [, operator, quotedValue, unquotedValue] of search.matchAll(SEARCH_TERMS_PATTERN)) {
+    const quoted = quotedValue !== undefined
+    let rawValue = (quotedValue || unquotedValue).trim()
+    while (LEADING_BOOLEAN_OPERATORS.has(rawValue[0])) {
       rawValue = rawValue.substring(1)
     }
-    if (rawValue[rawValue.length - 1] === '*') {
+    const wildcard = rawValue.endsWith('*')
+    if (wildcard) {
       rawValue = rawValue.substring(0, rawValue.length - 1)
     }
     if (rawValue.length < MIN_CHARS_TO_SEARCH) {
-      return []
+      continue
     }
-    const searchOperator: SearchTerm['operator'] = operator === '+' ? 'required' : operator === '-' ? 'excluded' : 'optional'
-    return [
-      {
-        rawValue,
-        regexpValue: escapeSearchTermRegexp(rawValue),
-        operator: searchOperator,
-        requiresLike: requiresLikeSearch(rawValue)
-      }
-    ]
-  })
+    const searchOperator: FilesSearchTerm['operator'] = operator === '+' ? 'required' : operator === '-' ? 'excluded' : 'optional'
+    terms.push({
+      rawValue,
+      regexpValue: escapeSearchTermRegexp(rawValue),
+      operator: searchOperator,
+      requiresLike: requiresLikeSearch(rawValue),
+      quoted,
+      wildcard
+    })
+  }
+  return terms
+}
+
+export function requiresLikeSearch(input: string): boolean {
+  return REQUIRES_LIKE_SEARCH_PATTERN.test(input)
 }
 
 export function likeSearchTermStartPattern(): string {
@@ -132,11 +134,11 @@ function termBoundaryPattern(term: string, endBoundary = false): string {
 }
 
 function genAccentInsensitiveRegexpPattern(input: string): string {
-  /* Allow to catch all terms with accents or not */
-  return input
-    .split('')
-    .map((char: string) => accentToBaseMap.get(char) || char)
-    .join('')
+  let pattern = ''
+  for (const character of input) {
+    pattern += ACCENT_INSENSITIVE_PATTERN_BY_CHARACTER.get(character.toLowerCase()) || character
+  }
+  return pattern
 }
 
 function escapeSearchTermRegexp(input: string): string {

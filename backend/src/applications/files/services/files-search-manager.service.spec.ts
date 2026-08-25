@@ -162,6 +162,20 @@ describe(FilesSearchManager.name, () => {
     expect(error.message).toBe('SyntaxError (check special characters)')
   })
 
+  it('should keep storage error details in logs but not in the HTTP error', async () => {
+    const storageError = new Error('Failed query: SELECT private_data')
+    const loggerSpy = vi.spyOn((service as any).logger, 'error').mockImplementation(() => undefined)
+    filesIndexer.existingIndexes.mockResolvedValueOnce(['user_5'])
+    filesIndexer.searchRecords.mockRejectedValueOnce(storageError)
+
+    const error = await (service as any).searchFullText(5, [], [], 'report', 5).catch((e: HttpException) => e)
+
+    expect(loggerSpy).toHaveBeenCalledWith(expect.objectContaining({ err: storageError }))
+    expect(error.getStatus()).toBe(HttpStatus.BAD_REQUEST)
+    expect(error.message).toBe('Unable to perform full-text search')
+    expect(error.message).not.toContain('private_data')
+  })
+
   it('should stop filename search when the limit is reached', async () => {
     filesParser.allPaths.mockResolvedValue([
       {

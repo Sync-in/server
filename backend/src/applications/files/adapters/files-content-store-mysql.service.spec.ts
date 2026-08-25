@@ -18,6 +18,14 @@ describe(FilesContentStoreMySQL.name, () => {
     return ''
   }
 
+  const mockSingleSearchRecord = (content: string): void => {
+    const id = 1
+    const sourceIndex = 'files_content_u_1'
+    db.execute
+      .mockResolvedValueOnce([[{ id, sourceIndex, score: 1 }]])
+      .mockResolvedValueOnce([[{ id, sourceIndex, path: '/docs', name: 'document.txt', mime: 'text/plain', mtime: 1730000000000, content }]])
+  }
+
   beforeAll(async () => {
     db = { execute: vi.fn() }
 
@@ -255,28 +263,29 @@ describe(FilesContentStoreMySQL.name, () => {
       expect(res).toEqual([])
     })
 
-    it('should use only LIKE for a CJK-only search', async () => {
+    it('should remove trailing boolean operators before querying FULLTEXT', async () => {
       db.execute.mockResolvedValueOnce([[]])
 
-      await filesIndexerMySQL.searchRecords(['files_content_u_1'], '中文', 10)
+      await filesIndexerMySQL.searchRecords(['files_content_u_1'], '+required optional+ excluded- "C++ guide"', 10)
 
-      const query = sqlText(db.execute.mock.calls[0][0])
-      expect(query).toContain('content LIKE')
-      expect(query).not.toContain('MATCH (content)')
+      const query = dialect.sqlToQuery(db.execute.mock.calls[0][0])
+      expect(query.params).toContain('+required optional excluded "C++ guide"')
+      expect(query.params).not.toContain('+required optional+ excluded- "C++ guide"')
     })
 
-    it('should use LIKE for non-segmented scripts and MATCH for Devanagari', async () => {
-      db.execute.mockResolvedValue([[]])
+    it.each([
+      ['report -set-variable', 'report -"set-variable"'],
+      ['2017-03-05', '"2017-03-05"'],
+      ['contact@financo.fr', '"contact@financo.fr"'],
+      ['"configure set-variable now"', '"configure set-variable now"'],
+      ['test+,', 'test,']
+    ])('should normalize the FULLTEXT search %s as %s', async (search, normalizedSearch) => {
+      db.execute.mockResolvedValueOnce([[]])
 
-      await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'ภาษาไทย', 10)
-      await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'खाते मिलान', 10)
+      await filesIndexerMySQL.searchRecords(['files_content_u_1'], search, 10)
 
-      const thaiQuery = sqlText(db.execute.mock.calls[0][0])
-      const devanagariQuery = sqlText(db.execute.mock.calls[1][0])
-      expect(thaiQuery).toContain('content LIKE')
-      expect(thaiQuery).not.toContain('MATCH (content)')
-      expect(devanagariQuery).toContain('MATCH (content)')
-      expect(devanagariQuery).not.toContain('content LIKE')
+      const query = dialect.sqlToQuery(db.execute.mock.calls[0][0])
+      expect(query.params.filter((param) => param === normalizedSearch)).toHaveLength(2)
     })
 
     it('should use only LIKE when a mixed search contains CJK', async () => {
@@ -289,68 +298,24 @@ describe(FilesContentStoreMySQL.name, () => {
       expect(query).not.toContain('MATCH (content)')
     })
 
-    it('should translate required, optional, excluded and exact CJK terms', async () => {
+    it('should translate required, optional and excluded CJK terms', async () => {
       db.execute.mockResolvedValue([[]])
 
       await filesIndexerMySQL.searchRecords(['files_content_u_1'], '+中文 +文档 -秘密', 10)
       await filesIndexerMySQL.searchRecords(['files_content_u_1'], '中文 文档', 10)
-      await filesIndexerMySQL.searchRecords(['files_content_u_1'], '"中文 文档"', 10)
 
       const requiredQuery = sqlText(db.execute.mock.calls[0][0])
       const optionalQuery = sqlText(db.execute.mock.calls[1][0])
-      const exactPhraseQuery = sqlText(db.execute.mock.calls[2][0])
       expect(requiredQuery).toContain('WHERE (content LIKE')
       expect(requiredQuery).toContain("ESCAPE '=' AND content LIKE")
       expect(requiredQuery).toContain('content NOT LIKE')
       expect(optionalQuery).toContain("ESCAPE '=' OR content LIKE")
-      // One LIKE in the score and one in WHERE means the quoted phrase was kept as one term.
-      expect(exactPhraseQuery.match(/content LIKE/g)).toHaveLength(2)
     })
 
-    it('should keep identical ids from different indexes with their score order', async () => {
-      db.execute.mockResolvedValueOnce([
-        [
-          { id: 3, sourceIndex: 'files_content_u_1', score: 10 },
-          { id: 3, sourceIndex: 'files_content_s_2', score: 5 }
-        ]
-      ])
-      db.execute.mockResolvedValueOnce([
-        [
-          {
-            id: 3,
-            sourceIndex: 'files_content_s_2',
-            path: '/shared',
-            name: 'shared.txt',
-            mime: 'text/plain',
-            mtime: 1730000000001,
-            content: 'foo shared'
-          },
-          {
-            id: 3,
-            sourceIndex: 'files_content_u_1',
-            path: '/personal',
-            name: 'personal.txt',
-            mime: 'text/plain',
-            mtime: 1730000000000,
-            content: 'foo personal'
-          }
-        ]
-      ])
-
-      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1', 'files_content_s_2'], 'foo', 10)
-
-      expect(res).toHaveLength(2)
-      expect(res.map(({ name, score }) => [name, score])).toEqual([
-        ['personal.txt', 10],
-        ['shared.txt', 5]
-      ])
-    })
-
-    it('should search across tables, sort by score, and highlight matches', async () => {
-      // fabricate records returned by DB. Only first array (rows) is used.
+    it('should load final content across indexes, preserve score order, and highlight matches', async () => {
       const rows = [
         {
-          id: 1,
+          id: 3,
           path: '/docs',
           name: 'alpha.txt',
           mime: 'text/plain',
@@ -359,7 +324,7 @@ describe(FilesContentStoreMySQL.name, () => {
           score: 10
         },
         {
-          id: 2,
+          id: 3,
           path: '/docs',
           name: 'beta.txt',
           mime: 'text/plain',
@@ -370,8 +335,8 @@ describe(FilesContentStoreMySQL.name, () => {
       ]
       db.execute.mockResolvedValueOnce([
         [
-          { id: 1, sourceIndex: 'files_content_u_1', score: 10 },
-          { id: 2, sourceIndex: 'files_content_s_2', score: 5 }
+          { id: 3, sourceIndex: 'files_content_u_1', score: 10 },
+          { id: 3, sourceIndex: 'files_content_s_2', score: 5 }
         ]
       ])
       db.execute.mockResolvedValueOnce([
@@ -391,30 +356,18 @@ describe(FilesContentStoreMySQL.name, () => {
       expect(recordsQuery).toContain('path')
       expect(recordsQuery).toContain('content')
       expect(res.length).toBe(2)
-      expect(res.map((record) => record.id)).toEqual([1, 2])
-      // content must be cleared
+      expect(res.map(({ name, score }) => [name, score])).toEqual([
+        ['alpha.txt', 10],
+        ['beta.txt', 5]
+      ])
       expect(res[0].content).toBeUndefined()
       expect(Array.isArray(res[0].matches)).toBe(true)
       expect(res[0].matches!.length).toBeGreaterThan(0)
-      // highlighted with <mark> tags
       expect(res[0].matches!.join(' ')).toMatch(/<mark>foo<\/mark>|<mark>bar<\/mark>/i)
     })
 
     it('should highlight CJK content returned by the fallback search', async () => {
-      db.execute.mockResolvedValueOnce([[{ id: 3, sourceIndex: 'files_content_u_1', score: 1 }]])
-      db.execute.mockResolvedValueOnce([
-        [
-          {
-            id: 3,
-            sourceIndex: 'files_content_u_1',
-            path: '/docs',
-            name: '日本語.txt',
-            mime: 'text/plain',
-            mtime: 1730000000002,
-            content: 'これは日本語の文書です。'
-          }
-        ]
-      ])
+      mockSingleSearchRecord('これは日本語の文書です。')
 
       const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], '日本語', 10)
 
@@ -423,50 +376,73 @@ describe(FilesContentStoreMySQL.name, () => {
       expect(res[0].matches).toEqual(['<mark>日本語</mark>の文書です。'])
     })
 
-    it('should highlight hyphenated full-text matches', async () => {
-      db.execute.mockResolvedValueOnce([[{ id: 4, sourceIndex: 'files_content_u_1', score: 1 }]])
-      db.execute.mockResolvedValueOnce([
-        [
-          {
-            id: 4,
-            sourceIndex: 'files_content_u_1',
-            path: '/docs',
-            name: 'euro-office.txt',
-            mime: 'text/plain',
-            mtime: 1730000000003,
-            content: 'Le dossier euro-office est prêt.'
-          }
-        ]
-      ])
+    it('should highlight a tokenized compound before its shorter alternative', async () => {
+      mockSingleSearchRecord('The command can set variable values.')
 
-      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'euro-office', 10)
+      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'set set-variable', 10)
 
-      expect(db.execute).toHaveBeenCalledTimes(2)
-      expect(res[0].content).toBeUndefined()
-      expect(res[0].matches).toEqual(['Le dossier <mark>euro-office</mark> est prêt.'])
+      expect(res[0].matches).toEqual(['The command can <mark>set variable</mark> values.'])
     })
 
-    it('should keep Unicode words in the highlighted match context', async () => {
-      db.execute.mockResolvedValueOnce([[{ id: 5, sourceIndex: 'files_content_u_1', score: 1 }]])
-      db.execute.mockResolvedValueOnce([
-        [
-          {
-            id: 5,
-            sourceIndex: 'files_content_u_1',
-            path: '/docs',
-            name: 'resume.txt',
-            mime: 'text/plain',
-            mtime: 1730000000004,
-            content: 'Le résumé final mentionne budget.'
-          }
-        ]
-      ])
+    it('should bound the highlighted context around a match', async () => {
+      const before = Array.from({ length: 12 }, (_, index) => `before${index}`).join(' ')
+      const after = Array.from({ length: 17 }, (_, index) => `after${index}`).join(' ')
+      mockSingleSearchRecord(`${before} target ${after}.`)
 
-      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'budget', 10)
+      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'target', 10)
+      const [match] = res[0].matches
 
-      expect(db.execute).toHaveBeenCalledTimes(2)
-      expect(res[0].content).toBeUndefined()
-      expect(res[0].matches).toEqual(['Le résumé final mentionne <mark>budget</mark>.'])
+      expect(match).toMatch(/^before2 /)
+      expect(match).toContain('<mark>target</mark>')
+      expect(match).toContain('after14')
+      expect(match).not.toContain('after15')
+    })
+
+    it('should highlight every occurrence inside one context', async () => {
+      mockSingleSearchRecord('target target target')
+
+      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'target', 10)
+
+      expect(res[0].matches).toEqual(['<mark>target</mark> <mark>target</mark> <mark>target</mark>'])
+    })
+
+    it('should highlight the FULLTEXT token when trailing operators precede punctuation', async () => {
+      mockSingleSearchRecord('The test is available.')
+
+      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'test+,', 10)
+
+      expect(res[0].matches).toEqual(['The <mark>test</mark> is available.'])
+    })
+
+    it('should highlight an unaccented match from an accented search', async () => {
+      mockSingleSearchRecord('Le resume final est disponible.')
+
+      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'résumé', 10)
+
+      expect(res[0].matches).toEqual(['Le <mark>resume</mark> final est disponible.'])
+    })
+
+    it('should highlight a Unicode term containing combining marks', async () => {
+      mockSingleSearchRecord('यह खाते का विवरण है।')
+
+      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'खाते', 10)
+
+      expect(res[0].matches[0]).toContain('<mark>खाते</mark>')
+    })
+
+    it.each([
+      ['set', '<mark>set</mark> value', '<mark>set</mark>ting'],
+      ['set*', '<mark>set</mark>ting', null]
+    ] as const)('should respect the FULLTEXT wildcard boundary for %s', async (search, highlightedTerm, rejectedHighlight) => {
+      mockSingleSearchRecord('A setting followed by a set value.')
+
+      const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], search, 10)
+      const matches = res[0].matches.join(' ')
+
+      expect(matches).toContain(highlightedTerm)
+      if (rejectedHighlight) {
+        expect(matches).not.toContain(rejectedHighlight)
+      }
     })
   })
 

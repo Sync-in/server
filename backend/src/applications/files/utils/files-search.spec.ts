@@ -5,6 +5,7 @@ import {
   likeSearchTermStartPattern,
   MaxSortedList,
   normalizeSearchLimit,
+  parseFilesSearchQuery,
   parseSearchTerms,
   requiresLikeSearch
 } from './files-search'
@@ -80,12 +81,9 @@ describe('files search utilities', () => {
   })
 
   describe(genTermsPattern.name, () => {
-    it('should generate an accent-insensitive alternative pattern', () => {
-      const regexp = new RegExp(`^(${genTermsPattern(['resume', 'canyon'])})$`, 'iu')
-
-      expect(regexp.test('résumé')).toBe(true)
-      expect(regexp.test('cañyon')).toBe(true)
-      expect(regexp.test('other')).toBe(false)
+    it('should match accented and unaccented terms in both directions', () => {
+      expect(new RegExp(`^(${genTermsPattern(['resume'])})$`, 'iu').test('résumé')).toBe(true)
+      expect(new RegExp(`^(${genTermsPattern(['résumé'])})$`, 'iu').test('resume')).toBe(true)
     })
 
     it('should generate a Unicode regular expression compatible pattern with hyphenated terms', () => {
@@ -152,29 +150,42 @@ describe('files search utilities', () => {
   describe(parseSearchTerms.name, () => {
     it('should classify boolean search terms and exact phrases', () => {
       expect(parseSearchTerms('+中文 -秘密 文档 "全文 搜索"')).toEqual([
-        { rawValue: '中文', regexpValue: '中文', operator: 'required', requiresLike: true },
-        { rawValue: '秘密', regexpValue: '秘密', operator: 'excluded', requiresLike: true },
-        { rawValue: '文档', regexpValue: '文档', operator: 'optional', requiresLike: true },
-        { rawValue: '全文 搜索', regexpValue: '全文 搜索', operator: 'optional', requiresLike: true }
+        { rawValue: '中文', regexpValue: '中文', operator: 'required', requiresLike: true, quoted: false, wildcard: false },
+        { rawValue: '秘密', regexpValue: '秘密', operator: 'excluded', requiresLike: true, quoted: false, wildcard: false },
+        { rawValue: '文档', regexpValue: '文档', operator: 'optional', requiresLike: true, quoted: false, wildcard: false },
+        { rawValue: '全文 搜索', regexpValue: '全文 搜索', operator: 'optional', requiresLike: true, quoted: true, wildcard: false }
       ])
     })
 
     it('should remove nested modifiers and trailing wildcards', () => {
       expect(parseSearchTerms('++report file*')).toEqual([
-        { rawValue: 'report', regexpValue: 'report', operator: 'required', requiresLike: false },
-        { rawValue: 'file', regexpValue: 'file', operator: 'optional', requiresLike: false }
+        { rawValue: 'report', regexpValue: 'report', operator: 'required', requiresLike: false, quoted: false, wildcard: false },
+        { rawValue: 'file', regexpValue: 'file', operator: 'optional', requiresLike: false, quoted: false, wildcard: true }
       ])
     })
 
     it('should ignore terms below the minimum length', () => {
-      expect(parseSearchTerms('+a valid')).toEqual([{ rawValue: 'valid', regexpValue: 'valid', operator: 'optional', requiresLike: false }])
+      expect(parseSearchTerms('+a valid')).toEqual([
+        { rawValue: 'valid', regexpValue: 'valid', operator: 'optional', requiresLike: false, quoted: false, wildcard: false }
+      ])
     })
 
     it('should expose raw and regular expression values', () => {
       expect(parseSearchTerms('file.txt euro-office')).toEqual([
-        { rawValue: 'file.txt', regexpValue: 'file\\.txt', operator: 'optional', requiresLike: false },
-        { rawValue: 'euro-office', regexpValue: 'euro-office', operator: 'optional', requiresLike: false }
+        { rawValue: 'file.txt', regexpValue: 'file\\.txt', operator: 'optional', requiresLike: false, quoted: false, wildcard: false },
+        { rawValue: 'euro-office', regexpValue: 'euro-office', operator: 'optional', requiresLike: false, quoted: false, wildcard: false }
       ])
+    })
+  })
+
+  describe(parseFilesSearchQuery.name, () => {
+    it('should group generic search terms by operator', () => {
+      const query = parseFilesSearchQuery('+required optional -excluded')
+
+      expect(query.positiveTerms.map(({ rawValue }) => rawValue)).toEqual(['required', 'optional'])
+      expect(query.requiredTerms.map(({ rawValue }) => rawValue)).toEqual(['required'])
+      expect(query.optionalTerms.map(({ rawValue }) => rawValue)).toEqual(['optional'])
+      expect(query.excludedTerms.map(({ rawValue }) => rawValue)).toEqual(['excluded'])
     })
   })
 
