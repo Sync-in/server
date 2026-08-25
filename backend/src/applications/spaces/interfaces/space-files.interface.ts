@@ -12,6 +12,10 @@ export type SpaceBrowseDetails = {
   favorites: boolean
 } | null
 
+export interface GetOrCreateSpaceFileOptions {
+  rejectIdMismatch?: boolean
+}
+
 export interface SpaceFiles {
   space: {
     alias: string

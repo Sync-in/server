@@ -220,7 +220,9 @@ export class SharesManager {
         if (!isSpaceRoot && !isExternalSpaceRoot) {
           const fileProps: FileProps = { ...(await getProps(space.realPath, space.dbFile.path)), id: undefined }
           // get or create file id
-          share.fileId = await this.spacesQueries.getOrCreateSpaceFile(createOrUpdateShareDto.file.id, fileProps, space.dbFile)
+          share.fileId = await this.spacesQueries.getOrCreateSpaceFile(createOrUpdateShareDto.file.id, fileProps, space.dbFile, {
+            rejectIdMismatch: true
+          })
         }
       } else {
         // unexpected case
@@ -387,7 +389,9 @@ export class SharesManager {
     if (!isLinkedToShareSpaceRoot && !isLinkedToShareExternalPath) {
       // fileId is mandatory for a file in a child share
       const fileProps: FileProps = { ...(await getProps(pShareEnv.realPath, pShareEnv.dbFile.path)), id: undefined }
-      fileId = await this.spacesQueries.getOrCreateSpaceFile(createOrUpdateShareDto.file.id, fileProps, pShareEnv.dbFile)
+      fileId = await this.spacesQueries.getOrCreateSpaceFile(createOrUpdateShareDto.file.id, fileProps, pShareEnv.dbFile, {
+        rejectIdMismatch: true
+      })
     }
 
     const share: Partial<Share> = {

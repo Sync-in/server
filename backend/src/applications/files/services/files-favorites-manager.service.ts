@@ -85,28 +85,17 @@ export class FilesFavoritesManager {
 
   async addFavorite(user: UserModel, space: SpaceEnv, fileId: number): Promise<FileFavoriteIdentity> {
     this.checkSupportedTarget(space)
-    const resolvedFileId = await this.resolveFileId(space, fileId)
+    if (!(await isPathExists(space.realPath))) {
+      throw new HttpException('Location not found', HttpStatus.NOT_FOUND)
+    }
+    const fileProps: FileProps = { ...(await getProps(space.realPath, space.dbFile.path)), id: undefined }
+    const resolvedFileId = await this.filesQueries.getOrCreateSpaceFile(fileId, fileProps, space.dbFile, { rejectIdMismatch: true })
     await this.filesFavoritesQueries.addFavorite(user.id, resolvedFileId)
     return { fileId: resolvedFileId }
   }
 
   removeFavorite(user: UserModel, fileId: number): Promise<void> {
     return this.filesFavoritesQueries.removeFavorite(user.id, fileId)
-  }
-
-  private async resolveFileId(space: SpaceEnv, fileId: number): Promise<number> {
-    if (!(await isPathExists(space.realPath))) {
-      throw new HttpException('Location not found', HttpStatus.NOT_FOUND)
-    }
-    const fileProps: FileProps = { ...(await getProps(space.realPath, space.dbFile.path)), id: undefined }
-    const dbFileId = await this.filesQueries.getSpaceFileId(fileProps, space.dbFile)
-    if (dbFileId !== undefined) {
-      if (fileId > 0 && fileId !== dbFileId) {
-        throw new HttpException('File id mismatch', HttpStatus.BAD_REQUEST)
-      }
-      return dbFileId
-    }
-    return this.filesQueries.getOrCreateSpaceFile(fileId, fileProps, space.dbFile)
   }
 
   private checkSupportedTarget(space: SpaceEnv): void {

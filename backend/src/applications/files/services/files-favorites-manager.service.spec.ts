@@ -1,4 +1,4 @@
-import { HttpStatus } from '@nestjs/common'
+import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
 import { SPACE_ALIAS } from '../../spaces/constants/spaces'
@@ -20,7 +20,6 @@ vi.mock('../utils/files', () => ({
 describe(FilesFavoritesManager.name, () => {
   let service: FilesFavoritesManager
   let filesQueries: {
-    getSpaceFileId: Mock
     getOrCreateSpaceFile: Mock
   }
   let filesFavoritesQueries: {
@@ -38,7 +37,6 @@ describe(FilesFavoritesManager.name, () => {
     vi.mocked(isPathExists).mockResolvedValue(true)
     vi.mocked(getProps).mockResolvedValue({ name: 'file.txt', path: 'docs' } as FileProps)
     filesQueries = {
-      getSpaceFileId: vi.fn(),
       getOrCreateSpaceFile: vi.fn()
     }
     filesFavoritesQueries = {
@@ -161,33 +159,32 @@ describe(FilesFavoritesManager.name, () => {
   })
 
   it('should add an already indexed favorite', async () => {
-    filesQueries.getSpaceFileId.mockResolvedValueOnce(42)
+    filesQueries.getOrCreateSpaceFile.mockResolvedValueOnce(42)
+    const space = makeSpace()
 
-    await expect(service.addFavorite(userWithPermissions(), makeSpace(), 42)).resolves.toEqual({ fileId: 42 })
+    await expect(service.addFavorite(userWithPermissions(), space, 42)).resolves.toEqual({ fileId: 42 })
 
-    expect(filesQueries.getOrCreateSpaceFile).not.toHaveBeenCalled()
+    const fileProps = { name: 'file.txt', path: 'docs', id: undefined }
+    expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(42, fileProps, space.dbFile, { rejectIdMismatch: true })
     expect(filesFavoritesQueries.addFavorite).toHaveBeenCalledWith(7, 42)
   })
 
   it('should index an untracked file before adding it', async () => {
-    filesQueries.getSpaceFileId.mockResolvedValueOnce(undefined)
     filesQueries.getOrCreateSpaceFile.mockResolvedValueOnce(84)
     const space = makeSpace()
 
     await expect(service.addFavorite(userWithPermissions(), space, -1)).resolves.toEqual({ fileId: 84 })
 
     const fileProps = { name: 'file.txt', path: 'docs', id: undefined }
-    expect(filesQueries.getSpaceFileId).toHaveBeenCalledWith(fileProps, space.dbFile)
-    expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(-1, fileProps, space.dbFile)
+    expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(-1, fileProps, space.dbFile, { rejectIdMismatch: true })
     expect(filesFavoritesQueries.addFavorite).toHaveBeenCalledWith(7, 84)
   })
 
   it('should reject a favorite when the provided file id does not match the indexed file', async () => {
-    filesQueries.getSpaceFileId.mockResolvedValueOnce(43)
+    filesQueries.getOrCreateSpaceFile.mockRejectedValueOnce(new HttpException('File id mismatch', HttpStatus.BAD_REQUEST))
 
     await expect(service.addFavorite(userWithPermissions(), makeSpace(), 42)).rejects.toMatchObject({ status: HttpStatus.BAD_REQUEST })
 
-    expect(filesQueries.getOrCreateSpaceFile).not.toHaveBeenCalled()
     expect(filesFavoritesQueries.addFavorite).not.toHaveBeenCalled()
   })
 

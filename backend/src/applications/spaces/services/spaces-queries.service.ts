@@ -38,7 +38,7 @@ import { usersGroups } from '../../users/schemas/users-groups.schema'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema'
 import { SPACE_ROLE } from '../constants/spaces'
 import { SpaceMemberDto } from '../dto/create-or-update-space.dto'
-import type { SpaceBrowseDetails } from '../interfaces/space-files.interface'
+import type { GetOrCreateSpaceFileOptions, SpaceBrowseDetails } from '../interfaces/space-files.interface'
 import { SpaceEnv } from '../models/space-env.model'
 import { SpaceProps } from '../models/space-props.model'
 import { SpaceRootProps } from '../models/space-root-props.model'
@@ -708,8 +708,8 @@ export class SpacesQueries {
     return this.filesQueries.getOrCreateUserFile(userId, file)
   }
 
-  getOrCreateSpaceFile(fileId: number, file: FileProps, dbFile: FileDBProps): Promise<number> {
-    return this.filesQueries.getOrCreateSpaceFile(fileId, file, dbFile)
+  getOrCreateSpaceFile(fileId: number, file: FileProps, dbFile: FileDBProps, options: GetOrCreateSpaceFileOptions = {}): Promise<number> {
+    return this.filesQueries.getOrCreateSpaceFile(fileId, file, dbFile, options)
   }
 
   async clearCachePermissions(spaceAlias: string, rootAliases?: string[], userIds?: number[]) {

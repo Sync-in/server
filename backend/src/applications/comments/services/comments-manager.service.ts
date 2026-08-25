@@ -24,8 +24,8 @@ export class CommentsManager {
   ) {}
 
   async getComments(user: UserModel, space: SpaceEnv): Promise<Comment[]> {
-    const fileId: number = await this.getFileId(space)
-    if (!fileId) {
+    const fileId = await this.getFileId(space)
+    if (fileId === undefined) {
       return []
     }
     return this.commentQueries.getComments(user.id, space.dbFile?.ownerId === user.id, fileId)
@@ -38,19 +38,7 @@ export class CommentsManager {
       // Maybe to implement later
       throw new HttpException('Not supported on this kind of location', HttpStatus.BAD_REQUEST)
     }
-    let fileId: number
-    if (createCommentDto.fileId > 0) {
-      const dbFileId = await this.getFileId(space)
-      if (dbFileId === undefined) {
-        fileId = await this.getFileId(space, createCommentDto.fileId)
-      } else if (createCommentDto.fileId !== dbFileId) {
-        throw new HttpException('File id mismatch', HttpStatus.BAD_REQUEST)
-      } else {
-        fileId = dbFileId
-      }
-    } else {
-      fileId = await this.getFileId(space, createCommentDto.fileId)
-    }
+    const fileId = await this.getFileId(space, createCommentDto.fileId)
     const commentId: number = await this.commentQueries.createComment(user.id, fileId, createCommentDto.content)
     this.notify(user, fileId, space, createCommentDto.content).catch((e: Error) => this.logger.error({ tag: this.createComment.name, msg: `${e}` }))
     return (await this.commentQueries.getComments(user.id, space.dbFile?.ownerId === user.id, null, commentId))[0]
@@ -81,14 +69,16 @@ export class CommentsManager {
     }
   }
 
+  private async getFileId(space: SpaceEnv): Promise<number | undefined>
+  private async getFileId(space: SpaceEnv, fileId: number): Promise<number>
   private async getFileId(space: SpaceEnv, fileId?: number): Promise<number | undefined> {
     if (!(await isPathExists(space.realPath))) {
       throw new HttpException('Location not found', HttpStatus.NOT_FOUND)
     }
     const fileProps: FileProps = { ...(await getProps(space.realPath, space.dbFile.path)), id: undefined }
-    if (fileId) {
+    if (fileId !== undefined) {
       // get or create
-      return this.filesQueries.getOrCreateSpaceFile(fileId, fileProps, space.dbFile)
+      return this.filesQueries.getOrCreateSpaceFile(fileId, fileProps, space.dbFile, { rejectIdMismatch: true })
     } else {
       // get only
       return this.filesQueries.getSpaceFileId(fileProps, space.dbFile)

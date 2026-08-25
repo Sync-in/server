@@ -92,6 +92,7 @@ describe(CommentsManager.name, () => {
     vi.mocked(getProps).mockResolvedValue({ name: 'file.txt', path: 'folder' } as FileProps)
     vi.mocked(dirName).mockReturnValue('/space/folder')
     vi.mocked(fileName).mockReturnValue('file.txt')
+    filesQueries.getOrCreateSpaceFile.mockImplementation(async (fileId: number) => fileId)
   })
 
   it('should be defined', () => {
@@ -100,7 +101,7 @@ describe(CommentsManager.name, () => {
 
   describe('getComments', () => {
     it('returns [] if no fileId', async () => {
-      filesQueries.getSpaceFileId.mockResolvedValue(0)
+      filesQueries.getSpaceFileId.mockResolvedValue(undefined)
 
       const res = await commentsManager.getComments(user, makeSpace())
 
@@ -147,7 +148,7 @@ describe(CommentsManager.name, () => {
     })
 
     it('rejects BAD_REQUEST if provided fileId mismatches', async () => {
-      filesQueries.getSpaceFileId.mockResolvedValue(100)
+      filesQueries.getOrCreateSpaceFile.mockRejectedValueOnce(new HttpException('File id mismatch', HttpStatus.BAD_REQUEST))
 
       await expect(commentsManager.createComment(user, makeSpace(), { fileId: 101, content: 'x' } as any)).rejects.toMatchObject({
         status: HttpStatus.BAD_REQUEST
@@ -157,7 +158,6 @@ describe(CommentsManager.name, () => {
     it('uses getOrCreate when fileId > 0 but file is not yet indexed', async () => {
       const space = makeSpace()
       const fileProps = { name: 'file.txt', path: 'folder', id: undefined }
-      filesQueries.getSpaceFileId.mockResolvedValue(undefined)
       filesQueries.getOrCreateSpaceFile.mockResolvedValue(77)
       commentQueries.createComment.mockResolvedValue(1)
       commentQueries.getComments.mockResolvedValue([{ id: 1, fileId: 77, content: 'hi' }])
@@ -165,9 +165,8 @@ describe(CommentsManager.name, () => {
 
       const res = await commentsManager.createComment(user, space, { fileId: 42, content: 'hi' } as any)
 
-      expect(filesQueries.getSpaceFileId).toHaveBeenCalledTimes(1)
-      expect(filesQueries.getSpaceFileId).toHaveBeenCalledWith(fileProps, space.dbFile)
-      expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(42, fileProps, space.dbFile)
+      expect(filesQueries.getSpaceFileId).not.toHaveBeenCalled()
+      expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(42, fileProps, space.dbFile, { rejectIdMismatch: true })
       expect(commentQueries.createComment).toHaveBeenCalledWith(42, 77, 'hi')
       expect(res).toMatchObject({ id: 1, fileId: 77, content: 'hi' })
     })
@@ -186,7 +185,7 @@ describe(CommentsManager.name, () => {
       // Let the microtask run the catch of createComment
       await new Promise((r) => setImmediate(r))
 
-      expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(-1, fileProps, space.dbFile)
+      expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(-1, fileProps, space.dbFile, { rejectIdMismatch: true })
       expect(filesQueries.getSpaceFileId).not.toHaveBeenCalled()
       expect(commentQueries.createComment).toHaveBeenCalledWith(42, 555, 'hello')
       expect(notificationsManager.create).not.toHaveBeenCalled()
@@ -197,7 +196,7 @@ describe(CommentsManager.name, () => {
     })
 
     it('notifies members when present', async () => {
-      filesQueries.getSpaceFileId.mockResolvedValue(10)
+      filesQueries.getOrCreateSpaceFile.mockResolvedValue(10)
       commentQueries.createComment.mockResolvedValue(1)
       commentQueries.getComments.mockResolvedValue([{ id: 1, fileId: 10, content: 'c' }])
       commentQueries.membersToNotify.mockResolvedValue([{ id: 2, email: 'a@b.c' }])
@@ -236,7 +235,7 @@ describe(CommentsManager.name, () => {
     })
 
     it('logs an error if notificationsManager.create rejects (covers catch in notify)', async () => {
-      filesQueries.getSpaceFileId.mockResolvedValue(10)
+      filesQueries.getOrCreateSpaceFile.mockResolvedValue(10)
       commentQueries.createComment.mockResolvedValue(1)
       commentQueries.getComments.mockResolvedValue([{ id: 1, fileId: 10, content: 'c' }])
       commentQueries.membersToNotify.mockResolvedValue([{ id: 2, email: 'a@b.c' }])
@@ -254,7 +253,7 @@ describe(CommentsManager.name, () => {
     })
 
     it('does not notify if no members', async () => {
-      filesQueries.getSpaceFileId.mockResolvedValue(10)
+      filesQueries.getOrCreateSpaceFile.mockResolvedValue(10)
       commentQueries.createComment.mockResolvedValue(1)
       commentQueries.getComments.mockResolvedValue([{ id: 1 }])
       commentQueries.membersToNotify.mockResolvedValue([])

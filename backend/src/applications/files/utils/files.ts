@@ -1,4 +1,4 @@
-import { HttpStatus } from '@nestjs/common'
+import { HttpException, HttpStatus } from '@nestjs/common'
 import { WriteStream } from 'fs'
 import fse from 'fs-extra'
 import mime from 'mime-types'
@@ -48,6 +48,12 @@ export function sanitizeName(name: string): string {
     .replace(/[/\\]/g, '') // remove slashes
     .replace(/\.\./g, '') // remove '..'
     .replace(/^\s+|[. ]+$/g, '') // trimStart + trimEnd + strip trailing dots
+}
+
+export function assertValidFileId(fileId: number): void {
+  if (!Number.isSafeInteger(fileId) || fileId === 0) {
+    throw new HttpException('Invalid file id', HttpStatus.BAD_REQUEST)
+  }
 }
 
 export function checkFileName(fPath: string): string {

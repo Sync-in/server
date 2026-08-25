@@ -65,7 +65,7 @@ describe(SyncPathsManager.name, () => {
   let service: SyncPathsManager
   let spacesManager: { spaceEnv: Mock }
   let usersQueries: Record<string, Mock>
-  let filesQueries: { getSpaceFileId: Mock; getOrCreateSpaceFile: Mock }
+  let filesQueries: { getOrCreateSpaceFile: Mock }
   let notificationsManager: { create: Mock }
   let syncQueries: {
     getClient: Mock
@@ -84,7 +84,6 @@ describe(SyncPathsManager.name, () => {
     spacesManager = { spaceEnv: vi.fn() }
     usersQueries = {}
     filesQueries = {
-      getSpaceFileId: vi.fn(),
       getOrCreateSpaceFile: vi.fn()
     }
     notificationsManager = {
@@ -102,7 +101,9 @@ describe(SyncPathsManager.name, () => {
     }
     vi.mocked(isPathExists).mockReset()
     vi.mocked(isPathIsDir).mockReset()
-    vi.mocked(getProps).mockReset()
+    vi.mocked(getProps)
+      .mockReset()
+      .mockResolvedValue({ id: -1, name: 'file' } as FileProps)
     vi.mocked(getEnvPermissions).mockReset().mockReturnValue('server-perms')
     vi.mocked(currentTimeStamp).mockReset().mockReturnValue(1000)
 
@@ -583,28 +584,16 @@ describe(SyncPathsManager.name, () => {
     })
   })
 
-  describe('getOrCreateFileId (private) branches', () => {
-    it('should return existing file id without creation', async () => {
-      vi.mocked(getProps).mockResolvedValue({ name: 'file' } as FileProps)
-      filesQueries.getSpaceFileId.mockResolvedValue(101)
+  describe('getOrCreateFileId (private)', () => {
+    it('should resolve or create a file id from its inode', async () => {
+      vi.mocked(getProps).mockResolvedValue({ id: -101, name: 'file' } as FileProps)
+      filesQueries.getOrCreateSpaceFile.mockResolvedValue(101)
       const id = await (service as any).getOrCreateFileId({
         realPath: '/rp',
         dbFile: { path: '.' }
       })
       expect(id).toBe(101)
-      expect(filesQueries.getOrCreateSpaceFile).not.toHaveBeenCalled()
-    })
-
-    it('should create file when not exists and return its id', async () => {
-      vi.mocked(getProps).mockResolvedValue({ id: 999, name: 'file' } as FileProps)
-      filesQueries.getSpaceFileId.mockResolvedValue(0)
-      filesQueries.getOrCreateSpaceFile.mockResolvedValue(202)
-      const id = await (service as any).getOrCreateFileId({
-        realPath: '/rp',
-        dbFile: { path: '.' }
-      })
-      expect(id).toBe(202)
-      expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(0, expect.objectContaining({ id: undefined }), { path: '.' })
+      expect(filesQueries.getOrCreateSpaceFile).toHaveBeenCalledWith(-101, expect.objectContaining({ id: undefined }), { path: '.' })
     })
   })
 })

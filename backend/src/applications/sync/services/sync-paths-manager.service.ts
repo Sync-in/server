@@ -218,11 +218,7 @@ export class SyncPathsManager {
 
   private async getOrCreateFileId(space: SpaceEnv): Promise<number> {
     const fileProps: FileProps = await getProps(space.realPath, space.dbFile.path)
-    let fileId: number = await this.filesQueries.getSpaceFileId(fileProps, space.dbFile)
-    if (!fileId) {
-      fileId = await this.filesQueries.getOrCreateSpaceFile(fileId, { ...fileProps, id: undefined }, space.dbFile)
-    }
-    return fileId
+    return this.filesQueries.getOrCreateSpaceFile(fileProps.id, { ...fileProps, id: undefined }, space.dbFile)
   }
 
   private async notify(userId: number, action: ACTION, remotePath: string) {

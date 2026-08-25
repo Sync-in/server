@@ -1,11 +1,11 @@
-import { Inject, Injectable, Logger } from '@nestjs/common'
+import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common'
 import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, or, SelectedFields, sql, SQL } from 'drizzle-orm'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
 import { concatDistinctObjectsInArray, convertToWhere, dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils'
 import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
 import { shares } from '../../shares/schemas/shares.schema'
-import type { SpaceBrowseContext, SpaceBrowseDetails } from '../../spaces/interfaces/space-files.interface'
+import type { GetOrCreateSpaceFileOptions, SpaceBrowseContext, SpaceBrowseDetails } from '../../spaces/interfaces/space-files.interface'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
 import { syncClients } from '../../sync/schemas/sync-clients.schema'
@@ -17,7 +17,7 @@ import { File } from '../schemas/file.interface'
 import { filesFavorites } from '../schemas/files-favorites.schema'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { childFilesMatch, childFilesReplacePath, childPathMatch, filePathSQL, files } from '../schemas/files.schema'
-import { dirName, fileName, isPathInside } from '../utils/files'
+import { assertValidFileId, dirName, fileName, isPathInside } from '../utils/files'
 
 @Injectable()
 export class FilesQueries {
@@ -93,7 +93,8 @@ export class FilesQueries {
   }
 
   async getOrCreateUserFile(userId: number, file: FileProps): Promise<number> {
-    if (file.id && file.id > 0) {
+    assertValidFileId(file.id)
+    if (file.id > 0) {
       const [searchFileInDB] = await this.db
         .select({ id: files.id })
         .from(files)
@@ -108,7 +109,8 @@ export class FilesQueries {
     return dbGetInsertedId(await this.db.insert(files).values({ ...file, id: undefined, ownerId: userId } as File))
   }
 
-  async getOrCreateSpaceFile(fileId: number, file: FileProps, dbFile: FileDBProps): Promise<number> {
+  async getOrCreateSpaceFile(fileId: number, file: FileProps, dbFile: FileDBProps, options: GetOrCreateSpaceFileOptions = {}): Promise<number> {
+    assertValidFileId(fileId)
     // `isDir` is intentionally excluded here: this flow reconciles an existing path before insert,
     // even if the caller has a stale file/dir kind for the same location.
     const fileInDB = {
@@ -116,7 +118,7 @@ export class FilesQueries {
       name: file.name,
       path: file.path
     }
-    const hasDbFileId = Number.isSafeInteger(fileId) && fileId > 0
+    const hasDbFileId = fileId > 0
     if (hasDbFileId) {
       const [searchFileInDB] = await this.db
         .select({ id: files.id })
@@ -136,7 +138,12 @@ export class FilesQueries {
     // Before inserting, check whether a record already exists at this path to avoid
     // creating duplicate rows when repeated calls index the same file.
     const existingId = await this.getSpaceFileId(file, dbFile, { withDir: false })
-    if (existingId !== undefined) return existingId
+    if (existingId !== undefined) {
+      if (options.rejectIdMismatch && hasDbFileId && existingId !== fileId) {
+        throw new HttpException('File id mismatch', HttpStatus.BAD_REQUEST)
+      }
+      return existingId
+    }
 
     // `fileInDB` keeps the DB scope and uses the `FileProps` path/name.
     return dbGetInsertedId(await this.db.insert(files).values({ ...file, ...fileInDB, id: undefined } as File))
