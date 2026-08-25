@@ -95,7 +95,7 @@
 
     .navbar-history-button-left {
       margin-left: -.5px;
-      @include media-breakpoint-up(sm) {
+      @include media-breakpoint-up(md) {
         border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
       }
     }
@@ -110,9 +110,6 @@
       min-width: 0;
       max-width: none;
       overflow: hidden;
-      @include media-breakpoint-down(sm) {
-        display: none;
-      }
     }
 
     .navbar-right-side {
@@ -209,6 +206,16 @@
     min-width: 0;
     @include text-truncate-utility;
     @include no-select-pointer-utility;
+
+    @include media-breakpoint-down(sm) {
+      .breadcrumb-mobile-active > a {
+        color: $gray-lightest !important;
+      }
+
+      .breadcrumb-mobile-hidden {
+        display: none;
+      }
+    }
 
     > li {
       &:not(:first-child) {
