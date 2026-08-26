@@ -176,9 +176,11 @@ $dropdown-link-color: #444;
 $dropdown-link-active-color: $dropdown-link-color;
 $dropdown-link-hover-bg: $table-bg-hover !important;
 $dropdown-link-active-bg: $dropdown-link-hover-bg;
-$dropdown-item-padding-y: .3rem;
-$dropdown-item-padding-x: .8rem;
-$dropdown-padding-y: .2rem;
+$dropdown-item-padding-y: .35rem;
+$dropdown-item-padding-x: .4rem;
+$dropdown-padding-y: .375rem;
+$dropdown-divider-margin-y: .25rem;
+$dropdown-divider-width: 1px;
 $dropdown-header-color: #8aa4af;
 
 // --------------------------------------------------------

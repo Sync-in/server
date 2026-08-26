@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, ViewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faArrowDown, faArrowRotateRight, faArrowUp, faCircleInfo, faPen, faPlus, faRotate, faUpload } from '@fortawesome/free-solid-svg-icons'
+import { faArrowDown, faArrowRotateRight, faArrowUp, faPen, faPlus, faRotate, faUpload } from '@fortawesome/free-solid-svg-icons'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
@@ -18,7 +18,6 @@ import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
-import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { SharedChildrenDialogComponent } from '../../shares/components/dialogs/shared-children-dialog.component'
 import { SpaceDialogComponent } from '../../spaces/components/dialogs/space-dialog.component'
@@ -58,7 +57,6 @@ export class AdminSpacesComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
-  protected readonly TAB_MENU = TAB_MENU
   protected readonly icons = {
     SPACES: ADMIN_ICON.SPACES,
     SHARES: SPACES_ICON.SHARES,
@@ -68,8 +66,7 @@ export class AdminSpacesComponent {
     faArrowRotateRight,
     faUpload,
     faPlus,
-    faPen,
-    faCircleInfo
+    faPen
   }
   // Sort
   protected tableHeaders: Record<'name' | 'managers' | 'storage' | 'members' | 'info' | 'modified', TableHeaderConfig> = {

@@ -1,6 +1,6 @@
 .dropdown-menu {
   min-width: 0 !important;
-  @include app-menu-surface-structure($btn-border-radius, .25rem);
+  @include app-menu-surface-structure($btn-border-radius, $dropdown-padding-y);
 
   > li > a {
     @include app-menu-item-structure($btn-border-radius, 1px);
@@ -21,7 +21,7 @@
 }
 
 .dropdown-divider {
-  @include app-menu-divider-structure(.2rem 0, .5px);
+  @include app-menu-divider-structure($dropdown-divider-margin-y 0, $dropdown-divider-width);
 }
 
 .dropdown-toggle {

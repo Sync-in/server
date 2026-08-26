@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { AfterViewInit, Component, ElementRef, inject, NgZone, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import { faSquareCheck } from '@fortawesome/free-regular-svg-icons'
 import {
   faAnchor,
   faArrowDown,
@@ -11,7 +12,6 @@ import {
   faArrowUp,
   faBan,
   faCheck,
-  faCircleInfo,
   faCirclePlus,
   faClipboardList,
   faCommentDots,
@@ -153,7 +153,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     faFileArchive,
     faSpellCheck,
     faArrowsAlt,
-    faCircleInfo,
+    faSquareCheck,
     faBan,
     faCheck,
     faArrowUp,

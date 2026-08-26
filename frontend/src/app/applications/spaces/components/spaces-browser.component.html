@@ -26,11 +26,7 @@
             <span l10nTranslate><fa-icon [icon]="icons.faFileAlt"></fa-icon>New document</span>
           </a>
         </li>
-        <li role="menuitem">
-          <a (click)="openNewDialog('download')" class="dropdown-item">
-            <span l10nTranslate><fa-icon [icon]="icons.faGlobe"></fa-icon>Download from URL</span>
-          </a>
-        </li>
+        <li class="dropdown-divider"></li>
         <li role="menuitem">
           <a appUploadFiles [options]="{isMultiple: true}" (uploadFiles)="onUploadFiles($event)" class="dropdown-item" id="uploadFilesButton">
             <span l10nTranslate><fa-icon [icon]="icons.faUpload"></fa-icon>Upload files</span>
@@ -44,6 +40,11 @@
               <span l10nTranslate><fa-icon [icon]="icons.faUpload"></fa-icon>Upload folders</span>
             </a>
           }
+        </li>
+        <li role="menuitem">
+          <a (click)="openNewDialog('download')" class="dropdown-item">
+            <span l10nTranslate><fa-icon [icon]="icons.faGlobe"></fa-icon>Download from URL</span>
+          </a>
         </li>
       </ul>
     </div>
@@ -120,10 +121,16 @@
           </li>
         }
       }
+      <li role="menuitem">
+        <a (click)="layout.showRSideBarTab(TAB_MENU.SELECTION)" class="dropdown-item">
+          <span l10nTranslate><fa-icon [icon]="icons.faSquareCheck"></fa-icon>Selection</span>
+        </a>
+      </li>
+      <li class="dropdown-divider"></li>
       @if (!hasDisabledItemsInSelection) {
         <li role="menuitem">
           <a (click)="copyMoveFiles()" class="dropdown-item">
-            <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy · Move</span>
+            <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy • Move</span>
           </a>
         </li>
       }
@@ -131,17 +138,6 @@
         <li role="menuitem">
           <a (click)="shortcutRename()" class="dropdown-item">
             <span l10nTranslate><fa-icon [icon]="icons.faSpellCheck"></fa-icon>Rename</span>
-          </a>
-        </li>
-      }
-      @if (selection.length === 1 && canManageFavorite) {
-        <li role="menuitem">
-          <a (click)="toggleFavorite(selection[0])" class="dropdown-item">
-            @if (selection[0].isFavorite) {
-              <span l10nTranslate><fa-icon [icon]="icons.FAVORITES"></fa-icon>Remove from favorites</span>
-            } @else {
-              <span l10nTranslate><fa-icon [icon]="icons.FAVORITES"></fa-icon>Add to favorites</span>
-            }
           </a>
         </li>
       }
@@ -158,6 +154,9 @@
             <span l10nTranslate><fa-icon [icon]="icons.faFileArchive"></fa-icon>Decompress</span>
           </a>
         </li>
+      }
+      @if (!hasDisabledItemsInSelection || selection.length === 1 && !isTrashRepo && !inSharesList || !isTrashRepo && canCompress) {
+        <li class="dropdown-divider"></li>
       }
       <li role="menuitem">
         <a (click)="addToClipboard()" class="dropdown-item">
@@ -178,21 +177,27 @@
           </a>
         </li>
       }
-      <li role="menuitem">
-        <a (click)="layout.showRSideBarTab(TAB_MENU.SELECTION)" class="dropdown-item">
-          <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
-        </a>
-      </li>
+      @if (selection.length === 1 && canManageFavorite) {
+        <li role="menuitem">
+          <a (click)="toggleFavorite(selection[0])" class="dropdown-item">
+            @if (selection[0].isFavorite) {
+              <span l10nTranslate><fa-icon [icon]="icons.FAVORITES"></fa-icon>Remove from favorites</span>
+            } @else {
+              <span l10nTranslate><fa-icon [icon]="icons.FAVORITES"></fa-icon>Add to favorites</span>
+            }
+          </a>
+        </li>
+      }
       @if (!inSharesList) {
         <li class="dropdown-divider"></li>
         <li role="menuitem">
           @if (isTrashRepo) {
             <a (click)="openTrashDialog(true)" class="dropdown-item">
-              <span l10nTranslate><fa-icon [icon]="icons.faBan"></fa-icon>Remove</span>
+              <span l10nTranslate><fa-icon [icon]="icons.faBan" class="text-danger"></fa-icon>Remove</span>
             </a>
           } @else {
             <a (click)="openTrashDialog()" class="dropdown-item">
-              <span l10nTranslate><fa-icon [icon]="icons.TRASH"></fa-icon>Trash</span>
+              <span l10nTranslate><fa-icon [icon]="icons.TRASH" class="text-danger"></fa-icon>Trash</span>
             </a>
           }
         </li>
@@ -589,8 +594,13 @@
     <ng-template (execute)="downloadFiles()" contextMenuItem>
       <span l10nTranslate><fa-icon [icon]="icons.faDownload"></fa-icon>Download</span>
     </ng-template>
+  }
+  @if (selection.length === 1 && selection[0] || !hasDisabledItemsInSelection) {
+    <ng-template [divider]="true" contextMenuItem></ng-template>
+  }
+  @if (!hasDisabledItemsInSelection) {
     <ng-template (execute)="copyMoveFiles()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy · Move</span>
+      <span l10nTranslate><fa-icon [icon]="icons.faArrowsAlt"></fa-icon>Copy • Move</span>
     </ng-template>
   }
   @if (selection.length === 1 && !isTrashRepo && !inSharesList) {
@@ -609,6 +619,11 @@
         <span l10nTranslate><fa-icon [icon]="icons.faFileArchive"></fa-icon>Decompress</span>
       </ng-template>
     }
+  }
+  @if (!hasDisabledItemsInSelection || selection.length === 1 && !isTrashRepo && !inSharesList || !isTrashRepo && canCompress) {
+    <ng-template [divider]="true" contextMenuItem></ng-template>
+  }
+  @if (!isTrashRepo) {
     @if (canShare.outside || inSharesList && selection[0]?.canBeReShared) {
       <ng-template [subMenu]="ShareContextMenu" contextMenuItem>
         <span l10nTranslate><fa-icon [icon]="icons.SHARED"></fa-icon>Share</span>
@@ -623,6 +638,11 @@
       <span l10nTranslate><fa-icon [icon]="icons.faRotate"></fa-icon>Synchronize</span>
     </ng-template>
   }
+  @if (selection.length === 1 && !isTrashRepo) {
+    <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" contextMenuItem>
+      <span l10nTranslate><fa-icon [icon]="icons.faCommentDots"></fa-icon>Comment</span>
+    </ng-template>
+  }
   @if (selection.length === 1 && canManageFavorite) {
     <ng-template (execute)="toggleFavorite(selection[0])" contextMenuItem>
       @if (selection[0].isFavorite) {
@@ -632,15 +652,10 @@
       }
     </ng-template>
   }
-  @if (selection.length === 1 && !isTrashRepo) {
-    <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faCommentDots"></fa-icon>Comment</span>
-    </ng-template>
-  }
   @if (!inSharesList) {
     <ng-template [divider]="true" contextMenuItem></ng-template>
     <ng-template (execute)="openTrashDialog(isTrashRepo)" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="isTrashRepo ? icons.faBan : icons.TRASH"></fa-icon>
+    <span l10nTranslate><fa-icon [icon]="isTrashRepo ? icons.faBan : icons.TRASH" class="text-danger"></fa-icon>
       {{ isTrashRepo ? 'Remove' : 'Trash' }}</span>
     </ng-template>
   }

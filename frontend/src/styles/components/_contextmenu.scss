@@ -10,7 +10,7 @@
 }
 
 .ngx-contextmenu {
-  padding: $dropdown-item-padding-y !important;
+  padding: $dropdown-padding-y !important;
   font-size: $dropdown-font-size !important;
   border-width: .5px !important;
   border-style: solid !important;
@@ -32,6 +32,7 @@
   }
   > [role='separator'] {
     border-bottom: none !important;
-    @include app-menu-divider-structure(.2rem 0, .5px, true);
+    opacity: 1 !important;
+    @include app-menu-divider-structure($dropdown-divider-margin-y 0, $dropdown-divider-width, true);
   }
 }
