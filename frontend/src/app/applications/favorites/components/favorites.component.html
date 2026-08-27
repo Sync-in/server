@@ -1,11 +1,5 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
-  <button (click)="loadFavorites()"
-          class="d-none d-sm-block btn btn-default me-1"
-          [tooltip]="'Refresh' | translate:locale.language"
-          type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
-  </button>
   <button (click)="goTo()"
           [disabled]="!selected || selected.isDisabled"
           class="btn btn-default me-1"
@@ -20,10 +14,16 @@
           type="button">
     <svg [lucideIcon]="icons.REMOVE_FAVORITE"></svg>
   </button>
-  <div class="ms-auto">
+  <div class="d-flex align-items-center ms-auto">
     <div class="btn-group me-1">
       <app-input-filter class="d-none d-sm-block"></app-input-filter>
     </div>
+    <button (click)="loadFavorites()"
+            class="d-none d-sm-block btn btn-default me-1"
+            [tooltip]="'Refresh' | translate:locale.language"
+            type="button">
+      <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
+    </button>
     <app-navigation-view (switchView)="galleryMode = $event"></app-navigation-view>
   </div>
 </div>
@@ -31,6 +31,7 @@
 @if (galleryMode?.enabled) {
   <!--Start Gallery Content-->
   <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
+       [style.--gallery-badge-size]="galleryMode.badgeSize + 'px'"
        [style.--gallery-image-size]="galleryMode.image + 'px'"
        [style.--gallery-text-size]="galleryMode.textSize + 'px'"
        class="app-gallery">

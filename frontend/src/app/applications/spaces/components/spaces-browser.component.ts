@@ -27,8 +27,7 @@ import {
   LucidePencil,
   LucidePlus,
   LucideRotateCw,
-  LucideSpellCheck,
-  LucideSquareCheckBig
+  LucideSpellCheck
 } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
@@ -134,6 +133,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     LINKS: SPACES_ICON.LINKS,
     SYNC: SYNC_ICON.SYNC,
     FAVORITES: FAVORITES_ICON,
+    SELECTION: SPACES_ICON.SELECTION,
     LucidePlus,
     LucideCirclePlus,
     LucideFileText,
@@ -151,7 +151,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     LucideFileArchive,
     LucideSpellCheck,
     LucideMove,
-    LucideSquareCheckBig,
     LucideBan,
     LucideCheck,
     LucideArrowUp,

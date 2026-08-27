@@ -1,11 +1,5 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
-  <button (click)="loadSpaces()"
-          class="d-none d-sm-block btn btn-default me-1"
-          [tooltip]="'Refresh' | translate:locale.language"
-          type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
-  </button>
   @if (canCreateSpace) {
     <button (click)="openSpaceDialog(true)"
             class="btn btn-default me-1"
@@ -35,12 +29,18 @@
           type="button">
     <svg [lucideIcon]="icons.LucideAnchor"></svg>
   </button>
-  <div class="ms-auto">
+  <div class="d-flex align-items-center ms-auto">
     <!--Start Filter Button-->
     <div class="btn-group me-1">
       <app-input-filter class="d-none d-sm-block"></app-input-filter>
     </div>
     <!--End Filter Button-->
+    <button (click)="loadSpaces()"
+            class="d-none d-sm-block btn btn-default me-1"
+            [tooltip]="'Refresh' | translate:locale.language"
+            type="button">
+      <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
+    </button>
     <!--Start View Button-->
     <app-navigation-view (switchView)="galleryMode = $event">
     </app-navigation-view>
@@ -51,6 +51,7 @@
 @if (galleryMode?.enabled) {
   <!--Start Gallery Content-->
   <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
+       [style.--gallery-badge-size]="galleryMode.badgeSize + 'px'"
        [style.--gallery-image-size]="galleryMode.image + 'px'"
        [style.--gallery-icon-size]="galleryMode.iconSize + 'px'"
        [style.--gallery-text-size]="galleryMode.textSize + 'px'"
@@ -243,7 +244,7 @@
     <ng-template [divider]="true" contextMenuItem></ng-template>
   }
   <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
-    <span l10nTranslate><svg [lucideIcon]="icons.LucideSquareCheckBig"></svg>Info</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.SELECTION"></svg>View selection</span>
   </ng-template>
 </context-menu>
 <!--End Context Menu-->

@@ -1,11 +1,5 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
-  <button (click)="loadGuests()"
-          class="btn btn-default me-1"
-          [tooltip]="'Refresh' | translate:locale.language"
-          type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
-  </button>
   <button (click)="openGuestDialog(true)"
           [disabled]="!canCreateGuest"
           class="btn btn-default me-1"
@@ -21,7 +15,17 @@
     <svg [lucideIcon]="icons.LucidePencil"></svg>
   </button>
   <!--Start Filter Button-->
-  <app-input-filter class="d-none d-sm-block ms-auto"></app-input-filter>
+  <div class="d-flex align-items-center ms-auto">
+    <div class="btn-group me-1">
+      <app-input-filter class="d-none d-sm-block"></app-input-filter>
+    </div>
+    <button (click)="loadGuests()"
+            class="btn btn-default"
+            [tooltip]="'Refresh' | translate:locale.language"
+            type="button">
+      <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
+    </button>
+  </div>
   <!--End Filter Button-->
 </div>
 <!--End Top Menu-->

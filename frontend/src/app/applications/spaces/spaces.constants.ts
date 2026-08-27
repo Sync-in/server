@@ -10,6 +10,7 @@ import {
   LucideLink,
   LucideRedo,
   LucideShare2,
+  LucideSquareCheckBig,
   LucideTrash2
 } from '@lucide/angular'
 import { SPACES_BASE_ROUTE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
@@ -52,6 +53,7 @@ export const SPACES_ICON = {
   SHARED_WITH_OTHERS: LucideShare2,
   ANCHORED: LucideAnchor,
   LINKS: LucideLink,
+  SELECTION: LucideSquareCheckBig,
   TRASH: LucideTrash2,
   EXTERNAL: LucideFileInput
 } as const

@@ -16,7 +16,10 @@
       <option l10nTranslate value="ERROR">Error</option>
     </select>
   </div>
-  <div class="d-flex ms-auto">
+  <div class="d-flex align-items-center ms-auto">
+    <!--Start Filter Button-->
+    <app-input-filter class="d-none d-sm-block me-1"></app-input-filter>
+    <!--End Filter Button-->
     <button (click)="refresh()"
             [tooltip]="'Refresh' | translate:locale.language"
 
@@ -27,13 +30,10 @@
     <button (click)="openClearDialog()"
             [tooltip]="'Clear events' | translate:locale.language"
             placement="bottom"
-            class="btn btn-default me-1"
+            class="btn btn-default"
             type="button">
       <svg [lucideIcon]="icons.LucideTrash2"></svg>
     </button>
-    <!--Start Filter Button-->
-    <app-input-filter class="d-none d-sm-block"></app-input-filter>
-    <!--End Filter Button-->
   </div>
 </div>
 <table class="app-table">

@@ -1,9 +1,4 @@
 <div class="app-top-menu">
-  <button (click)="onRefresh()"
-          [tooltip]="'Refresh' | translate:locale.language"
-          class="d-none d-sm-block btn btn-default me-1" type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw"></svg>
-  </button>
   <button (click)="addToSync()"
           [tooltip]="'Add' | translate:locale.language"
           class="btn btn-default me-1" type="button">
@@ -135,7 +130,14 @@
     </div>
   </div>
   <!--Start Filter Button-->
-  <app-input-filter class="d-none d-sm-block ms-auto"></app-input-filter>
+  <div class="d-flex align-items-center ms-auto">
+    <app-input-filter class="d-none d-sm-block me-1"></app-input-filter>
+    <button (click)="onRefresh()"
+            [tooltip]="'Refresh' | translate:locale.language"
+            class="d-none d-sm-block btn btn-default" type="button">
+      <svg [lucideIcon]="icons.LucideRotateCw"></svg>
+    </button>
+  </div>
   <!--End Filter Button-->
 </div>
 <table class="app-table">

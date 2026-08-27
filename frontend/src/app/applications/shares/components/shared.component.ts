@@ -12,8 +12,7 @@ import {
   LucideMinus,
   LucidePencil,
   LucidePlus,
-  LucideRotateCw,
-  LucideSquareCheckBig
+  LucideRotateCw
 } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import type { ShareFile } from '@sync-in-server/backend/src/applications/shares/interfaces/share-file.interface'
@@ -85,7 +84,7 @@ export class SharedComponent implements OnInit {
     LucidePencil,
     LucideEllipsis,
     LucideMapPin,
-    LucideSquareCheckBig,
+    SELECTION: SPACES_ICON.SELECTION,
     LucideMessageSquareMore
   }
   protected readonly originalOrderKeyValue = originalOrderKeyValue

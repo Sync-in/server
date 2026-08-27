@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnDestroy } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { RouterOutlet } from '@angular/router'
-import { LucideFolderTree, LucideList, LucideMessageSquareMore, LucideSquareCheckBig } from '@lucide/angular'
+import { LucideFolderTree, LucideList, LucideMessageSquareMore } from '@lucide/angular'
 import { map } from 'rxjs/operators'
 import { TAB_GROUP, TAB_MENU, TabMenu } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
@@ -11,6 +11,7 @@ import { CommentsSelectionComponent } from '../../comments/components/sidebar/co
 import { FilesClipboardComponent } from '../../files/components/sidebar/files-clipboard.component'
 import { FilesTreeComponent } from '../../files/components/sidebar/files-tree.component'
 import { FileModel } from '../../files/models/file.model'
+import { SPACES_ICON } from '../spaces.constants'
 
 @Component({
   selector: 'app-spaces-nav',
@@ -26,7 +27,7 @@ export class SpacesNavComponent implements OnDestroy {
       label: TAB_MENU.SELECTION,
       components: [SelectionComponent],
       loadComponent: false,
-      icon: LucideSquareCheckBig,
+      icon: SPACES_ICON.SELECTION,
       count: {
         value: toObservable(
           computed(() =>

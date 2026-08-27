@@ -11,6 +11,7 @@ export interface ViewMode {
   enabled: boolean
   dimensions?: number
   maxBadges?: number
+  badgeSize?: number
   image?: number
   imageRes?: number
   iconSize?: number
@@ -28,13 +29,14 @@ const GALLERY_VIEW_OPTIONS = [
 
 const VIEW_MODES: Record<string, ViewMode> = {
   tl: { enabled: false },
-  th: { enabled: true, maxBadges: 0, dimensions: 96, image: 56, imageRes: 128, iconSize: 30, textSize: 12, margins: 18 },
-  thM: { enabled: true, maxBadges: 1, dimensions: 112, image: 72, imageRes: 192, iconSize: 34, textSize: 12, margins: 18 },
-  thL: { enabled: true, maxBadges: 2, dimensions: 152, image: 112, imageRes: 256, iconSize: 50, textSize: 13, margins: 18 },
-  thXl: { enabled: true, maxBadges: 6, dimensions: 192, image: 152, imageRes: 512, iconSize: 65, textSize: 13, margins: 18 },
+  th: { enabled: true, maxBadges: 0, badgeSize: 10, dimensions: 96, image: 56, imageRes: 128, iconSize: 30, textSize: 12, margins: 18 },
+  thM: { enabled: true, maxBadges: 1, badgeSize: 11, dimensions: 112, image: 72, imageRes: 192, iconSize: 34, textSize: 12, margins: 18 },
+  thL: { enabled: true, maxBadges: 2, badgeSize: 12, dimensions: 152, image: 112, imageRes: 256, iconSize: 50, textSize: 13, margins: 18 },
+  thXl: { enabled: true, maxBadges: 6, badgeSize: 13, dimensions: 192, image: 152, imageRes: 512, iconSize: 65, textSize: 13, margins: 18 },
   thXxl: {
     enabled: true,
     maxBadges: 6,
+    badgeSize: 14,
     dimensions: 232,
     image: 192,
     imageRes: 1024,

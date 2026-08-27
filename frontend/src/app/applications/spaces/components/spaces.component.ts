@@ -10,8 +10,7 @@ import {
   LucideHardDriveUpload,
   LucidePencil,
   LucidePlus,
-  LucideRotateCw,
-  LucideSquareCheckBig
+  LucideRotateCw
 } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { SPACE_OPERATION, SPACE_ROLE } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -85,7 +84,7 @@ export class SpacesComponent implements OnInit {
     LucideHardDriveUpload,
     LucidePlus,
     LucidePencil,
-    LucideSquareCheckBig
+    SELECTION: SPACES_ICON.SELECTION
   }
   // Sort
   protected tableHeaders: Record<'name' | 'managers' | 'members' | 'info' | 'permissions' | 'modified', TableHeaderConfig> = {

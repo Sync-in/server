@@ -83,9 +83,15 @@
 
   .badge {
     display: inline-flex;
+    gap: .22em;
+    padding: .35em .6em;
+    font-size: var(--gallery-badge-size, var(--gallery-text-size));
+
+    .lucide {
+      font-size: 1.15em;
+    }
   }
 
-  .badge,
   .card-footer,
   .card-footer input {
     font-size: var(--gallery-text-size);

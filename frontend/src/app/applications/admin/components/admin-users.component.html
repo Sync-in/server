@@ -1,11 +1,5 @@
 <!--Start Top Menu-->
 <div class="app-top-menu">
-  <button (click)="loadUsersOrGuests()"
-          class="d-none d-sm-block btn btn-default me-1"
-          [tooltip]="'Refresh' | translate:locale.language"
-          type="button">
-    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
-  </button>
   <button (click)="openDialog(true)"
           class="btn btn-default me-1"
           [tooltip]="(guestsView ? 'New guest' : 'New user') | translate:locale.language"
@@ -26,7 +20,7 @@
           type="button">
     <svg [lucideIcon]="icons.LucideVenetianMask"></svg>
   </button>
-  <div class="ms-auto">
+  <div class="d-flex align-items-center ms-auto">
     <!--Start Filter Button-->
     <button btnCheckbox
             [ngModel]="guestsView"
@@ -38,10 +32,16 @@
         <span l10nTranslate>Guests</span>
       </div>
     </button>
-    <div class="btn-group">
+    <div class="btn-group me-1">
       <app-input-filter class="d-none d-sm-block"></app-input-filter>
     </div>
     <!--End Filter Button-->
+    <button (click)="loadUsersOrGuests()"
+            class="d-none d-sm-block btn btn-default"
+            [tooltip]="'Refresh' | translate:locale.language"
+            type="button">
+      <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
+    </button>
   </div>
 </div>
 <!--End Top Menu-->

@@ -14,8 +14,7 @@ import {
   LucideLock,
   LucideMapPin,
   LucidePencil,
-  LucideRotateCw,
-  LucideSquareCheckBig
+  LucideRotateCw
 } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -37,7 +36,7 @@ import { StoreService } from '../../../store/store.service'
 import { ShareRepositoryComponent } from '../../shares/components/utils/share-repository.component'
 import { ShareModel } from '../../shares/models/share.model'
 import { SharesService } from '../../shares/services/shares.service'
-import { SPACES_PATH, SPACES_TITLE } from '../../spaces/spaces.constants'
+import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../../spaces/spaces.constants'
 import { ShareLinkModel } from '../models/share-link.model'
 import { LinksService } from '../services/links.service'
 import { LinkDialogComponent } from './dialogs/link-dialog.component'
@@ -85,7 +84,7 @@ export class LinksComponent implements OnInit {
     LucideLock,
     LucideClipboard,
     LucideClipboardCheck,
-    LucideSquareCheckBig
+    SELECTION: SPACES_ICON.SELECTION
   }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
