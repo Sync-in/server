@@ -826,9 +826,7 @@ export class SpacesManager {
       space,
       action,
       user,
-      Array.from(new Set([...(await this.usersQueries.allUserIdsFromGroupsAndSubGroups(members.groupIds)), ...members.userIds])).filter(
-        (uid) => uid !== user?.id
-      )
+      Array.from(new Set([...(await this.usersQueries.allUserIdsFromGroupsAndSubGroups(members.groupIds)), ...members.userIds]))
     ).catch((e: Error) => this.logger.error({ tag: this.onSpaceActionForMembers.name, msg: `${e}` }))
   }
 
@@ -857,7 +855,8 @@ export class SpacesManager {
           .catch((e: Error) => this.logger.error({ tag: this.clearCachePermissionsAndOrNotify.name, msg: `${e}` }))
       }
       // notify
-      if (action !== ACTION.UPDATE) {
+      const notificationMemberIds = memberIds.filter((uid) => uid !== user?.id)
+      if (action !== ACTION.UPDATE && notificationMemberIds.length) {
         // notify the members who have joined or left the space
         const notification: NotificationContent = {
           app: NOTIFICATION_APP.SPACES,
@@ -866,7 +865,7 @@ export class SpacesManager {
           url: ''
         }
         this.notificationsManager
-          .create(memberIds, notification, {
+          .create(notificationMemberIds, notification, {
             action: action
           })
           .catch((e: Error) => this.logger.error({ tag: this.clearCachePermissionsAndOrNotify.name, msg: `${e}` }))
