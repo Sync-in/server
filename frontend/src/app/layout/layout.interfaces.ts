@@ -62,6 +62,8 @@ export interface AppMenu {
   count?: { value: Observable<any> & BehaviorSubject<any>; level: string }
   // prop must be an attribute of the userService
   checks?: { negate?: boolean; prop: 'user'; value: UserStatus }[]
+  // Allows an application to display another application's navigation while remaining active.
+  navigationMenu?: AppMenu
   submenus?: AppMenuEntry[]
   hasSubmenus?: boolean
 }

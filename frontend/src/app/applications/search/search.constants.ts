@@ -1,6 +1,7 @@
 import type { LucideIcon } from '@lucide/angular'
 import { LucideSearch } from '@lucide/angular'
 import { AppMenu } from '../../layout/layout.interfaces'
+import { SPACES_MENU } from '../spaces/spaces.constants'
 
 export const SEARCH_PATH = {
   BASE: 'search'
@@ -13,5 +14,5 @@ export const SEARCH_MENU: AppMenu = {
   title: SEARCH_TITLE,
   link: SEARCH_PATH.BASE,
   icon: SEARCH_ICON,
-  submenus: []
+  navigationMenu: SPACES_MENU
 } as const

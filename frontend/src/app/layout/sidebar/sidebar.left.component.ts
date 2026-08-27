@@ -90,6 +90,10 @@ export class SideBarLeftComponent implements OnDestroy {
     this.updateDynamicTitle()
   }
 
+  protected get navigationSubmenus(): AppMenuEntry[] {
+    return (this.currentMenu?.navigationMenu ?? this.currentMenu)?.submenus ?? []
+  }
+
   protected showMenuSeparator(menus: AppMenuEntry[] | undefined, separatorIndex: number, separator: AppMenuEntry): boolean {
     if (!menus?.length || !isAppMenuSeparator(separator)) {
       return false

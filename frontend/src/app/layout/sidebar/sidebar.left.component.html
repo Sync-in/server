@@ -46,18 +46,18 @@
     <div class="menus-content">
       <div class="menus-group">
         <div class="menus-top">
-          @for (menu of currentMenu.submenus; track $index; let menuIndex = $index) {
+          @for (menu of navigationSubmenus; track $index; let menuIndex = $index) {
             @if (menu.placement !== 'bottom') {
               <ng-container [ngTemplateOutlet]="MenuEntry"
-                            [ngTemplateOutletContext]="{menus: currentMenu.submenus, menu: menu, menuIndex: menuIndex}"></ng-container>
+                            [ngTemplateOutletContext]="{menus: navigationSubmenus, menu: menu, menuIndex: menuIndex}"></ng-container>
             }
           }
         </div>
         <div class="menus-bottom">
-          @for (menu of currentMenu.submenus; track $index; let menuIndex = $index) {
+          @for (menu of navigationSubmenus; track $index; let menuIndex = $index) {
             @if (menu.placement === 'bottom') {
               <ng-container [ngTemplateOutlet]="MenuEntry"
-                            [ngTemplateOutletContext]="{menus: currentMenu.submenus, menu: menu, menuIndex: menuIndex}"></ng-container>
+                            [ngTemplateOutletContext]="{menus: navigationSubmenus, menu: menu, menuIndex: menuIndex}"></ng-container>
             }
           }
         </div>
