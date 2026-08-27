@@ -1,0 +1,21 @@
+.icon-spin {
+  animation: icon-spin 1s infinite linear;
+  transform-origin: center;
+}
+
+.icon-spin-pulse {
+  animation: icon-spin .6s infinite steps(8);
+  transform-origin: center;
+
+  @for $index from 1 through 8 {
+    > path:nth-of-type(#{$index}) {
+      opacity: $index * .125;
+    }
+  }
+}
+
+@keyframes icon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

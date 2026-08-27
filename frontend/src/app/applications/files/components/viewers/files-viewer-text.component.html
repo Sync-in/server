@@ -7,7 +7,7 @@
       class="btn {{ isReadonly() ? 'btn-warning' : 'btn-default' }} me-1"
       type="button"
       [disabled]="!isSupported() || !isWriteable() || isSaving()">
-      <fa-icon [icon]="isReadonly() ? icons.faLock : icons.faLockOpen"></fa-icon>
+      <svg [lucideIcon]="isReadonly() ? icons.LucideLock : icons.LucideLockOpen"></svg>
     </button>
     <button
       (click)="save()"
@@ -18,9 +18,9 @@
       type="button"
       [disabled]="!canSave()">
       @if (isSaving()) {
-        <fa-icon [icon]="icons.faSpinner" animation="spin"></fa-icon>
+        <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true"></svg>
       } @else {
-        <fa-icon [icon]="icons.faFloppyDisk"></fa-icon>
+        <svg [lucideIcon]="icons.LucideSave"></svg>
       }
     </button>
     <button
@@ -29,7 +29,7 @@
       [tooltip]="'Undo' | translate:locale.language"
       class="d-none d-sm-block btn btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faReply"></fa-icon>
+      <svg [lucideIcon]="icons.LucideUndo"></svg>
     </button>
     <button
       (click)="onRedo()"
@@ -37,7 +37,7 @@
       [tooltip]="'Redo' | translate:locale.language"
       class="d-none d-sm-block btn btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faShare"></fa-icon>
+      <svg [lucideIcon]="icons.LucideRedo"></svg>
     </button>
     <button
       btnCheckbox
@@ -46,7 +46,7 @@
       [tooltip]="'Line Wrap' | translate:locale.language"
       class="btn btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faArrowsLeftRightToLine"></fa-icon>
+      <svg [lucideIcon]="icons.LucideWrapText"></svg>
     </button>
     <button
       btnCheckbox
@@ -55,7 +55,7 @@
       [tooltip]="'Search' | translate:locale.language"
       class="d-none d-sm-block btn btn-custom"
       type="button">
-      <fa-icon [icon]="icons.faMagnifyingGlass"></fa-icon>
+      <svg [lucideIcon]="icons.LucideSearch"></svg>
     </button>
     @if (warnOnUnsavedChanges()) {
       <button (click)="save(true)"

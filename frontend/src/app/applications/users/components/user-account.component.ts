@@ -2,8 +2,7 @@ import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { Component, inject, OnDestroy, OnInit } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCopy, faKey } from '@fortawesome/free-solid-svg-icons'
+import { LucideCopy, LucideDynamicIcon, LucideKeyRound } from '@lucide/angular'
 import { COLLABORA_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { ONLY_OFFICE_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
@@ -46,7 +45,7 @@ import { UserAuthManageAppPasswordsDialogComponent } from './dialogs/user-auth-m
     TimeAgoPipe,
     PasswordStrengthBarComponent,
     L10nTranslateDirective,
-    FaIconComponent,
+    LucideDynamicIcon,
     StorageUsageComponent,
     InputPasswordComponent,
     KeyValuePipe
@@ -59,7 +58,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   protected readonly allNotifications = Object.values(USER_NOTIFICATION_TEXT)
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
-  protected readonly icons = { faCopy, faKey }
+  protected readonly icons = { LucideCopy, LucideKeyRound }
   protected user: UserType
   protected userAvatar: string = null
   protected webdavUrl = `${window.location.origin}/${WEBDAV_BASE_PATH}`

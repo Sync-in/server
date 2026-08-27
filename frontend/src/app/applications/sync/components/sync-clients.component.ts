@@ -1,25 +1,26 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, inject } from '@angular/core'
 import { Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
-  faArrowRotateRight,
-  faAt,
-  faCircle,
-  faCircleUser,
-  faClock,
-  faCodeBranch,
-  faKey,
-  faMapMarkerAlt,
-  faPen,
-  faPlusCircle,
-  faRotate,
-  faTrashCan
-} from '@fortawesome/free-solid-svg-icons'
+  LucideAtSign,
+  LucideCircle,
+  LucideCirclePlus,
+  LucideCircleUserRound,
+  LucideClock,
+  LucideDynamicIcon,
+  LucideGitBranch,
+  LucideKeyRound,
+  LucideMapPin,
+  LucidePencil,
+  LucideRefreshCw,
+  LucideRotateCw,
+  LucideTrash2
+} from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
+import { PlatformIconComponent } from '../../../common/components/platform-icon.component'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
 import { TimeAgoPipe } from '../../../common/pipes/time-ago.pipe'
 import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
@@ -35,26 +36,35 @@ import { SyncPathSettingsDialogComponent } from './dialogs/sync-path-settings.di
 
 @Component({
   selector: 'app-sync-clients',
-  imports: [TooltipDirective, L10nTranslatePipe, FaIconComponent, AutoResizeDirective, L10nTranslateDirective, TimeDateFormatPipe, TimeAgoPipe],
+  imports: [
+    TooltipDirective,
+    L10nTranslatePipe,
+    LucideDynamicIcon,
+    PlatformIconComponent,
+    AutoResizeDirective,
+    L10nTranslateDirective,
+    TimeDateFormatPipe,
+    TimeAgoPipe
+  ],
   templateUrl: './sync-clients.component.html',
   styleUrl: './sync-clients.component.scss'
 })
 export class SyncClientsComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = {
-    faArrowRotateRight,
-    faTrashCan,
+    LucideRefreshCw,
+    LucideTrash2,
     CLIENT: SYNC_ICON.CLIENT,
-    faCircle,
-    faCircleUser,
-    faCodeBranch,
-    faAt,
-    faClock,
-    faRotate,
-    faPlusCircle,
-    faMapMarkerAlt,
-    faPen,
-    faKey
+    LucideCircle,
+    LucideCircleUserRound,
+    LucideGitBranch,
+    LucideAtSign,
+    LucideClock,
+    LucideRotateCw,
+    LucideCirclePlus,
+    LucideMapPin,
+    LucidePencil,
+    LucideKeyRound
   }
   protected selected: SyncClientModel
   protected selectedPath: SyncPathModel

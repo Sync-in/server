@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.SHARES"></fa-icon>
+    <svg [lucideIcon]="icons.SHARES"></svg>
     <span>{{ share?.name || space?.name }}</span>
   </h4>
   <h4 class="modal-title ms-auto">
@@ -18,7 +18,7 @@
             <div class="me-auto text-truncate">
               <img [src]="s.mimeUrl" alt="" draggable="false" height="28" (error)="s.fallBackMimeUrl()">
               @if (s.isShareLink) {
-                <fa-icon [icon]="icons.LINKS" class="align-middle ms-1"></fa-icon>
+                <svg [lucideIcon]="icons.LINKS" class="align-middle ms-1"></svg>
               }
               <span class="ms-1 align-middle">{{ s.name }}</span>
             </div>

@@ -2,21 +2,21 @@ import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
-  faArrowDown,
-  faArrowRotateRight,
-  faArrowUp,
-  faCircleInfo,
-  faClipboard,
-  faClipboardCheck,
-  faClock,
-  faEllipsisH,
-  faLink,
-  faLock,
-  faMapMarkerAlt,
-  faPen
-} from '@fortawesome/free-solid-svg-icons'
+  LucideArrowDown,
+  LucideArrowUp,
+  LucideClipboard,
+  LucideClipboardCheck,
+  LucideClock,
+  LucideDynamicIcon,
+  LucideEllipsis,
+  LucideLink,
+  LucideLock,
+  LucideMapPin,
+  LucidePencil,
+  LucideRotateCw,
+  LucideSquareCheckBig
+} from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
@@ -46,7 +46,7 @@ import { LinkDialogComponent } from './dialogs/link-dialog.component'
   selector: 'app-shared-links',
   imports: [
     ContextMenuModule,
-    FaIconComponent,
+    LucideDynamicIcon,
     KeyValuePipe,
     L10nTranslateDirective,
     L10nTranslatePipe,
@@ -74,18 +74,18 @@ export class LinksComponent implements OnInit {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly icons = {
-    faLink,
-    faArrowRotateRight,
-    faArrowDown,
-    faArrowUp,
-    faMapMarkerAlt,
-    faPen,
-    faEllipsisH,
-    faClock,
-    faLock,
-    faClipboard,
-    faClipboardCheck,
-    faCircleInfo
+    LucideLink,
+    LucideRotateCw,
+    LucideArrowDown,
+    LucideArrowUp,
+    LucideMapPin,
+    LucidePencil,
+    LucideEllipsis,
+    LucideClock,
+    LucideLock,
+    LucideClipboard,
+    LucideClipboardCheck,
+    LucideSquareCheckBig
   }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly TAB_MENU = TAB_MENU
@@ -156,7 +156,7 @@ export class LinksComponent implements OnInit {
   constructor() {
     this.loadShareLinks()
     this.activatedRoute.queryParams.subscribe((params) => (this.focusOnSelect = params.select))
-    this.layout.setBreadcrumbIcon(this.icons.faLink)
+    this.layout.setBreadcrumbIcon(this.icons.LucideLink)
     this.layout.setBreadcrumbNav({ url: `/${SPACES_PATH.LINKS}/${SPACES_TITLE.SHARED_BY_LINKS}`, translating: true, sameLink: true })
   }
 

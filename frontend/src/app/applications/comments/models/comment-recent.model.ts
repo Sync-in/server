@@ -1,4 +1,4 @@
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { LucideIcon } from '@lucide/angular'
 import type { CommentRecent } from '@sync-in-server/backend/src/applications/comments/interfaces/comment-recent.interface'
 import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { SPACE_ALIAS } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -17,7 +17,7 @@ export class CommentRecentModel implements CommentRecent {
   // Computed
   mimeUrl: string
   avatarUrl: string
-  icon: IconDefinition
+  icon: LucideIcon
   iconClass: 'primary' | 'purple'
   showedPath: string
   repositoryTitle: string

@@ -2,7 +2,7 @@ import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, inject } from '@angular/core'
 import { ReactiveFormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import { LucideDynamicIcon } from '@lucide/angular'
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
 import { L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -21,7 +21,7 @@ import { AdminService } from '../../admin.service'
 @Component({
   selector: 'app-admin-guest-dialog',
   imports: [
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslateDirective,
     TimeDateFormatPipe,
     ReactiveFormsModule,

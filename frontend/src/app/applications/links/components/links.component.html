@@ -4,27 +4,27 @@
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
   </button>
   <button (click)="openLinkDialog()"
           [disabled]="!selected" class="btn btn-default me-1"
           [tooltip]="'Edit link' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faPen"></fa-icon>
+    <svg [lucideIcon]="icons.LucidePencil"></svg>
   </button>
   <button (click)="copyToClipboard()"
           [disabled]="!selected"
           class="btn me-1 {{linkWasCopied ? 'btn-primary' : 'btn-default'}}"
           [tooltip]="'Copy link' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="linkWasCopied? icons.faClipboardCheck : icons.faClipboard"></fa-icon>
+    <svg [lucideIcon]="linkWasCopied? icons.LucideClipboardCheck : icons.LucideClipboard"></svg>
   </button>
   <button (click)="goTo()"
           [disabled]="!selected"
           class="btn btn-default"
           [tooltip]="'Go to' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
+    <svg [lucideIcon]="icons.LucideMapPin"></svg>
   </button>
   <div class="ms-auto">
     <!--Start Filter Button-->
@@ -78,7 +78,7 @@
                 }
                 @if (s.link.expiresAt) {
                   <span class="badge bg-{{s.hTimeExpirationAgo >= 1 ? 'warning': 'danger'}} ms-1">
-                          <fa-icon [icon]="icons.faClock" [fixedWidth]="false"></fa-icon>
+                          <svg [lucideIcon]="icons.LucideClock"></svg>
                     @if (s.hTimeExpirationAgo >= 1) {
                       {{ s.hTimeExpirationAgo }}&nbsp;{{ (s.hTimeExpirationAgo === 1 ? 'day' : 'days') | translate:locale.language }}
                     }
@@ -113,7 +113,7 @@
               l10nTranslate>
             {{ th.value.label }}
             @if (sortTable.sortParam.column === th.key) {
-              <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp" [fixedWidth]="false"></fa-icon>
+              <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
             }
           </th>
         }
@@ -168,7 +168,7 @@
                       }
                       @if (s.link.expiresAt) {
                         <span class="badge bg-{{s.hTimeExpirationAgo >= 1 ? 'warning': 'danger'}} ms-1">
-                          <fa-icon [icon]="icons.faClock" [fixedWidth]="false"></fa-icon>
+                          <svg [lucideIcon]="icons.LucideClock"></svg>
                           @if (s.hTimeExpirationAgo >= 1) {
                             {{ s.hTimeExpirationAgo }}&nbsp;{{ (s.hTimeExpirationAgo === 1 ? 'day' : 'days') | translate:locale.language }}
                           }
@@ -176,7 +176,7 @@
                       }
                       @if (s.link.requireAuth) {
                         <span class="badge bg-gray-dark ms-1">
-                          <fa-icon [icon]="icons.faLock"></fa-icon>
+                          <svg [lucideIcon]="icons.LucideLock"></svg>
                         </span>
                       }
                     }
@@ -213,22 +213,22 @@
 <!--Start Context Menu -->
 <context-menu #MainContextMenu>
   <ng-template (execute)="loadShareLinks()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>Refresh</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideRotateCw"></svg>Refresh</span>
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
   <ng-template (execute)="goTo()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>Go to</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideMapPin"></svg>Go to</span>
   </ng-template>
   <ng-template (execute)="openLinkDialog()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faPen"></fa-icon>Edit link</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>Edit link</span>
   </ng-template>
   <ng-template (execute)="copyToClipboard()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faClipboard"></fa-icon>Copy link</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideClipboard"></svg>Copy link</span>
   </ng-template>
   <ng-template [divider]="true" contextMenuItem></ng-template>
   <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideSquareCheckBig"></svg>Info</span>
   </ng-template>
 </context-menu>
 <!--End Context Menu-->

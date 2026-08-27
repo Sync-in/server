@@ -1,4 +1,4 @@
-import { faDownload, faLaptop, faUser, faUserGroup, faUsers } from '@fortawesome/free-solid-svg-icons'
+import { LucideContactRound, LucideHardDriveDownload, LucideLaptop, LucideUserRound, LucideUsersRound } from '@lucide/angular'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { AppMenu } from '../../layout/layout.interfaces'
 
@@ -28,11 +28,11 @@ export const USER_NOTIFICATION_TEXT = {
 export const USER_ONLINE_STATUS_LIST = ['available', 'busy', 'absent', 'offline']
 
 export const USER_ICON = {
-  ACCOUNT: faUser,
-  CLIENTS: faLaptop,
-  GROUPS: faUsers,
-  GUESTS: faUserGroup,
-  APPS: faDownload
+  ACCOUNT: LucideUserRound,
+  CLIENTS: LucideLaptop,
+  GROUPS: LucideUsersRound,
+  GUESTS: LucideContactRound,
+  APPS: LucideHardDriveDownload
 } as const
 
 export const USER_PASSWORD_CHANGE_TEXT = 'Change me !'

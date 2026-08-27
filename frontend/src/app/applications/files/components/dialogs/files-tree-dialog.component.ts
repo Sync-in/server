@@ -1,6 +1,5 @@
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faFile, faFolderClosed } from '@fortawesome/free-regular-svg-icons'
+import { LucideDynamicIcon, LucideFile, LucideFolderClosed } from '@lucide/angular'
 import { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import type { SpaceRootProps } from '@sync-in-server/backend/src/applications/spaces/models/space-root-props.model'
@@ -19,7 +18,7 @@ export interface FileTreeEvent {
 
 @Component({
   selector: 'app-files-tree-dialog',
-  imports: [L10nTranslateDirective, FilesTreeComponent, FaIconComponent, PathSlice],
+  imports: [L10nTranslateDirective, FilesTreeComponent, LucideDynamicIcon, PathSlice],
   templateUrl: 'files-tree-dialog.component.html'
 })
 export class FilesTreeDialogComponent {
@@ -30,7 +29,7 @@ export class FilesTreeDialogComponent {
   // sharing case
   @Input() mustHaveShareOutsidePermission = false
   protected readonly layout = inject(LayoutService)
-  protected readonly icons = { faFile, faFolderClosed }
+  protected readonly icons = { LucideFile, LucideFolderClosed }
   protected errorSelection = null
   protected selection: FileTree = null
 

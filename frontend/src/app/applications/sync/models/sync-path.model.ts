@@ -1,4 +1,4 @@
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { LucideIcon } from '@lucide/angular'
 import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { SyncPathFromClient, SyncPathSettings } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-path.interface'
 import type { SyncPath } from '@sync-in-server/backend/src/applications/sync/schemas/sync-path.interface'
@@ -29,7 +29,7 @@ export class SyncPathModel implements Partial<SyncPath> {
   newly = 0
   mimeUrl: string
   mime: string
-  icon: IconDefinition
+  icon: LucideIcon
   iconClass: 'primary' | 'purple'
   showedPath: string
   isWriteable: boolean

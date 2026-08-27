@@ -1,8 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, inject, Input, OnInit } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faKey, faUserPen } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideKeyRound, LucideUserRoundPen } from '@lucide/angular'
 import { USER_GROUP_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -12,7 +11,7 @@ import { AdminGroupModel } from '../../models/admin-group.model'
 
 @Component({
   selector: 'app-admin-group-edit-user-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, FormsModule],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, FormsModule],
   templateUrl: 'admin-group-edit-user-dialog.component.html'
 })
 export class AdminGroupEditUserDialogComponent implements OnInit {
@@ -22,7 +21,7 @@ export class AdminGroupEditUserDialogComponent implements OnInit {
   protected submitted = false
   protected isManager = false
   protected readonly USER_GROUP_ROLE = USER_GROUP_ROLE
-  protected readonly icons = { faUserPen, faKey }
+  protected readonly icons = { LucideUserRoundPen, LucideKeyRound }
   private readonly adminService = inject(AdminService)
 
   ngOnInit() {

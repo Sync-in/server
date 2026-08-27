@@ -1,8 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { inject, Injectable, NgZone, signal, WritableSignal } from '@angular/core'
 import { Title } from '@angular/platform-browser'
-import { FaConfig } from '@fortawesome/angular-fontawesome'
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { LucideIcon } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuService } from '@perfectmemory/ngx-contextmenu'
 import { L10nTranslationService } from 'angular-l10n'
 import { BsModalRef, BsModalService, ModalContainerComponent, ModalOptions } from 'ngx-bootstrap/modal'
@@ -49,7 +48,7 @@ export class LayoutService {
   // Used by the breadcrumb
   public breadcrumbNav = new BehaviorSubject<BreadCrumbUrl>({ url: '' })
   // Navigation breadcrumb icon
-  public breadcrumbIcon = new BehaviorSubject<IconDefinition>(null)
+  public breadcrumbIcon = new BehaviorSubject<LucideIcon>(null)
   // Modal section
   public windows = new BehaviorSubject<AppWindow[]>([]) // minimized modals
   public modalRefs = new Map<number | string, BsModalRef>()
@@ -58,7 +57,6 @@ export class LayoutService {
   private readonly title = inject(Title)
   private readonly ngZone = inject(NgZone)
   private readonly translation = inject(L10nTranslationService)
-  private readonly faConfig = inject(FaConfig)
   private readonly bsModal = inject(BsModalService)
   private readonly toastr = inject(ToastrService)
   private readonly contextMenu = inject<ContextMenuService<any>>(ContextMenuService)
@@ -87,7 +85,6 @@ export class LayoutService {
 
   constructor() {
     setTheme('bs5')
-    this.faConfig.fixedWidth = true
     this.title.setTitle(APP_NAME)
     this.preferTheme.subscribe((theme) => this.setTheme(theme))
   }
@@ -276,7 +273,7 @@ export class LayoutService {
     return languages
   }
 
-  setBreadcrumbIcon(icon: IconDefinition) {
+  setBreadcrumbIcon(icon: LucideIcon) {
     this.breadcrumbIcon.next(icon)
   }
 

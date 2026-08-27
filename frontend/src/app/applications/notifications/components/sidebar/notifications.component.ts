@@ -1,8 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { AfterViewInit, Component, effect, ElementRef, inject, QueryList, ViewChildren } from '@angular/core'
 import { Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCheck, faCircleInfo, faMagnifyingGlass, faTimes, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
+import { LucideCheck, LucideDynamicIcon, LucideInfo, LucideSearch, LucideTrash2, LucideX } from '@lucide/angular'
 import { NOTIFICATION_APP } from '@sync-in-server/backend/src/applications/notifications/constants/notifications'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
@@ -16,13 +15,13 @@ import { NotificationsService } from '../../notifications.service'
 
 @Component({
   selector: 'app-notifications',
-  imports: [L10nTranslateDirective, AutoResizeDirective, FaIconComponent, TimeAgoPipe, UserAvatarComponent],
+  imports: [L10nTranslateDirective, AutoResizeDirective, LucideDynamicIcon, TimeAgoPipe, UserAvatarComponent],
   templateUrl: 'notifications.component.html'
 })
 export class NotificationsComponent implements AfterViewInit {
   @ViewChildren('notificationsHtml') notificationsHtml!: QueryList<ElementRef>
   protected readonly store = inject(StoreService)
-  protected readonly icons = { faCheck, faTimes, faMagnifyingGlass, faTrashAlt, faCircleInfo }
+  protected readonly icons = { LucideCheck, LucideX, LucideSearch, LucideTrash2, LucideInfo }
   private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)
   private readonly notificationsService = inject(NotificationsService)

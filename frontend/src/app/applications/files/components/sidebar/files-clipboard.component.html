@@ -1,16 +1,16 @@
 <div class="sidebar-component-title justify-content-between position-relative">
   <div class="sidebar-component-title-side">
-    <fa-icon class="cursor-pointer"
-             [icon]="icons.faQuestion"
+    <svg class="cursor-pointer"
+             [lucideIcon]="icons.LucideCircleQuestionMark"
              [tooltip]="'Actions will be performed in the current folder' | translate:locale.language"
              container="body"
              placement="left">
-    </fa-icon>
+    </svg>
   </div>
   <div class="sidebar-component-title-label" l10nTranslate>Clipboard</div>
   <div class="sidebar-component-title-side">
-    <button (click)="clearAll()" class="btn btn-sm btn-default" type="button">
-      <fa-icon [icon]="icons.faTimes"></fa-icon>
+    <button (click)="clearAll()" class="btn btn-default" type="button">
+      <svg [lucideIcon]="icons.LucideX"></svg>
     </button>
   </div>
 </div>
@@ -34,7 +34,7 @@
           <img [src]="f.mimeUrl" alt="" height="28" width="28" (error)="f.fallBackMimeUrl()">
           <div class="text-truncate fs-sm">{{ f.name }}</div>
           <button (click)="remove(f)" class="btn btn-xs btn-default ms-auto">
-            <fa-icon [icon]="icons.faTimes"></fa-icon>
+            <svg class="fs-md" [lucideIcon]="icons.LucideX"></svg>
           </button>
         </div>
       </div>

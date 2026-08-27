@@ -64,6 +64,7 @@
       > .ui-select-match-text {
         display: flex;
         flex: 1 1 auto;
+        line-height: 1.4;
         min-width: 0;
         overflow: hidden;
 
@@ -73,9 +74,13 @@
         }
       }
 
-      > fa-icon,
+      > .lucide,
       > .dropdown-toggle {
         flex: 0 0 auto;
+      }
+
+      > .ui-select-clear-icon {
+        font-size: 1rem;
       }
 
       > .caret {

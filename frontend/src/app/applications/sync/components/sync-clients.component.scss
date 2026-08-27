@@ -90,13 +90,9 @@ $sync-client-card-radius: 0.9rem;
     min-width: 0;
     font-size: var(--font-size-sm);
 
-    > fa-icon:first-child:not(.osIcon) {
-      width: $sync-clients-icon-col-width;
-      min-width: $sync-clients-icon-col-width;
-      flex: 0 0 $sync-clients-icon-col-width;
+    > .lucide {
       font-size: calc(var(--font-size-base) * 1.024);
       margin-right: $sync-clients-icon-col-gap;
-      text-align: center;
     }
   }
 

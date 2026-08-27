@@ -4,14 +4,14 @@
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
   </button>
   @if (canCreateSpace) {
     <button (click)="openSpaceDialog(true)"
             class="btn btn-default me-1"
             [tooltip]="'New space' | translate:locale.language"
             type="button">
-      <fa-icon [icon]="icons.faPlus"></fa-icon>
+      <svg [lucideIcon]="icons.LucidePlus"></svg>
     </button>
   }
   <button (click)="openSpaceDialog()"
@@ -19,21 +19,21 @@
           class="btn btn-default me-1"
           [tooltip]="'Edit space' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faPen"></fa-icon>
+    <svg [lucideIcon]="icons.LucidePencil"></svg>
   </button>
   <button (click)="openChildShareDialog()"
           [disabled]="!canEditSpace || !selected?.counts.shares"
           class="btn btn-default me-1"
           [tooltip]="'Edit children shares' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.SHARES"></fa-icon>
+    <svg [lucideIcon]="icons.SHARES"></svg>
   </button>
   <button (click)="openSpaceRootsDialog()"
           [disabled]="!canManageRoots"
           class="btn btn-default me-1"
           [tooltip]="'Manage my anchored files' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faAnchor"></fa-icon>
+    <svg [lucideIcon]="icons.LucideAnchor"></svg>
   </button>
   <div class="ms-auto">
     <!--Start Filter Button-->
@@ -52,7 +52,7 @@
   <!--Start Gallery Content-->
   <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
        [style.--gallery-image-size]="galleryMode.image + 'px'"
-       [style.--gallery-icon-size]="galleryMode.faSize + 'px'"
+       [style.--gallery-icon-size]="galleryMode.iconSize + 'px'"
        [style.--gallery-text-size]="galleryMode.textSize + 'px'"
        class="app-gallery">
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
@@ -70,9 +70,9 @@
                [class.selected]="s.id === selected?.id"
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
-              <fa-icon [icon]="icons.SPACES"
-                       class="circle-primary-icon gallery-icon">
-              </fa-icon>
+              <span class="circle-primary-icon gallery-icon">
+                <svg [lucideIcon]="icons.SPACES"></svg>
+              </span>
               <span class="label-top-right">
                 @if (s.newly) {
                   <span class="badge bg-purple">{{ s.hTimeAgo }}</span>
@@ -85,20 +85,20 @@
                     [isMember]="true"
                     [height]="galleryMode.dimensions / 3.5"
                     [width]="galleryMode.dimensions / 3.5"
-                    [fontSize]="galleryMode.faSize / 2.5">
+                    [fontSize]="galleryMode.iconSize / 2.5">
                   </app-user-avatar-stack>
                 </span>
               }
               <span class="label-bottom-right">
                 @if (s.counts?.roots) {
                   <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.faAnchor"></fa-icon>
+                          <svg [lucideIcon]="icons.LucideAnchor"></svg>
                     {{ s.counts.roots }}
                         </span>
                 }
                 @if (s.role === SPACE_ROLE.IS_MANAGER && s.counts.shares) {
                   <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
-                          <fa-icon [icon]="icons.SHARES"></fa-icon>
+                          <svg [lucideIcon]="icons.SHARES"></svg>
                     {{ s.counts.shares }}
                         </span>
                 }
@@ -128,7 +128,7 @@
               l10nTranslate>
             {{ th.value.label }}
             @if (sortTable.sortParam.column === th.key) {
-              <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp" [fixedWidth]="false"></fa-icon>
+              <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
             }
           </th>
         }
@@ -155,7 +155,9 @@
                   @switch (th.key) {
                     @case ('name') {
                       <div class="d-flex align-items-center">
-                        <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false"></fa-icon>
+                        <span class="circle-primary-icon">
+                          <svg [lucideIcon]="icons.SPACES"></svg>
+                        </span>
                         <div class="d-flex flex-column text-truncate">
                           <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
                           <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ s.description }}</span>
@@ -171,13 +173,13 @@
                     @case ('info') {
                       @if (s.counts?.roots) {
                         <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1">
-                          <fa-icon [icon]="icons.faAnchor"></fa-icon>
+                          <svg [lucideIcon]="icons.LucideAnchor"></svg>
                           {{ s.counts.roots }}
                         </span>
                       }
                       @if (s.role === SPACE_ROLE.IS_MANAGER && s.counts.shares) {
                         <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
-                          <fa-icon [icon]="icons.SHARES"></fa-icon>
+                          <svg [lucideIcon]="icons.SHARES"></svg>
                           {{ s.counts.shares }}
                         </span>
                       }
@@ -213,35 +215,35 @@
   @if (canCreateSpace) {
     <ng-template
       (execute)="openSpaceDialog(true)" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faPlus"></fa-icon>New space</span>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucidePlus"></svg>New space</span>
     </ng-template>
     <ng-template [divider]="true" contextMenuItem></ng-template>
   }
   <ng-template (execute)="loadSpaces()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>Refresh</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideRotateCw"></svg>Refresh</span>
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
   @if (canEditSpace) {
     <ng-template (execute)="openSpaceDialog()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faPen"></fa-icon>Edit space</span>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>Edit space</span>
     </ng-template>
     @if (!!selected?.counts.shares) {
       <ng-template (execute)="openChildShareDialog()" contextMenuItem>
-        <span l10nTranslate><fa-icon [icon]="icons.SHARES"></fa-icon>Edit children shares</span>
+        <span l10nTranslate><svg [lucideIcon]="icons.SHARES"></svg>Edit children shares</span>
       </ng-template>
     }
   }
   @if (canManageRoots) {
     <ng-template (execute)="openSpaceRootsDialog()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faAnchor"></fa-icon>Manage my anchored files</span>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucideAnchor"></svg>Manage my anchored files</span>
     </ng-template>
   }
   @if (canEditSpace || canManageRoots) {
     <ng-template [divider]="true" contextMenuItem></ng-template>
   }
   <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideSquareCheckBig"></svg>Info</span>
   </ng-template>
 </context-menu>
 <!--End Context Menu-->

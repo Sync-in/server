@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { UrlSegment } from '@angular/router'
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { LucideIcon } from '@lucide/angular'
 import { API_SPACES_BROWSE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import type { SpaceFiles } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-files.interface'
@@ -19,7 +19,7 @@ export class SpacesBrowserService {
   private readonly layout = inject(LayoutService)
   private browseApi: string
   private breadCrumbUrl: string
-  private breadCrumbIcon: IconDefinition
+  private breadCrumbIcon: LucideIcon
   private breadCrumbFilesRepo = false
   private inShareRepo = false
   private inRootSpace = false

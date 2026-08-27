@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faLightbulb, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLightbulb, LucideUserRoundKey, LucideUsersRound } from '@lucide/angular'
 import { AvailableBSPositions } from 'ngx-bootstrap/positioning'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { OwnerType } from '../../interfaces/owner.interface'
@@ -10,7 +9,7 @@ import { UserAvatarTooltipComponent } from './user-avatar-tooltip.component'
 @Component({
   selector: 'app-user-avatar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TooltipModule, FaIconComponent, UserAvatarTooltipComponent],
+  imports: [TooltipModule, LucideDynamicIcon, UserAvatarTooltipComponent],
   template: `
     @if (userHasAvatar()) {
       <img
@@ -26,8 +25,7 @@ import { UserAvatarTooltipComponent } from './user-avatar-tooltip.component'
         containerClass="user-avatar-tooltip-container"
       />
     } @else {
-      <fa-icon
-        [icon]="userIcon()"
+      <span
         [class.circle-primary-icon]="isMember"
         [class.circle-gray-icon]="!isMember"
         class="cursor-pointer me-1"
@@ -40,7 +38,8 @@ import { UserAvatarTooltipComponent } from './user-avatar-tooltip.component'
         [style.min-height.px]="height"
         [style.font-size.px]="fontSize"
       >
-      </fa-icon>
+        <svg [lucideIcon]="userIcon()"></svg>
+      </span>
     }
 
     <ng-template #userTooltip>
@@ -58,7 +57,7 @@ export class UserAvatarComponent implements OnInit {
   @Input() tooltipPlacement: AvailableBSPositions = 'auto'
   @Input() container: string = null
   @Input() disableTooltip = false
-  protected readonly icons = { faUsers, faUserShield, faLightbulb }
+  protected readonly icons = { LucideUsersRound, LucideUserRoundKey, LucideLightbulb }
 
   ngOnInit(): void {
     if (this.height < 28) {
@@ -71,6 +70,6 @@ export class UserAvatarComponent implements OnInit {
   }
 
   protected userIcon() {
-    return this.isMember ? this.icons.faUsers : this.unknownUserAsInfo ? this.icons.faLightbulb : this.icons.faUserShield
+    return this.isMember ? this.icons.LucideUsersRound : this.unknownUserAsInfo ? this.icons.LucideLightbulb : this.icons.LucideUserRoundKey
   }
 }

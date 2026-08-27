@@ -2,28 +2,40 @@
   @return "rgb(#{red($hexColor)},#{green($hexColor)},#{blue($hexColor)})";
 }
 
-$tree-root-personal-icon: 'M448 448L64 448c-35.3 0-64-28.7-64-64l0-176 512 0 0 176c0 35.3-28.7 64-64 64zm64-288L0 160 0 96C0 60.7 28.7 32 64 32l138.7 0c13.8 0 27.3 4.5 38.4 12.8l38.4 28.8c5.5 4.2 12.3 6.4 19.2 6.4L448 80c35.3 0 64 28.7 64 64l0 16z';
-$tree-root-spaces-icon: 'M232.5 5.2c14.9-6.9 32.1-6.9 47 0l218.6 101c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0L13.9 149.8C5.4 145.8 0 137.3 0 128s5.4-17.9 13.9-21.8L232.5 5.2zM48.1 218.4l164.3 75.9c27.7 12.8 59.6 12.8 87.3 0l164.3-75.9 34.1 15.8c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0L13.9 277.8C5.4 273.8 0 265.3 0 256s5.4-17.9 13.9-21.8l34.1-15.8zM13.9 362.2l34.1-15.8 164.3 75.9c27.7 12.8 59.6 12.8 87.3 0l164.3-75.9 34.1 15.8c8.5 3.9 13.9 12.4 13.9 21.8s-5.4 17.9-13.9 21.8l-218.6 101c-14.9 6.9-32.1 6.9-47 0L13.9 405.8C5.4 401.8 0 393.3 0 384s5.4-17.9 13.9-21.8z';
-$tree-root-shares-icon: 'M384 192c53 0 96-43 96-96s-43-96-96-96-96 43-96 96c0 5.4 .5 10.8 1.3 16L159.6 184.1c-16.9-15-39.2-24.1-63.6-24.1-53 0-96 43-96 96s43 96 96 96c24.4 0 46.6-9.1 63.6-24.1L289.3 400c-.9 5.2-1.3 10.5-1.3 16 0 53 43 96 96 96s96-43 96-96-43-96-96-96c-24.4 0-46.6 9.1-63.6 24.1L190.7 272c.9-5.2 1.3-10.5 1.3-16s-.5-10.8-1.3-16l129.7-72.1c16.9 15 39.2 24.1 63.6 24.1z';
+$tree-folder-icon: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>';
+$tree-layers-icon: '<path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>';
+$tree-shares-icon: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>';
+$tree-caret-icon: '<path d="m9 18 6-6-6-6"/>';
+$tree-file-icon: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/>';
+
+@mixin lucide-content($color, $icon, $filled: false, $view-box: '0 0 24 24', $stroke-width: 2.25) {
+  $fill: 'none';
+
+  @if $filled {
+    $fill: hexToRGBString($color);
+  }
+
+  content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="#{$view-box}" fill="#{$fill}" stroke="#{hexToRGBString($color)}" stroke-width="#{$stroke-width}" stroke-linecap="round" stroke-linejoin="round">#{$icon}</svg>');
+}
 
 @mixin directory($color) {
-  content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#{hexToRGBString($color)}" d="M64 480H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H288c-10.1 0-19.6-4.7-25.6-12.8L243.2 57.6C231.1 41.5 212.1 32 192 32H64C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64z"/></svg>');
+  @include lucide-content($color, $tree-folder-icon, $filled: true, $stroke-width: 2);
   display: inline-block;
-  width: 24px;
+  width: 25px;
 }
 
 @mixin caret($color) {
-  content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="#{hexToRGBString($color)}" d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg>');
+  @include lucide-content($color, $tree-caret-icon, $view-box: '7 4 10 16');
   display: inline-block;
-  width: 8px;
+  width: 7px;
   position: absolute;
-  left: 4px;
-  top: 6px;
+  left: 5px;
+  top: 7px;
 }
 
 @mixin tree-root-icon($color, $path) {
-  content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#{hexToRGBString($color)}" d="#{$path}"/></svg>');
-  width: 13px;
+  @include lucide-content($color, $path);
+  width: 16px;
   position: absolute;
   left: 50%;
   top: 50%;
@@ -33,7 +45,7 @@ $tree-root-shares-icon: 'M384 192c53 0 96-43 96-96s-43-96-96-96-96 43-96 96c0 5.
 @mixin tree-root($color, $path) {
   .toggle-children-wrapper .toggle-children {
     width: 26px;
-    height: 24px;
+    height: 26px;
     border-radius: 0.25rem;
     background-color: $color;
 
@@ -52,9 +64,9 @@ $tree-root-shares-icon: 'M384 192c53 0 96-43 96-96s-43-96-96-96-96 43-96 96c0 5.
 }
 
 @mixin file($color) {
-  content: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="#{hexToRGBString($color)}" d="M 384 442.876 C 392.8 442.876 400 436.406 400 428.5 L 400 169.751 L 320 169.751 C 302.3 169.751 288 156.902 288 141 L 288 69.125 L 128 69.125 C 119.2 69.125 112 75.594 112 83.5 L 112 428.5 C 112 436.406 119.2 442.876 128 442.876 L 384 442.876 Z M 64 83.5 C 64 51.785 92.7 26 128 26 L 293.5 26 C 310.5 26 326.8 32.019 338.8 42.801 L 429.3 124.109 C 441.3 134.891 448 149.534 448 164.808 L 448 428.5 C 448 460.215 419.3 486 384 486 L 128 486 C 92.7 486 64 460.215 64 428.5 L 64 83.5 Z"/></svg>');
+  @include lucide-content($color, $tree-file-icon, $view-box: '2 2 20 20');
   display: inline-block;
-  width: 24px;
+  width: 23px;
 }
 
 .copy-move-location-icon {
@@ -62,8 +74,8 @@ $tree-root-shares-icon: 'M384 192c53 0 96-43 96-96s-43-96-96-96-96 43-96 96c0 5.
   width: 1.5rem;
   height: 1.5rem;
 
-  fa-icon {
-    font-size: 0.875em;
+  .lucide {
+    font-size: $font-size-md;
   }
 }
 
@@ -175,15 +187,15 @@ $tree-root-shares-icon: 'M384 192c53 0 96-43 96-96s-43-96-96-96-96 43-96 96c0 5.
   }
 
   .tree-root-personal {
-    @include tree-root($primary, $tree-root-personal-icon);
+    @include tree-root($primary, $tree-folder-icon);
   }
 
   .tree-root-spaces {
-    @include tree-root($primary, $tree-root-spaces-icon);
+    @include tree-root($primary, $tree-layers-icon);
   }
 
   .tree-root-shares {
-    @include tree-root($purple, $tree-root-shares-icon);
+    @include tree-root($purple, $tree-shares-icon);
   }
 
   .toggle-children-shared {

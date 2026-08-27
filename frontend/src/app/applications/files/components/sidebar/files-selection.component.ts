@@ -3,8 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCommentDots, faLock, faSpinner, faTimes, faUnlock } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLoader, LucideLock, LucideMessageSquareMore, LucideUnlock, LucideX } from '@lucide/angular'
 import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -38,7 +37,7 @@ import { FilesSummaryComponent } from '../utils/files-summary.component'
     TimeDateFormatPipe,
     L10nTranslateDirective,
     L10nTranslatePipe,
-    FaIconComponent,
+    LucideDynamicIcon,
     FilesViewerMediaComponent,
     UserAvatarComponent,
     BadgePermissionsComponent,
@@ -64,11 +63,11 @@ export class FilesSelectionComponent {
     LINKS: SPACES_ICON.LINKS,
     SYNC: SYNC_ICON.SYNC,
     FAVORITES: FAVORITES_ICON,
-    faCommentDots,
-    faLock,
-    faUnlock,
-    faSpinner,
-    faTimes
+    LucideMessageSquareMore,
+    LucideLock,
+    LucideUnlock,
+    LucideLoader,
+    LucideX
   }
 
   goToShare(share: { type: number; name: string }) {

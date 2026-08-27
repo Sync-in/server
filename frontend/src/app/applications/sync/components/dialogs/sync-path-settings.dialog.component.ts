@@ -1,8 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faRotate, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideRefreshCw, LucideX } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TabDirective, TabHeadingDirective, TabsetComponent } from 'ngx-bootstrap/tabs'
 import { ELECTRON_DIALOG } from '../../../../electron/constants/dialogs'
@@ -22,7 +21,7 @@ import { SyncPathSettingsComponent } from '../shared/sync-path-settings.componen
     TabDirective,
     SyncPathSettingsComponent,
     FormsModule,
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslateDirective,
     TabHeadingDirective
   ],
@@ -49,7 +48,7 @@ export class SyncPathSettingsDialogComponent implements OnInit {
     [this.SYNC_PATH_FILTER_TYPE.END]: "with the extension ('.mp3', '.avi', '.mov' ...)",
     [this.SYNC_PATH_FILTER_TYPE.EXPERT]: '[-+]?[0-9]*\\.?[0-9]*'
   }
-  protected readonly icons = { faTimes, faRotate }
+  protected readonly icons = { LucideX, LucideRefreshCw }
   protected confirmDeletion = false
   private readonly syncService = inject(SyncService)
 

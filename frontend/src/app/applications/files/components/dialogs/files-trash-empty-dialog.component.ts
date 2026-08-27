@@ -1,6 +1,5 @@
 import { Component, HostListener, inject, Input } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faSpinner, faTrashCan } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLoader, LucideTrash2 } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
@@ -8,13 +7,13 @@ import { FilesService } from '../../services/files.service'
 
 @Component({
   selector: 'app-files-trash-empty-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective],
+  imports: [LucideDynamicIcon, L10nTranslateDirective],
   templateUrl: 'files-trash-empty-dialog.component.html'
 })
 export class FilesTrashEmptyDialogComponent {
   @Input() files: FileModel[] = []
   protected layout = inject(LayoutService)
-  protected readonly icons = { faTrashCan, faSpinner }
+  protected readonly icons = { LucideTrash2, LucideLoader }
   protected submitted = false
   private filesService = inject(FilesService)
 

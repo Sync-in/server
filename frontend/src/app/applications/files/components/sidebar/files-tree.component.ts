@@ -3,9 +3,17 @@ import { AsyncPipe } from '@angular/common'
 import { Component, ElementRef, EventEmitter, inject, Input, OnDestroy, OnInit, Output, signal, ViewChild } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faFile } from '@fortawesome/free-regular-svg-icons'
-import { faArrowRotateRight, faArrowsAlt, faClone, faFolder, faObjectGroup, faQuestion, faSpinner, faTimes } from '@fortawesome/free-solid-svg-icons'
+import {
+  LucideCopy,
+  LucideDynamicIcon,
+  LucideFile,
+  LucideFiles,
+  LucideFolder,
+  LucideLoader,
+  LucideMove,
+  LucideRotateCw,
+  LucideX
+} from '@lucide/angular'
 import { FILE_OPERATION, FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import { SPACE_ALIAS, SPACE_ALL_OPERATIONS, SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -28,7 +36,7 @@ import { FilesSummaryComponent } from '../utils/files-summary.component'
 
 @Component({
   selector: 'app-files-tree',
-  imports: [AsyncPipe, AutoResizeDirective, TreeModule, L10nTranslateDirective, FaIconComponent, TapDirective, ToBytesPipe, FilesSummaryComponent],
+  imports: [AsyncPipe, AutoResizeDirective, TreeModule, L10nTranslateDirective, LucideDynamicIcon, TapDirective, ToBytesPipe, FilesSummaryComponent],
   templateUrl: 'files-tree.component.html'
 })
 export class FilesTreeComponent implements OnInit, OnDestroy {
@@ -55,15 +63,14 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
   @Input() toggleNodesAtStartup = false
   protected readonly store = inject(StoreService)
   protected readonly icons = {
-    faArrowRotateRight,
-    faArrowsAlt,
-    faClone,
-    faTimes,
-    faFolder,
-    faFile,
-    faObjectGroup,
-    faQuestion,
-    faSpinner
+    LucideRotateCw,
+    LucideMove,
+    LucideCopy,
+    LucideX,
+    LucideFolder,
+    LucideFile,
+    LucideFiles,
+    LucideLoader
   }
   protected readonly options: ITreeOptions = {
     actionMapping: {

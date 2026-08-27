@@ -1,6 +1,6 @@
 @if (adapter().isOpen()) {
   <div class="files-viewer-search">
-    <fa-icon class="files-viewer-search-icon" [icon]="icons.faMagnifyingGlass"></fa-icon>
+    <svg class="files-viewer-search-icon" [lucideIcon]="icons.LucideSearch"></svg>
     <input
       #searchInput
       (keydown)="searchKeyDown($event)"
@@ -15,20 +15,20 @@
       [disabled]="!adapter().matchCount()"
       class="btn btn-sm btn-custom files-viewer-search-button"
       type="button">
-      <fa-icon [icon]="icons.faChevronUp"></fa-icon>
+      <svg [lucideIcon]="icons.LucideChevronUp"></svg>
     </button>
     <button
       (click)="adapter().next()"
       [disabled]="!adapter().matchCount()"
       class="btn btn-sm btn-custom files-viewer-search-button"
       type="button">
-      <fa-icon [icon]="icons.faChevronDown"></fa-icon>
+      <svg [lucideIcon]="icons.LucideChevronDown"></svg>
     </button>
     <button
       (click)="adapter().close()"
       class="btn btn-sm btn-custom files-viewer-search-button"
       type="button">
-      <fa-icon [icon]="icons.faXmark"></fa-icon>
+      <svg [lucideIcon]="icons.LucideX"></svg>
     </button>
   </div>
 }

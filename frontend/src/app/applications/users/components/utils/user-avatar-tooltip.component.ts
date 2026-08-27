@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, Input, ViewEncapsulation } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faLightbulb, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLightbulb, LucideUserRoundKey, LucideUsersRound } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { OwnerType } from '../../interfaces/owner.interface'
 import { MemberModel } from '../../models/member.model'
@@ -9,7 +8,7 @@ import { MemberModel } from '../../models/member.model'
   selector: 'app-user-avatar-tooltip',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
-  imports: [FaIconComponent, L10nTranslatePipe],
+  imports: [LucideDynamicIcon, L10nTranslatePipe],
   styles: [
     `
       .user-avatar-tooltip {
@@ -68,8 +67,7 @@ import { MemberModel } from '../../models/member.model'
           @if (userHasAvatar(tooltipUser)) {
             <img alt="" class="avatar-base-img user-avatar-tooltip-avatar" height="24" width="24" [src]="tooltipUser.avatarUrl" />
           } @else {
-            <fa-icon
-              [icon]="userIcon()"
+            <span
               [class.circle-primary-icon]="isMember"
               [class.circle-gray-icon]="!isMember"
               class="user-avatar-tooltip-avatar"
@@ -77,7 +75,8 @@ import { MemberModel } from '../../models/member.model'
               [style.min-height.px]="24"
               [style.font-size.px]="12"
             >
-            </fa-icon>
+              <svg [lucideIcon]="userIcon()"></svg>
+            </span>
           }
           <div class="user-avatar-tooltip-text">
             @if (translateTitle(tooltipUser)) {
@@ -104,7 +103,7 @@ export class UserAvatarTooltipComponent {
   @Input() isMember = false
   @Input() unknownUserAsInfo = false
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly icons = { faUsers, faUserShield, faLightbulb }
+  protected readonly icons = { LucideUsersRound, LucideUserRoundKey, LucideLightbulb }
 
   protected get tooltipUsers(): (OwnerType | MemberModel | any)[] {
     if (this.users?.length) {
@@ -122,7 +121,7 @@ export class UserAvatarTooltipComponent {
   }
 
   protected userIcon() {
-    return this.isMember ? this.icons.faUsers : this.unknownUserAsInfo ? this.icons.faLightbulb : this.icons.faUserShield
+    return this.isMember ? this.icons.LucideUsersRound : this.unknownUserAsInfo ? this.icons.LucideLightbulb : this.icons.LucideUserRoundKey
   }
 
   protected userTitle(user: OwnerType | MemberModel | any): string {

@@ -1,8 +1,6 @@
 import { Component, inject, Input } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faFile, faFileLines, faFileWord } from '@fortawesome/free-regular-svg-icons'
-import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
+import { LucideArrowRight, LucideDynamicIcon, LucideFile, LucideFileText, LucideFileType2 } from '@lucide/angular'
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -12,7 +10,7 @@ import { FileModel } from '../../models/file.model'
 
 @Component({
   selector: 'app-files-viewer-select-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, FormsModule],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, FormsModule],
   templateUrl: 'files-viewer-select-dialog.component.html',
   styleUrls: ['./files-viewer-select-dialog.scss']
 })
@@ -20,7 +18,7 @@ export class FilesViewerSelectDialog {
   @Input({ required: true }) file: FileModel = null
   @Input({ required: true }) editorProvider: FileEditorProviders
   protected rememberChoice = false
-  protected readonly icons = { faFile, faFileWord, faArrowRight, faFileLines }
+  protected readonly icons = { LucideFile, LucideFileType2, LucideArrowRight, LucideFileText }
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
   private readonly store = inject(StoreService)

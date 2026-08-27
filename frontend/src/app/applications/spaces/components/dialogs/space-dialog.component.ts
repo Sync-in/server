@@ -1,8 +1,16 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Injector, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faAnchor, faCog, faPen, faPlus, faSpinner, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
+import {
+  LucideAnchor,
+  LucideDynamicIcon,
+  LucideLoader,
+  LucidePencil,
+  LucidePlus,
+  LucideSettings,
+  LucideUserRoundKey,
+  LucideUsersRound
+} from '@lucide/angular'
 import { LINK_TYPE } from '@sync-in-server/backend/src/applications/links/constants/links'
 import { SPACE_MAX_DISABLED_DAYS, SPACE_OPERATION, SPACE_ROLE } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SpaceProps } from '@sync-in-server/backend/src/applications/spaces/models/space-props.model'
@@ -43,7 +51,7 @@ import { AdminService } from '../../../admin/admin.service'
     TimeAddPipe,
     TimeDurationPipe,
     TimeDateFormatPipe,
-    FaIconComponent,
+    LucideDynamicIcon,
     TabsModule,
     FormsModule,
     AutofocusDirective,
@@ -70,13 +78,13 @@ export class SpaceDialogComponent implements OnInit {
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
     LINKS: SPACES_ICON.LINKS,
-    faPen,
-    faAnchor,
-    faUserShield,
-    faPlus,
-    faSpinner,
-    faCog,
-    faUsers
+    LucidePencil,
+    LucideAnchor,
+    LucideUserRoundKey,
+    LucidePlus,
+    LucideLoader,
+    LucideSettings,
+    LucideUsersRound
   }
   protected readonly SPACE_MAX_DISABLED_DAYS = SPACE_MAX_DISABLED_DAYS
   // states

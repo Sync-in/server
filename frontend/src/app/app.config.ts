@@ -3,6 +3,7 @@ import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXsrfC
 import { ApplicationConfig, importProvidersFrom, isDevMode, provideZoneChangeDetection } from '@angular/core'
 import { provideAnimations } from '@angular/platform-browser/animations'
 import { provideRouter } from '@angular/router'
+import { provideLucideConfig } from '@lucide/angular'
 import { CSRF_KEY } from '@sync-in-server/backend/src/authentication/constants/auth'
 import { provideL10nIntl, provideL10nTranslation } from 'angular-l10n'
 import { BsModalService } from 'ngx-bootstrap/modal'
@@ -18,6 +19,7 @@ import { webSocketOptions } from './websocket/websocket.constants'
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
+    provideLucideConfig({ size: '1em', strokeWidth: 2.25 }),
     { provide: LocationStrategy, useClass: HashLocationStrategy },
     { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
     provideRouter(routes),

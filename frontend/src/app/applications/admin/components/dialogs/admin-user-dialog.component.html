@@ -1,14 +1,14 @@
 <div class="modal-header">
   <h4 class="modal-title">
     @if (user) {
-      <fa-icon [icon]="icons.faUserPen"></fa-icon>
+      <svg [lucideIcon]="icons.LucideUserRoundPen"></svg>
       <span>{{ user.fullName }}</span>
     } @else {
-      <fa-icon [icon]="icons.faUserPlus"></fa-icon>
+      <svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>
       <span l10nTranslate>New user</span>
     }
     @if (loading) {
-      <fa-icon [icon]="icons.faSpinner" animation="spin" class="ms-2" size="sm"></fa-icon>
+      <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true" class="ms-2"></svg>
     }
   </h4>
   @if (user) {
@@ -23,7 +23,7 @@
     <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.faAddressCard"></fa-icon>
+          <svg [lucideIcon]="icons.LucideUserRoundCog"></svg>
           <span class="app-tab-label" l10nTranslate>Account</span>
         </span>
       </ng-template>
@@ -99,13 +99,13 @@
                 <div>
                   <label class="form-label" for="twoFa" l10nTranslate>Two-Factor Authentication</label>
                   <div id="twoFa" class="pt-1 d-flex align-items-center flex-wrap gap-2">
-                    <span>
-                      <fa-icon [icon]="user.twoFaEnabled ? icons.faLock : icons.faLockOpen"></fa-icon>
+                    <span class="d-inline-flex align-items-center gap-2">
+                      <svg class="two-fa-status-icon" [lucideIcon]="user.twoFaEnabled ? icons.LucideLock : icons.LucideLockOpen"></svg>
                       {{ (user.twoFaEnabled ? 'enabled' : 'disabled') | translate:locale.language | titlecase }}
                     </span>
                     @if (user.twoFaEnabled) {
                       <span (click)="reset2Fa()" class="link-danger" role="button">
-                        <fa-icon [icon]="icons.faTrash"></fa-icon>
+                        <svg [lucideIcon]="icons.LucideTrash2"></svg>
                         <span class="ms-1" l10nTranslate>Reset</span>
                       </span>
                     }
@@ -197,7 +197,7 @@
     <tab (selectTab)="tabView='permissions'" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.faShieldHalved"></fa-icon>
+          <svg [lucideIcon]="icons.LucideShieldCheck"></svg>
           <span class="app-tab-label" l10nTranslate>Permissions</span>
         </span>
       </ng-template>
@@ -249,7 +249,9 @@
                     @if (g.permissions) {
                       <div class="d-flex align-items-center mb-1 gap-2">
                         <div class="d-flex align-items-center me-4">
-                          <fa-icon [icon]="icons.GROUPS" class="circle-primary-icon me-2"></fa-icon>
+                          <span class="circle-primary-icon me-2">
+                            <svg [lucideIcon]="icons.GROUPS"></svg>
+                          </span>
                           <span>{{ g.name }}</span>
                         </div>
                         <div class="d-flex fs-xs ms-auto">{{ g.permissions | split | join:true }}</div>
@@ -267,7 +269,7 @@
     <tab (selectTab)="tabView='groups'" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.faUsers"></fa-icon>
+          <svg [lucideIcon]="icons.LucideUsersRound"></svg>
           <span class="app-tab-label" l10nTranslate>Groups</span>
           <span class="app-tab-count">{{ userForm.value.groups.length || 0 }}</span>
         </span>

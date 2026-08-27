@@ -14,6 +14,7 @@
 
     .modal-title {
       display: flex;
+      align-items: center;
       font-size: $font-size-base;
       overflow: hidden;
 
@@ -21,8 +22,8 @@
         @include text-truncate-utility;
       }
 
-      > fa-icon {
-        font-size: $font-size-md;
+      > .lucide {
+        font-size: $font-size-xl;
         margin-right: 0.4rem;
       }
 
@@ -70,6 +71,10 @@
       align-items: center;
       gap: .45rem;
       min-width: 0;
+
+      .lucide {
+        font-size: $font-size-lg;
+      }
     }
 
     .app-tab-label {

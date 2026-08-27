@@ -3,8 +3,8 @@
     <div class="sidebar-component-title-side"></div>
     <div class="sidebar-component-title-label" l10nTranslate>Navigation</div>
     <div class="sidebar-component-title-side">
-      <button (click)="onRefresh()" class="btn btn-sm btn-default" type="button">
-        <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
+      <button (click)="onRefresh()" class="btn btn-default" type="button">
+        <svg [lucideIcon]="icons.LucideRotateCw"></svg>
       </button>
     </div>
   </div>
@@ -16,10 +16,11 @@
     <div class="d-flex">
       <div class="d-flex flex-column align-items-center me-2 text-muted">
         <span class="copy-move-location-icon border rounded-circle d-flex align-items-center justify-content-center lh-1">
-          <fa-icon
-            [icon]="files.length === 1 ? (files[0].isDir ? icons.faFolder : icons.faFile) : files.length > 1 ? icons.faObjectGroup : icons.faQuestion"
-            [fixedWidth]="true">
-          </fa-icon>
+          @if (files.length) {
+            <svg [lucideIcon]="files.length === 1 ? (files[0].isDir ? icons.LucideFolder : icons.LucideFile) : icons.LucideFiles"></svg>
+          } @else {
+            <span class="fs-md">?</span>
+          }
         </span>
         <span class="copy-move-connector border-start flex-grow-1"></span>
       </div>
@@ -31,9 +32,9 @@
             @if (files[0].isDir) {
               @let directorySize = getSizeLazy(files[0]) | async;
               @if (directorySize === null) {
-                <fa-icon [icon]="icons.faSpinner" animation="spin-pulse"></fa-icon>
+                <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin-pulse]="true"></svg>
               } @else if (directorySize === undefined) {
-                <fa-icon [icon]="icons.faQuestion"></fa-icon>
+                <span class="fs-md">?</span>
               } @else {
                 <span>{{ directorySize | toBytes:0:true }}</span>
               }
@@ -53,7 +54,7 @@
           }
           @case (0) {
             <div class="app-small-card files-summary-card border rounded d-flex justify-content-center align-items-center px-2 py-2">
-              <fa-icon [icon]="icons.faQuestion" class="text-muted"></fa-icon>
+              <span class="fs-md text-muted">?</span>
             </div>
           }
           @default {
@@ -69,7 +70,11 @@
     <div class="d-flex">
       <div class="d-flex flex-column align-items-center me-2 text-muted">
         <span class="copy-move-location-icon border rounded-circle d-flex align-items-center justify-content-center lh-1">
-          <fa-icon [icon]="destination?.icon || icons.faQuestion" [fixedWidth]="true"></fa-icon>
+          @if (destination?.icon; as destinationIcon) {
+            <svg [lucideIcon]="destinationIcon"></svg>
+          } @else {
+            <span class="fs-md">?</span>
+          }
         </span>
       </div>
       <div class="flex-grow-1 overflow-hidden">
@@ -84,7 +89,7 @@
           @if (selection && dstAllowed) {
             <span class="text-bold text-truncate">{{ selection.data.name }}</span>
           } @else {
-            <fa-icon [icon]="icons.faQuestion" class="text-muted mx-auto"></fa-icon>
+            <span class="text-muted mx-auto">?</span>
           }
         </div>
         @if (errorMsg && !dstAllowed) {
@@ -99,7 +104,7 @@
               class="btn btn-sm btn-warning flex-fill"
               type="button"
               l10nTranslate>
-        <fa-icon [icon]="icons.faArrowsAlt"></fa-icon>
+        <svg [lucideIcon]="icons.LucideMove"></svg>
         Move
       </button>
       <button (click)="actionCopy()"
@@ -107,14 +112,14 @@
               class="btn btn-sm btn-primary flex-fill"
               type="button"
               l10nTranslate>
-        <fa-icon [icon]="icons.faClone"></fa-icon>
+        <svg [lucideIcon]="icons.LucideCopy"></svg>
         Copy
       </button>
       <button (click)="actionCancel()"
               class="btn btn-sm btn-secondary flex-fill"
               type="button"
               l10nTranslate>
-        <fa-icon [icon]="icons.faTimes"></fa-icon>
+        <svg [lucideIcon]="icons.LucideX"></svg>
         Cancel
       </button>
     </div>
@@ -144,7 +149,7 @@
     </ng-template>
     <ng-template #loadingTemplate>
       <span>
-        <fa-icon [icon]="icons.faSpinner" animation="spin" class="text-bold"></fa-icon>
+        <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true" class="text-bold"></svg>
       </span>
     </ng-template>
   </tree-root>

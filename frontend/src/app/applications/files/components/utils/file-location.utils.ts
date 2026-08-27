@@ -1,4 +1,4 @@
-import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { LucideIcon } from '@lucide/angular'
 import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SPACES_ICON, SPACES_TITLE } from '../../../spaces/spaces.constants'
@@ -9,7 +9,7 @@ export interface FileLocationPresentation {
   repository: FileLocationRepository
   repositoryTitle: string
   relativePath: string
-  icon: IconDefinition
+  icon: LucideIcon
   iconClass: 'primary' | 'purple'
 }
 

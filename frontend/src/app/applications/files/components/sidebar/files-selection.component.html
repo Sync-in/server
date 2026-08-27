@@ -23,7 +23,7 @@
                     class="btn btn-xs btn-default ms-auto"
                     type="button"
                     [attr.aria-label]="'Remove' | translate:locale.language">
-              <fa-icon [icon]="icons.faTimes"></fa-icon>
+              <svg class="fs-md" [lucideIcon]="icons.LucideX"></svg>
             </button>
           </div>
         </div>
@@ -58,7 +58,7 @@
           <div class="d-flex mb-1">
             <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Size</div>
             @if (f.isDir && (getSizeLazy(f) | async) === null) {
-              <fa-icon [icon]="icons.faSpinner" animation="spin-pulse"></fa-icon>
+              <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin-pulse]="true"></svg>
             } @else {
               {{ f.hSize }}
             }
@@ -76,12 +76,12 @@
             @if (f.lock) {
               @if (f.lock.isExclusive) {
                 <span class="badge bg-maroon" l10nTranslate>
-                  <fa-icon [icon]="icons.faLock"></fa-icon>
+                  <svg [lucideIcon]="icons.LucideLock"></svg>
                   <span l10nTranslate>Exclusive</span>
                 </span>
               } @else {
                 <span class="badge bg-maroon" l10nTranslate>
-                  <fa-icon [icon]="icons.faUnlock"></fa-icon>
+                  <svg [lucideIcon]="icons.LucideUnlock"></svg>
                   <span l10nTranslate>Shared</span>
                 </span>
               }
@@ -94,7 +94,7 @@
             <div class="d-flex col-7 col-sm-7">
               @if (f.shares.length || f.links.length) {
                 <span class="badge bg-primary">
-                  <fa-icon [icon]="icons.SHARED"></fa-icon>
+                  <svg [lucideIcon]="icons.SHARED"></svg>
                   {{ f.shares.length + f.links.length }}
                 </span>
               } @else {
@@ -106,7 +106,7 @@
             <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Anchored</div>
             @if (f.spaces.length) {
               <span class="badge bg-primary">
-                <fa-icon [icon]="icons.SPACES"></fa-icon>
+                <svg [lucideIcon]="icons.SPACES"></svg>
                 {{ f.spaces.length }}</span>
             } @else {
               <span class="badge bg-default" l10nTranslate>no</span>
@@ -125,7 +125,7 @@
                       class="badge {{f.isFavorite ? 'bg-warning' : 'bg-default'}} cursor-pointer"
                       type="button"
                       [attr.aria-label]="(f.isFavorite ? 'Remove from favorites' : 'Add to favorites') | translate:locale.language">
-                <fa-icon [icon]="icons.FAVORITES"></fa-icon>
+                <svg [lucideIcon]="icons.FAVORITES"></svg>
               </button>
             </div>
           }
@@ -135,7 +135,7 @@
                     class="badge {{f.hasComments ? 'bg-success' : 'bg-default'}} cursor-pointer"
                     type="button"
                     [attr.aria-label]="'Comments' | translate:locale.language">
-              <fa-icon [icon]="icons.faCommentDots"></fa-icon>
+              <svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>
             </button>
           </div>
         </div>
@@ -164,31 +164,31 @@
             @if (f.lock) {
               <div (click)="openLockDialog(f)"
                    class="badge white-space-normal bg-maroon cursor-pointer mb-2">
-                <fa-icon [icon]="f.lock.isExclusive ? icons.faLock : icons.faUnlock"></fa-icon>
+                <svg [lucideIcon]="f.lock.isExclusive ? icons.LucideLock : icons.LucideUnlock"></svg>
                 {{ f.lock | fileLockFormatPipe }}
               </div>
             }
             @for (space of f.spaces; track space.id) {
               <div (click)="goToSpace(space)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
-                <fa-icon [icon]="icons.SPACES"></fa-icon>
+                <svg [lucideIcon]="icons.SPACES"></svg>
                 {{ space.name }}
               </div>
             }
             @for (share of f.shares; track share.id) {
               <div (click)="goToShare(share)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
-                <fa-icon [icon]="icons.SHARED"></fa-icon>
+                <svg [lucideIcon]="icons.SHARED"></svg>
                 {{ share.name }}
               </div>
             }
             @for (link of f.links; track link.id) {
               <div (click)="goToShare(link)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
-                <fa-icon [icon]="icons.LINKS"></fa-icon>
+                <svg [lucideIcon]="icons.LINKS"></svg>
                 {{ link.name }}
               </div>
             }
             @for (sync of f.syncs; track sync.id) {
               <div (click)="goToSync(sync)" class="badge white-space-normal bg-primary cursor-pointer me-1 mb-2">
-                <fa-icon [icon]="icons.SYNC"></fa-icon>
+                <svg [lucideIcon]="icons.SYNC"></svg>
                 {{ sync.clientName }}
               </div>
             }

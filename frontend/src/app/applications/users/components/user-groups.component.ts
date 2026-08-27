@@ -2,20 +2,19 @@ import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, ViewChild } from '@angular/core'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
-  faArrowDown,
-  faArrowRotateRight,
-  faArrowUp,
-  faEllipsis,
-  faKey,
-  faMinus,
-  faPen,
-  faPlus,
-  faRightFromBracket,
-  faRotate,
-  faUsersRectangle
-} from '@fortawesome/free-solid-svg-icons'
+  LucideArrowDown,
+  LucideArrowUp,
+  LucideDynamicIcon,
+  LucideEllipsis,
+  LucideKeyRound,
+  LucideLogOut,
+  LucideMinus,
+  LucidePencil,
+  LucidePlus,
+  LucideRotateCw,
+  LucideUsersRound
+} from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { GROUP_TYPE } from '@sync-in-server/backend/src/applications/users/constants/group'
 import { USER_GROUP_ROLE, USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -48,7 +47,7 @@ import { UserPersonalGroupLeaveDialogComponent } from './dialogs/user-personal-g
   selector: 'app-user-groups',
   imports: [
     ContextMenuModule,
-    FaIconComponent,
+    LucideDynamicIcon,
     KeyValuePipe,
     L10nTranslateDirective,
     L10nTranslatePipe,
@@ -79,17 +78,16 @@ export class UserGroupsComponent {
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     GROUPS: USER_ICON.GROUPS,
-    faRotate,
-    faPlus,
-    faMinus,
-    faPen,
-    faArrowDown,
-    faArrowUp,
-    faKey,
-    faArrowRotateRight,
-    faRightFromBracket,
-    faUsersRectangle,
-    faEllipsis
+    LucideRotateCw,
+    LucidePlus,
+    LucideMinus,
+    LucidePencil,
+    LucideArrowDown,
+    LucideArrowUp,
+    LucideKeyRound,
+    LucideLogOut,
+    LucideUsersRound,
+    LucideEllipsis
   }
   // Sort
   protected tableHeaders: Record<'name' | 'type' | 'role' | 'members' | 'createdAt' | 'modifiedAt' | 'memberSince', TableHeaderConfig> = {

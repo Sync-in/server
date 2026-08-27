@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faRotate"></fa-icon>
+    <svg [lucideIcon]="icons.LucideRefreshCw"></svg>
     <span>{{ syncPath.settings.name }}</span>
   </h4>
   <button (click)="onMinimize()" aria-label="Minimize" class="btn-minimize btn-minimize-white" type="button"></button>
@@ -12,13 +12,13 @@
         <div class="sync-report-top-menu">
           <button (click)="manageReport(!running)" class="btn btn-default ms-1" type="button">
             <div class="d-flex align-items-center">
-              <fa-icon [icon]="running ? icons.faStop : icons.faFlask"></fa-icon>
+              <svg [lucideIcon]="running ? icons.LucideSquareStop : icons.LucideFlaskConical"></svg>
               <span class="ms-1" l10nTranslate>Simulate</span>
             </div>
           </button>
           <div class="sync-report-summary ms-3">
             @if (running) {
-              <fa-icon [icon]="icons.faSpinner" animation="spin" class="me-2"></fa-icon>
+              <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true" class="me-2"></svg>
             }
             @if (transfers().length) {
               <span class="badge bg-default sync-report-count-badge">{{ 'nb_actions' | translate:locale.language:{ nb: count.actions } }}</span>
@@ -34,20 +34,20 @@
                       role="button"
                       type="button"
                       btnCheckbox>
-                <fa-icon [icon]="icons.faFilter"></fa-icon>
+                <svg [lucideIcon]="icons.LucideFunnel"></svg>
                 <span>{{ count.filtered }}</span>
               </button>
             }
             <div [tooltip]="'Go to' | translate:locale.language">
               <div [isDisabled]="!transferSelected" class="btn-group me-2" dropdown>
                 <button class="btn btn-default dropdown-toggle" dropdownToggle type="button">
-                  <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
+                  <svg [lucideIcon]="icons.LucideMapPin"></svg>
                 </button>
                 <ul *dropdownMenu class="dropdown-menu" role="menu">
                   <li role="menuitem">
                     <a (click)="goToPath()" class="dropdown-item">
                     <span l10nTranslate>
-                      <fa-icon [icon]="icons.CLIENT"></fa-icon>
+                      <svg [lucideIcon]="icons.CLIENT"></svg>
                       <span class="ms-2">Client</span>
                     </span>
                     </a>
@@ -56,7 +56,7 @@
                     <li role="menuitem">
                       <a (click)="goToPath(false)" class="dropdown-item">
                         <span l10nTranslate>
-                          <fa-icon [icon]="icons.SERVER"></fa-icon>
+                          <svg [lucideIcon]="icons.SERVER"></svg>
                           <span class="ms-2">Server</span>
                         </span>
                       </a>
@@ -89,7 +89,7 @@
                       l10nTranslate>
                     {{ th.value.label }}
                     @if (sortTable.sortParam.column === th.key) {
-                      <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp"></fa-icon>
+                      <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
                     }
                   </th>
                 }
@@ -112,10 +112,14 @@
                           @switch (th.key) {
                             @case ('action') {
                               <span class="d-flex align-items-center" style="font-size: var(--font-size-sm)">
-                              <fa-icon [icon]="s.sideIcon" class="{{s.sideIconClass}}"></fa-icon>
-                              <fa-icon [icon]="s.actionIcon" class="circle-gray-icon-sm" size="sm"></fa-icon>
-                              <span class="fs-sm" l10nTranslate>{{ s.actionText }}</span>
-                            </span>
+                                <span [class]="s.sideIconClass">
+                                  <svg [lucideIcon]="s.sideIcon"></svg>
+                                </span>
+                                <span class="circle-gray-icon-sm">
+                                  <svg [lucideIcon]="s.actionIcon"></svg>
+                                </span>
+                                <span class="fs-sm" l10nTranslate>{{ s.actionText }}</span>
+                              </span>
                             }
                             @case ('file') {
                               <div class="d-flex align-items-center fs-sm">

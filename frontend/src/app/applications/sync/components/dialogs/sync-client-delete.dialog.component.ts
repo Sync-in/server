@@ -1,8 +1,8 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, Output } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faSpinner, faTrashCan } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLoader, LucideTrash2 } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
+import { PlatformIconComponent } from '../../../../common/components/platform-icon.component'
 import { LayoutService } from '../../../../layout/layout.service'
 import { SyncClientModel } from '../../models/sync-client.model'
 import { SyncService } from '../../services/sync.service'
@@ -10,14 +10,14 @@ import { SyncService } from '../../services/sync.service'
 @Component({
   selector: 'app-sync-client-delete-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FaIconComponent, L10nTranslateDirective],
+  imports: [LucideDynamicIcon, PlatformIconComponent, L10nTranslateDirective],
   templateUrl: './sync-client-delete.dialog.component.html'
 })
 export class SyncClientDeleteDialogComponent {
   @Input() client: SyncClientModel
   @Output() wasDeleted = new EventEmitter()
   protected readonly layout = inject(LayoutService)
-  protected readonly icons = { faSpinner, faTrashCan }
+  protected readonly icons = { LucideLoader, LucideTrash2 }
   protected submitted = false
   private readonly syncService = inject(SyncService)
 

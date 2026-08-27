@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, model, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faAngleLeft, faAngleRight, faExpand, faInfo, faPlay, faStop } from '@fortawesome/free-solid-svg-icons'
+import { LucideChevronLeft, LucideChevronRight, LucideDynamicIcon, LucideExpand, LucideInfo, LucidePlay, LucideSquareStop } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -11,7 +10,7 @@ import { FileModel } from '../../models/file.model'
 
 @Component({
   selector: 'app-files-viewer-image',
-  imports: [FormsModule, TooltipModule, FaIconComponent, ButtonCheckboxDirective, L10nTranslatePipe, L10nTranslateDirective],
+  imports: [FormsModule, TooltipModule, LucideDynamicIcon, ButtonCheckboxDirective, L10nTranslatePipe, L10nTranslateDirective],
   templateUrl: 'files-viewer-image.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -25,7 +24,7 @@ export class FilesViewerImageComponent {
   protected imageCount = computed(() => this.directoryImages().length)
   protected imageIndex = computed(() => this.directoryImages().indexOf(this.file()))
   protected imageResolution = signal<string>('')
-  protected readonly icons = { faAngleLeft, faAngleRight, faExpand, faInfo, faPlay, faStop }
+  protected readonly icons = { LucideChevronLeft, LucideChevronRight, LucideExpand, LucideInfo, LucidePlay, LucideSquareStop }
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   private readonly slideDelay = 5000
   private destroyRef = inject(DestroyRef)

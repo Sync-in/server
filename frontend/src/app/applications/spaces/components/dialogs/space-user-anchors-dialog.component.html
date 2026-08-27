@@ -1,10 +1,10 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.SPACES"></fa-icon>
+    <svg [lucideIcon]="icons.SPACES"></svg>
     <span>{{ space.name }}</span>
   </h4>
   @if (loading) {
-    <fa-icon [icon]="icons.faSpinner" animation="spin" class="ms-2" size="sm"></fa-icon>
+    <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true" class="ms-2"></svg>
   }
   <h4 class="modal-title ms-auto">
     <span l10nTranslate>Manage my anchored files</span>
@@ -20,8 +20,8 @@
 <div class="modal-footer">
   <button (click)="openSelectRootDialog()"
           class="btn btn-success" type="button" l10nTranslate>
-    <fa-icon [icon]="icons.faPlus"></fa-icon>
-    <fa-icon [icon]="icons.faAnchor"></fa-icon>
+    <svg [lucideIcon]="icons.LucidePlus"></svg>
+    <svg [lucideIcon]="icons.LucideAnchor"></svg>
     File
   </button>
   <button (click)="layout.closeDialog()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>

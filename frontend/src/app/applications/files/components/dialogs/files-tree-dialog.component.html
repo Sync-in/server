@@ -2,7 +2,7 @@
   <h4 class="modal-title">
     @if (!!selection) {
       <span>
-        <fa-icon [icon]="selection.isDir ? icons.faFolderClosed : icons.faFile"></fa-icon>
+        <svg [lucideIcon]="selection.isDir ? icons.LucideFolderClosed : icons.LucideFile"></svg>
         {{ selection.path | pathSlice:-1 }}
     </span>
     } @else {

@@ -1,17 +1,17 @@
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { LucideIcon } from '@lucide/angular'
 import {
-  faAnchor,
-  faFileCircleMinus,
-  faFileCirclePlus,
-  faFileImport,
-  faFilePen,
-  faFolderClosed,
-  faLayerGroup,
-  faLink,
-  faShare,
-  faShareNodes,
-  faTrashCan
-} from '@fortawesome/free-solid-svg-icons'
+  LucideAnchor,
+  LucideFileInput,
+  LucideFileMinusCorner,
+  LucideFilePenLine,
+  LucideFilePlusCorner,
+  LucideFolderClosed,
+  LucideLayers,
+  LucideLink,
+  LucideRedo,
+  LucideShare2,
+  LucideTrash2
+} from '@lucide/angular'
 import { SPACES_BASE_ROUTE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
 import {
   SPACE_ALIAS,
@@ -45,15 +45,15 @@ export const SPACES_TITLE = {
 } as const
 
 export const SPACES_ICON = {
-  PERSONAL: faFolderClosed,
-  SPACES: faLayerGroup,
-  SHARES: faShareNodes,
-  SHARED_WITH_ME: faShareNodes,
-  SHARED_WITH_OTHERS: faShare,
-  ANCHORED: faAnchor,
-  LINKS: faLink,
-  TRASH: faTrashCan,
-  EXTERNAL: faFileImport
+  PERSONAL: LucideFolderClosed,
+  SPACES: LucideLayers,
+  SHARES: LucideShare2,
+  SHARED_WITH_ME: LucideShare2,
+  SHARED_WITH_OTHERS: LucideShare2,
+  ANCHORED: LucideAnchor,
+  LINKS: LucideLink,
+  TRASH: LucideTrash2,
+  EXTERNAL: LucideFileInput
 } as const
 
 export const SPACES_PATH = {
@@ -72,10 +72,10 @@ export const SPACES_PATH = {
   PERSONAL_TRASH: `${SPACES_BASE_ROUTE}/${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}/${SPACE_REPOSITORY.TRASH}`
 } as const
 
-export const SPACES_PERMISSIONS_TEXT: Record<SPACE_OPERATION, { text: string; icon: IconDefinition }> = {
-  a: { text: 'Add', icon: faFileCirclePlus },
-  m: { text: 'Edit', icon: faFilePen },
-  d: { text: 'Delete', icon: faFileCircleMinus },
+export const SPACES_PERMISSIONS_TEXT: Record<SPACE_OPERATION, { text: string; icon: LucideIcon }> = {
+  a: { text: 'Add', icon: LucideFilePlusCorner },
+  m: { text: 'Edit', icon: LucideFilePenLine },
+  d: { text: 'Delete', icon: LucideFileMinusCorner },
   si: { text: 'Share inside', icon: SPACES_ICON.ANCHORED },
   so: { text: 'Share outside', icon: SPACES_ICON.SHARED_WITH_OTHERS }
 } as const
@@ -96,7 +96,7 @@ const SPACES_MENU_SECTION = {
 
 export const SPACES_MENU: AppMenu = {
   title: SPACES_TITLE.FILES,
-  icon: faFolderClosed,
+  icon: LucideFolderClosed,
   link: SPACES_PATH.PERSONAL_FILES,
   matchLink: new RegExp(
     `^${RECENTS_PATH.BASE}|^${FAVORITES_PATH.BASE}|^${SPACES_PATH.SPACES}|^${SPACES_PATH.TRASH}|^${SPACES_PATH.SHARES}|^${SPACES_PATH.SHARED}|^${SPACES_PATH.LINKS}`
@@ -142,7 +142,7 @@ export const SPACES_MENU: AppMenu = {
     {
       id: USER_PERMISSION.SHARES_ADMIN,
       title: SPACES_TITLE.SHARED_WITH_OTHER_SHORT,
-      icon: SPACES_ICON.SHARED_WITH_OTHERS,
+      icon: LucideRedo,
       link: SPACES_PATH.SHARED,
       matchLink: new RegExp(`^${SPACES_PATH.SHARED}`),
       defaultLinkCandidate: true

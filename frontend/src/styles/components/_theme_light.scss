@@ -23,7 +23,7 @@
             border-color: $light-sidebar-mini-active-border;
             color: $navy;
 
-            > fa-icon:first-child {
+            > .lucide:first-child {
               color: $light-sidebar-mini-active-icon;
             }
           }
@@ -62,7 +62,7 @@
             font-weight: 500;
             color: $navy;
 
-            > fa-icon:first-child {
+            > .lucide:first-child {
               color: $light-sidebar-mini-active-icon;
             }
           }
@@ -223,8 +223,7 @@
     }
   }
   .btn-custom {
-    fa-icon,
-    span {
+    .lucide, span {
       color: inherit !important;
     }
 
@@ -386,9 +385,9 @@
     --sync-client-card-selected-border: #{$light-dialog-check-card-hover-border-color};
     --sync-client-details-border: #{$light-dialog-check-card-border-color};
     --sync-client-details-bg: linear-gradient(
-                    158deg,
-                    #{mix($theme-light-panel-bg, $white, 74%)} 0%,
-                    #{mix($light-dialog-tab-card-bg, $theme-light-panel-bg, 68%)} 100%
+            158deg,
+            #{mix($theme-light-panel-bg, $white, 74%)} 0%,
+            #{mix($light-dialog-tab-card-bg, $theme-light-panel-bg, 68%)} 100%
     );
     --sync-client-subtle-color: #{$light-text-muted-color};
     --sync-client-paths-count-fg: #{$white};

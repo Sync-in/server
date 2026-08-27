@@ -1,14 +1,14 @@
 import {
-  faArrowDown,
-  faArrowUp,
-  faCircleExclamation,
-  faCopy,
-  faFilter,
-  faPencil,
-  faPlus,
-  faUpDownLeftRight,
-  faXmark
-} from '@fortawesome/free-solid-svg-icons'
+  LucideArrowDown,
+  LucideArrowUp,
+  LucideCircleAlert,
+  LucideCopy,
+  LucideFunnel,
+  LucideMove,
+  LucidePencil,
+  LucidePlus,
+  LucideX
+} from '@lucide/angular'
 
 export enum SYNC_TRANSFER_SIDE {
   LOCAL = 'local',
@@ -21,8 +21,8 @@ export const SYNC_TRANSFER_SIDE_CLASS = {
 }
 
 export const SYNC_TRANSFER_SIDE_ICON = {
-  [SYNC_TRANSFER_SIDE.LOCAL]: faArrowDown,
-  [SYNC_TRANSFER_SIDE.REMOTE]: faArrowUp
+  [SYNC_TRANSFER_SIDE.LOCAL]: LucideArrowDown,
+  [SYNC_TRANSFER_SIDE.REMOTE]: LucideArrowUp
 }
 
 export const SYNC_TRANSFER_ACTION = {
@@ -39,11 +39,11 @@ export const SYNC_TRANSFER_ACTION = {
 }
 
 export const SYNC_TRANSFER_ACTION_ICON = {
-  Added: faPlus,
-  Modified: faPencil,
-  Removed: faXmark,
-  Moved: faUpDownLeftRight,
-  Copied: faCopy,
-  Filtered: faFilter,
-  Error: faCircleExclamation
+  Added: LucidePlus,
+  Modified: LucidePencil,
+  Removed: LucideX,
+  Moved: LucideMove,
+  Copied: LucideCopy,
+  Filtered: LucideFunnel,
+  Error: LucideCircleAlert
 }

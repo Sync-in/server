@@ -1,6 +1,5 @@
 import { Component, computed, HostListener, inject, Input, model, OnDestroy, OnInit, signal } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faEye, faPen } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideEye, LucidePencil } from '@lucide/angular'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -25,7 +24,7 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
     FilesViewerTextComponent,
     FilesViewerMarkdownComponent,
     FilesViewerImageComponent,
-    FaIconComponent,
+    LucideDynamicIcon,
     FilesViewerOnlyOfficeComponent,
     FilesViewerCollaboraOnlineComponent,
     L10nTranslateDirective
@@ -44,7 +43,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   protected isReadonly = model<boolean>(true)
   protected currentHeight: number
   protected readonly SHORT_MIME = SHORT_MIME
-  protected readonly icons = { faEye, faPen }
+  protected readonly icons = { LucideEye, LucidePencil }
   protected directoryImages = computed(() => this.directoryFiles.filter((file) => file.isImage))
   protected canToggleViewer = false
   protected readonly store = inject(StoreService)

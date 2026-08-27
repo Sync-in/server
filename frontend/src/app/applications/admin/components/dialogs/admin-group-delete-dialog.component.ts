@@ -1,7 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faMinus, faUserMinus } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideMinus, LucideUserMinus } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -12,7 +11,7 @@ import { AdminService } from '../../admin.service'
 
 @Component({
   selector: 'app-admin-group-delete-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, CapitalizePipe],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, CapitalizePipe],
   templateUrl: 'admin-group-delete-dialog.component.html'
 })
 export class AdminGroupDeleteDialogComponent {
@@ -20,7 +19,7 @@ export class AdminGroupDeleteDialogComponent {
   @Input({ required: true }) member: MemberModel
   @Output() wasDeleted = new EventEmitter<boolean>()
   protected submitted = false
-  protected readonly icons = { GROUPS: USER_ICON.GROUPS, faMinus, faUserMinus }
+  protected readonly icons = { GROUPS: USER_ICON.GROUPS, LucideMinus, LucideUserMinus }
   private readonly layout = inject(LayoutService)
   private readonly adminService = inject(AdminService)
 

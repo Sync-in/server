@@ -1,7 +1,6 @@
 import { Location } from '@angular/common'
 import { Component, inject, OnDestroy } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faAngleLeft, faAngleRight } from '@fortawesome/free-solid-svg-icons'
+import { LucideChevronLeft, LucideChevronRight, LucideDynamicIcon } from '@lucide/angular'
 import { Subscription } from 'rxjs'
 import { logoIconUrl } from '../../applications/files/files.constants'
 import { UserType } from '../../applications/users/interfaces/user.interface'
@@ -14,11 +13,11 @@ import { LayoutService } from '../layout.service'
 @Component({
   selector: 'app-navbar',
   templateUrl: 'navbar.component.html',
-  imports: [BreadcrumbComponent, FaIconComponent]
+  imports: [BreadcrumbComponent, LucideDynamicIcon]
 })
 export class NavBarComponent implements OnDestroy {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
-  protected readonly icons = { faAngleLeft, faAngleRight }
+  protected readonly icons = { LucideChevronLeft, LucideChevronRight }
   protected logoIconUrl = logoIconUrl
   protected leftSideBarIsOpen = true
   protected user: UserType

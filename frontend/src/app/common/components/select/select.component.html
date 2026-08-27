@@ -19,7 +19,7 @@
           <span class="ui-select-placeholder">{{ placeholder }}</span>
         }
         @if (allowClear && active) {
-          <fa-icon class="cursor-pointer me-2" (click)="removeClick(active, $event)" [icon]="xMarkIcon"></fa-icon>
+          <svg class="ui-select-clear-icon cursor-pointer me-2" (click)="removeClick(active, $event)" [lucideIcon]="xMarkIcon"></svg>
         }
         <i class="dropdown-toggle"></i>
       </span>
@@ -46,7 +46,7 @@
 <ng-template #DefaultSelect let-active="active">
   <div class="d-flex align-items-center">
     <span class="ui-icon circle-primary-icon me-2">
-      <fa-icon [icon]="itemIcon" [fixedWidth]="false"></fa-icon>
+      <svg [lucideIcon]="itemIcon"></svg>
     </span>
     <div class="d-flex flex-column text-truncate">
       <span class="text-truncate">{{ active.name }}</span>
@@ -60,7 +60,7 @@
   <a class="dropdown-item cursor-pointer" href="javascript:void(0)" style="padding: 3px 5px">
     <div class="d-flex align-items-center">
       <span class="ui-icon circle-primary-icon me-2">
-        <fa-icon [icon]="itemIcon" [fixedWidth]="false"></fa-icon>
+        <svg [lucideIcon]="itemIcon"></svg>
       </span>
       <div class="d-flex flex-column text-truncate">
         <span class="text-truncate" [innerHTML]="o.name | highlight:i"></span>

@@ -2,8 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { Component, computed, ElementRef, inject, OnDestroy, Signal, ViewChild } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faEdit } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideSquarePen } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
@@ -24,7 +23,7 @@ import { CommentsService } from '../../services/comments.service'
     L10nTranslateDirective,
     AutoResizeDirective,
     L10nTranslatePipe,
-    FaIconComponent,
+    LucideDynamicIcon,
     TimeDateFormatPipe,
     TimeAgoPipe,
     FormsModule,
@@ -36,7 +35,7 @@ export class CommentsSelectionComponent implements OnDestroy {
   @ViewChild('CommentCreate', { static: true }) commentInput: ElementRef<HTMLInputElement>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected comments: CommentModel[] = []
-  protected readonly icons = { faEdit }
+  protected readonly icons = { LucideSquarePen }
   private readonly store = inject(StoreService)
   protected file: Signal<FileModel> = computed(() => (this.store.filesSelection().length ? this.store.filesSelection()[0] : null))
   private readonly layout = inject(LayoutService)

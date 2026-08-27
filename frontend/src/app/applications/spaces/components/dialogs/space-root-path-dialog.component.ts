@@ -1,7 +1,6 @@
 import { Component, EventEmitter, HostListener, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faFolderClosed } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideFolderClosed } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -15,7 +14,7 @@ export interface ExternalFilePathEvent {
 
 @Component({
   selector: 'app-space-root-path-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, L10nTranslatePipe, FormsModule, AutofocusDirective],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, L10nTranslatePipe, FormsModule, AutofocusDirective],
   templateUrl: 'space-root-path-dialog.component.html'
 })
 export class SpaceRootPathDialogComponent implements OnInit {
@@ -24,7 +23,7 @@ export class SpaceRootPathDialogComponent implements OnInit {
   @Input() withRootName = true
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
-  protected readonly icons = { faFolderClosed }
+  protected readonly icons = { LucideFolderClosed }
   protected newSpaceRoot: { name: string; externalPath: string } = { name: '', externalPath: '' }
   // states
   protected error: string

@@ -109,8 +109,9 @@
         background: transparent;
         cursor: pointer;
 
-        > fa-icon {
-          font-size: $font-size-lg;
+        > .lucide {
+          font-size: $font-size-xl;
+          stroke-width: 2.5;
         }
 
         .menu-badge-icon {
@@ -218,7 +219,7 @@
           padding-left: 10px;
           font-size: $font-size-sm;
 
-          fa-icon {
+          .lucide {
             font-size: $font-size-base;
           }
         }
@@ -233,18 +234,17 @@
           margin: 0 6px;
           padding: 0 10px;
           border-radius: $btn-border-radius;
+          font-weight: 450;
           max-height: none;
           @include text-truncate-utility;
           @include no-select-pointer-utility;
 
-          > fa-icon {
-            font-size: $font-size-lg;
+          > .lucide {
+            font-size: $font-size-xl;
+            stroke-width: 2.5;
             margin-right: 0;
-            width: .95rem;
-            min-width: .95rem;
             display: inline-flex;
             justify-content: center;
-            opacity: .88;
           }
 
           .menu-badge {
@@ -252,7 +252,6 @@
             font-size: $font-size-xs;
           }
         }
-
       }
     }
   }

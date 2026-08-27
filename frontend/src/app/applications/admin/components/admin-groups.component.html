@@ -4,25 +4,25 @@
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faRotate" [animation]="loading ? 'spin' : null"></fa-icon>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
   </button>
   <div class="btn-group me-1" dropdown>
     <button class="btn btn-default dropdown-toggle"
             dropdownToggle
             [tooltip]="'New' | translate:locale.language"
             type="button">
-      <fa-icon [icon]="icons.faPlus"></fa-icon>
+      <svg [lucideIcon]="icons.LucidePlus"></svg>
     </button>
     <ul *dropdownMenu class="dropdown-menu" role="menu">
       <li role="menuitem">
         <a (click)="openDialog(true)" class="dropdown-item" [class.disabled]="!!currentGroup && personalGroupsView">
-          <span l10nTranslate><fa-icon [icon]="icons.GROUPS"></fa-icon>
+          <span l10nTranslate><svg [lucideIcon]="icons.GROUPS"></svg>
             {{ personalGroupsView ? 'Personal group' : 'Group' }}</span>
         </a>
       </li>
       <li role="menuitem">
         <a (click)="addUserToGroupDialog()" class="dropdown-item" [class.disabled]="!currentGroup">
-          <span l10nTranslate><fa-icon [icon]="icons.faUserPlus"></fa-icon>Add members</span>
+          <span l10nTranslate><svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>Add members</span>
         </a>
       </li>
     </ul>
@@ -32,14 +32,14 @@
           [disabled]="!selected"
           [tooltip]="(selected?.isUser ? 'Remove from group' : 'Delete group') | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faMinus"></fa-icon>
+    <svg [lucideIcon]="icons.LucideMinus"></svg>
   </button>
   <button (click)="openDialog()"
           [disabled]="!selected"
           class="btn btn-default me-1"
           [tooltip]="(selected?.isGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faPen"></fa-icon>
+    <svg [lucideIcon]="icons.LucidePencil"></svg>
   </button>
   <div class="ms-auto">
     <button btnCheckbox
@@ -48,7 +48,7 @@
             type="button"
             class="btn btn-custom me-1">
       <div class="d-flex align-items-center">
-        <fa-icon [icon]="personalGroupsView ? icons.faToggleOn : icons.faToggleOff" class="me-2"></fa-icon>
+        <svg [lucideIcon]="personalGroupsView ? icons.LucideToggleRight : icons.LucideToggleLeft" class="me-2"></svg>
         <span l10nTranslate>Personal groups</span>
       </div>
     </button>
@@ -74,7 +74,7 @@
             l10nTranslate>
           {{ th.value.label }}
           @if (sortTable.sortParam.column === th.key) {
-            <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp" [fixedWidth]="false"></fa-icon>
+            <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
           }
         </th>
       }
@@ -103,13 +103,15 @@
                       @if (m.isUser) {
                         <img class="avatar-img" [src]="m.avatarUrl" alt="">
                       } @else {
-                        <fa-icon [icon]="icons.GROUPS" class="{{m.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}"></fa-icon>
+                        <span class="{{m.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}">
+                          <svg [lucideIcon]="icons.GROUPS"></svg>
+                        </span>
                       }
                       <div class="d-flex flex-column text-truncate">
                         <span class="no-pointer-events" draggable="false">
                           {{ m.name }}
                           @if (m.isUser && m.isGroupManager) {
-                            <fa-icon class="m-0" [icon]="icons.faKey"></fa-icon>
+                            <svg class="m-0" [lucideIcon]="icons.LucideKeyRound"></svg>
                           }
                         </span>
                         <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ m.description }}</span>
@@ -157,33 +159,33 @@
 <context-menu #MainContextMenu>
   @if (!!currentGroup && !personalGroupsView || !currentGroup && personalGroupsView) {
     <ng-template (execute)="openDialog(true)" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faPlus"></fa-icon>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucidePlus"></svg>
         {{ personalGroupsView ? 'Personal group' : 'Group' }}</span>
     </ng-template>
   }
   @if (!!currentGroup) {
     <ng-template (execute)="addUserToGroupDialog()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faUserPlus"></fa-icon>Add members</span>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>Add members</span>
     </ng-template>
   }
   <ng-template [divider]="true" contextMenuItem></ng-template>
   <ng-template (execute)="refresh()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>Refresh</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideRotateCw"></svg>Refresh</span>
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
   @if (selected) {
     <ng-template (execute)="openDialog()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faPen"></fa-icon>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>
         {{ selected.isGroup ? 'Edit group' : 'Edit user' }}</span>
     </ng-template>
     @if (selected.isGroup) {
       <ng-template (execute)="openDialog(false, true)" contextMenuItem>
-        <span l10nTranslate><fa-icon [icon]="icons.faMinus"></fa-icon>Delete group</span>
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideMinus"></svg>Delete group</span>
       </ng-template>
     } @else {
       <ng-template (execute)="openDialog(false, true)" contextMenuItem>
-        <span l10nTranslate><fa-icon [icon]="icons.faUserMinus"></fa-icon>Remove from group</span>
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideUserMinus"></svg>Remove from group</span>
       </ng-template>
     }
   }

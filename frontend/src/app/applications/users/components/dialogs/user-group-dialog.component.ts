@@ -1,8 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCog, faPen, faSpinner, faUsers } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLoader, LucidePencil, LucideSettings } from '@lucide/angular'
 import { MEMBER_TYPE } from '@sync-in-server/backend/src/applications/users/constants/member'
 import type { UserCreateOrUpdateGroupDto } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-group.dto'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -16,7 +15,7 @@ import { UserService } from '../../user.service'
 
 @Component({
   selector: 'app-user-group-dialog',
-  imports: [ReactiveFormsModule, FormsModule, FaIconComponent, L10nTranslateDirective, AutofocusDirective, TimeDateFormatPipe],
+  imports: [ReactiveFormsModule, FormsModule, LucideDynamicIcon, L10nTranslateDirective, AutofocusDirective, TimeDateFormatPipe],
   templateUrl: 'user-group-dialog.component.html'
 })
 export class UserGroupDialogComponent implements OnInit {
@@ -24,7 +23,7 @@ export class UserGroupDialogComponent implements OnInit {
   @Output() groupChange = new EventEmitter<['add' | 'update', MemberModel]>()
   protected readonly layout = inject(LayoutService)
   protected group: MemberModel
-  protected readonly icons = { GROUPS: USER_ICON.GROUPS, faSpinner, faCog, faUsers, faPen }
+  protected readonly icons = { GROUPS: USER_ICON.GROUPS, LucideLoader, LucideSettings, LucidePencil }
   // states
   protected isPersonalGroup = true
   protected submitted = false

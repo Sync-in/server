@@ -3,14 +3,14 @@
           [tooltip]="'Refresh' | translate:locale.language"
           class="d-none d-sm-block btn btn-default me-1"
           type="button">
-    <fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>
+    <svg [lucideIcon]="icons.LucideRotateCw"></svg>
   </button>
   <button (click)="onDeleteClient()"
           [disabled]="!selected"
           [tooltip]="'Remove' | translate:locale.language"
           class="btn btn-default me-1"
           type="button">
-    <fa-icon [icon]="icons.faTrashCan"></fa-icon>
+    <svg [lucideIcon]="icons.LucideTrash2"></svg>
   </button>
 </div>
 <div class="app-sync-clients" appAutoResize>
@@ -23,7 +23,9 @@
           <div class="sync-client-details">
             <div class="sync-client-header">
               <div class="d-flex align-items-center min-width-0">
-                <fa-icon [icon]="icons.CLIENT" class="circle-primary-icon me-2"></fa-icon>
+                <span class="circle-primary-icon me-2">
+                  <svg [lucideIcon]="icons.CLIENT"></svg>
+                </span>
                 <div class="d-flex flex-column text-truncate">
                   <span class="sync-client-title text-truncate">{{ client.info.node }}</span>
                   <span class="sync-client-subtitle text-truncate">{{ client.info.type }}</span>
@@ -32,37 +34,37 @@
               <div class="d-flex align-items-center flex-nowrap ms-2">
                 <div class="badge bg-primary">{{ client.info.version }}</div>
                 @if (client.isCurrentClient) {
-                  <fa-icon [icon]="icons.faCircle"
+                  <svg [lucideIcon]="icons.LucideCircle"
                            [container]="'body'"
                            [tooltip]="'This client' | translate:locale.language"
                            class="text-light-green cursor-pointer ms-2">
-                  </fa-icon>
+                  </svg>
                 }
               </div>
             </div>
             <div class="sync-client-meta-line {{client.expiration.reached ? 'text-bold text-danger' : client.expiration.approaching ? 'text-bold text-warning' : ''}}">
-              <fa-icon [icon]="icons.faKey"></fa-icon>
+              <svg [lucideIcon]="icons.LucideKeyRound"></svg>
               <span l10nTranslate>{{ client.expiration.reached ? 'The access has expired' : 'The access expires' }}</span>&nbsp;{{ client.expiration.value | amTimeAgo }}
             </div>
             <div class="sync-client-meta-line">
-              <fa-icon class="osIcon" [icon]="client.icon"></fa-icon>
+              <app-platform-icon [platform]="client.info.os" class="osIcon"></app-platform-icon>
               <span class="text-truncate">{{ client.osName }} {{ client.info.osRelease }}</span>
             </div>
             <div class="sync-client-meta-line">
-              <fa-icon [icon]="icons.faCircleUser"></fa-icon>
+              <svg [lucideIcon]="icons.LucideCircleUserRound"></svg>
               <span class="text-truncate">{{ client.info.user }}</span>
             </div>
             <div class="sync-client-meta-line">
-              <fa-icon [icon]="icons.faAt"></fa-icon>
+              <svg [lucideIcon]="icons.LucideAtSign"></svg>
               <span class="text-truncate">{{ client.currentIp }}&nbsp;-&nbsp;{{ client.lastIp }}</span>
             </div>
             <div class="d-flex flex-column align-items-start sync-client-meta-line">
               <div class="sync-client-meta-line">
-                <fa-icon [icon]="icons.faClock"></fa-icon>
+                <svg [lucideIcon]="icons.LucideClock"></svg>
                 <span class="text-truncate">{{ client.currentAccess | amDateFormat:'L HH:mm:ss' }}</span>
               </div>
               <div class="sync-client-meta-line text-muted">
-                <fa-icon [icon]="icons.faClock"></fa-icon>
+                <svg [lucideIcon]="icons.LucideClock"></svg>
                 <span class="text-truncate">{{ client.lastAccess | amDateFormat:'L HH:mm:ss' }}</span>
               </div>
             </div>
@@ -85,7 +87,7 @@
                         <div class="d-flex flex-column text-truncate ms-2">
                           <span class="fs-base text-truncate user-select-none text-bold">{{ path.settings.name }}</span>
                           <div class="d-inline-flex align-items-center text-{{path.iconClass}} fs-sm">
-                            <fa-icon [icon]="path.icon" size="1x" class="me-1"></fa-icon>
+                            <svg [lucideIcon]="path.icon" class="me-1"></svg>
                             <span class="text-truncate user-select-none">{{ path.showedPath }}</span>
                           </div>
                         </div>
@@ -93,11 +95,11 @@
                       <div class="sync-path-side">
                         <div class="sync-path-badges">
                           <div class="badge bg-dark">
-                            <fa-icon [icon]="icons.faPlusCircle"></fa-icon>
+                            <svg [lucideIcon]="icons.LucideCirclePlus"></svg>
                             {{ path.createdAt | amTimeAgo:true }}
                           </div>
                           <div class="badge sync-newly-{{path.newly}}">
-                            <fa-icon [icon]="icons.faRotate"></fa-icon>
+                            <svg [lucideIcon]="icons.LucideRefreshCw"></svg>
                             @if (path.newly) {
                               {{ path.settings.lastSync | amTimeAgo:true }}
                             } @else {
@@ -110,13 +112,13 @@
                                   [tooltip]="'Go to' | translate:locale.language"
                                   class="btn btn-default"
                                   type="button">
-                            <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
+                            <svg [lucideIcon]="icons.LucideMapPin"></svg>
                           </button>
                           <button (click)="$event.stopPropagation(); onEditPath(path, client)"
                                   [tooltip]="'Edit' | translate:locale.language"
                                   class="btn btn-default"
                                   type="button">
-                            <fa-icon [icon]="icons.faPen"></fa-icon>
+                            <svg [lucideIcon]="icons.LucidePencil"></svg>
                           </button>
                         </div>
                       </div>

@@ -1,8 +1,7 @@
 import { Component, inject } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faKey, faLock, faQrcode, faUserAlt } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideKeyRound, LucideLock, LucideQrCode, LucideUserRound } from '@lucide/angular'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { TWO_FA_CODE_LENGTH } from '@sync-in-server/backend/src/authentication/constants/auth'
 import { API_OIDC_CALLBACK } from '@sync-in-server/backend/src/authentication/constants/routes'
@@ -20,11 +19,11 @@ import { AuthService } from './auth.service'
 @Component({
   selector: 'app-auth',
   templateUrl: 'auth.component.html',
-  imports: [AutofocusDirective, ReactiveFormsModule, FaIconComponent, L10nTranslateDirective, L10nTranslatePipe]
+  imports: [AutofocusDirective, ReactiveFormsModule, LucideDynamicIcon, L10nTranslateDirective, L10nTranslatePipe]
 })
 export class AuthComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly icons = { faLock, faUserAlt, faKey, faQrcode }
+  protected readonly icons = { LucideLock, LucideUserRound, LucideKeyRound, LucideQrCode }
   protected twoFaCodelength = TWO_FA_CODE_LENGTH
   protected logoUrl = logoDarkUrl
   protected hasError: any = null

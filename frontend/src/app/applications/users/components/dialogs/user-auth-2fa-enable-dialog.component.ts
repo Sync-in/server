@@ -1,7 +1,6 @@
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCopy, faKey, faLock } from '@fortawesome/free-solid-svg-icons'
+import { LucideCopy, LucideDynamicIcon, LucideKeyRound, LucideLock } from '@lucide/angular'
 import { TWO_FA_CODE_LENGTH } from '@sync-in-server/backend/src/authentication/constants/auth'
 import type { TwoFaEnableResult } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.interfaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
@@ -13,7 +12,7 @@ import { UserService } from '../../user.service'
 
 @Component({
   selector: 'app-user-auth-2fa-enable-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, ReactiveFormsModule, InputPasswordComponent],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, ReactiveFormsModule, InputPasswordComponent],
   templateUrl: 'user-auth-2fa-enable-dialog.component.html'
 })
 export class UserAuth2faEnableDialogComponent {
@@ -24,7 +23,7 @@ export class UserAuth2faEnableDialogComponent {
   protected submitted = false
   protected hasError: any = null
   protected recoveryCodes: string[]
-  protected readonly icons = { faKey, faLock, faCopy }
+  protected readonly icons = { LucideKeyRound, LucideLock, LucideCopy }
   protected readonly twoFaCodelength = TWO_FA_CODE_LENGTH
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   private readonly layout = inject(LayoutService)

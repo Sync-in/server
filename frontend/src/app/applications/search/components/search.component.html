@@ -2,7 +2,7 @@
   <div class="col-12 col-md-6 col-lg-4">
     <div class="input-group">
       <button (click)="doSearch()" [disabled]="searchContent().length < minCharsToSearch" class="btn btn-default" role="button" type="button">
-        <fa-icon [icon]="loading ? icons.faSpinner : icons.SEARCH_ICON" [animation]="loading ? 'spin' : null"></fa-icon>
+        <svg [lucideIcon]="loading ? icons.LucideLoader : icons.SEARCH_ICON" [class.icon-spin]="loading"></svg>
       </button>
       <input [value]="searchContent()"
              (input)="setCurrentSearch($event)"
@@ -13,11 +13,11 @@
              name="search"
              type="text"
              appAutofocus
-             autocomplete>
+             autocomplete="off">
       @if (searchContent()) {
         <span class="search-clear-btn">
-        <fa-icon (click)="clearSearch()" [icon]="icons.faTimes" role="button"></fa-icon>
-      </span>
+          <svg (click)="clearSearch()" [lucideIcon]="icons.LucideX" class="fs-lg" role="button"></svg>
+        </span>
       }
       <button [ngModel]="this.store.currentSearch().fullText"
               (ngModelChange)="toggleFullText()"
@@ -27,7 +27,7 @@
               role="button"
               type="button"
               btnCheckbox>
-        <fa-icon [icon]="icons.faFont"></fa-icon>
+        <svg [lucideIcon]="icons.LucideType"></svg>
       </button>
     </div>
 
@@ -37,7 +37,7 @@
           class="search-go-to-btn d-none d-md-block btn btn-default"
           [tooltip]="'Go to' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
+    <svg [lucideIcon]="icons.LucideMapPin"></svg>
   </button>
   <!--Start Filter Button-->
   <app-input-filter class="d-none d-md-block ms-auto"></app-input-filter>

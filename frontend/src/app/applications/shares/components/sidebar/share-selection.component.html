@@ -31,7 +31,7 @@
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Child shares</div>
         @if (share().counts.shares) {
           <span (click)="childShareDialog(share())" class="badge bg-purple cursor-pointer me-1">
-            <fa-icon [icon]="iconShares"></fa-icon>
+            <svg [lucideIcon]="iconShares"></svg>
             {{ share().counts.shares }}
           </span>
         } @else {
@@ -44,7 +44,7 @@
                 class="badge {{share().hasComments ? 'bg-success' : 'bg-default'}} cursor-pointer"
                 type="button"
                 [attr.aria-label]="'Comments' | translate:locale.language">
-          <fa-icon [icon]="faCommentDots"></fa-icon>
+          <svg [lucideIcon]="LucideMessageSquareMore"></svg>
         </button>
       </div>
     </div>

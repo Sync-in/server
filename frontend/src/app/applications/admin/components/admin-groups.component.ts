@@ -3,21 +3,20 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
-  faArrowDown,
-  faArrowRotateRight,
-  faArrowUp,
-  faKey,
-  faMinus,
-  faPen,
-  faPlus,
-  faRotate,
-  faToggleOff,
-  faToggleOn,
-  faUserMinus,
-  faUserPlus
-} from '@fortawesome/free-solid-svg-icons'
+  LucideArrowDown,
+  LucideArrowUp,
+  LucideDynamicIcon,
+  LucideKeyRound,
+  LucideMinus,
+  LucidePencil,
+  LucidePlus,
+  LucideRotateCw,
+  LucideToggleLeft,
+  LucideToggleRight,
+  LucideUserMinus,
+  LucideUserRoundPlus
+} from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { GROUP_TYPE } from '@sync-in-server/backend/src/applications/users/constants/group'
 import { MEMBER_TYPE } from '@sync-in-server/backend/src/applications/users/constants/member'
@@ -54,7 +53,7 @@ import { AdminGroupEditUserDialogComponent } from './dialogs/admin-group-edit-us
   selector: 'app-admin-groups',
   imports: [
     ContextMenuModule,
-    FaIconComponent,
+    LucideDynamicIcon,
     KeyValuePipe,
     L10nTranslateDirective,
     L10nTranslatePipe,
@@ -86,18 +85,17 @@ export class AdminGroupsComponent {
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     GROUPS: USER_ICON.GROUPS,
-    faRotate,
-    faPlus,
-    faMinus,
-    faPen,
-    faArrowDown,
-    faArrowUp,
-    faKey,
-    faUserPlus,
-    faUserMinus,
-    faArrowRotateRight,
-    faToggleOn,
-    faToggleOff
+    LucideRotateCw,
+    LucidePlus,
+    LucideMinus,
+    LucidePencil,
+    LucideArrowDown,
+    LucideArrowUp,
+    LucideKeyRound,
+    LucideUserRoundPlus,
+    LucideUserMinus,
+    LucideToggleRight,
+    LucideToggleLeft
   }
   // Sort
   protected tableHeaders: Record<'name' | 'type' | 'members' | 'createdAndModified', TableHeaderConfig> = {

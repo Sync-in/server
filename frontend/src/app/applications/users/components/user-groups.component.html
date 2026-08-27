@@ -4,28 +4,28 @@
           class="btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faRotate" [animation]="loading ? 'spin' : null"></fa-icon>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
   </button>
   <button (click)="openDialog(true)"
           [disabled]="!allowedAction.addGroup && !allowedAction.addUsers"
           class="btn btn-default me-1"
           [tooltip]="(!currentGroup && allowedAction.addGroup ? 'New personal group': 'Add members') | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faPlus"></fa-icon>
+    <svg [lucideIcon]="icons.LucidePlus"></svg>
   </button>
   <button (click)="openDialog(false, true)"
           class="btn btn-default me-1"
           [disabled]="!allowedAction.removeGroup && !allowedAction.removeUser"
           [tooltip]="(allowedAction.removeGroup ? 'Delete group' : 'Remove from group') | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faMinus"></fa-icon>
+    <svg [lucideIcon]="icons.LucideMinus"></svg>
   </button>
   <button (click)="openDialog()"
           [disabled]="!allowedAction.editGroup && !allowedAction.editUser"
           class="btn btn-default me-1"
           [tooltip]="(allowedAction.editGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faPen"></fa-icon>
+    <svg [lucideIcon]="icons.LucidePencil"></svg>
   </button>
   @if (!currentGroup) {
     <div class="btn-group me-1" dropdown>
@@ -33,17 +33,17 @@
               [class.disabled]="!selected"
               class="btn btn-default dropdown-toggle"
               type="button">
-        <fa-icon [icon]="icons.faEllipsis"></fa-icon>
+        <svg [lucideIcon]="icons.LucideEllipsis"></svg>
       </button>
       <ul *dropdownMenu class="dropdown-menu" role="menu">
         <li role="menuitem">
           <a (click)="browse(selected)" class="dropdown-item" [class.disabled]="!selected">
-            <span l10nTranslate><fa-icon [icon]="icons.faUsersRectangle"></fa-icon>See members</span>
+            <span l10nTranslate><svg [lucideIcon]="icons.LucideUsersRound"></svg>See members</span>
           </a>
         </li>
         <li role="menuitem">
           <a (click)="openLeaveGroupDialog()" class="dropdown-item" [class.disabled]="!selected || !selected.isPersonalGroup">
-            <span l10nTranslate><fa-icon [icon]="icons.faRightFromBracket"></fa-icon>Leave group</span>
+            <span l10nTranslate><svg [lucideIcon]="icons.LucideLogOut"></svg>Leave group</span>
           </a>
         </li>
       </ul>
@@ -68,7 +68,7 @@
             l10nTranslate>
           {{ th.value.label }}
           @if (sortTable.sortParam.column === th.key) {
-            <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp" [fixedWidth]="false"></fa-icon>
+            <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
           }
         </th>
       }
@@ -97,13 +97,15 @@
                       @if (m.isUser) {
                         <img class="avatar-img" [src]="m.avatarUrl" alt="">
                       } @else {
-                        <fa-icon [icon]="icons.GROUPS" class="{{m.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}"></fa-icon>
+                        <span class="{{m.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}">
+                          <svg [lucideIcon]="icons.GROUPS"></svg>
+                        </span>
                       }
                       <div class="d-flex flex-column text-truncate">
                         <span class="no-pointer-events" draggable="false">
                           {{ m.name }}
                           @if (m.isUser && m.isGroupManager) {
-                            <fa-icon class="m-0" [icon]="icons.faKey"></fa-icon>
+                            <svg class="m-0" [lucideIcon]="icons.LucideKeyRound"></svg>
                           }
                         </span>
                         <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ m.description }}</span>
@@ -172,35 +174,35 @@
 <context-menu #MainContextMenu>
   @if (allowedAction.addGroup || allowedAction.addUsers) {
     <ng-template (execute)="openDialog(true)" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faPlus"></fa-icon>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucidePlus"></svg>
         {{ allowedAction.addGroup ? 'Personal group' : 'Add members' }}</span>
     </ng-template>
   }
   <ng-template (execute)="refresh()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>Refresh</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideRotateCw"></svg>Refresh</span>
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
   @if (selected?.isGroup) {
     <ng-template (execute)="browse(selected)" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faUsersRectangle"></fa-icon>See members</span>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucideUsersRound"></svg>See members</span>
     </ng-template>
   }
   @if (allowedAction.editGroup || allowedAction.editUser) {
     <ng-template (execute)="openDialog()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faPen"></fa-icon>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>
         {{ allowedAction.editGroup ? 'Edit group' : 'Edit user' }}</span>
     </ng-template>
   }
   @if (allowedAction.removeGroup || allowedAction.removeUser) {
     <ng-template (execute)="openDialog(false, true)" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faMinus"></fa-icon>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucideMinus"></svg>
         {{ allowedAction.removeGroup ? 'Delete group' : 'Remove from group' }}</span>
     </ng-template>
   }
   @if (allowedAction.leaveGroup) {
     <ng-template (execute)="openLeaveGroupDialog()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faRightFromBracket"></fa-icon>Leave group</span>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucideLogOut"></svg>Leave group</span>
     </ng-template>
   }
 </context-menu>

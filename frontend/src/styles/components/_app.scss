@@ -137,6 +137,7 @@
 
 .app-table {
   --app-table-cell-inline-padding: .5rem;
+  --app-table-leading-icon-gap: .3rem;
   --app-table-row-height: 36px;
 
   @extend .table;
@@ -211,8 +212,19 @@
   }
 
   tbody td:first-child {
-    img, fa-icon {
-      margin-right: 0.3rem;
+    img, .lucide {
+      margin-inline-end: var(--app-table-leading-icon-gap);
+    }
+
+    :where(
+      [class^='circle-'][class*='-icon'],
+      [class*=' circle-'][class*='-icon']
+    ) {
+      margin-inline-end: var(--app-table-leading-icon-gap);
+
+      > .lucide {
+        margin-inline-end: 0;
+      }
     }
   }
 
@@ -222,6 +234,9 @@
     border-top: none;
     .badge {
       font-size: 0.7rem;
+      > .lucide {
+        font-size: $font-size-md;
+      }
     }
   }
 }
@@ -243,16 +258,20 @@
   }
 
   .btn {
+    min-height: 31px;
+    min-width: 35px;
 
-    > fa-icon {
-      font-size: .875rem;
+    > .lucide {
+      font-size: $font-size-xl;
     }
 
     span {
+      display: inline-flex;
+      align-items: center;
       font-size: $font-size-xs;
 
-      fa-icon {
-        font-size: $font-size-md;
+      .lucide {
+        font-size: $font-size-2xl;
         margin-right: 0.2rem;
       }
     }
@@ -270,7 +289,7 @@
         display: flex;
         align-items: center;
 
-        fa-icon {
+        .lucide {
           margin-right: 0.4rem;
           font-size: $font-size-md;
         }
@@ -316,7 +335,7 @@ app-input-filter {
     position: absolute;
     left: 9px;
     pointer-events: none;
-    font-size: $font-size-xs;
+    font-size: $font-size-sm;
   }
 
   .clear-btn {
@@ -332,8 +351,8 @@ app-input-filter {
     background-color: transparent;
     cursor: pointer;
 
-    fa-icon {
-      font-size: $font-size-xs;
+    .lucide {
+      font-size: $font-size-md;
     }
 
     :focus-visible {
@@ -420,6 +439,10 @@ app-input-filter {
   textarea {
     padding: .15rem .3rem;
   }
+}
+
+.app-small-card {
+  padding: .2rem;
 }
 
 .app-collabora-online-border {

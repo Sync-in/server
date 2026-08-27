@@ -1,7 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, HostListener, inject, Input, OnInit } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faLock, faUnlock } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLock, LucideUnlock } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { firstValueFrom } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -14,14 +13,14 @@ import { FileLockFormatPipe } from '../utils/file-lock.utils'
 
 @Component({
   selector: 'app-files-lock-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, FileLockFormatPipe],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, FileLockFormatPipe],
   templateUrl: 'files-lock-dialog.component.html'
 })
 export class FilesLockDialogComponent implements OnInit {
   @Input({ required: true }) file: FileModel
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
-  protected readonly icons = { faLock, faUnlock }
+  protected readonly icons = { LucideLock, LucideUnlock }
   protected submitted = false
   protected readonly store = inject(StoreService)
   protected readonly userLogin = this.store.user.getValue().login

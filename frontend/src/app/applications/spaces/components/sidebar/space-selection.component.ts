@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, InputSignal } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import { LucideDynamicIcon } from '@lucide/angular'
 import { SPACE_ROLE } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { BadgeMembersComponent } from '../../../../common/components/badge-members.component'
@@ -21,7 +21,7 @@ import { SpaceUserAnchorsDialogComponent } from '../dialogs/space-user-anchors-d
   templateUrl: 'space-selection.component.html',
   imports: [
     AutoResizeDirective,
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslateDirective,
     TimeDateFormatPipe,
     BadgePermissionsComponent,

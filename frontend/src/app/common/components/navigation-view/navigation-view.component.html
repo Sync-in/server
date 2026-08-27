@@ -1,6 +1,6 @@
 <div [insideClick]="true" class="btn-group" dropdown>
   <button aria-label="Display" class="btn btn-default dropdown-toggle" dropdownToggle type="button">
-    <fa-icon [icon]="galleryModeEnabled ? icons.faTableCellsLarge : icons.faThList"></fa-icon>
+    <svg [lucideIcon]="galleryModeEnabled ? icons.LucideGrid2X2 : icons.LucideList"></svg>
   </button>
   <ul *dropdownMenu class="dropdown-menu dropdown-menu-right navigation-view-menu">
     <li class="dropdown-header text-bold" l10nTranslate>Display</li>
@@ -11,7 +11,7 @@
                 [class.active]="!galleryModeEnabled"
                 class="dropdown-item navigation-view-option"
                 type="button">
-          <fa-icon [icon]="icons.faThList"></fa-icon>
+          <svg [lucideIcon]="icons.LucideList"></svg>
           <span l10nTranslate>List</span>
         </button>
         <button (click)="selectGalleryMode()"
@@ -19,7 +19,7 @@
                 [class.active]="galleryModeEnabled"
                 class="dropdown-item navigation-view-option"
                 type="button">
-          <fa-icon [icon]="icons.faTableCellsLarge"></fa-icon>
+          <svg [lucideIcon]="icons.LucideGrid2X2"></svg>
           <span l10nTranslate>Gallery</span>
         </button>
       </div>

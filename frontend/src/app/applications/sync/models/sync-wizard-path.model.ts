@@ -1,4 +1,4 @@
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { LucideIcon } from '@lucide/angular'
 import { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import { getAssetsMimeUrl, mimeDirectory, mimeDirectoryDisabled, mimeDirectoryShare, mimeDirectorySync } from '../../files/files.constants'
 import { getServerPath, hasWritePermission, isSynchronizable } from '../sync.utils'
@@ -21,7 +21,7 @@ export class SyncWizardPath implements FileTree {
   isAlreadySynced = false
   serverPath: string
   selected?: boolean
-  icon?: IconDefinition
+  icon?: LucideIcon
   iconClass: 'primary' | 'purple'
   mimeUrl?: string
 

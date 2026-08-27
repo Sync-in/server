@@ -1,6 +1,5 @@
 import { Component, inject, Input, output } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faFileShield } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideFileLock2 } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
@@ -9,7 +8,7 @@ export type FilesOverwriteAction = 'cancel' | 'skip' | 'overwrite'
 
 @Component({
   selector: 'app-files-overwrite-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, L10nTranslatePipe],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, L10nTranslatePipe],
   templateUrl: 'files-overwrite-dialog.component.html'
 })
 export class FilesOverwriteDialogComponent {
@@ -18,7 +17,7 @@ export class FilesOverwriteDialogComponent {
   public action = output<FilesOverwriteAction>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
-  protected readonly icons = { faFileShield }
+  protected readonly icons = { LucideFileLock2 }
   protected submitted = false
 
   onAction(action: FilesOverwriteAction) {

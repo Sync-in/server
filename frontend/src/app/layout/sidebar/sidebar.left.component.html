@@ -21,7 +21,7 @@
                     [class.active]="menu.isActive"
                     class="app-shortcut"
                     type="button">
-              <fa-icon [animation]="menu.iconAnimated ? 'spin' : null" [icon]="menu.icon"></fa-icon>
+              <svg [class.icon-spin]="menu.iconAnimated" [lucideIcon]="menu.icon"></svg>
               @if (menu.count) {
                 <span class="menu-badge-icon">
                 @if (menu.count.value | async; as count) {
@@ -39,7 +39,7 @@
                 (mouseleave)="restoreMenuTitle()"
                 class="app-shortcut"
                 type="button">
-          <fa-icon [icon]="icons.faUserSecret"></fa-icon>
+          <svg [lucideIcon]="icons.LucideVenetianMask"></svg>
         </button>
       }
     </div>
@@ -76,11 +76,8 @@
   }
 </ng-template>
 <ng-template #MenuTemplate let-menu="menu">
-  <fa-icon [icon]="menu.icon" [animation]="menu.iconAnimated ? 'spin' : null"></fa-icon>
+  <svg [lucideIcon]="menu.icon" [class.icon-spin]="menu.iconAnimated"></svg>
   <span l10nTranslate>{{ menu.title }}</span>
-  @if (menu.hasSubmenus) {
-    <span class="ms-auto opacity-75"><fa-icon [icon]="icons.faChevronDown" size="sm"></fa-icon></span>
-  }
   @if (menu.count) {
     <span class="menu-badge">
     @if (menu.count.value | async; as count) {

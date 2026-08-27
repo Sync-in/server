@@ -1,5 +1,5 @@
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faClock } from '@fortawesome/free-solid-svg-icons'
+import type { LucideIcon } from '@lucide/angular'
+import { LucideClock } from '@lucide/angular'
 
 export const RECENTS_PATH = {
   BASE: 'recents'
@@ -7,4 +7,4 @@ export const RECENTS_PATH = {
 
 export const RECENTS_TITLE = 'Recents'
 
-export const RECENTS_ICON: IconDefinition = faClock
+export const RECENTS_ICON: LucideIcon = LucideClock

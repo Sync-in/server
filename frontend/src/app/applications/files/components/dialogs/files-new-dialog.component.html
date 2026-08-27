@@ -2,13 +2,13 @@
   <h4 class="modal-title">
     @switch (inputType) {
       @case ('download') {
-        <fa-icon [icon]="icons.faGlobe"></fa-icon>
+        <svg [lucideIcon]="icons.LucideGlobe"></svg>
       }
       @case ('directory') {
-        <fa-icon [icon]="icons.faFolderClosed"></fa-icon>
+        <svg [lucideIcon]="icons.LucideFolderClosed"></svg>
       }
       @case ('file') {
-        <fa-icon [icon]="icons.faFileAlt"></fa-icon>
+        <svg [lucideIcon]="icons.LucideFileText"></svg>
       }
     }
     <span l10nTranslate>{{ fileProp.title }}</span>
@@ -20,7 +20,7 @@
     <div class="btn-group mb-3" dropdown>
       <button aria-controls="dropdown-animated" class="btn btn-primary dropdown-toggle" dropdownToggle id="button-animated" type="button">
         <span l10nTranslate>{{ selectedDocType }}</span>
-        <fa-icon [icon]="icons.faCaretDown" class="ms-3"></fa-icon>
+        <svg [lucideIcon]="icons.LucideChevronDown" class="ms-3"></svg>
       </button>
       <ul *dropdownMenu aria-labelledby="button-animated" class="dropdown-menu" id="dropdown-animated" role="menu">
         @for (item of docTypes | keyvalue: originalOrderKeyValue; track item.key) {
@@ -39,7 +39,7 @@
   @if (inputType === 'download') {
     <div class="input-group my-2">
       <span class="input-group-text">
-        <fa-icon [icon]="icons.faGlobe"></fa-icon>
+        <svg [lucideIcon]="icons.LucideGlobe"></svg>
       </span>
       <input
         [(ngModel)]="downloadProp.url"
@@ -55,9 +55,9 @@
   <div class="input-group my-2">
     <span class="input-group-text">
       @if (inputType === 'directory') {
-        <fa-icon [icon]="icons.faFolderClosed"></fa-icon>
+        <svg [lucideIcon]="icons.LucideFolderClosed"></svg>
       } @else {
-        <fa-icon [icon]="icons.faFileAlt"></fa-icon>
+        <svg [lucideIcon]="icons.LucideFileText"></svg>
       }
     </span>
     <input

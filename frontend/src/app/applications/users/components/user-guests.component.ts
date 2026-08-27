@@ -1,8 +1,7 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, ViewChild } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faArrowDown, faArrowRotateRight, faArrowUp, faKey, faPen, faPlus, faRotate } from '@fortawesome/free-solid-svg-icons'
+import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideKeyRound, LucidePencil, LucidePlus, LucideRotateCw } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -28,7 +27,7 @@ import { UserAvatarStackComponent } from './utils/user-avatar-stack.component'
 @Component({
   selector: 'app-user-guests',
   imports: [
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslatePipe,
     FilterComponent,
     TooltipDirective,
@@ -55,7 +54,7 @@ export class UserGuestsComponent {
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
-  protected readonly icons = { faRotate, faPlus, faPen, faArrowDown, faArrowUp, faKey, faArrowRotateRight }
+  protected readonly icons = { LucideRotateCw, LucidePlus, LucidePencil, LucideArrowDown, LucideArrowUp, LucideKeyRound }
   // Sort
   protected tableHeaders: Record<'login' | 'fullName' | 'managers' | 'currentAccess' | 'createdAt' | 'isActive', TableHeaderConfig> = {
     login: {

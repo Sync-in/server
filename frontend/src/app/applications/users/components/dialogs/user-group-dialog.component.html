@@ -1,13 +1,13 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.GROUPS"></fa-icon>
+    <svg [lucideIcon]="icons.GROUPS"></svg>
     @if (group.id) {
       <span>{{ group.name }}</span>
     } @else {
       <span l10nTranslate>New personal group</span>
     }
     @if (loading) {
-      <fa-icon [icon]="icons.faSpinner" animation="spin" class="ms-2" size="sm"></fa-icon>
+      <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true" class="ms-2"></svg>
     }
   </h4>
   @if (group.id) {

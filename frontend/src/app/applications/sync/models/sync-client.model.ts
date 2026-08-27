@@ -1,5 +1,3 @@
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faApple, faLinux, faWindows } from '@fortawesome/free-brands-svg-icons'
 import type { SyncClientPaths } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-paths.interface'
 import type { SyncPath } from '@sync-in-server/backend/src/applications/sync/schemas/sync-path.interface'
 import { currentTimeStamp, popFromObject } from '@sync-in-server/backend/src/common/shared'
@@ -19,7 +17,6 @@ export class SyncClientModel implements Omit<SyncClientPaths, 'paths'> {
 
   // extra properties
   paths: SyncPathModel[]
-  icon: IconDefinition
   osName: string
   expiration: { value: number; reached: boolean; approaching: boolean }
 
@@ -27,7 +24,7 @@ export class SyncClientModel implements Omit<SyncClientPaths, 'paths'> {
     this.paths = (popFromObject('paths', client) || []).map((path: SyncPath) => new SyncPathModel(path))
     Object.assign(this, client)
     this.setExpiration()
-    this.setIcon()
+    this.setOsName()
   }
 
   setExpiration() {
@@ -39,15 +36,12 @@ export class SyncClientModel implements Omit<SyncClientPaths, 'paths'> {
     }
   }
 
-  private setIcon() {
+  private setOsName() {
     if (this.info.os === 'darwin') {
-      this.icon = faApple
       this.osName = 'macOS'
     } else if (this.info.os.startsWith('win')) {
-      this.icon = faWindows
       this.osName = 'Windows'
     } else if (this.info.os.startsWith('linux')) {
-      this.icon = faLinux
       this.osName = 'Linux'
     }
   }

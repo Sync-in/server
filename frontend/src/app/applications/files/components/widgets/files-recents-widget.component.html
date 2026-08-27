@@ -2,12 +2,12 @@
   <div class="recents-widget-card__header">
     <div class="recents-widget-card__title-wrap">
       <span class="recents-widget-card__title-icon">
-        <fa-icon [icon]="icons.faFileLines"></fa-icon>
+        <svg [lucideIcon]="icons.LucideFileText"></svg>
       </span>
       <span class="recents-widget-card__title" l10nTranslate>Files</span>
     </div>
     <button type="button" class="recents-widget-card__toggle" (click)="switchMore()">
-      <fa-icon [icon]="moreElements ? icons.faMagnifyingGlassMinus : icons.faMagnifyingGlassPlus"></fa-icon>
+      <svg [lucideIcon]="moreElements ? icons.LucideZoomOut : icons.LucideZoomIn"></svg>
     </button>
   </div>
   <div class="recents-widget-card__body">
@@ -24,7 +24,7 @@
       </button>
     } @empty {
       <div class="recent-empty-state">
-        <fa-icon [icon]="icons.faFileLines" size="2x"></fa-icon>
+        <svg [lucideIcon]="icons.LucideFileText"></svg>
         <div class="mt-3" l10nTranslate>No recent files</div>
       </div>
     }

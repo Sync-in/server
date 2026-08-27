@@ -1,8 +1,6 @@
 import { Component, computed, inject, Signal } from '@angular/core'
 import { Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCommentDots } from '@fortawesome/free-regular-svg-icons'
-import { faMagnifyingGlassMinus, faMagnifyingGlassPlus } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideMessageSquareMore, LucideZoomIn, LucideZoomOut } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { LiveTimeAgoPipe } from '../../../../common/pipes/time-ago-live.pipe'
 import { TAB_MENU } from '../../../../layout/layout.interfaces'
@@ -16,13 +14,13 @@ import { CommentsService } from '../../services/comments.service'
 
 @Component({
   selector: 'app-comments-recents-widget',
-  imports: [L10nTranslateDirective, FaIconComponent, UserAvatarComponent, LiveTimeAgoPipe, FileLocationComponent],
+  imports: [L10nTranslateDirective, LucideDynamicIcon, UserAvatarComponent, LiveTimeAgoPipe, FileLocationComponent],
   templateUrl: './comments-recents-widget.component.html',
   styleUrl: './comments-recents-widget.component.scss'
 })
 export class CommentsRecentsWidgetComponent {
   protected moreElements = false
-  protected readonly icons = { faCommentDots, faMagnifyingGlassPlus, faMagnifyingGlassMinus }
+  protected readonly icons = { LucideMessageSquareMore, LucideZoomIn, LucideZoomOut }
   private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)

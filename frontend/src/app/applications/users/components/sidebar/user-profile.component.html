@@ -4,20 +4,20 @@
     <div class="d-flex flex-fill justify-content-between">
       @if (!user?.isLink) {
         <button class="btn btn-default" (click)="collapseRSideBar()" type="button" [routerLink]=USER_PATH.BASE>
-          <fa-icon [icon]="icons.faUserAlt"></fa-icon>
+          <svg [lucideIcon]="icons.LucideUserRound"></svg>
         </button>
       }
       <button class="btn btn-default" (click)="toggleTheme()" type="button">
-        <fa-icon [icon]="icons.faCircleHalfStroke"></fa-icon>
+        <svg [lucideIcon]="icons.LucideContrast"></svg>
       </button>
       @if (user?.isAdmin) {
         <button class="btn btn-default" (click)="collapseRSideBar()" type="button" routerLink="/admin">
-          <fa-icon [icon]="icons.faCog"></fa-icon>
+          <svg [lucideIcon]="icons.LucideSettings"></svg>
         </button>
       }
       @if (!store.isElectronApp() || store.isElectronApp() && store.userImpersonate()) {
         <button (click)="logOut()" class="btn btn-default" type="button">
-          <fa-icon [icon]="store.userImpersonate() ? icons.faUserSecret : icons.faPowerOff"></fa-icon>
+          <svg [lucideIcon]="store.userImpersonate() ? icons.LucideVenetianMask : icons.LucidePower"></svg>
         </button>
       }
     </div>
@@ -60,11 +60,11 @@
           <a class="text-primary cursor-pointer" (click)="openLink('versions')" l10nTranslate>Versions</a>
           <span>&nbsp;|&nbsp;</span>
           <a class="cursor-pointer" (click)="openLink('support')"> 💛</a>
-          <fa-icon class="ms-auto fs-xs cursor-pointer"
+          <svg class="ms-auto fs-xs cursor-pointer"
                    (click)="layout.setAutoCollapseRSideBarPreference(!layout.collapseRSideBarPreference())"
                    [title]="(layout.collapseRSideBarPreference() ? 'Sidebar auto-hide enabled' : 'Sidebar pinned') | translate:locale.language"
-                   [icon]="layout.collapseRSideBarPreference() ? icons.faThumbTackSlash : icons.faThumbTack">
-          </fa-icon>
+                   [lucideIcon]="layout.collapseRSideBarPreference() ? icons.LucidePinOff : icons.LucidePin">
+          </svg>
         </div>
       </div>
     </div>

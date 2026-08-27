@@ -2,8 +2,7 @@ import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faAddressCard, faPen, faPlus, faShieldHalved, faSpinner, faUsers, faUsersGear } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLoader, LucidePencil, LucidePlus, LucideShieldHalf, LucideUserRoundCog, LucideUsersRound } from '@lucide/angular'
 import { USER_LOGIN_VALIDATION, USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { CreateUserDto, UpdateUserDto } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
@@ -26,7 +25,7 @@ import { UserSearchComponent } from '../utils/user-search.component'
 @Component({
   selector: 'app-user-guest-dialog',
   imports: [
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslateDirective,
     TimeDateFormatPipe,
     ReactiveFormsModule,
@@ -53,7 +52,15 @@ export class UserGuestDialogComponent implements OnInit {
   protected readonly layout = inject(LayoutService)
   protected readonly userService = inject(UserService)
   protected readonly user: UserType = this.userService.user
-  protected readonly icons = { GROUPS: USER_ICON.GROUPS, faPlus, faPen, faUsersGear, faSpinner, faAddressCard, faUsers, faShieldHalved }
+  protected readonly icons = {
+    GROUPS: USER_ICON.GROUPS,
+    LucidePlus,
+    LucidePencil,
+    LucideUsersRound,
+    LucideLoader,
+    LucideUserRoundCog,
+    LucideShieldHalf
+  }
   protected readonly allNotifications = Object.values(USER_NOTIFICATION_TEXT)
   protected readonly defaultPassword: string = this.layout.translateString(USER_PASSWORD_CHANGE_TEXT)
   protected readonly languages: string[] = this.layout.getLanguages(true)

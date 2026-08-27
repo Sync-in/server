@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faRightFromBracket"></fa-icon>
+    <svg [lucideIcon]="icons.LucideLogOut"></svg>
     <span l10nTranslate>Leave group</span>
   </h4>
   <button (click)="onClose()" aria-label="Close" class="btn-close btn-close-white ms-auto" type="button"></button>
@@ -8,7 +8,9 @@
 <div class="modal-body">
   <div class="d-flex align-items-center">
     <div class="d-flex align-items-center avatar me-2">
-      <fa-icon [icon]="icons.GROUPS" class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}"></fa-icon>
+      <span class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}">
+        <svg [lucideIcon]="icons.GROUPS"></svg>
+      </span>
     </div>
     <span class="text-bold me-1">{{ member.name }}</span>
     <span l10nTranslate>will be left, you will no longer be a member of this group</span>
@@ -23,5 +25,4 @@
     Confirm
   </button>
 </div>
-
 

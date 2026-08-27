@@ -1,9 +1,7 @@
 import { AsyncPipe, NgComponentOutlet } from '@angular/common'
 import { Component, computed, inject, OnDestroy } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faBell, faFlag, faUser, faWindowRestore } from '@fortawesome/free-regular-svg-icons'
-import { faWifi } from '@fortawesome/free-solid-svg-icons'
+import { LucideBell, LucideDynamicIcon, LucideFlag, LucidePanelsTopLeft, LucideUserRound, LucideWifi } from '@lucide/angular'
 import { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { USER_ONLINE_STATUS } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10nTranslateDirective } from 'angular-l10n'
@@ -20,7 +18,7 @@ import { WindowsComponent } from './components/windows.component'
 
 @Component({
   selector: 'app-sidebar-right',
-  imports: [FaIconComponent, L10nTranslateDirective, NgComponentOutlet, AsyncPipe],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, NgComponentOutlet, AsyncPipe],
   templateUrl: 'sidebar.right.component.html'
 })
 export class SideBarRightComponent implements OnDestroy {
@@ -29,7 +27,7 @@ export class SideBarRightComponent implements OnDestroy {
   protected tabs: TabMenu[] = []
   protected theme = themeLight
   protected networkIsOnline = true
-  protected readonly icons = { faWifi }
+  protected readonly icons = { LucideWifi }
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
   private subscriptions: Subscription[] = []
@@ -41,7 +39,7 @@ export class SideBarRightComponent implements OnDestroy {
     {
       label: TAB_MENU.ONLINES,
       components: [UserOnlinesComponent],
-      icon: faUser,
+      icon: LucideUserRound,
       title: null,
       count: {
         value: toObservable(computed(() => this.store.onlineUsers().filter((u) => u.onlineStatus !== USER_ONLINE_STATUS.OFFLINE).length)),
@@ -53,7 +51,7 @@ export class SideBarRightComponent implements OnDestroy {
     {
       label: TAB_MENU.NOTIFICATIONS,
       components: [NotificationsComponent],
-      icon: faBell,
+      icon: LucideBell,
       title: null,
       count: {
         value: toObservable(computed(() => this.store.unreadNotifications().length)),
@@ -64,7 +62,7 @@ export class SideBarRightComponent implements OnDestroy {
     {
       label: TAB_MENU.TASKS,
       components: [FilesTasksComponent],
-      icon: faFlag,
+      icon: LucideFlag,
       title: null,
       count: {
         value: combineLatest([this.store.filesActiveTasks.pipe(map((tasks: FileTask[]) => tasks.length)), this.store.clientSyncTasksCount]).pipe(
@@ -79,7 +77,7 @@ export class SideBarRightComponent implements OnDestroy {
     {
       label: TAB_MENU.WINDOWS,
       components: [WindowsComponent],
-      icon: faWindowRestore,
+      icon: LucidePanelsTopLeft,
       title: null,
       count: { value: this.layout.windows.pipe(map((modals: AppWindow[]) => modals.length)), level: 'maroon' },
       showOnCount: true,

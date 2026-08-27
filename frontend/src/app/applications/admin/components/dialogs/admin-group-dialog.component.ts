@@ -2,8 +2,7 @@ import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCog, faPen, faPlus, faShieldHalved } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucidePencil, LucidePlus, LucideSettings, LucideShieldCheck } from '@lucide/angular'
 import { GROUP_VISIBILITY } from '@sync-in-server/backend/src/applications/users/constants/group'
 import { USER_PERMISSION, USER_PERMS_SEP } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { CreateOrUpdateGroupDto } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-group.dto'
@@ -24,7 +23,7 @@ import { AdminPermissionsComponent } from '../utils/admin-permissions.component'
 @Component({
   selector: 'app-admin-group-dialog',
   imports: [
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslateDirective,
     ReactiveFormsModule,
     AutofocusDirective,
@@ -45,7 +44,7 @@ export class AdminGroupDialogComponent implements OnInit {
   @Output() groupChange = new EventEmitter<['add' | 'update', AdminGroupModel]>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
-  protected readonly icons = { GROUPS: USER_ICON.GROUPS, faPen, faPlus, faCog, faShieldHalved }
+  protected readonly icons = { GROUPS: USER_ICON.GROUPS, LucidePencil, LucidePlus, LucideSettings, LucideShieldCheck }
   protected tabView: undefined | 'permissions'
   protected submitted = false
   protected readonly originalOrderKeyValue = originalOrderKeyValue

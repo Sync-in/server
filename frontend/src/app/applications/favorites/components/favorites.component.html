@@ -4,21 +4,21 @@
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
   </button>
   <button (click)="goTo()"
           [disabled]="!selected || selected.isDisabled"
           class="btn btn-default me-1"
           [tooltip]="'Go to' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>
+    <svg [lucideIcon]="icons.LucideMapPin"></svg>
   </button>
   <button (click)="removeFavorite()"
           [disabled]="!selected"
           class="btn btn-default me-1"
           [tooltip]="'Remove from favorites' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.REMOVE_FAVORITE"></fa-icon>
+    <svg [lucideIcon]="icons.REMOVE_FAVORITE"></svg>
   </button>
   <div class="ms-auto">
     <div class="btn-group me-1">
@@ -63,7 +63,7 @@
               @if (f.isDisabled) {
                 <span class="label-bottom-left">
                   <span class="badge bg-warning text-dark" l10nTranslate>
-                    <fa-icon [icon]="icons.faTriangleExclamation"></fa-icon>
+                    <svg [lucideIcon]="icons.LucideTriangleAlert"></svg>
                     No longer accessible
                   </span>
                 </span>
@@ -93,7 +93,7 @@
               l10nTranslate>
             {{ th.value.label }}
             @if (sortTable.sortParam.column === th.key) {
-              <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp"></fa-icon>
+              <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
             }
           </th>
         }
@@ -133,7 +133,7 @@
                     @case ('location') {
                       @if (f.isDisabled) {
                         <span class="text-warning" l10nTranslate>
-                          <fa-icon [icon]="icons.faTriangleExclamation"></fa-icon>
+                          <svg [lucideIcon]="icons.LucideTriangleAlert"></svg>
                           No longer accessible
                         </span>
                       } @else {
@@ -177,18 +177,18 @@
 <!--Start Context Menu -->
 <context-menu #MainContextMenu>
   <ng-template (execute)="loadFavorites()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>Refresh</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideRotateCw"></svg>Refresh</span>
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
   @if (!selected?.isDisabled) {
     <ng-template (execute)="goTo()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.faMapMarkerAlt"></fa-icon>Go to</span>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucideMapPin"></svg>Go to</span>
     </ng-template>
     <ng-template [divider]="true" contextMenuItem></ng-template>
   }
   <ng-template (execute)="removeFavorite()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.REMOVE_FAVORITE"></fa-icon>Remove from favorites</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.REMOVE_FAVORITE"></svg>Remove from favorites</span>
   </ng-template>
 </context-menu>
 <!--End Context Menu-->

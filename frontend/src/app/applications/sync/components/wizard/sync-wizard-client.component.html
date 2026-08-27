@@ -9,7 +9,7 @@
   <div class="d-flex flex-column h-100">
     @if (syncService.wizard.localPath) {
       <div class="d-flex flex-column my-auto">
-        <fa-icon (click)="onReset()" [icon]="icons.faTimesCircle" size="2x" class="position-absolute align-self-center cursor-pointer" style="margin-left: 85px"></fa-icon>
+        <svg (click)="onReset()" [lucideIcon]="icons.LucideCircleX" class="position-absolute align-self-center cursor-pointer sync-wizard-reset-icon" style="margin-left: 85px"></svg>
         <img [src]="syncService.wizard.localPath.mimeUrl" alt="" class="align-self-center mb-2" height="96">
         <div class="align-self-center mt-2 fs-md word-break-all fw-500">{{ syncService.wizard.localPath.path }}</div>
         @if (infoMsg) {
@@ -30,15 +30,15 @@
   <div class="d-flex flex-column mt-4">
     <div class="d-flex align-items-start">
       <button (click)="onCancel()" class="btn btn-secondary me-auto" type="button" l10nTranslate>
-        <fa-icon [icon]="icons.faTimesCircle"></fa-icon>
+        <svg [lucideIcon]="icons.LucideCircleX"></svg>
         Cancel
       </button>
       <button (click)="onSelect()" class="btn btn-default" type="button" l10nTranslate>
-        <fa-icon [icon]="icons.faDownload"></fa-icon>
+        <svg [lucideIcon]="icons.LucideHardDriveDownload"></svg>
         Select a folder
       </button>
       <button (click)="onNext()" [disabled]="!pathIsValid" class="btn btn-default ms-auto" type="button" l10nTranslate>
-        <fa-icon [icon]="icons.faArrowCircleRight"></fa-icon>
+        <svg [lucideIcon]="icons.LucideCircleArrowRight"></svg>
         Next
       </button>
     </div>

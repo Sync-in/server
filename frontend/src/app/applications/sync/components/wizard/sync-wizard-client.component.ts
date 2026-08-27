@@ -1,7 +1,6 @@
 import { Component, inject, Renderer2 } from '@angular/core'
 import { Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faArrowCircleRight, faDownload, faTimesCircle } from '@fortawesome/free-solid-svg-icons'
+import { LucideCircleArrowRight, LucideCircleX, LucideDynamicIcon, LucideHardDriveDownload } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { ELECTRON_DIALOG } from '../../../../electron/constants/dialogs'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -14,14 +13,14 @@ import { SYNC_ICON, SYNC_PATH, SYNC_TITLE } from '../../sync.constants'
 
 @Component({
   selector: 'app-sync-wizard-client',
-  imports: [FaIconComponent, L10nTranslateDirective],
+  imports: [LucideDynamicIcon, L10nTranslateDirective],
   templateUrl: 'sync-wizard-client.component.html'
 })
 export class SyncWizardClientComponent {
   public pathIsValid = false
   public infoMsg: string = null
   protected readonly syncService = inject(SyncService)
-  protected readonly icons = { faTimesCircle, faArrowCircleRight, faDownload }
+  protected readonly icons = { LucideCircleX, LucideCircleArrowRight, LucideHardDriveDownload }
   private readonly router = inject(Router)
   private readonly renderer = inject(Renderer2)
   private readonly store = inject(StoreService)

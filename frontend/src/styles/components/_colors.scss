@@ -54,7 +54,12 @@ $semantic-dark-triplets: (
 
 @function semantic-dark($name, $field) {
   $triplet: map-get($semantic-dark-triplets, $name);
-  @return if(not sass($triplet == null): map-get($triplet, $field));
+
+  @if $triplet != null {
+    @return map-get($triplet, $field);
+  }
+
+  @return null;
 }
 
 @function semantic-ink($tone, $mix-amount: 90%) {

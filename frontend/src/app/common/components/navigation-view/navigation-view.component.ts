@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faTableCellsLarge, faThList } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideGrid2X2, LucideList } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 
@@ -14,7 +13,7 @@ export interface ViewMode {
   maxBadges?: number
   image?: number
   imageRes?: number
-  faSize?: number
+  iconSize?: number
   textSize?: number
   margins?: number
 }
@@ -29,17 +28,17 @@ const GALLERY_VIEW_OPTIONS = [
 
 const VIEW_MODES: Record<string, ViewMode> = {
   tl: { enabled: false },
-  th: { enabled: true, maxBadges: 0, dimensions: 96, image: 56, imageRes: 128, faSize: 30, textSize: 12, margins: 18 },
-  thM: { enabled: true, maxBadges: 1, dimensions: 112, image: 72, imageRes: 192, faSize: 34, textSize: 12, margins: 18 },
-  thL: { enabled: true, maxBadges: 2, dimensions: 152, image: 112, imageRes: 256, faSize: 50, textSize: 13, margins: 18 },
-  thXl: { enabled: true, maxBadges: 6, dimensions: 192, image: 152, imageRes: 512, faSize: 65, textSize: 13, margins: 18 },
+  th: { enabled: true, maxBadges: 0, dimensions: 96, image: 56, imageRes: 128, iconSize: 30, textSize: 12, margins: 18 },
+  thM: { enabled: true, maxBadges: 1, dimensions: 112, image: 72, imageRes: 192, iconSize: 34, textSize: 12, margins: 18 },
+  thL: { enabled: true, maxBadges: 2, dimensions: 152, image: 112, imageRes: 256, iconSize: 50, textSize: 13, margins: 18 },
+  thXl: { enabled: true, maxBadges: 6, dimensions: 192, image: 152, imageRes: 512, iconSize: 65, textSize: 13, margins: 18 },
   thXxl: {
     enabled: true,
     maxBadges: 6,
     dimensions: 232,
     image: 192,
     imageRes: 1024,
-    faSize: 80,
+    iconSize: 80,
     textSize: 14,
     margins: 18
   }
@@ -49,12 +48,12 @@ const VIEW_MODES: Record<string, ViewMode> = {
   selector: 'app-navigation-view',
   templateUrl: 'navigation-view.component.html',
   styleUrls: ['navigation-view.component.scss'],
-  imports: [BsDropdownModule, FaIconComponent, L10nTranslateDirective],
+  imports: [BsDropdownModule, LucideDynamicIcon, L10nTranslateDirective],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NavigationViewComponent {
   @Output() switchView = new EventEmitter<ViewMode>()
-  protected readonly icons = { faTableCellsLarge, faThList }
+  protected readonly icons = { LucideGrid2X2, LucideList }
   protected readonly galleryViewOptions = GALLERY_VIEW_OPTIONS
   protected viewMode = this.getStoredViewMode()
 

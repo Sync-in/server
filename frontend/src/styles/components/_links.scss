@@ -13,6 +13,10 @@
     box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
   }
 
+  .link-error-icon {
+    font-size: 5rem;
+  }
+
   .resource {
     display: flex;
     flex-direction: column;
@@ -38,7 +42,7 @@
       border-radius: 1rem;
       margin: .8rem;
 
-      fa-icon {
+      .circle-primary-icon {
         width: 80px;
         height: 80px;
         font-size: 2.5rem;
@@ -50,8 +54,12 @@
     margin-bottom: 0.3rem;
     margin-top: 0.6rem;
 
-    fa-icon {
-      font-size: $font-size-xl;
+    button {
+      min-height: 40px;
+
+      .lucide {
+        font-size: $font-size-3xl;
+      }
     }
   }
 

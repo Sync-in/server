@@ -45,33 +45,33 @@
                     [(ngModel)]="r.hPerms[perm.key]"
                     (ngModelChange)="onPermissionChange(r)"
                     [tooltip]="SPACES_PERMISSIONS_TEXT[perm.key].text | translate:locale.language"
-                    class="btn btn-sm btn-custom {{!r.isDir && (perm.key === 'a' || perm.key === 'd') ? 'disabled' : ''}}"
+                    class="btn btn-custom {{!r.isDir && (perm.key === 'a' || perm.key === 'd') ? 'disabled' : ''}}"
                     type="button">
-              <fa-icon [icon]="SPACES_PERMISSIONS_TEXT[perm.key].icon" size="lg"></fa-icon>
+              <svg [lucideIcon]="SPACES_PERMISSIONS_TEXT[perm.key].icon"></svg>
             </button>
           } @else {
             <button [tooltip]="SPACES_PERMISSIONS_TEXT[perm.key].text | translate:locale.language"
                     [class.active]="r.hPerms[perm.key]"
-                    class="btn btn-sm btn-custom disabled"
+                    class="btn btn-custom disabled"
                     type="button">
-              <fa-icon [icon]="SPACES_PERMISSIONS_TEXT[perm.key].icon" size="lg"></fa-icon>
+              <svg [lucideIcon]="SPACES_PERMISSIONS_TEXT[perm.key].icon"></svg>
             </button>
           }
         }
-        <div class="vr ms-1 me-2"></div>
+        <div class="vr"  style="margin-left: 0.15rem; margin-right: 0.35rem"></div>
         <button
           (click)="setRenamed(r)"
           [tooltip]="'Rename' | translate:locale.language"
-          class="btn btn-sm {{r.isRenamed ? 'btn-success' : 'btn-secondary'}} me-2"
+          class="btn {{r.isRenamed ? 'btn-success' : 'btn-secondary'}} me-2"
           type="button">
-          <fa-icon [icon]="icons.faPen"></fa-icon>
+          <svg [lucideIcon]="icons.LucidePencil"></svg>
         </button>
         <button
           (click)="removeRoot(r)"
           [tooltip]="'Remove' | translate:locale.language"
-          class="btn btn-sm btn-danger"
+          class="btn btn-danger"
           type="button">
-          <fa-icon [icon]="icons.faTimes"></fa-icon>
+          <svg [lucideIcon]="icons.LucideX"></svg>
         </button>
       </div>
     </div>

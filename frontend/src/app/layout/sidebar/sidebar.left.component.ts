@@ -1,8 +1,7 @@
 import { AsyncPipe, NgTemplateOutlet } from '@angular/common'
 import { Component, inject, OnDestroy } from '@angular/core'
 import { ResolveEnd, Router, RouterLink } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faChevronDown, faUserSecret } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideVenetianMask } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
@@ -22,11 +21,11 @@ import { LayoutService } from '../layout.service'
 @Component({
   selector: 'app-sidebar-left',
   templateUrl: 'sidebar.left.component.html',
-  imports: [RouterLink, FaIconComponent, L10nTranslateDirective, AsyncPipe, NgTemplateOutlet]
+  imports: [RouterLink, LucideDynamicIcon, L10nTranslateDirective, AsyncPipe, NgTemplateOutlet]
 })
 export class SideBarLeftComponent implements OnDestroy {
   protected readonly store = inject(StoreService)
-  protected readonly icons = { faUserSecret, faChevronDown }
+  protected readonly icons = { LucideVenetianMask }
   protected readonly appName = APP_NAME
   protected logoIconUrl = logoIconUrl
   protected dynamicTitle: string

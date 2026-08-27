@@ -1,10 +1,10 @@
 <div class="modal-header">
   <h4 class="modal-title">
     @if (group) {
-      <fa-icon [icon]="icons.faPen"></fa-icon>
+      <svg [lucideIcon]="icons.LucidePencil"></svg>
       <span>{{ group.name }}</span>
     } @else {
-      <fa-icon [icon]="icons.faPlus"></fa-icon>
+      <svg [lucideIcon]="icons.LucidePlus"></svg>
       <span l10nTranslate>New group</span>
     }
   </h4>
@@ -20,7 +20,7 @@
     <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.faCog"></fa-icon>
+          <svg [lucideIcon]="icons.LucideSettings"></svg>
           <span class="app-tab-label" l10nTranslate>Settings</span>
         </span>
       </ng-template>
@@ -119,7 +119,7 @@
     <tab (selectTab)="tabView='permissions'" customClass="tab-dialog form-validation">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.faShieldHalved"></fa-icon>
+          <svg [lucideIcon]="icons.LucideShieldCheck"></svg>
           <span class="app-tab-label" l10nTranslate>Permissions</span>
         </span>
       </ng-template>

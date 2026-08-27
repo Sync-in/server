@@ -1,8 +1,16 @@
 import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { RouterLink } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCircleHalfStroke, faCog, faPowerOff, faThumbTack, faThumbTackSlash, faUserAlt, faUserSecret } from '@fortawesome/free-solid-svg-icons'
+import {
+  LucideContrast,
+  LucideDynamicIcon,
+  LucidePin,
+  LucidePinOff,
+  LucidePower,
+  LucideSettings,
+  LucideUserRound,
+  LucideVenetianMask
+} from '@lucide/angular'
 import { APP_URL } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { Subscription } from 'rxjs'
@@ -21,7 +29,7 @@ import { UserService } from '../../user.service'
 @Component({
   selector: 'app-user-profile',
   templateUrl: 'user-profile.component.html',
-  imports: [FormsModule, RouterLink, CapitalizePipe, FaIconComponent, L10nTranslateDirective, L10nTranslatePipe, AutoResizeDirective]
+  imports: [FormsModule, RouterLink, CapitalizePipe, LucideDynamicIcon, L10nTranslateDirective, L10nTranslatePipe, AutoResizeDirective]
 })
 export class UserProfileComponent implements OnDestroy {
   protected readonly logoDarkUrl = logoDarkUrl
@@ -32,7 +40,7 @@ export class UserProfileComponent implements OnDestroy {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly appVersion = APP_VERSION
   protected appBaseUrl = `${APP_URL.WEBSITE}`
-  protected readonly icons = { faUserAlt, faCircleHalfStroke, faCog, faPowerOff, faUserSecret, faThumbTack, faThumbTackSlash }
+  protected readonly icons = { LucideUserRound, LucideContrast, LucideSettings, LucidePower, LucideVenetianMask, LucidePin, LucidePinOff }
   protected user: UserType
   protected userAvatar: string = null
   protected readonly themeLight = themeLight

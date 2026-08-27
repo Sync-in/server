@@ -6,7 +6,12 @@
 ) {
   $bg: rgba(mix(rgba($white, 0.92), mix($white, $tone, $light-bg-mix), 68%), 0.95);
   $border: mix($white, $tone, $light-border-mix - 4%);
-  $fg: if(sass($light-text != null): $light-text; else: mix($tone, $black, 90%));
+  $fg: mix($tone, $black, 90%);
+
+  @if $light-text != null {
+    $fg: $light-text;
+  }
+
   $hover-bg: rgba(mix(rgba($white, 0.96), mix($white, $tone, $light-bg-mix - 8%), 62%), 0.98);
   $hover-border: mix($white, $tone, $light-border-mix - 16%);
   $hover-fg: mix($fg, $black, 88%);
@@ -56,6 +61,11 @@
 }
 
 .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .25rem;
+  min-height: calc(#{$btn-line-height * 1em} + var(--bs-btn-padding-y) + var(--bs-btn-padding-y) + var(--bs-btn-border-width) + var(--bs-btn-border-width));
   transition: background-color .2s ease, border-color .2s ease, color .2s ease;
   box-shadow: none !important;
 }
@@ -112,7 +122,7 @@
 
 .btn-custom {
   @extend .btn-secondary;
-  margin-right: 0.2rem;
+  margin-right: 0.15rem;
   transition: background-color .2s ease, border-color .2s ease, color .2s ease;
 }
 
@@ -175,12 +185,20 @@ $button-dark-variants: (
   $bg-mix: map-get($config, bg-mix);
   $border-mix: map-get($config, border-mix);
 
+  @if $bg-mix == null {
+    $bg-mix: 84%;
+  }
+
+  @if $border-mix == null {
+    $border-mix: 66%;
+  }
+
   @include btn-variant(
     $selector,
     semantic-tone(map-get($config, tone)),
     map-get($config, text),
-    if(sass($bg-mix == null): 84%; else: $bg-mix),
-    if(sass($border-mix == null): 66%; else: $border-mix)
+    $bg-mix,
+    $border-mix
   );
 }
 

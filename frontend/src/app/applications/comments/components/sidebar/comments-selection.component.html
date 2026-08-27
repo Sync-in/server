@@ -28,7 +28,7 @@
           <div class="ms-auto align-self-center">
             @if (comment.author.isAuthor || comment.isFileOwner) {
               <i (click)="onEditComment(comment)" role="button" class="fs-md">
-                <fa-icon [icon]="icons.faEdit"></fa-icon>
+                <svg [lucideIcon]="icons.LucideSquarePen"></svg>
               </i>
             }
           </div>

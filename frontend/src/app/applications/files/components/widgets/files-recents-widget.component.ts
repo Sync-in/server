@@ -1,8 +1,6 @@
 import { Component, computed, inject, Signal } from '@angular/core'
 import { Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faFileLines } from '@fortawesome/free-regular-svg-icons'
-import { faMagnifyingGlassMinus, faMagnifyingGlassPlus } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideFileText, LucideZoomIn, LucideZoomOut } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { LiveTimeAgoPipe } from '../../../../common/pipes/time-ago-live.pipe'
 import { StoreService } from '../../../../store/store.service'
@@ -13,13 +11,13 @@ import { FileLocationComponent } from '../utils/file-location.component'
 
 @Component({
   selector: 'app-files-recents-widget',
-  imports: [L10nTranslateDirective, FaIconComponent, LiveTimeAgoPipe, FileLocationComponent],
+  imports: [L10nTranslateDirective, LucideDynamicIcon, LiveTimeAgoPipe, FileLocationComponent],
   templateUrl: './files-recents-widget.component.html',
   styleUrl: './files-recents-widget.component.scss'
 })
 export class FilesRecentsWidgetComponent {
   protected moreElements = false
-  protected readonly icons = { faFileLines, faMagnifyingGlassPlus, faMagnifyingGlassMinus }
+  protected readonly icons = { LucideFileText, LucideZoomIn, LucideZoomOut }
   private readonly router = inject(Router)
   private readonly store = inject(StoreService)
   private readonly filesService = inject(FilesService)

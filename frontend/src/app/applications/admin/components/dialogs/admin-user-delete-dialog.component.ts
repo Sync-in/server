@@ -1,8 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faUserMinus } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideUserMinus } from '@lucide/angular'
 import type { DeleteUserDto } from '@sync-in-server/backend/src/applications/users/dto/delete-user.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
@@ -13,7 +12,7 @@ import { AdminUserModel } from '../../models/admin-user.model'
 
 @Component({
   selector: 'app-admin-user-delete-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, ReactiveFormsModule, CapitalizePipe, FormsModule],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, ReactiveFormsModule, CapitalizePipe, FormsModule],
   templateUrl: 'admin-user-delete-dialog.component.html'
 })
 export class AdminUserDeleteDialogComponent {
@@ -21,7 +20,7 @@ export class AdminUserDeleteDialogComponent {
   @Output() wasDeleted = new EventEmitter<boolean>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected submitted = false
-  protected readonly icons = { faUserMinus }
+  protected readonly icons = { LucideUserMinus }
   protected deleteSpace = false
   private readonly layout = inject(LayoutService)
   private readonly adminService = inject(AdminService)

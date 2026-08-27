@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faFile"></fa-icon>
+    <svg [lucideIcon]="icons.LucideFile"></svg>
     <span>{{ file.name }}</span>
   </h4>
   <button
@@ -24,7 +24,7 @@
         <div class="card h-100 shadow-sm editor-card editor-collabora">
           <div class="card-body d-flex align-items-center gap-3 p-3">
             <div class="editor-badge collabora">
-              <fa-icon [icon]="icons.faFileLines"></fa-icon>
+              <svg [lucideIcon]="icons.LucideFileText"></svg>
             </div>
             <div class="flex-grow-1">
               <h3 class="text-bold mb-1">Collabora</h3>
@@ -45,7 +45,7 @@
         <div class="card h-100 shadow-sm editor-card">
           <div class="card-body d-flex align-items-center gap-3 p-3">
             <div class="editor-badge bg-primary-subtle text-primary">
-              <fa-icon [icon]="icons.faFileWord"></fa-icon>
+              <svg [lucideIcon]="icons.LucideFileType2"></svg>
             </div>
             <div class="flex-grow-1">
               <h3 class="text-bold mb-1">{{ officeEditorName }}</h3>

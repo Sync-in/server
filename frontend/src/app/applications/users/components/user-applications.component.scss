@@ -24,7 +24,8 @@
     justify-content: center;
     margin-bottom: 0.2rem;
 
-    fa-icon {
+    .lucide,
+    .platform-icon {
       font-size: calc(var(--font-size-3xl) * 1.5)
     }
   }

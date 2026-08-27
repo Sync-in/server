@@ -1,8 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Injector, Input, OnInit, Output } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCog, faPlus, faSpinner, faUsers, faUserShield } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLoader, LucidePlus, LucideSettings, LucideUserRoundKey, LucideUsersRound } from '@lucide/angular'
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
 import { LINK_TYPE } from '@sync-in-server/backend/src/applications/links/constants/links'
 import { SPACE_ALIAS, SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -40,7 +39,7 @@ import { AdminService } from '../../../admin/admin.service'
 @Component({
   selector: 'app-share-dialog',
   imports: [
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslateDirective,
     TimeDateFormatPipe,
     TabsModule,
@@ -71,11 +70,11 @@ export class ShareDialogComponent implements OnInit {
   protected readonly icons = {
     SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
     LINKS: SPACES_ICON.LINKS,
-    faPlus,
-    faSpinner,
-    faUserShield,
-    faUsers,
-    faCog
+    LucidePlus,
+    LucideLoader,
+    LucideUserRoundKey,
+    LucideUsersRound,
+    LucideSettings
   }
   protected tabView: undefined | 'members' | 'links'
   protected allowedPermissions: Partial<`${SPACE_OPERATION}`>[] = []

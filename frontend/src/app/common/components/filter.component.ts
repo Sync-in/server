@@ -1,17 +1,16 @@
 import { Component, ElementRef, HostListener, inject, OnDestroy, signal, ViewChild } from '@angular/core'
 import { FormBuilder, FormControl, ReactiveFormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faFilter, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideFunnel, LucideX } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
 
 @Component({
   selector: 'app-input-filter',
-  imports: [ReactiveFormsModule, L10nTranslatePipe, FaIconComponent],
+  imports: [ReactiveFormsModule, L10nTranslatePipe, LucideDynamicIcon],
   template: `
     <div class="filter-shell" [class.has-value]="!!search()">
-      <fa-icon class="filter-icon" [icon]="faFilterIcon"></fa-icon>
+      <svg class="filter-icon" [lucideIcon]="filterIcon"></svg>
       <input
         #iFilter
         type="text"
@@ -22,7 +21,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators'
       />
       @if (search()) {
         <button (click)="clear()" type="button" class="clear-btn" aria-label="Clear filter">
-          <fa-icon [icon]="faTimes"></fa-icon>
+          <svg [lucideIcon]="LucideX"></svg>
         </button>
       }
     </div>
@@ -33,8 +32,8 @@ export class FilterComponent implements OnDestroy {
   public search = signal('')
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly searchControl: FormControl
-  protected readonly faFilterIcon = faFilter
-  protected readonly faTimes = faTimes
+  protected readonly filterIcon = LucideFunnel
+  protected readonly LucideX = LucideX
   protected readonly shortcutHint = this.getShortcutHint()
   private readonly fb = inject(FormBuilder)
   private readonly subscription: Subscription

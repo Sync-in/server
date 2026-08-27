@@ -18,7 +18,7 @@
             background: $sidebar-dark-apps-menu-hover-bg;
             color: $sidebar-dark-apps-menu-hover-color;
 
-            > fa-icon:first-child {
+            > .lucide:first-child {
               color: $primary;
             }
           }
@@ -47,7 +47,7 @@
             background: $sidebar-dark-apps-menu-hover-bg;
             color: $sidebar-dark-apps-menu-hover-color;
 
-            > fa-icon:first-child {
+            > .lucide:first-child {
               color: $primary;
             }
           }
@@ -197,7 +197,7 @@
     }
   }
   .btn-custom {
-    fa-icon,
+    .lucide,
     span {
       color: inherit !important;
     }

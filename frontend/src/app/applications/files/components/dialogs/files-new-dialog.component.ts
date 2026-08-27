@@ -1,8 +1,7 @@
 import { KeyValuePipe } from '@angular/common'
 import { AfterViewInit, Component, ElementRef, EventEmitter, HostListener, inject, Input, OnInit, Output, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCaretDown, faFileAlt, faFolderClosed, faGlobe } from '@fortawesome/free-solid-svg-icons'
+import { LucideChevronDown, LucideDynamicIcon, LucideFileText, LucideFolderClosed, LucideGlobe } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
@@ -16,7 +15,7 @@ import { FilesService } from '../../services/files.service'
 @Component({
   selector: 'app-files-files-new-dialog',
   templateUrl: 'files-new-dialog.component.html',
-  imports: [FaIconComponent, L10nTranslateDirective, BsDropdownModule, FormsModule, L10nTranslatePipe, AutofocusDirective, KeyValuePipe]
+  imports: [LucideDynamicIcon, L10nTranslateDirective, BsDropdownModule, FormsModule, L10nTranslatePipe, AutofocusDirective, KeyValuePipe]
 })
 export class FilesNewDialogComponent implements OnInit, AfterViewInit {
   @Input() files: FileModel[]
@@ -26,7 +25,7 @@ export class FilesNewDialogComponent implements OnInit, AfterViewInit {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
-  protected readonly icons = { faCaretDown, faGlobe, faFolderClosed, faFileAlt }
+  protected readonly icons = { LucideChevronDown, LucideGlobe, LucideFolderClosed, LucideFileText }
   protected fileProp = { title: '', name: '', placeholder: '' }
   protected downloadProp = { title: '', url: '', placeholder: 'URL (https://...)' }
   protected selectedDocType = 'Text'

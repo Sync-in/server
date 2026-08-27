@@ -4,27 +4,27 @@
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faRotate" [animation]="loading ? 'spin' : null"></fa-icon>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
   </button>
   <button (click)="openDialog(true)"
           class="btn btn-default me-1"
           [tooltip]="(guestsView ? 'New guest' : 'New user') | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faUserPlus"></fa-icon>
+    <svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>
   </button>
   <button (click)="openDialog()"
           [disabled]="!selected"
           class="btn btn-default me-1"
           [tooltip]="(guestsView ? 'Edit guest' : 'Edit user') | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faUserPen"></fa-icon>
+    <svg [lucideIcon]="icons.LucideUserRoundPen"></svg>
   </button>
   <button (click)="impersonateIdentity()"
           [disabled]="!selected"
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Impersonate identity' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faUserSecret"></fa-icon>
+    <svg [lucideIcon]="icons.LucideVenetianMask"></svg>
   </button>
   <div class="ms-auto">
     <!--Start Filter Button-->
@@ -34,7 +34,7 @@
             type="button"
             class="btn btn-custom me-1">
       <div class="d-flex align-items-center">
-        <fa-icon [icon]="guestsView ? icons.faToggleOn : icons.faToggleOff" class="me-2"></fa-icon>
+        <svg [lucideIcon]="guestsView ? icons.LucideToggleRight : icons.LucideToggleLeft" class="me-2"></svg>
         <span l10nTranslate>Guests</span>
       </div>
     </button>
@@ -59,7 +59,7 @@
             l10nTranslate>
           {{ th.value.label }}
           @if (sortTable.sortParam.column === th.key) {
-            <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp" [fixedWidth]="false"></fa-icon>
+            <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
           }
         </th>
       }
@@ -91,7 +91,7 @@
                         <span class="no-pointer-events" draggable="false">
                           {{ u.login }}
                           @if (u.isAdmin) {
-                            <fa-icon class="m-0" [icon]="icons.faKey"></fa-icon>
+                            <svg class="m-0" [lucideIcon]="icons.LucideKeyRound"></svg>
                           }
                         </span>
                         <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ u.email }}</span>
@@ -167,20 +167,20 @@
 <!--Start Context Menu -->
 <context-menu #MainContextMenu>
   <ng-template (execute)="openDialog(true)" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faUserPlus"></fa-icon>New {{ guestsView ? 'guest' : 'user' }}</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>New {{ guestsView ? 'guest' : 'user' }}</span>
   </ng-template>
   <ng-template [divider]="true" contextMenuItem></ng-template>
   <ng-template (execute)="loadUsersOrGuests()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>Refresh</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideRotateCw"></svg>Refresh</span>
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
   <ng-template (execute)="openDialog()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faUserPen"></fa-icon>Edit {{ guestsView ? 'guest' : 'user' }}</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideUserRoundPen"></svg>Edit {{ guestsView ? 'guest' : 'user' }}</span>
   </ng-template>
   <ng-template [divider]="true" contextMenuItem></ng-template>
   <ng-template (execute)="impersonateIdentity()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faUserSecret"></fa-icon>Impersonate identity</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideVenetianMask"></svg>Impersonate identity</span>
   </ng-template>
 </context-menu>
 <!--End Context Menu-->

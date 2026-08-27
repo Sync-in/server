@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, Input, OnChanges } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faLink, faUser, faUsers } from '@fortawesome/free-solid-svg-icons'
+import type { LucideIcon } from '@lucide/angular'
+import { LucideDynamicIcon, LucideLink, LucideUserRound, LucideUsersRound } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 
@@ -13,21 +13,21 @@ export interface BadgeMembersCounts {
 interface BadgeEntry {
   key: keyof BadgeMembersCounts
   label: string
-  icon: typeof faUser
+  icon: LucideIcon
   value: number
 }
 
 @Component({
   selector: 'app-badge-members',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FaIconComponent, TooltipModule, L10nTranslatePipe],
+  imports: [LucideDynamicIcon, TooltipModule, L10nTranslatePipe],
   template: `
     @if (entries.length) {
       <span class="members-summary" [tooltip]="membersTooltip" [container]="'body'">
         <span class="members-breakdown">
           @for (entry of entries; track entry.key) {
             <span class="members-part">
-              <fa-icon [icon]="entry.icon" [class.members-icon-user]="entry.key === 'users'"></fa-icon>
+              <svg [lucideIcon]="entry.icon" [class.members-icon-user]="entry.key === 'users'"></svg>
               <span class="members-value">{{ entry.value }}</span>
             </span>
           }
@@ -73,6 +73,10 @@ interface BadgeEntry {
         display: inline-flex;
         align-items: center;
         gap: 0.2rem;
+
+        .lucide {
+          font-size: var(--font-size-md);
+        }
       }
 
       .members-icon-user {
@@ -98,9 +102,9 @@ export class BadgeMembersComponent implements OnChanges {
   private buildEntries(): BadgeEntry[] {
     const members = this.members ?? {}
     const entries: BadgeEntry[] = [
-      { key: 'users', label: 'Users', icon: faUser, value: members.users ?? 0 },
-      { key: 'groups', label: 'Groups', icon: faUsers, value: members.groups ?? 0 },
-      { key: 'links', label: 'Links', icon: faLink, value: members.links ?? 0 }
+      { key: 'users', label: 'Users', icon: LucideUserRound, value: members.users ?? 0 },
+      { key: 'groups', label: 'Groups', icon: LucideUsersRound, value: members.groups ?? 0 },
+      { key: 'links', label: 'Links', icon: LucideLink, value: members.links ?? 0 }
     ]
 
     return entries.filter((entry) => entry.value > 0)

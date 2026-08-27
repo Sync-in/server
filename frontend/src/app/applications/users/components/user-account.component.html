@@ -61,7 +61,7 @@
                       <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
                         @if (user.isAdmin) {
                           <span class="badge bg-purple">
-                            <fa-icon [icon]="icons.faKey"></fa-icon>
+                            <svg [lucideIcon]="icons.LucideKeyRound"></svg>
                             <span l10nTranslate>Administrator</span>
                           </span>
                         } @else {
@@ -87,7 +87,7 @@
                         (click)="clipBoardLink()"
                         [title]="webdavUrl"
                         class="badge bg-primary d-inline-flex align-items-center gap-1 cursor-pointer">
-                        <fa-icon [icon]="icons.faCopy"></fa-icon>
+                        <svg [lucideIcon]="icons.LucideCopy"></svg>
                         {{ webdavUrl }}
                       </span>
                     </div>

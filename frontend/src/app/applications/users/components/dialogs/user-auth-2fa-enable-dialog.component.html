@@ -1,6 +1,6 @@
 <div class="modal-header justify-content-center">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faLock"></fa-icon>
+    <svg [lucideIcon]="icons.LucideLock"></svg>
     <span l10nTranslate>Two-Factor Authentication</span>
   </h4>
 </div>
@@ -41,7 +41,7 @@
               <a class="link-primary text-decoration-none font-monospace fs-sm cursor-pointer"
                  role="button"
                  (click)="clipBoardSecret()">
-                <fa-icon [icon]="icons.faCopy"></fa-icon>
+                <svg [lucideIcon]="icons.LucideCopy"></svg>
                 {{ secret }}
               </a>
             </div>

@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, Output } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faSpinner, faTrashCan } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLoader, LucideTrash2 } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
@@ -8,7 +7,7 @@ import { FileModel } from '../../models/file.model'
 @Component({
   selector: 'app-files-trash-dialog',
   templateUrl: 'files-trash-dialog.component.html',
-  imports: [L10nTranslatePipe, L10nTranslateDirective, FaIconComponent],
+  imports: [L10nTranslatePipe, L10nTranslateDirective, LucideDynamicIcon],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FilesTrashDialogComponent {
@@ -17,7 +16,7 @@ export class FilesTrashDialogComponent {
   @Output() removeFiles = new EventEmitter<void>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
-  protected readonly icons = { faTrashCan, faSpinner }
+  protected readonly icons = { LucideTrash2, LucideLoader }
   protected submitted = false
 
   @HostListener('document:keyup.enter')

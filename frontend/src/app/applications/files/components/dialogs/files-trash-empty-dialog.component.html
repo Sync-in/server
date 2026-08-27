@@ -1,9 +1,9 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faTrashCan"></fa-icon>
+    <svg [lucideIcon]="icons.LucideTrash2"></svg>
     <span l10nTranslate>Trash</span>
     @if (submitted) {
-      <fa-icon [icon]="icons.faSpinner" animation="spin" class="ms-2"></fa-icon>
+      <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true" class="ms-2"></svg>
     }
   </h4>
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>

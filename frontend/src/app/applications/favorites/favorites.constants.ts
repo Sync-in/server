@@ -1,5 +1,5 @@
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faStar } from '@fortawesome/free-solid-svg-icons'
+import type { LucideIcon } from '@lucide/angular'
+import { LucideStar } from '@lucide/angular'
 
 export const FAVORITES_PATH = {
   BASE: 'favorites'
@@ -7,4 +7,4 @@ export const FAVORITES_PATH = {
 
 export const FAVORITES_TITLE = 'Favorites'
 
-export const FAVORITES_ICON: IconDefinition = faStar
+export const FAVORITES_ICON: LucideIcon = LucideStar

@@ -1,4 +1,4 @@
-import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { LucideIcon } from '@lucide/angular'
 import { FILE_REPOSITORY } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { type FileLocationRepository, resolveFileLocation } from '../components/utils/file-location.utils'
@@ -28,7 +28,7 @@ export abstract class FileLocationModel {
 
   // Computed
   mimeUrl: string
-  icon: IconDefinition
+  icon: LucideIcon
   iconClass: 'primary' | 'purple' = 'primary'
   showedPath: string
 

@@ -4,7 +4,7 @@
           class="btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
   </button>
   <div class="ms-auto">
     <!--Start Filter Button-->
@@ -23,7 +23,7 @@
   <!--Start Gallery Content-->
   <div [style.--gallery-card-size]="galleryMode.dimensions + 'px'"
        [style.--gallery-image-size]="galleryMode.image + 'px'"
-       [style.--gallery-icon-size]="galleryMode.faSize + 'px'"
+       [style.--gallery-icon-size]="galleryMode.iconSize + 'px'"
        [style.--gallery-text-size]="galleryMode.textSize + 'px'"
        class="app-gallery">
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
@@ -41,9 +41,9 @@
                [class.selected]="t.id === selected?.id"
                class="card">
             <div [attr.rowIndex]="$index" class="card-body">
-              <fa-icon [icon]="t.isPersonal ? icons.PERSONAL : icons.SPACES"
-                       class="circle-primary-icon gallery-icon">
-              </fa-icon>
+              <span class="circle-primary-icon gallery-icon">
+                <svg [lucideIcon]="t.isPersonal ? icons.PERSONAL : icons.SPACES"></svg>
+              </span>
               <span class="label-top-right">
                 @if (t.newly) {
                   <span class="badge bg-purple">{{ t.hTimeAgo }}</span>
@@ -81,7 +81,7 @@
               l10nTranslate>
             {{ th.value.label }}
             @if (sortTable.sortParam.column === th.key) {
-              <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp" [fixedWidth]="false"></fa-icon>
+              <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
             }
           </th>
         }
@@ -108,7 +108,9 @@
                   @switch (th.key) {
                     @case ('name') {
                       <div class="d-flex align-items-center">
-                        <fa-icon [icon]="t.isPersonal ? icons.PERSONAL : icons.SPACES" class="circle-primary-icon"></fa-icon>
+                        <span class="circle-primary-icon">
+                          <svg [lucideIcon]="t.isPersonal ? icons.PERSONAL : icons.SPACES"></svg>
+                        </span>
                         <span
                           class="no-pointer-events text-file-name-preserve"
                           draggable="false"
@@ -138,12 +140,12 @@
 <!--Start Context Menu -->
 <context-menu #MainContextMenu>
   <ng-template (execute)="loadTrashBins()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>Refresh</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideRotateCw"></svg>Refresh</span>
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
   <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faCircleInfo"></fa-icon>Info</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideSquareCheckBig"></svg>Info</span>
   </ng-template>
 </context-menu>
 <!--End Context Menu-->

@@ -1,4 +1,4 @@
-import { faGear, faLayerGroup, faScrewdriverWrench, faUserGear, faUsersGear } from '@fortawesome/free-solid-svg-icons'
+import { LucideLayers, LucideSettings, LucideUserRoundCog, LucideUsersRound, LucideWrench } from '@lucide/angular'
 import { AppMenu } from '../../layout/layout.interfaces'
 
 export const ADMIN_PATH = {
@@ -22,11 +22,11 @@ export const ADMIN_TITLE = {
 } as const
 
 export const ADMIN_ICON = {
-  BASE: faGear,
-  USERS: faUserGear,
-  GROUPS: faUsersGear,
-  SPACES: faLayerGroup,
-  TOOLS: faScrewdriverWrench
+  BASE: LucideSettings,
+  USERS: LucideUserRoundCog,
+  GROUPS: LucideUsersRound,
+  SPACES: LucideLayers,
+  TOOLS: LucideWrench
 } as const
 
 export const ADMIN_MENU: AppMenu = {

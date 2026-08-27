@@ -1,7 +1,6 @@
 import { Component, ElementRef, EventEmitter, inject, Input, OnInit, Output, ViewChild } from '@angular/core'
 import { FormsModule, ReactiveFormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faDice, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons'
+import { LucideDices, LucideDynamicIcon, LucideEye, LucideEyeOff } from '@lucide/angular'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { genPassword } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -9,7 +8,7 @@ import { togglePasswordType } from '../utils/functions'
 
 @Component({
   selector: 'app-input-password',
-  imports: [FormsModule, ReactiveFormsModule, L10nTranslatePipe, FaIconComponent, L10nTranslateDirective],
+  imports: [FormsModule, ReactiveFormsModule, L10nTranslatePipe, LucideDynamicIcon, L10nTranslateDirective],
   template: `@if (showLabel) {
       <label for="password" class="form-label" l10nTranslate>Password</label>
     }
@@ -31,16 +30,21 @@ import { togglePasswordType } from '../utils/functions'
       @if (showGenerator) {
         <div (click)="randomPassword()" class="input-group-text cursor-pointer">
           <span>
-            <fa-icon [icon]="icons.faDice"></fa-icon>
+            <svg [lucideIcon]="icons.LucideDices"></svg>
           </span>
         </div>
       }
       <div (click)="toggleVisiblePassword(Password)" class="input-group-text cursor-pointer">
         <span>
-          <fa-icon [icon]="Password.type === 'text' ? icons.faEye : icons.faEyeSlash"></fa-icon>
+          <svg [lucideIcon]="Password.type === 'text' ? icons.LucideEye : icons.LucideEyeOff"></svg>
         </span>
       </div>
-    </div> `
+    </div> `,
+  styles: `
+    .input-group-text .lucide {
+      font-size: var(--font-size-lg);
+    }
+  `
 })
 export class InputPasswordComponent implements OnInit {
   @ViewChild('Password', { static: true }) passwordElement: ElementRef
@@ -56,7 +60,7 @@ export class InputPasswordComponent implements OnInit {
   @Input() centered = false
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly toggleVisiblePassword = togglePasswordType
-  protected readonly icons = { faEye, faEyeSlash, faDice }
+  protected readonly icons = { LucideEye, LucideEyeOff, LucideDices }
 
   ngOnInit() {
     if (this.focus) {
@@ -69,7 +73,7 @@ export class InputPasswordComponent implements OnInit {
 
   randomPassword() {
     if (!this.disabled) {
-      this.passwordChange.emit(genPassword(this.passwordMinLength + 2))
+      this.passwordChange.emit(genPassword(this.passwordMinLength + 8))
     }
   }
 }

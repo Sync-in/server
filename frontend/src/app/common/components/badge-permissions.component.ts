@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, Input, OnChanges } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import { LucideDynamicIcon } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AvailableBSPositions } from 'ngx-bootstrap/positioning'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -13,7 +13,7 @@ interface FilePermissionEntry {
 @Component({
   selector: 'app-badge-permissions',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TooltipModule, L10nTranslateDirective, FaIconComponent, L10nTranslatePipe],
+  imports: [TooltipModule, L10nTranslateDirective, LucideDynamicIcon, L10nTranslatePipe],
   template: `
     @if (replaceEmptyPermissions && !permissionEntries.length) {
       <span l10nTranslate>No permissions</span>
@@ -22,7 +22,7 @@ interface FilePermissionEntry {
         <span class="badge bg-secondary-alt permission-badge" [tooltip]="permissionsTooltip" [placement]="tooltipPlacement" [container]="'body'">
           @for (p of permissionEntries; track p.key) {
             <span class="permission-icon">
-              <fa-icon [icon]="p.value.icon"></fa-icon>
+              <svg [lucideIcon]="p.value.icon"></svg>
             </span>
           }
         </span>
@@ -39,7 +39,8 @@ interface FilePermissionEntry {
       :host {
         --permission-icon-color: #2f4558;
         --permission-icon-hover-color: #22384b;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
         max-width: 100%;
         vertical-align: middle;
       }
@@ -50,7 +51,9 @@ interface FilePermissionEntry {
       }
 
       .permission-badge {
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.1rem;
         width: fit-content;
         max-width: 100%;
         min-width: 0;
@@ -58,24 +61,16 @@ interface FilePermissionEntry {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        line-height: 1.2;
       }
 
       .permission-icon {
-        display: inline-block;
-        margin-right: 0.1rem;
-        vertical-align: middle;
+        display: inline-flex;
+        align-items: center;
       }
 
-      .permission-icon:last-child {
-        margin-right: 0;
-      }
-
-      .permission-icon fa-icon {
-        display: inline-block;
+      .permission-icon .lucide {
         color: var(--permission-icon-color);
-        vertical-align: 0;
-        font-size: var(--font-size-base);
+        font-size: var(--font-size-md);
       }
     `
   ]

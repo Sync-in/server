@@ -3,8 +3,8 @@
   <div class="sidebar-component-title-label" l10nTranslate>Windows Manager</div>
   <div class="sidebar-component-title-side">
     @if (windows.length) {
-      <button (click)="onCloseAll()" class="btn btn-sm btn-default" type="button" aria-label="Close all windows">
-        <fa-icon [icon]="icons.faTimes"></fa-icon>
+      <button (click)="onCloseAll()" class="btn btn-default" type="button" aria-label="Close all windows">
+        <svg [lucideIcon]="icons.LucideX"></svg>
       </button>
     }
   </div>
@@ -16,7 +16,7 @@
         <img [ngSrc]="modal.element.mimeUrl" alt="" width="28" height="28">
         <div class="text-truncate fs-sm">{{ modal.element.name }}</div>
         <button (click)="onClose($event, modal)" class="btn btn-xs btn-default ms-auto">
-          <fa-icon [icon]="icons.faTimes"></fa-icon>
+          <svg class="fs-md" [lucideIcon]="icons.LucideX"></svg>
         </button>
       </div>
     </div>

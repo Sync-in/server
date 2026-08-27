@@ -1,25 +1,25 @@
 import { KeyValuePipe } from '@angular/common'
 import { Component, effect, ElementRef, inject, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
-  faArrowDown,
-  faArrowRotateRight,
-  faArrowsSpin,
-  faArrowUp,
-  faCalendarCheck,
-  faCalendarXmark,
-  faExclamationTriangle,
-  faFlask,
-  faForward,
-  faInfoCircle,
-  faMapMarkerAlt,
-  faPencilAlt,
-  faPlay,
-  faPlus,
-  faShuffle,
-  faStop
-} from '@fortawesome/free-solid-svg-icons'
+  LucideArrowDown,
+  LucideArrowUp,
+  LucideCalendarCheck,
+  LucideCalendarX,
+  LucideDynamicIcon,
+  LucideFastForward,
+  LucideFlaskConical,
+  LucideInfo,
+  LucideMapPin,
+  LucidePencilLine,
+  LucidePlay,
+  LucidePlus,
+  LucideRepeat2,
+  LucideRotateCw,
+  LucideShuffle,
+  LucideSquareStop,
+  LucideTriangleAlert
+} from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { SYNC_PATH_CONFLICT_MODE, SYNC_PATH_MODE } from '@sync-in-server/backend/src/applications/sync/constants/sync'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -60,7 +60,7 @@ import { LiveTimeAgoPipe } from '../../../common/pipes/time-ago-live.pipe'
     ContextMenuModule,
     SearchFilterPipe,
     SyncPathDirectionIconComponent,
-    FaIconComponent,
+    LucideDynamicIcon,
     KeyValuePipe,
     L10nTranslateDirective,
     SyncPathSchedulerComponent,
@@ -88,24 +88,24 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   protected readonly store = inject(StoreService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
-    faCalendarXmark,
-    faCalendarCheck,
-    faArrowDown,
-    faArrowUp,
-    faArrowRotateRight,
-    faPlus,
-    faPencilAlt,
-    faStop,
-    faPlay,
-    faForward,
-    faArrowsSpin,
-    faShuffle,
-    faMapMarkerAlt,
+    LucideCalendarX,
+    LucideCalendarCheck,
+    LucideArrowDown,
+    LucideArrowUp,
+    LucideRotateCw,
+    LucidePlus,
+    LucidePencilLine,
+    LucideSquareStop,
+    LucidePlay,
+    LucideFastForward,
+    LucideRepeat2,
+    LucideShuffle,
+    LucideMapPin,
     CLIENT: SYNC_ICON.CLIENT,
     SERVER: SYNC_ICON.SERVER,
-    faInfoCircle,
-    faExclamationTriangle,
-    faFlask
+    LucideInfo,
+    LucideTriangleAlert,
+    LucideFlaskConical
   }
   // Sort
   protected tableHeaders: Record<'name' | 'mode' | 'conflictMode' | 'diffMode' | 'scheduler' | 'filters' | 'lastSync', TableHeaderConfig> = {

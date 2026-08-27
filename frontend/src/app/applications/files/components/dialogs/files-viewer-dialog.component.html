@@ -1,11 +1,11 @@
 <div class="modal-header">
   <h4 class="modal-title me-auto">
-    <fa-icon [icon]="isReadonly() ? icons.faEye : icons.faPen"></fa-icon>
+    <svg [lucideIcon]="isReadonly() ? icons.LucideEye : icons.LucidePencil"></svg>
     <span>{{ currentFile.name }}</span>
   </h4>
   @if (canToggleViewer) {
     <button (click)="toggleViewer()" class="btn btn-sm btn-primary me-2" type="button">
-      <fa-icon [icon]="isReadonly() ? icons.faPen : icons.faEye"></fa-icon>
+      <svg [lucideIcon]="isReadonly() ? icons.LucidePencil : icons.LucideEye"></svg>
       <span class="d-none d-sm-inline ms-2">{{ toggleViewerText }}</span>
     </button>
   }

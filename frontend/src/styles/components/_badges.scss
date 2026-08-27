@@ -6,9 +6,13 @@
 ) {
   $light-bg: mix(rgba($white, 0.92), mix($white, $tone, $light-bg-mix), 72%);
   $light-border: mix($white, $tone, $light-border-mix);
-  $light-fg: if(sass($light-text != null): $light-text; else: mix($tone, $black, 90%));
+  $light-fg: mix($tone, $black, 90%);
   $light-bg-full: $tone;
   $light-border-full: $tone;
+
+  @if $light-text != null {
+    $light-fg: $light-text;
+  }
 
   --badge-bg: #{$light-bg};
   --badge-border: #{$light-border};
@@ -57,7 +61,7 @@
   --badge-bg-full: #{$gray};
   --badge-border-full: #{$gray};
 
-  display: inline-block;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.2rem;
@@ -89,7 +93,7 @@
     color: white !important;
   }
 
-  fa-icon {
+  .lucide {
     font-size: $font-size-base;
   }
 
@@ -154,12 +158,20 @@ $badge-dark-variants: (
   $bg-mix: map-get($config, bg-mix);
   $border-mix: map-get($config, border-mix);
 
+  @if $bg-mix == null {
+    $bg-mix: 84%;
+  }
+
+  @if $border-mix == null {
+    $border-mix: 66%;
+  }
+
   @include badge-variant(
     $selector,
     semantic-tone(map-get($config, tone)),
     map-get($config, text),
-    if(sass($bg-mix == null): 84%; else: $bg-mix),
-    if(sass($border-mix == null): 66%; else: $border-mix)
+    $bg-mix,
+    $border-mix
   );
 }
 

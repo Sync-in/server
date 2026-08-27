@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="hasExclusiveLock ? icons.faLock : icons.faUnlock"></fa-icon>
+    <svg [lucideIcon]="hasExclusiveLock ? icons.LucideLock : icons.LucideUnlock"></svg>
     <span>{{ file.name }}</span>
   </h4>
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>

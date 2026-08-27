@@ -2,8 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { Component, computed, inject, Signal, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faFont, faMapMarkerAlt, faSpinner, faTimes, faTrashCan } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLoader, LucideMapPin, LucideTrash2, LucideType, LucideX } from '@lucide/angular'
 import { MIN_CHARS_TO_SEARCH } from '@sync-in-server/backend/src/applications/files/constants/indexing'
 import type { SearchFilesDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -27,7 +26,7 @@ import { SEARCH_ICON, SEARCH_PATH } from '../search.constants'
   selector: 'app-files-search',
   imports: [
     FilterComponent,
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslatePipe,
     AutofocusDirective,
     ButtonCheckboxDirective,
@@ -46,7 +45,7 @@ export class SearchComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly store = inject(StoreService)
   public searchContent: Signal<string> = computed(() => this.store.currentSearch().content)
-  protected readonly icons = { SEARCH_ICON, faSpinner, faTrashCan, faTimes, faFont, faMapMarkerAlt }
+  protected readonly icons = { SEARCH_ICON, LucideLoader, LucideTrash2, LucideX, LucideType, LucideMapPin }
   protected minCharsToSearch = MIN_CHARS_TO_SEARCH
   protected loading = false
   protected errorMessage: string = null

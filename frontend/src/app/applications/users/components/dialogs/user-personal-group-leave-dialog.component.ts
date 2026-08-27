@@ -1,7 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideLogOut } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
 import { MemberModel } from '../../models/member.model'
@@ -11,14 +10,14 @@ import { UserService } from '../../user.service'
 
 @Component({
   selector: 'app-user-personal-group-leave-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective],
+  imports: [LucideDynamicIcon, L10nTranslateDirective],
   templateUrl: 'user-personal-group-leave-dialog.component.html'
 })
 export class UserPersonalGroupLeaveDialogComponent {
   @Input({ required: true }) member: MemberModel
   @Output() wasLeft = new EventEmitter<boolean>()
   protected submitted = false
-  protected readonly icons = { GROUPS: USER_ICON.GROUPS, faRightFromBracket }
+  protected readonly icons = { GROUPS: USER_ICON.GROUPS, LucideLogOut }
   private readonly layout = inject(LayoutService)
   private readonly userService = inject(UserService)
 

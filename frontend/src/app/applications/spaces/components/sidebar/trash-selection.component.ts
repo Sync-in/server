@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, InputSignal } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import { LucideDynamicIcon } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { TimeDateFormatPipe } from '../../../../common/pipes/time-date-format.pipe'
@@ -11,7 +11,7 @@ import { SPACES_ICON } from '../../spaces.constants'
   selector: 'app-trash-selection',
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'trash-selection.component.html',
-  imports: [AutoResizeDirective, FaIconComponent, L10nTranslateDirective, TimeDateFormatPipe, L10nTranslatePipe],
+  imports: [AutoResizeDirective, LucideDynamicIcon, L10nTranslateDirective, TimeDateFormatPipe, L10nTranslatePipe],
   styles: ['.card {width: 100%; background: transparent; border: none}']
 })
 export class TrashSelectionComponent {

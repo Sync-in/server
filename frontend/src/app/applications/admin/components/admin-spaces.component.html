@@ -4,27 +4,27 @@
           class="d-none d-sm-block btn btn-default me-1"
           [tooltip]="'Refresh' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faArrowRotateRight" [animation]="loading ? 'spin' : null"></fa-icon>
+    <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
   </button>
   <button (click)="openSpaceDialog(true)"
           class="btn btn-default me-1"
           [tooltip]="'New space' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faPlus"></fa-icon>
+    <svg [lucideIcon]="icons.LucidePlus"></svg>
   </button>
   <button (click)="openSpaceDialog()"
           [disabled]="!selected"
           class="btn btn-default me-1"
           [tooltip]="'Edit space' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.faPen"></fa-icon>
+    <svg [lucideIcon]="icons.LucidePencil"></svg>
   </button>
   <button (click)="openChildShareDialog()"
           [disabled]="!selected?.counts.shares"
           class="btn btn-default me-1"
           [tooltip]="'Edit children shares' | translate:locale.language"
           type="button">
-    <fa-icon [icon]="icons.SHARES"></fa-icon>
+    <svg [lucideIcon]="icons.SHARES"></svg>
   </button>
   <div class="ms-auto">
     <!--Start Filter Button-->
@@ -48,7 +48,7 @@
             l10nTranslate>
           {{ th.value.label }}
           @if (sortTable.sortParam.column === th.key) {
-            <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp" [fixedWidth]="false"></fa-icon>
+            <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
           }
         </th>
       }
@@ -75,7 +75,9 @@
                 @switch (th.key) {
                   @case ('name') {
                     <div class="d-flex align-items-center">
-                      <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false"></fa-icon>
+                      <span class="circle-primary-icon">
+                        <svg [lucideIcon]="icons.SPACES"></svg>
+                      </span>
                       <div class="d-flex flex-column text-truncate">
                         <span class="no-pointer-events text-file-name-preserve" draggable="false">{{ s.name }}</span>
                         <span class="no-pointer-events text-muted fs-xs" draggable="false">{{ s.description }}</span>
@@ -96,7 +98,7 @@
                   @case ('info') {
                     @if (s.counts.shares) {
                       <span (click)="openChildShareDialog(s)" class="badge bg-purple cursor-pointer me-1">
-                        <fa-icon [icon]="icons.SHARES"></fa-icon>
+                        <svg [lucideIcon]="icons.SHARES"></svg>
                         {{ s.counts.shares }}
                       </span>
                     }
@@ -126,20 +128,20 @@
 <context-menu #MainContextMenu>
   <ng-template
     (execute)="openSpaceDialog(true)" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faPlus"></fa-icon>New space</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucidePlus"></svg>New space</span>
   </ng-template>
   <ng-template [divider]="true" contextMenuItem></ng-template>
   <ng-template (execute)="loadSpaces()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faArrowRotateRight"></fa-icon>Refresh</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideRotateCw"></svg>Refresh</span>
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
   <ng-template (execute)="openSpaceDialog()" contextMenuItem>
-    <span l10nTranslate><fa-icon [icon]="icons.faPen"></fa-icon>Edit space</span>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>Edit space</span>
   </ng-template>
   @if (!!selected?.counts.shares) {
     <ng-template (execute)="openChildShareDialog()" contextMenuItem>
-      <span l10nTranslate><fa-icon [icon]="icons.SHARES"></fa-icon>Edit children shares</span>
+      <span l10nTranslate><svg [lucideIcon]="icons.SHARES"></svg>Edit children shares</span>
     </ng-template>
   }
 </context-menu>

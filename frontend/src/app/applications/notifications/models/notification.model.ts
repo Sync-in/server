@@ -1,4 +1,4 @@
-import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { LucideIcon } from '@lucide/angular'
 import { NOTIFICATION_APP } from '@sync-in-server/backend/src/applications/notifications/constants/notifications'
 import type {
   NotificationContent,
@@ -17,7 +17,7 @@ export class NotificationModel implements NotificationFromUser {
 
   // extra properties
   soonRead = false
-  appIcon: IconDefinition
+  appIcon: LucideIcon
   mainElement: string
 
   constructor(props: NotificationFromUser) {

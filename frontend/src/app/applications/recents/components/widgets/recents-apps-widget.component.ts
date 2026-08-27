@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core'
 import { RouterLink } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import { LucideDynamicIcon } from '@lucide/angular'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../../../spaces/spaces.constants'
@@ -8,7 +8,7 @@ import { UserService } from '../../../users/user.service'
 
 @Component({
   selector: 'app-recents-apps-widget',
-  imports: [RouterLink, FaIconComponent, L10nTranslateDirective],
+  imports: [RouterLink, LucideDynamicIcon, L10nTranslateDirective],
   templateUrl: './recents-apps-widget.component.html'
 })
 export class RecentsAppsWidgetComponent {

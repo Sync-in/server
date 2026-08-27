@@ -45,7 +45,7 @@
 .recents-widget-card__title {
   display: inline-block;
   line-height: 1.05;
-  font-size: $font-size-base;
+  font-size: $font-size-sm;
   font-weight: 500;
   user-select: none;
 }
@@ -64,6 +64,13 @@
   justify-content: center;
   cursor: pointer;
   font-size: $font-size-base;
+}
+
+.recents-widget-card__title-icon,
+.recents-widget-card__toggle {
+  > .lucide {
+    font-size: $font-size-xl;
+  }
 }
 
 .recents-widget-card__body {
@@ -145,6 +152,10 @@
   align-items: center;
   text-align: center;
   padding: 0.85rem;
+
+  > .lucide {
+    font-size: 1.5rem;
+  }
 }
 
 @keyframes recent-card-enter {

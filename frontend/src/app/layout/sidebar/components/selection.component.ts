@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, Signal } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faTimes } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideX } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { FilesSelectionComponent } from '../../../applications/files/components/sidebar/files-selection.component'
 import { FilesService } from '../../../applications/files/services/files.service'
@@ -21,7 +20,7 @@ import { StoreService } from '../../../store/store.service'
     SpaceSelectionComponent,
     TrashSelectionComponent,
     LinkSelectionComponent,
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslateDirective
   ],
   templateUrl: 'selection.component.html'
@@ -30,7 +29,7 @@ export class SelectionComponent {
   protected readonly store = inject(StoreService)
   private readonly filesService = inject(FilesService)
   private readonly layout = inject(LayoutService)
-  protected readonly faTimes = faTimes
+  protected readonly LucideX = LucideX
   protected readonly SPACES_PATH = SPACES_PATH
   protected readonly selectionType: Signal<(typeof SPACES_PATH)[keyof typeof SPACES_PATH]> = computed(() =>
     this.setRepository(this.store.repository())

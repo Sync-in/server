@@ -11,7 +11,9 @@
           @if (file?.mimeUrl) {
             <img [src]="file.mimeUrl" alt="" class="no-select-pointer" (error)="fallBackMimeUrl()">
           } @else {
-            <fa-icon [icon]="icons.SPACES" class="circle-primary-icon" [fixedWidth]="false"></fa-icon>
+            <span class="circle-primary-icon">
+              <svg [lucideIcon]="icons.SPACES"></svg>
+            </span>
           }
         </div>
         <span class="mime-text">{{ link.share?.name || link.space?.name }}</span>
@@ -20,11 +22,11 @@
         <div class="btn-group-action">
           @if (file?.isViewable) {
             <button (click)="openLink()" class="btn btn-lg btn-outline-light me-2" l10nTranslate>
-              <fa-icon [icon]="fileCanBeModified && file.isEditable ? icons.faPen : icons.faEye"></fa-icon>
+              <svg [lucideIcon]="fileCanBeModified && file.isEditable ? icons.LucidePencil : icons.LucideEye"></svg>
             </button>
           }
           <button (click)="downloadLink()" class="btn btn-lg btn-outline-light">
-            <fa-icon [icon]="icons.faDownload"></fa-icon>
+            <svg [lucideIcon]="icons.LucideHardDriveDownload"></svg>
           </button>
         </div>
       }

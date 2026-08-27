@@ -1,7 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, OnInit } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faAnchor, faPlus, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { LucideAnchor, LucideDynamicIcon, LucideLoader, LucidePlus } from '@lucide/angular'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SpaceProps } from '@sync-in-server/backend/src/applications/spaces/models/space-props.model'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -20,7 +19,7 @@ import { SpaceManageRootsComponent } from '../utils/space-manage-roots.component
 
 @Component({
   selector: 'app-space-anchor-file-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, SpaceManageRootsComponent, L10nTranslatePipe, SelectComponent],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, SpaceManageRootsComponent, L10nTranslatePipe, SelectComponent],
   templateUrl: 'space-anchor-file-dialog.component.html'
 })
 export class SpaceAnchorFileDialogComponent implements OnInit {
@@ -28,7 +27,7 @@ export class SpaceAnchorFileDialogComponent implements OnInit {
   public addAnchoredFiles = new EventEmitter<{ space: SpaceModel; rootFiles: { id: number; name: string }[] }>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
-  protected readonly icons = { faAnchor, faPlus, faSpinner, SPACES: SPACES_ICON.SPACES }
+  protected readonly icons = { LucideAnchor, LucidePlus, LucideLoader, SPACES: SPACES_ICON.SPACES }
   protected selectedSpace: SpaceModel
   // data
   protected space: Partial<SpaceModel> = { roots: [] }

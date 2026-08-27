@@ -1,4 +1,4 @@
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { LucideIcon } from '@lucide/angular'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { BehaviorSubject, Observable } from 'rxjs'
 import { UserStatus } from '../applications/users/interfaces/user.interface'
@@ -49,7 +49,7 @@ export function isAppMenu(menu: AppMenuEntry): menu is AppMenu {
 export interface AppMenu {
   id?: USER_PERMISSION
   title: string
-  icon: IconDefinition
+  icon: LucideIcon
   iconAnimated?: boolean
   link: string
   matchLink?: RegExp
@@ -71,7 +71,7 @@ export interface TabMenu {
   // load component even if not showed
   loadComponent?: boolean
   components: any[]
-  icon: IconDefinition | null
+  icon: LucideIcon | null
   title: string | null
   active: boolean
   firstOfLasts?: boolean

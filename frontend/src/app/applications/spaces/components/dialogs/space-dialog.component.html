@@ -1,13 +1,13 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.SPACES"></fa-icon>
+    <svg [lucideIcon]="icons.SPACES"></svg>
     @if (space.id) {
       <span>{{ space.name }}</span>
     } @else {
       <span l10nTranslate>Create a new space</span>
     }
     @if (loading) {
-      <fa-icon [icon]="icons.faSpinner" animation="spin" class="ms-2" size="sm"></fa-icon>
+      <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true" class="ms-2"></svg>
     }
   </h4>
   @if (space.id) {
@@ -22,7 +22,7 @@
     <tab (selectTab)="tabView=null" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.faCog"></fa-icon>
+          <svg [lucideIcon]="icons.LucideSettings"></svg>
           <span class="app-tab-label" l10nTranslate>Settings</span>
         </span>
       </ng-template>
@@ -110,7 +110,7 @@
             <div class="card-body d-flex flex-column">
               <div (click)="editManagers = !editManagers" type="button">
                 <label for="editManagers" class="form-label no-select-pointer" l10nTranslate>Managers</label>
-                <fa-icon id="editManagers" class="ms-1" [icon]="icons.faPen"></fa-icon>
+                <svg id="editManagers" class="ms-1" [lucideIcon]="icons.LucidePencil"></svg>
               </div>
               <app-user-search
                 [(members)]="space.managers"
@@ -154,7 +154,7 @@
     <tab (selectTab)="tabView='roots'" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.faAnchor"></fa-icon>
+          <svg [lucideIcon]="icons.LucideAnchor"></svg>
           <span class="app-tab-label" l10nTranslate>Files</span>
           <span class="app-tab-count">{{ space.roots?.length || 0 }}</span>
         </span>
@@ -167,7 +167,7 @@
     <tab (selectTab)="tabView='members'" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.faUsers"></fa-icon>
+          <svg [lucideIcon]="icons.LucideUsersRound"></svg>
           <span class="app-tab-label" l10nTranslate>Members</span>
           <span class="app-tab-count">{{ space.members.length }}</span>
         </span>
@@ -183,7 +183,7 @@
     <tab (selectTab)="tabView='links'" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.LINKS"></fa-icon>
+          <svg [lucideIcon]="icons.LINKS"></svg>
           <span class="app-tab-label" l10nTranslate>Links</span>
           <span class="app-tab-count">{{ space.links.length }}</span>
         </span>
@@ -225,23 +225,23 @@
   @if (tabView === 'links') {
     <button (click)="openCreateLinkDialog()"
             class="btn btn-success" type="button" l10nTranslate>
-      <fa-icon [icon]="icons.faPlus"></fa-icon>
-      <fa-icon [icon]="icons.LINKS"></fa-icon>
+      <svg [lucideIcon]="icons.LucidePlus"></svg>
+      <svg [lucideIcon]="icons.LINKS"></svg>
       Link
     </button>
   }
   @if (tabView === 'roots') {
     <button (click)="openSelectRootDialog()"
             class="btn btn-success" type="button" l10nTranslate>
-      <fa-icon [icon]="icons.faPlus"></fa-icon>
-      <fa-icon [icon]="icons.faAnchor"></fa-icon>
+      <svg [lucideIcon]="icons.LucidePlus"></svg>
+      <svg [lucideIcon]="icons.LucideAnchor"></svg>
       File
     </button>
     @if (user.isAdmin) {
       <button (click)="openAdminRootDialog()"
               class="btn btn-warning" type="button" l10nTranslate>
-        <fa-icon [icon]="icons.faPlus"></fa-icon>
-        <fa-icon [icon]="icons.faUserShield"></fa-icon>
+        <svg [lucideIcon]="icons.LucidePlus"></svg>
+        <svg [lucideIcon]="icons.LucideUserRoundKey"></svg>
         External location
       </button>
     }

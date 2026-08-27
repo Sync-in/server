@@ -22,14 +22,14 @@
 
             class="btn btn-default me-1"
             type="button">
-      <fa-icon [icon]="icons.faRedo"></fa-icon>
+      <svg [lucideIcon]="icons.LucideRedo2"></svg>
     </button>
     <button (click)="openClearDialog()"
             [tooltip]="'Clear events' | translate:locale.language"
             placement="bottom"
             class="btn btn-default me-1"
             type="button">
-      <fa-icon [icon]="icons.faTrashCan"></fa-icon>
+      <svg [lucideIcon]="icons.LucideTrash2"></svg>
     </button>
     <!--Start Filter Button-->
     <app-input-filter class="d-none d-sm-block"></app-input-filter>
@@ -49,7 +49,7 @@
             l10nTranslate>
           {{ th.value.label }}
           @if (sortTable.sortParam.column === th.key) {
-            <fa-icon [icon]="sortTable.sortParam.asc ? icons.faArrowDown : icons.faArrowUp"></fa-icon>
+            <svg [lucideIcon]="sortTable.sortParam.asc ? icons.LucideArrowDown : icons.LucideArrowUp"></svg>
           }
         </th>
       }
@@ -70,8 +70,12 @@
                 @switch (th.key) {
                   @case ('action') {
                     <span class="d-flex align-items-center" [title]="t.actionText | translate:locale.language">
-                      <fa-icon [icon]="t.sideIcon" class="{{t.ok ? t.sideIconClass : 'circle-error-icon-sm'}} me-1"></fa-icon>
-                      <fa-icon [icon]="t.actionIcon" [class.text-danger]="!t.ok" class="circle-gray-icon-sm cursor-pointer" size="sm"></fa-icon>
+                      <span class="{{t.ok ? t.sideIconClass : 'circle-error-icon-sm'}} me-1">
+                        <svg [lucideIcon]="t.sideIcon"></svg>
+                      </span>
+                      <span [class.text-danger]="!t.ok" class="circle-gray-icon-sm cursor-pointer">
+                        <svg [lucideIcon]="t.actionIcon"></svg>
+                      </span>
                     </span>
                   }
                   @case ('sync') {

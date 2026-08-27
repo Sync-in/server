@@ -1,8 +1,7 @@
 import { KeyValuePipe } from '@angular/common'
 import { Component, ElementRef, EventEmitter, inject, Input, NgZone, OnInit, Output, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faPen, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucidePencil, LucideX } from '@lucide/angular'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { MEMBER_TYPE } from '@sync-in-server/backend/src/applications/users/constants/member'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -27,13 +26,19 @@ import { USER_ICON } from '../../user.constants'
     TypeaheadModule,
     FormsModule,
     HighlightPipe,
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslateDirective,
     ButtonsModule,
     KeyValuePipe,
     TooltipModule
   ],
-  templateUrl: 'users-search.component.html'
+  templateUrl: 'users-search.component.html',
+  styles: `
+    .lucide {
+      margin: 2px;
+      font-size: 1rem;
+    }
+  `
 })
 export class UserSearchComponent implements OnInit {
   @ViewChild('InputTypeHead') inputTypeHead: ElementRef
@@ -52,7 +57,7 @@ export class UserSearchComponent implements OnInit {
   protected readonly MEMBER_TYPE = MEMBER_TYPE
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly SPACES_PERMISSIONS_TEXT = SPACES_PERMISSIONS_TEXT
-  protected readonly icons = { GROUPS: USER_ICON.GROUPS, LINKS: SPACES_ICON.LINKS, faTimes, faPen }
+  protected readonly icons = { GROUPS: USER_ICON.GROUPS, LINKS: SPACES_ICON.LINKS, LucideX, LucidePencil }
   protected selection = ''
   private readonly ngZone = inject(NgZone)
   private defaultPlaceholder = 'Type to search for users or groups to add'

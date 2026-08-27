@@ -6,14 +6,14 @@
       [adaptivePosition]="true"
       class="btn btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faAngleLeft"></fa-icon>
+      <svg [lucideIcon]="icons.LucideChevronLeft"></svg>
     </button>
     <button
       (click)="nextImage()"
       [tooltip]="'Next' | translate:locale.language"
       class="btn btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faAngleRight"></fa-icon>
+      <svg [lucideIcon]="icons.LucideChevronRight"></svg>
     </button>
     @if (!isSlideshowActive()) {
     <button
@@ -21,7 +21,7 @@
       [tooltip]="'Start Slideshow' | translate:locale.language"
       class="btn btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faPlay"></fa-icon>
+      <svg [lucideIcon]="icons.LucidePlay"></svg>
      </button>
     } @else {
     <button
@@ -29,7 +29,7 @@
       [tooltip]="'Stop slideshow' | translate:locale.language"
       class="btn btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faStop"></fa-icon>
+      <svg [lucideIcon]="icons.LucideSquareStop"></svg>
     </button>
     }
     <button
@@ -37,7 +37,7 @@
       [tooltip]="'Fullscreen' | translate:locale.language"
       class="btn btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faExpand"></fa-icon>
+      <svg [lucideIcon]="icons.LucideExpand"></svg>
     </button>
   </div>
   <div class="px-2">{{ imageIndex() + 1 }}<span class="px-1" l10nTranslate>of</span>{{ imageCount() }}</div>
@@ -47,7 +47,7 @@
     [tooltip]="'Info' | translate:locale.language"
     class="d-none d-sm-block btn btn-custom me-1"
     type="button">
-    <fa-icon [icon]="icons.faInfo"></fa-icon>
+    <svg [lucideIcon]="icons.LucideInfo"></svg>
   </button>
 </div>
 <div class="app-viewer-image" [style.height.px]="currentHeightWithOffset()">

@@ -1,8 +1,7 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCopy, faKey } from '@fortawesome/free-solid-svg-icons'
+import { LucideCopy, LucideDynamicIcon, LucideKeyRound } from '@lucide/angular'
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { AUTH_SCOPE } from '@sync-in-server/backend/src/authentication/constants/scope'
 import { createLightSlug, currentDate } from '@sync-in-server/backend/src/common/shared'
@@ -19,7 +18,7 @@ import { UserService } from '../../user.service'
 @Component({
   selector: 'app-user-auth-manage-app-passwords',
   imports: [
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslateDirective,
     TimeDateFormatPipe,
     AutofocusDirective,
@@ -40,7 +39,7 @@ export class UserAuthManageAppPasswordsDialogComponent {
   protected readonly minDate: Date = currentDate()
   protected hasError: string
   protected submitted = false
-  protected readonly icons = { faKey, faCopy }
+  protected readonly icons = { LucideKeyRound, LucideCopy }
   private readonly fb = inject(UntypedFormBuilder)
   protected appPasswordForm: FormGroup = this.fb.group({
     name: this.fb.control('', [Validators.required]),

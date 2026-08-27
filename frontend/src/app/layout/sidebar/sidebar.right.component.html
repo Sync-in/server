@@ -23,13 +23,13 @@
     <div class="menu">
       @if (!networkIsOnline) {
         <a class="bg-warning">
-          <fa-icon [icon]="icons.faWifi" class="text-white"></fa-icon>
+          <svg [lucideIcon]="icons.LucideWifi" class="text-white"></svg>
         </a>
       }
       @for (tab of tabs; track tab.label) {
         @if (tab.icon && (!tab.showOnCount || tab.showOnCount && tab.count && (tab.count.value | async))) {
           <a [class.mt-auto]="tab.firstOfLasts" [class.active]="visible && tab.active" (click)="setTabVisible(tab.label)">
-            <fa-icon [icon]="tab.icon"></fa-icon>
+            <svg [lucideIcon]="tab.icon"></svg>
             @if (tab.count && tab.count.value | async; as count) {
               <span class="menu-badge">
                 <span class="badge bg-{{tab.count.level}}">{{ count }}</span>

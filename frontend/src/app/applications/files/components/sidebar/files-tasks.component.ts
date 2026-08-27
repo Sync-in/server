@@ -1,21 +1,25 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnDestroy } from '@angular/core'
 import { Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faClock, faFile, faFileArchive, faFolderClosed, faTrashCan } from '@fortawesome/free-regular-svg-icons'
+import type { LucideIcon } from '@lucide/angular'
 import {
-  faArrowsAlt,
-  faBan,
-  faCheck,
-  faClone,
-  faExclamation,
-  faFileArrowDown,
-  faFlag,
-  faGlobe,
-  faSpinner,
-  faStop,
-  faTimes
-} from '@fortawesome/free-solid-svg-icons'
+  LucideBan,
+  LucideCheck,
+  LucideCircleAlert,
+  LucideClock,
+  LucideCopy,
+  LucideDynamicIcon,
+  LucideFile,
+  LucideFileArchive,
+  LucideFileDown,
+  LucideFlag,
+  LucideFolderClosed,
+  LucideGlobe,
+  LucideLoader,
+  LucideMove,
+  LucideSquareStop,
+  LucideTrash2,
+  LucideX
+} from '@lucide/angular'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { FileTask, FileTaskStatus } from '@sync-in-server/backend/src/applications/files/models/file-task'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
@@ -33,28 +37,28 @@ import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
 
 @Component({
   selector: 'app-files-tasks',
-  imports: [FaIconComponent, L10nTranslatePipe, AutoResizeDirective, TooltipModule, ProgressbarComponent, ToBytesPipe, TimeAgoPipe],
+  imports: [LucideDynamicIcon, L10nTranslatePipe, AutoResizeDirective, TooltipModule, ProgressbarComponent, ToBytesPipe, TimeAgoPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: 'files-tasks.component.html'
 })
 export class FilesTasksComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly icons = { faTimes, faFlag, faClock, faFile, faFolderClosed, faStop }
-  protected readonly iconsStatus: Record<FileTaskStatus, IconDefinition> = {
-    [FileTaskStatus.PENDING]: faSpinner,
-    [FileTaskStatus.SUCCESS]: faCheck,
-    [FileTaskStatus.ERROR]: faExclamation,
-    [FileTaskStatus.CANCELLED]: faBan,
-    [FileTaskStatus.QUEUED]: faClock
+  protected readonly icons = { LucideX, LucideFlag, LucideClock, LucideFile, LucideFolderClosed, LucideSquareStop }
+  protected readonly iconsStatus: Record<FileTaskStatus, LucideIcon> = {
+    [FileTaskStatus.PENDING]: LucideLoader,
+    [FileTaskStatus.SUCCESS]: LucideCheck,
+    [FileTaskStatus.ERROR]: LucideCircleAlert,
+    [FileTaskStatus.CANCELLED]: LucideBan,
+    [FileTaskStatus.QUEUED]: LucideClock
   }
-  protected readonly iconsOperation: Partial<Record<FILE_OPERATION, IconDefinition>> = {
-    [FILE_OPERATION.DELETE]: faTrashCan,
-    [FILE_OPERATION.MOVE]: faArrowsAlt,
-    [FILE_OPERATION.COPY]: faClone,
-    [FILE_OPERATION.DOWNLOAD]: faGlobe,
-    [FILE_OPERATION.UPLOAD]: faFileArrowDown,
-    [FILE_OPERATION.COMPRESS]: faFileArchive,
-    [FILE_OPERATION.DECOMPRESS]: faFileArchive
+  protected readonly iconsOperation: Partial<Record<FILE_OPERATION, LucideIcon>> = {
+    [FILE_OPERATION.DELETE]: LucideTrash2,
+    [FILE_OPERATION.MOVE]: LucideMove,
+    [FILE_OPERATION.COPY]: LucideCopy,
+    [FILE_OPERATION.DOWNLOAD]: LucideGlobe,
+    [FILE_OPERATION.UPLOAD]: LucideFileDown,
+    [FILE_OPERATION.COMPRESS]: LucideFileArchive,
+    [FILE_OPERATION.DECOMPRESS]: LucideFileArchive
   } as const
   protected nbActiveTasks = 0
   protected nbEndedTasks = 0
@@ -150,7 +154,7 @@ export class FilesTasksComponent implements OnDestroy {
         displayPriority: pending ? 0 : queued ? 1 : 2,
         error,
         openable: task.status === FileTaskStatus.SUCCESS,
-        operationIcon: this.iconsOperation[task.type] || this.icons.faFlag,
+        operationIcon: this.iconsOperation[task.type] || this.icons.LucideFlag,
         pending,
         progress: pending ? task.props.progress || 100 : queued ? 0 : 100,
         progressItems: this.createProgressItems(task, pending, queued),
@@ -174,13 +178,13 @@ export class FilesTasksComponent implements OnDestroy {
       }
     }
     if (task.props.directories) {
-      items.push({ icon: this.icons.faFolderClosed, type: 'directories', value: task.props.directories })
+      items.push({ icon: this.icons.LucideFolderClosed, type: 'directories', value: task.props.directories })
     }
     if (task.props.files) {
-      items.push({ icon: this.icons.faFile, type: 'files', value: task.props.files })
+      items.push({ icon: this.icons.LucideFile, type: 'files', value: task.props.files })
     }
     if (!pending && !queued && task.endedAt) {
-      items.push({ icon: this.icons.faClock, type: 'endedAt', value: task.endedAt })
+      items.push({ icon: this.icons.LucideClock, type: 'endedAt', value: task.endedAt })
     }
     return items
   }

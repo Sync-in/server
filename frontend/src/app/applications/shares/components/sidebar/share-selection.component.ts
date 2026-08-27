@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, InputSignal } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faCommentDots } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideMessageSquareMore } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BadgeMembersComponent } from '../../../../common/components/badge-members.component'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
@@ -23,7 +22,7 @@ import { ShareRepositoryComponent } from '../utils/share-repository.component'
     L10nTranslateDirective,
     L10nTranslatePipe,
     TimeDateFormatPipe,
-    FaIconComponent,
+    LucideDynamicIcon,
     ShareRepositoryComponent,
     BadgeMembersComponent
   ],
@@ -33,7 +32,7 @@ export class ShareSelectionComponent {
   share: InputSignal<ShareFileModel> = input.required<ShareFileModel>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly iconShares = SPACES_ICON.SHARES
-  protected readonly faCommentDots = faCommentDots
+  protected readonly LucideMessageSquareMore = LucideMessageSquareMore
   protected readonly cardImageSize = defaultCardImageSize
   protected readonly resizeOffset = defaultResizeOffset
   private readonly layout = inject(LayoutService)

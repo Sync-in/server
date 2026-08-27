@@ -1,4 +1,4 @@
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import type { LucideIcon } from '@lucide/angular'
 import { getNewly } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'
 import { defaultMimeUrl, getAssetsMimeUrl } from '../../files/files.constants'
@@ -33,8 +33,8 @@ export class SyncTransferModel implements SyncTransfer {
   hovered = false // really used in templates
   isFiltered = false
   sideIconClass: string
-  sideIcon: IconDefinition
-  actionIcon: IconDefinition
+  sideIcon: LucideIcon
+  actionIcon: LucideIcon
   actionText: string
   mimeUrl: string
   newly = 0

@@ -7,8 +7,8 @@
   <div class="sidebar-component-title-label" l10nTranslate>Notifications</div>
   <div class="sidebar-component-title-side">
     @if (store.notifications().length) {
-      <button (click)="removeAll()" class="btn btn-sm btn-default" type="button">
-        <fa-icon [icon]="icons.faTrashAlt"></fa-icon>
+      <button (click)="removeAll()" class="btn btn-default" type="button">
+        <svg [lucideIcon]="icons.LucideTrash2"></svg>
       </button>
     }
   </div>
@@ -26,8 +26,8 @@
           }
         </div>
         <div class="ms-auto align-self-center">
-          <i (click)="remove(n)" role="button" class="fs-sm">
-            <fa-icon [icon]="icons.faTimes"></fa-icon>
+          <i (click)="remove(n)" role="button" class="fs-md">
+            <svg [lucideIcon]="icons.LucideX"></svg>
           </i>
         </div>
       </div>
@@ -38,7 +38,7 @@
           <div>{{ n.createdAt | amTimeAgo }}</div>
           <div class="ms-auto">
             @if (n.appIcon) {
-              <fa-icon [icon]="n.appIcon"></fa-icon>
+              <svg [lucideIcon]="n.appIcon"></svg>
             }
             @if (n.mainElement) {
               <span>&nbsp;{{ n.mainElement }}</span>

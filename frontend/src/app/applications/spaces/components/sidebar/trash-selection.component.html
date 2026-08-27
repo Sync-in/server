@@ -2,14 +2,13 @@
   <div appAutoResize class="fs-sm" [resizeOffset]=resizeOffset>
     <div class="card px-1 pt-1">
       <div class="card-body align-self-center p-0 my-1">
-        <fa-icon
+        <span
           class="circle-primary-icon"
           style="font-size: calc(var(--font-size-md) * 3)"
-          [icon]="iconTrash"
-          [fixedWidth]="false"
           [style.width.px]="cardImageSize"
           [style.height.px]="cardImageSize">
-        </fa-icon>
+          <svg [lucideIcon]="iconTrash"></svg>
+        </span>
       </div>
     </div>
     <hr class="my-1" />
@@ -37,6 +36,5 @@
     </div>
   </div>
 }
-
 
 

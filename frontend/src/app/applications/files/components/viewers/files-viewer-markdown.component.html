@@ -7,7 +7,7 @@
       class="btn {{ isReadonly() ? 'btn-warning' : 'btn-default' }} me-1"
       type="button"
       [disabled]="!isSupported() || !isWriteable() || isSaving()">
-      <fa-icon [icon]="isReadonly() ? icons.faLock : icons.faLockOpen"></fa-icon>
+      <svg [lucideIcon]="isReadonly() ? icons.LucideLock : icons.LucideLockOpen"></svg>
     </button>
     <button
       (click)="save()"
@@ -18,9 +18,9 @@
       type="button"
       [disabled]="!canSave()">
       @if (isSaving()) {
-        <fa-icon [icon]="icons.faSpinner" animation="spin"></fa-icon>
+        <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true"></svg>
       } @else {
-        <fa-icon [icon]="icons.faFloppyDisk"></fa-icon>
+        <svg [lucideIcon]="icons.LucideSave"></svg>
       }
     </button>
     <button
@@ -29,7 +29,7 @@
       [tooltip]="'Undo' | translate:locale.language"
       class="d-none d-sm-block btn btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faReply"></fa-icon>
+      <svg [lucideIcon]="icons.LucideUndo"></svg>
     </button>
     <button
       (click)="onRedo()"
@@ -37,7 +37,7 @@
       [tooltip]="'Redo' | translate:locale.language"
       class="d-none d-sm-block btn btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faShare"></fa-icon>
+      <svg [lucideIcon]="icons.LucideRedo"></svg>
     </button>
 
     <div class="files-markdown-mode-group">
@@ -47,7 +47,7 @@
         [tooltip]="(isSourceMode() ? 'Visual Mode' : 'Code Mode') | translate:locale.language"
         class="btn btn-custom mx-0"
         type="button">
-        <fa-icon [icon]="isSourceMode() ? icons.faEye : icons.faKeyboard"></fa-icon>
+        <svg [lucideIcon]="isSourceMode() ? icons.LucideEye : icons.LucideKeyboard"></svg>
       </button>
       <div class="vr files-markdown-mode-separator files-markdown-mode-separator-end"></div>
     </div>
@@ -62,7 +62,7 @@
             class="btn btn-custom dropdown-toggle files-markdown-heading-toggle"
             dropdownToggle
             type="button">
-            <fa-icon [icon]="icons.faHeading"></fa-icon>
+            <svg [lucideIcon]="icons.LucideHeading"></svg>
           </button>
           <ul *dropdownMenu class="dropdown-menu files-markdown-heading-menu" role="menu">
             @for (level of headingLevels; track level) {
@@ -81,7 +81,7 @@
           [tooltip]="'Bold' | translate:locale.language"
           class="btn btn-custom"
           type="button">
-          <fa-icon [icon]="icons.faBold"></fa-icon>
+          <svg [lucideIcon]="icons.LucideBold"></svg>
         </button>
         <button
           (click)="toggleItalic()"
@@ -90,7 +90,7 @@
           [tooltip]="'Italic' | translate:locale.language"
           class="btn btn-custom"
           type="button">
-          <fa-icon [icon]="icons.faItalic"></fa-icon>
+          <svg [lucideIcon]="icons.LucideItalic"></svg>
         </button>
         <button
           (click)="toggleUnderline()"
@@ -99,7 +99,7 @@
           [tooltip]="'Underline' | translate:locale.language"
           class="d-none d-md-block btn btn-custom"
           type="button">
-          <fa-icon [icon]="icons.faUnderline"></fa-icon>
+          <svg [lucideIcon]="icons.LucideUnderline"></svg>
         </button>
         <button
           (click)="toggleStrike()"
@@ -108,7 +108,7 @@
           [tooltip]="'Strikethrough' | translate:locale.language"
           class="d-none d-md-block btn btn-custom"
           type="button">
-          <fa-icon [icon]="icons.faStrikethrough"></fa-icon>
+          <svg [lucideIcon]="icons.LucideStrikethrough"></svg>
         </button>
 
         <div class="d-none d-md-block vr files-markdown-toolbar-separator"></div>
@@ -121,13 +121,13 @@
             class="btn btn-custom dropdown-toggle"
             dropdownToggle
             type="button">
-            <fa-icon [icon]="icons.faListUl"></fa-icon>
+            <svg [lucideIcon]="icons.LucideList"></svg>
           </button>
           <ul *dropdownMenu class="dropdown-menu files-markdown-list-menu" role="menu">
             <li role="menuitem">
               <a (click)="toggleBulletList()" [class.active]="editor.isActive('bulletList')" class="dropdown-item">
                 <span class="files-markdown-list-item">
-                  <fa-icon [icon]="icons.faListUl"></fa-icon>
+                  <svg [lucideIcon]="icons.LucideList"></svg>
                   <span l10nTranslate>Bullet List</span>
                 </span>
               </a>
@@ -135,7 +135,7 @@
             <li role="menuitem">
               <a (click)="toggleOrderedList()" [class.active]="editor.isActive('orderedList')" class="dropdown-item">
                 <span class="files-markdown-list-item">
-                  <fa-icon [icon]="icons.faListOl"></fa-icon>
+                  <svg [lucideIcon]="icons.LucideListOrdered"></svg>
                   <span l10nTranslate>Ordered List</span>
                 </span>
               </a>
@@ -143,7 +143,7 @@
             <li role="menuitem">
               <a (click)="toggleTaskList()" [class.active]="editor.isActive('taskList')" class="dropdown-item">
                 <span class="files-markdown-list-item">
-                  <fa-icon [icon]="icons.faSquareCheck"></fa-icon>
+                  <svg [lucideIcon]="icons.LucideSquareCheck"></svg>
                   <span l10nTranslate>Task List</span>
                 </span>
               </a>
@@ -159,13 +159,13 @@
             class="btn btn-custom dropdown-toggle"
             dropdownToggle
             type="button">
-            <fa-icon [icon]="icons.faCode"></fa-icon>
+            <svg [lucideIcon]="icons.LucideCode"></svg>
           </button>
           <ul *dropdownMenu class="dropdown-menu files-markdown-code-menu" role="menu">
             <li role="menuitem">
               <a (click)="toggleCode()" [class.active]="editor.isActive('code')" class="dropdown-item">
                 <span class="files-markdown-code-item">
-                  <fa-icon [icon]="icons.faCode"></fa-icon>
+                  <svg [lucideIcon]="icons.LucideCode"></svg>
                   <span l10nTranslate>Inline Code</span>
                 </span>
               </a>
@@ -173,7 +173,7 @@
             <li role="menuitem">
               <a (click)="toggleCodeBlock()" [class.active]="editor.isActive('codeBlock')" class="dropdown-item">
                 <span class="files-markdown-code-item">
-                  <fa-icon [icon]="icons.faCode"></fa-icon>
+                  <svg [lucideIcon]="icons.LucideCode"></svg>
                   <span l10nTranslate>Code Block</span>
                 </span>
               </a>
@@ -190,7 +190,7 @@
           [tooltip]="'Blockquote' | translate:locale.language"
           class="d-none d-md-block btn btn-custom"
           type="button">
-          <fa-icon [icon]="icons.faQuoteLeft"></fa-icon>
+          <svg [lucideIcon]="icons.LucideQuote"></svg>
         </button>
       </div>
 
@@ -203,49 +203,49 @@
             class="btn btn-custom dropdown-toggle"
             dropdownToggle
             type="button">
-            <fa-icon [icon]="icons.faTable"></fa-icon>
+            <svg [lucideIcon]="icons.LucideTable"></svg>
           </button>
           <ul *dropdownMenu class="dropdown-menu files-markdown-table-menu" role="menu">
             <li role="menuitem">
               <a (click)="insertTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faTable"></fa-icon><span l10nTranslate>Create a table</span></span>
+                <span><svg [lucideIcon]="icons.LucideTable"></svg><span l10nTranslate>Create a table</span></span>
               </a>
             </li>
             <li role="menuitem">
               <a (click)="deleteTable()" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faTrashCan"></fa-icon><span l10nTranslate>Delete table</span></span>
+                <span><svg [lucideIcon]="icons.LucideTrash2"></svg><span l10nTranslate>Delete table</span></span>
               </a>
             </li>
             <li class="dropdown-divider"></li>
             <li role="menuitem">
               <a (click)="addTableRow('above')" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add row above</span></span>
+                <span><svg [lucideIcon]="icons.LucideSquarePlus"></svg><span l10nTranslate>Add row above</span></span>
               </a>
             </li>
             <li role="menuitem">
               <a (click)="addTableRow('below')" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add row below</span></span>
+                <span><svg [lucideIcon]="icons.LucideSquarePlus"></svg><span l10nTranslate>Add row below</span></span>
               </a>
             </li>
             <li role="menuitem">
               <a (click)="deleteTableRow()" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faSquareMinus"></fa-icon><span l10nTranslate>Delete row</span></span>
+                <span><svg [lucideIcon]="icons.LucideSquareMinus"></svg><span l10nTranslate>Delete row</span></span>
               </a>
             </li>
             <li class="dropdown-divider"></li>
             <li role="menuitem">
               <a (click)="addTableColumn('left')" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add column left</span></span>
+                <span><svg [lucideIcon]="icons.LucideSquarePlus"></svg><span l10nTranslate>Add column left</span></span>
               </a>
             </li>
             <li role="menuitem">
               <a (click)="addTableColumn('right')" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faSquarePlus"></fa-icon><span l10nTranslate>Add column right</span></span>
+                <span><svg [lucideIcon]="icons.LucideSquarePlus"></svg><span l10nTranslate>Add column right</span></span>
               </a>
             </li>
             <li role="menuitem">
               <a (click)="deleteTableColumn()" [class.disabled]="!canEditTable()" class="dropdown-item">
-                <span><fa-icon [icon]="icons.faSquareMinus"></fa-icon><span l10nTranslate>Delete column</span></span>
+                <span><svg [lucideIcon]="icons.LucideSquareMinus"></svg><span l10nTranslate>Delete column</span></span>
               </a>
             </li>
           </ul>
@@ -257,7 +257,7 @@
           [tooltip]="'Horizontal Rule' | translate:locale.language"
           class="d-none d-lg-block btn btn-custom"
           type="button">
-          <fa-icon [icon]="icons.faMinus"></fa-icon>
+          <svg [lucideIcon]="icons.LucideMinus"></svg>
         </button>
 
         <button
@@ -267,7 +267,7 @@
           [tooltip]="'Link' | translate:locale.language"
           class="btn btn-custom"
           type="button">
-          <fa-icon [icon]="icons.faLink"></fa-icon>
+          <svg [lucideIcon]="icons.LucideLink"></svg>
         </button>
 
         <div class="btn-group" dropdown>
@@ -278,13 +278,13 @@
             class="btn btn-custom dropdown-toggle"
             dropdownToggle
             type="button">
-            <fa-icon [icon]="icons.faImage"></fa-icon>
+            <svg [lucideIcon]="icons.LucideImage"></svg>
           </button>
           <ul *dropdownMenu class="dropdown-menu files-markdown-image-menu" role="menu">
             <li role="menuitem">
               <a (click)="openImageFilePicker()" class="dropdown-item">
                 <span class="files-markdown-image-item">
-                  <fa-icon [icon]="icons.faImage"></fa-icon>
+                  <svg [lucideIcon]="icons.LucideImage"></svg>
                   <span l10nTranslate>Image from file</span>
                 </span>
               </a>
@@ -292,7 +292,7 @@
             <li role="menuitem">
               <a (click)="insertImageFromUrl()" class="dropdown-item">
                 <span class="files-markdown-image-item">
-                  <fa-icon [icon]="icons.faLink"></fa-icon>
+                  <svg [lucideIcon]="icons.LucideLink"></svg>
                   <span l10nTranslate>Image from URL</span>
                 </span>
               </a>
@@ -312,7 +312,7 @@
         [tooltip]="'Line Wrap' | translate:locale.language"
         class="btn btn-custom"
         type="button">
-        <fa-icon [icon]="icons.faArrowsLeftRightToLine"></fa-icon>
+        <svg [lucideIcon]="icons.LucideWrapText"></svg>
       </button>
     }
     <div class="d-none d-sm-block vr files-markdown-toolbar-separator"></div>
@@ -323,7 +323,7 @@
       [tooltip]="'Search' | translate:locale.language"
       class="d-none d-sm-block btn btn-custom me-1"
       type="button">
-      <fa-icon [icon]="icons.faMagnifyingGlass"></fa-icon>
+      <svg [lucideIcon]="icons.LucideSearch"></svg>
     </button>
 
     @if (warnOnUnsavedChanges()) {

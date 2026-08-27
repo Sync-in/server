@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faRotate"></fa-icon>
+    <svg [lucideIcon]="icons.LucideRefreshCw"></svg>
     <span>{{ syncPath.settings.name }}</span>
   </h4>
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
@@ -74,7 +74,7 @@
                          class="form-control"
                          type="text">
                   <button (click)="onRemoveFilter(i)" class="btn btn-danger" data-dismiss="modal" type="button">
-                    <fa-icon [icon]="icons.faTimes"></fa-icon>
+                    <svg [lucideIcon]="icons.LucideX"></svg>
                   </button>
                 </div>
               }

@@ -11,7 +11,7 @@
     height: auto;
     padding: 0.3rem 0.8rem;
 
-    > fa-icon {
+    > .lucide {
       font-size: $font-size-base;
 
       &:first-child {
@@ -48,7 +48,7 @@
     line-height: 1;
   }
 
-  > fa-icon {
+  > .lucide {
     color: $gray;
     font-size: $font-size-base;
   }

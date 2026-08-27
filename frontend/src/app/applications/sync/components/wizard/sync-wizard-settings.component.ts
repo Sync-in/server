@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core'
 import { Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faArrowCircleLeft, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
+import { LucideCircleArrowLeft, LucideCircleCheck, LucideDynamicIcon } from '@lucide/angular'
 import { SYNC_PATH_CONFLICT_MODE, SYNC_PATH_MODE } from '@sync-in-server/backend/src/applications/sync/constants/sync'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
@@ -14,7 +13,7 @@ import { SyncPathDirectionIconComponent } from '../utils/sync-path-direction-ico
 
 @Component({
   selector: 'app-sync-wizard-settings',
-  imports: [L10nTranslateDirective, FaIconComponent, TooltipDirective, SyncPathDirectionIconComponent, SyncPathSettingsComponent],
+  imports: [L10nTranslateDirective, LucideDynamicIcon, TooltipDirective, SyncPathDirectionIconComponent, SyncPathSettingsComponent],
   templateUrl: './sync-wizard-settings.component.html',
   styleUrl: './sync-wizard-settings.component.scss'
 })
@@ -22,7 +21,7 @@ export class SyncWizardSettingsComponent {
   protected readonly syncService = inject(SyncService)
   protected readonly SYNC_PATH_CONFLICT_MODE = SYNC_PATH_CONFLICT_MODE
   protected readonly SYNC_PATH_MODE = SYNC_PATH_MODE
-  protected readonly icons = { CLIENT: SYNC_ICON.CLIENT, SERVER: SYNC_ICON.SERVER, faArrowCircleLeft, faCheckCircle }
+  protected readonly icons = { CLIENT: SYNC_ICON.CLIENT, SERVER: SYNC_ICON.SERVER, LucideCircleArrowLeft, LucideCircleCheck }
   protected readonly translatedRemotePath = this.syncService.translateServerPath(this.syncService.wizard.remotePath.serverPath)
   protected syncPath: SyncPathModel
   protected error: string = null

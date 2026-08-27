@@ -1,8 +1,7 @@
 import { Component, inject, OnDestroy } from '@angular/core'
 import { RouterLink, RouterLinkActive } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faChevronRight, faHome } from '@fortawesome/free-solid-svg-icons'
+import type { LucideIcon } from '@lucide/angular'
+import { LucideChevronRight, LucideDynamicIcon, LucideHouse } from '@lucide/angular'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../layout.service'
 import { BreadCrumbUrl } from './breadcrumb.interfaces'
@@ -10,11 +9,11 @@ import { BreadCrumbUrl } from './breadcrumb.interfaces'
 @Component({
   selector: 'app-breadcrumb',
   templateUrl: 'breadcrumb.component.html',
-  imports: [RouterLink, RouterLinkActive, FaIconComponent]
+  imports: [RouterLink, RouterLinkActive, LucideDynamicIcon]
 })
 export class BreadcrumbComponent implements OnDestroy {
-  protected readonly icons = { faChevronRight }
-  protected breadcrumbIcon: IconDefinition = faHome
+  protected readonly icons = { LucideChevronRight }
+  protected breadcrumbIcon: LucideIcon = LucideHouse
   protected levels: { link: string[] | string; title: string }[] = []
   private readonly layout = inject(LayoutService)
   private subscriptions: Subscription[] = []

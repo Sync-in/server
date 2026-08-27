@@ -1,7 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, inject, Input, OnInit } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faAnchor, faPlus, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { LucideAnchor, LucideDynamicIcon, LucideLoader, LucidePlus } from '@lucide/angular'
 import type { SpaceRootProps } from '@sync-in-server/backend/src/applications/spaces/models/space-root-props.model'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
@@ -18,7 +17,7 @@ import { ExternalFilePathEvent } from './space-root-path-dialog.component'
 
 @Component({
   selector: 'app-space-user-anchors-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, SpaceManageRootsComponent],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, SpaceManageRootsComponent],
   templateUrl: 'space-user-anchors-dialog.component.html'
 })
 export class SpaceUserAnchorsDialogComponent implements OnInit {
@@ -26,7 +25,7 @@ export class SpaceUserAnchorsDialogComponent implements OnInit {
   @Input({ required: true }) user: UserType
   protected readonly layout = inject(LayoutService)
   protected addRootFileEvent = new Subject<FileTreeEvent | ExternalFilePathEvent>()
-  protected readonly icons = { faAnchor, faPlus, faSpinner, SPACES: SPACES_ICON.SPACES }
+  protected readonly icons = { LucideAnchor, LucidePlus, LucideLoader, SPACES: SPACES_ICON.SPACES }
   // states
   protected submitted = false
   protected loading = false

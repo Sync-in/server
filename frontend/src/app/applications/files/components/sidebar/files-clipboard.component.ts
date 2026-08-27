@@ -1,8 +1,7 @@
 import { KeyValuePipe } from '@angular/common'
 import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faArrowsAlt, faClone, faDownload, faQuestion, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { LucideCircleQuestionMark, LucideCopy, LucideDynamicIcon, LucideHardDriveDownload, LucideMove, LucideX } from '@lucide/angular'
 import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
@@ -25,7 +24,7 @@ import { FilesSummaryComponent } from '../utils/files-summary.component'
   selector: 'app-files-clipboard',
   imports: [
     AutoResizeDirective,
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslatePipe,
     TooltipModule,
     L10nTranslateDirective,
@@ -37,7 +36,7 @@ import { FilesSummaryComponent } from '../utils/files-summary.component'
 })
 export class FilesClipboardComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly icons = { faTimes, faDownload, faArrowsAlt, faClone, faQuestion }
+  protected readonly icons = { LucideX, LucideHardDriveDownload, LucideMove, LucideCopy, LucideCircleQuestionMark }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected operations = {
     copyPaste: { text: 'Copy-Paste', operation: FILE_OPERATION.COPY },

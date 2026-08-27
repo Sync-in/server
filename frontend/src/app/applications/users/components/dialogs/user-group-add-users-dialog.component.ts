@@ -1,7 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faUserPlus } from '@fortawesome/free-solid-svg-icons'
+import { LucideDynamicIcon, LucideUserRoundPlus } from '@lucide/angular'
 import { GROUP_TYPE } from '@sync-in-server/backend/src/applications/users/constants/group'
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
@@ -15,7 +14,7 @@ import { UserSearchComponent } from '../utils/user-search.component'
 
 @Component({
   selector: 'app-user-group-add-users-dialog',
-  imports: [FaIconComponent, L10nTranslateDirective, UserSearchComponent],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, UserSearchComponent],
   templateUrl: 'user-group-add-users-dialog.component.html'
 })
 export class UserGroupAddUsersDialogComponent {
@@ -25,7 +24,7 @@ export class UserGroupAddUsersDialogComponent {
   protected readonly layout = inject(LayoutService)
   protected newMembers: MemberModel[] = []
   protected submitted = false
-  protected readonly icons = { faUserPlus }
+  protected readonly icons = { LucideUserRoundPlus }
   private readonly userService = inject(UserService)
 
   searchMembers(query: string): Observable<MemberModel[]> {

@@ -4,18 +4,18 @@
       <div class="card-body">
         <div class="sync-settings-row">
           <div class="sync-settings-label">
-            <fa-icon [icon]="icons.CLIENT"></fa-icon>
+            <svg [lucideIcon]="icons.CLIENT"></svg>
             <span class="ms-2" l10nTranslate>Client</span>
           </div>
           <div class="sync-settings-value text-truncate">{{ syncPath.settings.localPath }}</div>
         </div>
         <div class="sync-settings-row">
           <div class="sync-settings-label">
-            <fa-icon [icon]="icons.SERVER"></fa-icon>
+            <svg [lucideIcon]="icons.SERVER"></svg>
             <span class="ms-2" l10nTranslate>Server</span>
           </div>
           <div class="sync-settings-value sync-settings-value--server text-truncate">
-            <fa-icon [icon]="syncPath.icon" class="me-1"></fa-icon>
+            <svg [lucideIcon]="syncPath.icon" class="me-1"></svg>
             <span class="text-truncate">{{ syncPath.showedPath }}</span>
           </div>
         </div>
@@ -27,7 +27,7 @@
     <div class="card-body">
       <div class="sync-settings-row">
         <label class="sync-settings-label form-label mb-0" for="sync-path-name">
-          <fa-icon [icon]="icons.faEdit"></fa-icon>
+          <svg [lucideIcon]="icons.LucideSquarePen"></svg>
           <span class="ms-2" l10nTranslate>Name</span>
         </label>
         <div class="sync-settings-control">
@@ -45,11 +45,11 @@
           <span class="ms-2" l10nTranslate>Direction</span>
           @if (!syncPath.isWriteable) {
             <span class="ms-2 fs-lg cursor-pointer">
-              <fa-icon
-                [icon]="icons.faExclamationCircle"
+              <svg
+                [lucideIcon]="icons.LucideCircleAlert"
                 [tooltip]="'You must have permission to modify the server folder to choose a different sync mode' | translate:locale.language"
                 class="text-warning">
-              </fa-icon>
+              </svg>
             </span>
           }
         </label>
@@ -64,7 +64,7 @@
 
       <div class="sync-settings-row">
         <label class="sync-settings-label form-label mb-0" for="sync-path-conflict">
-          <fa-icon [icon]="icons.faBug"></fa-icon>
+          <svg [lucideIcon]="icons.LucideBug"></svg>
           <span class="ms-2" l10nTranslate>Conflict</span>
         </label>
         <div class="sync-settings-control">
@@ -82,7 +82,7 @@
 
       <div class="sync-settings-row">
         <label class="sync-settings-label form-label mb-0" for="sync-path-diff">
-          <fa-icon [icon]="icons.faGauge"></fa-icon>
+          <svg [lucideIcon]="icons.LucideGauge"></svg>
           <span class="ms-2" l10nTranslate>Mode</span>
         </label>
         <div class="sync-settings-control">
@@ -95,7 +95,7 @@
 
       <div class="sync-settings-row">
         <label class="sync-settings-label form-label mb-0" for="sync-path-scheduler-value">
-          <fa-icon [icon]="icons.faClock"></fa-icon>
+          <svg [lucideIcon]="icons.LucideClock"></svg>
           <span class="ms-2" l10nTranslate>Scheduler</span>
         </label>
         <div class="sync-settings-control sync-settings-control--scheduler">
@@ -117,7 +117,7 @@
 
       <div class="sync-settings-row">
         <label class="sync-settings-label form-label mb-0" for="sync-path-status">
-          <fa-icon [icon]="icons.faRotate"></fa-icon>
+          <svg [lucideIcon]="icons.LucideRefreshCw"></svg>
           <span class="ms-2" l10nTranslate>Status</span>
         </label>
         <div class="sync-settings-control">

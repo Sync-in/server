@@ -1,11 +1,10 @@
 import { Component, inject, Input } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import type { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faTrashAlt } from '@fortawesome/free-solid-svg-icons'
+import type { LucideIcon } from '@lucide/angular'
+import { LucideDynamicIcon, LucideTrash2 } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 
 export interface FileLocationDisplay {
-  icon?: IconDefinition
+  icon?: LucideIcon
   iconClass: 'primary' | 'purple'
   showedPath?: string
   repositoryTitle?: string
@@ -15,7 +14,7 @@ export interface FileLocationDisplay {
 
 @Component({
   selector: 'app-file-location',
-  imports: [FaIconComponent, L10nTranslatePipe],
+  imports: [LucideDynamicIcon, L10nTranslatePipe],
   template: `
     @if (location) {
       <span
@@ -27,14 +26,16 @@ export interface FileLocationDisplay {
       >
         @if (displayAsRepository) {
           @if (displayedIcon) {
-            <fa-icon [icon]="displayedIcon" [class]="displayedIconClass" class="me-2"></fa-icon>
+            <span [class]="displayedIconClass" class="me-2">
+              <svg [lucideIcon]="displayedIcon"></svg>
+            </span>
           }
         } @else {
           @if (location.inTrash) {
-            <fa-icon [icon]="faTrashAlt" class="file-location__icon"></fa-icon>
+            <svg [lucideIcon]="LucideTrash2" class="file-location__icon"></svg>
           }
           @if (location.icon) {
-            <fa-icon [icon]="location.icon" class="file-location__icon"></fa-icon>
+            <svg [lucideIcon]="location.icon" class="file-location__icon"></svg>
           }
         }
         <span class="file-location__label no-pointer-events" draggable="false">
@@ -70,7 +71,7 @@ export interface FileLocationDisplay {
         align-items: center;
         justify-content: center;
         flex: 0 0 auto;
-        font-size: 1.1em;
+        font-size: 0.875rem;
         line-height: 1;
       }
 
@@ -87,10 +88,10 @@ export class FileLocationComponent {
   @Input({ required: true }) location: FileLocationDisplay
   @Input() displayAsRepository = false
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly faTrashAlt = faTrashAlt
+  protected readonly LucideTrash2 = LucideTrash2
 
-  protected get displayedIcon(): IconDefinition | undefined {
-    return this.location?.inTrash ? this.faTrashAlt : this.location?.icon
+  protected get displayedIcon(): LucideIcon | undefined {
+    return this.location?.inTrash ? this.LucideTrash2 : this.location?.icon
   }
 
   protected get displayedIconClass(): string {

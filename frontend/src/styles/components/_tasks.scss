@@ -35,16 +35,25 @@ $task-progress-height: 1.35rem;
   &__header {
     align-items: center;
     display: flex;
-    gap: .25rem;
+    gap: .2rem;
     min-width: 0;
   }
 
   &__status,
   &__operation {
-    flex: 0 0 .95rem;
+    flex: 0 0 $font-size-lg;
+  }
+
+  &__status,
+  &__operation > .lucide {
+    font-size: $font-size-lg;
   }
 
   &__operation {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    line-height: 1;
     opacity: .85;
   }
 
@@ -57,6 +66,7 @@ $task-progress-height: 1.35rem;
   }
 
   &__name {
+    margin-left: .2rem;
     flex: 1 1 auto;
     min-width: 0;
   }

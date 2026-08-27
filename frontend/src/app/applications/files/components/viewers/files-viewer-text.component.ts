@@ -4,17 +4,17 @@ import { FormsModule } from '@angular/forms'
 import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
 import { languages } from '@codemirror/language-data'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
-  faArrowsLeftRightToLine,
-  faFloppyDisk,
-  faLock,
-  faLockOpen,
-  faMagnifyingGlass,
-  faReply,
-  faShare,
-  faSpinner
-} from '@fortawesome/free-solid-svg-icons'
+  LucideDynamicIcon,
+  LucideLoader,
+  LucideLock,
+  LucideLockOpen,
+  LucideRedo,
+  LucideSave,
+  LucideSearch,
+  LucideUndo,
+  LucideWrapText
+} from '@lucide/angular'
 import { L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -29,7 +29,7 @@ import { FilesViewerSearchComponent } from './components/files-viewer-search.com
     CodeEditor,
     TooltipModule,
     FormsModule,
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslatePipe,
     ButtonCheckboxDirective,
     L10nTranslateDirective,
@@ -63,7 +63,7 @@ export class FilesViewerTextComponent extends FilesViewerEditableBase implements
   protected content = ''
   protected currentLanguage = undefined
   protected readonly languages: LanguageDescription[] = languages
-  protected readonly icons = { faFloppyDisk, faLock, faLockOpen, faMagnifyingGlass, faSpinner, faArrowsLeftRightToLine, faReply, faShare }
+  protected readonly icons = { LucideSave, LucideLock, LucideLockOpen, LucideSearch, LucideLoader, LucideWrapText, LucideUndo, LucideRedo }
   protected readonly searchAdapter = new CodeMirrorFileViewerSearchAdapter(() => this.editor()?.view)
   protected readonly isSearchPanelOpen = this.searchAdapter.isOpen
   private focusRafId: number | null = null

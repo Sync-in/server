@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.links"></fa-icon>
+    <svg [lucideIcon]="icons.links"></svg>
     <span>{{ linkForm.value.name || linkForm.value.shareName }}</span>
   </h4>
   <h4 class="modal-title ms-auto">
@@ -19,7 +19,9 @@
         <div class="d-flex align-items-start gap-3">
           <div class="flex-grow-1 min-width-0">
             <div class="d-flex align-items-center text-truncate">
-              <fa-icon [icon]="icons.links" class="circle-primary-icon me-2"></fa-icon>
+              <span class="circle-primary-icon me-2">
+                <svg [lucideIcon]="icons.links"></svg>
+              </span>
               <div class="d-flex flex-column text-truncate">
                 <span class="text-truncate">{{ linkForm.value.name || linkForm.value.shareName }}</span>
                 <span class="fs-sm text-truncate">{{ linkForm.value.email }}</span>
@@ -40,7 +42,7 @@
                         [tooltip]="SPACES_PERMISSIONS_TEXT[p.key].text | translate:locale.language"
                         class="btn btn-sm btn-custom me-0 ms-2"
                         type="button">
-                  <fa-icon [icon]="SPACES_PERMISSIONS_TEXT[p.key].icon" size="lg"></fa-icon>
+                  <svg [lucideIcon]="SPACES_PERMISSIONS_TEXT[p.key].icon" size="1.333em"></svg>
                 </button>
                 @if (last) {
                   <div class="vr mx-2"></div>
@@ -52,7 +54,7 @@
                     [tooltip]="'Copy link' | translate:locale.language"
                     container="body"
                     type="button">
-              <fa-icon [icon]="linkWasCopied ? icons.faClipboardCheck : icons.faClipboard" size="lg"></fa-icon>
+              <svg [lucideIcon]="linkWasCopied ? icons.LucideClipboardCheck : icons.LucideClipboard" size="1.333em"></svg>
             </button>
           </div>
         </div>

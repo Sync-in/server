@@ -1,10 +1,10 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="icons.faAnchor"></fa-icon>
+    <svg [lucideIcon]="icons.LucideAnchor"></svg>
     <span l10nTranslate>Anchor files to a space</span>
   </h4>
   @if (loading) {
-    <fa-icon [icon]="icons.faSpinner" animation="spin" class="ms-2" size="sm"></fa-icon>
+    <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true" class="ms-2"></svg>
   }
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white ms-auto" type="button"></button>
 </div>

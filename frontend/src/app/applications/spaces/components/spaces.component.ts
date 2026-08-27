@@ -2,18 +2,17 @@ import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
-  faAnchor,
-  faArrowDown,
-  faArrowRotateRight,
-  faArrowUp,
-  faCircleInfo,
-  faPen,
-  faPlus,
-  faRotate,
-  faUpload
-} from '@fortawesome/free-solid-svg-icons'
+  LucideAnchor,
+  LucideArrowDown,
+  LucideArrowUp,
+  LucideDynamicIcon,
+  LucideHardDriveUpload,
+  LucidePencil,
+  LucidePlus,
+  LucideRotateCw,
+  LucideSquareCheckBig
+} from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { SPACE_OPERATION, SPACE_ROLE } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
@@ -49,7 +48,7 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
   imports: [
     KeyValuePipe,
     L10nTranslateDirective,
-    FaIconComponent,
+    LucideDynamicIcon,
     UserAvatarStackComponent,
     VirtualScrollComponent,
     TooltipModule,
@@ -79,15 +78,14 @@ export class SpacesComponent implements OnInit {
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
     SHARES: SPACES_ICON.SHARES,
-    faAnchor,
-    faArrowDown,
-    faArrowUp,
-    faRotate,
-    faArrowRotateRight,
-    faUpload,
-    faPlus,
-    faPen,
-    faCircleInfo
+    LucideAnchor,
+    LucideArrowDown,
+    LucideArrowUp,
+    LucideRotateCw,
+    LucideHardDriveUpload,
+    LucidePlus,
+    LucidePencil,
+    LucideSquareCheckBig
   }
   // Sort
   protected tableHeaders: Record<'name' | 'managers' | 'members' | 'info' | 'permissions' | 'modified', TableHeaderConfig> = {

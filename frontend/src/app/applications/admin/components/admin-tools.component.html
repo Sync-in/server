@@ -64,7 +64,7 @@
                           (click)="stopIndexing()"
                           class="btn btn-sm btn-warning btn-sm text-nowrap"
                           type="button">
-                          <fa-icon [icon]="icons.faStop"></fa-icon>
+                          <svg [lucideIcon]="icons.LucideSquareStop"></svg>
                           <span class="ms-1" l10nTranslate>Stop</span>
                         </button>
                       } @else {
@@ -73,7 +73,7 @@
                           [disabled]="indexingStatus.state === IndexingState.STOPPING || indexingStatus.state === IndexingState.DISABLED"
                           class="btn btn-sm btn-success btn-sm text-nowrap"
                           type="button">
-                          <fa-icon [icon]="icons.faPlay"></fa-icon>
+                          <svg [lucideIcon]="icons.LucidePlay"></svg>
                           <span class="ms-1" l10nTranslate>Start</span>
                         </button>
                       }
@@ -97,7 +97,7 @@
                         type="button"
                         [disabled]="(indexingStatus.state !== IndexingState.IDLE && indexingStatus.state !== IndexingState.DISABLED) ||
                         indexingStatus.indexesCount === 0">
-                        <fa-icon [icon]="icons.faTrash"></fa-icon>
+                        <svg [lucideIcon]="icons.LucideTrash2"></svg>
                         <span class="ms-1" l10nTranslate>Remove</span>
                       </button>
                     </div>

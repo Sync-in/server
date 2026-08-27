@@ -2,8 +2,7 @@ import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faClipboard, faClipboardCheck, faEye, faEyeSlash, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons'
+import { LucideClipboard, LucideClipboardCheck, LucideDynamicIcon, LucideEye, LucideEyeOff, LucideLock, LucideLockOpen } from '@lucide/angular'
 import type { FileSpace } from '@sync-in-server/backend/src/applications/files/interfaces/file-space.interface'
 import { LINK_TYPE } from '@sync-in-server/backend/src/applications/links/constants/links'
 import type { CreateOrUpdateLinkDto } from '@sync-in-server/backend/src/applications/links/dto/create-or-update-link.dto'
@@ -39,7 +38,7 @@ import { LinksService } from '../../services/links.service'
 @Component({
   selector: 'app-link-dialog',
   imports: [
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslateDirective,
     BsDatepickerModule,
     ButtonsModule,
@@ -73,7 +72,7 @@ export class LinkDialogComponent implements OnInit {
   protected submitted = false
   protected readonly SPACES_PERMISSIONS_TEXT = SPACES_PERMISSIONS_TEXT
   protected readonly originalOrderKeyValue = originalOrderKeyValue
-  protected readonly icons = { faEye, faEyeSlash, links: SPACES_ICON.LINKS, faClipboard, faClipboardCheck, faLock, faLockOpen }
+  protected readonly icons = { LucideEye, LucideEyeOff, links: SPACES_ICON.LINKS, LucideClipboard, LucideClipboardCheck, LucideLock, LucideLockOpen }
   protected readonly languages: string[] = this.layout.getLanguages()
   protected readonly minDate: Date = currentDate()
   protected readonly defaultPassword: string = this.layout.translateString(USER_PASSWORD_CHANGE_TEXT)

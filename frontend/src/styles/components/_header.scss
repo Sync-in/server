@@ -82,7 +82,7 @@
     }
 
     .navbar-history-button {
-      font-size: $font-size-lg;
+      font-size: $font-size-2xl;
       color: $sidebar-light-apps-menu-title-color;
 
       &:hover,
@@ -240,6 +240,7 @@
       }
 
       > a {
+        display: flex;
         color: darken($gray-light, 10%);
         text-decoration: none;
         margin-left: .3rem;
@@ -248,13 +249,14 @@
           color: $gray-lightest;
         }
 
-        > fa-icon {
+        > .lucide {
           font-size: $font-size-xl;
         }
       }
     }
 
-    > fa-icon {
+    > .lucide {
+      font-size: $font-size-xl;
       color: $sidebar-light-apps-menu-title-color;
       margin-left: .3rem;
     }

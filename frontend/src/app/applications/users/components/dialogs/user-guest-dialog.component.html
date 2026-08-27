@@ -1,14 +1,14 @@
 <div class="modal-header">
   <h4 class="modal-title">
     @if (guest) {
-      <fa-icon [icon]="icons.faPen"></fa-icon>
+      <svg [lucideIcon]="icons.LucidePencil"></svg>
       <span>{{ guest.fullName }}</span>
     } @else {
-      <fa-icon [icon]="icons.faPlus"></fa-icon>
+      <svg [lucideIcon]="icons.LucidePlus"></svg>
       <span l10nTranslate>New guest</span>
     }
     @if (loading) {
-      <fa-icon [icon]="icons.faSpinner" animation="spin" class="ms-2" size="sm"></fa-icon>
+      <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true" class="ms-2"></svg>
     }
   </h4>
   @if (guest) {
@@ -24,7 +24,7 @@
     <tab (selectTab)="tabView=null" customClass="tab-dialog form-validation">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.faAddressCard"></fa-icon>
+          <svg [lucideIcon]="icons.LucideUserRoundCog"></svg>
           <span class="app-tab-label" l10nTranslate>Account</span>
         </span>
       </ng-template>
@@ -183,7 +183,7 @@
     <tab (selectTab)="tabView='managers'" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.faUsersGear"></fa-icon>
+          <svg [lucideIcon]="icons.LucideUsersRound"></svg>
           <span class="app-tab-label" l10nTranslate>Managers</span>
           <span class="app-tab-count">{{ guestForm.value.managers.length || 0 }}</span>
         </span>
@@ -205,7 +205,7 @@
     <tab (selectTab)="tabView='groups'" customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <fa-icon [icon]="icons.faUsers"></fa-icon>
+          <svg [lucideIcon]="icons.LucideUsersRound"></svg>
           <span class="app-tab-label" l10nTranslate>Groups</span>
           <span class="app-tab-count">{{ guestForm.value.groups.length || 0 }}</span>
         </span>

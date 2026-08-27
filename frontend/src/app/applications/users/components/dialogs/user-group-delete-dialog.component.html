@@ -1,6 +1,6 @@
 <div class="modal-header">
   <h4 class="modal-title">
-    <fa-icon [icon]="member.isUser ? icons.faUserMinus : icons.faMinus"></fa-icon>
+    <svg [lucideIcon]="member.isUser ? icons.LucideUserMinus : icons.LucideMinus"></svg>
     <span>{{ member.name }}</span>
   </h4>
   <h4 class="modal-title ms-auto">
@@ -14,7 +14,9 @@
       @if (member.isUser) {
         <img class="avatar-img" [src]="member.avatarUrl" alt="">
       } @else {
-        <fa-icon [icon]="icons.GROUPS" class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}"></fa-icon>
+        <span class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}">
+          <svg [lucideIcon]="icons.GROUPS"></svg>
+        </span>
       }
     </div>
     <span class="text-bold me-1">{{ member.name | capitalize }}</span>
@@ -39,5 +41,4 @@
     Remove
   </button>
 </div>
-
 

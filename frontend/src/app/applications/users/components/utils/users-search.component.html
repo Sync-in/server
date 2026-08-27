@@ -4,9 +4,9 @@
       @if (member.isUser) {
         <img alt="" class="avatar-base-img" height="32" width="32" [src]="member.avatarUrl" />
       } @else {
-        <fa-icon [icon]="icons.GROUPS"
-                 class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}">
-        </fa-icon>
+        <span class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}">
+          <svg [lucideIcon]="icons.GROUPS"></svg>
+        </span>
       }
     </div>
     <div class="d-flex ms-2 pe-lg-5 flex-grow-1 overflow-hidden typeahead-option-text {{member.description ? 'flex-column align-items-start' : 'align-items-center'}}"
@@ -52,11 +52,13 @@
           @if (member.isUser) {
             <img alt="" class="avatar-base-img" height="32" width="32" [src]="member.avatarUrl" />
           } @else if (member.isLink) {
-            <fa-icon [icon]="icons.LINKS" class="circle-primary-icon"></fa-icon>
+            <span class="circle-primary-icon">
+              <svg [lucideIcon]="icons.LINKS"></svg>
+            </span>
           } @else {
-            <fa-icon [icon]="icons.GROUPS"
-                     class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}">
-            </fa-icon>
+            <span class="{{member.isPersonalGroup ? 'circle-purple-icon' : 'circle-primary-icon'}}">
+              <svg [lucideIcon]="icons.GROUPS"></svg>
+            </span>
           }
           <div class="d-flex flex-column text-truncate ms-2">
             <div class="text-truncate">{{ member.name }}</div>
@@ -83,27 +85,27 @@
                           (ngModelChange)="onPermissionChange(member)"
                           btnCheckbox
                           [tooltip]="SPACES_PERMISSIONS_TEXT[p.key].text | translate:locale.language"
-                          class="btn btn-sm btn-custom"
+                          class="btn btn-custom"
                           type="button">
-                    <fa-icon [icon]="SPACES_PERMISSIONS_TEXT[p.key].icon" size="lg"></fa-icon>
+                    <svg [lucideIcon]="SPACES_PERMISSIONS_TEXT[p.key].icon"></svg>
                   </button>
                 }
               }
-              <div class="vr ms-1 me-2"></div>
+              <div class="vr"  style="margin-left: 0.15rem; margin-right: 0.35rem"></div>
             }
             @if (editFunction) {
               <button (click)="editFunction(member)"
                       [tooltip]="'Edit' | translate:locale.language"
-                      class="btn btn-sm btn-custom me-2"
+                      class="btn btn-custom me-2"
                       type="button">
-                <fa-icon [icon]="icons.faPen"></fa-icon>
+                <svg [lucideIcon]="icons.LucidePencil"></svg>
               </button>
             }
             <button (click)="removeMember(member)"
                     [tooltip]="'Remove' | translate:locale.language"
-                    class="btn btn-sm btn-danger"
+                    class="btn btn-danger"
                     type="button">
-              <fa-icon [icon]="icons.faTimes"></fa-icon>
+              <svg [lucideIcon]="icons.LucideX"></svg>
             </button>
           </div>
         }

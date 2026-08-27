@@ -36,6 +36,10 @@
   margin: 0.4rem 0.6rem 0.2rem;
   flex: 1 1 auto !important;
   font-size: $font-size-sm;
+
+  .lucide {
+    font-size: $font-size-sm;
+  }
 }
 
 .profile-sync-in-brand {

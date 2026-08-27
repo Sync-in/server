@@ -1,4 +1,4 @@
-import { faDesktop, faRightLeft, faRotate, faServer, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
+import { LucideArrowRightLeft, LucideMonitor, LucideRefreshCw, LucideServer, LucideWandSparkles } from '@lucide/angular'
 import { SYNC_BASE_ROUTE, SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { BehaviorSubject } from 'rxjs'
@@ -15,11 +15,11 @@ export const SYNC_TITLE = {
 } as const
 
 export const SYNC_ICON = {
-  SYNC: faRotate,
-  TRANSFERS: faRightLeft,
-  WIZARD: faWandMagicSparkles,
-  SERVER: faServer,
-  CLIENT: faDesktop
+  SYNC: LucideRefreshCw,
+  TRANSFERS: LucideArrowRightLeft,
+  WIZARD: LucideWandSparkles,
+  SERVER: LucideServer,
+  CLIENT: LucideMonitor
 } as const
 
 export const SYNC_PATH = {

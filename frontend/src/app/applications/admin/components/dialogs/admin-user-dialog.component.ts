@@ -2,18 +2,18 @@ import { TitleCasePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
 import {
-  faAddressCard,
-  faLock,
-  faLockOpen,
-  faShieldHalved,
-  faSpinner,
-  faTrash,
-  faUserPen,
-  faUserPlus,
-  faUsers
-} from '@fortawesome/free-solid-svg-icons'
+  LucideDynamicIcon,
+  LucideLoader,
+  LucideLock,
+  LucideLockOpen,
+  LucideShieldCheck,
+  LucideTrash2,
+  LucideUserRoundCog,
+  LucideUserRoundPen,
+  LucideUserRoundPlus,
+  LucideUsersRound
+} from '@lucide/angular'
 import { USER_LOGIN_VALIDATION, USER_PERMISSION, USER_PERMS_SEP, USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { CreateUserDto, UpdateUserDto } from '@sync-in-server/backend/src/applications/users/dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
@@ -45,7 +45,7 @@ import { AdminUserDeleteDialogComponent } from './admin-user-delete-dialog.compo
 @Component({
   selector: 'app-admin-user-dialog',
   imports: [
-    FaIconComponent,
+    LucideDynamicIcon,
     L10nTranslateDirective,
     TabDirective,
     TabHeadingDirective,
@@ -64,7 +64,12 @@ import { AdminUserDeleteDialogComponent } from './admin-user-delete-dialog.compo
     AdminPermissionsComponent,
     TimeDateFormatPipe
   ],
-  templateUrl: 'admin-user-dialog.component.html'
+  templateUrl: 'admin-user-dialog.component.html',
+  styles: `
+    .two-fa-status-icon {
+      font-size: var(--font-size-lg);
+    }
+  `
 })
 export class AdminUserDialogComponent implements OnInit {
   @Input() user: AdminUserModel = null
@@ -77,15 +82,15 @@ export class AdminUserDialogComponent implements OnInit {
   protected tabView: undefined | 'permissions' | 'groups'
   protected readonly icons = {
     GROUPS: USER_ICON.GROUPS,
-    faUserPlus,
-    faUserPen,
-    faSpinner,
-    faAddressCard,
-    faUsers,
-    faShieldHalved,
-    faTrash,
-    faLock,
-    faLockOpen
+    LucideUserRoundPlus,
+    LucideUserRoundPen,
+    LucideLoader,
+    LucideUserRoundCog,
+    LucideUsersRound,
+    LucideShieldCheck,
+    LucideTrash2,
+    LucideLock,
+    LucideLockOpen
   }
   protected readonly allNotifications = Object.values(USER_NOTIFICATION_TEXT)
   protected readonly defaultPassword: string = this.layout.translateString(USER_PASSWORD_CHANGE_TEXT)

@@ -2,8 +2,7 @@ import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, ViewChild } from '@angular/core'
 import { ActivatedRoute } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faArrowDown, faArrowRotateRight, faArrowUp, faPen, faPlus, faRotate, faUpload } from '@fortawesome/free-solid-svg-icons'
+import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideHardDriveUpload, LucidePencil, LucidePlus, LucideRotateCw } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
@@ -34,7 +33,7 @@ import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
   imports: [
     KeyValuePipe,
     L10nTranslateDirective,
-    FaIconComponent,
+    LucideDynamicIcon,
     UserAvatarStackComponent,
     VirtualScrollComponent,
     TooltipModule,
@@ -60,13 +59,12 @@ export class AdminSpacesComponent {
   protected readonly icons = {
     SPACES: ADMIN_ICON.SPACES,
     SHARES: SPACES_ICON.SHARES,
-    faArrowDown,
-    faArrowUp,
-    faRotate,
-    faArrowRotateRight,
-    faUpload,
-    faPlus,
-    faPen
+    LucideArrowDown,
+    LucideArrowUp,
+    LucideRotateCw,
+    LucideHardDriveUpload,
+    LucidePlus,
+    LucidePencil
   }
   // Sort
   protected tableHeaders: Record<'name' | 'managers' | 'storage' | 'members' | 'info' | 'modified', TableHeaderConfig> = {

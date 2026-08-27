@@ -55,7 +55,8 @@
   border-radius: .25rem;
   opacity: 0.85;
 
-  fa-icon {
+  .lucide {
+    font-size: .875rem;
     margin-right: 0 !important;
   }
 }
@@ -83,8 +84,8 @@
     height: 1.85em;
     font-size: inherit;
 
-    fa-icon {
-      font-size: .9em;
+    .lucide {
+      font-size: .9rem;
     }
   }
 }

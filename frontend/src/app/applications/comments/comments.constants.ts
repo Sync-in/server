@@ -1,4 +1,4 @@
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faComments } from '@fortawesome/free-solid-svg-icons'
+import type { LucideIcon } from '@lucide/angular'
+import { LucideMessagesSquare } from '@lucide/angular'
 
-export const COMMENTS_ICON: IconDefinition = faComments
+export const COMMENTS_ICON: LucideIcon = LucideMessagesSquare

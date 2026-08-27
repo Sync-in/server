@@ -3,7 +3,9 @@
     <div class="d-flex align-items-center justify-content-center fs-md" style="min-height: 40px">
       @if (selectedPath) {
         @if (selectedPath.icon) {
-          <fa-icon [icon]="selectedPath.icon" class="circle-{{selectedPath.iconClass}}-icon" style="width: 32px; height: 32px; font-size: var(--font-size-md)"></fa-icon>
+          <span class="circle-{{selectedPath.iconClass}}-icon fs-md">
+            <svg [lucideIcon]="selectedPath.icon"></svg>
+          </span>
         } @else {
           <img [src]="selectedPath.mimeUrl" alt="" height="30">
         }
@@ -17,7 +19,7 @@
               [disabled]="!currentPath"
               class="btn btn-default"
               type="button">
-        <fa-icon [icon]="icons.faArrowCircleLeft"></fa-icon>
+        <svg [lucideIcon]="icons.LucideCircleArrowLeft"></svg>
       </button>
       <div class="text-warning mx-auto fs-sm">
         @if (infoMsg) {
@@ -31,7 +33,7 @@
                   [disabled]="!newDirectoryName"
                   class="btn btn-default input-group-text"
                   type="button">
-            <fa-icon [icon]="icons.faFolderPlus"></fa-icon>
+            <svg [lucideIcon]="icons.LucideFolderPlus"></svg>
           </button>
           <input (keyup.enter)="addDirectory()"
                  [(ngModel)]="newDirectoryName"
@@ -63,7 +65,9 @@
               <td>
                 <div class="d-flex align-items-center">
                   @if (p.icon) {
-                    <fa-icon [icon]="p.icon" class="circle-{{p.iconClass}}-icon" style="width: 32px; height: 32px; font-size: var(--font-size-md)"></fa-icon>
+                    <span class="circle-{{p.iconClass}}-icon fs-md">
+                      <svg [lucideIcon]="p.icon"></svg>
+                    </span>
                   } @else {
                     <img [src]="p.mimeUrl" alt="" height="30">
                   }
@@ -79,11 +83,11 @@
   <div class="mt-auto">
     <div class="d-flex align-items-start">
       <button (click)="onPrevious()" class="btn btn-default me-auto" type="button" l10nTranslate>
-        <fa-icon [icon]="icons.faArrowCircleLeft"></fa-icon>
+        <svg [lucideIcon]="icons.LucideCircleArrowLeft"></svg>
         Previous
       </button>
       <button (click)="onNext()" [disabled]="!selectedPath" class="btn btn-default ms-auto" type="button" l10nTranslate>
-        <fa-icon [icon]="icons.faArrowCircleRight"></fa-icon>
+        <svg [lucideIcon]="icons.LucideCircleArrowRight"></svg>
         Next
       </button>
     </div>

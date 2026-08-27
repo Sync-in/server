@@ -1,7 +1,7 @@
 import { NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
+import { LucideDynamicIcon } from '@lucide/angular'
 import type { ShareChild } from '@sync-in-server/backend/src/applications/shares/models/share-child.model'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
@@ -25,7 +25,7 @@ import { ShareDialogComponent } from './share-dialog.component'
 @Component({
   selector: 'app-shared-children-dialog',
   templateUrl: 'shared-children-dialog.component.html',
-  imports: [AutoResizeDirective, NgTemplateOutlet, L10nTranslateDirective, FaIconComponent, UserAvatarComponent],
+  imports: [AutoResizeDirective, NgTemplateOutlet, L10nTranslateDirective, LucideDynamicIcon, UserAvatarComponent],
   styleUrls: ['shared-children-dialog.component.scss']
 })
 export class SharedChildrenDialogComponent implements OnInit {

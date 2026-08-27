@@ -2,9 +2,7 @@ import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
-import { FaIconComponent } from '@fortawesome/angular-fontawesome'
-import { faStar as faStarRegular } from '@fortawesome/free-regular-svg-icons'
-import { faArrowDown, faArrowRotateRight, faArrowUp, faMapMarkerAlt, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
+import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideMapPin, LucideRotateCw, LucideStarOff, LucideTriangleAlert } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -29,7 +27,7 @@ import { FAVORITES_ICON, FAVORITES_PATH, FAVORITES_TITLE } from '../favorites.co
 @Component({
   selector: 'app-favorites',
   imports: [
-    FaIconComponent,
+    LucideDynamicIcon,
     KeyValuePipe,
     NgTemplateOutlet,
     L10nTranslateDirective,
@@ -61,12 +59,12 @@ export class FavoritesComponent implements OnInit {
   protected readonly layout = inject(LayoutService)
   protected readonly icons = {
     FAVORITES: FAVORITES_ICON,
-    faArrowRotateRight,
-    faArrowDown,
-    faArrowUp,
-    faMapMarkerAlt,
-    faTriangleExclamation,
-    REMOVE_FAVORITE: faStarRegular
+    LucideRotateCw,
+    LucideArrowDown,
+    LucideArrowUp,
+    LucideMapPin,
+    LucideTriangleAlert,
+    REMOVE_FAVORITE: LucideStarOff
   }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected loading = false

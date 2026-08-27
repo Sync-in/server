@@ -19,12 +19,12 @@
   @if (nbTotalTasks) {
     <div class="d-flex gap-1">
       @if (hasCancellableTasks) {
-        <button type="button" (click)="cancelTasks()" [tooltip]="'Stop' | translate:locale.language" class="btn btn-sm btn-default" placement="top">
-          <fa-icon [icon]="icons.faStop"></fa-icon>
+        <button type="button" (click)="cancelTasks()" [tooltip]="'Stop' | translate:locale.language" class="btn btn-default" placement="top">
+          <svg [lucideIcon]="icons.LucideSquareStop"></svg>
         </button>
       }
-      <button type="button" (click)="removeTasks()" class="btn btn-sm btn-default">
-        <fa-icon [icon]="icons.faTimes"></fa-icon>
+      <button type="button" (click)="removeTasks()" class="btn btn-default">
+        <svg [lucideIcon]="icons.LucideX"></svg>
       </button>
     </div>
   } @else {
@@ -45,13 +45,13 @@
          placement="bottom">
       <div class="task-list__content">
         <div class="task-list__header">
-          <fa-icon class="task-list__status"
+          <svg class="task-list__status"
                    [class.text-danger]="task.ui.error"
                    [class.text-muted]="task.ui.cancelled || task.ui.queued"
-                   [icon]="task.ui.statusIcon"
-                   [animation]="task.ui.pending ? 'spin-pulse' : null"></fa-icon>
+                   [lucideIcon]="task.ui.statusIcon"
+                   [class.icon-spin-pulse]="task.ui.pending"></svg>
           <span class="task-list__operation">
-            <fa-icon [icon]="task.ui.operationIcon"></fa-icon>
+            <svg [lucideIcon]="task.ui.operationIcon"></svg>
           </span>
           <span class="task-list__name">{{ task.name }}</span>
         </div>
@@ -74,7 +74,7 @@
                     <span>&nbsp;•&nbsp;</span>
                   }
                   @if (item.icon) {
-                    <fa-icon [icon]="item.icon"></fa-icon>
+                    <svg [lucideIcon]="item.icon"></svg>
                     <span>&nbsp;</span>
                   }
                   @switch (item.type) {
@@ -104,7 +104,7 @@
                   [tooltip]="'Stop' | translate:locale.language"
                   class="btn btn-sm btn-default task-list__cancel"
                   placement="top">
-            <fa-icon [icon]="icons.faStop"></fa-icon>
+            <svg [lucideIcon]="icons.LucideSquareStop"></svg>
           </button>
         }
       </div>
