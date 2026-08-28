@@ -81,18 +81,16 @@ export class UserService {
   private readonly notifications = inject(NotificationsService)
 
   constructor() {
-    this.webSocket.fromEvent('connect').subscribe(() => this.notifications.checkUnreadNotifications())
-    this.webSocket.fromEvent('disconnect').subscribe(() => this.store.onlineUsers.set([]))
-    this.webSocket.fromEvent(NOTIFICATIONS_WS.EVENTS.NOTIFICATION).subscribe(() => this.notifications.checkUnreadNotifications(true))
-    this.webSocket
-      .fromEvent(USERS_WS.EVENTS.ONLINE_USER)
+    this.fromWebSocketEvent('connect').subscribe(() => this.notifications.checkUnreadNotifications())
+    this.fromWebSocketEvent('disconnect').subscribe(() => this.store.onlineUsers.set([]))
+    this.fromWebSocketEvent(NOTIFICATIONS_WS.EVENTS.NOTIFICATION).subscribe(() => this.notifications.checkUnreadNotifications(true))
+    this.fromWebSocketEvent<UserOnline>(USERS_WS.EVENTS.ONLINE_USER)
       .pipe(map((u: UserOnline) => new UserOnlineModel(u)))
       .subscribe((user) => this.newOnlineUser(user))
-    this.webSocket
-      .fromEvent(USERS_WS.EVENTS.ONLINE_USERS)
+    this.fromWebSocketEvent<UserOnline[]>(USERS_WS.EVENTS.ONLINE_USERS)
       .pipe(map((users: UserOnline[]) => users.map((u) => new UserOnlineModel(u))))
       .subscribe((users) => this.setOnlineUsers(users))
-    this.webSocket.fromEvent(USERS_WS.EVENTS.ONLINE_STATUS).subscribe((event: EventUpdateOnlineStatus) => this.receiveOnlineStatus(event))
+    this.fromWebSocketEvent<EventUpdateOnlineStatus>(USERS_WS.EVENTS.ONLINE_STATUS).subscribe((event) => this.receiveOnlineStatus(event))
   }
 
   get user() {
@@ -129,6 +127,14 @@ export class UserService {
 
   disconnectWebSocket() {
     this.webSocket.disconnect()
+  }
+
+  private fromWebSocketEvent<T = unknown>(eventName: string): Observable<T> {
+    return new Observable<T>((subscriber) => {
+      const listener = (...args: unknown[]) => subscriber.next(args[0] as T)
+      this.webSocket.on(eventName, listener)
+      return () => this.webSocket.removeListener(eventName, listener)
+    })
   }
 
   setOnlineUsers(users: UserOnlineModel[]) {
