@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
+import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { API_COMMENTS_FROM_SPACE, API_COMMENTS_RECENTS } from '@sync-in-server/backend/src/applications/comments/constants/routes'
 import type { CreateOrUpdateCommentDto, DeleteCommentDto } from '@sync-in-server/backend/src/applications/comments/dto/comment.dto'
@@ -35,14 +35,12 @@ export class CommentsService {
     return this.http.request<void>('delete', `${API_COMMENTS_FROM_SPACE}/${file.path}`, { body: deleteCommentDto })
   }
 
-  loadRecents(limit: number) {
+  loadRecents() {
     this.http
-      .get<CommentRecent[]>(API_COMMENTS_RECENTS, { params: new HttpParams().set('limit', limit) })
+      .get<CommentRecent[]>(API_COMMENTS_RECENTS)
       .pipe(map((cs) => cs.map((c) => new CommentRecentModel(c))))
       .subscribe({
-        next: (cs: CommentRecentModel[]) => {
-          this.store.commentsRecents.update((comments) => [...cs, ...comments.slice(limit)])
-        },
+        next: (cs: CommentRecentModel[]) => this.store.commentsRecents.set(cs),
         error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Comments', 'Unable to load', e)
       })
   }

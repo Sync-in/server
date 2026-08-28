@@ -45,13 +45,13 @@ describe(FilesController.name, () => {
       vi.clearAllMocks()
     })
 
-    it('getRecents() should use limit=10 by default', async () => {
+    it('getRecents() should use limit=25 by default', async () => {
       const recents = [{ path: '/a' }] as any
       filesRecentsMock.getRecents.mockResolvedValue(recents)
 
       const result = await filesController.getRecents(fakeUser, undefined as unknown as number)
 
-      expect(filesRecentsMock.getRecents).toHaveBeenCalledWith(fakeUser, 10)
+      expect(filesRecentsMock.getRecents).toHaveBeenCalledWith(fakeUser, 25)
       expect(result).toBe(recents)
     })
 

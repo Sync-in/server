@@ -1,10 +1,157 @@
-<div appAutoResize class="recents-dashboard" [useMaxHeight]="false" [resizeOffset]="40">
-  <div class="row recents-grid g-3">
-    <div class="col-md-6">
-      <app-files-recents-widget></app-files-recents-widget>
+<div appAutoResize [useMaxHeight]="false" [resizeOffset]="40">
+  <div class="recents-timeline" [class.recents-timeline--with-content]="groups().length > 0">
+    <div class="recents-timeline__filters" role="group" aria-label="Filter recents">
+      <button
+        type="button"
+        class="recents-filter"
+        [class.active]="activeFilter() === 'all'"
+        [attr.aria-pressed]="activeFilter() === 'all'"
+        (click)="activeFilter.set('all')"
+        l10nTranslate
+      >
+        All
+      </button>
+      <button
+        type="button"
+        class="recents-filter"
+        [class.active]="activeFilter() === 'file'"
+        [attr.aria-pressed]="activeFilter() === 'file'"
+        (click)="activeFilter.set('file')"
+        l10nTranslate
+      >
+        Files
+      </button>
+      <button
+        type="button"
+        class="recents-filter"
+        [class.active]="activeFilter() === 'comment'"
+        [attr.aria-pressed]="activeFilter() === 'comment'"
+        (click)="activeFilter.set('comment')"
+        l10nTranslate
+      >
+        Comments
+      </button>
     </div>
-    <div class="col-md-6">
-      <app-comments-recents-widget></app-comments-recents-widget>
-    </div>
+
+    @if (groups().length) {
+      <div class="recents-days">
+        @for (group of groups(); track group.key) {
+          <section class="recents-day">
+            <div class="recents-day__label">
+              <span class="recents-day__date">
+                @switch (group.period) {
+                  @case ('today') {
+                    <span l10nTranslate>Today</span>
+                  }
+                  @case ('yesterday') {
+                    <span l10nTranslate>Yesterday</span>
+                  }
+                  @case ('week') {
+                    <span l10nTranslate>This week</span>
+                  }
+                  @default {
+                    {{ group.date | amLiveTimeAgo }}
+                  }
+                }
+              </span>
+              <span class="recents-day__range">
+                @if (group.period === 'week') {
+                  <time [attr.datetime]="group.startDate | date: 'yyyy-MM-dd'">
+                    {{ group.startDate | l10nDate: locale.language : { day: 'numeric', month: 'short' } }}
+                  </time>
+                  <span aria-hidden="true">–</span>
+                  <time [attr.datetime]="group.endDate | date: 'yyyy-MM-dd'">
+                    {{ group.endDate | l10nDate: locale.language : { day: 'numeric', month: 'short' } }}
+                  </time>
+                } @else if (group.period === 'older') {
+                  <time [attr.datetime]="group.startDate | date: 'yyyy-MM'">
+                    {{ group.startDate | l10nDate: locale.language : { month: 'long', year: 'numeric' } }}
+                  </time>
+                } @else {
+                  <time [attr.datetime]="group.startDate | date: 'yyyy-MM-dd'">
+                    {{ group.startDate | l10nDate: locale.language : { dateStyle: 'full' } }}
+                  </time>
+                }
+              </span>
+            </div>
+
+            <div class="recents-day__grid">
+              @for (item of group.items; track item.key; let itemIndex = $index) {
+                <button
+                  type="button"
+                  class="recent-card"
+                  [class.recent-card--comment]="item.kind === 'comment'"
+                  [style.animation-delay.ms]="itemIndex * 18"
+                  (click)="goToItem(item)"
+                >
+                  <span
+                    class="badge badge-small recent-card__badge"
+                    [class.bg-primary]="item.kind === 'file'"
+                    [class.bg-success]="item.kind === 'comment'"
+                  >
+                    @if (item.kind === 'file') {
+                      <svg [lucideIcon]="icons.LucideFileText" aria-hidden="true"></svg>
+                      <span class="visually-hidden" l10nTranslate>File</span>
+                    } @else {
+                      <svg [lucideIcon]="icons.LucideMessageSquareMore" aria-hidden="true"></svg>
+                      <span class="visually-hidden" l10nTranslate>Comments</span>
+                    }
+                  </span>
+
+                  <span class="recent-card__top">
+                    <span class="recent-card__media">
+                      @if (item.kind === 'file') {
+                        <img
+                          class="recent-card__file-icon"
+                          [src]="item.file.mimeUrl"
+                          alt=""
+                          (error)="item.file.fallBackMimeUrl()"
+                        />
+                      } @else {
+                        <app-user-avatar [user]="item.comment.author" [height]="38" [width]="38" [container]="'body'"></app-user-avatar>
+                      }
+                    </span>
+
+                    <span class="recent-card__summary">
+                      @if (item.kind === 'file') {
+                        <span class="recent-card__title">
+                          {{ item.file.name }}
+                        </span>
+                      } @else {
+                        <span class="recent-card__comment">
+                          {{ item.comment.content }}
+                        </span>
+                      }
+                      <span class="recent-card__time">{{ item.timestamp | amLiveTimeAgo }}</span>
+                    </span>
+                  </span>
+
+                  <span class="recent-card__content">
+                    <span class="recent-card__meta">
+                      <app-file-location [location]="item.kind === 'file' ? item.file : item.comment"></app-file-location>
+                    </span>
+                  </span>
+                </button>
+              }
+            </div>
+          </section>
+        }
+      </div>
+    } @else {
+      <div class="recents-timeline__empty">
+        @if (activeFilter() !== 'comment') {
+          <div>
+            <svg [lucideIcon]="icons.LucideFileText"></svg>
+            <span l10nTranslate>No recent files</span>
+          </div>
+        }
+        @if (activeFilter() !== 'file') {
+          <div>
+            <svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>
+            <span l10nTranslate>No recent comments</span>
+          </div>
+        }
+      </div>
+    }
   </div>
 </div>

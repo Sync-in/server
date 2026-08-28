@@ -635,74 +635,20 @@
   .text-bg-light {
     background-color: $white !important;
   }
-  app-files-recents-widget,
-  app-comments-recents-widget {
-    .recents-widget-card {
-      border-color: rgba($light-surface-border, 0.5);
-      box-shadow: 0 14px 34px $light-box-transparent-shadow-color;
-      background: linear-gradient(160deg, $light-app-top-menu-gradient-end 0%, $light-menu-surface-bg 100%);
-    }
-
-    .recents-widget-card__header {
-      border-bottom-color: rgba($light-surface-border, 0.5);
-      background: linear-gradient(125deg, $light-app-top-menu-gradient-start 0%, $theme-light-panel-bg 100%);
-    }
-
-    .recents-widget-card__title {
-      color: lighten($navy, 8%);
-    }
-
-    .recents-widget-card__title-icon {
-      color: darken($primary, 11%);
-      background: rgba($white, 0.7);
-      border: 1px solid rgba($light-surface-border, 0.4);
-    }
-
-    .recents-widget-card__toggle {
-      color: mix($navy, $primary, 40%);
-      background: rgba($white, 0.72);
-      border-color: rgba($light-surface-border, 0.48);
-    }
-
-    .recents-widget-card__toggle:hover {
-      color: darken($primary, 8%);
-      background: $white;
-    }
-
-    .recents-widget-card__body {
-      background: linear-gradient(180deg, $white 0%, $light-surface-bg 100%);
-    }
-
-    .recent-item-card {
-      background: $white;
-      border-color: rgba($light-surface-border, 0.5);
-      box-shadow: 0 5px 14px $light-dialog-tab-card-shadow-color;
-    }
-
-    .recent-item-card:hover {
-      border-color: $light-dialog-check-card-hover-border-color;
-      box-shadow: 0 10px 22px $light-dialog-check-card-hover-shadow-color;
-    }
-
-    .recent-item-card__title {
-      color: $light-item-color;
-    }
-
-    .recent-item-card__media {
-      background: $gray-lightest;
-      border: 1px solid rgba($light-surface-border, 0.42);
-    }
-
-    .recent-item-card__time {
-      color: $light-text-muted-color;
-    }
-
-    .recent-empty-state {
-      background: rgba($light-menu-surface-bg, 0.8);
-      color: $light-text-muted-color;
-      border: 1px dashed rgba($light-surface-border, 0.52);
-    }
-  }
+  @include recents-theme(
+    $surface: $white,
+    $surface-muted: $light-surface-bg,
+    $surface-hover: $light-table-row-hover-bg,
+    $empty-background: rgba($light-menu-surface-bg, 0.8),
+    $empty-text: $light-text-muted-color,
+    $border: $light-surface-border,
+    $border-hover: $light-dialog-check-card-hover-border-color,
+    $text: $light-item-color,
+    $muted: $light-text-muted-color,
+    $primary-soft: rgba($primary, 0.12),
+    $card-shadow: $light-dialog-tab-card-shadow-color,
+    $card-hover-shadow: $light-dialog-check-card-hover-shadow-color
+  );
   .avatar-img {
     background-color: darken($gray-light, 5%);
   }

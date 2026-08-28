@@ -121,7 +121,7 @@ describe(CommentsController.name, () => {
     expect(res).toEqual(recents)
   })
 
-  it('getRecents uses the default limit (10) when not provided', async () => {
+  it('getRecents uses the default limit (25) when not provided', async () => {
     const recents = [{ id: 'r2' }] as any
     commentsManager.getRecents.mockResolvedValueOnce(recents)
 
@@ -129,7 +129,7 @@ describe(CommentsController.name, () => {
     const res = await commentsController.getRecents(user, undefined as any)
 
     expect(commentsManager.getRecents).toHaveBeenCalledTimes(1)
-    expect(commentsManager.getRecents).toHaveBeenCalledWith(user, 10)
+    expect(commentsManager.getRecents).toHaveBeenCalledWith(user, 25)
     expect(res).toEqual(recents)
   })
 })

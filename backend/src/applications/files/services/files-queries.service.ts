@@ -10,6 +10,7 @@ import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
 import { syncClients } from '../../sync/schemas/sync-clients.schema'
 import { syncPaths } from '../../sync/schemas/sync-paths.schema'
+import { FILES_RECENTS_MAX_LIMIT } from '../constants/recents'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
 import { FileProps } from '../interfaces/file-props.interface'
 import type { FileRecent, FileRecentLocation, FileRecentUpdate } from '../schemas/file-recent.interface'
@@ -283,7 +284,8 @@ export class FilesQueries {
     }
   }
 
-  getRecentsFromUser(userId: number | undefined, spaceIds: number[], shareIds: number[], limit = 10): Promise<FileRecent[]> {
+  getRecentsFromUser(userId: number | undefined, spaceIds: number[], shareIds: number[], limit: number): Promise<FileRecent[]> {
+    const recentsLimit = Math.min(limit, FILES_RECENTS_MAX_LIMIT)
     const where: SQL[] = [
       ...(userId !== undefined ? [eq(filesRecents.ownerId, userId)] : []),
       ...(spaceIds.length ? [inArray(filesRecents.spaceId, spaceIds)] : []),
@@ -310,7 +312,7 @@ export class FilesQueries {
       .where(or(...where))
       .groupBy(filesRecents.id)
       .orderBy(desc(filesRecents.mtime))
-      .limit(limit)
+      .limit(recentsLimit)
   }
 
   getRecentsFromLocation(location: FileRecentLocation): Promise<FileRecent[]> {

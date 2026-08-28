@@ -267,14 +267,12 @@ export class FilesService {
     }
   }
 
-  loadRecents(limit: number) {
+  loadRecents() {
     this.http
-      .get<FileRecent[]>(API_FILES_RECENTS, { params: new HttpParams().set('limit', limit) })
+      .get<FileRecent[]>(API_FILES_RECENTS)
       .pipe(map((fs) => fs.map((f) => new FileRecentModel(f))))
       .subscribe({
-        next: (fs: FileRecentModel[]) => {
-          this.store.filesRecents.update((files) => [...fs, ...files.slice(limit)])
-        },
+        next: (fs: FileRecentModel[]) => this.store.filesRecents.set(fs),
         error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Files', 'Unable to load', e)
       })
   }

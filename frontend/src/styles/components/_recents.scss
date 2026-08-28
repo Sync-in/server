@@ -1,168 +1,343 @@
-.recents-dashboard {
-  padding: .4rem;
-}
+@mixin recents-theme(
+  $surface,
+  $surface-muted,
+  $surface-hover,
+  $empty-background,
+  $empty-text,
+  $border,
+  $border-hover,
+  $text,
+  $muted,
+  $primary-soft,
+  $card-shadow,
+  $card-hover-shadow
+) {
+  app-recents {
+    .recents-timeline__filters {
+      border-color: $border;
+      background: $surface-muted;
+    }
 
-.recents-grid {
-  margin-left: 0;
-  margin-right: 0;
-}
+    .recents-filter {
+      color: $muted;
 
-.recents-widget-card {
-  position: relative;
-  width: 100%;
-  border: 1px solid;
-  border-radius: $border-radius;
-  overflow: hidden;
-  transition: box-shadow 0.14s ease;
-}
+      &:hover,
+      &:focus-visible,
+      &.active {
+        color: $text;
+        background: $primary-soft;
+      }
+    }
 
-.recents-widget-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.78rem;
-  padding: 0.34rem 0.66rem;
-  border-bottom: 1px solid;
-}
+    .recents-day__date,
+    .recents-day__range,
+    .recent-card__time,
+    .recent-card__meta {
+      color: $muted;
+    }
 
-.recents-widget-card__title-wrap {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  gap: 0.58rem;
-}
+    .recent-card {
+      color: $text;
+      border-color: $border;
+      background: $surface;
+      box-shadow: 0 2px 6px $card-shadow;
 
-.recents-widget-card__title-icon {
-  width: 2.05rem;
-  height: 2.05rem;
-  border-radius: 0.6rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: $font-size-base;
-}
+      &:hover,
+      &:focus-visible {
+        border-color: $border-hover;
+        background: $surface-hover;
+        box-shadow: 0 4px 10px $card-hover-shadow;
+      }
+    }
 
-.recents-widget-card__title {
-  display: inline-block;
-  line-height: 1.05;
-  font-size: $font-size-sm;
-  font-weight: 500;
-  user-select: none;
-}
+    .recent-card__media {
+      border-color: $border;
+      background: $surface-muted;
+    }
 
-.recents-widget-card__toggle {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.6rem;
-  border: 1px solid transparent;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: $font-size-base;
-}
-
-.recents-widget-card__title-icon,
-.recents-widget-card__toggle {
-  > .lucide {
-    font-size: $font-size-xl;
+    .recents-timeline__empty {
+      color: $empty-text;
+      border-color: $border;
+      background: $empty-background;
+    }
   }
 }
 
-.recents-widget-card__body {
-  padding: 0.48rem 0.48rem 0.52rem;
-}
+app-recents {
+  display: block;
 
-.recent-item-card {
-  width: 100%;
-  border: 1px solid transparent;
-  border-radius: 0.68rem;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  appearance: none;
-  padding: 0.42rem 0.5rem;
-  display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) max-content;
-  align-items: center;
-  gap: 0.54rem;
-  text-align: left;
-  cursor: pointer;
-  animation: recent-card-enter 0.26s ease both;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
-
-  + .recent-item-card {
-    margin-top: 0.34rem;
+  .recents-timeline {
+    width: min(100%, 76rem);
+    margin: 0 auto;
+    padding: 0.55rem 0.7rem 1.25rem;
   }
-}
 
-.recent-item-card:hover {
-  transform: translateY(-1px);
-}
+  .recents-timeline--with-content {
+    position: relative;
 
-.recent-item-card__media {
-  width: 2rem;
-  height: 2rem;
-}
+    > .recents-timeline__filters {
+      position: absolute;
+      top: 0.55rem;
+      right: 0.7rem;
+    }
 
-.recent-item-card__content {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
+    .recents-day:first-child .recents-day__label {
+      min-height: 1.9rem;
+      padding-right: 19rem;
+    }
+  }
 
-.recent-item-card__title {
-  line-height: 1.2;
-  font-size: $font-size-base;
-  font-weight: 400;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+  .recents-timeline__filters {
+    width: fit-content;
+    height: 1.9rem;
+    margin: 0 0 0 auto;
+    padding: 0.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    border: 1px solid;
+    border-radius: $nav-pills-border-radius;
+  }
 
-.recent-item-card__path {
-  line-height: 1.15;
-  font-size: $font-size-xs;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+  .recents-filter {
+    min-width: 4.2rem;
+    height: 1.5rem;
+    padding: 0 0.68rem;
+    border: 0;
+    border-radius: $border-radius;
+    background: transparent;
+    font-size: $font-size-xs;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease;
 
-.recent-item-card__time {
-  white-space: nowrap;
-  font-size: $font-size-xs;
-  line-height: 1;
-  margin-left: 0.38rem;
-  min-width: 5.05rem;
-  text-align: right;
-  padding-top: 0.04rem;
-}
+    &:focus-visible {
+      outline: 2px solid rgba($primary, 0.4);
+      outline-offset: 1px;
+    }
+  }
 
-.recent-empty-state {
-  min-height: 142px;
-  border-radius: 0.65rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 0.85rem;
+  .recents-days {
+    display: flex;
+    flex-direction: column;
+    gap: 1.4rem;
+  }
 
-  > .lucide {
-    font-size: 1.5rem;
+  .recents-day__label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.16rem;
+    margin-bottom: 0.72rem;
+  }
+
+  .recents-day__date {
+    font-size: $font-size-xs;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.035em;
+    text-transform: uppercase;
+  }
+
+  .recents-day__range {
+    display: flex;
+    align-items: center;
+    gap: 0.22rem;
+    font-size: $font-size-2xs;
+    line-height: 1.2;
+    opacity: 0.78;
+    text-transform: capitalize;
+  }
+
+  .recents-day__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    gap: 0.72rem;
+  }
+
+  .recent-card {
+    position: relative;
+    width: 100%;
+    min-width: 0;
+    min-height: 5.20rem;
+    padding: 0.65rem 0.7rem;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid;
+    border-radius: $nav-tabs-border-radius;
+    text-align: left;
+    appearance: none;
+    cursor: pointer;
+    animation: recent-card-enter 0.24s ease both;
+    transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+
+    &:hover,
+    &:focus-visible {
+      transform: translateY(-1px);
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba($primary, 0.4);
+      outline-offset: 2px;
+    }
+  }
+
+  .recent-card__top {
+    min-width: 0;
+    padding-right: 2.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+  }
+
+  .recent-card__media {
+    width: 2.4rem;
+    height: 2.4rem;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid;
+    border-radius: $nav-pills-border-radius;
+
+    app-user-avatar {
+      display: grid;
+      place-items: center;
+    }
+  }
+
+  .recent-card__file-icon {
+    width: 1.45rem;
+    height: 1.45rem;
+    object-fit: contain;
+  }
+
+  .recent-card__summary {
+    min-width: 0;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.22rem;
+  }
+
+  .recent-card__badge {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.7rem;
+  }
+
+  .recent-card__time {
+    font-size: $font-size-2xs;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .recent-card__content {
+    min-width: 0;
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .recent-card__title,
+  .recent-card__comment {
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    font-weight: 550;
+    line-height: 1.25;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .recent-card__title {
+    font-size: $font-size-base;
+  }
+
+  .recent-card__meta {
+    min-width: 0;
+    font-size: $font-size-2xs;
+    line-height: 1.15;
+  }
+
+  .recent-card--comment {
+    .recent-card__comment {
+      font-size: $font-size-sm;
+      white-space: normal;
+      overflow-wrap: break-word;
+    }
+
+    .recent-card__media {
+      overflow: visible;
+      border: 0;
+      background: transparent;
+    }
+  }
+
+  .recents-timeline__empty {
+    min-height: 12rem;
+    padding: 1.25rem;
+    display: grid;
+    place-content: center;
+    gap: 2rem;
+    border: 1px dashed;
+    border-radius: $nav-tabs-border-radius;
+    text-align: center;
+    margin-top: 1.125rem;
+
+    > div {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      font-size: $font-size-md;
+
+      > .lucide {
+        font-size: $font-size-xl;
+      }
+    }
+  }
+
+  @media (max-width: 767.98px) {
+    .recents-timeline {
+      padding-right: 0.35rem;
+      padding-left: 0.35rem;
+    }
+
+    .recents-timeline__filters {
+      width: 100%;
+    }
+
+    .recents-timeline--with-content {
+      > .recents-timeline__filters {
+        position: static;
+      }
+
+      .recents-day:first-child .recents-day__label {
+        min-height: 0;
+        padding-right: 0;
+      }
+    }
+
+    .recents-filter {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .recents-day__grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 }
 
 @keyframes recent-card-enter {
   from {
     opacity: 0;
-    transform: translateY(5px);
+    transform: translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

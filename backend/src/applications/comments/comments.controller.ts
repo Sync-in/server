@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Patch, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Delete, Get, ParseIntPipe, Patch, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common'
 import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
 import { SkipSpaceGuard } from '../spaces/decorators/space-skip-guard.decorator'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator'
@@ -7,6 +7,7 @@ import { SpaceGuard } from '../spaces/guards/space.guard'
 import { SpaceEnv } from '../spaces/models/space-env.model'
 import { GetUser } from '../users/decorators/user.decorator'
 import type { UserModel } from '../users/models/user.model'
+import { COMMENTS_RECENTS_DEFAULT_LIMIT, COMMENTS_RECENTS_MAX_LIMIT } from './constants/recents'
 import { COMMENTS_ROUTE } from './constants/routes'
 import { CreateOrUpdateCommentDto, DeleteCommentDto } from './dto/comment.dto'
 import { CommentRecent } from './interfaces/comment-recent.interface'
@@ -42,7 +43,11 @@ export class CommentsController {
 
   @Get(COMMENTS_ROUTE.RECENTS)
   @SkipSpaceGuard()
-  getRecents(@GetUser() user: UserModel, @Query('limit') limit: number = 10): Promise<CommentRecent[]> {
-    return this.commentsManager.getRecents(user, limit)
+  getRecents(
+    @GetUser() user: UserModel,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = COMMENTS_RECENTS_DEFAULT_LIMIT
+  ): Promise<CommentRecent[]> {
+    if (!Number.isInteger(limit) || limit < 1) throw new BadRequestException('limit must be a positive integer')
+    return this.commentsManager.getRecents(user, Math.min(limit, COMMENTS_RECENTS_MAX_LIMIT))
   }
 }

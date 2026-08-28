@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Post, Query, Search, UseGuards } from '@nestjs/common'
+import { BadRequestException, Body, Controller, Delete, Get, ParseIntPipe, Post, Query, Search, UseGuards } from '@nestjs/common'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator'
 import { GetSpace } from '../spaces/decorators/space.decorator'
 import { SpaceGuard } from '../spaces/guards/space.guard'
@@ -8,6 +8,7 @@ import { UserHaveRole } from '../users/decorators/roles.decorator'
 import { GetUser } from '../users/decorators/user.decorator'
 import { UserRolesGuard } from '../users/guards/roles.guard'
 import { UserModel } from '../users/models/user.model'
+import { FILES_RECENTS_DEFAULT_LIMIT, FILES_RECENTS_MAX_LIMIT } from './constants/recents'
 import { FILES_ROUTE } from './constants/routes'
 import { DeleteFileFavoriteDto, FileFavoriteDto } from './dto/file-favorite.dto'
 import { SearchFilesDto } from './dto/file-operations.dto'
@@ -57,8 +58,12 @@ export class FilesController {
   // RECENT FILES
 
   @Get(FILES_ROUTE.RECENTS)
-  getRecents(@GetUser() user: UserModel, @Query('limit') limit: number = 10): Promise<FileRecent[]> {
-    return this.filesRecents.getRecents(user, limit)
+  getRecents(
+    @GetUser() user: UserModel,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = FILES_RECENTS_DEFAULT_LIMIT
+  ): Promise<FileRecent[]> {
+    if (!Number.isInteger(limit) || limit < 1) throw new BadRequestException('limit must be a positive integer')
+    return this.filesRecents.getRecents(user, Math.min(limit, FILES_RECENTS_MAX_LIMIT))
   }
 
   // SEARCH FILES

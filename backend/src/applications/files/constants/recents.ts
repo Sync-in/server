@@ -1,0 +1,2 @@
+export const FILES_RECENTS_DEFAULT_LIMIT = 25
+export const FILES_RECENTS_MAX_LIMIT = 100

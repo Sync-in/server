@@ -16,6 +16,7 @@ import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
 import { USER_PERMISSION } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema'
+import { COMMENTS_RECENTS_MAX_LIMIT } from '../constants/recents'
 import { CommentRecent } from '../interfaces/comment-recent.interface'
 import { Comment } from '../schemas/comment.interface'
 import { comments } from '../schemas/comments.schema'
@@ -249,7 +250,8 @@ export class CommentsQueries {
       .limit(limit)
   }
 
-  async getRecentsFromUser(user: UserModel, limit = 10): Promise<CommentRecent[]> {
+  async getRecentsFromUser(user: UserModel, limit: number): Promise<CommentRecent[]> {
+    const recentsLimit = Math.min(limit, COMMENTS_RECENTS_MAX_LIMIT)
     const hasPersonal = user.havePermission(USER_PERMISSION.PERSONAL_SPACE)
     const [spaces, shares] = await Promise.all([
       user.havePermission(USER_PERMISSION.SPACES) ? this.spacesQueries.spaceIdentities(user.id) : Promise.resolve([]),
@@ -260,13 +262,13 @@ export class CommentsQueries {
     const hasSpaces = spaceIds.length > 0
     const hasShares = shareIds.length > 0
     const sourceCount = +hasPersonal + +hasSpaces + +hasShares
-    const sourceLimit = sourceCount > 1 ? limit * 2 : limit
-    const sources: Promise<CommentRecent[]>[] = [
-      ...(hasPersonal ? [this.getRecentsFromPersonal(user.id, sourceLimit) as Promise<CommentRecent[]>] : []),
-      ...(hasSpaces ? [this.getRecentsFromSpaces(user.id, spaceIds, sourceLimit) as Promise<CommentRecent[]>] : []),
-      ...(hasShares ? [this.getRecentsFromShares(user.id, shareIds, sourceLimit) as Promise<CommentRecent[]>] : [])
-    ]
-    const recents = (await Promise.all(sources)).flat().sort((a, b) => b.id - a.id)
-    return Array.from(new Map(recents.map((r) => [r.id, r])).values()).slice(0, limit)
+    const sourceLimit = sourceCount > 1 ? recentsLimit * 2 : recentsLimit
+    const sourceRecents = await Promise.all([
+      hasPersonal ? this.getRecentsFromPersonal(user.id, sourceLimit) : Promise.resolve([]),
+      hasSpaces ? this.getRecentsFromSpaces(user.id, spaceIds, sourceLimit) : Promise.resolve([]),
+      hasShares ? this.getRecentsFromShares(user.id, shareIds, sourceLimit) : Promise.resolve([])
+    ])
+    const recents = sourceRecents.flat().sort((a, b) => b.id - a.id)
+    return Array.from(new Map(recents.map((r) => [r.id, r])).values()).slice(0, recentsLimit)
   }
 }

@@ -655,74 +655,6 @@
     }
 
   }
-  app-files-recents-widget,
-  app-comments-recents-widget {
-    .recents-widget-card {
-      border-color: rgba($dark-surface-border, 0.82);
-      box-shadow: 0 12px 26px rgba($black, 0.3);
-      background: linear-gradient(180deg, rgba(lighten($dark-surface-bg, 4%), 0.98) 0%, rgba($dark-bg-theme, 0.97) 100%);
-    }
-
-    .recents-widget-card__header {
-      border-bottom-color: rgba($dark-surface-border, 0.7);
-      background: lighten($sidebar-dark-apps-menu-title-bg, 4%);
-    }
-
-    .recents-widget-card__title {
-      color: $dark-item-hover-color;
-    }
-
-    .recents-widget-card__title-icon {
-      color: $dark-item-hover-color;
-      background: rgba(lighten($dark-bg-theme, 4%), 0.78);
-      border: 1px solid rgba($dark-surface-border, 0.58);
-    }
-
-    .recents-widget-card__toggle {
-      color: $dark-item-color;
-      background: rgba(lighten($dark-bg-theme, 5%), 0.8);
-      border-color: rgba($dark-surface-border, 0.62);
-    }
-
-    .recents-widget-card__toggle:hover {
-      background: rgba(lighten($sidebar-dark-apps-menu-title-bg, 10%), 0.9);
-      color: $dark-item-hover-color;
-    }
-
-    .recents-widget-card__body {
-      background: linear-gradient(180deg, rgba(darken($dark-bg-theme, 1%), 0.8) 0%, rgba(darken($dark-bg-theme, 4%), 0.9) 100%);
-    }
-
-    .recent-item-card {
-      background: rgba(lighten($sidebar-dark-apps-menu-title-bg, 5%), 0.92);
-      border-color: rgba($dark-surface-border, 0.7);
-      box-shadow: 0 6px 14px rgba($black, 0.24);
-    }
-
-    .recent-item-card:hover {
-      border-color: mix($primary, $dark-item-hover-color, 50%);
-      background: rgba(lighten($sidebar-dark-apps-menu-title-bg, 8%), 0.96);
-    }
-
-    .recent-item-card__title {
-      color: $dark-item-hover-color;
-    }
-
-    .recent-item-card__media {
-      background: rgba(lighten($dark-bg-theme, 2%), 0.78);
-      border: 1px solid rgba($dark-surface-border, 0.56);
-    }
-
-    .recent-item-card__time {
-      color: $theme-muted-blue;
-    }
-
-    .recent-empty-state {
-      background: rgba(lighten($sidebar-dark-apps-menu-title-bg, 4%), 0.8);
-      color: $dark-item-color;
-      border: 1px dashed rgba($dark-surface-border, 0.62);
-    }
-  }
   .ui-disabled {
     background-color: $sidebar-dark-icons-menu-bg !important;
     color: $body-color;
@@ -757,6 +689,20 @@
     color: $gray-light !important;
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%) !important;
   }
+  @include recents-theme(
+    $surface: $dark-surface-bg,
+    $surface-muted: $dark-bg-theme,
+    $surface-hover: $dark-table-row-hover-bg,
+    $empty-background: rgba(lighten($sidebar-dark-apps-menu-title-bg, 4%), 0.8),
+    $empty-text: $dark-item-color,
+    $border: $dark-surface-border,
+    $border-hover: $dark-dialog-check-card-hover-border-color,
+    $text: $dark-item-hover-color,
+    $muted: $dark-text-muted-color,
+    $primary-soft: rgba($primary, 0.26),
+    $card-shadow: $dark-dialog-tab-card-shadow-color,
+    $card-hover-shadow: $dark-dialog-check-card-hover-shadow-color
+  );
   .avatar-img {
     background-color: darken($gray-light, 5%);
   }
