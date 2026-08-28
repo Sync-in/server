@@ -49,6 +49,7 @@ export class SpaceManageRootsComponent implements OnInit, OnDestroy {
   @Input({ required: true }) user: UserType
   @Input() showInfo = true
   @Input() showUsers = true
+  @Input() showRemove = true
   @Input() addRootFile: Subject<FileTreeEvent | ExternalFilePathEvent> = null
   protected locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { LucideX, LucidePencil }

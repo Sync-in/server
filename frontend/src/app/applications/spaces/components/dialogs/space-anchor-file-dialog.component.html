@@ -21,7 +21,12 @@
   </div>
   <div class="mb-3">
     <label class="form-label" for="files" l10nTranslate>Files</label>
-    <app-space-manage-roots id="files" [space]="space" [user]="user" [showInfo]="false" [showUsers]="false"></app-space-manage-roots>
+    <app-space-manage-roots id="files"
+                            [space]="space"
+                            [user]="user"
+                            [showInfo]="false"
+                            [showUsers]="false"
+                            [showRemove]="files.length > 1"></app-space-manage-roots>
   </div>
 </div>
 <div class="modal-footer">

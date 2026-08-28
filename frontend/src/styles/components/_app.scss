@@ -75,6 +75,10 @@
           background: rgba(0, 0, 0, 0.3);
           color: rgba(255, 255, 255, 0.8);
           border: .5px solid lighten($dark-dialog-tabs-bar-bg, 5%);
+
+          .lucide {
+            font-size: 1rem;
+          }
         }
 
         .form-control {

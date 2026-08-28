@@ -32,8 +32,7 @@
         </div>
       </div>
       @if (showInfo) {
-        <div class="d-flex flex-column fs-2xs text-muted d-none d-lg-block ms-3">
-          <div class="d-flex justify-content-end">{{ r.alias }}</div>
+        <div class="d-flex fs-2xs text-muted d-none d-lg-block ms-3">
           <div class="d-flex justify-content-end">{{ r.createdAt | amTimeAgo }}</div>
         </div>
       }
@@ -62,17 +61,20 @@
         <button
           (click)="setRenamed(r)"
           [tooltip]="'Rename' | translate:locale.language"
-          class="btn {{r.isRenamed ? 'btn-success' : 'btn-secondary'}} me-2"
+          class="btn {{r.isRenamed ? 'btn-success' : 'btn-secondary'}}"
+          [class.me-2]="showRemove"
           type="button">
           <svg [lucideIcon]="icons.LucidePencil"></svg>
         </button>
-        <button
-          (click)="removeRoot(r)"
-          [tooltip]="'Remove' | translate:locale.language"
-          class="btn btn-danger"
-          type="button">
-          <svg [lucideIcon]="icons.LucideX"></svg>
-        </button>
+        @if (showRemove) {
+          <button
+            (click)="removeRoot(r)"
+            [tooltip]="'Remove' | translate:locale.language"
+            class="btn btn-danger"
+            type="button">
+            <svg [lucideIcon]="icons.LucideX"></svg>
+          </button>
+        }
       </div>
     </div>
   </div>

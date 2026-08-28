@@ -7,6 +7,7 @@ import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } fr
 import { Observable } from 'rxjs'
 import { SelectComponent } from '../../../../common/components/select/select.component'
 import { LayoutService } from '../../../../layout/layout.service'
+import { resolveFileLocation } from '../../../files/components/utils/file-location.utils'
 import { mimeDirectory } from '../../../files/files.constants'
 import { FileModel } from '../../../files/models/file.model'
 import { UserType } from '../../../users/interfaces/user.interface'
@@ -40,6 +41,7 @@ export class SpaceAnchorFileDialogComponent implements OnInit {
 
   ngOnInit() {
     for (const f of this.files) {
+      const file = { ...f, path: resolveFileLocation(f.path)?.relativePath ?? f.path }
       this.space.roots.push({
         id: f.id,
         name: f.name,
@@ -50,7 +52,7 @@ export class SpaceAnchorFileDialogComponent implements OnInit {
         hPerms: setBooleanPermissions('', [SPACE_OPERATION.SHARE_INSIDE]),
         isDir: f.mime === mimeDirectory,
         owner: { id: this.user.id, login: this.user.login },
-        file: f
+        file
       })
     }
   }

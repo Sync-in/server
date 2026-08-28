@@ -15,7 +15,11 @@
       <span l10nTranslate>Edit space</span>
     </h4>
   }
-  <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white {{space.id ? 'ms-2' : 'ms-auto'}} ms-2" type="button"></button>
+  <button (click)="layout.closeDialog()"
+          aria-label="Close"
+          class="btn-close btn-close-white {{space.id ? 'ms-2' : 'ms-auto'}} ms-2"
+          type="button">
+  </button>
 </div>
 <div class="modal-body">
   <tabset [justified]="true" type="pills">
@@ -73,7 +77,7 @@
               [class.dialog-check-card--active]="space.enabled"
               (click)="toggleSpaceStatusFromCard()">
               <div class="card-body p-2">
-              <label class="form-label" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>Space status</label>
+                <label class="form-label" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>Space status</label>
                 <div class="d-flex align-items-center form-check form-switch cursor-pointer">
                   <input class="form-check-input"
                          [ngModel]="space.enabled"
@@ -82,9 +86,9 @@
                          id="switchStatus"
                          type="checkbox"
                          role="button">
-                <label class="form-label form-check-label mb-0 ms-2" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>
-                  {{ space.enabled ? 'enabled' : 'disabled' }}
-                </label>
+                  <label class="form-label form-check-label mb-0 ms-2" for="switchStatus" (click)="$event.stopPropagation()" l10nTranslate>
+                    {{ space.enabled ? 'enabled' : 'disabled' }}
+                  </label>
                 </div>
               </div>
             </div>
@@ -93,12 +97,16 @@
               [class.dialog-check-card--active]="space.storageIndexing"
               (click)="toggleFullTextSearchFromCard()">
               <div class="card-body p-2">
-              <label class="form-label" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>Full-text search</label>
+                <label class="form-label" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>Full-text search</label>
                 <div class="d-flex align-items-center form-check form-switch cursor-pointer">
-                  <input class="form-check-input" [(ngModel)]="space.storageIndexing" (click)="$event.stopPropagation()" id="switchFullText" type="checkbox" role="button">
-                <label class="form-label form-check-label mb-0 ms-2" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>
-                  {{ space.storageIndexing ? 'enabled' : 'disabled' }}
-                </label>
+                  <input class="form-check-input"
+                         [(ngModel)]="space.storageIndexing"
+                         (click)="$event.stopPropagation()"
+                         id="switchFullText"
+                         type="checkbox" role="button">
+                  <label class="form-label form-check-label mb-0 ms-2" for="switchFullText" (click)="$event.stopPropagation()" l10nTranslate>
+                    {{ space.storageIndexing ? 'enabled' : 'disabled' }}
+                  </label>
                 </div>
               </div>
             </div>

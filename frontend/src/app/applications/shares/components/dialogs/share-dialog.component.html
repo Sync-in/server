@@ -15,7 +15,11 @@
       <span l10nTranslate>Edit share</span>
     </h4>
   }
-  <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white {{share.id ? 'ms-2' : 'ms-auto'}} ms-2" type="button"></button>
+  <button (click)="layout.closeDialog()"
+          aria-label="Close"
+          class="btn-close btn-close-white {{share.id ? 'ms-2' : 'ms-auto'}} ms-2"
+          type="button">
+  </button>
 </div>
 <div class="modal-body">
   <tabset [justified]="true" type="pills">
