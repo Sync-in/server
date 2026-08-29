@@ -1,9 +1,9 @@
 <div appAutoResize [useMaxHeight]="false" [resizeOffset]="40">
   <div class="recents-timeline" [class.recents-timeline--with-content]="groups().length > 0">
-    <div class="recents-timeline__filters" role="group" aria-label="Filter recents">
+    <div class="view-switch" role="group" aria-label="Filter recents">
       <button
         type="button"
-        class="recents-filter"
+        class="view-switch__option"
         [class.active]="activeFilter() === 'all'"
         [attr.aria-pressed]="activeFilter() === 'all'"
         (click)="activeFilter.set('all')"
@@ -13,7 +13,7 @@
       </button>
       <button
         type="button"
-        class="recents-filter"
+        class="view-switch__option"
         [class.active]="activeFilter() === 'file'"
         [attr.aria-pressed]="activeFilter() === 'file'"
         (click)="activeFilter.set('file')"
@@ -23,7 +23,7 @@
       </button>
       <button
         type="button"
-        class="recents-filter"
+        class="view-switch__option"
         [class.active]="activeFilter() === 'comment'"
         [attr.aria-pressed]="activeFilter() === 'comment'"
         (click)="activeFilter.set('comment')"

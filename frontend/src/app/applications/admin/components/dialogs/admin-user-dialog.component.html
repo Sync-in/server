@@ -207,11 +207,13 @@
             <div class="card-body d-flex flex-column gap-2">
               <label for="" class="form-label mb-1" l10nTranslate>Account status</label>
               <div class="card dialog-check-card dialog-check-card--interactive"
-                   [class.dialog-check-card--active]="userForm.value.isActive">
+                   [class.dialog-check-card--active]="userForm.value.isActive"
+                   (click)="toggleAccountSetting('isActive')">
                 <div class="card-body p-2">
                   <div class="d-flex align-items-center form-check form-switch cursor-pointer mb-0">
-                    <input class="form-check-input" formControlName="isActive" id="isActive" type="checkbox">
-                    <label class="form-label form-check-label mb-0 ms-2" for="isActive" [class.text-danger]="!userForm.value.isActive">
+                    <input class="form-check-input" formControlName="isActive" id="isActive" type="checkbox" (click)="$event.stopPropagation()">
+                    <label class="form-label form-check-label mb-0 ms-2" for="isActive" [class.text-danger]="!userForm.value.isActive"
+                           (click)="$event.stopPropagation()">
                       {{ (userForm.value.isActive ? 'active' : 'suspended') | translate:locale.language | titlecase }}
                     </label>
                   </div>
@@ -219,11 +221,12 @@
               </div>
 
               <div class="card dialog-check-card dialog-check-card--interactive"
-                   [class.dialog-check-card--active]="userForm.value.isAdmin">
+                   [class.dialog-check-card--active]="userForm.value.isAdmin"
+                   (click)="toggleAccountSetting('isAdmin')">
                 <div class="card-body p-2">
                   <div class="d-flex align-items-center form-check form-switch cursor-pointer mb-0">
-                    <input class="form-check-input" formControlName="isAdmin" id="isAdmin" type="checkbox">
-                    <label class="form-label form-check-label mb-0 ms-2" for="isAdmin" l10nTranslate>Administrator</label>
+                    <input class="form-check-input" formControlName="isAdmin" id="isAdmin" type="checkbox" (click)="$event.stopPropagation()">
+                    <label class="form-label form-check-label mb-0 ms-2" for="isAdmin" (click)="$event.stopPropagation()" l10nTranslate>Administrator</label>
                   </div>
                 </div>
               </div>

@@ -12,23 +12,23 @@
   $card-shadow,
   $card-hover-shadow
 ) {
+  .view-switch {
+    border-color: $border;
+    background: $surface-muted;
+  }
+
+  .view-switch__option {
+    color: $muted;
+
+    &:hover,
+    &:focus-visible,
+    &.active {
+      color: $text;
+      background: $primary-soft;
+    }
+  }
+
   app-recents {
-    .recents-timeline__filters {
-      border-color: $border;
-      background: $surface-muted;
-    }
-
-    .recents-filter {
-      color: $muted;
-
-      &:hover,
-      &:focus-visible,
-      &.active {
-        color: $text;
-        background: $primary-soft;
-      }
-    }
-
     .recents-day__date,
     .recents-day__range,
     .recent-card__time,
@@ -75,7 +75,7 @@ app-recents {
   .recents-timeline--with-content {
     position: relative;
 
-    > .recents-timeline__filters {
+    > .view-switch {
       position: absolute;
       top: 0.55rem;
       right: 0.7rem;
@@ -84,37 +84,6 @@ app-recents {
     .recents-day:first-child .recents-day__label {
       min-height: 1.9rem;
       padding-right: 19rem;
-    }
-  }
-
-  .recents-timeline__filters {
-    width: fit-content;
-    height: 1.9rem;
-    margin: 0 0 0 auto;
-    padding: 0.15rem;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    border: 1px solid;
-    border-radius: $nav-pills-border-radius;
-  }
-
-  .recents-filter {
-    min-width: 4.2rem;
-    height: 1.5rem;
-    padding: 0 0.68rem;
-    border: 0;
-    border-radius: $border-radius;
-    background: transparent;
-    font-size: $font-size-xs;
-    font-weight: 500;
-    line-height: 1;
-    cursor: pointer;
-    transition: color 0.15s ease, background-color 0.15s ease;
-
-    &:focus-visible {
-      outline: 2px solid rgba($primary, 0.4);
-      outline-offset: 1px;
     }
   }
 
@@ -164,7 +133,7 @@ app-recents {
     display: flex;
     flex-direction: column;
     border: 1px solid;
-    border-radius: $nav-tabs-border-radius;
+    border-radius: $nav-pills-border-radius;
     text-align: left;
     appearance: none;
     cursor: pointer;
@@ -283,7 +252,7 @@ app-recents {
     place-content: center;
     gap: 2rem;
     border: 1px dashed;
-    border-radius: $nav-tabs-border-radius;
+    border-radius: $nav-pills-border-radius;
     text-align: center;
     margin-top: 1.125rem;
 
@@ -306,12 +275,12 @@ app-recents {
       padding-left: 0.35rem;
     }
 
-    .recents-timeline__filters {
+    .view-switch {
       width: 100%;
     }
 
     .recents-timeline--with-content {
-      > .recents-timeline__filters {
+      > .view-switch {
         position: static;
       }
 
@@ -321,7 +290,7 @@ app-recents {
       }
     }
 
-    .recents-filter {
+    .view-switch__option {
       min-width: 0;
       flex: 1;
     }
@@ -329,6 +298,37 @@ app-recents {
     .recents-day__grid {
       grid-template-columns: minmax(0, 1fr);
     }
+  }
+}
+
+.view-switch {
+  width: fit-content;
+  height: 1.9rem;
+  margin: 0 0 0 auto;
+  padding: 0.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid;
+  border-radius: $border-radius;
+}
+
+.view-switch__option {
+  min-width: 4.2rem;
+  height: 1.5rem;
+  padding: 0 0.68rem;
+  border: 0;
+  border-radius: $border-radius - 0.1rem;
+  background: transparent;
+  font-size: $font-size-xs;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+
+  &:focus-visible {
+    outline: 2px solid rgba($primary, 0.4);
+    outline-offset: 1px;
   }
 }
 

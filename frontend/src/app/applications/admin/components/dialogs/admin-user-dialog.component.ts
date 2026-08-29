@@ -164,6 +164,12 @@ export class AdminUserDialogComponent implements OnInit {
     this.user.storageQuota = quota
   }
 
+  toggleAccountSetting(controlName: 'isActive' | 'isAdmin') {
+    const control = this.userForm.controls[controlName]
+    control.setValue(!control.value)
+    control.markAsDirty()
+  }
+
   onCancel() {
     if (this.confirmDeletion) {
       this.confirmDeletion = false

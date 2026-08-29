@@ -142,7 +142,7 @@
 .app-table {
   --app-table-cell-inline-padding: .5rem;
   --app-table-leading-icon-gap: .3rem;
-  --app-table-row-height: 36px;
+  --app-table-row-height: 37px;
 
   @extend .table;
   @include no-select-utility;

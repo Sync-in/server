@@ -36,16 +36,28 @@
     <svg [lucideIcon]="icons.LucidePencil"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
-    <button btnCheckbox
-            [ngModel]="personalGroupsView"
-            (ngModelChange)="onPersonalGroupsView($event)"
-            type="button"
-            class="btn btn-custom me-1">
-      <div class="d-flex align-items-center">
-        <svg [lucideIcon]="personalGroupsView ? icons.LucideToggleRight : icons.LucideToggleLeft" class="me-2"></svg>
-        <span l10nTranslate>Personal groups</span>
-      </div>
-    </button>
+    <div class="view-switch me-1" role="group" aria-label="Select group type">
+      <button
+        type="button"
+        class="view-switch__option"
+        [class.active]="!personalGroupsView"
+        [attr.aria-pressed]="!personalGroupsView"
+        (click)="onPersonalGroupsView(false)"
+        l10nTranslate
+      >
+        Groups
+      </button>
+      <button
+        type="button"
+        class="view-switch__option"
+        [class.active]="personalGroupsView"
+        [attr.aria-pressed]="personalGroupsView"
+        (click)="onPersonalGroupsView(true)"
+        l10nTranslate
+      >
+        Personal groups
+      </button>
+    </div>
     <!--Start Filter Button-->
     <div class="btn-group me-1">
       <app-input-filter class="d-none d-sm-block"></app-input-filter>

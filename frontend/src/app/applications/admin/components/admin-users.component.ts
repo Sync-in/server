@@ -1,7 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, ViewChild } from '@angular/core'
-import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Data, Router } from '@angular/router'
 import {
   LucideArrowDown,
@@ -9,8 +8,6 @@ import {
   LucideDynamicIcon,
   LucideKeyRound,
   LucideRotateCw,
-  LucideToggleLeft,
-  LucideToggleRight,
   LucideUserRoundPen,
   LucideUserRoundPlus,
   LucideVenetianMask
@@ -19,7 +16,6 @@ import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-cont
 import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
@@ -57,8 +53,6 @@ import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
     StorageUsageComponent,
     TimeDateFormatPipe,
     ContextMenuModule,
-    ButtonCheckboxDirective,
-    FormsModule,
     UserAvatarStackComponent,
     TapDirective,
     ToBytesPipe
@@ -83,9 +77,7 @@ export class AdminUsersComponent {
     LucideArrowDown,
     LucideArrowUp,
     LucideKeyRound,
-    LucideVenetianMask,
-    LucideToggleRight,
-    LucideToggleLeft
+    LucideVenetianMask
   }
   // Sort
   protected tableHeaders: Record<'login' | 'fullName' | 'managers' | 'storage' | 'currentAccess' | 'currentIp' | 'isActive', TableHeaderConfig> = {

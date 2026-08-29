@@ -1,7 +1,6 @@
 import { KeyValuePipe } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, ViewChild } from '@angular/core'
-import { FormsModule } from '@angular/forms'
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import {
   LucideArrowDown,
@@ -12,8 +11,6 @@ import {
   LucidePencil,
   LucidePlus,
   LucideRotateCw,
-  LucideToggleLeft,
-  LucideToggleRight,
   LucideUserMinus,
   LucideUserRoundPlus
 } from '@lucide/angular'
@@ -22,7 +19,6 @@ import { GROUP_TYPE } from '@sync-in-server/backend/src/applications/users/const
 import { MEMBER_TYPE } from '@sync-in-server/backend/src/applications/users/constants/member'
 import { USER_GROUP_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
@@ -65,8 +61,6 @@ import { AdminGroupEditUserDialogComponent } from './dialogs/admin-group-edit-us
     BsDropdownDirective,
     BsDropdownToggleDirective,
     BsDropdownMenuDirective,
-    ButtonCheckboxDirective,
-    FormsModule,
     TapDirective,
     BadgeMembersComponent
   ],
@@ -93,9 +87,7 @@ export class AdminGroupsComponent {
     LucideArrowUp,
     LucideKeyRound,
     LucideUserRoundPlus,
-    LucideUserMinus,
-    LucideToggleRight,
-    LucideToggleLeft
+    LucideUserMinus
   }
   // Sort
   protected tableHeaders: Record<'name' | 'type' | 'members' | 'createdAndModified', TableHeaderConfig> = {

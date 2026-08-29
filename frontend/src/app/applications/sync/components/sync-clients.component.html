@@ -74,7 +74,6 @@
           <div class="sync-client-paths">
             <div class="sync-client-paths-header">
               <span l10nTranslate>Synchronizations</span>
-              <span class="badge sync-client-paths-count">{{ client.paths.length }}</span>
             </div>
             @if (client.paths.length) {
               @for (path of client.paths; track path.id) {

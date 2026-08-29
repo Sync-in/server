@@ -21,17 +21,31 @@
     <svg [lucideIcon]="icons.LucideVenetianMask"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
+    <!--Start View Switch-->
+    <div class="view-switch me-1" role="group" aria-label="Select user type">
+      <button
+        type="button"
+        class="view-switch__option"
+        [class.active]="!guestsView"
+        [attr.aria-pressed]="!guestsView"
+        (click)="onGuestsView(false)"
+        l10nTranslate
+      >
+        Users
+      </button>
+      <button
+        type="button"
+        class="view-switch__option"
+        [class.active]="guestsView"
+        [attr.aria-pressed]="guestsView"
+        (click)="onGuestsView(true)"
+        l10nTranslate
+      >
+        Guests
+      </button>
+    </div>
+    <!--End View Switch-->
     <!--Start Filter Button-->
-    <button btnCheckbox
-            [ngModel]="guestsView"
-            (ngModelChange)="onGuestsView($event)"
-            type="button"
-            class="btn btn-custom me-1">
-      <div class="d-flex align-items-center">
-        <svg [lucideIcon]="guestsView ? icons.LucideToggleRight : icons.LucideToggleLeft" class="me-2"></svg>
-        <span l10nTranslate>Guests</span>
-      </div>
-    </button>
     <div class="btn-group me-1">
       <app-input-filter class="d-none d-sm-block"></app-input-filter>
     </div>
