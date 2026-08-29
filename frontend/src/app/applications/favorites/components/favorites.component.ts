@@ -2,7 +2,17 @@ import { KeyValuePipe, NgTemplateOutlet } from '@angular/common'
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, ElementRef, inject, OnInit, ViewChild } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
-import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideMapPin, LucideRotateCw, LucideStarOff, LucideTriangleAlert } from '@lucide/angular'
+import {
+  LucideArrowDown,
+  LucideArrowUp,
+  LucideCirclePlus,
+  LucideDynamicIcon,
+  LucideMapPin,
+  LucideMessageSquareMore,
+  LucideRotateCw,
+  LucideStarOff,
+  LucideTriangleAlert
+} from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -17,11 +27,13 @@ import { LiveTimeAgoPipe } from '../../../common/pipes/time-ago-live.pipe'
 import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
+import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
 import { FileLocationComponent } from '../../files/components/utils/file-location.component'
 import { FileFavoriteModel } from '../../files/models/file-favorite.model'
 import { FilesService } from '../../files/services/files.service'
-import { SPACES_PATH } from '../../spaces/spaces.constants'
+import { SPACES_ICON, SPACES_PATH } from '../../spaces/spaces.constants'
+import { SYNC_ICON } from '../../sync/sync.constants'
 import { FAVORITES_ICON, FAVORITES_PATH, FAVORITES_TITLE } from '../favorites.constants'
 
 @Component({
@@ -59,22 +71,29 @@ export class FavoritesComponent implements OnInit {
   protected readonly layout = inject(LayoutService)
   protected readonly icons = {
     FAVORITES: FAVORITES_ICON,
+    SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
+    SPACES: SPACES_ICON.SPACES,
+    LINKS: SPACES_ICON.LINKS,
+    SYNC: SYNC_ICON.SYNC,
     LucideRotateCw,
     LucideArrowDown,
     LucideArrowUp,
+    LucideCirclePlus,
     LucideMapPin,
+    LucideMessageSquareMore,
     LucideTriangleAlert,
     REMOVE_FAVORITE: LucideStarOff
   }
   protected readonly originalOrderKeyValue = originalOrderKeyValue
+  protected readonly TAB_MENU = TAB_MENU
   protected loading = false
   protected galleryMode: ViewMode
   protected favorites: FileFavoriteModel[] = []
   protected selected: FileFavoriteModel = null
-  protected tableHeaders: Record<'name' | 'location' | 'size' | 'modified' | 'created', TableHeaderConfig> = {
+  protected tableHeaders: Record<'name' | 'location' | 'info' | 'size' | 'modified' | 'created', TableHeaderConfig> = {
     name: {
       label: 'Name',
-      width: 35,
+      width: 30,
       textCenter: false,
       class: '',
       show: true,
@@ -82,12 +101,13 @@ export class FavoritesComponent implements OnInit {
     },
     location: {
       label: 'Location',
-      width: 35,
+      width: 25,
       textCenter: false,
       class: 'd-none d-md-table-cell fs-sm',
       show: true,
       sortable: true
     },
+    info: { label: 'Info', width: 15, textCenter: true, class: 'd-none d-md-table-cell', show: true },
     size: {
       label: 'Size',
       width: 10,
@@ -98,15 +118,16 @@ export class FavoritesComponent implements OnInit {
     },
     modified: {
       label: 'Modified',
-      width: 12,
+      width: 10,
       textCenter: true,
       class: 'd-none d-sm-table-cell',
+      newly: 'newly',
       show: true,
       sortable: true
     },
     created: {
-      label: 'Created',
-      width: 13,
+      label: 'Added',
+      width: 10,
       textCenter: true,
       class: 'd-none d-lg-table-cell',
       show: true,
@@ -186,13 +207,23 @@ export class FavoritesComponent implements OnInit {
     this.layout.openContextMenu(ev, this.targetContextMenu)
   }
 
-  goTo(favorite: FileFavoriteModel = this.selected) {
+  goTo(favorite: FileFavoriteModel = this.selected, tab?: TAB_MENU) {
     if (!favorite) return
     if (favorite.isDisabled) {
       this.layout.sendNotification('warning', favorite.name, 'No longer accessible')
       return
     }
-    this.router.navigate([SPACES_PATH.SPACES, ...favorite.path.split('/')], { queryParams: { select: favorite.name } }).catch(console.error)
+    this.router
+      .navigate([SPACES_PATH.SPACES, ...favorite.path.split('/')], { queryParams: { select: favorite.name } })
+      .then((navigated) => {
+        if (navigated && tab) this.layout.showRSideBarTab(tab, true)
+      })
+      .catch(console.error)
+  }
+
+  goToDetails(ev: Event, favorite: FileFavoriteModel, tab: TAB_MENU) {
+    ev.stopPropagation()
+    this.goTo(favorite, tab)
   }
 
   removeFavorite(favorite: FileFavoriteModel = this.selected, ev?: Event) {

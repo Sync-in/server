@@ -29,10 +29,12 @@ export class FilesFavoritesManager {
 
   async getFavorites(user: UserModel): Promise<FileFavorite[]> {
     const hasPersonal = user.havePermission(USER_PERMISSION.PERSONAL_SPACE)
+    const hasSpaces = user.havePermission(USER_PERMISSION.SPACES)
+    const hasShares = user.havePermission(USER_PERMISSION.SHARES)
     const [favorites, spaces, shares] = await Promise.all([
-      this.filesFavoritesQueries.getFavoritesFromUser(user.id, hasPersonal),
-      user.havePermission(USER_PERMISSION.SPACES) ? this.spacesQueries.spaceIdentities(user.id) : Promise.resolve([]),
-      user.havePermission(USER_PERMISSION.SHARES) ? this.sharesQueries.shareIdentities(user.id, +user.isAdmin) : Promise.resolve([])
+      this.filesFavoritesQueries.getFavoritesFromUser(user.id, hasPersonal, user.isUser),
+      hasSpaces ? this.spacesQueries.spaceIdentities(user.id) : Promise.resolve([]),
+      hasShares ? this.sharesQueries.shareIdentities(user.id, +user.isAdmin) : Promise.resolve([])
     ])
     if (!favorites.length) {
       return []

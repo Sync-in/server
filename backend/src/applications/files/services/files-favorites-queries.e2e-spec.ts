@@ -16,6 +16,9 @@ import { spacesMembers } from '../../spaces/schemas/spaces-members.schema'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
+import { SYNC_CLIENT_TYPE, SYNC_PATH_CONFLICT_MODE, SYNC_PATH_DIFF_MODE, SYNC_PATH_MODE, SYNC_PATH_SCHEDULER_UNIT } from '../../sync/constants/sync'
+import { syncClients } from '../../sync/schemas/sync-clients.schema'
+import { syncPaths } from '../../sync/schemas/sync-paths.schema'
 import { users } from '../../users/schemas/users.schema'
 import { FILE_REPOSITORY } from '../constants/operations'
 import { filesFavorites } from '../schemas/files-favorites.schema'
@@ -34,13 +37,16 @@ describe('Files favorites queries (e2e)', () => {
   let memberId: number | undefined
   let spaceId: number | undefined
   let shareId: number | undefined
+  let rootFileId: number | undefined
   let activeFileId: number | undefined
   let trashedFileId: number | undefined
+  let syncPathId: number | undefined
 
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12)
   const rootName = `favorite-root-${suffix}`
   const spaceAlias = `e2e-favorite-space-${suffix}`
   const shareAlias = `e2e-favorite-share-${suffix}`
+  const syncClientId = randomUUID()
   const noCache = {
     genSlugKey: vi.fn((...args: unknown[]) => args.join(':')),
     get: vi.fn().mockResolvedValue(undefined),
@@ -72,7 +78,7 @@ describe('Files favorites queries (e2e)', () => {
       })
     )
 
-    const rootFileId = dbGetInsertedId(await db.insert(files).values({ ownerId, path: '.', name: rootName, isDir: true }))
+    rootFileId = dbGetInsertedId(await db.insert(files).values({ ownerId, path: '.', name: rootName, isDir: true }))
     activeFileId = dbGetInsertedId(await db.insert(files).values({ ownerId, path: rootName, name: 'active.txt', isDir: false }))
     trashedFileId = dbGetInsertedId(await db.insert(files).values({ ownerId, path: rootName, name: 'trashed.txt', isDir: false, inTrash: true }))
     spaceId = dbGetInsertedId(await db.insert(spaces).values({ alias: spaceAlias, name: 'Favorite space' }))
@@ -81,7 +87,43 @@ describe('Files favorites queries (e2e)', () => {
 
     shareId = dbGetInsertedId(await db.insert(shares).values({ ownerId, fileId: rootFileId, alias: shareAlias, name: 'Favorite share' }))
     await db.insert(sharesMembers).values({ shareId, userId: memberId, permissions: 'd:m' })
+    await db.insert(syncClients).values({
+      id: syncClientId,
+      ownerId,
+      token: randomUUID(),
+      tokenExpiration: Number.MAX_SAFE_INTEGER,
+      info: {
+        node: 'Favorite client',
+        os: 'test',
+        osRelease: 'test',
+        user: 'test',
+        type: SYNC_CLIENT_TYPE.DESKTOP,
+        version: 'test'
+      }
+    })
+    syncPathId = dbGetInsertedId(
+      await db.insert(syncPaths).values({
+        clientId: syncClientId,
+        ownerId,
+        fileId: rootFileId,
+        settings: {
+          name: 'Favorite sync',
+          localPath: '/favorites',
+          remotePath: `personal/${rootName}`,
+          permissions: '',
+          mode: SYNC_PATH_MODE.BOTH,
+          enabled: true,
+          diffMode: SYNC_PATH_DIFF_MODE.FAST,
+          conflictMode: SYNC_PATH_CONFLICT_MODE.RECENT,
+          filters: [],
+          scheduler: { value: 0, unit: SYNC_PATH_SCHEDULER_UNIT.DISABLED },
+          timestamp: 0,
+          lastSync: new Date(0)
+        }
+      })
+    )
     await db.insert(filesFavorites).values([
+      { userId: ownerId, fileId: rootFileId },
       { userId: ownerId, fileId: trashedFileId },
       { userId: memberId, fileId: trashedFileId },
       { userId: memberId, fileId: activeFileId }
@@ -135,6 +177,32 @@ describe('Files favorites queries (e2e)', () => {
     )
   })
 
+  it('returns browser details', async () => {
+    const favorites = await favoritesQueries.getFavoritesFromUser(ownerId, true, true)
+    const rootFavorite = favorites.find(({ fileId }) => fileId === rootFileId)
+    const commentedFavorite = favorites.find(({ fileId }) => fileId === trashedFileId)
+
+    expect(rootFavorite).toEqual(
+      expect.objectContaining({
+        spaces: [{ id: spaceId, alias: spaceAlias, name: 'Favorite space' }],
+        shares: [{ id: shareId, alias: shareAlias, name: 'Favorite share', type: 0 }],
+        syncs: [{ id: syncPathId, clientId: syncClientId, clientName: 'Favorite client' }],
+        hasComments: false
+      })
+    )
+    expect(commentedFavorite).toEqual(expect.objectContaining({ hasComments: true }))
+
+    const favoritesWithoutSyncs = await favoritesQueries.getFavoritesFromUser(ownerId, true, false)
+    const rootFavoriteWithoutSyncs = favoritesWithoutSyncs.find(({ fileId }) => fileId === rootFileId)
+    expect(rootFavoriteWithoutSyncs).toEqual(
+      expect.objectContaining({
+        spaces: [{ id: spaceId, alias: spaceAlias, name: 'Favorite space' }],
+        shares: [{ id: shareId, alias: shareAlias, name: 'Favorite share', type: 0 }]
+      })
+    )
+    expect(rootFavoriteWithoutSyncs).not.toHaveProperty('syncs')
+  })
+
   it('does not resolve a trashed child through its former space anchor', async () => {
     const spaceIds = (await spacesQueries.spaceIdentities(memberId)).map(({ id }) => id)
     const locations = await favoritesQueries.getFavoriteLocationsFromSpaces(memberId, spaceIds)
@@ -143,9 +211,11 @@ describe('Files favorites queries (e2e)', () => {
     expect(locations.some(({ fileId }) => fileId === trashedFileId)).toBe(false)
     await expect(commentsQueries.getRecentsFromSpaces(memberId, spaceIds, 10)).resolves.toEqual([])
 
-    await expect(favoritesQueries.getFavoritesFromUser(ownerId, true)).resolves.toEqual([
-      expect.objectContaining({ fileId: trashedFileId, repository: SPACE_ALIAS.PERSONAL, path: `trash/personal/${rootName}`, isDisabled: false })
-    ])
+    await expect(favoritesQueries.getFavoritesFromUser(ownerId, true, true)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ fileId: trashedFileId, repository: SPACE_ALIAS.PERSONAL, path: `trash/personal/${rootName}`, isDisabled: false })
+      ])
+    )
     await expect(commentsQueries.getRecentsFromPersonal(ownerId, 10)).resolves.toEqual([
       expect.objectContaining({ file: expect.objectContaining({ path: `trash/personal/${rootName}` }) })
     ])

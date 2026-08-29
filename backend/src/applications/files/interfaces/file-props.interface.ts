@@ -43,7 +43,7 @@ export interface FileProps extends Omit<File, 'ownerId' | 'spaceId' | 'spaceExte
   // used by the file browser to enrich files
   spaces?: Pick<Space, 'id' | 'alias' | 'name'>[]
   shares?: Pick<Share, 'id' | 'alias' | 'name' | 'type'>[]
-  syncs?: Pick<SyncPath, 'clientId' | 'id'> & { clientName: string }[]
+  syncs?: (Pick<SyncPath, 'clientId' | 'id'> & { clientName: string })[]
   hasComments?: boolean
   isFavorite?: boolean
 }

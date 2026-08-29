@@ -3,11 +3,15 @@ import { and, desc, eq, inArray, isNotNull, isNull, or, SelectedFields, sql } fr
 import { alias, unionAll } from 'drizzle-orm/mysql-core'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
+import { concatDistinctObjectsInArray } from '../../../infrastructure/database/utils'
+import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.schema'
 import { shares } from '../../shares/schemas/shares.schema'
 import { externalShareScopeSQL } from '../../shares/utils/external-share-scope.sql'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaces } from '../../spaces/schemas/spaces.schema'
+import { syncClients } from '../../sync/schemas/sync-clients.schema'
+import { syncPaths } from '../../sync/schemas/sync-paths.schema'
 import { FILE_REPOSITORY } from '../constants/operations'
 import type { FileFavorite, FileFavoriteLocation, FileFavoriteRepository } from '../schemas/file-favorite.interface'
 import { filesFavorites } from '../schemas/files-favorites.schema'
@@ -17,9 +21,9 @@ import { filePathSQL, files } from '../schemas/files.schema'
 export class FilesFavoritesQueries {
   constructor(@Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema) {}
 
-  getFavoritesFromUser(userId: number, withPersonal: boolean): Promise<FileFavorite[]> {
+  getFavoritesFromUser(userId: number, withPersonal: boolean, withSyncs: boolean): Promise<FileFavorite[]> {
     const isPersonal = sql`${+withPersonal} = 1 AND ${files.ownerId} <=> ${userId}`
-    return this.db
+    const q = this.db
       .select({
         fileId: filesFavorites.fileId,
         createdAt: filesFavorites.createdAt,
@@ -42,12 +46,36 @@ export class FilesFavoritesQueries {
         size: files.size,
         mtime: files.mtime,
         ctime: files.ctime,
+        spaces: concatDistinctObjectsInArray(spaces.id, { id: spaces.id, alias: spaces.alias, name: spaces.name }),
+        shares: concatDistinctObjectsInArray(shares.id, {
+          id: shares.id,
+          alias: shares.alias,
+          name: shares.name,
+          type: shares.type
+        }),
+        ...(withSyncs && {
+          syncs: concatDistinctObjectsInArray(syncPaths.id, {
+            id: syncPaths.id,
+            clientId: syncClients.id,
+            clientName: sql`JSON_VALUE(${syncClients.info}, '$.node')`
+          })
+        }),
+        hasComments: sql`${fileHasCommentsSubquerySQL(files.id)}`.mapWith(Boolean),
         repository: sql<FileFavoriteRepository>`IF (${isPersonal}, ${SPACE_ALIAS.PERSONAL}, NULL)`.as('repository'),
         displayRootName: sql<string>`NULL`.as('displayRootName')
       } satisfies FileFavorite | SelectedFields<any, any>)
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
+      .leftJoin(spacesRoots, and(isPersonal, eq(spacesRoots.fileId, files.id)))
+      .leftJoin(spaces, eq(spaces.id, spacesRoots.spaceId))
+      .leftJoin(shares, and(eq(shares.ownerId, userId), eq(shares.fileId, files.id), isNull(shares.parentId)))
+    if (withSyncs) {
+      q.leftJoin(syncClients, eq(syncClients.ownerId, userId))
+      q.leftJoin(syncPaths, and(eq(syncPaths.clientId, syncClients.id), eq(syncPaths.fileId, files.id)))
+    }
+    return q
       .where(eq(filesFavorites.userId, userId))
+      .groupBy(files.id, filesFavorites.createdAt)
       .orderBy(desc(filesFavorites.createdAt), desc(filesFavorites.fileId))
   }
 

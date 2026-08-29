@@ -13,7 +13,6 @@ import { LinksQueries } from '../../links/services/links-queries.service'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { SharesManager } from '../../shares/services/shares-manager.service'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
-import { USER_PERMISSION } from '../../users/constants/user'
 import type { UserModel } from '../../users/models/user.model'
 import { UsersQueries } from '../../users/services/users-queries.service'
 import type { SpaceEnv } from '../models/space-env.model'
@@ -87,19 +86,19 @@ describe(SpacesBrowser.name, () => {
 
   it.each([
     {
-      name: 'regular user with sync permissions',
+      name: 'regular user whose sync permissions were removed',
+      isUser: true,
       isLink: false,
-      permissions: [USER_PERMISSION.DESKTOP_APP, USER_PERMISSION.DESKTOP_APP_SYNC],
       syncs: true,
       favorites: true
     },
-    { name: 'regular user without all sync permissions', isLink: false, permissions: [USER_PERMISSION.DESKTOP_APP], syncs: false, favorites: true },
-    { name: 'link user', isLink: true, permissions: [], syncs: false, favorites: false }
-  ])('resolves and propagates browse details for a $name', async ({ isLink, permissions, syncs, favorites }) => {
+    { name: 'guest user', isUser: false, isLink: false, syncs: false, favorites: true },
+    { name: 'link user', isUser: false, isLink: true, syncs: false, favorites: false }
+  ])('resolves and propagates browse details for a $name', async ({ isUser, isLink, syncs, favorites }) => {
     const user = {
       id: 1,
-      isLink,
-      havePermission: vi.fn((permission: USER_PERMISSION) => permissions.includes(permission))
+      isUser,
+      isLink
     } as unknown as UserModel
     const space = {
       alias: 'communication',

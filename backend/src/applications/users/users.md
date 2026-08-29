@@ -25,6 +25,51 @@ every authenticated user type. The numeric order is therefore security-sensitive
 `isLink` match only their exact roles. `USER_GROUP_ROLE` values (`MEMBER` and
 `MANAGER`) describe membership inside a group and are independent of these user types.
 
+## Application permissions
+
+Application permissions control access to features and protected operations. They are independent from the role hierarchy and from the permissions
+granted inside a particular space, root, or share.
+
+For a regular user, the effective permissions are the union of the permissions assigned directly to the account and those inherited from its user
+groups. They are stored as comma-separated values and exposed by `UserModel` through the `applications` list. `UserModel.havePermission()` checks that
+effective list, with the following role-specific behavior:
+
+- administrators satisfy every application permission;
+- regular users receive their direct and inherited permissions;
+- guests always receive `SPACES`, `SHARES`, and `WEBDAV`, but never `PERSONAL_SPACE`;
+- link pseudo-users do not use normal application permissions and are restricted to their linked context.
+
+The available `USER_PERMISSION` values are:
+
+| Permission              | Persisted value         | Scope                                                       |
+|-------------------------|-------------------------|-------------------------------------------------------------|
+| `PERSONAL_SPACE`        | `personal_space`        | Access personal files and the personal trash.               |
+| `SPACES`                | `spaces_access`         | Browse spaces available to the user.                        |
+| `SPACES_ADMIN`          | `spaces_admin`          | Create and administer spaces and their roots.               |
+| `SHARES`                | `shares_access`         | Browse shares available to the user.                        |
+| `SHARES_ADMIN`          | `shares_admin`          | Create and administer shares and share links.               |
+| `GUESTS_ADMIN`          | `guests_admin`          | Create and administer guest accounts.                       |
+| `PERSONAL_GROUPS_ADMIN` | `personal_groups_admin` | Create and administer personal groups.                      |
+| `DESKTOP_APP`           | `desktop_app_access`    | Register, authenticate, and administer desktop clients.     |
+| `DESKTOP_APP_SYNC`      | `desktop_app_sync`      | Configure and execute synchronization paths and operations. |
+| `WEBDAV`                | `webdav_access`         | Access files through WebDAV.                                |
+
+Permissions do not imply one another. When `@UserHavePermission()` receives an array, the guard accepts any listed permission; it does not require all
+of them. Endpoint guards and storage-context checks can also impose a role, membership, or repository permission in addition to the application
+permission.
+
+### Revocation and persisted state
+
+Revoking an application permission prevents subsequent protected actions, but it does not delete relationships or configurations that were created
+while the permission was granted. Existing space roots, shares, desktop clients, and synchronization paths therefore remain persisted until an
+authorized actor explicitly changes or removes them.
+
+File detail badges report that existing state independently from the current action permissions. A regular user can still see that one of their files
+belongs to a space, is shared, or has a synchronization path after the corresponding permission is revoked. Queries must keep those details scoped to
+resources owned by or otherwise visible to the authenticated user. Creating, updating, deleting, browsing, or executing the related resource remains
+protected by its normal guards and context permissions. Guests and link pseudo-users do not load synchronization details because they cannot own
+desktop synchronization clients.
+
 ## Homes and temporary files
 
 Temporary working data is stored with the targeted storage rather than with the authenticated actor. Archives produced for user download are the

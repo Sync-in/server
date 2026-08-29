@@ -61,6 +61,65 @@
                   <span class="badge bg-purple">{{ f.hTimeAgo }}</span>
                 </span>
               }
+              <span class="label-bottom-right">
+                @let maxBadges = galleryMode.maxBadges || 0;
+                @let hiddenBadges = f.nbBadges - maxBadges;
+                @for (badge of f.galleryBadges; track badge; let i = $index) {
+                  @if (i < maxBadges) {
+                    @switch (badge) {
+                      @case ('comments') {
+                        <span (click)="goToDetails($event, f, TAB_MENU.COMMENTS)"
+                              class="badge bg-success cursor-pointer">
+                          <svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>
+                        </span>
+                      }
+                      @case ('shares') {
+                        <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              class="badge bg-primary cursor-pointer">
+                          <svg [lucideIcon]="icons.SHARED"></svg>
+                          @if (f.shares.length > 1) {
+                            {{ f.shares.length }}
+                          }
+                        </span>
+                      }
+                      @case ('spaces') {
+                        <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              class="badge bg-primary cursor-pointer">
+                          <svg [lucideIcon]="icons.SPACES"></svg>
+                          @if (f.spaces.length > 1) {
+                            {{ f.spaces.length }}
+                          }
+                        </span>
+                      }
+                      @case ('links') {
+                        <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              class="badge bg-primary cursor-pointer">
+                          <svg [lucideIcon]="icons.LINKS"></svg>
+                          @if (f.links.length > 1) {
+                            {{ f.links.length }}
+                          }
+                        </span>
+                      }
+                      @case ('syncs') {
+                        <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              class="badge bg-primary cursor-pointer">
+                          <svg [lucideIcon]="icons.SYNC"></svg>
+                          @if (f.syncs.length > 1) {
+                            {{ f.syncs.length }}
+                          }
+                        </span>
+                      }
+                    }
+                  }
+                }
+                @if (hiddenBadges > 0) {
+                  <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                        class="badge bg-primary cursor-pointer">
+                    <svg [lucideIcon]="icons.LucideCirclePlus"></svg>
+                    {{ hiddenBadges }}
+                  </span>
+                }
+              </span>
               @if (f.isDisabled) {
                 <span class="label-bottom-left">
                   <span class="badge bg-warning text-dark" l10nTranslate>
@@ -141,14 +200,60 @@
                         <app-file-location [location]="f" [displayAsRepository]="true"></app-file-location>
                       }
                     }
+                    @case ('info') {
+                      @if (f.hasComments) {
+                        <span (click)="goToDetails($event, f, TAB_MENU.COMMENTS)"
+                              class="badge bg-success cursor-pointer me-1">
+                          <svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>
+                        </span>
+                      }
+                      @if (f.shares.length) {
+                        <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              class="badge bg-primary cursor-pointer me-1">
+                          <svg [lucideIcon]="icons.SHARED"></svg>
+                          @if (f.shares.length > 1) {
+                            {{ f.shares.length }}
+                          }
+                        </span>
+                      }
+                      @if (f.links.length) {
+                        <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              class="badge bg-primary cursor-pointer me-1">
+                          <svg [lucideIcon]="icons.LINKS"></svg>
+                          @if (f.links.length > 1) {
+                            {{ f.links.length }}
+                          }
+                        </span>
+                      }
+                      @if (f.spaces.length) {
+                        <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              class="badge bg-primary cursor-pointer me-1">
+                          <svg [lucideIcon]="icons.SPACES"></svg>
+                          @if (f.spaces.length > 1) {
+                            {{ f.spaces.length }}
+                          }
+                        </span>
+                      }
+                      @if (f.syncs.length) {
+                        <span (click)="goToDetails($event, f, TAB_MENU.SELECTION)"
+                              class="badge bg-primary cursor-pointer">
+                          <svg [lucideIcon]="icons.SYNC"></svg>
+                          @if (f.syncs.length > 1) {
+                            {{ f.syncs.length }}
+                          }
+                        </span>
+                      }
+                    }
                     @case ('size') {
                       <span>{{ f.isDir && f.size === 0 ? '●' : (f.size | toBytes:0:true) }}</span>
                     }
                     @case ('modified') {
-                      <span>{{ f.mtime | amLiveTimeAgo }}</span>
+                      <span class="{{th.value.newly && f[th.value.newly] ? 'badge prop-newly-' + f[th.value.newly] : ''}}">
+                        <span>{{ f.hTimeAgo }}</span>
+                      </span>
                     }
                     @case ('created') {
-                      <span>{{ f.createdAt | amLiveTimeAgo }}</span>
+                      <span>{{ f.createdAt | amLiveTimeAgo:true }}</span>
                     }
                   }
                 </td>

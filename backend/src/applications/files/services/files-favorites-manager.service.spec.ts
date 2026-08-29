@@ -62,10 +62,11 @@ describe(FilesFavoritesManager.name, () => {
     service = module.get(FilesFavoritesManager)
   })
 
-  const userWithPermissions = (applications: USER_PERMISSION[] = [], isAdmin = false) =>
+  const userWithPermissions = (applications: USER_PERMISSION[] = [], isAdmin = false, isUser = true) =>
     ({
       id: 7,
       isAdmin,
+      isUser,
       havePermission: (permission: USER_PERMISSION) => isAdmin || applications.includes(permission)
     }) as any
 
@@ -123,7 +124,7 @@ describe(FilesFavoritesManager.name, () => {
 
     expect(spacesQueries.spaceIdentities).toHaveBeenCalledWith(7)
     expect(sharesQueries.shareIdentities).toHaveBeenCalledWith(7, 1)
-    expect(filesFavoritesQueries.getFavoritesFromUser).toHaveBeenCalledWith(7, true)
+    expect(filesFavoritesQueries.getFavoritesFromUser).toHaveBeenCalledWith(7, true, true)
     expect(filesFavoritesQueries.getFavoriteLocationsFromSpaces).toHaveBeenCalledWith(7, [10])
     expect(filesFavoritesQueries.getFavoriteLocationsFromShares).toHaveBeenCalledWith(7, [20])
     expect(result[0]).toMatchObject({
@@ -152,10 +153,16 @@ describe(FilesFavoritesManager.name, () => {
 
     expect(spacesQueries.spaceIdentities).not.toHaveBeenCalled()
     expect(sharesQueries.shareIdentities).not.toHaveBeenCalled()
-    expect(filesFavoritesQueries.getFavoritesFromUser).toHaveBeenCalledWith(7, false)
+    expect(filesFavoritesQueries.getFavoritesFromUser).toHaveBeenCalledWith(7, false, true)
     expect(filesFavoritesQueries.getFavoriteLocationsFromSpaces).not.toHaveBeenCalled()
     expect(filesFavoritesQueries.getFavoriteLocationsFromShares).not.toHaveBeenCalled()
     expect(result).toEqual([{ fileId: 1, id: 1, name: 'stored.txt', path: 'stored', isDisabled: true }])
+  })
+
+  it('should skip sync details for guests', async () => {
+    await service.getFavorites(userWithPermissions([], false, false))
+
+    expect(filesFavoritesQueries.getFavoritesFromUser).toHaveBeenCalledWith(7, false, false)
   })
 
   it('should add an already indexed favorite', async () => {

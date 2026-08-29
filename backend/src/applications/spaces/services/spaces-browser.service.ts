@@ -10,7 +10,6 @@ import { FilesQueries } from '../../files/services/files-queries.service'
 import { FilesRecents } from '../../files/services/files-recents.service'
 import { dirName, fileName, getProps, isInternalTemporaryEntry } from '../../files/utils/files'
 import { SharesQueries } from '../../shares/services/shares-queries.service'
-import { USER_PERMISSION } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { SpaceBrowseDetails, SpaceFiles } from '../interfaces/space-files.interface'
 import { SpaceEnv } from '../models/space-env.model'
@@ -34,7 +33,7 @@ export class SpacesBrowser {
   async browse(user: UserModel, space: SpaceEnv, withDetails = false): Promise<SpaceFiles> {
     const details: SpaceBrowseDetails = withDetails
       ? {
-          syncs: user.havePermission(USER_PERMISSION.DESKTOP_APP) && user.havePermission(USER_PERMISSION.DESKTOP_APP_SYNC),
+          syncs: user.isUser,
           favorites: !user.isLink
         }
       : null
