@@ -1,12 +1,12 @@
 <div class="app-top-menu">
-  <div class="btn-group">
+  <div class="d-flex gap-2">
     <select (ngModelChange)="onSelectPath($event)" [ngModel]="syncPathSelected" class="form-select" style="min-width: 210px">
       <option [ngValue]="null" l10nTranslate>All syncs</option>
       @for (p of store.clientSyncPaths(); track p.id) {
         <option [ngValue]="p">{{ p.settings.name }}</option>
       }
     </select>
-    <select (ngModelChange)="onSelectAction($event)" [ngModel]="action" class="form-select ms-1" style="min-width: 170px">
+    <select (ngModelChange)="onSelectAction($event)" [ngModel]="action" class="form-select" style="min-width: 170px">
       <option [ngValue]="null" l10nTranslate>All events</option>
       <option l10nTranslate value="NEW|MKFILE|MKDIR">Added</option>
       <option l10nTranslate value="DIFF">Modified</option>
@@ -18,14 +18,15 @@
   </div>
   <div class="d-flex align-items-center ms-auto">
     <!--Start Filter Button-->
-    <app-input-filter class="d-none d-sm-block me-1"></app-input-filter>
+    <div class="btn-group me-1">
+      <app-input-filter class="d-none d-sm-block"></app-input-filter>
+    </div>
     <!--End Filter Button-->
     <button (click)="refresh()"
             [tooltip]="'Refresh' | translate:locale.language"
-
             class="btn btn-default me-1"
             type="button">
-      <svg [lucideIcon]="icons.LucideRedo2"></svg>
+      <svg [lucideIcon]="icons.LucideRotateCw"></svg>
     </button>
     <button (click)="openClearDialog()"
             [tooltip]="'Clear events' | translate:locale.language"
@@ -71,10 +72,10 @@
                   @case ('action') {
                     <span class="d-flex align-items-center" [title]="t.actionText | translate:locale.language">
                       <span class="{{t.ok ? t.sideIconClass : 'circle-error-icon-sm'}} me-1">
-                        <svg [lucideIcon]="t.sideIcon"></svg>
+                        <svg [lucideIcon]="t.sideIcon" class="fs-lg"></svg>
                       </span>
-                      <span [class.text-danger]="!t.ok" class="circle-gray-icon-sm cursor-pointer">
-                        <svg [lucideIcon]="t.actionIcon"></svg>
+                      <span [class.text-danger]="!t.ok" class="circle-gray-icon-sm">
+                        <svg [lucideIcon]="t.actionIcon" class="fs-lg"></svg>
                       </span>
                     </span>
                   }

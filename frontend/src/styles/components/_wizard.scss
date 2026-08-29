@@ -41,6 +41,16 @@
     background: transparent !important;
   }
 
+  .wizard-actions .btn {
+    min-height: 35px;
+    padding: .3rem .75rem;
+    font-size: $font-size-base;
+
+    > .lucide {
+      font-size: $font-size-lg;
+    }
+  }
+
   .area {
     padding: 15px;
     height: 100%;
@@ -51,7 +61,7 @@
       border: 2px dashed $gray;
       border-radius: $border-radius-base;
       padding: 80px;
-      font-size: 1.875rem;
+      font-size: 1.5rem;
       font-weight: 600;
       color: $gray;
       height: 100%;

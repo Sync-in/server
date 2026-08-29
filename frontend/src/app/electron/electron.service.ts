@@ -202,20 +202,16 @@ export class Electron {
     combineLatest([this.store.clientSyncs, this.store.clientSyncsWithErrors, toObservable(this.store.clientScheduler)]).subscribe(
       ([syncs, errors, scheduler]) => {
         if (syncs.length) {
-          SYNC_MENU.iconAnimated = true
           SYNC_MENU.count.level = 'purple'
           SYNC_MENU.count.value.next(syncs.length)
         } else if (errors.find((s: SyncStatus) => s.lastErrors.length || !!s.mainError)) {
           SYNC_MENU.count.level = 'danger'
           SYNC_MENU.count.value.next('!')
-          SYNC_MENU.iconAnimated = false
         } else if (scheduler === CLIENT_SCHEDULER_STATE.DISABLED) {
           SYNC_MENU.count.level = 'warning'
           SYNC_MENU.count.value.next('!')
-          SYNC_MENU.iconAnimated = false
         } else {
           SYNC_MENU.count.value.next(0)
-          SYNC_MENU.iconAnimated = false
         }
       }
     )

@@ -126,9 +126,12 @@ export class SyncWizardServerComponent {
   }
 
   addDirectory() {
-    this.filesService.make('directory', this.newDirectoryName, this.currentPath, true).subscribe({
+    const directoryName = this.newDirectoryName?.trim()
+    if (!this.canCreateDir || !directoryName) return
+
+    this.filesService.make('directory', directoryName, this.currentPath, true).subscribe({
       next: () => {
-        this.browse(this.currentPath, this.newDirectoryName)
+        this.browse(this.currentPath, directoryName)
           .then(() => (this.newDirectoryName = ''))
           .catch(console.error)
       },

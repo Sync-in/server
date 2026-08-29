@@ -10,7 +10,7 @@ import {
   LucideLoader,
   LucideMapPin,
   LucideRefreshCw,
-  LucideSquareStop
+  LucideSquare
 } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
@@ -68,7 +68,7 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
   protected readonly icons = {
     LucideArrowDown,
     LucideArrowUp,
-    LucideSquareStop,
+    LucideSquare,
     LucideFlaskConical,
     LucideLoader,
     LucideRefreshCw,
@@ -81,7 +81,7 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
   protected tableHeaders: Record<'action' | 'file', TableHeaderConfig> = {
     action: {
       label: 'Action',
-      width: 20,
+      width: 10,
       textCenter: false,
       class: '',
       show: true,
@@ -89,7 +89,7 @@ export class SyncPathReportDialogComponent implements OnInit, OnDestroy {
     },
     file: {
       label: 'File',
-      width: 80,
+      width: 90,
       textCenter: false,
       class: '',
       show: true,

@@ -8,7 +8,7 @@
           [disabled]="!syncPathSelected"
           [tooltip]="'Edit' | translate:locale.language"
           class="btn btn-default me-1" type="button">
-    <svg [lucideIcon]="icons.LucidePencilLine"></svg>
+    <svg [lucideIcon]="icons.LucidePencil"></svg>
   </button>
   <button (click)="openReportDialog()"
           [disabled]="!syncPathSelected || !syncPathSelected.settings.enabled"
@@ -20,8 +20,8 @@
   @if (syncPathSelected && syncPathSelected.inSync) {
     <button (click)="doSync(false)"
             [tooltip]="'Stop synchronization' | translate:locale.language"
-            class="btn btn-default me-1" type="button">
-      <svg [lucideIcon]="icons.LucideSquareStop"></svg>
+            class="btn btn-warning me-1" type="button">
+      <svg [lucideIcon]="icons.LucideSquare"></svg>
     </button>
   } @else {
     <button (click)="doSync(true)"
@@ -34,8 +34,8 @@
   @if (allSyncsRunning) {
     <button (click)="doAllSyncs(false)"
             [tooltip]="'Stop synchronizations' | translate:locale.language"
-            class="btn btn-default me-1" type="button">
-      <svg [lucideIcon]="icons.LucideSquareStop"></svg>
+            class="btn btn-warning me-1" type="button">
+      <svg [lucideIcon]="icons.LucideSquare"></svg>
     </button>
   } @else {
     <div [tooltip]="'Synchronize all' | translate:locale.language">
@@ -131,7 +131,9 @@
   </div>
   <!--Start Filter Button-->
   <div class="d-flex align-items-center ms-auto">
-    <app-input-filter class="d-none d-sm-block me-1"></app-input-filter>
+    <div class="btn-group me-1">
+      <app-input-filter class="d-none d-sm-block"></app-input-filter>
+    </div>
     <button (click)="onRefresh()"
             [tooltip]="'Refresh' | translate:locale.language"
             class="d-none d-sm-block btn btn-default" type="button">
@@ -235,7 +237,7 @@
 <!--Start Context Menu -->
 <context-menu #SyncPathContextMenu>
   @if (syncPathSelected && syncPathSelected.inSync) {
-    <ng-template (execute)="doSync(false)" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucideSquareStop"></svg>Synchronize</span>
+    <ng-template (execute)="doSync(false)" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucideSquare"></svg>Synchronize</span>
     </ng-template>
   } @else {
     <ng-template (execute)="doSync(true)" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucidePlay"></svg>Synchronize</span>
@@ -246,7 +248,7 @@
   <ng-template [divider]="true" contextMenuItem></ng-template>
   <ng-template [subMenu]="SyncGoToContextMenu" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucideMapPin"></svg>Go to</span>
   </ng-template>
-  <ng-template (execute)="openSettingsDialog()" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucidePencilLine"></svg>Edit</span>
+  <ng-template (execute)="openSettingsDialog()" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucidePencil"></svg>Edit</span>
   </ng-template>
 </context-menu>
 <context-menu #SyncAllContextMenu>
@@ -273,7 +275,7 @@
 </context-menu>
 <context-menu #MainContextMenu>
   @if (allSyncsRunning) {
-    <ng-template (execute)="doAllSyncs(false)" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucideSquareStop"></svg>Stop synchronizations</span>
+    <ng-template (execute)="doAllSyncs(false)" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucideSquare"></svg>Stop synchronizations</span>
     </ng-template>
   } @else if (store.clientSyncPaths().length) {
     <ng-template [subMenu]="SyncAllContextMenu" contextMenuItem>

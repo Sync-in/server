@@ -22,6 +22,21 @@
   align-items: center;
   padding: 6px;
   border-radius: 0.55rem;
+
+  .btn {
+    min-height: 31px;
+    min-width: 35px;
+
+    > .lucide {
+      font-size: var(--font-size-xl);
+    }
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      font-size: var(--font-size-xs);
+    }
+  }
 }
 
 .sync-report-summary {
@@ -40,4 +55,23 @@
 
 .sync-report-table-scroll {
   min-height: 11rem;
+}
+
+:host ::ng-deep .sync-report-pagination {
+  .page-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+  }
+
+  .pagination-first,
+  .pagination-prev,
+  .pagination-next,
+  .pagination-last {
+    .page-link {
+      font-size: var(--font-size-3xl);
+      line-height: 1;
+    }
+  }
 }

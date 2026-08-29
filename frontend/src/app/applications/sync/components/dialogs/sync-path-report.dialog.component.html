@@ -11,10 +11,8 @@
     <div class="card dialog-tab-card sync-report-toolbar">
         <div class="sync-report-top-menu">
           <button (click)="manageReport(!running)" class="btn btn-default ms-1" type="button">
-            <div class="d-flex align-items-center">
-              <svg [lucideIcon]="running ? icons.LucideSquareStop : icons.LucideFlaskConical"></svg>
-              <span class="ms-1" l10nTranslate>Simulate</span>
-            </div>
+            <svg [lucideIcon]="running ? icons.LucideSquare : icons.LucideFlaskConical"></svg>
+            <span l10nTranslate>Simulate</span>
           </button>
           <div class="sync-report-summary ms-3">
             @if (running) {
@@ -111,14 +109,13 @@
                             class="{{th.value.class}}">
                           @switch (th.key) {
                             @case ('action') {
-                              <span class="d-flex align-items-center" style="font-size: var(--font-size-sm)">
-                                <span [class]="s.sideIconClass">
-                                  <svg [lucideIcon]="s.sideIcon"></svg>
+                              <span class="d-flex align-items-center" [title]="s.actionText | translate:locale.language">
+                                <span class="{{s.sideIconClass}} me-1">
+                                  <svg [lucideIcon]="s.sideIcon" class="fs-lg"></svg>
                                 </span>
                                 <span class="circle-gray-icon-sm">
-                                  <svg [lucideIcon]="s.actionIcon"></svg>
+                                  <svg [lucideIcon]="s.actionIcon" class="fs-lg"></svg>
                                 </span>
-                                <span class="fs-sm" l10nTranslate>{{ s.actionText }}</span>
                               </span>
                             }
                             @case ('file') {
@@ -149,7 +146,7 @@
   </div>
 </div>
 <div class="modal-footer justify-content-center align-items-center fs-sm">
-  <pagination class="pagination pagination-sm"
+  <pagination class="pagination sync-report-pagination"
               style="margin-bottom: -.6rem;"
               (pageChanged)="pageChanged()"
               [(ngModel)]="currentPage"

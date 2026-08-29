@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs'
 import { AppMenu } from '../../layout/layout.interfaces'
 
 export const SYNC_TITLE = {
-  SYNC: 'Sync',
+  SYNC: 'Synchronization',
   SYNCS: 'Synchronizations',
   TRANSFERS: 'Transfers',
   WIZARD: 'Wizard',
@@ -37,7 +37,6 @@ export const SYNC_MENU: AppMenu = {
   title: SYNC_TITLE.SYNC,
   link: SYNC_PATH.BASE,
   icon: SYNC_ICON.SYNC,
-  iconAnimated: false,
   checks: [{ prop: 'user', value: 'clientId' }],
   count: { value: new BehaviorSubject<number>(0), level: 'warning' },
   matchLink: new RegExp(`^${SYNC_PATH.BASE}`),

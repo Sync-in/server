@@ -3,7 +3,7 @@
     <div class="menu-title">
       <div class="menu-title-content">
         <button (click)="toggleSideBar()" class="logo-toggle" type="button">
-          <img alt="" class="logo-toggle-spin-in" [src]="logoIconUrl">
+          <img alt="" class="logo-toggle-spin-in" [class.icon-spin]="!!(store.clientSyncs | async)?.length" [src]="logoIconUrl">
         </button>
         <div class="sidebar-brand">
           <span class="sidebar-app-name">{{ appName }}</span>

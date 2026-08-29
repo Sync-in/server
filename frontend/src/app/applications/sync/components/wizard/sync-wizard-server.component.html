@@ -1,6 +1,6 @@
 <div class="wizard">
   <div class="my-2">
-    <div class="d-flex align-items-center justify-content-center fs-md" style="min-height: 40px">
+    <div class="d-flex {{selectedPath ? 'align-items-center' : 'align-items-start'}} justify-content-center fs-md" style="min-height: 30px">
       @if (selectedPath) {
         @if (selectedPath.icon) {
           <span class="circle-{{selectedPath.iconClass}}-icon fs-md">
@@ -17,32 +17,31 @@
     <div class="app-top-menu px-0">
       <button (click)="onBack()"
               [disabled]="!currentPath"
-              class="btn btn-default"
+              class="btn btn-default me-1"
               type="button">
         <svg [lucideIcon]="icons.LucideCircleArrowLeft"></svg>
       </button>
-      <div class="text-warning mx-auto fs-sm">
-        @if (infoMsg) {
-          <span l10nTranslate>{{ infoMsg }}</span>
-        }
-      </div>
-      <form class="row align-items-center">
+      <form class="d-flex align-items-center">
         <div class="input-group">
+          <input (keyup.enter)="addDirectory()"
+                 [(ngModel)]="newDirectoryName"
+                 [disabled]="!canCreateDir"
+                 [ngModelOptions]="{standalone: true}"
+                 class="form-control"
+                 [placeholder]="'New folder' | translate:locale.language" type="text">
           <button (click)="addDirectory()"
-                  [hidden]="!canCreateDir"
-                  [disabled]="!newDirectoryName"
+                  [disabled]="!canCreateDir || !newDirectoryName?.trim()"
                   class="btn btn-default input-group-text"
                   type="button">
             <svg [lucideIcon]="icons.LucideFolderPlus"></svg>
           </button>
-          <input (keyup.enter)="addDirectory()"
-                 [(ngModel)]="newDirectoryName"
-                 [hidden]="!canCreateDir"
-                 [ngModelOptions]="{standalone: true}"
-                 class="form-control me-1"
-                 [placeholder]="'New folder' | translate:locale.language" type="text">
         </div>
       </form>
+      <div class="text-warning ms-3 me-auto fs-sm">
+        @if (infoMsg) {
+          <span l10nTranslate>{{ infoMsg }}</span>
+        }
+      </div>
     </div>
     <table class="app-table wizard-nav-header">
       <thead>
@@ -55,7 +54,7 @@
       </tr>
       </thead>
     </table>
-    <div [resizeOffset]="250" appAutoResize [useMaxHeight]="false" class="wizard-nav-content">
+    <div [resizeOffset]="210" appAutoResize [useMaxHeight]="false" class="wizard-nav-content">
       <table class="app-table">
         <tbody tabindex="-1">
           @for (p of currentPaths(); track p.id) {
@@ -81,7 +80,7 @@
     </div>
   </div>
   <div class="mt-auto">
-    <div class="d-flex align-items-start">
+    <div class="d-flex align-items-start wizard-actions">
       <button (click)="onPrevious()" class="btn btn-default me-auto" type="button" l10nTranslate>
         <svg [lucideIcon]="icons.LucideCircleArrowLeft"></svg>
         Previous

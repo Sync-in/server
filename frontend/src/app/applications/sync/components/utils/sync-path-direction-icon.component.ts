@@ -17,12 +17,12 @@ import { SyncPathModel } from '../../models/sync-path.model'
             [class.me-1]="syncPath.settings.mode === SYNC_PATH_MODE.BOTH"
             class="{{ small ? '' : SYNC_TRANSFER_SIDE_CLASS[SYNC_TRANSFER_SIDE.REMOTE] }}"
           >
-            <svg [lucideIcon]="SYNC_TRANSFER_SIDE_ICON[SYNC_TRANSFER_SIDE.REMOTE]"></svg>
+            <svg [class.fs-lg]="!small" [lucideIcon]="SYNC_TRANSFER_SIDE_ICON[SYNC_TRANSFER_SIDE.REMOTE]"></svg>
           </span>
         }
         @if (syncPath.settings.mode === SYNC_PATH_MODE.DOWNLOAD || syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
           <span class="{{ small ? '' : SYNC_TRANSFER_SIDE_CLASS[SYNC_TRANSFER_SIDE.LOCAL] }}">
-            <svg [lucideIcon]="SYNC_TRANSFER_SIDE_ICON[SYNC_TRANSFER_SIDE.LOCAL]"></svg>
+            <svg [class.fs-lg]="!small" [lucideIcon]="SYNC_TRANSFER_SIDE_ICON[SYNC_TRANSFER_SIDE.LOCAL]"></svg>
           </span>
         }
       }

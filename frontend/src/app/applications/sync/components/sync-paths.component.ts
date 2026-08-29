@@ -11,13 +11,13 @@ import {
   LucideFlaskConical,
   LucideInfo,
   LucideMapPin,
-  LucidePencilLine,
+  LucidePencil,
   LucidePlay,
   LucidePlus,
   LucideRepeat2,
   LucideRotateCw,
   LucideShuffle,
-  LucideSquareStop,
+  LucideSquare,
   LucideTriangleAlert
 } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
@@ -94,8 +94,8 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
     LucideArrowUp,
     LucideRotateCw,
     LucidePlus,
-    LucidePencilLine,
-    LucideSquareStop,
+    LucidePencil,
+    LucideSquare,
     LucidePlay,
     LucideFastForward,
     LucideRepeat2,

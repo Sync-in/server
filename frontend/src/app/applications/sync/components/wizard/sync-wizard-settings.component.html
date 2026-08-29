@@ -1,5 +1,5 @@
 <div class="wizard fs-md">
-  <div class="wizard-settings-cards mb-3">
+  <div class="wizard-settings-cards">
     <div class="card dialog-tab-card wizard-settings-card">
       <div class="card-header wizard-settings-card-header">
         <svg [lucideIcon]="icons.CLIENT"></svg>
@@ -60,8 +60,7 @@
           <span l10nTranslate>(One-Way)</span>
         }
       </div>
-      <br>
-      <div class="text-center">
+      <div class="text-center mt-2">
         @if (syncPath.settings.mode === SYNC_PATH_MODE.BOTH) {
           <div>
             <span l10nTranslate>In case of conflict,</span>
@@ -85,7 +84,7 @@
     }
   </div>
   <div class="mt-auto">
-    <div class="d-flex align-items-start">
+    <div class="d-flex align-items-start wizard-actions">
       <button (click)="onPrevious()" class="btn btn-default me-auto" translate type="button">
         <svg [lucideIcon]="icons.LucideCircleArrowLeft"></svg>
         Previous
