@@ -64,9 +64,12 @@
 .file-selection-control .file-selection-indicator {
   top: calc((var(--app-table-row-height) - 30px) / 2);
   left: var(--app-table-cell-inline-padding);
-  width: 16px;
+  width: 15px;
   height: 16px;
-  font-size: .55rem;
+
+  .lucide {
+    font-size: .78rem;
+  }
 }
 
 .gallery-file-selection-overlay {
@@ -80,8 +83,8 @@
   .file-selection-indicator {
     top: .25em;
     left: .25em;
-    width: 1.85em;
-    height: 1.85em;
+    width: 1.75em;
+    height: 1.75em;
     font-size: inherit;
 
     .lucide {

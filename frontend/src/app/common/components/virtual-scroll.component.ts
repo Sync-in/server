@@ -86,6 +86,10 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
     return !this.galleryMode
   }
 
+  get itemsPerRow(): number {
+    return this.dimensionsView?.itemsPerRow || 1
+  }
+
   ngOnInit() {
     this.resizeOffsetHeight(true)
     this.addParentEventHandlers()

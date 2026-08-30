@@ -1,44 +1,90 @@
 .navigation-view-menu {
-  min-width: 12.5rem !important;
+  min-width: 15rem !important;
+  padding: .5rem;
 }
 
-.navigation-view-mode-selector,
+.btn.navigation-view-direct-option.active,
+.btn.navigation-view-direct-option.active:hover:not(:disabled) {
+  background-color: rgba(var(--bs-primary-rgb), .12) !important;
+}
+
 .navigation-view-size-selector {
   display: grid;
-  gap: .25rem;
+  grid-template-columns: 1rem minmax(7rem, 1fr) 1.25rem;
+  align-items: start;
+  gap: .5rem;
+  padding: .25rem .25rem .35rem;
 }
 
-.navigation-view-mode-selector {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.navigation-view-option,
-.navigation-view-size-option {
+.navigation-view-size-preview {
   display: flex;
   align-items: center;
   justify-content: center;
+  height: 1.25rem;
+
+  &.is-small .lucide {
+    font-size: .8rem;
+  }
+
+  &.is-large .lucide {
+    font-size: 1.15rem;
+  }
+}
+
+.navigation-view-size-range-wrapper {
   min-width: 0;
+}
+
+.navigation-view-size-range {
+  display: block;
+  height: 1.25rem;
   margin: 0;
+  cursor: default !important;
+
+  &::-webkit-slider-thumb {
+    background-color: currentColor;
+    cursor: default !important;
+  }
+
+  &::-moz-range-thumb {
+    background-color: currentColor;
+    cursor: default !important;
+  }
+
+  &::-webkit-slider-runnable-track {
+    background-color: var(--bs-white);
+  }
+
+  &::-moz-range-track {
+    background-color: var(--bs-white);
+  }
 
   &:focus-visible {
     outline: 2px solid var(--bs-primary);
-    outline-offset: -2px;
+    outline-offset: 2px;
   }
 }
 
-.navigation-view-option {
-  gap: .4rem;
-  padding: .4rem .5rem;
+.navigation-view-size-scale {
+  position: relative;
+  height: .65rem;
+  margin: .1rem .5rem 0;
+  color: var(--bs-secondary-color);
+  font-size: .7rem;
+  line-height: 1;
+  user-select: none;
 
-  .lucide {
-    font-size: .9rem;
+  span {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    transition: color .15s ease;
   }
 }
 
-.navigation-view-size-selector {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-}
-
-.navigation-view-size-option {
-  padding: .35rem .15rem;
+:host-context(body.theme-dark) {
+  .navigation-view-size-preview,
+  .navigation-view-size-scale {
+    color: var(--bs-white);
+  }
 }

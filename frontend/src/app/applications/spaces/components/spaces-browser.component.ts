@@ -116,7 +116,12 @@ const keyboardNavigationKeys: ReadonlySet<string> = new Set<KeyboardNavigationKe
   styleUrl: 'spaces-browser.component.scss'
 })
 export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: FileModel[]; scrollInto: (arg: FileModel | number) => void }
+  @ViewChild(VirtualScrollComponent) scrollView: {
+    element: ElementRef
+    viewPortItems: FileModel[]
+    scrollInto: (arg: FileModel | number) => void
+    itemsPerRow: number
+  }
   @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: any
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
@@ -878,9 +883,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       direction = 'ArrowDown'
     }
     const referenceIndexes = this.getSelectionReferenceIndexes(files, extendSelection)
-    const step = useGalleryColumns
-      ? Math.ceil(this.scrollView.element.nativeElement.offsetWidth / (this.galleryMode.dimensions + this.galleryMode.margins))
-      : 1
+    const step = useGalleryColumns ? this.scrollView.itemsPerRow : 1
     let index: number
     if (!referenceIndexes.length) {
       index = direction === 'ArrowUp' ? files.length - 1 : 0

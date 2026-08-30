@@ -1,44 +1,50 @@
-<div [insideClick]="true" class="btn-group" dropdown>
-  <button aria-label="Display" class="btn btn-default dropdown-toggle" dropdownToggle type="button">
-    <svg [lucideIcon]="galleryModeEnabled ? icons.LucideGrid2X2 : icons.LucideList"></svg>
+<div #viewDropdown="bs-dropdown" [insideClick]="true" aria-label="Display mode" class="btn-group" dropdown role="group">
+  <button (click)="setView('tl'); viewDropdown.hide()"
+          [attr.aria-pressed]="!galleryModeEnabled"
+          [class.active]="!galleryModeEnabled"
+          aria-label="List view"
+          class="btn btn-default navigation-view-direct-option"
+          type="button">
+    <svg [lucideIcon]="icons.LucideList"></svg>
+  </button>
+  <button (click)="selectGalleryMode()"
+          [attr.aria-pressed]="galleryModeEnabled"
+          [class.active]="galleryModeEnabled"
+          aria-label="Gallery view and size options"
+          class="btn btn-default dropdown-toggle navigation-view-direct-option"
+          dropdownToggle
+          type="button">
+    <svg [lucideIcon]="icons.LucideGrid2X2"></svg>
   </button>
   <ul *dropdownMenu class="dropdown-menu dropdown-menu-right navigation-view-menu">
-    <li class="dropdown-header text-bold" l10nTranslate>Display</li>
+    <li class="dropdown-header text-bold" l10nTranslate>Size</li>
     <li class="px-1">
-      <div aria-label="Display mode" class="navigation-view-mode-selector" role="group">
-        <button (click)="setView('tl')"
-                [attr.aria-pressed]="!galleryModeEnabled"
-                [class.active]="!galleryModeEnabled"
-                class="dropdown-item navigation-view-option"
-                type="button">
-          <svg [lucideIcon]="icons.LucideList"></svg>
-          <span l10nTranslate>List</span>
-        </button>
-        <button (click)="selectGalleryMode()"
-                [attr.aria-pressed]="galleryModeEnabled"
-                [class.active]="galleryModeEnabled"
-                class="dropdown-item navigation-view-option"
-                type="button">
+      <div class="navigation-view-size-selector">
+        <span aria-hidden="true" class="navigation-view-size-preview is-small">
           <svg [lucideIcon]="icons.LucideGrid2X2"></svg>
-          <span l10nTranslate>Gallery</span>
-        </button>
+        </span>
+        <div class="navigation-view-size-range-wrapper">
+          <input (input)="setGallerySize($event)"
+                 [attr.aria-valuetext]="gallerySizeLabel"
+                 [value]="gallerySizeIndex"
+                 aria-label="Gallery size"
+                 class="form-range navigation-view-size-range text-primary"
+                 max="4"
+                 min="0"
+                 step="1"
+                 type="range">
+          <div aria-hidden="true" class="navigation-view-size-scale">
+            @for (view of galleryViewOptions; track view.key) {
+              <span [class.text-bold]="viewMode === view.key"
+                    [class.text-primary]="viewMode === view.key"
+                    [style.left.%]="$index * 100 / (galleryViewOptions.length - 1)">{{ view.label }}</span>
+            }
+          </div>
+        </div>
+        <span aria-hidden="true" class="navigation-view-size-preview is-large">
+          <svg [lucideIcon]="icons.LucideGrid2X2"></svg>
+        </span>
       </div>
     </li>
-    @if (galleryModeEnabled) {
-      <li class="dropdown-header text-bold mt-1" l10nTranslate>Size</li>
-      <li class="px-1">
-        <div aria-label="Gallery size" class="navigation-view-size-selector" role="group">
-          @for (view of galleryViewOptions; track view.key) {
-            <button (click)="setView(view.key)"
-                    [attr.aria-pressed]="viewMode === view.key"
-                    [class.active]="viewMode === view.key"
-                    class="dropdown-item navigation-view-size-option"
-                    type="button">
-              {{ view.label }}
-            </button>
-          }
-        </div>
-      </li>
-    }
   </ul>
 </div>

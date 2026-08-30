@@ -279,6 +279,15 @@ app-recents {
       width: 100%;
     }
 
+    .recents-days {
+      margin-top: 0.7rem;
+    }
+
+    .recents-day__label {
+      align-items: center;
+      text-align: center;
+    }
+
     .recents-timeline--with-content {
       > .view-switch {
         position: static;
@@ -295,9 +304,6 @@ app-recents {
       flex: 1;
     }
 
-    .recents-day__grid {
-      grid-template-columns: minmax(0, 1fr);
-    }
   }
 }
 

@@ -2,7 +2,7 @@ import { Component, inject, Input, OnChanges, OnInit } from '@angular/core'
 import type { LucideIcon } from '@lucide/angular'
 import { LucideCircleQuestionMark, LucideDynamicIcon } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
-import { ViewMode } from '../../../../common/components/navigation-view/navigation-view.component'
+import type { ViewMode } from '../../../../common/components/navigation-view/navigation-view.component'
 import { ShareLinkModel } from '../../../links/models/share-link.model'
 import { SPACES_ICON, SPACES_TITLE } from '../../../spaces/spaces.constants'
 import { ShareFileModel } from '../../models/share-file.model'
@@ -19,7 +19,7 @@ interface ShareRepository {
   selector: 'app-share-repository',
   imports: [L10nTranslatePipe, LucideDynamicIcon],
   template: `
-    @if (galleryMode) {
+    @if (galleryMode?.enabled) {
       <span
         [class]="repository.class"
         [style.min-width.px]="galleryMode.dimensions / 3.5"
