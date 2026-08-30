@@ -153,11 +153,6 @@
       @if (!hasDisabledItemsInSelection || selection.length === 1 && !isTrashRepo && !inSharesList || !isTrashRepo && canCompress) {
         <li class="dropdown-divider"></li>
       }
-      <li role="menuitem">
-        <a (click)="addToClipboard()" class="dropdown-item">
-          <span l10nTranslate><svg [lucideIcon]="icons.LucideClipboardList"></svg>Clipboard</span>
-        </a>
-      </li>
       @if (selection.length === 1 && !isTrashRepo && isElectronApp && selection[0].isDir) {
         <li role="menuitem">
           <a (click)="addToSync()" class="dropdown-item">
@@ -183,6 +178,11 @@
           </a>
         </li>
       }
+      <li role="menuitem">
+        <a (click)="addToClipboard()" class="dropdown-item">
+          <span l10nTranslate><svg [lucideIcon]="icons.LucideClipboardList"></svg>Add to clipboard</span>
+        </a>
+      </li>
       @if (!inSharesList) {
         <li class="dropdown-divider"></li>
         <li role="menuitem">
@@ -192,7 +192,7 @@
             </a>
           } @else {
             <a (click)="openTrashDialog()" class="dropdown-item">
-              <span l10nTranslate><svg [lucideIcon]="icons.TRASH" class="text-danger"></svg>Trash</span>
+              <span l10nTranslate><svg [lucideIcon]="icons.TRASH" class="text-danger"></svg>Remove</span>
             </a>
           }
         </li>
@@ -632,9 +632,6 @@
   @if (!hasDisabledItemsInSelection || selection.length === 1 && !isTrashRepo && !inSharesList || !isTrashRepo && canCompress || !isTrashRepo && (canShare.outside || inSharesList && selection[0]?.canBeReShared)) {
     <ng-template [divider]="true" contextMenuItem></ng-template>
   }
-  <ng-template (execute)="addToClipboard()" contextMenuItem>
-    <span l10nTranslate><svg [lucideIcon]="icons.LucideClipboardList"></svg>Clipboard</span>
-  </ng-template>
   @if (selection.length === 1 && !isTrashRepo && isElectronApp && selection[0].isDir) {
     <ng-template (execute)="addToSync()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.SYNC"></svg>Synchronize</span>
@@ -654,11 +651,14 @@
       }
     </ng-template>
   }
+  <ng-template (execute)="addToClipboard()" contextMenuItem>
+    <span l10nTranslate><svg [lucideIcon]="icons.LucideClipboardList"></svg>Add to clipboard</span>
+  </ng-template>
   @if (!inSharesList) {
     <ng-template [divider]="true" contextMenuItem></ng-template>
     <ng-template (execute)="openTrashDialog(isTrashRepo)" contextMenuItem>
     <span l10nTranslate><svg [lucideIcon]="isTrashRepo ? icons.LucideBan : icons.TRASH" class="text-danger"></svg>
-      {{ isTrashRepo ? 'Remove' : 'Trash' }}</span>
+      Remove</span>
     </ng-template>
   }
 </context-menu>
