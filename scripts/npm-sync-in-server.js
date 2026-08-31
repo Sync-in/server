@@ -27,8 +27,7 @@ const ENV_DIST_MIN_FILE = path.join(ROOT_DIR, 'environment', 'environment.dist.m
 const USER_DIST_FILE = path.join(ROOT_DIR, '../../../environment.yaml')
 const PID_FILE = path.join(ROOT_DIR, 'server.pid')
 const LOG_FILE = path.join(ROOT_DIR, '../../../logs/server.log')
-const DB_CONF_FILE = path.join(ROOT_DIR, 'server', 'infrastructure', 'database', 'configuration.js')
-const CMD_DB_ARGS = ['drizzle-kit', 'migrate', `--config=${DB_CONF_FILE}`]
+const MIGRATE_DB_SCRIPT = path.join(ROOT_DIR, 'server', 'infrastructure', 'database', 'scripts', 'migrate.js')
 
 function printHelp() {
   console.log(`
@@ -191,11 +190,19 @@ function showVersion() {
 }
 
 function migrateDatabase() {
+  if (!fs.existsSync(MIGRATE_DB_SCRIPT)) {
+    console.error(`❌ Database migration script not found: ${MIGRATE_DB_SCRIPT}`)
+    process.exit(1)
+  }
   console.log('🗄️ Running database migrations...')
-  const result = spawnSync('npx', CMD_DB_ARGS, { stdio: 'inherit' })
+  const result = spawnSync('node', [MIGRATE_DB_SCRIPT], { stdio: 'inherit' })
+  if (result.error) {
+    console.error(`❌ Unable to run database migrations: ${result.error.message}`)
+    process.exit(1)
+  }
   if (result.status !== 0) {
     console.error('❌ Database migrations failed. Please verify database connectivity and credentials.')
-    process.exit(result.status)
+    process.exit(result.status ?? 1)
   }
   console.log('✅ Database migrations completed successfully.')
 }

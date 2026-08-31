@@ -24,7 +24,7 @@ if [ "${SKIP_INIT}" != "true" ]; then
       fi
 
       # migrate database
-      if ! npx drizzle-kit migrate --config=server/infrastructure/database/configuration.js; then
+      if ! node server/infrastructure/database/scripts/migrate.js; then
         echo "Error: unable to migrate database schema !" >&2
         exit 1
       fi
