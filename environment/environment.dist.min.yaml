@@ -3,7 +3,7 @@ server:
   # e.g.: https://sync-in.domain.com
   publicUrl:
 mysql:
-  url: 'mysql://user:MySQLPassword@localhost:3306/database'
+  url: 'mysql://root:MySQLRootPassword@localhost:3306/database'
 auth:
   # Key used to encrypt MFA secrets at rest.
   # Optional but strongly recommended.

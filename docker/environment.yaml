@@ -3,7 +3,7 @@ server:
   # e.g.: https://sync-in.domain.com
   publicUrl:
 mysql:
-  url: 'mysql://user:MySQLPassword@mariadb:3306/sync_in'
+  url: 'mysql://root:MySQLRootPassword@mariadb:3306/sync_in'
 auth:
   # Key used to encrypt MFA secrets at rest.
   # Optional but strongly recommended.

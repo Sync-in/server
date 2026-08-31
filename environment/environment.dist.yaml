@@ -36,7 +36,7 @@ logger:
   filePath:
 mysql:
   # required
-  url: 'mysql://user:MySQLPassword@localhost:3306/database'
+  url: 'mysql://root:MySQLRootPassword@localhost:3306/database'
   # default: `false`
   logQueries: false
 cache:
