@@ -4,7 +4,6 @@ import { LucideDynamicIcon, LucideEye, LucideHardDriveDownload, LucidePencil } f
 import type { SpaceLink } from '@sync-in-server/backend/src/applications/links/interfaces/link-space.interface'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { logoUrl } from '../../../files/files.constants'
 import { FileModel } from '../../../files/models/file.model'
 import { SPACES_ICON } from '../../../spaces/spaces.constants'
 import { LinksService } from '../../services/links.service'
@@ -17,7 +16,6 @@ import { LinksService } from '../../services/links.service'
 export class PublicLinkComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { SPACES: SPACES_ICON.SPACES, LucideEye, LucideHardDriveDownload, LucidePencil }
-  protected readonly logoUrl = logoUrl
   protected file: FileModel
   protected fileCanBeModified: boolean
   protected link: SpaceLink

@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core'
 import { ActivatedRoute, Params, RouterLink } from '@angular/router'
 import { LucideCircleAlert, LucideDynamicIcon } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
-import { logoUrl } from '../../../files/files.constants'
 import { LINK_ERROR_TRANSLATION } from '../../links.constants'
 
 @Component({
@@ -11,7 +10,6 @@ import { LINK_ERROR_TRANSLATION } from '../../links.constants'
   templateUrl: 'public-link-error.component.html'
 })
 export class PublicLinkErrorComponent {
-  protected readonly logoUrl = logoUrl
   protected readonly icons = { LucideCircleAlert }
   protected error: string
   private readonly activatedRoute = inject(ActivatedRoute)

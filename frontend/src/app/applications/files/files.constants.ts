@@ -12,9 +12,6 @@ export function getAssetsMimeUrl(asset: string): string {
   return `${assetsMimeUrl}/${asset}${mimeExtension}`
 }
 
-export const logoIconUrl = `${assetsUrl}/favicon${mimeExtension}`
-export const logoDarkUrl = `${assetsUrl}/logo-dark${mimeExtension}`
-export const logoUrl = `${assetsUrl}/logo${mimeExtension}`
 export const linkProtected = `${assetsUrl}/protected.png`
 export const defaultMimeUrl = getAssetsMimeUrl(mimeFile)
 export const MAX_TEXT_FILE_SIZE = 25 * 1024 * 1024 // 25 MB

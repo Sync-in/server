@@ -11,7 +11,6 @@ import type { TwoFaResponseDto, TwoFaVerifyDto } from '@sync-in-server/backend/s
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { finalize } from 'rxjs/operators'
 import { APP_PATH } from '../app.constants'
-import { logoDarkUrl } from '../applications/files/files.constants'
 import { AutofocusDirective } from '../common/directives/auto-focus.directive'
 import type { AuthResult } from './auth.interface'
 import { AuthService } from './auth.service'
@@ -25,7 +24,6 @@ export class AuthComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { LucideLock, LucideUserRound, LucideKeyRound, LucideQrCode }
   protected twoFaCodelength = TWO_FA_CODE_LENGTH
-  protected logoUrl = logoDarkUrl
   protected hasError: any = null
   protected submitted = false
   protected twoFaVerify = false

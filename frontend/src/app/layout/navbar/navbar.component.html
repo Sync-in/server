@@ -3,7 +3,7 @@
     @if (!leftSideBarIsOpen) {
       <a (click)="toggleLeftSideBar()" class="navbar-button navbar-logo-button navbar-logo-button--delayed" role="button">
         <span class="logo-container">
-          <img alt="" class="logo-spin-in" [src]="logoIconUrl">
+          <span aria-hidden="true" class="sync-in-favicon logo-spin-in"></span>
         </span>
       </a>
     }

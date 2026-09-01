@@ -7,7 +7,6 @@ import { Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { APP_MENU, APP_NAME } from '../../app.constants'
 import { ADMIN_MENU } from '../../applications/admin/admin.constants'
-import { logoIconUrl } from '../../applications/files/files.constants'
 import { SEARCH_MENU } from '../../applications/search/search.constants'
 import { SPACES_MENU } from '../../applications/spaces/spaces.constants'
 import { SYNC_MENU } from '../../applications/sync/sync.constants'
@@ -27,7 +26,6 @@ export class SideBarLeftComponent implements OnDestroy {
   protected readonly store = inject(StoreService)
   protected readonly icons = { LucideVenetianMask }
   protected readonly appName = APP_NAME
-  protected logoIconUrl = logoIconUrl
   protected dynamicTitle: string
   protected currentUrl: string
   protected currentMenu: AppMenu

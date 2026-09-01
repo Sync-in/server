@@ -69,7 +69,7 @@
         background: $black;
         transition: background-color $transition-speed $transition-fn;
 
-        > img {
+        > .sync-in-favicon {
           width: $layout-logo-image-size;
           height: $layout-logo-image-size;
 

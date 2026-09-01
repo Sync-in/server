@@ -18,10 +18,8 @@ import { APP_VERSION } from '../../../../app.constants'
 import { AuthService } from '../../../../auth/auth.service'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
-import { themeLight } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
-import { logoDarkUrl, logoUrl } from '../../../files/files.constants'
 import { UserType } from '../../interfaces/user.interface'
 import { USER_ONLINE_STATUS_LIST, USER_PATH } from '../../user.constants'
 import { UserService } from '../../user.service'
@@ -32,8 +30,6 @@ import { UserService } from '../../user.service'
   imports: [FormsModule, RouterLink, CapitalizePipe, LucideDynamicIcon, L10nTranslateDirective, L10nTranslatePipe, AutoResizeDirective]
 })
 export class UserProfileComponent implements OnDestroy {
-  protected readonly logoDarkUrl = logoDarkUrl
-  protected readonly logoUrl = logoUrl
   protected readonly store = inject(StoreService)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly USER_PATH = USER_PATH
@@ -43,7 +39,6 @@ export class UserProfileComponent implements OnDestroy {
   protected readonly icons = { LucideUserRound, LucideContrast, LucideSettings, LucidePower, LucideVenetianMask, LucidePin, LucidePinOff }
   protected user: UserType
   protected userAvatar: string = null
-  protected readonly themeLight = themeLight
   protected readonly layout = inject(LayoutService)
   private readonly authService = inject(AuthService)
   private readonly userService = inject(UserService)

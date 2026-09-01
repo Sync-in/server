@@ -2,7 +2,6 @@ import { Location } from '@angular/common'
 import { Component, inject, OnDestroy } from '@angular/core'
 import { LucideChevronLeft, LucideChevronRight, LucideDynamicIcon } from '@lucide/angular'
 import { Subscription } from 'rxjs'
-import { logoIconUrl } from '../../applications/files/files.constants'
 import { UserType } from '../../applications/users/interfaces/user.interface'
 import { USER_ONLINE_STATUS_LIST } from '../../applications/users/user.constants'
 import { StoreService } from '../../store/store.service'
@@ -18,7 +17,6 @@ import { LayoutService } from '../layout.service'
 export class NavBarComponent implements OnDestroy {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly icons = { LucideChevronLeft, LucideChevronRight }
-  protected logoIconUrl = logoIconUrl
   protected leftSideBarIsOpen = true
   protected user: UserType
   protected userAvatar: string = null
