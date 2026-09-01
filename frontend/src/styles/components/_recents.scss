@@ -205,6 +205,7 @@ app-recents {
   .recent-card__content {
     min-width: 0;
     margin-top: auto;
+    padding-top: 6px;
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
@@ -233,7 +234,10 @@ app-recents {
 
   .recent-card--comment {
     .recent-card__comment {
+      display: -webkit-box;
       font-size: $font-size-sm;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
       white-space: normal;
       overflow-wrap: break-word;
     }
