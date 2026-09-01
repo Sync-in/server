@@ -88,10 +88,12 @@ export class AuthManager {
       throw new HttpException('Token has expired', HttpStatus.FORBIDDEN)
     }
     const refreshTokenExpiration = user.exp - currentTime
+    const accessTokenExpiration = convertHumanTimeToSeconds(configuration.auth.token[TOKEN_TYPE.ACCESS].expiration)
+    const csrfTokenExpiration = Math.max(accessTokenExpiration, refreshTokenExpiration)
     const csrfToken: string = crypto.randomUUID()
     for (const type of TOKEN_TYPES) {
       const tokenExpiration =
-        type === TOKEN_TYPE.ACCESS ? convertHumanTimeToSeconds(configuration.auth.token[TOKEN_TYPE.ACCESS].expiration) : refreshTokenExpiration
+        type === TOKEN_TYPE.ACCESS ? accessTokenExpiration : type === TOKEN_TYPE.CSRF ? csrfTokenExpiration : refreshTokenExpiration
       const cookieValue: string = type === TOKEN_TYPE.CSRF ? csrfToken : await this.jwtSign(user, type, tokenExpiration, csrfToken)
       res.setCookie(configuration.auth.token[type].name, cookieValue, {
         signed: type === TOKEN_TYPE.CSRF,
