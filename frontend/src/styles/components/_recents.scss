@@ -232,7 +232,7 @@ app-recents {
     line-height: 1.15;
   }
 
-  .recent-card--comment {
+  .recent-card.recent-card--comment {
     .recent-card__comment {
       display: -webkit-box;
       font-size: $font-size-sm;
