@@ -1,6 +1,6 @@
 import { Component, DestroyRef, inject } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
-import { LucideDynamicIcon, LucidePlay, LucideSquareStop, LucideTrash2 } from '@lucide/angular'
+import { LucideDynamicIcon, LucidePlay, LucideSquare, LucideTrash2 } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
 import { ADMIN_ICON, ADMIN_PATH, ADMIN_TITLE } from '../admin.constants'
@@ -16,7 +16,7 @@ import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
   templateUrl: 'admin-tools.component.html'
 })
 export class AdminToolsComponent {
-  protected readonly icons = { LucideTrash2, LucidePlay, LucideSquareStop }
+  protected readonly icons = { LucideTrash2, LucidePlay, LucideSquare }
   protected readonly IndexingState = IndexingState
   protected confirmResetIndexing = false
   protected indexingStatus: IndexingStatus = { indexesCount: 0, state: this.IndexingState.IDLE, lastFullRunAt: null, lastPartialRunAt: null }

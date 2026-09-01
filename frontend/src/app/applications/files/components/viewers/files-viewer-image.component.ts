@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, ElementRef, inject, input, model, signal, viewChild } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { FormsModule } from '@angular/forms'
-import { LucideChevronLeft, LucideChevronRight, LucideDynamicIcon, LucideExpand, LucideInfo, LucidePlay, LucideSquareStop } from '@lucide/angular'
+import { LucideChevronLeft, LucideChevronRight, LucideDynamicIcon, LucideExpand, LucideInfo, LucidePlay, LucideSquare } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
@@ -24,7 +24,7 @@ export class FilesViewerImageComponent {
   protected imageCount = computed(() => this.directoryImages().length)
   protected imageIndex = computed(() => this.directoryImages().indexOf(this.file()))
   protected imageResolution = signal<string>('')
-  protected readonly icons = { LucideChevronLeft, LucideChevronRight, LucideExpand, LucideInfo, LucidePlay, LucideSquareStop }
+  protected readonly icons = { LucideChevronLeft, LucideChevronRight, LucideExpand, LucideInfo, LucidePlay, LucideSquare }
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   private readonly slideDelay = 5000
   private destroyRef = inject(DestroyRef)

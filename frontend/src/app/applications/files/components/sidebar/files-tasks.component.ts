@@ -16,7 +16,7 @@ import {
   LucideGlobe,
   LucideLoader,
   LucideMove,
-  LucideSquareStop,
+  LucideSquare,
   LucideTrash2,
   LucideX
 } from '@lucide/angular'
@@ -43,7 +43,7 @@ import { TimeAgoPipe } from '../../../../common/pipes/time-ago.pipe'
 })
 export class FilesTasksComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly icons = { LucideX, LucideFlag, LucideClock, LucideFile, LucideFolderClosed, LucideSquareStop }
+  protected readonly icons = { LucideX, LucideFlag, LucideClock, LucideFile, LucideFolderClosed, LucideSquare }
   protected readonly iconsStatus: Record<FileTaskStatus, LucideIcon> = {
     [FileTaskStatus.PENDING]: LucideLoader,
     [FileTaskStatus.SUCCESS]: LucideCheck,

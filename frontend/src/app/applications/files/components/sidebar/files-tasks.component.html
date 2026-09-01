@@ -20,7 +20,7 @@
     <div class="d-flex gap-1">
       @if (hasCancellableTasks) {
         <button type="button" (click)="cancelTasks()" [tooltip]="'Stop' | translate:locale.language" class="btn btn-default" placement="top">
-          <svg [lucideIcon]="icons.LucideSquareStop"></svg>
+          <svg [lucideIcon]="icons.LucideSquare"></svg>
         </button>
       }
       <button type="button" (click)="removeTasks()" class="btn btn-default">
@@ -104,7 +104,7 @@
                   [tooltip]="'Stop' | translate:locale.language"
                   class="btn btn-sm btn-default task-list__cancel"
                   placement="top">
-            <svg [lucideIcon]="icons.LucideSquareStop"></svg>
+            <svg [lucideIcon]="icons.LucideSquare"></svg>
           </button>
         }
       </div>
