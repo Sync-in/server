@@ -36,18 +36,19 @@
 }
 
 .navigation-view-size-range {
+  --navigation-view-thumb-color: var(--bs-primary);
   display: block;
   height: 1.25rem;
   margin: 0;
   cursor: default !important;
 
   &::-webkit-slider-thumb {
-    background-color: currentColor;
+    background-color: var(--navigation-view-thumb-color);
     cursor: default !important;
   }
 
   &::-moz-range-thumb {
-    background-color: currentColor;
+    background-color: var(--navigation-view-thumb-color);
     cursor: default !important;
   }
 
@@ -83,6 +84,10 @@
 }
 
 :host-context(body.theme-dark) {
+  .navigation-view-size-range {
+    --navigation-view-thumb-color: #60a5fa;
+  }
+
   .navigation-view-size-preview,
   .navigation-view-size-scale {
     color: var(--bs-white);
