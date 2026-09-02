@@ -1,6 +1,6 @@
 import { Component, inject, Input } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { LucideArrowRight, LucideDynamicIcon, LucideFile, LucideFileText, LucideFileType2 } from '@lucide/angular'
+import { LucideArrowRight, LucideDynamicIcon, LucideFile, LucideFileText, LucideFileTypeCorner } from '@lucide/angular'
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -18,7 +18,7 @@ export class FilesViewerSelectDialog {
   @Input({ required: true }) file: FileModel = null
   @Input({ required: true }) editorProvider: FileEditorProviders
   protected rememberChoice = false
-  protected readonly icons = { LucideFile, LucideFileType2, LucideArrowRight, LucideFileText }
+  protected readonly icons = { LucideFile, LucideFileTypeCorner, LucideArrowRight, LucideFileText }
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
   private readonly store = inject(StoreService)

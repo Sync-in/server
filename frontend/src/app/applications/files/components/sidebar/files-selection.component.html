@@ -81,7 +81,7 @@
                 </span>
               } @else {
                 <span class="badge bg-maroon" l10nTranslate>
-                  <svg [lucideIcon]="icons.LucideUnlock"></svg>
+                  <svg [lucideIcon]="icons.LucideLockOpen"></svg>
                   <span l10nTranslate>Shared</span>
                 </span>
               }
@@ -164,7 +164,7 @@
             @if (f.lock) {
               <div (click)="openLockDialog(f)"
                    class="badge white-space-normal bg-maroon cursor-pointer mb-2">
-                <svg [lucideIcon]="f.lock.isExclusive ? icons.LucideLock : icons.LucideUnlock"></svg>
+                <svg [lucideIcon]="f.lock.isExclusive ? icons.LucideLock : icons.LucideLockOpen"></svg>
                 {{ f.lock | fileLockFormatPipe }}
               </div>
             }

@@ -29,10 +29,10 @@ import {
   LucideSquarePlus,
   LucideStrikethrough,
   LucideTable,
+  LucideTextWrap,
   LucideTrash2,
   LucideUnderline,
-  LucideUndo,
-  LucideWrapText
+  LucideUndo
 } from '@lucide/angular'
 import { Editor, Extension, type Range } from '@tiptap/core'
 import Image, { type SetImageOptions } from '@tiptap/extension-image'
@@ -130,7 +130,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     onSelectionUpdate: () => this.visualSearchAdapter.sync()
   })
   protected readonly icons = {
-    LucideWrapText,
+    LucideTextWrap,
     LucideBold,
     LucideCode,
     LucideEye,

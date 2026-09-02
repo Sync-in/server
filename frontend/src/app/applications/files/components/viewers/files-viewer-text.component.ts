@@ -12,8 +12,8 @@ import {
   LucideRedo,
   LucideSave,
   LucideSearch,
-  LucideUndo,
-  LucideWrapText
+  LucideTextWrap,
+  LucideUndo
 } from '@lucide/angular'
 import { L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
@@ -63,7 +63,7 @@ export class FilesViewerTextComponent extends FilesViewerEditableBase implements
   protected content = ''
   protected currentLanguage = undefined
   protected readonly languages: LanguageDescription[] = languages
-  protected readonly icons = { LucideSave, LucideLock, LucideLockOpen, LucideSearch, LucideLoader, LucideWrapText, LucideUndo, LucideRedo }
+  protected readonly icons = { LucideSave, LucideLock, LucideLockOpen, LucideSearch, LucideLoader, LucideTextWrap, LucideUndo, LucideRedo }
   protected readonly searchAdapter = new CodeMirrorFileViewerSearchAdapter(() => this.editor()?.view)
   protected readonly isSearchPanelOpen = this.searchAdapter.isOpen
   private focusRafId: number | null = null

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Output } from '@angular/core'
-import { LucideDynamicIcon, LucideGrid2X2, LucideList } from '@lucide/angular'
+import { LucideDynamicIcon, LucideGrid2x2, LucideList } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import type { ViewMode } from './interfaces/view-mode.interface'
@@ -54,7 +54,7 @@ export type { ViewMode } from './interfaces/view-mode.interface'
 })
 export class NavigationViewComponent {
   @Output() switchView = new EventEmitter<ViewMode>()
-  protected readonly icons = { LucideGrid2X2, LucideList }
+  protected readonly icons = { LucideGrid2x2, LucideList }
   protected readonly galleryViewOptions = GALLERY_VIEW_OPTIONS
   protected viewMode = this.getStoredViewMode()
 

@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
-import { LucideDynamicIcon, LucideLoader, LucideLock, LucideMessageSquareMore, LucideUnlock, LucideX } from '@lucide/angular'
+import { LucideDynamicIcon, LucideLoader, LucideLock, LucideLockOpen, LucideMessageSquareMore, LucideX } from '@lucide/angular'
 import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
 import type { CompressFileDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -65,7 +65,7 @@ export class FilesSelectionComponent {
     FAVORITES: FAVORITES_ICON,
     LucideMessageSquareMore,
     LucideLock,
-    LucideUnlock,
+    LucideLockOpen,
     LucideLoader,
     LucideX
   }

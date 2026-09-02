@@ -1,5 +1,5 @@
 import { Component, inject, Input, output } from '@angular/core'
-import { LucideDynamicIcon, LucideFileLock2 } from '@lucide/angular'
+import { LucideDynamicIcon, LucideFileLock } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
@@ -17,7 +17,7 @@ export class FilesOverwriteDialogComponent {
   public action = output<FilesOverwriteAction>()
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
-  protected readonly icons = { LucideFileLock2 }
+  protected readonly icons = { LucideFileLock }
   protected submitted = false
 
   onAction(action: FilesOverwriteAction) {

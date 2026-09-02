@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, HostListener, inject, Input, OnInit } from '@angular/core'
-import { LucideDynamicIcon, LucideLock, LucideUnlock } from '@lucide/angular'
+import { LucideDynamicIcon, LucideLock, LucideLockOpen } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { firstValueFrom } from 'rxjs'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -20,7 +20,7 @@ export class FilesLockDialogComponent implements OnInit {
   @Input({ required: true }) file: FileModel
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected layout = inject(LayoutService)
-  protected readonly icons = { LucideLock, LucideUnlock }
+  protected readonly icons = { LucideLock, LucideLockOpen }
   protected submitted = false
   protected readonly store = inject(StoreService)
   protected readonly userLogin = this.store.user.getValue().login
