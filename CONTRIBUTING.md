@@ -28,6 +28,7 @@ All contributors must follow our [Code of Conduct](CODE_OF_CONDUCT.md) to ensure
 - All pull requests must target the main branch, following the GitHub Flow model with continuous deployment.
 - Make sure your work fits with the existing architecture, code style, and documentation standards.
 - All contributions must comply with the [CLA](CLA.md).
+- AI-assisted contributions must comply with the [AI Usage Policy](AI_POLICY.md).
 - Contributions are made under the [AGPL-3.0 license](LICENSE), the same license used by the project.
 
 #### Submission Guidelines
