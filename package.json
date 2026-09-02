@@ -108,16 +108,13 @@
     }
   },
   "allowScripts": {
-    "fsevents@2.3.3": true,
-    "lmdb@3.5.1": true,
-    "msgpackr-extract@3.0.4": true,
-    "tesseract.js@7.0.0": true,
-    "esbuild@0.27.7": true,
-    "esbuild@0.18.20": true,
-    "esbuild@0.25.12": true,
-    "esbuild@0.28.1": true,
-    "@parcel/watcher@2.6.0": true,
-    "@swc/core@1.15.47": true,
-    "core-js@3.50.0": true
+    "fsevents": true,
+    "lmdb": true,
+    "msgpackr-extract": true,
+    "tesseract.js": true,
+    "esbuild": true,
+    "@parcel/watcher": true,
+    "core-js": true,
+    "@swc/core": true
   }
 }
