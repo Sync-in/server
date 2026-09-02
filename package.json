@@ -1,7 +1,7 @@
 {
   "productName": "Sync-in",
   "name": "sync-in-server",
-  "version": "2.4.4",
+  "version": "2.5.0",
   "description": "The secure, open-source platform for file storage, sharing, collaboration, and syncing",
   "keywords": [
     "self-hosted",
@@ -79,6 +79,8 @@
     "release:clean": "rm -rf release",
     "bump:version": "npm run test && commit-and-tag-version",
     "bump:version:patch": "npm run test && commit-and-tag-version --release-as patch",
+    "bump:version:minor": "npm run test && commit-and-tag-version --release-as minor",
+    "bump:version:major": "npm run test && commit-and-tag-version --release-as major",
     "bump:version:dry": "npm run test && commit-and-tag-version --dry-run",
     "lint": "npm --ws run lint",
     "lint:staged": "npm --ws run lint:staged",
