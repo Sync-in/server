@@ -35,6 +35,8 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
     pool.on('connection', (conn: Connection) => {
       // Force UTC timezone for every new MySQL connection.
       conn.query(`SET time_zone = '+00:00'`)
+      // Use InnoDB for tables created dynamically by the application.
+      conn.query(`SET SESSION default_storage_engine = 'InnoDB'`)
     })
 
     // Ensure MySQL connection is healthy

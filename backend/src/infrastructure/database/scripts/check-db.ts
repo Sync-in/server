@@ -2,15 +2,18 @@ import { sql } from 'drizzle-orm'
 import { getDB } from './db'
 
 async function checkConnection() {
+  const db = await getDB()
+
   try {
-    const db = await getDB()
     await db.execute(sql`SELECT 1`)
     console.log('Database is ready and accepting queries!')
-    process.exit(0)
-  } catch (error: any) {
-    console.error(`Database check failed: ${error.message}`)
-    process.exit(1)
+  } finally {
+    await db.$client.end()
   }
 }
 
-checkConnection()
+checkConnection().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error)
+  console.error(`Database check failed: ${message}`)
+  process.exitCode = 1
+})

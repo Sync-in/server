@@ -58,19 +58,21 @@ export const usersAndGroups = async () => {
 
   const db = await getDB()
 
-  console.log('Seed start')
-  const usersInfo: ResultSetHeader = (await db.insert(users).values(newUsers as any))[0]
-  console.log('users: ', usersInfo.info)
-  const groupsInfo: ResultSetHeader = (await db.insert(groups).values(newGroups as any))[0]
-  console.log('groups: ', groupsInfo.info)
+  try {
+    console.log('Seed start')
+    const usersInfo: ResultSetHeader = (await db.insert(users).values(newUsers as any))[0]
+    console.log('users: ', usersInfo.info)
+    const groupsInfo: ResultSetHeader = (await db.insert(groups).values(newGroups as any))[0]
+    console.log('groups: ', groupsInfo.info)
 
-  const usersId = (await db.select({ id: users.id }).from(users)).map((r) => r.id)
-  const groupsId = (await db.select({ id: groups.id }).from(groups)).map((r) => r.id)
-  const newUsersGroups = usersId.map((uid) => ({ userId: uid, groupId: groupsId[Math.floor(Math.random() * groupsId.length)] }))
-  const usersGroupsInfo: ResultSetHeader = (await db.insert(usersGroups).values(newUsersGroups))[0]
-  console.log('users & groups: ', usersGroupsInfo.info)
-
-  db.$client.end()
+    const usersId = (await db.select({ id: users.id }).from(users)).map((r) => r.id)
+    const groupsId = (await db.select({ id: groups.id }).from(groups)).map((r) => r.id)
+    const newUsersGroups = usersId.map((uid) => ({ userId: uid, groupId: groupsId[Math.floor(Math.random() * groupsId.length)] }))
+    const usersGroupsInfo: ResultSetHeader = (await db.insert(usersGroups).values(newUsersGroups))[0]
+    console.log('users & groups: ', usersGroupsInfo.info)
+  } finally {
+    await db.$client.end()
+  }
 }
 
 if (require.main === module) {
