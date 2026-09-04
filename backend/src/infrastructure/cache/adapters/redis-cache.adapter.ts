@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common'
 import { RedisClientOptions } from '@redis/client'
 import { createClient, RedisClientType } from 'redis'
 import { createCacheKeySlug } from '../../../common/shared'
-import { anonymizeRedisUrl } from '../../../common/functions'
 import { configuration } from '../../../configuration/config.environment'
+import { redactRedisUrl } from '../../utils'
 import { Cache } from '../cache.service'
 
 @Injectable()
@@ -12,6 +12,7 @@ export class RedisCacheAdapter implements Cache {
   infiniteExpiration = -1
   private readonly logger = new Logger(Cache.name.toUpperCase())
   private readonly client: RedisClientType
+  private readonly redactedRedisUrl = redactRedisUrl(configuration.cache.redis)
   private readonly reconnectOptions = { maxAttempts: 3, minConnectDelay: 1000, maxConnectDelay: 2000 }
 
   constructor() {
@@ -23,7 +24,7 @@ export class RedisCacheAdapter implements Cache {
 
   async onModuleInit() {
     this.client.on('error', (e: Error) => this.logger.error(e.message || e))
-    this.client.on('ready', () => this.logger.log(`Connected to Redis Server at ${anonymizeRedisUrl(this.client.options.url)}`))
+    this.client.on('ready', () => this.logger.log(`Connected to Redis Server at ${this.redactedRedisUrl}`))
     this.client.connect().catch((e: Error) => this.logger.error(e))
   }
 
