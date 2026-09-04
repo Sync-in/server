@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common'
 import { IoAdapter } from '@nestjs/platform-socket.io'
 import { ServerOptions } from 'socket.io'
-import { loadOptionalModule } from '../../../common/functions'
+import { anonymizeRedisUrl, loadOptionalModule } from '../../../common/functions'
 
 export class RedisAdapter extends IoAdapter {
   private readonly logger = new Logger('WebSocketAdapter')
@@ -24,9 +24,9 @@ export class RedisAdapter extends IoAdapter {
     const pubClient = createClient({ url: redisUrl, socket: { noDelay: true, reconnectStrategy: this.reconnectStrategy } })
     const subClient = pubClient.duplicate()
     pubClient.on('error', (e: Error) => this.logger.error(`PubClient: ${e.message || e}`))
-    pubClient.on('ready', () => this.logger.log(`PubClient: Connected to Redis Server at ${pubClient.options.url}`))
+    pubClient.on('ready', () => this.logger.log(`PubClient: Connected to Redis Server at ${anonymizeRedisUrl(pubClient.options.url)}`))
     subClient.on('error', (e: Error) => this.logger.error(`SubClient: ${e.message || e}`))
-    subClient.on('ready', () => this.logger.log(`SubClient: Connected to Redis Server at ${subClient.options.url}`))
+    subClient.on('ready', () => this.logger.log(`SubClient: Connected to Redis Server at ${anonymizeRedisUrl(subClient.options.url)}`))
     pubClient.connect()
     subClient.connect()
     this.adapterConstructor = createAdapter(pubClient, subClient)

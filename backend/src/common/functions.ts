@@ -76,6 +76,10 @@ export function anonymizePassword(obj: { password?: string; secrets?: string }) 
   return { ...obj, ...(obj?.password && { password: '********' }), ...(obj?.secrets && { secrets: '********' }) }
 }
 
+export function anonymizeRedisUrl(url: string): string {
+  return url.replace(/\/\/:([^@]*)@/, '//:********@')
+}
+
 export function splitFullName(fullName?: string): { firstName: string; lastName: string } {
   if (!fullName || !fullName.trim()) return { firstName: '', lastName: '' }
   const parts = fullName.trim().split(/\s+/)
