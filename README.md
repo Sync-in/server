@@ -28,8 +28,7 @@ Run your own workspace for files, documents, shares, and collaborative work with
 Sync-in is designed to stay fast, lightweight, and centered on your data, keeping files readable on your filesystem while adding collaboration features only where they are needed.
 
 <picture>
-  <source srcset="https://raw.githubusercontent.com/Sync-in/assets/main/server-dark.png" media="(prefers-color-scheme: dark)" />
-  <img src="https://raw.githubusercontent.com/Sync-in/assets/main/server.png" alt="Sync-in" width="600"/>
+  <img src="https://raw.githubusercontent.com/Sync-in/assets/main/server-dark.png" alt="Sync-in server" width="600"/>
 </picture>
 
 ## Features
@@ -49,8 +48,6 @@ Sync-in is designed to stay fast, lightweight, and centered on your data, keepin
 ---
 
 ## Sponsors
-
-Sync-in receives support from organizations that provide infrastructure, distribution, and security services to open source projects.
 
 <table>
   <tr>
@@ -80,7 +77,7 @@ You can help by:
 ## Community Guidelines
 
 - Use [GitHub Issues](https://github.com/Sync-in/server/issues) for bug reports and feature requests.
-- Use [GitHub Discussions](https://github.com/Sync-in/server/discussions), [Discord](https://discord.gg/qhJyzwaymT), or [Reddit](https://www.reddit.com/r/SyncInPlatform/) for questions and community support.
+- Use [GitHub Discussions](https://github.com/Sync-in/server/discussions) or [Discord](https://discord.gg/qhJyzwaymT) for questions and community support.
 - Report security vulnerabilities privately through GitHub Security Advisories.
 - Please read the [Code of Conduct](CODE_OF_CONDUCT.md) and [Contributing Guide](CONTRIBUTING.md) before contributing.
 
