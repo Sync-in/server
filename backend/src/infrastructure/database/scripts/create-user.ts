@@ -110,4 +110,7 @@ async function main() {
   await createUserInDatabase(user)
 }
 
-main().catch((e: Error) => console.error(e))
+main().catch((e: Error) => {
+  console.error(e)
+  process.exitCode = 1
+})

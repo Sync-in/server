@@ -3,7 +3,7 @@ import { BeforeApplicationShutdown, Global, Inject, Module, OnModuleInit } from 
 import { MySql2Client } from 'drizzle-orm/mysql2'
 import { Connection, Pool } from 'mysql2'
 import { configuration } from '../../configuration/config.environment'
-import { DB_TOKEN_PROVIDER } from './constants'
+import { DB_SESSION_INIT_QUERIES, DB_TOKEN_PROVIDER } from './constants'
 import { DatabaseLogger } from './database.logger'
 import type { DBSchema } from './interfaces/database.interface'
 import * as schema from './schema'
@@ -33,10 +33,9 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
   async onModuleInit() {
     const pool: Pool = (this.db as any).$client
     pool.on('connection', (conn: Connection) => {
-      // Force UTC timezone for every new MySQL connection.
-      conn.query(`SET time_zone = '+00:00'`)
-      // Use InnoDB for tables created dynamically by the application.
-      conn.query(`SET SESSION default_storage_engine = 'InnoDB'`)
+      for (const query of DB_SESSION_INIT_QUERIES) {
+        conn.query(query)
+      }
     })
 
     // Ensure MySQL connection is healthy

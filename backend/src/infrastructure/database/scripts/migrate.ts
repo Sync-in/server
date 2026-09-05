@@ -1,14 +1,16 @@
 import { sql } from 'drizzle-orm'
 import { DrizzleQueryError } from 'drizzle-orm/errors'
 import { migrate } from 'drizzle-orm/mysql2/migrator'
-import { MIGRATIONS_PATH } from '../constants'
+import { DB_SESSION_INIT_QUERIES, MIGRATIONS_PATH } from '../constants'
 import { getDB } from './db'
 
 async function applyMigrations(): Promise<void> {
   const db = await getDB()
 
   try {
-    await db.execute(sql`SET SESSION default_storage_engine = 'InnoDB'`)
+    for (const query of DB_SESSION_INIT_QUERIES) {
+      await db.execute(sql.raw(query))
+    }
     await migrate(db, { migrationsFolder: MIGRATIONS_PATH })
     console.log('Database migrations applied successfully!')
   } finally {
