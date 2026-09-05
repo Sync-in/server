@@ -161,7 +161,9 @@ export class UsersManager {
     if (!user.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
       this.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error({ tag: this.validateUserAccess.name, msg: `${e}` }))
       this.logger.error({ tag: this.validateUserAccess.name, msg: `user account *${user.login}* is locked` })
-      this.notifyAccountLocked(user, ip)
+      if (user.isActive) {
+        this.notifyAccountLocked(user, ip)
+      }
       throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
     }
   }
