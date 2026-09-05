@@ -187,6 +187,16 @@ describe(AuthProviderLDAP.name, () => {
     expect(loggerErrorSpy).toHaveBeenCalled()
   })
 
+  it('should reject an empty password before accessing LDAP', async () => {
+    const res = await authProviderLDAP.validateUser('john', '')
+
+    expect(res).toBeNull()
+    expect(usersManager.findUser).not.toHaveBeenCalled()
+    expect(Client).not.toHaveBeenCalled()
+    expect(ldapClient.bind).not.toHaveBeenCalled()
+    expect(adminUsersManager.createUserOrGuest).not.toHaveBeenCalled()
+  })
+
   it('should return null on invalid LDAP credentials without fallback', async () => {
     const existingUser: any = buildUser({ id: 1 })
     usersManager.findUser.mockResolvedValue(existingUser)

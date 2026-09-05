@@ -34,6 +34,10 @@ export class AuthProviderLDAP implements AuthProvider {
   ) {}
 
   async validateUser(loginOrEmail: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
+    if (password.length === 0) {
+      return null
+    }
+
     // Authenticate user via LDAP and sync local user state.
     // Find user from his login or email
     const localLogin = this.dbLogin(loginOrEmail)

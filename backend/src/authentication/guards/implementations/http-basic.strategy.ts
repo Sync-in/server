@@ -62,7 +62,7 @@ export class HttpBasicStrategy extends PassportStrategy {
     }
 
     const [userid, password] = splitFirst(decoded, ':')
-    if (password === undefined) {
+    if (password === undefined || password.length === 0) {
       return this.fail(400)
     }
 

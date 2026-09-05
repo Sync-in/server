@@ -56,6 +56,10 @@ entry, or a successful search that returns an unusable entry ends the authentica
 
 LDAP client connections use a six-second operation timeout and a six-second connect timeout.
 
+Sync-in rejects zero-length user passwords before opening an LDAP connection. Directory operators must also disable unauthenticated simple binds
+(a non-empty bind DN with an empty password) and anonymous binds in the LDAP server policy; the application-side check is defense in depth, not a
+replacement for that server-side restriction.
+
 ## User search
 
 User searches run under `baseDN` with subtree scope. Sync-in asks LDAP for the known login attributes, common profile attributes, the configured email

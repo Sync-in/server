@@ -95,6 +95,18 @@ describe(AuthBasicGuard.name, () => {
     expect(userWithColonPassword.password).toBeUndefined()
   })
 
+  it('should reject an empty password before calling the authentication provider', async () => {
+    const encodedAuthWithEmptyPassword = Buffer.from(`${userTest.login}:`).toString('base64')
+    authProvider.validateUser = vi.fn()
+    context.switchToHttp().getRequest.mockReturnValue({
+      raw: { user: '' },
+      headers: { authorization: `Basic ${encodedAuthWithEmptyPassword}` }
+    })
+
+    await expect(authBasicGuard.canActivate(context)).rejects.toThrow()
+    expect(authProvider.validateUser).not.toHaveBeenCalled()
+  })
+
   it('should validate the user authentication with cache', async () => {
     cache.get = vi.fn().mockReturnValueOnce(userTest)
     context.switchToHttp().getRequest.mockReturnValue({
