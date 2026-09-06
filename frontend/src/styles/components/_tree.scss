@@ -58,6 +58,7 @@ $tree-file-icon: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1
     }
   }
 
+  &.active .toggle-children-wrapper .toggle-children:before,
   .toggle-children-wrapper-expanded .toggle-children:before {
     @include tree-root-icon(white, $path);
   }
@@ -90,6 +91,10 @@ $tree-file-icon: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1
   white-space: nowrap;
   margin-bottom: 15px;
   font-size: 0.75rem;
+
+  .tree-node {
+    position: relative;
+  }
 
   .node-wrapper {
     cursor: default;
@@ -186,6 +191,10 @@ $tree-file-icon: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1
     }
   }
 
+  tree-node-expander.active .toggle-children-wrapper-collapsed .toggle-children:before {
+    @include caret(white);
+  }
+
   .tree-root-personal {
     @include tree-root($primary, $tree-folder-icon);
   }
@@ -228,7 +237,14 @@ $tree-file-icon: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1
   .tree-node-loading {
     color: white;
     position: absolute;
-    margin-top: -23px;
-    margin-left: 9px;
+    top: 11px;
+    left: 12px;
+    margin: 0;
+    line-height: 0;
+    pointer-events: none;
+
+    .lucide {
+      font-size: $font-size-md;
+    }
   }
 }

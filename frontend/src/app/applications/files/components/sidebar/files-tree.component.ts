@@ -1,6 +1,6 @@
 import { IActionMapping, ITreeOptions, TREE_ACTIONS, TreeModel, TreeModule, TreeNode } from '@ali-hm/angular-tree-component'
 import { AsyncPipe } from '@angular/common'
-import { Component, ElementRef, EventEmitter, inject, Input, OnDestroy, OnInit, Output, signal, ViewChild } from '@angular/core'
+import { Component, ElementRef, EventEmitter, inject, Injector, Input, OnDestroy, OnInit, Output, signal, ViewChild } from '@angular/core'
 import { toObservable } from '@angular/core/rxjs-interop'
 import { Router } from '@angular/router'
 import {
@@ -52,7 +52,7 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
     })
     this.copyMovePanelResizeObserver.observe(element)
   }
-  @Output() selected = new EventEmitter()
+  @Output() selected = new EventEmitter<FileTree | null>()
   @Input() showFiles = false
   @Input() allowShares = true
   @Input() allowSpaces = true
@@ -98,17 +98,12 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router)
   private readonly user = inject(UserService)
   private readonly filesService = inject(FilesService)
+  private readonly injector = inject(Injector)
   private readonly copyMoveOnHeight = signal(0)
   private copyMovePanelResizeObserver: ResizeObserver | null = null
-  private subscriptions: Subscription[] = []
-  private preventDblClick = false
-  private preventTimer: any
-
-  constructor() {
-    if (this.enableCopyMove) {
-      this.subscriptions.push(toObservable(this.store.filesSelection).subscribe(() => this.checkAllowed(this.selection)))
-    }
-  }
+  private readonly subscriptions: Subscription[] = []
+  private focusTimer: ReturnType<typeof setTimeout> | undefined
+  private preventTimer: ReturnType<typeof setTimeout> | undefined
 
   protected get treeResizeOffset() {
     return this.resizeOffset + (this.copyMoveOn ? this.copyMoveOnHeight() : 0)
@@ -120,58 +115,46 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
 
   set selection(node: TreeNode) {
     this.filesService.treeNodeSelected = node
-    if (node) {
-      if ([0, -1, -2].indexOf(node.data.id) === -1) {
-        this.selected.emit(node.data)
-      } else {
-        this.selected.emit(null)
-      }
-    }
+    this.selected.emit(node && ![0, -1, -2].includes(node.data.id) ? node.data : null)
   }
 
   ngOnInit() {
     this.initRoot()
     if (this.enableCopyMove) {
       this.subscriptions.push(
+        toObservable(this.store.filesSelection, { injector: this.injector }).subscribe(() => this.checkAllowed(this.selection)),
         this.filesService.treeCopyMoveOn.subscribe(() => {
           this.onCopyMove()
           this.filesService.consumeTreeCopyMove()
         })
       )
     }
-    setTimeout(() => this.focusLastNode(), 100)
+    this.focusTimer = setTimeout(() => {
+      this.focusTimer = undefined
+      this.focusLastNode()
+    }, 100)
   }
 
   ngOnDestroy() {
     this.copyMovePanelResizeObserver?.disconnect()
+    clearTimeout(this.focusTimer)
+    clearTimeout(this.preventTimer)
     this.subscriptions.forEach((s) => s.unsubscribe())
   }
 
   onRefresh() {
-    if (this.tree.treeModel.activeNodes.length) {
-      this.tree.treeModel.activeNodes.forEach((node: TreeNode) => {
-        node.loadNodeChildren().then(() => this.tree.treeModel.update())
+    const activeNodes: TreeNode[] = this.tree.treeModel.activeNodes
+    const nodesToRefresh: TreeNode[] = activeNodes.length ? activeNodes : this.tree.treeModel.roots
+    const selectedPath = this.selection?.data.path
+    Promise.allSettled(nodesToRefresh.map((node) => node.loadNodeChildren()))
+      .then((results) => {
+        for (const result of results) {
+          if (result.status === 'rejected') console.error(result.reason)
+        }
+        this.tree.treeModel.update()
+        this.focusLastNode(selectedPath)
       })
-    } else {
-      if (this.user.userHavePermission(USER_PERMISSION.PERSONAL_SPACE)) {
-        this.tree.treeModel
-          .getNodeById(0)
-          .loadNodeChildren()
-          .then(() => this.tree.treeModel.update())
-      }
-      if (this.user.userHavePermission(USER_PERMISSION.SPACES)) {
-        this.tree.treeModel
-          .getNodeById(-1)
-          .loadNodeChildren()
-          .then(() => this.tree.treeModel.update())
-      }
-      if (this.allowShares && this.user.userHavePermission(USER_PERMISSION.SHARES)) {
-        this.tree.treeModel
-          .getNodeById(-2)
-          .loadNodeChildren()
-          .then(() => this.tree.treeModel.update())
-      }
-    }
+      .catch(console.error)
   }
 
   actionCancel() {
@@ -288,12 +271,12 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
     }
   }
 
-  private focusLastNode() {
-    if (this.selection) {
-      this.selection = this.tree.treeModel.getNodeById(this.selection.data.id)
-      if (this.selection) {
-        TREE_ACTIONS.ACTIVATE(this.tree, this.selection, null)
-      }
+  private focusLastNode(path = this.selection?.data.path) {
+    if (!path) return
+    const selection = this.tree.treeModel.getNodeBy((node: TreeNode) => node.data.path === path) || null
+    this.selection = selection
+    if (selection) {
+      TREE_ACTIONS.ACTIVATE(this.tree, selection, null)
     }
   }
 
@@ -314,13 +297,14 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
 
   private toggleExpand(tree: TreeModel, node: TreeNode, event: any) {
     TREE_ACTIONS.TOGGLE_EXPANDED(tree, node, event)
-    node.data.isExpanded = !!node.data.isExpanded
+    node.data.isExpanded = node.isExpanded
   }
 
   private onOpen(node: TreeNode) {
     if (!this.copyMoveOn && this.enableNavigateTo && node.data.enabled) {
       clearTimeout(this.preventTimer)
-      this.preventDblClick = true
+      this.preventTimer = undefined
+      this.selection = node
       const urlSegments = node.data.path.split('/')
       if (urlSegments[0] !== SPACES_PATH.SPACES) {
         urlSegments.unshift(SPACES_PATH.SPACES)
@@ -335,16 +319,15 @@ export class FilesTreeComponent implements OnInit, OnDestroy {
       return
     }
     TREE_ACTIONS.ACTIVATE(tree, node, event)
+    clearTimeout(this.preventTimer)
     this.preventTimer = setTimeout(() => {
       this.checkAllowed(node)
       this.selection = node
-      if (!this.preventDblClick) {
-        if (node.hasChildren) {
-          this.collapseChildren(node, node.parent.children)
-          this.toggleExpand(tree, node, event)
-        }
+      if (node.hasChildren) {
+        this.collapseChildren(node, node.parent.children)
+        this.toggleExpand(tree, node, event)
       }
-      this.preventDblClick = false
+      this.preventTimer = undefined
     }, 200)
   }
 

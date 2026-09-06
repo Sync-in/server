@@ -135,7 +135,8 @@
            [class.tree-disabled]="!node.data.enabled"
            [style.padding-left]="node.getNodePadding()"
            class="node-wrapper">
-        <tree-node-expander [class.toggle-children-file]="!node.data.isDir"
+        <tree-node-expander [class.active]="node.isActive"
+                            [class.toggle-children-file]="!node.data.isDir"
                             [class.toggle-children-shared]="node.data.inShare"
                             [class.tree-root-personal]="node.data.id === 0"
                             [class.tree-root-shares]="node.data.id === -2"
