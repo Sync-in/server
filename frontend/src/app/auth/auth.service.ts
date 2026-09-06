@@ -33,6 +33,7 @@ import { LayoutService } from '../layout/layout.service'
 import { StoreService } from '../store/store.service'
 import { AUTH_PATHS } from './auth.constants'
 import type { AuthOIDCQueryParams, AuthResult } from './auth.interface'
+import { AUTH_RATE_LIMIT_ERROR_MESSAGE, getAuthRetryAfter, isDesktopRateLimitError } from './auth.utils'
 
 @Injectable({
   providedIn: 'root'
@@ -88,9 +89,14 @@ export class AuthService {
         this.initUserFromResponse(r)
         return of<AuthResult>({ success: true, message: null })
       }),
-      catchError((e) => {
+      catchError((e: HttpErrorResponse) => {
         console.error(e)
-        return of<AuthResult>({ success: false, message: e?.error?.message ?? e?.message })
+        const retryAfter = getAuthRetryAfter(e)
+        return of<AuthResult>({
+          success: false,
+          message: e?.error?.message ?? e?.message,
+          retryAfter
+        })
       })
     )
   }
@@ -275,6 +281,7 @@ export class AuthService {
           )
         }
         console.error(`${this.authOIDCDesktopClient.name} - ${message}`)
+        this.notifyDesktopRateLimit(e)
         this.logout(true)
         return of(false)
       })
@@ -347,6 +354,7 @@ export class AuthService {
   private handleDesktopAuthError(e: unknown): Observable<boolean> {
     const message = this.desktopAuthErrorMessage(e)
     console.debug(`${this.authDesktopClient.name} - ${message}`)
+    this.notifyDesktopRateLimit(e)
     if (message === CLIENT_TOKEN_EXPIRED_ERROR) {
       this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_EXPIRED)
     } else if (message !== CLIENT_MISSING_ERROR) {
@@ -357,6 +365,8 @@ export class AuthService {
   }
 
   private desktopAuthErrorMessage(e: unknown): string {
+    if (isDesktopRateLimitError(e)) return AUTH_RATE_LIMIT_ERROR_MESSAGE
+
     const rawMessage = (e as HttpErrorResponse)?.error?.message ?? (e as Error)?.message ?? e
     const message = Array.isArray(rawMessage) ? rawMessage.join(', ') : String(rawMessage)
     if (message.includes(CLIENT_TOKEN_EXPIRED_ERROR)) {
@@ -366,6 +376,12 @@ export class AuthService {
       return CLIENT_MISSING_ERROR
     }
     return message
+  }
+
+  private notifyDesktopRateLimit(e: unknown) {
+    if (isDesktopRateLimitError(e)) {
+      this.layout.sendNotification('error', 'Authentication', AUTH_RATE_LIMIT_ERROR_MESSAGE)
+    }
   }
 
   private refreshTokenHasExpired(): boolean {

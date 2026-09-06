@@ -1,5 +1,6 @@
 import { StreamableFile } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard'
 import { LinksController } from './links.controller'
 import { LinksManager } from './services/links-manager.service'
 import { Mock } from 'vitest'
@@ -19,10 +20,12 @@ describe(LinksController.name, () => {
       linkAuthentication: vi.fn()
     }
 
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModuleBuilder = Test.createTestingModule({
       controllers: [LinksController],
       providers: [{ provide: LinksManager, useValue: linksManager }]
-    }).compile()
+    })
+    testingModuleBuilder.overrideGuard(AuthRateLimitGuard).useValue({ canActivate: () => true })
+    const module: TestingModule = await testingModuleBuilder.compile()
 
     controller = module.get<LinksController>(LinksController)
   })

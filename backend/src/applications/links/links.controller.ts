@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post, Req, Res, StreamableFile } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post, Req, Res, StreamableFile, UseGuards } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { AuthTokenOptional } from '../../authentication/decorators/auth-token-optional.decorator'
 import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
+import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard'
 import { GetUser } from '../users/decorators/user.decorator'
 import { UserPasswordDto } from '../users/dto/user-properties.dto'
 import { UserModel } from '../users/models/user.model'
@@ -47,6 +48,7 @@ export class LinksController {
   }
 
   @Post(`${PUBLIC_LINKS_ROUTE.AUTH}/:uuid`)
+  @UseGuards(AuthRateLimitGuard)
   linkAuthentication(
     @GetUser() user: UserModel,
     @Param('uuid') uuid: string,

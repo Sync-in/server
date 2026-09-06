@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard'
 import { ContextManager } from '../../infrastructure/context/services/context-manager.service'
 import { SpacesManager } from '../spaces/services/spaces-manager.service'
 import { SyncClientsManager } from './services/sync-clients-manager.service'
@@ -10,7 +11,7 @@ describe(SyncController.name, () => {
   let controller: SyncController
 
   beforeAll(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    const testingModuleBuilder = Test.createTestingModule({
       controllers: [SyncController],
       providers: [
         { provide: ContextManager, useValue: {} },
@@ -19,7 +20,9 @@ describe(SyncController.name, () => {
         { provide: SyncClientsManager, useValue: {} },
         { provide: SyncPathsManager, useValue: {} }
       ]
-    }).compile()
+    })
+    testingModuleBuilder.overrideGuard(AuthRateLimitGuard).useValue({ canActivate: () => true })
+    const module: TestingModule = await testingModuleBuilder.compile()
 
     controller = module.get<SyncController>(SyncController)
   })

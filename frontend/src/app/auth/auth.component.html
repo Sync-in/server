@@ -6,7 +6,16 @@
       </div>
       <div class="body">
         @if (twoFaVerify) {
-          <p class="mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Two-Factor Authentication' }}</p>
+          <p class="mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" aria-live="polite">
+            @if (retryAfter > 0) {
+              <span class="d-block">{{ hasError | translate:locale.language }}</span>
+              <span class="d-block mt-1 text-white-50">
+                {{ 'auth_retry_after' | translate:locale.language:{ delay: retryDelayLabel() } }}
+              </span>
+            } @else {
+              <span l10nTranslate>{{ hasError || 'Two-Factor Authentication' }}</span>
+            }
+          </p>
           <form (ngSubmit)="onSubmit2Fa()" [formGroup]="twoFaForm">
             <div class="input-group input-group-lg mt-2 mb-4">
               @if (isRecoveryCode) {
@@ -43,7 +52,7 @@
             <div class="auth-actions d-flex flex-column flex-sm-row gap-2 mt-4">
               <button type="button" (click)="onCancel2Fa()" class="btn btn-secondary auth-action-btn" l10nTranslate>Cancel</button>
               <button type="submit"
-                      [disabled]="isRecoveryCode ? twoFaForm.controls.recoveryCode.invalid : twoFaForm.controls.totpCode.invalid || submitted"
+                      [disabled]="(isRecoveryCode ? twoFaForm.controls.recoveryCode.invalid : twoFaForm.controls.totpCode.invalid) || submitted || retryAfter > 0"
                       class="btn btn-primary auth-action-btn" l10nTranslate>
                 Confirm
               </button>
@@ -51,7 +60,16 @@
           </form>
         } @else {
           <form (ngSubmit)="onSubmit()" [formGroup]="loginForm">
-            <p class="mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" l10nTranslate>{{ hasError || 'Sign-in to your account' }}</p>
+            <p class="mb-3 {{hasError ? 'text-danger' : 'text-white-50'}}" aria-live="polite">
+              @if (retryAfter > 0) {
+                <span class="d-block">{{ hasError | translate:locale.language }}</span>
+                <span class="d-block mt-1 text-white-50">
+                  {{ 'auth_retry_after' | translate:locale.language:{ delay: retryDelayLabel() } }}
+                </span>
+              } @else {
+                <span l10nTranslate>{{ hasError || 'Sign-in to your account' }}</span>
+              }
+            </p>
             <div class="input-group input-group-lg my-2">
               <span class="input-group-text">
                 <svg [lucideIcon]="icons.LucideUserRound"></svg>
@@ -65,7 +83,7 @@
               <input class="form-control form-control-lg" formControlName="password" [placeholder]="'Password' | translate:locale.language" type="password" />
             </div>
             <div class="d-flex">
-              <button type="submit" [disabled]="loginForm.invalid || submitted" class="btn btn-lg btn-primary w-100" l10nTranslate>Sign in</button>
+              <button type="submit" [disabled]="loginForm.invalid || submitted || retryAfter > 0" class="btn btn-lg btn-primary w-100" l10nTranslate>Sign in</button>
             </div>
           </form>
           @if (oidcSettings) {

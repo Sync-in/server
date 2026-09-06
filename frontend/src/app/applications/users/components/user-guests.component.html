@@ -90,7 +90,7 @@
                   @case ('isActive') {
                     <span class="{{u.isActive ? 'text-success' : 'text-danger'}}" l10nTranslate>
                       @if (!u.isActive && u.passwordAttempts) {
-                        too many login attempts
+                        Too many login attempts
                       } @else {
                         {{ u.userIsActiveText }}
                       }

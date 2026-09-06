@@ -23,7 +23,7 @@ import type { UserPasswordDto } from '@sync-in-server/backend/src/applications/u
 import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { ClipboardService } from 'ngx-clipboard'
-import { catchError, map, Observable, of } from 'rxjs'
+import { catchError, map, Observable, of, throwError } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { AuthService } from '../../../auth/auth.service'
 import { downloadWithAnchor } from '../../../common/utils/functions'
@@ -123,7 +123,8 @@ export class LinksService {
         this.router.navigate([`${LINKS_PATH.LINK}/${uuid}`]).catch(console.error)
         return true
       }),
-      catchError((e) => {
+      catchError((e: HttpErrorResponse) => {
+        if (e.status === 429) return throwError(() => e)
         if (e.error.message === LINK_ERROR.UNAUTHORIZED) {
           this.layout.sendNotification('error', 'Link', 'Bad password')
         } else {

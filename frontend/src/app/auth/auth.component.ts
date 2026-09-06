@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core'
+import { Component, inject, OnDestroy } from '@angular/core'
 import { FormGroup, ReactiveFormsModule, UntypedFormBuilder, Validators } from '@angular/forms'
 import { ActivatedRoute, Router } from '@angular/router'
 import { LucideDynamicIcon, LucideKeyRound, LucideLock, LucideQrCode, LucideUserRound } from '@lucide/angular'
@@ -14,17 +14,19 @@ import { APP_PATH } from '../app.constants'
 import { AutofocusDirective } from '../common/directives/auto-focus.directive'
 import type { AuthResult } from './auth.interface'
 import { AuthService } from './auth.service'
+import { getAuthRetryAfter } from './auth.utils'
 
 @Component({
   selector: 'app-auth',
   templateUrl: 'auth.component.html',
   imports: [AutofocusDirective, ReactiveFormsModule, LucideDynamicIcon, L10nTranslateDirective, L10nTranslatePipe]
 })
-export class AuthComponent {
+export class AuthComponent implements OnDestroy {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = { LucideLock, LucideUserRound, LucideKeyRound, LucideQrCode }
   protected twoFaCodelength = TWO_FA_CODE_LENGTH
   protected hasError: any = null
+  protected retryAfter = 0
   protected submitted = false
   protected twoFaVerify = false
   private route = inject(ActivatedRoute)
@@ -32,6 +34,7 @@ export class AuthComponent {
   private readonly router = inject(Router)
   private readonly auth = inject(AuthService)
   private readonly fb = inject(UntypedFormBuilder)
+  private retryTimer: ReturnType<typeof setInterval> | null = null
   protected loginForm: FormGroup = this.fb.group({
     username: this.fb.control('', [Validators.required]),
     password: this.fb.control('', [Validators.required])
@@ -51,30 +54,46 @@ export class AuthComponent {
     }
   }
 
+  ngOnDestroy() {
+    this.clearRetryCountdown()
+  }
+
   onSubmit() {
+    if (this.retryAfter > 0) return
     this.submitted = true
     this.auth
       .login(this.loginForm.value.username, this.loginForm.value.password)
       .pipe(finalize(() => setTimeout(() => (this.submitted = false), 1500)))
       .subscribe({
         next: (res: AuthResult) => this.isLogged(res),
-        error: (e) => this.isLogged({ success: false, message: e.error ? e.error.message : e })
+        error: (e) => this.isLogged({ success: false, message: e.error ? e.error.message : e, retryAfter: getAuthRetryAfter(e) })
       })
   }
 
   async onSubmit2Fa() {
+    if (this.retryAfter > 0) return
     this.submitted = true
     const code = this.isRecoveryCode ? this.twoFaForm.value.recoveryCode : this.twoFaForm.value.totpCode
 
     if (this.auth.electron.enabled) {
       this.auth.electron.register(this.loginForm.value.username, this.loginForm.value.password, code).subscribe({
         next: (res: AuthResult) => this.is2FaVerified(res as TwoFaResponseDto),
-        error: (e) => this.is2FaVerified({ success: false, message: e.error ? e.error.message : e } as TwoFaResponseDto)
+        error: (e) =>
+          this.is2FaVerified({
+            success: false,
+            message: e.error ? e.error.message : e,
+            retryAfter: getAuthRetryAfter(e)
+          } as TwoFaResponseDto & AuthResult)
       })
     } else {
       this.auth.loginWith2Fa({ code: code, isRecoveryCode: this.isRecoveryCode } satisfies TwoFaVerifyDto).subscribe({
         next: (res: TwoFaResponseDto) => this.is2FaVerified(res),
-        error: (e) => this.is2FaVerified({ success: false, message: e.error ? e.error.message : e } as TwoFaResponseDto)
+        error: (e) =>
+          this.is2FaVerified({
+            success: false,
+            message: e.error ? e.error.message : e,
+            retryAfter: getAuthRetryAfter(e)
+          } as TwoFaResponseDto & AuthResult)
       })
     }
   }
@@ -85,6 +104,7 @@ export class AuthComponent {
     this.twoFaVerify = false
     this.submitted = false
     this.hasError = null
+    this.clearRetryCountdown()
   }
 
   async loginWithOIDC() {
@@ -125,15 +145,20 @@ export class AuthComponent {
     }
   }
 
-  private is2FaVerified(res: TwoFaResponseDto) {
+  protected retryDelayLabel(): string {
+    return new Intl.RelativeTimeFormat(this.locale.language, { numeric: 'always' }).format(this.retryAfter, 'second')
+  }
+
+  private is2FaVerified(res: TwoFaResponseDto & Partial<AuthResult>) {
     if (res.success) {
+      this.clearRetryCountdown()
       if (!this.auth.electron.enabled) {
         // Web: in this case, the user and tokens are provided
         this.auth.initUserFromResponse(res)
       }
       this.isLogged({ success: true, message: res.message })
     } else {
-      this.hasError = res.message || 'Unable to verify code'
+      this.setAuthError(res.message || 'Unable to verify code', res.retryAfter)
       this.submitted = false
     }
     this.twoFaForm.patchValue({ totpCode: '', recoveryCode: '' })
@@ -141,6 +166,7 @@ export class AuthComponent {
 
   private isLogged(res: AuthResult) {
     if (res.success) {
+      this.clearRetryCountdown()
       this.hasError = null
       if (res.twoFaEnabled) {
         this.twoFaVerify = true
@@ -157,9 +183,32 @@ export class AuthComponent {
         this.router.navigate([APP_PATH.HOME]).then(() => this.loginForm.reset())
       }
     } else {
-      this.hasError = res.message || 'Server connection error'
+      this.setAuthError(res.message || 'Server connection error', res.retryAfter)
       this.submitted = false
     }
     this.loginForm.patchValue({ password: '' })
+  }
+
+  private setAuthError(message: any, retryAfter?: number) {
+    this.clearRetryCountdown()
+    this.hasError = retryAfter ? 'Too many login attempts' : message
+    if (!retryAfter) return
+
+    const retryAt = Date.now() + retryAfter * 1000
+    const updateRetryAfter = () => {
+      this.retryAfter = Math.max(0, Math.ceil((retryAt - Date.now()) / 1000))
+      if (this.retryAfter === 0) {
+        this.clearRetryCountdown()
+        this.hasError = null
+      }
+    }
+    updateRetryAfter()
+    if (this.retryAfter > 0) this.retryTimer = setInterval(updateRetryAfter, 1000)
+  }
+
+  private clearRetryCountdown() {
+    if (this.retryTimer !== null) clearInterval(this.retryTimer)
+    this.retryTimer = null
+    this.retryAfter = 0
   }
 }

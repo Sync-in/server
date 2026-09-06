@@ -12,6 +12,7 @@ import { AuthTokenSkip } from './decorators/auth-token-skip.decorator'
 import { LoginResponseDto, LoginVerify2FaDto } from './dto/login-response.dto'
 import { TokenResponseDto } from './dto/token-response.dto'
 import { AuthLocalGuard } from './guards/auth-local.guard'
+import { AuthRateLimitGuard } from './guards/auth-rate-limit.guard'
 import { AuthTokenRefreshGuard } from './guards/auth-token-refresh.guard'
 import { FastifyAuthenticatedRequest } from './interfaces/auth-request.interface'
 import { TOKEN_TYPE } from './interfaces/token.interface'
@@ -31,7 +32,7 @@ export class AuthController {
 
   @Post(AUTH_ROUTE.LOGIN)
   @AuthTokenSkip()
-  @UseGuards(AuthLocalGuard)
+  @UseGuards(AuthRateLimitGuard, AuthLocalGuard)
   login(@GetUser() user: UserModel, @Res({ passthrough: true }) res: FastifyReply): Promise<LoginResponseDto | LoginVerify2FaDto> {
     return this.authManager.setCookies(user, res, true)
   }
@@ -51,7 +52,7 @@ export class AuthController {
 
   @Post(AUTH_ROUTE.TOKEN)
   @AuthTokenSkip()
-  @UseGuards(AuthLocalGuard, AuthTwoFaVerificationWithoutPasswordGuard)
+  @UseGuards(AuthRateLimitGuard, AuthLocalGuard, AuthTwoFaVerificationWithoutPasswordGuard)
   token(@GetUser() user: UserModel): Promise<TokenResponseDto> {
     return this.authManager.getTokens(user)
   }
@@ -80,14 +81,14 @@ export class AuthController {
   }
 
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_ENABLE}`)
-  @UseGuards(UserRolesGuard)
+  @UseGuards(AuthRateLimitGuard, UserRolesGuard)
   @UserHaveRole(USER_ROLE.USER)
   twoFaEnable(@Body() body: TwoFaVerifyWithPasswordDto, @Req() req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
     return this.authProvider2FA.enableTwoFactor(body, req)
   }
 
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_DISABLE}`)
-  @UseGuards(UserRolesGuard)
+  @UseGuards(AuthRateLimitGuard, UserRolesGuard)
   @UserHaveRole(USER_ROLE.USER)
   twoFaDisable(@Body() body: TwoFaVerifyWithPasswordDto, @Req() req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {
     return this.authProvider2FA.disableTwoFactor(body, req)
@@ -95,7 +96,7 @@ export class AuthController {
 
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_LOGIN_VERIFY}`)
   @AuthTokenSkip()
-  @UseGuards(AuthTokenTwoFaGuard, UserRolesGuard)
+  @UseGuards(AuthRateLimitGuard, AuthTokenTwoFaGuard, UserRolesGuard)
   @UserHaveRole(USER_ROLE.USER)
   async twoFaLogin(
     @Body() body: TwoFaVerifyDto,
@@ -113,7 +114,7 @@ export class AuthController {
   }
 
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_ADMIN_RESET_USER}/:id`)
-  @UseGuards(UserRolesGuard, AuthTwoFaVerificationGuard)
+  @UseGuards(AuthRateLimitGuard, UserRolesGuard, AuthTwoFaVerificationGuard)
   @UserHaveRole(USER_ROLE.ADMINISTRATOR)
   twoFaReset(@Param('id', ParseIntPipe) userId: number): Promise<TwoFaVerifyResult> {
     return this.authProvider2FA.adminResetUserTwoFa(userId)
