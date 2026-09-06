@@ -644,7 +644,7 @@ export class SharesManager {
       'shareDescription'
     ]
     const [updateUser, updateLink, updateShare, updateMember]: [
-      Partial<Pick<User, 'language' | 'isActive' | 'password'>>,
+      Partial<Pick<User, 'language' | 'isActive' | 'password' | 'passwordAttempts'>>,
       Partial<Pick<Link, 'name' | 'email' | 'requireAuth' | 'limitAccess' | 'expiresAt'>>,
       Partial<Pick<Share, 'alias' | 'name' | 'description'>>,
       Partial<Pick<ShareMembers, 'permissions'>>
@@ -673,6 +673,9 @@ export class SharesManager {
             break
           case 'isActive':
             updateUser.isActive = v
+            if (v) {
+              updateUser.passwordAttempts = 0
+            }
             break
           case 'shareName':
             updateShare.name = v
@@ -716,6 +719,7 @@ export class SharesManager {
     if (fromAPI) {
       // for security reasons
       delete updateUser.password
+      delete updateUser.passwordAttempts
       Object.assign(link, updateUser, updateLink, updateMember)
       return link
     }
