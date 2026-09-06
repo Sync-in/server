@@ -16,11 +16,10 @@ import {
   isCrossDevice,
   isInternalTemporaryEntry,
   isPathExists,
-  moveFiles,
   removeFiles,
   temporaryFilePath
 } from '../../utils/files'
-import { countDirEntriesAndSize } from '../../utils/tasks'
+import { countDirEntriesAndSize, isCrossDeviceError } from '../../utils/tasks'
 import { SourceCleanupError } from '../../models/file-error'
 
 @Injectable()
@@ -58,11 +57,10 @@ export class FilesTasksTransfer {
     signal: AbortSignal,
     deleteDestination: () => Promise<void>
   ): Promise<SourceCleanupError | undefined> {
-    await this.initializeTaskProps(srcSpace, isDir)
     const beforeCommit = this.prepareTaskDestination(srcSpace, dstSpace, overwrite, deleteDestination)
     return this.moveAbortable(srcSpace.realPath, dstSpace.realPath, {
       beforeCommit,
-      crossDevice: true,
+      beforeTransfer: () => this.initializeTaskProps(srcSpace, isDir),
       executionId: srcSpace.task!.id,
       onProgress: this.createByteProgressHandler(srcSpace),
       onTransferStart: () => this.startTransferTaskWatch(srcSpace, dstSpace.realPath),
@@ -81,23 +79,15 @@ export class FilesTasksTransfer {
     signal: AbortSignal | undefined,
     prepareDestination: () => Promise<void>
   ): Promise<SourceCleanupError | undefined> {
-    await this.initializeTaskProps(space, isDir)
-    if (!signal) {
-      // Moving to trash on the same device stays atomic and does not copy bytes.
-      this.startTransferTaskWatch(space, trashFile)
-      await prepareDestination()
-      await moveFiles(space.realPath, trashFile, true)
-      return
-    }
     return this.moveAbortable(space.realPath, trashFile, {
       beforeCommit: prepareDestination,
-      crossDevice: true,
+      beforeTransfer: () => this.initializeTaskProps(space, isDir),
       executionId: space.task!.id,
       onProgress: this.createByteProgressHandler(space),
       onTransferStart: () => this.startTransferTaskWatch(space, trashFile),
       operation: FILE_OPERATION.DELETE,
       overwrite: true,
-      signal,
+      signal: signal ?? new AbortController().signal,
       stagingDir
     })
   }
@@ -192,7 +182,7 @@ export class FilesTasksTransfer {
         await this.copyEntry(srcPath, dstPath, recursive, preserveTimestamps, signal, onProgress)
       } catch (e) {
         if (transferStarted) {
-          await this.cleanupAfterFailure(dstPath)
+          await this.removeBestEffort(dstPath)
         }
         throw e
       }
@@ -205,24 +195,30 @@ export class FilesTasksTransfer {
       signal.throwIfAborted()
       await beforeCommit?.()
       await this.prepareDestination(dstPath, overwrite)
-      await fs.rename(temporaryPath, dstPath)
+      await this.publishTemporaryEntry(temporaryPath, dstPath, recursive, preserveTimestamps, signal)
     } catch (e) {
-      await this.cleanupAfterFailure(temporaryPath)
+      await this.removeBestEffort(temporaryPath)
       throw e
     }
   }
 
   private async moveAbortable(srcPath: string, dstPath: string, options: FileTaskTransferOptions): Promise<SourceCleanupError | undefined> {
-    const { beforeCommit, executionId, onProgress, onTransferStart, operation, overwrite = false, signal, stagingDir } = options
-    const crossDevice = options.crossDevice ?? (await isCrossDevice(srcPath, dstPath))
+    const { beforeCommit, beforeTransfer, executionId, onProgress, onTransferStart, operation, overwrite = false, signal, stagingDir } = options
+    const crossDevice = await isCrossDevice(srcPath, dstPath)
+    let streamedBeforeCommit = beforeCommit
     if (!crossDevice) {
       signal.throwIfAborted()
       await beforeCommit?.()
-      await moveFiles(srcPath, dstPath, overwrite)
-      return
+      streamedBeforeCommit = undefined
+      if (!overwrite && srcPath.toLowerCase() !== dstPath.toLowerCase() && (await isPathExists(dstPath))) {
+        throw this.destinationExistsError()
+      }
+      if (await this.tryRename(srcPath, dstPath)) return
     }
+    signal.throwIfAborted()
+    await beforeTransfer?.()
     await this.copyAbortable(srcPath, dstPath, {
-      beforeCommit,
+      beforeCommit: streamedBeforeCommit,
       executionId,
       onProgress,
       onTransferStart,
@@ -235,6 +231,34 @@ export class FilesTasksTransfer {
       await removeFiles(srcPath)
     } catch (cause) {
       return new SourceCleanupError(srcPath, dstPath, { cause })
+    }
+  }
+
+  private async publishTemporaryEntry(
+    temporaryPath: string,
+    dstPath: string,
+    recursive: boolean,
+    preserveTimestamps: boolean,
+    signal: AbortSignal
+  ): Promise<void> {
+    if (await this.tryRename(temporaryPath, dstPath)) return
+    try {
+      // Bytes were already accounted for while filling the staging entry.
+      await this.copyEntry(temporaryPath, dstPath, recursive, preserveTimestamps, signal)
+    } catch (error) {
+      await this.removeBestEffort(dstPath)
+      throw error
+    }
+    await this.removeBestEffort(temporaryPath)
+  }
+
+  private async tryRename(srcPath: string, dstPath: string): Promise<boolean> {
+    try {
+      await fs.rename(srcPath, dstPath)
+      return true
+    } catch (error) {
+      if (isCrossDeviceError(error)) return false
+      throw error
     }
   }
 
@@ -278,16 +302,20 @@ export class FilesTasksTransfer {
   private async prepareDestination(dstPath: string, overwrite: boolean): Promise<void> {
     if (!(await isPathExists(dstPath))) return
     if (!overwrite) {
-      throw Object.assign(new Error('Destination already exists'), { code: 'EEXIST' })
+      throw this.destinationExistsError()
     }
     await removeFiles(dstPath)
   }
 
-  private async cleanupAfterFailure(rPath: string): Promise<void> {
+  private destinationExistsError(): NodeJS.ErrnoException {
+    return Object.assign(new Error('Destination already exists'), { code: 'EEXIST' })
+  }
+
+  private async removeBestEffort(rPath: string): Promise<void> {
     try {
       await removeFiles(rPath)
     } catch {
-      // Cleanup is best-effort and must not replace the transfer error.
+      // Cleanup is best-effort and must not replace the transfer result.
     }
   }
 }

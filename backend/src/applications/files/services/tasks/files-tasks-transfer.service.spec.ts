@@ -197,10 +197,56 @@ describe(FilesTasksTransfer.name, () => {
   it('copies then removes the source for a cross-device move', async () => {
     const signal = new AbortController().signal
     await writeFile(srcPath, 'content')
+    mockCrossDevice()
 
-    await moveAbortable({ crossDevice: true, signal, stagingDir })
+    await moveAbortable({ signal, stagingDir })
 
     await expect(readFile(dstPath, 'utf8')).resolves.toBe('content')
+    await expect(access(srcPath)).rejects.toMatchObject({ code: 'ENOENT' })
+    await expect(readdir(stagingDir)).resolves.toEqual([])
+  })
+
+  it('keeps same-mount moves atomic without initializing streamed progress', async () => {
+    const signal = new AbortController().signal
+    const beforeTransfer = vi.fn()
+    await writeFile(srcPath, 'content')
+
+    await moveAbortable({ beforeTransfer, signal, stagingDir })
+
+    expect(beforeTransfer).not.toHaveBeenCalled()
+    await expect(readFile(dstPath, 'utf8')).resolves.toBe('content')
+    await expect(access(srcPath)).rejects.toMatchObject({ code: 'ENOENT' })
+  })
+
+  it('falls back to instrumented copies when rename reports EXDEV despite device hints', async () => {
+    const signal = new AbortController().signal
+    const beforeCommit = vi.fn()
+    const beforeTransfer = vi.fn()
+    const content = 'content'
+    const temporaryPath = filesUtils.temporaryFilePath(stagingDir, dstPath, FILE_OPERATION.MOVE, taskId)
+    let transferredBytes = 0
+    await writeFile(srcPath, content)
+    const renameSpy = vi
+      .spyOn(fs, 'rename')
+      .mockRejectedValueOnce(Object.assign(new Error('cross-mount move'), { code: 'EXDEV' }))
+      .mockRejectedValueOnce(Object.assign(new Error('cross-mount staging'), { code: 'EXDEV' }))
+
+    await moveAbortable({
+      beforeCommit,
+      beforeTransfer,
+      onProgress: (bytes: number) => {
+        transferredBytes += bytes
+      },
+      signal,
+      stagingDir
+    })
+
+    expect(beforeCommit).toHaveBeenCalledOnce()
+    expect(beforeTransfer).toHaveBeenCalledOnce()
+    expect(transferredBytes).toBe(Buffer.byteLength(content))
+    expect(renameSpy).toHaveBeenNthCalledWith(1, srcPath, dstPath)
+    expect(renameSpy).toHaveBeenNthCalledWith(2, temporaryPath, dstPath)
+    await expect(readFile(dstPath, 'utf8')).resolves.toBe(content)
     await expect(access(srcPath)).rejects.toMatchObject({ code: 'ENOENT' })
     await expect(readdir(stagingDir)).resolves.toEqual([])
   })
@@ -209,9 +255,10 @@ describe(FilesTasksTransfer.name, () => {
     const signal = new AbortController().signal
     const error = new Error('source cleanup failed')
     await writeFile(srcPath, 'content')
+    mockCrossDevice()
     vi.spyOn(filesUtils, 'removeFiles').mockRejectedValueOnce(error)
 
-    const cleanupError = await moveAbortable({ crossDevice: true, signal, stagingDir })
+    const cleanupError = await moveAbortable({ signal, stagingDir })
 
     expect(cleanupError).toBeInstanceOf(SourceCleanupError)
     expect(cleanupError).toMatchObject({

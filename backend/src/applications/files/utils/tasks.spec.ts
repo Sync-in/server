@@ -6,12 +6,10 @@ import { countDirEntriesAndSize, isTaskCancellable } from './tasks'
 
 describe('file task utilities', () => {
   let tmpDir: string
-  let srcPath: string
   let dstPath: string
 
   beforeEach(async () => {
     tmpDir = await mkdtemp(path.join(os.tmpdir(), 'file-tasks-'))
-    srcPath = path.join(tmpDir, 'source.txt')
     dstPath = path.join(tmpDir, 'destination.txt')
   })
 
@@ -20,24 +18,15 @@ describe('file task utilities', () => {
     vi.restoreAllMocks()
   })
 
-  it('marks intrinsically abortable operations as cancellable', async () => {
-    await expect(isTaskCancellable(FILE_OPERATION.COPY, '/source')).resolves.toBe(true)
-    await expect(isTaskCancellable(FILE_OPERATION.DOWNLOAD, '/source')).resolves.toBe(true)
+  it('marks intrinsically abortable operations as cancellable', () => {
+    expect(isTaskCancellable(FILE_OPERATION.COPY)).toBe(true)
+    expect(isTaskCancellable(FILE_OPERATION.DOWNLOAD)).toBe(true)
   })
 
-  it('requires a cross-device destination for move and delete', async () => {
-    await writeFile(srcPath, 'content')
-    const lstatSpy = vi.spyOn(fs, 'lstat')
-    const statSpy = vi.spyOn(fs, 'stat')
-    lstatSpy.mockResolvedValueOnce({ dev: 1 } as any)
-    statSpy.mockResolvedValueOnce({ dev: 2 } as any)
-
-    await expect(isTaskCancellable(FILE_OPERATION.MOVE, srcPath, dstPath)).resolves.toBe(true)
-    lstatSpy.mockResolvedValueOnce({ dev: 1 } as any)
-    statSpy.mockResolvedValueOnce({ dev: 2 } as any)
-    await expect(isTaskCancellable(FILE_OPERATION.DELETE, srcPath, dstPath)).resolves.toBe(true)
-    await expect(isTaskCancellable(FILE_OPERATION.DELETE, srcPath)).resolves.toBe(false)
-    expect(lstatSpy).toHaveBeenCalledWith(srcPath)
+  it('marks moves and trash deletes as cancellable when their destination is known', () => {
+    expect(isTaskCancellable(FILE_OPERATION.MOVE, dstPath)).toBe(true)
+    expect(isTaskCancellable(FILE_OPERATION.DELETE, dstPath)).toBe(true)
+    expect(isTaskCancellable(FILE_OPERATION.DELETE)).toBe(false)
   })
 
   it('counts task content while ignoring internal temporary entries', async () => {

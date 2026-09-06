@@ -36,9 +36,14 @@ export class FileTask {
     this.cancellable = cancellable
     this.path = path
     this.name = name
-    if (type === FILE_OPERATION.COPY || type === FILE_OPERATION.MOVE || type === FILE_OPERATION.DOWNLOAD) {
+    if (
+      type === FILE_OPERATION.COPY ||
+      type === FILE_OPERATION.MOVE ||
+      type === FILE_OPERATION.DOWNLOAD ||
+      (type === FILE_OPERATION.DELETE && cancellable)
+    ) {
       this.props = { progress: 1 }
-      if (type !== FILE_OPERATION.DOWNLOAD) {
+      if (type === FILE_OPERATION.COPY || type === FILE_OPERATION.MOVE) {
         // copy move operation
         this.props.src = { name: name, path: path }
       }

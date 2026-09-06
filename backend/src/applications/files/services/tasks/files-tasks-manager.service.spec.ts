@@ -391,15 +391,37 @@ describe(FilesTasksManager.name, () => {
   it('should run a non-cancellable task without an abort signal', async () => {
     filesMethods.doWork.mockResolvedValueOnce(undefined)
     const user = { id: 7 } as any
-    const space = { realPath: '/data/users/john/files/document.txt', url: 'files/personal/document.txt' } as any
-    const dto = { dstDirectory: 'files/personal' }
+    const space = {
+      inTrashRepository: true,
+      realPath: '/data/users/john/trash/document.txt',
+      url: 'trash/personal/document.txt'
+    } as any
 
-    const task = await filesTasksManager.createTask(FILE_OPERATION.MOVE, user, space, dto, 'doWork')
+    const task = await filesTasksManager.createTask(FILE_OPERATION.DELETE, user, space, null, 'doWork')
     await flushPromises()
 
-    expect(spacesManager.spaceEnv).toHaveBeenCalledWith(user, ['files', 'personal', 'document.txt'])
     expect(task.cancellable).toBe(false)
-    expect(filesMethods.doWork).toHaveBeenCalledWith(user, space, dto)
+    expect(filesMethods.doWork).toHaveBeenCalledWith(user, space, null)
+  })
+
+  it('should stream trash deletes without relying on storage-specific ids', async () => {
+    filesMethods.doWork.mockReturnValueOnce(new Promise<void>(() => undefined))
+    const user = { id: 7 } as any
+    const space = {
+      dbFile: { path: 'documents/report.png', shareExternalId: 33 },
+      inFilesRepository: false,
+      inSharesRepository: true,
+      inTrashRepository: false,
+      realPath: '/mnt/archive/documents/report.png',
+      root: { externalPath: '/mnt/archive', file: { space: { alias: 'project', id: 11 } } },
+      url: 'shares/project/documents/report.png'
+    } as any
+
+    const task = await filesTasksManager.createTask(FILE_OPERATION.DELETE, user, space, null, 'doWork')
+
+    expect(task.cancellable).toBe(true)
+    expect(task.props).toEqual({ progress: 1 })
+    expect(filesMethods.doWork).toHaveBeenCalledWith(user, space, null, expect.any(AbortSignal))
   })
 
   it('should queue tasks when a user already has three running tasks', async () => {

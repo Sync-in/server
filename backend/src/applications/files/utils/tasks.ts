@@ -1,10 +1,14 @@
 import { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
 import { FILE_OPERATION } from '../constants/operations'
-import { isCrossDevice, isInternalTemporaryEntry, walkDir } from './files'
+import { isInternalTemporaryEntry, walkDir } from './files'
 import { FileTaskProps, FileTaskStatus } from '../models/file-task'
 
-export async function isTaskCancellable(type: FILE_OPERATION, srcPath: string, dstPath?: string): Promise<boolean> {
+export function isCrossDeviceError(error: unknown): error is NodeJS.ErrnoException {
+  return (error as NodeJS.ErrnoException)?.code === 'EXDEV'
+}
+
+export function isTaskCancellable(type: FILE_OPERATION, dstPath?: string): boolean {
   switch (type) {
     case FILE_OPERATION.COPY:
     case FILE_OPERATION.DOWNLOAD:
@@ -13,12 +17,9 @@ export async function isTaskCancellable(type: FILE_OPERATION, srcPath: string, d
       return true
     case FILE_OPERATION.MOVE:
     case FILE_OPERATION.DELETE:
-      if (!dstPath) return false
-      try {
-        return await isCrossDevice(srcPath, dstPath)
-      } catch {
-        return false
-      }
+      // The real rename capability is only authoritative at execution time.
+      // Supplying a signal keeps the streamed EXDEV fallback cancellable.
+      return Boolean(dstPath)
     default:
       return false
   }

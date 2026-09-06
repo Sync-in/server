@@ -54,9 +54,9 @@ export class FilesTasksManager implements OnModuleDestroy {
   async createTask(type: FILE_OPERATION, user: UserModel, space: SpaceEnv, dto: any, method: string): Promise<FileTask> {
     const taskId: string = crypto.randomUUID()
     const cacheKey = FilesTasksManager.getCacheKey(user.id, taskId)
-    // MOVE and DELETE need their effective destination to determine whether they cross devices.
+    // MOVE and DELETE only need an effective destination to support a cancellable streamed fallback.
     const dstPath = await this.taskDestinationPath(type, user, space, dto)
-    const cancellable = await isTaskCancellable(type, space.realPath, dstPath)
+    const cancellable = isTaskCancellable(type, dstPath)
     const newTask = new FileTask(taskId, type, dirName(space.url), fileName(space.url), cancellable)
     await this.storeTask(cacheKey, newTask, FileTaskStatus.QUEUED)
     space.task = { id: taskId, type, cacheKey, props: {} }
@@ -206,7 +206,7 @@ export class FilesTasksManager implements OnModuleDestroy {
   }
 
   private runTask(task: FileTaskQueueItem): void {
-    // Only cancellable tasks receive a signal; its absence keeps same-device moves on the atomic path.
+    // Transfer-capable tasks receive a signal; successful native renames still stay atomic.
     const controller = this.watchCancellation(task.task, task.user.id, task.cacheKey)
     const taskPromise = controller
       ? this.filesMethods[task.method](task.user, task.space, task.dto, controller.signal)

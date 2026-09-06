@@ -8,7 +8,7 @@ export interface FileTasksPollResponse {
 }
 export interface FileTaskTransferOptions {
   beforeCommit?: () => Promise<void>
-  crossDevice?: boolean
+  beforeTransfer?: () => Promise<void>
   executionId: string
   onTransferStart?: () => void
   onProgress?: (bytes: number) => void
