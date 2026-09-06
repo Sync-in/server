@@ -7,7 +7,7 @@ import { currentTimeStamp } from '../../../../common/shared'
 import { Cache } from '../../../../infrastructure/cache/cache.service'
 import { SpaceEnv } from '../../../spaces/models/space-env.model'
 import { SpacesManager } from '../../../spaces/services/spaces-manager.service'
-import { trashTargetFromSpace } from '../../../spaces/utils/paths'
+import { trashRelativePathFromSpace, trashTargetFromSpace } from '../../../spaces/utils/paths'
 import { UserModel } from '../../../users/models/user.model'
 import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../../constants/cache'
 import { FILE_OPERATION } from '../../constants/operations'
@@ -24,7 +24,6 @@ import { FilesTasksWatcher } from './files-tasks-watcher.service'
 
 @Injectable()
 export class FilesTasksManager implements OnModuleDestroy {
-  // Task cache key: `ftask-${userId}-${taskId}`.
   private readonly logger = new Logger(FilesTasksManager.name)
   private readonly watchInterval = 1000
   private tasksCancellationWatcher: Record<string, NodeJS.Timeout> = {}
@@ -281,7 +280,7 @@ export class FilesTasksManager implements OnModuleDestroy {
       if (type === FILE_OPERATION.DELETE && !space.inTrashRepository) {
         const trashTarget = trashTargetFromSpace(user, space)
         if (trashTarget?.mode === 'trash') {
-          return path.join(trashTarget.path, dirName(space.dbFile.path), fileName(space.realPath))
+          return path.join(trashTarget.path, dirName(trashRelativePathFromSpace(space)), fileName(space.realPath))
         }
       }
     } catch {

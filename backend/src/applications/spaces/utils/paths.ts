@@ -131,6 +131,13 @@ export function trashTargetFromSpace(user: UserModel, space: SpaceEnv): TrashTar
   return null
 }
 
+export function trashRelativePathFromSpace(space: SpaceEnv): string {
+  if (space.inFilesRepository && space.root?.externalPath) {
+    return path.join(space.root.alias, space.dbFile.path)
+  }
+  return space.dbFile.path
+}
+
 export function temporaryRootFromStorage(storageRoot: string, userId: number): string {
   if (!Number.isSafeInteger(userId) || userId <= 0) {
     throw new FileError(HttpStatus.BAD_REQUEST, 'Invalid temporary-file owner')

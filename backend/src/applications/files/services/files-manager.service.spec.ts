@@ -1374,7 +1374,7 @@ describe(FilesManager.name, () => {
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.DELETE, rPath: trashFile })
     })
 
-    it('should move an external-root db entry into the canonical space-trash scope and preserve a collision', async () => {
+    it('should namespace an external-root entry in the space trash and preserve a collision', async () => {
       const sourceDb = {
         ownerId: null,
         spaceId: 11,
@@ -1384,16 +1384,18 @@ describe(FilesManager.name, () => {
         inTrash: false
       }
       const trashDbScope = { ownerId: null, spaceId: 11, spaceExternalRootId: null, shareExternalId: null, inTrash: true }
-      const trashDb = { ...trashDbScope, path: sourceDb.path }
+      const trashDb = { ...trashDbScope, path: 'archive/documents/report.txt' }
       const space = makeSpace({
         id: 11,
         alias: 'project',
+        inFilesRepository: true,
         inPersonalSpace: false,
         realPath: '/mnt/archive/documents/report.txt',
+        root: { id: 22, alias: 'archive', externalPath: '/mnt/archive' },
         dbFile: sourceDb
       })
-      const trashFile = '/data/spaces/project/trash/documents/report.txt'
-      const renamedTrashFile = '/data/spaces/project/trash/documents/report-2026.txt'
+      const trashFile = '/data/spaces/project/trash/archive/documents/report.txt'
+      const renamedTrashFile = '/data/spaces/project/trash/archive/documents/report-2026.txt'
       vi.mocked(spacesPathUtils.trashTargetFromSpace).mockReturnValueOnce({
         dbScope: trashDbScope,
         mode: 'trash',
@@ -1407,7 +1409,7 @@ describe(FilesManager.name, () => {
 
       expect(filesUtils.moveFiles).toHaveBeenNthCalledWith(1, trashFile, renamedTrashFile)
       expect(filesUtils.moveFiles).toHaveBeenNthCalledWith(2, space.realPath, trashFile, true)
-      expect(filesQueries.moveFiles).toHaveBeenNthCalledWith(1, trashDb, { ...trashDbScope, path: 'documents/report-2026.txt' }, false)
+      expect(filesQueries.moveFiles).toHaveBeenNthCalledWith(1, trashDb, { ...trashDbScope, path: 'archive/documents/report-2026.txt' }, false)
       expect(filesQueries.moveFiles).toHaveBeenNthCalledWith(2, sourceDb, trashDb, false)
       expect(filesQueries.deleteFiles).not.toHaveBeenCalled()
     })

@@ -14,7 +14,7 @@ import { SPACE_OPERATION } from '../../spaces/constants/spaces'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface'
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service'
-import { temporaryRootFromSpace, trashTargetFromSpace } from '../../spaces/utils/paths'
+import { temporaryRootFromSpace, trashRelativePathFromSpace, trashTargetFromSpace } from '../../spaces/utils/paths'
 import { canAccessToSpace, haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
 import { UserModel } from '../../users/models/user.model'
 import { DEPTH, LOCK_DEPTH } from '../../webdav/constants/webdav'
@@ -580,10 +580,10 @@ export class FilesManager {
         throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Unable to resolve trash target')
       }
       if (trashTarget.mode === 'trash') {
-        let destinationDbFile: FileDBProps = { ...trashTarget.dbScope, path: space.dbFile.path }
-        const name = fileName(space.realPath)
-        const trashDir = path.join(trashTarget.path, dirName(space.dbFile.path))
-        let trashFile = path.join(trashDir, name)
+        const trashRelativePath = trashRelativePathFromSpace(space)
+        let destinationDbFile: FileDBProps = { ...trashTarget.dbScope, path: trashRelativePath }
+        const trashDir = path.join(trashTarget.path, dirName(trashRelativePath))
+        let trashFile = path.join(trashDir, fileName(space.realPath))
         if (!(await isPathExists(trashDir))) {
           await makeDir(trashDir, true)
         }
