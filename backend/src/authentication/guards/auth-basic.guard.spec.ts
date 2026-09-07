@@ -1,11 +1,13 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
+import type { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
 import { UserModel } from '../../applications/users/models/user.model'
 import { generateUserTest } from '../../applications/users/utils/test'
 import { WEBDAV_BASE_PATH } from '../../applications/webdav/constants/routes'
 import { Cache } from '../../infrastructure/cache/cache.service'
+import { AUTH_RATE_LIMIT_ERROR_MESSAGE } from '../constants/auth'
 import { AuthProvider } from '../providers/auth-providers.models'
 import { AuthBasicGuard } from './auth-basic.guard'
 import { AuthBasicStrategy } from './auth-basic.strategy'
@@ -18,6 +20,7 @@ describe(AuthBasicGuard.name, () => {
   let userTest: UserModel
   let encodedAuth: string
   let context: DeepMocked<ExecutionContext>
+  const requestIp = '127.0.0.1'
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -42,6 +45,7 @@ describe(AuthBasicGuard.name, () => {
           useValue: {
             get: (_key: string) => undefined,
             set: async (_key: string, _value: string, _ttl: number) => undefined,
+            consumeRateLimit: vi.fn().mockResolvedValue({ totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 }),
             genSlugKey: () => 'test'
           }
         }
@@ -70,6 +74,7 @@ describe(AuthBasicGuard.name, () => {
   it('should validate the user authentication', async () => {
     authProvider.validateUser = vi.fn().mockReturnValueOnce(userTest)
     context.switchToHttp().getRequest.mockReturnValue({
+      ip: requestIp,
       raw: { user: '' },
       headers: { authorization: `Basic ${encodedAuth}` }
     })
@@ -88,6 +93,7 @@ describe(AuthBasicGuard.name, () => {
       return userWithColonPassword
     })
     context.switchToHttp().getRequest.mockReturnValue({
+      ip: requestIp,
       raw: { user: '' },
       headers: { authorization: `Basic ${encodedAuthWithColon}` }
     })
@@ -107,22 +113,32 @@ describe(AuthBasicGuard.name, () => {
     expect(authProvider.validateUser).not.toHaveBeenCalled()
   })
 
-  it('should validate the user authentication with cache', async () => {
+  it('should validate cached credentials without consuming the rate limit', async () => {
     cache.get = vi.fn().mockReturnValueOnce(userTest)
+    const rateLimitSpy = vi.mocked(cache.consumeRateLimit).mockClear()
+    authProvider.validateUser = vi.fn()
     context.switchToHttp().getRequest.mockReturnValue({
+      ip: requestIp,
       raw: { user: '' },
       headers: { authorization: `Basic ${encodedAuth}` }
     })
     expect(await authBasicGuard.canActivate(context)).toBe(true)
+    expect(rateLimitSpy).not.toHaveBeenCalled()
+    expect(authProvider.validateUser).not.toHaveBeenCalled()
   })
 
-  it('should not validate the user authentication when cache returns null (explicitly unauthorized)', async () => {
+  it('should reject cached invalid credentials without consuming the rate limit', async () => {
     cache.get = vi.fn().mockReturnValueOnce(null)
+    const rateLimitSpy = vi.mocked(cache.consumeRateLimit).mockClear()
+    authProvider.validateUser = vi.fn()
     context.switchToHttp().getRequest.mockReturnValue({
+      ip: requestIp,
       raw: { user: '' },
       headers: { authorization: `Basic ${encodedAuth}` }
     })
     await expect(authBasicGuard.canActivate(context)).rejects.toThrow()
+    expect(rateLimitSpy).not.toHaveBeenCalled()
+    expect(authProvider.validateUser).not.toHaveBeenCalled()
   })
 
   it('should not validate the user authentication when cache returns undefined and database return null', async () => {
@@ -130,6 +146,7 @@ describe(AuthBasicGuard.name, () => {
     authProvider.validateUser = vi.fn().mockReturnValueOnce(null)
     vi.spyOn(cache, 'set').mockRejectedValueOnce(new Error('cache failed'))
     context.switchToHttp().getRequest.mockReturnValue({
+      ip: requestIp,
       raw: { user: '' },
       headers: { authorization: `Basic ${encodedAuth}` }
     })
@@ -143,6 +160,7 @@ describe(AuthBasicGuard.name, () => {
 
   it('should not validate the user authentication', async () => {
     context.switchToHttp().getRequest.mockReturnValue({
+      ip: requestIp,
       raw: { user: '' },
       headers: { authorization: `Basic ${encodedAuth}` }
     })
@@ -180,5 +198,16 @@ describe(AuthBasicGuard.name, () => {
       raw: { user: '' }
     })
     await expect(authBasicGuard.canActivate(context)).rejects.toThrow()
+  })
+
+  it('should rate limit unknown credentials before calling the authentication provider', async () => {
+    cache.get = vi.fn().mockResolvedValueOnce(undefined)
+    cache.consumeRateLimit = vi.fn().mockResolvedValueOnce({ totalHits: 61, timeToExpire: 60, isBlocked: true, timeToBlockExpire: 60 })
+    authProvider.validateUser = vi.fn()
+
+    await expect(authBasicStrategy.validate({ ip: requestIp } as FastifyRequest, userTest.login, 'unknown-password')).rejects.toThrow(
+      AUTH_RATE_LIMIT_ERROR_MESSAGE
+    )
+    expect(authProvider.validateUser).not.toHaveBeenCalled()
   })
 })

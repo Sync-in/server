@@ -16,6 +16,11 @@ export const AUTH_RATE_LIMIT_OPTIONS = {
   ttl: 60_000,
   blockDuration: 60_000
 } as const
+export const AUTH_WEBDAV_RATE_LIMIT_OPTIONS = {
+  limit: 60,
+  ttl: 60_000,
+  blockDuration: 60_000
+} as const
 export const AUTH_RATE_LIMIT_ERROR_MESSAGE = 'Too many requests. Please try again later.'
 
 export const TOKEN_PATHS = {
