@@ -1,7 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { CronJob } from 'cron'
-import { and, between, eq, exists, inArray, like, notBetween, SQL, sql } from 'drizzle-orm'
+import { and, between, eq, exists, inArray, notBetween, SQL, sql } from 'drizzle-orm'
 import cluster from 'node:cluster'
 import { createCacheKeySlug, currentTimeStamp } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
@@ -61,7 +61,7 @@ export class MysqlCacheAdapter implements Cache {
     const ks = await this.db
       .select({ key: cache.key })
       .from(cache)
-      .where(and(like(cache.key, pattern.replaceAll('*', '%')), this.whereNotExpired()))
+      .where(and(sql`${cache.key} LIKE ${this.toLikePattern(pattern)} ESCAPE '='`, this.whereNotExpired()))
     return ks.map((k: { key: string }) => k.key)
   }
 
@@ -90,11 +90,13 @@ export class MysqlCacheAdapter implements Cache {
   }
 
   async mget(keys: string[]): Promise<any[]> {
-    const vs: { value: any }[] = await this.db
-      .select({ value: cache.value })
+    if (!keys.length) return []
+    const entries: { key: string; value: any }[] = await this.db
+      .select({ key: cache.key, value: cache.value })
       .from(cache)
       .where(and(inArray(cache.key, keys), this.whereNotExpired()))
-    return vs.map((v: { value: any }) => v.value)
+    const valuesByKey = new Map(entries.map((entry) => [entry.key, entry.value]))
+    return keys.map((key) => valuesByKey.get(key))
   }
 
   async increment(key: string, amount = 1, ttl?: number, minimum?: number): Promise<number> {
@@ -195,7 +197,9 @@ export class MysqlCacheAdapter implements Cache {
   }
 
   async mdel(keys: string[]): Promise<boolean> {
-    return dbCheckAffectedRows(await this.db.delete(cache).where(inArray(cache.key, keys)), keys.length, false)
+    if (!keys.length) return false
+    const [result] = await this.db.delete(cache).where(inArray(cache.key, keys))
+    return result.affectedRows > 0
   }
 
   genSlugKey(...args: any[]): string {
@@ -220,6 +224,10 @@ export class MysqlCacheAdapter implements Cache {
       return null
     }
     return data
+  }
+
+  private toLikePattern(pattern: string): string {
+    return pattern.replaceAll('=', '==').replaceAll('%', '=%').replaceAll('_', '=_').replaceAll('*', '%')
   }
 
   private async clearExpiredKeys() {

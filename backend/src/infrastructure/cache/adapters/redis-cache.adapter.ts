@@ -41,7 +41,7 @@ export class RedisCacheAdapter implements Cache {
 
   async keys(pattern: string): Promise<string[]> {
     const matches: string[] = []
-    for await (const keys of this.client.scanIterator({ MATCH: pattern, COUNT: 100 })) {
+    for await (const keys of this.client.scanIterator({ MATCH: this.toGlobPattern(pattern), COUNT: 100 })) {
       matches.push(...keys)
     }
     return matches
@@ -52,6 +52,7 @@ export class RedisCacheAdapter implements Cache {
   }
 
   async mget(keys: string[]): Promise<(any | undefined)[]> {
+    if (!keys.length) return []
     return (await this.client.mGet(keys)).map((v) => this.deserialize(v))
   }
 
@@ -132,7 +133,13 @@ export class RedisCacheAdapter implements Cache {
 
   async set(key: string, data: unknown, ttl?: number): Promise<boolean> {
     const exp = this.getTTL(ttl)
-    return (await this.client.set(key, this.serialize(data), { expiration: { type: 'EX', value: exp === -1 ? undefined : exp } })) === 'OK'
+    const options = exp === this.infiniteExpiration ? {} : { expiration: { type: 'EX' as const, value: exp } }
+    try {
+      return (await this.client.set(key, this.serialize(data), options)) === 'OK'
+    } catch (e) {
+      this.logger.error({ tag: this.set.name, msg: `${e}` })
+      return false
+    }
   }
 
   async del(key: any): Promise<boolean> {
@@ -140,6 +147,7 @@ export class RedisCacheAdapter implements Cache {
   }
 
   async mdel(keys: string[]): Promise<boolean> {
+    if (!keys.length) return false
     const multi = this.client.multi()
     for (const key of keys) {
       multi.unlink(key)
@@ -183,5 +191,9 @@ export class RedisCacheAdapter implements Cache {
       return undefined
     }
     return JSON.parse(data)
+  }
+
+  private toGlobPattern(pattern: string): string {
+    return pattern.replaceAll('\\', '\\\\').replaceAll('?', '\\?').replaceAll('[', '\\[').replaceAll(']', '\\]')
   }
 }

@@ -12,12 +12,15 @@ export abstract class Cache implements OnModuleInit, OnModuleDestroy {
   abstract has(key: string): Promise<boolean>
 
   /*
-    pattern must use '*' as wildcard
+    pattern supports only '*' as wildcard
    */
   abstract keys(pattern: string): Promise<string[]>
 
   abstract get(key: string): Promise<any>
 
+  /*
+    values preserve the requested key order; missing keys return undefined
+   */
   abstract mget(keys: string[]): Promise<any[]>
 
   abstract increment(key: string, amount?: number, ttl?: number, minimum?: number): Promise<number>
@@ -33,6 +36,9 @@ export abstract class Cache implements OnModuleInit, OnModuleDestroy {
 
   abstract del(key: string): Promise<boolean>
 
+  /*
+    returns true when at least one key was deleted
+   */
   abstract mdel(keys: string[]): Promise<boolean>
 
   abstract genSlugKey(...args: any[]): string
