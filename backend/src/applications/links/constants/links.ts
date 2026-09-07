@@ -10,3 +10,9 @@ export enum LINK_TYPE {
   SPACE = 'space',
   SHARE = 'share'
 }
+
+export const LINK_DOWNLOAD_RATE_LIMIT_OPTIONS = {
+  limit: 30,
+  ttl: 60_000,
+  blockDuration: 60_000
+} as const

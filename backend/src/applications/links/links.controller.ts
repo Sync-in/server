@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Post, Req, Res, StreamableFile, UseGuards } from '@nestjs/common'
+import { Throttle } from '@nestjs/throttler'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { AuthTokenOptional } from '../../authentication/decorators/auth-token-optional.decorator'
 import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
@@ -6,6 +7,7 @@ import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.
 import { GetUser } from '../users/decorators/user.decorator'
 import { UserPasswordDto } from '../users/dto/user-properties.dto'
 import { UserModel } from '../users/models/user.model'
+import { LINK_DOWNLOAD_RATE_LIMIT_OPTIONS } from './constants/links'
 import { PUBLIC_LINKS_ROUTE } from './constants/routes'
 import { SpaceLink } from './interfaces/link-space.interface'
 import { LinksManager } from './services/links-manager.service'
@@ -16,6 +18,7 @@ export class LinksController {
   constructor(private readonly linksManager: LinksManager) {}
 
   @Get(`${PUBLIC_LINKS_ROUTE.VALIDATION}/:uuid`)
+  @UseGuards(AuthRateLimitGuard)
   linkValidation(
     @GetUser() user: UserModel,
     @Param('uuid') uuid: string
@@ -28,6 +31,7 @@ export class LinksController {
   }
 
   @Get(`${PUBLIC_LINKS_ROUTE.ACCESS}/:uuid`)
+  @UseGuards(AuthRateLimitGuard)
   linkAccess(
     @GetUser() user: UserModel,
     @Param('uuid') uuid: string,
@@ -38,6 +42,8 @@ export class LinksController {
   }
 
   @Get(`${PUBLIC_LINKS_ROUTE.DOWNLOAD}/:uuid`)
+  @Throttle({ default: LINK_DOWNLOAD_RATE_LIMIT_OPTIONS })
+  @UseGuards(AuthRateLimitGuard)
   linkDownload(
     @GetUser() user: UserModel,
     @Param('uuid') uuid: string,
