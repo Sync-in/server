@@ -26,6 +26,7 @@ import { API_AUTH_SETTINGS, API_AUTH_TOKEN, API_TWO_FA_ADMIN_RESET_USER, API_TWO
 import { AUTH_TOKEN_SKIP } from './decorators/auth-token-skip.decorator'
 import { LoginResponseDto, LoginVerify2FaDto } from './dto/login-response.dto'
 import { AuthLocalGuard } from './guards/auth-local.guard'
+import { AuthRateLimitGuard } from './guards/auth-rate-limit.guard'
 import { JwtPayload } from './interfaces/jwt-payload.interface'
 import { TOKEN_TYPE } from './interfaces/token.interface'
 import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service'
@@ -43,7 +44,7 @@ describe(AuthController.name, () => {
   let userTest: UserModel
 
   beforeAll(async () => {
-    module = await Test.createTestingModule({
+    const testingModuleBuilder = Test.createTestingModule({
       imports: [await ConfigModule.forRoot({ load: [exportConfiguration], isGlobal: true }), PassportModule],
       controllers: [AuthController],
       providers: [
@@ -57,7 +58,9 @@ describe(AuthController.name, () => {
         { provide: UsersManager, useValue: { updateAccesses: vi.fn().mockResolvedValue(undefined) } },
         { provide: NotificationsManager, useValue: {} }
       ]
-    }).compile()
+    })
+    testingModuleBuilder.overrideGuard(AuthRateLimitGuard).useValue({ canActivate: () => true })
+    module = await testingModuleBuilder.compile()
 
     module.useLogger(['fatal'])
     authConfig = module.get<ConfigService>(ConfigService).get<AuthConfig>('auth')
@@ -314,6 +317,7 @@ describe(`${AuthController.name} HTTP`, () => {
         return true
       }
     })
+    testingModuleBuilder.overrideGuard(AuthRateLimitGuard).useValue({ canActivate: () => true })
     const module: TestingModule = await testingModuleBuilder.compile()
 
     module.useLogger(['fatal'])

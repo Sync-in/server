@@ -1,4 +1,5 @@
 import { OnModuleDestroy, OnModuleInit } from '@nestjs/common'
+import type { CacheRateLimitResult } from './interfaces/cache-rate-limit.interface'
 
 export abstract class Cache implements OnModuleInit, OnModuleDestroy {
   abstract defaultTTL: number
@@ -20,6 +21,9 @@ export abstract class Cache implements OnModuleInit, OnModuleDestroy {
   abstract mget(keys: string[]): Promise<any[]>
 
   abstract increment(key: string, amount?: number, ttl?: number, minimum?: number): Promise<number>
+
+  // Atomically consumes a request; ttl and blockDuration are in milliseconds.
+  abstract consumeRateLimit(key: string, ttl: number, limit: number, blockDuration: number): Promise<CacheRateLimitResult>
 
   /* ttl (seconds):
       - 0: infinite expiration

@@ -11,13 +11,14 @@
     <div class="input-group input-group-lg" style="max-width: 220px">
       <input [(ngModel)]="password"
              (keyup.enter)="validPassword()"
-             [class.is-invalid]="password?.length < passwordMinLength"
+             [class.is-invalid]="retryAfter === 0 && password?.length < passwordMinLength"
+             [disabled]="submitted || retryAfter > 0"
              autocomplete="off"
              class="form-control"
              [placeholder]="'Password' | translate:locale.language"
              type="password"
              required>
-      <button [disabled]="password?.length < passwordMinLength"
+      <button [disabled]="password?.length < passwordMinLength || submitted || retryAfter > 0"
               (click)="validPassword()"
               class="btn btn-custom"
               type="button">
@@ -27,8 +28,15 @@
   </div>
   <div class="link-text">
     <span class="hr"></span>
-    <div>
-      <span class="info" l10nTranslate>This access is protected by a password</span>
+    <div aria-live="polite">
+      @if (retryAfter > 0) {
+        <span class="info d-block text-danger">{{ 'Too many login attempts' | translate:locale.language }}</span>
+        <span class="d-block mt-1 fw-normal opacity-75">
+          {{ 'auth_retry_after' | translate:locale.language:{ delay: retryDelayLabel() } }}
+        </span>
+      } @else {
+        <span class="info" l10nTranslate>This access is protected by a password</span>
+      }
     </div>
   </div>
 </div>

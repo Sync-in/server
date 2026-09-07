@@ -2,6 +2,7 @@ export interface AuthResult {
   success: boolean
   message: any
   twoFaEnabled?: boolean
+  retryAfter?: number
 }
 
 export interface AuthOIDCQueryParams {

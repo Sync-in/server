@@ -11,6 +11,18 @@ export const TWO_FA_VERIFY_EXPIRATION = '5m'
 export const TWO_FA_HEADER_CODE = 'sync-in-two-fa-code'
 export const TWO_FA_HEADER_PASSWORD = 'sync-in-two-fa-password'
 
+export const AUTH_RATE_LIMIT_OPTIONS = {
+  limit: 6,
+  ttl: 60_000,
+  blockDuration: 60_000
+} as const
+export const AUTH_WEBDAV_RATE_LIMIT_OPTIONS = {
+  limit: 60,
+  ttl: 60_000,
+  blockDuration: 60_000
+} as const
+export const AUTH_RATE_LIMIT_ERROR_MESSAGE = 'Too many requests. Please try again later.'
+
 export const TOKEN_PATHS = {
   [TOKEN_TYPE.ACCESS]: '/',
   [TOKEN_TYPE.REFRESH]: API_AUTH_REFRESH,

@@ -23,7 +23,7 @@ import type { UserPasswordDto } from '@sync-in-server/backend/src/applications/u
 import type { LoginResponseDto } from '@sync-in-server/backend/src/authentication/dto/login-response.dto'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { ClipboardService } from 'ngx-clipboard'
-import { catchError, map, Observable, of } from 'rxjs'
+import { catchError, EMPTY, map, Observable, of, throwError } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { AuthService } from '../../../auth/auth.service'
 import { downloadWithAnchor } from '../../../common/utils/functions'
@@ -82,7 +82,11 @@ export class LinksService {
         }
         return false
       }),
-      catchError((): Observable<false> => {
+      catchError((e: HttpErrorResponse): Observable<false> => {
+        if (e.status === 429) {
+          this.navigateToPublicLinkError(uuid, LINKS_PATH.RATE_LIMIT)
+          return of(false)
+        }
         this.authService.logout()
         return of(false)
       })
@@ -90,26 +94,38 @@ export class LinksService {
   }
 
   linkAccessOrView(uuid: string, link: SpaceLink, fileToView?: FileModel) {
-    this.http.get<LoginResponseDto>(`${API_PUBLIC_LINK_ACCESS}/${uuid}`).subscribe((r) => {
-      if (!r.token) {
-        // Already authenticated
-        this.authService.initUser(r)
-      } else {
-        // First authentication with token
-        this.authService.initUserFromResponse(r)
-      }
-      if (fileToView) {
-        this.filesService.openViewerDialog(fileToView, [], link.share.permissions).catch(console.error)
-      } else if (link.space) {
-        this.router.navigate([SPACES_PATH.SPACES_FILES, link.space.alias]).catch(console.error)
-      } else {
-        if (link.share.isDir) {
-          this.router.navigate([SPACES_PATH.SPACES_SHARES, link.share.alias]).catch(console.error)
+    this.http
+      .get<LoginResponseDto>(`${API_PUBLIC_LINK_ACCESS}/${uuid}`)
+      .pipe(
+        catchError((e: HttpErrorResponse) => {
+          if (e.status === 429) {
+            this.navigateToPublicLinkError(uuid, LINKS_PATH.RATE_LIMIT)
+          } else {
+            console.error(e)
+          }
+          return EMPTY
+        })
+      )
+      .subscribe((r) => {
+        if (!r.token) {
+          // Already authenticated
+          this.authService.initUser(r)
         } else {
-          this.router.navigate([SPACES_PATH.SPACES_SHARES], { queryParams: { select: link.share.alias } }).catch(console.error)
+          // First authentication with token
+          this.authService.initUserFromResponse(r)
         }
-      }
-    })
+        if (fileToView) {
+          this.filesService.openViewerDialog(fileToView, [], link.share.permissions).catch(console.error)
+        } else if (link.space) {
+          this.router.navigate([SPACES_PATH.SPACES_FILES, link.space.alias]).catch(console.error)
+        } else {
+          if (link.share.isDir) {
+            this.router.navigate([SPACES_PATH.SPACES_SHARES, link.share.alias]).catch(console.error)
+          } else {
+            this.router.navigate([SPACES_PATH.SPACES_SHARES], { queryParams: { select: link.share.alias } }).catch(console.error)
+          }
+        }
+      })
   }
 
   linkDownload(uuid: string) {
@@ -123,7 +139,8 @@ export class LinksService {
         this.router.navigate([`${LINKS_PATH.LINK}/${uuid}`]).catch(console.error)
         return true
       }),
-      catchError((e) => {
+      catchError((e: HttpErrorResponse) => {
+        if (e.status === 429) return throwError(() => e)
         if (e.error.message === LINK_ERROR.UNAUTHORIZED) {
           this.layout.sendNotification('error', 'Link', 'Bad password')
         } else {
@@ -221,5 +238,9 @@ export class LinksService {
 
   private genLink(link: string): string {
     return `${document.location.origin}/#/${LINKS_PATH.LINK}/${link}`
+  }
+
+  private navigateToPublicLinkError(uuid: string, error: string) {
+    this.router.navigate([`${LINKS_PATH.LINK}/${uuid}/${error}`]).catch(console.error)
   }
 }

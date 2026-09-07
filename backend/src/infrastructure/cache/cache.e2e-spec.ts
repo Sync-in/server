@@ -83,4 +83,20 @@ describe(Cache.name, () => {
   it('should create a slug key from parameters', () => {
     expect(cache.genSlugKey('foo', 'BAR', 12341)).toBe('foo-bar-12341')
   })
+
+  it('should consume, block and reset a rate limit', async () => {
+    const key = 'rate-limit-test'
+    await cache.del(key)
+
+    expect(await cache.consumeRateLimit(key, 5_000, 2, 1_000)).toMatchObject({ totalHits: 1, isBlocked: false })
+    expect(await cache.consumeRateLimit(key, 5_000, 2, 1_000)).toMatchObject({ totalHits: 2, isBlocked: false })
+    expect(await cache.consumeRateLimit(key, 5_000, 2, 1_000)).toMatchObject({ totalHits: 3, isBlocked: true })
+
+    // Blocked requests neither add hits nor extend the block duration.
+    expect(await cache.consumeRateLimit(key, 5_000, 2, 1_000)).toMatchObject({ totalHits: 3, isBlocked: true })
+    await setTimeout(1_100)
+    expect(await cache.consumeRateLimit(key, 5_000, 2, 1_000)).toMatchObject({ totalHits: 1, isBlocked: false })
+
+    await cache.del(key)
+  })
 })
