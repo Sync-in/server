@@ -5,6 +5,9 @@ import { PassportModule } from '@nestjs/passport'
 import { ThrottlerModule } from '@nestjs/throttler'
 import { UsersModule } from '../applications/users/users.module'
 import { configuration } from '../configuration/config.environment'
+import { CacheModule } from '../infrastructure/cache/cache.module'
+import { Cache } from '../infrastructure/cache/cache.service'
+import { AuthRateLimitStorage } from './adapters/auth-rate-limit-storage.adapter'
 import { AuthController } from './auth.controller'
 import { AuthManager } from './auth.service'
 import { AUTH_RATE_LIMIT_OPTIONS } from './constants/auth'
@@ -31,7 +34,14 @@ import { AuthTokenTwoFaStrategy } from './providers/two-fa/guards/auth-token-two
 @Module({
   imports: [
     JwtModule.register({ global: true }),
-    ThrottlerModule.forRoot([AUTH_RATE_LIMIT_OPTIONS]),
+    ThrottlerModule.forRootAsync({
+      imports: [CacheModule],
+      inject: [Cache],
+      useFactory: (cache: Cache) => ({
+        throttlers: [AUTH_RATE_LIMIT_OPTIONS],
+        storage: new AuthRateLimitStorage(cache)
+      })
+    }),
     UsersModule,
     PassportModule,
     ...(configuration.auth.provider === AUTH_PROVIDER.OIDC ? [AuthProviderOIDCModule] : [])
