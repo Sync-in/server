@@ -463,6 +463,8 @@
   "active": "actief",
   "Active": "Actief",
   "suspended": "geschorst",
+  "locked": "geblokkeerd",
+  "Temporarily locked": "Tijdelijk geblokkeerd",
   "Unable to rename user space": "Kan gebruikersruimte niet hernoemen",
   "Unable to delete user space": "Kan gebruikersruimte niet verwijderen",
   "Unable to update user": "Kan gebruiker niet bijwerken",

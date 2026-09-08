@@ -153,8 +153,8 @@ WebDAV-scoped app password, not the primary account password.
 
 ## Password attempts and account access
 
-TOTP verification always reloads the user and applies the normal account-access checks. A missing user, inactive account, or account over the
-password-attempt limit is rejected before code validation.
+TOTP verification always reloads the user and applies the normal account-access checks. A missing user, inactive account, or account within the
+15-minute password-attempt lock period is rejected before code validation. The lock expires automatically and blocked requests do not extend it.
 
 After a successful password step for a TOTP-enabled login, password attempts are preserved until the TOTP step succeeds. A successful TOTP step resets
 attempts; a failed password or failed code increments attempts through the shared access tracking path.

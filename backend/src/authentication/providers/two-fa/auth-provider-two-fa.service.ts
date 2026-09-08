@@ -111,7 +111,7 @@ export class AuthProvider2FA {
       this.logger.warn({ tag: this.loadUser.name, msg: `User ${userId} (${ip}) not found` })
       throw new HttpException(`User not found`, HttpStatus.NOT_FOUND)
     }
-    this.usersManager.validateUserAccess(user, ip)
+    await this.usersManager.validateUserAccess(user)
     return user
   }
 

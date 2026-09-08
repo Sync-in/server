@@ -32,10 +32,10 @@ export const tr = {
   'You receive this notification because you have a lock on this file.': 'Bu dosya üzerinde bir kilidiniz olduğu için bu bildirimi alıyorsunuz.',
   'sends you a request to unlock the file': 'size dosyanın kilidini açma talebi gönderiyor',
   'Security notification': 'Güvenlik bildirimi',
-  'Your account has been locked after several unsuccessful authentication attempts':
-    'Birkaç başarısız kimlik doğrulama girişiminden sonra hesabınız kilitlendi',
-  'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':
-    'Bu güvenlik bildirimi, Sync-in hesabınızla ilgilidir. Analiz yapılması ve hesabınızın kilidinin açılması için lütfen bir yöneticiyle iletişime geçin.',
+  'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts':
+    'Çok fazla başarısız oturum açma denemesi nedeniyle hesabınız geçici olarak 15 dakika kilitlendi',
+  'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.':
+    '15 dakika sonra tekrar oturum açmayı deneyebilirsiniz. Bu denemeleri siz yapmadıysanız yöneticinizle iletişime geçin.',
   'Two-factor authentication (2FA) on your account has been disabled': 'Hesabınızda iki faktörlü kimlik doğrulama (2FA) devre dışı bırakıldı',
   'Two-factor authentication (2FA) on your account has been enabled': 'Hesabınızda iki faktörlü kimlik doğrulama (2FA) etkinleştirildi',
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':

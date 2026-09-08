@@ -32,9 +32,10 @@ export const ja = {
   'You receive this notification because you have a lock on this file.': 'このファイルにロックが設定されているため、この通知を受け取っています。',
   'sends you a request to unlock the file': 'あなたにファイルのロック解除をリクエストしました',
   'Security notification': 'セキュリティ通知',
-  'Your account has been locked after several unsuccessful authentication attempts': '複数回の認証失敗により、あなたのアカウントはロックされました',
-  'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':
-    'このセキュリティ通知はあなたの Sync-in アカウントに関するものです。分析とアカウントのロック解除のため、管理者に連絡してください。',
+  'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts':
+    'サインインの失敗回数が多すぎるため、アカウントは15分間一時的にロックされています',
+  'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.':
+    '15分後に再度サインインできます。これらの試行に心当たりがない場合は、管理者に連絡してください。',
   'Two-factor authentication (2FA) on your account has been disabled': 'あなたのアカウントの二要素認証（2FA）が無効化されました',
   'Two-factor authentication (2FA) on your account has been enabled': 'あなたのアカウントの二要素認証（2FA）が有効化されました',
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':

@@ -4,7 +4,7 @@ import type { GuestUser } from '@sync-in-server/backend/src/applications/users/i
 import { getNewly, titleCase } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'
 import { MemberModel } from '../../users/models/member.model'
-import { userAvatarUrl } from '../../users/user.functions'
+import { isUserTemporarilyLocked, userAvatarUrl } from '../../users/user.functions'
 
 export class AdminUserModel implements AdminUser {
   id: number
@@ -31,6 +31,7 @@ export class AdminUserModel implements AdminUser {
 
   // extra properties
   isAdmin = false
+  isTemporarilyLocked = false
   twoFaEnabled?: boolean
   userRoleText: string
   userIsActiveText: string
@@ -47,9 +48,10 @@ export class AdminUserModel implements AdminUser {
     this.setManagers(user)
     Object.assign(this, user)
     this.isAdmin = user.role === USER_ROLE.ADMINISTRATOR
+    this.isTemporarilyLocked = isUserTemporarilyLocked(this.isActive, this.passwordAttempts, this.currentAccess)
     this.userRoleText = titleCase(USER_ROLE[user.role])
     this.avatarUrl = userAvatarUrl(user.login)
-    this.userIsActiveText = this.isActive ? 'active' : 'suspended'
+    this.userIsActiveText = this.isTemporarilyLocked ? 'locked' : this.isActive ? 'active' : 'suspended'
     this.hTimeAgo = dJs(this.currentAccess).fromNow(true)
     this.newly = getNewly(this.currentAccess)
     if (this.permissions) {

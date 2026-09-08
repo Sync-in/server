@@ -44,9 +44,7 @@ export const NOTIFICATION_APP_EVENT = {
     [ACTION.ADD]: 'Two-factor authentication (2FA) on your account has been enabled',
     [ACTION.DELETE]: 'Two-factor authentication (2FA) on your account has been disabled'
   },
-  AUTH_LOCKED: {
-    [ACTION.DELETE]: 'Your account has been locked after several unsuccessful authentication attempts'
-  },
+  AUTH_LOCKED: 'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts',
   UNLOCK_REQUEST: 'sends you a request to unlock the file',
   UPDATE_AVAILABLE: 'A new update is available'
 }

@@ -31,9 +31,10 @@ export const fr = {
   'You receive this notification because you have a lock on this file.': 'Vous recevez cette notification car vous avez un verrou sur ce fichier.',
   'sends you a request to unlock the file': 'vous envoie une demande de déverrouillage du fichier',
   'Security notification': 'Notification de sécurité',
-  'Your account has been locked after several unsuccessful authentication attempts':
-    'Votre compte a été verrouillé après plusieurs tentatives d’authentification infructueuses',
-  'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.': `Cette notification de sécurité concerne votre compte Sync-in. Merci de contacter un administrateur afin qu’il procède à l’analyse et au déverrouillage de votre compte.`,
+  'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts':
+    'Votre compte est temporairement verrouillé pendant 15 minutes en raison d’un trop grand nombre de tentatives de connexion infructueuses',
+  'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.':
+    'Vous pourrez réessayer de vous connecter après 15 minutes. Si vous n’êtes pas à l’origine de ces tentatives, contactez votre administrateur.',
   'Two-factor authentication (2FA) on your account has been disabled': `L’authentification à deux facteurs (2FA) sur votre compte a été désactivée`,
   'Two-factor authentication (2FA) on your account has been enabled': `L’authentification à deux facteurs (2FA) sur votre compte a été activée`,
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.': `Vous recevez cette notification car la sécurité de votre compte Sync-in a été modifiée. Si vous pensez qu’il s’agit d’une erreur, vérifiez vos paramètres de sécurité ou contactez votre administrateur.`,

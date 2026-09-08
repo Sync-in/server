@@ -163,10 +163,22 @@ local password access or password-fallback step-up. Users authenticated through 
 reset, and disable flows still verify the local Sync-in password. Administrator accounts should have a local Sync-in password configured and kept
 available for break-glass recovery. See `providers/oidc/oidc.md`.
 
-## Access updates and password attempts
+## Authentication rate limiting
 
-Authentication success and failure update the user's access metadata asynchronously. Failed password or code checks increment password attempts. A
-successful password step for a TOTP-enabled user preserves password attempts until the TOTP verification step succeeds; the final 2FA success resets
-the attempt counter.
+Sensitive authentication and verification routes explicitly use `AuthRateLimitGuard`. The guard is selective rather than global: an unguarded route
+does not inherit this policy merely because it belongs to the authentication module.
 
-Accounts that are inactive or have reached the maximum password attempts are rejected before password or app-password validation.
+The default policy allows six requests for the same route and client IP in a rolling 60-second window. Every request that reaches the guard counts,
+regardless of its authentication outcome. The next request starts a 60-second block and returns HTTP `429` with
+`Too many requests. Please try again later.` Requests received during that block do not extend it. Rate-limit response headers expose the configured
+limit, remaining requests, reset delay, and block retry delay. Individual routes can override the default policy when their traffic profile requires
+another limit.
+
+Nest builds each limiter key from the controller handler, throttler name, and `req.ip`, which keeps counters separate between routes and clients. The
+client address therefore follows Fastify's `server.trustProxy` configuration. Limiter state is updated atomically in the configured shared cache,
+whether the cache adapter is MySQL or Redis, so concurrent server workers observe the same counter and block period.
+
+Rate limiting and the temporary account lock cover different levels. The route limiter bounds requests from one IP before expensive authentication
+work, while the account lock stops further cryptographic checks for one account after repeated failures. A distributed source can use several IPs,
+so an edge or reverse-proxy limit remains a complementary deployment control. WebDAV HTTP Basic authentication uses its own rate-limit policy rather
+than the default route guard described here.

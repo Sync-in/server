@@ -191,8 +191,7 @@ export function auth2FaMail(language: i18nLocale, notification: NotificationCont
 export function authLockedMail(language: i18nLocale, notification: NotificationContent): [string, string] {
   const tr = translateObject(language, {
     title: 'Security notification',
-    footer:
-      'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.',
+    footer: 'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.',
     event: notification.event,
     addressIp: 'Address IP'
   })

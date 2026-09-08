@@ -32,10 +32,10 @@ export const nl = {
   'You receive this notification because you have a lock on this file.': 'U ontvangt deze melding omdat u dit bestand hebt vergrendeld.',
   'sends you a request to unlock the file': 'stuurt u een verzoek om het bestand te ontgrendelen',
   'Security notification': 'Beveiligingsmelding',
-  'Your account has been locked after several unsuccessful authentication attempts':
-    'Uw account is vergrendeld na meerdere mislukte pogingen tot authenticatie',
-  'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':
-    'Deze beveiligingsmelding betreft uw Sync-in-account. Neem contact op met een beheerder om dit te laten onderzoeken en uw account te ontgrendelen.',
+  'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts':
+    'Uw account is vanwege te veel mislukte aanmeldpogingen tijdelijk 15 minuten geblokkeerd',
+  'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.':
+    'U kunt na 15 minuten opnieuw proberen in te loggen. Als u deze pogingen niet hebt gedaan, neem dan contact op met uw beheerder.',
   'Two-factor authentication (2FA) on your account has been disabled': 'Twee-factor-authenticatie (2FA) op uw account is uitgeschakeld',
   'Two-factor authentication (2FA) on your account has been enabled': 'Twee-factor-authenticatie (2FA) op uw account is ingeschakeld',
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':

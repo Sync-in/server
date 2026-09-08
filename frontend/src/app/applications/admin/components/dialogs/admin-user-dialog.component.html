@@ -219,6 +219,9 @@
                   </div>
                 </div>
               </div>
+              @if (user?.isTemporarilyLocked) {
+                <small class="text-danger" l10nTranslate>Temporarily locked</small>
+              }
 
               <div class="card dialog-check-card dialog-check-card--interactive"
                    [class.dialog-check-card--active]="userForm.value.isAdmin"

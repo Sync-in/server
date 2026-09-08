@@ -33,10 +33,10 @@ export const ru = {
     'Вы получили это уведомление, потому что у вас есть блокировка на этом файле.',
   'sends you a request to unlock the file': 'отправляет вам запрос на разблокировку файла',
   'Security notification': 'Уведомление безопасности',
-  'Your account has been locked after several unsuccessful authentication attempts':
-    'Ваш аккаунт был заблокирован после нескольких неудачных попыток входа',
-  'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':
-    'Это уведомление касается вашего аккаунта в Sync-in. Пожалуйста, обратитесь к администратору для анализа и разблокировки аккаунта.',
+  'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts':
+    'Ваша учетная запись временно заблокирована на 15 минут из-за слишком большого количества неудачных попыток входа',
+  'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.':
+    'Вы можете повторить попытку входа через 15 минут. Если эти попытки совершали не вы, обратитесь к администратору.',
   'Two-factor authentication (2FA) on your account has been disabled': 'Двухфакторная аутентификация (2FA) для вашего аккаунта была отключена',
   'Two-factor authentication (2FA) on your account has been enabled': 'Двухфакторная аутентификация (2FA) для вашего аккаунта была включена',
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':

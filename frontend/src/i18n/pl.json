@@ -463,6 +463,8 @@
   "active": "aktywne",
   "Active": "Aktywne",
   "suspended": "zawieszone",
+  "locked": "zablokowane",
+  "Temporarily locked": "Tymczasowo zablokowane",
   "Unable to rename user space": "Nie można zmienić nazwy przestrzeni użytkownika",
   "Unable to delete user space": "Nie można usunąć przestrzeni użytkownika",
   "Unable to update user": "Nie można zaktualizować użytkownika",

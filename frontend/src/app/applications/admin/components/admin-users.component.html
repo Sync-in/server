@@ -135,13 +135,9 @@
                     </div>
                   }
                   @case ('isActive') {
-                    <span class="{{u.isActive ? 'text-success' : 'text-danger'}}" l10nTranslate>
-                      @if (!u.isActive && u.passwordAttempts) {
-                        Too many login attempts
-                      } @else {
-                        {{ u.userIsActiveText }}
-                      }
-                  </span>
+                    <span class="{{u.isActive && !u.isTemporarilyLocked ? 'text-success' : 'text-danger'}}" l10nTranslate>
+                      {{ u.userIsActiveText }}
+                    </span>
                   }
                   @case ('currentAccess') {
                     @if (u.currentAccess) {

@@ -33,10 +33,10 @@ export const de = {
     'Sie erhalten diese Benachrichtigung, weil Sie eine Sperre auf dieser Datei haben.',
   'sends you a request to unlock the file': 'sendet Ihnen eine Anfrage zum Entsperren der Datei',
   'Security notification': 'Sicherheitsbenachrichtigung',
-  'Your account has been locked after several unsuccessful authentication attempts':
-    'Ihr Konto wurde nach mehreren fehlgeschlagenen Anmeldeversuchen gesperrt',
-  'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':
-    'Diese Sicherheitsbenachrichtigung betrifft Ihr Sync-in-Konto. Bitte wenden Sie sich an einen Administrator, damit er die Analyse durchführt und Ihr Konto entsperrt.',
+  'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts':
+    'Ihr Konto ist aufgrund zu vieler fehlgeschlagener Anmeldeversuche vorübergehend für 15 Minuten gesperrt',
+  'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.':
+    'Sie können sich nach 15 Minuten erneut anmelden. Wenn diese Versuche nicht von Ihnen stammen, wenden Sie sich bitte an Ihren Administrator.',
   'Two-factor authentication (2FA) on your account has been disabled': 'Die Zwei-Faktor-Authentifizierung (2FA) für Ihr Konto wurde deaktiviert',
   'Two-factor authentication (2FA) on your account has been enabled': 'Die Zwei-Faktor-Authentifizierung (2FA) für Ihr Konto wurde aktiviert',
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':

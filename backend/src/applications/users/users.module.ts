@@ -1,4 +1,5 @@
 import { Global, Module } from '@nestjs/common'
+import { NotificationsModule } from '../notifications/notifications.module'
 import { AdminUsersController } from './admin-users.controller'
 import { UserPermissionsGuard } from './guards/permissions.guard'
 import { UserRolesGuard } from './guards/roles.guard'
@@ -11,6 +12,7 @@ import { WebSocketUsers } from './users.gateway'
 
 @Global()
 @Module({
+  imports: [NotificationsModule],
   controllers: [UsersController, AdminUsersController],
   providers: [WebSocketUsers, UserRolesGuard, UserPermissionsGuard, UsersManager, UsersQueries, AdminUsersManager, AdminUsersQueries],
   exports: [UsersManager, UsersQueries, AdminUsersManager, AdminUsersQueries]

@@ -463,6 +463,8 @@
   "active": "सक्रिय",
   "Active": "सक्रिय",
   "suspended": "निलंबित",
+  "locked": "लॉक किया गया",
+  "Temporarily locked": "अस्थायी रूप से लॉक किया गया",
   "Unable to rename user space": "उपयोगकर्ता स्पेस का नाम नहीं बदला जा सका",
   "Unable to delete user space": "उपयोगकर्ता स्पेस हटाया नहीं जा सका",
   "Unable to update user": "उपयोगकर्ता अपडेट नहीं किया जा सका",

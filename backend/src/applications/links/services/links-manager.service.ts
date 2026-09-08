@@ -105,8 +105,9 @@ export class LinksManager {
       this.logger.warn({ tag: this.linkAuthentication.name, msg: `*${link.user.login}* (${link.user.id}) : ${check}` })
       throw new HttpException(check as string, HttpStatus.BAD_REQUEST)
     }
-    const authSuccess: boolean = await this.usersManager.compareUserPassword(link.user.id, linkPasswordDto.password)
     const user = new UserModel(link.user)
+    await this.usersManager.validatePasswordAttempts(user)
+    const authSuccess: boolean = await this.usersManager.compareUserPassword(link.user.id, linkPasswordDto.password)
     this.usersManager
       .updateAccesses(user, req.ip, authSuccess)
       .catch((e: Error) => this.logger.error({ tag: this.linkAuthentication.name, msg: `${e}` }))

@@ -31,9 +31,9 @@ export const zh = {
   'You receive this notification because you have a lock on this file.': '您收到此通知是因为您对该文件设置了锁。',
   'sends you a request to unlock the file': '向您发送了解锁该文件的请求',
   'Security notification': '安全通知',
-  'Your account has been locked after several unsuccessful authentication attempts': '在多次身份验证失败后，您的账户已被锁定',
-  'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':
-    '此安全通知与您的 Sync-in 账户相关。请联系管理员进行分析并解锁您的账户。',
+  'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts': '您的账户因登录失败次数过多而被暂时锁定 15 分钟',
+  'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.':
+    '您可以在 15 分钟后再次尝试登录。如果这些尝试并非由您发起，请联系您的管理员。',
   'Two-factor authentication (2FA) on your account has been disabled': '您账户的双重身份验证 (2FA) 已被禁用',
   'Two-factor authentication (2FA) on your account has been enabled': '您账户的双重身份验证 (2FA) 已被启用',
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':

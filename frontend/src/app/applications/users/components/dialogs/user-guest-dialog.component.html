@@ -140,6 +140,9 @@
                   </div>
                 </div>
               </div>
+              @if (guest?.isTemporarilyLocked) {
+                <small class="text-danger" l10nTranslate>Temporarily locked</small>
+              }
             </div>
           </div>
 
@@ -147,14 +150,14 @@
             <div class="card dialog-tab-card w-100">
               <div class="card-body">
                 <div class="row g-3">
-                  <div class="col-12">
+                  <div class="col-12 col-md-5">
                     <div class="d-flex flex-column">
                       <label class="form-label" for="created" l10nTranslate>Creation date</label>
                       <div class="fs-sm" id="created">{{ guest.createdAt | amDateFormat }}</div>
                     </div>
                   </div>
-                  <div class="col-12">
-                    <div class="d-flex flex-column">
+                  <div class="col-12 col-md-7">
+                    <div class="d-flex flex-column text-md-end">
                       <label class="form-label" for="access" l10nTranslate>Last accesses</label>
                       <div class="fs-sm" id="access">
                         @if (guest.lastAccess) {
@@ -167,7 +170,7 @@
                             <span>{{ guest.lastIp }}</span>
                           </div>
                         } @else {
-                          <span class="badge bg-danger" l10nTranslate>never</span>
+                          <span class="text-danger" l10nTranslate>never</span>
                         }
                       </div>
                     </div>

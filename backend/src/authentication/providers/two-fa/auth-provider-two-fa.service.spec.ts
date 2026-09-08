@@ -334,7 +334,7 @@ describe(AuthProvider2FA.name, () => {
       const result = await service.loadUser(1, '127.0.0.1')
 
       expect(result).toBe(mockUser)
-      expect(usersManager.validateUserAccess).toHaveBeenCalledWith(mockUser, '127.0.0.1')
+      expect(usersManager.validateUserAccess).toHaveBeenCalledWith(mockUser)
     })
 
     it('should throw error if user not found', async () => {

@@ -25,6 +25,44 @@ every authenticated user type. The numeric order is therefore security-sensitive
 `isLink` match only their exact roles. `USER_GROUP_ROLE` values (`MEMBER` and
 `MANAGER`) describe membership inside a group and are independent of these user types.
 
+## Account state and password attempts
+
+The persistent account state and the temporary authentication lock are independent controls. Password failures never change `isActive`, and reaching
+the password-attempt limit does not suspend the account.
+
+### Persistent account state (`isActive`)
+
+`isActive` is the durable administrative switch for a local user record:
+
+- `isActive: false` is rejected by local password and app-password paths as well as by the LDAP and OIDC provider flows;
+- authenticated requests and token refreshes reload the local user record, so disabling the account also invalidates existing sessions;
+- the account remains disabled until an administrator reactivates it; there is no automatic expiration;
+- reactivating the account resets `passwordAttempts` to zero.
+
+Public-link pseudo-users also use `isActive` as their persistent enabled or disabled state. A disabled pseudo-user cannot authenticate or access its
+link.
+
+### Temporary authentication lock
+
+The temporary lock limits repeated checks against an active account without changing `isActive`:
+
+- failed password, app-password, TOTP, or recovery-code checks recorded by the shared access-update path increment `passwordAttempts` up to a maximum
+  of 10;
+- a successful authentication resets the counter; for a TOTP-enabled login, a successful password step preserves it until the TOTP or recovery-code
+  step succeeds;
+- the transition from 9 to 10 attempts starts a 15-minute lock. The timestamp written to `currentAccess` by that failed attempt is the lock-period
+  anchor;
+- while the lock is active, password, app-password, and verification-code checks are rejected before their cryptographic comparison. These rejected
+  requests do not update the access history, increment the counter, extend the lock, or send another lock notification;
+- expiration is checked lazily on the next authentication attempt. A conditional database update resets the expired counter without clearing newer
+  failures from a concurrent request. Only the request that successfully resets the counter continues; a concurrent request based on stale lock data
+  fails closed. A new failure after reset counts as the first attempt of a new period;
+- the temporary lock does not invalidate access, refresh, or websocket tokens that were issued before the lock.
+
+The counter transition is serialized in the database so concurrent failures cannot lose increments or produce several 9-to-10 transitions. When
+email delivery is available, only the request that reaches 10 attempts schedules the temporary-lock security notification. Route-level request
+throttling is documented in [`auth.md`](../../authentication/auth.md#authentication-rate-limiting).
+
 ## Application permissions
 
 Application permissions control access to features and protected operations. They are independent from the role hierarchy and from the permissions

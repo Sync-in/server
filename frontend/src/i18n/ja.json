@@ -463,6 +463,8 @@
   "active": "有効",
   "Active": "有効",
   "suspended": "一時停止",
+  "locked": "ロック中",
+  "Temporarily locked": "一時的にロック",
   "Unable to rename user space": "ユーザースペースの名前を変更できません",
   "Unable to delete user space": "ユーザースペースを削除できません",
   "Unable to update user": "ユーザーを更新できません",

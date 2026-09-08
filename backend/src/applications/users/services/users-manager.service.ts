@@ -11,7 +11,6 @@ import { LoginResponseDto } from '../../../authentication/dto/login-response.dto
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface'
 import { AUTH_SESSION } from '../../../authentication/providers/auth-providers.constants'
-import { ACTION } from '../../../common/constants'
 import { comparePassword, hashPassword } from '../../../common/functions'
 import { convertTempImageToPng, generateAvatar, imgMimeTypePrefix, pngMimeType, svgMimeType } from '../../../common/image'
 import { createLightSlug, genPassword } from '../../../common/shared'
@@ -19,10 +18,17 @@ import { configuration, serverConfig } from '../../../configuration/config.envir
 import { Cache } from '../../../infrastructure/cache/cache.service'
 import { isPathExists, removeFiles, sanitizeName, temporaryFilePath } from '../../files/utils/files'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
+import type { NotificationContent } from '../../notifications/interfaces/notification-properties.interface'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { GROUP_TYPE } from '../constants/group'
 import { MEMBER_TYPE } from '../constants/member'
-import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_ONLINE_STATUS, USER_ROLE } from '../constants/user'
+import {
+  USER_GROUP_ROLE,
+  USER_MAX_PASSWORD_ATTEMPTS,
+  USER_ONLINE_STATUS,
+  USER_PASSWORD_ATTEMPTS_LOCK_DURATION_MS,
+  USER_ROLE
+} from '../constants/user'
 import type { UserCreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
 import type { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto'
 import type { SearchMembersDto } from '../dto/search-members.dto'
@@ -65,12 +71,12 @@ export class UsersManager {
 
   async fromAuthToken(authUser: UserModel): Promise<UserModel | null> {
     const user = await this.fromUserId(authUser.id)
-    if (!user?.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
+    if (!user?.isActive) {
       return null
     }
     if (authUser.impersonatedFromId) {
       const impersonatingUser = await this.fromUserId(authUser.impersonatedFromId)
-      if (!impersonatingUser?.isActive || !impersonatingUser.isAdmin || impersonatingUser.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
+      if (!impersonatingUser?.isActive || !impersonatingUser.isAdmin) {
         return null
       }
       user.impersonatedFromId = authUser.impersonatedFromId
@@ -136,7 +142,7 @@ export class UsersManager {
   }
 
   async logUser(user: UserModel, password: string, ip: string, scope?: AUTH_SCOPE): Promise<UserModel | null> {
-    this.validateUserAccess(user, ip)
+    await this.validateUserAccess(user)
     const webDAVRequiresAppPassword = scope === AUTH_SCOPE.WEBDAV && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
     // Keep the primary-password bcrypt path for scoped auth timing, but never accept it for 2FA WebDAV.
     const primaryPasswordMatches: boolean = await comparePassword(password, user.password)
@@ -153,19 +159,33 @@ export class UsersManager {
     return null
   }
 
-  validateUserAccess(user: UserModel, ip: string) {
+  async validateUserAccess(user: UserModel): Promise<void> {
     if (user.role === USER_ROLE.LINK) {
       this.logger.error({ tag: this.validateUserAccess.name, msg: `guest link account ${user} is not authorized to login` })
       throw new HttpException('Account is not allowed', HttpStatus.FORBIDDEN)
     }
-    if (!user.isActive || user.passwordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
-      this.updateAccesses(user, ip, false).catch((e: Error) => this.logger.error({ tag: this.validateUserAccess.name, msg: `${e}` }))
+    if (!user.isActive) {
       this.logger.error({ tag: this.validateUserAccess.name, msg: `user account *${user.login}* is locked` })
-      if (user.isActive) {
-        this.notifyAccountLocked(user, ip)
-      }
       throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
     }
+    await this.validatePasswordAttempts(user)
+  }
+
+  async validatePasswordAttempts(user: UserModel): Promise<void> {
+    if ((user.passwordAttempts ?? 0) < USER_MAX_PASSWORD_ATTEMPTS) return
+
+    const now = Date.now()
+    const lastAttemptAt = user.currentAccess?.getTime() ?? Number.NaN
+    if (Number.isFinite(lastAttemptAt) && lastAttemptAt + USER_PASSWORD_ATTEMPTS_LOCK_DURATION_MS > now) {
+      this.logger.error({ tag: this.validatePasswordAttempts.name, msg: `user account *${user.login}* is temporarily locked` })
+      throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
+    }
+
+    const expiredBefore = new Date(now - USER_PASSWORD_ATTEMPTS_LOCK_DURATION_MS)
+    if (!(await this.usersQueries.resetExpiredPasswordAttempts(user.id, expiredBefore))) {
+      throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
+    }
+    user.passwordAttempts = 0
   }
 
   async me(authUser: UserModel): Promise<Omit<LoginResponseDto, 'token'>> {
@@ -276,8 +296,12 @@ export class UsersManager {
 
   async updateAccesses(user: UserModel, ip: string, success: boolean, isAuthTwoFa = false) {
     const preservePasswordAttempts = success && !isAuthTwoFa && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
-    if (!(await this.usersQueries.updateAccesses(user.id, ip, preservePasswordAttempts ? 'preserve' : success ? 'reset' : 'increment'))) {
+    const result = await this.usersQueries.updateAccesses(user.id, ip, preservePasswordAttempts ? 'preserve' : success ? 'reset' : 'increment')
+    if (!result.success) {
       throw new Error('Unable to update user accesses')
+    }
+    if (result.temporaryLockStarted) {
+      this.notifyTemporaryAccountLock(user, ip)
     }
   }
 
@@ -687,14 +711,15 @@ export class UsersManager {
     }
   }
 
-  private notifyAccountLocked(user: UserModel, ip: string) {
+  private notifyTemporaryAccountLock(user: UserModel, ip: string): void {
+    const notification = {
+      app: NOTIFICATION_APP.AUTH_LOCKED,
+      event: NOTIFICATION_APP_EVENT.AUTH_LOCKED,
+      element: '',
+      url: ip
+    } satisfies NotificationContent
     this.notificationsManager
-      .sendEmailNotification([user], {
-        app: NOTIFICATION_APP.AUTH_LOCKED,
-        event: NOTIFICATION_APP_EVENT.AUTH_LOCKED[ACTION.DELETE],
-        element: null,
-        url: ip
-      })
-      .catch((e: Error) => this.logger.error({ tag: this.notifyAccountLocked.name, msg: `${e}` }))
+      .sendEmailNotification([user], notification)
+      .catch((e: Error) => this.logger.error({ tag: this.notifyTemporaryAccountLock.name, msg: `${e}` }))
   }
 }

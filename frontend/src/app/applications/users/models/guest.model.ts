@@ -1,7 +1,7 @@
 import type { GuestUser } from '@sync-in-server/backend/src/applications/users/interfaces/guest-user.interface'
 import { getNewly } from '../../../common/utils/functions'
 import { dJs } from '../../../common/utils/time'
-import { userAvatarUrl } from '../user.functions'
+import { isUserTemporarilyLocked, userAvatarUrl } from '../user.functions'
 import { MemberModel } from './member.model'
 
 export class GuestUserModel implements GuestUser {
@@ -25,6 +25,7 @@ export class GuestUserModel implements GuestUser {
   groups: MemberModel[]
 
   // extra properties
+  isTemporarilyLocked = false
   userIsActiveText: string
   avatarUrl?: string
   newly = 0
@@ -37,8 +38,9 @@ export class GuestUserModel implements GuestUser {
     this.setManagers(guest)
     this.setGroups(guest)
     Object.assign(this, guest)
+    this.isTemporarilyLocked = isUserTemporarilyLocked(this.isActive, this.passwordAttempts, this.currentAccess)
     this.avatarUrl = userAvatarUrl(guest.login)
-    this.userIsActiveText = this.isActive ? 'active' : 'suspended'
+    this.userIsActiveText = this.isTemporarilyLocked ? 'locked' : this.isActive ? 'active' : 'suspended'
     this.hTimeAgo = dJs(this.currentAccess).fromNow(true)
     this.newly = getNewly(this.currentAccess)
   }

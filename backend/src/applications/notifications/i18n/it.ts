@@ -32,9 +32,10 @@ export const it = {
   'You receive this notification because you have a lock on this file.': 'Ricevi questa notifica perché hai un blocco su questo file.',
   'sends you a request to unlock the file': 'ti invia una richiesta per sbloccare il file',
   'Security notification': 'Notifica di sicurezza',
-  'Your account has been locked after several unsuccessful authentication attempts':
-    'Il tuo account è stato bloccato dopo diversi tentativi di autenticazione non riusciti',
-  'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.': `Questa notifica di sicurezza riguarda il tuo account Sync-in. Contatta un amministratore per effettuare l'analisi e sbloccare il tuo account.`,
+  'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts':
+    'Il tuo account è temporaneamente bloccato per 15 minuti a causa di troppi tentativi di accesso non riusciti',
+  'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.':
+    'Puoi provare ad accedere di nuovo dopo 15 minuti. Se non hai effettuato tu questi tentativi, contatta il tuo amministratore.',
   'Two-factor authentication (2FA) on your account has been disabled': `L'autenticazione a due fattori (2FA) sul tuo account è stata disabilitata`,
   'Two-factor authentication (2FA) on your account has been enabled': `L'autenticazione a due fattori (2FA) sul tuo account è stata abilitata`,
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':

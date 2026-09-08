@@ -463,6 +463,8 @@
   "active": "активен",
   "Active": "Активен",
   "suspended": "приостановлен",
+  "locked": "заблокирован",
+  "Temporarily locked": "Временно заблокирован",
   "Unable to rename user space": "Не удалось переименовать пользовательское пространство",
   "Unable to delete user space": "Не удалось удалить пользовательское пространство",
   "Unable to update user": "Не удалось обновить пользователя",

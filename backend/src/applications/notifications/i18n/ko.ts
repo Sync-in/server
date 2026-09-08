@@ -32,9 +32,10 @@ export const ko = {
   'You receive this notification because you have a lock on this file.': '이 파일에 잠금이 설정되어 있어 이 알림을 받았습니다.',
   'sends you a request to unlock the file': '파일 잠금 해제 요청을 보냈습니다',
   'Security notification': '보안 알림',
-  'Your account has been locked after several unsuccessful authentication attempts': '여러 번 인증에 실패하여 계정이 잠겼습니다',
-  'This security notification concerns your Sync-in account. Please contact an administrator to perform the analysis and unlock your account.':
-    '이 보안 알림은 귀하의 Sync-in 계정과 관련된 것입니다. 분석 및 계정 잠금 해제를 위해 관리자에게 문의해 주세요.',
+  'Your account is temporarily locked for 15 minutes due to too many failed sign-in attempts':
+    '로그인 실패 횟수가 너무 많아 계정이 15분 동안 일시적으로 잠겼습니다',
+  'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.':
+    '15분 후에 다시 로그인할 수 있습니다. 본인이 시도한 것이 아니라면 관리자에게 문의하세요.',
   'Two-factor authentication (2FA) on your account has been disabled': '계정의 이중 인증(2FA)이 비활성화되었습니다',
   'Two-factor authentication (2FA) on your account has been enabled': '계정의 이중 인증(2FA)이 활성화되었습니다',
   'You received this notification because the security of your Sync-in account has changed. If you think this was a mistake, please review your security settings or contact your administrator.':

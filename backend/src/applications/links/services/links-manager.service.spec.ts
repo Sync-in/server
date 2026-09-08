@@ -1,4 +1,5 @@
 import { HttpService } from '@nestjs/axios'
+import { HttpException, HttpStatus } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
@@ -54,6 +55,7 @@ describe(LinksManager.name, () => {
     } as any
 
     usersManagerMock = {
+      validatePasswordAttempts: vi.fn(),
       compareUserPassword: vi.fn(),
       updateAccesses: vi.fn()
     } as any
@@ -311,6 +313,7 @@ describe(LinksManager.name, () => {
       const result = await service.linkAuthentication(identity, link.uuid, { password: 'secret' } as any, req, res)
 
       expect(result).toBe(loginDto)
+      expect(usersManagerMock.validatePasswordAttempts).toHaveBeenCalledWith(expect.objectContaining({ id: link.user.id }))
       expect(usersManagerMock.compareUserPassword).toHaveBeenCalledWith(link.user.id, 'secret')
       expect(usersManagerMock.updateAccesses).toHaveBeenCalledWith(expect.anything(), req.ip, true)
       expect(authManagerMock.setCookies).toHaveBeenCalled()
@@ -325,6 +328,16 @@ describe(LinksManager.name, () => {
       usersManagerMock.updateAccesses.mockResolvedValueOnce(undefined)
 
       await expect(service.linkAuthentication(identity, link.uuid, { password: 'bad' } as any, req, res)).rejects.toMatchObject({ status: 403 })
+    })
+
+    it('rejects a temporarily locked link before comparing its password', async () => {
+      const link = { ...baseLink, requireAuth: true }
+      linksQueriesMock.linkFromUUID.mockResolvedValueOnce(link)
+      usersManagerMock.validatePasswordAttempts.mockRejectedValueOnce(new HttpException('Account locked', HttpStatus.FORBIDDEN))
+
+      await expect(service.linkAuthentication(identity, link.uuid, { password: 'secret' } as any, req, res)).rejects.toMatchObject({ status: 403 })
+      expect(usersManagerMock.compareUserPassword).not.toHaveBeenCalled()
+      expect(usersManagerMock.updateAccesses).not.toHaveBeenCalled()
     })
 
     it('throws BAD_REQUEST when link is invalid (e.g., expired)', async () => {

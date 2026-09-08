@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { and, countDistinct, desc, eq, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, SelectedFields, SQL, sql } from 'drizzle-orm'
+import { and, countDistinct, desc, eq, gte, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, SelectedFields, SQL, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/mysql-core'
 import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { anonymizePassword, comparePassword, uniquePermissions } from '../../../common/functions'
@@ -25,6 +25,7 @@ import { SearchMembersDto } from '../dto/search-members.dto'
 import { GroupMember, GroupWithMembers } from '../interfaces/group-member'
 import { GuestUser } from '../interfaces/guest-user.interface'
 import { Member } from '../interfaces/member.interface'
+import type { UserAccessUpdateResult } from '../interfaces/user-access-update-result.interface'
 import { UserSecrets } from '../interfaces/user-secrets.interface'
 import { UserOnline } from '../interfaces/websocket.interface'
 import { UserModel } from '../models/user.model'
@@ -267,26 +268,77 @@ export class UsersQueries {
     }
   }
 
-  async updateAccesses(userId: number, ip: string, passwordAttempts: 'preserve' | 'reset' | 'increment'): Promise<boolean> {
-    const set: Partial<Record<keyof User, any>> = {
-      lastAccess: users.currentAccess,
-      currentAccess: new Date(),
-      lastIp: users.currentIp,
-      currentIp: ip
-    }
-    if (passwordAttempts === 'reset') {
-      set.passwordAttempts = 0
-    } else if (passwordAttempts === 'increment') {
-      // Keep the increment and account lock in one UPDATE to avoid lost updates under concurrent authentication failures.
-      set.isActive = sql`IF(${users.passwordAttempts} >= ${USER_MAX_PASSWORD_ATTEMPTS - 1}, FALSE, ${users.isActive})`
-      set.passwordAttempts = sql`LEAST(${users.passwordAttempts} + 1, ${USER_MAX_PASSWORD_ATTEMPTS})`
-    }
+  async updateAccesses(userId: number, ip: string, attemptsAction: 'preserve' | 'reset' | 'increment'): Promise<UserAccessUpdateResult> {
+    const passwordAttemptsUpdate =
+      attemptsAction === 'reset'
+        ? sql`, ${sql.identifier(users.passwordAttempts.name)} = ${sql.param(0, users.passwordAttempts)}`
+        : attemptsAction === 'increment'
+          ? sql`, ${sql.identifier(users.passwordAttempts.name)} = LEAST(${users.passwordAttempts} + 1, ${USER_MAX_PASSWORD_ATTEMPTS})`
+          : sql``
+    const updateAccessesQuery = () => sql`
+      UPDATE ${users}
+      SET ${sql.identifier(users.lastAccess.name)}    = ${users.currentAccess},
+          ${sql.identifier(users.currentAccess.name)} = ${sql.param(new Date(), users.currentAccess)},
+          ${sql.identifier(users.lastIp.name)}        = ${users.currentIp},
+          ${sql.identifier(users.currentIp.name)}     = ${sql.param(ip, users.currentIp)} ${passwordAttemptsUpdate}
+      WHERE ${users.id} = ${userId}
+    `
     try {
-      dbCheckAffectedRows(await this.db.update(users).set(set).where(eq(users.id, userId)), 1)
+      // Drizzle orders UPDATE assignments by schema order.
+      // Keep each previous value assignment first because MariaDB evaluates them left-to-right.
+      let temporaryLockStarted = false
+      if (attemptsAction === 'increment') {
+        // Serialize failures so only one request can report the transition to a temporary lock.
+        temporaryLockStarted = await this.db.transaction(async (tx) => {
+          const [user]: Pick<User, 'passwordAttempts'>[] = await tx
+            .select({ passwordAttempts: users.passwordAttempts })
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1)
+            .for('update')
+          if (!user) {
+            throw new Error(`User (${userId}) not found`)
+          }
+          const currentPasswordAttempts = user.passwordAttempts ?? 0
+          if (currentPasswordAttempts >= USER_MAX_PASSWORD_ATTEMPTS) {
+            // Do not move currentAccess: it is also the start of the temporary lock period.
+            return false
+          }
+          dbCheckAffectedRows(await tx.execute(updateAccessesQuery()), 1)
+          return currentPasswordAttempts + 1 >= USER_MAX_PASSWORD_ATTEMPTS
+        })
+      } else {
+        dbCheckAffectedRows(await this.db.execute(updateAccessesQuery()), 1)
+      }
       this.logger.verbose({ tag: this.updateAccesses.name, msg: `accesses for user (${userId}) were updated` })
-      return true
+      return { success: true, temporaryLockStarted }
     } catch (e) {
       this.logger.error({ tag: this.updateAccesses.name, msg: `accesses for user (${userId}) were not updated : ${e}` })
+      return { success: false, temporaryLockStarted: false }
+    }
+  }
+
+  async resetExpiredPasswordAttempts(userId: number, expiredBefore: Date): Promise<boolean> {
+    try {
+      // The conditional update lets concurrent requests release an expired lock without resetting newer failures.
+      const result = await this.db
+        .update(users)
+        .set({ passwordAttempts: 0 })
+        .where(
+          and(
+            eq(users.id, userId),
+            gte(users.passwordAttempts, USER_MAX_PASSWORD_ATTEMPTS),
+            or(isNull(users.currentAccess), lte(users.currentAccess, expiredBefore))
+          )
+        )
+      if (!dbCheckAffectedRows(result, 1, false)) {
+        this.logger.warn({ tag: this.resetExpiredPasswordAttempts.name, msg: `expired password lock for user (${userId}) was not released` })
+        return false
+      }
+      this.logger.verbose({ tag: this.resetExpiredPasswordAttempts.name, msg: `expired password lock for user (${userId}) was released` })
+      return true
+    } catch (e) {
+      this.logger.error({ tag: this.resetExpiredPasswordAttempts.name, msg: `expired password lock for user (${userId}) was not released : ${e}` })
       return false
     }
   }

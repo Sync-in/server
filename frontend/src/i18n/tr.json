@@ -463,6 +463,8 @@
   "active": "aktif",
   "Active": "Aktif",
   "suspended": "askıda",
+  "locked": "kilitli",
+  "Temporarily locked": "Geçici olarak kilitlendi",
   "Unable to rename user space": "Kullanıcı alanı yeniden adlandırılamıyor",
   "Unable to delete user space": "Kullanıcı alanı silinemiyor",
   "Unable to update user": "Kullanıcı güncellenemiyor",

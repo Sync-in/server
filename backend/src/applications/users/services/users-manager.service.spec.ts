@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import bcrypt from 'bcryptjs'
-import { SQL } from 'drizzle-orm'
+import { MySqlDialect } from 'drizzle-orm/mysql-core'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -20,7 +20,7 @@ import { fileName, isPathExists } from '../../files/utils/files'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { GROUP_TYPE } from '../constants/group'
 import { MEMBER_TYPE } from '../constants/member'
-import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_PERMISSION, USER_ROLE } from '../constants/user'
+import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_PASSWORD_ATTEMPTS_LOCK_DURATION_MS, USER_PERMISSION, USER_ROLE } from '../constants/user'
 import { CreateUserDto } from '../dto/create-or-update-user.dto'
 import { DeleteUserDto } from '../dto/delete-user.dto'
 import { UserSecrets } from '../interfaces/user-secrets.interface'
@@ -93,10 +93,6 @@ describe(UsersManager.name, () => {
     return () => currentSecrets
   }
 
-  const notificationsManager = {
-    sendEmailNotification: vi.fn().mockResolvedValue(undefined)
-  }
-
   beforeAll(async () => {
     testDataPath = await fs.mkdtemp(path.join(os.tmpdir(), 'sync-in-users-manager-spec-'))
     configuration.applications.files.dataPath = testDataPath
@@ -114,8 +110,8 @@ describe(UsersManager.name, () => {
           provide: FilesQuotaManager,
           useValue: { updateStorageQuota: () => vi.fn() }
         },
-        { provide: NotificationsManager, useValue: notificationsManager },
         { provide: AuthManager, useValue: {} },
+        { provide: NotificationsManager, useValue: { sendEmailNotification: vi.fn().mockResolvedValue(undefined) } },
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
         { provide: Cache, useValue: {} }
       ]
@@ -188,7 +184,8 @@ describe(UsersManager.name, () => {
       ...generateUserTest(),
       id: 42,
       role: USER_ROLE.USER,
-      permissions: USER_PERMISSION.SPACES
+      permissions: USER_PERMISSION.SPACES,
+      passwordAttempts: USER_MAX_PASSWORD_ATTEMPTS
     }
     usersQueriesService.from = vi.fn().mockResolvedValue(currentUser)
 
@@ -212,7 +209,7 @@ describe(UsersManager.name, () => {
       impersonatedClientId: 'admin-client'
     } as any)
     const currentUser = { ...generateUserTest(), id: 42 }
-    const admin = { ...generateUserTest(), id: 1, role: USER_ROLE.ADMINISTRATOR }
+    const admin = { ...generateUserTest(), id: 1, role: USER_ROLE.ADMINISTRATOR, passwordAttempts: USER_MAX_PASSWORD_ATTEMPTS }
     usersQueriesService.from = vi.fn().mockImplementation(async (id: number) => (id === authUser.id ? currentUser : admin))
 
     const resolved = await usersManager.fromAuthToken(authUser)
@@ -277,28 +274,66 @@ describe(UsersManager.name, () => {
 
     const uLocked = new UserModel({ ...generateUserTest(), isActive: false, passwordAttempts: 5 }, false)
     const errSpy = vi.spyOn((usersManager as any)['logger'], 'error').mockImplementation(() => undefined as any)
-    const updSpy1 = vi.spyOn(usersManager, 'updateAccesses').mockRejectedValue(new Error('reject-locked'))
+    const updateAccessesSpy = vi.spyOn(usersManager, 'updateAccesses').mockResolvedValue(undefined)
     await expect(usersManager.logUser(uLocked, 'pwd', 'ip')).rejects.toThrow('Account locked')
-    await flush()
-    expect(errSpy.mock.calls.some(([payload]: { msg: string }[]) => payload?.msg?.includes('reject-locked'))).toBe(true)
-    expect(updSpy1).toHaveBeenCalledWith(uLocked, 'ip', false)
+    expect(updateAccessesSpy).not.toHaveBeenCalled()
     vi.mocked(comparePassword).mockResolvedValue(false)
     const uBad = new UserModel({ ...generateUserTest(), isActive: true, passwordAttempts: 0 }, false)
-    const errSpy2 = vi.spyOn((usersManager as any)['logger'], 'error').mockImplementation(() => undefined as any)
-    const updSpy2 = vi.spyOn(usersManager, 'updateAccesses').mockRejectedValue(new Error('reject-auth'))
+    updateAccessesSpy.mockRejectedValueOnce(new Error('reject-auth'))
     const out = await usersManager.logUser(uBad, 'bad', '1.1.1.1')
     expect(out).toBeNull()
     await flush()
-    expect(errSpy2.mock.calls.some(([payload]: { msg: string }[]) => payload?.msg?.includes('reject-auth'))).toBe(true)
-    expect(updSpy2).toHaveBeenCalledWith(uBad, '1.1.1.1', false)
+    expect(errSpy.mock.calls.some(([payload]: { msg: string }[]) => payload?.msg?.includes('reject-auth'))).toBe(true)
+    expect(updateAccessesSpy).toHaveBeenCalledWith(uBad, '1.1.1.1', false)
     vi.mocked(comparePassword).mockResolvedValue(true)
     const uGood = new UserModel({ ...generateUserTest(), isActive: true, passwordAttempts: 0 }, false)
-    const updSpy3 = vi.spyOn(usersManager, 'updateAccesses').mockResolvedValue(undefined)
+    updateAccessesSpy.mockResolvedValue(undefined)
     const pathsSpy = vi.spyOn(uGood, 'makePaths').mockResolvedValue(undefined)
     const out2 = await usersManager.logUser(uGood, 'good', '8.8.8.8')
     expect(out2).toBe(uGood)
-    expect(updSpy3).toHaveBeenCalledWith(uGood, '8.8.8.8', true)
+    expect(updateAccessesSpy).toHaveBeenCalledWith(uGood, '8.8.8.8', true)
     expect(pathsSpy).toHaveBeenCalled()
+  })
+
+  it('should release an expired password lock without extending an active lock', async () => {
+    const now = new Date('2026-09-08T12:00:00.000Z').getTime()
+    vi.spyOn(Date, 'now').mockReturnValue(now)
+    vi.mocked(comparePassword).mockClear()
+    vi.mocked(comparePassword).mockResolvedValue(true)
+    const resetSpy = vi.spyOn(usersQueriesService, 'resetExpiredPasswordAttempts').mockResolvedValue(true)
+    const updateAccessesSpy = vi.spyOn(usersManager, 'updateAccesses').mockResolvedValue(undefined)
+
+    const activeLockDate = new Date(now - USER_PASSWORD_ATTEMPTS_LOCK_DURATION_MS + 1)
+    const temporarilyLockedUser = new UserModel(
+      { ...generateUserTest(), isActive: true, passwordAttempts: USER_MAX_PASSWORD_ATTEMPTS, currentAccess: activeLockDate },
+      false
+    )
+    await expect(usersManager.logUser(temporarilyLockedUser, 'password', '127.0.0.1')).rejects.toThrow('Account locked')
+    expect(temporarilyLockedUser.currentAccess).toEqual(activeLockDate)
+    expect(resetSpy).not.toHaveBeenCalled()
+    expect(updateAccessesSpy).not.toHaveBeenCalled()
+    expect(comparePassword).not.toHaveBeenCalled()
+
+    const expiredLockDate = new Date(now - USER_PASSWORD_ATTEMPTS_LOCK_DURATION_MS)
+    const expiredLockUser = new UserModel(
+      { ...generateUserTest(), isActive: true, passwordAttempts: USER_MAX_PASSWORD_ATTEMPTS, currentAccess: expiredLockDate },
+      false
+    )
+    vi.spyOn(expiredLockUser, 'makePaths').mockResolvedValue(undefined)
+
+    await expect(usersManager.logUser(expiredLockUser, 'password', '127.0.0.1')).resolves.toBe(expiredLockUser)
+    expect(resetSpy).toHaveBeenCalledWith(expiredLockUser.id, expiredLockDate)
+    expect(expiredLockUser.passwordAttempts).toBe(0)
+    expect(updateAccessesSpy).toHaveBeenCalledWith(expiredLockUser, '127.0.0.1', true)
+
+    vi.mocked(comparePassword).mockClear()
+    resetSpy.mockResolvedValueOnce(false)
+    const concurrentlyUpdatedUser = new UserModel(
+      { ...generateUserTest(), isActive: true, passwordAttempts: USER_MAX_PASSWORD_ATTEMPTS, currentAccess: expiredLockDate },
+      false
+    )
+    await expect(usersManager.logUser(concurrentlyUpdatedUser, 'password', '127.0.0.1')).rejects.toThrow('Account locked')
+    expect(comparePassword).not.toHaveBeenCalled()
   })
 
   it('local password validation burns time when user is missing or rejected by policy', async () => {
@@ -554,7 +589,7 @@ describe(UsersManager.name, () => {
     await expect(usersManager.updateNotification(userTest, { notification: 2 })).resolves.toBeUndefined()
 
     const u1 = new UserModel({ ...generateUserTest(), isActive: true, passwordAttempts: 3 } as any, false)
-    usersQueriesService.updateAccesses = vi.fn().mockResolvedValue(true)
+    usersQueriesService.updateAccesses = vi.fn().mockResolvedValue({ success: true, temporaryLockStarted: false })
     await expect(usersManager.updateAccesses(u1, '5.6.7.8', true)).resolves.toBeUndefined()
     expect(usersQueriesService.updateAccesses).toHaveBeenCalledWith(u1.id, '5.6.7.8', 'reset')
 
@@ -566,7 +601,7 @@ describe(UsersManager.name, () => {
       } as any,
       false
     )
-    usersQueriesService.updateAccesses = vi.fn().mockResolvedValue(true)
+    usersQueriesService.updateAccesses = vi.fn().mockResolvedValue({ success: true, temporaryLockStarted: false })
     await expect(usersManager.updateAccesses(u2, 'new.ip', false)).resolves.toBeUndefined()
     expect(usersQueriesService.updateAccesses).toHaveBeenCalledWith(u2.id, 'new.ip', 'increment')
 
@@ -576,30 +611,78 @@ describe(UsersManager.name, () => {
     await expect(usersManager.updateAccesses(u3, 'new.ip', false)).resolves.toBeUndefined()
     expect(usersQueriesService.updateAccesses).toHaveBeenCalledWith(u3.id, 'new.ip', 'increment')
 
-    usersQueriesService.updateAccesses = vi.fn().mockResolvedValue(false)
+    usersQueriesService.updateAccesses = vi.fn().mockResolvedValue({ success: false, temporaryLockStarted: false })
     await expect(usersManager.updateAccesses(u1, 'new.ip', false)).rejects.toThrow('Unable to update user accesses')
   })
 
-  it('should update password attempts atomically', async () => {
+  it('should update access history and password attempts atomically', async () => {
+    const execute = vi.fn().mockResolvedValue([{ affectedRows: 1 }])
+    const lock = vi
+      .fn()
+      .mockResolvedValueOnce([{ passwordAttempts: USER_MAX_PASSWORD_ATTEMPTS - 1 }])
+      .mockResolvedValueOnce([{ passwordAttempts: USER_MAX_PASSWORD_ATTEMPTS }])
+    const selectLimit = vi.fn().mockReturnValue({ for: lock })
+    const selectWhere = vi.fn().mockReturnValue({ limit: selectLimit })
+    const from = vi.fn().mockReturnValue({ where: selectWhere })
+    const select = vi.fn().mockReturnValue({ from })
     const where = vi.fn().mockResolvedValue([{ affectedRows: 1 }])
     const set = vi.fn().mockReturnValue({ where })
     const update = vi.fn().mockReturnValue({ set })
-    const usersQueries = new UsersQueries({ update } as any, {} as Cache)
+    const transaction = vi.fn().mockImplementation(async (callback) => callback({ select, execute }))
+    const usersQueries = new UsersQueries({ execute, update, transaction } as any, {} as Cache)
+    const dialect = new MySqlDialect()
 
-    await expect(usersQueries.updateAccesses(userTest.id, '127.0.0.1', 'increment')).resolves.toBe(true)
-    const increment = set.mock.calls[0][0]
-    expect(increment.isActive).toBeInstanceOf(SQL)
-    expect(increment.passwordAttempts).toBeInstanceOf(SQL)
+    await expect(usersQueries.updateAccesses(userTest.id, '127.0.0.1', 'increment')).resolves.toEqual({
+      success: true,
+      temporaryLockStarted: true
+    })
+    expect(lock).toHaveBeenCalledWith('update')
+    const increment = dialect.sqlToQuery(execute.mock.calls[0][0])
+    const incrementSql = increment.sql.replace(/\s+/g, ' ')
+    const lastAccessAssignment = incrementSql.indexOf('`lastAccess` = `users`.`currentAccess`')
+    const currentAccessAssignment = incrementSql.indexOf('`currentAccess` = ?')
+    const lastIpAssignment = incrementSql.indexOf('`lastIp` = `users`.`currentIp`')
+    const currentIpAssignment = incrementSql.indexOf('`currentIp` = ?')
+    expect(lastAccessAssignment).toBeGreaterThanOrEqual(0)
+    expect(currentAccessAssignment).toBeGreaterThanOrEqual(0)
+    expect(lastAccessAssignment).toBeLessThan(currentAccessAssignment)
+    expect(lastIpAssignment).toBeGreaterThanOrEqual(0)
+    expect(currentIpAssignment).toBeGreaterThanOrEqual(0)
+    expect(lastIpAssignment).toBeLessThan(currentIpAssignment)
+    expect(incrementSql).toContain('`passwordAttempts` = LEAST(`users`.`passwordAttempts` + 1, ?)')
 
-    await expect(usersQueries.updateAccesses(userTest.id, '127.0.0.1', 'reset')).resolves.toBe(true)
-    const reset = set.mock.calls[1][0]
-    expect(reset.passwordAttempts).toBe(0)
-    expect(reset.isActive).toBeUndefined()
+    await expect(usersQueries.updateAccesses(userTest.id, '127.0.0.1', 'reset')).resolves.toEqual({
+      success: true,
+      temporaryLockStarted: false
+    })
+    const reset = dialect.sqlToQuery(execute.mock.calls[1][0])
+    expect(reset.sql).toContain('`passwordAttempts` = ?')
+    expect(reset.params).toContain(0)
 
-    await expect(usersQueries.updateAccesses(userTest.id, '127.0.0.1', 'preserve')).resolves.toBe(true)
-    const preserve = set.mock.calls[2][0]
-    expect(preserve.passwordAttempts).toBeUndefined()
-    expect(preserve.isActive).toBeUndefined()
+    await expect(usersQueries.updateAccesses(userTest.id, '127.0.0.1', 'preserve')).resolves.toEqual({
+      success: true,
+      temporaryLockStarted: false
+    })
+    const preserve = dialect.sqlToQuery(execute.mock.calls[2][0])
+    expect(preserve.sql).not.toContain('`passwordAttempts` =')
+    expect(increment.sql).not.toContain('`isActive` =')
+    expect(reset.sql).not.toContain('`isActive` =')
+    expect(preserve.sql).not.toContain('`isActive` =')
+
+    await expect(usersQueries.updateAccesses(userTest.id, '127.0.0.1', 'increment')).resolves.toEqual({
+      success: true,
+      temporaryLockStarted: false
+    })
+    expect(execute).toHaveBeenCalledTimes(3)
+
+    const expiredBefore = new Date('2026-09-08T12:00:00.000Z')
+    await expect(usersQueries.resetExpiredPasswordAttempts(userTest.id, expiredBefore)).resolves.toBe(true)
+    const expiredReset = set.mock.calls[0][0]
+    expect(expiredReset.passwordAttempts).toBe(0)
+    expect(expiredReset.currentAccess).toBeUndefined()
+
+    where.mockResolvedValueOnce([{ affectedRows: 0 }])
+    await expect(usersQueries.resetExpiredPasswordAttempts(userTest.id, expiredBefore)).resolves.toBe(false)
   })
 
   it('should lock the user row while mutating secrets', async () => {
