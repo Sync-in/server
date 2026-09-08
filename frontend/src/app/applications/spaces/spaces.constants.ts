@@ -51,6 +51,7 @@ export const SPACES_ICON = {
   SHARES: LucideShare2,
   SHARED_WITH_ME: LucideShare2,
   SHARED_WITH_OTHERS: LucideShare2,
+  SHARED_WITH_OTHERS_2: LucideRedo,
   ANCHORED: LucideAnchor,
   LINKS: LucideLink,
   SELECTION: LucideSquareCheckBig,
@@ -144,7 +145,7 @@ export const SPACES_MENU: AppMenu = {
     {
       id: USER_PERMISSION.SHARES_ADMIN,
       title: SPACES_TITLE.SHARED_WITH_OTHER_SHORT,
-      icon: LucideRedo,
+      icon: SPACES_ICON.SHARED_WITH_OTHERS_2,
       link: SPACES_PATH.SHARED,
       matchLink: new RegExp(`^${SPACES_PATH.SHARED}`),
       defaultLinkCandidate: true

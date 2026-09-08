@@ -74,7 +74,7 @@ export class SharedComponent implements OnInit {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly icons = {
-    SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
+    SHARED: SPACES_ICON.SHARED_WITH_OTHERS_2,
     SHARES: SPACES_ICON.SHARES,
     LucideArrowDown,
     LucideArrowUp,
