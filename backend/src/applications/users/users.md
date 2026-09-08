@@ -35,7 +35,8 @@ the password-attempt limit does not suspend the account.
 `isActive` is the durable administrative switch for a local user record:
 
 - `isActive: false` is rejected by local password and app-password paths as well as by the LDAP and OIDC provider flows;
-- authenticated requests and token refreshes reload the local user record, so disabling the account also invalidates existing sessions;
+- new authentication and token refreshes reload the local user record and reject an inactive account. Already-issued access tokens and positive
+  WebDAV authentication cache entries remain usable until they expire;
 - the account remains disabled until an administrator reactivates it; there is no automatic expiration;
 - reactivating the account resets `passwordAttempts` to zero.
 

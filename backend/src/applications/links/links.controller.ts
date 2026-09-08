@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, Res, StreamableFile, UseGuards } from '@nestjs/common'
+import { Body, Controller, Get, Header, Param, Post, Req, Res, StreamableFile, UseGuards } from '@nestjs/common'
 import { Throttle } from '@nestjs/throttler'
 import { FastifyReply, FastifyRequest } from 'fastify'
 import { AuthTokenOptional } from '../../authentication/decorators/auth-token-optional.decorator'
@@ -31,6 +31,7 @@ export class LinksController {
   }
 
   @Get(`${PUBLIC_LINKS_ROUTE.ACCESS}/:uuid`)
+  @Header('Cache-Control', 'no-store')
   @UseGuards(AuthRateLimitGuard)
   linkAccess(
     @GetUser() user: UserModel,
@@ -54,6 +55,7 @@ export class LinksController {
   }
 
   @Post(`${PUBLIC_LINKS_ROUTE.AUTH}/:uuid`)
+  @Header('Cache-Control', 'no-store')
   @UseGuards(AuthRateLimitGuard)
   linkAuthentication(
     @GetUser() user: UserModel,

@@ -51,6 +51,7 @@ export class AuthController {
   }
 
   @Post(AUTH_ROUTE.TOKEN)
+  @Header('Cache-Control', 'no-store')
   @AuthTokenSkip()
   @UseGuards(AuthRateLimitGuard, AuthLocalGuard, AuthTwoFaVerificationWithoutPasswordGuard)
   token(@GetUser() user: UserModel): Promise<TokenResponseDto> {
@@ -58,6 +59,7 @@ export class AuthController {
   }
 
   @Post(AUTH_ROUTE.TOKEN_REFRESH)
+  @Header('Cache-Control', 'no-store')
   @AuthTokenSkip()
   @UseGuards(AuthTokenRefreshGuard)
   refreshToken(@GetUser() user: UserModel): Promise<TokenResponseDto> {
@@ -81,6 +83,7 @@ export class AuthController {
   }
 
   @Post(`${AUTH_ROUTE.TWO_FA_BASE}/${AUTH_ROUTE.TWO_FA_ENABLE}`)
+  @Header('Cache-Control', 'no-store')
   @UseGuards(AuthRateLimitGuard, UserRolesGuard)
   @UserHaveRole(USER_ROLE.USER)
   twoFaEnable(@Body() body: TwoFaVerifyWithPasswordDto, @Req() req: FastifyAuthenticatedRequest): Promise<TwoFaVerifyResult> {

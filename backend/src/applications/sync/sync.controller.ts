@@ -4,6 +4,7 @@ import {
   Copy,
   Delete,
   Get,
+  Header,
   HttpException,
   HttpStatus,
   Move,
@@ -70,6 +71,7 @@ export class SyncController {
   }
 
   @Post(SYNC_ROUTE.REGISTER)
+  @Header('Cache-Control', 'no-store')
   @AuthTokenSkip()
   @UseGuards(AuthRateLimitGuard)
   register(@Body() syncClientRegistrationDto: SyncClientRegistrationDto, @Req() req: FastifyRequest): Promise<SyncClientAuthRegistration> {
@@ -77,6 +79,7 @@ export class SyncController {
   }
 
   @Post(SYNC_ROUTE.REGISTER_AUTH)
+  @Header('Cache-Control', 'no-store')
   @UserHavePermission(USER_PERMISSION.DESKTOP_APP)
   @UseGuards(UserPermissionsGuard)
   registerWithAuth(
@@ -101,6 +104,7 @@ export class SyncController {
   }
 
   @Post(`${SYNC_ROUTE.AUTH}/:type`)
+  @Header('Cache-Control', 'no-store')
   @AuthTokenSkip()
   @UseGuards(AuthRateLimitGuard)
   authenticate(

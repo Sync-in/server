@@ -100,8 +100,8 @@ auth:
       # required
       secret:
       # token expiration = cookie maxAge
-      # default: `30m`
-      expiration: 30m
+      # default: `15m`
+      expiration: 15m
     refresh:
       # Used for token and cookie signatures
       # required

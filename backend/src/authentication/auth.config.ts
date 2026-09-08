@@ -17,7 +17,7 @@ export class AuthTokenAccessConfig {
 
   @IsString()
   @IsNotEmpty()
-  expiration = '30m'
+  expiration = '15m'
 }
 
 export class AuthTokenRefreshConfig {
