@@ -8,6 +8,7 @@ import { ApplicationsModule } from './applications/applications.module'
 import { AuthModule } from './authentication/auth.module'
 import { configuration, exportConfiguration } from './configuration/config.environment'
 import { configLogger } from './configuration/config.logger'
+import { AvailabilityModule } from './infrastructure/availability/availability.module'
 import { CacheModule } from './infrastructure/cache/cache.module'
 import { ContextModule } from './infrastructure/context/context.module'
 import { DatabaseModule } from './infrastructure/database/database.module'
@@ -22,6 +23,7 @@ import { SchedulerModule } from './infrastructure/scheduler/scheduler.module'
         pinoHttp: configLogger(configuration.logger)
       })
     }),
+    AvailabilityModule,
     AuthModule,
     DatabaseModule,
     CacheModule,

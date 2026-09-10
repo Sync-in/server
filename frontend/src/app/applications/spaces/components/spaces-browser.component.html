@@ -574,9 +574,9 @@
     <div class="fs-sm text-center text-danger text-bold no-select p-4">
       <span l10nTranslate>Location not found</span>
     </div>
-  } @else if (serverConnectionError) {
+  } @else if (serviceError) {
     <div class="fs-sm text-center text-danger text-bold no-select p-4">
-      <span l10nTranslate>{{ serverConnectionErrorMessage }}</span>
+      <span l10nTranslate>{{ serviceErrorMsg }}</span>
     </div>
   } @else if (!isTrashRepo && !loading && !stats.elements) {
     <div class="fs-base text-center text-gray fw-bold no-select p-4">

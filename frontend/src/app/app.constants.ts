@@ -17,4 +17,5 @@ export const APP_MENU: AppMenu = {
   submenus: []
 } as const
 
-export const SERVER_CONNECTION_ERROR = 'Server connection error'
+export const SERVICE_INTERRUPTION_ERROR = 'Service interruption'
+export const SERVICE_UNAVAILABLE_ERROR = 'Service unavailable'

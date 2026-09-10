@@ -5,6 +5,8 @@ import { and, between, eq, exists, inArray, notBetween, SQL, sql } from 'drizzle
 import cluster from 'node:cluster'
 import { createCacheKeySlug, currentTimeStamp } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
+import { INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants'
+import { Availability } from '../../availability/availability.service'
 import { DB_TOKEN_PROVIDER } from '../../database/constants'
 import { DBSchema } from '../../database/interfaces/database.interface'
 import { dbCheckAffectedRows, dbParseJson } from '../../database/utils'
@@ -29,8 +31,11 @@ export class MysqlCacheAdapter implements Cache {
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
-    private readonly scheduler: SchedulerRegistry
-  ) {}
+    private readonly scheduler: SchedulerRegistry,
+    availability: Availability
+  ) {
+    availability.register(INFRASTRUCTURE_DEPENDENCY.CACHE, true)
+  }
 
   async onModuleInit(): Promise<void> {
     if (cluster.isWorker && process.env[SCHEDULER_ENV] === SCHEDULER_STATE.ENABLED) {

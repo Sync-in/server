@@ -20,6 +20,8 @@
   "Close": "閉じる",
   "Open": "開く",
   "Server connection error": "サーバー接続エラー",
+  "Service interruption": "サービスの中断",
+  "Service unavailable": "サービスを利用できません",
   "Filter": "フィルター",
   "Filters": "フィルター",
   "search": "検索",

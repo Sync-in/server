@@ -52,15 +52,21 @@ export class WebSocketAdapter extends IoAdapter {
     return server
   }
 
+  async dispose(): Promise<void> {
+    if (this.adapter instanceof RedisAdapter) {
+      await this.adapter.disconnect()
+    }
+  }
+
   async getAdapter() {
     if (configuration.websocket.adapter === 'redis') {
       try {
         const redisIoAdapter = new RedisAdapter(this.app)
-        await redisIoAdapter.connectToRedis(configuration.websocket.redis)
+        await redisIoAdapter.connect(configuration.websocket.redis)
         return redisIoAdapter
       } catch (e) {
         this.logger.error(e.message)
-        process.exit(1)
+        throw e
       }
     } else {
       if (cluster.isWorker) {

@@ -7,7 +7,7 @@ import { AppService } from './app.service'
 import { configuration } from './configuration/config.environment'
 
 async function bootstrap(): Promise<void> {
-  let logger: Logger
+  let logger: Logger | undefined
   try {
     const app: NestFastifyApplication = await appBootstrap()
     logger = app.get<Logger>(Logger)
@@ -31,8 +31,15 @@ async function bootstrap(): Promise<void> {
       }
     )
   } catch (e) {
-    logger.error(`Bootstrap failed: ${e?.errors || e}`, 'BOOTSTRAP')
-    logger.error(`${configuration.server.restartOnFailure ? 'Retrying' : 'Exiting'} ...`, 'BOOTSTRAP')
+    const failureMessage = `Bootstrap failed: ${e?.errors || e}`
+    const nextActionMessage = `${configuration.server.restartOnFailure ? 'Retrying' : 'Exiting'} ...`
+    if (logger) {
+      logger.error(failureMessage, 'BOOTSTRAP')
+      logger.error(nextActionMessage, 'BOOTSTRAP')
+    } else {
+      console.error(`[BOOTSTRAP] ${failureMessage}`)
+      console.error(`[BOOTSTRAP] ${nextActionMessage}`)
+    }
     await setTimeout(6000)
     throw e
   }

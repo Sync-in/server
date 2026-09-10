@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { eq, inArray } from 'drizzle-orm'
 import { randomUUID } from 'node:crypto'
+import { AvailabilityModule } from '../../../infrastructure/availability/availability.module'
 import type { Cache } from '../../../infrastructure/cache/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { DatabaseModule } from '../../../infrastructure/database/database.module'
@@ -54,7 +55,7 @@ describe('Files favorites queries (e2e)', () => {
   } as unknown as Cache
 
   beforeAll(async () => {
-    module = await Test.createTestingModule({ imports: [DatabaseModule] }).compile()
+    module = await Test.createTestingModule({ imports: [AvailabilityModule, DatabaseModule] }).compile()
     module.useLogger(['fatal'])
     db = await module.resolve<DBSchema>(DB_TOKEN_PROVIDER)
     const filesQueries = new FilesQueries(db)
