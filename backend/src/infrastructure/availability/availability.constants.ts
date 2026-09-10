@@ -6,3 +6,14 @@ export const INFRASTRUCTURE_DEPENDENCY = {
   CACHE: 'cache',
   WEBSOCKET: 'websocket'
 } as const satisfies Record<string, AvailabilityDependency>
+
+export const AVAILABILITY_ROUTE = {
+  BASE: '/healthz',
+  LIVE: 'live',
+  READY: 'ready'
+} as const
+
+export const AVAILABILITY_STATUS = {
+  OK: 'ok',
+  UNAVAILABLE: 'unavailable'
+} as const

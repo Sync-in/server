@@ -23,6 +23,9 @@ ENV NODE_ENV=production
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV PUID=8888
 ENV PGID=8888
+ENV SYNC_IN_HEALTHCHECK_URL=http://127.0.0.1:8080/healthz/ready
 EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD ["node", "server/infrastructure/availability/scripts/check-health.js"]
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["/bin/sh", "sync-in-server.sh"]
