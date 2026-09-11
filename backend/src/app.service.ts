@@ -11,6 +11,8 @@ import { SERVER_NAME } from './common/shared'
 export class AppService {
   static schedulerPID: number
   private static readonly logger = new Logger('SERVER')
+  private static shuttingDown = false
+  private static shutdownHooksRegistered = false
 
   static clusterize(bootstrap: () => Promise<void>) {
     AppService.logger.localInstance['options']['prefix'] = SERVER_NAME
@@ -24,9 +26,17 @@ export class AppService {
       for (let i = 0; i < configuration.server.workers; i++) {
         AppService.forkProcess(i === configuration.server.workers - 1)
       }
+      // Keep the primary alive while workers run their NestJS shutdown hooks.
+      AppService.registerShutdownHooks()
       cluster.on('exit', (worker: Worker, code: number, signal: string) => {
         AppService.logger.log(`[Worker:${worker.process.pid}] (code: ${code}, signal: ${signal}) died.`)
-        if (configuration.server.restartOnFailure) {
+        if (AppService.shuttingDown) {
+          // A signal-triggered shutdown is intentional, not an error eligible for restartOnFailure.
+          // Wait for every worker to exit before stopping the primary.
+          if (!Object.values(cluster.workers ?? {}).some(Boolean)) {
+            process.exit(0)
+          }
+        } else if (configuration.server.restartOnFailure) {
           const isScheduler = worker.process.pid === AppService.schedulerPID
           AppService.logger.log(`[Worker:${worker.process.pid}] restarting ${isScheduler ? `(with Scheduler)` : ''}...`)
           AppService.forkProcess(isScheduler)
@@ -35,6 +45,30 @@ export class AppService {
     } else {
       AppService.logger.log(`[Worker:${process.pid}] started`)
       bootstrap().catch(() => process.exit(1))
+    }
+  }
+
+  private static registerShutdownHooks(): void {
+    if (AppService.shutdownHooksRegistered) return
+    AppService.shutdownHooksRegistered = true
+    for (const signal of ['SIGINT', 'SIGTERM'] satisfies NodeJS.Signals[]) {
+      process.on(signal, () => AppService.shutdown(signal))
+    }
+  }
+
+  private static shutdown(signal: NodeJS.Signals): void {
+    if (AppService.shuttingDown) return
+    AppService.shuttingDown = true
+    AppService.logger.log(`[Master:${process.pid}] shutting down`)
+    const workers = Object.values(cluster.workers ?? {}).filter((worker): worker is Worker => !!worker)
+    if (!workers.length) {
+      process.exit(0)
+    }
+    // Let workers close Socket.IO and HTTP while their IPC channel to the primary is still open.
+    for (const worker of workers) {
+      if (!worker.isDead()) {
+        worker.process.kill(signal)
+      }
     }
   }
 

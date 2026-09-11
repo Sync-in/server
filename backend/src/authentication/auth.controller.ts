@@ -5,6 +5,7 @@ import { UserHaveRole } from '../applications/users/decorators/roles.decorator'
 import { GetUser } from '../applications/users/decorators/user.decorator'
 import { UserRolesGuard } from '../applications/users/guards/roles.guard'
 import { UserModel } from '../applications/users/models/user.model'
+import { AvailabilitySkip } from '../infrastructure/availability/availability.decorator'
 import { AuthManager } from './auth.service'
 import { ACCESS_KEY, TOKEN_PATHS } from './constants/auth'
 import { AUTH_ROUTE } from './constants/routes'
@@ -39,6 +40,7 @@ export class AuthController {
 
   @Post(AUTH_ROUTE.LOGOUT)
   @AuthTokenSkip()
+  @AvailabilitySkip()
   logout(@Res({ passthrough: true }) res: FastifyReply) {
     return this.authManager.clearCookies(res)
   }

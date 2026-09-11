@@ -24,7 +24,8 @@ services:
       - data:/app/data
       - desktop_releases:/app/static/releases:ro
     depends_on:
-      - mariadb
+      mariadb:
+        condition: service_healthy
     logging:
       driver: json-file
       options:
@@ -41,6 +42,12 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: MySQLRootPassword
       MYSQL_DATABASE: sync_in
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     volumes:
       - mariadb_data:/var/lib/mysql
     networks:

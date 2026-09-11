@@ -36,6 +36,8 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
 
   /* LOGGER */
   app.useLogger(IS_TEST_ENV ? ['fatal'] : app.get(Logger))
+  // Flush bootstrap logs through Pino before lifecycle hooks can block app.listen().
+  app.flushLogs()
 
   /* WEBDAV BOOTSTRAP RULES */
   bootstrapWebDAV(app, fastifyInstance)

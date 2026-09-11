@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { Cron, CronExpression, Interval, Timeout } from '@nestjs/schedule'
+import { Cron, CronExpression, Timeout } from '@nestjs/schedule'
 import { isNotNull, sql } from 'drizzle-orm'
 import { unionAll } from 'drizzle-orm/mysql-core'
 import fs from 'node:fs/promises'
@@ -71,7 +71,7 @@ export class FilesScheduler {
     }
   }
 
-  @Interval(60_000)
+  @Cron(CronExpression.EVERY_MINUTE)
   async updateStorageAndIndexing() {
     if (this.isQuotaUpdateIsRunning || this.isQuotaUpdateEntriesIsRunning) return
     this.isQuotaUpdateEntriesIsRunning = true

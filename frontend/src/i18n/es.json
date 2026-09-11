@@ -20,6 +20,8 @@
   "Close": "Cerrar",
   "Open": "Abrir",
   "Server connection error": "Error de conexión con el servidor",
+  "Service interruption": "Interrupción del servicio",
+  "Service unavailable": "Servicio no disponible",
   "Filter": "Filtrar",
   "Filters": "Filtros",
   "search": "buscar",

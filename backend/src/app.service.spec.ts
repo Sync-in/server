@@ -25,6 +25,63 @@ describe(AppService.name, () => {
     expect(appService).toBeDefined()
   })
 
+  it('should gracefully stop every worker before exiting the primary', () => {
+    const appServiceState = AppService as unknown as { shuttingDown: boolean; shutdownHooksRegistered: boolean }
+    const previousAdapter = configuration.websocket.adapter
+    const previousRestartOnFailure = configuration.server.restartOnFailure
+    const createWorker = (pid: number) => ({
+      isDead: vi.fn(() => false),
+      process: { pid, kill: vi.fn() }
+    })
+    const firstWorker = createWorker(1)
+    const secondWorker = createWorker(2)
+    const workers = { 1: firstWorker, 2: secondWorker } as any
+    const forkWorker = createWorker(3)
+    const forkSpy = vi.spyOn(cluster, 'fork').mockReturnValue(forkWorker as any)
+    const workersSpy = vi.spyOn(cluster, 'workers', 'get').mockImplementation(() => workers)
+    const clusterOnSpy = vi.spyOn(cluster, 'on')
+    const processOnSpy = vi.spyOn(process, 'on')
+    const processExitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never)
+
+    configuration.websocket.adapter = null
+    configuration.server.restartOnFailure = true
+    AppService.clusterize(vi.fn().mockResolvedValue(undefined))
+
+    const shutdownHandler = processOnSpy.mock.calls.find(([event]) => event === 'SIGTERM')?.[1] as (signal: NodeJS.Signals) => void
+    const exitHandler = clusterOnSpy.mock.calls[0][1] as unknown as (worker: typeof firstWorker, code: number, signal: string) => void
+    const forkCallsBeforeShutdown = forkSpy.mock.calls.length
+
+    shutdownHandler('SIGTERM')
+    expect(firstWorker.process.kill).toHaveBeenCalledWith('SIGTERM')
+    expect(secondWorker.process.kill).toHaveBeenCalledWith('SIGTERM')
+    expect(processExitSpy).not.toHaveBeenCalled()
+
+    delete workers[1]
+    exitHandler(firstWorker, 0, 'SIGTERM')
+    expect(processExitSpy).not.toHaveBeenCalled()
+    expect(forkSpy).toHaveBeenCalledTimes(forkCallsBeforeShutdown)
+
+    delete workers[2]
+    exitHandler(secondWorker, 0, 'SIGTERM')
+    expect(processExitSpy).toHaveBeenCalledWith(0)
+    expect(forkSpy).toHaveBeenCalledTimes(forkCallsBeforeShutdown)
+
+    for (const signal of ['SIGINT', 'SIGTERM'] satisfies NodeJS.Signals[]) {
+      const handler = processOnSpy.mock.calls.find(([event]) => event === signal)?.[1] as (signal: NodeJS.Signals) => void
+      process.removeListener(signal, handler)
+    }
+    cluster.removeListener('exit', exitHandler as any)
+    appServiceState.shuttingDown = false
+    appServiceState.shutdownHooksRegistered = false
+    configuration.websocket.adapter = previousAdapter
+    configuration.server.restartOnFailure = previousRestartOnFailure
+    forkSpy.mockRestore()
+    workersSpy.mockRestore()
+    clusterOnSpy.mockRestore()
+    processOnSpy.mockRestore()
+    processExitSpy.mockRestore()
+  })
+
   it('should clusterize', () => {
     // --- MASTER, adapter='cluster' -> covers setupPrimary()
     configuration.websocket.adapter = 'cluster'

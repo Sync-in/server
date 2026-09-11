@@ -1,7 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { LoggerModule } from 'nestjs-pino'
 import { setTimeout } from 'node:timers/promises'
+import { AvailabilityModule } from '../availability/availability.module'
 import { DatabaseModule } from '../database/database.module'
+import { SchedulerModule } from '../scheduler/scheduler.module'
 import { CacheModule } from './cache.module'
 import { Cache } from './cache.service'
 
@@ -11,7 +13,7 @@ describe(Cache.name, () => {
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
-      imports: [CacheModule, LoggerModule.forRoot(), DatabaseModule]
+      imports: [AvailabilityModule, SchedulerModule, CacheModule, LoggerModule.forRoot(), DatabaseModule]
     }).compile()
 
     module.useLogger(['fatal'])

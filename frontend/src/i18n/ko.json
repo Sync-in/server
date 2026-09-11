@@ -20,6 +20,8 @@
   "Close": "닫기",
   "Open": "열기",
   "Server connection error": "서버 연결 오류",
+  "Service interruption": "서비스 중단",
+  "Service unavailable": "서비스를 사용할 수 없습니다",
   "Filter": "필터",
   "Filters": "필터",
   "search": "검색",

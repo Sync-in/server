@@ -3,7 +3,9 @@ import { RedisClientOptions } from '@redis/client'
 import { createClient, RedisClientType } from 'redis'
 import { createCacheKeySlug } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
-import { redactRedisUrl } from '../../utils'
+import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants'
+import { Availability } from '../../availability/availability.service'
+import { connectionErrorMessage, isRetryableConnectionError, redactRedisUrl } from '../../utils'
 import { Cache } from '../cache.service'
 import type { CacheRateLimitResult } from '../interfaces/cache-rate-limit.interface'
 
@@ -14,22 +16,30 @@ export class RedisCacheAdapter implements Cache {
   private readonly logger = new Logger(Cache.name.toUpperCase())
   private readonly client: RedisClientType
   private readonly redactedRedisUrl = redactRedisUrl(configuration.cache.redis)
-  private readonly reconnectOptions = { maxAttempts: 3, minConnectDelay: 1000, maxConnectDelay: 2000 }
 
-  constructor() {
+  constructor(private readonly availability: Availability) {
+    this.availability.register(INFRASTRUCTURE_DEPENDENCY.CACHE)
     this.client = createClient({
       url: configuration.cache.redis,
       socket: { noDelay: true, reconnectStrategy: this.reconnectStrategy }
     } satisfies RedisClientOptions)
   }
 
-  async onModuleInit() {
-    this.client.on('error', (e: Error) => this.logger.error(e.message || e))
-    this.client.on('ready', () => this.logger.log(`Connected to Redis Server at ${this.redactedRedisUrl}`))
-    this.client.connect().catch((e: Error) => this.logger.error(e))
+  async onModuleInit(): Promise<void> {
+    this.client.on('error', (e: Error) => {
+      this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.CACHE, this.client.isReady)
+      this.logger.error(e.message || e)
+    })
+    this.client.on('reconnecting', () => this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.CACHE, false))
+    this.client.on('ready', () => {
+      this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.CACHE, true)
+      this.logger.log(`Connected to Redis Server at ${this.redactedRedisUrl}`)
+    })
+    await this.client.connect()
   }
 
   async onModuleDestroy() {
+    this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.CACHE, false)
     if (this.client?.isOpen) {
       await this.client.close()
     }
@@ -160,15 +170,13 @@ export class RedisCacheAdapter implements Cache {
     return createCacheKeySlug(args)
   }
 
-  private readonly reconnectStrategy = (attempts: number): number => {
-    if (attempts > this.reconnectOptions.maxAttempts) {
-      this.logger.error('Too many retries on Redis server. Exiting')
-      process.exit()
-    } else {
-      const wait: number = Math.min(this.reconnectOptions.minConnectDelay * Math.pow(2, attempts), this.reconnectOptions.maxConnectDelay)
-      this.logger.warn(`Retrying connection to Redis server in ${wait / 1000}s`)
-      return wait
+  private readonly reconnectStrategy = (_attempts: number, cause: Error): number | Error => {
+    this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.CACHE, false)
+    if (!isRetryableConnectionError(cause)) {
+      return new Error(`Unable to connect to Redis server: ${connectionErrorMessage(cause)}`)
     }
+    this.logger.warn(`Retrying connection to Redis server in ${INFRASTRUCTURE_CONNECTION_RETRY_DELAY / 1000}s`)
+    return INFRASTRUCTURE_CONNECTION_RETRY_DELAY
   }
 
   private getTTL(ttl: number): number {

@@ -20,6 +20,8 @@
   "Close": "Закрыть",
   "Open": "Открыть",
   "Server connection error": "Ошибка подключения к серверу",
+  "Service interruption": "Перерыв в работе сервиса",
+  "Service unavailable": "Сервис недоступен",
   "Filter": "Фильтровать",
   "Filters": "Фильтры",
   "search": "поиск",

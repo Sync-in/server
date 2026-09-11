@@ -1,23 +1,27 @@
 import { HttpErrorResponse, HttpEvent, HttpHandler, HttpInterceptor, HttpRequest } from '@angular/common/http'
 import { inject, Injectable, Injector } from '@angular/core'
+import { API_ADMIN_IMPERSONATE_LOGOUT } from '@sync-in-server/backend/src/applications/users/constants/routes'
 import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH } from '@sync-in-server/backend/src/authentication/constants/routes'
-import { BehaviorSubject, concatMap, delay, Observable, of, retryWhen, throwError } from 'rxjs'
+import { BehaviorSubject, Observable, retry, throwError, timer } from 'rxjs'
 import { catchError, filter, finalize, switchMap, take } from 'rxjs/operators'
-import { SERVER_CONNECTION_ERROR } from '../app.constants'
+import { SERVICE_UNAVAILABLE_ERROR } from '../app.constants'
 import { hasReservedUrlChars } from '../common/utils/functions'
 import { AuthService } from './auth.service'
-import { API_ADMIN_IMPERSONATE_LOGOUT } from '@sync-in-server/backend/src/applications/users/constants/routes'
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthInterceptor implements HttpInterceptor {
   private readonly injector = inject(Injector)
-  private auth: AuthService | null = null
+  private _auth?: AuthService
   private isRefreshingToken = false
-  private waitForRefreshToken: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(false)
-  private retryCount = 3
-  private retryWaitMilliSeconds = 2000
+  private readonly waitForRefreshToken = new BehaviorSubject<boolean>(false)
+  private readonly retryCount = 3
+  private readonly retryWaitMilliSeconds = 2000
+
+  private get auth(): AuthService {
+    return (this._auth ??= this.injector.get(AuthService))
+  }
 
   intercept(request: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     const encodedUrl = hasReservedUrlChars(request.url)
@@ -26,26 +30,41 @@ export class AuthInterceptor implements HttpInterceptor {
     }
 
     return next.handle(request).pipe(
+      retry({
+        count: this.retryCount,
+        delay: (error: HttpErrorResponse) => {
+          if (error.status !== 0 || request.body instanceof FormData || request.url === API_AUTH_LOGOUT) {
+            return throwError(() => error)
+          }
+          return timer(this.retryWaitMilliSeconds)
+        }
+      }),
       catchError((e: HttpErrorResponse) => {
         if (e.status === 401) {
           return this.handleAuthorizationError(request, next, e)
+        } else if (e.status === 503) {
+          return this.handleServiceUnavailable(request, e)
         } else if (e.status === 0) {
           // Do not retry multipart uploads on a transport error: the connection may have
           // been closed after a quota or size rejection, and replaying would resend all files.
-          if (request.body instanceof FormData) {
+          if (request.body instanceof FormData || request.url === API_AUTH_LOGOUT) {
             return throwError(() => e)
           }
-          return this.handleRetries(request, next, e)
+          return this.handleServiceUnavailable(request, e, SERVICE_UNAVAILABLE_ERROR)
         }
         return throwError(() => e)
       })
     )
   }
 
-  private handleAuthorizationError(request: HttpRequest<any>, next: HttpHandler, error: HttpErrorResponse): Observable<any> {
-    if (!this.auth) {
-      this.auth = this.injector.get(AuthService)
+  private handleServiceUnavailable(request: HttpRequest<any>, error: HttpErrorResponse, message?: string): Observable<never> {
+    if (request.url !== API_AUTH_LOGOUT) {
+      this.auth.logout(true, false, message ?? error.error?.message ?? SERVICE_UNAVAILABLE_ERROR)
     }
+    return throwError(() => error)
+  }
+
+  private handleAuthorizationError(request: HttpRequest<any>, next: HttpHandler, error: HttpErrorResponse): Observable<any> {
     console.debug('AuthInterceptor:', request.url, error.status)
     if ([API_AUTH_REFRESH, API_AUTH_LOGIN, API_AUTH_LOGOUT, API_ADMIN_IMPERSONATE_LOGOUT].indexOf(request.url) === -1) {
       if (this.isRefreshingToken) {
@@ -69,24 +88,5 @@ export class AuthInterceptor implements HttpInterceptor {
       }
     }
     return throwError(() => error)
-  }
-
-  private handleRetries(request: HttpRequest<any>, next: HttpHandler, _error: HttpErrorResponse): Observable<any> {
-    return next.handle(request).pipe(
-      retryWhen((error) =>
-        error.pipe(
-          concatMap((error, count) => {
-            if (count < this.retryCount) {
-              return of(error)
-            }
-            if (error.status === 0) {
-              error.message = SERVER_CONNECTION_ERROR
-            }
-            return throwError(() => error)
-          }),
-          delay(this.retryWaitMilliSeconds)
-        )
-      )
-    )
   }
 }

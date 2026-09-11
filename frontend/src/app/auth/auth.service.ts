@@ -24,6 +24,7 @@ import type { TwoFaResponseDto, TwoFaVerifyDto } from '@sync-in-server/backend/s
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
 import { catchError, finalize, map, Observable, of, throwError } from 'rxjs'
 import { switchMap, tap } from 'rxjs/operators'
+import { SERVICE_INTERRUPTION_ERROR } from '../app.constants'
 import { USER_PATH } from '../applications/users/user.constants'
 import { UserService } from '../applications/users/user.service'
 import { getCookie } from '../common/utils/functions'
@@ -101,8 +102,8 @@ export class AuthService {
     )
   }
 
-  logout(redirect = true, expired = false) {
-    if ((redirect || expired) && this.store.userImpersonate()) {
+  logout(redirect = true, expired = false, errorMsg?: string) {
+    if (!errorMsg && (redirect || expired) && this.store.userImpersonate()) {
       this.logoutImpersonateUser()
       return
     }
@@ -117,12 +118,14 @@ export class AuthService {
           if (redirect) {
             this.router.navigate([AUTH_PATHS.BASE, AUTH_PATHS.LOGIN]).catch(console.error)
           }
-          if (expired) {
+          if (errorMsg) {
+            this.layout.sendNotification('error', SERVICE_INTERRUPTION_ERROR, errorMsg)
+          } else if (expired) {
             this.layout.sendNotification('warning', 'Session has expired', 'Please sign in')
           }
         })
       )
-      .subscribe()
+      .subscribe({ error: (error: HttpErrorResponse) => console.error(error) })
   }
 
   initUserFromResponse(r: LoginResponseDto, impersonate = false) {
