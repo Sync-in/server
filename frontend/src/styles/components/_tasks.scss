@@ -102,6 +102,7 @@ $task-progress-height: 1.35rem;
     flex: 0 0 auto;
     height: $task-progress-height;
     justify-content: center;
+    min-height: $task-progress-height;
     min-width: 1.9rem;
     padding: 0;
   }
