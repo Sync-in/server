@@ -32,7 +32,7 @@
             @if (files[0].isDir) {
               @let directorySize = getSizeLazy(files[0]) | async;
               @if (directorySize === null) {
-                <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin-pulse]="true"></svg>
+                <svg [lucideIcon]="icons.LucideLoader" class="icon-spin-pulse"></svg>
               } @else if (directorySize === undefined) {
                 <span class="fs-md">?</span>
               } @else {
@@ -150,7 +150,7 @@
     </ng-template>
     <ng-template #loadingTemplate>
       <span>
-        <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true" class="text-bold"></svg>
+        <svg [lucideIcon]="icons.LucideLoader" class="text-bold icon-spin"></svg>
       </span>
     </ng-template>
   </tree-root>

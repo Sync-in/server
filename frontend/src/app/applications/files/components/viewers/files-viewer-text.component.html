@@ -18,7 +18,7 @@
       type="button"
       [disabled]="!canSave()">
       @if (isSaving()) {
-        <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true"></svg>
+        <svg [lucideIcon]="icons.LucideLoader" class="icon-spin"></svg>
       } @else {
         <svg [lucideIcon]="icons.LucideSave"></svg>
       }

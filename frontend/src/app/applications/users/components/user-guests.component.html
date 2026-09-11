@@ -23,7 +23,7 @@
             class="btn btn-default"
             [tooltip]="'Refresh' | translate:locale.language"
             type="button">
-      <svg [lucideIcon]="icons.LucideRotateCw" [class.icon-spin]="loading"></svg>
+      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
     </button>
   </div>
   <!--End Filter Button-->

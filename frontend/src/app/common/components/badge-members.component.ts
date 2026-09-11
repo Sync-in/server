@@ -27,7 +27,7 @@ interface BadgeEntry {
         <span class="members-breakdown">
           @for (entry of entries; track entry.key) {
             <span class="members-part">
-              <svg [lucideIcon]="entry.icon" [class.members-icon-user]="entry.key === 'users'"></svg>
+              <svg [lucideIcon]="entry.icon" [class]="entry.key === 'users' ? 'members-icon-user' : ''"></svg>
               <span class="members-value">{{ entry.value }}</span>
             </span>
           }

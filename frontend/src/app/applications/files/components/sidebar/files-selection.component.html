@@ -58,7 +58,7 @@
           <div class="d-flex mb-1">
             <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Size</div>
             @if (f.isDir && (getSizeLazy(f) | async) === null) {
-              <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin-pulse]="true"></svg>
+              <svg [lucideIcon]="icons.LucideLoader" class="icon-spin-pulse"></svg>
             } @else {
               {{ f.hSize }}
             }

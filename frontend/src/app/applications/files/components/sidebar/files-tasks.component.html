@@ -45,11 +45,11 @@
          placement="bottom">
       <div class="task-list__content">
         <div class="task-list__header">
-          <svg class="task-list__status"
-                   [class.text-danger]="task.ui.error"
-                   [class.text-muted]="task.ui.cancelled || task.ui.queued"
-                   [lucideIcon]="task.ui.statusIcon"
-                   [class.icon-spin-pulse]="task.ui.pending"></svg>
+          <svg [class]="'task-list__status' +
+                        (task.ui.error ? ' text-danger' : '') +
+                        (task.ui.cancelled || task.ui.queued ? ' text-muted' : '') +
+                        (task.ui.pending ? ' icon-spin-pulse' : '')"
+               [lucideIcon]="task.ui.statusIcon"></svg>
           <span class="task-list__operation">
             <svg [lucideIcon]="task.ui.operationIcon"></svg>
           </span>

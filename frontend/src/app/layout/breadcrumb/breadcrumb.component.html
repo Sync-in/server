@@ -3,7 +3,7 @@
     @for (item of levels; track $index) {
       @if (!$first) {
         <svg
-          [class.breadcrumb-mobile-hidden]="$index > 1"
+          [class]="$index > 1 ? 'breadcrumb-mobile-hidden' : ''"
           [lucideIcon]="icons.LucideChevronRight">
         </svg>
       }

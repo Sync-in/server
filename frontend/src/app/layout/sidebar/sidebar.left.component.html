@@ -21,7 +21,7 @@
                     [class.active]="menu.isActive"
                     class="app-shortcut"
                     type="button">
-              <svg [class.icon-spin]="menu.iconAnimated" [lucideIcon]="menu.icon"></svg>
+              <svg [class]="menu.iconAnimated ? 'icon-spin' : ''" [lucideIcon]="menu.icon"></svg>
               @if (menu.count) {
                 <span class="menu-badge-icon">
                 @if (menu.count.value | async; as count) {
@@ -76,7 +76,7 @@
   }
 </ng-template>
 <ng-template #MenuTemplate let-menu="menu">
-  <svg [lucideIcon]="menu.icon" [class.icon-spin]="menu.iconAnimated"></svg>
+  <svg [lucideIcon]="menu.icon" [class]="menu.iconAnimated ? 'icon-spin' : ''"></svg>
   <span l10nTranslate>{{ menu.title }}</span>
   @if (menu.count) {
     <span class="menu-badge">

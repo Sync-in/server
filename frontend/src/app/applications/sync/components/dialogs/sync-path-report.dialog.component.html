@@ -16,7 +16,7 @@
           </button>
           <div class="sync-report-summary ms-3">
             @if (running) {
-              <svg [lucideIcon]="icons.LucideLoader" [class.icon-spin]="true" class="me-2"></svg>
+              <svg [lucideIcon]="icons.LucideLoader" class="me-2 icon-spin"></svg>
             }
             @if (transfers().length) {
               <span class="badge bg-default sync-report-count-badge">{{ 'nb_actions' | translate:locale.language:{ nb: count.actions } }}</span>

@@ -2,7 +2,7 @@
   <div class="col-12 col-md-6 col-lg-4">
     <div class="input-group">
       <button (click)="doSearch()" [disabled]="searchContent().length < minCharsToSearch" class="btn btn-default" role="button" type="button">
-        <svg [lucideIcon]="loading ? icons.LucideLoader : icons.SEARCH_ICON" [class.icon-spin]="loading"></svg>
+        <svg [lucideIcon]="loading ? icons.LucideLoader : icons.SEARCH_ICON" [class]="loading ? 'icon-spin' : ''"></svg>
       </button>
       <input [value]="searchContent()"
              (input)="setCurrentSearch($event)"
