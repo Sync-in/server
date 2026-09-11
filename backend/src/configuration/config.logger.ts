@@ -1,5 +1,8 @@
 import type { Options } from 'pino-http'
+import { AVAILABILITY_ROUTE } from '../infrastructure/availability/availability.constants'
 import type { LoggerConfig } from './config.validation'
+
+const AVAILABILITY_ROUTE_PREFIX = `${AVAILABILITY_ROUTE.BASE}/`
 
 export const configLogger = (loggerConfig: LoggerConfig) =>
   ({
@@ -17,7 +20,12 @@ export const configLogger = (loggerConfig: LoggerConfig) =>
     customErrorMessage: (req: any, res: any) => {
       return `${req.method} ${req.url} (${req.protocol.toUpperCase()}/${req['httpVersion']} ${res.statusCode}) ${req.ip}`
     },
-    customLogLevel: (_req, res, err) => {
+    customLogLevel: (req, res, err) => {
+      // Successful health checks are frequent and provide little value in logs.
+      // Keep failed checks visible so readiness issues remain diagnosable.
+      if (res.statusCode === 200 && req.url?.startsWith(AVAILABILITY_ROUTE_PREFIX)) {
+        return 'silent'
+      }
       if (res.statusCode >= 400 && res.statusCode < 500) {
         return 'warn'
       } else if (res.statusCode >= 500 || err) {
