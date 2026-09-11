@@ -50,7 +50,7 @@
                   "glob": "**/*",
                   "input": "src/assets",
                   "output": "assets",
-                  "ignore": ["mimes/**"]
+                  "ignore": ["mimes/**", "**/*.map"]
                 }
               ],
               "budgets": [

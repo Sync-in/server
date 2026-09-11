@@ -8,7 +8,7 @@
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "target": "ES2022",
-    "sourceMap": true,
+    "sourceMap": false,
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
