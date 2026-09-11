@@ -5,6 +5,9 @@ set -eu
 : "${PGID:?PGID is not defined}"
 : "${FORCE_PERMISSIONS:=false}"
 
+# The Docker image and its startup scripts use /app/data as the persistent data directory.
+export SYNCIN_APPLICATIONS_FILES_DATAPATH=/app/data
+
 # Create syncin group if needed
 group_name=$(getent group "${PGID}" | cut -d: -f1)
 if [ -z "${group_name}" ]; then
@@ -22,11 +25,11 @@ fi
 chown "${PUID}:${PGID}" /app
 
 # Change application data ownership to syncin if needed
-CURRENT_UID=$(stat -c '%u' /app/data)
-CURRENT_GID=$(stat -c '%g' /app/data)
+CURRENT_UID=$(stat -c '%u' "${SYNCIN_APPLICATIONS_FILES_DATAPATH}")
+CURRENT_GID=$(stat -c '%g' "${SYNCIN_APPLICATIONS_FILES_DATAPATH}")
 
 if [ "${CURRENT_UID}" != "${PUID}" ] || [ "${CURRENT_GID}" != "${PGID}" ] || [ "${FORCE_PERMISSIONS}" = "true" ]; then
-    chown -R "${PUID}:${PGID}" /app/data
+    chown -R "${PUID}:${PGID}" "${SYNCIN_APPLICATIONS_FILES_DATAPATH}"
 fi
 
 umask 027

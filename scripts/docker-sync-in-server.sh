@@ -38,7 +38,7 @@ if [ "${SKIP_INIT}" != "true" ]; then
         fi
       fi
       touch .init
-      chmod 750 /app/data
+      chmod 750 "${SYNCIN_APPLICATIONS_FILES_DATAPATH}"
   fi
 else
   echo "SKIP_INIT invoked"
@@ -46,7 +46,7 @@ fi
 
 if [ "${FORCE_PERMISSIONS}" = "true" ]; then
   echo "FORCE_PERMISSIONS: Applying recursive permissions (Dirs: 750, Files: 640)..."
-  chmod -R u=rwX,g=rX,o= /app/data
+  chmod -R u=rwX,g=rX,o= "${SYNCIN_APPLICATIONS_FILES_DATAPATH}"
 fi
 
 exec node server/main.js

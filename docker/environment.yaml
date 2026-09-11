@@ -18,7 +18,6 @@ auth:
       secret:
 applications:
   files:
-    dataPath: /app/data
     editors:
       collabora:
         enabled: false
