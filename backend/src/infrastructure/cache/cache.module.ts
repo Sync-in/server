@@ -1,5 +1,4 @@
 import { Global, Module } from '@nestjs/common'
-import { SchedulerRegistry } from '@nestjs/schedule'
 import { configuration } from '../../configuration/config.environment'
 import { MysqlCacheAdapter } from './adapters/mysql-cache.adapter'
 import { RedisCacheAdapter } from './adapters/redis-cache.adapter'
@@ -11,8 +10,7 @@ import { Cache } from './cache.service'
     {
       provide: Cache,
       useClass: configuration.cache.adapter === 'mysql' ? MysqlCacheAdapter : RedisCacheAdapter
-    },
-    SchedulerRegistry
+    }
   ],
   exports: [Cache]
 })

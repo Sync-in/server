@@ -29,7 +29,7 @@ import { SchedulerModule } from './infrastructure/scheduler/scheduler.module'
     CacheModule,
     MailerModule,
     ContextModule,
-    SchedulerModule.register(),
+    SchedulerModule,
     ApplicationsModule,
     HttpModule.register({
       global: true,

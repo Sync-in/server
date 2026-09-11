@@ -1,8 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { SchedulerRegistry } from '@nestjs/schedule'
-import { CronJob } from 'cron'
 import { and, between, eq, exists, inArray, notBetween, SQL, sql } from 'drizzle-orm'
-import cluster from 'node:cluster'
 import { createCacheKeySlug, currentTimeStamp } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
 import { INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants'
@@ -10,7 +7,7 @@ import { Availability } from '../../availability/availability.service'
 import { DB_TOKEN_PROVIDER } from '../../database/constants'
 import { DBSchema } from '../../database/interfaces/database.interface'
 import { dbCheckAffectedRows, dbParseJson } from '../../database/utils'
-import { SCHEDULER_ENV, SCHEDULER_STATE } from '../../scheduler/scheduler.constants'
+import { SchedulerManager } from '../../scheduler/scheduler-manager.service'
 import type { CacheRateLimitResult, CacheRateLimitState } from '../interfaces/cache-rate-limit.interface'
 import { MysqlCache } from '../schemas/mysql-cache.interface'
 import { cache } from '../schemas/mysql-cache.schema'
@@ -24,21 +21,20 @@ export class MysqlCacheAdapter implements Cache {
   */
   defaultTTL: number = configuration.cache.ttl
   infiniteExpiration = -1
-  private scheduledJob: CronJob
   private readonly scheduledJobName = 'cache_expired_keys' as const
   private readonly scheduledJobInterval = 5 // minutes
   private readonly logger = new Logger(Cache.name.toUpperCase())
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
-    private readonly scheduler: SchedulerRegistry,
+    private readonly schedulerManager: SchedulerManager,
     availability: Availability
   ) {
     availability.register(INFRASTRUCTURE_DEPENDENCY.CACHE, true)
   }
 
   async onModuleInit(): Promise<void> {
-    if (cluster.isWorker && process.env[SCHEDULER_ENV] === SCHEDULER_STATE.ENABLED) {
+    if (this.schedulerManager.isSchedulerProcess) {
       try {
         await this.db.execute(`SET GLOBAL event_scheduler = ON;`)
         await this.db.execute(`DROP EVENT IF EXISTS ${this.scheduledJobName};`)
@@ -49,17 +45,13 @@ export class MysqlCacheAdapter implements Cache {
       } catch (e) {
         this.logger.error(`MySQL scheduler on '${e?.sql || e?.code}' : ${e.message || e}`)
         this.logger.warn(`Fallback to internal scheduler`)
-        this.scheduledJob = new CronJob(`0 */${this.scheduledJobInterval} * * * *`, async () => await this.clearExpiredKeys())
-        this.scheduler.addCronJob(this.scheduledJobName, this.scheduledJob)
-        this.scheduledJob.start()
+        this.schedulerManager.registerCron(this.scheduledJobName, `0 */${this.scheduledJobInterval} * * * *`, () => this.clearExpiredKeys())
       }
     }
   }
 
-  async onModuleDestroy(): Promise<void> {
-    if (this.scheduledJob) {
-      await this.scheduledJob.stop()
-    }
+  onModuleDestroy(): void {
+    this.schedulerManager.unregisterCron(this.scheduledJobName)
   }
 
   async keys(pattern: string): Promise<string[]> {
