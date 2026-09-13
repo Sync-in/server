@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import type { AxiosResponse } from 'axios'
 import { VERSION } from '../../../app.constants'
 import { APP_URL } from '../../../common/shared'
+import { configuration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/cache.service'
 import { HTTP_METHOD } from '../../applications.constants'
 import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
@@ -29,7 +30,10 @@ export class AdminService {
     try {
       const res: AxiosResponse<ServerReleaseVersionManifest> = await this.http.axiosRef({
         method: HTTP_METHOD.GET,
-        url: APP_URL.SERVER_VERSION_MANIFEST
+        url: APP_URL.SERVER_VERSION_MANIFEST,
+        headers: {
+          Referer: configuration.server.publicUrl
+        }
       })
       lastVersion = res.data?.tag_name || ''
     } catch (e) {
