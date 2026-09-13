@@ -38,12 +38,26 @@ export class FilesLockDialogComponent implements OnInit {
     this.userAvatarUrl = userAvatarUrl(this.file.lock.owner.login)
   }
 
+  protected get canUnlock(): boolean {
+    return this.isLockOwner || this.isFileOwner
+  }
+
+  protected get canRequestUnlock(): boolean {
+    return this.hasExclusiveLock && !this.isLockOwner
+  }
+
+  protected get hasAction(): boolean {
+    return this.canUnlock || this.canRequestUnlock
+  }
+
   @HostListener('document:keyup.enter')
   async onEnter() {
-    if (this.isLockOwner || this.isFileOwner) {
+    if (this.canUnlock) {
       await this.onUnlock()
-    } else {
+    } else if (this.canRequestUnlock) {
       this.onSendUnLockRequest()
+    } else {
+      this.layout.closeDialog()
     }
   }
 

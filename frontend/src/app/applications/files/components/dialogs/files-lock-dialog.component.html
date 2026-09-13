@@ -23,14 +23,12 @@
 </div>
 <div class="modal-footer">
   <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>
-    {{ hasExclusiveLock ? 'Cancel' : 'Close' }}
+    {{ hasAction ? 'Cancel' : 'Close' }}
   </button>
-  @if (hasExclusiveLock) {
-    @if (isLockOwner || isFileOwner) {
-      <button (click)="onUnlock()" [disabled]="submitted" class="btn btn-primary" type="button" l10nTranslate>Unlock</button>
-    }
-    @if (!isLockOwner) {
-      <button (click)="onSendUnLockRequest()" [disabled]="submitted" class="btn btn-success" type="button" l10nTranslate>Send an unlock request</button>
-    }
+  @if (canUnlock) {
+    <button (click)="onUnlock()" [disabled]="submitted" class="btn btn-primary" type="button" l10nTranslate>Unlock</button>
+  }
+  @if (canRequestUnlock) {
+    <button (click)="onSendUnLockRequest()" [disabled]="submitted" class="btn btn-success" type="button" l10nTranslate>Send an unlock request</button>
   }
 </div>
