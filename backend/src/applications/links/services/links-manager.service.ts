@@ -63,9 +63,9 @@ export class LinksManager {
     }
     const user = new UserModel(link.user)
     if (link.user.id !== identity.id) {
-      // Authenticate user to allow access to the directory
+      // Authenticate the link user for subsequent access
+      await this.consumeLinkAccess(link)
       this.logger.log({ tag: this.linkAccess.name, msg: `*${user.login}* (${user.id}) is logged` })
-      this.incrementLinkNbAccess(link)
       this.usersManager.updateAccesses(user, req.ip, true).catch((e: Error) => this.logger.error({ tag: this.linkAccess.name, msg: `${e}` }))
       return this.authManager.setCookies(user, res)
     }
@@ -85,9 +85,11 @@ export class LinksManager {
       throw new HttpException('This link does not allow file download', HttpStatus.BAD_REQUEST)
     }
     const user = new UserModel(link.user)
-    // Download the file (authentication has been verified before)
+    // A direct download without an existing link session consumes an access
+    if (link.user.id !== identity.id) {
+      await this.consumeLinkAccess(link)
+    }
     this.logger.log({ tag: this.linkDownload.name, msg: `*${user.login}* (${user.id}) downloading ${spaceLink.share.name}` })
-    this.incrementLinkNbAccess(link)
     const spaceEnv: SpaceEnv = await this.spaceEnvFromLink(user, spaceLink)
     const sendFile: SendFile = this.filesManager.sendFileFromSpace(spaceEnv, spaceLink.share.name)
     try {
@@ -115,6 +117,7 @@ export class LinksManager {
       this.logger.warn({ tag: this.linkAuthentication.name, msg: `*${user.login}* (${user.id}) : auth failed` })
       throw new HttpException(LINK_ERROR.UNAUTHORIZED, HttpStatus.FORBIDDEN)
     }
+    await this.consumeLinkAccess(link)
     // authenticate user to allow access
     this.logger.log({ tag: this.linkAuthentication.name, msg: `*${user.login}* (${user.id}) is logged` })
     return this.authManager.setCookies(user, res)
@@ -141,7 +144,7 @@ export class LinksManager {
     if (!link.user.isActive) {
       return LINK_ERROR.DISABLED
     }
-    if (link.limitAccess !== 0 && link.nbAccess >= link.limitAccess) {
+    if (link.user.id !== identity.id && link.limitAccess !== 0 && link.nbAccess >= link.limitAccess) {
       return LINK_ERROR.EXCEEDED
     }
     if (link.expiresAt && new Date() >= link.expiresAt) {
@@ -153,7 +156,9 @@ export class LinksManager {
     return true
   }
 
-  private incrementLinkNbAccess(link: LinkAsUser) {
-    this.linksQueries.incrementLinkNbAccess(link.uuid).catch((e: Error) => this.logger.error({ tag: this.incrementLinkNbAccess.name, msg: `${e}` }))
+  private async consumeLinkAccess(link: LinkAsUser): Promise<void> {
+    if (!(await this.linksQueries.consumeLinkAccess(link.uuid))) {
+      throw new HttpException(LINK_ERROR.EXCEEDED, HttpStatus.BAD_REQUEST)
+    }
   }
 }

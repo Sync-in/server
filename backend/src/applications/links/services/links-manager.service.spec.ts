@@ -51,7 +51,7 @@ describe(LinksManager.name, () => {
     linksQueriesMock = {
       linkFromUUID: vi.fn(),
       spaceLink: vi.fn(),
-      incrementLinkNbAccess: vi.fn().mockResolvedValue(undefined)
+      consumeLinkAccess: vi.fn().mockResolvedValue(true)
     } as any
 
     usersManagerMock = {
@@ -113,6 +113,7 @@ describe(LinksManager.name, () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    linksQueriesMock.consumeLinkAccess.mockResolvedValue(true)
   })
 
   it('should be defined', () => {
@@ -200,20 +201,14 @@ describe(LinksManager.name, () => {
         stream: vi.fn().mockResolvedValueOnce(streamable)
       } as any)
 
-      // cover: incrementLinkNbAccess.catch(...) should log an error when the query rejects
-      const logErrorSpy = vi.spyOn((service as any).logger, 'error').mockImplementation(() => undefined as any)
-      linksQueriesMock.incrementLinkNbAccess.mockRejectedValueOnce(new Error('increment boom'))
-
       const result = await service.linkDownload(identity, link.uuid, req, res)
 
       expect(result).toBe(streamable)
       expect(filesManagerMock.sendFileFromSpace).toHaveBeenCalled()
-      expect(linksQueriesMock.incrementLinkNbAccess).toHaveBeenCalledWith(link.uuid)
+      expect(linksQueriesMock.consumeLinkAccess).toHaveBeenCalledWith(link.uuid)
       // Assert repository selection for a share file (space falsy)
       // should call spacesManager.spaceEnv with SHARES and share alias when link.space is falsy
       expect(spacesManagerMock.spaceEnv).toHaveBeenCalledWith(expect.anything(), ['shares', 'share-alias'])
-      // should log error when increment fails
-      expect(logErrorSpy).toHaveBeenCalled()
     })
 
     it('authenticates and returns cookies when link targets a directory and user is different', async () => {
@@ -223,7 +218,6 @@ describe(LinksManager.name, () => {
         space: { alias: 'files', name: 'My Space' },
         share: { isDir: true, name: 'ignored', alias: 'ignored' }
       } as any
-      linksQueriesMock.spaceLink.mockResolvedValueOnce(spaceLink)
 
       const loginDto: any = { token: 'jwt' }
       authManagerMock.setCookies.mockResolvedValueOnce(loginDto)
@@ -235,6 +229,7 @@ describe(LinksManager.name, () => {
       const result = await service.linkAccess(identity, link.uuid, req, res)
 
       expect(result).toBe(loginDto)
+      expect(linksQueriesMock.consumeLinkAccess).toHaveBeenCalledWith(link.uuid)
       expect(usersManagerMock.updateAccesses).toHaveBeenCalledWith(expect.anything(), req.ip, true)
       expect(authManagerMock.setCookies).toHaveBeenCalled()
       // additionally cover the "space truthy" branch by calling the private helper directly
@@ -254,21 +249,38 @@ describe(LinksManager.name, () => {
       })
     })
 
-    it('returns undefined for already authenticated directory access (same user) and does not set cookies or increment', async () => {
+    it('keeps an authenticated directory session after the limit is reached without consuming another access', async () => {
       const sameUserIdentity = { id: baseLink.user.id, login: 'john' }
-      const link = { ...baseLink, requireAuth: true }
+      const link = { ...baseLink, requireAuth: true, limitAccess: 1, nbAccess: 1 }
       linksQueriesMock.linkFromUUID.mockResolvedValueOnce(link)
-      const spaceLink = {
-        space: { alias: 'files', name: 'Space' },
-        share: { isDir: true, name: 'dir', alias: 'share' }
-      } as any
-      linksQueriesMock.spaceLink.mockResolvedValueOnce(spaceLink)
 
       const result = await service.linkAccess(sameUserIdentity as any, link.uuid, req, res)
 
       expect(result.user.id).toEqual(baseLink.user.id)
       expect(authManagerMock.setCookies).not.toHaveBeenCalled()
-      expect(linksQueriesMock.incrementLinkNbAccess).not.toHaveBeenCalled()
+      expect(linksQueriesMock.consumeLinkAccess).not.toHaveBeenCalled()
+    })
+
+    it('downloads through an existing link session after the limit is reached without consuming another access', async () => {
+      const sameUserIdentity = { id: baseLink.user.id, login: 'john' }
+      const link = { ...baseLink, requireAuth: true, limitAccess: 1, nbAccess: 1 }
+      const spaceLink = {
+        space: null,
+        share: { isDir: false, name: 'file.txt', alias: 'share-alias' }
+      } as any
+      const streamable = { some: 'stream' } as any
+      linksQueriesMock.linkFromUUID.mockResolvedValueOnce(link)
+      linksQueriesMock.spaceLink.mockResolvedValueOnce(spaceLink)
+      spacesManagerMock.spaceEnv.mockResolvedValueOnce({} as any)
+      filesManagerMock.sendFileFromSpace.mockReturnValueOnce({
+        checks: vi.fn().mockResolvedValueOnce(undefined),
+        stream: vi.fn().mockResolvedValueOnce(streamable)
+      } as any)
+
+      const result = await service.linkDownload(sameUserIdentity as any, link.uuid, req, res)
+
+      expect(result).toBe(streamable)
+      expect(linksQueriesMock.consumeLinkAccess).not.toHaveBeenCalled()
     })
 
     it('throws INTERNAL_SERVER_ERROR when file checks fail during streaming', async () => {
@@ -290,7 +302,19 @@ describe(LinksManager.name, () => {
       await expect(service.linkDownload(identity, link.uuid, req, res)).rejects.toMatchObject({
         status: 500
       })
-      expect(linksQueriesMock.incrementLinkNbAccess).toHaveBeenCalledWith(link.uuid)
+      expect(linksQueriesMock.consumeLinkAccess).toHaveBeenCalledWith(link.uuid)
+    })
+
+    it('does not issue a session when no access can be consumed', async () => {
+      const link = { ...baseLink, limitAccess: 1 }
+      linksQueriesMock.linkFromUUID.mockResolvedValueOnce(link)
+      linksQueriesMock.consumeLinkAccess.mockResolvedValueOnce(false)
+
+      await expect(service.linkAccess(identity, link.uuid, req, res)).rejects.toMatchObject({
+        status: HttpStatus.BAD_REQUEST,
+        response: 'exceeded'
+      })
+      expect(authManagerMock.setCookies).not.toHaveBeenCalled()
     })
   })
 
@@ -315,6 +339,7 @@ describe(LinksManager.name, () => {
       expect(result).toBe(loginDto)
       expect(usersManagerMock.validatePasswordAttempts).toHaveBeenCalledWith(expect.objectContaining({ id: link.user.id }))
       expect(usersManagerMock.compareUserPassword).toHaveBeenCalledWith(link.user.id, 'secret')
+      expect(linksQueriesMock.consumeLinkAccess).toHaveBeenCalledWith(link.uuid)
       expect(usersManagerMock.updateAccesses).toHaveBeenCalledWith(expect.anything(), req.ip, true)
       expect(authManagerMock.setCookies).toHaveBeenCalled()
       // should log error when updateAccesses fails in successful authentication

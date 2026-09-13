@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { and, eq, getTableColumns, isNotNull, isNull, or, sql } from 'drizzle-orm'
+import { and, eq, getTableColumns, isNotNull, isNull, lt, or, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/mysql-core'
 import { Cache } from '../../../infrastructure/cache/cache.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
-import { dbGetInsertedId } from '../../../infrastructure/database/utils'
+import { dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils'
 import { files } from '../../files/schemas/files.schema'
 import type { ShareMembers } from '../../shares/schemas/share-members.interface'
 import type { Share } from '../../shares/schemas/share.interface'
@@ -182,12 +182,16 @@ export class LinksQueries {
     }
   }
 
-  async incrementLinkNbAccess(uuid: string) {
-    await this.db
-      .update(links)
-      .set({ nbAccess: sql`${links.nbAccess} + 1` } as Record<keyof Link, any>)
-      .where(eq(links.uuid, uuid))
-      .limit(1)
+  async consumeLinkAccess(uuid: string): Promise<boolean> {
+    return dbCheckAffectedRows(
+      await this.db
+        .update(links)
+        .set({ nbAccess: sql`${links.nbAccess} + 1` } as Record<keyof Link, any>)
+        .where(and(eq(links.uuid, uuid), or(eq(links.limitAccess, 0), lt(links.nbAccess, links.limitAccess))))
+        .limit(1),
+      1,
+      false
+    )
   }
 
   async isUniqueUUID(userId: number, uuid: string) {
