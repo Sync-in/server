@@ -1,5 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, ParseIntPipe, Patch, Post, Query, UseGuards, UseInterceptors } from '@nestjs/common'
-import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
+import { BadRequestException, Body, Controller, Delete, Get, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common'
 import { SkipSpaceGuard } from '../spaces/decorators/space-skip-guard.decorator'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator'
 import { GetSpace } from '../spaces/decorators/space.decorator'
@@ -26,7 +25,6 @@ export class CommentsController {
   }
 
   @Post(`${COMMENTS_ROUTE.SPACES}/*`)
-  @UseInterceptors(ContextInterceptor)
   createFromSpace(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() createCommentDto: CreateOrUpdateCommentDto): Promise<Comment> {
     return this.commentsManager.createComment(user, space, createCommentDto)
   }

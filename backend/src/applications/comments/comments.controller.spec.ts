@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { Cache } from '../../infrastructure/cache/cache.service'
-import { ContextManager } from '../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../infrastructure/database/constants'
 import { FilesQueries } from '../files/services/files-queries.service'
 import { LinksQueries } from '../links/services/links-queries.service'
@@ -41,7 +40,6 @@ describe(CommentsController.name, () => {
         { provide: NotificationsManager, useValue: {} },
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
         { provide: Cache, useValue: {} },
-        ContextManager,
         { provide: CommentsManager, useValue: commentsManagerMock },
         { provide: FilesQuotaManager, useValue: {} },
         CommentsQueries,

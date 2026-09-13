@@ -25,7 +25,6 @@ import { FastifyReply, FastifyRequest } from 'fastify'
 import { AuthTokenSkip } from '../../authentication/decorators/auth-token-skip.decorator'
 import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard'
 import { FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface'
-import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator'
 import { FastifySpaceRequest } from '../spaces/interfaces/space-request.interface'
 import { USER_PERMISSION } from '../users/constants/user'
@@ -174,7 +173,6 @@ export class SyncController {
   @Put(SYNC_ROUTE.PATHS)
   @UserHavePermission(USER_PERMISSION.DESKTOP_APP_SYNC)
   @UseGuards(UserPermissionsGuard)
-  @UseInterceptors(ContextInterceptor)
   updatePaths(
     @GetUser() user: UserModel,
     @Body(new ParseArrayPipe({ items: SyncPathDto, whitelist: true })) syncPathsDto: SyncPathDto[]

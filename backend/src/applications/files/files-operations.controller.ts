@@ -18,12 +18,10 @@ import {
   Res,
   StreamableFile,
   Unlock,
-  UseGuards,
-  UseInterceptors
+  UseGuards
 } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { webpMimeType } from '../../common/image'
-import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator'
 import { GetSpace } from '../spaces/decorators/space.decorator'
 import { SpaceGuard } from '../spaces/guards/space.guard'
@@ -124,7 +122,6 @@ export class FilesOperationsController {
   }
 
   @Unlock(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.UNLOCK_REQUEST}/*`)
-  @UseInterceptors(ContextInterceptor)
   async unlockRequest(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv): Promise<void> {
     return this.filesMethods.unlockRequest(user, space)
   }

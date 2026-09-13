@@ -5,7 +5,6 @@ import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthManager } from '../../../authentication/auth.service'
 import { Cache } from '../../../infrastructure/cache/cache.service'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
 import { FilesManager } from '../../files/services/files-manager.service'
@@ -82,7 +81,6 @@ describe(LinksManager.name, () => {
           provide: Cache,
           useValue: {}
         },
-        { provide: ContextManager, useValue: {} },
         {
           provide: NotificationsManager,
           useValue: {}

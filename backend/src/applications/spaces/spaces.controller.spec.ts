@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { Cache } from '../../infrastructure/cache/cache.service'
-import { ContextManager } from '../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../infrastructure/database/constants'
 import { FilesLockManager } from '../files/services/files-lock-manager.service'
 import { FilesQueries } from '../files/services/files-queries.service'
@@ -36,7 +35,6 @@ describe(SpacesController.name, () => {
           provide: FilesQuotaManager,
           useValue: {}
         },
-        ContextManager,
         SpacesManager,
         SpacesQueries,
         SpacesBrowser,

@@ -14,10 +14,8 @@ import {
   Put,
   Query,
   Search,
-  UseGuards,
-  UseInterceptors
+  UseGuards
 } from '@nestjs/common'
-import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
 import { FileTree } from '../files/interfaces/file-tree.interface'
 import { FileError } from '../files/models/file-error'
 import { checkExternalPath } from '../files/utils/files'
@@ -51,7 +49,6 @@ import { SpacesManager } from './services/spaces-manager.service'
 @UserHaveRole(USER_ROLE.USER)
 @UserHavePermission(USER_PERMISSION.SPACES)
 @UseGuards(UserRolesGuard, UserPermissionsGuard)
-@UseInterceptors(ContextInterceptor)
 export class SpacesController {
   constructor(
     private readonly spacesManager: SpacesManager,

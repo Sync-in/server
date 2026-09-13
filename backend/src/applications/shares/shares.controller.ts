@@ -1,5 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UseGuards, UseInterceptors } from '@nestjs/common'
-import { ContextInterceptor } from '../../infrastructure/context/interceptors/context.interceptor'
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UseGuards } from '@nestjs/common'
 import { LINK_TYPE } from '../links/constants/links'
 import { CreateOrUpdateLinkDto } from '../links/dto/create-or-update-link.dto'
 import { LinkGuest } from '../links/interfaces/link-guest.interface'
@@ -22,7 +21,6 @@ import { SharesManager } from './services/shares-manager.service'
 @UserHaveRole(USER_ROLE.USER)
 @UserHavePermission(USER_PERMISSION.SHARES_ADMIN)
 @UseGuards(UserRolesGuard, UserPermissionsGuard)
-@UseInterceptors(ContextInterceptor)
 export class SharesController {
   constructor(private readonly sharesManager: SharesManager) {}
 

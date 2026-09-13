@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard'
-import { ContextManager } from '../../infrastructure/context/services/context-manager.service'
 import { SpacesManager } from '../spaces/services/spaces-manager.service'
 import { SyncClientsManager } from './services/sync-clients-manager.service'
 import { SyncManager } from './services/sync-manager.service'
@@ -14,7 +13,6 @@ describe(SyncController.name, () => {
     const testingModuleBuilder = Test.createTestingModule({
       controllers: [SyncController],
       providers: [
-        { provide: ContextManager, useValue: {} },
         { provide: SpacesManager, useValue: {} },
         { provide: SyncManager, useValue: {} },
         { provide: SyncClientsManager, useValue: {} },

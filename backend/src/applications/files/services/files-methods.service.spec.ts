@@ -4,7 +4,6 @@ import path from 'node:path'
 import type { Mock } from 'vitest'
 import { transformAndValidate } from '../../../common/functions'
 import { Cache } from '../../../infrastructure/cache/cache.service'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
 import { SharesManager } from '../../shares/services/shares-manager.service'
@@ -55,7 +54,6 @@ describe(FilesMethods.name, () => {
           provide: Cache,
           useValue: { get: () => null }
         },
-        { provide: ContextManager, useValue: {} },
         {
           provide: NotificationsManager,
           useValue: {}

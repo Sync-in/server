@@ -3,7 +3,6 @@ import { Test, TestingModule } from '@nestjs/testing'
 import fs from 'node:fs/promises'
 import { configuration, exportConfiguration } from '../../../configuration/config.environment'
 import { Cache } from '../../../infrastructure/cache/cache.service'
-import { ContextManager } from '../../../infrastructure/context/services/context-manager.service'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
 import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
 import { FilesLockManager } from '../../files/services/files-lock-manager.service'
@@ -32,7 +31,6 @@ describe(SpacesBrowser.name, () => {
           provide: Cache,
           useValue: {}
         },
-        { provide: ContextManager, useValue: {} },
         {
           provide: NotificationsManager,
           useValue: {}

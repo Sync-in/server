@@ -17,23 +17,18 @@ describe(ContextManager.name, () => {
     expect(contextManager).toBeDefined()
   })
 
-  // Test helpers to reduce repetition and keep strong typing in one place
-  const getKey = <K extends keyof ContextStore>(key: K): ContextStore[K] => contextManager.get(key) as ContextStore[K]
-
-  const runWithContext = <T>(ctx: Partial<ContextStore>, fn: () => T): T => contextManager.run(ctx as ContextStore, fn) as unknown as T
+  const runWithContext = <T>(ctx: ContextStore, fn: () => T): T => contextManager.run(ctx, fn) as unknown as T
 
   describe('Context access', () => {
-    it('get() should return undefined when no context is active', () => {
-      // Using a fake key ensures we don’t rely on a specific ContextStore shape
-      expect(getKey('' as keyof ContextStore)).toBeUndefined()
+    it('headerOriginUrl() should return undefined when no context is active', () => {
+      expect(contextManager.headerOriginUrl()).toBeUndefined()
     })
 
     it('run() should expose context within the callback and surface return value', () => {
-      const ctx = { userId: 'u1', requestId: 'r1' } as Partial<ContextStore>
+      const ctx = { headerOriginUrl: 'https://sync-in.example' }
 
       const value = runWithContext<number>(ctx, () => {
-        expect(getKey('userId' as keyof ContextStore)).toBe('u1')
-        expect(getKey('requestId' as keyof ContextStore)).toBe('r1')
+        expect(contextManager.headerOriginUrl()).toBe(ctx.headerOriginUrl)
         return 123
       })
 
@@ -43,52 +38,50 @@ describe(ContextManager.name, () => {
 
   describe('Context lifecycle', () => {
     it('should restore to no context after run() completes', () => {
-      const ctx = { userId: 'u2' } as Partial<ContextStore>
+      const ctx = { headerOriginUrl: 'https://sync-in.example' }
 
       runWithContext<void>(ctx, () => {
-        expect(getKey('userId' as keyof ContextStore)).toBe('u2')
+        expect(contextManager.headerOriginUrl()).toBe(ctx.headerOriginUrl)
       })
 
-      expect(getKey('userId' as keyof ContextStore)).toBeUndefined()
+      expect(contextManager.headerOriginUrl()).toBeUndefined()
     })
 
     it('should support nested contexts and restore the previous one after inner run()', () => {
-      const outer = { userId: 'outer' } as Partial<ContextStore>
-      const inner = { userId: 'inner' } as Partial<ContextStore>
+      const outer = { headerOriginUrl: 'https://outer.example' }
+      const inner = { headerOriginUrl: 'https://inner.example' }
 
       runWithContext<void>(outer, () => {
-        expect(getKey('userId' as keyof ContextStore)).toBe('outer')
+        expect(contextManager.headerOriginUrl()).toBe(outer.headerOriginUrl)
 
         runWithContext<void>(inner, () => {
-          expect(getKey('userId' as keyof ContextStore)).toBe('inner')
+          expect(contextManager.headerOriginUrl()).toBe(inner.headerOriginUrl)
         })
 
-        // After inner completes, outer should be visible again
-        expect(getKey('userId' as keyof ContextStore)).toBe('outer')
+        expect(contextManager.headerOriginUrl()).toBe(outer.headerOriginUrl)
       })
 
-      // After outer completing, no context should be active
-      expect(getKey('userId' as keyof ContextStore)).toBeUndefined()
+      expect(contextManager.headerOriginUrl()).toBeUndefined()
     })
   })
 
   describe('Async propagation', () => {
     it('should propagate context across microtasks (Promise)', async () => {
-      const ctx = { userId: 'async-user' } as Partial<ContextStore>
+      const ctx = { headerOriginUrl: 'https://async.example' }
 
       await runWithContext<Promise<void>>(ctx, async () => {
         await Promise.resolve()
-        expect(getKey('userId' as keyof ContextStore)).toBe('async-user')
+        expect(contextManager.headerOriginUrl()).toBe(ctx.headerOriginUrl)
       })
     })
 
     it('should propagate context across timers (setTimeout)', async () => {
-      const ctx = { requestId: 'req-timer' } as Partial<ContextStore>
+      const ctx = { headerOriginUrl: 'https://timer.example' }
 
       await runWithContext<Promise<void>>(ctx, async () => {
         await new Promise<void>((resolve) =>
           setTimeout(() => {
-            expect(getKey('requestId' as keyof ContextStore)).toBe('req-timer')
+            expect(contextManager.headerOriginUrl()).toBe(ctx.headerOriginUrl)
             resolve()
           }, 0)
         )
