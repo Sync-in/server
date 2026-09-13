@@ -1,5 +1,6 @@
 services:
   onlyoffice:
+    # Version 9.4.0.1 may fail in Firefox when Analytics.js is blocked: https://github.com/ONLYOFFICE/DocumentServer/issues/3686
     image: onlyoffice/documentserver:9.3.1.2
     container_name: onlyoffice
     restart: always

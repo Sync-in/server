@@ -1,6 +1,6 @@
 services:
   eurooffice:
-    image: ghcr.io/euro-office/documentserver:v9.3.1
+    image: ghcr.io/euro-office/documentserver:v9.3.4-hotfix.1
     container_name: eurooffice
     restart: always
     environment:
