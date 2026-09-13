@@ -3,8 +3,8 @@ server:
   host: 0.0.0.0
   # default port : `8080`
   port: 8080
-  # publicUrl: Canonical public URL used to build links in notification emails.
-  # When unset, notification emails are sent without action links.
+  # publicUrl: Canonical public URL used to build notification links and document editor URLs.
+  # When unset, notification emails are sent without action links and document editors fall back to the request origin.
   # It will become required in a future major release.
   # e.g.: https://sync-in.domain.com
   # optional

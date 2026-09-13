@@ -226,7 +226,7 @@ export class CollaboraOnlineManager {
   }
 
   private getDocumentUrl(dbFileHash: string, token: string): string {
-    const collaboraBase = this.externalCollaboraOnlineServer || this.contextManager.headerOriginUrl()
+    const collaboraBase = this.externalCollaboraOnlineServer || this.contextManager.publicOriginUrl()
     // Example:
     // - external: https://collabora.domain.com
     // - internal (via nginx proxy): https://domain.com/*
@@ -234,7 +234,7 @@ export class CollaboraOnlineManager {
     const editorUrl = new URL(COLLABORA_URI, collaboraBase)
     // → /browser/dist/cool.html
 
-    const wopiSrcUrl = new URL(`${API_COLLABORA_ONLINE_FILES}/${dbFileHash}`, this.contextManager.headerOriginUrl())
+    const wopiSrcUrl = new URL(`${API_COLLABORA_ONLINE_FILES}/${dbFileHash}`, this.contextManager.publicOriginUrl())
     // → https://domain.com/wopi/files/888
 
     editorUrl.searchParams.set(COLLABORA_WOPI_SRC_QUERY_PARAM_NAME, wopiSrcUrl.toString())
