@@ -1,4 +1,41 @@
 
+## [2.5.1](https://github.com/Sync-in/server/compare/v2.5.0...v2.5.1) (2026-09-14)
+
+### Features
+
+* **auth:** add cache-backed rate limiting ([#272](https://github.com/Sync-in/server/issues/272)) ([829df9e](https://github.com/Sync-in/server/commit/829df9e044537f37c33c9a45509259ff199d1bb5))
+* **backend:admin:** include instance URL in update check requests ([2c9b4c2](https://github.com/Sync-in/server/commit/2c9b4c29b8fbb03de686171dec30201ea3198db9))
+* **backend:availability:** expose health endpoints and add Docker health checks ([9526812](https://github.com/Sync-in/server/commit/952681254ec84e5a1a9a4c761f056f1ccd7714e7))
+* **backend:availability:** monitor dependencies and handle service outages ([f54f182](https://github.com/Sync-in/server/commit/f54f182f884f45a3ddee15804112fdf60ab896b0))
+* **backend:scheduler:** handle database and cache outages ([68fbb44](https://github.com/Sync-in/server/commit/68fbb449c9499842d7ade9000746e1b6209c8825))
+
+### Bug Fixes
+
+* **backend:auth:** make password-attempt locks temporary ([413dd45](https://github.com/Sync-in/server/commit/413dd45157d13a19a302b2308d263e3b1df0e029))
+* **backend:auth:** prevent lock emails for already disabled accounts ([cee35be](https://github.com/Sync-in/server/commit/cee35be799d55ab9c12fc11418af45fe2efed569))
+* **backend:auth:** reject empty passwords before LDAP bind ([7e7845e](https://github.com/Sync-in/server/commit/7e7845e5eebfb751bb9f09cca09e94c7ea03cc8f))
+* **backend:auth:** reject local credentials in query parameters ([462f32c](https://github.com/Sync-in/server/commit/462f32c39f03bd84d8cc06040ace96bd288015cd))
+* **backend:auth:** update token expiration and enforce no-store Cache-Control headers ([b94ac0e](https://github.com/Sync-in/server/commit/b94ac0ed135f673b15853563b35f0b5f071d9a79))
+* **backend:cache:** align Redis and MySQL adapter behavior ([5c5f01c](https://github.com/Sync-in/server/commit/5c5f01cdeadc56403c111421577db1d74b467b7e))
+* **backend:database:** align migration session settings and fix user creation exit code ([33e3047](https://github.com/Sync-in/server/commit/33e3047b09c5a530502e429968ab0a4076a1bb23))
+* **backend:database:** enforce InnoDB storage engine and improve connection handling ([7981ab9](https://github.com/Sync-in/server/commit/7981ab9e95fcd89f652bf05a9d4c20f1159811bb))
+* **backend:editors:** use configured public URL for editor endpoints ([fe3345d](https://github.com/Sync-in/server/commit/fe3345df0b918c49a2155f71f2dda3929d56eae2))
+* **backend:files:** handle EXDEV fallbacks for task moves ([0b0d10a](https://github.com/Sync-in/server/commit/0b0d10a943a62795565c327f5baf0a363aa5bd1d))
+* **backend:files:** preserve external-root paths in trash ([48b5118](https://github.com/Sync-in/server/commit/48b5118b52ef6db1dec6de6924308ff268d895ba))
+* **backend:links:** atomically enforce public link access limits ([f1895c8](https://github.com/Sync-in/server/commit/f1895c8dd97bc3a083bfabad63b30736e30cbb5a))
+* **backend:redis:** improve password redaction in connection logs ([#268](https://github.com/Sync-in/server/issues/268)) ([12eb6b5](https://github.com/Sync-in/server/commit/12eb6b59a87657edef89c909b9ffb0bb3396aebe))
+* **backend:server:** prevent IPC errors during cluster shutdown ([8619471](https://github.com/Sync-in/server/commit/8619471d152d1012c291b106912cb786d729ff67))
+* **backend:shares:** reset password attempts when reactivating a link ([d40de85](https://github.com/Sync-in/server/commit/d40de85ca79178a74999bff2e7a331fe3f8c53cc))
+* **backend:websocket:** allow cluster workers to exit gracefully ([90de776](https://github.com/Sync-in/server/commit/90de7766f6dac075aef06717b94b277987954490))
+* **docker:nginx:** preserve public port in forwarded host headers ([c2bb1d7](https://github.com/Sync-in/server/commit/c2bb1d71aa621b1940c51db6023be794d3c57fca))
+* **docker:** force application data path to /app/data ([8e9233e](https://github.com/Sync-in/server/commit/8e9233ef7e0370e20e1d0535ac8a2c60eeda189e))
+* **docker:** update EuroOffice and proxy its SDK assets ([3e2d938](https://github.com/Sync-in/server/commit/3e2d938c8a469990250eeb78a2b989f2979b3e9d))
+* **frontend:files:** align shared lock actions with backend ownership rules ([447f98c](https://github.com/Sync-in/server/commit/447f98c16ed8dcb46842b425afafbe14fdf8f94b))
+* **frontend:files:** keep task card height consistent during progress ([edc369c](https://github.com/Sync-in/server/commit/edc369c84b7d473f77d379aacadecce3ce0a8424))
+* **frontend:files:** preserve destination labels and stabilize tree interactions ([e509d70](https://github.com/Sync-in/server/commit/e509d70ff0a57f8a57db964941f267ead2ff39c9))
+* **frontend:spaces:** update icon for "Shared with Others" for consistency ([016d832](https://github.com/Sync-in/server/commit/016d8329a705c2a3b5d9b4fcbc44d518bbb7dc09))
+* **frontend:** preserve dynamic classes on Lucide icons ([a263bc9](https://github.com/Sync-in/server/commit/a263bc9d1b1ff3c0ac922b91d86cc8f397c49ed9))
+
 ## [2.5.0](https://github.com/Sync-in/server/compare/v2.4.4...v2.5.0) (2026-09-02)
 
 ### ⚠ MINOR BREAKING CHANGES
