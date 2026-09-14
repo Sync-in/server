@@ -7,8 +7,6 @@ import { ServerOptions } from 'socket.io'
 export class ClusterAdapter extends IoAdapter {
   createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options)
-    // Prevent the connection from closing too early when NestJS shutdown hooks are enabled, which can cause errors on exit
-    server.close = () => void 0
     const adapter: ReturnType<typeof createAdapter> = createAdapter()
     server.adapter(adapter)
     return server
