@@ -1,7 +1,6 @@
 import { HashLocationStrategy, LocationStrategy } from '@angular/common'
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXsrfConfiguration } from '@angular/common/http'
 import { ApplicationConfig, importProvidersFrom, isDevMode, provideZoneChangeDetection } from '@angular/core'
-import { provideAnimations } from '@angular/platform-browser/animations'
 import { provideRouter } from '@angular/router'
 import { provideLucideConfig } from '@lucide/angular'
 import { CSRF_KEY } from '@sync-in-server/backend/src/authentication/constants/auth'
@@ -30,7 +29,6 @@ export const appConfig: ApplicationConfig = {
       ...(isDevMode() ? { missingTranslationHandler: TranslationMissing } : {})
     }),
     provideL10nIntl(),
-    provideAnimations(),
     provideToastr({
       positionClass: 'toast-top-right',
       preventDuplicates: false,
