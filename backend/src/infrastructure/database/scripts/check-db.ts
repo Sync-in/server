@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { getDB } from './db'
+import { DatabaseConfigurationError, getDB } from './db'
 
 async function checkConnection() {
   const db = await getDB()
@@ -14,6 +14,7 @@ async function checkConnection() {
 
 checkConnection().catch((error: unknown) => {
   const message = error instanceof Error ? error.message : String(error)
-  console.error(`Database check failed: ${message}`)
-  process.exitCode = 1
+  const isConfigurationError = error instanceof DatabaseConfigurationError
+  console.error(`${isConfigurationError ? 'Database configuration error' : 'Database check failed'}: ${message}`)
+  process.exitCode = isConfigurationError ? 2 : 1
 })

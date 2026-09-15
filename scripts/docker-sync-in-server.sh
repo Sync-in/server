@@ -7,12 +7,20 @@ if [ "${SKIP_INIT}" != "true" ]; then
       COUNT=0
       CONNECTED=false
 
+      # Retry transient connection failures while the database is starting.
       while [ $COUNT -lt $MAX_RETRIES ]; do
         COUNT=$((COUNT+1))
         echo "Database connection attempt ${COUNT}/${MAX_RETRIES}..."
         if OUTPUT=$(node server/infrastructure/database/scripts/check-db.js 2>&1); then
           CONNECTED=true
           break
+        else
+          CHECK_EXIT_CODE=$?
+          # Exit code 2 indicates an invalid database configuration, which cannot be fixed by retrying.
+          if [ "$CHECK_EXIT_CODE" -eq 2 ]; then
+            echo "$OUTPUT" >&2
+            exit "$CHECK_EXIT_CODE"
+          fi
         fi
         sleep 1
       done
