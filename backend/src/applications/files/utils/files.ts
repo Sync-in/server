@@ -67,7 +67,10 @@ export function checkFileName(fPath: string): string {
 }
 
 export function isPathExists(rPath: string): Promise<boolean> {
-  return fse.pathExists(rPath)
+  return fs.access(rPath).then(
+    () => true,
+    () => false
+  )
 }
 
 async function existingParentPath(rPath: string): Promise<string> {
@@ -224,7 +227,7 @@ export function genUniqHashFromFileDBProps(dbFile: FileDBProps) {
 
 export function removeFiles(rPath: string): Promise<void> {
   // if the file does not exist, no error is thrown
-  return fse.remove(rPath)
+  return fs.rm(rPath, { force: true, recursive: true })
 }
 
 export async function getProps(rPath: string, fPath?: string, isDir?: boolean): Promise<FileProps> {
@@ -247,6 +250,43 @@ export function touchFile(rPath: string, mtime?: number): Promise<void> {
   return fs.utimes(rPath, mtime, mtime)
 }
 
+const REFLINK_UNAVAILABLE_ERROR_CODES = new Set(['EAGAIN', 'EINVAL', 'ENOSYS', 'ENOTSUP', 'ENOTTY', 'EOPNOTSUPP', 'EXDEV'])
+
+export async function tryReflink(srcPath: string, dstPath: string): Promise<boolean> {
+  // A reflink is a copy-on-write clone that shares data blocks and allocates new ones only for modified regions.
+  try {
+    // FORCE lets the caller distinguish a real reflink from Node's transparent byte-copy fallback.
+    await fs.copyFile(srcPath, dstPath, fs.constants.COPYFILE_FICLONE_FORCE)
+    return true
+  } catch (error) {
+    const errorCode = (error as NodeJS.ErrnoException)?.code
+    if (errorCode && REFLINK_UNAVAILABLE_ERROR_CODES.has(errorCode)) {
+      return false
+    }
+    throw error
+  }
+}
+
+async function checkCopyParentPaths(srcPath: string, dstPath: string): Promise<void> {
+  const srcStats = await fs.lstat(srcPath, { bigint: true })
+  if (!srcStats.isDirectory()) return
+
+  const srcParentPath = path.resolve(path.dirname(srcPath))
+  let dstParentPath = path.resolve(path.dirname(dstPath))
+
+  while (dstParentPath !== srcParentPath && dstParentPath !== path.parse(dstParentPath).root) {
+    try {
+      const dstParentStats = await fs.stat(dstParentPath, { bigint: true })
+      if (srcStats.ino === dstParentStats.ino && srcStats.dev === dstParentStats.dev) {
+        throw new Error(`Cannot copy '${srcPath}' to a subdirectory of itself, '${dstPath}'.`)
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') throw error
+    }
+    dstParentPath = path.dirname(dstParentPath)
+  }
+}
+
 export async function copyFiles(srcPath: string, dstPath: string, overwrite = false, recursive = true, preserveTimestamps = true): Promise<void> {
   /*
     If src is a directory it will copy everything inside of this directory, not the entire directory itself
@@ -260,11 +300,26 @@ export async function copyFiles(srcPath: string, dstPath: string, overwrite = fa
     }
   } else {
     const resolvedSrcPath = path.resolve(srcPath)
-    await fse.copy(srcPath, dstPath, {
-      overwrite,
-      preserveTimestamps,
-      filter: (entryPath) => path.resolve(entryPath) === resolvedSrcPath || !isInternalTemporaryEntry(path.basename(entryPath))
-    })
+    const filter = (entryPath: string): boolean => path.resolve(entryPath) === resolvedSrcPath || !isInternalTemporaryEntry(path.basename(entryPath))
+
+    await checkCopyParentPaths(srcPath, dstPath)
+    try {
+      await fs.cp(srcPath, dstPath, {
+        dereference: false,
+        force: overwrite,
+        mode: fs.constants.COPYFILE_FICLONE,
+        preserveTimestamps,
+        recursive,
+        // Match fs-extra: keep relative symlink targets relative instead of resolving them against the source directory.
+        verbatimSymlinks: true,
+        filter
+      })
+    } catch (error) {
+      // TODO: Remove this fallback once https://github.com/nodejs/node/issues/65097 is fixed in every supported Node release.
+      // Reproduced with fs.promises.cp on Node 24.20.0; fs-extra remains necessary for this case and for moveFiles' EXDEV fallback.
+      if ((error as NodeJS.ErrnoException)?.code !== 'ERR_FS_CP_EINVAL') throw error
+      await fse.copy(srcPath, dstPath, { overwrite, preserveTimestamps, filter })
+    }
   }
 }
 

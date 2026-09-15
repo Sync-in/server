@@ -17,7 +17,8 @@ import {
   isInternalTemporaryEntry,
   isPathExists,
   removeFiles,
-  temporaryFilePath
+  temporaryFilePath,
+  tryReflink
 } from '../../utils/files'
 import { countDirEntriesAndSize, isCrossDeviceError } from '../../utils/tasks'
 import { SourceCleanupError } from '../../models/file-error'
@@ -283,12 +284,18 @@ export class FilesTasksTransfer {
     } else if (stats.isSymbolicLink()) {
       await fs.symlink(await fs.readlink(srcPath), dstPath)
     } else {
-      const src = createReadStream(srcPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
-      const dst = createWriteStream(dstPath, { mode: stats.mode, highWaterMark: DEFAULT_HIGH_WATER_MARK })
-      if (onProgress) {
-        await pipeline(src, createProgressTransform(onProgress), dst, { signal })
+      const reflinked = await tryReflink(srcPath, dstPath)
+      if (reflinked) {
+        signal.throwIfAborted()
+        onProgress?.(stats.size)
       } else {
-        await pipeline(src, dst, { signal })
+        const src = createReadStream(srcPath, { highWaterMark: DEFAULT_HIGH_WATER_MARK })
+        const dst = createWriteStream(dstPath, { mode: stats.mode, highWaterMark: DEFAULT_HIGH_WATER_MARK })
+        if (onProgress) {
+          await pipeline(src, createProgressTransform(onProgress), dst, { signal })
+        } else {
+          await pipeline(src, dst, { signal })
+        }
       }
     }
     if (!stats.isSymbolicLink()) {

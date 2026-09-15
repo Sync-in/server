@@ -3,8 +3,6 @@ import fs, { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
-import fse from 'fs-extra'
-import type { MockInstance } from 'vitest'
 import { FileError } from '../models/file-error'
 import { storageQuotaExceededError } from './errors'
 import {
@@ -92,8 +90,7 @@ describe(isCrossDevice.name, () => {
   it('compares the source device with the nearest existing destination parent', async () => {
     vi.spyOn(fs, 'lstat').mockResolvedValueOnce({ dev: 1 } as any)
     const statSpy = vi.spyOn(fs, 'stat').mockResolvedValueOnce({ dev: 2 } as any)
-    const pathExistsSpy = vi.spyOn(fse, 'pathExists') as unknown as MockInstance<(path: string) => Promise<boolean>>
-    pathExistsSpy.mockResolvedValueOnce(false).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    vi.spyOn(fs, 'access').mockRejectedValueOnce(new Error()).mockRejectedValueOnce(new Error()).mockResolvedValueOnce(undefined)
     const dstPath = path.join(path.sep, 'missing', 'parent', 'destination.txt')
 
     await expect(isCrossDevice('/source.txt', dstPath)).resolves.toBe(true)
