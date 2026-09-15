@@ -1,4 +1,5 @@
 export const DEFAULT_CHECKSUM_ALGORITHM = 'sha512-256'
+export const DEFAULT_DIRECTORY_BUFFER_SIZE = 128
 export const DEFAULT_HIGH_WATER_MARK = 1024 * 1024
 export const DEFAULT_MIME_TYPE = 'application/octet-stream'
 export const TEMPORARY_FILE_PREFIX = '~tmp-'
