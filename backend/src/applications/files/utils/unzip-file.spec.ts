@@ -57,7 +57,7 @@ describe(extractZip.name, () => {
 
     await writeFile(archivePath, createZip('..\\zip-slip-proof.txt'))
 
-    await expect(extractZip(archivePath, outputDir)).rejects.toThrow('invalid relative path: ../zip-slip-proof.txt')
+    await expect(extractZip(archivePath, outputDir)).rejects.toThrow(ERR_UNSAFE_FILENAME)
     await expect(access(escapedPath)).rejects.toMatchObject({ code: 'ENOENT' })
 
     await writeFile(archivePath, createZip('link', Buffer.from('../../outside'), 0o120777))
