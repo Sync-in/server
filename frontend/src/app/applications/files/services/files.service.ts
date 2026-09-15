@@ -49,7 +49,7 @@ import { StoreService } from '../../../store/store.service'
 import { UserService } from '../../users/user.service'
 import { FilesLockDialogComponent } from '../components/dialogs/files-lock-dialog.component'
 import { type FilesOverwriteAction, FilesOverwriteDialogComponent } from '../components/dialogs/files-overwrite-dialog.component'
-import { FilesViewerDialogComponent } from '../components/dialogs/files-viewer-dialog.component'
+import type { FilesViewerDialogComponent as FilesViewerDialogComponentState } from '../components/dialogs/files-viewer-dialog.component'
 import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
 import { fileLockPropsToString } from '../components/utils/file-lock.utils'
 import { MAX_TEXT_FILE_SIZE, SHORT_MIME } from '../files.constants'
@@ -436,6 +436,7 @@ export class FilesService {
       }
     }
 
+    const { FilesViewerDialogComponent } = await import('../components/dialogs/files-viewer-dialog.component')
     this.layout.openDialog(FilesViewerDialogComponent, 'full', {
       id: file.id, // only used to manage the modal
       initialState: {
@@ -445,7 +446,7 @@ export class FilesService {
         isWriteable: isWriteable,
         hookedShortMime: hookedShortMime,
         editorProvider: editorProvider
-      } satisfies Partial<FilesViewerDialogComponent>
+      } satisfies Partial<FilesViewerDialogComponentState>
     })
   }
 

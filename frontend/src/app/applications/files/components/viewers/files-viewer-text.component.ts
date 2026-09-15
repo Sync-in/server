@@ -19,7 +19,7 @@ import { L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { FilesViewerEditableBase } from './files-viewer-editable-base'
-import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-search-adapter'
+import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-codemirror-search-adapter'
 import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 
 @Component({

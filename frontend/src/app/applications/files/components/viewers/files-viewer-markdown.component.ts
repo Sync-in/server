@@ -46,13 +46,11 @@ import { ButtonCheckboxDirective } from 'ngx-bootstrap/buttons'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { TiptapEditorDirective } from 'ngx-tiptap'
+import type { FileViewerSearchAdapter } from '../../interfaces/file-viewer-search.interface'
 import { FilesViewerEditableBase } from './files-viewer-editable-base'
-import {
-  CodeMirrorFileViewerSearchAdapter,
-  type FileViewerSearchAdapter,
-  TipTapFileViewerSearchAdapter
-} from './components/files-viewer-search-adapter'
+import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-codemirror-search-adapter'
 import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
+import { TipTapFileViewerSearchAdapter } from './components/files-viewer-tiptap-search-adapter'
 
 type MarkdownHeadingLevel = 1 | 2 | 3 | 4
 type MarkdownInlineMark = 'bold' | 'code' | 'italic' | 'strike' | 'underline'

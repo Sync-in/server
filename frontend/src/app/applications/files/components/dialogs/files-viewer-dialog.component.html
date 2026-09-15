@@ -14,50 +14,108 @@
 </div>
 @if (currentFile) {
   <div class="modal-body">
+    <ng-template #viewerLoading>
+      <div [style.height.px]="currentHeight" class="d-flex align-items-center justify-content-center" role="status">
+        <span class="spinner-border text-primary" aria-hidden="true"></span>
+        <span class="visually-hidden" l10nTranslate>Loading...</span>
+      </div>
+    </ng-template>
+    <ng-template #viewerError>
+      <div [style.height.px]="currentHeight" class="d-flex align-items-center justify-content-center p-4" l10nTranslate>Unable to open document</div>
+    </ng-template>
     @switch (activeViewer()) {
       @case (SHORT_MIME.IMAGE) {
-        <app-files-viewer-image [currentHeight]="currentHeight" [(file)]="currentFile" [directoryImages]="directoryImages()"></app-files-viewer-image>
+        @defer (on immediate) {
+          <app-files-viewer-image [currentHeight]="currentHeight" [(file)]="currentFile" [directoryImages]="directoryImages()"></app-files-viewer-image>
+        } @loading (after 100ms; minimum 200ms) {
+          <ng-container [ngTemplateOutlet]="viewerLoading"></ng-container>
+        } @error {
+          <ng-container [ngTemplateOutlet]="viewerError"></ng-container>
+        }
       }
       @case (SHORT_MIME.PDF) {
-        <app-files-viewer-pdf [currentHeight]="currentHeight" [file]="currentFile"></app-files-viewer-pdf>
+        @defer (on immediate) {
+          <app-files-viewer-pdf [currentHeight]="currentHeight" [file]="currentFile"></app-files-viewer-pdf>
+        } @loading (after 100ms; minimum 200ms) {
+          <ng-container [ngTemplateOutlet]="viewerLoading"></ng-container>
+        } @error {
+          <ng-container [ngTemplateOutlet]="viewerError"></ng-container>
+        }
       }
       @case (SHORT_MIME.MEDIA) {
-        <app-files-viewer-media [currentHeight]="currentHeight" [file]="currentFile"></app-files-viewer-media>
+        @defer (on immediate) {
+          <app-files-viewer-media [currentHeight]="currentHeight" [file]="currentFile"></app-files-viewer-media>
+        } @loading (after 100ms; minimum 200ms) {
+          <ng-container [ngTemplateOutlet]="viewerLoading"></ng-container>
+        } @error {
+          <ng-container [ngTemplateOutlet]="viewerError"></ng-container>
+        }
       }
       @case (SHORT_MIME.DOCUMENT) {
         <!-- PDF toggled to OnlyOffice: editorProvider flags are not set for PDFs, so we route directly when the original file was a PDF (hookedShortMime === SHORT_MIME.PDF) -->
         @if (hookedShortMime === SHORT_MIME.PDF) {
-          <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile"
-                                        [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
+          @defer (on immediate) {
+            <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile"
+                                          [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
+          } @loading (after 100ms; minimum 200ms) {
+            <ng-container [ngTemplateOutlet]="viewerLoading"></ng-container>
+          } @error {
+            <ng-container [ngTemplateOutlet]="viewerError"></ng-container>
+          }
         } @else if (editorProvider.collabora) {
-          <app-files-viewer-collabora-online [currentHeight]="currentHeight" [file]="currentFile"
-                                             [(isReadonly)]="isReadonly"></app-files-viewer-collabora-online>
+          @defer (on immediate) {
+            <app-files-viewer-collabora-online [currentHeight]="currentHeight" [file]="currentFile"
+                                               [(isReadonly)]="isReadonly"></app-files-viewer-collabora-online>
+          } @loading (after 100ms; minimum 200ms) {
+            <ng-container [ngTemplateOutlet]="viewerLoading"></ng-container>
+          } @error {
+            <ng-container [ngTemplateOutlet]="viewerError"></ng-container>
+          }
         } @else if (editorProvider.onlyoffice || editorProvider.eurooffice) {
-          <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile"
-                                        [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
+          @defer (on immediate) {
+            <app-files-viewer-only-office [currentHeight]="currentHeight" [file]="currentFile"
+                                          [(isReadonly)]="isReadonly"></app-files-viewer-only-office>
+          } @loading (after 100ms; minimum 200ms) {
+            <ng-container [ngTemplateOutlet]="viewerLoading"></ng-container>
+          } @error {
+            <ng-container [ngTemplateOutlet]="viewerError"></ng-container>
+          }
         } @else {
           <!--This case should never happen-->
           <div [style.height.px]="currentHeight" class="d-flex p-4" l10nTranslate>No editor found</div>
         }
       }
       @case (SHORT_MIME.MARKDOWN) {
-        <app-files-viewer-markdown
-          [currentHeight]="currentHeight"
-          [file]="currentFile"
-          [isWriteable]="isWriteable"
-          [modalClosing]="modalClosing()"
-          [(isReadonly)]="isReadonly">
-        </app-files-viewer-markdown>
+        @defer (on immediate) {
+          <app-files-viewer-markdown
+            [currentHeight]="currentHeight"
+            [file]="currentFile"
+            [isWriteable]="isWriteable"
+            [modalClosing]="modalClosing()"
+            (viewerReady)="editableViewerReady.set(true)"
+            [(isReadonly)]="isReadonly">
+          </app-files-viewer-markdown>
+        } @loading (after 100ms; minimum 200ms) {
+          <ng-container [ngTemplateOutlet]="viewerLoading"></ng-container>
+        } @error {
+          <ng-container [ngTemplateOutlet]="viewerError"></ng-container>
+        }
       }
       @default {
-        <app-files-viewer-text
-          [currentHeight]="currentHeight"
-          [file]="currentFile"
-          [isWriteable]="isWriteable"
-          [modalClosing]="modalClosing()"
-          [(isReadonly)]="isReadonly">
-        </app-files-viewer-text>
-
+        @defer (on immediate) {
+          <app-files-viewer-text
+            [currentHeight]="currentHeight"
+            [file]="currentFile"
+            [isWriteable]="isWriteable"
+            [modalClosing]="modalClosing()"
+            (viewerReady)="editableViewerReady.set(true)"
+            [(isReadonly)]="isReadonly">
+          </app-files-viewer-text>
+        } @loading (after 100ms; minimum 200ms) {
+          <ng-container [ngTemplateOutlet]="viewerLoading"></ng-container>
+        } @error {
+          <ng-container [ngTemplateOutlet]="viewerError"></ng-container>
+        }
       }
     }
   </div>

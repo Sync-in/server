@@ -1,3 +1,4 @@
+import { NgTemplateOutlet } from '@angular/common'
 import { Component, computed, HostListener, inject, Input, model, OnDestroy, OnInit, signal } from '@angular/core'
 import { LucideDynamicIcon, LucideEye, LucidePencil } from '@lucide/angular'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
@@ -19,6 +20,7 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
 @Component({
   selector: 'app-files-viewer-dialog',
   imports: [
+    NgTemplateOutlet,
     FilesViewerPdfComponent,
     FilesViewerMediaComponent,
     FilesViewerTextComponent,
@@ -40,6 +42,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) editorProvider: FileEditorProviders
   modalClosing = signal<boolean>(false)
   protected activeViewer = signal<string>('')
+  protected editableViewerReady = signal(false)
   protected isReadonly = model<boolean>(true)
   protected currentHeight: number
   protected readonly SHORT_MIME = SHORT_MIME
@@ -65,7 +68,8 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   }
 
   onClose() {
-    if (this.hookedShortMime === SHORT_MIME.TEXT || this.hookedShortMime === SHORT_MIME.MARKDOWN) {
+    const isEditableViewer = this.hookedShortMime === SHORT_MIME.TEXT || this.hookedShortMime === SHORT_MIME.MARKDOWN
+    if (isEditableViewer && this.editableViewerReady()) {
       // Prevent closing the modal without saving when using text-based editors
       this.modalClosing.set(true)
       // Force the next state change

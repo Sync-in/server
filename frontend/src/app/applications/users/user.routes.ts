@@ -1,9 +1,6 @@
 import { Routes } from '@angular/router'
 import { routeResolver } from '../../common/resolvers/route.resolver'
 import { userHaveDesktopAppPermission } from '../sync/sync.guards'
-import { UserAccountComponent } from './components/user-account.component'
-import { UserApplicationsComponent } from './components/user-applications.component'
-import { UserGroupsComponent } from './components/user-groups.component'
 import { USER_PATH } from './user.constants'
 import { noUserLinkGuard, onlyUserGuard } from './user.guards'
 
@@ -13,7 +10,10 @@ export const userRoutes: Routes = [
     pathMatch: 'prefix',
     canActivate: [noUserLinkGuard],
     children: [
-      { path: USER_PATH.ACCOUNT, component: UserAccountComponent },
+      {
+        path: USER_PATH.ACCOUNT,
+        loadComponent: () => import('./components/user-account.component').then((c) => c.UserAccountComponent)
+      },
       {
         path: USER_PATH.CLIENTS,
         canActivate: [userHaveDesktopAppPermission],
@@ -25,7 +25,7 @@ export const userRoutes: Routes = [
           {
             path: '**',
             resolve: { routes: routeResolver },
-            component: UserGroupsComponent
+            loadComponent: () => import('./components/user-groups.component').then((c) => c.UserGroupsComponent)
           }
         ]
       },
@@ -36,7 +36,7 @@ export const userRoutes: Routes = [
       },
       {
         path: USER_PATH.APPS,
-        component: UserApplicationsComponent
+        loadComponent: () => import('./components/user-applications.component').then((c) => c.UserApplicationsComponent)
       },
       { path: '**', redirectTo: USER_PATH.ACCOUNT }
     ]

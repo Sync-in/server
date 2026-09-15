@@ -1,7 +1,7 @@
 import { Component, effect, ElementRef, input, signal, untracked, viewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideChevronDown, LucideChevronUp, LucideDynamicIcon, LucideSearch, LucideX } from '@lucide/angular'
-import type { FileViewerSearchAdapter } from './files-viewer-search-adapter'
+import type { FileViewerSearchAdapter } from '../../../interfaces/file-viewer-search.interface'
 
 @Component({
   selector: 'app-files-viewer-search',

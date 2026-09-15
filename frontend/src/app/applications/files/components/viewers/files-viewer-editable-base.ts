@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Directive, effect, HostListener, inject, input, model, OnDestroy, signal, untracked } from '@angular/core'
+import { AfterViewInit, Directive, effect, HostListener, inject, input, model, OnDestroy, output, signal, untracked } from '@angular/core'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import { L10N_LOCALE, L10nLocale } from 'angular-l10n'
 import { firstValueFrom } from 'rxjs'
@@ -11,12 +11,13 @@ import { FilesUploadService } from '../../services/files-upload.service'
 import { fileLockPropsToString } from '../utils/file-lock.utils'
 
 @Directive()
-export abstract class FilesViewerEditableBase implements OnDestroy {
+export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestroy {
   currentHeight = input.required<number>()
   file = model.required<FileModel>()
   isWriteable = input.required<boolean>()
   isReadonly = model.required<boolean>()
   modalClosing = input.required<boolean>()
+  readonly viewerReady = output<void>()
   protected isSupported = signal(false)
   protected isModified = signal(false)
   protected isSaving = signal(false)
@@ -45,6 +46,10 @@ export abstract class FilesViewerEditableBase implements OnDestroy {
         this.onClose().catch(console.error)
       }
     })
+  }
+
+  ngAfterViewInit() {
+    this.viewerReady.emit()
   }
 
   ngOnDestroy() {
