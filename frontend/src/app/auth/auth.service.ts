@@ -1,4 +1,4 @@
-import { HttpClient, HttpErrorResponse, HttpRequest } from '@angular/common/http'
+import { HttpClient, HttpErrorResponse } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
 import { Router } from '@angular/router'
 import { CLIENT_MISSING_ERROR, CLIENT_TOKEN_EXPIRED_ERROR } from '@sync-in-server/backend/src/applications/sync/constants/auth'
@@ -10,7 +10,6 @@ import type {
   SyncClientAuthRegistration
 } from '@sync-in-server/backend/src/applications/sync/interfaces/sync-client-auth.interface'
 import { API_ADMIN_IMPERSONATE_LOGOUT } from '@sync-in-server/backend/src/applications/users/constants/routes'
-import { CSRF_KEY } from '@sync-in-server/backend/src/authentication/constants/auth'
 import {
   API_AUTH_LOGIN,
   API_AUTH_LOGOUT,
@@ -27,7 +26,6 @@ import { switchMap, tap } from 'rxjs/operators'
 import { SERVICE_INTERRUPTION_ERROR } from '../app.constants'
 import { USER_PATH } from '../applications/users/user.constants'
 import { UserService } from '../applications/users/user.service'
-import { getCookie } from '../common/utils/functions'
 import { EVENT } from '../electron/constants/events'
 import { Electron } from '../electron/electron.service'
 import { LayoutService } from '../layout/layout.service'
@@ -187,14 +185,6 @@ export class AuthService {
       )
     }
     return of(true)
-  }
-
-  checkCSRF(request: HttpRequest<any>): HttpRequest<any> {
-    // fix xsrf in header when request is replayed after the refresh token phase
-    if (request.headers.has(CSRF_KEY)) {
-      return request.clone({ headers: request.headers.set(CSRF_KEY, getCookie(CSRF_KEY)) })
-    }
-    return request
   }
 
   loginWith2Fa(verify: TwoFaVerifyDto): Observable<TwoFaResponseDto> {
