@@ -24,33 +24,35 @@ export class MysqlCacheAdapter implements Cache {
   private readonly scheduledJobName = 'cache_expired_keys' as const
   private readonly scheduledJobInterval = 5 // minutes
   private readonly logger = new Logger(Cache.name.toUpperCase())
+  private internalSchedulerRegistered = false
+  private unsubscribeAvailability?: () => void
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
     private readonly schedulerManager: SchedulerManager,
-    availability: Availability
+    private readonly availability: Availability
   ) {
     availability.register(INFRASTRUCTURE_DEPENDENCY.CACHE, true)
   }
 
   async onModuleInit(): Promise<void> {
-    if (this.schedulerManager.isSchedulerProcess) {
-      try {
-        await this.db.execute(`SET GLOBAL event_scheduler = ON;`)
-        await this.db.execute(`DROP EVENT IF EXISTS ${this.scheduledJobName};`)
-        await this.db.execute(`CREATE EVENT IF NOT EXISTS ${this.scheduledJobName}
-                               ON SCHEDULE EVERY ${this.scheduledJobInterval} MINUTE
-                               DO DELETE FROM cache WHERE cache.expiration BETWEEN 0 AND UNIX_TIMESTAMP();`)
-        this.logger.log(`Using MySQL scheduler`)
-      } catch (e) {
-        this.logger.error(`MySQL scheduler on '${e?.sql || e?.code}' : ${e.message || e}`)
-        this.logger.warn(`Fallback to internal scheduler`)
-        this.schedulerManager.registerCron(this.scheduledJobName, `0 */${this.scheduledJobInterval} * * * *`, () => this.clearExpiredKeys())
+    if (!this.schedulerManager.isSchedulerProcess) return
+
+    this.unsubscribeAvailability = this.availability.onChange((dependency, isAvailable) => {
+      // SchedulerManager pauses the internal cron during an outage; recovery is the right time to retry the MySQL event.
+      if (dependency === INFRASTRUCTURE_DEPENDENCY.DATABASE && isAvailable) {
+        void this.useMysqlScheduler()
       }
+    })
+
+    // A fallback cannot run without the database, so wait for its recovery instead of registering one prematurely.
+    if (this.availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE)) {
+      await this.useMysqlScheduler()
     }
   }
 
   onModuleDestroy(): void {
+    this.unsubscribeAvailability?.()
     this.schedulerManager.unregisterCron(this.scheduledJobName)
   }
 
@@ -225,6 +227,37 @@ export class MysqlCacheAdapter implements Cache {
 
   private toLikePattern(pattern: string): string {
     return pattern.replaceAll('=', '==').replaceAll('%', '=%').replaceAll('_', '=_').replaceAll('*', '%')
+  }
+
+  private async useMysqlScheduler(): Promise<void> {
+    try {
+      await this.db.execute(`SET GLOBAL event_scheduler = ON;`)
+      await this.db.execute(`DROP EVENT IF EXISTS ${this.scheduledJobName};`)
+      await this.db.execute(`CREATE EVENT IF NOT EXISTS ${this.scheduledJobName}
+                             ON SCHEDULE EVERY ${this.scheduledJobInterval} MINUTE
+                             DO DELETE FROM cache WHERE cache.expiration BETWEEN 0 AND UNIX_TIMESTAMP();`)
+      // Keep the fallback until the MySQL event is fully configured, then remove the local cron.
+      if (this.internalSchedulerRegistered) {
+        this.schedulerManager.unregisterCron(this.scheduledJobName)
+        this.internalSchedulerRegistered = false
+      }
+      this.logger.log(`Using MySQL scheduler`)
+    } catch (e) {
+      const errorSource = e?.sql || e?.code
+      this.logger.error(
+        `MariaDB event scheduler configuration failed${errorSource ? ` on '${errorSource}'` : ''}: ${e.message || e}. ` +
+          `Enable the scheduler with "SET GLOBAL event_scheduler = ON" as a MariaDB user with SUPER`
+      )
+      this.useInternalScheduler()
+    }
+  }
+
+  private useInternalScheduler(): void {
+    // Preserve a single registration: SchedulerManager owns its pause and resume across database outages.
+    if (this.internalSchedulerRegistered) return
+    this.logger.warn(`Fallback to internal scheduler`)
+    this.schedulerManager.registerCron(this.scheduledJobName, `0 */${this.scheduledJobInterval} * * * *`, () => this.clearExpiredKeys())
+    this.internalSchedulerRegistered = true
   }
 
   private async clearExpiredKeys() {
