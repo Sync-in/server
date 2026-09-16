@@ -3,12 +3,36 @@ import { AVAILABILITY_ROUTE } from '../infrastructure/availability/availability.
 import type { LoggerConfig } from './config.validation'
 
 const AVAILABILITY_ROUTE_PREFIX = `${AVAILABILITY_ROUTE.BASE}/`
+const PINO_WARN_LEVEL = 40
+const NEST_APPLICATION_CONTEXT = 'NestApplication'
+const MUTED_NEST_STARTUP_CONTEXTS = new Set(['NestFactory', 'InstanceLoader', 'RoutesResolver', 'RouterExplorer', NEST_APPLICATION_CONTEXT])
 
-export const configLogger = (loggerConfig: LoggerConfig) =>
-  ({
+export const configLogger = (loggerConfig: LoggerConfig) => {
+  let isNestBootstrapping = true
+
+  return {
     level: loggerConfig.level,
     autoLogging: true,
     quietReqLogger: true,
+    hooks: {
+      logMethod(args, method, level) {
+        if (isNestBootstrapping && level < PINO_WARN_LEVEL) {
+          const logObject = args[0]
+          const context = typeof logObject === 'object' && logObject !== null && 'context' in logObject ? logObject.context : undefined
+
+          // Hide routine NestJS startup logs while preserving warnings and errors.
+          if (typeof context === 'string' && MUTED_NEST_STARTUP_CONTEXTS.has(context)) {
+            // NestApplication emits the final NestJS startup message once app.init() completes.
+            if (context === NEST_APPLICATION_CONTEXT) {
+              isNestBootstrapping = false
+            }
+            return
+          }
+        }
+
+        method.apply(this, args)
+      }
+    },
     customProps: (req: any) => ({
       context: 'HTTP',
       user: req.user,
@@ -66,4 +90,5 @@ export const configLogger = (loggerConfig: LoggerConfig) =>
             sync: false
           }
         }
-  }) satisfies Options
+  } satisfies Options
+}
