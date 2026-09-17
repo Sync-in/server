@@ -76,6 +76,10 @@
           &.logo-spin-in {
             animation: logo-spin-in .45s $transition-fn calc(#{$transition-speed} - .09s) both;
             transform-origin: 50% 50%;
+
+            @include media-breakpoint-down(md) {
+              animation: none;
+            }
           }
         }
       }

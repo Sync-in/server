@@ -72,7 +72,9 @@ export class SideBarLeftComponent implements OnDestroy {
 
   navigateToMenu(menu: AppMenu) {
     this.router.navigate([menu.link]).catch(console.error)
-    this.closeSideBarOnMobile()
+    if (menu === SEARCH_MENU) {
+      this.closeSideBarOnMobile()
+    }
   }
 
   closeSideBarOnMobile() {

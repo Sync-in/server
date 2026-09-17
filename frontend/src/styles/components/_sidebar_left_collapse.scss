@@ -3,13 +3,19 @@
     margin-left: 0 !important;
   }
 
-  &.theme-dark {
-    .content-container {
-      border-left: 0.5px solid $sidebar-dark-icons-menu-border-color !important;
-    }
+  .breadcrumb {
+    padding-left: .5rem;
   }
 
+  .app-top-menu {
+    padding-left: .3rem;
+  }
 
+  &.theme-dark {
+    .content-container {
+      border-left: .5px solid $sidebar-dark-icons-menu-border-color !important;
+    }
+  }
 
   .left-sidebar {
     z-index: $content-z-index;
@@ -32,6 +38,10 @@
             animation: logo-toggle-spin-in .45s $transition-fn both;
             transform-origin: 50% 50%;
 
+            @include media-breakpoint-down(md) {
+              animation: none;
+            }
+
             &.icon-spin {
               animation: icon-spin 1s infinite linear reverse;
             }
@@ -51,6 +61,10 @@
   @include media-breakpoint-down(md) {
     .main-header, .content-wrapper {
       margin-left: 0;
+    }
+
+    .left-sidebar .sidebar-apps-menus .menu-title {
+      border-right: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
     }
   }
 }
