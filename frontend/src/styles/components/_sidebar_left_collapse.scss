@@ -17,7 +17,6 @@
     .sidebar-apps-menus {
       transform: translate3d(0, 0, 0);
       transition: width $transition-speed $transition-fn;
-      border-right: none !important;
       overflow: hidden;
       width: 0;
     }

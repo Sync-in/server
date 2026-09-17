@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs'
 import { AppMenu } from '../../layout/layout.interfaces'
 
 export const SYNC_TITLE = {
-  SYNC: 'Synchronization',
+  SYNC: 'Sync',
   SYNCS: 'Synchronizations',
   TRANSFERS: 'Transfers',
   WIZARD: 'Wizard',

@@ -7,30 +7,40 @@
         </button>
         <div class="sidebar-brand">
           <span class="sidebar-app-name">{{ appName }}</span>
-          <span class="sidebar-title">{{ dynamicTitle }}</span>
+          <span class="sidebar-title" l10nTranslate>{{ dynamicTitle }}</span>
         </div>
+        <button (click)="navigateInHistory('back')"
+                aria-label="Back"
+                class="d-none d-md-flex menu-title-history-button"
+                type="button">
+          <svg [lucideIcon]="icons.LucideChevronLeft"></svg>
+        </button>
+        <button (click)="navigateInHistory('next')"
+                aria-label="Forward"
+                class="d-none d-md-flex menu-title-history-button"
+                type="button">
+          <svg [lucideIcon]="icons.LucideChevronRight"></svg>
+        </button>
       </div>
     </div>
     <div class="apps-shortcuts">
-      @for (menu of appsMenu.submenus; track $index) {
-        @if (isMenu(menu)) {
-          @if (!menu.hide) {
-            <button (click)="navigateToMenu(menu)"
-                    (mouseenter)="previewMenuTitle(menu.title)"
-                    (mouseleave)="restoreMenuTitle()"
-                    [class.active]="menu.isActive"
-                    class="app-shortcut"
-                    type="button">
-              <svg [class]="menu.iconAnimated ? 'icon-spin' : ''" [lucideIcon]="menu.icon"></svg>
-              @if (menu.count) {
-                <span class="menu-badge-icon">
-                @if (menu.count.value | async; as count) {
-                  <span class="badge bg-{{menu.count.level}}">{{ count }}</span>
-                }
-                </span>
+      @for (menu of appMenus; track $index) {
+        @if (!menu.hide) {
+          <button (click)="navigateToMenu(menu)"
+                  (mouseenter)="previewMenuTitle(menu.title)"
+                  (mouseleave)="restoreMenuTitle()"
+                  [class.active]="menu.isActive"
+                  class="app-shortcut"
+                  type="button">
+            <svg [class]="menu.iconAnimated ? 'icon-spin' : ''" [lucideIcon]="menu.icon"></svg>
+            @if (menu.count) {
+              <span class="menu-badge-icon">
+              @if (menu.count.value | async; as count) {
+                <span class="badge bg-{{menu.count.level}}">{{ count }}</span>
               }
-            </button>
-          }
+              </span>
+            }
+          </button>
         }
       }
       @if (store.userImpersonate()) {

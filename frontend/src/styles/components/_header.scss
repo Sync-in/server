@@ -81,34 +81,11 @@
       }
     }
 
-    .navbar-history-button {
-      font-size: $font-size-2xl;
-      color: $sidebar-light-apps-menu-title-color;
-
-      &:hover,
-      &:focus,
-      &:active {
-        background-color: $sidebar-light-icons-menu-hover-bg;
-        color: $white;
-      }
-    }
-
-    .navbar-history-button-left {
-      margin-left: -.5px;
-      @include media-breakpoint-up(md) {
-        border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
-      }
-    }
-
-    .navbar-history-button-right {
-      border-right: none;
-    }
-
     .navbar-breadcrumb {
+      margin-left: -.5px;
       border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
       flex: 1 1 auto;
       min-width: 0;
-      max-width: none;
       overflow: hidden;
     }
 
@@ -121,7 +98,7 @@
       .menu {
         display: flex;
         justify-content: center;
-        align-content: center;
+        align-items: center;
         width: $sidebar-apps-icons-width;
         height: $sidebar-apps-icons-height;
         cursor: pointer;
@@ -134,7 +111,6 @@
         }
 
         .avatar-img {
-          display: flex;
           align-self: center;
           width: 30px;
           height: 30px;
@@ -188,7 +164,6 @@
 .breadcrumb {
   display: flex;
   align-items: center;
-  align-content: center;
   justify-content: flex-start;
   min-width: 0;
   height: $navbar-height;
@@ -250,7 +225,7 @@
         }
 
         > .lucide {
-          font-size: $font-size-xl;
+          font-size: 1.1rem;
         }
       }
     }

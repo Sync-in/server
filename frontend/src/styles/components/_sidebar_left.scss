@@ -31,14 +31,6 @@
         color: $sidebar-light-apps-menu-title-color;
       }
 
-      &:hover, &.active {
-        background: $sidebar-light-apps-menu-title-bg;
-
-        .menu-title-content {
-          color: $sidebar-light-apps-menu-title-color;
-        }
-      }
-
       .logo-toggle {
         display: flex;
         align-items: center;
@@ -49,7 +41,7 @@
         padding: 0;
         border: none;
         border-radius: 50%;
-        margin-right: .55rem;
+        margin-right: .35rem;
         margin-left: .5rem;
         background: $black;
         cursor: pointer;
@@ -61,6 +53,8 @@
       }
 
       .sidebar-brand {
+        position: relative;
+        z-index: 2;
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -74,14 +68,42 @@
         @include text-truncate-utility;
         color: $white;
         font-size: $font-size-base;
-        font-weight: 600;
+        font-weight: 550;
       }
 
       .sidebar-title {
         @include text-truncate-utility;
+        width: max-content;
+        max-width: calc(#{$sidebar-apps-menus-width} - #{$layout-logo-container-size} - 1rem);
+        padding-right: .25rem;
+        background: $sidebar-light-apps-menu-title-bg;
         color: rgba($white, .68);
         font-size: $font-size-xs;
         font-weight: 500;
+        pointer-events: none;
+      }
+
+      .menu-title-history-button {
+        position: relative;
+        z-index: 1;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 30px;
+        height: $sidebar-apps-height;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: $sidebar-light-apps-menu-title-color;
+        font-size: $font-size-2xl;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible,
+        &:active {
+          z-index: 3;
+          background-color: $sidebar-light-icons-menu-hover-bg;
+          color: $white;
+        }
       }
     }
 
@@ -89,10 +111,9 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 0.2rem 0;
-      padding: 0 6px 0 6px;
-      min-height: 40px;
-      max-height: 40px;
+      padding: 0 0.5rem;
+      min-height: $sidebar-apps-height;
+      max-height: $sidebar-apps-height;
       border-bottom: .5px solid transparent;
       border-right: .5px solid transparent;
 

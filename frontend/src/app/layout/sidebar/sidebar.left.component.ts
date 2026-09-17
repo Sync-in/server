@@ -1,11 +1,11 @@
-import { AsyncPipe, NgTemplateOutlet } from '@angular/common'
+import { AsyncPipe, Location, NgTemplateOutlet } from '@angular/common'
 import { Component, inject, OnDestroy } from '@angular/core'
 import { ResolveEnd, Router, RouterLink } from '@angular/router'
-import { LucideDynamicIcon, LucideVenetianMask } from '@lucide/angular'
+import { LucideChevronLeft, LucideChevronRight, LucideDynamicIcon, LucideVenetianMask } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
-import { APP_MENU, APP_NAME } from '../../app.constants'
+import { APP_NAME } from '../../app.constants'
 import { ADMIN_MENU } from '../../applications/admin/admin.constants'
 import { SEARCH_MENU } from '../../applications/search/search.constants'
 import { SPACES_MENU } from '../../applications/spaces/spaces.constants'
@@ -24,13 +24,13 @@ import { LayoutService } from '../layout.service'
 })
 export class SideBarLeftComponent implements OnDestroy {
   protected readonly store = inject(StoreService)
-  protected readonly icons = { LucideVenetianMask }
+  protected readonly icons = { LucideChevronLeft, LucideChevronRight, LucideVenetianMask }
   protected readonly appName = APP_NAME
+  protected readonly appMenus = [SPACES_MENU, SEARCH_MENU, SYNC_MENU, USER_MENU, ADMIN_MENU]
   protected dynamicTitle: string
-  protected currentUrl: string
-  protected currentMenu: AppMenu
-  protected appsMenu: AppMenu = APP_MENU
   protected readonly isMenu = isAppMenu
+  private currentMenu: AppMenu = this.appMenus[0]
+  private readonly location = inject(Location)
   private readonly router = inject(Router)
   private readonly authService = inject(AuthService)
   private readonly layout = inject(LayoutService)
@@ -39,7 +39,6 @@ export class SideBarLeftComponent implements OnDestroy {
   private subscriptions: Subscription[] = []
 
   constructor() {
-    this.appsMenu.submenus = [SPACES_MENU, SEARCH_MENU, SYNC_MENU, USER_MENU, ADMIN_MENU]
     this.subscriptions.push(this.store.user.pipe(filter((u) => !!u)).subscribe(() => this.loadMenus()))
     this.subscriptions.push(
       this.router.events.pipe(filter((ev) => ev instanceof ResolveEnd)).subscribe((ev: any) => this.updateUrl(ev.urlAfterRedirects))
@@ -51,7 +50,7 @@ export class SideBarLeftComponent implements OnDestroy {
   }
 
   loadMenus() {
-    this.userService.setMenusVisibility(this.appsMenu.submenus ?? [])
+    this.userService.setMenusVisibility(this.appMenus)
     this.updateUrl(this.router.url)
   }
 
@@ -63,8 +62,16 @@ export class SideBarLeftComponent implements OnDestroy {
     this.layout.toggleLSideBar()
   }
 
+  navigateInHistory(action: 'back' | 'next') {
+    if (action === 'back') {
+      this.location.back()
+    } else {
+      this.location.forward()
+    }
+  }
+
   navigateToMenu(menu: AppMenu) {
-    this.navigateToUrl([menu.link])
+    this.router.navigate([menu.link]).catch(console.error)
     this.closeSideBarOnMobile()
   }
 
@@ -104,10 +111,6 @@ export class SideBarLeftComponent implements OnDestroy {
     return hasMenuBefore && hasMenuAfter
   }
 
-  private navigateToUrl(url: string[]) {
-    this.router.navigate(url).catch(console.error)
-  }
-
   private hasVisibleMenuUntilNextSeparator(menus: AppMenuEntry[], startIndex: number, direction: 1 | -1): boolean {
     for (let i = startIndex; i >= 0 && i < menus.length; i += direction) {
       const menu = menus[i]
@@ -135,15 +138,10 @@ export class SideBarLeftComponent implements OnDestroy {
   }
 
   private updateUrl(url: string) {
-    this.currentUrl = url.substring(1)
-    for (const mainMenu of this.appsMenu.submenus ?? []) {
-      if (isAppMenuSeparator(mainMenu)) {
-        continue
-      }
-      mainMenu.isActive = !!(
-        !mainMenu.hide &&
-        (mainMenu.link === this.currentUrl || (!!mainMenu.matchLink && mainMenu.matchLink.test(this.currentUrl)))
-      )
+    const currentUrl = url.substring(1)
+    this.currentMenu = this.appMenus.find((menu) => !menu.hide) ?? this.appMenus[0]
+    for (const mainMenu of this.appMenus) {
+      mainMenu.isActive = !!(!mainMenu.hide && (mainMenu.link === currentUrl || (!!mainMenu.matchLink && mainMenu.matchLink.test(currentUrl))))
       if (mainMenu.isActive) {
         this.currentMenu = mainMenu
       }
@@ -152,26 +150,22 @@ export class SideBarLeftComponent implements OnDestroy {
           if (isAppMenuSeparator(menu)) {
             continue
           }
-          menu.isActive = mainMenu.isActive && (menu.link === this.currentUrl || (!!menu.matchLink && menu.matchLink.test(this.currentUrl)))
+          menu.isActive = mainMenu.isActive && (menu.link === currentUrl || (!!menu.matchLink && menu.matchLink.test(currentUrl)))
           if (menu.submenus?.length) {
             for (const subMenu of menu.submenus) {
               if (isAppMenuSeparator(subMenu)) {
                 continue
               }
-              subMenu.isActive = this.currentUrl.startsWith(subMenu.link)
+              subMenu.isActive = currentUrl.startsWith(subMenu.link)
             }
           }
         }
       }
     }
-    const firstMenu = this.appsMenu.submenus?.find(isAppMenu)
-    if (firstMenu) {
-      this.currentMenu ??= firstMenu
-    }
     this.updateDynamicTitle()
   }
 
   private updateDynamicTitle(title?: string) {
-    this.dynamicTitle = this.layout.translateString(title !== undefined ? title : this.currentMenu ? this.currentMenu.title : this.appsMenu.title)
+    this.dynamicTitle = title ?? this.currentMenu.title
   }
 }

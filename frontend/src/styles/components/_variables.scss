@@ -5,7 +5,7 @@ $navbar-height: 40px;
 //Sidebar left
 $sidebar-apps-icons-width: 40px;
 $sidebar-apps-icons-height: 40px;
-$sidebar-apps-menus-width: 185px;
+$sidebar-apps-menus-width: 190px;
 $sidebar-apps-height: $sidebar-apps-icons-height;
 $layout-logo-container-size: 32px;
 $layout-logo-image-size: 24px;
@@ -32,7 +32,6 @@ $theme-light-panel-alt-bg: #eaf1f8;
 $sidebar-dark-icons-menu-bg: $custom-dark-color;
 $sidebar-dark-icons-menu-hover-bg: darken($sidebar-dark-icons-menu-bg, 4%);
 $sidebar-dark-icons-menu-color: $theme-muted-blue;
-$sidebar-dark-icons-menu-hover-color: $primary;
 $sidebar-dark-icons-menu-border-color: #304047;
 $sidebar-dark-apps-menu-title-bg: $sidebar-dark-icons-menu-hover-bg;
 $sidebar-dark-apps-menu-bg: lighten($sidebar-dark-icons-menu-bg, 2%);
@@ -40,17 +39,14 @@ $sidebar-dark-apps-menu-hover-bg: $sidebar-dark-icons-menu-hover-bg;
 $sidebar-dark-apps-menu-color: lighten($sidebar-dark-icons-menu-bg, 60%);
 $sidebar-dark-apps-menu-hover-color: #fff;
 $sidebar-dark-apps-menu-border-color: #8ea8b4;
-$sidebar-dark-mini-menu-bg: $sidebar-dark-icons-menu-hover-bg;
 //Light sidebar
 $sidebar-light-icons-menu-bg: $primary;
 //$sidebar-light-icons-menu-hover-bg: #2a445e;
 $sidebar-light-icons-menu-hover-bg: darken($sidebar-light-icons-menu-bg, 15%);
 $sidebar-light-icons-menu-color: $gray-lightest;
-$sidebar-light-icons-menu-hover-color: $white;
 $sidebar-light-apps-menu-title-bg: $sidebar-light-icons-menu-bg;
 $sidebar-light-apps-menu-title-color: $theme-muted-blue;
 $sidebar-light-apps-menu-bg: mix($gray-lightest, $gray-lighter, 60%);
-$sidebar-light-apps-menu-hover-bg: mix($gray-light, $gray-lighter, 55%);
 $sidebar-light-apps-menu-color: $custom-dark-color;
 $sidebar-light-apps-menu-hover-color: $black;
 $sidebar-light-apps-menu-border-color: $gray-mid;
@@ -58,7 +54,6 @@ $sidebar-light-apps-menu-border-color: $gray-mid;
 //THEME TOKENS
 //--------------------------------------------------------
 //Shared theme tokens
-$theme-btn-focus-outline-fallback: rgba(13, 110, 253, 0.25);
 $theme-btn-bg-hover-overlay-shadow: rgba(0, 0, 0, 0.2);
 $theme-dropdown-divider-bg: #eee;
 $theme-dialog-tab-active-bg: $primary;
@@ -119,13 +114,11 @@ $light-tree-node-selected-bg: $selected-background;
 $light-surface-bg: mix($white, $gray-lightest, 94%);
 $light-surface-border: mix($primary, $gray-light, 14%);
 $light-item-color: darken($gray-dark, 18%);
-$light-item-hover-bg: lighten($selected-background, 3%);
 $light-item-hover-color: darken($gray-dark, 28%);
 $light-item-disabled-color: lighten($gray-dark, 18%);
 $light-table-head-bg: #F3F7FD;
 $light-table-row-hover-bg: mix($table-bg-hover, $white, 50%);
 $light-table-row-selected-bg: mix($selected-background, $white, 50%);
-$light-table-striped-hover-bg: mix($table-bg-hover, $white, 55%);
 $light-row-selected-bg: darken($table-bg-hover, 4%);
 $light-menu-surface-bg: #eef4fc;
 $light-menu-surface-border: #cfdded;
@@ -133,10 +126,7 @@ $light-menu-item-hover-bg: #bdd7f4;
 $light-menu-surface-shadow: 0 12px 24px rgba(27, 56, 94, 0.14);
 $light-nav-bg: lighten($gray-mid, 4%);
 $light-nav-hover-bg: darken($gray-mid, 2%);
-$light-box-border-strong: darken($gray-lighter, 5%);
 $light-btn-focus-color: rgba($primary, 0.24);
-$light-chat-button-color: darken($gray, 30%);
-$light-chat-button-hover-color: $black;
 $light-dialog-tab-card-bg: rgba(255, 255, 255, 0.52);
 $light-dialog-tab-card-border-color: rgba(20, 45, 72, 0.11);
 $light-dialog-tab-card-shadow-color: rgba(31, 56, 86, 0.1);
@@ -146,7 +136,6 @@ $light-dialog-check-card-hover-bg: rgba(236, 243, 251, 0.88);
 $light-dialog-check-card-hover-border-color: rgba(52, 94, 146, 0.48);
 $light-dialog-check-card-hover-shadow-color: rgba(31, 56, 86, 0.12);
 $light-dialog-check-card-active-border-color: rgba(30, 59, 89, 0.3);
-$light-dialog-tabs-bar-bg: mix($light-dialog-tab-card-bg, #eaf2fc, 74%);
 $light-dialog-tabs-bar-border-color: rgba(51, 84, 121, 0.24);
 $light-dialog-tab-bg: rgba(mix($light-surface-bg, $gray-light, 72%), 0.72);
 $light-dialog-tab-color: $light-item-color;
@@ -166,10 +155,5 @@ $light-app-top-menu-gradient-end: #f4f8fe;
 $light-box-transparent-shadow-color: rgba(24, 32, 58, 0.1);
 //BOXES
 //--------------------------------------------------------
-$box-border-color: #f4f4f4;
 $box-border-radius: 3px;
-$box-footer-bg: $gray-200;
-$box-boxshadow: 0 1px 1px rgba(0, 0, 0, .1);
 $box-padding: 8px;
-//Box variants
-$box-default-border-top-color: #d2d6de;
