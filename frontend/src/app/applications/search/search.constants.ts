@@ -7,12 +7,18 @@ export const SEARCH_PATH = {
   BASE: 'search'
 } as const
 
+export const SEARCH_QUERY_PARAM = {
+  QUERY: 'q',
+  SCOPE: 'scope'
+} as const
+
 export const SEARCH_TITLE = 'Search'
 export const SEARCH_ICON: LucideIcon = LucideSearch
 
 export const SEARCH_MENU: AppMenu = {
   title: SEARCH_TITLE,
   link: SEARCH_PATH.BASE,
+  matchLink: /^search(?:\?|$)/,
   icon: SEARCH_ICON,
   navigationMenu: SPACES_MENU
 } as const

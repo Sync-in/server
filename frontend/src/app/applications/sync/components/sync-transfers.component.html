@@ -17,11 +17,6 @@
     </select>
   </div>
   <div class="d-flex align-items-center ms-auto">
-    <!--Start Filter Button-->
-    <div class="btn-group me-1">
-      <app-input-filter class="d-none d-sm-block"></app-input-filter>
-    </div>
-    <!--End Filter Button-->
     <button (click)="refresh()"
             [tooltip]="'Refresh' | translate:locale.language"
             class="btn btn-default me-1"

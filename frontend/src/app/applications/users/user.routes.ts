@@ -25,6 +25,7 @@ export const userRoutes: Routes = [
           {
             path: '**',
             resolve: { routes: routeResolver },
+            data: { navbarViewSearch: true },
             loadComponent: () => import('./components/user-groups.component').then((c) => c.UserGroupsComponent)
           }
         ]
@@ -32,7 +33,8 @@ export const userRoutes: Routes = [
       {
         path: USER_PATH.GUESTS,
         canActivate: [onlyUserGuard],
-        loadComponent: () => import('./components/user-guests.component').then((c) => c.UserGuestsComponent)
+        loadComponent: () => import('./components/user-guests.component').then((c) => c.UserGuestsComponent),
+        data: { navbarViewSearch: true }
       },
       {
         path: USER_PATH.APPS,

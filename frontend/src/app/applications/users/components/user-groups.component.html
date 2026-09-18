@@ -43,11 +43,7 @@
       </ul>
     </div>
   }
-  <!--Start Filter Button-->
   <div class="d-flex align-items-center ms-auto">
-    <div class="btn-group me-1">
-      <app-input-filter class="d-none d-sm-block"></app-input-filter>
-    </div>
     <button (click)="refresh()"
             class="btn btn-default"
             [tooltip]="'Refresh' | translate:locale.language"
@@ -55,7 +51,6 @@
       <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
     </button>
   </div>
-  <!--End Filter Button-->
 </div>
 <!--End Top Menu-->
 <!--Start Table Files Content-->
@@ -82,7 +77,7 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="members | searchFilter:inputFilter.search()">
+                    [items]="members | searchFilter:navbarSearch.viewFilter()">
   <table class="app-table">
     <tbody tabindex="-1">
       @for (m of scrollView?.viewPortItems; track m.mid) {

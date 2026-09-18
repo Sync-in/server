@@ -17,7 +17,6 @@ import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-cont
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
-import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
@@ -29,6 +28,7 @@ import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
+import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { FileLocationComponent } from '../../files/components/utils/file-location.component'
 import { FileFavoriteModel } from '../../files/models/file-favorite.model'
 import { FilesService } from '../../files/services/files.service'
@@ -45,7 +45,6 @@ import { FAVORITES_ICON, FAVORITES_PATH, FAVORITES_TITLE } from '../favorites.co
     L10nTranslateDirective,
     L10nTranslatePipe,
     NavigationViewComponent,
-    FilterComponent,
     SearchFilterPipe,
     TooltipModule,
     VirtualScrollComponent,
@@ -63,12 +62,12 @@ export class FavoritesComponent implements OnInit {
     viewPortItems: FileFavoriteModel[]
     scrollInto: (arg: FileFavoriteModel | number) => void
   }
-  @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
+  protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly icons = {
     FAVORITES: FAVORITES_ICON,
     SHARED: SPACES_ICON.SHARED_WITH_OTHERS,
@@ -162,7 +161,7 @@ export class FavoritesComponent implements OnInit {
   loadFavorites() {
     this.loading = true
     this.onSelect()
-    this.inputFilter.clear()
+    this.navbarSearch.clearViewFilter()
     this.filesService
       .listFavorites()
       .pipe(take(1))

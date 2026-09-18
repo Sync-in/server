@@ -6,14 +6,17 @@ import { StoreService } from '../../store/store.service'
 import { BreadcrumbComponent } from '../breadcrumb/breadcrumb.component'
 import { TAB_MENU } from '../layout.interfaces'
 import { LayoutService } from '../layout.service'
+import { NavbarSearchComponent } from './components/navbar-search.component'
+import { NavbarSearchService } from './services/navbar-search.service'
 
 @Component({
   selector: 'app-navbar',
   templateUrl: 'navbar.component.html',
-  imports: [BreadcrumbComponent]
+  imports: [BreadcrumbComponent, NavbarSearchComponent]
 })
 export class NavBarComponent implements OnDestroy {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
+  protected readonly navbarSearch = inject(NavbarSearchService)
   protected leftSideBarIsOpen = true
   protected user: UserType
   protected userAvatar: string = null

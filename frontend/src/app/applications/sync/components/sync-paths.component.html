@@ -129,18 +129,13 @@
       </ul>
     </div>
   </div>
-  <!--Start Filter Button-->
   <div class="d-flex align-items-center ms-auto">
-    <div class="btn-group me-1">
-      <app-input-filter class="d-none d-sm-block"></app-input-filter>
-    </div>
     <button (click)="onRefresh()"
             [tooltip]="'Refresh' | translate:locale.language"
             class="d-none d-sm-block btn btn-default" type="button">
       <svg [lucideIcon]="icons.LucideRotateCw"></svg>
     </button>
   </div>
-  <!--End Filter Button-->
 </div>
 <table class="app-table">
   <thead>
@@ -165,10 +160,10 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="store.clientSyncPaths() | searchFilter:inputFilter.search():'name'">
+                    [items]="store.clientSyncPaths() | searchFilter:navbarSearch.viewFilter():'name'">
   <table class="app-table">
     <tbody tabindex="-1">
-      @for (s of store.clientSyncPaths() | searchFilter:inputFilter.search(); track s.id) {
+      @for (s of store.clientSyncPaths() | searchFilter:navbarSearch.viewFilter(); track s.id) {
         <tr (click)="onSelect(s)"
             (contextmenu)="onSyncPathContextMenu($event, s)"
             (dblclick)="openSettingsDialog()"

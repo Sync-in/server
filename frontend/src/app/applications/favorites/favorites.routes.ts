@@ -6,6 +6,7 @@ export const favoritesRoutes: Routes = [
   {
     path: FAVORITES_PATH.BASE,
     loadComponent: () => import('./components/favorites.component').then((c) => c.FavoritesComponent),
-    canActivate: [noUserLinkGuard]
+    canActivate: [noUserLinkGuard],
+    data: { navbarViewSearch: true }
   }
 ]

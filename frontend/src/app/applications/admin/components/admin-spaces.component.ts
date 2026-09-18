@@ -9,7 +9,6 @@ import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { BadgeMembersComponent } from '../../../common/components/badge-members.component'
-import { FilterComponent } from '../../../common/components/filter.component'
 import { StorageUsageComponent } from '../../../common/components/storage-usage.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
@@ -18,6 +17,7 @@ import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { LayoutService } from '../../../layout/layout.service'
+import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { SharedChildrenDialogComponent } from '../../shares/components/dialogs/shared-children-dialog.component'
 import { SpaceDialogComponent } from '../../spaces/components/dialogs/space-dialog.component'
 import type { SpaceModel } from '../../spaces/models/space.model'
@@ -39,7 +39,6 @@ import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
     TooltipModule,
     L10nTranslatePipe,
     ContextMenuModule,
-    FilterComponent,
     SearchFilterPipe,
     TapDirective,
     BadgeMembersComponent,
@@ -50,11 +49,11 @@ import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
 })
 export class AdminSpacesComponent {
   @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: SpaceModel[]; scrollInto: (arg: SpaceModel | number) => void }
-  @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
+  protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     SPACES: ADMIN_ICON.SPACES,

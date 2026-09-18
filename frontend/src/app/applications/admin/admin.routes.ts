@@ -13,12 +13,12 @@ export const adminRoutes: Routes = [
     children: [
       {
         path: ADMIN_PATH.USERS,
-        data: { type: USER_ROLE.USER },
+        data: { type: USER_ROLE.USER, navbarViewSearch: true },
         loadComponent: () => import('./components/admin-users.component').then((c) => c.AdminUsersComponent)
       },
       {
         path: ADMIN_PATH.GUESTS,
-        data: { type: USER_ROLE.GUEST },
+        data: { type: USER_ROLE.GUEST, navbarViewSearch: true },
         loadComponent: () => import('./components/admin-users.component').then((c) => c.AdminUsersComponent)
       },
       {
@@ -27,7 +27,7 @@ export const adminRoutes: Routes = [
           {
             path: '**',
             resolve: { routes: routeResolver },
-            data: { type: GROUP_TYPE.USER },
+            data: { type: GROUP_TYPE.USER, navbarViewSearch: true },
             loadComponent: () => import('./components/admin-groups.component').then((c) => c.AdminGroupsComponent)
           }
         ]
@@ -38,7 +38,7 @@ export const adminRoutes: Routes = [
           {
             path: '**',
             resolve: { routes: routeResolver },
-            data: { type: GROUP_TYPE.PERSONAL },
+            data: { type: GROUP_TYPE.PERSONAL, navbarViewSearch: true },
             loadComponent: () => import('./components/admin-groups.component').then((c) => c.AdminGroupsComponent)
           }
         ]
@@ -49,6 +49,7 @@ export const adminRoutes: Routes = [
           {
             path: '**',
             resolve: { routes: routeResolver },
+            data: { navbarViewSearch: true },
             loadComponent: () => import('./components/admin-spaces.component').then((c) => c.AdminSpacesComponent)
           }
         ]

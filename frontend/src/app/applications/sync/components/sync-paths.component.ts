@@ -26,7 +26,6 @@ import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } fr
 import { BsDropdownDirective, BsDropdownMenuDirective, BsDropdownToggleDirective } from 'ngx-bootstrap/dropdown'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { Subscription } from 'rxjs'
-import { FilterComponent } from '../../../common/components/filter.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
@@ -35,6 +34,7 @@ import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { LayoutService } from '../../../layout/layout.service'
+import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { StoreService } from '../../../store/store.service'
 import { CLIENT_SCHEDULER_STATE } from '../constants/client'
 import { SyncStatus } from '../interfaces/sync-status.interface'
@@ -56,7 +56,6 @@ import { LiveTimeAgoPipe } from '../../../common/pipes/time-ago-live.pipe'
     BsDropdownDirective,
     BsDropdownToggleDirective,
     BsDropdownMenuDirective,
-    FilterComponent,
     ContextMenuModule,
     SearchFilterPipe,
     SyncPathDirectionIconComponent,
@@ -77,7 +76,6 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
     scrollInto: (arg: SyncPathModel | number) => void
   }
   @ViewChild(AutoResizeDirective, { static: true }) autoResize: AutoResizeDirective
-  @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('SyncPathContextMenu', { static: true }) syncPathContextMenu: ContextMenuComponent<any>
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   // data
@@ -86,6 +84,7 @@ export class SyncPathsComponent implements OnInit, OnDestroy {
   public allSyncsRunning = false
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly store = inject(StoreService)
+  protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     LucideCalendarX,

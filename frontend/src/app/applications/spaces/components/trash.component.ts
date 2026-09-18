@@ -6,7 +6,6 @@ import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-cont
 import type { SpaceTrash } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-trash.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
-import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
@@ -16,6 +15,7 @@ import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
+import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { StoreService } from '../../../store/store.service'
 import { TrashModel } from '../models/trash.model'
 import { SpacesService } from '../services/spaces.service'
@@ -27,7 +27,6 @@ import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../spaces.constants'
     LucideDynamicIcon,
     NavigationViewComponent,
     L10nTranslatePipe,
-    FilterComponent,
     TooltipModule,
     KeyValuePipe,
     VirtualScrollComponent,
@@ -40,12 +39,12 @@ import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../spaces.constants'
 })
 export class TrashComponent implements OnInit {
   @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: TrashModel[]; scrollInto: (arg: TrashModel | number) => void }
-  @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
+  protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,

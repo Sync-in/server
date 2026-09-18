@@ -14,28 +14,28 @@ export const spacesRoutes: Routes = [
         pathMatch: 'full',
         loadComponent: () => import('./components/spaces.component').then((c) => c.SpacesComponent),
         resolve: { routes: spacesResolver },
-        data: { repository: SPACES_PATH.SPACES }
+        data: { repository: SPACES_PATH.SPACES, navbarViewSearch: true }
       },
       {
         path: SPACES_PATH.TRASH,
         pathMatch: 'full',
         loadComponent: () => import('./components/trash.component').then((c) => c.TrashComponent),
         resolve: { routes: spacesResolver },
-        data: { repository: SPACES_PATH.TRASHES }
+        data: { repository: SPACES_PATH.TRASHES, navbarViewSearch: true }
       },
       {
         path: SPACES_PATH.SHARED,
         pathMatch: 'full',
         loadComponent: () => import('../shares/components/shared.component').then((c) => c.SharedComponent),
         resolve: { routes: spacesResolver },
-        data: { repository: SPACES_PATH.SHARED }
+        data: { repository: SPACES_PATH.SHARED, navbarViewSearch: true }
       },
       {
         path: SPACES_PATH.LINKS,
         pathMatch: 'full',
         loadComponent: () => import('../links/components/links.component').then((c) => c.LinksComponent),
         resolve: { routes: spacesResolver },
-        data: { repository: SPACES_PATH.LINKS }
+        data: { repository: SPACES_PATH.LINKS, navbarViewSearch: true }
       },
       {
         path: SPACES_PATH.SPACES_FILES,
@@ -44,7 +44,7 @@ export const spacesRoutes: Routes = [
             path: '**',
             loadComponent: loadSpacesBrowserComponent,
             resolve: { routes: spacesResolver },
-            data: { repository: SPACES_PATH.FILES }
+            data: { repository: SPACES_PATH.FILES, navbarViewSearch: true }
           }
         ]
       },
@@ -55,7 +55,7 @@ export const spacesRoutes: Routes = [
             path: '**',
             loadComponent: loadSpacesBrowserComponent,
             resolve: { routes: spacesResolver },
-            data: { repository: SPACES_PATH.SHARES }
+            data: { repository: SPACES_PATH.SHARES, navbarViewSearch: true }
           }
         ]
       },
@@ -66,7 +66,7 @@ export const spacesRoutes: Routes = [
             path: '**',
             loadComponent: loadSpacesBrowserComponent,
             resolve: { routes: spacesResolver },
-            data: { repository: SPACES_PATH.TRASH }
+            data: { repository: SPACES_PATH.TRASH, navbarViewSearch: true }
           }
         ]
       }

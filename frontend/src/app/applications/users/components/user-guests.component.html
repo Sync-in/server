@@ -14,11 +14,7 @@
           type="button">
     <svg [lucideIcon]="icons.LucidePencil"></svg>
   </button>
-  <!--Start Filter Button-->
   <div class="d-flex align-items-center ms-auto">
-    <div class="btn-group me-1">
-      <app-input-filter class="d-none d-sm-block"></app-input-filter>
-    </div>
     <button (click)="loadGuests()"
             class="btn btn-default"
             [tooltip]="'Refresh' | translate:locale.language"
@@ -26,7 +22,6 @@
       <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
     </button>
   </div>
-  <!--End Filter Button-->
 </div>
 <!--End Top Menu-->
 <!--Start Table Files Content-->
@@ -53,7 +48,7 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="guests | searchFilter:inputFilter.search()">
+                    [items]="guests | searchFilter:navbarSearch.viewFilter()">
   <table class="app-table">
     <tbody tabindex="-1">
       @for (u of scrollView?.viewPortItems; track u.id) {

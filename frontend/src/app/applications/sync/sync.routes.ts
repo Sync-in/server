@@ -14,12 +14,14 @@ export const syncRoutes: Routes = [
       {
         path: SYNC_PATH.PATHS,
         pathMatch: 'full',
-        loadComponent: () => import('./components/sync-paths.component').then((c) => c.SyncPathsComponent)
+        loadComponent: () => import('./components/sync-paths.component').then((c) => c.SyncPathsComponent),
+        data: { navbarViewSearch: true }
       },
       {
         path: SYNC_PATH.TRANSFERS,
         pathMatch: 'full',
-        loadComponent: () => import('./components/sync-transfers.component').then((c) => c.SyncTransfersComponent)
+        loadComponent: () => import('./components/sync-transfers.component').then((c) => c.SyncTransfersComponent),
+        data: { navbarViewSearch: true }
       },
       { path: SYNC_PATH.WIZARD, pathMatch: 'full', redirectTo: `${SYNC_PATH.WIZARD}/${SYNC_PATH.WIZARD_CLIENT}` },
       {

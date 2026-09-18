@@ -49,7 +49,6 @@ import { Subscription } from 'rxjs'
 import { take } from 'rxjs/operators'
 import { SERVICE_UNAVAILABLE_ERROR } from '../../../app.constants'
 import { BadgePermissionsComponent } from '../../../common/components/badge-permissions.component'
-import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { InputEditDirective } from '../../../common/directives/input-edit.directive'
@@ -63,6 +62,7 @@ import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { dragClass, tableTrSelectedClass } from '../../../layout/layout.constants'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
+import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { StoreService } from '../../../store/store.service'
 import { FAVORITES_ICON } from '../../favorites/favorites.constants'
 import { FilesCompressionDialogComponent } from '../../files/components/dialogs/files-compression-dialog.component'
@@ -97,7 +97,6 @@ const keyboardNavigationKeys: ReadonlySet<string> = new Set<KeyboardNavigationKe
     LucideDynamicIcon,
     TooltipModule,
     BsDropdownModule,
-    FilterComponent,
     ToBytesPipe,
     ContextMenuModule,
     VirtualScrollComponent,
@@ -122,13 +121,13 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     scrollInto: (arg: FileModel | number) => void
     itemsPerRow: number
   }
-  @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: any
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('MainReadOnlyContextMenu', { static: true }) mainReadOnlyContextMenu: ContextMenuComponent<any>
   @ViewChild('FileContextMenu', { static: true }) fileContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
+  protected readonly navbarSearch = inject(NavbarSearchService)
   // Static
   protected readonly icons = {
     SPACES: SPACES_ICON.SPACES,
@@ -314,7 +313,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.forbiddenResource = false
     this.locationNotFound = false
     this.serviceError = false
-    this.inputFilter.clear()
+    this.navbarSearch.clearViewFilter()
     this.resetFilesSelection()
     this.spacesBrowser.loadFiles().subscribe({
       next: (spacesFiles: SpaceFiles) => {
@@ -839,7 +838,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private getFilteredFiles(): FileModel[] {
-    const search = this.inputFilter?.search()
+    const search = this.navbarSearch.viewFilter()
     return search ? filterArray(search, this.files, 'name') : this.files
   }
 

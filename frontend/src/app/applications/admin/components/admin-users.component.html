@@ -45,11 +45,6 @@
       </button>
     </div>
     <!--End View Switch-->
-    <!--Start Filter Button-->
-    <div class="btn-group me-1">
-      <app-input-filter class="d-none d-sm-block"></app-input-filter>
-    </div>
-    <!--End Filter Button-->
     <button (click)="loadUsersOrGuests()"
             class="d-none d-sm-block btn btn-default"
             [tooltip]="'Refresh' | translate:locale.language"
@@ -83,7 +78,7 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="users | searchFilter:inputFilter.search()">
+                    [items]="users | searchFilter:navbarSearch.viewFilter()">
   <table class="app-table">
     <tbody tabindex="-1">
       @for (u of scrollView?.viewPortItems; track u.id) {

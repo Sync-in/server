@@ -1,67 +1,23 @@
-<div class="app-top-menu">
-  <div class="col-12 col-md-6">
-    <div class="input-group">
-      <button (click)="doSearch()" [disabled]="searchContent().length < minCharsToSearch" class="btn btn-default" role="button" type="button">
-        <svg [lucideIcon]="loading ? icons.LucideLoader : icons.SEARCH_ICON" [class]="loading ? 'icon-spin' : ''"></svg>
-      </button>
-      <input [value]="searchContent()"
-             (input)="setCurrentSearch($event)"
-             [placeholder]="(this.store.currentSearch().fullText ? 'Search for content' : 'Search for files')|translate:locale.language"
-             (keyup.enter)="doSearch()"
-             (keyup.escape)="clearSearch()"
-             class="search-input flex-fill form-control"
-             name="search"
-             type="text"
-             appAutofocus
-             autocomplete="off">
-      @if (searchContent()) {
-        <span class="search-clear-btn">
-          <svg (click)="clearSearch()" [lucideIcon]="icons.LucideX" class="fs-lg" role="button"></svg>
-        </span>
-      }
-      <button [ngModel]="this.store.currentSearch().fullText"
-              (ngModelChange)="toggleFullText()"
-              [tooltip]="'Search for content'|translate:locale.language"
-              placement="bottom"
-              class="btn btn-custom"
-              role="button"
-              type="button"
-              btnCheckbox>
-        <svg [lucideIcon]="icons.LucideType"></svg>
-      </button>
-    </div>
-
-  </div>
-  <button (click)="goTo(null, selectedId)"
-          [disabled]="selectedId === null"
-          class="search-go-to-btn d-none d-md-block btn btn-default"
-          [tooltip]="'Go to' | translate:locale.language"
-          type="button">
-    <svg [lucideIcon]="icons.LucideMapPin"></svg>
-  </button>
-  <!--Start Filter Button-->
-  <app-input-filter class="d-none d-md-block ms-auto"></app-input-filter>
-  <!--End Filter Button-->
-</div>
-<div appAutoResize class="search-results-list" role="list">
+<div appAutoResize [resizeOffset]="45" class="search-results-list" role="list">
   @if (errorMessage) {
     <div class="p-3 text-danger fw-500" l10nTranslate>{{ errorMessage }}</div>
   }
-  @for (f of this.store.filesSearch() | searchFilter:inputFilter.search(); track $index) {
-    <article class="app-div-striped search-result-item"
-             (click)="selectedId = $index"
-             (appTap)="goTo(f)"
-             [class.selected]="$index === selectedId">
+  @for (file of store.filesSearch() | searchFilter:navbarSearch.viewFilter(); track $index) {
+    <article
+      (click)="selectedId = $index"
+      (appTap)="goTo(file)"
+      [class.selected]="$index === selectedId"
+      class="app-div-striped search-result-item">
       <div class="search-result-header d-flex align-items-start">
-        <img [src]="f.mimeUrl" (error)="f.fallBackMimeUrl()" alt="" draggable="false" class="search-result-mime">
+        <img [src]="file.mimeUrl" (error)="file.fallBackMimeUrl()" alt="" draggable="false" class="search-result-mime">
         <div class="search-result-meta d-flex flex-column">
-          <span class="search-result-name text-truncate">{{ f.name }}</span>
-          <app-file-location class="search-result-path" [location]="f"></app-file-location>
+          <span class="search-result-name text-truncate">{{ file.name }}</span>
+          <app-file-location class="search-result-path" [location]="file"></app-file-location>
         </div>
       </div>
-      @if (f.matches?.length) {
+      @if (file.matches?.length) {
         <div class="search-result-matches">
-          @for (match of f.matches; track $index) {
+          @for (match of file.matches; track $index) {
             <p class="search-result-match" [innerHTML]="match"></p>
           }
         </div>

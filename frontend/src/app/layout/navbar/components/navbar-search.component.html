@@ -1,0 +1,80 @@
+<div
+  aria-keyshortcuts="Control+D Meta+D Control+K Meta+K Control+B Meta+B"
+  class="navbar-search"
+  [class.navbar-search--mobile-open]="mobileOpen()">
+  <button
+    (click)="toggleMobileSearch()"
+    [attr.aria-expanded]="mobileOpen()"
+    [attr.aria-label]="'Search' | translate:locale.language"
+    class="navbar-search-mobile-toggle"
+    type="button">
+    <svg [lucideIcon]="icons.LucideSearch"></svg>
+  </button>
+
+  <div class="navbar-search-panel">
+    <div class="navbar-search-mode" dropdown>
+      <button
+        [attr.aria-label]="currentMode().label | translate:locale.language"
+        [attr.title]="currentMode().label | translate:locale.language"
+        class="navbar-search-mode-toggle"
+        dropdownToggle
+        type="button">
+        <svg [lucideIcon]="currentMode().icon"></svg>
+        <svg [lucideIcon]="icons.LucideChevronDown" class="navbar-search-mode-chevron"></svg>
+      </button>
+      <ul *dropdownMenu class="dropdown-menu navbar-search-mode-menu" role="menu">
+        @for (option of modes; track option.mode) {
+          <li role="none">
+            <button
+              (click)="selectMode(option.mode)"
+              [attr.aria-label]="option.label | translate:locale.language"
+              [attr.title]="option.label | translate:locale.language"
+              [class.active]="option.mode === search.mode()"
+              [disabled]="modeDisabled(option.mode)"
+              class="dropdown-item"
+              role="menuitem"
+              type="button">
+              <svg [lucideIcon]="option.icon"></svg>
+              <span>{{ option.label | translate:locale.language }}</span>
+              <kbd aria-hidden="true" class="navbar-search-mode-shortcut">{{ option.shortcut }}</kbd>
+            </button>
+          </li>
+        }
+      </ul>
+    </div>
+
+    <div
+      class="navbar-search-field"
+      [class.navbar-search-field--global]="globalMode()"
+      [class.navbar-search-field--has-query]="!!search.query()">
+      <input
+        #searchInput
+        (keyup.enter)="submit()"
+        (keyup.escape)="onEscape($event)"
+        [attr.aria-label]="currentMode().label | translate:locale.language"
+        [formControl]="searchControl"
+        [placeholder]="'Search' | translate:locale.language"
+        autocomplete="off"
+        type="search">
+      @if (search.query()) {
+        <button
+          (click)="clear()"
+          [attr.aria-label]="'Clear' | translate:locale.language"
+          class="navbar-search-clear"
+          type="button">
+          <svg [lucideIcon]="icons.LucideX"></svg>
+        </button>
+      }
+      @if (globalMode() && search.query()) {
+        <button
+          (click)="submit()"
+          [attr.aria-label]="'Search' | translate:locale.language"
+          [disabled]="!search.canSubmit()"
+          class="navbar-search-submit"
+          type="button">
+          <svg [class.icon-spin]="search.loading()" [lucideIcon]="search.loading() ? icons.LucideLoader : icons.LucideSearch"></svg>
+        </button>
+      }
+    </div>
+  </div>
+</div>

@@ -22,7 +22,6 @@ import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { BadgeMembersComponent } from '../../../common/components/badge-members.component'
-import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
@@ -32,6 +31,7 @@ import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
+import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { StoreService } from '../../../store/store.service'
 import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../../spaces/spaces.constants'
 import { ShareFileModel } from '../models/share-file.model'
@@ -49,7 +49,6 @@ import { ShareRepositoryComponent } from './utils/share-repository.component'
     L10nTranslateDirective,
     L10nTranslatePipe,
     NavigationViewComponent,
-    FilterComponent,
     SearchFilterPipe,
     TooltipModule,
     VirtualScrollComponent,
@@ -67,12 +66,12 @@ export class SharedComponent implements OnInit {
     viewPortItems: ShareFileModel[]
     scrollInto: (arg: ShareFileModel | number) => void
   }
-  @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
+  protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly icons = {
     SHARED: SPACES_ICON.SHARED_WITH_OTHERS_2,
     SHARES: SPACES_ICON.SHARES,

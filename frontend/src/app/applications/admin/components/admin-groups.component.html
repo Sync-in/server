@@ -58,11 +58,6 @@
         Personal groups
       </button>
     </div>
-    <!--Start Filter Button-->
-    <div class="btn-group me-1">
-      <app-input-filter class="d-none d-sm-block"></app-input-filter>
-    </div>
-    <!--End Filter Button-->
     <button (click)="refresh()"
             class="d-none d-sm-block btn btn-default"
             [tooltip]="'Refresh' | translate:locale.language"
@@ -96,7 +91,7 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="members | searchFilter:inputFilter.search()">
+                    [items]="members | searchFilter:navbarSearch.viewFilter()">
   <table class="app-table">
     <tbody tabindex="-1">
       @for (m of scrollView?.viewPortItems; track m.mid) {

@@ -1,5 +1,5 @@
 <header class="main-header">
-  <nav class="navbar navbar-content">
+  <nav class="navbar navbar-content" [class.navbar-content--search]="navbarSearch.searchRouteActive()">
     @if (!leftSideBarIsOpen) {
       <a (click)="toggleLeftSideBar()" class="navbar-button navbar-logo-button navbar-logo-button--delayed" role="button">
         <span class="logo-container">
@@ -7,9 +7,12 @@
         </span>
       </a>
     }
-    <div class="navbar-breadcrumb">
-      <app-breadcrumb></app-breadcrumb>
-    </div>
+    @if (!navbarSearch.searchRouteActive()) {
+      <div class="navbar-breadcrumb">
+        <app-breadcrumb></app-breadcrumb>
+      </div>
+    }
+    <app-navbar-search></app-navbar-search>
     <div class="navbar-right-side">
       <div (click)="openSidebarUser()" class="menu">
         <div class="d-flex align-items-center avatar">

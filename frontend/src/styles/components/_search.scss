@@ -2,24 +2,6 @@
   padding: 0.2rem 0.25rem 0.4rem;
 }
 
-.search-input {
-  padding-right: 2rem;
-}
-
-.search-clear-btn {
-  position: absolute;
-  top: 50%;
-  right: 45px;
-  z-index: 1001;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transform: translateY(-50%);
-  font-size: $font-size-md;
-  line-height: 1;
-  cursor: pointer;
-}
-
 .search-go-to-btn {
   margin-left: 0.3rem;
 }

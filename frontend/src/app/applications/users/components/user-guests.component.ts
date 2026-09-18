@@ -8,7 +8,6 @@ import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } fr
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
-import { FilterComponent } from '../../../common/components/filter.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { TableHeaderConfig } from '../../../common/interfaces/table.interface'
@@ -18,6 +17,7 @@ import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { LayoutService } from '../../../layout/layout.service'
+import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { GuestUserModel } from '../models/guest.model'
 import { USER_ICON, USER_PATH, USER_TITLE } from '../user.constants'
 import { UserService } from '../user.service'
@@ -29,7 +29,6 @@ import { UserAvatarStackComponent } from './utils/user-avatar-stack.component'
   imports: [
     LucideDynamicIcon,
     L10nTranslatePipe,
-    FilterComponent,
     TooltipDirective,
     KeyValuePipe,
     L10nTranslateDirective,
@@ -49,10 +48,10 @@ export class UserGuestsComponent {
     viewPortItems: GuestUserModel[]
     scrollInto: (arg: GuestUserModel | number) => void
   }
-  @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = { LucideRotateCw, LucidePlus, LucidePencil, LucideArrowDown, LucideArrowUp, LucideKeyRound }
   // Sort

@@ -84,6 +84,7 @@ export class StoreService {
     this.filesActiveTasks.next([])
     this.filesEndedTasks.next([])
     this.filesRecents.set([])
+    this.currentSearch.set({ content: '', fullText: false })
     this.filesSearch.set([])
     this.commentsRecents.set([])
     // Websocket

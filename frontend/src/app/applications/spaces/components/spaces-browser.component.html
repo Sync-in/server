@@ -201,11 +201,6 @@
   </div>
   <!--End Actions Button-->
   <div class="d-flex align-items-center ms-auto">
-    <!--Start Filter Button-->
-    <div class="btn-group me-1">
-      <app-input-filter class="d-none d-sm-block"></app-input-filter>
-    </div>
-    <!--End Filter Button-->
     <button (click)="loadFiles()"
             class="d-none d-sm-block btn btn-default me-1"
             [tooltip]="'Refresh' | translate:locale.language"
@@ -230,7 +225,7 @@
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                         [childHeight]="galleryMode.dimensions"
                         [childWidth]="galleryMode.dimensions"
-                        [items]="files | searchFilter:inputFilter.search():'name'"
+                        [items]="files | searchFilter:navbarSearch.viewFilter():'name'"
                         [galleryMode]="true"
                         [resizeOffset]="115">
       <div *ngTemplateOutlet="CommonMessages"></div>
@@ -403,7 +398,7 @@
   </table>
   <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                       [bufferAmount]="5"
-                      [items]="files | searchFilter:inputFilter.search():'name'">
+                      [items]="files | searchFilter:navbarSearch.viewFilter():'name'">
     <div *ngTemplateOutlet="CommonMessages"></div>
     <table class="app-table">
       <tbody id="table-files" tabindex="-1">

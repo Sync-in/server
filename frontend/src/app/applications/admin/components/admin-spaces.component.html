@@ -21,11 +21,6 @@
     <svg [lucideIcon]="icons.SHARES"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
-    <!--Start Filter Button-->
-    <div class="btn-group me-1">
-      <app-input-filter class="d-none d-sm-block"></app-input-filter>
-    </div>
-    <!--End Filter Button-->
     <button (click)="loadSpaces()"
             class="d-none d-sm-block btn btn-default"
             [tooltip]="'Refresh' | translate:locale.language"
@@ -58,7 +53,7 @@
 </table>
 <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                     [bufferAmount]="5"
-                    [items]="spaces | searchFilter:inputFilter.search()">
+                    [items]="spaces | searchFilter:navbarSearch.viewFilter()">
   <table class="app-table">
     <tbody tabindex="-1">
       @for (s of scrollView?.viewPortItems; track s.id) {

@@ -16,6 +16,7 @@ import { AuthService } from '../../auth/auth.service'
 import { StoreService } from '../../store/store.service'
 import { AppMenu, AppMenuEntry, isAppMenu, isAppMenuSeparator } from '../layout.interfaces'
 import { LayoutService } from '../layout.service'
+import { NavbarSearchService } from '../navbar/services/navbar-search.service'
 
 @Component({
   selector: 'app-sidebar-left',
@@ -34,6 +35,7 @@ export class SideBarLeftComponent implements OnDestroy {
   private readonly router = inject(Router)
   private readonly authService = inject(AuthService)
   private readonly layout = inject(LayoutService)
+  private readonly navbarSearch = inject(NavbarSearchService)
   private readonly userService = inject(UserService)
   private readonly canPreviewMenuTitle = window.matchMedia('(hover: hover) and (pointer: fine)')
   private subscriptions: Subscription[] = []
@@ -71,10 +73,15 @@ export class SideBarLeftComponent implements OnDestroy {
   }
 
   navigateToMenu(menu: AppMenu) {
-    this.router.navigate([menu.link]).catch(console.error)
     if (menu === SEARCH_MENU) {
       this.closeSideBarOnMobile()
+      this.navbarSearch
+        .openLastSearch()
+        .then(() => this.navbarSearch.requestFocus())
+        .catch(console.error)
+      return
     }
+    this.router.navigate([menu.link]).catch(console.error)
   }
 
   closeSideBarOnMobile() {
@@ -95,6 +102,12 @@ export class SideBarLeftComponent implements OnDestroy {
       return
     }
     this.updateDynamicTitle()
+  }
+
+  protected showAppShortcut(menu: AppMenu): boolean {
+    if (menu.hide) return false
+    const visibleButtons = this.appMenus.filter((appMenu) => !appMenu.hide).length + (this.store.userImpersonate() ? 1 : 0)
+    return menu !== SEARCH_MENU || visibleButtons <= 4
   }
 
   protected get navigationSubmenus(): AppMenuEntry[] {

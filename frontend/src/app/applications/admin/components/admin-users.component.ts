@@ -19,7 +19,6 @@ import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } fr
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
-import { FilterComponent } from '../../../common/components/filter.component'
 import { StorageUsageComponent } from '../../../common/components/storage-usage.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
@@ -29,6 +28,7 @@ import { TimeDateFormatPipe } from '../../../common/pipes/time-date-format.pipe'
 import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { LayoutService } from '../../../layout/layout.service'
+import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { UserAvatarStackComponent } from '../../users/components/utils/user-avatar-stack.component'
 import { GuestUserModel } from '../../users/models/guest.model'
 import { UserService } from '../../users/user.service'
@@ -44,7 +44,6 @@ import { ToBytesPipe } from '../../../common/pipes/to-bytes.pipe'
   imports: [
     LucideDynamicIcon,
     L10nTranslatePipe,
-    FilterComponent,
     TooltipDirective,
     KeyValuePipe,
     L10nTranslateDirective,
@@ -65,10 +64,10 @@ export class AdminUsersComponent {
     viewPortItems: AdminUserModel[]
     scrollInto: (arg: AdminUserModel | number) => void
   }
-  @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected readonly icons = {
     LucideRotateCw,

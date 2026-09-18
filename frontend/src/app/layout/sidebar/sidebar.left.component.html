@@ -25,7 +25,7 @@
     </div>
     <div class="apps-shortcuts">
       @for (menu of appMenus; track $index) {
-        @if (!menu.hide) {
+        @if (showAppShortcut(menu)) {
           <button (click)="navigateToMenu(menu)"
                   (mouseenter)="previewMenuTitle(menu.title)"
                   (mouseleave)="restoreMenuTitle()"

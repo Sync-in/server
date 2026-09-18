@@ -22,7 +22,6 @@ import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { BadgeMembersComponent } from '../../../common/components/badge-members.component'
 import { BadgePermissionsComponent } from '../../../common/components/badge-permissions.component'
-import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
@@ -32,6 +31,7 @@ import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
+import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { StoreService } from '../../../store/store.service'
 import { SharedChildrenDialogComponent } from '../../shares/components/dialogs/shared-children-dialog.component'
 import { UserAvatarStackComponent } from '../../users/components/utils/user-avatar-stack.component'
@@ -54,7 +54,6 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
     L10nTranslatePipe,
     ContextMenuModule,
     NavigationViewComponent,
-    FilterComponent,
     SearchFilterPipe,
     BadgePermissionsComponent,
     TapDirective,
@@ -64,12 +63,12 @@ import { SpaceUserAnchorsDialogComponent } from './dialogs/space-user-anchors-di
 })
 export class SpacesComponent implements OnInit {
   @ViewChild(VirtualScrollComponent) scrollView: { element: ElementRef; viewPortItems: SpaceModel[]; scrollInto: (arg: SpaceModel | number) => void }
-  @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
+  protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly SPACE_ROLE = SPACE_ROLE
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   protected galleryMode: ViewMode

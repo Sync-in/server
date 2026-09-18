@@ -15,9 +15,6 @@
     <svg [lucideIcon]="icons.REMOVE_FAVORITE"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
-    <div class="btn-group me-1">
-      <app-input-filter class="d-none d-sm-block"></app-input-filter>
-    </div>
     <button (click)="loadFavorites()"
             class="d-none d-sm-block btn btn-default me-1"
             [tooltip]="'Refresh' | translate:locale.language"
@@ -38,7 +35,7 @@
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                         [childHeight]="galleryMode.dimensions"
                         [childWidth]="galleryMode.dimensions"
-                        [items]="favorites | searchFilter:inputFilter.search()"
+                        [items]="favorites | searchFilter:navbarSearch.viewFilter()"
                         [galleryMode]="true"
                         [resizeOffset]="115">
       <div *ngTemplateOutlet="CommonMessages"></div>
@@ -163,7 +160,7 @@
   </table>
   <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                       [bufferAmount]="5"
-                      [items]="favorites | searchFilter:inputFilter.search()">
+                      [items]="favorites | searchFilter:navbarSearch.viewFilter()">
     <div *ngTemplateOutlet="CommonMessages"></div>
     <table class="app-table">
       <tbody tabindex="-1">

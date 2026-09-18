@@ -28,11 +28,6 @@
     <svg [lucideIcon]="icons.LucideMapPin"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
-    <!--Start Filter Button-->
-    <div class="btn-group me-1">
-      <app-input-filter class="d-none d-sm-block"></app-input-filter>
-    </div>
-    <!--End Filter Button-->
     <button (click)="loadShares()"
             class="d-none d-sm-block btn btn-default me-1"
             [tooltip]="'Refresh' | translate:locale.language"
@@ -56,7 +51,7 @@
     <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                         [childHeight]="galleryMode.dimensions"
                         [childWidth]="galleryMode.dimensions"
-                        [items]="shares | searchFilter:inputFilter.search()"
+                        [items]="shares | searchFilter:navbarSearch.viewFilter()"
                         [galleryMode]="true"
                         [resizeOffset]="115">
       <div class="row g-0" tabindex="-1">
@@ -132,7 +127,7 @@
   </table>
   <app-virtual-scroll (contextmenu)="onContextMenu($event)"
                       [bufferAmount]="5"
-                      [items]="shares | searchFilter:inputFilter.search()">
+                      [items]="shares | searchFilter:navbarSearch.viewFilter()">
     <table class="app-table">
       <tbody tabindex="-1">
         @for (s of scrollView?.viewPortItems; track s.id) {

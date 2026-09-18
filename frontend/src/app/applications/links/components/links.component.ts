@@ -22,7 +22,6 @@ import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { take } from 'rxjs/operators'
 import { BadgePermissionsComponent } from '../../../common/components/badge-permissions.component'
-import { FilterComponent } from '../../../common/components/filter.component'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
@@ -32,6 +31,7 @@ import { originalOrderKeyValue } from '../../../common/utils/functions'
 import { SortSettings, SortTable } from '../../../common/utils/sort-table'
 import { TAB_MENU } from '../../../layout/layout.interfaces'
 import { LayoutService } from '../../../layout/layout.service'
+import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { StoreService } from '../../../store/store.service'
 import { ShareRepositoryComponent } from '../../shares/components/utils/share-repository.component'
 import { ShareModel } from '../../shares/models/share.model'
@@ -51,7 +51,6 @@ import { LinkDialogComponent } from './dialogs/link-dialog.component'
     L10nTranslatePipe,
     NavigationViewComponent,
     TooltipModule,
-    FilterComponent,
     VirtualScrollComponent,
     SearchFilterPipe,
     ShareRepositoryComponent,
@@ -66,12 +65,12 @@ export class LinksComponent implements OnInit {
     viewPortItems: ShareLinkModel[]
     scrollInto: (arg: ShareLinkModel | number) => void
   }
-  @ViewChild(FilterComponent, { static: true }) inputFilter: FilterComponent
   @ViewChild(NavigationViewComponent, { static: true }) btnNavigationView: NavigationViewComponent
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('TargetContextMenu', { static: true }) targetContextMenu: ContextMenuComponent<any>
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
+  protected readonly navbarSearch = inject(NavbarSearchService)
   protected readonly icons = {
     LucideLink,
     LucideRotateCw,
