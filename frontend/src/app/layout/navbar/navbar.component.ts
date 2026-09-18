@@ -6,7 +6,7 @@ import { StoreService } from '../../store/store.service'
 import { BreadcrumbComponent } from '../breadcrumb/breadcrumb.component'
 import { TAB_MENU } from '../layout.interfaces'
 import { LayoutService } from '../layout.service'
-import { NavbarSearchComponent } from './components/navbar-search.component'
+import { NavbarSearchComponent } from '../../applications/search/navbar/navbar-search.component'
 import { NavbarSearchService } from './services/navbar-search.service'
 
 @Component({

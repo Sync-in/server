@@ -6,8 +6,8 @@ import { LucideChevronDown, LucideDynamicIcon, LucideFunnel, LucideLoader, Lucid
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
 import { filter } from 'rxjs'
-import { isNavbarGlobalSearchMode, NAVBAR_SEARCH_MODE, type NavbarSearchOption } from '../interfaces/navbar-search.interface'
-import { NavbarSearchService } from '../services/navbar-search.service'
+import { isNavbarGlobalSearchMode, NAVBAR_SEARCH_MODE, type NavbarSearchOption } from '../../../layout/navbar/interfaces/navbar-search.interface'
+import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 
 @Component({
   selector: 'app-navbar-search',
@@ -92,7 +92,7 @@ export class NavbarSearchComponent {
       (!event.ctrlKey && !event.metaKey) ||
       event.altKey ||
       event.shiftKey ||
-      this.isEditableTarget(event.target) ||
+      (this.isEditableTarget(event.target) && event.target !== this.searchInput.nativeElement) ||
       document.querySelector('.modal.show')
     ) {
       return
