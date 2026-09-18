@@ -232,7 +232,7 @@
                         [childWidth]="galleryMode.dimensions"
                         [items]="files | searchFilter:inputFilter.search():'name'"
                         [galleryMode]="true"
-                        [resizeOffset]="110">
+                        [resizeOffset]="115">
       <div *ngTemplateOutlet="CommonMessages"></div>
       <div id="thumb-files" class="row g-0" tabindex="-1">
         @for (f of scrollView?.viewPortItems; track f.id) {

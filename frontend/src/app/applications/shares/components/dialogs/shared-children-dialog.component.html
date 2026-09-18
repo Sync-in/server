@@ -9,7 +9,7 @@
   </h4>
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white ms-2" type="button"></button>
 </div>
-<div appAutoResize class="modal-body" [resizeOffset]="170" style="padding-right: 24px">
+<div appAutoResize class="modal-body" [resizeOffset]="175" style="padding-right: 24px">
   <ul class="tree">
     <ng-template #recursiveList let-shares>
       @for (s of toShares(shares); track s.id) {

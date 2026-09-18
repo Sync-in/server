@@ -12,7 +12,7 @@ export const ADMIN_PATH = {
 } as const
 
 export const ADMIN_TITLE = {
-  ADMIN: 'Admin',
+  ADMIN: 'Administration',
   USERS: 'Users',
   GROUPS: 'Groups',
   GUESTS: 'Guests',

@@ -25,7 +25,7 @@ export const hi = {
     'आप अब पैरेंट शेयर के सदस्य नहीं हैं; आपका चाइल्ड शेयर हटा दिया गया है',
   'Access your shares from': 'अपने शेयर यहाँ से एक्सेस करें',
   'Access password': 'एक्सेस पासवर्ड',
-  Sync: 'समन्वयन',
+  Sync: 'सिंक',
   'Access your syncs from': 'अपने समन्वयन यहाँ से एक्सेस करें',
   'You are no longer synchronizing': 'आप अब समन्वयन नहीं कर रहे हैं',
   'Unlock Request': 'अनलॉक अनुरोध',

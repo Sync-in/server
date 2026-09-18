@@ -96,7 +96,7 @@
             </thead>
           </table>
         }
-        <div [resizeOffset]="270" [useMaxHeight]="false" appAutoResize class="sync-report-table-scroll bg-white">
+        <div [resizeOffset]="275" [useMaxHeight]="false" appAutoResize class="sync-report-table-scroll bg-white">
           <table class="app-table">
             <tbody tabindex="-1">
               @for (s of transfers() | searchFilter:inputFilter.search() | paginate:currentPage:itemsPerPage; track s.nbTasks) {

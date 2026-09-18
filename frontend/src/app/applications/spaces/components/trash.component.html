@@ -32,7 +32,7 @@
                         [childWidth]="galleryMode.dimensions"
                         [items]="trashBins | searchFilter:inputFilter.search()"
                         [galleryMode]="true"
-                        [resizeOffset]="110">
+                        [resizeOffset]="115">
       <div class="row g-0" tabindex="-1">
         @for (t of scrollView?.viewPortItems; track t.id) {
           <div (click)="onSelect(t)"

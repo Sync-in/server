@@ -53,7 +53,7 @@ import { LayoutService } from '../../layout/layout.service'
 export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
   @ViewChild('content', { read: ElementRef, static: true }) contentElementRef: ElementRef
   @ViewChild('shim', { read: ElementRef, static: true }) shimElementRef: ElementRef
-  @Input() resizeOffset = 134
+  @Input() resizeOffset = 139
   @Input() galleryMode = false
   @Input() items: T[] = []
   @Input() childHeight = 38

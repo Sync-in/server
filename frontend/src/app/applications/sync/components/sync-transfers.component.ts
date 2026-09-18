@@ -59,7 +59,7 @@ export class SyncTransfersComponent {
       sortable: true
     },
     sync: {
-      label: 'Synchronization',
+      label: SYNC_TITLE.SYNC_SHORT,
       width: 14,
       textCenter: false,
       class: '',
