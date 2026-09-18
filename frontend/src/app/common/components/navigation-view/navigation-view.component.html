@@ -33,11 +33,16 @@
                  min="0"
                  step="1"
                  type="range">
-          <div aria-hidden="true" class="navigation-view-size-scale">
+          <div class="navigation-view-size-scale">
             @for (view of galleryViewOptions; track view.key) {
-              <span [class.text-bold]="viewMode === view.key"
-                    [class.text-primary]="viewMode === view.key"
-                    [style.left.%]="$index * 100 / (galleryViewOptions.length - 1)">{{ view.label }}</span>
+              <button (click)="setView(view.key)"
+                      [attr.aria-label]="'Gallery size ' + view.label"
+                      [attr.aria-pressed]="viewMode === view.key"
+                      [class.text-bold]="viewMode === view.key"
+                      [class.text-primary]="viewMode === view.key"
+                      [style.left.%]="$index * 100 / (galleryViewOptions.length - 1)"
+                      class="navigation-view-size-option"
+                      type="button">{{ view.label }}</button>
             }
           </div>
         </div>

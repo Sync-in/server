@@ -75,11 +75,25 @@
   line-height: 1;
   user-select: none;
 
-  span {
+  .navigation-view-size-option {
     position: absolute;
     top: 0;
+    min-width: 2rem;
+    padding: .15rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    cursor: pointer;
     transform: translateX(-50%);
     transition: color .15s ease;
+
+    &:focus-visible {
+      border-radius: .2rem;
+      outline: 2px solid var(--bs-primary);
+      outline-offset: 1px;
+    }
   }
 }
 
