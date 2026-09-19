@@ -1,19 +1,21 @@
-<div class="app-top-menu">
+<div class="app-top-menu app-top-menu-tool-bar"
+     [attr.aria-label]="'Actions' | translate:locale.language"
+     role="toolbar">
+  <button (click)="loadClients()"
+          [attr.aria-label]="'Refresh' | translate:locale.language"
+          class="d-none d-sm-flex align-items-center justify-content-center btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+          type="button">
+    <svg [lucideIcon]="icons.LucideRotateCw"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Refresh</span>
+  </button>
   <button (click)="onDeleteClient()"
+          [attr.aria-label]="'Delete' | translate:locale.language"
           [disabled]="!selected"
-          [tooltip]="'Remove' | translate:locale.language"
-          class="btn btn-default me-1"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet ms-auto"
           type="button">
     <svg [lucideIcon]="icons.LucideTrash2"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Delete</span>
   </button>
-  <div class="d-flex align-items-center ms-auto">
-    <button (click)="loadClients()"
-            [tooltip]="'Refresh' | translate:locale.language"
-            class="d-none d-sm-flex align-items-center justify-content-center btn btn-default"
-            type="button">
-      <svg [lucideIcon]="icons.LucideRotateCw"></svg>
-    </button>
-  </div>
 </div>
 <div class="app-sync-clients" appAutoResize>
   @for (client of clients; track client.id) {

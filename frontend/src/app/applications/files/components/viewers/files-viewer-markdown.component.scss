@@ -7,9 +7,9 @@
   .files-markdown-toolbar {
     position: relative;
     z-index: 3;
-    flex: 0 0 auto !important;
+    flex: 0 0 auto;
     flex-wrap: nowrap;
-    gap: 4px 0;
+    row-gap: 4px;
     overflow: visible;
   }
 
@@ -28,11 +28,6 @@
 
   .files-markdown-toolbar-separator {
     margin: 0 0.5rem 0 0.3rem;
-  }
-
-  .files-markdown-mode-separator-start {
-    margin-left: 0.1rem;
-    margin-right: 0.5rem;
   }
 
   .files-markdown-mode-separator-end {
@@ -391,6 +386,17 @@ body.theme-dark {
           background: rgba(156, 171, 194, 0.12);
         }
       }
+    }
+  }
+}
+
+body.theme-light {
+  .files-viewer-markdown .files-markdown-toolbar {
+    --app-top-menu-action-active-bg: var(--app-top-menu-action-hover-bg);
+
+    .btn-custom:is(.active, :active, [aria-pressed='true']):not(:disabled) {
+      box-shadow: none !important;
+      color: var(--bs-body-color) !important;
     }
   }
 }

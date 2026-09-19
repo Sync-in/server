@@ -1,12 +1,15 @@
 <!--Start Top Menu-->
-<div class="app-top-menu">
+<div class="app-top-menu app-top-menu-tool-bar"
+     [attr.aria-label]="'Actions' | translate:locale.language"
+     role="toolbar">
+  <button (click)="loadTrashBins()"
+          [attr.aria-label]="'Refresh' | translate:locale.language"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+          type="button">
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Refresh</span>
+  </button>
   <div class="d-flex align-items-center ms-auto">
-    <button (click)="loadTrashBins()"
-            class="btn btn-default me-1"
-            [tooltip]="'Refresh' | translate:locale.language"
-            type="button">
-      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
-    </button>
     <!--Start View Button-->
     <app-navigation-view (switchView)="galleryMode = $event">
     </app-navigation-view>

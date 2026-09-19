@@ -1,41 +1,48 @@
-<div class="app-top-menu d-flex justify-content-between">
+<div class="app-top-menu app-top-menu-tool-bar d-flex justify-content-between"
+     [attr.aria-label]="'Actions' | translate:locale.language"
+     role="toolbar">
   <div class="d-flex">
     <button
       (click)="previousImage()"
+      [attr.aria-label]="'Previous' | translate:locale.language"
       [tooltip]="'Previous' | translate:locale.language"
       [adaptivePosition]="true"
-      class="btn btn-custom me-1"
+      class="btn btn-custom"
       type="button">
       <svg [lucideIcon]="icons.LucideChevronLeft"></svg>
     </button>
     <button
       (click)="nextImage()"
+      [attr.aria-label]="'Next' | translate:locale.language"
       [tooltip]="'Next' | translate:locale.language"
-      class="btn btn-custom me-1"
+      class="btn btn-custom"
       type="button">
       <svg [lucideIcon]="icons.LucideChevronRight"></svg>
     </button>
     @if (!isSlideshowActive()) {
     <button
       (click)="startSlideshow()"
+      [attr.aria-label]="'Start Slideshow' | translate:locale.language"
       [tooltip]="'Start Slideshow' | translate:locale.language"
-      class="btn btn-custom me-1"
+      class="btn btn-custom"
       type="button">
       <svg [lucideIcon]="icons.LucidePlay"></svg>
      </button>
     } @else {
     <button
       (click)="stopSlideshow()"
+      [attr.aria-label]="'Stop slideshow' | translate:locale.language"
       [tooltip]="'Stop slideshow' | translate:locale.language"
-      class="btn btn-custom me-1"
+      class="btn btn-custom"
       type="button">
       <svg [lucideIcon]="icons.LucideSquare"></svg>
     </button>
     }
     <button
       (click)="fullscreen()"
+      [attr.aria-label]="'Fullscreen' | translate:locale.language"
       [tooltip]="'Fullscreen' | translate:locale.language"
-      class="btn btn-custom me-1"
+      class="btn btn-custom"
       type="button">
       <svg [lucideIcon]="icons.LucideExpand"></svg>
     </button>
@@ -43,9 +50,10 @@
   <div class="px-2">{{ imageIndex() + 1 }}<span class="px-1" l10nTranslate>of</span>{{ imageCount() }}</div>
   <button
     btnCheckbox
+    [attr.aria-label]="'Info' | translate:locale.language"
     [(ngModel)]="isInfoboxOpen"
     [tooltip]="'Info' | translate:locale.language"
-    class="d-none d-sm-block btn btn-custom me-1"
+    class="d-none d-sm-block btn btn-custom"
     type="button">
     <svg [lucideIcon]="icons.LucideInfo"></svg>
   </button>

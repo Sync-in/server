@@ -6,15 +6,18 @@ import { genPassword } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { togglePasswordType } from '../utils/functions'
 
+let nextInputPasswordId = 0
+
 @Component({
   selector: 'app-input-password',
   imports: [FormsModule, ReactiveFormsModule, L10nTranslatePipe, LucideDynamicIcon, L10nTranslateDirective],
   template: `@if (showLabel) {
-      <label for="password" class="form-label" l10nTranslate>Password</label>
+      <label [for]="inputId" class="form-label" l10nTranslate>Password</label>
     }
-    <div id="password" class="input-group" style="min-width: 150px">
+    <div class="input-group" style="min-width: 150px">
       <input
         #Password
+        [id]="inputId"
         autocomplete="off"
         [(ngModel)]="password"
         [disabled]="disabled"
@@ -52,6 +55,7 @@ export class InputPasswordComponent implements OnInit {
   @Output() passwordChange = new EventEmitter<string>()
   @Input() passwordMinLength = USER_PASSWORD_MIN_LENGTH
   @Input() placeholder: string | null = null
+  @Input() inputId = `input-password-${nextInputPasswordId++}`
   @Input() showGenerator = false
   @Input() showLabel = false
   @Input() disabled = false

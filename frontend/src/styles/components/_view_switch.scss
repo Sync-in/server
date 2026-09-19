@@ -1,0 +1,54 @@
+@mixin view-switch-theme(
+  $surface,
+  $border,
+  $text,
+  $muted,
+  $state-background
+) {
+  .view-switch {
+    border-color: $border;
+    background: $surface;
+  }
+
+  .view-switch__option {
+    color: $muted;
+
+    &:hover,
+    &:focus-visible,
+    &.active {
+      color: $text;
+      background: $state-background;
+    }
+  }
+}
+
+.view-switch {
+  width: fit-content;
+  height: 1.9rem;
+  margin: 0 0 0 auto;
+  padding: 0.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid;
+  border-radius: $border-radius;
+}
+
+.view-switch__option {
+  min-width: 4.2rem;
+  height: 1.5rem;
+  padding: 0 0.68rem;
+  border: 0;
+  border-radius: $border-radius - 0.1rem;
+  background: transparent;
+  font-size: $font-size-xs;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, background-color 0.15s ease;
+
+  &:focus-visible {
+    outline: 2px solid rgba($primary, 0.4);
+    outline-offset: 1px;
+  }
+}

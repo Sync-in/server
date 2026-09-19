@@ -35,12 +35,12 @@
               <div>
                 <div class="px-1 mt-4">
                   <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                    <label for="" class="col-5 col-sm-4" l10nTranslate>Login</label>
+                    <div class="col-5 col-sm-4" l10nTranslate>Login</div>
                     <span class="col-7 col-sm-8 text-end">{{ user.login }}</span>
                   </div>
 
                   <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                    <label for="" class="col-5 col-sm-4" l10nTranslate>IP Addresses</label>
+                    <div class="col-5 col-sm-4" l10nTranslate>IP Addresses</div>
                     <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
                       <span class="badge bg-warning">{{ user.currentIp }}</span>
                       <span class="badge bg-default ms-1">{{ user.lastIp }}</span>
@@ -48,7 +48,7 @@
                   </div>
 
                   <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                    <label for="" class="col-5 col-sm-4" l10nTranslate>Connections</label>
+                    <div class="col-5 col-sm-4" l10nTranslate>Connections</div>
                     <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
                       <span class="badge bg-warning">{{ user.currentAccess | amDateFormat }}</span>
                       <span class="badge bg-default ms-1">{{ user.lastAccess | amDateFormat }}</span>
@@ -57,7 +57,7 @@
 
                   @if (user.isUser) {
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                      <label for="" class="col-5 col-sm-4" l10nTranslate>Permissions</label>
+                      <div class="col-5 col-sm-4" l10nTranslate>Permissions</div>
                       <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end">
                         @if (user.isAdmin) {
                           <span class="badge bg-purple">
@@ -73,7 +73,7 @@
                     </div>
 
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                      <label for="" class="col-5 col-sm-4" l10nTranslate>Storage Space</label>
+                      <div class="col-5 col-sm-4" l10nTranslate>Storage Space</div>
                       <div class="col-7 col-sm-8 d-flex justify-content-end">
                         <app-storage-usage class="w-100" style="max-width: 18rem;" [item]="user"></app-storage-usage>
                       </div>
@@ -81,7 +81,7 @@
                   }
 
                   <div class="row g-2 align-items-center pt-2">
-                    <label for="" class="col-5 col-sm-4">WebDAV</label>
+                    <div class="col-5 col-sm-4">WebDAV</div>
                     <div class="col-7 col-sm-8 text-end text-truncate">
                       <span
                         (click)="clipBoardLink()"
@@ -103,9 +103,10 @@
 
               @if (showEditorPreference) {
                 <div class="row g-2 align-items-center mb-2">
-                  <label for="" class="col-12 col-sm-6" l10nTranslate>Document editor</label>
+                  <label class="col-12 col-sm-6" for="documentEditor" l10nTranslate>Document editor</label>
                   <div class="col-12 col-sm-6">
                     <select
+                      id="documentEditor"
                       class="form-select"
                       [ngModel]="userEditorPreference"
                       (ngModelChange)="updateEditorPreference($event)">
@@ -161,7 +162,7 @@
               <div class="d-flex flex-column gap-2">
                 @if (user.isUser) {
                   <div class="row g-2 align-items-center">
-                    <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Avatar</label>
+                    <div class="form-label col-12 col-md-6 mb-0" l10nTranslate>Avatar</div>
                     <div class="col-12 col-md-6">
                       <div class="d-flex flex-wrap gap-2">
                         <button (click)="genAvatar()" class="btn btn-success" type="button" l10nTranslate>Generate</button>
@@ -216,19 +217,20 @@
                 <div class="d-flex flex-column gap-2">
                   @if (requiresCurrentPassword) {
                     <div class="row g-2 align-items-center">
-                      <label for="" class="form-label col-12 col-md-6 mb-0">{{ 'current password' | translate:locale.language | capitalize }}</label>
+                      <label class="form-label col-12 col-md-6 mb-0" for="currentPassword">{{ 'current password' | translate:locale.language | capitalize }}</label>
                       <div class="col-12 col-md-6">
-                        <app-input-password [(password)]="oldPassword"></app-input-password>
+                        <app-input-password inputId="currentPassword" [(password)]="oldPassword"></app-input-password>
                       </div>
                     </div>
                   }
 
                   <div class="row g-2 align-items-center">
-                    <label for="" class="form-label col-12 col-md-6 mb-0">
+                    <label class="form-label col-12 col-md-6 mb-0" for="newPassword">
                       {{ (requiresCurrentPassword ? 'new password' : 'local password') | translate:locale.language | capitalize }}
                     </label>
                     <div class="col-12 col-md-6">
-                      <app-input-password [(password)]="newPassword"
+                      <app-input-password inputId="newPassword"
+                                          [(password)]="newPassword"
                                           [disabled]="requiresCurrentPassword && !oldPassword?.length"
                                           [isRequired]="requiresCurrentPassword && !!oldPassword?.length"
                                           [passwordMinLength]="passwordMinLength"
@@ -257,7 +259,7 @@
                 <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Security</div>
                 <div class="d-flex flex-column gap-3">
                   <div class="row g-2 align-items-center">
-                    <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Two-Factor Authentication</label>
+                    <div class="form-label col-12 col-md-6 mb-0" l10nTranslate>Two-Factor Authentication</div>
                     <div class="col-12 col-md-6 d-flex flex-wrap align-items-center gap-2">
                       <button (click)="enable2Fa()"
                               [disabled]="!store.server().twoFaEnabled"
@@ -279,7 +281,7 @@
                   </div>
 
                   <div class="row g-2 align-items-center">
-                    <label for="" class="form-label col-12 col-md-6 mb-0" l10nTranslate>Application Passwords</label>
+                    <div class="form-label col-12 col-md-6 mb-0" l10nTranslate>Application Passwords</div>
                     <div class="col-12 col-md-6 d-flex align-items-center">
                       <button (click)="manageAppPasswords()"
                               class="btn btn-primary"

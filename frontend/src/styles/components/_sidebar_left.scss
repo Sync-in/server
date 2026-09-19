@@ -19,8 +19,8 @@
       height: $navbar-height;
       min-width: $sidebar-apps-menus-width;
       font-size: $font-size-xs;
-      background: $sidebar-light-apps-menu-title-bg;
-      border-bottom: .5px solid $sidebar-light-apps-menu-title-bg;
+      background: $app-header-bg;
+      border-bottom: .5px solid $app-header-bg;
 
       .menu-title-content {
         @include text-truncate-utility;
@@ -192,7 +192,6 @@
       flex: 1 1 auto;
       min-height: 0;
       overflow: hidden;
-      font-size: 0.8rem;
 
       .menus-top {
         flex: 0 1 auto;

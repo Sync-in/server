@@ -1,23 +1,33 @@
 <!-- The user image in the menu -->
 <div class="d-flex flex-column">
-  <div class="sidebar-component-title">
+  <div class="sidebar-component-title app-top-menu-tool-bar">
     <div class="d-flex flex-fill justify-content-between">
       @if (!user?.isLink) {
-        <button class="btn btn-default" (click)="collapseRSideBar()" type="button" [routerLink]=USER_PATH.BASE>
+        <button class="btn btn-default"
+                (click)="collapseRSideBar()"
+                type="button"
+                [routerLink]=USER_PATH.BASE>
           <svg [lucideIcon]="icons.LucideUserRound"></svg>
         </button>
       }
-      <button class="btn btn-default" (click)="toggleTheme()" type="button">
+      <button class="btn btn-default"
+              (click)="toggleTheme()"
+              type="button">
         <svg [lucideIcon]="icons.LucideContrast"></svg>
       </button>
       @if (user?.isAdmin) {
-        <button class="btn btn-default" (click)="collapseRSideBar()" type="button" routerLink="/admin">
+        <button class="btn btn-default"
+                (click)="collapseRSideBar()"
+                type="button"
+                routerLink="/admin">
           <svg [lucideIcon]="icons.LucideSettings"></svg>
         </button>
       }
       @if (!store.isElectronApp() || store.isElectronApp() && store.userImpersonate()) {
-        <button (click)="logOut()" class="btn btn-default" type="button">
-          <svg [lucideIcon]="store.userImpersonate() ? icons.LucideVenetianMask : icons.LucidePower"></svg>
+        <button (click)="logOut()"
+                class="btn btn-default"
+                type="button">
+          <svg [lucideIcon]="store.userImpersonate() ? icons.LucideVenetianMask : icons.LucideLogOut"></svg>
         </button>
       }
     </div>

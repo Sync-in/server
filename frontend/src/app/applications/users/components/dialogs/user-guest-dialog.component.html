@@ -78,14 +78,14 @@
             <div class="card-body d-flex flex-column gap-3">
               <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
-                  <label class="form-label mb-0" for="password" l10nTranslate>Password</label>
+                  <label class="form-label mb-0" for="guestPassword" l10nTranslate>Password</label>
                   @if (guestForm.value.password !== defaultPassword) {
                     <div class="d-flex align-items-center ms-auto">
                       <app-password-strength-bar [passwordToCheck]="guestForm.value.password"></app-password-strength-bar>
                     </div>
                   }
                 </div>
-                <app-input-password id="password"
+                <app-input-password inputId="guestPassword"
                                     class="w-100"
                                     [password]="guestForm.value.password"
                                     (passwordChange)="updatePassword($event)"

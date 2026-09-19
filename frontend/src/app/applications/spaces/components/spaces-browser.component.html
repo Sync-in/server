@@ -1,65 +1,84 @@
 <!--Start Top Menu-->
-<div class="app-top-menu">
-  <!--Start New Button-->
+<div class="app-top-menu app-top-menu-tool-bar"
+     [attr.aria-label]="'Actions' | translate:locale.language"
+     role="toolbar">
   @if (!isTrashRepo && !inSharesList) {
-    <div (onShown)="initUpload()" class="btn-group me-1" dropdown>
-      <button dropdownToggle
-              class="btn btn-default dropdown-toggle"
-              [tooltip]="'New' | translate:locale.language"
+    <span #uploadFilesPicker="appUploadFiles"
+          (uploadFiles)="onUploadFiles($event)"
+          [options]="{isMultiple: true}"
+          appUploadFiles
+          class="d-none"></span>
+    @if (supportUploadFolder) {
+      <span #uploadFoldersPicker="appUploadFiles"
+            (uploadFiles)="onUploadFiles($event, true)"
+            [options]="{isDirectory: true}"
+            appUploadFiles
+            class="d-none"></span>
+    }
+    <!--Start New Button-->
+    <div class="btn-group">
+      <button (click)="openNewDialog()"
+              class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+              [attr.aria-label]="'New' | translate:locale.language"
               type="button">
         <svg [lucideIcon]="icons.LucidePlus"></svg>
+        <span class="app-top-menu-tool-bar__label" l10nTranslate>New</span>
+      </button>
+    </div>
+    <!--End New Button-->
+    <!--Start Upload Button-->
+    <div class="btn-group" dropdown>
+      <button dropdownToggle
+              class="btn btn-default dropdown-toggle app-top-menu-tool-bar__action--quiet"
+              [attr.aria-label]="'Upload' | translate:locale.language"
+              type="button">
+        <svg [lucideIcon]="icons.LucideHardDriveUpload"></svg>
+        <span class="app-top-menu-tool-bar__label" l10nTranslate>Upload</span>
       </button>
       <ul *dropdownMenu class="dropdown-menu" role="menu">
         <li role="menuitem">
-          <a (click)="openNewDialog('directory')" class="dropdown-item">
-            <span l10nTranslate><svg [lucideIcon]="icons.PERSONAL"></svg>New folder</span>
+          <a (click)="shortcutUploadFiles()" class="dropdown-item">
+            <span l10nTranslate><svg [lucideIcon]="icons.LucideFileUp"></svg>Upload files</span>
           </a>
         </li>
-        <li role="menuitem">
-          <a (click)="openNewDialog('file')" class="dropdown-item">
-            <span l10nTranslate><svg [lucideIcon]="icons.LucideFileText"></svg>New document</span>
-          </a>
-        </li>
-        <li class="dropdown-divider"></li>
-        <li role="menuitem">
-          <a appUploadFiles [options]="{isMultiple: true}" (uploadFiles)="onUploadFiles($event)" class="dropdown-item" id="uploadFilesButton">
-            <span l10nTranslate><svg [lucideIcon]="icons.LucideHardDriveUpload"></svg>Upload files</span>
-          </a>
-          @if (supportUploadFolder) {
-            <a appUploadFiles
-               [options]="{isDirectory: true}"
-               (uploadFiles)="onUploadFiles($event, true)"
-               class="dropdown-item"
-               id="uploadFoldersButton">
-              <span l10nTranslate><svg [lucideIcon]="icons.LucideHardDriveUpload"></svg>Upload folders</span>
+        @if (supportUploadFolder) {
+          <li role="menuitem">
+            <a (click)="shortcutUploadFolders()" class="dropdown-item">
+              <span l10nTranslate><svg [lucideIcon]="icons.LucideFolderUp"></svg>Upload folders</span>
             </a>
-          }
-        </li>
+          </li>
+        }
         <li class="dropdown-divider"></li>
         <li role="menuitem">
           <a (click)="openNewDialog('download')" class="dropdown-item">
-            <span l10nTranslate><svg [lucideIcon]="icons.LucideGlobe"></svg>Download from URL</span>
+            <span l10nTranslate><svg [lucideIcon]="icons.LucideGlobe"></svg>Import from URL</span>
           </a>
         </li>
       </ul>
     </div>
+    <!--End Upload Button-->
   }
-  <!--End New Button-->
-  <button (click)="downloadFiles()"
-          [disabled]="!hasSelection || hasDisabledItemsInSelection"
-          class="btn btn-default me-1"
-          [tooltip]="'Download' | translate:locale.language"
-          type="button">
-    <svg [lucideIcon]="icons.LucideHardDriveDownload"></svg>
-  </button>
+  @if (inSharesList) {
+    <button (click)="shortcutOpen()"
+            [attr.aria-label]="'Open' | translate:locale.language"
+            [disabled]="selection.length !== 1"
+            class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+            type="button">
+      <svg [lucideIcon]="selection[0]?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>
+      <span class="app-top-menu-tool-bar__label" l10nTranslate>Open</span>
+    </button>
+  }
   <!--Start Share Button-->
-  @if (!isTrashRepo && canShare.outside || inSharesList) {
-    <div class="d-none d-sm-block btn-group me-1" [isDisabled]="!hasSelection || inSharesList && !selection[0].canBeReShared" dropdown>
+  @if (!isTrashRepo && !inSharesList && canShare.outside) {
+    <div class="btn-group"
+         [isDisabled]="!hasSelection"
+         dropdown>
       <button dropdownToggle
-              class="btn btn-default dropdown-toggle"
-              [tooltip]="'Share' | translate:locale.language"
+              class="btn btn-default dropdown-toggle app-top-menu-tool-bar__action--quiet"
+              [attr.aria-label]="'Share' | translate:locale.language"
               type="button">
         <svg [lucideIcon]="icons.SHARED"></svg>
+        <span class="app-top-menu-tool-bar__label" l10nTranslate>Share</span>
       </button>
       <ul *dropdownMenu class="dropdown-menu" role="menu">
         <li role="menuitem">
@@ -85,25 +104,31 @@
   <!--End Share Button-->
   @if (isTrashRepo) {
     <button (click)="openTrashDialog(true)"
+            [attr.aria-label]="'Remove' | translate:locale.language"
             [disabled]="!hasSelection"
-            class="btn btn-default me-1"
-            [tooltip]="'Remove' | translate:locale.language"
+            class="btn btn-default app-top-menu-tool-bar__action--quiet"
             type="button">
       <svg [lucideIcon]="icons.LucideBan"></svg>
+      <span class="app-top-menu-tool-bar__label" l10nTranslate>Remove</span>
     </button>
     @if (inRootSpace) {
       <button (click)="openEmptyTrashDialog()"
+              [attr.aria-label]="'Empty' | translate:locale.language"
               [disabled]="!stats.elements"
-              class="btn btn-default me-1"
-              [tooltip]="'Empty' | translate:locale.language"
+              class="btn btn-default app-top-menu-tool-bar__action--quiet"
               type="button">
         <svg [lucideIcon]="icons.TRASH"></svg>
+        <span class="app-top-menu-tool-bar__label" l10nTranslate>Empty</span>
       </button>
     }
   }
   <!--Start Actions Button-->
-  <div [isDisabled]="!hasSelection" class="btn-group me-1" dropdown>
-    <button class="btn btn-default dropdown-toggle" dropdownToggle type="button">
+  <div [isDisabled]="!hasSelection" class="btn-group" dropdown>
+    <button class="btn btn-default dropdown-toggle app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--quiet"
+            [attr.aria-label]="'Actions' | translate:locale.language"
+            [tooltip]="'Actions' | translate:locale.language"
+            dropdownToggle
+            type="button">
       <svg [lucideIcon]="icons.LucideEllipsis"></svg>
     </button>
     <ul *dropdownMenu class="dropdown-menu" role="menu">
@@ -117,10 +142,31 @@
         }
       }
       <li role="menuitem">
+        <a (click)="downloadFiles()"
+           [attr.aria-disabled]="hasDisabledItemsInSelection"
+           [class.disabled]="hasDisabledItemsInSelection"
+           class="dropdown-item">
+          <span l10nTranslate><svg [lucideIcon]="icons.LucideHardDriveDownload"></svg>Download</span>
+        </a>
+      </li>
+      <li role="menuitem">
         <a (click)="layout.showRSideBarTab(TAB_MENU.SELECTION)" class="dropdown-item">
           <span l10nTranslate><svg [lucideIcon]="icons.SELECTION"></svg>View selection</span>
         </a>
       </li>
+      @if (inSharesList && selection.length === 1 && selection[0]?.canBeReShared) {
+        <li class="dropdown-divider"></li>
+        <li role="menuitem">
+          <a (click)="openShareDialog()" class="dropdown-item">
+            <span l10nTranslate><svg [lucideIcon]="icons.SHARED"></svg>New share</span>
+          </a>
+        </li>
+        <li role="menuitem">
+          <a (click)="openShareLinkDialog()" class="dropdown-item">
+            <span l10nTranslate><svg [lucideIcon]="icons.LucideLink"></svg>New share link</span>
+          </a>
+        </li>
+      }
       <li class="dropdown-divider"></li>
       @if (!hasDisabledItemsInSelection) {
         <li role="menuitem">
@@ -167,10 +213,10 @@
           </a>
         </li>
       }
-      @if (selection.length === 1 && canManageFavorite) {
+      @if (selection.length === 1 && canManageFavorite && selection[0]; as selectedFile) {
         <li role="menuitem">
-          <a (click)="toggleFavorite(selection[0])" class="dropdown-item">
-            @if (selection[0].isFavorite) {
+          <a (click)="toggleFavorite(selectedFile)" class="dropdown-item">
+            @if (selectedFile.isFavorite) {
               <span l10nTranslate><svg [lucideIcon]="icons.FAVORITES"></svg>Remove from favorites</span>
             } @else {
               <span l10nTranslate><svg [lucideIcon]="icons.FAVORITES"></svg>Add to favorites</span>
@@ -200,13 +246,14 @@
     </ul>
   </div>
   <!--End Actions Button-->
-  <div class="d-flex align-items-center ms-auto">
-    <button (click)="loadFiles()"
-            class="d-none d-sm-block btn btn-default me-1"
-            [tooltip]="'Refresh' | translate:locale.language"
-            type="button">
-      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
-    </button>
+  <button (click)="loadFiles()"
+          [attr.aria-label]="'Refresh' | translate:locale.language"
+          [tooltip]="'Refresh' | translate:locale.language"
+          class="btn btn-default app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--quiet"
+          type="button">
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+  </button>
+  <div class="d-flex align-items-center ms-auto app-top-menu-tool-bar__utilities">
     <!--Start View Button-->
     <app-navigation-view (switchView)="switchView($event)">
     </app-navigation-view>
@@ -637,9 +684,9 @@
       <span l10nTranslate><svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>Comment</span>
     </ng-template>
   }
-  @if (selection.length === 1 && canManageFavorite) {
-    <ng-template (execute)="toggleFavorite(selection[0])" contextMenuItem>
-      @if (selection[0].isFavorite) {
+  @if (selection.length === 1 && canManageFavorite && selection[0]; as selectedFile) {
+    <ng-template (execute)="toggleFavorite(selectedFile)" contextMenuItem>
+      @if (selectedFile.isFavorite) {
         <span l10nTranslate><svg [lucideIcon]="icons.FAVORITES"></svg>Remove from favorites</span>
       } @else {
         <span l10nTranslate><svg [lucideIcon]="icons.FAVORITES"></svg>Add to favorites</span>
@@ -693,14 +740,14 @@
       <span l10nTranslate><svg [lucideIcon]="icons.LucideFileText"></svg>New document</span>
     </ng-template>
     <ng-template (execute)="openNewDialog('download')" contextMenuItem>
-      <span l10nTranslate><svg [lucideIcon]="icons.LucideGlobe"></svg>Download from URL</span>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucideGlobe"></svg>Import from URL</span>
     </ng-template>
     <ng-template (execute)="shortcutUploadFiles()" contextMenuItem>
-      <span l10nTranslate><svg [lucideIcon]="icons.LucideHardDriveUpload"></svg>Upload files</span>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucideFileUp"></svg>Upload files</span>
     </ng-template>
     @if (supportUploadFolder) {
       <ng-template (execute)="shortcutUploadFolders()" contextMenuItem>
-        <span l10nTranslate><svg [lucideIcon]="icons.LucideHardDriveUpload"></svg>Upload folders</span>
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideFolderUp"></svg>Upload folders</span>
       </ng-template>
     }
   }

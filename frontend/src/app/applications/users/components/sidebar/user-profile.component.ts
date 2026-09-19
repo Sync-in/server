@@ -4,9 +4,9 @@ import { RouterLink } from '@angular/router'
 import {
   LucideContrast,
   LucideDynamicIcon,
+  LucideLogOut,
   LucidePin,
   LucidePinOff,
-  LucidePower,
   LucideSettings,
   LucideUserRound,
   LucideVenetianMask
@@ -36,7 +36,7 @@ export class UserProfileComponent implements OnDestroy {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly appVersion = APP_VERSION
   protected appBaseUrl = `${APP_URL.WEBSITE}`
-  protected readonly icons = { LucideUserRound, LucideContrast, LucideSettings, LucidePower, LucideVenetianMask, LucidePin, LucidePinOff }
+  protected readonly icons = { LucideUserRound, LucideContrast, LucideSettings, LucideLogOut, LucideVenetianMask, LucidePin, LucidePinOff }
   protected user: UserType
   protected userAvatar: string = null
   protected readonly layout = inject(LayoutService)

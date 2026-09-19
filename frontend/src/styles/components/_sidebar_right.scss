@@ -31,6 +31,15 @@
   }
 
   .sidebar-component-title {
+    &.app-top-menu-tool-bar {
+      .btn {
+        min-width: auto;
+        min-height: calc(#{$btn-line-height * 1em} + var(--bs-btn-padding-y) + var(--bs-btn-padding-y) + var(--bs-btn-border-width) + var(--bs-btn-border-width));
+        padding: var(--bs-btn-padding-y) var(--bs-btn-padding-x);
+        border-radius: var(--bs-btn-border-radius);
+      }
+    }
+
     .lucide {
       font-size: $font-size-xl;
     }

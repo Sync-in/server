@@ -9,10 +9,11 @@ import {
   LucideEllipsis,
   LucideKeyRound,
   LucideLogOut,
-  LucideMinus,
   LucidePencil,
   LucidePlus,
   LucideRotateCw,
+  LucideTrash2,
+  LucideUserMinus,
   LucideUsersRound
 } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
@@ -79,7 +80,8 @@ export class UserGroupsComponent {
     GROUPS: USER_ICON.GROUPS,
     LucideRotateCw,
     LucidePlus,
-    LucideMinus,
+    LucideTrash2,
+    LucideUserMinus,
     LucidePencil,
     LucideArrowDown,
     LucideArrowUp,

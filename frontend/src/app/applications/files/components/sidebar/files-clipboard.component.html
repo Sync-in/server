@@ -1,4 +1,4 @@
-<div class="sidebar-component-title justify-content-between position-relative">
+<div class="sidebar-component-title app-top-menu-tool-bar justify-content-between position-relative">
   <div class="sidebar-component-title-side">
     <svg class="cursor-pointer"
              [lucideIcon]="icons.LucideCircleQuestionMark"
@@ -9,7 +9,9 @@
   </div>
   <div class="sidebar-component-title-label" l10nTranslate>Clipboard</div>
   <div class="sidebar-component-title-side">
-    <button (click)="clearAll()" class="btn btn-default" type="button">
+    <button (click)="clearAll()"
+            class="btn btn-default app-top-menu-tool-bar__action--highlighted"
+            type="button">
       <svg [lucideIcon]="icons.LucideX"></svg>
     </button>
   </div>

@@ -3,9 +3,15 @@
   padding: .5rem;
 }
 
-.btn.navigation-view-direct-option.active,
-.btn.navigation-view-direct-option.active:hover:not(:disabled) {
-  background-color: rgba(var(--bs-primary-rgb), .12) !important;
+.navigation-view-switch {
+  > .view-switch__option {
+    min-width: 2.5rem;
+    padding-inline: .6rem;
+
+    .lucide {
+      font-size: 1rem;
+    }
+  }
 }
 
 .navigation-view-size-selector {

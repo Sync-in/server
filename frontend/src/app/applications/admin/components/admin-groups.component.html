@@ -1,11 +1,14 @@
 <!--Start Top Menu-->
-<div class="app-top-menu">
-  <div class="btn-group me-1" dropdown>
-    <button class="btn btn-default dropdown-toggle"
+<div class="app-top-menu app-top-menu-tool-bar"
+     [attr.aria-label]="'Actions' | translate:locale.language"
+     role="toolbar">
+  <div class="btn-group" dropdown>
+    <button class="btn btn-default dropdown-toggle app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+            [attr.aria-label]="'New' | translate:locale.language"
             dropdownToggle
-            [tooltip]="'New' | translate:locale.language"
             type="button">
       <svg [lucideIcon]="icons.LucidePlus"></svg>
+      <span class="app-top-menu-tool-bar__label" l10nTranslate>New</span>
     </button>
     <ul *dropdownMenu class="dropdown-menu" role="menu">
       <li role="menuitem">
@@ -21,22 +24,32 @@
       </li>
     </ul>
   </div>
-  <button (click)="openDialog(false, true)"
-          class="d-none d-sm-block btn btn-default me-1"
-          [disabled]="!selected"
-          [tooltip]="(selected?.isUser ? 'Remove from group' : 'Delete group') | translate:locale.language"
-          type="button">
-    <svg [lucideIcon]="icons.LucideMinus"></svg>
-  </button>
   <button (click)="openDialog()"
+          [attr.aria-label]="(selected?.isGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
           [disabled]="!selected"
-          class="btn btn-default me-1"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet"
           [tooltip]="(selected?.isGroup ? 'Edit group' : 'Edit user') | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucidePencil"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Edit</span>
+  </button>
+  <button (click)="openDialog(false, true)"
+          [attr.aria-label]="(selected?.isUser ? 'Remove from group' : 'Delete group') | translate:locale.language"
+          class="d-none d-sm-block btn btn-default app-top-menu-tool-bar__action--quiet"
+          [disabled]="!selected"
+          type="button">
+    <svg [lucideIcon]="selected?.isUser ? icons.LucideUserMinus : icons.LucideTrash2"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Delete</span>
+  </button>
+  <button (click)="refresh()"
+          [attr.aria-label]="'Refresh' | translate:locale.language"
+          class="d-none d-sm-block btn btn-default"
+          [tooltip]="'Refresh' | translate:locale.language"
+          type="button">
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
-    <div class="view-switch me-1" role="group" aria-label="Select group type">
+    <div class="view-switch" role="group" aria-label="Select group type">
       <button
         type="button"
         class="view-switch__option"
@@ -58,12 +71,6 @@
         Personal groups
       </button>
     </div>
-    <button (click)="refresh()"
-            class="d-none d-sm-block btn btn-default"
-            [tooltip]="'Refresh' | translate:locale.language"
-            type="button">
-      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
-    </button>
   </div>
 </div>
 <!--End Top Menu-->
@@ -188,7 +195,7 @@
     </ng-template>
     @if (selected.isGroup) {
       <ng-template (execute)="openDialog(false, true)" contextMenuItem>
-        <span l10nTranslate><svg [lucideIcon]="icons.LucideMinus"></svg>Delete group</span>
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash2"></svg>Delete group</span>
       </ng-template>
     } @else {
       <ng-template (execute)="openDialog(false, true)" contextMenuItem>

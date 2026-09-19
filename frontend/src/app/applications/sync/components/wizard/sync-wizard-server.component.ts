@@ -6,6 +6,7 @@ import { LucideCircleArrowLeft, LucideCircleArrowRight, LucideDynamicIcon, Lucid
 import { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
+import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
@@ -19,7 +20,7 @@ import { isSynchronizable } from '../../sync.utils'
 
 @Component({
   selector: 'app-sync-wizard-server',
-  imports: [LucideDynamicIcon, L10nTranslateDirective, AutoResizeDirective, FormsModule, L10nTranslatePipe, ReactiveFormsModule],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, AutoResizeDirective, FormsModule, L10nTranslatePipe, ReactiveFormsModule, TooltipModule],
   templateUrl: 'sync-wizard-server.component.html'
 })
 export class SyncWizardServerComponent {

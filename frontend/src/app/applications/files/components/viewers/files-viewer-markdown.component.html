@@ -1,20 +1,27 @@
 <div class="files-viewer-markdown" [style.height.px]="currentHeight()">
-  <div class="app-top-menu files-markdown-toolbar">
+  <div (pointerdown)="hideTooltips()"
+       class="app-top-menu app-top-menu-tool-bar files-markdown-toolbar"
+       [attr.aria-label]="'Actions' | translate:locale.language"
+       role="toolbar">
     <button
       (click)="toggleReadonly()"
+      [attr.aria-label]="(isReadonly() || !isWriteable() ? 'Read-only' : 'Read-write') | translate:locale.language"
       [tooltip]="(isReadonly() || !isWriteable() ? 'Read-only' : 'Read-write') | translate:locale.language"
+      triggers="hover"
       [adaptivePosition]="true"
-      class="btn {{ isReadonly() ? 'btn-warning' : 'btn-default' }} me-1"
+      class="btn {{ isReadonly() ? 'btn-warning' : 'btn-default' }}"
       type="button"
       [disabled]="!isSupported() || !isWriteable() || isSaving()">
       <svg [lucideIcon]="isReadonly() ? icons.LucideLock : icons.LucideLockOpen"></svg>
     </button>
     <button
       (click)="save()"
+      [attr.aria-label]="'Save' | translate:locale.language"
       [tooltip]="(canSave() ? 'Save' : undefined) | translate:locale.language"
+      triggers="hover"
       [delay]="0"
       [isDisabled]="!canSave()"
-      class="btn btn-default me-1"
+      class="btn btn-default app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--quiet"
       type="button"
       [disabled]="!canSave()">
       @if (isSaving()) {
@@ -25,26 +32,31 @@
     </button>
     <button
       (click)="onUndo()"
+      [attr.aria-label]="'Undo' | translate:locale.language"
       [disabled]="!canUndo()"
       [tooltip]="'Undo' | translate:locale.language"
-      class="d-none d-sm-block btn btn-custom me-1"
+      triggers="hover"
+      class="d-none d-sm-block btn btn-custom"
       type="button">
       <svg [lucideIcon]="icons.LucideUndo"></svg>
     </button>
     <button
       (click)="onRedo()"
+      [attr.aria-label]="'Redo' | translate:locale.language"
       [disabled]="!canRedo()"
       [tooltip]="'Redo' | translate:locale.language"
-      class="d-none d-sm-block btn btn-custom me-1"
+      triggers="hover"
+      class="d-none d-sm-block btn btn-custom"
       type="button">
       <svg [lucideIcon]="icons.LucideRedo"></svg>
     </button>
 
     <div class="files-markdown-mode-group">
-      <div class="vr files-markdown-mode-separator files-markdown-mode-separator-start"></div>
       <button
         (click)="toggleViewMode()"
+        [attr.aria-label]="(isSourceMode() ? 'Visual Mode' : 'Code Mode') | translate:locale.language"
         [tooltip]="(isSourceMode() ? 'Visual Mode' : 'Code Mode') | translate:locale.language"
+        triggers="hover"
         class="btn btn-custom mx-0"
         type="button">
         <svg [lucideIcon]="isSourceMode() ? icons.LucideEye : icons.LucideKeyboard"></svg>
@@ -56,9 +68,11 @@
       <div class="files-markdown-toolbar-group">
         <div class="btn-group" dropdown>
           <button
+            [attr.aria-label]="'Heading' | translate:locale.language"
             [disabled]="!canEditVisual()"
             [class.active]="isSelectionActive('heading')"
             [tooltip]="'Heading' | translate:locale.language"
+            triggers="hover"
             class="btn btn-custom dropdown-toggle files-markdown-heading-toggle"
             dropdownToggle
             type="button">
@@ -76,36 +90,44 @@
         </div>
         <button
           (click)="toggleBold()"
+          [attr.aria-label]="'Bold' | translate:locale.language"
           [disabled]="!canEditVisual()"
           [class.active]="isSelectionActive('bold')"
           [tooltip]="'Bold' | translate:locale.language"
+          triggers="hover"
           class="btn btn-custom"
           type="button">
           <svg [lucideIcon]="icons.LucideBold"></svg>
         </button>
         <button
           (click)="toggleItalic()"
+          [attr.aria-label]="'Italic' | translate:locale.language"
           [disabled]="!canEditVisual()"
           [class.active]="isSelectionActive('italic')"
           [tooltip]="'Italic' | translate:locale.language"
+          triggers="hover"
           class="btn btn-custom"
           type="button">
           <svg [lucideIcon]="icons.LucideItalic"></svg>
         </button>
         <button
           (click)="toggleUnderline()"
+          [attr.aria-label]="'Underline' | translate:locale.language"
           [disabled]="!canEditVisual()"
           [class.active]="isSelectionActive('underline')"
           [tooltip]="'Underline' | translate:locale.language"
+          triggers="hover"
           class="d-none d-md-block btn btn-custom"
           type="button">
           <svg [lucideIcon]="icons.LucideUnderline"></svg>
         </button>
         <button
           (click)="toggleStrike()"
+          [attr.aria-label]="'Strikethrough' | translate:locale.language"
           [disabled]="!canEditVisual()"
           [class.active]="isSelectionActive('strike')"
           [tooltip]="'Strikethrough' | translate:locale.language"
+          triggers="hover"
           class="d-none d-md-block btn btn-custom"
           type="button">
           <svg [lucideIcon]="icons.LucideStrikethrough"></svg>
@@ -115,9 +137,11 @@
 
         <div class="btn-group" dropdown>
           <button
+            [attr.aria-label]="'List' | translate:locale.language"
             [disabled]="!canEditVisual()"
             [class.active]="editor.isActive('bulletList') || editor.isActive('orderedList') || editor.isActive('taskList')"
             [tooltip]="'List' | translate:locale.language"
+            triggers="hover"
             class="btn btn-custom dropdown-toggle"
             dropdownToggle
             type="button">
@@ -153,9 +177,11 @@
 
         <div class="btn-group" dropdown>
           <button
+            [attr.aria-label]="'Code' | translate:locale.language"
             [disabled]="!canEditVisual()"
             [class.active]="editor.isActive('code') || editor.isActive('codeBlock')"
             [tooltip]="'Code' | translate:locale.language"
+            triggers="hover"
             class="btn btn-custom dropdown-toggle"
             dropdownToggle
             type="button">
@@ -182,12 +208,14 @@
         </div>
       </div>
 
-      <div class="files-markdown-toolbar-group me-1">
+      <div class="files-markdown-toolbar-group">
         <button
           (click)="toggleBlockquote()"
+          [attr.aria-label]="'Blockquote' | translate:locale.language"
           [disabled]="!canEditVisual()"
           [class.active]="isSelectionActive('blockquote')"
           [tooltip]="'Blockquote' | translate:locale.language"
+          triggers="hover"
           class="d-none d-md-block btn btn-custom"
           type="button">
           <svg [lucideIcon]="icons.LucideQuote"></svg>
@@ -197,9 +225,11 @@
       <div class="files-markdown-toolbar-group">
         <div class="d-none d-lg-block btn-group" dropdown>
           <button
+            [attr.aria-label]="'Table' | translate:locale.language"
             [disabled]="!canEditVisual()"
             [class.active]="editor.isActive('table')"
             [tooltip]="'Table' | translate:locale.language"
+            triggers="hover"
             class="btn btn-custom dropdown-toggle"
             dropdownToggle
             type="button">
@@ -253,8 +283,10 @@
 
         <button
           (click)="setHorizontalRule()"
+          [attr.aria-label]="'Horizontal Rule' | translate:locale.language"
           [disabled]="!canEditVisual()"
           [tooltip]="'Horizontal Rule' | translate:locale.language"
+          triggers="hover"
           class="d-none d-lg-block btn btn-custom"
           type="button">
           <svg [lucideIcon]="icons.LucideMinus"></svg>
@@ -262,9 +294,11 @@
 
         <button
           (click)="setLink()"
+          [attr.aria-label]="'Link' | translate:locale.language"
           [disabled]="!canEditVisual()"
           [class.active]="isSelectionActive('link')"
           [tooltip]="'Link' | translate:locale.language"
+          triggers="hover"
           class="btn btn-custom"
           type="button">
           <svg [lucideIcon]="icons.LucideLink"></svg>
@@ -272,9 +306,11 @@
 
         <div class="btn-group" dropdown>
           <button
+            [attr.aria-label]="'Image' | translate:locale.language"
             [disabled]="!canEditVisual()"
             [class.active]="isSelectionActive('image')"
             [tooltip]="'Image' | translate:locale.language"
+            triggers="hover"
             class="btn btn-custom dropdown-toggle"
             dropdownToggle
             type="button">
@@ -307,9 +343,11 @@
     @if (isSourceMode()) {
       <button
         btnCheckbox
+        [attr.aria-label]="'Line Wrap' | translate:locale.language"
         [ngModel]="lineWrapping()"
         (ngModelChange)="lineWrapping.set($event)"
         [tooltip]="'Line Wrap' | translate:locale.language"
+        triggers="hover"
         class="btn btn-custom"
         type="button">
         <svg [lucideIcon]="icons.LucideTextWrap"></svg>
@@ -318,23 +356,25 @@
     <div class="d-none d-sm-block vr files-markdown-toolbar-separator"></div>
     <button
       btnCheckbox
+      [attr.aria-label]="'Search' | translate:locale.language"
       [ngModel]="isSearchPanelOpen()"
       (ngModelChange)="toggleSearch()"
       [tooltip]="'Search' | translate:locale.language"
-      class="d-none d-sm-block btn btn-custom me-1"
+      triggers="hover"
+      class="d-none d-sm-block btn btn-custom"
       type="button">
       <svg [lucideIcon]="icons.LucideSearch"></svg>
     </button>
 
     @if (warnOnUnsavedChanges()) {
       <button (click)="save(true)"
-              class="btn btn-sm btn-primary me-2 ms-auto"
+              class="btn btn-sm btn-primary ms-auto"
               type="button"
               l10nTranslate>Save And Exit
       </button>
       <button (click)="onClose()"
               [disabled]="isSaving()"
-              class="btn btn-sm btn-danger me-2"
+              class="btn btn-sm btn-danger"
               data-dismiss="modal" type="button"
               l10nTranslate>Close Without Saving
       </button>

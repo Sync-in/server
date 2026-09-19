@@ -1,26 +1,31 @@
 <!--Start Top Menu-->
-<div class="app-top-menu">
+<div class="app-top-menu app-top-menu-tool-bar"
+     [attr.aria-label]="'Actions' | translate:locale.language"
+     role="toolbar">
   <button (click)="goTo()"
+          [attr.aria-label]="'Go to' | translate:locale.language"
           [disabled]="!selected || selected.isDisabled"
-          class="btn btn-default me-1"
-          [tooltip]="'Go to' | translate:locale.language"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
           type="button">
     <svg [lucideIcon]="icons.LucideMapPin"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Go to</span>
   </button>
   <button (click)="removeFavorite()"
+          [attr.aria-label]="'Remove from favorites' | translate:locale.language"
           [disabled]="!selected"
-          class="btn btn-default me-1"
-          [tooltip]="'Remove from favorites' | translate:locale.language"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet"
           type="button">
     <svg [lucideIcon]="icons.REMOVE_FAVORITE"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Unfavorite</span>
+  </button>
+  <button (click)="loadFavorites()"
+          [attr.aria-label]="'Refresh' | translate:locale.language"
+          class="d-none d-sm-block btn btn-default"
+          [tooltip]="'Refresh' | translate:locale.language"
+          type="button">
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
   </button>
   <div class="d-flex align-items-center ms-auto">
-    <button (click)="loadFavorites()"
-            class="d-none d-sm-block btn btn-default me-1"
-            [tooltip]="'Refresh' | translate:locale.language"
-            type="button">
-      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
-    </button>
     <app-navigation-view (switchView)="galleryMode = $event"></app-navigation-view>
   </div>
 </div>

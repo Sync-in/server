@@ -1,9 +1,11 @@
 @if (sideBarHeader) {
-  <div class="sidebar-component-title justify-content-between position-relative">
+  <div class="sidebar-component-title app-top-menu-tool-bar justify-content-between position-relative">
     <div class="sidebar-component-title-side"></div>
     <div class="sidebar-component-title-label" l10nTranslate>Navigation</div>
     <div class="sidebar-component-title-side">
-      <button (click)="onRefresh()" class="btn btn-default" type="button">
+      <button (click)="onRefresh()"
+              class="btn btn-default app-top-menu-tool-bar__action--highlighted"
+              type="button">
         <svg [lucideIcon]="icons.LucideRotateCw"></svg>
       </button>
     </div>

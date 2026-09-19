@@ -1,4 +1,4 @@
-import { LucideContactRound, LucideHardDriveDownload, LucideLaptop, LucideUserRound, LucideUsersRound } from '@lucide/angular'
+import { LucideLaptopMinimal, LucideStore, LucideUserRound, LucideUserRoundGroup, LucideUsersRound } from '@lucide/angular'
 import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { AppMenu } from '../../layout/layout.interfaces'
 
@@ -29,10 +29,10 @@ export const USER_ONLINE_STATUS_LIST = ['available', 'busy', 'absent', 'offline'
 
 export const USER_ICON = {
   ACCOUNT: LucideUserRound,
-  CLIENTS: LucideLaptop,
+  CLIENTS: LucideLaptopMinimal,
   GROUPS: LucideUsersRound,
-  GUESTS: LucideContactRound,
-  APPS: LucideHardDriveDownload
+  GUESTS: LucideUserRoundGroup,
+  APPS: LucideStore
 } as const
 
 export const USER_PASSWORD_CHANGE_TEXT = 'Change me !'

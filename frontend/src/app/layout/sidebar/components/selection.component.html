@@ -1,10 +1,10 @@
-<div class="sidebar-component-title justify-content-between position-relative">
+<div class="sidebar-component-title app-top-menu-tool-bar justify-content-between position-relative">
   <div class="sidebar-component-title-side"></div>
   <div class="sidebar-component-title-label" l10nTranslate>Selection</div>
   <div class="sidebar-component-title-side">
     @if (selectionType() === SPACES_PATH.FILES && store.filesSelection().length > 1) {
       <button (click)="clearSelection()"
-              class="btn btn-default"
+              class="btn btn-default app-top-menu-tool-bar__action--highlighted"
               type="button"
               aria-label="Clear selection">
         <svg [lucideIcon]="LucideX"></svg>
