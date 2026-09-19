@@ -51,7 +51,7 @@ export function sanitizeName(name: string): string {
 }
 
 export function assertValidFileId(fileId: number): void {
-  if (!Number.isSafeInteger(fileId) || fileId === 0) {
+  if (!Number.isInteger(fileId) || fileId === 0 || (fileId > 0 && !Number.isSafeInteger(fileId))) {
     throw new HttpException('Invalid file id', HttpStatus.BAD_REQUEST)
   }
 }

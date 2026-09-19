@@ -53,8 +53,8 @@ describe(FilesQueries.name, () => {
     await expect(service.getOrCreateSpaceFile(42, file, dbFile)).resolves.toBe(43)
   })
 
-  it('accepts a negative inode in strict mode', async () => {
-    await expect(service.getOrCreateSpaceFile(-42, file, dbFile, { rejectIdMismatch: true })).resolves.toBe(43)
+  it.each([-42, -13229323909065756])('accepts the negative inode %s in strict mode', async (fileId) => {
+    await expect(service.getOrCreateSpaceFile(fileId, file, dbFile, { rejectIdMismatch: true })).resolves.toBe(43)
     expect(select).not.toHaveBeenCalled()
   })
 })
