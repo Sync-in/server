@@ -1,9 +1,12 @@
-<div class="sidebar-component-title justify-content-between position-relative">
+<div class="sidebar-component-title app-top-menu-tool-bar justify-content-between position-relative">
   <div class="sidebar-component-title-side"></div>
   <div class="sidebar-component-title-label" l10nTranslate>Windows Manager</div>
   <div class="sidebar-component-title-side">
     @if (windows.length) {
-      <button (click)="onCloseAll()" class="btn btn-default" type="button" aria-label="Close all windows">
+      <button (click)="onCloseAll()"
+              class="btn btn-default app-top-menu-tool-bar__action--highlighted"
+              type="button"
+              aria-label="Close all windows">
         <svg [lucideIcon]="icons.LucideX"></svg>
       </button>
     }

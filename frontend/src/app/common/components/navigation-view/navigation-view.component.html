@@ -1,17 +1,22 @@
-<div #viewDropdown="bs-dropdown" [insideClick]="true" aria-label="Display mode" class="btn-group" dropdown role="group">
+<div #viewDropdown="bs-dropdown"
+     aria-label="Display mode"
+     [insideClick]="true"
+     class="btn-group view-switch navigation-view-switch"
+     dropdown
+     role="group">
   <button (click)="setView('tl'); viewDropdown.hide()"
+          aria-label="List view"
           [attr.aria-pressed]="!galleryModeEnabled"
           [class.active]="!galleryModeEnabled"
-          aria-label="List view"
-          class="btn btn-default navigation-view-direct-option"
+          class="view-switch__option"
           type="button">
     <svg [lucideIcon]="icons.LucideList"></svg>
   </button>
   <button (click)="selectGalleryMode()"
+          aria-label="Gallery view and size options"
           [attr.aria-pressed]="galleryModeEnabled"
           [class.active]="galleryModeEnabled"
-          aria-label="Gallery view and size options"
-          class="btn btn-default dropdown-toggle navigation-view-direct-option"
+          class="view-switch__option dropdown-toggle"
           dropdownToggle
           type="button">
     <svg [lucideIcon]="icons.LucideGrid2x2"></svg>

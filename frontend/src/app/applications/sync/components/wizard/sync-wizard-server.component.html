@@ -14,10 +14,14 @@
         <span l10nTranslate>Please select the server directory to sync, if it doesn't exist you can create it.</span>
       }
     </div>
-    <div class="app-top-menu px-0">
+    <div class="app-top-menu app-top-menu-tool-bar px-0"
+         [attr.aria-label]="'Actions' | translate:locale.language"
+         role="toolbar">
       <button (click)="onBack()"
+              [attr.aria-label]="'Back' | translate:locale.language"
               [disabled]="!currentPath"
-              class="btn btn-default me-1"
+              [tooltip]="'Back' | translate:locale.language"
+              class="btn btn-default"
               type="button">
         <svg [lucideIcon]="icons.LucideCircleArrowLeft"></svg>
       </button>
@@ -30,7 +34,9 @@
                  class="form-control"
                  [placeholder]="'New folder' | translate:locale.language" type="text">
           <button (click)="addDirectory()"
+                  [attr.aria-label]="'New folder' | translate:locale.language"
                   [disabled]="!canCreateDir || !newDirectoryName?.trim()"
+                  [tooltip]="'New folder' | translate:locale.language"
                   class="btn btn-default input-group-text"
                   type="button">
             <svg [lucideIcon]="icons.LucideFolderPlus"></svg>

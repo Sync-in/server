@@ -249,44 +249,114 @@
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  align-content: center;
-  flex: 1 1 auto !important;
-  padding: .5rem;
+  flex: 1 1 auto;
+  padding: $btn-padding-x;
   border-top: .5px solid;
   border-bottom: .5px solid;
   height: $sidebar-apps-icons-height;
+}
 
-  .btn.me-1, .btn-group.me-1 {
-    // handles space between button
-    margin-right: .4rem !important;
+.app-top-menu-tool-bar {
+  --app-top-menu-action-active-bg: rgba(var(--bs-primary-rgb), #{$app-top-menu-action-active-bg-opacity});
+  --app-top-menu-action-highlighted-bg: rgba(var(--bs-primary-rgb), #{$app-top-menu-action-highlighted-bg-opacity});
+
+  gap: .3rem;
+  padding: 0 .55rem;
+
+  > .btn-custom {
+    margin-right: 0;
+  }
+
+  .btn-group {
+    flex: 0 0 auto;
   }
 
   .btn {
-    min-height: 31px;
-    min-width: 35px;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    min-width: $app-top-menu-action-min-width;
+    min-height: $app-top-menu-action-min-height;
+    padding: $btn-padding-y ($btn-padding-x + $dropdown-spacer);
+    border-radius: $border-radius-lg;
+    white-space: nowrap;
 
     > .lucide {
+      flex: 0 0 auto;
+      margin: 0;
       font-size: $font-size-xl;
     }
 
-    span {
+    > span {
       display: inline-flex;
       align-items: center;
-      font-size: $font-size-xs;
-
-      .lucide {
-        font-size: $font-size-2xl;
-        margin-right: 0.2rem;
-      }
+      font-size: .8rem;
+      font-weight: $app-top-menu-label-font-weight;
+      line-height: 1;
     }
   }
 
+  :is(.btn-default, .btn-custom):not(.input-group-text) {
+    border-color: transparent !important;
+    background-color: transparent !important;
+
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      border-color: transparent !important;
+    }
+
+    &:is(.active, :active, [aria-pressed='true']):not(:disabled) {
+      border-color: transparent !important;
+      background-color: var(--app-top-menu-action-active-bg) !important;
+    }
+
+    &:disabled {
+      border-color: transparent !important;
+      background-color: transparent !important;
+      opacity: $btn-disabled-opacity;
+    }
+  }
+
+  .app-top-menu-tool-bar__action--highlighted.btn-default {
+    background-color: var(--app-top-menu-action-highlighted-bg) !important;
+
+    &:disabled {
+      background-color: var(--app-top-menu-action-highlighted-bg) !important;
+    }
+  }
+
+  .app-top-menu-tool-bar__action--icon {
+    width: $app-top-menu-action-min-width;
+    padding-inline: 0;
+
+    &.dropdown-toggle::after {
+      display: none;
+    }
+  }
+
+  .app-top-menu-tool-bar__utilities {
+    flex: 0 0 auto;
+    padding-left: $btn-padding-x + $dropdown-spacer;
+  }
+
+  .dropdown-toggle:not(.app-top-menu-tool-bar__action--icon)::after {
+    margin-left: $dropdown-padding-y;
+    opacity: $app-top-menu-dropdown-indicator-opacity;
+  }
+
   .dropdown-menu {
-    margin: 1px;
+    margin: $dropdown-spacer;
+    padding: $dropdown-padding-y;
+    border-radius: $border-radius-lg;
 
     .dropdown-item {
+      padding: $dropdown-item-padding-y $dropdown-item-padding-x;
+      border-radius: $border-radius-base;
+      font-weight: 450;
+
       &.disabled {
-        opacity: 0.4;
+        opacity: $btn-disabled-opacity;
       }
 
       span {
@@ -294,10 +364,40 @@
         align-items: center;
 
         .lucide {
-          margin-right: 0.4rem;
+          margin-right: $dropdown-item-padding-x;
           font-size: $font-size-md;
         }
       }
+    }
+
+    .dropdown-divider {
+      margin: $dropdown-divider-margin-y 0;
+    }
+  }
+}
+
+@include media-breakpoint-down(sm) {
+  .app-top-menu-tool-bar {
+    height: auto;
+    min-height: $sidebar-apps-icons-height;
+    flex-wrap: wrap !important;
+    padding-inline: $dropdown-padding-y;
+
+    .btn-group.d-none {
+      display: inline-flex !important;
+    }
+
+    .btn > .app-top-menu-tool-bar__label {
+      display: none;
+    }
+
+    .app-top-menu-tool-bar__action--quiet {
+      width: $app-top-menu-action-min-width;
+      padding-inline: 0;
+    }
+
+    .app-top-menu-tool-bar__utilities {
+      padding-left: $btn-padding-y;
     }
   }
 }

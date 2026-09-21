@@ -5,10 +5,10 @@
         <svg [lucideIcon]="icons.LucideGlobe"></svg>
       }
       @case ('directory') {
-        <svg [lucideIcon]="icons.LucideFolderClosed"></svg>
+        <img [src]="directoryMimeUrl" class="me-2" alt="" draggable="false" height="26" width="26" />
       }
       @case ('file') {
-        <svg [lucideIcon]="icons.LucideFileText"></svg>
+        <img [src]="selectedDocumentMimeUrl()" class="me-2" alt="" draggable="false" height="26" width="26" />
       }
     }
     <span l10nTranslate>{{ fileProp.title }}</span>
@@ -16,24 +16,39 @@
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white" type="button"></button>
 </div>
 <div class="modal-body">
-  @if (inputType === 'file') {
-    <div class="btn-group mb-3" dropdown>
-      <button aria-controls="dropdown-animated" class="btn btn-primary dropdown-toggle" dropdownToggle id="button-animated" type="button">
-        <span l10nTranslate>{{ selectedDocType }}</span>
-        <svg [lucideIcon]="icons.LucideChevronDown" class="ms-3"></svg>
-      </button>
-      <ul *dropdownMenu aria-labelledby="button-animated" class="dropdown-menu" id="dropdown-animated" role="menu">
+  @if (inputType !== 'download') {
+    <div class="mb-3" role="group" [attr.aria-label]="'New' | translate: locale.language">
+      <div class="row g-2">
+        <div class="col-12 col-sm-6">
+          <button
+            (click)="onSelectDirectory()"
+            [attr.aria-pressed]="inputType === 'directory'"
+            [class.active]="inputType === 'directory'"
+            class="btn btn-default w-100 me-0 justify-content-start"
+            type="button">
+            <img [src]="directoryMimeUrl" alt="" draggable="false" height="24" width="24" />
+            <span l10nTranslate>New folder</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="text-muted text-uppercase text-bold fs-xs mt-3 mb-2" l10nTranslate>Document</div>
+      <div class="row g-2">
         @for (item of docTypes | keyvalue: originalOrderKeyValue; track item.key) {
-          <li role="menuitem">
-            <a (click)="onSelectDocType(item.key)" class="dropdown-item">
-              <div class="d-flex align-items-center">
-                <div class="me-5" l10nTranslate>{{ item.key }}</div>
-                <div class="ms-auto fs-xs">{{ item.value }}</div>
-              </div>
-            </a>
-          </li>
+          <div class="col-12 col-sm-6">
+            <button
+              (click)="onSelectDocType(item.key)"
+              [attr.aria-pressed]="isSelectedDocType(item.key)"
+              [class.active]="isSelectedDocType(item.key)"
+              class="btn btn-default w-100 me-0 justify-content-start"
+              type="button">
+              <img [src]="documentMimeUrl(item.value)" alt="" draggable="false" height="24" width="24" />
+              <span l10nTranslate>{{ item.key }}</span>
+              <span class="ms-auto fs-xs opacity-75">.{{ item.value }}</span>
+            </button>
+          </div>
         }
-      </ul>
+      </div>
     </div>
   }
   @if (inputType === 'download') {
@@ -45,6 +60,7 @@
         [(ngModel)]="downloadProp.url"
         (keydown.control.v)="pasteUrl()"
         (keydown.meta.v)="pasteUrl()"
+        (keyup.enter)="onEnter()"
         [placeholder]="downloadProp.placeholder | translate: locale.language"
         class="form-control"
         type="text"
@@ -55,7 +71,9 @@
   <div class="input-group my-2">
     <span class="input-group-text">
       @if (inputType === 'directory') {
-        <svg [lucideIcon]="icons.LucideFolderClosed"></svg>
+        <img [src]="directoryMimeUrl" alt="" draggable="false" height="24" width="24" />
+      } @else if (inputType === 'file') {
+        <img [src]="selectedDocumentMimeUrl()" alt="" draggable="false" height="24" width="24" />
       } @else {
         <svg [lucideIcon]="icons.LucideFileText"></svg>
       }
@@ -63,11 +81,10 @@
     <input
       #InputText
       [(ngModel)]="fileProp.name"
+      (keyup.enter)="onEnter()"
       [placeholder]="fileProp.placeholder | translate: locale.language"
       class="form-control"
-      type="text"
-      appAutofocus
-    />
+      type="text" />
   </div>
 </div>
 <div class="modal-footer">

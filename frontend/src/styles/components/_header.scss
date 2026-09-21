@@ -18,7 +18,7 @@
     border: none;
     @include border-radius(0);
     padding: 0;
-    background-color: $primary;
+    background-color: $app-header-bg;
   }
 
   .navbar-content {
@@ -34,7 +34,7 @@
     }
 
     .navbar-logo-button {
-      padding: 0 .4rem;
+      padding: 0 .5rem;
       flex-shrink: 0;
 
       &:hover,
@@ -87,7 +87,7 @@
 
     .navbar-breadcrumb {
       margin-left: -.5px;
-      border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
+      border-left: .5px solid $app-header-border-color;
       flex: 1 1 auto;
       min-width: 0;
       overflow: hidden;
@@ -98,7 +98,7 @@
       display: block;
       flex: 0 1 250px;
       min-width: 190px;
-      padding: 0 .5rem;
+      padding: 0 .55rem;
     }
 
     &.navbar-content--search app-navbar-search {
@@ -106,7 +106,7 @@
       min-width: 280px;
       margin-left: -.5px;
       margin-right: auto;
-      border-left: .5px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
+      border-left: .5px solid $app-header-border-color;
     }
 
     .navbar-search {
@@ -133,20 +133,35 @@
     }
 
     .navbar-search-panel {
+      --navbar-search-border-color: #{$app-header-border-color};
+
       display: flex;
       align-items: center;
       width: 100%;
       min-width: 0;
       height: 32px;
-      border: 1px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
+      border: 1px solid var(--navbar-search-border-color);
       border-radius: $border-radius-base;
       background: rgba($black, .12);
       transition: border-color .15s ease;
     }
 
     .navbar-search-mode {
+      position: relative;
       flex: 0 0 auto;
       height: 100%;
+
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1;
+        width: 1px;
+        background-color: var(--navbar-search-border-color);
+        pointer-events: none;
+      }
     }
 
     .navbar-search-mode-toggle {
@@ -158,7 +173,6 @@
       height: 100%;
       padding: 0 .25rem;
       border: 0;
-      border-right: 1px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
       background: transparent;
       color: $white;
 
@@ -295,7 +309,7 @@
 
     .navbar-search-submit {
       right: 0;
-      border-left: 1px solid mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
+      border-left: 1px solid var(--navbar-search-border-color);
 
       &:disabled {
         opacity: .4;
@@ -371,7 +385,6 @@
           width: 100%;
           height: 32px;
           margin: 0;
-          border-color: mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
           background: rgba($black, .12);
           box-shadow: none;
         }
@@ -395,8 +408,7 @@
         width: auto;
         height: 42px;
         margin: .4rem;
-        border-color: mix($sidebar-light-icons-menu-hover-bg, $primary, 50%);
-        background: $primary;
+        background: $app-header-bg;
         box-shadow: 0 .35rem 1rem rgba($black, .28);
       }
 
@@ -406,7 +418,7 @@
     }
 
     .navbar-search-panel:focus-within {
-      border-color: mix($sidebar-light-icons-menu-hover-bg, $primary, 75%);
+      --navbar-search-border-color: #{$app-header-border-focus-color};
     }
   }
 
@@ -457,8 +469,8 @@
   min-width: 0;
   height: $navbar-height;
   background: transparent;
-  font-size: .8rem;
-  padding: 0 .5rem 0 .875rem;
+  font-size: $font-size-base;
+  padding: 0 .5rem;
   margin: 0;
   color: $sidebar-light-icons-menu-color;
 

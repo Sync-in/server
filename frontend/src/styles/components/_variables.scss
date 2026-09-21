@@ -11,6 +11,15 @@ $layout-logo-container-size: 32px;
 $layout-logo-image-size: 24px;
 $sidebar-z-index: 1030;
 $content-z-index: 1000;
+
+// Top menu toolbar
+$app-top-menu-action-min-width: 2.1875rem;
+$app-top-menu-action-min-height: 1.9375rem;
+$app-top-menu-label-font-weight: 450;
+$app-top-menu-action-active-bg-opacity: .16;
+$app-top-menu-action-highlighted-bg-opacity: .12;
+$app-top-menu-dropdown-indicator-opacity: .65;
+
 // Sidebar right (control)
 //--------------------------------------------------------
 $control-sidebar-width: 310px;
@@ -41,10 +50,8 @@ $sidebar-dark-apps-menu-hover-color: #fff;
 $sidebar-dark-apps-menu-border-color: #8ea8b4;
 //Light sidebar
 $sidebar-light-icons-menu-bg: $primary;
-//$sidebar-light-icons-menu-hover-bg: #2a445e;
 $sidebar-light-icons-menu-hover-bg: darken($sidebar-light-icons-menu-bg, 15%);
 $sidebar-light-icons-menu-color: $gray-lightest;
-$sidebar-light-apps-menu-title-bg: $sidebar-light-icons-menu-bg;
 $sidebar-light-apps-menu-title-color: $theme-muted-blue;
 $sidebar-light-apps-menu-bg: mix($gray-lightest, $gray-lighter, 60%);
 $sidebar-light-apps-menu-color: $custom-dark-color;
@@ -55,19 +62,26 @@ $sidebar-light-apps-menu-border-color: $gray-mid;
 //--------------------------------------------------------
 //Shared theme tokens
 $theme-btn-bg-hover-overlay-shadow: rgba(0, 0, 0, 0.2);
-$theme-dropdown-divider-bg: #eee;
 $theme-dialog-tab-active-bg: $primary;
 $theme-dialog-tab-active-border-color: darken($primary, 7%);
 $theme-dialog-tab-count-color: inherit;
+$app-header-bg: mix($primary, $sidebar-dark-icons-menu-bg, 85%);
+$app-header-border-color: mix($sidebar-light-icons-menu-hover-bg, $primary, 75%);
+$app-header-border-focus-color: mix($sidebar-light-icons-menu-hover-bg, $primary, 90%);
 
 //Dark theme
 $dark-bg-theme: darken($sidebar-dark-icons-menu-bg, 4%);
 $dark-tree-node-hover-bg: $sidebar-dark-apps-menu-title-bg;
 $dark-tree-node-selected-bg: darken($sidebar-dark-apps-menu-title-bg, 4%);
 $dark-surface-bg: lighten($sidebar-dark-icons-menu-bg, 5%);
+$dark-menu-bg: darken($sidebar-dark-icons-menu-bg, 1.5%);
+$dark-menu-surface-border: mix($theme-muted-blue, $dark-menu-bg, 18%);
+$dark-highlighted-action-bg: mix($primary, $dark-menu-bg, 55%);
+$dark-action-state-bg: mix($primary, $dark-menu-bg, 78%);
 $dark-surface-border: lighten($sidebar-dark-icons-menu-border-color, 10%);
 $dark-item-color: lighten($gray-light, 8%);
 $dark-item-hover-color: lighten($gray-light, 14%);
+$dark-control-state-color: mix($white, $theme-muted-blue, 55%);
 $dark-item-disabled-color: darken($gray-light, 12%);
 $dark-border-subtle: darken($sidebar-dark-icons-menu-border-color, 3%);
 $dark-table-row-hover-bg: $sidebar-dark-icons-menu-bg;
@@ -116,11 +130,11 @@ $light-surface-border: mix($primary, $gray-light, 14%);
 $light-item-color: darken($gray-dark, 18%);
 $light-item-hover-color: darken($gray-dark, 28%);
 $light-item-disabled-color: lighten($gray-dark, 18%);
-$light-table-head-bg: #F3F7FD;
 $light-table-row-hover-bg: mix($table-bg-hover, $white, 50%);
 $light-table-row-selected-bg: mix($selected-background, $white, 50%);
 $light-row-selected-bg: darken($table-bg-hover, 4%);
 $light-menu-surface-bg: #eef4fc;
+$light-overlay-menu-bg: #e3ecf9;
 $light-menu-surface-border: #cfdded;
 $light-menu-item-hover-bg: #bdd7f4;
 $light-menu-surface-shadow: 0 12px 24px rgba(27, 56, 94, 0.14);

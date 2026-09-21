@@ -1,32 +1,39 @@
 <!--Start Top Menu-->
-<div class="app-top-menu">
-  <button (click)="openLinkDialog()"
-          [disabled]="!selected" class="btn btn-default me-1"
-          [tooltip]="'Edit link' | translate:locale.language"
-          type="button">
-    <svg [lucideIcon]="icons.LucidePencil"></svg>
-  </button>
+<div class="app-top-menu app-top-menu-tool-bar"
+     [attr.aria-label]="'Actions' | translate:locale.language"
+     role="toolbar">
   <button (click)="copyToClipboard()"
+          [attr.aria-label]="'Copy link' | translate:locale.language"
           [disabled]="!selected"
-          class="btn me-1 {{linkWasCopied ? 'btn-primary' : 'btn-default'}}"
-          [tooltip]="'Copy link' | translate:locale.language"
+          class="btn {{linkWasCopied ? 'btn-primary' : 'btn-default'}} app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
           type="button">
     <svg [lucideIcon]="linkWasCopied? icons.LucideClipboardCheck : icons.LucideClipboard"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Copy link</span>
+  </button>
+  <button (click)="openLinkDialog()"
+          [attr.aria-label]="'Edit link' | translate:locale.language"
+          [disabled]="!selected"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet"
+          type="button">
+    <svg [lucideIcon]="icons.LucidePencil"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Edit link</span>
   </button>
   <button (click)="goTo()"
+          [attr.aria-label]="'Go to' | translate:locale.language"
           [disabled]="!selected"
           class="btn btn-default"
           [tooltip]="'Go to' | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucideMapPin"></svg>
   </button>
+  <button (click)="loadShareLinks()"
+          [attr.aria-label]="'Refresh' | translate:locale.language"
+          class="d-none d-sm-block btn btn-default"
+          [tooltip]="'Refresh' | translate:locale.language"
+          type="button">
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+  </button>
   <div class="d-flex align-items-center ms-auto">
-    <button (click)="loadShareLinks()"
-            class="d-none d-sm-block btn btn-default me-1"
-            [tooltip]="'Refresh' | translate:locale.language"
-            type="button">
-      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
-    </button>
     <!--Start View Button-->
     <app-navigation-view (switchView)="galleryMode = $event">
     </app-navigation-view>

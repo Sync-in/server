@@ -1,4 +1,4 @@
-<div class="sidebar-component-title justify-content-between">
+<div class="sidebar-component-title app-top-menu-tool-bar justify-content-between">
   <div style="width: 25px"></div>
   <div>
     @switch (nbActiveTasks) {
@@ -19,11 +19,17 @@
   @if (nbTotalTasks) {
     <div class="d-flex gap-1">
       @if (hasCancellableTasks) {
-        <button type="button" (click)="cancelTasks()" [tooltip]="'Stop' | translate:locale.language" class="btn btn-default" placement="top">
-          <svg [lucideIcon]="icons.LucideSquare"></svg>
+        <button type="button"
+                (click)="cancelTasks()"
+                [tooltip]="'Stop' | translate:locale.language"
+                class="btn btn-default app-top-menu-tool-bar__action--highlighted"
+                placement="top">
+          <svg [lucideIcon]="icons.LucideOctagonX"></svg>
         </button>
       }
-      <button type="button" (click)="removeTasks()" class="btn btn-default">
+      <button type="button"
+              (click)="removeTasks()"
+              class="btn btn-default app-top-menu-tool-bar__action--highlighted">
         <svg [lucideIcon]="icons.LucideX"></svg>
       </button>
     </div>
@@ -104,7 +110,7 @@
                   [tooltip]="'Stop' | translate:locale.language"
                   class="btn btn-sm btn-default task-list__cancel"
                   placement="top">
-            <svg [lucideIcon]="icons.LucideSquare"></svg>
+            <svg [lucideIcon]="icons.LucideOctagonX"></svg>
           </button>
         }
       </div>

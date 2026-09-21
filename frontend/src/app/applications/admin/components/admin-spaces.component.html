@@ -1,27 +1,35 @@
 <!--Start Top Menu-->
-<div class="app-top-menu">
+<div class="app-top-menu app-top-menu-tool-bar"
+     [attr.aria-label]="'Actions' | translate:locale.language"
+     role="toolbar">
   <button (click)="openSpaceDialog(true)"
-          class="btn btn-default me-1"
+          [attr.aria-label]="'New space' | translate:locale.language"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
           [tooltip]="'New space' | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucidePlus"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>New</span>
   </button>
   <button (click)="openSpaceDialog()"
+          [attr.aria-label]="'Edit space' | translate:locale.language"
           [disabled]="!selected"
-          class="btn btn-default me-1"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet"
           [tooltip]="'Edit space' | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucidePencil"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Edit</span>
   </button>
   <button (click)="openChildShareDialog()"
+          [attr.aria-label]="'Edit children shares' | translate:locale.language"
           [disabled]="!selected?.counts.shares"
-          class="btn btn-default me-1"
+          class="btn btn-default"
           [tooltip]="'Edit children shares' | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.SHARES"></svg>
   </button>
-  <div class="d-flex align-items-center ms-auto">
+  <div class="d-flex align-items-center">
     <button (click)="loadSpaces()"
+            [attr.aria-label]="'Refresh' | translate:locale.language"
             class="d-none d-sm-block btn btn-default"
             [tooltip]="'Refresh' | translate:locale.language"
             type="button">

@@ -45,7 +45,7 @@
         &:hover, &.active {
           > a {
             background: $sidebar-dark-apps-menu-hover-bg;
-            color: $sidebar-dark-apps-menu-hover-color;
+            color: var(--app-menu-item-color);
 
             > .lucide:first-child {
               color: $primary;
@@ -121,6 +121,13 @@
 }
 
 @mixin skin-dark-app() {
+  --app-action-state-bg: #{$dark-action-state-bg};
+  --app-action-state-color: #{$gray-lightest};
+  --app-menu-item-color: #{$gray-lighter};
+  --app-primary-action-bg: rgba(var(--bs-primary-rgb), 0.48);
+  --app-menu-surface-bg: #{$dark-menu-bg};
+  --app-menu-surface-border: #{$dark-menu-surface-border};
+
   .dialog-tab-card {
     box-shadow: 0 12px 24px $dark-dialog-tab-card-shadow-color;
   }
@@ -181,12 +188,12 @@
   .btn-custom,
   .btn-outline-secondary-alt {
     border-color: $dark-surface-border !important;
-    color: $dark-item-color !important;
+    color: $theme-muted-blue !important;
     background-color: $dark-surface-bg !important;
 
     &:hover:not(:disabled) {
       border-color: mix($primary, $sidebar-dark-icons-menu-border-color, 34%) !important;
-      color: $dark-item-hover-color !important;
+      color: $dark-control-state-color !important;
       background-color: $sidebar-dark-icons-menu-bg !important;
     }
 
@@ -212,6 +219,20 @@
     background-color: $primary !important;
     border-color: $primary !important;
     color: $white !important;
+  }
+  app-files-files-new-dialog .btn-default[aria-pressed] {
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      color: var(--app-action-state-color) !important;
+      border-color: var(--app-action-state-bg) !important;
+      background-color: var(--app-action-state-bg) !important;
+    }
+
+    &:is(.active, :active, [aria-pressed='true']):not(:disabled) {
+      color: var(--app-action-state-color) !important;
+      border-color: var(--app-action-state-bg) !important;
+      background-color: var(--app-action-state-bg) !important;
+    }
   }
   app-input-filter {
     .filter-shell {
@@ -260,34 +281,36 @@
     }
   }
   .dropdown-menu {
-    border: .5px solid $dark-surface-border !important;
-    background-color: $dark-surface-bg !important;
+    border: .5px solid var(--app-menu-surface-border) !important;
+    background-color: var(--app-menu-surface-bg) !important;
     box-shadow: $dark-menu-surface-shadow;
 
     > li > a {
-      color: $dark-item-color;
+      color: var(--app-menu-item-color);
       background-color: transparent;
 
       &:hover {
-        background-color: $sidebar-dark-icons-menu-hover-bg !important;
+        color: var(--app-action-state-color);
+        background-color: var(--app-action-state-bg) !important;
       }
     }
 
     > .divider {
-      background-color: $theme-dropdown-divider-bg;
+      background-color: var(--app-menu-surface-border);
     }
   }
   .dropdown-item {
-    color: $dark-item-color;
+    color: var(--app-menu-item-color);
 
     &:hover,
     &.active,
     &:active {
-      background-color: $sidebar-dark-icons-menu-bg !important;
+      color: var(--app-action-state-color);
+      background-color: var(--app-action-state-bg) !important;
     }
   }
   .dropdown-divider {
-    border-top-color: $dark-surface-border !important;
+    border-top-color: var(--app-menu-surface-border) !important;
   }
 
   .virtual-scroll-border-top {
@@ -325,18 +348,38 @@
   .app-top-menu {
     border-top-color: $sidebar-dark-icons-menu-border-color;
     border-bottom-color: $sidebar-dark-icons-menu-border-color;
-    background-color: darken($sidebar-dark-icons-menu-bg, 1.5%);
+    background-color: $dark-menu-bg;
+  }
 
-    .dropdown-menu {
-      > li > a {
-        color: $gray-light;
-      }
+  :is(.app-top-menu, .sidebar-component-title).app-top-menu-tool-bar {
+    --app-top-menu-action-active-bg: var(--app-action-state-bg);
+    --app-top-menu-action-highlighted-bg: #{$dark-highlighted-action-bg};
+    --app-top-menu-action-hover-bg: var(--app-action-state-bg);
+
+    :is(.btn-default, .btn-custom):not(:disabled) {
+      color: var(--app-menu-item-color) !important;
     }
 
-    .dropdown-item {
-      color: $gray-light;
+    :is(.btn-default, .btn-custom):focus-visible:not(:disabled) {
+      background-color: var(--app-top-menu-action-hover-bg) !important;
+      color: var(--app-menu-item-color) !important;
+    }
+
+    :is(.btn-default, .btn-custom):is(.active, :active, [aria-pressed='true']):not(:disabled) {
+      background-color: var(--app-top-menu-action-active-bg) !important;
+      color: var(--app-action-state-color) !important;
+    }
+
+    :is(.btn-default, .btn-custom):hover:not(:disabled) {
+      background-color: var(--app-top-menu-action-hover-bg) !important;
+      color: var(--app-action-state-color) !important;
+    }
+
+    .btn-default.input-group-text:hover:not(:disabled) {
+      border-color: $dark-surface-border !important;
     }
   }
+
   .app-foot-menu {
     border-top: 0.5px solid $dark-border-subtle !important;
     background-color: $sidebar-dark-icons-menu-bg;
@@ -440,8 +483,6 @@
                     #{mix($sidebar-dark-apps-menu-title-bg, $dark-dialog-tab-bg, 62%)} 100%
     );
     --sync-client-subtle-color: #{$dark-item-color};
-    --sync-client-paths-count-fg: #{$white};
-    --sync-client-paths-count-bg: #{lighten($primary, 6%)};
     --sync-client-path-empty-border: #{$dark-dialog-check-card-hover-border-color};
     --sync-client-path-empty-bg: #{mix($dark-dialog-tab-bg, $sidebar-dark-apps-menu-title-bg, 70%)};
     --sync-path-actions-separator: #{$dark-dialog-check-card-border-color};
@@ -505,27 +546,29 @@
     background-color: lighten($sidebar-dark-apps-menu-bg, 4%);
     color: $gray-light;
   }
-  //.content-container {
-  //  border-left: .5px solid $sidebar-dark-icons-menu-border-color;
-  //}
   .ngx-contextmenu {
-    background-color: $dark-surface-bg !important;
-    border-color: $dark-surface-border !important;
+    background-color: var(--app-menu-surface-bg) !important;
+    border-color: var(--app-menu-surface-border) !important;
     box-shadow: $dark-menu-surface-shadow !important;
 
     > button.ngx-context-menu-item {
-      color: $gray-light !important;
+      color: var(--app-menu-item-color) !important;
       background-color: transparent !important;
 
-      &:hover,
-      &:focus-visible,
-      &.active {
-        background-color: $sidebar-dark-icons-menu-hover-bg !important;
+      &:focus-visible {
+        color: var(--app-menu-item-color) !important;
+        background-color: var(--app-action-state-bg) !important;
+      }
+
+      &.active,
+      &:hover {
+        color: var(--app-action-state-color) !important;
+        background-color: var(--app-action-state-bg) !important;
       }
     }
 
     > [role='separator'] {
-      border-top-color: $dark-surface-border !important;
+      border-top-color: var(--app-menu-surface-border) !important;
     }
   }
   .dialog-tab-card,
@@ -689,6 +732,13 @@
     color: $gray-light !important;
     background-color: lighten($sidebar-dark-apps-menu-title-bg, 8%) !important;
   }
+  @include view-switch-theme(
+    $surface: $dark-bg-theme,
+    $border: $dark-surface-border,
+    $text: $dark-control-state-color,
+    $muted: $dark-text-muted-color,
+    $state-background: var(--app-primary-action-bg)
+  );
   @include recents-theme(
     $surface: $dark-surface-bg,
     $surface-muted: $dark-bg-theme,
@@ -699,7 +749,6 @@
     $border-hover: $dark-dialog-check-card-hover-border-color,
     $text: $dark-item-hover-color,
     $muted: $dark-text-muted-color,
-    $primary-soft: rgba($primary, 0.26),
     $card-shadow: $dark-dialog-tab-card-shadow-color,
     $card-hover-shadow: $dark-dialog-check-card-hover-shadow-color
   );

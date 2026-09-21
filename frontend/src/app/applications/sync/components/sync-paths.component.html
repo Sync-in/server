@@ -1,46 +1,49 @@
-<div class="app-top-menu">
+<div class="app-top-menu app-top-menu-tool-bar"
+     [attr.aria-label]="'Actions' | translate:locale.language"
+     role="toolbar">
   <button (click)="addToSync()"
-          [tooltip]="'Add' | translate:locale.language"
-          class="btn btn-default me-1" type="button">
+          [attr.aria-label]="'New' | translate:locale.language"
+          [tooltip]="'New' | translate:locale.language"
+          class="btn btn-default app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--highlighted" type="button">
     <svg [lucideIcon]="icons.LucidePlus"></svg>
   </button>
   <button (click)="openSettingsDialog()"
+          [attr.aria-label]="'Edit' | translate:locale.language"
           [disabled]="!syncPathSelected"
           [tooltip]="'Edit' | translate:locale.language"
-          class="btn btn-default me-1" type="button">
+          class="btn btn-default app-top-menu-tool-bar__action--icon" type="button">
     <svg [lucideIcon]="icons.LucidePencil"></svg>
-  </button>
-  <button (click)="openReportDialog()"
-          [disabled]="!syncPathSelected || !syncPathSelected.settings.enabled"
-          [tooltip]="'Simulate' | translate:locale.language"
-          class="btn btn-default me-1" type="button">
-    <svg [lucideIcon]="icons.LucideFlaskConical"></svg>
   </button>
   <!--Start Sync Buttons-->
   @if (syncPathSelected && syncPathSelected.inSync) {
     <button (click)="doSync(false)"
+            [attr.aria-label]="'Stop synchronization' | translate:locale.language"
             [tooltip]="'Stop synchronization' | translate:locale.language"
-            class="btn btn-warning me-1" type="button">
+            class="btn btn-warning app-top-menu-tool-bar__action--icon" type="button">
       <svg [lucideIcon]="icons.LucideSquare"></svg>
     </button>
   } @else {
     <button (click)="doSync(true)"
+            [attr.aria-label]="'Synchronize' | translate:locale.language"
             [disabled]="!syncPathSelected || !syncPathSelected.settings.enabled"
             [tooltip]="'Synchronize' | translate:locale.language"
-            class="btn btn-default me-1" type="button">
+            class="btn btn-default app-top-menu-tool-bar__action--icon" type="button">
       <svg [lucideIcon]="icons.LucidePlay"></svg>
     </button>
   }
   @if (allSyncsRunning) {
     <button (click)="doAllSyncs(false)"
+            [attr.aria-label]="'Stop synchronizations' | translate:locale.language"
             [tooltip]="'Stop synchronizations' | translate:locale.language"
-            class="btn btn-warning me-1" type="button">
+            class="btn btn-warning app-top-menu-tool-bar__action--icon" type="button">
       <svg [lucideIcon]="icons.LucideSquare"></svg>
     </button>
   } @else {
     <div [tooltip]="'Synchronize all' | translate:locale.language">
-      <div class="btn-group me-1" dropdown [isDisabled]="!store.clientSyncPaths().length">
-        <button class="btn btn-default dropdown-toggle" dropdownToggle type="button">
+      <div class="btn-group" dropdown [isDisabled]="!store.clientSyncPaths().length">
+        <button class="btn btn-default dropdown-toggle app-top-menu-tool-bar__action--icon"
+                [attr.aria-label]="'Synchronize all' | translate:locale.language"
+                dropdownToggle type="button">
           <svg [lucideIcon]="icons.LucideFastForward"></svg>
         </button>
         <ul *dropdownMenu class="dropdown-menu" role="menu">
@@ -64,9 +67,18 @@
       </div>
     </div>
   }
+  <button (click)="openReportDialog()"
+          [attr.aria-label]="'Simulate' | translate:locale.language"
+          [disabled]="!syncPathSelected || !syncPathSelected.settings.enabled"
+          [tooltip]="'Simulate' | translate:locale.language"
+          class="btn btn-default app-top-menu-tool-bar__action--icon" type="button">
+    <svg [lucideIcon]="icons.LucideFlaskConical"></svg>
+  </button>
   <div [tooltip]="(('Scheduler' | translate:locale.language) + ': ' + (store.clientScheduler() | translate:locale.language))">
-    <div class="btn-group me-1" dropdown>
-      <button class="btn {{store.clientScheduler() === CLIENT_SCHEDULER_STATE.DISABLED ? 'btn-warning' : 'btn-success'}} dropdown-toggle" dropdownToggle type="button">
+    <div class="btn-group" dropdown>
+      <button class="btn {{store.clientScheduler() === CLIENT_SCHEDULER_STATE.DISABLED ? 'btn-warning' : 'btn-success'}} dropdown-toggle app-top-menu-tool-bar__action--icon"
+              [attr.aria-label]="(('Scheduler' | translate:locale.language) + ': ' + (store.clientScheduler() | translate:locale.language))"
+              dropdownToggle type="button">
         @if (store.clientScheduler() === CLIENT_SCHEDULER_STATE.DISABLED) {
           <svg [lucideIcon]="icons.LucideCalendarX"></svg>
         } @else {
@@ -105,8 +117,10 @@
   </div>
   <!--End Sync Buttons-->
   <div [tooltip]="'Go to' | translate:locale.language">
-    <div [isDisabled]="!syncPathSelected" class="btn-group me-1" dropdown>
-      <button class="btn btn-default dropdown-toggle" dropdownToggle type="button">
+    <div [isDisabled]="!syncPathSelected" class="btn-group" dropdown>
+      <button class="btn btn-default dropdown-toggle app-top-menu-tool-bar__action--icon"
+              [attr.aria-label]="'Go to' | translate:locale.language"
+              dropdownToggle type="button">
         <svg [lucideIcon]="icons.LucideMapPin"></svg>
       </button>
       <ul *dropdownMenu class="dropdown-menu" role="menu">
@@ -129,10 +143,11 @@
       </ul>
     </div>
   </div>
-  <div class="d-flex align-items-center ms-auto">
+  <div class="d-flex align-items-center">
     <button (click)="onRefresh()"
+            [attr.aria-label]="'Refresh' | translate:locale.language"
             [tooltip]="'Refresh' | translate:locale.language"
-            class="d-none d-sm-block btn btn-default" type="button">
+            class="d-none d-sm-block btn btn-default app-top-menu-tool-bar__action--icon" type="button">
       <svg [lucideIcon]="icons.LucideRotateCw"></svg>
     </button>
   </div>
@@ -288,5 +303,5 @@
     </span>
   </ng-template>
   <ng-template [divider]="true" contextMenuItem></ng-template>
-  <ng-template (execute)="addToSync()" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucidePlus"></svg>Add</span></ng-template>
+  <ng-template (execute)="addToSync()" contextMenuItem><span l10nTranslate><svg [lucideIcon]="icons.LucidePlus"></svg>New</span></ng-template>
 </context-menu>

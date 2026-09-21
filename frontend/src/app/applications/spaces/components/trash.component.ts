@@ -5,7 +5,6 @@ import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideRotateCw } fro
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import type { SpaceTrash } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-trash.interface'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
-import { TooltipModule } from 'ngx-bootstrap/tooltip'
 import { NavigationViewComponent, ViewMode } from '../../../common/components/navigation-view/navigation-view.component'
 import { VirtualScrollComponent } from '../../../common/components/virtual-scroll.component'
 import { TapDirective } from '../../../common/directives/tap.directive'
@@ -27,7 +26,6 @@ import { SPACES_ICON, SPACES_PATH, SPACES_TITLE } from '../spaces.constants'
     LucideDynamicIcon,
     NavigationViewComponent,
     L10nTranslatePipe,
-    TooltipModule,
     KeyValuePipe,
     VirtualScrollComponent,
     SearchFilterPipe,

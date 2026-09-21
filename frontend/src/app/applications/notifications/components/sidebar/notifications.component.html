@@ -1,4 +1,4 @@
-<div class="sidebar-component-title justify-content-between position-relative">
+<div class="sidebar-component-title app-top-menu-tool-bar justify-content-between position-relative">
   <div class="sidebar-component-title-side">
     @if (store.notifications().length) {
       <div class="badge bg-warning">{{ store.notifications().length }}</div>
@@ -7,7 +7,9 @@
   <div class="sidebar-component-title-label" l10nTranslate>Notifications</div>
   <div class="sidebar-component-title-side">
     @if (store.notifications().length) {
-      <button (click)="removeAll()" class="btn btn-default" type="button">
+      <button (click)="removeAll()"
+              class="btn btn-default app-top-menu-tool-bar__action--highlighted"
+              type="button">
         <svg [lucideIcon]="icons.LucideTrash2"></svg>
       </button>
     }

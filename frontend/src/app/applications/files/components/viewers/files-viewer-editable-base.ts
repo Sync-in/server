@@ -1,7 +1,21 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { AfterViewInit, Directive, effect, HostListener, inject, input, model, OnDestroy, output, signal, untracked } from '@angular/core'
+import {
+  AfterViewInit,
+  Directive,
+  effect,
+  HostListener,
+  inject,
+  input,
+  model,
+  OnDestroy,
+  output,
+  signal,
+  untracked,
+  viewChildren
+} from '@angular/core'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import { L10N_LOCALE, L10nLocale } from 'angular-l10n'
+import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { firstValueFrom } from 'rxjs'
 import { type AppWindow, themeDark } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -25,6 +39,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   protected currentTheme: 'dark' | 'light' = 'light'
   protected readonly layout = inject(LayoutService)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
+  private readonly tooltips = viewChildren(TooltipDirective)
   private readonly http = inject(HttpClient)
   private readonly filesServices = inject(FilesService)
   private readonly filesUpload = inject(FilesUploadService)
@@ -129,6 +144,10 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
 
   protected canRestoreEditorFocus(): boolean {
     return !document.activeElement?.closest('.files-viewer-search')
+  }
+
+  protected hideTooltips(): void {
+    this.tooltips().forEach((tooltip: TooltipDirective) => tooltip.hide())
   }
 
   protected isActiveDialog(): boolean {

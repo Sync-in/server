@@ -1,21 +1,26 @@
 <!--Start Top Menu-->
-<div class="app-top-menu">
+<div class="app-top-menu app-top-menu-tool-bar"
+     [attr.aria-label]="'Actions' | translate:locale.language"
+     role="toolbar">
   <button (click)="openGuestDialog(true)"
+          [attr.aria-label]="'New guest' | translate:locale.language"
           [disabled]="!canCreateGuest"
-          class="btn btn-default me-1"
-          [tooltip]="'New guest' | translate:locale.language"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
           type="button">
     <svg [lucideIcon]="icons.LucidePlus"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>New guest</span>
   </button>
   <button (click)="openGuestDialog()"
+          [attr.aria-label]="'Edit guest' | translate:locale.language"
           [disabled]="!selected"
-          class="btn btn-default me-1"
-          [tooltip]="'Edit guest' | translate:locale.language"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet"
           type="button">
     <svg [lucideIcon]="icons.LucidePencil"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Edit guest</span>
   </button>
-  <div class="d-flex align-items-center ms-auto">
+  <div class="d-flex align-items-center">
     <button (click)="loadGuests()"
+            [attr.aria-label]="'Refresh' | translate:locale.language"
             class="btn btn-default"
             [tooltip]="'Refresh' | translate:locale.language"
             type="button">

@@ -14,8 +14,8 @@
       <form (ngSubmit)="onSubmit()" [formGroup]="twoFaForm" class="d-flex flex-column gap-3 align-items-center">
         @if (withPassword) {
           <div class="w-100" style="max-width: 360px;">
-            <label class="form-label text-muted text-uppercase fs-sm d-block text-center mb-2" for="password" l10nTranslate>Enter your password</label>
-            <app-input-password id="password"
+            <label class="form-label text-muted text-uppercase fs-sm d-block text-center mb-2" for="twoFaVerifyPassword" l10nTranslate>Enter your password</label>
+            <app-input-password inputId="twoFaVerifyPassword"
                                 class="d-block w-100"
                                 [password]="twoFaForm.value.password"
                                 (passwordChange)="updatePassword($event)"

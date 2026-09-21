@@ -1,8 +1,4 @@
 body {
-  .navbar {
-    background-color: $primary;
-  }
-
   &.theme-light {
     @include skin-light-app();
     @include skin-light-left-sidebar();

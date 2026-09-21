@@ -1,28 +1,42 @@
 <!--Start Top Menu-->
-<div class="app-top-menu">
+<div class="app-top-menu app-top-menu-tool-bar"
+     [attr.aria-label]="'Actions' | translate:locale.language"
+     role="toolbar">
   <button (click)="openDialog(true)"
-          class="btn btn-default me-1"
+          [attr.aria-label]="(guestsView ? 'New guest' : 'New user') | translate:locale.language"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
           [tooltip]="(guestsView ? 'New guest' : 'New user') | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>New</span>
   </button>
   <button (click)="openDialog()"
+          [attr.aria-label]="(guestsView ? 'Edit guest' : 'Edit user') | translate:locale.language"
           [disabled]="!selected"
-          class="btn btn-default me-1"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet"
           [tooltip]="(guestsView ? 'Edit guest' : 'Edit user') | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucideUserRoundPen"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Edit</span>
   </button>
   <button (click)="impersonateIdentity()"
+          [attr.aria-label]="'Impersonate identity' | translate:locale.language"
           [disabled]="!selected"
-          class="d-none d-sm-block btn btn-default me-1"
+          class="d-none d-sm-block btn btn-default"
           [tooltip]="'Impersonate identity' | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucideVenetianMask"></svg>
   </button>
+  <button (click)="loadUsersOrGuests()"
+          [attr.aria-label]="'Refresh' | translate:locale.language"
+          class="d-none d-sm-block btn btn-default"
+          [tooltip]="'Refresh' | translate:locale.language"
+          type="button">
+    <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
+  </button>
   <div class="d-flex align-items-center ms-auto">
     <!--Start View Switch-->
-    <div class="view-switch me-1" role="group" aria-label="Select user type">
+    <div class="view-switch" role="group" aria-label="Select user type">
       <button
         type="button"
         class="view-switch__option"
@@ -45,12 +59,6 @@
       </button>
     </div>
     <!--End View Switch-->
-    <button (click)="loadUsersOrGuests()"
-            class="d-none d-sm-block btn btn-default"
-            [tooltip]="'Refresh' | translate:locale.language"
-            type="button">
-      <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
-    </button>
   </div>
 </div>
 <!--End Top Menu-->

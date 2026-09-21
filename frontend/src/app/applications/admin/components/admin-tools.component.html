@@ -10,7 +10,7 @@
                 <div class="card dialog-check-card">
                   <div class="card-body p-2">
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                      <label for="" class="form-label col-7 col-sm-6 mb-0" l10nTranslate>State</label>
+                      <div class="form-label col-7 col-sm-6 mb-0" l10nTranslate>State</div>
                       <div class="col-5 col-sm-6 text-end">
                         @switch (indexingStatus.state) {
                           @case (IndexingState.RUNNING) {
@@ -29,13 +29,13 @@
                       </div>
                     </div>
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
-                      <label for="" class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Indexes</label>
+                      <div class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Indexes</div>
                       <div class="col-5 col-sm-6 text-end">
                         <span class="badge bg-primary">{{ indexingStatus.indexesCount }}</span>
                       </div>
                     </div>
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle mb-2">
-                      <label for="" class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Last partial run</label>
+                      <div class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Last partial run</div>
                       <div class="col-5 col-sm-6 text-end">
                         @if (indexingStatus.lastPartialRunAt) {
                           <span class="badge bg-purple text-muted">{{ indexingStatus.lastPartialRunAt | amDateFormat }}</span>
@@ -45,7 +45,7 @@
                       </div>
                     </div>
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle mb-2">
-                      <label for="" class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Last full run</label>
+                      <div class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Last full run</div>
                       <div class="col-5 col-sm-6 text-end">
                         @if (indexingStatus.lastFullRunAt) {
                           <span class="badge bg-purple text-muted">{{ indexingStatus.lastFullRunAt | amDateFormat }}</span>
@@ -54,7 +54,7 @@
                         }
                       </div>
                     </div>
-                    <label for="" class="form-label me-auto mb-0 text-nowrap" l10nTranslate>Actions</label>
+                    <div class="form-label me-auto mb-0 text-nowrap" l10nTranslate>Actions</div>
                     <div class="d-flex align-items-center">
                       <div class="text-muted no-select fs-sm my-3 px-1 me-auto" l10nTranslate>
                         Start or stop indexing.

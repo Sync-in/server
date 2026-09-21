@@ -15,7 +15,9 @@ import {
   LucideEye,
   LucideFileArchive,
   LucideFileText,
+  LucideFileUp,
   LucideFolderOpen,
+  LucideFolderUp,
   LucideGlobe,
   LucideHardDriveDownload,
   LucideHardDriveUpload,
@@ -125,6 +127,8 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   @ViewChild('MainContextMenu', { static: true }) mainContextMenu: ContextMenuComponent<any>
   @ViewChild('MainReadOnlyContextMenu', { static: true }) mainReadOnlyContextMenu: ContextMenuComponent<any>
   @ViewChild('FileContextMenu', { static: true }) fileContextMenu: ContextMenuComponent<any>
+  @ViewChild('uploadFilesPicker') private uploadFilesPicker: UploadFilesDirective | undefined
+  @ViewChild('uploadFoldersPicker') private uploadFoldersPicker: UploadFilesDirective | undefined
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly layout = inject(LayoutService)
   protected readonly navbarSearch = inject(NavbarSearchService)
@@ -141,6 +145,8 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     LucidePlus,
     LucideCirclePlus,
     LucideFileText,
+    LucideFileUp,
+    LucideFolderUp,
     LucideGlobe,
     LucideHardDriveUpload,
     LucideHardDriveDownload,
@@ -251,7 +257,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private baseRepoUrl: string
   private currentRoute: string
   private isPersonalSpace: boolean
-  private uploadButtonsShowed = false
   // Others
   private subscriptions: Subscription[] = []
   private focusOnSelect: string
@@ -460,20 +465,11 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   shortcutUploadFiles() {
-    if (!this.uploadButtonsShowed) {
-      const newButton = document.getElementById('newButton')
-      newButton.click()
-    }
-    setTimeout(() => document.getElementById('uploadFilesButton').click(), 100)
+    this.uploadFilesPicker?.open()
   }
 
   shortcutUploadFolders() {
-    if (!this.uploadButtonsShowed) {
-      const newButton = document.getElementById('newButton')
-      newButton.click()
-      newButton.click()
-    }
-    setTimeout(() => document.getElementById('uploadFoldersButton').click(), 100)
+    this.uploadFoldersPicker?.open()
   }
 
   shortcutRename() {
@@ -586,12 +582,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     })
   }
 
-  initUpload() {
-    if (!this.isTrashRepo && !this.uploadButtonsShowed) {
-      this.uploadButtonsShowed = true
-    }
-  }
-
   async onUploadFiles(ev: { files: File[] }, isDirectory = false) {
     const selectedFiles = [...ev.files]
     let exist: FileModel[] = []
@@ -634,7 +624,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     })
   }
 
-  openNewDialog(type: 'file' | 'directory' | 'download') {
+  openNewDialog(type: 'file' | 'directory' | 'download' = 'directory') {
     this.layout.openDialog(FilesNewDialogComponent, null, { initialState: { files: this.files, inputType: type } as FilesNewDialogComponent })
   }
 
