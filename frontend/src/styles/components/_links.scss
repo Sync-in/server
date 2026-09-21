@@ -11,9 +11,31 @@
     padding: 10px 0;
     -webkit-box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
     box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
+    transition: background-color .2s ease;
 
     .sync-in-logo {
       height: 40px;
+    }
+
+    .public-link-theme-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: .375rem .5rem;
+      border: 0;
+      background: transparent;
+      color: #000;
+      font-size: $font-size-xl;
+
+      &:hover {
+        opacity: .7;
+      }
+
+      &:focus-visible {
+        border-radius: $border-radius-base;
+        outline: 2px solid currentColor;
+        outline-offset: 2px;
+      }
     }
   }
 
@@ -101,5 +123,13 @@
       font-size: $font-size-xl;
       font-weight: 400;
     }
+  }
+}
+
+body.theme-dark .link-page .header {
+  background: $navy;
+
+  .public-link-theme-toggle {
+    color: #fff;
   }
 }

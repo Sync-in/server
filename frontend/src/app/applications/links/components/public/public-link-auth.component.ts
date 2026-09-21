@@ -1,6 +1,6 @@
 import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { ActivatedRoute, Params, RouterLink } from '@angular/router'
+import { ActivatedRoute, Params } from '@angular/router'
 import { LucideDynamicIcon, LucideKeyRound, LucideLogIn } from '@lucide/angular'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
@@ -8,10 +8,11 @@ import { finalize } from 'rxjs/operators'
 import { getAuthRetryAfter } from '../../../../auth/auth.utils'
 import { linkProtected } from '../../../files/files.constants'
 import { LinksService } from '../../services/links.service'
+import { PublicLinkHeaderComponent } from './public-link-header.component'
 
 @Component({
   selector: 'app-public-link-auth',
-  imports: [RouterLink, FormsModule, LucideDynamicIcon, L10nTranslatePipe, L10nTranslateDirective],
+  imports: [FormsModule, LucideDynamicIcon, L10nTranslatePipe, L10nTranslateDirective, PublicLinkHeaderComponent],
   templateUrl: 'public-link-auth.component.html'
 })
 export class PublicLinkAuthComponent implements OnDestroy {

@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core'
-import { ActivatedRoute, Data, Params, RouterLink } from '@angular/router'
+import { ActivatedRoute, Data, Params } from '@angular/router'
 import { LucideDynamicIcon, LucideEye, LucideHardDriveDownload, LucidePencil } from '@lucide/angular'
 import type { SpaceLink } from '@sync-in-server/backend/src/applications/links/interfaces/link-space.interface'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
@@ -7,10 +7,11 @@ import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } fr
 import { FileModel } from '../../../files/models/file.model'
 import { SPACES_ICON } from '../../../spaces/spaces.constants'
 import { LinksService } from '../../services/links.service'
+import { PublicLinkHeaderComponent } from './public-link-header.component'
 
 @Component({
   selector: 'app-public-link',
-  imports: [RouterLink, LucideDynamicIcon, L10nTranslatePipe, L10nTranslateDirective],
+  imports: [LucideDynamicIcon, L10nTranslatePipe, L10nTranslateDirective, PublicLinkHeaderComponent],
   templateUrl: 'public-link.component.html'
 })
 export class PublicLinkComponent {
