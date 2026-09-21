@@ -16,8 +16,8 @@ $content-z-index: 1000;
 $app-top-menu-action-min-width: 2.1875rem;
 $app-top-menu-action-min-height: 1.9375rem;
 $app-top-menu-label-font-weight: 450;
+$app-top-menu-leading-content-offset: .28rem;
 $app-top-menu-action-active-bg-opacity: .16;
-$app-top-menu-action-highlighted-bg-opacity: .12;
 $app-top-menu-dropdown-indicator-opacity: .65;
 
 // Sidebar right (control)
@@ -76,7 +76,6 @@ $dark-tree-node-selected-bg: darken($sidebar-dark-apps-menu-title-bg, 4%);
 $dark-surface-bg: lighten($sidebar-dark-icons-menu-bg, 5%);
 $dark-menu-bg: darken($sidebar-dark-icons-menu-bg, 1.5%);
 $dark-menu-surface-border: mix($theme-muted-blue, $dark-menu-bg, 18%);
-$dark-highlighted-action-bg: mix($primary, $dark-menu-bg, 55%);
 $dark-action-state-bg: mix($primary, $dark-menu-bg, 78%);
 $dark-surface-border: lighten($sidebar-dark-icons-menu-border-color, 10%);
 $dark-item-color: lighten($gray-light, 8%);

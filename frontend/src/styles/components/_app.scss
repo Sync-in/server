@@ -258,7 +258,6 @@
 
 .app-top-menu-tool-bar {
   --app-top-menu-action-active-bg: rgba(var(--bs-primary-rgb), #{$app-top-menu-action-active-bg-opacity});
-  --app-top-menu-action-highlighted-bg: rgba(var(--bs-primary-rgb), #{$app-top-menu-action-highlighted-bg-opacity});
 
   gap: .3rem;
   padding: 0 .55rem;
@@ -318,12 +317,9 @@
     }
   }
 
-  .app-top-menu-tool-bar__action--highlighted.btn-default {
-    background-color: var(--app-top-menu-action-highlighted-bg) !important;
-
-    &:disabled {
-      background-color: var(--app-top-menu-action-highlighted-bg) !important;
-    }
+  .app-top-menu-tool-bar__action--breadcrumb-aligned {
+    padding-inline-start: ($btn-padding-x + $dropdown-spacer - $app-top-menu-leading-content-offset);
+    padding-inline-end: ($btn-padding-x + $dropdown-spacer + $app-top-menu-leading-content-offset);
   }
 
   .app-top-menu-tool-bar__action--icon {

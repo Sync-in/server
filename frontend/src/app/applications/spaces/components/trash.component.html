@@ -5,7 +5,7 @@
   <button (click)="browse(selected)"
           [attr.aria-label]="'Open' | translate:locale.language"
           [disabled]="!selected?.enabled || loading"
-          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
           type="button">
     <svg [lucideIcon]="icons.LucideFolderOpen"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Open</span>

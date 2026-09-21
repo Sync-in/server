@@ -5,7 +5,7 @@
   <button (click)="copyToClipboard()"
           [attr.aria-label]="'Copy link' | translate:locale.language"
           [disabled]="!selected"
-          class="btn {{linkWasCopied ? 'btn-primary' : 'btn-default'}} app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+          class="btn {{linkWasCopied ? 'btn-primary' : 'btn-default'}} app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
           type="button">
     <svg [lucideIcon]="linkWasCopied? icons.LucideClipboardCheck : icons.LucideClipboard"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Copy link</span>

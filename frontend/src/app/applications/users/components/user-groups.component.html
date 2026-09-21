@@ -5,7 +5,7 @@
   <button (click)="openDialog(true)"
           [attr.aria-label]="(!currentGroup && allowedAction.addGroup ? 'New personal group': 'Add members') | translate:locale.language"
           [disabled]="!allowedAction.addGroup && !allowedAction.addUsers"
-          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
           [tooltip]="(!currentGroup && allowedAction.addGroup ? 'New personal group': 'Add members') | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucidePlus"></svg>

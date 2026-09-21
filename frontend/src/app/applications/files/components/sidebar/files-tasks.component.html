@@ -22,14 +22,14 @@
         <button type="button"
                 (click)="cancelTasks()"
                 [tooltip]="'Stop' | translate:locale.language"
-                class="btn btn-default app-top-menu-tool-bar__action--highlighted"
+                class="btn btn-default"
                 placement="top">
           <svg [lucideIcon]="icons.LucideOctagonX"></svg>
         </button>
       }
       <button type="button"
               (click)="removeTasks()"
-              class="btn btn-default app-top-menu-tool-bar__action--highlighted">
+              class="btn btn-default">
         <svg [lucideIcon]="icons.LucideX"></svg>
       </button>
     </div>

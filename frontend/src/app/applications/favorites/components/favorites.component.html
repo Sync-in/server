@@ -5,7 +5,7 @@
   <button (click)="goTo()"
           [attr.aria-label]="'Go to' | translate:locale.language"
           [disabled]="!selected || selected.isDisabled"
-          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
           type="button">
     <svg [lucideIcon]="icons.LucideMapPin"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Go to</span>

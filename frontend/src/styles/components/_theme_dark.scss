@@ -353,7 +353,6 @@
 
   :is(.app-top-menu, .sidebar-component-title).app-top-menu-tool-bar {
     --app-top-menu-action-active-bg: var(--app-action-state-bg);
-    --app-top-menu-action-highlighted-bg: #{$dark-highlighted-action-bg};
     --app-top-menu-action-hover-bg: var(--app-action-state-bg);
 
     :is(.btn-default, .btn-custom):not(:disabled) {

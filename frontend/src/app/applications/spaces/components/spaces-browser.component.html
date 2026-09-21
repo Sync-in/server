@@ -18,7 +18,7 @@
     <!--Start New Button-->
     <div class="btn-group">
       <button (click)="openNewDialog()"
-              class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+              class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
               [attr.aria-label]="'New' | translate:locale.language"
               type="button">
         <svg [lucideIcon]="icons.LucidePlus"></svg>
@@ -62,7 +62,7 @@
     <button (click)="shortcutOpen()"
             [attr.aria-label]="'Open' | translate:locale.language"
             [disabled]="selection.length !== 1"
-            class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+            class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
             type="button">
       <svg [lucideIcon]="selection[0]?.isDir ? icons.LucideFolderOpen : icons.LucideEye"></svg>
       <span class="app-top-menu-tool-bar__label" l10nTranslate>Open</span>
@@ -106,7 +106,7 @@
     <button (click)="copyMoveFiles()"
             [attr.aria-label]="'Restore to...' | translate:locale.language"
             [disabled]="!hasSelection || hasDisabledItemsInSelection"
-            class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+            class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
             type="button">
       <svg [lucideIcon]="icons.LucideArchiveRestore"></svg>
       <span class="app-top-menu-tool-bar__label" l10nTranslate>Restore to...</span>

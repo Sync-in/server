@@ -4,7 +4,7 @@
      role="toolbar">
   <button (click)="openDialog(true)"
           [attr.aria-label]="(guestsView ? 'New guest' : 'New user') | translate:locale.language"
-          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
           [tooltip]="(guestsView ? 'New guest' : 'New user') | translate:locale.language"
           type="button">
     <svg [lucideIcon]="icons.LucideUserRoundPlus"></svg>

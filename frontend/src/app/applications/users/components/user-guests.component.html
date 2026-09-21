@@ -5,7 +5,7 @@
   <button (click)="openGuestDialog(true)"
           [attr.aria-label]="'New guest' | translate:locale.language"
           [disabled]="!canCreateGuest"
-          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--breadcrumb-aligned"
           type="button">
     <svg [lucideIcon]="icons.LucidePlus"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>New guest</span>
