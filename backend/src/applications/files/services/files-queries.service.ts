@@ -18,7 +18,7 @@ import { File } from '../schemas/file.interface'
 import { filesFavorites } from '../schemas/files-favorites.schema'
 import { filesRecents } from '../schemas/files-recents.schema'
 import { childFilesMatch, childFilesReplacePath, childPathMatch, filePathSQL, files } from '../schemas/files.schema'
-import { assertValidFileId, dirName, fileName, isPathInside } from '../utils/files'
+import { assertValidFileReferenceId, dirName, fileName, isPathInside } from '../utils/files'
 
 @Injectable()
 export class FilesQueries {
@@ -94,7 +94,7 @@ export class FilesQueries {
   }
 
   async getOrCreateUserFile(userId: number, file: FileProps): Promise<number> {
-    assertValidFileId(file.id)
+    assertValidFileReferenceId(file.id)
     if (file.id > 0) {
       const [searchFileInDB] = await this.db
         .select({ id: files.id })
@@ -111,7 +111,7 @@ export class FilesQueries {
   }
 
   async getOrCreateSpaceFile(fileId: number, file: FileProps, dbFile: FileDBProps, options: GetOrCreateSpaceFileOptions = {}): Promise<number> {
-    assertValidFileId(fileId)
+    assertValidFileReferenceId(fileId)
     // `isDir` is intentionally excluded here: this flow reconciles an existing path before insert,
     // even if the caller has a stale file/dir kind for the same location.
     const fileInDB = {

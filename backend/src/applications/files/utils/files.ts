@@ -50,8 +50,11 @@ export function sanitizeName(name: string): string {
     .replace(/^\s+|[. ]+$/g, '') // trimStart + trimEnd + strip trailing dots
 }
 
-export function assertValidFileId(fileId: number): void {
-  if (!Number.isInteger(fileId) || fileId === 0 || (fileId > 0 && !Number.isSafeInteger(fileId))) {
+export function assertValidFileReferenceId(fileId: number): void {
+  const isTemporaryInode = Number.isInteger(fileId) && fileId < 0
+  const isDatabaseId = Number.isSafeInteger(fileId) && fileId > 0
+
+  if (!isTemporaryInode && !isDatabaseId) {
     throw new HttpException('Invalid file id', HttpStatus.BAD_REQUEST)
   }
 }
