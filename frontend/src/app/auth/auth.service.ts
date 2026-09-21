@@ -21,9 +21,10 @@ import type { LoginResponseDto } from '@sync-in-server/backend/src/authenticatio
 import type { AuthOIDCSettings } from '@sync-in-server/backend/src/authentication/providers/oidc/auth-oidc.interfaces'
 import type { TwoFaResponseDto, TwoFaVerifyDto } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.dtos'
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
+import { RETRYABLE_CONNECTION_ERROR_CODES } from '@sync-in-server/backend/src/infrastructure/constants'
 import { catchError, finalize, map, Observable, of, throwError } from 'rxjs'
 import { switchMap, tap } from 'rxjs/operators'
-import { SERVICE_INTERRUPTION_ERROR } from '../app.constants'
+import { SERVICE_INTERRUPTION_ERROR, SERVICE_UNAVAILABLE_ERROR } from '../app.constants'
 import { USER_PATH } from '../applications/users/user.constants'
 import { UserService } from '../applications/users/user.service'
 import { EVENT } from '../electron/constants/events'
@@ -101,6 +102,10 @@ export class AuthService {
   }
 
   logout(redirect = true, expired = false, errorMsg?: string) {
+    if (this.electron.enabled && errorMsg !== undefined) {
+      this.layout.sendNotification('error', SERVICE_INTERRUPTION_ERROR, errorMsg)
+      return
+    }
     if (!errorMsg && (redirect || expired) && this.store.userImpersonate()) {
       this.logoutImpersonateUser()
       return
@@ -146,6 +151,9 @@ export class AuthService {
       }),
       catchError((e: HttpErrorResponse) => {
         if (this.electron.enabled) {
+          if (this.isTemporaryHttpError(e)) {
+            return throwError(() => e)
+          }
           return this.authDesktopClient()
         }
         this.logout(true, true)
@@ -223,6 +231,9 @@ export class AuthService {
       },
       error: (e: HttpErrorResponse) => {
         console.error(e)
+        if (this.electron.enabled && this.isTemporaryHttpError(e)) {
+          return
+        }
         this.store.userImpersonate.set(false)
         this.logout(true, true)
       }
@@ -267,13 +278,20 @@ export class AuthService {
               return this.authDesktopClient()
             }),
             catchError((registrationError) => {
-              console.error(`${this.authOIDCDesktopClient.name} - ${this.desktopAuthErrorMessage(registrationError)}`)
+              const registrationErrorMessage = this.desktopAuthErrorMessage(registrationError)
+              console.error(`${this.authOIDCDesktopClient.name} - ${registrationErrorMessage}`)
+              if (this.handleRetryableDesktopAuthError(registrationError)) {
+                return of(false)
+              }
               this.logout(true)
               return of(false)
             })
           )
         }
         console.error(`${this.authOIDCDesktopClient.name} - ${message}`)
+        if (this.handleRetryableDesktopAuthError(e)) {
+          return of(false)
+        }
         this.notifyDesktopRateLimit(e)
         this.logout(true)
         return of(false)
@@ -297,8 +315,11 @@ export class AuthService {
         return authenticated
       }),
       catchError((e: HttpErrorResponse) => {
-        const message = e.error?.message
+        const message = this.desktopAuthErrorMessage(e)
         console.debug(`${this.authDesktopClient.name} - ${message}`)
+        if (this.isTemporaryHttpError(e)) {
+          return of(false)
+        }
         if (message === CLIENT_TOKEN_EXPIRED_ERROR) {
           this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_EXPIRED)
         } else {
@@ -326,7 +347,11 @@ export class AuthService {
         )
       ),
       catchError((e: HttpErrorResponse) => {
-        console.error(`${this.authOIDCDesktopClient.name} - ${e.error?.message ?? e}`)
+        const message = this.desktopAuthErrorMessage(e)
+        console.error(`${this.authOIDCDesktopClient.name} - ${message}`)
+        if (this.handleRetryableDesktopAuthError(e)) {
+          return of(false)
+        }
         this.logout(true)
         return of(false)
       })
@@ -347,6 +372,9 @@ export class AuthService {
   private handleDesktopAuthError(e: unknown): Observable<boolean> {
     const message = this.desktopAuthErrorMessage(e)
     console.debug(`${this.authDesktopClient.name} - ${message}`)
+    if (this.handleRetryableDesktopAuthError(e)) {
+      return of(false)
+    }
     this.notifyDesktopRateLimit(e)
     if (message === CLIENT_TOKEN_EXPIRED_ERROR) {
       this.electron.send(EVENT.SERVER.AUTHENTICATION_TOKEN_EXPIRED)
@@ -369,6 +397,18 @@ export class AuthService {
       return CLIENT_MISSING_ERROR
     }
     return message
+  }
+
+  private handleRetryableDesktopAuthError(e: unknown): boolean {
+    const code = (e as { code?: string })?.code
+    if (!code || !RETRYABLE_CONNECTION_ERROR_CODES.has(code)) return false
+
+    this.layout.sendNotification('error', SERVICE_INTERRUPTION_ERROR, SERVICE_UNAVAILABLE_ERROR)
+    return true
+  }
+
+  private isTemporaryHttpError(e: HttpErrorResponse): boolean {
+    return e.status === 0 || e.status === 503
   }
 
   private notifyDesktopRateLimit(e: unknown) {

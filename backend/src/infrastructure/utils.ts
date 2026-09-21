@@ -1,3 +1,5 @@
+import { RETRYABLE_CONNECTION_ERROR_CODES } from './constants'
+
 export function redactRedisUrl(url: string): string {
   const parsedUrl = new URL(url)
   if (!parsedUrl.password) return url
@@ -5,21 +7,6 @@ export function redactRedisUrl(url: string): string {
   parsedUrl.password = '********'
   return parsedUrl.toString()
 }
-
-const RETRYABLE_CONNECTION_ERROR_CODES = new Set([
-  'EAI_AGAIN',
-  'ECONNABORTED',
-  'ECONNREFUSED',
-  'ECONNRESET',
-  'EHOSTUNREACH',
-  'ENETUNREACH',
-  'ENOTFOUND',
-  'EPIPE',
-  'ER_CON_COUNT_ERROR',
-  'ER_SERVER_SHUTDOWN',
-  'ETIMEDOUT',
-  'PROTOCOL_CONNECTION_LOST'
-])
 
 export function isRetryableConnectionError(error: unknown): boolean {
   const errors = connectionErrors(error)
