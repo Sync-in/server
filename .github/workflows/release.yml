@@ -23,7 +23,7 @@ jobs:
           git merge-base --is-ancestor "${GITHUB_REF}^{commit}" origin/main
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
 
@@ -48,7 +48,7 @@ jobs:
 
       # Publish to NPM (OIDC / Trusted Publishing)
       - name: Setup Node for npmjs
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
