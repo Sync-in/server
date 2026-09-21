@@ -58,6 +58,8 @@ describe(SchedulerManager.name, () => {
       })
     }
     manager = new SchedulerManager(schedulerRegistry as any, availability as any)
+    vi.spyOn(manager['logger'], 'log').mockImplementation(() => undefined)
+    vi.spyOn(manager['logger'], 'warn').mockImplementation(() => undefined)
     Object.defineProperty(manager, 'isSchedulerProcess', { value: true })
   })
 
