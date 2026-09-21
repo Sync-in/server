@@ -17,7 +17,7 @@ import {
   LucideLoader,
   LucideMove,
   LucideOctagonX,
-  LucideTrash2,
+  LucideTrash,
   LucideX
 } from '@lucide/angular'
 import { FILE_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/operations'
@@ -52,7 +52,7 @@ export class FilesTasksComponent implements OnDestroy {
     [FileTaskStatus.QUEUED]: LucideClock
   }
   protected readonly iconsOperation: Partial<Record<FILE_OPERATION, LucideIcon>> = {
-    [FILE_OPERATION.DELETE]: LucideTrash2,
+    [FILE_OPERATION.DELETE]: LucideTrash,
     [FILE_OPERATION.MOVE]: LucideMove,
     [FILE_OPERATION.COPY]: LucideCopy,
     [FILE_OPERATION.DOWNLOAD]: LucideGlobe,

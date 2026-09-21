@@ -12,7 +12,7 @@ import {
   LucidePencil,
   LucidePlus,
   LucideRotateCw,
-  LucideTrash2,
+  LucideTrash,
   LucideUserMinus,
   LucideUsersRound
 } from '@lucide/angular'
@@ -80,7 +80,7 @@ export class UserGroupsComponent {
     GROUPS: USER_ICON.GROUPS,
     LucideRotateCw,
     LucidePlus,
-    LucideTrash2,
+    LucideTrash,
     LucideUserMinus,
     LucidePencil,
     LucideArrowDown,

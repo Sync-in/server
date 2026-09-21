@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, HostListener, inject, Input } from '@angular/core'
-import { LucideDynamicIcon, LucideLoader, LucideTrash2 } from '@lucide/angular'
+import { LucideDynamicIcon, LucideLoader, LucideTrash } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FilesService } from '../../services/files.service'
@@ -14,7 +14,7 @@ export class FilesTrashEmptyDialogComponent {
   @Input() trashAlias = ''
   @Input() trashName = ''
   protected layout = inject(LayoutService)
-  protected readonly icons = { LucideTrash2, LucideLoader }
+  protected readonly icons = { LucideTrash, LucideLoader }
   protected submitted = false
   private filesService = inject(FilesService)
 

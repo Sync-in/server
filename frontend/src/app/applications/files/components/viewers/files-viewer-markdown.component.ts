@@ -30,7 +30,7 @@ import {
   LucideStrikethrough,
   LucideTable,
   LucideTextWrap,
-  LucideTrash2,
+  LucideTrash,
   LucideUnderline,
   LucideUndo
 } from '@lucide/angular'
@@ -151,7 +151,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     LucideLoader,
     LucideStrikethrough,
     LucideTable,
-    LucideTrash2,
+    LucideTrash,
     LucideUnderline,
     LucideSquareMinus,
     LucideSquarePlus

@@ -14,7 +14,7 @@ import {
   LucidePencil,
   LucideRefreshCw,
   LucideRotateCw,
-  LucideTrash2
+  LucideTrash
 } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
@@ -53,7 +53,7 @@ export class SyncClientsComponent {
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly icons = {
     LucideRefreshCw,
-    LucideTrash2,
+    LucideTrash,
     CLIENT: SYNC_ICON.CLIENT,
     LucideCircle,
     LucideCircleUserRound,

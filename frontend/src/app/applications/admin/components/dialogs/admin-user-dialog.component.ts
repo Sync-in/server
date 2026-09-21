@@ -8,7 +8,7 @@ import {
   LucideLock,
   LucideLockOpen,
   LucideShieldCheck,
-  LucideTrash2,
+  LucideTrash,
   LucideUserRoundCog,
   LucideUserRoundPen,
   LucideUserRoundPlus,
@@ -88,7 +88,7 @@ export class AdminUserDialogComponent implements OnInit {
     LucideUserRoundCog,
     LucideUsersRound,
     LucideShieldCheck,
-    LucideTrash2,
+    LucideTrash,
     LucideLock,
     LucideLockOpen
   }

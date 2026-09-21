@@ -50,8 +50,8 @@ app-recents {
   display: block;
 
   .recents-timeline {
-    width: min(100%, 76rem);
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
     padding: 0.55rem 0.7rem 1.25rem;
   }
 
@@ -136,10 +136,10 @@ app-recents {
 
   .recent-card__top {
     min-width: 0;
-    padding-right: 2.1rem;
+    padding-right: 2rem;
     display: flex;
     align-items: center;
-    gap: 0.7rem;
+    gap: 0.5rem;
   }
 
   .recent-card__media {

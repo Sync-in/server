@@ -26,7 +26,7 @@
           [disabled]="!allowedAction.removeGroup && !allowedAction.removeUser"
           [tooltip]="(allowedAction.removeGroup ? 'Delete group' : 'Remove from group') | translate:locale.language"
           type="button">
-    <svg [lucideIcon]="allowedAction.removeUser ? icons.LucideUserMinus : icons.LucideTrash2"></svg>
+    <svg [lucideIcon]="allowedAction.removeUser ? icons.LucideUserMinus : icons.LucideTrash"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Delete</span>
   </button>
   @if (!currentGroup) {
@@ -206,7 +206,7 @@
   }
   @if (allowedAction.removeGroup || allowedAction.removeUser) {
     <ng-template (execute)="openDialog(false, true)" contextMenuItem>
-      <span l10nTranslate><svg [lucideIcon]="allowedAction.removeUser ? icons.LucideUserMinus : icons.LucideTrash2"></svg>
+      <span l10nTranslate><svg [lucideIcon]="allowedAction.removeUser ? icons.LucideUserMinus : icons.LucideTrash"></svg>
         {{ allowedAction.removeGroup ? 'Delete group' : 'Remove from group' }}</span>
     </ng-template>
   }

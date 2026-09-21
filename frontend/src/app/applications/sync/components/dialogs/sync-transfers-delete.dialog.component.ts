@@ -1,5 +1,5 @@
 import { Component, EventEmitter, inject, Input, Output } from '@angular/core'
-import { LucideDynamicIcon, LucideTrash2 } from '@lucide/angular'
+import { LucideDynamicIcon, LucideTrash } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
 import { SyncPathModel } from '../../models/sync-path.model'
@@ -14,7 +14,7 @@ export class SyncTransfersDeleteDialogComponent {
   @Input() syncPath: SyncPathModel = null
   @Output() wasDeleted = new EventEmitter<void>()
   protected readonly layout = inject(LayoutService)
-  protected readonly icons = { LucideTrash2 }
+  protected readonly icons = { LucideTrash }
   private readonly syncService = inject(SyncService)
 
   doClear() {

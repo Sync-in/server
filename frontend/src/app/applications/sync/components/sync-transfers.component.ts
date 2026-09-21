@@ -2,7 +2,7 @@ import { KeyValuePipe } from '@angular/common'
 import { Component, effect, ElementRef, inject, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { Router } from '@angular/router'
-import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideRotateCw, LucideTrash2 } from '@lucide/angular'
+import { LucideArrowDown, LucideArrowUp, LucideDynamicIcon, LucideRotateCw, LucideTrash } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
@@ -75,7 +75,7 @@ export class SyncTransfersComponent {
       sortable: true
     }
   }
-  protected readonly icons = { LucideRotateCw, LucideTrash2, LucideArrowDown, LucideArrowUp }
+  protected readonly icons = { LucideRotateCw, LucideTrash, LucideArrowDown, LucideArrowUp }
   private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)
   private readonly syncService = inject(SyncService)

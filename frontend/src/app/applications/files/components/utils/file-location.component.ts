@@ -1,6 +1,6 @@
 import { Component, inject, Input } from '@angular/core'
 import type { LucideIcon } from '@lucide/angular'
-import { LucideDynamicIcon, LucideTrash2 } from '@lucide/angular'
+import { LucideDynamicIcon, LucideTrash } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslatePipe } from 'angular-l10n'
 
 export interface FileLocationDisplay {
@@ -32,7 +32,7 @@ export interface FileLocationDisplay {
           }
         } @else {
           @if (location.inTrash) {
-            <svg [lucideIcon]="LucideTrash2" class="file-location__icon"></svg>
+            <svg [lucideIcon]="LucideTrash" class="file-location__icon"></svg>
           }
           @if (location.icon) {
             <svg [lucideIcon]="location.icon" class="file-location__icon"></svg>
@@ -88,10 +88,10 @@ export class FileLocationComponent {
   @Input({ required: true }) location: FileLocationDisplay
   @Input() displayAsRepository = false
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
-  protected readonly LucideTrash2 = LucideTrash2
+  protected readonly LucideTrash = LucideTrash
 
   protected get displayedIcon(): LucideIcon | undefined {
-    return this.location?.inTrash ? this.LucideTrash2 : this.location?.icon
+    return this.location?.inTrash ? this.LucideTrash : this.location?.icon
   }
 
   protected get displayedIconClass(): string {

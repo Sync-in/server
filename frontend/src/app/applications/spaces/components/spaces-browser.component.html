@@ -116,7 +116,7 @@
             [disabled]="!hasSelection"
             class="btn btn-default app-top-menu-tool-bar__action--quiet"
             type="button">
-      <svg [lucideIcon]="icons.LucideTrash2"></svg>
+      <svg [lucideIcon]="icons.LucideTrash"></svg>
       <span class="app-top-menu-tool-bar__label" l10nTranslate>Delete permanently</span>
     </button>
   }
@@ -232,7 +232,7 @@
         <li role="menuitem">
           @if (isTrashRepo) {
             <a (click)="openTrashDialog(true)" class="dropdown-item">
-              <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash2" class="text-danger"></svg>Delete permanently</span>
+              <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash" class="text-danger"></svg>Delete permanently</span>
             </a>
           } @else {
             <a (click)="openTrashDialog()" class="dropdown-item">
@@ -702,7 +702,7 @@
     <ng-template [divider]="true" contextMenuItem></ng-template>
     <ng-template (execute)="openTrashDialog(isTrashRepo)" contextMenuItem>
       @if (isTrashRepo) {
-        <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash2" class="text-danger"></svg>Delete permanently</span>
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash" class="text-danger"></svg>Delete permanently</span>
       } @else {
         <span l10nTranslate><svg [lucideIcon]="icons.TRASH" class="text-danger"></svg>Remove</span>
       }

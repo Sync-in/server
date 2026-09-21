@@ -30,7 +30,7 @@ import {
   LucidePlus,
   LucideRotateCw,
   LucideSpellCheck,
-  LucideTrash2
+  LucideTrash
 } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
@@ -162,7 +162,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     LucideFileArchive,
     LucideSpellCheck,
     LucideMove,
-    LucideTrash2,
+    LucideTrash,
     LucideCheck,
     LucideArrowUp,
     LucideArrowDown,

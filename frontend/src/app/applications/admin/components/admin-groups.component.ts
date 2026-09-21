@@ -10,7 +10,7 @@ import {
   LucidePencil,
   LucidePlus,
   LucideRotateCw,
-  LucideTrash2,
+  LucideTrash,
   LucideUserMinus,
   LucideUserRoundPlus
 } from '@lucide/angular'
@@ -80,7 +80,7 @@ export class AdminGroupsComponent {
     GROUPS: USER_ICON.GROUPS,
     LucideRotateCw,
     LucidePlus,
-    LucideTrash2,
+    LucideTrash,
     LucidePencil,
     LucideArrowDown,
     LucideArrowUp,

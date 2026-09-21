@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { AfterViewInit, Component, effect, ElementRef, inject, QueryList, ViewChildren } from '@angular/core'
 import { Router } from '@angular/router'
-import { LucideCheck, LucideDynamicIcon, LucideInfo, LucideSearch, LucideTrash2, LucideX } from '@lucide/angular'
+import { LucideCheck, LucideDynamicIcon, LucideInfo, LucideSearch, LucideTrash, LucideX } from '@lucide/angular'
 import { NOTIFICATION_APP } from '@sync-in-server/backend/src/applications/notifications/constants/notifications'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
@@ -21,7 +21,7 @@ import { NotificationsService } from '../../notifications.service'
 export class NotificationsComponent implements AfterViewInit {
   @ViewChildren('notificationsHtml') notificationsHtml!: QueryList<ElementRef>
   protected readonly store = inject(StoreService)
-  protected readonly icons = { LucideCheck, LucideX, LucideSearch, LucideTrash2, LucideInfo }
+  protected readonly icons = { LucideCheck, LucideX, LucideSearch, LucideTrash, LucideInfo }
   private readonly router = inject(Router)
   private readonly layout = inject(LayoutService)
   private readonly notificationsService = inject(NotificationsService)

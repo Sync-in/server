@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, Output } from '@angular/core'
-import { LucideDynamicIcon, LucideLoader, LucideTrash2 } from '@lucide/angular'
+import { LucideDynamicIcon, LucideLoader, LucideTrash } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { PlatformIconComponent } from '../../../../common/components/platform-icon.component'
 import { LayoutService } from '../../../../layout/layout.service'
@@ -17,7 +17,7 @@ export class SyncClientDeleteDialogComponent {
   @Input() client: SyncClientModel
   @Output() wasDeleted = new EventEmitter()
   protected readonly layout = inject(LayoutService)
-  protected readonly icons = { LucideLoader, LucideTrash2 }
+  protected readonly icons = { LucideLoader, LucideTrash }
   protected submitted = false
   private readonly syncService = inject(SyncService)
 

@@ -38,7 +38,7 @@
           class="d-none d-sm-block btn btn-default app-top-menu-tool-bar__action--quiet"
           [disabled]="!selected"
           type="button">
-    <svg [lucideIcon]="selected?.isUser ? icons.LucideUserMinus : icons.LucideTrash2"></svg>
+    <svg [lucideIcon]="selected?.isUser ? icons.LucideUserMinus : icons.LucideTrash"></svg>
     <span class="app-top-menu-tool-bar__label" l10nTranslate>Delete</span>
   </button>
   <button (click)="refresh()"
@@ -195,7 +195,7 @@
     </ng-template>
     @if (selected.isGroup) {
       <ng-template (execute)="openDialog(false, true)" contextMenuItem>
-        <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash2"></svg>Delete group</span>
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash"></svg>Delete group</span>
       </ng-template>
     } @else {
       <ng-template (execute)="openDialog(false, true)" contextMenuItem>
