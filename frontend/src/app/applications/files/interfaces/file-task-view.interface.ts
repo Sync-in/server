@@ -10,7 +10,11 @@ export interface TaskProgressItem {
   value: number
 }
 
-export interface FileTaskView extends FileTask {
+export interface FileTaskClient extends FileTask {
+  displayName?: string
+}
+
+export interface FileTaskView extends FileTaskClient {
   ui: {
     cancelled: boolean
     cancellable: boolean

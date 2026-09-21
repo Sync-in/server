@@ -107,8 +107,26 @@ describe(SpacesManager.name, () => {
         .filter((p) => p !== SPACE_OPERATION.DELETE)
         .join(SPACE_PERMS_SEP)
     )
+    const personalTrash = await spacesManager.spaceEnv(userTest, ['trash', SPACE_ALIAS.PERSONAL])
+    expect(personalTrash.envPermissions).toBe(SPACE_ALL_OPERATIONS)
     const sharesSpace = await spacesManager.spaceEnv(userTest, ['shares'])
     expect(sharesSpace.envPermissions).toBe('')
+  })
+
+  it('should count only browsable trash entries', async () => {
+    vi.spyOn(spacesManager, 'listSpaces').mockResolvedValueOnce([])
+    await fs.mkdir(userTest.trashPath, { recursive: true })
+
+    try {
+      await fs.writeFile(path.join(userTest.trashPath, 'visible.txt'), '')
+      await fs.symlink('visible.txt', path.join(userTest.trashPath, 'file-link'))
+      const trashes = await spacesManager.listTrashes(userTest)
+
+      expect(trashes).toHaveLength(1)
+      expect(trashes[0]).toMatchObject({ alias: SPACE_ALIAS.PERSONAL, nb: 1 })
+    } finally {
+      await removeFiles(userTest.trashPath)
+    }
   })
 
   it("should validate (or not) the user's personal space (files & trash repositories)", async () => {

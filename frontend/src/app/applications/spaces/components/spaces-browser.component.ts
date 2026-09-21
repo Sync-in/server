@@ -4,9 +4,9 @@ import { AfterViewInit, Component, ElementRef, inject, NgZone, OnDestroy, OnInit
 import { ActivatedRoute, Data, Router, UrlSegment } from '@angular/router'
 import {
   LucideAnchor,
+  LucideArchiveRestore,
   LucideArrowDown,
   LucideArrowUp,
-  LucideBan,
   LucideCheck,
   LucideCirclePlus,
   LucideClipboardList,
@@ -29,7 +29,8 @@ import {
   LucidePencil,
   LucidePlus,
   LucideRotateCw,
-  LucideSpellCheck
+  LucideSpellCheck,
+  LucideTrash2
 } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuModule } from '@perfectmemory/ngx-contextmenu'
 import { TAR_EXTENSION } from '@sync-in-server/backend/src/applications/files/constants/compress'
@@ -70,7 +71,6 @@ import { FAVORITES_ICON } from '../../favorites/favorites.constants'
 import { FilesCompressionDialogComponent } from '../../files/components/dialogs/files-compression-dialog.component'
 import { FilesNewDialogComponent } from '../../files/components/dialogs/files-new-dialog.component'
 import { FilesTrashDialogComponent } from '../../files/components/dialogs/files-trash-dialog.component'
-import { FilesTrashEmptyDialogComponent } from '../../files/components/dialogs/files-trash-empty-dialog.component'
 import { FileLockFormatPipe } from '../../files/components/utils/file-lock.utils'
 import { FileEvent } from '../../files/interfaces/file-event.interface'
 import { FileModel } from '../../files/models/file.model'
@@ -152,6 +152,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     LucideHardDriveDownload,
     LucideLink,
     LucideAnchor,
+    LucideArchiveRestore,
     LucideEllipsis,
     LucidePencil,
     LucideEye,
@@ -161,7 +162,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     LucideFileArchive,
     LucideSpellCheck,
     LucideMove,
-    LucideBan,
+    LucideTrash2,
     LucideCheck,
     LucideArrowUp,
     LucideArrowDown,
@@ -178,7 +179,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   protected isFilesRepo: boolean
   protected isSharesRepo: boolean
   protected isTrashRepo: boolean
-  protected inRootSpace: boolean
   protected inSharesList: boolean
   protected hasRoots = false
   protected canShare: { inside: boolean; outside: boolean } = { inside: false, outside: false }
@@ -443,6 +443,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   copyMoveFiles() {
+    if (!this.selection.length) return
     this.filesService.openTreeCopyMove()
   }
 
@@ -628,12 +629,6 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.layout.openDialog(FilesNewDialogComponent, null, { initialState: { files: this.files, inputType: type } as FilesNewDialogComponent })
   }
 
-  openEmptyTrashDialog() {
-    if (this.isTrashRepo && this.inRootSpace) {
-      this.layout.openDialog(FilesTrashEmptyDialogComponent, null, { initialState: { files: this.files } as FilesTrashEmptyDialogComponent })
-    }
-  }
-
   openTrashDialog(permanently = false) {
     if (!this.selection.length) return
     const modalRef: BsModalRef<FilesTrashDialogComponent> = this.layout.openDialog(FilesTrashDialogComponent, null, {
@@ -655,8 +650,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.isFilesRepo = route.repository === SPACES_PATH.FILES
     this.isSharesRepo = route.repository === SPACES_PATH.SHARES
     this.isTrashRepo = route.repository === SPACES_PATH.TRASH
-    this.inRootSpace = this.isSharesRepo ? route.routes.length === 0 : route.routes.length === 1
-    this.inSharesList = this.isSharesRepo && this.inRootSpace
+    this.inSharesList = this.isSharesRepo && route.routes.length === 0
     this.spacesBrowser.setEnvironment(route.repository, route.routes)
     this.isPersonalSpace = this.spacesBrowser.inPersonalSpace
     this.loadFiles(true)

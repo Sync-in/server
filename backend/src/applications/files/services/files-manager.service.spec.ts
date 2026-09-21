@@ -2,6 +2,7 @@ import { HttpService } from '@nestjs/axios'
 import { HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { lookup } from 'node:dns/promises'
+import fs from 'node:fs/promises'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { transformAndValidate } from '../../../common/functions'
@@ -1276,6 +1277,118 @@ describe(FilesManager.name, () => {
   })
 
   describe('delete', () => {
+    it('should empty visible trash-root entries through a task without deleting the root', async () => {
+      const trashRoot = makeTrashSpace({
+        url: 'trash/personal',
+        realPath: '/data/users/john/trash',
+        dbFile: { ...targetTrashDbScope, path: '.' },
+        paths: [],
+        task: { id: 'empty-trash', type: FILE_OPERATION.DELETE, cacheKey: 'empty-trash', props: {} }
+      })
+      const entries = [
+        { name: 'old.txt', isDirectory: () => false, isFile: () => true },
+        { name: 'archive', isDirectory: () => true, isFile: () => false },
+        { name: '.hidden', isDirectory: () => false, isFile: () => true },
+        { name: '.sync-in-tmp', isDirectory: () => true, isFile: () => false }
+      ] as any
+      vi.spyOn(fs, 'readdir').mockResolvedValueOnce(entries)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValue(true)
+      vi.mocked(filesUtils.isPathIsDir).mockImplementation(async (filePath: string) => filePath.endsWith('/archive'))
+      spacesManager.spaceEnv.mockImplementation(async (_user: any, segments: string[]) => {
+        const name = segments.at(-1) as string
+        return makeTrashSpace({
+          url: segments.join('/'),
+          realPath: path.join(trashRoot.realPath, name),
+          dbFile: { ...targetTrashDbScope, path: name },
+          paths: [name]
+        })
+      })
+      const showHiddenFiles = configuration.applications.files.showHiddenFiles
+      configuration.applications.files.showHiddenFiles = false
+
+      try {
+        await service.delete(user, trashRoot)
+      } finally {
+        configuration.applications.files.showHiddenFiles = showHiddenFiles
+      }
+
+      expect(spacesManager.spaceEnv).toHaveBeenCalledTimes(2)
+      expect(spacesManager.spaceEnv).toHaveBeenNthCalledWith(1, user, ['trash', 'personal', 'old.txt'])
+      expect(spacesManager.spaceEnv).toHaveBeenNthCalledWith(2, user, ['trash', 'personal', 'archive'])
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/trash/old.txt')
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/trash/archive')
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(trashRoot.realPath)
+      expect(filesQueries.deleteFiles).toHaveBeenCalledTimes(2)
+    })
+
+    it('should empty the trash root synchronously and forward WebDAV lock tokens', async () => {
+      const trashRoot = makeTrashSpace({
+        url: 'trash/personal',
+        realPath: '/data/users/john/trash',
+        dbFile: { ...targetTrashDbScope, path: '.' },
+        paths: []
+      })
+      const childSpace = makeTrashSpace({
+        url: 'trash/personal/old.txt',
+        realPath: '/data/users/john/trash/old.txt',
+        dbFile: { ...targetTrashDbScope, path: 'old.txt' },
+        paths: ['old.txt']
+      })
+      vi.spyOn(fs, 'readdir').mockResolvedValueOnce([{ name: 'old.txt', isDirectory: () => false, isFile: () => true }] as any)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValue(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(false)
+      spacesManager.spaceEnv.mockResolvedValueOnce(childSpace)
+
+      await service.delete(user, trashRoot, { lockTokens: ['webdav-token'] })
+
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith(childSpace.realPath)
+      expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(trashRoot.realPath)
+      expect(filesLockManager.checkConflicts).toHaveBeenCalledWith(childSpace.dbFile, DEPTH.RESOURCE, {
+        userId: user.id,
+        lockTokens: ['webdav-token']
+      })
+    })
+
+    it('should preserve WebDAV errors when emptying the trash synchronously', async () => {
+      const trashRoot = makeTrashSpace({ url: 'trash/personal', realPath: '/data/users/john/trash', paths: [] })
+      const childSpace = makeTrashSpace({
+        url: 'trash/personal/locked',
+        realPath: '/data/users/john/trash/locked',
+        dbFile: { ...targetTrashDbScope, path: 'locked' },
+        paths: ['locked']
+      })
+      const lockError = new LockConflict({ dbFilePath: 'locked' } as any, 'Lock conflict')
+      vi.spyOn(fs, 'readdir').mockResolvedValueOnce([{ name: 'locked', isDirectory: () => true, isFile: () => false }] as any)
+      vi.mocked(filesUtils.isPathExists).mockResolvedValue(true)
+      vi.mocked(filesUtils.isPathIsDir).mockResolvedValue(true)
+      spacesManager.spaceEnv.mockResolvedValueOnce(childSpace)
+      filesLockManager.checkConflicts.mockRejectedValueOnce(lockError)
+
+      await expect(service.delete(user, trashRoot, { lockTokens: [] })).rejects.toBe(lockError)
+
+      expect(filesUtils.removeFiles).not.toHaveBeenCalled()
+    })
+
+    it('should reject copying or moving the trash root', async () => {
+      const trashRoot = makeTrashSpace({
+        url: 'trash/personal',
+        realPath: '/data/users/john/trash',
+        dbFile: { ...targetTrashDbScope, path: '.' },
+        paths: []
+      })
+      const destination = makeSpace({ realPath: '/data/users/john/files/restored-trash' })
+
+      await expect(service.copyMove(user, trashRoot, destination, false)).rejects.toEqual(
+        new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'The trash root cannot be copied or moved')
+      )
+      await expect(service.copyMove(user, trashRoot, destination, true)).rejects.toEqual(
+        new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'The trash root cannot be copied or moved')
+      )
+
+      expect(filesUtils.copyFiles).not.toHaveBeenCalled()
+      expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+    })
+
     it('should remove trash file, locks and db entries', async () => {
       const space = makeSpace({
         inTrashRepository: true,

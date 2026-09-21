@@ -1,8 +1,8 @@
+import { HttpErrorResponse } from '@angular/common/http'
 import { Component, HostListener, inject, Input } from '@angular/core'
 import { LucideDynamicIcon, LucideLoader, LucideTrash2 } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { LayoutService } from '../../../../layout/layout.service'
-import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 
 @Component({
@@ -11,7 +11,8 @@ import { FilesService } from '../../services/files.service'
   templateUrl: 'files-trash-empty-dialog.component.html'
 })
 export class FilesTrashEmptyDialogComponent {
-  @Input() files: FileModel[] = []
+  @Input() trashAlias = ''
+  @Input() trashName = ''
   protected layout = inject(LayoutService)
   protected readonly icons = { LucideTrash2, LucideLoader }
   protected submitted = false
@@ -23,11 +24,14 @@ export class FilesTrashEmptyDialogComponent {
   }
 
   onSubmit() {
-    if (!this.submitted) {
-      this.submitted = true
-      this.filesService.delete(this.files)
-      this.layout.closeDialog()
-      this.submitted = false
-    }
+    if (this.submitted || !this.trashAlias) return
+    this.submitted = true
+    this.filesService.emptyTrash(this.trashAlias, this.trashName).subscribe({
+      next: () => this.layout.closeDialog(),
+      error: (error: HttpErrorResponse) => {
+        this.submitted = false
+        this.layout.sendNotification('error', 'Deletion failed', this.trashName, error)
+      }
+    })
   }
 }

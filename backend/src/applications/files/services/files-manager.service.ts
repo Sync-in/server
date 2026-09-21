@@ -1,5 +1,7 @@
 import { HttpService } from '@nestjs/axios'
 import { HttpStatus, Injectable, Logger } from '@nestjs/common'
+import type { Dirent } from 'node:fs'
+import fs from 'node:fs/promises'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
@@ -41,6 +43,7 @@ import {
   fileName,
   fileSize,
   getMimeType,
+  isInternalTemporaryEntry,
   isPathExists,
   isPathInside,
   isPathIsDir,
@@ -422,6 +425,9 @@ export class FilesManager {
     const isTaskContext = Boolean(srcSpace.task?.cacheKey)
     const useTaskTransfer = isTaskContext && (!isMove || Boolean(signal))
     // checks
+    if (this.isTrashRepositoryRoot(srcSpace)) {
+      throw new FileError(HttpStatus.METHOD_NOT_ALLOWED, 'The trash root cannot be copied or moved')
+    }
     this.checkNotTrashRepository(dstSpace)
     if (!canAccessToSpace(user, dstSpace)) {
       this.logger.warn({ tag: this.copyMove.name, msg: `is not allowed to access to this space repository : ${dstSpace.repository}` })
@@ -553,6 +559,9 @@ export class FilesManager {
   }
 
   async delete(user: UserModel, space: SpaceEnv, dav?: { lockTokens: string[] }, signal?: AbortSignal, options?: DeleteFileOptions): Promise<void> {
+    if (this.isTrashRepositoryRoot(space)) {
+      return this.emptyTrash(user, space, dav)
+    }
     const isTaskContext = Boolean(space.task?.cacheKey)
     if (!(await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
@@ -868,6 +877,50 @@ export class FilesManager {
     await moveFiles(trashFile, dstTrash.path)
     const dstTrashFileDB: FileDBProps = { ...trashFileDB, path: path.join(dirName(trashFileDB.path), fileName(dstTrash.path)) }
     await this.filesQueries.moveFiles(trashFileDB, dstTrashFileDB, dstTrash.isDir)
+  }
+
+  private async emptyTrash(user: UserModel, space: SpaceEnv, dav?: { lockTokens: string[] }): Promise<void> {
+    const continueOnError = Boolean(space.task?.cacheKey)
+
+    let entries: Dirent[]
+    try {
+      entries = await fs.readdir(space.realPath, { withFileTypes: true })
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException)?.code === 'ENOENT') return
+      throw e
+    }
+
+    let failureCount = 0
+    for (const entry of entries) {
+      if (
+        isInternalTemporaryEntry(entry.name) ||
+        (!configuration.applications.files.showHiddenFiles && entry.name.startsWith('.')) ||
+        (!entry.isDirectory() && !entry.isFile())
+      ) {
+        continue
+      }
+      try {
+        const childSpace = await this.spacesManager.spaceEnv(user, [...space.url.split('/'), entry.name])
+        if (!childSpace) {
+          throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Unable to resolve trash item')
+        }
+        await this.delete(user, childSpace, dav)
+      } catch (e) {
+        if (e instanceof FileError && e.httpCode === HttpStatus.NOT_FOUND) continue
+        if ((e as NodeJS.ErrnoException)?.code === 'ENOENT') continue
+        if (!continueOnError) throw e
+        failureCount++
+        this.logger.warn({ tag: this.emptyTrash.name, msg: `unable to delete trash entry: ${e}` })
+      }
+    }
+
+    if (failureCount) {
+      throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, `Unable to delete ${failureCount} trash item(s)`)
+    }
+  }
+
+  private isTrashRepositoryRoot(space: SpaceEnv): boolean {
+    return space.inTrashRepository && Array.isArray(space.paths) && space.paths.length === 0
   }
 
   private logSourceCleanupError(error: SourceCleanupError): void {

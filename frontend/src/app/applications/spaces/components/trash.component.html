@@ -2,12 +2,28 @@
 <div class="app-top-menu app-top-menu-tool-bar"
      [attr.aria-label]="'Actions' | translate:locale.language"
      role="toolbar">
-  <button (click)="loadTrashBins()"
-          [attr.aria-label]="'Refresh' | translate:locale.language"
+  <button (click)="browse(selected)"
+          [attr.aria-label]="'Open' | translate:locale.language"
+          [disabled]="!selected?.enabled || loading"
           class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
           type="button">
+    <svg [lucideIcon]="icons.LucideFolderOpen"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Open</span>
+  </button>
+  <button (click)="openEmptyTrashDialog(selected)"
+          [attr.aria-label]="'Empty' | translate:locale.language"
+          [disabled]="!selected?.enabled || !selected?.nb || loading"
+          class="btn btn-default app-top-menu-tool-bar__action--quiet"
+          type="button">
+    <svg [lucideIcon]="icons.TRASH"></svg>
+    <span class="app-top-menu-tool-bar__label" l10nTranslate>Empty</span>
+  </button>
+  <button (click)="loadTrashBins()"
+          [attr.aria-label]="'Refresh' | translate:locale.language"
+          [tooltip]="'Refresh' | translate:locale.language"
+          class="btn btn-default app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--quiet"
+          type="button">
     <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
-    <span class="app-top-menu-tool-bar__label" l10nTranslate>Refresh</span>
   </button>
   <div class="d-flex align-items-center ms-auto">
     <!--Start View Button-->
@@ -143,9 +159,17 @@
   </ng-template>
 </context-menu>
 <context-menu #TargetContextMenu>
-  <ng-template (execute)="layout.showRSideBarTab(TAB_MENU.SELECTION)" contextMenuItem>
-    <span l10nTranslate><svg [lucideIcon]="icons.SELECTION"></svg>View selection</span>
-  </ng-template>
+  @if (selected?.enabled) {
+    <ng-template (execute)="browse(selected)" contextMenuItem>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucideFolderOpen"></svg>Open</span>
+    </ng-template>
+  }
+  @if (selected?.enabled && selected?.nb) {
+    <ng-template [divider]="true" contextMenuItem></ng-template>
+    <ng-template (execute)="openEmptyTrashDialog(selected)" contextMenuItem>
+      <span l10nTranslate><svg [lucideIcon]="icons.TRASH" class="text-danger"></svg>Empty</span>
+    </ng-template>
+  }
 </context-menu>
 <!--End Context Menu-->
 <!--Start Foot Content-->

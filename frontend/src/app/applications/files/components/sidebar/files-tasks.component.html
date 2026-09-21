@@ -59,7 +59,7 @@
           <span class="task-list__operation">
             <svg [lucideIcon]="task.ui.operationIcon"></svg>
           </span>
-          <span class="task-list__name">{{ task.name }}</span>
+          <span class="task-list__name">{{ task.displayName ?? task.name }}</span>
         </div>
         @if (task.ui.error && task.result) {
           <div class="text-danger task-list__result">

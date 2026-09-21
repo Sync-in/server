@@ -14,6 +14,7 @@ import {
   API_FILES_OPERATION_MAKE,
   API_FILES_RECENTS,
   API_FILES_SEARCH,
+  API_FILES_TASK_OPERATION,
   API_FILES_TASK_OPERATION_COMPRESS,
   API_FILES_TASK_OPERATION_DECOMPRESS,
   API_FILES_TASK_OPERATION_DOWNLOAD,
@@ -38,7 +39,7 @@ import type { FileContent } from '@sync-in-server/backend/src/applications/files
 import type { FileFavorite, FileFavoriteIdentity } from '@sync-in-server/backend/src/applications/files/schemas/file-favorite.interface'
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
 import { API_SPACES_TREE } from '@sync-in-server/backend/src/applications/spaces/constants/routes'
-import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
+import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { BehaviorSubject, catchError, EMPTY, filter, firstValueFrom, map, Observable, of, shareReplay, Subject, switchMap, tap, timer } from 'rxjs'
@@ -180,6 +181,12 @@ export class FilesService {
         }
       })
     }
+  }
+
+  emptyTrash(alias: string, displayName: string): Observable<FileTask> {
+    return this.http
+      .delete<FileTask>(`${API_FILES_TASK_OPERATION}/${SPACE_REPOSITORY.TRASH}/${encodeURIComponent(alias)}`)
+      .pipe(tap((task: FileTask) => this.filesTasksService.addTask(task, displayName)))
   }
 
   make(type: 'file' | 'directory', name: string, dirPath: string, asCallBack: true): Observable<any>

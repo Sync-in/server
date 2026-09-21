@@ -99,8 +99,12 @@ Every segment after `personal` or `<space-alias>` is treated as a path inside th
 browsing trash. For an external root, the trash path is relative to the external root itself and does not include its alias.
 
 The trash list examines the personal trash and every space available to the user. It returns only repositories containing at least one visible
-top-level entry. Internal temporary entries are always ignored; hidden entries follow the
-`showHiddenFiles` configuration.
+top-level file or directory. Internal temporary and special filesystem entries are always ignored; hidden entries follow the `showHiddenFiles`
+configuration.
+
+Deleting `trash/<trash-alias>` through the synchronous Files API, WebDAV, or an asynchronous file task empties its visible top-level entries while
+preserving the physical trash directory. The frontend uses the asynchronous form. The trash root cannot be copied or moved, but its children can be
+restored outside the read-only trash repository.
 
 ## Deletion target resolution
 

@@ -99,7 +99,7 @@
 <!--Start Apps Menu Template-->
 <ng-template #MenuApps let-menu="menu">
   <div class="menu" [class.active]="menu.isActive">
-    <a (click)="closeSideBarOnMobile()" [routerLink]="menu.link">
+    <a (click)="closeSideBarOnMobile()" [routerLink]="menu.link" draggable="false">
       <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: menu}"></ng-container>
     </a>
   </div>
@@ -108,7 +108,7 @@
       @if (isMenu(submenu)) {
         @if (!submenu.hide) {
           <div class="menu submenu" [class.active]="submenu.isActive">
-            <a (click)="closeSideBarOnMobile()" [routerLink]="submenu.link">
+            <a (click)="closeSideBarOnMobile()" [routerLink]="submenu.link" draggable="false">
               <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: submenu}"></ng-container>
             </a>
           </div>

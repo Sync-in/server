@@ -187,7 +187,11 @@ export class SpacesManager {
       try {
         space.nb = 0
         for await (const entry of await fs.opendir(rPath, { bufferSize: DEFAULT_DIRECTORY_BUFFER_SIZE })) {
-          if (!isInternalTemporaryEntry(entry.name) && (configuration.applications.files.showHiddenFiles || entry.name[0] !== '.')) {
+          if (
+            (entry.isDirectory() || entry.isFile()) &&
+            !isInternalTemporaryEntry(entry.name) &&
+            (configuration.applications.files.showHiddenFiles || entry.name[0] !== '.')
+          ) {
             space.nb++
           }
         }

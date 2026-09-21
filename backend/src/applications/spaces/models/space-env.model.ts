@@ -102,8 +102,8 @@ export class SpaceEnv implements Pick<Space, 'id' | 'alias' | 'name' | 'enabled'
     this.envPermissions = getEnvPermissions(this, this.root)
     /* Protects against the deletion of virtual endpoints */
     if (!skipEndpointProtection && this.envPermissions.indexOf(SPACE_OPERATION.DELETE) > -1) {
-      if ((this.inFilesRepository || this.inTrashRepository) && !this.paths.length && (this.root?.id || (!this.root?.id && !this.root?.alias))) {
-        /* Protects the spaces : /spaces/space_alias || /trash/space_alias */
+      if (this.inFilesRepository && !this.paths.length && (this.root?.id || (!this.root?.id && !this.root?.alias))) {
+        /* Protects the spaces : /spaces/space_alias */
         /* Protects the root spaces : /spaces/space_alias/root_anchored */
         this.envPermissions = removePermissions(this.envPermissions, [SPACE_OPERATION.DELETE])
       } else if (this.inSharesRepository && !this.paths.length && (this.root?.id || this.root?.externalPath)) {

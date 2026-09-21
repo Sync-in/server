@@ -19,6 +19,7 @@ import { LayoutService } from '../../../layout/layout.service'
 import { StoreService } from '../../../store/store.service'
 import { UserType } from '../../users/interfaces/user.interface'
 import { FileEvent } from '../interfaces/file-event.interface'
+import type { FileTaskClient } from '../interfaces/file-task-view.interface'
 
 @Injectable({ providedIn: 'root' })
 export class FilesTasksService {
@@ -81,7 +82,8 @@ export class FilesTasksService {
     })
   }
 
-  addTask(task: FileTask) {
+  addTask(task: FileTaskClient, displayName?: string) {
+    if (displayName !== undefined) task.displayName = displayName
     if (this.isActiveStatus(task.status)) {
       this.store.filesActiveTasks.next(this.prependUniqueTasks(this.store.filesActiveTasks.getValue(), [task]))
       this.startWatch()
@@ -262,7 +264,10 @@ export class FilesTasksService {
     this.store.filesActiveTasks.next(nextTasks)
 
     if (endedTasks.length) {
+      const currentTasksById = new Map(currentTasks.map((task: FileTaskClient) => [task.id, task]))
       for (const task of endedTasks) {
+        const displayName = currentTasksById.get(task.id)?.displayName
+        if (displayName !== undefined) Object.assign(task, { displayName })
         this.cancellingTasks.delete(task.id)
       }
       this.store.filesEndedTasks.next(this.prependUniqueTasks(this.store.filesEndedTasks.getValue(), endedTasks))

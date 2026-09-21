@@ -26,7 +26,7 @@
       </button>
     </div>
     <!--End New Button-->
-    <!--Start Upload Button-->
+      <!--Start Upload Button-->
     <div class="btn-group" dropdown>
       <button dropdownToggle
               class="btn btn-default dropdown-toggle app-top-menu-tool-bar__action--quiet"
@@ -103,24 +103,22 @@
   }
   <!--End Share Button-->
   @if (isTrashRepo) {
+    <button (click)="copyMoveFiles()"
+            [attr.aria-label]="'Restore to...' | translate:locale.language"
+            [disabled]="!hasSelection || hasDisabledItemsInSelection"
+            class="btn btn-default app-top-menu-tool-bar__action--quiet app-top-menu-tool-bar__action--highlighted"
+            type="button">
+      <svg [lucideIcon]="icons.LucideArchiveRestore"></svg>
+      <span class="app-top-menu-tool-bar__label" l10nTranslate>Restore to...</span>
+    </button>
     <button (click)="openTrashDialog(true)"
-            [attr.aria-label]="'Remove' | translate:locale.language"
+            [attr.aria-label]="'Delete permanently' | translate:locale.language"
             [disabled]="!hasSelection"
             class="btn btn-default app-top-menu-tool-bar__action--quiet"
             type="button">
-      <svg [lucideIcon]="icons.LucideBan"></svg>
-      <span class="app-top-menu-tool-bar__label" l10nTranslate>Remove</span>
+      <svg [lucideIcon]="icons.LucideTrash2"></svg>
+      <span class="app-top-menu-tool-bar__label" l10nTranslate>Delete permanently</span>
     </button>
-    @if (inRootSpace) {
-      <button (click)="openEmptyTrashDialog()"
-              [attr.aria-label]="'Empty' | translate:locale.language"
-              [disabled]="!stats.elements"
-              class="btn btn-default app-top-menu-tool-bar__action--quiet"
-              type="button">
-        <svg [lucideIcon]="icons.TRASH"></svg>
-        <span class="app-top-menu-tool-bar__label" l10nTranslate>Empty</span>
-      </button>
-    }
   }
   <!--Start Actions Button-->
   <div [isDisabled]="!hasSelection" class="btn-group" dropdown>
@@ -167,8 +165,8 @@
           </a>
         </li>
       }
-      <li class="dropdown-divider"></li>
-      @if (!hasDisabledItemsInSelection) {
+      @if (!isTrashRepo && !hasDisabledItemsInSelection) {
+        <li class="dropdown-divider"></li>
         <li role="menuitem">
           <a (click)="copyMoveFiles()" class="dropdown-item">
             <span l10nTranslate><svg [lucideIcon]="icons.LucideMove"></svg>Copy • Move</span>
@@ -234,7 +232,7 @@
         <li role="menuitem">
           @if (isTrashRepo) {
             <a (click)="openTrashDialog(true)" class="dropdown-item">
-              <span l10nTranslate><svg [lucideIcon]="icons.LucideBan" class="text-danger"></svg>Remove</span>
+              <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash2" class="text-danger"></svg>Delete permanently</span>
             </a>
           } @else {
             <a (click)="openTrashDialog()" class="dropdown-item">
@@ -644,7 +642,11 @@
   }
   @if (!hasDisabledItemsInSelection) {
     <ng-template (execute)="copyMoveFiles()" contextMenuItem>
-      <span l10nTranslate><svg [lucideIcon]="icons.LucideMove"></svg>Copy • Move</span>
+      @if (isTrashRepo) {
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideArchiveRestore"></svg>Restore to...</span>
+      } @else {
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideMove"></svg>Copy • Move</span>
+      }
     </ng-template>
   }
   @if (selection.length === 1 && !isTrashRepo && !inSharesList) {
@@ -699,8 +701,11 @@
   @if (!inSharesList) {
     <ng-template [divider]="true" contextMenuItem></ng-template>
     <ng-template (execute)="openTrashDialog(isTrashRepo)" contextMenuItem>
-    <span l10nTranslate><svg [lucideIcon]="isTrashRepo ? icons.LucideBan : icons.TRASH" class="text-danger"></svg>
-      Remove</span>
+      @if (isTrashRepo) {
+        <span l10nTranslate><svg [lucideIcon]="icons.LucideTrash2" class="text-danger"></svg>Delete permanently</span>
+      } @else {
+        <span l10nTranslate><svg [lucideIcon]="icons.TRASH" class="text-danger"></svg>Remove</span>
+      }
     </ng-template>
   }
 </context-menu>
@@ -721,11 +726,6 @@
   <ng-template (execute)="loadFiles()" contextMenuItem>
     <span l10nTranslate><svg [lucideIcon]="icons.LucideRotateCw"></svg>Refresh</span>
   </ng-template>
-  @if (inRootSpace) {
-    <ng-template (execute)="openEmptyTrashDialog()" contextMenuItem>
-      <span l10nTranslate><svg [lucideIcon]="icons.TRASH"></svg>Empty</span>
-    </ng-template>
-  }
 </context-menu>
 <context-menu #MainContextMenu>
   @if (inSharesList) {

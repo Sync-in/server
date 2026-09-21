@@ -1,7 +1,7 @@
 <div class="modal-header">
   <h4 class="modal-title">
     <svg [lucideIcon]="icons.LucideTrash2"></svg>
-    <span l10nTranslate>Trash</span>
+    <span>{{ trashName }}</span>
     @if (submitted) {
       <svg [lucideIcon]="icons.LucideLoader" class="ms-2 icon-spin"></svg>
     }
