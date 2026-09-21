@@ -1,4 +1,24 @@
 
+## [2.5.2](https://github.com/Sync-in/server/compare/v2.5.1...v2.5.2) (2026-09-21)
+
+### Features
+
+* **frontend:search:** centralize local and global search in the navbar ([68805c2](https://github.com/Sync-in/server/commit/68805c27e0efe6799c4b7c624b9e521f5ee7bebc))
+* **trash:** support trash emptying without deleting their physical roots ([588c8bb](https://github.com/Sync-in/server/commit/588c8bbdc09c272c922f3e1303048a6f99efd32b))
+
+### Bug Fixes
+
+* **auth:** preserve desktop app session during service interruptions ([0bbb3b6](https://github.com/Sync-in/server/commit/0bbb3b6853469e4ccdb28bb058fee992fe6943e6))
+* **backend:cache:** retry MariaDB event scheduler after database recovery ([d4b965e](https://github.com/Sync-in/server/commit/d4b965e2011be33f217388b4a926036db4a5f1df))
+* **backend:files:** accept unsafe negative inode IDs ([8509428](https://github.com/Sync-in/server/commit/8509428d5310ee593badc6a2e00ab120d1983fd1))
+* **backend:files:** throw consistent error for unsafe filenames in unzip tests ([a0652de](https://github.com/Sync-in/server/commit/a0652de9b30d7b805062919e3195b36f207fccbd))
+* **build:** fail when PDF.js assets cannot be downloaded ([19caf0f](https://github.com/Sync-in/server/commit/19caf0fbce8fa1b140326229d64a851e7adb2eca))
+* **docker:** fail fast when MySQL URL is missing ([cadd351](https://github.com/Sync-in/server/commit/cadd3517d2be4578773cdf78850d788617d94bdb))
+* **frontend:auth:** safely replay requests after session refresh ([1d96f81](https://github.com/Sync-in/server/commit/1d96f81e6b1df8b196d236378b19af1890846f84))
+* **frontend:** disable tooltips on touch devices ([884e421](https://github.com/Sync-in/server/commit/884e42195d360f99ca05e5adf54259eed82c8ae8))
+* **frontend:** replace deprecated trash icon and expand recents layout ([84ac4ed](https://github.com/Sync-in/server/commit/84ac4ed5e12645dbc44eef5d1c72783637f5587f))
+* **search:** prevent browser shortcuts when input is focused ([a1ef31c](https://github.com/Sync-in/server/commit/a1ef31ca71f0a6e67377026caf582d74746b91be))
+
 ## [2.5.1](https://github.com/Sync-in/server/compare/v2.5.0...v2.5.1) (2026-09-14)
 
 ### Features
