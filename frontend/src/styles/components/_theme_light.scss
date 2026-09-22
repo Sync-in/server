@@ -364,12 +364,19 @@
   }
 
   :is(.app-top-menu, .sidebar-component-title).app-top-menu-tool-bar {
+    --app-top-menu-action-active-bg: var(--app-action-state-bg);
     --app-top-menu-action-hover-bg: var(--app-action-state-bg);
 
     :is(.btn-default, .btn-custom):hover:not(:disabled),
     :is(.btn-default, .btn-custom):focus-visible:not(:disabled) {
       background-color: var(--app-top-menu-action-hover-bg) !important;
       color: var(--app-action-state-color) !important;
+    }
+
+    :is(.btn-default, .btn-custom):is(.active, :active, [aria-pressed='true']):not(:disabled) {
+      background-color: var(--app-top-menu-action-active-bg) !important;
+      box-shadow: none !important;
+      color: var(--bs-body-color) !important;
     }
   }
   .app-foot-menu {

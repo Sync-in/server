@@ -11,8 +11,8 @@
   display: flex;
   align-items: center;
   width: 100%;
-  min-height: 36px;
-  padding: 0 0.35rem 0 0;
+  min-height: 40px;
+  padding: 0 0.45rem 0 0;
   overflow: hidden;
   border-top: 1px solid rgba(128, 128, 128, 0.28);
   background: #fff;
@@ -28,7 +28,7 @@
 .files-viewer-search-input {
   flex: 1 1 auto;
   min-width: 4rem;
-  height: 30px;
+  height: 34px;
   border: 0;
   outline: 0;
   background: transparent;
@@ -48,20 +48,24 @@
 .files-viewer-search-button {
   position: relative;
   flex: 0 0 auto;
-  width: 28px;
-  height: 26px;
-  margin: 2px 1px;
+  width: 32px;
+  height: 30px;
+  margin: 3px 2px;
   padding: 0;
   border: 0;
 
+  > .lucide {
+    font-size: 1.125rem;
+  }
+
   &:first-of-type {
-    margin-left: 5px;
+    margin-left: 7px;
 
     &::before {
       position: absolute;
       top: 6px;
       bottom: 6px;
-      left: -4px;
+      left: -5px;
       width: 1px;
       content: '';
       background: rgba(128, 128, 128, 0.2);

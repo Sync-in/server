@@ -389,14 +389,3 @@ body.theme-dark {
     }
   }
 }
-
-body.theme-light {
-  .files-viewer-markdown .files-markdown-toolbar {
-    --app-top-menu-action-active-bg: var(--app-top-menu-action-hover-bg);
-
-    .btn-custom:is(.active, :active, [aria-pressed='true']):not(:disabled) {
-      box-shadow: none !important;
-      color: var(--bs-body-color) !important;
-    }
-  }
-}
