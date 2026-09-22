@@ -53,6 +53,7 @@
 
       .nav-link {
         width: 100% !important;
+        height: 100%;
         margin: 0 !important;
         padding: $nav-link-padding-y $nav-link-padding-x !important;
         border-radius: $nav-pills-border-radius;
@@ -80,6 +81,12 @@
     .app-tab-label {
       @include text-truncate-utility;
       max-width: 100%;
+    }
+
+    @include media-breakpoint-down(md) {
+      .app-tab-heading > .lucide + .app-tab-label {
+        @include visually-hidden;
+      }
     }
 
     .app-tab-count {
