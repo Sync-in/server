@@ -339,6 +339,19 @@
   .cm-panel.cm-search {
     display: none;
   }
+
+  @media (max-width: 767.98px) {
+    .files-markdown-toolbar {
+      flex-wrap: wrap !important;
+      height: auto;
+      min-height: 40px;
+    }
+
+    .files-markdown-toolbar-group,
+    .files-markdown-mode-group {
+      display: contents;
+    }
+  }
 }
 
 body.theme-dark {

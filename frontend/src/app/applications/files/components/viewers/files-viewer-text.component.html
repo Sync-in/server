@@ -72,25 +72,14 @@
       type="button">
       <svg [lucideIcon]="icons.LucideSearch"></svg>
     </button>
-    @if (warnOnUnsavedChanges()) {
-      <button (click)="save(true)"
-              class="btn btn-sm btn-primary ms-auto"
-              type="button"
-              l10nTranslate>Save And Exit
-      </button>
-      <button (click)="onClose()"
-              [disabled]="isSaving()"
-              class="btn btn-sm btn-danger"
-              data-dismiss="modal" type="button"
-              l10nTranslate>Close Without Saving
-      </button>
-      <button (click)="warnOnUnsavedChanges.set(false)"
-              class="d-none d-sm-block btn btn-sm btn-default"
-              data-dismiss="modal" type="button"
-              l10nTranslate>Cancel
-      </button>
-    }
   </div>
+  @if (warnOnUnsavedChanges()) {
+    <app-files-viewer-unsaved-changes
+      [saving]="isSaving()"
+      (saveAndExit)="save(true)"
+      (closeWithoutSaving)="onClose()"
+      (keepEditing)="warnOnUnsavedChanges.set(false)" />
+  }
   <code-editor
     #editor
     [languages]="languages"

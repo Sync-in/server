@@ -91,6 +91,10 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
     return
   }
 
+  protected onContentLoadError(e: HttpErrorResponse): void {
+    this.layout.sendNotification('error', 'Unable to open document', this.file().name, e)
+  }
+
   protected onSaveFinished(): void {
     return
   }
@@ -168,7 +172,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
     }
     this.http.get(this.file().dataUrl, { responseType: 'text' }).subscribe({
       next: (data: string) => this.onContentLoaded(data),
-      error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Unable to open document', this.file().name, e)
+      error: (e: HttpErrorResponse) => this.onContentLoadError(e)
     })
   }
 

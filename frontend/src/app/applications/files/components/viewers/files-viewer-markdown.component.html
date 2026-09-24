@@ -36,7 +36,7 @@
       [disabled]="!canUndo()"
       [tooltip]="'Undo' | translate:locale.language"
       triggers="hover"
-      class="d-none d-sm-block btn btn-custom"
+      class="btn btn-custom"
       type="button">
       <svg [lucideIcon]="icons.LucideUndo"></svg>
     </button>
@@ -46,7 +46,7 @@
       [disabled]="!canRedo()"
       [tooltip]="'Redo' | translate:locale.language"
       triggers="hover"
-      class="d-none d-sm-block btn btn-custom"
+      class="btn btn-custom"
       type="button">
       <svg [lucideIcon]="icons.LucideRedo"></svg>
     </button>
@@ -117,7 +117,7 @@
           [class.active]="isSelectionActive('underline')"
           [tooltip]="'Underline' | translate:locale.language"
           triggers="hover"
-          class="d-none d-md-block btn btn-custom"
+          class="btn btn-custom"
           type="button">
           <svg [lucideIcon]="icons.LucideUnderline"></svg>
         </button>
@@ -128,12 +128,12 @@
           [class.active]="isSelectionActive('strike')"
           [tooltip]="'Strikethrough' | translate:locale.language"
           triggers="hover"
-          class="d-none d-md-block btn btn-custom"
+          class="btn btn-custom"
           type="button">
           <svg [lucideIcon]="icons.LucideStrikethrough"></svg>
         </button>
 
-        <div class="d-none d-md-block vr files-markdown-toolbar-separator"></div>
+        <div class="vr files-markdown-toolbar-separator"></div>
 
         <div class="btn-group" dropdown>
           <button
@@ -216,14 +216,14 @@
           [class.active]="isSelectionActive('blockquote')"
           [tooltip]="'Blockquote' | translate:locale.language"
           triggers="hover"
-          class="d-none d-md-block btn btn-custom"
+          class="btn btn-custom"
           type="button">
           <svg [lucideIcon]="icons.LucideQuote"></svg>
         </button>
       </div>
 
       <div class="files-markdown-toolbar-group">
-        <div class="d-none d-lg-block btn-group" dropdown>
+        <div class="btn-group" dropdown>
           <button
             [attr.aria-label]="'Table' | translate:locale.language"
             [disabled]="!canEditVisual()"
@@ -287,7 +287,7 @@
           [disabled]="!canEditVisual()"
           [tooltip]="'Horizontal Rule' | translate:locale.language"
           triggers="hover"
-          class="d-none d-lg-block btn btn-custom"
+          class="btn btn-custom"
           type="button">
           <svg [lucideIcon]="icons.LucideMinus"></svg>
         </button>
@@ -353,7 +353,7 @@
         <svg [lucideIcon]="icons.LucideTextWrap"></svg>
       </button>
     }
-    <div class="d-none d-sm-block vr files-markdown-toolbar-separator"></div>
+    <div class="vr files-markdown-toolbar-separator"></div>
     <button
       btnCheckbox
       [attr.aria-label]="'Search' | translate:locale.language"
@@ -361,30 +361,20 @@
       (ngModelChange)="toggleSearch()"
       [tooltip]="'Search' | translate:locale.language"
       triggers="hover"
-      class="d-none d-sm-block btn btn-custom"
+      class="btn btn-custom"
       type="button">
       <svg [lucideIcon]="icons.LucideSearch"></svg>
     </button>
 
-    @if (warnOnUnsavedChanges()) {
-      <button (click)="save(true)"
-              class="btn btn-sm btn-primary ms-auto"
-              type="button"
-              l10nTranslate>Save And Exit
-      </button>
-      <button (click)="onClose()"
-              [disabled]="isSaving()"
-              class="btn btn-sm btn-danger"
-              data-dismiss="modal" type="button"
-              l10nTranslate>Close Without Saving
-      </button>
-      <button (click)="warnOnUnsavedChanges.set(false)"
-              class="d-none d-sm-block btn btn-sm btn-default"
-              data-dismiss="modal" type="button"
-              l10nTranslate>Cancel
-      </button>
-    }
   </div>
+
+  @if (warnOnUnsavedChanges()) {
+    <app-files-viewer-unsaved-changes
+      [saving]="isSaving()"
+      (saveAndExit)="save(true)"
+      (closeWithoutSaving)="onClose()"
+      (keepEditing)="warnOnUnsavedChanges.set(false)" />
+  }
 
   <div class="files-markdown-content" [class.is-visual]="!isSourceMode()" [class.is-source]="isSourceMode()">
     <div class="files-markdown-visual-pane">

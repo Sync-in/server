@@ -51,6 +51,7 @@ import { FilesViewerEditableBase } from './files-viewer-editable-base'
 import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-codemirror-search-adapter'
 import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 import { TipTapFileViewerSearchAdapter } from './components/files-viewer-tiptap-search-adapter'
+import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-unsaved-changes.component'
 
 type MarkdownHeadingLevel = 1 | 2 | 3 | 4
 type MarkdownInlineMark = 'bold' | 'code' | 'italic' | 'strike' | 'underline'
@@ -82,7 +83,8 @@ const ExitInlineCodeOnEnter = Extension.create({
     LucideDynamicIcon,
     L10nTranslatePipe,
     L10nTranslateDirective,
-    FilesViewerSearchComponent
+    FilesViewerSearchComponent,
+    FilesViewerUnsavedChangesComponent
   ],
   styleUrl: 'files-viewer-markdown.component.scss',
   templateUrl: 'files-viewer-markdown.component.html'
