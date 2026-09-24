@@ -13,10 +13,11 @@ import {
   untracked,
   viewChildren
 } from '@angular/core'
+import { CACHE_LOCK_FILE_TTL } from '@sync-in-server/backend/src/applications/files/constants/cache'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import { L10N_LOCALE, L10nLocale } from 'angular-l10n'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
-import { firstValueFrom } from 'rxjs'
+import { catchError, EMPTY, exhaustMap, filter, firstValueFrom, Subscription, tap, timer } from 'rxjs'
 import { type AppWindow, themeDark } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { MAX_CLIENT_EDITOR_FILE_SIZE } from '../../files.constants'
@@ -24,6 +25,9 @@ import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 import { FilesUploadService } from '../../services/files-upload.service'
 import { fileLockPropsToString } from '../utils/file-lock.utils'
+
+const LOCK_REFRESH_INTERVAL_MS = (CACHE_LOCK_FILE_TTL * 1_000) / 6
+const HTTP_STATUS_LOCKED = 423
 
 @Directive()
 export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestroy {
@@ -44,7 +48,11 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   private readonly http = inject(HttpClient)
   private readonly filesServices = inject(FilesService)
   private readonly filesUpload = inject(FilesUploadService)
-  private readonly subscription = this.layout.switchTheme.subscribe((layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light'))
+  private readonly themeSubscription = this.layout.switchTheme.subscribe(
+    (layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light')
+  )
+  private lockRefreshSubscription: Subscription | null = null
+  private lockRefreshWarningSent = false
   private isDestroyed = false
   private unlockPromise: Promise<boolean> | null = null
 
@@ -69,7 +77,8 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   }
 
   ngOnDestroy() {
-    this.subscription.unsubscribe()
+    this.themeSubscription.unsubscribe()
+    this.stopLockRefresh()
     this.isDestroyed = true
     // Fallback for programmatic closes that bypass onClose().
     if (!this.isReadonly() && this.file().lock) {
@@ -196,6 +205,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
         await this.unlockFile()
         return false
       }
+      this.startLockRefresh()
       return true
     } catch (e) {
       this.lockError(e as HttpErrorResponse)
@@ -204,14 +214,62 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   }
 
   protected unlockFile(): Promise<boolean> {
+    this.stopLockRefresh()
     if (!this.file().lock) return Promise.resolve(true)
     // Close, toggle and destroy paths must await the same request instead of racing each other.
     if (this.unlockPromise) return this.unlockPromise
 
-    this.unlockPromise = this.releaseLock().finally(() => {
-      this.unlockPromise = null
-    })
+    this.unlockPromise = this.releaseLock()
+      .then((success) => {
+        if (!success && !this.isDestroyed && !this.isReadonly()) this.startLockRefresh()
+        return success
+      })
+      .finally(() => {
+        this.unlockPromise = null
+      })
     return this.unlockPromise
+  }
+
+  private startLockRefresh() {
+    if (this.lockRefreshSubscription || this.isDestroyed || !this.isWriteable() || !this.file().lock) return
+    this.lockRefreshWarningSent = false
+    this.lockRefreshSubscription = timer(LOCK_REFRESH_INTERVAL_MS, LOCK_REFRESH_INTERVAL_MS)
+      .pipe(
+        filter(() => !this.isReadonly() && this.isWriteable() && !!this.file().lock),
+        exhaustMap(() =>
+          this.filesServices.lock(this.file()).pipe(
+            tap((lock: FileLockProps) => {
+              this.lockRefreshWarningSent = false
+              this.file.update((file) => {
+                file.lock = lock
+                return file
+              })
+            }),
+            catchError((e: HttpErrorResponse) => {
+              this.handleLockRefreshError(e)
+              return EMPTY
+            })
+          )
+        )
+      )
+      .subscribe()
+  }
+
+  private stopLockRefresh() {
+    this.lockRefreshSubscription?.unsubscribe()
+    this.lockRefreshSubscription = null
+  }
+
+  private handleLockRefreshError(e: HttpErrorResponse) {
+    if (e.status === HTTP_STATUS_LOCKED) {
+      this.stopLockRefresh()
+      this.lockError(e)
+      return
+    }
+    if (!this.lockRefreshWarningSent) {
+      this.lockRefreshWarningSent = true
+      this.layout.sendNotification('warning', this.file().name, 'Service unavailable', e)
+    }
   }
 
   private async releaseLock(): Promise<boolean> {
@@ -237,6 +295,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   }
 
   private lockError(e: HttpErrorResponse) {
+    this.stopLockRefresh()
     // Lock availability is independent from editor support: keep the viewer read-only and retryable.
     this.isReadonly.set(true)
     if (e.error?.owner) {
