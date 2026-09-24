@@ -69,7 +69,8 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
         ? configuration.applications.files.editors.onlyoffice
         : configuration.applications.files.editors.eurooffice
       ).externalServer,
-      configuration.applications.files.editors.collabora.externalServer
+      configuration.applications.files.editors.collabora.externalServer,
+      configuration.applications.files.editors.drawio.externalServer
     )
   })
 

@@ -21,6 +21,8 @@ applications:
     editors:
       collabora:
         enabled: false
+      drawio:
+        enabled: false
       onlyoffice:
         enabled: false
         # Required when enabled. Must match JWT_SECRET in the OnlyOffice container.

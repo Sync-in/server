@@ -172,7 +172,7 @@ export class FilesViewerTextComponent extends FilesViewerEditableBase implements
     this.savedContent = content
   }
 
-  protected override onSaveFinished() {
+  protected override onSaveFinished(_success: boolean) {
     this.scheduleEditorFocus(undefined, true)
   }
 

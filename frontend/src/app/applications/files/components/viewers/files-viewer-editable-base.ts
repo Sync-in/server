@@ -19,6 +19,7 @@ import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { firstValueFrom } from 'rxjs'
 import { type AppWindow, themeDark } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
+import { MAX_CLIENT_EDITOR_FILE_SIZE } from '../../files.constants'
 import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 import { FilesUploadService } from '../../services/files-upload.service'
@@ -45,7 +46,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   private readonly filesUpload = inject(FilesUploadService)
   private readonly subscription = this.layout.switchTheme.subscribe((layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light'))
   private isDestroyed = false
-  private unlockRequested = false
+  private unlockPromise: Promise<boolean> | null = null
 
   protected constructor() {
     effect(() => {
@@ -95,7 +96,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
     this.layout.sendNotification('error', 'Unable to open document', this.file().name, e)
   }
 
-  protected onSaveFinished(): void {
+  protected onSaveFinished(_success: boolean): void {
     return
   }
 
@@ -105,34 +106,43 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
         this.isReadonly.set(false)
       }
     } else {
-      await this.unlockFile()
-      this.isReadonly.set(true)
+      if (await this.unlockFile()) {
+        this.isReadonly.set(true)
+      }
     }
   }
 
   protected save(exit = false) {
     if (!this.canSave()) return
-    this.isSaving.set(true)
     const content = this.currentFileContent()
+    const contentSize = new Blob([content]).size
+    if (contentSize >= MAX_CLIENT_EDITOR_FILE_SIZE) {
+      this.onSaveFinished(false)
+      this.layout.sendNotification('warning', 'Unable to save document', 'File size limit exceeded')
+      return
+    }
+    this.isSaving.set(true)
     this.filesUpload.uploadFileContent(this.file(), content, true).subscribe({
       next: () => {
         if (this.isDestroyed) return
         this.onContentSaved(content)
-        this.isModified.set(false)
+        // The editor may have changed while this content snapshot was uploading.
+        // Only mark it clean when the current content still matches that snapshot.
+        this.isModified.set(this.currentFileContent() !== content)
         this.isSaving.set(false)
         this.warnOnUnsavedChanges.set(false)
-        if (exit) {
+        if (exit && !this.isModified()) {
           this.onClose().catch(console.error)
         } else {
-          this.onSaveFinished()
+          this.onSaveFinished(true)
         }
-        this.file().updateSize(new Blob([content]).size)
+        this.file().updateSize(contentSize)
         this.file().updateHTimeAgo()
       },
       error: (e: HttpErrorResponse) => {
         if (this.isDestroyed) return
         this.isSaving.set(false)
-        this.onSaveFinished()
+        this.onSaveFinished(false)
         this.layout.sendNotification('error', 'Unable to save document', e.error.message)
       }
     })
@@ -160,9 +170,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
 
   protected async onClose() {
     if (this.isSaving()) return
-    if (!this.isReadonly()) {
-      await this.unlockFile()
-    }
+    if (!this.isReadonly() && !(await this.unlockFile())) return
     this.layout.closeDialog(null, this.file().id)
   }
 
@@ -180,7 +188,6 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
     if (!this.isSupported() || !this.isWriteable()) return false
     try {
       const lock: FileLockProps = await firstValueFrom(this.filesServices.lock(this.file()))
-      this.unlockRequested = false
       this.file.update((f) => {
         f.lock = lock
         return f
@@ -196,30 +203,42 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
     }
   }
 
-  protected async unlockFile() {
-    if (this.unlockRequested || !this.isSupported() || !this.isWriteable()) return
-    this.unlockRequested = true
+  protected unlockFile(): Promise<boolean> {
+    if (!this.file().lock) return Promise.resolve(true)
+    // Close, toggle and destroy paths must await the same request instead of racing each other.
+    if (this.unlockPromise) return this.unlockPromise
+
+    this.unlockPromise = this.releaseLock().finally(() => {
+      this.unlockPromise = null
+    })
+    return this.unlockPromise
+  }
+
+  private async releaseLock(): Promise<boolean> {
     try {
       await firstValueFrom(this.filesServices.unlock(this.file()))
       this.file.update((f) => {
         delete f.lock
         return f
       })
+      return true
     } catch (e) {
-      this.lockError(e as HttpErrorResponse)
+      // Keep the local lock and the editor state intact so a later close or toggle can retry.
+      this.layout.sendNotification('warning', 'Unable to unlock file', this.file().name, e as HttpErrorResponse)
+      return false
     }
   }
 
   private unlockFileOnPageUnload() {
     // Firefox may cancel this request when closing the tab before it reaches the backend.
-    if (this.unlockRequested || this.isReadonly() || !this.file().lock || !this.isSupported() || !this.isWriteable()) return
-    this.unlockRequested = true
-    this.filesServices.unlock(this.file()).subscribe({ error: () => undefined })
+    if (this.isReadonly() || !this.file().lock) return
+    // Reuse an existing unlock promise so destruction cannot start a competing request.
+    void this.unlockFile()
   }
 
   private lockError(e: HttpErrorResponse) {
+    // Lock availability is independent from editor support: keep the viewer read-only and retryable.
     this.isReadonly.set(true)
-    this.isSupported.set(false)
     if (e.error?.owner) {
       const lock: FileLockProps = e.error
       this.file.update((f) => {

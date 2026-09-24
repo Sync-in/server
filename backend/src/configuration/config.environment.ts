@@ -17,6 +17,7 @@ export const serverConfig: ServerConfig = {
   files: {
     editors: {
       collabora: configuration.applications.files.editors.collabora.enabled,
+      drawio: configuration.applications.files.editors.drawio.enabled,
       eurooffice: configuration.applications.files.editors.eurooffice.enabled,
       onlyoffice: configuration.applications.files.editors.onlyoffice.enabled
     },

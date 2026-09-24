@@ -53,7 +53,7 @@ import { type FilesOverwriteAction, FilesOverwriteDialogComponent } from '../com
 import type { FilesViewerDialogComponent as FilesViewerDialogComponentState } from '../components/dialogs/files-viewer-dialog.component'
 import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
 import { fileLockPropsToString } from '../components/utils/file-lock.utils'
-import { MAX_DIAGRAM_FILE_SIZE, MAX_TEXT_FILE_SIZE, SHORT_MIME } from '../files.constants'
+import { MAX_CLIENT_EDITOR_FILE_SIZE, SHORT_MIME } from '../files.constants'
 import { FileContentModel } from '../models/file-content.model'
 import { FileFavoriteModel } from '../models/file-favorite.model'
 import { FileRecentModel } from '../models/file-recent.model'
@@ -388,7 +388,7 @@ export class FilesService {
   }
 
   private async openViewerAfterAvailabilityCheck(file: FileModel, directoryFiles: FileModel[], permissions: string): Promise<void> {
-    // This check is only used for the text viewer; other viewers are read-only or enforce permissions on the backend.
+    // Client-side editable viewers use this flag; office editors enforce permissions on the backend.
     const isWriteable = !file?.lock?.isExclusive && permissions.includes(SPACE_OPERATION.MODIFY)
     const mode: FILE_MODE = isWriteable ? FILE_MODE.EDIT : FILE_MODE.VIEW
 
@@ -481,14 +481,14 @@ export class FilesService {
   }
 
   private async viewerHook(file: FileModel): Promise<ViewerHookResult> {
-    if (file.shortMime === SHORT_MIME.DIAGRAM && file.size >= MAX_DIAGRAM_FILE_SIZE) {
+    if (file.shortMime === SHORT_MIME.DIAGRAM && file.size >= MAX_CLIENT_EDITOR_FILE_SIZE) {
       return { action: 'download', message: this.fileSizeLimitExceededMessage }
     }
     if (file.shortMime === SHORT_MIME.TEXT || file.shortMime === SHORT_MIME.MARKDOWN) {
       if (file.shortMime === SHORT_MIME.TEXT && (await this.hasBinaryContent(file))) {
         return { action: 'download' }
       }
-      if (file.size >= MAX_TEXT_FILE_SIZE) {
+      if (file.size >= MAX_CLIENT_EDITOR_FILE_SIZE) {
         // Download if too large
         return { action: 'download', message: this.fileSizeLimitExceededMessage }
       }

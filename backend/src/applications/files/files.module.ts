@@ -6,6 +6,7 @@ import { FilesTasksController } from './files-tasks.controller'
 import { FilesController } from './files.controller'
 import { FilesContentStore } from './models/files-content-store'
 import { CollaboraOnlineModule } from './editors/collabora-online/collabora-online.module'
+import { DrawioModule } from './editors/drawio/drawio.module'
 import { OnlyOfficeModule } from './editors/only-office/only-office.module'
 import { FilesContentIndexer } from './services/files-content-indexer.service'
 import { FilesLockManager } from './services/files-lock-manager.service'
@@ -31,7 +32,8 @@ import { FilesFavoritesQueries } from './services/files-favorites-queries.servic
     ...(configuration.applications.files.editors.onlyoffice.enabled || configuration.applications.files.editors.eurooffice.enabled
       ? [OnlyOfficeModule]
       : []),
-    ...(configuration.applications.files.editors.collabora.enabled ? [CollaboraOnlineModule] : [])
+    ...(configuration.applications.files.editors.collabora.enabled ? [CollaboraOnlineModule] : []),
+    ...(configuration.applications.files.editors.drawio.enabled ? [DrawioModule] : [])
   ],
   controllers: [FilesOperationsController, FilesController, FilesTasksController],
   providers: [

@@ -451,7 +451,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     this.savedContent = content
   }
 
-  protected override onSaveFinished() {
+  protected override onSaveFinished(_success: boolean) {
     this.scheduleEditorFocus(this.isSourceMode() ? 'source' : 'visual', undefined, true)
   }
 

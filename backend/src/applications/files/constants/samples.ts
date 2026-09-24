@@ -1,5 +1,5 @@
 export const SAMPLE_PATH_WITHOUT_EXT = '../assets/samples/sample'
-export const SAMPLE_DOCUMENT_GROUPS = ['opendocument', 'microsoft'] as const
+export const SAMPLE_DOCUMENT_GROUPS = ['opendocument', 'microsoft', 'drawio'] as const
 export type SampleDocumentGroup = (typeof SAMPLE_DOCUMENT_GROUPS)[number]
 export type DocumentTypes = Record<string, string>
 
@@ -13,8 +13,15 @@ export const DOCUMENT_TYPES_BY_GROUP: Record<SampleDocumentGroup, DocumentTypes>
     'Microsoft Word': 'docx',
     'Microsoft Excel': 'xlsx',
     'Microsoft PowerPoint': 'pptx'
+  },
+  drawio: {
+    Diagram: 'drawio'
   }
 }
+
+export const SAMPLE_DOCUMENT_EXTENSIONS = new Set<string>(
+  Object.values(DOCUMENT_TYPES_BY_GROUP).flatMap((documentTypes) => Object.values(documentTypes))
+)
 
 export const DEFAULT_DOCUMENT_TYPES: DocumentTypes = {
   Text: 'txt',

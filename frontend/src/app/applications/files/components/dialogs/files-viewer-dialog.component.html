@@ -85,6 +85,22 @@
           <div [style.height.px]="currentHeight" class="d-flex p-4" l10nTranslate>No editor found</div>
         }
       }
+      @case (SHORT_MIME.DIAGRAM) {
+        @defer (on immediate) {
+          <app-files-viewer-drawio
+            [currentHeight]="currentHeight - 5"
+            [file]="currentFile"
+            [isWriteable]="isWriteable"
+            [modalClosing]="modalClosing()"
+            (viewerReady)="editableViewerReady.set(true)"
+            [(isReadonly)]="isReadonly">
+          </app-files-viewer-drawio>
+        } @loading (after 100ms; minimum 200ms) {
+          <ng-container [ngTemplateOutlet]="viewerLoading"></ng-container>
+        } @error {
+          <ng-container [ngTemplateOutlet]="viewerError"></ng-container>
+        }
+      }
       @case (SHORT_MIME.MARKDOWN) {
         @defer (on immediate) {
           <app-files-viewer-markdown

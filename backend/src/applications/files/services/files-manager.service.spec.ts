@@ -886,16 +886,19 @@ describe(FilesManager.name, () => {
   })
 
   describe('creation', () => {
-    it('mkFile should use sample document when requested', async () => {
-      const space = makeSpace({ realPath: '/data/users/john/files/doc.docx' })
+    it.each([
+      ['doc.docx', 'sample.docx'],
+      ['diagram.drawio', 'sample.drawio']
+    ])('mkFile should use the %s sample document when requested', async (fileName, sampleName) => {
+      const space = makeSpace({ realPath: `/data/users/john/files/${fileName}` })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(false)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
 
       await service.mkFile(user, space, false, true, true)
 
       expect(filesUtils.copyFileContent).toHaveBeenCalledWith(
-        expect.stringContaining('assets/samples/sample.docx'),
-        '/data/users/john/files/doc.docx'
+        expect.stringContaining(`assets/samples/${sampleName}`),
+        `/data/users/john/files/${fileName}`
       )
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: space.realPath })
     })

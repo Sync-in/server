@@ -8,6 +8,7 @@ services:
       - ./onlyoffice.conf:/etc/nginx/onlyoffice.conf
       - ./collabora.conf:/etc/nginx/collabora.conf
       - ./eurooffice.conf:/etc/nginx/eurooffice.conf
+      - ./drawio.conf:/etc/nginx/drawio.conf
     ports:
       - "80:80"
     logging:

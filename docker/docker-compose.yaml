@@ -3,6 +3,7 @@
 #  - ./config/onlyoffice/docker-compose.onlyoffice.yaml
 #  - ./config/collabora/docker-compose.collabora.yaml
 #  - ./config/eurooffice/docker-compose.eurooffice.yaml
+#  - ./config/drawio/docker-compose.drawio.yaml
 #  - ./config/sync-in-desktop-releases/docker-compose.sync-in-desktop-releases.yaml
 
 name: sync-in

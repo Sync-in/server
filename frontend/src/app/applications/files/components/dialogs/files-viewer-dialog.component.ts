@@ -10,6 +10,7 @@ import { StoreService } from '../../../../store/store.service'
 import { SHORT_MIME } from '../../files.constants'
 import { FileModel } from '../../models/file.model'
 import { FilesViewerCollaboraOnlineComponent } from '../viewers/files-viewer-collabora-online.component'
+import { FilesViewerDrawioComponent } from '../viewers/files-viewer-drawio.component'
 import { FilesViewerImageComponent } from '../viewers/files-viewer-image.component'
 import { FilesViewerMarkdownComponent } from '../viewers/files-viewer-markdown.component'
 import { FilesViewerMediaComponent } from '../viewers/files-viewer-media.component'
@@ -29,6 +30,7 @@ import { FilesViewerTextComponent } from '../viewers/files-viewer-text.component
     LucideDynamicIcon,
     FilesViewerOnlyOfficeComponent,
     FilesViewerCollaboraOnlineComponent,
+    FilesViewerDrawioComponent,
     L10nTranslateDirective
   ],
   templateUrl: 'files-viewer-dialog.component.html'
@@ -68,7 +70,8 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   }
 
   onClose() {
-    const isEditableViewer = this.hookedShortMime === SHORT_MIME.TEXT || this.hookedShortMime === SHORT_MIME.MARKDOWN
+    const isEditableViewer =
+      this.hookedShortMime === SHORT_MIME.TEXT || this.hookedShortMime === SHORT_MIME.MARKDOWN || this.hookedShortMime === SHORT_MIME.DIAGRAM
     if (isEditableViewer && this.editableViewerReady()) {
       // Prevent closing the modal without saving when using text-based editors
       this.modalClosing.set(true)

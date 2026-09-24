@@ -17,6 +17,7 @@ import {
 import type { SampleDocumentGroup } from './constants/samples'
 import { SAMPLE_DOCUMENT_GROUPS } from './constants/samples'
 import { CollaboraOnlineConfig } from './editors/collabora-online/collabora-online.config'
+import { DrawioConfig } from './editors/drawio/drawio.config'
 import { OnlyOfficeConfig } from './editors/only-office/only-office.config'
 
 export class FilesContentIndexingOCRConfig {
@@ -77,6 +78,11 @@ export class FilesEditorsConfig {
   @ValidateNested()
   @Type(() => CollaboraOnlineConfig)
   collabora: CollaboraOnlineConfig = new CollaboraOnlineConfig()
+
+  @IsNotEmptyObject()
+  @ValidateNested()
+  @Type(() => DrawioConfig)
+  drawio: DrawioConfig = new DrawioConfig()
 }
 
 export class FilesConfig {

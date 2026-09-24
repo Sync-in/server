@@ -24,7 +24,7 @@ import { CACHE_LOCK_FILE_TTL } from '../constants/cache'
 import { TAR_EXTENSION, TAR_GZ_EXTENSION, ZIP_EXTENSION } from '../constants/compress'
 import { COMPRESSION_EXTENSION } from '../constants/files'
 import { FILE_OPERATION } from '../constants/operations'
-import { ALL_DOCUMENT_TYPES, DEFAULT_DOCUMENT_TYPES, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
+import { SAMPLE_DOCUMENT_EXTENSIONS, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
 import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto'
 import type { DeleteFileOptions } from '../interfaces/delete-file.interface'
 import { FileDBProps } from '../interfaces/file-db-props.interface'
@@ -384,11 +384,7 @@ export class FilesManager {
     }
     // use sample documents when possible
     const fileExtension = path.extname(space.realPath).slice(1)
-    if (
-      checkDocument &&
-      Object.values(DEFAULT_DOCUMENT_TYPES).indexOf(fileExtension) === -1 &&
-      Object.values(ALL_DOCUMENT_TYPES).indexOf(fileExtension) > -1
-    ) {
+    if (checkDocument && SAMPLE_DOCUMENT_EXTENSIONS.has(fileExtension)) {
       const srcSample = path.join(__dirname, `${SAMPLE_PATH_WITHOUT_EXT}.${fileExtension}`)
       await copyFileContent(srcSample, space.realPath)
       // emit file event

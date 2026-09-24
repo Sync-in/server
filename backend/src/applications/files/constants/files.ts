@@ -8,6 +8,8 @@ export const TEMPORARY_PATH = {
   ACTORS: 'users'
 } as const
 export const EXTRA_MIMES_TYPE = new Map([
+  ['.drawio', 'application-x-drawio'],
+  ['.dwb', 'application-x-drawio-wb'],
   ['.go', 'text-x-go'],
   ['.gz', 'application-gzip'],
   ['.gzip', 'application-gzip'],

@@ -378,10 +378,10 @@ applications:
     # default: false
     showHiddenFiles: false
     # Optional document groups shown in the "new document" dialog.
-    # options: `microsoft` | `opendocument`
+    # options: `microsoft` | `opendocument` | `drawio`
     # use [] to only show Text and Markdown
-    # default: [opendocument, microsoft]
-    sampleDocuments: [opendocument, microsoft]
+    # default: [opendocument, microsoft, drawio]
+    sampleDocuments: [opendocument, microsoft, drawio]
     editors:
       onlyoffice:
         # enable onlyoffice integration
@@ -390,9 +390,9 @@ applications:
         # Secret used for jwt tokens, it must be the same on the onlyoffice server
         # required
         secret:
-        # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
-        # If an external server is configured, it will be used instead.
-        # Note: when using an external server (e.g.: https://onlyoffice.domain.com), make sure it is accessible from the client/browser.
+        # If unset, the local Docker Compose service is used through Nginx.
+        # If set, this external URL is used instead and must be accessible from the client/browser.
+        # example: https://onlyoffice.domain.com
         # default: null
         externalServer:
         # If you use https, set to `true`.
@@ -405,8 +405,9 @@ applications:
         # Secret used for jwt tokens, it must be the same on the Euro-Office server
         # required
         secret:
-        # If an external server is configured, it will be used.
-        # Note: make sure it is accessible from the client/browser.
+        # If unset, the local Docker Compose service is used through Nginx.
+        # If set, this external URL is used instead and must be accessible from the client/browser.
+        # example: https://eurooffice.domain.com
         # default: null
         externalServer:
         # If you use https, set to `true`.
@@ -416,9 +417,18 @@ applications:
         # enable collabora online integration
         # default: false
         enabled: false
-        # If no external server is configured, the local Nginx service from the Docker Compose setup is used.
-        # If an external server is configured, it will be used instead.
-        # Note: when using an external server (e.g.: https://collabora.domain.com), make sure it is accessible from the client/browser.
+        # If unset, the local Docker Compose service is used through Nginx.
+        # If set, this external URL is used instead and must be accessible from the client/browser.
+        # example: https://collabora.domain.com
+        # default: null
+        externalServer:
+      drawio:
+        # enable draw.io integration
+        # default: false
+        enabled: false
+        # If unset, the local Docker Compose service is used through Nginx.
+        # If set, this external URL is used instead and must be accessible from the client/browser.
+        # example: https://drawio.domain.com
         # default: null
         externalServer:
   # Client application repository configuration

@@ -7,6 +7,7 @@ import { FileError } from '../models/file-error'
 import { storageQuotaExceededError } from './errors'
 import {
   createSizeLimiter,
+  getMimeType,
   isCrossDevice,
   isInternalTemporaryEntry,
   isInternalTemporaryPath,
@@ -79,6 +80,13 @@ describe(sanitizeName.name, () => {
     expect(sanitizeName('.\\')).toBe('')
     expect(sanitizeName('folder./')).toBe('folder')
     expect(sanitizeName('archive.tar.gz')).toBe('archive.tar.gz')
+  })
+})
+
+describe(getMimeType.name, () => {
+  it('returns draw.io MIME types for diagrams and workbooks', () => {
+    expect(getMimeType('/path/to/diagram.drawio', false)).toBe('application-x-drawio')
+    expect(getMimeType('/path/to/diagram.dwb', false)).toBe('application-x-drawio-wb')
   })
 })
 
