@@ -59,16 +59,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   protected constructor() {
     effect(() => {
       if (!this.modalClosing()) return
-      const fileId = untracked(() => this.file().id)
-      const modified = untracked(() => this.isModified())
-      if (modified) {
-        this.warnOnUnsavedChanges.set(true)
-        if (this.layout.windows.getValue().find((w: AppWindow) => w.id === fileId)) {
-          this.layout.restoreDialog(fileId)
-        }
-      } else {
-        this.onClose().catch(console.error)
-      }
+      untracked(() => this.requestClose())
     })
   }
 
@@ -167,6 +158,18 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
 
   protected canRestoreEditorFocus(): boolean {
     return !document.activeElement?.closest('.files-viewer-search')
+  }
+
+  protected requestClose(): void {
+    const fileId = this.file().id
+    if (this.isModified()) {
+      this.warnOnUnsavedChanges.set(true)
+      if (this.layout.windows.getValue().find((w: AppWindow) => w.id === fileId)) {
+        this.layout.restoreDialog(fileId)
+      }
+    } else {
+      this.onClose().catch(console.error)
+    }
   }
 
   protected hideTooltips(): void {

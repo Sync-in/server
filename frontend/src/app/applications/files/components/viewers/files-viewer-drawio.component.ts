@@ -90,6 +90,7 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
   // Coalesce those events into one follow-up upload containing the latest XML.
   private savePending = false
   private closeAfterSave = false
+  private closeCheckPending = false
 
   constructor() {
     super()
@@ -149,6 +150,13 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
         break
       case 'autosave':
         if (typeof data.xml === 'string') this.trackChanges(data.xml)
+        break
+      case 'export':
+        if (this.closeCheckPending && typeof data.xml === 'string') {
+          this.closeCheckPending = false
+          this.trackChanges(data.xml)
+          super.requestClose()
+        }
         break
       case 'exit':
         this.requestClose()
@@ -258,13 +266,15 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
     this.isModified.set(this.content !== this.savedContent)
   }
 
-  private requestClose() {
-    if (this.isSaving()) return
-    if (this.isModified() && !this.isReadonly()) {
-      this.warnOnUnsavedChanges.set(true)
-    } else {
-      this.onClose().catch(console.error)
+  protected override requestClose() {
+    if (this.isSaving() || this.closeCheckPending) return
+    if (this.isReadonlyView()) {
+      super.requestClose()
+      return
     }
+    this.closeCheckPending = true
+    this.postToEditor({ action: 'resetEditor' })
+    this.postToEditor({ action: 'export', format: 'xml' })
   }
 
   private persist() {
