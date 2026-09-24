@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Request, Res, StreamableFile, UseGuards, UseInterceptors } from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Request, Res, StreamableFile, UseGuards, UseInterceptors } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor'
 import { SPACE_OPERATION } from '../../../spaces/constants/spaces'
@@ -25,8 +25,8 @@ export class OnlyOfficeController {
   @Get(`${ONLY_OFFICE_ROUTE.SETTINGS}/*`)
   @UseGuards(SpaceGuard)
   @UseInterceptors(ContextInterceptor)
-  onlyOfficeSettings(@Request() req: FastifySpaceRequest): Promise<OnlyOfficeReqDto> {
-    return this.filesOnlyOfficeManager.getSettings(req.user, req.space, req)
+  onlyOfficeSettings(@Request() req: FastifySpaceRequest, @Query('theme') theme?: 'light' | 'dark'): Promise<OnlyOfficeReqDto> {
+    return this.filesOnlyOfficeManager.getSettings(req.user, req.space, req, theme)
   }
 
   @Get(`${ONLY_OFFICE_ROUTE.DOCUMENT}/*`)

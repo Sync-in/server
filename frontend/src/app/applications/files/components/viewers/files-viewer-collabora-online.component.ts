@@ -1,10 +1,10 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Component, inject, input, model, OnDestroy, OnInit } from '@angular/core'
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'
+import { Component, ElementRef, inject, input, model, OnDestroy, OnInit, ViewChild } from '@angular/core'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { COLLABORA_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
 import type { CollaboraOnlineReqDto } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.dtos'
 import { API_COLLABORA_ONLINE_SETTINGS } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.routes'
+import { themeDark } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
 import { FileModel } from '../../models/file.model'
@@ -16,11 +16,10 @@ import { fileLockPropsToString } from '../utils/file-lock.utils'
   template: `
     @if (documentServerUrl) {
       <div class="app-collabora-online-border" [style.height.px]="currentHeight()">
-        <iframe
-          [src]="documentServerUrl"
-          class="app-viewer-iframe collabora-scaling"
-          allow="clipboard-read *; clipboard-write *; fullscreen"
-        ></iframe>
+        <iframe [attr.name]="frameName" class="app-viewer-iframe collabora-scaling" allow="clipboard-read *; clipboard-write *; fullscreen"></iframe>
+        <form #documentForm [action]="documentServerUrl" method="post" [attr.target]="frameName" hidden>
+          <input type="hidden" name="ui_defaults" [value]="collaboraUiDefaults" />
+        </form>
       </div>
     }
   `,
@@ -39,15 +38,22 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
   file = input.required<FileModel>()
   isReadonly = model.required<boolean>()
   currentHeight = input<number>()
-  protected documentServerUrl: SafeResourceUrl = null
+  protected documentServerUrl: string = null
+  protected frameName: string
+  protected collaboraUiDefaults: string
   private readonly http = inject(HttpClient)
   private readonly filesService = inject(FilesService)
   private readonly layout = inject(LayoutService)
   private readonly store = inject(StoreService)
-  private readonly sanitizer = inject(DomSanitizer)
   private shouldReconcileMetadata = false
 
+  @ViewChild('documentForm')
+  private set documentForm(form: ElementRef<HTMLFormElement> | undefined) {
+    form?.nativeElement.submit()
+  }
+
   ngOnInit() {
+    this.frameName = `collabora-frame-${this.file().id}`
     this.http.get<CollaboraOnlineReqDto>(`${API_COLLABORA_ONLINE_SETTINGS}/${this.file().path}`).subscribe({
       next: (data) => {
         if (!data) {
@@ -77,7 +83,10 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
             isExclusive: false
           })
         }
-        this.documentServerUrl = this.sanitizer.bypassSecurityTrustResourceUrl(`${data.documentServerUrl}&lang=${this.layout.getCurrentLanguage()}`)
+        const documentServerUrl = new URL(data.documentServerUrl)
+        documentServerUrl.searchParams.set('lang', this.layout.getCurrentLanguage())
+        this.collaboraUiDefaults = `UITheme=${this.layout.switchTheme.getValue() === themeDark ? 'dark' : 'light'};`
+        this.documentServerUrl = documentServerUrl.toString()
       },
       error: (e: HttpErrorResponse) => {
         this.layout.closeDialog()

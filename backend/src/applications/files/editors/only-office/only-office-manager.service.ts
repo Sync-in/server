@@ -75,7 +75,7 @@ export class OnlyOfficeManager {
     private readonly filesLockManager: FilesLockManager
   ) {}
 
-  async getSettings(user: UserModel, space: SpaceEnv, req: FastifySpaceRequest): Promise<OnlyOfficeReqDto> {
+  async getSettings(user: UserModel, space: SpaceEnv, req: FastifySpaceRequest, theme?: 'dark' | 'light'): Promise<OnlyOfficeReqDto> {
     if (!(await isPathExists(space.realPath))) {
       throw new HttpException('Document not found', HttpStatus.BAD_REQUEST)
     }
@@ -111,6 +111,7 @@ export class OnlyOfficeManager {
     const fileUrl = this.buildUrl(API_ONLY_OFFICE_DOCUMENT, encodeUrl(space.url), authToken)
     const callBackUrl = this.buildUrl(API_ONLY_OFFICE_CALLBACK, encodeUrl(space.url), authToken)
     const config: OnlyOfficeReqDto = await this.genConfiguration(user, space, mode, fileUrl, fileExtension, callBackUrl, isMobile, hasLock)
+    config.config.editorConfig.customization.uiTheme = `theme-${theme ?? 'light'}`
     config.config.token = await this.genPayloadToken(config.config)
     return config
   }

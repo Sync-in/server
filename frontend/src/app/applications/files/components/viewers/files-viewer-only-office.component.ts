@@ -4,6 +4,7 @@ import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/consta
 import { EURO_OFFICE_APP_LOCK, ONLY_OFFICE_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import type { OnlyOfficeReqDto } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.dtos'
 import { API_ONLY_OFFICE_SETTINGS } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.routes'
+import { themeDark } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
 import { FileModel } from '../../models/file.model'
@@ -51,7 +52,8 @@ export class FilesViewerOnlyOfficeComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.docId = `viewer-doc-${this.file().id}`
-    this.http.get<OnlyOfficeReqDto>(`${API_ONLY_OFFICE_SETTINGS}/${this.file().path}`).subscribe({
+    const theme = this.layout.switchTheme.getValue() === themeDark ? 'dark' : 'light'
+    this.http.get<OnlyOfficeReqDto>(`${API_ONLY_OFFICE_SETTINGS}/${this.file().path}`, { params: { theme } }).subscribe({
       next: (data) => {
         if (!data) {
           this.layout.closeDialog()

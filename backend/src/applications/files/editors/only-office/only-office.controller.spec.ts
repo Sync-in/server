@@ -64,7 +64,7 @@ describe(OnlyOfficeController.name, () => {
       const result = await controller.onlyOfficeSettings(req)
 
       expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledTimes(1)
-      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, req)
+      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, req, undefined)
       expect(result).toBe(expected)
     })
 
@@ -77,7 +77,7 @@ describe(OnlyOfficeController.name, () => {
 
       const result = await controller.onlyOfficeSettings(req)
 
-      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, req)
+      expect(filesOnlyOfficeManagerMock.getSettings).toHaveBeenCalledWith(user, space, req, undefined)
       expect(result).toBe(expected)
     })
   })
