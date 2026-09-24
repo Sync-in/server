@@ -7,6 +7,7 @@ export interface FileEvent {
   reload?: boolean
   delete?: boolean
   focus?: boolean
+  openAfterCreate?: boolean
   archiveId?: string
   // special case on move task, the src is removed, the dst is added
   reloadFocusOnDst?: boolean

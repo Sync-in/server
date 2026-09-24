@@ -44,7 +44,9 @@
               type="button">
               <img [src]="documentMimeUrl(item.value)" alt="" draggable="false" height="24" width="24" />
               <span l10nTranslate>{{ item.key }}</span>
-              <span class="ms-auto fs-xs opacity-75">.{{ item.value }}</span>
+              @if (item.value) {
+                <span class="ms-auto fs-xs opacity-75">.{{ item.value }}</span>
+              }
             </button>
           </div>
         }
@@ -88,9 +90,19 @@
   </div>
 </div>
 <div class="modal-footer">
-  @if (error) {
-    <span class="me-auto fs-sm text-danger" l10nTranslate>{{ error }}</span>
-  }
+  <div class="me-auto d-flex align-items-center gap-3">
+    @if (canOpenAfterCreation()) {
+      <div class="form-check mb-0 ps-0">
+        <label class="form-check-label ps-1">
+          <input [(ngModel)]="openAfterCreate" type="checkbox" />
+          <span l10nTranslate>Open after creation</span>
+        </label>
+      </div>
+    }
+    @if (error) {
+      <span class="fs-sm text-danger" l10nTranslate>{{ error }}</span>
+    }
+  </div>
   <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button
     (click)="onSubmit()"

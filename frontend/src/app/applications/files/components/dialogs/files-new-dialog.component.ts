@@ -2,6 +2,9 @@ import { KeyValuePipe } from '@angular/common'
 import { AfterViewInit, Component, ElementRef, EventEmitter, inject, Input, OnInit, Output, ViewChild } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideDynamicIcon, LucideFileText, LucideGlobe } from '@lucide/angular'
+import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
+import { DRAWIO_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.constants'
+import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
 import { originalOrderKeyValue } from '../../../../common/utils/functions'
@@ -13,6 +16,7 @@ import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 
 const DOCUMENT_MIME_TYPES: Record<string, string> = {
+  drawio: 'application-x-drawio',
   odt: 'application-vnd.oasis.opendocument.text',
   ods: 'application-vnd.oasis.opendocument.spreadsheet',
   odp: 'application-vnd.oasis.opendocument.presentation',
@@ -40,9 +44,9 @@ export class FilesNewDialogComponent implements OnInit, AfterViewInit {
   protected readonly directoryMimeUrl = getAssetsMimeUrl(mimeDirectory)
   protected fileProp = { title: '', name: '', placeholder: '' }
   protected downloadProp = { title: '', url: '', placeholder: 'URL (https://...)' }
-  protected selectedDocType = 'Text'
   private store = inject(StoreService)
-  protected docTypes = this.store.server().files.sampleDocuments
+  protected readonly docTypes = this.buildDocumentTypes(this.store.server().files.sampleDocuments)
+  protected openAfterCreate = false
   protected submitted = false
   protected error: string
   private filesService = inject(FilesService)
@@ -54,10 +58,10 @@ export class FilesNewDialogComponent implements OnInit, AfterViewInit {
       return
     }
 
-    this.selectedDocType = this.docTypes[this.selectedDocType] ? this.selectedDocType : Object.keys(this.docTypes)[0]
     if (this.inputType === 'file') {
+      const docType = this.docTypes.Text ? 'Text' : Object.keys(this.docTypes)[0]
       this.fileProp.title = 'New document'
-      this.fileProp.name = `${this.layout.translateString('New document')}${this.docTypeExtension(this.selectedDocType)}`
+      this.fileProp.name = `${this.layout.translateString('New document')}${this.docTypeExtension(docType)}`
       this.fileProp.placeholder = 'Document name'
     } else {
       this.fileProp.title = 'New folder'
@@ -80,7 +84,6 @@ export class FilesNewDialogComponent implements OnInit, AfterViewInit {
     }
     this.inputType = 'file'
     this.fileProp.title = 'New document'
-    this.selectedDocType = docType
     this.fileProp.placeholder = 'Document name'
     this.fileProp.name = `${baseName || this.layout.translateString('New document')}${this.docTypeExtension(docType)}`
     this.updateFileSelection()
@@ -123,7 +126,7 @@ export class FilesNewDialogComponent implements OnInit, AfterViewInit {
       }
       this.filesService.downloadFromUrl(this.downloadProp.url, this.fileProp.name)
     } else {
-      this.filesService.make(this.inputType, this.fileProp.name)
+      this.filesService.make(this.inputType, this.fileProp.name, undefined, false, this.openAfterCreate && this.canOpenAfterCreation())
     }
     this.layout.closeDialog()
   }
@@ -139,24 +142,50 @@ export class FilesNewDialogComponent implements OnInit, AfterViewInit {
   }
 
   protected selectedDocumentMimeUrl() {
-    const extensionPosition = this.fileNamePosition()
-    const extension = extensionPosition >= 0 ? this.fileProp.name.slice(extensionPosition + 1).toLowerCase() : ''
-    const documentType = Object.values(this.docTypes).find((type) => type.toLowerCase() === extension)
-    return this.documentMimeUrl(documentType || '')
+    return this.documentMimeUrl(this.docTypes[this.currentDocType()])
   }
 
   protected isSelectedDocType(docType: string) {
-    const extensionPosition = this.fileNamePosition()
-    const extension = extensionPosition >= 0 ? this.fileProp.name.slice(extensionPosition + 1).toLowerCase() : ''
-    return this.inputType === 'file' && extension === this.docTypes[docType]?.toLowerCase()
+    return this.inputType === 'file' && docType === this.currentDocType()
+  }
+
+  protected canOpenAfterCreation(): boolean {
+    const docType = this.currentDocType()
+    if (this.inputType !== 'file' || docType === 'Other') return false
+    const extension = this.docTypes[docType].toLowerCase()
+    if (extension === 'txt' || extension === 'md') return true
+    const editors = this.store.server().files.editors
+    return (
+      (editors.drawio && DRAWIO_EXTENSIONS.has(extension)) ||
+      (editors.collabora && COLLABORA_ONLINE_EXTENSIONS.has(extension)) ||
+      ((editors.onlyoffice || editors.eurooffice) && ONLY_OFFICE_EXTENSIONS.has(extension))
+    )
+  }
+
+  private buildDocumentTypes(documentTypes: Record<string, string>): Record<string, string> {
+    const { Diagram, Text, Markdown, ...officeDocumentTypes } = documentTypes
+    return {
+      ...officeDocumentTypes,
+      ...(Diagram ? { Diagram } : {}),
+      ...(Markdown ? { Markdown } : {}),
+      ...(Text ? { Text } : {}),
+      Other: ''
+    }
   }
 
   private fileNamePosition() {
     return this.fileProp.name.lastIndexOf('.')
   }
 
+  private currentDocType(): string {
+    const extensionPosition = this.fileNamePosition()
+    const extension = extensionPosition >= 0 ? this.fileProp.name.slice(extensionPosition + 1).toLowerCase() : ''
+    return Object.keys(this.docTypes).find((docType) => this.docTypes[docType] && this.docTypes[docType].toLowerCase() === extension) || 'Other'
+  }
+
   private docTypeExtension(docType: string) {
-    return `.${this.docTypes[docType]}`
+    const extension = this.docTypes[docType]
+    return extension ? `.${extension}` : ''
   }
 
   private updateFileSelection(selectAll = false) {

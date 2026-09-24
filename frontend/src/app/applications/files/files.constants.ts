@@ -15,8 +15,10 @@ export function getAssetsMimeUrl(asset: string): string {
 export const linkProtected = `${assetsUrl}/protected.png`
 export const defaultMimeUrl = getAssetsMimeUrl(mimeFile)
 export const MAX_TEXT_FILE_SIZE = 25 * 1024 * 1024 // 25 MB
+export const MAX_DIAGRAM_FILE_SIZE = 10 * 1024 * 1024 // 10 MB
 export const COMPRESSIBLE_MIMES = new Set(['application-gzip', 'application-zip', 'application-x-tar'])
 export const SHORT_MIME = {
+  DIAGRAM: 'diagram',
   DOCUMENT: 'document',
   TEXT: 'text',
   MARKDOWN: 'markdown',
@@ -135,6 +137,8 @@ export const UNSUPPORTED_VIEW_EXTENSIONS = new Set([
   'vst',
   'vstm',
   'vstx',
+  'drawio',
+  'dwb',
   'dwg',
   'sketch',
   'fig',

@@ -53,7 +53,7 @@ import { type FilesOverwriteAction, FilesOverwriteDialogComponent } from '../com
 import type { FilesViewerDialogComponent as FilesViewerDialogComponentState } from '../components/dialogs/files-viewer-dialog.component'
 import { FilesViewerSelectDialog } from '../components/dialogs/files-viewer-select-dialog.component'
 import { fileLockPropsToString } from '../components/utils/file-lock.utils'
-import { MAX_TEXT_FILE_SIZE, SHORT_MIME } from '../files.constants'
+import { MAX_DIAGRAM_FILE_SIZE, MAX_TEXT_FILE_SIZE, SHORT_MIME } from '../files.constants'
 import { FileContentModel } from '../models/file-content.model'
 import { FileFavoriteModel } from '../models/file-favorite.model'
 import { FileRecentModel } from '../models/file-recent.model'
@@ -76,7 +76,7 @@ export class FilesService {
   // Files
   public currentRoute: string
   private readonly editorMetadataReconciliationDelay = 2_000
-  private readonly textFileSizeLimitExceededMessage = 'File size limit exceeded'
+  private readonly fileSizeLimitExceededMessage = 'File size limit exceeded'
   private readonly textBinaryProbeBytes = 4096
   private readonly http = inject(HttpClient)
   private readonly layout = inject(LayoutService)
@@ -190,8 +190,8 @@ export class FilesService {
   }
 
   make(type: 'file' | 'directory', name: string, dirPath: string, asCallBack: true): Observable<any>
-  make(type: 'file' | 'directory', name: string, dirPath?: string, asCallBack?: false): void
-  make(type: 'file' | 'directory', name: string, dirPath: string = null, asCallBack = false): Observable<any> | void {
+  make(type: 'file' | 'directory', name: string, dirPath?: string, asCallBack?: false, openAfterCreate?: boolean): void
+  make(type: 'file' | 'directory', name: string, dirPath: string = null, asCallBack = false, openAfterCreate = false): Observable<any> | void {
     if (!this.isValidName(name)) return
     dirPath = dirPath || this.currentRoute
     const op: MakeFileDto = { type: type }
@@ -199,7 +199,7 @@ export class FilesService {
       return this.http.post(`${API_FILES_OPERATION_MAKE}/${dirPath}/${name}`, op)
     } else {
       this.http.post(`${API_FILES_OPERATION_MAKE}/${dirPath}/${name}`, op).subscribe({
-        next: () => this.store.filesOnEvent.next({ filePath: dirPath, fileName: name, focus: true, reload: true }),
+        next: () => this.store.filesOnEvent.next({ filePath: dirPath, fileName: name, focus: true, reload: true, openAfterCreate }),
         error: (e: HttpErrorResponse) => this.layout.sendNotification('error', 'Creation failed', name, e)
       })
     }
@@ -413,7 +413,7 @@ export class FilesService {
       this.layout.sendNotification('info', 'The file is locked', fileLockPropsToString(file.lock))
     }
 
-    const editorProvider: FileEditorProviders = { collabora: false, eurooffice: false, onlyoffice: false }
+    const editorProvider: FileEditorProviders = { collabora: false, drawio: false, eurooffice: false, onlyoffice: false }
     if (hookedShortMime === SHORT_MIME.DOCUMENT) {
       const officeEditorProvider: keyof FileEditorProviders = this.store.server().files.editors.onlyoffice ? 'onlyoffice' : 'eurooffice'
       const officeEditorEnabled = this.store.server().files.editors[officeEditorProvider]
@@ -481,13 +481,16 @@ export class FilesService {
   }
 
   private async viewerHook(file: FileModel): Promise<ViewerHookResult> {
+    if (file.shortMime === SHORT_MIME.DIAGRAM && file.size >= MAX_DIAGRAM_FILE_SIZE) {
+      return { action: 'download', message: this.fileSizeLimitExceededMessage }
+    }
     if (file.shortMime === SHORT_MIME.TEXT || file.shortMime === SHORT_MIME.MARKDOWN) {
       if (file.shortMime === SHORT_MIME.TEXT && (await this.hasBinaryContent(file))) {
         return { action: 'download' }
       }
       if (file.size >= MAX_TEXT_FILE_SIZE) {
         // Download if too large
-        return { action: 'download', message: this.textFileSizeLimitExceededMessage }
+        return { action: 'download', message: this.fileSizeLimitExceededMessage }
       }
       return { action: 'open', shortMime: file.shortMime }
     }

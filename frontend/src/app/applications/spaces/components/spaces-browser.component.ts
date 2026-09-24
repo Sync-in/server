@@ -260,6 +260,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   // Others
   private subscriptions: Subscription[] = []
   private focusOnSelect: string
+  private openAfterReload: string
   private selectionAnchor: FileModel | null = null
   private selectionFocus: FileModel | null = null
   private selectionControlMode = false
@@ -344,11 +345,13 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
         } else {
           this.scrollView.scrollInto(-1)
         }
+        this.openCreatedFileAfterReload()
         if (focusView) {
           setTimeout(() => this.focusFilesView(focusOrigin), 0)
         }
       },
       error: (e: HttpErrorResponse) => {
+        this.openAfterReload = null
         this.files = []
         this.updateFilesStats(this.files)
         if (e.status !== 401) {
@@ -667,6 +670,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       const mustReloadFocus = matchDstPath && ev.reloadFocusOnDst
       if (ev.fileName) {
         if (ev.focus || mustReloadFocus) this.focusOnSelect = ev.fileName
+        if (ev.openAfterCreate) this.openAfterReload = ev.fileName
         if (ev.delete && !mustReloadFocus) {
           if (ev.status === FileTaskStatus.SUCCESS) {
             this.files = this.files.filter((file: FileModel) => file.name !== ev.fileName)
@@ -731,6 +735,16 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       permissions = f?.root ? intersectPermissions(this.spacePermissions, f?.root.permissions) : this.spacePermissions
     }
     this.filesService.openViewerDialog(f, this.files, permissions).catch(console.error)
+  }
+
+  private openCreatedFileAfterReload() {
+    if (!this.openAfterReload) return
+    const fileName = this.openAfterReload
+    this.openAfterReload = null
+    const file = this.files.find((item) => item.name.toLowerCase() === fileName.toLowerCase())
+    if (!file || (!file.isViewable && !file.isEditable)) return
+    this.setSelection([file], file, file)
+    this.openViewerDialog()
   }
 
   private focusOn(selectName: string) {
