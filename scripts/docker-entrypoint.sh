@@ -5,6 +5,20 @@ set -eu
 : "${PGID:?PGID is not defined}"
 : "${FORCE_PERMISSIONS:=false}"
 
+case "${PUID}" in
+    ''|*[!0-9]*)
+        echo "PUID must be a non-negative decimal integer" >&2
+        exit 1
+        ;;
+esac
+
+case "${PGID}" in
+    ''|*[!0-9]*)
+        echo "PGID must be a non-negative decimal integer" >&2
+        exit 1
+        ;;
+esac
+
 # The Docker image and its startup scripts use /app/data as the persistent data directory.
 export SYNCIN_APPLICATIONS_FILES_DATAPATH=/app/data
 
@@ -28,7 +42,7 @@ chown "${PUID}:${PGID}" /app
 CURRENT_UID=$(stat -c '%u' "${SYNCIN_APPLICATIONS_FILES_DATAPATH}")
 CURRENT_GID=$(stat -c '%g' "${SYNCIN_APPLICATIONS_FILES_DATAPATH}")
 
-if [ "${CURRENT_UID}" != "${PUID}" ] || [ "${CURRENT_GID}" != "${PGID}" ] || [ "${FORCE_PERMISSIONS}" = "true" ]; then
+if [ "${FORCE_PERMISSIONS}" = "true" ] || [ "${CURRENT_UID}" -ne "${PUID}" ] || [ "${CURRENT_GID}" -ne "${PGID}" ]; then
     chown -R "${PUID}:${PGID}" "${SYNCIN_APPLICATIONS_FILES_DATAPATH}"
 fi
 
