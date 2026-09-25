@@ -89,6 +89,7 @@
         @defer (on immediate) {
           <app-files-viewer-drawio
             [currentHeight]="currentHeight - 5"
+            [directoryFiles]="directoryFiles"
             [file]="currentFile"
             [isWriteable]="isWriteable"
             [modalClosing]="modalClosing()"

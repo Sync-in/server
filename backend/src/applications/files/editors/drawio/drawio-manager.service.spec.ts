@@ -58,6 +58,14 @@ describe(DrawioManager.name, () => {
     })
   })
 
+  it.each(['vsdx', 'gliffy'])('supports importing .%s files', async (extension) => {
+    const importedSpace = { ...mockSpace, realPath: `/path/to/diagram.${extension}` } as SpaceEnv
+
+    await expect(service.getSettings(importedSpace)).resolves.toEqual({
+      documentServerUrl: 'https://sync-in.test/drawio/'
+    })
+  })
+
   it('returns the configured external draw.io URL', async () => {
     const drawioConfig = configuration.applications.files.editors.drawio
     const localExternalServer = drawioConfig.externalServer

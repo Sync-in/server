@@ -72,7 +72,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
     this.stopLockRefresh()
     this.isDestroyed = true
     // Fallback for programmatic closes that bypass onClose().
-    if (!this.isReadonly() && this.file().lock) {
+    if (this.usesFileLock() && !this.isReadonly() && this.file().lock) {
       void this.unlockFile()
     }
   }
@@ -160,6 +160,10 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
     return !document.activeElement?.closest('.files-viewer-search')
   }
 
+  protected usesFileLock(): boolean {
+    return true
+  }
+
   protected requestClose(): void {
     const fileId = this.file().id
     if (this.isModified()) {
@@ -182,7 +186,7 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
 
   protected async onClose() {
     if (this.isSaving()) return
-    if (!this.isReadonly() && !(await this.unlockFile())) return
+    if (this.usesFileLock() && !this.isReadonly() && !(await this.unlockFile())) return
     this.layout.closeDialog(null, this.file().id)
   }
 

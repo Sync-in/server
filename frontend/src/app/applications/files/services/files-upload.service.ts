@@ -83,6 +83,12 @@ export class FilesUploadService {
     return this.http.request<void>(updateContent ? 'patch' : overwrite ? 'put' : 'post', url, { body: formData })
   }
 
+  uploadNewFileContent(directoryPath: string, fileName: string, content: string) {
+    const formData = new FormData()
+    formData.append('file', new File([new Blob([content])], fileName, { type: 'application/x-drawio' }))
+    return this.http.post<void>(`${API_FILES_OPERATION_UPLOAD}/${directoryPath}/${fileName}`, formData)
+  }
+
   private uploadFiles(url: string, form: FormData, overwrite: boolean) {
     return this.http.request(overwrite ? 'put' : 'post', url, {
       body: form,

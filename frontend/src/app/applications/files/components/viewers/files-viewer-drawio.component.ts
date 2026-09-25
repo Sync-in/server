@@ -1,10 +1,18 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, HostListener, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core'
+import { Component, ElementRef, HostListener, inject, input, OnDestroy, OnInit, signal, viewChild } from '@angular/core'
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'
 import type { DrawioSettingsDto } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.dtos'
-import { EMPTY_DRAWIO_XML } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.constants'
+import { DRAWIO_IMPORT_EXTENSIONS, EMPTY_DRAWIO_XML } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.constants'
 import { API_DRAWIO_SETTINGS } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.routes'
+import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
 import { L10nTranslateDirective } from 'angular-l10n'
+import type { BsModalRef } from 'ngx-bootstrap/modal'
+import { firstValueFrom, take } from 'rxjs'
+import { StoreService } from '../../../../store/store.service'
+import { MAX_CLIENT_EDITOR_FILE_SIZE } from '../../files.constants'
+import type { FileModel } from '../../models/file.model'
+import { FilesUploadService } from '../../services/files-upload.service'
+import { FilesViewerSaveAsComponent } from './components/files-viewer-save-as.component'
 import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-unsaved-changes.component'
 import { FilesViewerEditableBase } from './files-viewer-editable-base'
 import type { DrawioEditorEvent } from './interfaces/files-viewer-drawio.interface'
@@ -25,7 +33,10 @@ import type { DrawioEditorEvent } from './interfaces/files-viewer-drawio.interfa
       }
 
       .drawio-viewer__state {
-        height: 100%;
+        position: absolute;
+        z-index: 1;
+        inset: 0;
+        background: var(--bs-body-bg);
       }
     `
   ],
@@ -38,7 +49,7 @@ import type { DrawioEditorEvent } from './interfaces/files-viewer-drawio.interfa
         </div>
       } @else if (loadFailed()) {
         <div class="drawio-viewer__state d-flex align-items-center justify-content-center p-4" l10nTranslate>Unable to open document</div>
-      } @else if (iframeSrc()) {
+      } @else {
         @if (warnOnUnsavedChanges()) {
           <app-files-viewer-unsaved-changes
             [saving]="isSaving()"
@@ -47,6 +58,8 @@ import type { DrawioEditorEvent } from './interfaces/files-viewer-drawio.interfa
             (keepEditing)="warnOnUnsavedChanges.set(false)"
           />
         }
+      }
+      @if (iframeSrc()) {
         @if (isExternalEditor()) {
           <iframe
             #editorFrame
@@ -75,13 +88,18 @@ import type { DrawioEditorEvent } from './interfaces/files-viewer-drawio.interfa
   `
 })
 export class FilesViewerDrawioComponent extends FilesViewerEditableBase implements OnInit, OnDestroy {
+  directoryFiles = input.required<FileModel[]>()
   protected readonly loading = signal(true)
   protected readonly loadFailed = signal(false)
   protected readonly iframeSrc = signal<SafeResourceUrl | null>(null)
   protected readonly isExternalEditor = signal(false)
+  protected existingFileNames: string[] = []
+  protected suggestedFileName = ''
   private readonly editorFrame = viewChild<ElementRef<HTMLIFrameElement>>('editorFrame')
   private readonly httpClient = inject(HttpClient)
   private readonly sanitizer = inject(DomSanitizer)
+  private readonly filesUploadService = inject(FilesUploadService)
+  private readonly store = inject(StoreService)
   private content = ''
   private savedContent = ''
   private editorOrigin = 'null'
@@ -91,12 +109,18 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
   private savePending = false
   private closeAfterSave = false
   private closeCheckPending = false
+  private importInitializing = false
+  private saveAsModalRef: BsModalRef<FilesViewerSaveAsComponent> | null = null
 
   constructor() {
     super()
   }
 
   ngOnInit() {
+    if (this.isImportedFormat()) {
+      this.existingFileNames = this.directoryFiles().map((file) => file.name)
+      this.suggestedFileName = this.getSuggestedFileName()
+    }
     this.httpClient.get<DrawioSettingsDto>(`${API_DRAWIO_SETTINGS}/${this.file().encodedPath}`).subscribe({
       next: (settings) => {
         try {
@@ -108,7 +132,11 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
             this.isExternalEditor.set(true)
           }
           this.isSupported.set(true)
-          this.loadContent().catch(console.error)
+          if (this.isImportedFormat()) {
+            this.loadImportedContent().catch((e) => this.handleLoadError(e))
+          } else {
+            this.loadContent().catch(console.error)
+          }
         } catch (e) {
           this.handleLoadError(e)
         }
@@ -141,18 +169,27 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
         }
         break
       case 'init':
-        if (this.isReadonlyView()) return
+        if (this.isReadonlyView() && !this.importInitializing) return
         this.postToEditor({ action: 'load', xml: this.content, autosave: 1, title: this.file().name })
-        if (this.isModified()) this.persist()
+        if (!this.importInitializing && this.isModified()) this.persist()
+        break
+      case 'load':
+        if (data.error) {
+          this.handleLoadError(data.message || data.error)
+        } else if (this.importInitializing) {
+          this.postToEditor({ action: 'export', format: 'xml' })
+        }
         break
       case 'save':
         if (typeof data.xml === 'string') this.queueSave(data.xml, data.exit === true)
         break
       case 'autosave':
-        if (typeof data.xml === 'string') this.trackChanges(data.xml)
+        if (!this.importInitializing && typeof data.xml === 'string') this.trackChanges(data.xml)
         break
       case 'export':
-        if (this.closeCheckPending && typeof data.xml === 'string') {
+        if (this.importInitializing && typeof data.xml === 'string') {
+          this.completeImport(data.xml)
+        } else if (this.closeCheckPending && typeof data.xml === 'string') {
           this.closeCheckPending = false
           this.trackChanges(data.xml)
           super.requestClose()
@@ -210,6 +247,10 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
 
   protected saveAndExit() {
     this.warnOnUnsavedChanges.set(false)
+    if (this.isImportedFormat()) {
+      this.openSaveAs()
+      return
+    }
     this.closeAfterSave = true
     if (this.isSaving()) return
     if (this.isModified()) {
@@ -224,7 +265,7 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
     const editorUrl = new URL(this.editorServerUrl)
     editorUrl.searchParams.set('dark', this.currentTheme === 'dark' ? '1' : '0')
     editorUrl.searchParams.set('lang', this.locale.language)
-    if (this.isReadonlyView()) {
+    if (this.isReadonlyView() && !this.importInitializing) {
       editorUrl.searchParams.set('chrome', '0')
       editorUrl.searchParams.set('lightbox', '1')
       editorUrl.searchParams.set('layers', '1')
@@ -247,6 +288,10 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
   private queueSave(xml: string, exit: boolean) {
     if (this.isReadonly() || !this.isWriteable()) return
     this.trackChanges(xml)
+    if (this.isImportedFormat()) {
+      this.openSaveAs()
+      return
+    }
     this.closeAfterSave ||= exit
     if (this.isSaving()) {
       this.savePending = true
@@ -267,7 +312,7 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
   }
 
   protected override requestClose() {
-    if (this.isSaving() || this.closeCheckPending) return
+    if (this.isSaving() || this.closeCheckPending || this.saveAsModalRef) return
     if (this.isReadonlyView()) {
       super.requestClose()
       return
@@ -277,8 +322,121 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
     this.postToEditor({ action: 'export', format: 'xml' })
   }
 
+  protected override usesFileLock(): boolean {
+    return !this.isImportedFormat()
+  }
+
   private persist() {
     this.save()
+  }
+
+  protected saveImportedFile(baseName: string) {
+    if (!this.isImportedFormat() || this.isSaving()) return
+    const fileName = `${baseName}.drawio`
+    try {
+      isValidFileName(fileName)
+    } catch (e: any) {
+      this.saveAsModalRef?.content?.setError(`${this.layout.translateString(e.message)} : ${forbiddenChars}`)
+      return
+    }
+    if (new Blob([this.content]).size >= MAX_CLIENT_EDITOR_FILE_SIZE) {
+      this.saveAsModalRef?.content?.setError(this.layout.translateString('File size limit exceeded'))
+      return
+    }
+
+    const directoryPath = this.file().path.split('/').slice(0, -1).join('/') || '.'
+    this.isSaving.set(true)
+    this.saveAsModalRef?.content?.setSaving(true)
+    this.saveAsModalRef?.content?.setError('')
+    this.filesUploadService.uploadNewFileContent(directoryPath, fileName, this.content).subscribe({
+      next: () => {
+        this.isSaving.set(false)
+        this.isModified.set(false)
+        if (this.saveAsModalRef?.id != null) this.layout.closeDialog(null, this.saveAsModalRef.id)
+        this.onClose()
+          .then(() => this.store.filesOnEvent.next({ filePath: directoryPath, fileName, focus: true, reload: true, openAfterCreate: true }))
+          .catch(console.error)
+      },
+      error: (e: HttpErrorResponse) => {
+        this.isSaving.set(false)
+        this.saveAsModalRef?.content?.setSaving(false)
+        this.saveAsModalRef?.content?.setError(
+          e.status === 405 ? this.layout.translateString('This name is already used') : e.error?.message || e.message
+        )
+      }
+    })
+  }
+
+  private async loadImportedContent() {
+    const extension = this.file().getExtension()
+    if (extension === 'vsdx') {
+      const content = await firstValueFrom(this.httpClient.get(this.file().dataUrl, { responseType: 'arraybuffer' }))
+      this.content = await this.toDataUrl(content, 'application/vnd.visio')
+    } else {
+      this.content = await firstValueFrom(this.httpClient.get(this.file().dataUrl, { responseType: 'text' }))
+    }
+    this.importInitializing = true
+    this.configureIframe()
+  }
+
+  private completeImport(xml: string) {
+    this.importInitializing = false
+    this.content = xml
+    this.savedContent = xml
+    this.isModified.set(false)
+    this.postToEditor({ action: 'status', message: '', modified: false })
+    if (this.isReadonlyView()) this.configureIframe()
+    this.loading.set(false)
+  }
+
+  private openSaveAs() {
+    if (this.saveAsModalRef) return
+    this.warnOnUnsavedChanges.set(false)
+    const modalRef: BsModalRef<FilesViewerSaveAsComponent> = this.layout.openDialog(
+      FilesViewerSaveAsComponent,
+      'sm',
+      {
+        initialState: {
+          existingNames: this.existingFileNames,
+          suggestedName: this.suggestedFileName
+        } satisfies Partial<FilesViewerSaveAsComponent>
+      },
+      { keyboard: false }
+    )
+    this.saveAsModalRef = modalRef
+    const confirmSubscription = modalRef.content!.confirmSave.subscribe((baseName: string) => this.saveImportedFile(baseName))
+    modalRef.onHidden?.pipe(take(1)).subscribe(() => {
+      confirmSubscription.unsubscribe()
+      if (this.saveAsModalRef !== modalRef) return
+      this.saveAsModalRef = null
+      this.postToEditor({ action: 'status', message: '', modified: this.isModified() })
+    })
+  }
+
+  private getSuggestedFileName(): string {
+    const sourceName = this.file().name
+    const extensionIndex = sourceName.lastIndexOf('.')
+    const baseName = extensionIndex > 0 ? sourceName.slice(0, extensionIndex) : sourceName
+    const existingNames = new Set(this.existingFileNames.map((name) => name.normalize().toLowerCase()))
+    let candidate = baseName
+    let suffix = 1
+    while (existingNames.has(`${candidate}.drawio`.normalize().toLowerCase())) {
+      candidate = `${baseName} (${suffix++})`
+    }
+    return candidate
+  }
+
+  private isImportedFormat(): boolean {
+    return DRAWIO_IMPORT_EXTENSIONS.has(this.file().getExtension())
+  }
+
+  private toDataUrl(content: ArrayBuffer, mime: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = () => reject(reader.error)
+      reader.readAsDataURL(new Blob([content], { type: mime }))
+    })
   }
 
   private postToEditor(message: object) {

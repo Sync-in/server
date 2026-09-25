@@ -5,7 +5,7 @@ import {
 } from '@sync-in-server/backend/src/applications/files/constants/routes'
 import type { FileLockProps, FileProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
-import { DRAWIO_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.constants'
+import { DRAWIO_SUPPORTED_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.constants'
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import type { File } from '@sync-in-server/backend/src/applications/files/schemas/file.interface'
@@ -182,7 +182,7 @@ export class FileModel implements File {
     const dash = mime?.indexOf('-') ?? -1
     const temporaryMime = mime && dash >= 0 ? mime.slice(0, dash) : mime
 
-    if (editorConfig.drawio === true && DRAWIO_EXTENSIONS.has(extension)) {
+    if (editorConfig.drawio === true && DRAWIO_SUPPORTED_EXTENSIONS.has(extension)) {
       this.shortMime = SHORT_MIME.DIAGRAM
       this.isEditable = true
       this.isViewable = true
