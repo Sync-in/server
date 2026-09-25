@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, HostListener, inject, input, OnDestroy, OnInit, signal, viewChild } from '@angular/core'
+import { Component, ElementRef, HostListener, inject, input, OnInit, signal, viewChild } from '@angular/core'
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'
 import type { DrawioSettingsDto } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.dtos'
 import { DRAWIO_IMPORT_EXTENSIONS, EMPTY_DRAWIO_XML } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.constants'
@@ -15,7 +15,7 @@ import { FilesUploadService } from '../../services/files-upload.service'
 import { FilesViewerSaveAsComponent } from './components/files-viewer-save-as.component'
 import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-unsaved-changes.component'
 import { FilesViewerEditableBase } from './files-viewer-editable-base'
-import type { DrawioEditorEvent } from './interfaces/files-viewer-drawio.interface'
+import type { DrawioEditorEvent, DrawioInitializationMode } from './interfaces/files-viewer-drawio.interface'
 
 @Component({
   selector: 'app-files-viewer-drawio',
@@ -49,17 +49,16 @@ import type { DrawioEditorEvent } from './interfaces/files-viewer-drawio.interfa
         </div>
       } @else if (loadFailed()) {
         <div class="drawio-viewer__state d-flex align-items-center justify-content-center p-4" l10nTranslate>Unable to open document</div>
-      } @else {
-        @if (warnOnUnsavedChanges()) {
-          <app-files-viewer-unsaved-changes
-            [saving]="isSaving()"
-            (saveAndExit)="saveAndExit()"
-            (closeWithoutSaving)="onClose()"
-            (keepEditing)="warnOnUnsavedChanges.set(false)"
-          />
-        }
+      } @else if (warnOnUnsavedChanges()) {
+        <app-files-viewer-unsaved-changes
+          [saving]="isSaving()"
+          (saveAndExit)="saveAndExit()"
+          (closeWithoutSaving)="onClose()"
+          (keepEditing)="warnOnUnsavedChanges.set(false)"
+        />
       }
       @if (iframeSrc()) {
+        <!-- Angular requires a static sandbox; the local frame deliberately keeps an opaque origin. -->
         @if (isExternalEditor()) {
           <iframe
             #editorFrame
@@ -87,14 +86,14 @@ import type { DrawioEditorEvent } from './interfaces/files-viewer-drawio.interfa
     </div>
   `
 })
-export class FilesViewerDrawioComponent extends FilesViewerEditableBase implements OnInit, OnDestroy {
+export class FilesViewerDrawioComponent extends FilesViewerEditableBase implements OnInit {
   directoryFiles = input.required<FileModel[]>()
   protected readonly loading = signal(true)
   protected readonly loadFailed = signal(false)
   protected readonly iframeSrc = signal<SafeResourceUrl | null>(null)
   protected readonly isExternalEditor = signal(false)
-  protected existingFileNames: string[] = []
-  protected suggestedFileName = ''
+  private existingFileNames: string[] = []
+  private suggestedFileName = ''
   private readonly editorFrame = viewChild<ElementRef<HTMLIFrameElement>>('editorFrame')
   private readonly httpClient = inject(HttpClient)
   private readonly sanitizer = inject(DomSanitizer)
@@ -109,9 +108,10 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
   private savePending = false
   private closeAfterSave = false
   private closeCheckPending = false
-  private importInitializing = false
+  private initializationMode: DrawioInitializationMode | null = null
   private saveAsModalRef: BsModalRef<FilesViewerSaveAsComponent> | null = null
 
+  // FilesViewerEditableBase has a protected constructor, but Angular components must remain publicly constructible.
   constructor() {
     super()
   }
@@ -122,31 +122,9 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
       this.suggestedFileName = this.getSuggestedFileName()
     }
     this.httpClient.get<DrawioSettingsDto>(`${API_DRAWIO_SETTINGS}/${this.file().encodedPath}`).subscribe({
-      next: (settings) => {
-        try {
-          const editorUrl = new URL(settings.documentServerUrl)
-          if (editorUrl.protocol !== 'http:' && editorUrl.protocol !== 'https:') throw new Error('Unsupported draw.io URL')
-          this.editorServerUrl = editorUrl.toString()
-          if (editorUrl.origin !== window.location.origin) {
-            this.editorOrigin = editorUrl.origin
-            this.isExternalEditor.set(true)
-          }
-          this.isSupported.set(true)
-          if (this.isImportedFormat()) {
-            this.loadImportedContent().catch((e) => this.handleLoadError(e))
-          } else {
-            this.loadContent().catch(console.error)
-          }
-        } catch (e) {
-          this.handleLoadError(e)
-        }
-      },
+      next: (settings) => this.initializeEditor(settings),
       error: (e: HttpErrorResponse) => this.handleLoadError(e)
     })
-  }
-
-  override ngOnDestroy() {
-    super.ngOnDestroy()
   }
 
   @HostListener('window:message', ['$event'])
@@ -169,31 +147,19 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
         }
         break
       case 'init':
-        if (this.isReadonlyView() && !this.importInitializing) return
-        this.postToEditor({ action: 'load', xml: this.content, autosave: 1, title: this.file().name })
-        if (!this.importInitializing && this.isModified()) this.persist()
+        this.handleInit()
         break
       case 'load':
-        if (data.error) {
-          this.handleLoadError(data.message || data.error)
-        } else if (this.importInitializing) {
-          this.postToEditor({ action: 'export', format: 'xml' })
-        }
+        this.handleEditorLoad(data)
         break
       case 'save':
         if (typeof data.xml === 'string') this.queueSave(data.xml, data.exit === true)
         break
       case 'autosave':
-        if (!this.importInitializing && typeof data.xml === 'string') this.trackChanges(data.xml)
+        if (!this.initializationMode && typeof data.xml === 'string') this.trackChanges(data.xml)
         break
       case 'export':
-        if (this.importInitializing && typeof data.xml === 'string') {
-          this.completeImport(data.xml)
-        } else if (this.closeCheckPending && typeof data.xml === 'string') {
-          this.closeCheckPending = false
-          this.trackChanges(data.xml)
-          super.requestClose()
-        }
+        this.handleExport(data.xml)
         break
       case 'exit':
         this.requestClose()
@@ -209,8 +175,9 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
     this.savedContent = content
     this.content = content.trim() ? content : EMPTY_DRAWIO_XML
     this.isModified.set(this.content !== this.savedContent && !this.isReadonly() && this.isWriteable())
+    this.initializationMode = !this.isReadonlyView() && !this.isModified() ? 'native' : null
     this.configureIframe()
-    this.loading.set(false)
+    if (!this.initializationMode) this.loading.set(false)
   }
 
   protected override onContentSaved(content: string) {
@@ -234,7 +201,7 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
     if (this.isModified() && (this.savePending || this.closeAfterSave)) {
       // The completed request saved an older snapshot; flush the latest XML before closing.
       this.savePending = false
-      this.persist()
+      this.save()
       return
     }
 
@@ -254,7 +221,7 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
     this.closeAfterSave = true
     if (this.isSaving()) return
     if (this.isModified()) {
-      this.persist()
+      this.save()
     } else {
       this.closeAfterSave = false
       this.onClose().catch(console.error)
@@ -265,12 +232,11 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
     const editorUrl = new URL(this.editorServerUrl)
     editorUrl.searchParams.set('dark', this.currentTheme === 'dark' ? '1' : '0')
     editorUrl.searchParams.set('lang', this.locale.language)
-    if (this.isReadonlyView() && !this.importInitializing) {
+    if (this.isReadonlyView() && this.initializationMode !== 'import') {
       editorUrl.searchParams.set('chrome', '0')
       editorUrl.searchParams.set('lightbox', '1')
       editorUrl.searchParams.set('layers', '1')
       editorUrl.searchParams.set('nav', '1')
-      editorUrl.searchParams.set('title', this.file().name)
       editorUrl.hash = `create=${encodeURIComponent(JSON.stringify({ type: 'message' }))}`
     } else {
       editorUrl.searchParams.set('embed', '1')
@@ -286,7 +252,7 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
   }
 
   private queueSave(xml: string, exit: boolean) {
-    if (this.isReadonly() || !this.isWriteable()) return
+    if (this.isReadonlyView()) return
     this.trackChanges(xml)
     if (this.isImportedFormat()) {
       this.openSaveAs()
@@ -298,7 +264,7 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
       return
     }
     if (this.isModified()) {
-      this.persist()
+      this.save()
     } else if (this.closeAfterSave) {
       this.closeAfterSave = false
       this.onClose().catch(console.error)
@@ -306,18 +272,19 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
   }
 
   private trackChanges(xml: string) {
-    if (this.isReadonly() || !this.isWriteable()) return
+    if (this.isReadonlyView()) return
     this.content = xml
     this.isModified.set(this.content !== this.savedContent)
   }
 
   protected override requestClose() {
     if (this.isSaving() || this.closeCheckPending || this.saveAsModalRef) return
-    if (this.isReadonlyView()) {
+    if (this.loading() || this.isReadonlyView()) {
       super.requestClose()
       return
     }
     this.closeCheckPending = true
+    // Flush the active cell editor before exporting; autosave may not contain the latest keystrokes yet.
     this.postToEditor({ action: 'resetEditor' })
     this.postToEditor({ action: 'export', format: 'xml' })
   }
@@ -326,17 +293,14 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
     return !this.isImportedFormat()
   }
 
-  private persist() {
-    this.save()
-  }
-
-  protected saveImportedFile(baseName: string) {
+  private saveImportedFile(baseName: string) {
     if (!this.isImportedFormat() || this.isSaving()) return
     const fileName = `${baseName}.drawio`
     try {
       isValidFileName(fileName)
-    } catch (e: any) {
-      this.saveAsModalRef?.content?.setError(`${this.layout.translateString(e.message)} : ${forbiddenChars}`)
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : `${e}`
+      this.saveAsModalRef?.content?.setError(`${this.layout.translateString(message)} : ${forbiddenChars}`)
       return
     }
     if (new Blob([this.content]).size >= MAX_CLIENT_EDITOR_FILE_SIZE) {
@@ -375,18 +339,49 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
     } else {
       this.content = await firstValueFrom(this.httpClient.get(this.file().dataUrl, { responseType: 'text' }))
     }
-    this.importInitializing = true
+    this.initializationMode = 'import'
     this.configureIframe()
   }
 
-  private completeImport(xml: string) {
-    this.importInitializing = false
+  private completeInitialization(xml: string) {
+    const initializationMode = this.initializationMode
+    if (!initializationMode) return
+    this.initializationMode = null
     this.content = xml
     this.savedContent = xml
     this.isModified.set(false)
-    this.postToEditor({ action: 'status', message: '', modified: false })
-    if (this.isReadonlyView()) this.configureIframe()
+    if (initializationMode === 'import') {
+      this.postToEditor({ action: 'status', message: '', modified: false })
+      // Conversion requires embed mode first; only then can a read-only import switch to the viewer.
+      if (this.isReadonlyView()) this.configureIframe()
+    }
     this.loading.set(false)
+  }
+
+  private handleInit() {
+    if (this.isReadonlyView() && this.initializationMode !== 'import') return
+    this.postToEditor({ action: 'load', xml: this.content, autosave: 1 })
+    if (this.initializationMode !== 'import' && this.isModified()) this.save()
+  }
+
+  private handleEditorLoad(data: DrawioEditorEvent) {
+    if (data.error) {
+      this.handleLoadError(data.message || data.error)
+    } else if (this.initializationMode) {
+      this.postToEditor({ action: 'export', format: 'xml' })
+    }
+  }
+
+  private handleExport(xml: string | undefined) {
+    if (typeof xml !== 'string') return
+    if (this.initializationMode) {
+      this.completeInitialization(xml)
+      return
+    }
+    if (!this.closeCheckPending) return
+    this.closeCheckPending = false
+    this.trackChanges(xml)
+    super.requestClose()
   }
 
   private openSaveAs() {
@@ -440,14 +435,37 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
   }
 
   private postToEditor(message: object) {
+    // The sandboxed local editor has an opaque origin ("null"), so postMessage cannot target its HTTP origin.
     const targetOrigin = this.editorOrigin === 'null' ? '*' : this.editorOrigin
     this.editorFrame()?.nativeElement.contentWindow?.postMessage(JSON.stringify(message), targetOrigin)
   }
 
   private handleLoadError(error: unknown) {
+    this.initializationMode = null
+    this.closeCheckPending = false
     this.loading.set(false)
     this.loadFailed.set(true)
     const message = error instanceof HttpErrorResponse ? error.error?.message || error.message : `${error}`
     this.layout.sendNotification('error', 'Unable to open document', message)
+  }
+
+  private initializeEditor(settings: DrawioSettingsDto) {
+    try {
+      const editorUrl = new URL(settings.documentServerUrl)
+      if (editorUrl.protocol !== 'http:' && editorUrl.protocol !== 'https:') throw new Error('Unsupported draw.io URL')
+      this.editorServerUrl = editorUrl.toString()
+      if (editorUrl.origin !== window.location.origin) {
+        this.editorOrigin = editorUrl.origin
+        this.isExternalEditor.set(true)
+      }
+      this.isSupported.set(true)
+      if (this.isImportedFormat()) {
+        this.loadImportedContent().catch((e) => this.handleLoadError(e))
+      } else {
+        this.loadContent().catch(console.error)
+      }
+    } catch (e) {
+      this.handleLoadError(e)
+    }
   }
 }
