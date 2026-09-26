@@ -72,7 +72,7 @@
           [disabled]="!search.canSubmit()"
           class="navbar-search-submit"
           type="button">
-          <svg [class.icon-spin]="search.loading()" [lucideIcon]="search.loading() ? icons.LucideLoader : icons.LucideSearch"></svg>
+          <svg [class]="search.loading() ? 'icon-spin' : ''" [lucideIcon]="search.loading() ? icons.LucideLoader : icons.LucideSearch"></svg>
         </button>
       }
     </div>
