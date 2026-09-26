@@ -137,7 +137,7 @@ export class Electron {
       this.store.clientSyncs.next([...this.store.clientSyncs.getValue(), sync])
     } else {
       this.store.clientSyncs.next(this.store.clientSyncs.getValue().filter((s) => s.syncPathId !== sync.syncPathId))
-      this.store.clientSyncTask.next({ syncPathId: sync.syncPathId, nbTasks: 0 })
+      this.setSyncTasksCount({ syncPathId: sync.syncPathId, nbTasks: 0 })
       if (sync.lastErrors.length || sync.mainError) {
         this.store.clientSyncsWithErrors.next([...this.store.clientSyncsWithErrors.getValue().filter((s) => s.syncPathId !== sync.syncPathId), sync])
       } else {
