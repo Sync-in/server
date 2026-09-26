@@ -17,7 +17,20 @@
 </div>
 <div class="modal-body">
   @if (inputType !== 'download') {
-    <div class="mb-3" role="group" [attr.aria-label]="'New' | translate: locale.language">
+    <label class="form-label d-sm-none" for="new-file-type" l10nTranslate>Type</label>
+    <select
+      id="new-file-type"
+      class="form-select d-sm-none mb-3"
+      [ngModel]="inputType === 'directory' ? 'directory' : currentDocType()"
+      (ngModelChange)="onSelectMobileType($event)">
+      <option value="directory">{{ 'New folder' | translate: locale.language }}</option>
+      <optgroup [label]="'Document' | translate: locale.language">
+        @for (item of docTypes | keyvalue: originalOrderKeyValue; track item.key) {
+          <option [value]="item.key">{{ item.key | translate: locale.language }}{{ item.value ? ' (.' + item.value + ')' : '' }}</option>
+        }
+      </optgroup>
+    </select>
+    <div class="mb-3 d-none d-sm-block" role="group" [attr.aria-label]="'New' | translate: locale.language">
       <div class="row g-2">
         <div class="col-12 col-sm-6">
           <button

@@ -89,6 +89,14 @@ export class FilesNewDialogComponent implements OnInit, AfterViewInit {
     this.updateFileSelection()
   }
 
+  onSelectMobileType(type: string) {
+    if (type === 'directory') {
+      this.onSelectDirectory()
+    } else {
+      this.onSelectDocType(type)
+    }
+  }
+
   onSelectDirectory() {
     if (this.inputType === 'file') {
       const extensionPosition = this.fileNamePosition()
@@ -177,7 +185,7 @@ export class FilesNewDialogComponent implements OnInit, AfterViewInit {
     return this.fileProp.name.lastIndexOf('.')
   }
 
-  private currentDocType(): string {
+  protected currentDocType(): string {
     const extensionPosition = this.fileNamePosition()
     const extension = extensionPosition >= 0 ? this.fileProp.name.slice(extensionPosition + 1).toLowerCase() : ''
     return Object.keys(this.docTypes).find((docType) => this.docTypes[docType] && this.docTypes[docType].toLowerCase() === extension) || 'Other'
