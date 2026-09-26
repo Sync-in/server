@@ -50,7 +50,7 @@ export class SyncTransfersComponent {
       sortable: true
     },
     sync: {
-      label: SYNC_TITLE.SYNC_SHORT,
+      label: 'Name',
       width: 14,
       textCenter: false,
       class: '',

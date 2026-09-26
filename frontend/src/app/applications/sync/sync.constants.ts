@@ -6,7 +6,6 @@ import { AppMenu } from '../../layout/layout.interfaces'
 
 export const SYNC_TITLE = {
   SYNC: 'Synchronization',
-  SYNC_SHORT: 'Sync',
   SYNCS: 'Synchronizations',
   TRANSFERS: 'Transfers',
   WIZARD: 'Wizard',
