@@ -547,6 +547,8 @@
   "Error": "エラー",
   "Server": "サーバー",
   "Direction": "方向",
+  "Deletion": "削除",
+  "Deletions are not synchronized.": "削除は同期されません。",
   "Conflict": "競合",
   "Show filtered files": "フィルターされたファイルを表示",
   "recent": "最近",

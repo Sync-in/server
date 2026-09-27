@@ -36,6 +36,7 @@ export class SyncWizardSettingsComponent {
         remotePath: this.syncService.wizard.remotePath.serverPath,
         enabled: this.syncService.wizard.settings.enabled,
         mode: this.syncService.wizard.remotePath.isWriteable ? this.syncService.wizard.settings.mode : SYNC_PATH_MODE.DOWNLOAD,
+        ignoreDelete: this.syncService.wizard.settings.ignoreDelete,
         conflictMode: this.syncService.wizard.settings.conflictMode,
         diffMode: this.syncService.wizard.settings.diffMode,
         scheduler: this.syncService.wizard.settings.scheduler,

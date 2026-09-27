@@ -547,6 +547,8 @@
   "Error": "오류",
   "Server": "서버",
   "Direction": "방향",
+  "Deletion": "삭제",
+  "Deletions are not synchronized.": "삭제 내용은 동기화되지 않습니다.",
   "Conflict": "충돌",
   "Show filtered files": "필터된 파일 표시",
   "recent": "최근",

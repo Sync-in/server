@@ -547,6 +547,8 @@
   "Error": "Ошибка",
   "Server": "Сервер",
   "Direction": "Направление",
+  "Deletion": "Удаление",
+  "Deletions are not synchronized.": "Удаления не синхронизируются.",
   "Conflict": "Конфликт",
   "Show filtered files": "Показать отфильтрованные файлы",
   "recent": "недавний",

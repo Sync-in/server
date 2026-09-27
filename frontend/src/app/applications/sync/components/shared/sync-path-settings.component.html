@@ -94,6 +94,21 @@
       </div>
 
       <div class="sync-settings-row">
+        <label class="sync-settings-label form-label mb-0" for="sync-path-ignore-delete">
+          <svg [lucideIcon]="icons.LucideTrashOff"></svg>
+          <span class="ms-2" l10nTranslate>Deletion</span>
+        </label>
+        <div class="sync-settings-control sync-settings-control--checkbox">
+          <input
+            id="sync-path-ignore-delete"
+            [(ngModel)]="syncPath.settings.ignoreDelete"
+            class="form-check-input"
+            type="checkbox">
+          <label class="sync-settings-checkbox-help" for="sync-path-ignore-delete" l10nTranslate>Deletions are not synchronized.</label>
+        </div>
+      </div>
+
+      <div class="sync-settings-row">
         <label class="sync-settings-label form-label mb-0" for="sync-path-scheduler-value">
           <svg [lucideIcon]="icons.LucideClock"></svg>
           <span class="ms-2" l10nTranslate>Scheduler</span>

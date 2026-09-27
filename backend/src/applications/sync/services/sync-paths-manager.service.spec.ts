@@ -200,10 +200,24 @@ describe(SyncPathsManager.name, () => {
       expect(syncQueries.createPath).toHaveBeenCalledWith(
         'client-1',
         { ownerId: 1 },
-        expect.objectContaining({ remotePath: 'SPACES/alias/sub', permissions: 'env-perms' })
+        expect.objectContaining({ remotePath: 'SPACES/alias/sub', permissions: 'env-perms', ignoreDelete: false })
       )
 
       getDBPropsSpy.mockRestore()
+    })
+
+    it('should persist ignoreDelete when explicitly enabled', async () => {
+      const req = baseReq()
+      vi.mocked(isPathExists).mockResolvedValue(true)
+      vi.mocked(isPathIsDir).mockResolvedValue(true)
+      vi.mocked(getEnvPermissions).mockReturnValue('env-perms')
+      syncQueries.getClient.mockResolvedValue({ id: 'client-1' })
+      vi.spyOn<any, any>(service as any, 'getDBProps').mockResolvedValue({ ownerId: 1 })
+      syncQueries.createPath.mockResolvedValue(124)
+
+      await service.createPath(req, { remotePath: 'client/remote', ignoreDelete: true } as any)
+
+      expect(syncQueries.createPath).toHaveBeenCalledWith('client-1', { ownerId: 1 }, expect.objectContaining({ ignoreDelete: true }))
     })
   })
 
@@ -255,7 +269,14 @@ describe(SyncPathsManager.name, () => {
 
     it('should update path settings, set new timestamp, clear cache and return updated settings', async () => {
       syncQueries.clientExistsForOwner.mockResolvedValue(true)
-      syncQueries.getPathSettings.mockResolvedValue({ id: 5, timestamp: 500, lastSync: 1, remotePath: '/a', permissions: 'p' })
+      syncQueries.getPathSettings.mockResolvedValue({
+        id: 5,
+        timestamp: 500,
+        lastSync: 1,
+        remotePath: '/a',
+        permissions: 'p',
+        ignoreDelete: true
+      })
       syncQueries.updatePathSettings.mockResolvedValue(undefined)
       vi.mocked(currentTimeStamp).mockReturnValue(4242)
 
@@ -263,10 +284,22 @@ describe(SyncPathsManager.name, () => {
       expect(syncQueries.updatePathSettings).toHaveBeenCalledWith(
         'c1',
         5,
-        expect.objectContaining({ id: 5, lastSync: 3, timestamp: 4242, permissions: 'new' })
+        expect.objectContaining({ id: 5, lastSync: 3, timestamp: 4242, permissions: 'new', ignoreDelete: true })
       )
       expect(syncQueries.clearCachePathSettings).toHaveBeenCalledWith('c1', 5)
-      expect(out).toEqual(expect.objectContaining({ id: 5, lastSync: 3, timestamp: 4242, permissions: 'new' }))
+      expect(out).toEqual(expect.objectContaining({ id: 5, lastSync: 3, timestamp: 4242, permissions: 'new', ignoreDelete: true }))
+    })
+
+    it('should disable ignoreDelete when false is explicitly provided', async () => {
+      syncQueries.clientExistsForOwner.mockResolvedValue(true)
+      syncQueries.getPathSettings.mockResolvedValue({ id: 5, timestamp: 500, ignoreDelete: true })
+      syncQueries.updatePathSettings.mockResolvedValue(undefined)
+      vi.mocked(currentTimeStamp).mockReturnValue(4242)
+
+      const out = await service.updatePath({ id: 1 } as any, 'c1', 5, { ignoreDelete: false } as any)
+
+      expect(syncQueries.updatePathSettings).toHaveBeenCalledWith('c1', 5, expect.objectContaining({ ignoreDelete: false }))
+      expect(out.ignoreDelete).toBe(false)
     })
 
     it('should clear cache and throw INTERNAL_SERVER_ERROR when update fails', async () => {
@@ -353,6 +386,28 @@ describe(SyncPathsManager.name, () => {
 
       expect(syncQueries.updatePathSettings).toHaveBeenCalledWith('c1', 5, expect.objectContaining({ foo: 'client', lastSync: 2 }))
       // No client update instructions because hasUpdates=false and serverNewer=false
+    })
+
+    it('should preserve ignoreDelete when a newer legacy client omits it', async () => {
+      syncQueries.clientExistsForOwner.mockResolvedValue(true)
+      syncQueries.getPaths.mockResolvedValue([{ id: 5, settings: { timestamp: 1, lastSync: 1, ignoreDelete: true }, remotePath: 'SPACES/x' }])
+      spacesManager.spaceEnv.mockResolvedValue({ envPermissions: 'p' })
+
+      const client = [{ id: 5, timestamp: 10, lastSync: 2, remotePath: 'SPACES/x', permissions: 'p' } as any]
+      await service.updatePaths(userWith('c1') as any, client)
+
+      expect(syncQueries.updatePathSettings).toHaveBeenCalledWith('c1', 5, expect.objectContaining({ ignoreDelete: true }))
+    })
+
+    it('should disable ignoreDelete when a newer client explicitly sends false', async () => {
+      syncQueries.clientExistsForOwner.mockResolvedValue(true)
+      syncQueries.getPaths.mockResolvedValue([{ id: 5, settings: { timestamp: 1, lastSync: 1, ignoreDelete: true }, remotePath: 'SPACES/x' }])
+      spacesManager.spaceEnv.mockResolvedValue({ envPermissions: 'p' })
+
+      const client = [{ id: 5, timestamp: 10, lastSync: 2, remotePath: 'SPACES/x', permissions: 'p', ignoreDelete: false } as any]
+      await service.updatePaths(userWith('c1') as any, client)
+
+      expect(syncQueries.updatePathSettings).toHaveBeenCalledWith('c1', 5, expect.objectContaining({ ignoreDelete: false }))
     })
 
     it('should push server-newer updates to client and also remotePath/permissions corrections', async () => {

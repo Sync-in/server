@@ -547,6 +547,8 @@
   "Error": "त्रुटि",
   "Server": "सर्वर",
   "Direction": "दिशा",
+  "Deletion": "हटाना",
+  "Deletions are not synchronized.": "हटाने की कार्रवाइयाँ सिंक्रनाइज़ नहीं की जातीं।",
   "Conflict": "टकराव",
   "Show filtered files": "फ़िल्टर की गई फ़ाइलें दिखाएँ",
   "recent": "हाल का",

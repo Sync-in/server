@@ -43,6 +43,10 @@ export class SyncPathDto implements SyncPathSettings {
   @IsEnum(SYNC_PATH_MODE)
   mode: SYNC_PATH_MODE
 
+  @IsOptional()
+  @IsBoolean()
+  ignoreDelete: boolean
+
   @Transform(({ value }) => (typeof value === 'string' ? value.toLowerCase() : value))
   @IsEnum(SYNC_PATH_DIFF_MODE)
   diffMode: SYNC_PATH_DIFF_MODE

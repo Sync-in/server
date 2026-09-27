@@ -43,6 +43,7 @@ export class SyncService {
       conflictMode: SYNC_PATH_CONFLICT_MODE
       diffMode: SYNC_PATH_DIFF_MODE
       enabled: boolean
+      ignoreDelete: boolean
       mode: SYNC_PATH_MODE
       name: string
       scheduler: { unit: string; value: number }
@@ -180,6 +181,7 @@ export class SyncService {
       remotePath: null,
       settings: {
         enabled: true,
+        ignoreDelete: false,
         name: '',
         mode: SYNC_PATH_MODE.BOTH,
         conflictMode: SYNC_PATH_CONFLICT_MODE.RECENT,

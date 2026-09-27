@@ -113,6 +113,7 @@ describe('Files favorites queries (e2e)', () => {
           remotePath: `personal/${rootName}`,
           permissions: '',
           mode: SYNC_PATH_MODE.BOTH,
+          ignoreDelete: false,
           enabled: true,
           diffMode: SYNC_PATH_DIFF_MODE.FAST,
           conflictMode: SYNC_PATH_CONFLICT_MODE.RECENT,

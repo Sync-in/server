@@ -547,6 +547,8 @@
   "Error": "Fehler",
   "Server": "Server",
   "Direction": "Richtung",
+  "Deletion": "Löschung",
+  "Deletions are not synchronized.": "Löschungen werden nicht synchronisiert.",
   "Conflict": "Konflikt",
   "Show filtered files": "Gefilterte Dateien anzeigen",
   "recent": "aktuell",

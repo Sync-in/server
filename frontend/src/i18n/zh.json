@@ -547,6 +547,8 @@
   "Error": "错误",
   "Server": "服务器",
   "Direction": "方向",
+  "Deletion": "删除",
+  "Deletions are not synchronized.": "删除操作不会同步。",
   "Conflict": "冲突",
   "Show filtered files": "显示已过滤的文件",
   "recent": "最近",

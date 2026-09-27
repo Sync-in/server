@@ -88,6 +88,22 @@
   }
 }
 
+.sync-settings-control--checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .form-check-input {
+    flex: 0 0 auto;
+    margin-top: 0;
+  }
+
+  .sync-settings-checkbox-help {
+    cursor: pointer;
+    font-weight: 400;
+  }
+}
+
 @media (max-width: 575.98px) {
   .sync-settings-panel--small .sync-settings-section {
     max-width: 100%;

@@ -1,6 +1,15 @@
 import { Component, inject, Input } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { LucideBug, LucideCircleAlert, LucideClock, LucideDynamicIcon, LucideGauge, LucideRefreshCw, LucideSquarePen } from '@lucide/angular'
+import {
+  LucideBug,
+  LucideCircleAlert,
+  LucideClock,
+  LucideDynamicIcon,
+  LucideGauge,
+  LucideRefreshCw,
+  LucideSquarePen,
+  LucideTrashOff
+} from '@lucide/angular'
 import {
   SYNC_PATH_CONFLICT_MODE,
   SYNC_PATH_DIFF_MODE,
@@ -33,6 +42,7 @@ export class SyncPathSettingsComponent {
     LucideClock,
     LucideRefreshCw,
     LucideSquarePen,
+    LucideTrashOff,
     LucideBug
   }
   protected readonly SYNC_PATH_CONFLICT_MODE = SYNC_PATH_CONFLICT_MODE

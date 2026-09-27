@@ -547,6 +547,8 @@
   "Error": "Fout",
   "Server": "Server",
   "Direction": "Richting",
+  "Deletion": "Verwijdering",
+  "Deletions are not synchronized.": "Verwijderingen worden niet gesynchroniseerd.",
   "Conflict": "Conflict",
   "Show filtered files": "Gefilterde bestanden weergeven",
   "recent": "recent",

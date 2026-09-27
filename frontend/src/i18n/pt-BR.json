@@ -547,6 +547,8 @@
   "Error": "Erro",
   "Server": "Servidor",
   "Direction": "Direção",
+  "Deletion": "Eliminação",
+  "Deletions are not synchronized.": "As eliminações não são sincronizadas.",
   "Conflict": "Conflito",
   "Show filtered files": "Mostrar arquivos filtrados",
   "recent": "recentes",

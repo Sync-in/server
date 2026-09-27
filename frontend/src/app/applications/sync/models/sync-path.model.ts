@@ -49,6 +49,8 @@ export class SyncPathModel implements Partial<SyncPath> {
     } else {
       Object.assign(this, props)
     }
+    // Payloads from older clients or servers do not contain this setting.
+    this.settings.ignoreDelete = this.settings.ignoreDelete === true
     this.setProperties()
     this.setStatus(false)
   }
@@ -78,6 +80,7 @@ export class SyncPathModel implements Partial<SyncPath> {
       ...(withId ? { id: this.id } : {}),
       name: this.settings.name,
       mode: this.settings.mode,
+      ignoreDelete: this.settings.ignoreDelete,
       enabled: this.settings.enabled,
       diffMode: this.settings.diffMode,
       conflictMode: this.settings.conflictMode,

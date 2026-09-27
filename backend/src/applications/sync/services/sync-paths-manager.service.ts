@@ -57,6 +57,8 @@ export class SyncPathsManager {
     syncPathDto.remotePath = req.params['*']
     // add permissions (skip end point protection using getEnvPermission)
     syncPathDto.permissions = getEnvPermissions(req.space, req.space.root)
+    // Backward compatibility: clients predating this setting omit it.
+    syncPathDto.ignoreDelete = syncPathDto.ignoreDelete === true
     const pathId = await this.syncQueries.createPath(client.id, syncDBProps, syncPathDto)
     return { id: pathId, permissions: syncPathDto.permissions }
   }
@@ -88,7 +90,12 @@ export class SyncPathsManager {
     // delete possible id
     delete syncPathUpdateDto.id
     // update current path settings
+    const currentIgnoreDelete = syncPathSettings.ignoreDelete
     Object.assign(syncPathSettings, syncPathUpdateDto)
+    // Partial updates from older clients must not reset an already enabled value.
+    if (syncPathUpdateDto.ignoreDelete === undefined) {
+      syncPathSettings.ignoreDelete = currentIgnoreDelete
+    }
     syncPathSettings.timestamp = currentTimeStamp()
     try {
       await this.syncQueries.updatePathSettings(clientId, pathId, syncPathSettings)
@@ -162,7 +169,13 @@ export class SyncPathsManager {
       let updatedSettings: SyncPathSettings = { ...serverPath.settings, ...updateClientInfo }
 
       if (clientNewer) {
-        updatedSettings = { ...clientPath, ...updateClientInfo }
+        // A legacy client does not send ignoreDelete. Preserve the server value
+        // in that case, while still accepting an explicit false from newer clients.
+        updatedSettings = {
+          ...clientPath,
+          ignoreDelete: clientPath.ignoreDelete ?? serverPath.settings.ignoreDelete ?? false,
+          ...updateClientInfo
+        }
       } else if (serverNewer) {
         clientDiff.update.push({ id: clientPath.id, ...serverPath.settings, ...updateClientInfo })
       }

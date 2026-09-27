@@ -547,6 +547,8 @@
   "Error": "Hata",
   "Server": "Sunucu",
   "Direction": "Yön",
+  "Deletion": "Silme işlemi",
+  "Deletions are not synchronized.": "Silme işlemleri eşitlenmez.",
   "Conflict": "Çakışma",
   "Show filtered files": "Filtrelenen dosyaları göster",
   "recent": "son",
