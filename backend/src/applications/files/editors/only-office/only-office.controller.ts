@@ -1,4 +1,18 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Request, Res, StreamableFile, UseGuards, UseInterceptors } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  ParseEnumPipe,
+  Post,
+  Query,
+  Request,
+  Res,
+  StreamableFile,
+  UseGuards,
+  UseInterceptors
+} from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor'
 import { SPACE_OPERATION } from '../../../spaces/constants/spaces'
@@ -7,7 +21,9 @@ import { GetSpace } from '../../../spaces/decorators/space.decorator'
 import { SpaceGuard } from '../../../spaces/guards/space.guard'
 import { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface'
 import { SpaceEnv } from '../../../spaces/models/space-env.model'
+import { USER_THEME } from '../../../users/constants/user-preferences'
 import { GetUser } from '../../../users/decorators/user.decorator'
+import type { UserTheme } from '../../../users/interfaces/user-preferences.interface'
 import { UserModel } from '../../../users/models/user.model'
 import { FilesMethods } from '../../services/files-methods.service'
 import { OnlyOfficeEnvironment } from './only-office-environment.decorator'
@@ -25,7 +41,10 @@ export class OnlyOfficeController {
   @Get(`${ONLY_OFFICE_ROUTE.SETTINGS}/*`)
   @UseGuards(SpaceGuard)
   @UseInterceptors(ContextInterceptor)
-  onlyOfficeSettings(@Request() req: FastifySpaceRequest, @Query('theme') theme?: 'light' | 'dark'): Promise<OnlyOfficeReqDto> {
+  onlyOfficeSettings(
+    @Request() req: FastifySpaceRequest,
+    @Query('theme', new ParseEnumPipe({ DARK: USER_THEME.DARK, LIGHT: USER_THEME.LIGHT }, { optional: true })) theme?: UserTheme
+  ): Promise<OnlyOfficeReqDto> {
     return this.filesOnlyOfficeManager.getSettings(req.user, req.space, req, theme)
   }
 

@@ -1,6 +1,5 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { inject, Injectable } from '@angular/core'
-import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
 import { NOTIFICATIONS_WS } from '@sync-in-server/backend/src/applications/notifications/constants/websocket'
 import { SPACE_OPERATION } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SYNC_ROUTE } from '@sync-in-server/backend/src/applications/sync/constants/routes'
@@ -16,6 +15,7 @@ import {
   API_USERS_MY_LANGUAGE,
   API_USERS_MY_NOTIFICATION,
   API_USERS_MY_PASSWORD,
+  API_USERS_MY_PREFERENCES,
   API_USERS_MY_STORAGE_INDEXING,
   USERS_ROUTE
 } from '@sync-in-server/backend/src/applications/users/constants/routes'
@@ -32,6 +32,7 @@ import {
   UserAppPasswordDto,
   UserLanguageDto,
   UserNotificationDto,
+  UserPreferencesDto,
   UserStorageIndexingDto,
   UserUpdatePasswordDto
 } from '@sync-in-server/backend/src/applications/users/dto/user-properties.dto'
@@ -39,6 +40,7 @@ import type { GroupBrowse } from '@sync-in-server/backend/src/applications/users
 import type { GroupMember } from '@sync-in-server/backend/src/applications/users/interfaces/group-member'
 import type { GuestUser } from '@sync-in-server/backend/src/applications/users/interfaces/guest-user.interface'
 import type { Member } from '@sync-in-server/backend/src/applications/users/interfaces/member.interface'
+import type { UserPreferences } from '@sync-in-server/backend/src/applications/users/interfaces/user-preferences.interface'
 import type { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import type {
   EventChangeOnlineStatus,
@@ -55,7 +57,7 @@ import type {
 } from '@sync-in-server/backend/src/authentication/providers/two-fa/auth-two-fa.interfaces'
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { Socket } from 'ngx-socket-io'
-import { catchError, map, Observable, of } from 'rxjs'
+import { catchError, EMPTY, map, Observable, of, tap } from 'rxjs'
 import { AppMenu, AppMenuEntry, isAppMenu, isAppMenuSeparator } from '../../layout/layout.interfaces'
 import { LayoutService } from '../../layout/layout.service'
 import { StoreService } from '../../store/store.service'
@@ -100,6 +102,7 @@ export class UserService {
   initUser(user: UserType, impersonate = false) {
     this.refreshAvatar()
     this.layout.setLanguage(user.language).catch(console.error)
+    if (!user.isLink) this.layout.setThemePreference(user.preferences.theme)
     this.store.userImpersonate.set(impersonate || user.impersonated)
     this.store.user.next(user)
     this.checkQuota(this.user)
@@ -115,7 +118,10 @@ export class UserService {
 
   refreshUser() {
     this.loadUser().subscribe({
-      next: (r: Omit<LoginResponseDto, 'token'>) => this.store.user.next(r.user),
+      next: (r: Omit<LoginResponseDto, 'token'>) => {
+        if (!r.user.isLink) this.layout.setThemePreference(r.user.preferences.theme)
+        this.store.user.next(r.user)
+      },
       error: (e: HttpErrorResponse) => console.error(e)
     })
   }
@@ -239,6 +245,24 @@ export class UserService {
     return this.http.put(API_USERS_MY_NOTIFICATION, userNotificationDto)
   }
 
+  changePreferences(patch: UserPreferencesDto): Observable<UserPreferences> {
+    const userId = this.user.id
+    return this.http.patch<UserPreferences>(API_USERS_MY_PREFERENCES, patch).pipe(
+      catchError((e: HttpErrorResponse) => {
+        const message = patch.theme !== undefined ? 'Unable to update theme preference' : 'Unable to update editor preference'
+        this.layout.sendNotification('error', 'Configuration', message, e)
+        return EMPTY
+      }),
+      tap(() => {
+        const user = this.user
+        if (user?.id !== userId) return
+        const preferences = { ...user.preferences, ...patch }
+        this.store.user.next({ ...user, preferences })
+        if (patch.theme !== undefined) this.layout.setThemePreference(preferences.theme)
+      })
+    )
+  }
+
   changeStorageIndexing(userStorageIndexingDto: UserStorageIndexingDto): Observable<any> {
     return this.http.put(API_USERS_MY_STORAGE_INDEXING, userStorageIndexingDto)
   }
@@ -317,16 +341,12 @@ export class UserService {
     })
   }
 
-  getEditorProviderPreference(): keyof FileEditorProviders {
-    return localStorage.getItem('editorPreference') as keyof FileEditorProviders
+  getEditorProviderPreference(): UserPreferences['editor'] {
+    return this.user?.preferences?.editor ?? null
   }
 
-  setEditorProviderPreference(editorProvider: keyof FileEditorProviders) {
-    if (editorProvider === null) {
-      localStorage.removeItem('editorPreference')
-    } else {
-      localStorage.setItem('editorPreference', editorProvider)
-    }
+  setEditorProviderPreference(editorProvider: UserPreferences['editor']) {
+    this.changePreferences({ editor: editorProvider }).subscribe()
   }
 
   listAppPasswords(): Observable<Omit<UserAppPassword, 'password'>[]> {

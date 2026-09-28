@@ -1,16 +1,8 @@
 import { Component, inject, OnDestroy } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { RouterLink } from '@angular/router'
-import {
-  LucideContrast,
-  LucideDynamicIcon,
-  LucideLogOut,
-  LucidePin,
-  LucidePinOff,
-  LucideSettings,
-  LucideUserRound,
-  LucideVenetianMask
-} from '@lucide/angular'
+import { LucideDynamicIcon, LucideLogOut, LucidePin, LucidePinOff, LucideSettings, LucideUserRound, LucideVenetianMask } from '@lucide/angular'
+import type { USER_THEME } from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
 import { APP_URL } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { Subscription } from 'rxjs'
@@ -19,6 +11,7 @@ import { AuthService } from '../../../../auth/auth.service'
 import { AutoResizeDirective } from '../../../../common/directives/auto-resize.directive'
 import { CapitalizePipe } from '../../../../common/pipes/capitalize.pipe'
 import { LayoutService } from '../../../../layout/layout.service'
+import { ThemeSwitchComponent } from '../../../../layout/theme-switch.component'
 import { StoreService } from '../../../../store/store.service'
 import { UserType } from '../../interfaces/user.interface'
 import { USER_ONLINE_STATUS_LIST, USER_PATH } from '../../user.constants'
@@ -27,7 +20,16 @@ import { UserService } from '../../user.service'
 @Component({
   selector: 'app-user-profile',
   templateUrl: 'user-profile.component.html',
-  imports: [FormsModule, RouterLink, CapitalizePipe, LucideDynamicIcon, L10nTranslateDirective, L10nTranslatePipe, AutoResizeDirective]
+  imports: [
+    FormsModule,
+    RouterLink,
+    CapitalizePipe,
+    LucideDynamicIcon,
+    L10nTranslateDirective,
+    L10nTranslatePipe,
+    AutoResizeDirective,
+    ThemeSwitchComponent
+  ]
 })
 export class UserProfileComponent implements OnDestroy {
   protected readonly store = inject(StoreService)
@@ -36,7 +38,7 @@ export class UserProfileComponent implements OnDestroy {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly appVersion = APP_VERSION
   protected appBaseUrl = `${APP_URL.WEBSITE}`
-  protected readonly icons = { LucideUserRound, LucideContrast, LucideSettings, LucideLogOut, LucideVenetianMask, LucidePin, LucidePinOff }
+  protected readonly icons = { LucideUserRound, LucideSettings, LucideLogOut, LucideVenetianMask, LucidePin, LucidePinOff }
   protected user: UserType
   protected userAvatar: string = null
   protected readonly layout = inject(LayoutService)
@@ -62,8 +64,12 @@ export class UserProfileComponent implements OnDestroy {
     this.userService.changeOnlineStatus(status)
   }
 
-  toggleTheme() {
-    this.layout.toggleTheme()
+  toggleTheme(theme: USER_THEME) {
+    if (this.user?.isLink) {
+      this.layout.setThemePreference(theme)
+      return
+    }
+    this.userService.changePreferences({ theme }).subscribe()
   }
 
   logOut() {

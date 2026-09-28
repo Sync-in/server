@@ -4,7 +4,6 @@ import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/consta
 import { COLLABORA_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
 import type { CollaboraOnlineReqDto } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.dtos'
 import { API_COLLABORA_ONLINE_SETTINGS } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.routes'
-import { themeDark } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
 import { FileModel } from '../../models/file.model'
@@ -85,7 +84,8 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
         }
         const documentServerUrl = new URL(data.documentServerUrl)
         documentServerUrl.searchParams.set('lang', this.layout.getCurrentLanguage())
-        this.collaboraUiDefaults = `UITheme=${this.layout.switchTheme.getValue() === themeDark ? 'dark' : 'light'};`
+        const theme = this.layout.getCurrentTheme()
+        this.collaboraUiDefaults = `UITheme=${theme};`
         this.documentServerUrl = documentServerUrl.toString()
       },
       error: (e: HttpErrorResponse) => {

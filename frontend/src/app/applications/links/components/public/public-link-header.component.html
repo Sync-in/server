@@ -2,11 +2,8 @@
   <a routerLink="">
     <span aria-hidden="true" class="sync-in-logo sync-in-logo--themed"></span>
   </a>
-  <button (click)="toggleTheme()"
-          [attr.aria-label]="'Switch theme' | translate:locale.language"
-          [title]="'Switch theme' | translate:locale.language"
-          class="public-link-theme-toggle position-absolute top-50 end-0 translate-middle-y me-3"
-          type="button">
-    <svg [lucideIcon]="icons.LucideContrast"></svg>
-  </button>
+  <app-theme-switch
+    buttonClass="public-link-theme-toggle position-absolute top-50 end-0 translate-middle-y me-3"
+    (themeChange)="toggleTheme($event)">
+  </app-theme-switch>
 </div>

@@ -15,10 +15,12 @@ import {
 } from '@angular/core'
 import { CACHE_LOCK_FILE_TTL } from '@sync-in-server/backend/src/applications/files/constants/cache'
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
+import { USER_THEME } from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
+import type { UserTheme } from '@sync-in-server/backend/src/applications/users/interfaces/user-preferences.interface'
 import { L10N_LOCALE, L10nLocale } from 'angular-l10n'
 import { TooltipDirective } from 'ngx-bootstrap/tooltip'
 import { catchError, EMPTY, exhaustMap, filter, firstValueFrom, Subscription, tap, timer } from 'rxjs'
-import { type AppWindow, themeDark } from '../../../../layout/layout.interfaces'
+import type { AppWindow } from '../../../../layout/layout.interfaces'
 import { LayoutService } from '../../../../layout/layout.service'
 import { MAX_CLIENT_EDITOR_FILE_SIZE } from '../../files.constants'
 import { FileModel } from '../../models/file.model'
@@ -41,16 +43,14 @@ export abstract class FilesViewerEditableBase implements AfterViewInit, OnDestro
   protected isModified = signal(false)
   protected isSaving = signal(false)
   protected warnOnUnsavedChanges = signal(false)
-  protected currentTheme: 'dark' | 'light' = 'light'
+  protected currentTheme: UserTheme = USER_THEME.LIGHT
   protected readonly layout = inject(LayoutService)
   protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   private readonly tooltips = viewChildren(TooltipDirective)
   private readonly http = inject(HttpClient)
   private readonly filesServices = inject(FilesService)
   private readonly filesUpload = inject(FilesUploadService)
-  private readonly themeSubscription = this.layout.switchTheme.subscribe(
-    (layout: string) => (this.currentTheme = layout === themeDark ? 'dark' : 'light')
-  )
+  private readonly themeSubscription = this.layout.switchTheme.subscribe(() => (this.currentTheme = this.layout.getCurrentTheme()))
   private lockRefreshSubscription: Subscription | null = null
   private lockRefreshWarningSent = false
   private isDestroyed = false

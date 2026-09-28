@@ -26,6 +26,7 @@ import { GroupMember, GroupWithMembers } from '../interfaces/group-member'
 import { GuestUser } from '../interfaces/guest-user.interface'
 import { Member } from '../interfaces/member.interface'
 import type { UserAccessUpdateResult } from '../interfaces/user-access-update-result.interface'
+import type { UserPreferences } from '../interfaces/user-preferences.interface'
 import { UserSecrets } from '../interfaces/user-secrets.interface'
 import { UserOnline } from '../interfaces/websocket.interface'
 import { UserModel } from '../models/user.model'
@@ -36,6 +37,7 @@ import { User } from '../schemas/user.interface'
 import { usersGroups } from '../schemas/users-groups.schema'
 import { usersGuests } from '../schemas/users-guests.schema'
 import { userFullNameSQL, users } from '../schemas/users.schema'
+import { normalizeUserPreferences } from '../utils/user'
 
 @Injectable()
 export class UsersQueries {
@@ -180,6 +182,22 @@ export class UsersQueries {
         dbCheckAffectedRows(await tx.update(users).set({ secrets: mutation.secrets }).where(eq(users.id, userId)), 1)
       }
       return mutation.result
+    })
+  }
+
+  async updateUserPreferences(userId: number, patch: Partial<UserPreferences>): Promise<UserPreferences> {
+    return this.db.transaction(async (tx) => {
+      const [user] = await tx.select({ preferences: users.preferences }).from(users).where(eq(users.id, userId)).limit(1).for('update')
+      if (!user) {
+        throw new Error(`User (${userId}) not found`)
+      }
+      const currentPreferences = normalizeUserPreferences(user.preferences)
+      const preferences = { ...currentPreferences, ...patch }
+      if (preferences.theme === currentPreferences.theme && preferences.editor === currentPreferences.editor) {
+        return currentPreferences
+      }
+      dbCheckAffectedRows(await tx.update(users).set({ preferences }).where(eq(users.id, userId)), 1)
+      return preferences
     })
   }
 

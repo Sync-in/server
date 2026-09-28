@@ -101,6 +101,20 @@
             <div class="card-body">
               <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Preferences</div>
 
+              <div class="row g-2 align-items-center mb-2">
+                <label class="col-12 col-sm-6" for="userTheme" l10nTranslate>Theme</label>
+                <div class="col-12 col-sm-6">
+                  <select id="userTheme"
+                          class="form-select"
+                          [ngModel]="user.preferences.theme"
+                          (ngModelChange)="updateTheme($event)">
+                    <option [value]="USER_THEME.AUTO" l10nTranslate>Auto</option>
+                    <option [value]="USER_THEME.LIGHT" l10nTranslate>Light</option>
+                    <option [value]="USER_THEME.DARK" l10nTranslate>Dark</option>
+                  </select>
+                </div>
+              </div>
+
               @if (showEditorPreference) {
                 <div class="row g-2 align-items-center mb-2">
                   <label class="col-12 col-sm-6" for="documentEditor" l10nTranslate>Document editor</label>

@@ -4,6 +4,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser'
 import type { DrawioSettingsDto } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.dtos'
 import { DRAWIO_IMPORT_EXTENSIONS, EMPTY_DRAWIO_XML } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.constants'
 import { API_DRAWIO_SETTINGS } from '@sync-in-server/backend/src/applications/files/editors/drawio/drawio.routes'
+import { USER_THEME } from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
 import { forbiddenChars, isValidFileName } from '@sync-in-server/backend/src/common/shared'
 import { L10nTranslateDirective } from 'angular-l10n'
 import type { BsModalRef } from 'ngx-bootstrap/modal'
@@ -230,7 +231,7 @@ export class FilesViewerDrawioComponent extends FilesViewerEditableBase implemen
 
   private configureIframe() {
     const editorUrl = new URL(this.editorServerUrl)
-    editorUrl.searchParams.set('dark', this.currentTheme === 'dark' ? '1' : '0')
+    editorUrl.searchParams.set('dark', this.currentTheme === USER_THEME.DARK ? '1' : '0')
     editorUrl.searchParams.set('lang', this.locale.language)
     if (this.isReadonlyView() && this.initializationMode !== 'import') {
       editorUrl.searchParams.set('chrome', '0')

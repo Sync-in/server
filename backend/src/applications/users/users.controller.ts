@@ -15,13 +15,21 @@ import { GetUser } from './decorators/user.decorator'
 import { UserCreateOrUpdateGroupDto } from './dto/create-or-update-group.dto'
 import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from './dto/create-or-update-user.dto'
 import { SearchMembersDto } from './dto/search-members.dto'
-import { UserAppPasswordDto, UserLanguageDto, UserNotificationDto, UserStorageIndexingDto, UserUpdatePasswordDto } from './dto/user-properties.dto'
+import {
+  UserAppPasswordDto,
+  UserLanguageDto,
+  UserNotificationDto,
+  UserPreferencesDto,
+  UserStorageIndexingDto,
+  UserUpdatePasswordDto
+} from './dto/user-properties.dto'
 import { UserPermissionsGuard } from './guards/permissions.guard'
 import { UserRolesGuard } from './guards/roles.guard'
 import { GroupBrowse } from './interfaces/group-browse.interface'
 import { GroupMember } from './interfaces/group-member'
 import { GuestUser } from './interfaces/guest-user.interface'
 import { Member } from './interfaces/member.interface'
+import type { UserPreferences } from './interfaces/user-preferences.interface'
 import { UserAppPassword } from './interfaces/user-secrets.interface'
 import { UserModel } from './models/user.model'
 import { UsersManager } from './services/users-manager.service'
@@ -75,6 +83,12 @@ export class UsersController {
   @UserHaveRole(USER_ROLE.GUEST)
   updateNotification(@GetUser() user: UserModel, @Body() userNotificationDto: UserNotificationDto) {
     return this.usersManager.updateNotification(user, userNotificationDto)
+  }
+
+  @Patch(`${USERS_ROUTE.ME}/${USERS_ROUTE.PREFERENCES}`)
+  @UserHaveRole(USER_ROLE.GUEST)
+  updatePreferences(@GetUser() user: UserModel, @Body() dto: UserPreferencesDto): Promise<UserPreferences> {
+    return this.usersManager.updatePreferences(user, dto)
   }
 
   @Put(`${USERS_ROUTE.ME}/${USERS_ROUTE.STORAGE_INDEXING}`)

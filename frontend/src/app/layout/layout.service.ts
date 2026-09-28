@@ -3,6 +3,8 @@ import { inject, Injectable, NgZone, signal, WritableSignal } from '@angular/cor
 import { Title } from '@angular/platform-browser'
 import type { LucideIcon } from '@lucide/angular'
 import { ContextMenuComponent, ContextMenuService } from '@perfectmemory/ngx-contextmenu'
+import { USER_THEME } from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
+import type { UserTheme } from '@sync-in-server/backend/src/applications/users/interfaces/user-preferences.interface'
 import { L10nTranslationService } from 'angular-l10n'
 import { BsModalRef, BsModalService, ModalContainerComponent, ModalOptions } from 'ngx-bootstrap/modal'
 import { setTheme } from 'ngx-bootstrap/utils'
@@ -29,7 +31,7 @@ export class LayoutService {
   public currentRightSideBarTab: string | null = null
   // Resize event
   public resizeEvent = new BehaviorSubject<void | null>(null)
-  public switchTheme = new BehaviorSubject<string>(sessionStorage.getItem('themeMode') || getTheme())
+  public switchTheme = new BehaviorSubject<string>(getTheme())
   // Toggle Left sidebar tabs (1: open / 2: collapse / 3: toggle)
   public toggleLeftSideBar = new BehaviorSubject<number>(this.isSmallerMediumScreen() ? 2 : 1)
   // Left sidebar: save user action
@@ -53,6 +55,7 @@ export class LayoutService {
   public windows = new BehaviorSubject<AppWindow[]>([]) // minimized modals
   public modalRefs = new Map<number | string, BsModalRef>()
   public collapseRSideBarPreference: WritableSignal<boolean> = signal(this.getAutoCollapseRSideBarPreference())
+  public readonly themePreference = signal<USER_THEME>(USER_THEME.AUTO)
   // Services
   private readonly title = inject(Title)
   private readonly ngZone = inject(NgZone)
@@ -86,7 +89,9 @@ export class LayoutService {
   constructor() {
     setTheme('bs5')
     this.title.setTitle(APP_NAME)
-    this.preferTheme.subscribe((theme) => this.setTheme(theme))
+    this.preferTheme.subscribe((theme) => {
+      if (this.themePreference() === USER_THEME.AUTO) this.setTheme(theme)
+    })
   }
 
   showRSideBarTab(tabName: TAB_MENU = null, tabVisible = false, delay: number = 0) {
@@ -140,8 +145,8 @@ export class LayoutService {
     return window.innerWidth !== 0 && window.innerWidth < this.screenMediumSize
   }
 
-  toggleTheme() {
-    this.setTheme(this.switchTheme.getValue() === themeLight ? themeDark : themeLight)
+  getCurrentTheme(): UserTheme {
+    return this.switchTheme.getValue() === themeDark ? USER_THEME.DARK : USER_THEME.LIGHT
   }
 
   openDialog(dialog: any, size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'full', componentState: any = {}, override: ModalOptions = {}): BsModalRef {
@@ -296,6 +301,7 @@ export class LayoutService {
   clean() {
     this.toggleRSideBar(false)
     this.closeDialog(null, null, true)
+    this.setThemePreference(USER_THEME.AUTO)
   }
 
   setAutoCollapseRSideBarPreference(preference: boolean) {
@@ -304,6 +310,11 @@ export class LayoutService {
     if (preference) {
       this.toggleRSideBar(true)
     }
+  }
+
+  setThemePreference(theme: USER_THEME) {
+    this.themePreference.set(theme)
+    this.setTheme(theme === USER_THEME.AUTO ? getTheme() : theme === USER_THEME.DARK ? themeDark : themeLight)
   }
 
   private openModalWithEffect(modal: ModalComponent) {
@@ -376,7 +387,6 @@ export class LayoutService {
   private setTheme(theme: string) {
     this.electron.send(EVENT.MISC.SWITCH_THEME, theme)
     this.ngZone.run(() => this.switchTheme.next(theme))
-    sessionStorage.setItem('themeMode', theme)
   }
 
   private getAutoCollapseRSideBarPreference(): boolean {

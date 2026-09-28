@@ -3,10 +3,19 @@ import { HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { Component, inject, OnDestroy, OnInit } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { LucideCopy, LucideDynamicIcon, LucideKeyRound } from '@lucide/angular'
-import { COLLABORA_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
-import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
-import { ONLY_OFFICE_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
+import {
+  COLLABORA_APP_LOCK,
+  COLLABORA_EDITOR
+} from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
+import {
+  EURO_OFFICE_APP_LOCK,
+  EURO_OFFICE_EDITOR,
+  ONLY_OFFICE_APP_LOCK,
+  ONLY_OFFICE_EDITOR
+} from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
+import { USER_THEME } from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
+import type { UserPreferences } from '@sync-in-server/backend/src/applications/users/interfaces/user-preferences.interface'
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
 import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '@sync-in-server/backend/src/authentication/constants/auth'
@@ -58,6 +67,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   protected readonly allNotifications = Object.values(USER_NOTIFICATION_TEXT)
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
+  protected readonly USER_THEME = USER_THEME
   protected readonly icons = { LucideCopy, LucideKeyRound }
   protected user: UserType
   protected userAvatar: string = null
@@ -67,7 +77,14 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   protected newPassword: string
   protected readonly store = inject(StoreService)
   protected showEditorPreference = false
-  protected userEditorPreference: keyof FileEditorProviders
+  private readonly onlyOfficeEditorEnabled = this.store.server().files.editors.onlyoffice
+  protected readonly editors: Record<string, NonNullable<UserPreferences['editor']>> = {
+    [COLLABORA_APP_LOCK]: COLLABORA_EDITOR,
+    [this.onlyOfficeEditorEnabled ? ONLY_OFFICE_APP_LOCK : EURO_OFFICE_APP_LOCK]: this.onlyOfficeEditorEnabled
+      ? ONLY_OFFICE_EDITOR
+      : EURO_OFFICE_EDITOR
+  }
+  protected userEditorPreference: UserPreferences['editor'] = null
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   private readonly layout = inject(LayoutService)
   protected languages = this.layout.getLanguages(true)
@@ -76,7 +93,13 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   private subscriptions: Subscription[] = []
 
   constructor() {
-    this.subscriptions.push(this.store.user.subscribe((user: UserType) => (this.user = user)))
+    this.subscriptions.push(
+      this.store.user.subscribe((user: UserType) => {
+        this.user = user
+        const preference = user?.preferences?.editor
+        this.userEditorPreference = preference && Object.values(this.editors).includes(preference) ? preference : null
+      })
+    )
     this.subscriptions.push(this.store.userAvatarUrl.subscribe((avatarUrl) => (this.userAvatar = avatarUrl)))
     this.layout.setBreadcrumbIcon(USER_ICON.ACCOUNT)
     this.layout.setBreadcrumbNav({
@@ -87,19 +110,6 @@ export class UserAccountComponent implements OnInit, OnDestroy {
     })
     this.showEditorPreference =
       this.store.server().files.editors.collabora && (this.store.server().files.editors.onlyoffice || this.store.server().files.editors.eurooffice)
-    if (this.showEditorPreference) {
-      const preference = this.userService.getEditorProviderPreference()
-      this.userEditorPreference = Object.values(this.editors).includes(preference) ? preference : null
-    }
-  }
-
-  protected get editors(): Record<string, keyof FileEditorProviders> {
-    return {
-      [COLLABORA_APP_LOCK]: 'collabora',
-      [this.store.server().files.editors.onlyoffice ? ONLY_OFFICE_APP_LOCK : 'Euro-Office']: this.store.server().files.editors.onlyoffice
-        ? 'onlyoffice'
-        : 'eurooffice'
-    }
   }
 
   get language() {
@@ -198,8 +208,12 @@ export class UserAccountComponent implements OnInit, OnDestroy {
     this.layout.sendNotification('info', 'Link copied', this.webdavUrl)
   }
 
-  updateEditorPreference(preference: keyof FileEditorProviders | null) {
-    this.userService.setEditorProviderPreference(preference)
+  updateTheme(theme: UserPreferences['theme']) {
+    this.userService.changePreferences({ theme }).subscribe()
+  }
+
+  updateEditorPreference(editor: UserPreferences['editor']) {
+    this.userService.changePreferences({ editor }).subscribe()
   }
 
   async enable2Fa() {

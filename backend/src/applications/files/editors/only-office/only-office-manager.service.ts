@@ -17,6 +17,8 @@ import { HTTP_METHOD } from '../../../applications.constants'
 import { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface'
 import type { SpaceEnv } from '../../../spaces/models/space-env.model'
 import { canModifySpaceEnv } from '../../../spaces/utils/permissions'
+import { USER_THEME } from '../../../users/constants/user-preferences'
+import type { UserTheme } from '../../../users/interfaces/user-preferences.interface'
 import type { UserModel } from '../../../users/models/user.model'
 import { getAvatarBase64 } from '../../../users/utils/avatar'
 import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
@@ -75,7 +77,7 @@ export class OnlyOfficeManager {
     private readonly filesLockManager: FilesLockManager
   ) {}
 
-  async getSettings(user: UserModel, space: SpaceEnv, req: FastifySpaceRequest, theme?: 'dark' | 'light'): Promise<OnlyOfficeReqDto> {
+  async getSettings(user: UserModel, space: SpaceEnv, req: FastifySpaceRequest, theme?: UserTheme): Promise<OnlyOfficeReqDto> {
     if (!(await isPathExists(space.realPath))) {
       throw new HttpException('Document not found', HttpStatus.BAD_REQUEST)
     }
@@ -111,7 +113,7 @@ export class OnlyOfficeManager {
     const fileUrl = this.buildUrl(API_ONLY_OFFICE_DOCUMENT, encodeUrl(space.url), authToken)
     const callBackUrl = this.buildUrl(API_ONLY_OFFICE_CALLBACK, encodeUrl(space.url), authToken)
     const config: OnlyOfficeReqDto = await this.genConfiguration(user, space, mode, fileUrl, fileExtension, callBackUrl, isMobile, hasLock)
-    config.config.editorConfig.customization.uiTheme = `theme-${theme ?? 'light'}`
+    config.config.editorConfig.customization.uiTheme = `theme-${theme ?? USER_THEME.LIGHT}`
     config.config.token = await this.genPayloadToken(config.config)
     return config
   }

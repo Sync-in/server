@@ -1,6 +1,8 @@
 export const ONLY_OFFICE_INTERNAL_URI = '/onlyoffice' // used by nginx as a proxy
 export const ONLY_OFFICE_CONTEXT = 'OnlyOfficeEnvironment' as const
 export const ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME = 'token' as const
+export const ONLY_OFFICE_EDITOR = 'onlyoffice' as const
+export const EURO_OFFICE_EDITOR = 'eurooffice' as const
 export const ONLY_OFFICE_APP_LOCK = 'OnlyOffice' as const
 export const EURO_OFFICE_APP_LOCK = 'Euro-Office' as const
 // cache only office = `office|${fileId}` => docKey

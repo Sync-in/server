@@ -8,9 +8,11 @@ import { isPathInside } from '../../files/utils/files'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces'
 import { GUEST_PERMISSION, USER_PERMISSION, USER_PERMS_SEP, USER_ROLE, USER_TMP_DIRECTORY } from '../constants/user'
 import type { Owner } from '../interfaces/owner.interface'
+import type { UserPreferences } from '../interfaces/user-preferences.interface'
 import type { UserSecrets } from '../interfaces/user-secrets.interface'
 import type { User } from '../schemas/user.interface'
 import { isSafePathSegment, validateUserId } from '../utils/login'
+import { normalizeUserPreferences } from '../utils/user'
 
 export class UserModel implements User {
   id: number
@@ -21,6 +23,7 @@ export class UserModel implements User {
   role: number
   language: string
   isActive: boolean
+  preferences: UserPreferences
   notification: number
   onlineStatus: number
   permissions: string
@@ -61,6 +64,7 @@ export class UserModel implements User {
     // User model can be instantiated with data from the database or from a token payload
     this.initSecrets(props)
     Object.assign(this, props)
+    this.preferences = normalizeUserPreferences(this.isLink ? null : this.preferences)
     if (removePassword) {
       // always remove the password field from model for obvious security reasons
       // do not remove it from `props` to not mutate the object

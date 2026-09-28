@@ -6,19 +6,19 @@
         <button class="btn btn-default"
                 (click)="collapseRSideBar()"
                 type="button"
+                [attr.aria-label]="'Account' | translate:locale.language"
+                [title]="'Account' | translate:locale.language"
                 [routerLink]=USER_PATH.BASE>
           <svg [lucideIcon]="icons.LucideUserRound"></svg>
         </button>
       }
-      <button class="btn btn-default"
-              (click)="toggleTheme()"
-              type="button">
-        <svg [lucideIcon]="icons.LucideContrast"></svg>
-      </button>
+      <app-theme-switch (themeChange)="toggleTheme($event)"></app-theme-switch>
       @if (user?.isAdmin) {
         <button class="btn btn-default"
                 (click)="collapseRSideBar()"
                 type="button"
+                [attr.aria-label]="'Administration' | translate:locale.language"
+                [title]="'Administration' | translate:locale.language"
                 routerLink="/admin">
           <svg [lucideIcon]="icons.LucideSettings"></svg>
         </button>
@@ -26,6 +26,8 @@
       @if (!store.isElectronApp() || store.isElectronApp() && store.userImpersonate()) {
         <button (click)="logOut()"
                 class="btn btn-default"
+                [attr.aria-label]="'logout' | translate:locale.language"
+                [title]="'logout' | translate:locale.language"
                 type="button">
           <svg [lucideIcon]="store.userImpersonate() ? icons.LucideVenetianMask : icons.LucideLogOut"></svg>
         </button>
@@ -70,11 +72,13 @@
           <a class="text-primary cursor-pointer" (click)="openLink('versions')" l10nTranslate>Versions</a>
           <span>&nbsp;|&nbsp;</span>
           <a class="cursor-pointer" (click)="openLink('support')"> 💛</a>
-          <svg class="ms-auto fs-xs cursor-pointer"
-                   (click)="layout.setAutoCollapseRSideBarPreference(!layout.collapseRSideBarPreference())"
-                   [title]="(layout.collapseRSideBarPreference() ? 'Sidebar auto-hide enabled' : 'Sidebar pinned') | translate:locale.language"
-                   [lucideIcon]="layout.collapseRSideBarPreference() ? icons.LucidePinOff : icons.LucidePin">
-          </svg>
+          <button class="ms-auto fs-xs cursor-pointer border-0 bg-transparent p-0 text-reset"
+                  type="button"
+                  (click)="layout.setAutoCollapseRSideBarPreference(!layout.collapseRSideBarPreference())"
+                  [attr.aria-label]="(layout.collapseRSideBarPreference() ? 'Sidebar auto-hide enabled' : 'Sidebar pinned') | translate:locale.language"
+                  [title]="(layout.collapseRSideBarPreference() ? 'Sidebar auto-hide enabled' : 'Sidebar pinned') | translate:locale.language">
+            <svg [lucideIcon]="layout.collapseRSideBarPreference() ? icons.LucidePinOff : icons.LucidePin"></svg>
+          </button>
         </div>
       </div>
     </div>

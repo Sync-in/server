@@ -32,9 +32,16 @@ import type { CopyMoveFileResponse } from '@sync-in-server/backend/src/applicati
 import type { FileLockProps } from '@sync-in-server/backend/src/applications/files/interfaces/file-props.interface'
 import type { FileTree } from '@sync-in-server/backend/src/applications/files/interfaces/file-tree.interface'
 import type { FileTask } from '@sync-in-server/backend/src/applications/files/models/file-task'
-import { COLLABORA_ONLINE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
+import {
+  COLLABORA_EDITOR,
+  COLLABORA_ONLINE_EXTENSIONS
+} from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
 import type { FileEditorProviders } from '@sync-in-server/backend/src/applications/files/editors/file-editor-providers.interface'
-import { ONLY_OFFICE_EXTENSIONS } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
+import {
+  EURO_OFFICE_EDITOR,
+  ONLY_OFFICE_EDITOR,
+  ONLY_OFFICE_EXTENSIONS
+} from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import type { FileContent } from '@sync-in-server/backend/src/applications/files/schemas/file-content.interface'
 import type { FileFavorite, FileFavoriteIdentity } from '@sync-in-server/backend/src/applications/files/schemas/file-favorite.interface'
 import type { FileRecent } from '@sync-in-server/backend/src/applications/files/schemas/file-recent.interface'
@@ -415,7 +422,7 @@ export class FilesService {
 
     const editorProvider: FileEditorProviders = { collabora: false, drawio: false, eurooffice: false, onlyoffice: false }
     if (hookedShortMime === SHORT_MIME.DOCUMENT) {
-      const officeEditorProvider: keyof FileEditorProviders = this.store.server().files.editors.onlyoffice ? 'onlyoffice' : 'eurooffice'
+      const officeEditorProvider = this.store.server().files.editors.onlyoffice ? ONLY_OFFICE_EDITOR : EURO_OFFICE_EDITOR
       const officeEditorEnabled = this.store.server().files.editors[officeEditorProvider]
       if (this.store.server().files.editors.collabora && officeEditorEnabled) {
         // Case with multiple editors
@@ -424,7 +431,7 @@ export class FilesService {
         if (collaboraHasExtension && officeEditorHasExtension) {
           // Get user's saved preference
           const userEditorPreference = this.userService.getEditorProviderPreference()
-          if (userEditorPreference === 'collabora' || userEditorPreference === officeEditorProvider) {
+          if (userEditorPreference === COLLABORA_EDITOR || userEditorPreference === officeEditorProvider) {
             editorProvider[userEditorPreference] = true
           } else {
             // Both editors support this file extension, let the user choose

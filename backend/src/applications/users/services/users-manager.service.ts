@@ -36,6 +36,7 @@ import type {
   UserAppPasswordDto,
   UserLanguageDto,
   UserNotificationDto,
+  UserPreferencesDto,
   UserStorageIndexingDto,
   UserUpdatePasswordDto
 } from '../dto/user-properties.dto'
@@ -43,6 +44,7 @@ import type { GroupBrowse } from '../interfaces/group-browse.interface'
 import type { GroupMember, GroupWithMembers } from '../interfaces/group-member'
 import type { GuestUser } from '../interfaces/guest-user.interface'
 import type { Member } from '../interfaces/member.interface'
+import type { UserPreferences } from '../interfaces/user-preferences.interface'
 import type { UserAppPassword, UserSecrets } from '../interfaces/user-secrets.interface'
 import type { UserOnline } from '../interfaces/websocket.interface'
 import { UserModel } from '../models/user.model'
@@ -229,6 +231,18 @@ export class UsersManager {
   async updateNotification(user: UserModel, userNotificationDto: UserNotificationDto) {
     if (!(await this.usersQueries.updateUserOrGuest(user.id, userNotificationDto))) {
       throw new HttpException('Unable to update notification preference', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+  }
+
+  async updatePreferences(user: UserModel, dto: UserPreferencesDto): Promise<UserPreferences> {
+    const patch: Partial<UserPreferences> = {}
+    if (dto.theme !== undefined) patch.theme = dto.theme
+    if (dto.editor !== undefined) patch.editor = dto.editor
+    try {
+      return await this.usersQueries.updateUserPreferences(user.id, patch)
+    } catch (e) {
+      this.logger.error({ tag: this.updatePreferences.name, msg: `Unable to update preferences for user (${user.id}) : ${e}` })
+      throw new HttpException('Unable to update preferences', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 

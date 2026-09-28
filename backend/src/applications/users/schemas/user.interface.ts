@@ -1,3 +1,4 @@
+import type { UserPreferences } from '../interfaces/user-preferences.interface'
 import type { UserSecrets } from '../interfaces/user-secrets.interface'
 import type { users } from './users.schema'
 
@@ -14,6 +15,7 @@ export class User implements UserSchema {
   role: number
   isActive: boolean
   secrets: UserSecrets
+  preferences: UserPreferences
   language: string
   permissions: string
   storageUsage: number
