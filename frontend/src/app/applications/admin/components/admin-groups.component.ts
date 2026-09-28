@@ -326,7 +326,7 @@ export class AdminGroupsComponent {
         url: this.personalGroupsView
           ? `/${ADMIN_PATH.BASE}/${ADMIN_PATH.PGROUPS}${pathFromRoutes(routes)}`
           : `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}${pathFromRoutes(routes)}`,
-        firstLink: `/${ADMIN_PATH.BASE}/${ADMIN_PATH.GROUPS}`,
+        firstLink: `/${ADMIN_PATH.BASE}/${this.personalGroupsView ? ADMIN_PATH.PGROUPS : ADMIN_PATH.GROUPS}`,
         splicing: 1,
         translating: true,
         sameLink: false,

@@ -515,13 +515,14 @@
         overflow: visible;
 
         > a {
-          color: $gray-lightest !important;
+          gap: .4rem;
           margin-right: .3rem;
         }
       }
 
       > a {
         display: flex;
+        align-items: center;
         min-width: 0;
         color: darken($gray-light, 10%);
         text-decoration: none;
@@ -544,6 +545,7 @@
     }
 
     > .lucide {
+      flex-shrink: 0;
       font-size: $font-size-md;
       color: $sidebar-light-apps-menu-title-color;
     }

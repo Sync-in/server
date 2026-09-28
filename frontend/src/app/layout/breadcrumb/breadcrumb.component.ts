@@ -1,7 +1,7 @@
 import { Component, inject, OnDestroy } from '@angular/core'
 import { RouterLink, RouterLinkActive } from '@angular/router'
 import type { LucideIcon } from '@lucide/angular'
-import { LucideChevronRight, LucideDynamicIcon, LucideHouse } from '@lucide/angular'
+import { LucideChevronRight, LucideDynamicIcon } from '@lucide/angular'
 import { Subscription } from 'rxjs'
 import { LayoutService } from '../layout.service'
 import { BreadCrumbUrl } from './breadcrumb.interfaces'
@@ -13,7 +13,7 @@ import { BreadCrumbUrl } from './breadcrumb.interfaces'
 })
 export class BreadcrumbComponent implements OnDestroy {
   protected readonly icons = { LucideChevronRight }
-  protected breadcrumbIcon: LucideIcon = LucideHouse
+  protected breadcrumbIcon: LucideIcon = null
   protected levels: { link: string[] | string; title: string }[] = []
   private readonly layout = inject(LayoutService)
   private subscriptions: Subscription[] = []
@@ -35,30 +35,25 @@ export class BreadcrumbComponent implements OnDestroy {
     const mutateLevel = url.mutateLevel || null
     const urlTabs = url.url.split('/').slice(1)
     this.levels = []
-    if (urlTabs.length >= 1 && urlTabs[0]) {
-      // first item with breadcrumb icon only
+    if (urlTabs[0]) {
       let link = `/${urlTabs.splice(0, splicing).join('/')}`
-      this.levels.push({ link: firstLink || link, title: '' })
       for (const { index, item } of urlTabs.filter((i) => i !== '').map((item, index) => ({ index, item }))) {
         // ignore url args (ex: ?select=...)
         let sanitized_item = item.split('?')[0]
-        if (!sameLink || (mutateLevel && mutateLevel[index] && mutateLevel[index].setUrl)) {
+        const mutation = mutateLevel?.[index]
+        if (!sameLink || mutation?.setUrl) {
           link += '/' + sanitized_item
         }
-        if (mutateLevel && mutateLevel[index]) {
-          if (mutateLevel[index].hide) continue
-          if (mutateLevel[index].setTitle) {
-            sanitized_item = mutateLevel[index].translateTitle
-              ? this.layout.translateString(mutateLevel[index].setTitle)
-              : mutateLevel[index].setTitle
+        if (mutation) {
+          if (mutation.hide) continue
+          if (mutation.setTitle) {
+            sanitized_item = mutation.translateTitle ? this.layout.translateString(mutation.setTitle) : mutation.setTitle
           }
         } else if (translating) {
           sanitized_item = this.layout.translateString(sanitized_item)
         }
-        this.levels.push({ link, title: sanitized_item })
+        this.levels.push({ link: index === 0 && firstLink ? firstLink : link, title: sanitized_item })
       }
-    } else {
-      this.levels.push({ link: ['/'], title: '' })
     }
   }
 }

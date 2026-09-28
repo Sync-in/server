@@ -1,7 +1,9 @@
 <div class="breadcrumb">
   <div class="breadcrumb-content">
     @for (item of levels; track $index) {
-      @if ($index > 1) {
+      @if ($index === 1) {
+        <svg [lucideIcon]="icons.LucideChevronRight"></svg>
+      } @else if ($index > 1) {
         <svg
           class="breadcrumb-mobile-hidden"
           [lucideIcon]="icons.LucideChevronRight">
