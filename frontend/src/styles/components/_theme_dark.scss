@@ -124,6 +124,9 @@
   --app-action-state-bg: #{$dark-action-state-bg};
   --app-action-state-color: #{$gray-lightest};
   --app-menu-item-color: #{$gray-lighter};
+  --app-menu-item-hover-bg: #{semantic-dark('primary', bg)};
+  --app-menu-item-hover-border: #{semantic-dark('primary', border)};
+  --app-menu-item-hover-color: #{semantic-dark('primary', fg)};
   --app-primary-action-bg: rgba(var(--bs-primary-rgb), 0.48);
   --app-menu-surface-bg: #{$dark-menu-bg};
   --app-menu-surface-border: #{$dark-menu-surface-border};
@@ -289,9 +292,10 @@
       color: var(--app-menu-item-color);
       background-color: transparent;
 
-      &:hover {
-        color: var(--app-action-state-color);
-        background-color: var(--app-action-state-bg) !important;
+      &:is(:hover, :focus-visible):not(.active, .disabled, :active, :disabled) {
+        color: var(--app-menu-item-hover-color) !important;
+        background-color: var(--app-menu-item-hover-bg) !important;
+        box-shadow: inset 0 0 0 1px var(--app-menu-item-hover-border) !important;
       }
     }
 
@@ -302,7 +306,12 @@
   .dropdown-item {
     color: var(--app-menu-item-color);
 
-    &:hover,
+    &:is(:hover, :focus-visible):not(.active, .disabled, :active, :disabled) {
+      color: var(--app-menu-item-hover-color) !important;
+      background-color: var(--app-menu-item-hover-bg) !important;
+      box-shadow: inset 0 0 0 1px var(--app-menu-item-hover-border) !important;
+    }
+
     &.active,
     &:active {
       color: var(--app-action-state-color);
@@ -376,6 +385,14 @@
 
     .btn-default.input-group-text:hover:not(:disabled) {
       border-color: $dark-surface-border !important;
+    }
+  }
+
+  .app-top-menu.app-top-menu-tool-bar {
+    :is(.btn-default, .btn-custom):is(:hover, :focus-visible):not(:disabled) {
+      border-color: var(--app-menu-item-hover-border) !important;
+      background-color: var(--app-menu-item-hover-bg) !important;
+      color: var(--app-menu-item-hover-color) !important;
     }
   }
 
@@ -554,13 +571,13 @@
       color: var(--app-menu-item-color) !important;
       background-color: transparent !important;
 
-      &:focus-visible {
-        color: var(--app-menu-item-color) !important;
-        background-color: var(--app-action-state-bg) !important;
+      &:is(:hover, :focus-visible):not(.active, .disabled, :active, :disabled) {
+        color: var(--app-menu-item-hover-color) !important;
+        background-color: var(--app-menu-item-hover-bg) !important;
+        box-shadow: inset 0 0 0 1px var(--app-menu-item-hover-border) !important;
       }
 
-      &.active,
-      &:hover {
+      &.active {
         color: var(--app-action-state-color) !important;
         background-color: var(--app-action-state-bg) !important;
       }
