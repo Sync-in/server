@@ -4,6 +4,7 @@
 
   > li > a {
     @include app-menu-item-structure($btn-border-radius, 1px);
+    user-select: none;
   }
 
   .dropdown-header {
@@ -13,6 +14,7 @@
 
 .dropdown-item {
   cursor: pointer;
+  user-select: none;
   @include app-menu-item-structure($btn-border-radius, 1px);
 
   > span {

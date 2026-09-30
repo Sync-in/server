@@ -292,7 +292,7 @@
       color: var(--app-menu-item-color);
       background-color: transparent;
 
-      &:is(:hover, :focus-visible):not(.active, .disabled, :active, :disabled) {
+      &:is(:hover, :focus-visible, .active, :active):not(.disabled, :disabled) {
         color: var(--app-menu-item-hover-color) !important;
         background-color: var(--app-menu-item-hover-bg) !important;
         box-shadow: inset 0 0 0 1px var(--app-menu-item-hover-border) !important;
@@ -306,16 +306,10 @@
   .dropdown-item {
     color: var(--app-menu-item-color);
 
-    &:is(:hover, :focus-visible):not(.active, .disabled, :active, :disabled) {
+    &:is(:hover, :focus-visible, .active, :active):not(.disabled, :disabled) {
       color: var(--app-menu-item-hover-color) !important;
       background-color: var(--app-menu-item-hover-bg) !important;
       box-shadow: inset 0 0 0 1px var(--app-menu-item-hover-border) !important;
-    }
-
-    &.active,
-    &:active {
-      color: var(--app-action-state-color);
-      background-color: var(--app-action-state-bg) !important;
     }
   }
   .dropdown-divider {
@@ -389,7 +383,7 @@
   }
 
   .app-top-menu.app-top-menu-tool-bar {
-    :is(.btn-default, .btn-custom):is(:hover, :focus-visible):not(:disabled) {
+    :is(.btn-default, .btn-custom):is(:hover, :focus-visible, .active, :active):not(:disabled) {
       border-color: var(--app-menu-item-hover-border) !important;
       background-color: var(--app-menu-item-hover-bg) !important;
       color: var(--app-menu-item-hover-color) !important;
@@ -571,15 +565,10 @@
       color: var(--app-menu-item-color) !important;
       background-color: transparent !important;
 
-      &:is(:hover, :focus-visible):not(.active, .disabled, :active, :disabled) {
+      &:is(:hover, :focus-visible, .active, :active):not(.disabled, :disabled) {
         color: var(--app-menu-item-hover-color) !important;
         background-color: var(--app-menu-item-hover-bg) !important;
         box-shadow: inset 0 0 0 1px var(--app-menu-item-hover-border) !important;
-      }
-
-      &.active {
-        color: var(--app-action-state-color) !important;
-        background-color: var(--app-action-state-bg) !important;
       }
     }
 
