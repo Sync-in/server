@@ -8,9 +8,11 @@ import { pipeline } from 'node:stream/promises'
 import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache'
 import { AUTH_SCOPE } from '../../../authentication/constants/scope'
 import { LoginResponseDto } from '../../../authentication/dto/login-response.dto'
+import { AuthPasswordWorkLimitException } from '../../../authentication/errors/auth-password-work-limit.exception'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
 import { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface'
 import { AUTH_SESSION } from '../../../authentication/providers/auth-providers.constants'
+import { consumePasswordWorkRateLimit } from '../../../authentication/utils/auth-rate-limit'
 import { comparePassword, hashPassword } from '../../../common/functions'
 import { convertTempImageToPng, generateAvatar, imgMimeTypePrefix, pngMimeType, svgMimeType } from '../../../common/image'
 import { createLightSlug, genPassword } from '../../../common/shared'
@@ -123,6 +125,10 @@ export class UsersManager {
     scope?: AUTH_SCOPE,
     canAuthenticate?: (user: UserModel) => boolean
   ): Promise<UserModel | null> {
+    // Limit password work for every submitted identifier, whether or not it resolves to an account.
+    const rateLimit = await consumePasswordWorkRateLimit(this.cache, loginOrEmail)
+    if (rateLimit.isBlocked) throw new AuthPasswordWorkLimitException()
+
     if (!user) {
       this.logger.warn({ tag: this.validateLocalPasswordForUser.name, msg: `login or email not found for *${loginOrEmail}*` })
       await comparePassword(password, null)
@@ -144,10 +150,22 @@ export class UsersManager {
   }
 
   async logUser(user: UserModel, password: string, ip: string, scope?: AUTH_SCOPE): Promise<UserModel | null> {
-    await this.validateUserAccess(user)
+    let accessDenied: HttpException | null = null
+    try {
+      await this.validateUserAccess(user)
+    } catch (e) {
+      if (!(e instanceof HttpException) || e.getStatus() !== HttpStatus.FORBIDDEN) throw e
+      accessDenied = e
+    }
     const webDAVRequiresAppPassword = scope === AUTH_SCOPE.WEBDAV && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
     // Keep the primary-password bcrypt path for scoped auth timing, but never accept it for 2FA WebDAV.
     const primaryPasswordMatches: boolean = await comparePassword(password, user.password)
+    if (accessDenied) {
+      // Only reveal the account state after an allowed primary password has been verified.
+      if (primaryPasswordMatches && !webDAVRequiresAppPassword) throw accessDenied
+      if (scope) await comparePassword(password, null)
+      return null
+    }
     let authSuccess: boolean = webDAVRequiresAppPassword ? false : primaryPasswordMatches
     if (!authSuccess && scope) {
       authSuccess = await this.validateAppPassword(user, password, ip, scope)

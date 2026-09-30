@@ -28,7 +28,10 @@ describe(AuthProviderMySQL.name, () => {
         { provide: AdminUsersManager, useValue: {} },
         { provide: AuthManager, useValue: {} },
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
-        { provide: Cache, useValue: {} },
+        {
+          provide: Cache,
+          useValue: { consumeRateLimit: vi.fn().mockResolvedValue({ totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 }) }
+        },
         { provide: NotificationsManager, useValue: {} }
       ]
     }).compile()

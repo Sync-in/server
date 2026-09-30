@@ -1,3 +1,4 @@
+import { HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Client, InvalidCredentialsError } from 'ldapts'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
@@ -179,12 +180,41 @@ describe(AuthProviderLDAP.name, () => {
     expect(Client).not.toHaveBeenCalled()
   })
 
-  it('should throw FORBIDDEN for locked account', async () => {
-    usersManager.findUser.mockResolvedValue({ login: 'john', isGuest: false, isActive: false } as UserModel)
+  it('should not expose a locked account when LDAP credentials are invalid', async () => {
+    const lockedUser = buildUser({ isActive: false })
+    usersManager.findUser.mockResolvedValue(lockedUser)
+    usersManager.validateLocalPasswordForUser.mockResolvedValue(null)
+    mockBindRejectInvalid()
+
+    await expect(authProviderLDAP.validateUser('john', 'wrong-password')).resolves.toBeNull()
+    expect(ldapClient.bind).toHaveBeenCalled()
+    expect(usersManager.validateLocalPasswordForUser).toHaveBeenCalledWith(
+      lockedUser,
+      'john',
+      'wrong-password',
+      undefined,
+      undefined,
+      expect.any(Function)
+    )
+    expect(usersManager.updateAccesses).not.toHaveBeenCalled()
+    expect(adminUsersManager.updateUserOrGuest).not.toHaveBeenCalled()
+  })
+
+  it('should throw FORBIDDEN for a locked account after valid LDAP credentials', async () => {
+    usersManager.findUser.mockResolvedValue(buildUser({ isActive: false }))
+    mockBindResolve()
+    mockSearchEntries([{ uid: 'john', mail: 'john@example.org' }])
     const loggerErrorSpy = vi.spyOn(authProviderLDAP['logger'], 'error').mockImplementation(() => undefined as any)
 
-    await expect(authProviderLDAP.validateUser('john', 'pwd')).rejects.toThrow(/account locked/i)
+    await expect(authProviderLDAP.validateUser('john', 'pwd')).rejects.toMatchObject({
+      status: HttpStatus.FORBIDDEN,
+      message: 'Account locked'
+    })
+    expect(ldapClient.bind).toHaveBeenCalled()
+    expect(ldapClient.search).toHaveBeenCalled()
     expect(loggerErrorSpy).toHaveBeenCalled()
+    expect(usersManager.updateAccesses).not.toHaveBeenCalled()
+    expect(adminUsersManager.updateUserOrGuest).not.toHaveBeenCalled()
   })
 
   it('should reject an empty password before accessing LDAP', async () => {

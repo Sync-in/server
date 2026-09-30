@@ -127,7 +127,7 @@ export class UsersQueries {
         this.fromLoginOrEmailPermissionsQuery = pQuery
       }
     }
-    const r = await pQuery.execute(userId ? { userId } : { loginOrEmail })
+    const r = await pQuery.execute(userId ? { userId } : { loginOrEmail: loginOrEmail?.trim() })
     if (!r.length) return null
     const [user, groupsPermissions] = [r[0].user, r[0].groupsPermissions]
     // merge user and groups permissions
