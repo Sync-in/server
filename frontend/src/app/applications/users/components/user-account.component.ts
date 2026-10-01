@@ -14,7 +14,11 @@ import {
   ONLY_OFFICE_EDITOR
 } from '@sync-in-server/backend/src/applications/files/editors/only-office/only-office.constants'
 import { USER_PASSWORD_MIN_LENGTH } from '@sync-in-server/backend/src/applications/users/constants/user'
-import { USER_THEME } from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
+import {
+  USER_SIDEBAR_QUICK_ACCESS_POSITION,
+  USER_SIDEBAR_QUICK_ACCESS_VISIBILITY,
+  USER_THEME
+} from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
 import type { UserPreferences } from '@sync-in-server/backend/src/applications/users/interfaces/user-preferences.interface'
 import { UserAppPassword } from '@sync-in-server/backend/src/applications/users/interfaces/user-secrets.interface'
 import { WEBDAV_BASE_PATH } from '@sync-in-server/backend/src/applications/webdav/constants/routes'
@@ -69,6 +73,8 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   protected readonly allOnlineStatus = USER_ONLINE_STATUS_LIST
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
   protected readonly USER_THEME = USER_THEME
+  protected readonly USER_SIDEBAR_QUICK_ACCESS_VISIBILITY = USER_SIDEBAR_QUICK_ACCESS_VISIBILITY
+  protected readonly USER_SIDEBAR_QUICK_ACCESS_POSITION = USER_SIDEBAR_QUICK_ACCESS_POSITION
   protected readonly icons = { LucideCopy, LucideKeyRound }
   protected user: UserType
   protected userAvatar: string = null
@@ -220,6 +226,14 @@ export class UserAccountComponent implements OnInit, OnDestroy {
 
   updateEditorPreference(editor: UserPreferences['editor']) {
     this.userService.changePreferences({ editor }).subscribe()
+  }
+
+  updateSidebarQuickAccessVisibility(sidebarQuickAccessVisibility: UserPreferences['sidebarQuickAccessVisibility']) {
+    this.userService.changePreferences({ sidebarQuickAccessVisibility }).subscribe()
+  }
+
+  updateSidebarQuickAccessPosition(sidebarQuickAccessPosition: UserPreferences['sidebarQuickAccessPosition']) {
+    this.userService.changePreferences({ sidebarQuickAccessPosition }).subscribe()
   }
 
   updateSystemNotificationsPreference(useSystemNotifications: UserPreferences['useSystemNotifications']) {

@@ -239,6 +239,8 @@ export class UsersManager {
     if (dto.theme !== undefined) patch.theme = dto.theme
     if (dto.editor !== undefined) patch.editor = dto.editor
     if (dto.useSystemNotifications !== undefined) patch.useSystemNotifications = dto.useSystemNotifications
+    if (dto.sidebarQuickAccessVisibility !== undefined) patch.sidebarQuickAccessVisibility = dto.sidebarQuickAccessVisibility
+    if (dto.sidebarQuickAccessPosition !== undefined) patch.sidebarQuickAccessPosition = dto.sidebarQuickAccessPosition
     try {
       return await this.usersQueries.updateUserPreferences(user.id, patch)
     } catch (e) {

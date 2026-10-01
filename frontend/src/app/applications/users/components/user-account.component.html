@@ -110,141 +110,6 @@
             </div>
           </div>
 
-          <div class="card dialog-tab-card">
-            <div class="card-body">
-              <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Preferences</div>
-
-              <div class="row g-2 align-items-center mb-2">
-                <label class="col-12 col-sm-6" for="userLanguage" l10nTranslate>Language</label>
-                <div class="col-12 col-sm-6">
-                  <select id="userLanguage" [(ngModel)]="language" class="form-select">
-                    @for (l of languages; track $index) {
-                      <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
-                    }
-                  </select>
-                </div>
-              </div>
-
-              <div class="row g-2 align-items-center mb-2">
-                <label class="col-12 col-sm-6" for="userTheme" l10nTranslate>Theme</label>
-                <div class="col-12 col-sm-6">
-                  <select id="userTheme"
-                          class="form-select"
-                          [ngModel]="user.preferences.theme"
-                          (ngModelChange)="updateTheme($event)">
-                    <option [value]="USER_THEME.AUTO" l10nTranslate>Auto</option>
-                    <option [value]="USER_THEME.LIGHT" l10nTranslate>Light</option>
-                    <option [value]="USER_THEME.DARK" l10nTranslate>Dark</option>
-                  </select>
-                </div>
-              </div>
-
-              @if (showEditorPreference) {
-                <div class="row g-2 align-items-center mb-2">
-                  <label class="col-12 col-sm-6" for="documentEditor" l10nTranslate>Document editor</label>
-                  <div class="col-12 col-sm-6">
-                    <select
-                      id="documentEditor"
-                      class="form-select"
-                      [ngModel]="userEditorPreference"
-                      (ngModelChange)="updateEditorPreference($event)">
-                      <option [ngValue]="null" l10nTranslate>Ask Me</option>
-                      @for (e of editors | keyvalue: originalOrderKeyValue; track e.key) {
-                        <option [ngValue]="e.value">{{ e.key }}</option>
-                      }
-                    </select>
-                  </div>
-                </div>
-                <div class="text-muted fs-sm mb-3" l10nTranslate>
-                  Used when both editors support the file type.
-                </div>
-              }
-
-              @if (user.isUser) {
-                <div class="row g-0">
-                  <div class="col-12">
-                    <div class="card dialog-check-card dialog-check-card--interactive"
-                         [class.dialog-check-card--active]="user.storageIndexing"
-                         (click)="updateStorageIndexing(!user.storageIndexing)">
-                      <div class="card-body p-2">
-                        <div class="d-flex align-items-center cursor-pointer">
-                          <label for="prefSwitchFullText" class="form-label me-auto text-nowrap" l10nTranslate>Full-text search</label>
-                          <div class="d-flex align-items-center form-check form-switch ps-0 mb-0">
-                            <label class="form-check-label" for="prefSwitchFullText" (click)="$event.stopPropagation()"></label>
-                            <input
-                              [ngModel]="user.storageIndexing"
-                              (ngModelChange)="updateStorageIndexing($event)"
-                              (click)="$event.stopPropagation()"
-                              class="form-check-input ms-2"
-                              id="prefSwitchFullText"
-                              type="checkbox"
-                              role="button">
-                          </div>
-                        </div>
-                        <div class="text-muted fs-sm mt-2 px-1" l10nTranslate>
-                          Enable content indexation for personal files.
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        </div>
-
-        <div class="col-12 col-lg-6 d-flex flex-column gap-3">
-          <div class="card dialog-tab-card">
-            <div class="card-body">
-              <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Notifications</div>
-              <div class="d-flex flex-column gap-2">
-                <div class="row g-2 align-items-center">
-                  <label class="form-label col-12 col-md-6 mb-0" for="userNotification" l10nTranslate>Channels</label>
-                  <div class="col-12 col-md-6">
-                    <select id="userNotification"
-                            [ngModel]="user.notification"
-                            (ngModelChange)="updateNotification($event)"
-                            class="form-select">
-                      @for (n of allNotifications; track $index) {
-                        <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
-                      }
-                    </select>
-                  </div>
-                </div>
-
-                @if (store.isElectronApp()) {
-                  <div class="row g-0">
-                    <div class="col-12">
-                      <div class="card dialog-check-card dialog-check-card--interactive"
-                           [class.dialog-check-card--active]="user.preferences.useSystemNotifications"
-                           (click)="updateSystemNotificationsPreference(!user.preferences.useSystemNotifications)">
-                        <div class="card-body p-2">
-                          <div class="d-flex align-items-center cursor-pointer">
-                            <label for="useSystemNotifications" class="form-label me-auto text-nowrap" l10nTranslate>System display</label>
-                            <div class="d-flex align-items-center form-check form-switch ps-0 mb-0">
-                              <label class="form-check-label" for="useSystemNotifications" (click)="$event.stopPropagation()"></label>
-                              <input
-                                [ngModel]="user.preferences.useSystemNotifications"
-                                (ngModelChange)="updateSystemNotificationsPreference($event)"
-                                (click)="$event.stopPropagation()"
-                                class="form-check-input ms-2"
-                                id="useSystemNotifications"
-                                type="checkbox"
-                                role="button">
-                            </div>
-                          </div>
-                          <div class="text-muted fs-sm mt-2 px-1" l10nTranslate>
-                            Show notifications through the operating system instead of in the application.
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-          </div>
-
           @if (user.isUser) {
             <div class="card dialog-tab-card">
               <div class="card-body">
@@ -356,6 +221,179 @@
               </div>
             </div>
           }
+
+        </div>
+
+        <div class="col-12 col-lg-6 d-flex flex-column gap-3">
+          <div class="card dialog-tab-card">
+            <div class="card-body">
+              <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Interface</div>
+
+              <div class="row g-2 align-items-center mb-2">
+                <label class="col-12 col-sm-6" for="userLanguage" l10nTranslate>Language</label>
+                <div class="col-12 col-sm-6">
+                  <select id="userLanguage" [(ngModel)]="language" class="form-select">
+                    @for (l of languages; track $index) {
+                      <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+
+              <div class="row g-2 align-items-center mb-2">
+                <label class="col-12 col-sm-6" for="userTheme" l10nTranslate>Theme</label>
+                <div class="col-12 col-sm-6">
+                  <select id="userTheme"
+                          class="form-select"
+                          [ngModel]="user.preferences.theme"
+                          (ngModelChange)="updateTheme($event)">
+                    <option [value]="USER_THEME.AUTO" l10nTranslate>Auto</option>
+                    <option [value]="USER_THEME.LIGHT" l10nTranslate>Light</option>
+                    <option [value]="USER_THEME.DARK" l10nTranslate>Dark</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row g-2 align-items-center mb-2">
+                <label class="col-12 col-sm-6" for="sidebarQuickAccessVisibility" l10nTranslate>Quick access display</label>
+                <div class="col-12 col-sm-6">
+                  <select id="sidebarQuickAccessVisibility"
+                          class="form-select"
+                          [ngModel]="user.preferences.sidebarQuickAccessVisibility"
+                          (ngModelChange)="updateSidebarQuickAccessVisibility($event)">
+                    <option [value]="USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.BOTH" l10nTranslate>Recents and favorites</option>
+                    <option [value]="USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.RECENTS" l10nTranslate>Recents only</option>
+                    <option [value]="USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.FAVORITES" l10nTranslate>Favorites only</option>
+                    <option [value]="USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.NONE" l10nTranslate>None</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="row g-2 align-items-center mb-2">
+                <label class="col-12 col-sm-6" for="sidebarQuickAccessPosition" l10nTranslate>Quick access position</label>
+                <div class="col-12 col-sm-6">
+                  <select id="sidebarQuickAccessPosition"
+                          class="form-select"
+                          [ngModel]="user.preferences.sidebarQuickAccessPosition"
+                          (ngModelChange)="updateSidebarQuickAccessPosition($event)">
+                    <option [value]="USER_SIDEBAR_QUICK_ACCESS_POSITION.TOP" l10nTranslate>Top</option>
+                    <option [value]="USER_SIDEBAR_QUICK_ACCESS_POSITION.BOTTOM" l10nTranslate>Bottom</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          @if (showEditorPreference || user.isUser) {
+            <div class="card dialog-tab-card">
+              <div class="card-body">
+                <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Files</div>
+
+                @if (showEditorPreference) {
+                  <div class="row g-2 align-items-center mb-2">
+                    <label class="col-12 col-sm-6" for="documentEditor" l10nTranslate>Document editor</label>
+                    <div class="col-12 col-sm-6">
+                      <select
+                        id="documentEditor"
+                        class="form-select"
+                        [ngModel]="userEditorPreference"
+                        (ngModelChange)="updateEditorPreference($event)">
+                        <option [ngValue]="null" l10nTranslate>Ask Me</option>
+                        @for (e of editors | keyvalue: originalOrderKeyValue; track e.key) {
+                          <option [ngValue]="e.value">{{ e.key }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                  <div class="text-muted fs-sm mb-3" l10nTranslate>
+                    Used when both editors support the file type.
+                  </div>
+                }
+
+                @if (user.isUser) {
+                  <div class="row g-0">
+                    <div class="col-12">
+                      <div class="card dialog-check-card dialog-check-card--interactive"
+                           [class.dialog-check-card--active]="user.storageIndexing"
+                           (click)="updateStorageIndexing(!user.storageIndexing)">
+                        <div class="card-body p-2">
+                          <div class="d-flex align-items-center cursor-pointer">
+                            <label for="prefSwitchFullText" class="form-label me-auto text-nowrap" l10nTranslate>Full-text search</label>
+                            <div class="d-flex align-items-center form-check form-switch ps-0 mb-0">
+                              <label class="form-check-label" for="prefSwitchFullText" (click)="$event.stopPropagation()"></label>
+                              <input
+                                [ngModel]="user.storageIndexing"
+                                (ngModelChange)="updateStorageIndexing($event)"
+                                (click)="$event.stopPropagation()"
+                                class="form-check-input ms-2"
+                                id="prefSwitchFullText"
+                                type="checkbox"
+                                role="button">
+                            </div>
+                          </div>
+                          <div class="text-muted fs-sm mt-2 px-1" l10nTranslate>
+                            Enable content indexation for personal files.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="card dialog-tab-card">
+            <div class="card-body">
+              <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Notifications</div>
+              <div class="d-flex flex-column gap-2">
+                <div class="row g-2 align-items-center">
+                  <label class="form-label col-12 col-md-6 mb-0" for="userNotification" l10nTranslate>Channels</label>
+                  <div class="col-12 col-md-6">
+                    <select id="userNotification"
+                            [ngModel]="user.notification"
+                            (ngModelChange)="updateNotification($event)"
+                            class="form-select">
+                      @for (n of allNotifications; track $index) {
+                        <option [ngValue]="allNotifications.indexOf(n)" l10nTranslate>{{ n }}</option>
+                      }
+                    </select>
+                  </div>
+                </div>
+
+                @if (store.isElectronApp()) {
+                  <div class="row g-0">
+                    <div class="col-12">
+                      <div class="card dialog-check-card dialog-check-card--interactive"
+                           [class.dialog-check-card--active]="user.preferences.useSystemNotifications"
+                           (click)="updateSystemNotificationsPreference(!user.preferences.useSystemNotifications)">
+                        <div class="card-body p-2">
+                          <div class="d-flex align-items-center cursor-pointer">
+                            <label for="useSystemNotifications" class="form-label me-auto text-nowrap" l10nTranslate>System display</label>
+                            <div class="d-flex align-items-center form-check form-switch ps-0 mb-0">
+                              <label class="form-check-label" for="useSystemNotifications" (click)="$event.stopPropagation()"></label>
+                              <input
+                                [ngModel]="user.preferences.useSystemNotifications"
+                                (ngModelChange)="updateSystemNotificationsPreference($event)"
+                                (click)="$event.stopPropagation()"
+                                class="form-check-input ms-2"
+                                id="useSystemNotifications"
+                                type="checkbox"
+                                role="button">
+                            </div>
+                          </div>
+                          <div class="text-muted fs-sm mt-2 px-1" l10nTranslate>
+                            Show notifications through the operating system instead of in the application.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     }

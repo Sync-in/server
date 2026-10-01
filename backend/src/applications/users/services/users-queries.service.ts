@@ -196,7 +196,9 @@ export class UsersQueries {
       if (
         preferences.theme === currentPreferences.theme &&
         preferences.editor === currentPreferences.editor &&
-        preferences.useSystemNotifications === currentPreferences.useSystemNotifications
+        preferences.useSystemNotifications === currentPreferences.useSystemNotifications &&
+        preferences.sidebarQuickAccessVisibility === currentPreferences.sidebarQuickAccessVisibility &&
+        preferences.sidebarQuickAccessPosition === currentPreferences.sidebarQuickAccessPosition
       ) {
         return currentPreferences
       }

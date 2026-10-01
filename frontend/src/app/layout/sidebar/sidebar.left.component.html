@@ -67,7 +67,7 @@
       <div class="menus-group">
         <div class="menus-top">
           @for (menu of navigationSubmenus; track $index; let menuIndex = $index) {
-            @if (menu.placement !== 'bottom') {
+            @if (!isBottomMenu(menu)) {
               <ng-container [ngTemplateOutlet]="MenuEntry"
                             [ngTemplateOutletContext]="{menus: navigationSubmenus, menu: menu, menuIndex: menuIndex}"></ng-container>
             }
@@ -75,7 +75,7 @@
         </div>
         <div class="menus-bottom">
           @for (menu of navigationSubmenus; track $index; let menuIndex = $index) {
-            @if (menu.placement === 'bottom') {
+            @if (isBottomMenu(menu)) {
               <ng-container [ngTemplateOutlet]="MenuEntry"
                             [ngTemplateOutletContext]="{menus: navigationSubmenus, menu: menu, menuIndex: menuIndex}"></ng-container>
             }
@@ -88,7 +88,7 @@
 <!--Start Templates-->
 <ng-template #MenuEntry let-menus="menus" let-menu="menu" let-menuIndex="menuIndex">
   @if (isMenu(menu)) {
-    @if (!menu.hide) {
+    @if (showNavigationMenu(menu)) {
       <ng-container [ngTemplateOutlet]="MenuApps" [ngTemplateOutletContext]="{menu: menu}"></ng-container>
     }
   } @else if (showMenuSeparator(menus, menuIndex, menu)) {
@@ -116,7 +116,7 @@
   @if (menu.hasSubmenus) {
     @for (submenu of menu.submenus; track $index; let submenuIndex = $index) {
       @if (isMenu(submenu)) {
-        @if (!submenu.hide) {
+        @if (showNavigationMenu(submenu)) {
           <div class="menu submenu" [class.active]="submenu.isActive">
             <a (click)="closeSideBarOnMobile()" [routerLink]="submenu.link" draggable="false">
               <ng-container [ngTemplateOutlet]="MenuTemplate" [ngTemplateOutletContext]="{menu: submenu}"></ng-container>

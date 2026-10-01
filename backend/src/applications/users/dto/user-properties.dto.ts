@@ -5,7 +5,7 @@ import { currentDate } from '../../../common/shared'
 import { COLLABORA_EDITOR } from '../../files/editors/collabora-online/collabora-online.constants'
 import { EURO_OFFICE_EDITOR, ONLY_OFFICE_EDITOR } from '../../files/editors/only-office/only-office.constants'
 import { USER_PASSWORD_MIN_LENGTH } from '../constants/user'
-import { USER_THEME } from '../constants/user-preferences'
+import { USER_SIDEBAR_QUICK_ACCESS_POSITION, USER_SIDEBAR_QUICK_ACCESS_VISIBILITY, USER_THEME } from '../constants/user-preferences'
 import type { UserPreferences } from '../interfaces/user-preferences.interface'
 
 export class UserLanguageDto {
@@ -37,6 +37,14 @@ export class UserPreferencesDto implements Partial<UserPreferences> {
   @ValidateIf((_, value) => value !== undefined)
   @IsBoolean()
   useSystemNotifications?: UserPreferences['useSystemNotifications']
+
+  @ValidateIf((_, value) => value !== undefined)
+  @IsEnum(USER_SIDEBAR_QUICK_ACCESS_VISIBILITY)
+  sidebarQuickAccessVisibility?: UserPreferences['sidebarQuickAccessVisibility']
+
+  @ValidateIf((_, value) => value !== undefined)
+  @IsEnum(USER_SIDEBAR_QUICK_ACCESS_POSITION)
+  sidebarQuickAccessPosition?: UserPreferences['sidebarQuickAccessPosition']
 }
 
 export class UserUpdatePasswordDto {

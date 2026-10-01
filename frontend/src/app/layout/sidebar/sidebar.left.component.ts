@@ -2,11 +2,17 @@ import { AsyncPipe, Location, NgTemplateOutlet } from '@angular/common'
 import { Component, inject, OnDestroy } from '@angular/core'
 import { ResolveEnd, Router, RouterLink } from '@angular/router'
 import { LucideChevronLeft, LucideChevronRight, LucideDynamicIcon, LucideLogOut, LucideVenetianMask } from '@lucide/angular'
+import {
+  USER_SIDEBAR_QUICK_ACCESS_POSITION,
+  USER_SIDEBAR_QUICK_ACCESS_VISIBILITY
+} from '@sync-in-server/backend/src/applications/users/constants/user-preferences'
 import { L10nTranslateDirective } from 'angular-l10n'
 import { Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 import { APP_NAME } from '../../app.constants'
 import { ADMIN_MENU } from '../../applications/admin/admin.constants'
+import { FAVORITES_PATH } from '../../applications/favorites/favorites.constants'
+import { RECENTS_PATH } from '../../applications/recents/recents.constants'
 import { SEARCH_MENU } from '../../applications/search/search.constants'
 import { SPACES_MENU } from '../../applications/spaces/spaces.constants'
 import { SYNC_MENU } from '../../applications/sync/sync.constants'
@@ -129,23 +135,45 @@ export class SideBarLeftComponent implements OnDestroy {
     return hasMenuBefore && hasMenuAfter
   }
 
+  protected showNavigationMenu(menu: AppMenu): boolean {
+    if (menu.hide) return false
+    if (!this.isQuickAccessMenu(menu)) return true
+    const quickAccess = this.store.user.getValue()?.preferences?.sidebarQuickAccessVisibility ?? USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.BOTH
+    if (menu.link === RECENTS_PATH.BASE) {
+      return quickAccess === USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.BOTH || quickAccess === USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.RECENTS
+    }
+    return quickAccess === USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.BOTH || quickAccess === USER_SIDEBAR_QUICK_ACCESS_VISIBILITY.FAVORITES
+  }
+
+  protected isBottomMenu(menu: AppMenuEntry): boolean {
+    if (isAppMenu(menu) && this.isQuickAccessMenu(menu)) {
+      const position = this.store.user.getValue()?.preferences?.sidebarQuickAccessPosition ?? USER_SIDEBAR_QUICK_ACCESS_POSITION.TOP
+      return position === USER_SIDEBAR_QUICK_ACCESS_POSITION.BOTTOM
+    }
+    return menu.placement === 'bottom'
+  }
+
   private hasVisibleMenuUntilNextSeparator(menus: AppMenuEntry[], startIndex: number, direction: 1 | -1): boolean {
     for (let i = startIndex; i >= 0 && i < menus.length; i += direction) {
       const menu = menus[i]
       if (isAppMenuSeparator(menu)) {
         return false
       }
-      if (isAppMenu(menu) && !menu.hide) {
+      if (isAppMenu(menu) && this.showNavigationMenu(menu)) {
         return true
       }
     }
     return false
   }
 
+  private isQuickAccessMenu(menu: AppMenu): boolean {
+    return menu.link === RECENTS_PATH.BASE || menu.link === FAVORITES_PATH.BASE
+  }
+
   private hasVisibleMenuUntilNextSimpleSeparator(menus: AppMenuEntry[], startIndex: number, direction: 1 | -1): boolean {
     for (let i = startIndex; i >= 0 && i < menus.length; i += direction) {
       const menu = menus[i]
-      if (isAppMenu(menu) && !menu.hide) {
+      if (isAppMenu(menu) && this.showNavigationMenu(menu)) {
         return true
       }
       if (isAppMenuSeparator(menu) && !menu.title) {
