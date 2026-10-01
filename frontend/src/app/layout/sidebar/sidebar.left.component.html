@@ -43,9 +43,19 @@
           </button>
         }
       }
-      @if (store.userImpersonate()) {
+      @if (showLogoutShortcut) {
         <button (click)="logOut()"
-                (mouseenter)="previewMenuTitle('logout')"
+                (mouseenter)="previewMenuTitle('Logout')"
+                (mouseleave)="restoreMenuTitle()"
+                aria-label="Logout"
+                class="app-shortcut"
+                type="button">
+          <svg [lucideIcon]="icons.LucideLogOut"></svg>
+        </button>
+      }
+      @if (store.userImpersonate()) {
+        <button (click)="logOutImpersonate()"
+                (mouseenter)="previewMenuTitle('Logout')"
                 (mouseleave)="restoreMenuTitle()"
                 class="app-shortcut"
                 type="button">

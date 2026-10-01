@@ -339,6 +339,19 @@
                       </button>
                     </div>
                   </div>
+
+                  @if (!store.isElectronApp() || store.userImpersonate()) {
+                    <div class="row g-2 align-items-center">
+                      <div class="form-label col-12 col-md-6 mb-0" l10nTranslate>Session</div>
+                      <div class="col-12 col-md-6 d-flex align-items-center">
+                        <button (click)="logOut()"
+                                class="btn btn-danger"
+                                type="button">
+                          <span l10nTranslate>Logout</span>
+                        </button>
+                      </div>
+                    </div>
+                  }
                 </div>
               </div>
             </div>

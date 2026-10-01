@@ -27,6 +27,7 @@ import { ClipboardService } from 'ngx-clipboard'
 import { Subscription } from 'rxjs'
 import { filter, take } from 'rxjs/operators'
 import { i18nLanguageText } from '../../../../i18n/l10n'
+import { AuthService } from '../../../auth/auth.service'
 import { InputPasswordComponent } from '../../../common/components/input-password.component'
 import { PasswordStrengthBarComponent } from '../../../common/components/password-strength-bar.component'
 import { StorageUsageComponent } from '../../../common/components/storage-usage.component'
@@ -88,6 +89,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   protected readonly originalOrderKeyValue = originalOrderKeyValue
   private readonly layout = inject(LayoutService)
   protected languages = this.layout.getLanguages(true)
+  private readonly authService = inject(AuthService)
   private readonly userService = inject(UserService)
   private readonly clipBoardService = inject(ClipboardService)
   private subscriptions: Subscription[] = []
@@ -134,6 +136,10 @@ export class UserAccountComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.subscriptions.forEach((s) => s.unsubscribe())
+  }
+
+  logOut() {
+    this.authService.logout()
   }
 
   setOnlineStatus(status: number) {

@@ -26,8 +26,8 @@
       @if (!store.isElectronApp() || store.isElectronApp() && store.userImpersonate()) {
         <button (click)="logOut()"
                 class="btn btn-default"
-                [attr.aria-label]="'logout' | translate:locale.language"
-                [title]="'logout' | translate:locale.language"
+                [attr.aria-label]="'Logout' | translate:locale.language"
+                [title]="'Logout' | translate:locale.language"
                 type="button">
           <svg [lucideIcon]="store.userImpersonate() ? icons.LucideVenetianMask : icons.LucideLogOut"></svg>
         </button>
