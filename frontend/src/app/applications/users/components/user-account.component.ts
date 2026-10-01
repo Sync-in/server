@@ -216,6 +216,10 @@ export class UserAccountComponent implements OnInit, OnDestroy {
     this.userService.changePreferences({ editor }).subscribe()
   }
 
+  updateSystemNotificationsPreference(useSystemNotifications: UserPreferences['useSystemNotifications']) {
+    this.userService.changePreferences({ useSystemNotifications }).subscribe()
+  }
+
   async enable2Fa() {
     this.userService.init2Fa().subscribe({
       next: (init: TwoFaSetup) => {

@@ -17,6 +17,7 @@ import { USER_LANGUAGE_AUTO } from '../applications/users/user.constants'
 import { getTheme } from '../common/utils/functions'
 import { EVENT } from '../electron/constants/events'
 import { Electron } from '../electron/electron.service'
+import { StoreService } from '../store/store.service'
 import { BreadCrumbUrl } from './breadcrumb/breadcrumb.interfaces'
 import { AppWindow, TAB_GROUP, TAB_MENU, TabMenu, themeDark, themeLight } from './layout.interfaces'
 
@@ -64,6 +65,7 @@ export class LayoutService {
   private readonly toastr = inject(ToastrService)
   private readonly contextMenu = inject<ContextMenuService<any>>(ContextMenuService)
   private readonly electron = inject(Electron)
+  private readonly store = inject(StoreService)
   // States
   private readonly screenMediumSize = 767 // px
   private readonly screenSmallSize = 576 // px
@@ -229,13 +231,14 @@ export class LayoutService {
     e?: HttpErrorResponse,
     override: any = {}
   ): ActiveToast<any> | void {
+    const useSystemNotifications = this.electron.enabled && (this.store.user.getValue()?.preferences?.useSystemNotifications ?? true)
     if (type === 'error' && e) {
       const errorMessage = e.error
         ? Array.isArray(e.error.message)
           ? e.error.message.map((e: string) => this.translateString(e)).join(' & ')
           : this.translateString(e.error.message)
         : this.translateString(e.message || 'Unknown error !')
-      if (this.electron.enabled) {
+      if (useSystemNotifications) {
         this.electron.sendMessage(this.translateString(title), `${this.translateString(message)} - ${errorMessage}`)
       } else {
         return this.toastr[type](
@@ -248,7 +251,7 @@ export class LayoutService {
         )
       }
     }
-    if (this.electron.enabled) {
+    if (useSystemNotifications) {
       this.electron.sendMessage(this.translateString(title), this.translateString(message))
     } else {
       return this.toastr[type](this.translateString(message), this.translateString(title), override)

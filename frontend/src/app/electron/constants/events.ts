@@ -29,7 +29,8 @@ export const EVENT = {
   // tasks & notifications & chats
   APPLICATIONS: {
     MSG: 'applications-msg',
-    COUNTER: 'applications-counter'
+    COUNTER: 'applications-counter',
+    SYSTEM_NOTIFICATIONS: 'applications-system-notifications'
   },
   MISC: {
     DIALOG_OPEN: 'dialog-open',

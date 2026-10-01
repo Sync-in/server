@@ -193,7 +193,11 @@ export class UsersQueries {
       }
       const currentPreferences = normalizeUserPreferences(user.preferences)
       const preferences = { ...currentPreferences, ...patch }
-      if (preferences.theme === currentPreferences.theme && preferences.editor === currentPreferences.editor) {
+      if (
+        preferences.theme === currentPreferences.theme &&
+        preferences.editor === currentPreferences.editor &&
+        preferences.useSystemNotifications === currentPreferences.useSystemNotifications
+      ) {
         return currentPreferences
       }
       dbCheckAffectedRows(await tx.update(users).set({ preferences }).where(eq(users.id, userId)), 1)

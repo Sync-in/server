@@ -34,6 +34,19 @@
 
               <div>
                 <div class="px-1 mt-4">
+                  @if (user.isUser) {
+                    <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
+                      <div class="col-5 col-sm-4" l10nTranslate>Avatar</div>
+                      <div class="col-7 col-sm-8 d-flex flex-wrap justify-content-end gap-2">
+                        <button (click)="genAvatar()" class="btn btn-success" type="button" l10nTranslate>Generate</button>
+                        <button class="btn-file-upload btn btn-default" type="button">
+                          <span l10nTranslate>Import</span>
+                          <input (change)="uploadAvatar($event)" accept="image/*" name="file" role="button" type="file" />
+                        </button>
+                      </div>
+                    </div>
+                  }
+
                   <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle">
                     <div class="col-5 col-sm-4" l10nTranslate>Login</div>
                     <span class="col-7 col-sm-8 text-end">{{ user.login }}</span>
@@ -100,6 +113,17 @@
           <div class="card dialog-tab-card">
             <div class="card-body">
               <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Preferences</div>
+
+              <div class="row g-2 align-items-center mb-2">
+                <label class="col-12 col-sm-6" for="userLanguage" l10nTranslate>Language</label>
+                <div class="col-12 col-sm-6">
+                  <select id="userLanguage" [(ngModel)]="language" class="form-select">
+                    @for (l of languages; track $index) {
+                      <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
 
               <div class="row g-2 align-items-center mb-2">
                 <label class="col-12 col-sm-6" for="userTheme" l10nTranslate>Theme</label>
@@ -172,36 +196,10 @@
         <div class="col-12 col-lg-6 d-flex flex-column gap-3">
           <div class="card dialog-tab-card">
             <div class="card-body">
-              <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Configuration</div>
+              <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Notifications</div>
               <div class="d-flex flex-column gap-2">
-                @if (user.isUser) {
-                  <div class="row g-2 align-items-center">
-                    <div class="form-label col-12 col-md-6 mb-0" l10nTranslate>Avatar</div>
-                    <div class="col-12 col-md-6">
-                      <div class="d-flex flex-wrap gap-2">
-                        <button (click)="genAvatar()" class="btn btn-success" type="button" l10nTranslate>Generate</button>
-                        <button class="btn-file-upload btn btn-default" type="button">
-                          <span l10nTranslate>Import</span>
-                          <input (change)="uploadAvatar($event)" accept="image/*" name="file" role="button" type="file" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                }
-
                 <div class="row g-2 align-items-center">
-                  <label class="form-label col-12 col-md-6 mb-0" for="userLanguage" l10nTranslate>Language</label>
-                  <div class="col-12 col-md-6">
-                    <select id="userLanguage" [(ngModel)]="language" class="form-select">
-                      @for (l of languages; track $index) {
-                        <option [ngValue]="l">{{ i18nLanguageText[l] }}</option>
-                      }
-                    </select>
-                  </div>
-                </div>
-
-                <div class="row g-2 align-items-center">
-                  <label class="form-label col-12 col-md-6 mb-0" for="userNotification" l10nTranslate>Notification</label>
+                  <label class="form-label col-12 col-md-6 mb-0" for="userNotification" l10nTranslate>Channels</label>
                   <div class="col-12 col-md-6">
                     <select id="userNotification"
                             [ngModel]="user.notification"
@@ -213,6 +211,36 @@
                     </select>
                   </div>
                 </div>
+
+                @if (store.isElectronApp()) {
+                  <div class="row g-0">
+                    <div class="col-12">
+                      <div class="card dialog-check-card dialog-check-card--interactive"
+                           [class.dialog-check-card--active]="user.preferences.useSystemNotifications"
+                           (click)="updateSystemNotificationsPreference(!user.preferences.useSystemNotifications)">
+                        <div class="card-body p-2">
+                          <div class="d-flex align-items-center cursor-pointer">
+                            <label for="useSystemNotifications" class="form-label me-auto text-nowrap" l10nTranslate>System display</label>
+                            <div class="d-flex align-items-center form-check form-switch ps-0 mb-0">
+                              <label class="form-check-label" for="useSystemNotifications" (click)="$event.stopPropagation()"></label>
+                              <input
+                                [ngModel]="user.preferences.useSystemNotifications"
+                                (ngModelChange)="updateSystemNotificationsPreference($event)"
+                                (click)="$event.stopPropagation()"
+                                class="form-check-input ms-2"
+                                id="useSystemNotifications"
+                                type="checkbox"
+                                role="button">
+                            </div>
+                          </div>
+                          <div class="text-muted fs-sm mt-2 px-1" l10nTranslate>
+                            Show notifications through the operating system instead of in the application.
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
             </div>
           </div>
@@ -268,7 +296,7 @@
               </div>
             </div>
 
-            <div class="card dialog-tab-card flex-grow-1">
+            <div class="card dialog-tab-card">
               <div class="card-body">
                 <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Security</div>
                 <div class="d-flex flex-column gap-3">

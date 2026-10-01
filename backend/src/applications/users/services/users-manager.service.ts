@@ -238,6 +238,7 @@ export class UsersManager {
     const patch: Partial<UserPreferences> = {}
     if (dto.theme !== undefined) patch.theme = dto.theme
     if (dto.editor !== undefined) patch.editor = dto.editor
+    if (dto.useSystemNotifications !== undefined) patch.useSystemNotifications = dto.useSystemNotifications
     try {
       return await this.usersQueries.updateUserPreferences(user.id, patch)
     } catch (e) {

@@ -33,6 +33,10 @@ export class UserPreferencesDto implements Partial<UserPreferences> {
   @ValidateIf((_, value) => value !== undefined)
   @IsIn([COLLABORA_EDITOR, ONLY_OFFICE_EDITOR, EURO_OFFICE_EDITOR, null])
   editor?: UserPreferences['editor']
+
+  @ValidateIf((_, value) => value !== undefined)
+  @IsBoolean()
+  useSystemNotifications?: UserPreferences['useSystemNotifications']
 }
 
 export class UserUpdatePasswordDto {

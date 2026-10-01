@@ -43,6 +43,10 @@ export class Electron {
   constructor() {
     this.store.isElectronApp.set(this.enabled)
     if (this.enabled) {
+      this.store.user.subscribe((user) => {
+        if (!user) return
+        this.send(EVENT.APPLICATIONS.SYSTEM_NOTIFICATIONS, user.preferences?.useSystemNotifications ?? true)
+      })
       effect(() => {
         const count = this.store.notifications().filter((n: NotificationModel) => !n.wasRead).length
         this.send(EVENT.APPLICATIONS.COUNTER, CLIENT_APP_COUNTER.NOTIFICATIONS, count)

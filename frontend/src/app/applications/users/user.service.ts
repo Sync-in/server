@@ -249,7 +249,12 @@ export class UserService {
     const userId = this.user.id
     return this.http.patch<UserPreferences>(API_USERS_MY_PREFERENCES, patch).pipe(
       catchError((e: HttpErrorResponse) => {
-        const message = patch.theme !== undefined ? 'Unable to update theme preference' : 'Unable to update editor preference'
+        const message =
+          patch.theme !== undefined
+            ? 'Unable to update theme preference'
+            : patch.editor !== undefined
+              ? 'Unable to update editor preference'
+              : 'Unable to update notification preference'
         this.layout.sendNotification('error', 'Configuration', message, e)
         return EMPTY
       }),
