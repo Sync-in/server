@@ -56,7 +56,7 @@ export class VirtualScrollComponent<T> implements OnInit, OnChanges, OnDestroy {
   @Input() resizeOffset = 139
   @Input() galleryMode = false
   @Input() items: T[] = []
-  @Input() childHeight = 38
+  @Input() childHeight = 40
   @Input() childWidth: number
   @Input() bufferAmount = 0
   protected viewPortItems: T[] = []

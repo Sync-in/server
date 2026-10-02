@@ -142,7 +142,7 @@
 .app-table {
   --app-table-cell-inline-padding: .5rem;
   --app-table-leading-icon-gap: .3rem;
-  --app-table-row-height: 38px;
+  --app-table-row-height: 40px;
 
   @extend .table;
   @include no-select-utility;
@@ -207,6 +207,7 @@
 
     .badge {
       max-width: 100%;
+      line-height: 1.2;
     }
   }
 
