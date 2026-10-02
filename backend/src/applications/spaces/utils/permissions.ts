@@ -39,6 +39,7 @@ export function removePermissions(permissions: string, rmPermissions: SPACE_OPER
 }
 
 export function canAccessToSpaceUrl(user: UserModel, urlSegments: string[]): boolean {
+  if (urlSegments[0] === SPACE_REPOSITORY.TRASH && !user.isUser) return false
   if (urlSegments[1] === SPACE_ALIAS.PERSONAL && (urlSegments[0] === SPACE_REPOSITORY.FILES || urlSegments[0] === SPACE_REPOSITORY.TRASH)) {
     return user.havePermission(USER_PERMISSION.PERSONAL_SPACE)
   } else if (urlSegments[0] === SPACE_REPOSITORY.FILES) {
@@ -52,6 +53,7 @@ export function canAccessToSpaceUrl(user: UserModel, urlSegments: string[]): boo
 }
 
 export function canAccessToSpace(user: UserModel, space: SpaceEnv): boolean {
+  if (space.inTrashRepository && !user.isUser) return false
   if (space.inPersonalSpace) {
     return user.havePermission(USER_PERMISSION.PERSONAL_SPACE)
   } else if (space.inFilesRepository) {

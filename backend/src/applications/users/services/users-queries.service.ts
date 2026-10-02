@@ -215,6 +215,16 @@ export class UsersQueries {
       .where(and(...where))
   }
 
+  async usersHaveRole(userIds: number[], role: USER_ROLE): Promise<boolean> {
+    const uniqueUserIds = [...new Set(userIds)]
+    if (!uniqueUserIds.length) return true
+    const matchingUsers = await this.db
+      .select({ id: users.id })
+      .from(users)
+      .where(and(inArray(users.id, uniqueUserIds), lte(users.role, role)))
+    return matchingUsers.length === uniqueUserIds.length
+  }
+
   async selectUserProperties(userId: number, fields: Partial<keyof User>[]): Promise<Partial<User>> {
     const select: Record<keyof User, any> = convertToSelect(users, fields)
     const [r]: Record<string, any>[] = await this.db.select(select).from(users).where(eq(users.id, userId)).limit(1)

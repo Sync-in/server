@@ -25,8 +25,8 @@ export class SpacesBrowserService {
 
   setEnvironment(repository: SPACE_REPOSITORY, routes: UrlSegment[]) {
     this.breadCrumbFilesRepo = SPACES_PATH.FILES === repository
-    this.inPersonalSpace = routes[0]?.path === SPACES_PATH.PERSONAL
     this.inShareRepo = repository === SPACES_PATH.SHARES
+    this.inPersonalSpace = routes[0]?.path === SPACES_PATH.PERSONAL
     this.inRootShare = this.inShareRepo && routes.length === 0
     this.browseApi = buildUrlFromRoutes(`${API_SPACES_BROWSE}/${repository}`, routes, false)
     this.breadCrumbUrl = `/${SPACES_PATH.SPACES}/${repository}${pathFromRoutes(routes)}`

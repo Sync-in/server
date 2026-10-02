@@ -69,7 +69,7 @@
     </button>
   }
   <!--Start Share Button-->
-  @if (!isTrashRepo && !inSharesList && canShare.outside) {
+  @if (!isTrashRepo && !inSharesList && (canShare.outside || isPersonalSpace)) {
     <div class="btn-group"
          [isDisabled]="!hasSelection"
          dropdown>
@@ -81,17 +81,19 @@
         <span class="app-top-menu-tool-bar__label" l10nTranslate>Share</span>
       </button>
       <ul *dropdownMenu class="dropdown-menu" role="menu">
-        <li role="menuitem">
-          <a (click)="openShareDialog()" class="dropdown-item">
-            <span l10nTranslate><svg [lucideIcon]="icons.SHARED"></svg>New share</span>
-          </a>
-        </li>
-        <li role="menuitem">
-          <a (click)="openShareLinkDialog()" class="dropdown-item">
-            <span l10nTranslate><svg [lucideIcon]="icons.LucideLink"></svg>New share link</span>
-          </a>
-        </li>
-        @if (isFilesRepo) {
+        @if (canShare.outside) {
+          <li role="menuitem">
+            <a (click)="openShareDialog()" class="dropdown-item">
+              <span l10nTranslate><svg [lucideIcon]="icons.SHARED"></svg>New share</span>
+            </a>
+          </li>
+          <li role="menuitem">
+            <a (click)="openShareLinkDialog()" class="dropdown-item">
+              <span l10nTranslate><svg [lucideIcon]="icons.LucideLink"></svg>New share link</span>
+            </a>
+          </li>
+        }
+        @if (isPersonalSpace) {
           <li role="menuitem">
             <a (click)="openSpaceAnchorFileDialog()" class="dropdown-item">
               <span l10nTranslate><svg [lucideIcon]="icons.LucideAnchor"></svg>Anchor to a space</span>
@@ -152,7 +154,7 @@
           <span l10nTranslate><svg [lucideIcon]="icons.SELECTION"></svg>View selection</span>
         </a>
       </li>
-      @if (inSharesList && selection.length === 1 && selection[0]?.canBeReShared) {
+      @if (canAdminShares && inSharesList && selection.length === 1 && selection[0]?.canBeReShared) {
         <li class="dropdown-divider"></li>
         <li role="menuitem">
           <a (click)="openShareDialog()" class="dropdown-item">
@@ -667,13 +669,13 @@
     }
   }
   @if (!isTrashRepo) {
-    @if (canShare.outside || inSharesList && selection[0]?.canBeReShared) {
+    @if (canShare.outside || isPersonalSpace || canAdminShares && inSharesList && selection[0]?.canBeReShared) {
       <ng-template [subMenu]="ShareContextMenu" contextMenuItem>
         <span l10nTranslate><svg [lucideIcon]="icons.SHARED"></svg>Share</span>
       </ng-template>
     }
   }
-  @if (!hasDisabledItemsInSelection || selection.length === 1 && !isTrashRepo && !inSharesList || !isTrashRepo && canCompress || !isTrashRepo && (canShare.outside || inSharesList && selection[0]?.canBeReShared)) {
+  @if (!hasDisabledItemsInSelection || selection.length === 1 && !isTrashRepo && !inSharesList || !isTrashRepo && canCompress || !isTrashRepo && (canShare.outside || isPersonalSpace || canAdminShares && inSharesList && selection[0]?.canBeReShared)) {
     <ng-template [divider]="true" contextMenuItem></ng-template>
   }
   @if (selection.length === 1 && !isTrashRepo && isElectronApp && selection[0].isDir) {
@@ -710,13 +712,15 @@
   }
 </context-menu>
 <context-menu #ShareContextMenu>
-  <ng-template (execute)="openShareDialog()" contextMenuItem>
-    <span l10nTranslate><svg [lucideIcon]="icons.SHARED"></svg>New share</span>
-  </ng-template>
-  <ng-template (execute)="openShareLinkDialog()" contextMenuItem>
-    <span l10nTranslate><svg [lucideIcon]="icons.LucideLink"></svg>New share link</span>
-  </ng-template>
-  @if (isFilesRepo) {
+  @if (canShare.outside || canAdminShares && inSharesList && selection[0]?.canBeReShared) {
+    <ng-template (execute)="openShareDialog()" contextMenuItem>
+      <span l10nTranslate><svg [lucideIcon]="icons.SHARED"></svg>New share</span>
+    </ng-template>
+    <ng-template (execute)="openShareLinkDialog()" contextMenuItem>
+      <span l10nTranslate><svg [lucideIcon]="icons.LucideLink"></svg>New share link</span>
+    </ng-template>
+  }
+  @if (isPersonalSpace) {
     <ng-template (execute)="openSpaceAnchorFileDialog()" contextMenuItem>
       <span l10nTranslate><svg [lucideIcon]="icons.LucideAnchor"></svg>Anchor to a space</span>
     </ng-template>

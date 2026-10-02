@@ -113,7 +113,7 @@ The available `USER_PERMISSION` values are:
 |-------------------------|-------------------------|-------------------------------------------------------------|
 | `PERSONAL_SPACE`        | `personal_space`        | Access personal files and the personal trash.               |
 | `SPACES`                | `spaces_access`         | Browse spaces available to the user.                        |
-| `SPACES_ADMIN`          | `spaces_admin`          | Create and administer spaces and their roots.               |
+| `SPACES_ADMIN`          | `spaces_admin`          | Create collaborative spaces.                                |
 | `SHARES`                | `shares_access`         | Browse shares available to the user.                        |
 | `SHARES_ADMIN`          | `shares_admin`          | Create and administer shares and share links.               |
 | `GUESTS_ADMIN`          | `guests_admin`          | Create and administer guest accounts.                       |
@@ -125,6 +125,49 @@ The available `USER_PERMISSION` values are:
 Permissions do not imply one another. When `@UserHavePermission()` receives an array, the guard accepts any listed permission; it does not require all
 of them. Endpoint guards and storage-context checks can also impose a role, membership, or repository permission in addition to the application
 permission.
+
+For a regular user, `SPACES_ADMIN` allows space creation but does not grant management over every existing space. Updating a space, its members,
+roots, or originating shares still requires the user to be one of that space's managers. Administrators can administer every space.
+
+`SHARES_ADMIN` allows a regular user to create and administer outgoing shares and share links. When the source belongs to a collaborative space, the
+effective space or anchored-root permissions must also include `SHARE_OUTSIDE`. Conversely, a space manager's oversight of existing shares originating
+from that space does not depend on `SHARES_ADMIN`.
+
+## Guest and link capabilities in collaborative spaces
+
+Guests and link pseudo-users are content collaborators, not space administrators. Both can browse the collaborative spaces available to their
+identity and can act on their content according to the effective permissions granted by the space and, when applicable, by an anchored root.
+
+| Capability                                            | Guest                                                               | Space link pseudo-user                            |
+|-------------------------------------------------------|---------------------------------------------------------------------|---------------------------------------------------|
+| Access scope                                          | Spaces granted directly or through an allowed collaboration context | Only the space attached to the authenticated link |
+| Read and download                                     | Yes                                                                 | Yes                                               |
+| Create, upload, copy, or move content into a location | Requires `ADD`                                                      | Requires `ADD`                                    |
+| Edit, rename, overwrite, or lock content              | Requires `MODIFY`                                                   | Requires `MODIFY`                                 |
+| Delete content or move it out of a location           | Requires `DELETE`; a move also requires `ADD` on the destination    | Same                                              |
+| Comments                                              | Yes, on accessible content                                          | Yes, on accessible content                        |
+| Favorites                                             | Yes                                                                 | No                                                |
+| WebDAV                                                | Yes                                                                 | No                                                |
+| Personal space and personal trash                     | No                                                                  | No                                                |
+| Collaborative-space trash                             | No                                                                  | No                                                |
+| Personal-file anchoring                               | No                                                                  | No                                                |
+| Create shares, share links, or child shares           | No                                                                  | No                                                |
+| Manage a collaborative space or its shares            | No                                                                  | No                                                |
+| Desktop synchronization                               | No                                                                  | No                                                |
+
+Only administrators and regular users can be collaborative-space managers. Guests can be space members but cannot be promoted to manager, and link
+pseudo-users are always link-scoped members. A manager of an originating collaborative space can administer the shares created from that space through
+the space-management endpoints; this manager oversight is distinct from the global `SHARES_ADMIN` application permission.
+
+`SHARE_INSIDE` and `SHARE_OUTSIDE` are not independently usable by guests or link pseudo-users. Anchoring requires a personal source that these roles
+do not have, while share creation and child-share creation require an authorized regular user and the share-administration capability. Link settings
+normally expose only `ADD`, `MODIFY`, and `DELETE`.
+
+Collaborative-space trash is a recovery scope reserved for administrators and regular users. Guests and link pseudo-users can move active content to
+the trash when their effective permissions include `DELETE`, but they cannot list, browse, restore, permanently delete, or empty the trash.
+
+Link access remains subject to the link state and settings, including activation, expiration, access limits, and optional password authentication.
+Link pseudo-users cannot use the normal login flow.
 
 ### Revocation and persisted state
 

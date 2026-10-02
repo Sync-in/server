@@ -20,6 +20,7 @@ import type { ShareProps } from '../../shares/interfaces/share-props.interface'
 import type { ShareChild } from '../../shares/models/share-child.model'
 import { SharesManager } from '../../shares/services/shares-manager.service'
 import { MEMBER_TYPE } from '../../users/constants/member'
+import { USER_PERMISSION, USER_ROLE } from '../../users/constants/user'
 import { UserModel } from '../../users/models/user.model'
 import { UsersQueries } from '../../users/services/users-queries.service'
 import {
@@ -44,6 +45,7 @@ import { SpaceModel } from '../models/space.model'
 import type { SpaceRoot } from '../schemas/space-root.interface'
 import type { Space } from '../schemas/space.interface'
 import { spaces } from '../schemas/spaces.schema'
+import { createUniqueAlias } from '../utils/alias'
 import { haveSpacePermission } from '../utils/permissions'
 import { SpacesQueries } from './spaces-queries.service'
 import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
@@ -182,7 +184,9 @@ export class SpacesManager {
       ctime: 0,
       enabled: true
     }
-    for (const space of [...(await this.listSpaces(user.id)), personalTrash] as SpaceTrash[]) {
+    const spaces = (await this.listSpaces(user.id)) as SpaceTrash[]
+    if (user.havePermission(USER_PERMISSION.PERSONAL_SPACE)) spaces.push(personalTrash)
+    for (const space of spaces) {
       const rPath = space.alias === SPACE_ALIAS.PERSONAL ? user.trashPath : SpaceModel.getTrashPath(space.alias)
       try {
         space.nb = 0
@@ -221,6 +225,7 @@ export class SpacesManager {
 
   async createSpace(user: UserModel, createOrUpdateSpaceDto: CreateOrUpdateSpaceDto): Promise<SpaceProps> {
     /* only users with admin space role can create a space */
+    await this.validateManagers(createOrUpdateSpaceDto.managers)
     // create space
     const space: SpaceProps = new SpaceProps({
       name: createOrUpdateSpaceDto.name,
@@ -251,6 +256,7 @@ export class SpacesManager {
   async updateSpace(user: UserModel, spaceId: number, createOrUpdateSpaceDto: CreateOrUpdateSpaceDto): Promise<SpaceProps> {
     /* only managers of the space can update it */
     const space: SpaceProps = await this.userCanAccessSpace(user, spaceId, true)
+    await this.validateManagers(createOrUpdateSpaceDto.managers)
     // check and update space info
     let mustInvalidateCache = false
     let renamedSpaceAlias: string
@@ -552,6 +558,16 @@ export class SpacesManager {
     return rmRootOwners
   }
 
+  private async validateManagers(managers: SpaceMemberDto[]): Promise<void> {
+    const managersHaveUserRole = await this.usersQueries.usersHaveRole(
+      managers.map((manager) => manager.id),
+      USER_ROLE.USER
+    )
+    if (managers.some((manager) => manager.type !== MEMBER_TYPE.USER) || !managersHaveUserRole) {
+      throw new HttpException('Only users can be space managers', HttpStatus.BAD_REQUEST)
+    }
+  }
+
   private async updateRoots(
     user: UserModel,
     space: Partial<SpaceProps>,
@@ -766,19 +782,9 @@ export class SpacesManager {
   }
 
   private async uniqueSpaceAlias(name: string, replaceCount = false, excludedSpaceId?: number): Promise<string> {
-    const originalAlias = this.createAliasSlug(name, replaceCount)
-    let alias = originalAlias
-    let count = 0
-    // Personal space name is reserved
-    if (alias === SPACE_ALIAS.PERSONAL) {
-      count += 1
-      alias = `${originalAlias}-${count}`
-    }
-    while (await this.spacesQueries.spaceExistsForAlias(alias, excludedSpaceId)) {
-      count += 1
-      alias = `${originalAlias}-${count}`
-    }
-    return alias
+    return createUniqueAlias(this.createAliasSlug(name, replaceCount), (alias: string) =>
+      this.spacesQueries.spaceExistsForAlias(alias, excludedSpaceId)
+    )
   }
 
   private createAliasSlug(name: string, replaceCount = false): string {

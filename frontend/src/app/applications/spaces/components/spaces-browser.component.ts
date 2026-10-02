@@ -43,6 +43,7 @@ import { FileTaskStatus } from '@sync-in-server/backend/src/applications/files/m
 import { SHARE_TYPE } from '@sync-in-server/backend/src/applications/shares/constants/shares'
 import { SPACE_OPERATION, SPACE_REPOSITORY } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import type { SpaceFiles } from '@sync-in-server/backend/src/applications/spaces/interfaces/space-files.interface'
+import { USER_PERMISSION } from '@sync-in-server/backend/src/applications/users/constants/user'
 import { intersectPermissions } from '@sync-in-server/backend/src/common/shared'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown'
@@ -82,6 +83,7 @@ import { ShareDialogComponent } from '../../shares/components/dialogs/share-dial
 import { ShareModel } from '../../shares/models/share.model'
 import { SYNC_ICON, SYNC_PATH } from '../../sync/sync.constants'
 import { UserAvatarComponent } from '../../users/components/utils/user-avatar.component'
+import { UserService } from '../../users/user.service'
 import { SpaceModel } from '../models/space.model'
 import { SpacesBrowserService } from '../services/spaces-browser.service'
 import { SPACES_ICON, SPACES_PATH } from '../spaces.constants'
@@ -182,6 +184,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   protected inSharesList: boolean
   protected hasRoots = false
   protected canShare: { inside: boolean; outside: boolean } = { inside: false, outside: false }
+  protected canAdminShares = false
   protected spacePermissions: string
   // Actions
   protected multipleSelection = false
@@ -249,6 +252,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private readonly zone = inject(NgZone)
   private readonly renderer = inject(Renderer2)
   private readonly store = inject(StoreService)
+  private readonly userService = inject(UserService)
   protected isElectronApp = this.store.isElectronApp()
   private readonly spacesBrowser = inject(SpacesBrowserService)
   private readonly filesService = inject(FilesService)
@@ -256,7 +260,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   // Space
   private baseRepoUrl: string
   private currentRoute: string
-  private isPersonalSpace: boolean
+  protected isPersonalSpace: boolean
   // Others
   private subscriptions: Subscription[] = []
   private focusOnSelect: string
@@ -291,6 +295,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   private moveFromDrag = false
 
   ngOnInit() {
+    this.canAdminShares = this.userService.userHavePermission(USER_PERMISSION.SHARES_ADMIN)
     this.galleryMode = this.btnNavigationView.currentView()
     this.supportUploadFolder = this.filesUpload.supportUploadDirectory
     this.activatedRoute.queryParams.subscribe((params) => this.focusOn(params.select))
@@ -325,7 +330,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       next: (spacesFiles: SpaceFiles) => {
         this.spacePermissions = spacesFiles.permissions
         this.canManageFavorite = !this.store.user.getValue()?.isLink && !this.isTrashRepo
-        this.canShare.outside = this.spacePermissions.indexOf(SPACE_OPERATION.SHARE_OUTSIDE) > -1
+        this.canShare.outside = this.canAdminShares && this.spacePermissions.indexOf(SPACE_OPERATION.SHARE_OUTSIDE) > -1
         // todo: share inside is not used, this should allow the file anchor dialog to add a personal file to the current space (?)
         this.canShare.inside = this.spacePermissions.indexOf(SPACE_OPERATION.SHARE_INSIDE) > -1
         this.hasRoots = spacesFiles.hasRoots

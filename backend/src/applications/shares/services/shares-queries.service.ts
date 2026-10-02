@@ -27,6 +27,7 @@ import type { SpaceBrowseDetails } from '../../spaces/interfaces/space-files.int
 import { SpaceEnv } from '../../spaces/models/space-env.model'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
 import { spaceGroupConcatPermissions, spaces } from '../../spaces/schemas/spaces.schema'
+import { createUniqueAlias } from '../../spaces/utils/alias'
 import { syncClients } from '../../sync/schemas/sync-clients.schema'
 import { syncPaths } from '../../sync/schemas/sync-paths.schema'
 import { GROUP_TYPE } from '../../users/constants/group'
@@ -67,14 +68,7 @@ export class SharesQueries {
   ) {}
 
   async uniqueShareAlias(name: string, excludedShareId?: number): Promise<string> {
-    const originalAlias = createSlug(name, true)
-    let alias = originalAlias
-    let count = 0
-    while (await this.shareExistsForAlias(alias, excludedShareId)) {
-      count += 1
-      alias = `${originalAlias}-${count}`
-    }
-    return alias
+    return createUniqueAlias(createSlug(name, true), (alias: string) => this.shareExistsForAlias(alias, excludedShareId))
   }
 
   shareExistsForOwner(userId: number, shareId: number): any | undefined {

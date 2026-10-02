@@ -134,7 +134,9 @@ export class SpacesComponent implements OnInit {
   protected selected: SpaceModel = null
   protected canCreateSpace = false
   protected canEditSpace = false
+  protected canManageSpaces = false
   protected canManageRoots = false
+  protected canUsePersonalSpace = false
   private readonly router = inject(Router)
   private readonly activatedRoute = inject(ActivatedRoute)
   private readonly spacesService = inject(SpacesService)
@@ -154,6 +156,8 @@ export class SpacesComponent implements OnInit {
   constructor() {
     this.loadSpaces()
     this.canCreateSpace = this.userService.userHavePermission(USER_PERMISSION.SPACES_ADMIN)
+    this.canManageSpaces = this.userService.user.isUser
+    this.canUsePersonalSpace = this.userService.userHavePermission(USER_PERMISSION.PERSONAL_SPACE)
     this.layout.setBreadcrumbIcon(SPACES_ICON.SPACES)
     this.layout.setBreadcrumbNav({ url: `/${SPACES_PATH.SPACES}/${SPACES_TITLE.COLLABORATIVE_SPACES}`, translating: true, sameLink: true })
     this.activatedRoute.queryParams.subscribe((params) => (this.focusOnSelect = params.select))
@@ -196,7 +200,7 @@ export class SpacesComponent implements OnInit {
     if (space) {
       this.selected = space
       this.canEditSpace = !!space.managers.find((m: Member) => m.id === this.userService.user.id)
-      this.canManageRoots = this.canEditSpace || space.havePermission(SPACE_OPERATION.SHARE_INSIDE)
+      this.canManageRoots = this.canUsePersonalSpace && (this.canEditSpace || space.havePermission(SPACE_OPERATION.SHARE_INSIDE))
     } else {
       this.selected = null
       this.canEditSpace = false

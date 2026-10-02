@@ -15,6 +15,7 @@ import { LINK_TYPE } from '@sync-in-server/backend/src/applications/links/consta
 import { SPACE_MAX_DISABLED_DAYS, SPACE_OPERATION, SPACE_ROLE } from '@sync-in-server/backend/src/applications/spaces/constants/spaces'
 import { SpaceProps } from '@sync-in-server/backend/src/applications/spaces/models/space-props.model'
 import type { SpaceRootProps } from '@sync-in-server/backend/src/applications/spaces/models/space-root-props.model'
+import { USER_ROLE } from '@sync-in-server/backend/src/applications/users/constants/user'
 import type { SearchMembersDto } from '@sync-in-server/backend/src/applications/users/dto/search-members.dto'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
 import { BsModalRef } from 'ngx-bootstrap/modal'
@@ -116,7 +117,8 @@ export class SpaceDialogComponent implements OnInit {
         ...this.space.managers.map((m: MemberModel) => m.id),
         ...this.space.members.filter((m: MemberModel) => m.isUser).map((m: MemberModel) => m.id)
       ],
-      onlyUsers: true
+      onlyUsers: true,
+      usersRole: USER_ROLE.USER
     }
     return this.memberSearchService.searchMembers(search)
   }

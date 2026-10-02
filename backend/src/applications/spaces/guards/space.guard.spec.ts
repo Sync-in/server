@@ -390,6 +390,21 @@ describe(SpaceGuard.name, () => {
     }
   })
 
+  it('should deny guest and link access to the trash repository', async () => {
+    spacesManager.spaceEnv = vi.fn()
+    for (const role of [USER_ROLE.GUEST, USER_ROLE.LINK]) {
+      userTest.role = role
+      context.switchToHttp().getRequest.mockReturnValueOnce({
+        method: 'GET',
+        user: userTest,
+        params: { '*': 'trash/project/document.txt' }
+      })
+      await expect(spacesGuard.canActivate(context)).rejects.toMatchObject({ status: HttpStatus.FORBIDDEN })
+    }
+    expect(spacesManager.spaceEnv).not.toHaveBeenCalled()
+    userTest.role = USER_ROLE.USER
+  })
+
   it('should fail with space disabled', async () => {
     userTest.role = USER_ROLE.USER
     spacesManager.spaceEnv = vi.fn().mockReturnValueOnce({
