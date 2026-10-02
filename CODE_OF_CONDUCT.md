@@ -21,7 +21,7 @@ The following behavior will **not be tolerated**:
 
 ## 4. Reporting Violations
 If you witness or experience any violations of this Code of Conduct:
-- Contact the project maintainers at **[Your Contact Email]**.
+- Contact the project maintainers at **[contact@sync-in.com](mailto:contact@sync-in.com)**.
 - Provide details about the incident, including where and when it occurred.
 - Reports will be handled **confidentially and fairly**.
 
