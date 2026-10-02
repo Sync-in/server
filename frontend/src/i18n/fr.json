@@ -72,6 +72,8 @@
   "Share status": "État du partage",
   "No recent files": "Aucun fichier récent",
   "Groups": "Groupes",
+  "administrative_groups_short": "Administratifs",
+  "personal_groups_short": "Personnels",
   "Group": "Groupe",
   "group": "groupe",
   "New personal group": "Nouveau groupe personnel",

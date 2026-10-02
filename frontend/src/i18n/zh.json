@@ -72,6 +72,8 @@
   "Share status": "共享状态",
   "No recent files": "没有最近的文件",
   "Groups": "群组",
+  "administrative_groups_short": "管理",
+  "personal_groups_short": "个人",
   "Group": "群组",
   "group": "群组",
   "New personal group": "新个人群组",

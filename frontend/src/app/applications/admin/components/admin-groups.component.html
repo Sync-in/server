@@ -56,9 +56,8 @@
         [class.active]="!personalGroupsView"
         [attr.aria-pressed]="!personalGroupsView"
         (click)="onPersonalGroupsView(false)"
-        l10nTranslate
       >
-        Groups
+        {{ 'administrative_groups_short' | translate:locale.language }}
       </button>
       <button
         type="button"
@@ -66,9 +65,8 @@
         [class.active]="personalGroupsView"
         [attr.aria-pressed]="personalGroupsView"
         (click)="onPersonalGroupsView(true)"
-        l10nTranslate
       >
-        Personal groups
+        {{ 'personal_groups_short' | translate:locale.language }}
       </button>
     </div>
   </div>

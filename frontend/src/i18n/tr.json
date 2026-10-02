@@ -72,6 +72,8 @@
   "Share status": "Paylaşım durumu",
   "No recent files": "Son dosya yok",
   "Groups": "Gruplar",
+  "administrative_groups_short": "Yönetsel",
+  "personal_groups_short": "Kişisel",
   "Group": "Grup",
   "group": "grup",
   "New personal group": "Yeni kişisel grup",

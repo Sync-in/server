@@ -30,6 +30,8 @@
   "shares_admin": "Shares administration",
   "guests_admin": "Guests administration",
   "personal_groups_admin": "Personal groups administration",
+  "administrative_groups_short": "Administrative",
+  "personal_groups_short": "Personal",
   "desktop_app_access": "Desktop app access",
   "desktop_app_sync": "Desktop app synchronization",
   "webdav_access": "WebDAV access"

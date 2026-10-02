@@ -72,6 +72,8 @@
   "Share status": "Status van de share",
   "No recent files": "Geen recente bestanden",
   "Groups": "Groepen",
+  "administrative_groups_short": "Administratieve",
+  "personal_groups_short": "Persoonlijke",
   "Group": "Groep",
   "group": "groep",
   "New personal group": "Nieuwe persoonlijke groep",
