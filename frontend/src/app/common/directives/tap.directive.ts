@@ -12,7 +12,7 @@ interface TapEvent {
   selector: '[appTap]',
   standalone: true,
   host: {
-    style: 'touch-action: manipulation; -webkit-tap-highlight-color: transparent;'
+    style: 'touch-action: manipulation; -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;'
   }
 })
 export class TapDirective implements OnDestroy {
@@ -36,6 +36,10 @@ export class TapDirective implements OnDestroy {
   @Input() preventGhostClick = true
   @Input() preventDefault = false
   @Input() disabled = false
+  /** Synthesizes a contextmenu event for touch-and-hold on iOS, where WebKit does not emit one. */
+  @Input() enableLongPressContextMenu = true
+  /** Minimum touch duration (in ms) before opening the context menu. */
+  @Input() longPressDuration = 550
 
   @Output() appTap = new EventEmitter<TapEvent>()
 
@@ -50,6 +54,11 @@ export class TapDirective implements OnDestroy {
   private startTime = 0
   private moved = false
   private lastEmitTs = 0
+  private longPressPointerId: number | null = null
+  private longPressTimer: ReturnType<typeof setTimeout> | null = null
+  private longPressTriggered = false
+  private longPressStartX = 0
+  private longPressStartY = 0
 
   private pendingSingle: { x: number; y: number; t: number } | null = null
   private singleTimer: any = null
@@ -57,6 +66,10 @@ export class TapDirective implements OnDestroy {
   constructor() {
     this.el = this.elRef.nativeElement
     this.zone.runOutsideAngular(() => {
+      this.add('pointerdown', this.onLongPressDown, { passive: true, capture: true })
+      this.add('pointermove', this.onLongPressMove, { passive: true, capture: true })
+      this.add('pointerup', this.onLongPressEnd, { passive: true, capture: true })
+      this.add('pointercancel', this.onLongPressEnd, { passive: true, capture: true })
       this.add('pointerdown', this.onDown, { passive: true })
       this.add('pointermove', this.onMove, { passive: true })
       this.add('pointerup', this.onUp, { passive: false })
@@ -71,6 +84,59 @@ export class TapDirective implements OnDestroy {
     for (const off of this.removeFns) off()
     this.removeFns = []
     clearTimeout(this.singleTimer)
+    this.cancelLongPress()
+  }
+
+  private onLongPressDown = (ev: PointerEvent) => {
+    this.cancelLongPress()
+    this.longPressTriggered = false
+    if (
+      !this.enableLongPressContextMenu ||
+      this.disabled ||
+      !this.isIosTouchDevice() ||
+      ev.pointerType !== 'touch' ||
+      !ev.isPrimary ||
+      ev.button !== 0 ||
+      this.isEditableTarget(ev.target)
+    ) {
+      return
+    }
+
+    this.longPressPointerId = ev.pointerId
+    const { clientX, clientY } = ev
+    this.longPressStartX = clientX
+    this.longPressStartY = clientY
+    this.longPressTimer = setTimeout(() => {
+      if (this.longPressPointerId !== ev.pointerId) return
+
+      this.cancelLongPress()
+      if (!this.el.isConnected) return
+
+      this.longPressTriggered = true
+      this.zone.run(() =>
+        this.el.dispatchEvent(
+          new MouseEvent('contextmenu', {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            button: 2,
+            clientX,
+            clientY
+          })
+        )
+      )
+    }, this.longPressDuration)
+  }
+
+  private onLongPressMove = (ev: PointerEvent) => {
+    if (ev.pointerId !== this.longPressPointerId) return
+    if (Math.abs(ev.clientX - this.longPressStartX) > this.maxMove || Math.abs(ev.clientY - this.longPressStartY) > this.maxMove) {
+      this.cancelLongPress()
+    }
+  }
+
+  private onLongPressEnd = (ev: PointerEvent) => {
+    if (ev.pointerId === this.longPressPointerId) this.cancelLongPress()
   }
 
   private onDown = (ev: PointerEvent) => {
@@ -95,6 +161,10 @@ export class TapDirective implements OnDestroy {
 
   private onUp = (ev: PointerEvent) => {
     if (!this.active || ev.pointerId !== this.pointerId) return
+    if (this.longPressTriggered) {
+      this.resetGesture()
+      return
+    }
     const dt = ev.timeStamp - this.startTime
     const dx = Math.abs(ev.clientX - this.startX)
     const dy = Math.abs(ev.clientY - this.startY)
@@ -147,7 +217,8 @@ export class TapDirective implements OnDestroy {
 
   private onNativeClick = (ev: MouseEvent) => {
     if (!this.preventGhostClick) return
-    if (performance.now() - this.lastEmitTs < 350) {
+    if (this.longPressTriggered || performance.now() - this.lastEmitTs < 350) {
+      this.longPressTriggered = false
       ev.stopImmediatePropagation()
       ev.stopPropagation()
       ev.preventDefault()
@@ -165,8 +236,24 @@ export class TapDirective implements OnDestroy {
   }
 
   private resetGesture() {
+    this.cancelLongPress()
     this.active = false
     this.pointerId = null
     this.startTime = 0
+  }
+
+  private cancelLongPress() {
+    if (this.longPressTimer !== null) clearTimeout(this.longPressTimer)
+    this.longPressTimer = null
+    this.longPressPointerId = null
+  }
+
+  private isEditableTarget(target: EventTarget | null): boolean {
+    return target instanceof Element && !!target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
+  }
+
+  private isIosTouchDevice(): boolean {
+    if (typeof navigator === 'undefined') return false
+    return /iPad|iPhone|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
   }
 }
