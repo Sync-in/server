@@ -21,7 +21,7 @@
   <button (click)="loadTrashBins()"
           [attr.aria-label]="'Refresh' | translate:locale.language"
           [tooltip]="'Refresh' | translate:locale.language"
-          class="btn btn-default app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--quiet"
+          class="d-none d-md-block btn btn-default app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--quiet"
           type="button">
     <svg [lucideIcon]="icons.LucideRotateCw" [class]="loading ? 'icon-spin' : ''"></svg>
   </button>
