@@ -947,6 +947,37 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     return true
   }
 
+  private handleKeyboardAction(ev: KeyboardEvent): boolean {
+    if (ev.repeat || ev.ctrlKey || ev.metaKey || ev.altKey || ev.shiftKey) {
+      return false
+    }
+    let action: (() => void) | undefined
+    switch (ev.key) {
+      case 'Enter':
+        if (this.selection.length === 1) {
+          action = () => this.browse(this.selection[0])
+        }
+        break
+      case 'F2':
+        if (this.selection.length === 1 && !this.isTrashRepo && !this.inSharesList) {
+          action = () => this.shortcutRename()
+        }
+        break
+      case 'Delete':
+        if (this.selection.length && !this.inSharesList) {
+          action = () => this.openTrashDialog(this.isTrashRepo)
+        }
+        break
+    }
+    if (!action) {
+      return false
+    }
+    ev.preventDefault()
+    ev.stopPropagation()
+    this.zone.run(action)
+    return true
+  }
+
   private isEditableKeyboardTarget(target: EventTarget | null): boolean {
     return target instanceof Element && !!target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
   }
@@ -1077,6 +1108,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
           return
         }
         if (this.handleKeyboardShortcut(ev)) {
+          return
+        }
+        if (this.handleKeyboardAction(ev)) {
           return
         }
         if (!keyboardNavigationKeys.has(ev.key)) {
