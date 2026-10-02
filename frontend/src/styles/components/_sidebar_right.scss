@@ -31,7 +31,11 @@
   }
 
   .sidebar-component-title {
+    min-width: 0;
+
     &.app-top-menu-tool-bar {
+      flex-wrap: nowrap !important;
+
       .btn {
         min-width: auto;
         min-height: calc(#{$btn-line-height * 1em} + var(--bs-btn-padding-y) + var(--bs-btn-padding-y) + var(--bs-btn-border-width) + var(--bs-btn-border-width));
@@ -50,17 +54,17 @@
     }
 
     > .sidebar-component-title-label {
-      position: absolute;
-      left: 50%;
-      max-width: calc(100% - 90px);
+      flex: 1 1 auto;
+      min-width: 0;
       overflow: hidden;
+      text-align: center;
       text-overflow: ellipsis;
-      transform: translateX(-50%);
       white-space: nowrap;
     }
 
     > .sidebar-component-title-side {
       display: flex;
+      flex: 0 0 auto;
       align-items: center;
       min-width: 35px;
 
