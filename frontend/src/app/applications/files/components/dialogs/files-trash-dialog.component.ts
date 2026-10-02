@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, HostListener, inject, Input, Output } from '@angular/core'
 import { LucideDynamicIcon, LucideLoader, LucideTrash } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
+import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FileModel } from '../../models/file.model'
 
 @Component({
   selector: 'app-files-trash-dialog',
   templateUrl: 'files-trash-dialog.component.html',
-  imports: [L10nTranslatePipe, L10nTranslateDirective, LucideDynamicIcon],
+  imports: [L10nTranslatePipe, L10nTranslateDirective, LucideDynamicIcon, AutofocusDirective],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FilesTrashDialogComponent {

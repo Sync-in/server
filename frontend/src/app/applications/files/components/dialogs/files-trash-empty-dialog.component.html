@@ -14,5 +14,5 @@
 </div>
 <div class="modal-footer">
   <button (click)="layout.closeDialog()" class="btn btn-secondary" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()" [disabled]="submitted" class="btn btn-danger" type="button" l10nTranslate>Confirm</button>
+  <button (click)="onSubmit()" [disabled]="submitted" [autoSelect]="false" appAutofocus class="btn btn-danger" type="button" l10nTranslate>Confirm</button>
 </div>
