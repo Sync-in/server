@@ -37,6 +37,17 @@
       padding: 0 .5rem;
       flex-shrink: 0;
 
+      &.navbar-logo-button--placeholder {
+        @include media-breakpoint-up(md) {
+          display: none;
+        }
+
+        @include media-breakpoint-down(md) {
+          visibility: hidden;
+          pointer-events: none;
+        }
+      }
+
       &:hover,
       &:focus,
       &:active {

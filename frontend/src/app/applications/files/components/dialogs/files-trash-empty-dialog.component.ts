@@ -2,12 +2,13 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { Component, HostListener, inject, Input } from '@angular/core'
 import { LucideDynamicIcon, LucideLoader, LucideTrash } from '@lucide/angular'
 import { L10nTranslateDirective } from 'angular-l10n'
+import { AutofocusDirective } from '../../../../common/directives/auto-focus.directive'
 import { LayoutService } from '../../../../layout/layout.service'
 import { FilesService } from '../../services/files.service'
 
 @Component({
   selector: 'app-files-trash-empty-dialog',
-  imports: [LucideDynamicIcon, L10nTranslateDirective],
+  imports: [LucideDynamicIcon, L10nTranslateDirective, AutofocusDirective],
   templateUrl: 'files-trash-empty-dialog.component.html'
 })
 export class FilesTrashEmptyDialogComponent {

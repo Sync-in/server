@@ -1,6 +1,6 @@
 <div class="sidebar-component-title app-top-menu-tool-bar justify-content-between">
-  <div style="width: 25px"></div>
-  <div>
+  <div class="sidebar-component-title-side"></div>
+  <div class="sidebar-component-title-label">
     @switch (nbActiveTasks) {
       @case (0) {
         <span>{{ (nbTotalTasks === 0 ? 'no_task' : nbTotalTasks > 1 ? 'nb_tasks' : 'one_task') | translate:locale.language:{ nb: nbTotalTasks } }}</span>
@@ -16,8 +16,8 @@
       }
     }
   </div>
-  @if (nbTotalTasks) {
-    <div class="d-flex gap-1">
+  <div class="sidebar-component-title-side gap-1">
+    @if (nbTotalTasks) {
       @if (hasCancellableTasks) {
         <button type="button"
                 (click)="cancelTasks()"
@@ -32,10 +32,8 @@
               class="btn btn-default">
         <svg [lucideIcon]="icons.LucideX"></svg>
       </button>
-    </div>
-  } @else {
-    <div style="width: 35px"></div>
-  }
+    }
+  </div>
 </div>
 <!-- Inner menu: contains the tasks -->
 <div appAutoResize>
