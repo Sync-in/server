@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { Client, InvalidCredentialsError } from 'ldapts'
+import { Client, InsufficientAccessError, InvalidCredentialsError, SizeLimitExceededError } from 'ldapts'
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -107,6 +107,20 @@ describe(AuthProviderLDAP.name, () => {
     ldapClient.search.mockResolvedValue({ searchEntries: entries })
   }
 
+  const expectRejectedLdapAuthentication = async (expectedSearches: number, expectedBinds: number) => {
+    usersManager.findUser.mockResolvedValue(null)
+    usersManager.validateLocalPasswordForUser.mockResolvedValue(null)
+
+    const result = await authProviderLDAP.validateUser('john', 'pwd')
+
+    expect(result).toBeNull()
+    expect(ldapClient.search).toHaveBeenCalledTimes(expectedSearches)
+    expect(ldapClient.bind).toHaveBeenCalledTimes(expectedBinds)
+    expect(usersManager.updateAccesses).not.toHaveBeenCalled()
+    expect(adminUsersManager.createUserOrGuest).not.toHaveBeenCalled()
+    expect(adminUsersManager.updateUserOrGuest).not.toHaveBeenCalled()
+  }
+
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -146,13 +160,6 @@ describe(AuthProviderLDAP.name, () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
-  })
-
-  it('should be defined', () => {
-    expect(authProviderLDAP).toBeDefined()
-    expect(usersManager).toBeDefined()
-    expect(adminUsersManager).toBeDefined()
-    expect(ldapClient).toBeDefined()
   })
 
   it('should authenticate a guest user via database and bypass LDAP', async () => {
@@ -236,23 +243,6 @@ describe(AuthProviderLDAP.name, () => {
 
     expect(res).toBeNull()
     expect(usersManager.logUser).not.toHaveBeenCalled()
-    expect(usersManager.updateAccesses).not.toHaveBeenCalled()
-  })
-
-  it('should return null when LDAP search yields no entries or throws', async () => {
-    const existingUser: any = buildUser({ id: 10 })
-    usersManager.findUser.mockResolvedValue(existingUser)
-    mockBindResolve()
-    mockSearchEntries([])
-
-    const resA = await authProviderLDAP.validateUser('john', 'pwd')
-
-    expect(resA).toBeNull()
-
-    ldapClient.search.mockRejectedValue(new Error('search failed'))
-    const resB = await authProviderLDAP.validateUser('john', 'pwd')
-
-    expect(resB).toBeNull()
     expect(usersManager.updateAccesses).not.toHaveBeenCalled()
   })
 
@@ -508,6 +498,112 @@ describe(AuthProviderLDAP.name, () => {
     expect(res).toBe(createdUser)
   })
 
+  it('should bind and read the exact DN for generic LDAP direct bind', async () => {
+    setLdapConfig({ filter: '(department=IT)' })
+    usersManager.findUser.mockResolvedValue(null)
+    mockBindResolve()
+    ldapClient.search.mockResolvedValueOnce({
+      searchEntries: [{ uid: 'john', cn: 'John Doe', mail: 'john@example.org', dn: 'uid=john,ou=people,dc=example,dc=org' }]
+    })
+    const createdUser: any = { id: 4, login: 'john', isGuest: false, isActive: true, makePaths: vi.fn() }
+    adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
+    usersManager.fromUserId.mockResolvedValue(createdUser)
+
+    await authProviderLDAP.validateUser('DOMAIN\\john', 'pwd')
+
+    const bindUserDN = 'uid=john,ou=people,dc=example,dc=org'
+    expect(ldapClient.bind).toHaveBeenCalledWith(bindUserDN, 'pwd')
+    expect(ldapClient.search).toHaveBeenCalledWith(bindUserDN, {
+      scope: 'base',
+      filter: '(&(objectClass=*)(department=IT))',
+      attributes: (authProviderLDAP as any).requestedAttributes,
+      sizeLimit: 1
+    })
+  })
+
+  it('should use a verified subtree fallback when the exact LDAP entry cannot be read', async () => {
+    setLdapConfig({ filter: '(department=IT)' })
+    usersManager.findUser.mockResolvedValue(null)
+    mockBindResolve()
+    const fallbackUserDN = 'UID=john,OU=people,DC=example,DC=org'
+    ldapClient.search.mockRejectedValueOnce(new InsufficientAccessError('base read denied')).mockResolvedValueOnce({
+      searchEntries: [{ uid: 'john', cn: 'John Doe', mail: 'john@example.org', dn: fallbackUserDN }]
+    })
+    const createdUser: any = { id: 4, login: 'john', isGuest: false, isActive: true, makePaths: vi.fn() }
+    adminUsersManager.createUserOrGuest.mockResolvedValue(createdUser)
+    usersManager.fromUserId.mockResolvedValue(createdUser)
+
+    const res = await authProviderLDAP.validateUser('DOMAIN\\john', 'pwd')
+
+    const bindUserDN = 'uid=john,ou=people,dc=example,dc=org'
+    expect(ldapClient.search).toHaveBeenNthCalledWith(1, bindUserDN, {
+      scope: 'base',
+      filter: '(&(objectClass=*)(department=IT))',
+      attributes: (authProviderLDAP as any).requestedAttributes,
+      sizeLimit: 1
+    })
+    expect(ldapClient.search).toHaveBeenNthCalledWith(2, 'ou=people,dc=example,dc=org', {
+      scope: 'sub',
+      filter: '(&(uid=john)(department=IT))',
+      attributes: (authProviderLDAP as any).requestedAttributes
+    })
+    expect(ldapClient.bind).toHaveBeenNthCalledWith(1, bindUserDN, 'pwd')
+    expect(ldapClient.bind).toHaveBeenNthCalledWith(2, fallbackUserDN, 'pwd')
+    expect(res).toBe(createdUser)
+  })
+
+  it('should not use the subtree fallback when the exact entry does not match the configured filter', async () => {
+    setLdapConfig({ filter: '(department=IT)' })
+    mockBindResolve()
+    ldapClient.search.mockResolvedValueOnce({ searchEntries: [] })
+
+    await expectRejectedLdapAuthentication(1, 1)
+  })
+
+  it('should reject an ambiguous direct-bind fallback', async () => {
+    mockBindResolve()
+    ldapClient.search.mockRejectedValueOnce(new InsufficientAccessError('base read denied')).mockResolvedValueOnce({
+      searchEntries: [
+        { uid: 'john', mail: 'john@example.org', dn: 'uid=john,ou=people,dc=example,dc=org' },
+        { uid: 'john', mail: 'john@other.example.org', dn: 'uid=john,ou=other,dc=example,dc=org' }
+      ]
+    })
+
+    await expectRejectedLdapAuthentication(2, 1)
+  })
+
+  it('should reject a truncated direct-bind fallback before binding a candidate', async () => {
+    mockBindResolve()
+    ldapClient.search
+      .mockRejectedValueOnce(new InsufficientAccessError('base read denied'))
+      .mockRejectedValueOnce(new SizeLimitExceededError('server search limit reached'))
+
+    await expectRejectedLdapAuthentication(2, 1)
+  })
+
+  it('should not use the subtree fallback for an unexpected exact-entry error', async () => {
+    mockBindResolve()
+    ldapClient.search.mockRejectedValueOnce(new Error('unexpected search failure'))
+
+    await expectRejectedLdapAuthentication(1, 1)
+  })
+
+  it('should reject a fallback entry that does not accept the submitted password', async () => {
+    ldapClient.unbind.mockResolvedValue(undefined)
+    ldapClient.bind.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new InvalidCredentialsError('invalid credentials'))
+    ldapClient.search.mockRejectedValueOnce(new InsufficientAccessError('base read denied')).mockResolvedValueOnce({
+      searchEntries: [{ uid: 'john', mail: 'john@example.org', dn: 'uid=john,ou=people,dc=example,dc=org' }]
+    })
+
+    await expectRejectedLdapAuthentication(2, 2)
+  })
+
+  it('should escape the generic LDAP login when building the bind DN', () => {
+    const bindUserDN = (authProviderLDAP as any).buildBindUserDN('john,ops\\team')
+
+    expect(bindUserDN).toBe('uid=john\\,ops\\\\team,ou=people,dc=example,dc=org')
+  })
+
   it('should use service bind for LDAP searches when configured', async () => {
     setLdapConfig({
       serviceBindDN: 'cn=svc,dc=example,dc=org',
@@ -526,6 +622,7 @@ describe(AuthProviderLDAP.name, () => {
 
     expect(ldapClient.bind).toHaveBeenCalledWith('cn=svc,dc=example,dc=org', 'secret')
     expect(ldapClient.bind).toHaveBeenCalledWith('uid=john,ou=people,dc=example,dc=org', 'pwd')
+    expect(ldapClient.search).toHaveBeenCalledWith('ou=people,dc=example,dc=org', expect.objectContaining({ scope: 'sub' }))
   })
 
   it('should return null when service bind is set but user DN is not found', async () => {
@@ -536,10 +633,13 @@ describe(AuthProviderLDAP.name, () => {
     usersManager.findUser.mockResolvedValue(null)
     mockBindResolve()
     ldapClient.search.mockResolvedValueOnce({ searchEntries: [] })
+    const warnSpy = vi.spyOn(authProviderLDAP['logger'], 'warn').mockImplementation(() => undefined)
 
     const res = await authProviderLDAP.validateUser('john', 'pwd')
 
     expect(res).toBeNull()
+    expect(warnSpy).toHaveBeenCalledOnce()
+    expect(warnSpy).toHaveBeenCalledWith(expect.objectContaining({ tag: 'findUserEntry' }))
     expect(ldapClient.bind).toHaveBeenCalledWith('cn=svc,dc=example,dc=org', 'secret')
     expect(ldapClient.bind).not.toHaveBeenCalledWith('uid=john,ou=people,dc=example,dc=org', 'pwd')
   })
@@ -632,6 +732,10 @@ describe(AuthProviderLDAP.name, () => {
     expect(ldapFilter).toContain('(cn=john)')
     expect(ldapFilter).toContain('(mail=john)')
     expect(ldapFilter).toContain('(department=IT)')
+
+    setLdapConfig({ attributes: { login: LDAP_LOGIN_ATTR.SAM }, netbiosName: 'SYNC' })
+    const samLogin = (authProviderLDAP as any).buildLdapLogin('john')
+    expect(samLogin).toBe('SYNC\\john')
   })
 
   it('should normalize LDAP entries for memberOf and array attributes', () => {
@@ -646,12 +750,6 @@ describe(AuthProviderLDAP.name, () => {
     expect(normalized.uid).toBe('john')
     expect(normalized.mail).toBe('john@example.org')
     expect(normalized.memberOf).toEqual(['CN=Admins,OU=Groups,DC=example,DC=org', 'Admins', 'CN=Staff,OU=Groups,DC=example,DC=org', 'Staff'])
-  })
-
-  it('should build LDAP logins for SAM account name when netbiosName is set', () => {
-    setLdapConfig({ attributes: { login: LDAP_LOGIN_ATTR.SAM }, netbiosName: 'SYNC' })
-    const samLogin = (authProviderLDAP as any).buildLdapLogin('john')
-    expect(samLogin).toBe('SYNC\\john')
   })
 
   it('should load CA from file and keep inline CA values', async () => {

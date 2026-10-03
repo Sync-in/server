@@ -44,6 +44,14 @@ For generic LDAP, the bind DN is constructed as:
 <attributes.login>=<login>,<baseDN>
 ```
 
+The login value is escaped as an LDAP RDN. After a successful direct bind, Sync-in reads the bound entry itself with a base-scope search at that exact
+DN. This keeps the authenticated LDAP principal and the local identity mapped from LDAP attributes tied to the same directory entry.
+
+A successful exact-entry search that returns no entry, including because the optional configured `filter` rejects it, ends authentication. If the
+directory rejects the exact read with a known access or compatibility error, Sync-in uses a guarded compatibility path: it searches under `baseDN`
+for the configured `attributes.login`, requires exactly one complete, non-truncated result with a DN, then binds that exact DN with the same password
+before using any of its attributes. Other read errors do not enable this compatibility search.
+
 For Active Directory login attributes, Sync-in binds with the login string directly instead of constructing a DN:
 
 - `userPrincipalName` can append `upnSuffix` when the user enters `john` instead of `john@example.com`;
@@ -75,8 +83,11 @@ limit complements both the directory policy and Sync-in's per-IP limits. Account
 
 ## User search
 
-User searches run under `baseDN` with subtree scope. Sync-in asks LDAP for the known login attributes, common profile attributes, the configured email
-attribute, and the configured storage quota attribute.
+Service-bind searches and Active Directory direct-bind searches run under `baseDN` with subtree scope. Generic LDAP direct bind instead reads the exact
+bound user DN with base scope. Its guarded compatibility search, when needed after a known exact-read error, uses subtree scope and matches only the
+configured `attributes.login`; it never uses the broader generic LDAP OR filter. All modes ask LDAP for the known login attributes, common profile
+attributes, the configured email attribute, and the configured storage quota attribute. The optional trusted `filter` applies to both the exact-entry
+read and its guarded compatibility search.
 
 For Active Directory mode, the search filter matches any of:
 
@@ -86,7 +97,7 @@ userPrincipalName
 mail
 ```
 
-For generic LDAP mode, the search filter matches any of:
+For generic LDAP service-bind mode, the search filter matches any of:
 
 ```text
 uid
@@ -97,7 +108,9 @@ mail
 The login value placed in these comparisons is escaped by `ldapts`. The configured `filter` is then appended as-is and is treated as trusted
 administrator configuration, not user input.
 
-If multiple entries match, Sync-in logs a warning and uses the first entry returned by LDAP.
+If multiple entries match a normal service-bind or Active Directory subtree search, Sync-in logs a warning and uses the first entry returned by LDAP.
+A generic direct-bind base search and its guarded compatibility search must each identify exactly one entry; an ambiguous compatibility result is
+rejected, as is any result reported as truncated by the directory.
 
 ## Supported attributes
 
