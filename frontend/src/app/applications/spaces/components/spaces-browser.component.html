@@ -57,6 +57,16 @@
       </ul>
     </div>
     <!--End Upload Button-->
+    <!--Start Download Button-->
+    <button (click)="downloadFiles()"
+            [attr.aria-label]="'Download' | translate:locale.language"
+            [disabled]="!hasSelection || hasDisabledItemsInSelection"
+            [tooltip]="'Download' | translate:locale.language"
+            class="d-sm-none btn btn-default app-top-menu-tool-bar__action--icon app-top-menu-tool-bar__action--quiet"
+            type="button">
+      <svg [lucideIcon]="icons.LucideHardDriveDownload"></svg>
+    </button>
+    <!--End Download Button-->
   }
   @if (inSharesList) {
     <button (click)="shortcutOpen()"
