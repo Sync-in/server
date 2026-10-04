@@ -46,6 +46,7 @@ interface BadgeEntry {
         --members-breakdown-color: #5f6f81;
         display: inline-block;
         max-width: 100%;
+        vertical-align: middle;
       }
 
       :host-context(body.theme-dark) {
