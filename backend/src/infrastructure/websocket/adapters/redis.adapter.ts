@@ -11,7 +11,7 @@ import { connectionErrorMessage, isRetryableConnectionError, redactRedisUrl } fr
 import type { WebSocketConfig } from '../web-socket.config'
 
 export class RedisAdapter extends IoAdapter {
-  private readonly logger = new Logger('WebSocketAdapter')
+  protected override readonly logger = new Logger('WebSocketAdapter')
   private readonly availability: Availability
   private adapterConstructor: ReturnType<typeof createRedisAdapter>
   private pubClient?: RedisClientType
