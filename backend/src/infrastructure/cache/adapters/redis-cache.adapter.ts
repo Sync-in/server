@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { RedisClientOptions } from '@redis/client'
-import { createClient, RedisClientType } from 'redis'
+import { createClient, type RedisClientOptions, type RedisClientType } from 'redis'
 import { createCacheKeySlug } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
 import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants'
