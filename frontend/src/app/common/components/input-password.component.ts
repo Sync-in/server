@@ -31,21 +31,43 @@ let nextInputPasswordId = 0
         [required]="isRequired"
       />
       @if (showGenerator) {
-        <div (click)="randomPassword()" class="input-group-text cursor-pointer">
+        <button
+          (click)="randomPassword()"
+          [attr.aria-label]="'Generate' | translate: locale.language"
+          [disabled]="disabled"
+          class="input-group-text"
+          type="button"
+        >
           <span>
             <svg [lucideIcon]="icons.LucideDices"></svg>
           </span>
-        </div>
+        </button>
       }
-      <div (click)="toggleVisiblePassword(Password)" class="input-group-text cursor-pointer">
+      <button
+        (click)="toggleVisiblePassword(Password)"
+        [attr.aria-label]="'Visibility' | translate: locale.language"
+        [attr.aria-pressed]="Password.type === 'text'"
+        [disabled]="disabled"
+        class="input-group-text"
+        type="button"
+      >
         <span>
           <svg [lucideIcon]="Password.type === 'text' ? icons.LucideEye : icons.LucideEyeOff"></svg>
         </span>
-      </div>
+      </button>
     </div> `,
   styles: `
     .input-group-text .lucide {
       font-size: var(--font-size-lg);
+    }
+
+    button.input-group-text:not(:disabled) {
+      cursor: pointer;
+    }
+
+    button.input-group-text:disabled {
+      cursor: not-allowed;
+      opacity: 0.65;
     }
   `
 })
@@ -77,7 +99,7 @@ export class InputPasswordComponent implements OnInit {
 
   randomPassword() {
     if (!this.disabled) {
-      this.passwordChange.emit(genPassword(this.passwordMinLength + 8))
+      this.passwordChange.emit(genPassword(this.passwordMinLength + 10))
     }
   }
 }

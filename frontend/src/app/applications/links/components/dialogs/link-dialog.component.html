@@ -13,104 +13,127 @@
   <button (click)="layout.closeDialog()" aria-label="Close" class="btn-close btn-close-white ms-2" type="button"></button>
 </div>
 <div class="modal-body">
-  @if (share || link) {
-    <div class="card dialog-tab-card mb-3">
-      <div class="card-body">
-        <div class="d-flex align-items-start gap-3">
-          <div class="flex-grow-1 min-width-0">
-            <div class="d-flex align-items-center text-truncate">
-              <span class="circle-primary-icon me-2">
-                <svg [lucideIcon]="icons.links"></svg>
-              </span>
-              <div class="d-flex flex-column text-truncate">
-                <span class="text-truncate">{{ linkForm.value.name || linkForm.value.shareName }}</span>
-                <span class="fs-sm text-truncate">{{ linkForm.value.email }}</span>
-              </div>
-            </div>
-            @if (share) {
-              <div class="d-flex align-items-center d-none d-sm-flex pt-2">
-                <app-share-repository id="file" [share]="share" [showIcon]="true" [showFullPath]="true"></app-share-repository>
-              </div>
-            }
-          </div>
-          <div class="d-flex flex-nowrap">
-            @if (share && permissions) {
-              @for (p of permissions| keyvalue: originalOrderKeyValue; track p.key; let last = $last) {
-                <button btnCheckbox
-                        [(ngModel)]="permissions[p.key]"
-                        (ngModelChange)="onPermissionChange()"
-                        [tooltip]="SPACES_PERMISSIONS_TEXT[p.key].text | translate:locale.language"
-                        class="btn btn-sm btn-custom me-0 ms-2"
-                        type="button">
-                  <svg [lucideIcon]="SPACES_PERMISSIONS_TEXT[p.key].icon" size="1.333em"></svg>
-                </button>
-                @if (last) {
-                  <div class="vr mx-2"></div>
-                }
-              }
-            }
-            <button (click)="copyToClipboard()"
-                    class="btn btn-sm {{linkWasCopied ? 'btn-primary' : 'btn-default'}}"
-                    [tooltip]="'Copy link' | translate:locale.language"
-                    container="body"
-                    type="button">
-              <svg [lucideIcon]="linkWasCopied ? icons.LucideClipboardCheck : icons.LucideClipboard" size="1.333em"></svg>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  }
   <form [formGroup]="linkForm" autocomplete="off">
     <div class="row g-3">
-      <div class="col-12 col-lg-6 d-flex flex-column gap-3">
+      <div class="col-12">
         <div class="card dialog-tab-card">
-          <div class="card-body d-flex flex-column">
-            <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Link identity</div>
-
-            <div class="d-flex align-items-center cursor-pointer border-bottom py-2"
-                 (mouseover)="linkIsHovered = true"
-                 (mouseleave)="linkIsHovered = false"
-                 (focus)="linkIsHovered = true"
-                 (blur)="linkIsHovered = false"
-                 (click)="copyToClipboard()">
-              <span class="form-label mb-0" l10nTranslate>Link</span>
-              <span id="link" [class.text-primary]="linkIsHovered" class="ms-auto text-truncate ps-2">
-                {{ share ? share.link.uuid : link.uuid }}
-              </span>
+          <div class="card-body">
+            <div class="text-muted text-uppercase fs-sm text-bold mb-3" l10nTranslate>Link information</div>
+            @if (shareFileContext) {
+              <div class="d-flex align-items-start gap-2 min-width-0 mb-3">
+                <img [src]="shareFileContext.mimeUrl"
+                     alt=""
+                     class="flex-shrink-0"
+                     draggable="false"
+                     height="32"
+                     width="32"
+                     (error)="shareFileContext.fallBackMimeUrl()">
+                <app-share-repository id="file"
+                                      class="d-block flex-grow-1 min-width-0"
+                                      [share]="shareFileContext"
+                                      [showIcon]="true"
+                                      [showFullPath]="true">
+                </app-share-repository>
+              </div>
+            }
+            <div>
+              <label class="form-label" for="link" l10nTranslate>Link</label>
+              <div class="input-group">
+                <input id="link"
+                       class="form-control"
+                       type="text"
+                       readonly
+                       [value]="publicLinkUrl">
+                <button (click)="copyToClipboard()"
+                        class="btn btn-primary d-inline-flex align-items-center"
+                        [attr.aria-label]="'Copy link' | translate:locale.language"
+                        type="button">
+                  <svg [lucideIcon]="linkWasCopied ? icons.LucideClipboardCheck : icons.LucideClipboard" size="1.333em"></svg>
+                  <span class="ms-2" l10nTranslate>Copy link</span>
+                </button>
+              </div>
             </div>
 
-            <div class="card dialog-check-card dialog-check-card--interactive mt-3"
-                 [class.dialog-check-card--active]="linkForm.controls.isActive.value"
-                 (click)="toggleIsActiveFromCard()">
-              <div class="card-body p-2">
-                <div class="d-flex align-items-center">
-                  <label class="form-label cursor-pointer me-auto mb-0"
-                         for="state"
-                         (click)="$event.stopPropagation()"
-                         l10nTranslate>
-                    Active
-                  </label>
-                  <div class="d-flex align-items-center form-check form-switch cursor-pointer">
-                    <input
-                      id="state"
-                      class="form-check-input"
-                      formControlName="isActive"
-                      (click)="$event.stopPropagation()"
-                      type="checkbox"
-                      role="button">
+            @if (share) {
+              <div class="row g-3 mt-0">
+                <div class="col-12 col-lg-6">
+                  <label class="form-label" for="shareName" l10nTranslate>Link name</label>
+                  <input id="shareName"
+                         formControlName="shareName"
+                         type="text"
+                         class="form-control"
+                         [class.is-invalid]="linkForm.controls.shareName.invalid"
+                         [placeholder]="'Link name' | translate:locale.language">
+                </div>
+                <div class="col-12 col-lg-6">
+                  <label class="form-label" for="shareDescription" l10nTranslate>Description</label>
+                  <input id="shareDescription"
+                         formControlName="shareDescription"
+                         type="text"
+                         class="form-control">
+                </div>
+              </div>
+            }
+
+            <div class="row g-3 mt-0">
+              <div class="col-12 col-lg-6">
+                <div class="card dialog-check-card dialog-check-card--interactive"
+                     [class.dialog-check-card--active]="linkForm.controls.isActive.value"
+                     (click)="toggleIsActiveFromCard()">
+                  <div class="card-body p-2">
+                    <div class="d-flex align-items-center">
+                      <div class="me-auto">
+                        <label class="form-label cursor-pointer mb-0"
+                               for="state"
+                               (click)="$event.stopPropagation()"
+                               l10nTranslate>
+                          Active
+                        </label>
+                        <div class="text-muted fs-sm mt-1" l10nTranslate>Allow access through this link</div>
+                      </div>
+                      <div class="d-flex align-items-center form-check form-switch cursor-pointer">
+                        <input id="state"
+                               class="form-check-input"
+                               formControlName="isActive"
+                               (click)="$event.stopPropagation()"
+                               type="checkbox"
+                               role="button">
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
+
+              @if (share && permissions) {
+                <div class="col-12 col-lg-6">
+                  <label class="form-label" for="permissions" l10nTranslate>Permissions</label>
+                  <div id="permissions" class="d-flex align-items-center flex-wrap gap-2">
+                    @for (p of permissions | keyvalue: originalOrderKeyValue; track p.key) {
+                      <button btnCheckbox
+                              [(ngModel)]="permissions[p.key]"
+                              [ngModelOptions]="{ standalone: true }"
+                              (ngModelChange)="onPermissionChange()"
+                              [tooltip]="SPACES_PERMISSIONS_TEXT[p.key].text | translate:locale.language"
+                              class="btn btn-sm btn-custom"
+                              type="button">
+                        <svg [lucideIcon]="SPACES_PERMISSIONS_TEXT[p.key].icon" size="1.333em"></svg>
+                      </button>
+                    }
+                  </div>
+                </div>
+              }
             </div>
           </div>
         </div>
-        <div class="card dialog-tab-card">
-          <div class="card-body d-flex flex-column">
-            <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Access rules</div>
+      </div>
 
-            <div class="d-flex align-items-center border-bottom py-2">
-              <span class="form-label mb-0" l10nTranslate>Current access count</span>
+      <div class="col-12 col-lg-6 d-flex flex-column">
+        <div class="card dialog-tab-card flex-grow-1">
+          <div class="card-body d-flex flex-column">
+            <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Access and security</div>
+
+            <div class="d-flex align-items-center py-2">
+              <label class="form-label mb-0" for="access" l10nTranslate>Current access count</label>
               <span id="access" class="ms-auto">
                 @if (linkForm.value.limitAccess) {
                   <span class="badge {{(share ? share.link.nbAccess : link.nbAccess) >= linkForm.value.limitAccess ? 'bg-danger': 'bg-success'}}">
@@ -153,12 +176,8 @@
                   }">
               </div>
             </div>
-          </div>
-        </div>
-        <div class="card dialog-tab-card">
-          <div class="card-body d-flex flex-column">
-            <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Security</div>
-            <div class="card dialog-check-card dialog-check-card--interactive"
+
+            <div class="card dialog-check-card dialog-check-card--interactive mt-3"
                  [class.dialog-check-card--active]="linkForm.value.requireAuth"
                  (click)="toggleRequireAuth()">
               <div class="card-body p-2">
@@ -169,8 +188,8 @@
                          l10nTranslate>
                     Password
                   </label>
-                  @if (linkForm.value.requireAuth && password !== defaultPassword) {
-                    <div class="d-flex align-items-center d-none d-sm-flex mx-auto">
+                  @if (linkForm.value.requireAuth && password.length) {
+                    <div class="d-flex align-items-center d-none d-sm-flex ms-auto me-4">
                       <app-password-strength-bar [passwordToCheck]="password"></app-password-strength-bar>
                     </div>
                   }
@@ -183,47 +202,23 @@
                            role="button">
                   </div>
                 </div>
+                <div class="mt-2" (click)="$event.stopPropagation()">
+                  <app-input-password [isRequired]="linkForm.value.requireAuth && (!passwordProtectionWasConfigured || !!password.length)"
+                                      [disabled]="!linkForm.value.requireAuth"
+                                      [passwordMinLength]="passwordMinLength"
+                                      [(password)]="password"
+                                      [showGenerator]="true"
+                                      [placeholder]="passwordProtectionWasConfigured ? 'Change password' : 'Set a password'"
+                                      class="d-block w-100">
+                  </app-input-password>
+                </div>
               </div>
             </div>
-            <app-input-password [isRequired]="linkForm.value.requireAuth"
-                                [disabled]="!linkForm.value.requireAuth"
-                                [passwordMinLength]="passwordMinLength"
-                                [(password)]="password"
-                                [showGenerator]="true"
-                                placeholder="Set a password"
-                                class="mt-2 w-100">
-            </app-input-password>
           </div>
         </div>
       </div>
-      <div class="col-12 col-lg-6 d-flex flex-column gap-3">
-        @if (share) {
-          <div class="card dialog-tab-card">
-            <div class="card-body d-flex flex-column">
-              <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Share details</div>
-              <div class="row g-2 align-items-center mb-2">
-                <label class="form-label col-5 mb-0" for="shareName" l10nTranslate>Share name</label>
-                <div class="col-7">
-                  <input id="shareName"
-                         formControlName="shareName"
-                         type="text"
-                         class="form-control"
-                         [class.is-invalid]="linkForm.controls.shareName.invalid"
-                         [placeholder]="'Share name' | translate:locale.language">
-                </div>
-              </div>
-              <div class="row g-2 align-items-center mb-2">
-                <label class="form-label col-5 mb-0" for="shareDescription" l10nTranslate>Description</label>
-                <div class="col-7">
-                  <input id="shareDescription"
-                         formControlName="shareDescription"
-                         type="text"
-                         class="form-control">
-                </div>
-              </div>
-            </div>
-          </div>
-        }
+
+      <div class="col-12 col-lg-6 d-flex flex-column">
         <div class="card dialog-tab-card flex-grow-1">
           <div class="card-body d-flex flex-column">
             <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Guest profile</div>
@@ -277,7 +272,7 @@
   }
   <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button (click)="onSubmit()"
-          [disabled]="linkForm.invalid || linkForm.controls.requireAuth.value && password.length < passwordMinLength || submitted"
+          [disabled]="submitted || !confirmDeletion && (linkForm.invalid || linkForm.controls.requireAuth.value && (!passwordProtectionWasConfigured || !!password.length) && password.length < passwordMinLength)"
           class="btn {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
           type="button"
           l10nTranslate>

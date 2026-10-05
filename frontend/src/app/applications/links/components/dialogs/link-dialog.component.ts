@@ -30,7 +30,6 @@ import { SpacesService } from '../../../spaces/services/spaces.service'
 import { SPACES_ICON, SPACES_PERMISSIONS_TEXT } from '../../../spaces/spaces.constants'
 import { setAllowedBooleanPermissions, setStringPermission } from '../../../spaces/spaces.functions'
 import { MemberModel } from '../../../users/models/member.model'
-import { USER_PASSWORD_CHANGE_TEXT } from '../../../users/user.constants'
 import { UserService } from '../../../users/user.service'
 import type { ShareLinkModel } from '../../models/share-link.model'
 import { LinksService } from '../../services/links.service'
@@ -75,13 +74,14 @@ export class LinkDialogComponent implements OnInit {
   protected readonly icons = { LucideEye, LucideEyeOff, links: SPACES_ICON.LINKS, LucideClipboard, LucideClipboardCheck, LucideLock, LucideLockOpen }
   protected readonly languages: string[] = this.layout.getLanguages()
   protected readonly minDate: Date = currentDate()
-  protected readonly defaultPassword: string = this.layout.translateString(USER_PASSWORD_CHANGE_TEXT)
   protected readonly passwordMinLength = USER_PASSWORD_MIN_LENGTH
   protected password = ''
+  protected passwordProtectionWasConfigured = false
   protected permissions: Partial<Record<`${SPACE_OPERATION}`, boolean>>
   protected linkIsExpired = false
-  protected linkIsHovered = false
   protected linkWasCopied = false
+  protected publicLinkUrl = ''
+  protected shareFileContext: ShareModel | ShareLinkModel
   protected linkForm: FormGroup<{
     shareName: FormControl<string>
     shareDescription: FormControl<string>
@@ -114,12 +114,11 @@ export class LinkDialogComponent implements OnInit {
       this.initFile()
     } else {
       // from links component or children dialog component
+      this.shareFileContext = this.share as ShareLinkModel
       this.initShareLink()
     }
-
-    if (this.linkForm.value.requireAuth) {
-      this.password = this.defaultPassword
-    }
+    this.updatePublicLinkUrl(this.share?.link?.uuid || this.link?.uuid)
+    this.passwordProtectionWasConfigured = this.linkForm.controls.requireAuth.value
     if (this.linkForm.value.expiresAt) {
       this.isLinkIsExpired(this.share ? this.share.link.expiresAt : this.link.expiresAt)
     }
@@ -249,6 +248,7 @@ export class LinkDialogComponent implements OnInit {
 
   private initFile() {
     const fileShare: ShareModel = this.sharesService.initShareFromFile(this.userService.user, this.file, this.isSharesRepo, this.inSharesList)[0]
+    this.shareFileContext = fileShare
     this.share = {
       ...fileShare,
       link: {
@@ -262,7 +262,10 @@ export class LinkDialogComponent implements OnInit {
         limitAccess: 0
       } as LinkGuest
     }
-    this.linksService.genUUID().subscribe((uuid: string) => (this.share.link.uuid = uuid))
+    this.linksService.genUUID().subscribe((uuid: string) => {
+      this.share.link.uuid = uuid
+      this.updatePublicLinkUrl(uuid)
+    })
     this.initShareLink()
     // update permissions (text)
     this.onPermissionChange()
@@ -307,17 +310,24 @@ export class LinkDialogComponent implements OnInit {
     }
   }
 
-  private isLinkIsExpired(date: Date) {
+  private isLinkIsExpired(date: Date | string | null | undefined) {
     if (date === undefined || date === null) {
       this.linkIsExpired = false
-      if (date === null) return
-      // change value from undefined to null
-      this.linkForm.controls.expiresAt.setValue(null)
+      if (date === undefined) {
+        // change value from undefined to null
+        this.linkForm.controls.expiresAt.setValue(null)
+      }
+      return
     }
-    this.linkIsExpired = currentDate() >= date
+    const expirationDate = typeof date === 'string' ? currentDate(date) : date
+    this.linkIsExpired = currentDate() >= expirationDate
+  }
+
+  private updatePublicLinkUrl(uuid?: string) {
+    this.publicLinkUrl = uuid ? this.linksService.getPublicLinkUrl(uuid) : ''
   }
 
   private mustIncludePassword(): boolean {
-    return !!this.password.length && this.password !== this.defaultPassword
+    return this.linkForm.value.requireAuth && !!this.password.length
   }
 }
