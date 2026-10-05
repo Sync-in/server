@@ -11,7 +11,7 @@
  *  - Displaying help information
  */
 
-const [nodeMajorVersion] = process.versions.node.split('.').map((num) => parseInt(num, 10))
+const [nodeMajorVersion, nodeMinorVersion] = process.versions.node.split('.').map((num) => parseInt(num, 10))
 const { spawn, spawnSync, exec } = require('child_process')
 const { promisify } = require('util')
 const path = require('path')
@@ -290,8 +290,8 @@ function waitForProcessExit(pid) {
 
 ;(function main() {
   // Ensure Nodejs.version
-  if (nodeMajorVersion < 22) {
-    console.error(`❌ Sync-in Server requires Node.js >= 22.x. Detected version: ${process.versions.node}`)
+  if (nodeMajorVersion < 22 || (nodeMajorVersion === 22 && nodeMinorVersion < 12)) {
+    console.error(`❌ Sync-in Server requires Node.js >= 22.12.0. Detected version: ${process.versions.node}`)
     process.exit(1)
   }
   // Ensure CLI isn’t run on Windows
