@@ -12,9 +12,10 @@ server:
   # workers: `auto` or `0` (use all cpus) | number of CPUs to use
   # default: 1
   workers: 1
-  # trust proxy: number (trust the nth hop from the front-facing proxy server as the client) | `true` | `false` | `127.0.0.1,192.168.1.1/24`
-  # default: 1
-  trustProxy: 1
+  # trust proxy: `true` (trust all proxies) | `false` | `127.0.0.1,192.168.1.1/24`
+  # legacy numeric values >= 1 are treated as `true` for compatibility
+  # default: true
+  trustProxy: true
   # restartOnFailure: automatically restart workers if they are killed or die
   # default: `true`
   restartOnFailure: true

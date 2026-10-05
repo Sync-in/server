@@ -50,8 +50,10 @@ export class ServerConfig {
   @Min(1)
   workers: number = 1
 
+  // Temporary compatibility for deprecated numeric hop counts.
+  @Transform(({ value }) => (typeof value === 'number' ? value >= 1 : value))
   @IsOptional()
-  trustProxy: boolean | string | number = 1
+  trustProxy: boolean | string = true
 
   @IsBoolean()
   restartOnFailure: boolean = true

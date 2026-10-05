@@ -55,6 +55,7 @@ function loadConfiguration(): GlobalConfig {
   config.applications.files.spacesPath = join(config.applications.files.dataPath, 'spaces')
   config.applications.files.linksPath = join(config.applications.files.dataPath, 'links')
   // DEPRECATIONS
+  deprecatedServerTrustProxyConfig(config)
   deprecatedFilesEditorsConfig(config)
   deprecatedFilesContentIndexingConfig(config)
 
@@ -91,6 +92,17 @@ function deprecatedFilesEditorsEnvConfig(): void {
       console.warn(`Environment variable "${deprecatedEnvKey}" is deprecated. Please use "${currentEnvKey}" instead.`)
     }
   }
+}
+
+function deprecatedServerTrustProxyConfig(config: GlobalConfig): void {
+  if (typeof config.server?.trustProxy !== 'number') {
+    return
+  }
+
+  console.warn(
+    '[DEPRECATED][CONFIGURATION] Numeric server.trustProxy values will be removed in the next major version. ' +
+      'They now map to booleans (>= 1: true, < 1: false); use true/false or a trusted proxy IP/CIDR instead.'
+  )
 }
 
 function deprecatedFilesEditorsConfig(config: GlobalConfig): void {
