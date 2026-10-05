@@ -23,10 +23,12 @@ does not store the LDAP server, bind DN, or any LDAP token in the user record.
 1. The client submits a login or email and password through the normal Sync-in password flow.
 2. Sync-in looks for an existing local user by login or email after normalizing `DOMAIN\user` input to `user`.
 3. Existing guest users and existing scoped application authentications use local password or app-password validation and do not bind to LDAP.
-4. Existing disabled users are rejected before LDAP authentication.
-5. Sync-in builds the LDAP login from the submitted or stored local login.
-6. Sync-in binds to LDAP, searches the user entry, validates the required attributes, and maps the LDAP profile to a local identity.
-7. Sync-in creates a new local user when `options.autoCreateUser` is enabled, or updates the matching existing user.
+4. Sync-in builds the LDAP login from the submitted or stored local login, then binds to LDAP and searches for the user entry.
+5. If LDAP authentication fails, Sync-in applies the eligible local-password fallback rules, or rejects the credentials or reports an LDAP service error.
+   A failed LDAP bind alone does not trigger the disabled-account `403`; a valid local fallback password can still expose that state.
+6. After a successful LDAP bind and user search, Sync-in rejects an existing disabled local account before synchronizing its profile.
+7. Sync-in validates the required LDAP attributes, maps the profile to a local identity, and creates a new local user when `options.autoCreateUser`
+   is enabled or updates the matching existing user.
 8. The regular Sync-in authentication layer then issues local tokens or starts the local TOTP step when TOTP is required.
 
 LDAP is part of the local credential flow. Unlike OIDC, Sync-in TOTP can still be required after the LDAP password step for browser and bearer-token
@@ -59,6 +61,17 @@ LDAP client connections use a six-second operation timeout and a six-second conn
 Sync-in rejects zero-length user passwords before opening an LDAP connection. Directory operators must also disable unauthenticated simple binds
 (a non-empty bind DN with an empty password) and anonymous binds in the LDAP server policy; the application-side check is defense in depth, not a
 replacement for that server-side restriction.
+
+### Rate limiting and directory protection
+
+Sync-in limits password requests per client IP. LDAP authentication that returns a valid user entry skips the shared per-login limit. When LDAP
+returns no entry (including an invalid bind or failed search), the local validator runs, including its dummy path when no fallback is eligible, and
+consumes that limit. An LDAP bind itself does not increment Sync-in's local password-attempt counter; an eligible local fallback can do so.
+See [Authentication rate limiting](../../auth.md#authentication-rate-limiting) for the limits by route and authentication method.
+
+The LDAP directory may apply its own failed-bind, lockout, or throttling policy, but that depends on the directory and its configuration; Sync-in does
+not configure or verify it. Operators should review the directory policy and monitor failed binds. Where distributed attempts are a concern, an edge
+limit complements both the directory policy and Sync-in's per-IP limits. Account lockout policies also need to account for deliberate lockout attacks.
 
 ## User search
 

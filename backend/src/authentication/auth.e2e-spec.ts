@@ -179,6 +179,35 @@ describe('Auth (e2e)', () => {
     }
   })
 
+  it(`POST ${API_AUTH_LOGIN} does not reveal an inactive account with an invalid password`, async () => {
+    const invalidPassword = 'invalid-password'
+    await usersQueries.updateUserOrGuest(userTest.id, { isActive: false })
+    try {
+      const unknown = await app.inject({
+        method: 'POST',
+        url: API_AUTH_LOGIN,
+        body: { login: `${userTest.login}-missing`, password: invalidPassword }
+      })
+      const inactive = await app.inject({
+        method: 'POST',
+        url: API_AUTH_LOGIN,
+        body: { login: userTest.login, password: invalidPassword }
+      })
+
+      expect(inactive.statusCode).toBe(401)
+      expect(inactive.json()).toEqual(unknown.json())
+
+      const verified = await app.inject({
+        method: 'POST',
+        url: API_AUTH_LOGIN,
+        body: { login: userTest.login, password: userTest.password }
+      })
+      expect(verified.statusCode).toBe(403)
+    } finally {
+      await usersQueries.updateUserOrGuest(userTest.id, { isActive: true })
+    }
+  })
+
   it(`POST ${API_AUTH_LOGOUT} => 201`, async () => {
     const res = await app.inject({
       method: 'POST',
@@ -339,9 +368,7 @@ describe('Auth (e2e)', () => {
       expect(await cache.get(cacheKey)).toBeUndefined()
       const revoked = await webDAVRequest(appPassword.password)
       expect(revoked.statusCode).toBe(401)
-      await vi.waitFor(async () => {
-        expect(await cache.get(cacheKey)).toBeNull()
-      })
+      expect(await cache.get(cacheKey)).toBeUndefined()
     } finally {
       await deleteAppPasswordIfPresent(passwordName)
       await cache.del(cacheKey)

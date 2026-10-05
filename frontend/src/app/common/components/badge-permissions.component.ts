@@ -39,8 +39,7 @@ interface FilePermissionEntry {
       :host {
         --permission-icon-color: #2f4558;
         --permission-icon-hover-color: #22384b;
-        display: inline-flex;
-        align-items: center;
+        display: inline-block;
         max-width: 100%;
         vertical-align: middle;
       }

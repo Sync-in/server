@@ -151,8 +151,12 @@ export class LinksService {
     )
   }
 
-  copyLinkToClipboard(link: string) {
-    this.clipboard.copyFromContent(this.genLink(link))
+  copyLinkToClipboard(uuid: string) {
+    this.clipboard.copyFromContent(this.getPublicLinkUrl(uuid))
+  }
+
+  getPublicLinkUrl(uuid: string): string {
+    return `${document.location.origin}/#/${LINKS_PATH.LINK}/${uuid}`
   }
 
   genUUID(): Observable<string> {
@@ -234,10 +238,6 @@ export class LinksService {
       }
       modalRef.content.layout.closeDialog()
     })
-  }
-
-  private genLink(link: string): string {
-    return `${document.location.origin}/#/${LINKS_PATH.LINK}/${link}`
   }
 
   private navigateToPublicLinkError(uuid: string, error: string) {

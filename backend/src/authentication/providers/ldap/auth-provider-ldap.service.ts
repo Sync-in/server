@@ -42,15 +42,9 @@ export class AuthProviderLDAP implements AuthProvider {
     // Find user from his login or email
     const localLogin = this.dbLogin(loginOrEmail)
     let user: UserModel = await this.usersManager.findUser(localLogin, false)
-    if (user) {
-      if (user.isGuest || scope) {
-        // Allow local password authentication for guest users and application scopes (app passwords)
-        return this.usersManager.validateLocalPasswordForUser(user, localLogin, password, ip, scope)
-      }
-      if (!user.isActive) {
-        this.logger.error({ tag: this.validateUser.name, msg: `user *${user.login}* is locked` })
-        throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
-      }
+    if (user && (user.isGuest || scope)) {
+      // Allow local password authentication for guest users and application scopes (app passwords)
+      return this.usersManager.validateLocalPasswordForUser(user, localLogin, password, ip, scope)
     }
     let ldapErrorMessage: string
     let entry: false | LdapUserEntry = false
@@ -80,6 +74,12 @@ export class AuthProviderLDAP implements AuthProvider {
       }
 
       return null
+    }
+
+    // This LDAP branch discloses the local lock only after a valid bind; failed binds follow the fallback or generic path above.
+    if (user && !user.isActive) {
+      this.logger.error({ tag: this.validateUser.name, msg: `user *${user.login}* is locked` })
+      throw new HttpException('Account locked', HttpStatus.FORBIDDEN)
     }
 
     if (!entry[this.ldapConfig.attributes.login] || !entry[this.ldapConfig.attributes.email]) {

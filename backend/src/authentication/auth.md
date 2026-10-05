@@ -133,8 +133,9 @@ WebDAV uses HTTP Basic authentication and cannot complete the interactive Sync-i
 
 The primary password comparison is still executed for scoped-auth timing, but a successful primary-password match is ignored for 2FA-protected WebDAV.
 
-Revoking a WebDAV app password clears cached WebDAV Basic-auth results for that user so the revoked password cannot continue to authenticate from
-cache.
+Only successful WebDAV Basic-auth results are cached, for 900 seconds. Failed credentials and refusals caused by account state are never cached, so
+credentials can be checked again immediately after an account is unlocked (subject to rate limits). Revoking a WebDAV app password clears cached
+successful results for that user so the revoked password cannot continue to authenticate from cache.
 
 ### Client registration
 
@@ -167,6 +168,21 @@ available for break-glass recovery. See `providers/oidc/oidc.md`.
 
 Sensitive authentication and verification routes explicitly use `AuthRateLimitGuard`. The guard is selective rather than global: an unguarded route
 does not inherit this policy merely because it belongs to the authentication module.
+The table covers credential and challenge routes plus notable routes without a Sync-in limiter. Every configured limit below uses a rolling 60-second
+window and a 60-second block. Route/IP limits return HTTP `429`; the shared local-password work limit returns the generic HTTP `401`.
+
+| Authentication path                                               | HTTP route(s)                                                                                                                           | Route/IP limit                     | Additional limit                                                                                                                        |
+|-------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| Local password (MySQL, OIDC local access, LDAP guest or fallback) | `POST /api/auth/login`<br>`POST /api/auth/token`                                                                                        | 6 requests / 60 s per route and IP | 20 local password validations / 60 s per normalized login or email, shared across routes, scopes, and IPs.                              |
+| Direct LDAP authentication                                        | `POST /api/auth/login`<br>`POST /api/auth/token`                                                                                        | 6 / 60 s per route and IP          | A valid LDAP entry skips the local-password limit. If LDAP returns no entry, the local validator runs, including its dummy path.        |
+| Desktop/CLI registration with a password                          | `POST /api/app/sync/register`                                                                                                           | 6 / 60 s per route and IP          | 20 / 60 s when the local validator runs. A valid LDAP entry skips this limit; no-entry results consume it.                              |
+| Client-token exchange                                             | `POST /api/app/sync/auth/:type`                                                                                                         | 6 / 60 s per route and IP          | No local-password limit; this route validates a registered client token.                                                                |
+| WebDAV HTTP Basic                                                 | `PROPFIND /`<br>`PROPFIND /webdav`<br>WebDAV operations on `/webdav/*`                                                                  | 60 provider lookups / 60 s per IP  | 20 / 60 s when local password validation runs. Only successful credentials are cached and skip both limits; `OPTIONS` skips Basic auth. |
+| TOTP verification or management                                   | `POST /api/auth/2fa/login/verify`<br>`POST /api/auth/2fa/enable`<br>`POST /api/auth/2fa/disable`<br>`POST /api/auth/2fa/reset/user/:id` | 6 / 60 s per route and IP          | No shared local-password limit, including when a TOTP management route checks the current password.                                     |
+| Public-link validation, access, and password                      | `GET /api/app/link/validation/:uuid`<br>`GET /api/app/link/access/:uuid`<br>`POST /api/app/link/auth/:uuid`                             | 6 / 60 s per route and IP          | Link-password attempts have their own account lock, not the shared local-password limit.                                                |
+| Public-link download                                              | `GET /api/app/link/download/:uuid`                                                                                                      | 30 / 60 s per route and IP         | No shared local-password limit.                                                                                                         |
+| OIDC browser redirect and callback                                | `GET /api/auth/oidc/login`<br>`GET /api/auth/oidc/callback`                                                                             | No Sync-in route/IP limit          | No local-password limit; primary authentication occurs at the identity provider.                                                        |
+| Refresh or existing-session registration                          | `POST /api/auth/refresh`<br>`POST /api/auth/token/refresh`<br>`POST /api/app/sync/register/auth`                                        | No `AuthRateLimitGuard`            | These paths validate an existing token or session, not a submitted account password.                                                    |
 
 The default policy allows six requests for the same route and client IP in a rolling 60-second window. Every request that reaches the guard counts,
 regardless of its authentication outcome. The next request starts a 60-second block and returns HTTP `429` with
@@ -179,6 +195,13 @@ client address therefore follows Fastify's `server.trustProxy` configuration. Li
 whether the cache adapter is MySQL or Redis, so concurrent server workers observe the same counter and block period.
 
 Rate limiting and the temporary account lock cover different levels. The route limiter bounds requests from one IP before expensive authentication
-work, while the account lock stops further cryptographic checks for one account after repeated failures. A distributed source can use several IPs,
-so an edge or reverse-proxy limit remains a complementary deployment control. WebDAV HTTP Basic authentication uses its own rate-limit policy rather
-than the default route guard described here.
+work. A separate shared limiter bounds local password checks for each submitted login or email (case-insensitive) to 20 attempts in a rolling
+60-second window, across IPs and authentication scopes. Dummy checks after unsuccessful LDAP authentication also count. Once exceeded, both existing
+and unknown identifiers skip bcrypt and receive the same generic HTTP `401` as invalid credentials on local password paths. All local password
+validation attempts count, including successful ones; cached successful WebDAV credentials do not require another validation.
+The temporary account lock still prevents authentication after repeated failures, but password checks below the shared limit continue so its state
+cannot be inferred from a pre-authentication response. WebDAV does not cache any failed validation, including one denied by the shared work limit.
+Repeated failures therefore consume the per-IP and, for local password validation, per-identifier limits. The former negative cache only helped with
+repeated identical login/password pairs; changing the submitted password bypassed it. These limits are not a global CPU budget: a distributed source
+can still spread attempts across many identifiers, so an edge or reverse-proxy limit remains a complementary deployment control. WebDAV HTTP Basic
+authentication uses its own per-IP rate-limit policy rather than the default route guard described here.

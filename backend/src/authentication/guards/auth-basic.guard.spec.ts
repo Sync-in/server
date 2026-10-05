@@ -8,6 +8,7 @@ import { generateUserTest } from '../../applications/users/utils/test'
 import { WEBDAV_BASE_PATH } from '../../applications/webdav/constants/routes'
 import { Cache } from '../../infrastructure/cache/cache.service'
 import { AUTH_RATE_LIMIT_ERROR_MESSAGE } from '../constants/auth'
+import { AuthPasswordWorkLimitException } from '../errors/auth-password-work-limit.exception'
 import { AuthProvider } from '../providers/auth-providers.models'
 import { AuthBasicGuard } from './auth-basic.guard'
 import { AuthBasicStrategy } from './auth-basic.strategy'
@@ -127,38 +128,51 @@ describe(AuthBasicGuard.name, () => {
     expect(authProvider.validateUser).not.toHaveBeenCalled()
   })
 
-  it('should reject cached invalid credentials without consuming the rate limit', async () => {
-    cache.get = vi.fn().mockReturnValueOnce(null)
-    const rateLimitSpy = vi.mocked(cache.consumeRateLimit).mockClear()
-    authProvider.validateUser = vi.fn()
-    context.switchToHttp().getRequest.mockReturnValue({
-      ip: requestIp,
-      raw: { user: '' },
-      headers: { authorization: `Basic ${encodedAuth}` }
-    })
-    await expect(authBasicGuard.canActivate(context)).rejects.toThrow()
-    expect(rateLimitSpy).not.toHaveBeenCalled()
-    expect(authProvider.validateUser).not.toHaveBeenCalled()
+  it('should revalidate a legacy negative cache entry', async () => {
+    cache.get = vi.fn().mockResolvedValueOnce(null)
+    cache.consumeRateLimit = vi.fn().mockResolvedValue({ totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 })
+    const user = new UserModel(generateUserTest(), false)
+    authProvider.validateUser = vi.fn().mockResolvedValueOnce(user)
+
+    expect(await authBasicStrategy.validate({ ip: requestIp } as FastifyRequest, user.login, 'app-password')).toBe(user)
+    expect(cache.consumeRateLimit).toHaveBeenCalledOnce()
+    expect(authProvider.validateUser).toHaveBeenCalledOnce()
   })
 
-  it('should not validate the user authentication when cache returns undefined and database return null', async () => {
-    cache.get = vi.fn().mockReturnValueOnce(undefined)
-    authProvider.validateUser = vi.fn().mockReturnValueOnce(null)
+  it('should not cache a WebDAV denial and should revalidate after the account is unlocked', async () => {
+    cache.get = vi.fn().mockResolvedValue(undefined)
+    cache.consumeRateLimit = vi.fn().mockResolvedValue({ totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 })
+    const setSpy = vi.spyOn(cache, 'set').mockClear()
+    const user = new UserModel(generateUserTest(), false)
+    authProvider.validateUser = vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(user)
+    const request = { ip: requestIp } as FastifyRequest
+
+    expect(await authBasicStrategy.validate(request, user.login, 'app-password')).toBeNull()
+    expect(setSpy).not.toHaveBeenCalled()
+    expect(await authBasicStrategy.validate(request, user.login, 'app-password')).toBe(user)
+    expect(cache.get).toHaveBeenCalledTimes(2)
+    expect(authProvider.validateUser).toHaveBeenCalledTimes(2)
+    expect(setSpy).toHaveBeenCalledOnce()
+  })
+
+  it('should log a failed cache write after successful authentication', async () => {
+    cache.get = vi.fn().mockResolvedValueOnce(undefined)
+    cache.consumeRateLimit = vi.fn().mockResolvedValue({ totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 })
+    const user = new UserModel(generateUserTest(), false)
+    authProvider.validateUser = vi.fn().mockResolvedValueOnce(user)
     vi.spyOn(cache, 'set').mockRejectedValueOnce(new Error('cache failed'))
-    context.switchToHttp().getRequest.mockReturnValue({
-      ip: requestIp,
-      raw: { user: '' },
-      headers: { authorization: `Basic ${encodedAuth}` }
-    })
-    const loggerSpy = vi
-      .spyOn(authBasicStrategy['logger'], 'error') // <-- spy the SAME instance used in the class
-      .mockImplementation(() => undefined)
-    await expect(authBasicGuard.canActivate(context)).rejects.toThrow()
-    expect(loggerSpy).toHaveBeenCalled()
-    expect(loggerSpy.mock.calls[0][0]).toEqual(expect.objectContaining({ tag: 'validate', msg: expect.stringContaining('cache failed') }))
+    const loggerSpy = vi.spyOn(authBasicStrategy['logger'], 'error').mockImplementation(() => undefined)
+
+    expect(await authBasicStrategy.validate({ ip: requestIp } as FastifyRequest, user.login, 'app-password')).toBe(user)
+    await vi.waitFor(() =>
+      expect(loggerSpy).toHaveBeenCalledWith(expect.objectContaining({ tag: 'validate', msg: expect.stringContaining('cache failed') }))
+    )
   })
 
   it('should not validate the user authentication', async () => {
+    cache.get = vi.fn().mockResolvedValueOnce(undefined)
+    cache.consumeRateLimit = vi.fn().mockResolvedValue({ totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 })
+    authProvider.validateUser = vi.fn().mockResolvedValueOnce(null)
     context.switchToHttp().getRequest.mockReturnValue({
       ip: requestIp,
       raw: { user: '' },
@@ -209,5 +223,15 @@ describe(AuthBasicGuard.name, () => {
       AUTH_RATE_LIMIT_ERROR_MESSAGE
     )
     expect(authProvider.validateUser).not.toHaveBeenCalled()
+  })
+
+  it('should not cache credentials denied by the shared password-work limit', async () => {
+    cache.get = vi.fn().mockResolvedValueOnce(undefined)
+    cache.consumeRateLimit = vi.fn().mockResolvedValueOnce({ totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 })
+    const setSpy = vi.spyOn(cache, 'set').mockClear()
+    authProvider.validateUser = vi.fn().mockRejectedValueOnce(new AuthPasswordWorkLimitException())
+
+    await expect(authBasicStrategy.validate({ ip: requestIp } as FastifyRequest, userTest.login, 'possibly-valid-password')).resolves.toBeNull()
+    expect(setSpy).not.toHaveBeenCalled()
   })
 })

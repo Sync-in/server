@@ -7,6 +7,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { AuthManager } from '../../../authentication/auth.service'
+import { AUTH_PASSWORD_WORK_RATE_LIMIT_OPTIONS } from '../../../authentication/constants/auth'
 import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache'
 import { AUTH_SCOPE } from '../../../authentication/constants/scope'
 import { AUTH_SESSION } from '../../../authentication/providers/auth-providers.constants'
@@ -113,7 +114,7 @@ describe(UsersManager.name, () => {
         { provide: AuthManager, useValue: {} },
         { provide: NotificationsManager, useValue: { sendEmailNotification: vi.fn().mockResolvedValue(undefined) } },
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
-        { provide: Cache, useValue: {} }
+        { provide: Cache, useValue: { consumeRateLimit: vi.fn() } }
       ]
     }).compile()
     module.useLogger(['fatal'])
@@ -124,6 +125,11 @@ describe(UsersManager.name, () => {
     cache = module.get(Cache)
     userTest = new UserModel(generateUserTest(), false)
     deleteUserDto = { deleteSpace: true } satisfies DeleteUserDto
+  })
+
+  beforeEach(() => {
+    vi.mocked(cache.consumeRateLimit).mockReset()
+    vi.mocked(cache.consumeRateLimit).mockResolvedValue({ totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 })
   })
 
   afterEach(() => vi.restoreAllMocks())
@@ -269,13 +275,27 @@ describe(UsersManager.name, () => {
   })
 
   it('logUser branches: forbidden/locked/bad/good', async () => {
-    const linkUser = new UserModel({ ...generateUserTest(), role: USER_ROLE.LINK }, false)
-    await expect(usersManager.logUser(linkUser, 'x', '127.0.0.1')).rejects.toThrow('Account is not allowed')
-
-    const uLocked = new UserModel({ ...generateUserTest(), isActive: false, passwordAttempts: 5 }, false)
     const errSpy = vi.spyOn((usersManager as any)['logger'], 'error').mockImplementation(() => undefined as any)
     const updateAccessesSpy = vi.spyOn(usersManager, 'updateAccesses').mockResolvedValue(undefined)
-    await expect(usersManager.logUser(uLocked, 'pwd', 'ip')).rejects.toThrow('Account locked')
+    vi.mocked(comparePassword).mockResolvedValue(false)
+    const linkUser = new UserModel({ ...generateUserTest(), role: USER_ROLE.LINK }, false)
+    await expect(usersManager.logUser(linkUser, 'x', '127.0.0.1')).resolves.toBeNull()
+    expect(comparePassword).toHaveBeenLastCalledWith('x', linkUser.password)
+    vi.mocked(comparePassword).mockResolvedValue(true)
+    await expect(usersManager.logUser(linkUser, 'x', '127.0.0.1')).rejects.toMatchObject({
+      status: HttpStatus.FORBIDDEN,
+      message: 'Account is not allowed'
+    })
+
+    const uLocked = new UserModel({ ...generateUserTest(), isActive: false, passwordAttempts: 5 }, false)
+    vi.mocked(comparePassword).mockResolvedValue(false)
+    await expect(usersManager.logUser(uLocked, 'bad', 'ip')).resolves.toBeNull()
+    expect(comparePassword).toHaveBeenLastCalledWith('bad', uLocked.password)
+    vi.mocked(comparePassword).mockResolvedValue(true)
+    await expect(usersManager.logUser(uLocked, 'pwd', 'ip')).rejects.toMatchObject({
+      status: HttpStatus.FORBIDDEN,
+      message: 'Account locked'
+    })
     expect(updateAccessesSpy).not.toHaveBeenCalled()
     vi.mocked(comparePassword).mockResolvedValue(false)
     const uBad = new UserModel({ ...generateUserTest(), isActive: true, passwordAttempts: 0 }, false)
@@ -299,7 +319,7 @@ describe(UsersManager.name, () => {
     const now = new Date('2026-09-08T12:00:00.000Z').getTime()
     vi.spyOn(Date, 'now').mockReturnValue(now)
     vi.mocked(comparePassword).mockClear()
-    vi.mocked(comparePassword).mockResolvedValue(true)
+    vi.mocked(comparePassword).mockResolvedValue(false)
     const resetSpy = vi.spyOn(usersQueriesService, 'resetExpiredPasswordAttempts').mockResolvedValue(true)
     const updateAccessesSpy = vi.spyOn(usersManager, 'updateAccesses').mockResolvedValue(undefined)
 
@@ -308,11 +328,14 @@ describe(UsersManager.name, () => {
       { ...generateUserTest(), isActive: true, passwordAttempts: USER_MAX_PASSWORD_ATTEMPTS, currentAccess: activeLockDate },
       false
     )
+    await expect(usersManager.logUser(temporarilyLockedUser, 'wrong', '127.0.0.1')).resolves.toBeNull()
+    expect(comparePassword).toHaveBeenCalledWith('wrong', temporarilyLockedUser.password)
+    vi.mocked(comparePassword).mockResolvedValue(true)
     await expect(usersManager.logUser(temporarilyLockedUser, 'password', '127.0.0.1')).rejects.toThrow('Account locked')
     expect(temporarilyLockedUser.currentAccess).toEqual(activeLockDate)
     expect(resetSpy).not.toHaveBeenCalled()
     expect(updateAccessesSpy).not.toHaveBeenCalled()
-    expect(comparePassword).not.toHaveBeenCalled()
+    expect(comparePassword).toHaveBeenCalledWith('password', temporarilyLockedUser.password)
 
     const expiredLockDate = new Date(now - USER_PASSWORD_ATTEMPTS_LOCK_DURATION_MS)
     const expiredLockUser = new UserModel(
@@ -333,7 +356,78 @@ describe(UsersManager.name, () => {
       false
     )
     await expect(usersManager.logUser(concurrentlyUpdatedUser, 'password', '127.0.0.1')).rejects.toThrow('Account locked')
+    expect(comparePassword).toHaveBeenCalledWith('password', concurrentlyUpdatedUser.password)
+    expect(updateAccessesSpy).not.toHaveBeenCalledWith(concurrentlyUpdatedUser, '127.0.0.1', true)
+  })
+
+  it('does not check app passwords or expose a locked account through scoped authentication', async () => {
+    const previousTotpEnabled = configuration.auth.mfa.totp.enabled
+    configuration.auth.mfa.totp.enabled = true
+    try {
+      const lockedUser = new UserModel(
+        {
+          ...generateUserTest(),
+          role: USER_ROLE.USER,
+          isActive: false,
+          password: 'ACCOUNT_HASH',
+          secrets: { twoFaSecret: 'two-fa' }
+        } as any,
+        false
+      )
+      const getSecretsSpy = vi.spyOn(usersQueriesService, 'getUserSecrets').mockResolvedValue({
+        appPasswords: [{ name: 'webdav-client', app: AUTH_SCOPE.WEBDAV, password: 'APP_HASH' }]
+      } as any)
+      const mutateSecretsSpy = vi.spyOn(usersQueriesService, 'mutateUserSecrets')
+      const updateAccessesSpy = vi.spyOn(usersManager, 'updateAccesses').mockResolvedValue(undefined)
+      const makePathsSpy = vi.spyOn(lockedUser, 'makePaths').mockResolvedValue(undefined)
+      vi.mocked(comparePassword).mockImplementation(
+        async (password, hash) => (password === 'primary-password' && hash === 'ACCOUNT_HASH') || (password === 'app-password' && hash === 'APP_HASH')
+      )
+
+      for (const password of ['wrong', 'app-password', 'primary-password']) {
+        vi.mocked(comparePassword).mockClear()
+        await expect(usersManager.logUser(lockedUser, password, '192.0.2.20', AUTH_SCOPE.WEBDAV)).resolves.toBeNull()
+        expect(comparePassword).toHaveBeenCalledTimes(2)
+        expect(comparePassword).toHaveBeenNthCalledWith(1, password, 'ACCOUNT_HASH')
+        expect(comparePassword).toHaveBeenNthCalledWith(2, password, null)
+      }
+
+      await expect(usersManager.logUser(lockedUser, 'primary-password', '192.0.2.20', AUTH_SCOPE.CLIENT)).rejects.toMatchObject({
+        status: HttpStatus.FORBIDDEN,
+        message: 'Account locked'
+      })
+      expect(getSecretsSpy).not.toHaveBeenCalled()
+      expect(mutateSecretsSpy).not.toHaveBeenCalled()
+      expect(updateAccessesSpy).not.toHaveBeenCalled()
+      expect(makePathsSpy).not.toHaveBeenCalled()
+    } finally {
+      configuration.auth.mfa.totp.enabled = previousTotpEnabled
+    }
+  })
+
+  it('limits password work for missing and locked accounts using the same identifier key', async () => {
+    const lockedUser = new UserModel({ ...generateUserTest(), isActive: false }, false)
+    vi.mocked(cache.consumeRateLimit).mockResolvedValue({ totalHits: 21, timeToExpire: 60, isBlocked: true, timeToBlockExpire: 60 })
+    vi.mocked(comparePassword).mockClear()
+    const updateAccessesSpy = vi.spyOn(usersManager, 'updateAccesses').mockResolvedValue(undefined)
+
+    await expect(
+      usersManager.validateLocalPasswordForUser(null, lockedUser.login.toUpperCase(), 'pwd', '127.0.0.1', AUTH_SCOPE.WEBDAV)
+    ).rejects.toMatchObject({ status: HttpStatus.UNAUTHORIZED, message: 'Wrong login or password' })
+    await expect(
+      usersManager.validateLocalPasswordForUser(lockedUser, ` ${lockedUser.login} `, 'pwd', '192.0.2.11', AUTH_SCOPE.WEBDAV)
+    ).rejects.toMatchObject({ status: HttpStatus.UNAUTHORIZED, message: 'Wrong login or password' })
+
+    expect(cache.consumeRateLimit).toHaveBeenCalledTimes(2)
+    expect(vi.mocked(cache.consumeRateLimit).mock.calls[0][0]).toBe(vi.mocked(cache.consumeRateLimit).mock.calls[1][0])
+    expect(cache.consumeRateLimit).toHaveBeenCalledWith(
+      expect.any(String),
+      AUTH_PASSWORD_WORK_RATE_LIMIT_OPTIONS.ttl,
+      AUTH_PASSWORD_WORK_RATE_LIMIT_OPTIONS.limit,
+      AUTH_PASSWORD_WORK_RATE_LIMIT_OPTIONS.blockDuration
+    )
     expect(comparePassword).not.toHaveBeenCalled()
+    expect(updateAccessesSpy).not.toHaveBeenCalled()
   })
 
   it('local password validation burns time when user is missing or rejected by policy', async () => {
