@@ -60,6 +60,7 @@ describe('Auth (e2e)', () => {
   let userTest: UserModel
   let refreshToken: string
   let csrfToken: string
+  let clientAddress: string
 
   beforeAll(async () => {
     app = await appBootstrap()
@@ -72,6 +73,8 @@ describe('Auth (e2e)', () => {
     usersQueries = app.get<UsersQueries>(UsersQueries)
     cache = app.get<Cache>(Cache)
     userTest = new UserModel(generateUserTest(false), false)
+    // The rate-limit cache is shared across runs; use one suite-specific tracker to avoid stale counters.
+    clientAddress = `auth-e2e-${userTest.login}`
   })
 
   afterAll(async () => {
@@ -99,6 +102,7 @@ describe('Auth (e2e)', () => {
     const res = await app.inject({
       method: 'POST',
       url: API_AUTH_LOGIN,
+      remoteAddress: clientAddress,
       body: { login: userTest.login, password: userTest.password }
     })
     expect(res.statusCode).toEqual(401)
@@ -111,6 +115,7 @@ describe('Auth (e2e)', () => {
     const res = await app.inject({
       method: 'POST',
       url: API_AUTH_LOGIN,
+      remoteAddress: clientAddress,
       body: { login: userTest.login, password: userTest.password }
     })
     expect(res.statusCode).toEqual(201)
@@ -186,11 +191,13 @@ describe('Auth (e2e)', () => {
       const unknown = await app.inject({
         method: 'POST',
         url: API_AUTH_LOGIN,
+        remoteAddress: clientAddress,
         body: { login: `${userTest.login}-missing`, password: invalidPassword }
       })
       const inactive = await app.inject({
         method: 'POST',
         url: API_AUTH_LOGIN,
+        remoteAddress: clientAddress,
         body: { login: userTest.login, password: invalidPassword }
       })
 
@@ -200,6 +207,7 @@ describe('Auth (e2e)', () => {
       const verified = await app.inject({
         method: 'POST',
         url: API_AUTH_LOGIN,
+        remoteAddress: clientAddress,
         body: { login: userTest.login, password: userTest.password }
       })
       expect(verified.statusCode).toBe(403)
@@ -312,6 +320,7 @@ describe('Auth (e2e)', () => {
     const res = await app.inject({
       method: 'POST',
       url: API_AUTH_TOKEN,
+      remoteAddress: clientAddress,
       body: { login: userTest.login, password: 'bar' }
     })
     expect(res.statusCode).toEqual(401)
@@ -321,6 +330,7 @@ describe('Auth (e2e)', () => {
     const res = await app.inject({
       method: 'POST',
       url: API_AUTH_TOKEN,
+      remoteAddress: clientAddress,
       body: { login: userTest.login, password: userTest.password }
     })
     expect(res.statusCode).toEqual(201)
