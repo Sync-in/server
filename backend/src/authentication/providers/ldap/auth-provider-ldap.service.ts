@@ -176,7 +176,7 @@ export class AuthProviderLDAP implements AuthProvider {
       return values.flat().filter((v): v is string | Buffer => typeof v === 'string' || Buffer.isBuffer(v))
     }
     if (typeof ca !== 'string') {
-      this.logger.debug({ tag: this.readTlsCa.name, msg: 'ca file is not string or buffer' })
+      this.logger.verbose({ tag: this.readTlsCa.name, msg: 'ca file is not string or buffer' })
       return undefined
     }
     if (!(await isPathIsReadable(ca))) {
