@@ -116,7 +116,7 @@
     "@types/supertest": "^7.2.0",
     "@types/tar": "^6.1.13",
     "@types/text-to-svg": "^3.1.4",
-    "@vitest/coverage-v8": "^4.1.8",
+    "@vitest/coverage-v8": "^5.0.3",
     "chokidar": "^5.0.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
@@ -130,6 +130,6 @@
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.60.1",
     "unplugin-swc": "^1.5.9",
-    "vitest": "^4.1.8"
+    "vitest": "^5.0.3"
   }
 }
