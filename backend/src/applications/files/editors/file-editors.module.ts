@@ -8,13 +8,13 @@ export class FileEditorsModule {
     const imports: Type[] = []
 
     if (editors.onlyoffice.enabled || editors.eurooffice.enabled) {
-      imports.push((await import('./only-office/only-office.module')).OnlyOfficeModule)
+      imports.push((await import('./only-office/only-office.module.js')).OnlyOfficeModule)
     }
     if (editors.collabora.enabled) {
-      imports.push((await import('./collabora-online/collabora-online.module')).CollaboraOnlineModule)
+      imports.push((await import('./collabora-online/collabora-online.module.js')).CollaboraOnlineModule)
     }
     if (editors.drawio.enabled) {
-      imports.push((await import('./drawio/drawio.module')).DrawioModule)
+      imports.push((await import('./drawio/drawio.module.js')).DrawioModule)
     }
 
     return { module: FileEditorsModule, imports }

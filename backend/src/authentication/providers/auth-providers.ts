@@ -5,14 +5,14 @@ export async function loadAuthProviderDefinition(provider: AUTH_PROVIDER): Promi
   switch (provider) {
     case AUTH_PROVIDER.LDAP:
       return {
-        provider: (await import('./ldap/auth-provider-ldap.service')).AuthProviderLDAP,
+        provider: (await import('./ldap/auth-provider-ldap.service.js')).AuthProviderLDAP,
         controllers: []
       }
 
     case AUTH_PROVIDER.OIDC: {
       const [{ AuthProviderOIDC }, { AuthOIDCController }] = await Promise.all([
-        import('./oidc/auth-provider-oidc.service'),
-        import('./oidc/auth-oidc.controller')
+        import('./oidc/auth-provider-oidc.service.js'),
+        import('./oidc/auth-oidc.controller.js')
       ])
 
       return {
@@ -24,7 +24,7 @@ export async function loadAuthProviderDefinition(provider: AUTH_PROVIDER): Promi
     case AUTH_PROVIDER.MYSQL:
     default:
       return {
-        provider: (await import('./mysql/auth-provider-mysql.service')).AuthProviderMySQL,
+        provider: (await import('./mysql/auth-provider-mysql.service.js')).AuthProviderMySQL,
         controllers: []
       }
   }

@@ -3,6 +3,7 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
+    "allowOutsidePaths": true,
     "builder": {
       "type": "swc",
       "options": {

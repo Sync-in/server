@@ -199,7 +199,7 @@ export class DownloadFile {
     return !address || !ipaddr.isValid(address) || ipaddr.process(address).range() !== 'unicast'
   }
 
-  private contentLength(headers: AxiosHeaders): number | null {
+  private contentLength(headers: ReturnType<typeof AxiosHeaders.from>): number | null {
     const value = headers.get('content-length')
     if (value === undefined || value === null) return null
 

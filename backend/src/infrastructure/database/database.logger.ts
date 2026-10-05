@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common'
-import { Logger as DrizzleLogger } from 'drizzle-orm/logger.js'
+import type { Logger as DrizzleLogger } from 'drizzle-orm/logger'
 
 export class DatabaseLogger extends Logger implements DrizzleLogger {
   logQuery(message: string, params: unknown[]) {
