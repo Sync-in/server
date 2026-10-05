@@ -50,6 +50,7 @@ describe(Mailer.name, () => {
         }
       ]
     }).compile()
+    await module.init()
 
     mailer = module.get<Mailer>(Mailer)
     configService = module.get<ConfigService>(ConfigService)

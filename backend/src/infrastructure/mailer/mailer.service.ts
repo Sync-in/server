@@ -1,14 +1,14 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, type OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PinoLogger } from 'nestjs-pino'
-import nodemailer, { type SendMailOptions, type SMTPTransportOptions, type Transporter } from 'nodemailer'
+import type { SendMailOptions, SMTPTransportOptions, Transporter } from 'nodemailer'
 import type { MailProps } from './interfaces/mail.interface'
 import { MailerConfig } from './mailer.config'
 
 @Injectable()
-export class Mailer {
+export class Mailer implements OnModuleInit {
   public available: boolean = false
-  private readonly transporter: Transporter
+  private transporter: Transporter
   private readonly configuration: MailerConfig
 
   constructor(
@@ -17,9 +17,13 @@ export class Mailer {
   ) {
     this.logger.setContext(Mailer.name.toUpperCase())
     this.configuration = this.configService.get<MailerConfig>('mail')
+  }
+
+  async onModuleInit(): Promise<void> {
     if (!this.configuration) {
       return
     }
+    const { default: nodemailer } = await import('nodemailer')
     if (this.configuration.secure && (this.configuration.port === 587 || this.configuration.port === 25)) {
       this.logger.warn(`Secure transport has been disabled due to use of port : ${this.configuration.port}`)
       this.configuration.secure = false
@@ -38,7 +42,7 @@ export class Mailer {
       } satisfies SMTPTransportOptions,
       { from: this.configuration.sender } satisfies SendMailOptions
     )
-    void this.verify()
+    await this.verify()
   }
 
   async sendMails(mails: MailProps[]): Promise<void> {
