@@ -13,10 +13,6 @@ const DUMMY_PASSWORD_HASH = '$2a$10$tjgA0v/cGe.vAfAJgNHpZeNrIdMxu82i0kGEjbtYkaVU
 
 export const regexpEscape = /[.*+?^${}()|[\]\\]/g
 
-export async function loadOptionalModule(moduleName: string): Promise<any> {
-  return await import(moduleName)
-}
-
 export async function sleep(ms: number): Promise<void> {
   await setTimeout(ms)
 }

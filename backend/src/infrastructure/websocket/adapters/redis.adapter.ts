@@ -1,10 +1,9 @@
 import { Logger } from '@nestjs/common'
-import { NestFastifyApplication } from '@nestjs/platform-fastify'
+import type { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { IoAdapter } from '@nestjs/platform-socket.io'
 import type { createAdapter as createRedisAdapter } from '@socket.io/redis-adapter'
 import type { RedisClientType } from 'redis'
-import { ServerOptions } from 'socket.io'
-import { loadOptionalModule } from '../../../common/functions'
+import type { ServerOptions } from 'socket.io'
 import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants'
 import { Availability } from '../../availability/availability.service'
 import { connectionErrorMessage, isRetryableConnectionError, redactRedisUrl } from '../../utils'
@@ -34,8 +33,8 @@ export class RedisAdapter extends IoAdapter {
 
   async connect(redisUrl: WebSocketConfig['redis']): Promise<void> {
     const redactedRedisUrl = redactRedisUrl(redisUrl)
-    const { createAdapter } = await loadOptionalModule('@socket.io/redis-adapter')
-    const { createClient } = await loadOptionalModule('redis')
+    const { createAdapter } = await import('@socket.io/redis-adapter')
+    const { createClient } = await import('redis')
     const pubClient = createClient({ url: redisUrl, socket: { noDelay: true, reconnectStrategy: this.reconnectStrategy } })
     const subClient = pubClient.duplicate()
     this.pubClient = pubClient

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { createClient, type RedisClientOptions, type RedisClientType } from 'redis'
+import type { RedisClientOptions, RedisClientType } from 'redis'
 import { createCacheKeySlug } from '../../../common/shared'
 import { configuration } from '../../../configuration/config.environment'
 import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants'
@@ -13,18 +13,19 @@ export class RedisCacheAdapter implements Cache {
   defaultTTL: number = configuration.cache.ttl
   infiniteExpiration = -1
   private readonly logger = new Logger(Cache.name.toUpperCase())
-  private readonly client: RedisClientType
+  private client: RedisClientType
   private readonly redactedRedisUrl = redactRedisUrl(configuration.cache.redis)
 
   constructor(private readonly availability: Availability) {
     this.availability.register(INFRASTRUCTURE_DEPENDENCY.CACHE)
+  }
+
+  async onModuleInit(): Promise<void> {
+    const { createClient } = await import('redis')
     this.client = createClient({
       url: configuration.cache.redis,
       socket: { noDelay: true, reconnectStrategy: this.reconnectStrategy }
     } satisfies RedisClientOptions)
-  }
-
-  async onModuleInit(): Promise<void> {
     this.client.on('error', (e: Error) => {
       this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.CACHE, this.client.isReady)
       this.logger.error(e.message || e)
