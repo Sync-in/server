@@ -1,4 +1,5 @@
 import type { Options } from 'pino-http'
+import { join } from 'node:path'
 import { AVAILABILITY_ROUTE } from '../infrastructure/availability/availability.constants'
 import type { LoggerConfig } from './config.validation'
 
@@ -6,6 +7,53 @@ const AVAILABILITY_ROUTE_PREFIX = `${AVAILABILITY_ROUTE.BASE}/`
 const PINO_WARN_LEVEL = 40
 const NEST_APPLICATION_CONTEXT = 'NestApplication'
 const MUTED_NEST_STARTUP_CONTEXTS = new Set(['NestFactory', 'InstanceLoader', 'RoutesResolver', 'RouterExplorer', NEST_APPLICATION_CONTEXT])
+const MESSAGE_COLOR_MARKER = '\uE000SYNC_IN_WHITE\uE001'
+const MESSAGE_FORMAT =
+  '[{context}]{if tag} [{tag}] {end}{if user} <{user}> {end} {msg}{if res} ({res.contentLength} bytes in {responseTime}ms) {userAgent}{end}{if reqId} | {reqId}{end}'
+const COLORIZED_MESSAGE_FORMAT = MESSAGE_FORMAT.replace('{msg}', `${MESSAGE_COLOR_MARKER}{msg}`)
+
+const createPrettyTransport = (loggerConfig: LoggerConfig) => {
+  const prettyOptions = {
+    ignore: 'hostname,context,reqId,req,res,user,userAgent,responseTime,tag',
+    hideObject: false,
+    singleLine: false,
+    colorize: loggerConfig.colorize,
+    colorizeObjects: false,
+    translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
+    messageFormat: loggerConfig.colorize ? COLORIZED_MESSAGE_FORMAT : MESSAGE_FORMAT
+  }
+  const destinationOptions = {
+    destination: loggerConfig.stdout ? 1 : loggerConfig.filePath,
+    mkdir: true,
+    sync: false
+  }
+
+  if (!loggerConfig.colorize) {
+    return {
+      target: 'pino-pretty',
+      options: {
+        ...prettyOptions,
+        ...destinationOptions
+      }
+    }
+  }
+
+  return {
+    pipeline: [
+      {
+        target: join(__dirname, 'config.logger.transport.cjs'),
+        options: {
+          messageColorMarker: MESSAGE_COLOR_MARKER,
+          ...prettyOptions
+        }
+      },
+      {
+        target: 'pino/file',
+        options: destinationOptions
+      }
+    ]
+  }
+}
 
 export const configLogger = (loggerConfig: LoggerConfig) => {
   let isNestBootstrapping = true
@@ -71,24 +119,6 @@ export const configLogger = (loggerConfig: LoggerConfig) => {
         return undefined
       }
     },
-    transport: loggerConfig.jsonOutput
-      ? null
-      : {
-          target: 'pino-pretty',
-          options: {
-            ignore: 'hostname,context,reqId,req,res,user,userAgent,responseTime,tag',
-            hideObject: false,
-            singleLine: false,
-            colorize: loggerConfig.colorize,
-            colorizeObjects: false,
-            translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
-            messageFormat: `[{context}]{if tag} [{tag}] {end}{if user} <{user}> {end} ${
-              loggerConfig.colorize ? '\x1b[37m' : ''
-            }{msg}{if res} ({res.contentLength} bytes in {responseTime}ms) {userAgent}{end}{if reqId} | {reqId}{end}`,
-            destination: loggerConfig.stdout ? 1 : loggerConfig.filePath,
-            mkdir: true,
-            sync: false
-          }
-        }
+    transport: loggerConfig.jsonOutput ? null : createPrettyTransport(loggerConfig)
   } satisfies Options
 }
