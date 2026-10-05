@@ -2,6 +2,7 @@ import type { Options } from 'pino-http'
 import { join } from 'node:path'
 import { AVAILABILITY_ROUTE } from '../infrastructure/availability/availability.constants'
 import type { LoggerConfig } from './config.validation'
+import type { FastifyLoggerRequest, LoggerErrorObject, LoggerSerializedResponse } from './interfaces/logger.interface'
 
 const AVAILABILITY_ROUTE_PREFIX = `${AVAILABILITY_ROUTE.BASE}/`
 const PINO_WARN_LEVEL = 40
@@ -81,16 +82,16 @@ export const configLogger = (loggerConfig: LoggerConfig) => {
         method.apply(this, args)
       }
     },
-    customProps: (req: any) => ({
+    customProps: (req) => ({
       context: 'HTTP',
       user: req.user,
       userAgent: req.headers['user-agent']
     }),
-    customSuccessMessage: (req: any, res: any) => {
-      return `${req.method} ${req.url} (${req.protocol.toUpperCase()}/${req['httpVersion']} ${res.statusCode}) ${req.ip}`
+    customSuccessMessage: (req, res) => {
+      return `${req.method} ${req.url} (${req.protocol.toUpperCase()}/${req.httpVersion} ${res.statusCode}) ${req.ip}`
     },
-    customErrorMessage: (req: any, res: any) => {
-      return `${req.method} ${req.url} (${req.protocol.toUpperCase()}/${req['httpVersion']} ${res.statusCode}) ${req.ip}`
+    customErrorMessage: (req, res) => {
+      return `${req.method} ${req.url} (${req.protocol.toUpperCase()}/${req.httpVersion} ${res.statusCode}) ${req.ip}`
     },
     customLogLevel: (req, res, err) => {
       // Successful health checks are frequent and provide little value in logs.
@@ -105,14 +106,21 @@ export const configLogger = (loggerConfig: LoggerConfig) => {
       }
       return 'info'
     },
-    customErrorObject: (_req, _res, _error, val) => {
-      // avoid logging object error for 404 status
-      return val.res.statusCode === 404 ? null : val
+    customErrorObject: (_req, _res, _error, val: LoggerErrorObject) => {
+      // Keep response metadata for 404s without logging the associated error object.
+      if (val.res.statusCode === 404) {
+        return {
+          res: val.res,
+          responseTime: val.responseTime
+        }
+      }
+
+      return val
     },
     serializers: {
-      res(reply) {
+      res(response: LoggerSerializedResponse) {
         return {
-          contentLength: reply.raw['_contentLength']
+          contentLength: response.headers['content-length'] || '0'
         }
       },
       req() {
@@ -120,5 +128,5 @@ export const configLogger = (loggerConfig: LoggerConfig) => {
       }
     },
     transport: loggerConfig.jsonOutput ? null : createPrettyTransport(loggerConfig)
-  } satisfies Options
+  } satisfies Options<FastifyLoggerRequest>
 }
