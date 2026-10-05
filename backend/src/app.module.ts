@@ -25,7 +25,7 @@ import { SchedulerModule } from './infrastructure/scheduler/scheduler.module'
       })
     }),
     AvailabilityModule,
-    AuthModule,
+    AuthModule.register(configuration.auth.provider),
     DatabaseModule,
     CacheModule,
     MailerModule,

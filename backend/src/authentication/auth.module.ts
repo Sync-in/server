@@ -1,10 +1,9 @@
-import { Global, Module } from '@nestjs/common'
+import { type DynamicModule, Global, Module, type Provider } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { ThrottlerModule } from '@nestjs/throttler'
 import { UsersModule } from '../applications/users/users.module'
-import { configuration } from '../configuration/config.environment'
 import { CacheModule } from '../infrastructure/cache/cache.module'
 import { Cache } from '../infrastructure/cache/cache.service'
 import { AuthRateLimitStorage } from './adapters/auth-rate-limit-storage.adapter'
@@ -22,52 +21,60 @@ import { AuthTokenAccessGuard } from './guards/auth-token-access.guard'
 import { AuthTokenAccessStrategy } from './guards/auth-token-access.strategy'
 import { AuthTokenRefreshGuard } from './guards/auth-token-refresh.guard'
 import { AuthTokenRefreshStrategy } from './guards/auth-token-refresh.strategy'
-import { AUTH_PROVIDER } from './providers/auth-providers.constants'
+import type { AUTH_PROVIDER } from './providers/auth-providers.constants'
 import { AuthProvider } from './providers/auth-providers.models'
-import { selectAuthProvider } from './providers/auth-providers'
-import { AuthProviderOIDCModule } from './providers/oidc/auth-provider-oidc.module'
+import { loadAuthProviderDefinition } from './providers/auth-providers'
 import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service'
 import { AuthTokenTwoFaGuard } from './providers/two-fa/guards/auth-token-two-fa.guard'
 import { AuthTokenTwoFaStrategy } from './providers/two-fa/guards/auth-token-two-fa.strategy'
 
 @Global()
-@Module({
-  imports: [
-    JwtModule.register({ global: true }),
-    ThrottlerModule.forRootAsync({
-      imports: [CacheModule],
-      inject: [Cache],
-      useFactory: (cache: Cache) => ({
-        throttlers: [AUTH_RATE_LIMIT_OPTIONS],
-        storage: new AuthRateLimitStorage(cache)
-      })
-    }),
-    UsersModule,
-    PassportModule,
-    ...(configuration.auth.provider === AUTH_PROVIDER.OIDC ? [AuthProviderOIDCModule] : [])
-  ],
-  controllers: [AuthController],
-  providers: [
-    {
-      provide: APP_GUARD,
-      useClass: AuthTokenAccessGuard
-    },
-    AuthRateLimitGuard,
-    AuthTokenRefreshGuard,
-    AuthTokenTwoFaGuard,
-    AuthLocalGuard,
-    AuthBasicGuard,
-    AuthAnonymousGuard,
-    AuthLocalStrategy,
-    AuthTokenAccessStrategy,
-    AuthTokenRefreshStrategy,
-    AuthTokenTwoFaStrategy,
-    AuthBasicStrategy,
-    AuthAnonymousStrategy,
-    AuthManager,
-    AuthProvider2FA,
-    selectAuthProvider(configuration.auth.provider)
-  ],
-  exports: [AuthManager, AuthProvider, AuthProvider2FA, AuthRateLimitGuard]
-})
-export class AuthModule {}
+@Module({})
+export class AuthModule {
+  static async register(provider: AUTH_PROVIDER): Promise<DynamicModule> {
+    const { provider: authProvider, controllers: providerControllers } = await loadAuthProviderDefinition(provider)
+    const providers: Provider[] = [
+      {
+        provide: APP_GUARD,
+        useClass: AuthTokenAccessGuard
+      },
+      AuthRateLimitGuard,
+      AuthTokenRefreshGuard,
+      AuthTokenTwoFaGuard,
+      AuthLocalGuard,
+      AuthBasicGuard,
+      AuthAnonymousGuard,
+      AuthLocalStrategy,
+      AuthTokenAccessStrategy,
+      AuthTokenRefreshStrategy,
+      AuthTokenTwoFaStrategy,
+      AuthBasicStrategy,
+      AuthAnonymousStrategy,
+      AuthManager,
+      AuthProvider2FA,
+      // AuthOIDCController requires the concrete token; generic consumers reuse the same instance through AuthProvider.
+      authProvider,
+      { provide: AuthProvider, useExisting: authProvider }
+    ]
+
+    return {
+      module: AuthModule,
+      imports: [
+        JwtModule.register({ global: true }),
+        ThrottlerModule.forRootAsync({
+          imports: [CacheModule],
+          inject: [Cache],
+          useFactory: (cache: Cache) => ({
+            throttlers: [AUTH_RATE_LIMIT_OPTIONS],
+            storage: new AuthRateLimitStorage(cache)
+          })
+        }),
+        UsersModule,
+        PassportModule
+      ],
+      controllers: [AuthController, ...providerControllers],
+      providers,
+      exports: [AuthManager, AuthProvider, AuthProvider2FA, AuthRateLimitGuard]
+    }
+  }
+}
