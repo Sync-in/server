@@ -18,6 +18,9 @@
       },
       {
         "include": "./common/fonts"
+      },
+      {
+        "include": "./configuration/config.logger.transport.cjs"
       }
     ]
   }

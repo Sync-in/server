@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
-import nodemailer from 'nodemailer'
+import nodemailer, { type Transporter } from 'nodemailer'
 import { MailerConfig } from './mailer.config'
 import { Mailer } from './mailer.service'
 
@@ -11,7 +11,7 @@ const createTransportMock = {
   verify: vi.fn().mockResolvedValue(true),
   sendMail: vi.fn().mockResolvedValue(true)
 }
-vi.mocked(nodemailer.createTransport).mockReturnValue(createTransportMock)
+vi.mocked(nodemailer.createTransport).mockReturnValue(createTransportMock as unknown as Transporter)
 
 describe(Mailer.name, () => {
   let module: TestingModule
@@ -24,12 +24,13 @@ describe(Mailer.name, () => {
     port: 587,
     auth: { user: 'user', pass: 'pass' },
     secure: false,
+    ignoreTLS: false,
+    rejectUnauthorized: true,
     sender: 'noreply@example.com',
-    debug: false,
     logger: false
   }
 
-  const initModule = async (config: MailerConfig | undefined) => {
+  const initModule = async (config: MailerConfig | undefined, loggerLevel: string = 'info') => {
     module = await Test.createTestingModule({
       providers: [
         Mailer,
@@ -42,11 +43,14 @@ describe(Mailer.name, () => {
             error: vi.fn(),
             info: vi.fn(),
             assign: vi.fn(),
-            logger: { level: 'info' }
+            logger: {
+              isLevelEnabled: vi.fn().mockImplementation((level: string) => level === 'debug' && ['trace', 'debug'].includes(loggerLevel))
+            }
           }
         }
       ]
     }).compile()
+    await module.init()
 
     mailer = module.get<Mailer>(Mailer)
     configService = module.get<ConfigService>(ConfigService)
@@ -65,14 +69,14 @@ describe(Mailer.name, () => {
   })
 
   it('should not initialize transporter if config is absent', () => {
-    expect(mailer['transport']).toBeUndefined()
+    expect(mailer['transporter']).toBeUndefined()
     expect(nodemailer.createTransport).not.toHaveBeenCalled()
   })
 
   it('should initialize secure transport with no secure port', async () => {
     await initModule({ ...mailerConfig, secure: true })
     expect(mailer['configuration'].secure).toBe(false)
-    await initModule({ ...mailerConfig, port: 25, secure: true, logger: true, debug: true })
+    await initModule({ ...mailerConfig, port: 25, secure: true, logger: true })
     expect(mailer['configuration'].secure).toBe(false)
     const loggerWarnSpy = vi.spyOn(logger, 'warn')
     expect(loggerWarnSpy).toHaveBeenCalledWith(expect.stringMatching(/has been disabled/i))
@@ -96,7 +100,29 @@ describe(Mailer.name, () => {
         host: mailerConfig.host,
         port: mailerConfig.port,
         auth: mailerConfig.auth,
-        secure: mailerConfig.secure
+        secure: mailerConfig.secure,
+        ignoreTLS: mailerConfig.ignoreTLS,
+        tls: { rejectUnauthorized: mailerConfig.rejectUnauthorized },
+        debug: false,
+        logger: false
+      }),
+      expect.objectContaining({
+        from: mailerConfig.sender
+      })
+    )
+  })
+
+  it.each([
+    { loggerLevel: 'info', smtpDebug: false },
+    { loggerLevel: 'debug', smtpDebug: true },
+    { loggerLevel: 'trace', smtpDebug: true }
+  ])('should set SMTP debug to $smtpDebug when the general logger level is $loggerLevel', async ({ loggerLevel, smtpDebug }) => {
+    await initModule({ ...mailerConfig, logger: true }, loggerLevel)
+
+    expect(nodemailer.createTransport).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        debug: smtpDebug,
+        logger
       }),
       expect.objectContaining({
         from: mailerConfig.sender

@@ -8,6 +8,7 @@ import { ApplicationsModule } from './applications/applications.module'
 import { AuthModule } from './authentication/auth.module'
 import { configuration, exportConfiguration } from './configuration/config.environment'
 import { configLogger } from './configuration/config.logger'
+import type { FastifyLoggerRequest } from './configuration/interfaces/logger.interface'
 import { AvailabilityModule } from './infrastructure/availability/availability.module'
 import { CacheModule } from './infrastructure/cache/cache.module'
 import { ContextModule } from './infrastructure/context/context.module'
@@ -18,13 +19,13 @@ import { SchedulerModule } from './infrastructure/scheduler/scheduler.module'
 @Module({
   imports: [
     ConfigModule.forRoot({ load: [exportConfiguration], validatePredefined: false, ignoreEnvFile: true, isGlobal: true }),
-    LoggerModule.forRootAsync({
+    LoggerModule.forRootAsync<FastifyLoggerRequest>({
       useFactory: async () => ({
         pinoHttp: configLogger(configuration.logger)
       })
     }),
     AvailabilityModule,
-    AuthModule,
+    AuthModule.register(configuration.auth.provider),
     DatabaseModule,
     CacheModule,
     MailerModule,

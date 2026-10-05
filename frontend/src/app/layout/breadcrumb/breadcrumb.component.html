@@ -1,17 +1,15 @@
 <div class="breadcrumb">
   <div class="breadcrumb-content">
     @for (item of levels; track $index) {
-      @if ($index === 1) {
-        <svg [lucideIcon]="icons.LucideChevronRight"></svg>
-      } @else if ($index > 1) {
+      @if (!$first) {
         <svg
-          class="breadcrumb-mobile-hidden"
+          [class.breadcrumb-mobile-hidden]="!$last"
           [lucideIcon]="icons.LucideChevronRight">
         </svg>
       }
       <li
-        [class.breadcrumb-mobile-active]="$index === 1"
-        [class.breadcrumb-mobile-hidden]="$index > 1"
+        [class.breadcrumb-mobile-active]="!$first && $last"
+        [class.breadcrumb-mobile-hidden]="!$first && !$last"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{matrixParams: 'ignored', queryParams: 'ignored', paths: 'exact', fragment: 'ignored'}">
         <a [routerLink]="item.link">

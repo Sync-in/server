@@ -75,14 +75,12 @@ mail:
   # default: false
   ignoreTLS: false
   # rejectUnauthorized: reject the connection if the server's TLS certificate is invalid
-  # default: false
-  rejectUnauthorized: false
-  # Enable logger
+  # default: true
+  rejectUnauthorized: true
+  # Enable Nodemailer internal SMTP logs
+  # Their verbosity follows the general logger.level; debug and trace enable detailed SMTP traffic
   # default: `false`
   logger: false
-  # Set log level to debug
-  # default: `false`
-  debug: false
 auth:
   # provider : `mysql` | `ldap` | `oidc`
   # default: `mysql`

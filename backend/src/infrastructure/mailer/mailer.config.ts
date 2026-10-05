@@ -31,7 +31,7 @@ export class MailerConfig {
 
   @IsOptional()
   @IsBoolean()
-  rejectUnauthorized?: boolean = false
+  rejectUnauthorized?: boolean = true
 
   @IsOptional()
   @IsObject()
@@ -42,10 +42,6 @@ export class MailerConfig {
   @IsOptional()
   @IsString()
   sender?: string = 'Sync-in<notification@sync-in.com>'
-
-  @IsOptional()
-  @IsBoolean()
-  debug?: boolean = false
 
   @IsOptional()
   @IsBoolean()

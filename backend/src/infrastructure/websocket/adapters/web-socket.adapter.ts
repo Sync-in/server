@@ -21,7 +21,7 @@ export class WebSocketAdapter extends IoAdapter {
   private adapter: RedisAdapter | ClusterAdapter
   private readonly app: NestFastifyApplication
   private readonly fastify: FastifyInstance
-  private readonly logger: Logger = new Logger(WebSocketAdapter.name)
+  protected override readonly logger: Logger = new Logger(WebSocketAdapter.name)
   private readonly jwtService: JwtService
   private readonly usersManager: UsersManager
 

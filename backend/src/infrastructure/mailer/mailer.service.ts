@@ -1,15 +1,14 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, type OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PinoLogger } from 'nestjs-pino'
-import nodemailer from 'nodemailer'
-import type { Logger as NodeMailLogger } from 'nodemailer/lib/shared'
-import { MailDefaultsTransport, MailProps, MailTransport } from './interfaces/mail.interface'
+import type { SendMailOptions, SMTPTransportOptions, Transporter } from 'nodemailer'
+import type { MailProps } from './interfaces/mail.interface'
 import { MailerConfig } from './mailer.config'
 
 @Injectable()
-export class Mailer {
+export class Mailer implements OnModuleInit {
   public available: boolean = false
-  private readonly transporter: nodemailer.Transporter
+  private transporter: Transporter
   private readonly configuration: MailerConfig
 
   constructor(
@@ -18,14 +17,18 @@ export class Mailer {
   ) {
     this.logger.setContext(Mailer.name.toUpperCase())
     this.configuration = this.configService.get<MailerConfig>('mail')
+  }
+
+  async onModuleInit(): Promise<void> {
     if (!this.configuration) {
       return
     }
-    this.logger.logger.level = this.configuration.debug ? 'debug' : 'info'
+    const { default: nodemailer } = await import('nodemailer')
     if (this.configuration.secure && (this.configuration.port === 587 || this.configuration.port === 25)) {
       this.logger.warn(`Secure transport has been disabled due to use of port : ${this.configuration.port}`)
       this.configuration.secure = false
     }
+    const smtpLoggerEnabled = this.configuration.logger === true
     this.transporter = nodemailer.createTransport(
       {
         host: this.configuration.host,
@@ -33,27 +36,30 @@ export class Mailer {
         auth: this.configuration.auth,
         secure: this.configuration.secure,
         ignoreTLS: this.configuration.ignoreTLS,
-        logger: this.configuration.logger ? (this.logger as NodeMailLogger & any) : false
-      } satisfies MailTransport,
-      { from: this.configuration.sender, tls: { rejectUnauthorized: this.configuration.rejectUnauthorized } } satisfies MailDefaultsTransport
+        tls: { rejectUnauthorized: this.configuration.rejectUnauthorized },
+        debug: smtpLoggerEnabled && this.logger.logger.isLevelEnabled('debug'),
+        logger: smtpLoggerEnabled ? (this.logger as SMTPTransportOptions['logger']) : false
+      } satisfies SMTPTransportOptions,
+      { from: this.configuration.sender } satisfies SendMailOptions
     )
-    this.verify().catch(this.logger.error)
+    await this.verify()
   }
 
-  async sendMails(mails: MailProps[]) {
+  async sendMails(mails: MailProps[]): Promise<void> {
     if (!this.available) {
       return
     }
-    for (const m of mails) {
-      this.transporter
-        .sendMail(m)
-        .then(() => {
+
+    await Promise.all(
+      mails.map(async (m) => {
+        try {
+          await this.transporter.sendMail(m)
           this.logger.info(`Mail sent to '${m.to}' with subject '${m.subject}'`)
-        })
-        .catch((e) => {
+        } catch (e) {
           this.logger.error(`Mail was not sent to '${m.to}' with subject '${m.subject}' : ${e}`)
-        })
-    }
+        }
+      })
+    )
   }
 
   private async verify(): Promise<void> {
