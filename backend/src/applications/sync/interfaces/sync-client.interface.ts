@@ -1,4 +1,4 @@
-import type { SYNC_CLIENT_TYPE } from '../constants/sync'
+import type { SYNC_CLIENT_TYPE } from '../constants/sync.js'
 
 export interface SyncClientInfo {
   node: string

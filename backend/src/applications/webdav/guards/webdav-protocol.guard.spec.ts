@@ -1,25 +1,25 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { FastifyReply } from 'fastify'
-import { urlToPath } from '../../../common/functions'
-import { decodeUrl } from '../../../common/shared'
-import { HTTP_METHOD } from '../../applications.constants'
-import { CACHE_LOCK_DEFAULT_TTL } from '../../files/constants/cache'
-import { DEPTH, HEADER, LOCK_SCOPE, OPTIONS_HEADERS, PROPSTAT } from '../constants/webdav'
-import { FastifyDAVRequest } from '../interfaces/webdav.interface'
-import * as IfHeaderUtils from '../utils/if-header'
-import { PROPFIND_ALL_PROP } from '../utils/webdav'
-import { WebDAVProtocolGuard } from './webdav-protocol.guard'
+import { urlToPath } from '../../../common/functions.js'
+import { decodeUrl } from '../../../common/shared.js'
+import { HTTP_METHOD } from '../../applications.constants.js'
+import { CACHE_LOCK_DEFAULT_TTL } from '../../files/constants/cache.js'
+import { DEPTH, HEADER, LOCK_SCOPE, OPTIONS_HEADERS, PROPSTAT } from '../constants/webdav.js'
+import { FastifyDAVRequest } from '../interfaces/webdav.interface.js'
+import * as IfHeaderUtils from '../utils/if-header.js'
+import { PROPFIND_ALL_PROP } from '../utils/webdav.js'
+import { WebDAVProtocolGuard } from './webdav-protocol.guard.js'
 
 // Keep these mocks to control path transforms in COPY/MOVE tests
-vi.mock('../../../common/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../common/shared')>()
+vi.mock('../../../common/shared.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/shared.js')>()
   return {
     ...actual,
     decodeUrl: vi.fn((s: string) => s)
   }
 })
-vi.mock('../../../common/functions', () => ({
+vi.mock('../../../common/functions.js', () => ({
   urlToPath: vi.fn((s: string) => s)
 }))
 

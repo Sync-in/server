@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import fs from 'fs/promises'
 import path from 'node:path'
-import { Cache } from '../../../infrastructure/cache/cache.service'
+import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import {
   CACHE_INDEXING_EVENT_PREFIX,
   CACHE_INDEXING_FULL_RUN_REQUEST_KEY,
@@ -9,15 +9,15 @@ import {
   CACHE_INDEXING_LAST_RUN_KEY,
   CACHE_INDEXING_RUNNING_KEY,
   CACHE_INDEXING_RUNNING_TTL
-} from '../constants/indexing'
-import { FILE_REPOSITORY } from '../constants/operations'
-import { FileContentIndexContext, FileParseContentPath, FileParseContext } from '../interfaces/file-parse-index'
-import { IndexingState } from '../interfaces/indexing.interface'
-import { FilesContentStore } from '../models/files-content-store'
-import * as docTextifyModule from '../utils/doc-textify/doc-textify'
-import { OCRManager } from '../utils/doc-textify/utils/ocr'
-import { FilesContentParser } from './files-content-parser.service'
-import { FilesContentIndexer } from './files-content-indexer.service'
+} from '../constants/indexing.js'
+import { FILE_REPOSITORY } from '../constants/operations.js'
+import { FileContentIndexContext, FileParseContentPath, FileParseContext } from '../interfaces/file-parse-index.js'
+import { IndexingState } from '../interfaces/indexing.interface.js'
+import { FilesContentStore } from '../models/files-content-store.js'
+import * as docTextifyModule from '../utils/doc-textify/doc-textify.js'
+import { OCRManager } from '../utils/doc-textify/utils/ocr.js'
+import { FilesContentParser } from './files-content-parser.service.js'
+import { FilesContentIndexer } from './files-content-indexer.service.js'
 import type { Mock } from 'vitest'
 
 interface CacheMock {

@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common'
-import { NotificationsController } from './notifications.controller'
-import { WebSocketNotifications } from './notifications.gateway'
-import { NotificationsManager } from './services/notifications-manager.service'
-import { NotificationsQueries } from './services/notifications-queries.service'
+import { NotificationsController } from './notifications.controller.js'
+import { WebSocketNotifications } from './notifications.gateway.js'
+import { NotificationsManager } from './services/notifications-manager.service.js'
+import { NotificationsQueries } from './services/notifications-queries.service.js'
 
 @Module({
   controllers: [NotificationsController],

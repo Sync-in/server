@@ -2,8 +2,8 @@ import { Controller, Get, UseGuards } from '@nestjs/common'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { Test, TestingModule } from '@nestjs/testing'
 import { ThrottlerModule } from '@nestjs/throttler'
-import { AUTH_RATE_LIMIT_ERROR_MESSAGE, AUTH_RATE_LIMIT_OPTIONS } from '../constants/auth'
-import { AuthRateLimitGuard } from './auth-rate-limit.guard'
+import { AUTH_RATE_LIMIT_ERROR_MESSAGE, AUTH_RATE_LIMIT_OPTIONS } from '../constants/auth.js'
+import { AuthRateLimitGuard } from './auth-rate-limit.guard.js'
 
 @Controller('rate-limit-test')
 class RateLimitTestController {

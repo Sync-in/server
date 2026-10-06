@@ -1,4 +1,4 @@
-import { SPACE_ALIAS } from '../constants/spaces'
+import { SPACE_ALIAS } from '../constants/spaces.js'
 
 const RESERVED_ALIASES = new Set<string>([SPACE_ALIAS.PERSONAL])
 

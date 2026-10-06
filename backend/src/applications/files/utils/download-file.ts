@@ -7,15 +7,20 @@ import type { HttpService } from '@nestjs/axios'
 import { HttpStatus, Logger } from '@nestjs/common'
 import { AxiosHeaders, type AxiosRequestConfig, type AxiosResponse } from 'axios'
 import ipaddr from 'ipaddr.js'
-import { HTTP_METHOD } from '../../applications.constants'
-import type { SpaceEnv } from '../../spaces/models/space-env.model'
-import type { DownloadFileDto } from '../dto/file-operations.dto'
-import { FileTaskEvent } from '../events/file-events'
-import type { DownloadFileContentInfo, DownloadFileOptions, DownloadFileRequestOptions, DownloadStage } from '../interfaces/download-file.interface'
-import { FileError } from '../models/file-error'
-import { writeUploadFromStream } from './files'
-import { FILE_ERROR } from '../constants/errors'
-import { createUploadStreamLimiter } from './upload-file'
+import { HTTP_METHOD } from '../../applications.constants.js'
+import type { SpaceEnv } from '../../spaces/models/space-env.model.js'
+import type { DownloadFileDto } from '../dto/file-operations.dto.js'
+import { FileTaskEvent } from '../events/file-events.js'
+import type {
+  DownloadFileContentInfo,
+  DownloadFileOptions,
+  DownloadFileRequestOptions,
+  DownloadStage
+} from '../interfaces/download-file.interface.js'
+import { FileError } from '../models/file-error.js'
+import { writeUploadFromStream } from './files.js'
+import { FILE_ERROR } from '../constants/errors.js'
+import { createUploadStreamLimiter } from './upload-file.js'
 
 export class DownloadFile {
   private readonly logger = new Logger(DownloadFile.name)

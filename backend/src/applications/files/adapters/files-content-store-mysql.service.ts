@@ -1,14 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { SQL, sql } from 'drizzle-orm'
 import { MySqlQueryResult } from 'drizzle-orm/mysql2'
-import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
-import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
-import { FILE_REPOSITORY } from '../constants/operations'
-import type { FilesSearchTerm } from '../interfaces/files-search-query.interface'
-import { FilesContentStore } from '../models/files-content-store'
-import { FileContent, FileContentRecordMetadata, FileContentRecordMetadataMap } from '../schemas/file-content.interface'
-import { createTableFilesContent, FILES_CONTENT_TABLE_PREFIX } from '../schemas/files-content.schema'
-import { genTermsPattern, likeSearchTermStartPattern, MaxSortedList, parseFilesSearchQuery } from '../utils/files-search'
+import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
+import { type DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
+import { FILE_REPOSITORY } from '../constants/operations.js'
+import type { FilesSearchTerm } from '../interfaces/files-search-query.interface.js'
+import { FilesContentStore } from '../models/files-content-store.js'
+import { FileContent, FileContentRecordMetadata, FileContentRecordMetadataMap } from '../schemas/file-content.interface.js'
+import { createTableFilesContent, FILES_CONTENT_TABLE_PREFIX } from '../schemas/files-content.schema.js'
+import { genTermsPattern, likeSearchTermStartPattern, MaxSortedList, parseFilesSearchQuery } from '../utils/files-search.js'
 
 type SearchCandidate = Pick<FileContent, 'id' | 'score'> & { sourceIndex: string }
 type SearchRecord = FileContent & { sourceIndex: string }

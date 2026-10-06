@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common'
 import path from 'node:path'
 import safeRegex from 'safe-regex2'
-import { SYNC_MAX_PATH_FILTER_PATTERN_LENGTH, SYNC_MAX_PATH_FILTER_REPETITIONS, SYNC_TEMPORARY_FILE_PREFIX } from '../constants/sync'
+import { SYNC_MAX_PATH_FILTER_PATTERN_LENGTH, SYNC_MAX_PATH_FILTER_REPETITIONS, SYNC_TEMPORARY_FILE_PREFIX } from '../constants/sync.js'
 
 export function getSyncTmpFilePath(rPath: string): string {
   return `${path.dirname(rPath)}/${SYNC_TEMPORARY_FILE_PREFIX}${path.basename(rPath)}`

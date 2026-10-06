@@ -3,7 +3,7 @@ import { openAsBlob } from 'node:fs'
 import { link, mkdir, mkdtemp, rm, symlink, truncate, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { createZip } from './zip-file'
+import { createZip } from './zip-file.js'
 
 const DEFAULT_TEST_FILE_SIZE = 8 * 1024 * 1024
 const UNIX_FILE_TYPE_MASK = 0o170000

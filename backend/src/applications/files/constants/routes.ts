@@ -1,5 +1,5 @@
-import { SPACES_ROUTE } from '../../spaces/constants/routes'
-import { FILE_OPERATION } from './operations'
+import { SPACES_ROUTE } from '../../spaces/constants/routes.js'
+import { FILE_OPERATION } from './operations.js'
 
 export const FILES_ROUTE = {
   BASE: SPACES_ROUTE.BASE,

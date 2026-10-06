@@ -1,4 +1,4 @@
-import { DEFAULT_STORAGE_QUOTA_FIELD } from './auth-providers.constants'
+import { DEFAULT_STORAGE_QUOTA_FIELD } from './auth-providers.constants.js'
 
 interface IdentityWithStorageQuota {
   storageQuota?: number | null

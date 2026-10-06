@@ -1,6 +1,6 @@
 /* THIS FILE IS SHARED WITH THE FRONTEND PACKAGE */
 
-import { SPACE_PERMS_SEP } from '../applications/spaces/constants/spaces'
+import { SPACE_PERMS_SEP } from '../applications/spaces/constants/spaces.js'
 
 export const SERVER_NAME = 'Sync-in' as const
 export const RELEASES_URL = 'https://releases.sync-in.org' as const

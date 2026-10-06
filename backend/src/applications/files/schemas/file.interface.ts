@@ -1,4 +1,4 @@
-import type { files } from './files.schema'
+import type { files } from './files.schema.js'
 
 type FileSchema = typeof files.$inferSelect
 

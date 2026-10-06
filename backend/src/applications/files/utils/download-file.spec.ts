@@ -2,14 +2,14 @@ import { lookup } from 'node:dns/promises'
 import { HttpService } from '@nestjs/axios'
 import { HttpStatus, Logger } from '@nestjs/common'
 import { Readable } from 'node:stream'
-import { HTTP_METHOD } from '../../applications.constants'
-import { FileError } from '../models/file-error'
-import { writeUploadFromStream } from './files'
-import { DownloadFile } from './download-file'
+import { HTTP_METHOD } from '../../applications.constants.js'
+import { FileError } from '../models/file-error.js'
+import { writeUploadFromStream } from './files.js'
+import { DownloadFile } from './download-file.js'
 import type { Mock } from 'vitest'
-import { FILE_ERROR } from '../constants/errors'
+import { FILE_ERROR } from '../constants/errors.js'
 
-vi.mock('./files', () => ({
+vi.mock('./files.js', () => ({
   writeUploadFromStream: vi.fn()
 }))
 vi.mock('node:dns/promises', () => ({

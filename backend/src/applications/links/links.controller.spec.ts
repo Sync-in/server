@@ -1,8 +1,8 @@
 import { StreamableFile } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard'
-import { LinksController } from './links.controller'
-import { LinksManager } from './services/links-manager.service'
+import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard.js'
+import { LinksController } from './links.controller.js'
+import { LinksManager } from './services/links-manager.service.js'
 import { Mock } from 'vitest'
 
 describe(LinksController.name, () => {

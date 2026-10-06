@@ -1,6 +1,6 @@
 import { Transform } from 'class-transformer'
 import { IsBoolean, IsNotEmpty, IsString } from 'class-validator'
-import { DB_CHARSET } from './constants'
+import { DB_CHARSET } from './constants.js'
 
 export class MySQLConfig {
   @IsString()

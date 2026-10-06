@@ -1,4 +1,4 @@
-import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
+import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
 
 export const SYNC_IN_SERVER_AGENT = 'sync-in' as const
 export const CHECK_SERVER_RESP = { server: SYNC_IN_SERVER_AGENT } as const

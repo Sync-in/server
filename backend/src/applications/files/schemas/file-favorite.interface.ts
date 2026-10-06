@@ -1,6 +1,6 @@
-import { SPACE_ALIAS } from '../../spaces/constants/spaces'
-import { FILE_REPOSITORY } from '../constants/operations'
-import type { FileProps } from '../interfaces/file-props.interface'
+import { SPACE_ALIAS } from '../../spaces/constants/spaces.js'
+import { FILE_REPOSITORY } from '../constants/operations.js'
+import type { FileProps } from '../interfaces/file-props.interface.js'
 
 export type FileFavoriteRepository = SPACE_ALIAS.PERSONAL | FILE_REPOSITORY.SPACE | FILE_REPOSITORY.SHARE
 

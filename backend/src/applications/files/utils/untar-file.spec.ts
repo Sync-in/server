@@ -3,7 +3,7 @@ import { access, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises
 import os from 'node:os'
 import path from 'node:path'
 import { create } from 'tar'
-import { checkTarEntry, extractTar, isTarDirectory } from './untar-file'
+import { checkTarEntry, extractTar, isTarDirectory } from './untar-file.js'
 
 describe(extractTar.name, () => {
   it('classifies directories and rejects link entries', () => {

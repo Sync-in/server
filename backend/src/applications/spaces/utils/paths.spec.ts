@@ -1,9 +1,9 @@
 import path from 'node:path'
-import { USER_ROLE } from '../../users/constants/user'
-import { UserModel } from '../../users/models/user.model'
-import { realPathFromSpace, temporaryRootFromSpace, temporaryRootFromStorage, trashTargetFromSpace } from './paths'
+import { USER_ROLE } from '../../users/constants/user.js'
+import { UserModel } from '../../users/models/user.model.js'
+import { realPathFromSpace, temporaryRootFromSpace, temporaryRootFromStorage, trashTargetFromSpace } from './paths.js'
 
-vi.mock('../../../configuration/config.environment', () => ({
+vi.mock('../../../configuration/config.environment.js', () => ({
   configuration: {
     applications: {
       files: {

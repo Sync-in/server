@@ -1,11 +1,11 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common'
 import path from 'node:path'
-import { configuration } from '../../../../configuration/config.environment'
-import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
-import type { SpaceEnv } from '../../../spaces/models/space-env.model'
-import { isPathExists, isPathIsDir } from '../../utils/files'
-import { DRAWIO_INTERNAL_URI, DRAWIO_SUPPORTED_EXTENSIONS } from './drawio.constants'
-import type { DrawioSettingsDto } from './drawio.dtos'
+import { configuration } from '../../../../configuration/config.environment.js'
+import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service.js'
+import type { SpaceEnv } from '../../../spaces/models/space-env.model.js'
+import { isPathExists, isPathIsDir } from '../../utils/files.js'
+import { DRAWIO_INTERNAL_URI, DRAWIO_SUPPORTED_EXTENSIONS } from './drawio.constants.js'
+import type { DrawioSettingsDto } from './drawio.dtos.js'
 
 @Injectable()
 export class DrawioManager {

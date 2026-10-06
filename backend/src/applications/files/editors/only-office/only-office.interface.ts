@@ -1,4 +1,4 @@
-import { FILE_MODE } from '../../constants/operations'
+import { FILE_MODE } from '../../constants/operations.js'
 
 export interface OnlyOfficeConvertForm {
   key: string

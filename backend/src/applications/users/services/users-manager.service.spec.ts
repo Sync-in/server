@@ -6,41 +6,47 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
-import { AuthManager } from '../../../authentication/auth.service'
-import { AUTH_PASSWORD_WORK_RATE_LIMIT_OPTIONS } from '../../../authentication/constants/auth'
-import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache'
-import { AUTH_SCOPE } from '../../../authentication/constants/scope'
-import { AUTH_SESSION } from '../../../authentication/providers/auth-providers.constants'
-import { comparePassword } from '../../../common/functions'
-import * as imageModule from '../../../common/image'
-import { pngMimeType, svgMimeType } from '../../../common/image'
-import { configuration } from '../../../configuration/config.environment'
-import { Cache } from '../../../infrastructure/cache/cache.service'
-import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
-import { fileName, isPathExists } from '../../files/utils/files'
-import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
-import { GROUP_TYPE } from '../constants/group'
-import { MEMBER_TYPE } from '../constants/member'
-import { USER_GROUP_ROLE, USER_MAX_PASSWORD_ATTEMPTS, USER_PASSWORD_ATTEMPTS_LOCK_DURATION_MS, USER_PERMISSION, USER_ROLE } from '../constants/user'
-import { CreateUserDto } from '../dto/create-or-update-user.dto'
-import { DeleteUserDto } from '../dto/delete-user.dto'
-import { UserSecrets } from '../interfaces/user-secrets.interface'
-import { UserModel } from '../models/user.model'
-import { generateUserTest } from '../utils/test'
-import { AdminUsersManager } from './admin-users-manager.service'
-import { AdminUsersQueries } from './admin-users-queries.service'
-import { UsersManager } from './users-manager.service'
-import { UsersQueries } from './users-queries.service'
-import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
+import { AuthManager } from '../../../authentication/auth.service.js'
+import { AUTH_PASSWORD_WORK_RATE_LIMIT_OPTIONS } from '../../../authentication/constants/auth.js'
+import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache.js'
+import { AUTH_SCOPE } from '../../../authentication/constants/scope.js'
+import { AUTH_SESSION } from '../../../authentication/providers/auth-providers.constants.js'
+import { comparePassword } from '../../../common/functions.js'
+import * as imageModule from '../../../common/image.js'
+import { pngMimeType, svgMimeType } from '../../../common/image.js'
+import { configuration } from '../../../configuration/config.environment.js'
+import { Cache } from '../../../infrastructure/cache/cache.service.js'
+import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
+import { fileName, isPathExists } from '../../files/utils/files.js'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
+import { GROUP_TYPE } from '../constants/group.js'
+import { MEMBER_TYPE } from '../constants/member.js'
+import {
+  USER_GROUP_ROLE,
+  USER_MAX_PASSWORD_ATTEMPTS,
+  USER_PASSWORD_ATTEMPTS_LOCK_DURATION_MS,
+  USER_PERMISSION,
+  USER_ROLE
+} from '../constants/user.js'
+import { CreateUserDto } from '../dto/create-or-update-user.dto.js'
+import { DeleteUserDto } from '../dto/delete-user.dto.js'
+import { UserSecrets } from '../interfaces/user-secrets.interface.js'
+import { UserModel } from '../models/user.model.js'
+import { generateUserTest } from '../utils/test.js'
+import { AdminUsersManager } from './admin-users-manager.service.js'
+import { AdminUsersQueries } from './admin-users-queries.service.js'
+import { UsersManager } from './users-manager.service.js'
+import { UsersQueries } from './users-queries.service.js'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service.js'
 import { Mock } from 'vitest'
 
-vi.mock('../../../common/functions', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../common/functions')>()
+vi.mock('../../../common/functions.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/functions.js')>()
   return { ...actual, comparePassword: vi.fn() }
 })
 vi.mock('bcryptjs', () => ({ __esModule: true, default: { hash: vi.fn(() => Promise.resolve('hashed-password')) } }))
-vi.mock('../../../common/image', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../common/image')>()
+vi.mock('../../../common/image.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/image.js')>()
   return {
     ...actual,
     generateAvatar: vi.fn(() => Readable.from([Buffer.from('PNGDATA')])),

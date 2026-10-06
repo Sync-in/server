@@ -1,27 +1,27 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { getProps, isPathExists, isPathIsDir } from '../../files/utils/files'
-import { SPACE_REPOSITORY } from '../../spaces/constants/spaces'
-import { SpacesBrowser } from '../../spaces/services/spaces-browser.service'
-import { SpacesManager } from '../../spaces/services/spaces-manager.service'
-import { canAccessToSpaceUrl } from '../../spaces/utils/permissions'
-import { WEBDAV_NS } from '../constants/routes'
-import { DEPTH } from '../constants/webdav'
-import type { FastifyDAVRequest } from '../interfaces/webdav.interface'
-import { WebDAVSpaces } from './webdav-spaces.service'
+import { getProps, isPathExists, isPathIsDir } from '../../files/utils/files.js'
+import { SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
+import { SpacesBrowser } from '../../spaces/services/spaces-browser.service.js'
+import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
+import { canAccessToSpaceUrl } from '../../spaces/utils/permissions.js'
+import { WEBDAV_NS } from '../constants/routes.js'
+import { DEPTH } from '../constants/webdav.js'
+import type { FastifyDAVRequest } from '../interfaces/webdav.interface.js'
+import { WebDAVSpaces } from './webdav-spaces.service.js'
 import { Mocked } from 'vitest'
 
 // mocks for file utils and permissions
-vi.mock('../../files/utils/files', () => ({
+vi.mock('../../files/utils/files.js', () => ({
   getProps: vi.fn(),
   isPathExists: vi.fn(),
   isPathIsDir: vi.fn()
 }))
-vi.mock('../../spaces/utils/permissions', () => ({
+vi.mock('../../spaces/utils/permissions.js', () => ({
   canAccessToSpaceUrl: vi.fn()
 }))
 // mock for WEBDAV path-to-space segments
-vi.mock('../utils/routes', () => ({
+vi.mock('../utils/routes.js', () => ({
   WEBDAV_PATH_TO_SPACE_SEGMENTS: vi.fn(() => ['files', 'personal'])
 }))
 

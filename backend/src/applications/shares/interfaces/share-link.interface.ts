@@ -1,6 +1,6 @@
-import type { FileSpace } from '../../files/interfaces/file-space.interface'
-import type { LinkGuest } from '../../links/interfaces/link-guest.interface'
-import type { Share } from '../schemas/share.interface'
+import type { FileSpace } from '../../files/interfaces/file-space.interface.js'
+import type { LinkGuest } from '../../links/interfaces/link-guest.interface.js'
+import type { Share } from '../schemas/share.interface.js'
 
 export interface ShareLink extends Pick<Share, 'id' | 'name' | 'alias' | 'ownerId' | 'description'> {
   ownerId: number

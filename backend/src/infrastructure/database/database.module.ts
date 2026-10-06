@@ -2,14 +2,14 @@ import { type DrizzleMySqlConfig, DrizzleMySqlModule } from '@knaadh/nestjs-driz
 import { BeforeApplicationShutdown, Global, Inject, Logger, Module, OnModuleInit } from '@nestjs/common'
 import type { Connection, Pool } from 'mysql2'
 import { setTimeout } from 'node:timers/promises'
-import { configuration } from '../../configuration/config.environment'
-import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../availability/availability.constants'
-import { Availability } from '../availability/availability.service'
-import { connectionErrorMessage, isRetryableConnectionError } from '../utils'
-import { DB_SESSION_INIT_QUERIES, DB_TOKEN_PROVIDER } from './constants'
-import { DatabaseLogger } from './database.logger'
-import type { DBSchema } from './interfaces/database.interface'
-import * as schema from './schema'
+import { configuration } from '../../configuration/config.environment.js'
+import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../availability/availability.constants.js'
+import { Availability } from '../availability/availability.service.js'
+import { connectionErrorMessage, isRetryableConnectionError } from '../utils.js'
+import { DB_SESSION_INIT_QUERIES, DB_TOKEN_PROVIDER } from './constants.js'
+import { DatabaseLogger } from './database.logger.js'
+import type { DBSchema } from './interfaces/database.interface.js'
+import * as schema from './schema.js'
 
 @Global()
 @Module({

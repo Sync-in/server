@@ -1,5 +1,5 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
-import { appBootstrap } from './app.bootstrap'
+import { appBootstrap } from './app.bootstrap.js'
 
 describe('AppStaticFiles (e2e)', () => {
   let app: NestFastifyApplication

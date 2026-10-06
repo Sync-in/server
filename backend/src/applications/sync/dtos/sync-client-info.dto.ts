@@ -1,6 +1,6 @@
 import { IsEnum, IsString } from 'class-validator'
-import { SYNC_CLIENT_TYPE } from '../constants/sync'
-import { SyncClientInfo } from '../interfaces/sync-client.interface'
+import { SYNC_CLIENT_TYPE } from '../constants/sync.js'
+import { SyncClientInfo } from '../interfaces/sync-client.interface.js'
 
 export class SyncClientInfoDto implements SyncClientInfo {
   @IsString()

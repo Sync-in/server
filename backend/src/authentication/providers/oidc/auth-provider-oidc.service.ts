@@ -21,33 +21,33 @@ import {
   skipSubjectCheck,
   UserInfoResponse
 } from 'openid-client'
-import { USER_ROLE } from '../../../applications/users/constants/user'
-import type { CreateUserDto, UpdateUserDto } from '../../../applications/users/dto/create-or-update-user.dto'
-import { UserModel } from '../../../applications/users/models/user.model'
-import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service'
-import { UsersManager } from '../../../applications/users/services/users-manager.service'
+import { USER_ROLE } from '../../../applications/users/constants/user.js'
+import type { CreateUserDto, UpdateUserDto } from '../../../applications/users/dto/create-or-update-user.dto.js'
+import { UserModel } from '../../../applications/users/models/user.model.js'
+import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service.js'
+import { UsersManager } from '../../../applications/users/services/users-manager.service.js'
 import {
   isAvatarMetadataUnchanged,
   saveAvatarMetadata,
   USER_AVATAR_FILE_NAME,
   USER_AVATAR_MAX_UPLOAD_SIZE
-} from '../../../applications/users/utils/avatar'
-import { generateShortUUID, splitFullName, transformAndValidate } from '../../../common/functions'
-import { configuration } from '../../../configuration/config.environment'
-import { AUTH_ROUTE } from '../../constants/routes'
-import type { AUTH_SCOPE } from '../../constants/scope'
-import { TOKEN_TYPE } from '../../interfaces/token.interface'
-import { AUTH_PROVIDER } from '../auth-providers.constants'
-import { AuthProvider } from '../auth-providers.models'
-import { applyStorageQuotaToIdentity } from '../auth-providers.utils'
-import { OAuthDesktopCallBackURI, OAuthDesktopLoopbackPorts, OAuthDesktopPortParam } from './auth-oidc-desktop.constants'
-import type { AuthProviderOIDCConfig } from './auth-oidc.config'
-import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint, OIDC_LOGIN_HASH_LENGTH, OIDC_LOGIN_MAX_LENGTH } from './auth-oidc.constants'
+} from '../../../applications/users/utils/avatar.js'
+import { generateShortUUID, splitFullName, transformAndValidate } from '../../../common/functions.js'
+import { configuration } from '../../../configuration/config.environment.js'
+import { AUTH_ROUTE } from '../../constants/routes.js'
+import type { AUTH_SCOPE } from '../../constants/scope.js'
+import { TOKEN_TYPE } from '../../interfaces/token.interface.js'
+import { AUTH_PROVIDER } from '../auth-providers.constants.js'
+import { AuthProvider } from '../auth-providers.models.js'
+import { applyStorageQuotaToIdentity } from '../auth-providers.utils.js'
+import { OAuthDesktopCallBackURI, OAuthDesktopLoopbackPorts, OAuthDesktopPortParam } from './auth-oidc-desktop.constants.js'
+import type { AuthProviderOIDCConfig } from './auth-oidc.config.js'
+import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint, OIDC_LOGIN_HASH_LENGTH, OIDC_LOGIN_MAX_LENGTH } from './auth-oidc.constants.js'
 import { HttpService } from '@nestjs/axios'
-import { DownloadFileDto } from '../../../applications/files/dto/file-operations.dto'
-import { DownloadFile } from '../../../applications/files/utils/download-file'
-import { convertTempImageToPng, imgMimeTypePrefix } from '../../../common/image'
-import { fileSize, temporaryFilePath } from '../../../applications/files/utils/files'
+import { DownloadFileDto } from '../../../applications/files/dto/file-operations.dto.js'
+import { DownloadFile } from '../../../applications/files/utils/download-file.js'
+import { convertTempImageToPng, imgMimeTypePrefix } from '../../../common/image.js'
+import { fileSize, temporaryFilePath } from '../../../applications/files/utils/files.js'
 
 @Injectable()
 export class AuthProviderOIDC implements AuthProvider {

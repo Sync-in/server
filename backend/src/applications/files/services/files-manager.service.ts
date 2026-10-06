@@ -4,35 +4,36 @@ import type { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { Readable } from 'node:stream'
-import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
-import { generateThumbnail } from '../../../common/image'
-import { SERVER_NAME } from '../../../common/shared'
-import { configuration } from '../../../configuration/config.environment'
-import { HTTP_METHOD } from '../../applications.constants'
-import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications'
-import { NotificationContent } from '../../notifications/interfaces/notification-properties.interface'
-import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
-import { SPACE_OPERATION } from '../../spaces/constants/spaces'
-import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface'
-import { SpaceEnv } from '../../spaces/models/space-env.model'
-import { SpacesManager } from '../../spaces/services/spaces-manager.service'
-import { temporaryRootFromSpace, trashRelativePathFromSpace, trashTargetFromSpace } from '../../spaces/utils/paths'
-import { canAccessToSpace, haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
-import { UserModel } from '../../users/models/user.model'
-import { DEPTH, LOCK_DEPTH } from '../../webdav/constants/webdav'
-import { CACHE_LOCK_FILE_TTL } from '../constants/cache'
-import { TAR_EXTENSION, TAR_GZ_EXTENSION, ZIP_EXTENSION } from '../constants/compress'
-import { COMPRESSION_EXTENSION } from '../constants/files'
-import { FILE_OPERATION } from '../constants/operations'
-import { SAMPLE_DOCUMENT_EXTENSIONS, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples'
-import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto'
-import type { DeleteFileOptions } from '../interfaces/delete-file.interface'
-import { FileDBProps } from '../interfaces/file-db-props.interface'
-import { FileLock } from '../interfaces/file-lock.interface'
-import { FileLockProps } from '../interfaces/file-props.interface'
-import { SaveStreamOptions } from '../interfaces/save-stream.interface'
-import { FileError, SourceCleanupError } from '../models/file-error'
-import { LockConflict } from '../models/file-lock-error'
+import { fileURLToPath } from 'node:url'
+import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface.js'
+import { generateThumbnail } from '../../../common/image.js'
+import { SERVER_NAME } from '../../../common/shared.js'
+import { configuration } from '../../../configuration/config.environment.js'
+import { HTTP_METHOD } from '../../applications.constants.js'
+import { NOTIFICATION_APP, NOTIFICATION_APP_EVENT } from '../../notifications/constants/notifications.js'
+import { NotificationContent } from '../../notifications/interfaces/notification-properties.interface.js'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
+import { SPACE_OPERATION } from '../../spaces/constants/spaces.js'
+import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface.js'
+import { SpaceEnv } from '../../spaces/models/space-env.model.js'
+import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
+import { temporaryRootFromSpace, trashRelativePathFromSpace, trashTargetFromSpace } from '../../spaces/utils/paths.js'
+import { canAccessToSpace, haveSpaceEnvPermissions } from '../../spaces/utils/permissions.js'
+import { UserModel } from '../../users/models/user.model.js'
+import { DEPTH, LOCK_DEPTH } from '../../webdav/constants/webdav.js'
+import { CACHE_LOCK_FILE_TTL } from '../constants/cache.js'
+import { TAR_EXTENSION, TAR_GZ_EXTENSION, ZIP_EXTENSION } from '../constants/compress.js'
+import { COMPRESSION_EXTENSION } from '../constants/files.js'
+import { FILE_OPERATION } from '../constants/operations.js'
+import { SAMPLE_DOCUMENT_EXTENSIONS, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples.js'
+import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto.js'
+import type { DeleteFileOptions } from '../interfaces/delete-file.interface.js'
+import { FileDBProps } from '../interfaces/file-db-props.interface.js'
+import { FileLock } from '../interfaces/file-lock.interface.js'
+import { FileLockProps } from '../interfaces/file-props.interface.js'
+import { SaveStreamOptions } from '../interfaces/save-stream.interface.js'
+import { FileError, SourceCleanupError } from '../models/file-error.js'
+import { LockConflict } from '../models/file-lock-error.js'
 import {
   checkFileName,
   copyFileContent,
@@ -57,27 +58,27 @@ import {
   uniqueFilePathFromDir,
   writeUploadFromStream,
   writeUploadFromStreamAndChecksum
-} from '../utils/files'
-import { SendFile } from '../utils/send-file'
-import { extractZip } from '../utils/unzip-file'
-import { extractTar } from '../utils/untar-file'
-import { DownloadFile } from '../utils/download-file'
-import { FilesLockManager } from './files-lock-manager.service'
-import { FilesQueries } from './files-queries.service'
-import { FileEvent, FileTaskEvent } from '../events/file-events'
-import { ACTION } from '../../../common/constants'
+} from '../utils/files.js'
+import { SendFile } from '../utils/send-file.js'
+import { extractZip } from '../utils/unzip-file.js'
+import { extractTar } from '../utils/untar-file.js'
+import { DownloadFile } from '../utils/download-file.js'
+import { FilesLockManager } from './files-lock-manager.service.js'
+import { FilesQueries } from './files-queries.service.js'
+import { FileEvent, FileTaskEvent } from '../events/file-events.js'
+import { ACTION } from '../../../common/constants.js'
 import {
   createUploadStreamLimiter,
   isMultipartFileTooLargeError,
   parseContentLength,
   parseContentRange,
   uploadTmpFilePath
-} from '../utils/upload-file'
-import { maxFileSizeExceededError } from '../utils/errors'
-import { FilesTasksTransfer } from './tasks/files-tasks-transfer.service'
-import { createTar } from '../utils/tar-file'
-import { createZip } from '../utils/zip-file'
-import { FILE_ERROR } from '../constants/errors'
+} from '../utils/upload-file.js'
+import { maxFileSizeExceededError } from '../utils/errors.js'
+import { FilesTasksTransfer } from './tasks/files-tasks-transfer.service.js'
+import { createTar } from '../utils/tar-file.js'
+import { createZip } from '../utils/zip-file.js'
+import { FILE_ERROR } from '../constants/errors.js'
 
 @Injectable()
 export class FilesManager {
@@ -385,7 +386,7 @@ export class FilesManager {
     // use sample documents when possible
     const fileExtension = path.extname(space.realPath).slice(1)
     if (checkDocument && SAMPLE_DOCUMENT_EXTENSIONS.has(fileExtension)) {
-      const srcSample = path.join(__dirname, `${SAMPLE_PATH_WITHOUT_EXT}.${fileExtension}`)
+      const srcSample = path.join(path.dirname(fileURLToPath(import.meta.url)), `${SAMPLE_PATH_WITHOUT_EXT}.${fileExtension}`)
       await copyFileContent(srcSample, space.realPath)
       // emit file event
       FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: space.realPath })

@@ -1,6 +1,6 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
-import { appBootstrap } from '../../app.bootstrap'
-import { XML_CONTENT_TYPE } from './constants/webdav'
+import { appBootstrap } from '../../app.bootstrap.js'
+import { XML_CONTENT_TYPE } from './constants/webdav.js'
 
 const XML_VERSION_STR = '<?xml version="1.0" encoding="utf-8" standalone="yes"?>'
 

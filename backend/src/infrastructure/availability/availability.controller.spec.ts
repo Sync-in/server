@@ -1,10 +1,10 @@
 import { HttpStatus, ServiceUnavailableException } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { AUTH_TOKEN_SKIP } from '../../authentication/decorators/auth-token-skip.decorator'
-import { AVAILABILITY_ROUTE, AVAILABILITY_STATUS, INFRASTRUCTURE_DEPENDENCY } from './availability.constants'
-import { AvailabilityController } from './availability.controller'
-import { AVAILABILITY_SKIP } from './availability.decorator'
-import { Availability } from './availability.service'
+import { AUTH_TOKEN_SKIP } from '../../authentication/decorators/auth-token-skip.decorator.js'
+import { AVAILABILITY_ROUTE, AVAILABILITY_STATUS, INFRASTRUCTURE_DEPENDENCY } from './availability.constants.js'
+import { AvailabilityController } from './availability.controller.js'
+import { AVAILABILITY_SKIP } from './availability.decorator.js'
+import { Availability } from './availability.service.js'
 
 describe(AvailabilityController.name, () => {
   let availability: Availability

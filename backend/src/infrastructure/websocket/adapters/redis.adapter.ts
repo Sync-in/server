@@ -4,10 +4,10 @@ import { IoAdapter } from '@nestjs/platform-socket.io'
 import type { createAdapter as createRedisAdapter } from '@socket.io/redis-adapter'
 import type { RedisClientType } from 'redis'
 import type { ServerOptions } from 'socket.io'
-import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants'
-import { Availability } from '../../availability/availability.service'
-import { connectionErrorMessage, isRetryableConnectionError, redactRedisUrl } from '../../utils'
-import type { WebSocketConfig } from '../web-socket.config'
+import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants.js'
+import { Availability } from '../../availability/availability.service.js'
+import { connectionErrorMessage, isRetryableConnectionError, redactRedisUrl } from '../../utils.js'
+import type { WebSocketConfig } from '../web-socket.config.js'
 
 export class RedisAdapter extends IoAdapter {
   protected override readonly logger = new Logger('WebSocketAdapter')

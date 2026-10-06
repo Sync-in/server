@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import { AsyncLocalStorage } from 'node:async_hooks'
 import type { Observable } from 'rxjs'
-import { configuration } from '../../../configuration/config.environment'
-import type { ContextStore } from '../interfaces/context-store.interface'
+import { configuration } from '../../../configuration/config.environment.js'
+import type { ContextStore } from '../interfaces/context-store.interface.js'
 
 @Injectable()
 export class ContextManager {

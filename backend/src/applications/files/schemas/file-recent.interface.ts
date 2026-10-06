@@ -1,4 +1,4 @@
-import { filesRecents } from './files-recents.schema'
+import { filesRecents } from './files-recents.schema.js'
 
 type FileRecentSchema = typeof filesRecents.$inferSelect
 

@@ -1,5 +1,5 @@
-import { AUTH_SCOPE } from '../../../authentication/constants/scope'
-import { USER_SECRET } from '../constants/user'
+import { AUTH_SCOPE } from '../../../authentication/constants/scope.js'
+import { USER_SECRET } from '../constants/user.js'
 
 export interface UserAppPassword {
   name: string

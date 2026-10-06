@@ -16,13 +16,13 @@ import {
 } from 'class-validator'
 import { cpus } from 'node:os'
 import type { Level } from 'pino'
-import { ApplicationsConfig } from '../applications/applications.config'
-import { AuthConfig } from '../authentication/auth.config'
-import { CacheConfig } from '../infrastructure/cache/cache.config'
-import { MySQLConfig } from '../infrastructure/database/database.config'
-import { MailerConfig } from '../infrastructure/mailer/mailer.config'
-import { WebSocketConfig } from '../infrastructure/websocket/web-socket.config'
-import { DEFAULT_LOG_FILE_PATH } from './config.constants'
+import { ApplicationsConfig } from '../applications/applications.config.js'
+import { AuthConfig } from '../authentication/auth.config.js'
+import { CacheConfig } from '../infrastructure/cache/cache.config.js'
+import { MySQLConfig } from '../infrastructure/database/database.config.js'
+import { MailerConfig } from '../infrastructure/mailer/mailer.config.js'
+import { WebSocketConfig } from '../infrastructure/websocket/web-socket.config.js'
+import { DEFAULT_LOG_FILE_PATH } from './config.constants.js'
 
 export class ServerConfig {
   @IsIP()

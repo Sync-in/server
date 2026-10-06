@@ -1,5 +1,5 @@
 import { FastifyReply } from 'fastify'
-import { FastifyDAVRequest } from '../interfaces/webdav.interface'
+import { FastifyDAVRequest } from '../interfaces/webdav.interface.js'
 
 export function IfHeaderDecorator() {
   return (_target: any, _key?: string | symbol, descriptor?: TypedPropertyDescriptor<any>) => {

@@ -1,10 +1,10 @@
 import path from 'node:path'
 
-import { encodeUrl } from '../../../common/shared'
-import { DEFAULT_MIME_TYPE } from '../../files/constants/files'
-import { FileProps } from '../../files/interfaces/file-props.interface'
-import { genEtag } from '../../files/utils/files'
-import { PROPFIND_COLLECTION, SUPPORTED_LOCKS } from '../utils/webdav'
+import { encodeUrl } from '../../../common/shared.js'
+import { DEFAULT_MIME_TYPE } from '../../files/constants/files.js'
+import { FileProps } from '../../files/interfaces/file-props.interface.js'
+import { genEtag } from '../../files/utils/files.js'
+import { PROPFIND_COLLECTION, SUPPORTED_LOCKS } from '../utils/webdav.js'
 
 export class WebDAVFile implements Omit<FileProps, 'path'> {
   id: number

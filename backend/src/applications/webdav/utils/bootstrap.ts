@@ -1,8 +1,8 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { FastifyInstance } from 'fastify'
-import { HTTP_METHOD, HTTP_WEBDAV_METHOD } from '../../applications.constants'
-import { WEBDAV_NS, WEBDAV_SPACES } from '../constants/routes'
-import { WEBDAV_CONTENT_TYPES } from '../constants/webdav'
+import { HTTP_METHOD, HTTP_WEBDAV_METHOD } from '../../applications.constants.js'
+import { WEBDAV_NS, WEBDAV_SPACES } from '../constants/routes.js'
+import { WEBDAV_CONTENT_TYPES } from '../constants/webdav.js'
 
 /**
  * Bootstrap WebDAV-specific Nest/Fastify configuration.

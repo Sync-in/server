@@ -1,4 +1,4 @@
-import { SPACES_ROUTE } from '../../../spaces/constants/routes'
+import { SPACES_ROUTE } from '../../../spaces/constants/routes.js'
 
 export const DRAWIO_ROUTE = {
   BASE: SPACES_ROUTE.BASE,

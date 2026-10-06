@@ -1,7 +1,7 @@
 import { Column, SQL, sql } from 'drizzle-orm'
 import { bigint, datetime, index, mysqlTable, text } from 'drizzle-orm/mysql-core'
-import { files } from '../../files/schemas/files.schema'
-import { users } from '../../users/schemas/users.schema'
+import { files } from '../../files/schemas/files.schema.js'
+import { users } from '../../users/schemas/users.schema.js'
 
 /*
 For now, comments are only allowed on existing files.

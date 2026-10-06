@@ -1,6 +1,6 @@
 import { SQL, sql } from 'drizzle-orm'
 import { bigint, boolean, datetime, mysqlTable, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
-import { SPACE_PERMS_SEP } from '../constants/spaces'
+import { SPACE_PERMS_SEP } from '../constants/spaces.js'
 
 /*
   alias: used to navigate over api & webdav, must be unique

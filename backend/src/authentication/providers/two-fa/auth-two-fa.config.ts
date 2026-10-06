@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsBoolean, IsDefined, IsNotEmptyObject, IsObject, IsString, ValidateNested } from 'class-validator'
-import { SERVER_NAME } from '../../../common/shared'
+import { SERVER_NAME } from '../../../common/shared.js'
 
 export class AuthMFATotpConfig {
   @IsBoolean()

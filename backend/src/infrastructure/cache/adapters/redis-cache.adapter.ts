@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common'
 import type { RedisClientOptions, RedisClientType } from 'redis'
-import { createCacheKeySlug } from '../../../common/shared'
-import { configuration } from '../../../configuration/config.environment'
-import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants'
-import { Availability } from '../../availability/availability.service'
-import { connectionErrorMessage, isRetryableConnectionError, redactRedisUrl } from '../../utils'
-import { Cache } from '../cache.service'
-import type { CacheRateLimitResult } from '../interfaces/cache-rate-limit.interface'
+import { createCacheKeySlug } from '../../../common/shared.js'
+import { configuration } from '../../../configuration/config.environment.js'
+import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants.js'
+import { Availability } from '../../availability/availability.service.js'
+import { connectionErrorMessage, isRetryableConnectionError, redactRedisUrl } from '../../utils.js'
+import { Cache } from '../cache.service.js'
+import type { CacheRateLimitResult } from '../interfaces/cache-rate-limit.interface.js'
 
 @Injectable()
 export class RedisCacheAdapter implements Cache {

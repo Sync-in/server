@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { LoggerModule } from 'nestjs-pino'
 import { setTimeout } from 'node:timers/promises'
-import { AvailabilityModule } from '../availability/availability.module'
-import { DatabaseModule } from '../database/database.module'
-import { SchedulerModule } from '../scheduler/scheduler.module'
-import { CacheModule } from './cache.module'
-import { Cache } from './cache.service'
+import { AvailabilityModule } from '../availability/availability.module.js'
+import { DatabaseModule } from '../database/database.module.js'
+import { SchedulerModule } from '../scheduler/scheduler.module.js'
+import { CacheModule } from './cache.module.js'
+import { Cache } from './cache.service.js'
 
 describe(Cache.name, () => {
   let module: TestingModule

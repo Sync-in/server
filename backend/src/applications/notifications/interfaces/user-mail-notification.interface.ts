@@ -1,4 +1,4 @@
-import { USER_NOTIFICATION } from '../../users/constants/user'
+import { USER_NOTIFICATION } from '../../users/constants/user.js'
 
 export interface UserMailNotification {
   id: number

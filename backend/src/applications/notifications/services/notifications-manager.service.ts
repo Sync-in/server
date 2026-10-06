@@ -1,15 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common'
-import { i18nLocale } from '../../../common/i18n'
-import { configuration } from '../../../configuration/config.environment'
-import { MailProps } from '../../../infrastructure/mailer/interfaces/mail.interface'
-import { Mailer } from '../../../infrastructure/mailer/mailer.service'
-import { USER_NOTIFICATION } from '../../users/constants/user'
-import { UserModel } from '../../users/models/user.model'
-import { getAvatarBase64 } from '../../users/utils/avatar'
-import { NOTIFICATION_APP } from '../constants/notifications'
-import { NOTIFICATIONS_WS } from '../constants/websocket'
-import type { NotificationContent, NotificationFromUser, NotificationOptions } from '../interfaces/notification-properties.interface'
-import type { UserMailNotification } from '../interfaces/user-mail-notification.interface'
+import { i18nLocale } from '../../../common/i18n.js'
+import { configuration } from '../../../configuration/config.environment.js'
+import { MailProps } from '../../../infrastructure/mailer/interfaces/mail.interface.js'
+import { Mailer } from '../../../infrastructure/mailer/mailer.service.js'
+import { USER_NOTIFICATION } from '../../users/constants/user.js'
+import { UserModel } from '../../users/models/user.model.js'
+import { getAvatarBase64 } from '../../users/utils/avatar.js'
+import { NOTIFICATION_APP } from '../constants/notifications.js'
+import { NOTIFICATIONS_WS } from '../constants/websocket.js'
+import type { NotificationContent, NotificationFromUser, NotificationOptions } from '../interfaces/notification-properties.interface.js'
+import type { UserMailNotification } from '../interfaces/user-mail-notification.interface.js'
 import {
   auth2FaMail,
   authLockedMail,
@@ -21,9 +21,9 @@ import {
   spaceMail,
   spaceRootMail,
   syncMail
-} from '../mails/models'
-import { WebSocketNotifications } from '../notifications.gateway'
-import { NotificationsQueries } from './notifications-queries.service'
+} from '../mails/models.js'
+import { WebSocketNotifications } from '../notifications.gateway.js'
+import { NotificationsQueries } from './notifications-queries.service.js'
 
 @Injectable()
 export class NotificationsManager {

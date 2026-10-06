@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
-import { USER_ROLE } from '../constants/user'
-import { UserHaveRole } from '../decorators/roles.decorator'
+import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface.js'
+import { USER_ROLE } from '../constants/user.js'
+import { UserHaveRole } from '../decorators/roles.decorator.js'
 
 @Injectable()
 export class UserRolesGuard implements CanActivate {

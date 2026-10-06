@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/mysql2'
 import { createConnection } from 'mysql2/promise'
-import { configLoader } from '../../../configuration/config.loader'
-import * as schema from '../schema'
+import { configLoader } from '../../../configuration/config.loader.js'
+import * as schema from '../schema.js'
 
 export class DatabaseConfigurationError extends Error {}
 

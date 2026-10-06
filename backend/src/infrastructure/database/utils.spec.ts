@@ -1,5 +1,5 @@
 import { MySqlDialect, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
-import { concatDistinctObjectsInArray } from './utils'
+import { concatDistinctObjectsInArray } from './utils.js'
 
 describe(concatDistinctObjectsInArray.name, () => {
   const dialect = new MySqlDialect()

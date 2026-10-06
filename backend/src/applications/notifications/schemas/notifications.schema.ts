@@ -1,8 +1,8 @@
 import { sql } from 'drizzle-orm'
 import { bigint, boolean, datetime, index, mysqlTable } from 'drizzle-orm/mysql-core'
-import { jsonColumn } from '../../../infrastructure/database/columns'
-import { users } from '../../users/schemas/users.schema'
-import type { NotificationContent } from '../interfaces/notification-properties.interface'
+import { jsonColumn } from '../../../infrastructure/database/columns.js'
+import { users } from '../../users/schemas/users.schema.js'
+import type { NotificationContent } from '../interfaces/notification-properties.interface.js'
 
 export const notifications = mysqlTable(
   'notifications',

@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { bigint, datetime, index, mysqlTable, unique, varchar } from 'drizzle-orm/mysql-core'
-import { files } from '../../files/schemas/files.schema'
-import { spaces } from './spaces.schema'
+import { files } from '../../files/schemas/files.schema.js'
+import { spaces } from './spaces.schema.js'
 
 /*
   alias: used to navigate over web & webdav, must be unique for each space

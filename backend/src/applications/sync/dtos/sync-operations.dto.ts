@@ -1,9 +1,9 @@
 import { Transform } from 'class-transformer'
 import { IsBoolean, IsDefined, IsInt, IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator'
-import { MakeFileDto } from '../../files/dto/file-operations.dto'
-import { SyncFileStats } from '../interfaces/sync-diff.interface'
-import { transformPathFilters } from '../utils/functions'
-import { NormalizedMap } from '../utils/normalizedMap'
+import { MakeFileDto } from '../../files/dto/file-operations.dto.js'
+import { SyncFileStats } from '../interfaces/sync-diff.interface.js'
+import { transformPathFilters } from '../utils/functions.js'
+import { NormalizedMap } from '../utils/normalizedMap.js'
 
 export class SyncDiffDto {
   @IsDefined()

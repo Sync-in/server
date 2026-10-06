@@ -1,5 +1,5 @@
-import type { SyncPathSettings } from '../interfaces/sync-path.interface'
-import { syncPaths } from './sync-paths.schema'
+import type { SyncPathSettings } from '../interfaces/sync-path.interface.js'
+import { syncPaths } from './sync-paths.schema.js'
 
 type SyncPathSchema = typeof syncPaths.$inferSelect
 

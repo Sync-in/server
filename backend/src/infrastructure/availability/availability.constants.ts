@@ -1,4 +1,4 @@
-import type { AvailabilityDependency } from './availability.interfaces'
+import type { AvailabilityDependency } from './availability.interfaces.js'
 
 export const INFRASTRUCTURE_CONNECTION_RETRY_DELAY = 6000
 export const INFRASTRUCTURE_DEPENDENCY = {

@@ -5,25 +5,25 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { AxiosResponse } from 'axios'
 import { Readable } from 'stream'
 import { Mocked } from 'vitest'
-import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
-import { configuration } from '../../../../configuration/config.environment'
-import { Cache } from '../../../../infrastructure/cache/cache.service'
-import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
-import type { SpaceEnv } from '../../../spaces/models/space-env.model'
-import type { UserModel } from '../../../users/models/user.model'
-import { ACTION } from '../../../../common/constants'
-import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
-import { FILE_MODE } from '../../constants/operations'
-import { FileEvent } from '../../events/file-events'
-import { LockConflict } from '../../models/file-lock-error'
-import { FilesLockManager } from '../../services/files-lock-manager.service'
-import { maxFileSizeExceededError } from '../../utils/errors'
-import * as filesUtils from '../../utils/files'
-import { OnlyOfficeManager } from './only-office-manager.service'
-import { ONLY_OFFICE_APP_LOCK } from './only-office.constants'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface.js'
+import { configuration } from '../../../../configuration/config.environment.js'
+import { Cache } from '../../../../infrastructure/cache/cache.service.js'
+import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service.js'
+import type { SpaceEnv } from '../../../spaces/models/space-env.model.js'
+import type { UserModel } from '../../../users/models/user.model.js'
+import { ACTION } from '../../../../common/constants.js'
+import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav.js'
+import { FILE_MODE } from '../../constants/operations.js'
+import { FileEvent } from '../../events/file-events.js'
+import { LockConflict } from '../../models/file-lock-error.js'
+import { FilesLockManager } from '../../services/files-lock-manager.service.js'
+import { maxFileSizeExceededError } from '../../utils/errors.js'
+import * as filesUtils from '../../utils/files.js'
+import { OnlyOfficeManager } from './only-office-manager.service.js'
+import { ONLY_OFFICE_APP_LOCK } from './only-office.constants.js'
 
-vi.mock('../../utils/files')
-vi.mock('../../../users/utils/avatar', () => ({
+vi.mock('../../utils/files.js')
+vi.mock('../../../users/utils/avatar.js', () => ({
   getAvatarBase64: vi.fn().mockResolvedValue('data:image/png;base64,iVBORw0KGgo=')
 }))
 

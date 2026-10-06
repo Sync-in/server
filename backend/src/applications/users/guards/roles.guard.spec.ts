@@ -1,11 +1,11 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { USER_ROLE } from '../constants/user'
-import { UserHaveRole } from '../decorators/roles.decorator'
-import { UserModel } from '../models/user.model'
-import { generateUserTest } from '../utils/test'
-import { UserRolesGuard } from './roles.guard'
+import { USER_ROLE } from '../constants/user.js'
+import { UserHaveRole } from '../decorators/roles.decorator.js'
+import { UserModel } from '../models/user.model.js'
+import { generateUserTest } from '../utils/test.js'
+import { UserRolesGuard } from './roles.guard.js'
 
 describe(UserRolesGuard.name, () => {
   let reflector: Reflector

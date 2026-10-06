@@ -1,5 +1,5 @@
-import type { FileLockProps } from '../../interfaces/file-props.interface'
-import type { OnlyOfficeConfig } from './only-office.interface'
+import type { FileLockProps } from '../../interfaces/file-props.interface.js'
+import type { OnlyOfficeConfig } from './only-office.interface.js'
 
 export interface OnlyOfficeReqDto {
   documentServerUrl: string

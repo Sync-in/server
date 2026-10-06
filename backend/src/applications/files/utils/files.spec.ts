@@ -3,8 +3,8 @@ import fs, { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
-import { FileError } from '../models/file-error'
-import { storageQuotaExceededError } from './errors'
+import { FileError } from '../models/file-error.js'
+import { storageQuotaExceededError } from './errors.js'
 import {
   createSizeLimiter,
   getMimeType,
@@ -21,9 +21,9 @@ import {
   writeFromStreamAndChecksum,
   writeUploadFromStream,
   writeUploadFromStreamAndChecksum
-} from './files'
-import { FILE_ERROR } from '../constants/errors'
-import { UploadStreamLimiter } from './upload-file'
+} from './files.js'
+import { FILE_ERROR } from '../constants/errors.js'
+import { UploadStreamLimiter } from './upload-file.js'
 
 describe(createSizeLimiter.name, () => {
   it('rejects the call that makes the cumulative size exceed the limit', () => {

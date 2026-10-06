@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { SpaceGuard } from '../spaces/guards/space.guard'
-import { FilesController } from './files.controller'
-import { FilesContentIndexer } from './services/files-content-indexer.service'
-import { FilesFavoritesManager } from './services/files-favorites-manager.service'
-import { FilesRecents } from './services/files-recents.service'
-import { FilesSearchManager } from './services/files-search-manager.service'
+import { SpaceGuard } from '../spaces/guards/space.guard.js'
+import { FilesController } from './files.controller.js'
+import { FilesContentIndexer } from './services/files-content-indexer.service.js'
+import { FilesFavoritesManager } from './services/files-favorites-manager.service.js'
+import { FilesRecents } from './services/files-recents.service.js'
+import { FilesSearchManager } from './services/files-search-manager.service.js'
 
 describe(FilesController.name, () => {
   let filesController: FilesController

@@ -4,27 +4,27 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { FastifyReply } from 'fastify'
 import crypto from 'node:crypto'
 import { readFile } from 'node:fs/promises'
-import { AuthManager } from '../../../authentication/auth.service'
-import { AuthProvider } from '../../../authentication/providers/auth-providers.models'
-import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-provider-two-fa.service'
-import * as commonFunctions from '../../../common/functions'
-import * as commonShared from '../../../common/shared'
-import { configuration } from '../../../configuration/config.environment'
-import { Cache } from '../../../infrastructure/cache/cache.service'
-import { isPathExists } from '../../files/utils/files'
-import { UserModel } from '../../users/models/user.model'
-import { UsersManager } from '../../users/services/users-manager.service'
-import { CLIENT_AUTH_TYPE, CLIENT_TOKEN_EXPIRED_ERROR } from '../constants/auth'
-import { APP_STORE_DIRNAME, APP_STORE_REPOSITORY } from '../constants/store'
-import { SYNC_CLIENT_TYPE } from '../constants/sync'
-import { SyncClientAuthRegistration } from '../interfaces/sync-client-auth.interface'
-import { SyncClientsManager } from './sync-clients-manager.service'
-import { SyncQueries } from './sync-queries.service'
+import { AuthManager } from '../../../authentication/auth.service.js'
+import { AuthProvider } from '../../../authentication/providers/auth-providers.models.js'
+import { AuthProvider2FA } from '../../../authentication/providers/two-fa/auth-provider-two-fa.service.js'
+import * as commonFunctions from '../../../common/functions.js'
+import * as commonShared from '../../../common/shared.js'
+import { configuration } from '../../../configuration/config.environment.js'
+import { Cache } from '../../../infrastructure/cache/cache.service.js'
+import { isPathExists } from '../../files/utils/files.js'
+import { UserModel } from '../../users/models/user.model.js'
+import { UsersManager } from '../../users/services/users-manager.service.js'
+import { CLIENT_AUTH_TYPE, CLIENT_TOKEN_EXPIRED_ERROR } from '../constants/auth.js'
+import { APP_STORE_DIRNAME, APP_STORE_REPOSITORY } from '../constants/store.js'
+import { SYNC_CLIENT_TYPE } from '../constants/sync.js'
+import { SyncClientAuthRegistration } from '../interfaces/sync-client-auth.interface.js'
+import { SyncClientsManager } from './sync-clients-manager.service.js'
+import { SyncQueries } from './sync-queries.service.js'
 import { Mock } from 'vitest'
 
 // Pilotage permission via UserModel
 let mockHavePermission = true
-vi.mock('../../users/models/user.model', () => ({
+vi.mock('../../users/models/user.model.js', () => ({
   UserModel: vi.fn(function (props: any) {
     return {
       ...props,
@@ -34,14 +34,14 @@ vi.mock('../../users/models/user.model', () => ({
 }))
 
 // Mock ciblé de convertHumanTimeToSeconds
-vi.mock('../../../common/functions', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../common/functions')>()
+vi.mock('../../../common/functions.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/functions.js')>()
   return { ...actual, convertHumanTimeToSeconds: vi.fn() }
 })
 
 // Mock currentTimeStamp
-vi.mock('../../../common/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../common/shared')>()
+vi.mock('../../../common/shared.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/shared.js')>()
   return {
     ...actual,
     currentTimeStamp: vi.fn()
@@ -62,8 +62,8 @@ vi.mock('node:fs/promises', async (importOriginal) => {
   }
 })
 
-vi.mock('../../files/utils/files', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../files/utils/files')>()
+vi.mock('../../files/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
   return {
     ...actual,
     isPathExists: vi.fn()

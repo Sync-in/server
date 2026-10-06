@@ -1,6 +1,6 @@
-import { UserModel } from '../../applications/users/models/user.model'
-import { ServerConfig } from '../../configuration/config.interfaces'
-import { TokenResponseDto } from './token-response.dto'
+import { UserModel } from '../../applications/users/models/user.model.js'
+import { ServerConfig } from '../../configuration/config.interfaces.js'
+import { TokenResponseDto } from './token-response.dto.js'
 
 export class LoginResponseDto {
   server: ServerConfig

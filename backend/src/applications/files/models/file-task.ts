@@ -1,4 +1,4 @@
-import { FILE_OPERATION } from '../constants/operations'
+import { FILE_OPERATION } from '../constants/operations.js'
 
 export enum FileTaskStatus {
   PENDING,

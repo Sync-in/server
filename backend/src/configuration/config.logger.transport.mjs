@@ -1,13 +1,13 @@
-'use strict'
+import build from 'pino-abstract-transport'
+import { pipeline, Transform } from 'node:stream'
+import pinoPretty from 'pino-pretty'
 
-const build = require('pino-abstract-transport')
-const { Transform, pipeline } = require('node:stream')
-const { prettyFactory } = require('pino-pretty')
+const { prettyFactory } = pinoPretty
 
 const DEFAULT_ERROR_LIKE_OBJECT_KEYS = ['err', 'error']
 const WHITE = '\u001B[37m'
 
-module.exports = function buildPinoPrettyPrefixTransport(options) {
+export default function buildPinoPrettyPrefixTransport(options) {
   const { messageColorMarker, ...prettyOptions } = options
 
   if (typeof messageColorMarker !== 'string' || messageColorMarker.length === 0) {
@@ -19,9 +19,7 @@ module.exports = function buildPinoPrettyPrefixTransport(options) {
       const runtimeOptions = {
         ...prettyOptions,
         messageKey: source.messageKey,
-        errorLikeObjectKeys: Array.from(
-          new Set([...(prettyOptions.errorLikeObjectKeys || DEFAULT_ERROR_LIKE_OBJECT_KEYS), source.errorKey])
-        ),
+        errorLikeObjectKeys: Array.from(new Set([...(prettyOptions.errorLikeObjectKeys || DEFAULT_ERROR_LIKE_OBJECT_KEYS), source.errorKey])),
         customLevels: source.levels.values
       }
       const prettify = prettyFactory(runtimeOptions)

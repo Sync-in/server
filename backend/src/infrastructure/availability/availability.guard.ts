@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, ServiceUnavailableException } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { AVAILABILITY_SKIP } from './availability.decorator'
-import { Availability } from './availability.service'
+import { AVAILABILITY_SKIP } from './availability.decorator.js'
+import { Availability } from './availability.service.js'
 
 @Injectable()
 export class AvailabilityGuard implements CanActivate {

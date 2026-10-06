@@ -1,9 +1,9 @@
-import type { Share } from '../../shares/schemas/share.interface'
-import type { SpaceRoot } from '../../spaces/schemas/space-root.interface'
-import type { Space } from '../../spaces/schemas/space.interface'
-import type { SyncPath } from '../../sync/schemas/sync-path.interface'
-import type { Owner } from '../../users/interfaces/owner.interface'
-import type { File } from '../schemas/file.interface'
+import type { Share } from '../../shares/schemas/share.interface.js'
+import type { SpaceRoot } from '../../spaces/schemas/space-root.interface.js'
+import type { Space } from '../../spaces/schemas/space.interface.js'
+import type { SyncPath } from '../../sync/schemas/sync-path.interface.js'
+import type { Owner } from '../../users/interfaces/owner.interface.js'
+import type { File } from '../schemas/file.interface.js'
 
 export interface FileLockProps {
   owner: Owner

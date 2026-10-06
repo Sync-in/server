@@ -1,8 +1,8 @@
 import { ArgumentsHost, HttpException } from '@nestjs/common'
 import { Test } from '@nestjs/testing'
-import { SERVER_NAME } from '../../../common/shared'
-import { XML_CONTENT_TYPE } from '../constants/webdav'
-import { WebDAVExceptionsFilter } from './webdav.filter'
+import { SERVER_NAME } from '../../../common/shared.js'
+import { XML_CONTENT_TYPE } from '../constants/webdav.js'
+import { WebDAVExceptionsFilter } from './webdav.filter.js'
 
 describe('WebDAVExceptionsFilter', () => {
   let filter: WebDAVExceptionsFilter

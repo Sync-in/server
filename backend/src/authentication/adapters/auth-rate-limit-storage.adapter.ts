@@ -1,7 +1,7 @@
 import { ThrottlerStorage } from '@nestjs/throttler'
-import { Cache } from '../../infrastructure/cache/cache.service'
-import type { CacheRateLimitResult } from '../../infrastructure/cache/interfaces/cache-rate-limit.interface'
-import { consumeRouteAuthRateLimit } from '../utils/auth-rate-limit'
+import { Cache } from '../../infrastructure/cache/cache.service.js'
+import type { CacheRateLimitResult } from '../../infrastructure/cache/interfaces/cache-rate-limit.interface.js'
+import { consumeRouteAuthRateLimit } from '../utils/auth-rate-limit.js'
 
 export class AuthRateLimitStorage implements ThrottlerStorage {
   constructor(private readonly cache: Cache) {}

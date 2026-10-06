@@ -1,4 +1,4 @@
-import { APP_BASE_ROUTE } from '../../applications.constants'
+import { APP_BASE_ROUTE } from '../../applications.constants.js'
 
 export const SYNC_BASE_ROUTE = 'sync'
 export const SYNC_ROUTE = {

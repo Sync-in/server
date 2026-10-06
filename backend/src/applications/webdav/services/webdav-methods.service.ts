@@ -1,18 +1,18 @@
 import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
-import { FastifyReply } from 'fastify'
-import { currentTimeStamp, encodeUrl } from '../../../common/shared'
-import { HTTP_METHOD, HTTP_VERSION } from '../../applications.constants'
-import { FileLock, FileLockOptions } from '../../files/interfaces/file-lock.interface'
-import { FileError } from '../../files/models/file-error'
-import { LockConflict } from '../../files/models/file-lock-error'
-import { FilesLockManager } from '../../files/services/files-lock-manager.service'
-import { FilesManager } from '../../files/services/files-manager.service'
-import { dirName, fileName, genEtag, isPathExists, isPathIsDir, removeFiles, temporaryFilePath } from '../../files/utils/files'
-import { FILE_OPERATION } from '../../files/constants/operations'
-import { SPACE_OPERATION, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
-import { SpaceEnv } from '../../spaces/models/space-env.model'
-import { dbFileFromSpace, temporaryRootFromSpace } from '../../spaces/utils/paths'
-import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
+import { type FastifyReply } from 'fastify'
+import { currentTimeStamp, encodeUrl } from '../../../common/shared.js'
+import { HTTP_METHOD, HTTP_VERSION } from '../../applications.constants.js'
+import { FileLock, FileLockOptions } from '../../files/interfaces/file-lock.interface.js'
+import { FileError } from '../../files/models/file-error.js'
+import { LockConflict } from '../../files/models/file-lock-error.js'
+import { FilesLockManager } from '../../files/services/files-lock-manager.service.js'
+import { FilesManager } from '../../files/services/files-manager.service.js'
+import { dirName, fileName, genEtag, isPathExists, isPathIsDir, removeFiles, temporaryFilePath } from '../../files/utils/files.js'
+import { FILE_OPERATION } from '../../files/constants/operations.js'
+import { SPACE_OPERATION, SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
+import { SpaceEnv } from '../../spaces/models/space-env.model.js'
+import { dbFileFromSpace, temporaryRootFromSpace } from '../../spaces/utils/paths.js'
+import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions.js'
 import {
   DEPTH,
   HEADER,
@@ -28,13 +28,13 @@ import {
   STANDARD_PROPS,
   WEBDAV_APP_LOCK,
   XML_CONTENT_TYPE
-} from '../constants/webdav'
-import { IfHeaderDecorator } from '../decorators/if-header.decorator'
-import { FastifyDAVRequest } from '../interfaces/webdav.interface'
-import { extractAllTokens, extractOneToken } from '../utils/if-header'
-import { DAV_ERROR_RES, LOCK_DISCOVERY, LOCK_PROP, MULTI_STATUS, PROP, PROP_STAT } from '../utils/webdav'
-import { xmlBuild } from '../utils/xml'
-import { WebDAVSpaces } from './webdav-spaces.service'
+} from '../constants/webdav.js'
+import { IfHeaderDecorator } from '../decorators/if-header.decorator.js'
+import { type FastifyDAVRequest } from '../interfaces/webdav.interface.js'
+import { extractAllTokens, extractOneToken } from '../utils/if-header.js'
+import { DAV_ERROR_RES, LOCK_DISCOVERY, LOCK_PROP, MULTI_STATUS, PROP, PROP_STAT } from '../utils/webdav.js'
+import { xmlBuild } from '../utils/xml.js'
+import { WebDAVSpaces } from './webdav-spaces.service.js'
 
 @Injectable()
 export class WebDAVMethods {

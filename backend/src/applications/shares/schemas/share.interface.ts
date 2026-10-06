@@ -1,4 +1,4 @@
-import type { shares } from './shares.schema'
+import type { shares } from './shares.schema.js'
 
 type ShareSchema = typeof shares.$inferSelect
 

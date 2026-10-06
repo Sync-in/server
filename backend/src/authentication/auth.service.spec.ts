@@ -1,14 +1,14 @@
 import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
-import { USER_ROLE } from '../applications/users/constants/user'
-import { UserModel } from '../applications/users/models/user.model'
-import { convertHumanTimeToSeconds } from '../common/functions'
-import { currentTimeStamp } from '../common/shared'
-import { configuration } from '../configuration/config.environment'
-import { AuthManager } from './auth.service'
-import { TOKEN_TYPE } from './interfaces/token.interface'
-import { AUTH_SESSION } from './providers/auth-providers.constants'
+import { USER_ROLE } from '../applications/users/constants/user.js'
+import { UserModel } from '../applications/users/models/user.model.js'
+import { convertHumanTimeToSeconds } from '../common/functions.js'
+import { currentTimeStamp } from '../common/shared.js'
+import { configuration } from '../configuration/config.environment.js'
+import { AuthManager } from './auth.service.js'
+import { TOKEN_TYPE } from './interfaces/token.interface.js'
+import { AUTH_SESSION } from './providers/auth-providers.constants.js'
 
 describe(AuthManager.name, () => {
   const jwtService = { signAsync: vi.fn() }

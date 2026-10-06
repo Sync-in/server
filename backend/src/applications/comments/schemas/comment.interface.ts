@@ -1,5 +1,5 @@
-import { Owner } from '../../users/interfaces/owner.interface'
-import type { comments } from './comments.schema'
+import { Owner } from '../../users/interfaces/owner.interface.js'
+import type { comments } from './comments.schema.js'
 
 type CommentSchema = typeof comments.$inferSelect
 

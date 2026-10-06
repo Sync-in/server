@@ -1,25 +1,25 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import * as commonFunctions from '../../../common/functions'
-import { intersectPermissions } from '../../../common/shared'
-import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
-import { LINK_TYPE } from '../../links/constants/links'
-import { LinksQueries } from '../../links/services/links-queries.service'
-import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
-import { SPACE_OPERATION } from '../../spaces/constants/spaces'
-import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
-import * as permissionsUtils from '../../spaces/utils/permissions'
-import { GUEST_PERMISSION } from '../../users/constants/user'
-import { UsersQueries } from '../../users/services/users-queries.service'
-import { SHARE_ALL_OPERATIONS } from '../constants/shares'
-import { SharesManager } from './shares-manager.service'
-import { SharesQueries } from './shares-queries.service'
-import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
-import * as filesUtils from '../../files/utils/files'
-import { UserModel } from '../../users/models/user.model'
+import * as commonFunctions from '../../../common/functions.js'
+import { intersectPermissions } from '../../../common/shared.js'
+import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
+import { LINK_TYPE } from '../../links/constants/links.js'
+import { LinksQueries } from '../../links/services/links-queries.service.js'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
+import { SPACE_OPERATION } from '../../spaces/constants/spaces.js'
+import { SpacesQueries } from '../../spaces/services/spaces-queries.service.js'
+import * as permissionsUtils from '../../spaces/utils/permissions.js'
+import { GUEST_PERMISSION } from '../../users/constants/user.js'
+import { UsersQueries } from '../../users/services/users-queries.service.js'
+import { SHARE_ALL_OPERATIONS } from '../constants/shares.js'
+import { SharesManager } from './shares-manager.service.js'
+import { SharesQueries } from './shares-queries.service.js'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service.js'
+import * as filesUtils from '../../files/utils/files.js'
+import { UserModel } from '../../users/models/user.model.js'
 
 // Mock classes and utility modules used by SharesManager
-vi.mock('../../spaces/models/space-env.model', () => ({
+vi.mock('../../spaces/models/space-env.model.js', () => ({
   SpaceEnv: vi.fn(function () {
     return {
       setPermissions: vi.fn(),
@@ -28,14 +28,14 @@ vi.mock('../../spaces/models/space-env.model', () => ({
   })
 }))
 
-vi.mock('../../spaces/utils/permissions', () => ({
+vi.mock('../../spaces/utils/permissions.js', () => ({
   havePermission: vi.fn(),
   haveSpacePermission: vi.fn(),
   removePermissions: vi.fn(() => 'trimmed')
 }))
 
-vi.mock('../../../common/functions', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../common/functions')>()
+vi.mock('../../../common/functions.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/functions.js')>()
   return {
     ...actual,
     generateShortUUID: vi.fn(),
@@ -43,8 +43,8 @@ vi.mock('../../../common/functions', async (importOriginal) => {
   }
 })
 
-vi.mock('../../../common/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../common/shared')>()
+vi.mock('../../../common/shared.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/shared.js')>()
   return {
     ...actual,
     intersectPermissions: vi.fn()

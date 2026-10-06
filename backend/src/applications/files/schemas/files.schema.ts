@@ -1,9 +1,9 @@
 import { SQL, sql, SQLWrapper } from 'drizzle-orm'
 import { AnyMySqlColumn, bigint, boolean, index, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
-import { shares } from '../../shares/schemas/shares.schema'
-import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
-import { spaces } from '../../spaces/schemas/spaces.schema'
-import { users } from '../../users/schemas/users.schema'
+import { shares } from '../../shares/schemas/shares.schema.js'
+import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema.js'
+import { spaces } from '../../spaces/schemas/spaces.schema.js'
+import { users } from '../../users/schemas/users.schema.js'
 
 /*
   ownerId: defined if the file is in a personal space (spaceId & spaceExternalRootId & shareExternalId must be null)

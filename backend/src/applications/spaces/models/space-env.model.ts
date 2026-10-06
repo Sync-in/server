@@ -1,12 +1,12 @@
-import { uniquePermissions } from '../../../common/functions'
-import { FileDBProps } from '../../files/interfaces/file-db-props.interface'
-import { FileTaskProps } from '../../files/models/file-task'
-import { FILE_OPERATION } from '../../files/constants/operations'
-import { UserModel } from '../../users/models/user.model'
-import { SPACE_ALIAS, SPACE_ALL_OPERATIONS, SPACE_OPERATION, SPACE_PERMS_SEP, SPACE_REPOSITORY, SPACE_ROLE } from '../constants/spaces'
-import { Space } from '../schemas/space.interface'
-import { dbFileFromSpace, realPathFromSpace } from '../utils/paths'
-import { getEnvPermissions, removePermissions } from '../utils/permissions'
+import { uniquePermissions } from '../../../common/functions.js'
+import { FileDBProps } from '../../files/interfaces/file-db-props.interface.js'
+import { FileTaskProps } from '../../files/models/file-task.js'
+import { FILE_OPERATION } from '../../files/constants/operations.js'
+import { UserModel } from '../../users/models/user.model.js'
+import { SPACE_ALIAS, SPACE_ALL_OPERATIONS, SPACE_OPERATION, SPACE_PERMS_SEP, SPACE_REPOSITORY, SPACE_ROLE } from '../constants/spaces.js'
+import { Space } from '../schemas/space.interface.js'
+import { dbFileFromSpace, realPathFromSpace } from '../utils/paths.js'
+import { getEnvPermissions, removePermissions } from '../utils/permissions.js'
 
 export class SpaceEnv implements Pick<Space, 'id' | 'alias' | 'name' | 'enabled'> {
   /* the space environment determines the context of access, permissions and the targeted resource */

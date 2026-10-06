@@ -1,8 +1,8 @@
 import { CallHandler, ExecutionContext } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { firstValueFrom, of } from 'rxjs'
-import { ContextManager } from '../services/context-manager.service'
-import { ContextInterceptor } from './context.interceptor'
+import { ContextManager } from '../services/context-manager.service.js'
+import { ContextInterceptor } from './context.interceptor.js'
 import { Mock } from 'vitest'
 
 // Helper to create a minimal ExecutionContext with Fastify-like request

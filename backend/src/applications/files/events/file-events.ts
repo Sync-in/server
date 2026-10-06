@@ -1,5 +1,5 @@
 import EventEmitter from 'node:events'
-import type { FileEventEmit, FileTaskEventEmit } from '../interfaces/file-event.interface'
+import type { FileEventEmit, FileTaskEventEmit } from '../interfaces/file-event.interface.js'
 
 export const FileTaskEvent: EventEmitter<FileTaskEventEmit> = new EventEmitter<FileTaskEventEmit>()
 

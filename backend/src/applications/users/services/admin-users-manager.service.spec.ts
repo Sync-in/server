@@ -1,20 +1,20 @@
 import { HttpException } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { AuthManager } from '../../../authentication/auth.service'
-import { GROUP_TYPE } from '../constants/group'
-import { USER_GROUP_ROLE, USER_ROLE } from '../constants/user'
-import type { CreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto'
-import type { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto'
-import type { SearchMembersDto } from '../dto/search-members.dto'
-import { UserModel } from '../models/user.model'
-import { AdminUsersManager } from './admin-users-manager.service'
-import { AdminUsersQueries } from './admin-users-queries.service'
-import { FilesQuotaManager } from '../../files/services/files-quota-manager.service'
+import { AuthManager } from '../../../authentication/auth.service.js'
+import { GROUP_TYPE } from '../constants/group.js'
+import { USER_GROUP_ROLE, USER_ROLE } from '../constants/user.js'
+import type { CreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto.js'
+import type { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto.js'
+import type { SearchMembersDto } from '../dto/search-members.dto.js'
+import { UserModel } from '../models/user.model.js'
+import { AdminUsersManager } from './admin-users-manager.service.js'
+import { AdminUsersQueries } from './admin-users-queries.service.js'
+import { FilesQuotaManager } from '../../files/services/files-quota-manager.service.js'
 import { Mock } from 'vitest'
-import * as _fs from '../../files/utils/files'
+import * as _fs from '../../files/utils/files.js'
 
 // mock file utils used by the service (delete/rename user space)
-vi.mock('../../files/utils/files', () => ({
+vi.mock('../../files/utils/files.js', () => ({
   isPathInside: vi.fn(() => true),
   isPathExists: vi.fn(),
   moveFiles: vi.fn(),
@@ -22,8 +22,8 @@ vi.mock('../../files/utils/files', () => ({
 }))
 
 // mock hash/anonymize utilities (preserve other module exports)
-vi.mock('../../../common/functions', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../common/functions')>()
+vi.mock('../../../common/functions.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/functions.js')>()
   return {
     ...actual,
     hashPassword: vi.fn(async (pwd: string) => `hashed:${pwd}`),

@@ -1,9 +1,9 @@
 import { HttpService } from '@nestjs/axios'
 import { Test, TestingModule } from '@nestjs/testing'
-import { Cache } from '../../../infrastructure/cache/cache.service'
-import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
-import { AdminUsersQueries } from '../../users/services/admin-users-queries.service'
-import { AdminService } from './admin.service'
+import { Cache } from '../../../infrastructure/cache/cache.service.js'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
+import { AdminUsersQueries } from '../../users/services/admin-users-queries.service.js'
+import { AdminService } from './admin.service.js'
 
 describe(AdminService.name, () => {
   let service: AdminService

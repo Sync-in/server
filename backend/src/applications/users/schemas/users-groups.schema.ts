@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { bigint, datetime, index, mysqlTable, primaryKey, tinyint } from 'drizzle-orm/mysql-core'
-import { groups } from './groups.schema'
-import { users } from './users.schema'
+import { groups } from './groups.schema.js'
+import { users } from './users.schema.js'
 
 /*
   role:

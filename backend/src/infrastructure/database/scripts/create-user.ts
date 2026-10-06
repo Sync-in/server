@@ -1,10 +1,10 @@
 import { count, eq, or } from 'drizzle-orm'
-import { USER_PERMISSION, USER_ROLE } from '../../../applications/users/constants/user'
-import { User } from '../../../applications/users/schemas/user.interface'
-import { users } from '../../../applications/users/schemas/users.schema'
-import { hashPassword } from '../../../common/functions'
-import { capitalizeString, stripMatchingQuotes } from '../../../common/shared'
-import { getDB } from './db'
+import { USER_PERMISSION, USER_ROLE } from '../../../applications/users/constants/user.js'
+import { User } from '../../../applications/users/schemas/user.interface.js'
+import { users } from '../../../applications/users/schemas/users.schema.js'
+import { hashPassword } from '../../../common/functions.js'
+import { capitalizeString, stripMatchingQuotes } from '../../../common/shared.js'
+import { getDB } from './db.js'
 
 interface InitUser extends Partial<User> {
   login: string

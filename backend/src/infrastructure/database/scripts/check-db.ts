@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { DatabaseConfigurationError, getDB } from './db'
+import { DatabaseConfigurationError, getDB } from './db.js'
 
 async function checkConnection() {
   const db = await getDB()

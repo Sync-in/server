@@ -2,8 +2,8 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { ENVIRONMENT_PREFIX } from './config.constants'
-import { configLoader } from './config.loader'
+import { ENVIRONMENT_PREFIX } from './config.constants.js'
+import { configLoader } from './config.loader.js'
 
 describe(configLoader.name, () => {
   const initialEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => key.startsWith(ENVIRONMENT_PREFIX)))

@@ -1,10 +1,10 @@
 import { Exclude, Type } from 'class-transformer'
 import { IsDefined, IsEnum, IsIn, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator'
-import { ACCESS_KEY, CSRF_KEY, REFRESH_KEY, WS_KEY } from './constants/auth'
-import { AUTH_PROVIDER } from './providers/auth-providers.constants'
-import { AuthProviderLDAPConfig } from './providers/ldap/auth-ldap.config'
-import { AuthProviderOIDCConfig } from './providers/oidc/auth-oidc.config'
-import { AuthMFAConfig } from './providers/two-fa/auth-two-fa.config'
+import { ACCESS_KEY, CSRF_KEY, REFRESH_KEY, WS_KEY } from './constants/auth.js'
+import { AUTH_PROVIDER } from './providers/auth-providers.constants.js'
+import { AuthProviderLDAPConfig } from './providers/ldap/auth-ldap.config.js'
+import { AuthProviderOIDCConfig } from './providers/oidc/auth-oidc.config.js'
+import { AuthMFAConfig } from './providers/two-fa/auth-two-fa.config.js'
 
 export class AuthTokenAccessConfig {
   @Exclude({ toClassOnly: true })

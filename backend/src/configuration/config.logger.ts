@@ -1,8 +1,9 @@
 import type { Options } from 'pino-http'
-import { join } from 'node:path'
-import { AVAILABILITY_ROUTE } from '../infrastructure/availability/availability.constants'
-import type { LoggerConfig } from './config.validation'
-import type { FastifyLoggerRequest, LoggerErrorObject, LoggerSerializedResponse } from './interfaces/logger.interface'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { AVAILABILITY_ROUTE } from '../infrastructure/availability/availability.constants.js'
+import type { LoggerConfig } from './config.validation.js'
+import type { FastifyLoggerRequest, LoggerErrorObject, LoggerSerializedResponse } from './interfaces/logger.interface.js'
 
 const AVAILABILITY_ROUTE_PREFIX = `${AVAILABILITY_ROUTE.BASE}/`
 const PINO_WARN_LEVEL = 40
@@ -42,7 +43,7 @@ const createPrettyTransport = (loggerConfig: LoggerConfig) => {
   return {
     pipeline: [
       {
-        target: join(__dirname, 'config.logger.transport.cjs'),
+        target: join(dirname(fileURLToPath(import.meta.url)), 'config.logger.transport.mjs'),
         options: {
           messageColorMarker: MESSAGE_COLOR_MARKER,
           ...prettyOptions

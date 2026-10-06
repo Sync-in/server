@@ -1,23 +1,23 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { HTTP_VERSION } from '../../applications.constants'
-import { FileLock } from '../../files/interfaces/file-lock.interface'
-import { FileError } from '../../files/models/file-error'
-import { LockConflict } from '../../files/models/file-lock-error'
-import { FilesLockManager } from '../../files/services/files-lock-manager.service'
-import { FilesManager } from '../../files/services/files-manager.service'
-import { dirName, genEtag, isPathExists, removeFiles } from '../../files/utils/files'
-import { SPACE_REPOSITORY } from '../../spaces/constants/spaces'
-import * as PathsUtils from '../../spaces/utils/paths'
-import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions'
-import { DEPTH, LOCK_DISCOVERY_PROP, PROPSTAT, STANDARD_PROPS } from '../constants/webdav'
-import * as IfHeaderUtils from '../utils/if-header'
-import { WebDAVMethods } from './webdav-methods.service'
-import { WebDAVSpaces } from './webdav-spaces.service'
+import { HTTP_VERSION } from '../../applications.constants.js'
+import { FileLock } from '../../files/interfaces/file-lock.interface.js'
+import { FileError } from '../../files/models/file-error.js'
+import { LockConflict } from '../../files/models/file-lock-error.js'
+import { FilesLockManager } from '../../files/services/files-lock-manager.service.js'
+import { FilesManager } from '../../files/services/files-manager.service.js'
+import { dirName, genEtag, isPathExists, removeFiles } from '../../files/utils/files.js'
+import { SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
+import * as PathsUtils from '../../spaces/utils/paths.js'
+import { haveSpaceEnvPermissions } from '../../spaces/utils/permissions.js'
+import { DEPTH, LOCK_DISCOVERY_PROP, PROPSTAT, STANDARD_PROPS } from '../constants/webdav.js'
+import * as IfHeaderUtils from '../utils/if-header.js'
+import { WebDAVMethods } from './webdav-methods.service.js'
+import { WebDAVSpaces } from './webdav-spaces.service.js'
 import { Mocked } from 'vitest'
 
 // Mock external dependencies
-vi.mock('../../files/utils/files', () => ({
+vi.mock('../../files/utils/files.js', () => ({
   isPathExists: vi.fn().mockReturnValue(false),
   isPathIsDir: vi.fn(),
   fileName: vi.fn().mockReturnValue('fileName'),
@@ -27,16 +27,16 @@ vi.mock('../../files/utils/files', () => ({
   temporaryFilePath: vi.fn().mockReturnValue('/space/tmp/users/1/~tmp-upload-id-file.txt')
 }))
 
-vi.mock('../../spaces/utils/permissions', () => ({
+vi.mock('../../spaces/utils/permissions.js', () => ({
   haveSpaceEnvPermissions: vi.fn()
 }))
 
-vi.mock('../../spaces/utils/paths', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../spaces/utils/paths')>()
+vi.mock('../../spaces/utils/paths.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../spaces/utils/paths.js')>()
   return { ...actual, dbFileFromSpace: vi.fn(), temporaryRootFromSpace: vi.fn().mockReturnValue('/space/tmp/users/1') }
 })
 
-vi.mock('../decorators/if-header.decorator', () => ({
+vi.mock('../decorators/if-header.decorator.js', () => ({
   IfHeaderDecorator: () => (_target?: any, _key?: string, _desc?: any) => undefined
 }))
 

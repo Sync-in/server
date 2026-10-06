@@ -12,21 +12,21 @@ import {
   randomPKCECodeVerifier,
   randomState
 } from 'openid-client'
-import { USER_ROLE } from '../../../applications/users/constants/user'
-import { UserModel } from '../../../applications/users/models/user.model'
-import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service'
-import { UsersManager } from '../../../applications/users/services/users-manager.service'
-import * as avatarUtils from '../../../applications/users/utils/avatar'
-import * as filesUtils from '../../../applications/files/utils/files'
-import { DownloadFile } from '../../../applications/files/utils/download-file'
-import * as imageUtils from '../../../common/image'
-import { AUTH_SCOPE } from '../../constants/scope'
-import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants'
-import { OAuthCookie } from './auth-oidc.constants'
-import { AuthProviderOIDC } from './auth-provider-oidc.service'
+import { USER_ROLE } from '../../../applications/users/constants/user.js'
+import { UserModel } from '../../../applications/users/models/user.model.js'
+import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service.js'
+import { UsersManager } from '../../../applications/users/services/users-manager.service.js'
+import * as avatarUtils from '../../../applications/users/utils/avatar.js'
+import * as filesUtils from '../../../applications/files/utils/files.js'
+import { DownloadFile } from '../../../applications/files/utils/download-file.js'
+import * as imageUtils from '../../../common/image.js'
+import { AUTH_SCOPE } from '../../constants/scope.js'
+import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants.js'
+import { OAuthCookie } from './auth-oidc.constants.js'
+import { AuthProviderOIDC } from './auth-provider-oidc.service.js'
 import { Mock } from 'vitest'
 
-vi.mock('../../../configuration/config.environment', () => ({
+vi.mock('../../../configuration/config.environment.js', () => ({
   configuration: {
     auth: {
       oidc: {

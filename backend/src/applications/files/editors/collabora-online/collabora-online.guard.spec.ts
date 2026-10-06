@@ -3,12 +3,12 @@ import { ExecutionContext } from '@nestjs/common'
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
-import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
-import { configuration } from '../../../../configuration/config.environment'
-import { COLLABORA_TOKEN_QUERY_PARAM_NAME } from './collabora-online.constants'
-import { CollaboraOnlineGuard } from './collabora-online.guard'
-import { API_COLLABORA_ONLINE_FILES } from './collabora-online.routes'
-import { CollaboraOnlineStrategy } from './collabora-online.strategy'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface.js'
+import { configuration } from '../../../../configuration/config.environment.js'
+import { COLLABORA_TOKEN_QUERY_PARAM_NAME } from './collabora-online.constants.js'
+import { CollaboraOnlineGuard } from './collabora-online.guard.js'
+import { API_COLLABORA_ONLINE_FILES } from './collabora-online.routes.js'
+import { CollaboraOnlineStrategy } from './collabora-online.strategy.js'
 
 describe(CollaboraOnlineGuard.name, () => {
   let jwtService: JwtService

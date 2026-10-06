@@ -1,17 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common'
 import crypto from 'node:crypto'
 
-import { currentTimeStamp } from '../../../common/shared'
-import { Cache } from '../../../infrastructure/cache/cache.service'
-import { UserModel } from '../../users/models/user.model'
-import { DEPTH, LOCK_DEPTH, LOCK_PREFIX, LOCK_SCOPE } from '../../webdav/constants/webdav'
-import { CACHE_LOCK_DEFAULT_TTL, CACHE_LOCK_PREFIX } from '../constants/cache'
-import { FileDBProps } from '../interfaces/file-db-props.interface'
-import { FileLock, FileLockOptions, LOCK_APP } from '../interfaces/file-lock.interface'
-import { FileLockProps } from '../interfaces/file-props.interface'
-import { LockConflict } from '../models/file-lock-error'
-import { files } from '../schemas/files.schema'
-import { dirName, fileName } from '../utils/files'
+import { currentTimeStamp } from '../../../common/shared.js'
+import { Cache } from '../../../infrastructure/cache/cache.service.js'
+import { UserModel } from '../../users/models/user.model.js'
+import { DEPTH, LOCK_DEPTH, LOCK_PREFIX, LOCK_SCOPE } from '../../webdav/constants/webdav.js'
+import { CACHE_LOCK_DEFAULT_TTL, CACHE_LOCK_PREFIX } from '../constants/cache.js'
+import { FileDBProps } from '../interfaces/file-db-props.interface.js'
+import { FileLock, FileLockOptions, LOCK_APP } from '../interfaces/file-lock.interface.js'
+import { FileLockProps } from '../interfaces/file-props.interface.js'
+import { LockConflict } from '../models/file-lock-error.js'
+import { files } from '../schemas/files.schema.js'
+import { dirName, fileName } from '../utils/files.js'
 
 @Injectable()
 export class FilesLockManager {

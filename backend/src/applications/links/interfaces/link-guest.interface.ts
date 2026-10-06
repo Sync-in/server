@@ -1,6 +1,6 @@
-import type { ShareMembers } from '../../shares/schemas/share-members.interface'
-import type { User } from '../../users/schemas/user.interface'
-import type { Link } from '../schemas/link.interface'
+import type { ShareMembers } from '../../shares/schemas/share-members.interface.js'
+import type { User } from '../../users/schemas/user.interface.js'
+import type { Link } from '../schemas/link.interface.js'
 
 export type LinkGuest = Link &
   Pick<User, 'language' | 'isActive' | 'currentIp' | 'lastIp' | 'currentAccess' | 'lastAccess' | 'createdAt'> &

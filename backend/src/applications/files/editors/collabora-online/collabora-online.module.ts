@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common'
-import { CollaboraOnlineManager } from './collabora-online-manager.service'
-import { CollaboraOnlineController } from './collabora-online.controller'
-import { CollaboraOnlineGuard } from './collabora-online.guard'
-import { CollaboraOnlineStrategy } from './collabora-online.strategy'
+import { CollaboraOnlineManager } from './collabora-online-manager.service.js'
+import { CollaboraOnlineController } from './collabora-online.controller.js'
+import { CollaboraOnlineGuard } from './collabora-online.guard.js'
+import { CollaboraOnlineStrategy } from './collabora-online.strategy.js'
 
 @Module({
   controllers: [CollaboraOnlineController],

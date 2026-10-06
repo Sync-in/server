@@ -1,8 +1,8 @@
 import { Type } from 'class-transformer'
 import { IsDefined, IsNotEmptyObject, IsObject, ValidateNested } from 'class-validator'
-import { FilesConfig } from './files/files.config'
-import { AppStoreConfig } from './sync/sync.config'
-import { UsersConfig } from './users/users.config'
+import { FilesConfig } from './files/files.config.js'
+import { AppStoreConfig } from './sync/sync.config.js'
+import { UsersConfig } from './users/users.config.js'
 
 export class ApplicationsConfig {
   @IsDefined()

@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import crypto from 'node:crypto'
-import { currentTimeStamp } from '../../../common/shared'
-import { Cache } from '../../../infrastructure/cache/cache.service'
-import { CACHE_LOCK_PREFIX } from '../constants/cache'
-import { LockConflict } from '../models/file-lock-error'
-import { DEPTH, LOCK_PREFIX, LOCK_SCOPE, WEBDAV_APP_LOCK } from '../../webdav/constants/webdav'
-import { FilesLockManager } from './files-lock-manager.service'
+import { currentTimeStamp } from '../../../common/shared.js'
+import { Cache } from '../../../infrastructure/cache/cache.service.js'
+import { CACHE_LOCK_PREFIX } from '../constants/cache.js'
+import { LockConflict } from '../models/file-lock-error.js'
+import { DEPTH, LOCK_PREFIX, LOCK_SCOPE, WEBDAV_APP_LOCK } from '../../webdav/constants/webdav.js'
+import { FilesLockManager } from './files-lock-manager.service.js'
 import { Mock } from 'vitest'
 
 describe(FilesLockManager.name, () => {

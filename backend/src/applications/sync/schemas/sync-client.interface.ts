@@ -1,5 +1,5 @@
-import { SyncClientInfo } from '../interfaces/sync-client.interface'
-import type { syncClients } from './sync-clients.schema'
+import { SyncClientInfo } from '../interfaces/sync-client.interface.js'
+import type { syncClients } from './sync-clients.schema.js'
 
 type SyncClientSchema = typeof syncClients.$inferSelect
 

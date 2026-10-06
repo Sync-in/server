@@ -1,4 +1,4 @@
-import { LOCK_DEPTH } from '../../webdav/constants/webdav'
+import { LOCK_DEPTH } from '../../webdav/constants/webdav.js'
 
 export interface SaveStreamTmpFileValidationContext {
   tmpPath: string

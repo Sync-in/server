@@ -1,5 +1,5 @@
-import { DocTextifyOptions } from '../interfaces/doc-textify.interfaces'
-import { collectElementText, parseZipXmlEntries } from '../utils/zip-xml'
+import { DocTextifyOptions } from '../interfaces/doc-textify.interfaces.js'
+import { collectElementText, parseZipXmlEntries } from '../utils/zip-xml.js'
 
 const SLIDE_PATH = /^ppt\/slides\/slide(\d+)\.xml$/
 const NOTES_PATH = /^ppt\/notesSlides\/notesSlide(\d+)\.xml$|^ppt\/slides\/notesSlides\/slide(\d+)\.xml$/

@@ -1,7 +1,7 @@
 import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets'
 import { Server } from 'socket.io'
-import { USER_ROOM_PREFIX } from '../users/constants/websocket'
-import { NOTIFICATIONS_WS } from './constants/websocket'
+import { USER_ROOM_PREFIX } from '../users/constants/websocket.js'
+import { NOTIFICATIONS_WS } from './constants/websocket.js'
 
 @WebSocketGateway({ namespace: NOTIFICATIONS_WS.NAME_SPACE })
 export class WebSocketNotifications {

@@ -1,4 +1,4 @@
-import type { Owner } from '../../users/interfaces/owner.interface'
+import type { Owner } from '../../users/interfaces/owner.interface.js'
 
 export interface CommentRecent {
   id: number

@@ -1,7 +1,7 @@
-import { INFRASTRUCTURE_DEPENDENCY } from '../availability/availability.constants'
-import type { AvailabilityDependency } from '../availability/availability.interfaces'
+import { INFRASTRUCTURE_DEPENDENCY } from '../availability/availability.constants.js'
+import type { AvailabilityDependency } from '../availability/availability.interfaces.js'
 import type { CronJob } from 'cron'
-import { SchedulerManager } from './scheduler-manager.service'
+import { SchedulerManager } from './scheduler-manager.service.js'
 
 describe(SchedulerManager.name, () => {
   const createCronJob = (initiallyActive: boolean) => {

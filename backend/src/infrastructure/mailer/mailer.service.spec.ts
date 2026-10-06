@@ -2,8 +2,8 @@ import { ConfigService } from '@nestjs/config'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
 import nodemailer, { type Transporter } from 'nodemailer'
-import { MailerConfig } from './mailer.config'
-import { Mailer } from './mailer.service'
+import { MailerConfig } from './mailer.config.js'
+import { Mailer } from './mailer.service.js'
 
 // Mocks
 vi.mock('nodemailer')

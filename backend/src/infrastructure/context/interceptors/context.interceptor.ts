@@ -1,7 +1,7 @@
 import { CallHandler, ExecutionContext, Injectable, NestInterceptor } from '@nestjs/common'
 import { FastifyRequest } from 'fastify'
 import type { Observable } from 'rxjs'
-import { ContextManager } from '../services/context-manager.service'
+import { ContextManager } from '../services/context-manager.service.js'
 
 @Injectable()
 export class ContextInterceptor implements NestInterceptor {

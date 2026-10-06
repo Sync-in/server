@@ -1,5 +1,5 @@
 import { Inject, Logger } from '@nestjs/common'
-import { Cache } from './cache.service'
+import { Cache } from './cache.service.js'
 
 export function CacheDecorator(TTL = 120, updateCache: boolean = false) {
   // if updateCache is true, we update the value in the cache on each call

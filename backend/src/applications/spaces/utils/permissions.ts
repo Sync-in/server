@@ -1,10 +1,10 @@
-import { intersectPermissions } from '../../../common/shared'
-import { USER_PERMISSION } from '../../users/constants/user'
-import type { UserModel } from '../../users/models/user.model'
-import { SPACE_ALIAS, SPACE_OPERATION, SPACE_PERMS_SEP, SPACE_REPOSITORY } from '../constants/spaces'
-import type { SpaceEnv } from '../models/space-env.model'
-import type { SpaceProps } from '../models/space-props.model'
-import type { SpaceRoot } from '../schemas/space-root.interface'
+import { intersectPermissions } from '../../../common/shared.js'
+import { USER_PERMISSION } from '../../users/constants/user.js'
+import type { UserModel } from '../../users/models/user.model.js'
+import { SPACE_ALIAS, SPACE_OPERATION, SPACE_PERMS_SEP, SPACE_REPOSITORY } from '../constants/spaces.js'
+import type { SpaceEnv } from '../models/space-env.model.js'
+import type { SpaceProps } from '../models/space-props.model.js'
+import type { SpaceRoot } from '../schemas/space-root.interface.js'
 
 export function havePermission(currentPermissions: string, mustHavePermission: SPACE_OPERATION): boolean {
   return currentPermissions.indexOf(mustHavePermission) > -1

@@ -1,6 +1,6 @@
 import { SQL, sql, SQLWrapper } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/mysql-core'
-import { shares } from '../schemas/shares.schema'
+import { shares } from '../schemas/shares.schema.js'
 
 export interface ExternalShareScopeSQL {
   table: SQL

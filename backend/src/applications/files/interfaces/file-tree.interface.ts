@@ -1,4 +1,4 @@
-import type { FileProps } from './file-props.interface'
+import type { FileProps } from './file-props.interface.js'
 
 export interface FileTree extends Pick<FileProps, 'id' | 'name' | 'path' | 'isDir' | 'mime'> {
   hasChildren: boolean

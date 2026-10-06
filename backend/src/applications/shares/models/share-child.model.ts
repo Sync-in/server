@@ -1,7 +1,7 @@
-import { popFromObject } from '../../../common/shared'
-import type { Owner } from '../../users/interfaces/owner.interface'
-import type { ShareChildQuery } from '../interfaces/share-child.interface'
-import type { Share } from '../schemas/share.interface'
+import { popFromObject } from '../../../common/shared.js'
+import type { Owner } from '../../users/interfaces/owner.interface.js'
+import type { ShareChildQuery } from '../interfaces/share-child.interface.js'
+import type { Share } from '../schemas/share.interface.js'
 
 export class ShareChild implements Pick<Share, 'id' | 'parentId' | 'type' | 'name' | 'alias'> {
   id: number

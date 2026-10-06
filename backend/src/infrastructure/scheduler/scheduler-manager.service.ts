@@ -1,9 +1,9 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnModuleDestroy } from '@nestjs/common'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { CronJob, type CronJobParams } from 'cron'
-import { INFRASTRUCTURE_DEPENDENCY } from '../availability/availability.constants'
-import { Availability } from '../availability/availability.service'
-import { IS_SCHEDULER_PROCESS } from './scheduler.constants'
+import { INFRASTRUCTURE_DEPENDENCY } from '../availability/availability.constants.js'
+import { Availability } from '../availability/availability.service.js'
+import { IS_SCHEDULER_PROCESS } from './scheduler.constants.js'
 
 @Injectable()
 export class SchedulerManager implements OnApplicationBootstrap, OnModuleDestroy {

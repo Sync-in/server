@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { FILE_OPERATION } from '../constants/operations'
-import { FilesScheduler } from './files-scheduler.service'
+import { FILE_OPERATION } from '../constants/operations.js'
+import { FilesScheduler } from './files-scheduler.service.js'
 
 describe(FilesScheduler.name, () => {
   let cache: { keys: ReturnType<typeof vi.fn>; mget: ReturnType<typeof vi.fn> }

@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { MySqlDialect } from 'drizzle-orm/mysql-core'
-import { childFilesMatch, childFilesReplacePath, files } from './files.schema'
+import { childFilesMatch, childFilesReplacePath, files } from './files.schema.js'
 
 describe('files path SQL helpers', () => {
   const dialect = new MySqlDialect()

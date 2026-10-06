@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common'
-import { SYNC_MAX_PATH_FILTER_PATTERN_LENGTH } from '../constants/sync'
-import { transformPathFilters } from './functions'
+import { SYNC_MAX_PATH_FILTER_PATTERN_LENGTH } from '../constants/sync.js'
+import { transformPathFilters } from './functions.js'
 
 describe(transformPathFilters.name, () => {
   it('returns null for empty or non-string values', () => {

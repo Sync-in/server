@@ -1,5 +1,5 @@
-import { DocTextifyOptions } from '../interfaces/doc-textify.interfaces'
-import { collectElementText, parseZipXmlEntries } from '../utils/zip-xml'
+import { DocTextifyOptions } from '../interfaces/doc-textify.interfaces.js'
+import { collectElementText, parseZipXmlEntries } from '../utils/zip-xml.js'
 
 const MAIN_PATH = /^word\/document(?:\d*)\.xml$/
 const FOOTNOTES_PATH = /^word\/footnotes(?:\d*)\.xml$/

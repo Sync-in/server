@@ -1,13 +1,13 @@
 import { parse as parseMs } from '@lukeed/ms'
 import bcrypt from 'bcryptjs'
-import { ClassTransformOptions, plainToInstance } from 'class-transformer'
+import type { ClassTransformOptions } from 'class-transformer'
+import { plainToInstance } from 'class-transformer'
+import type { ValidationError, ValidatorOptions } from 'class-validator'
 import { validateSync } from 'class-validator'
-import { ValidationError } from 'class-validator/types/validation/ValidationError'
-import { ValidatorOptions } from 'class-validator/types/validation/ValidatorOptions'
 import crypto from 'node:crypto'
 import { setTimeout } from 'node:timers/promises'
-import { SPACE_PERMS_SEP } from '../applications/spaces/constants/spaces'
-import { decodeUrl } from './shared'
+import { SPACE_PERMS_SEP } from '../applications/spaces/constants/spaces.js'
+import { decodeUrl } from './shared.js'
 
 const DUMMY_PASSWORD_HASH = '$2a$10$tjgA0v/cGe.vAfAJgNHpZeNrIdMxu82i0kGEjbtYkaVUCDkVzHRjG'
 

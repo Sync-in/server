@@ -12,9 +12,9 @@ import {
   IsString,
   ValidateNested
 } from 'class-validator'
-import { USER_PERMISSION } from '../../../applications/users/constants/user'
-import { LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants'
-import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants'
+import { USER_PERMISSION } from '../../../applications/users/constants/user.js'
+import { LDAP_COMMON_ATTR, LDAP_LOGIN_ATTR } from './auth-ldap.constants.js'
+import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants.js'
 
 export class AuthProviderLDAPAttributesConfig {
   @IsOptional()

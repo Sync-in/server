@@ -1,12 +1,12 @@
 import { All, Controller, HttpStatus, Options, Param, Propfind, Req, Res, StreamableFile, UseGuards } from '@nestjs/common'
-import { FastifyReply } from 'fastify'
-import { HTTP_METHOD } from '../applications.constants'
-import { SPACE_REPOSITORY } from '../spaces/constants/spaces'
-import { SpaceGuard } from '../spaces/guards/space.guard'
-import { WEBDAV_BASE_PATH, WEBDAV_NS } from './constants/routes'
-import { WebDAVEnvironment } from './decorators/webdav-context.decorator'
-import { FastifyDAVRequest } from './interfaces/webdav.interface'
-import { WebDAVMethods } from './services/webdav-methods.service'
+import { type FastifyReply } from 'fastify'
+import { HTTP_METHOD } from '../applications.constants.js'
+import { SPACE_REPOSITORY } from '../spaces/constants/spaces.js'
+import { SpaceGuard } from '../spaces/guards/space.guard.js'
+import { WEBDAV_BASE_PATH, WEBDAV_NS } from './constants/routes.js'
+import { WebDAVEnvironment } from './decorators/webdav-context.decorator.js'
+import { type FastifyDAVRequest } from './interfaces/webdav.interface.js'
+import { WebDAVMethods } from './services/webdav-methods.service.js'
 
 @Controller()
 @WebDAVEnvironment()

@@ -1,4 +1,4 @@
-import type { spacesMembers } from './spaces-members.schema'
+import type { spacesMembers } from './spaces-members.schema.js'
 
 type SpaceMembersSchema = typeof spacesMembers.$inferSelect
 

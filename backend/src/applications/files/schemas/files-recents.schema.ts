@@ -1,7 +1,7 @@
 import { bigint, index, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
-import { shares } from '../../shares/schemas/shares.schema'
-import { spaces } from '../../spaces/schemas/spaces.schema'
-import { users } from '../../users/schemas/users.schema'
+import { shares } from '../../shares/schemas/shares.schema.js'
+import { spaces } from '../../spaces/schemas/spaces.schema.js'
+import { users } from '../../users/schemas/users.schema.js'
 
 export const filesRecents = mysqlTable(
   'files_recents',

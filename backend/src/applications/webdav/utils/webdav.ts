@@ -1,9 +1,9 @@
 import { FastifyReply } from 'fastify'
 import http from 'node:http'
-import { currentTimeStamp, encodeUrl, SERVER_NAME } from '../../../common/shared'
-import { FileLock } from '../../files/interfaces/file-lock.interface'
-import { LOCK_SCOPE, NS_DAV, NS_PREFIX, PROPSTAT, XML_CONTENT_TYPE } from '../constants/webdav'
-import { XML_NS, xmlBuild } from './xml'
+import { currentTimeStamp, encodeUrl, SERVER_NAME } from '../../../common/shared.js'
+import { FileLock } from '../../files/interfaces/file-lock.interface.js'
+import { LOCK_SCOPE, NS_DAV, NS_PREFIX, PROPSTAT, XML_CONTENT_TYPE } from '../constants/webdav.js'
+import { XML_NS, xmlBuild } from './xml.js'
 
 export const XML_DAV_NS = { [`${XML_NS}:${NS_PREFIX}`]: `${NS_DAV}` }
 export const PROPFIND_COLLECTION = { [`${NS_PREFIX}:collection`]: null }

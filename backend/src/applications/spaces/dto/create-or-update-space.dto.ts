@@ -1,10 +1,10 @@
 import { Transform, Type } from 'class-transformer'
 import { ArrayMinSize, IsArray, IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator'
-import { sanitizeName } from '../../files/utils/files'
-import { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto'
-import { MEMBER_TYPE, MEMBER_TYPE_REVERSE } from '../../users/constants/member'
-import { SPACE_ROLE } from '../constants/spaces'
-import { SpaceRootDto } from './space-roots.dto'
+import { sanitizeName } from '../../files/utils/files.js'
+import { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto.js'
+import { MEMBER_TYPE, MEMBER_TYPE_REVERSE } from '../../users/constants/member.js'
+import { SPACE_ROLE } from '../constants/spaces.js'
+import { SpaceRootDto } from './space-roots.dto.js'
 
 export class SpaceMemberDto {
   @IsNotEmpty()

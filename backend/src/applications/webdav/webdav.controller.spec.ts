@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { SpacesManager } from '../spaces/services/spaces-manager.service'
-import { WebDAVMethods } from './services/webdav-methods.service'
-import { WebDAVSpaces } from './services/webdav-spaces.service'
-import { WebDAVController } from './webdav.controller'
+import { SpacesManager } from '../spaces/services/spaces-manager.service.js'
+import { WebDAVMethods } from './services/webdav-methods.service.js'
+import { WebDAVSpaces } from './services/webdav-spaces.service.js'
+import { WebDAVController } from './webdav.controller.js'
 
 describe(WebDAVController.name, () => {
   let davController: WebDAVController

@@ -1,9 +1,9 @@
 import 'reflect-metadata'
 import { Socket } from 'socket.io'
-import { UserModel } from '../../../applications/users/models/user.model'
-import { TOKEN_TYPE } from '../../../authentication/interfaces/token.interface'
-import { configuration } from '../../../configuration/config.environment'
-import { WebSocketAdapter } from './web-socket.adapter'
+import { UserModel } from '../../../applications/users/models/user.model.js'
+import { TOKEN_TYPE } from '../../../authentication/interfaces/token.interface.js'
+import { configuration } from '../../../configuration/config.environment.js'
+import { WebSocketAdapter } from './web-socket.adapter.js'
 
 describe(WebSocketAdapter.name, () => {
   const token = 'signed-token'

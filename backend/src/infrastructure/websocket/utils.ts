@@ -1,5 +1,5 @@
 import { Socket } from 'socket.io'
-import { configuration } from '../../configuration/config.environment'
+import { configuration } from '../../configuration/config.environment.js'
 
 export function getClientAddress(socket: Socket) {
   return (

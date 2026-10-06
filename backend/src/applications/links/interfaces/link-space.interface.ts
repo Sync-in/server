@@ -1,4 +1,4 @@
-import type { FileEditorProviders } from '../../files/editors/file-editor-providers.interface'
+import type { FileEditorProviders } from '../../files/editors/file-editor-providers.interface.js'
 
 export interface SpaceLink {
   share?: {

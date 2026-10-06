@@ -1,6 +1,6 @@
 import { MySqlDialect } from 'drizzle-orm/mysql-core'
-import type { Cache } from '../../../infrastructure/cache/cache.service'
-import { LinksQueries } from './links-queries.service'
+import type { Cache } from '../../../infrastructure/cache/cache.service.js'
+import { LinksQueries } from './links-queries.service.js'
 
 describe(LinksQueries.name, () => {
   let service: LinksQueries

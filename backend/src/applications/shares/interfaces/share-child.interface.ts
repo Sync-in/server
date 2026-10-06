@@ -1,4 +1,4 @@
-import type { Share } from '../schemas/share.interface'
+import type { Share } from '../schemas/share.interface.js'
 
 export interface ShareChildQuery extends Pick<Share, 'id' | 'parentId' | 'type' | 'alias' | 'name'> {
   id: number

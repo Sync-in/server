@@ -1,7 +1,7 @@
 import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common'
-import { SpaceGuard } from '../../../spaces/guards/space.guard'
-import { ONLY_OFFICE_CONTEXT } from './only-office.constants'
-import { OnlyOfficeGuard } from './only-office.guard'
+import { SpaceGuard } from '../../../spaces/guards/space.guard.js'
+import { ONLY_OFFICE_CONTEXT } from './only-office.constants.js'
+import { OnlyOfficeGuard } from './only-office.guard.js'
 
 export const OnlyOfficeContext = () => SetMetadata(ONLY_OFFICE_CONTEXT, true)
 export const OnlyOfficeEnvironment = () => {

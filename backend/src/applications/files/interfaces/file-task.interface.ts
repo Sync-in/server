@@ -1,5 +1,5 @@
-import type { FileTask } from '../models/file-task'
-import type { FILE_OPERATION } from '../constants/operations'
+import type { FileTask } from '../models/file-task.js'
+import type { FILE_OPERATION } from '../constants/operations.js'
 
 export interface FileTasksPollResponse {
   active: FileTask[]

@@ -1,7 +1,7 @@
-import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
-import { SpaceEnv } from '../../spaces/models/space-env.model'
-import { DEPTH, LOCK_SCOPE, PROPSTAT } from '../constants/webdav'
-import { IfHeader } from './if-header.interface'
+import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface.js'
+import { SpaceEnv } from '../../spaces/models/space-env.model.js'
+import { DEPTH, LOCK_SCOPE, PROPSTAT } from '../constants/webdav.js'
+import { IfHeader } from './if-header.interface.js'
 
 export interface WebDAVContext {
   url: string

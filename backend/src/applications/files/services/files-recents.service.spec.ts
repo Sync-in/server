@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { convertHumanTimeToMs } from '../../../common/functions'
-import { currentTimeStamp } from '../../../common/shared'
-import { SharesQueries } from '../../shares/services/shares-queries.service'
-import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
-import { USER_PERMISSION } from '../../users/constants/user'
-import { FilesQueries } from './files-queries.service'
-import { FilesRecents } from './files-recents.service'
+import { convertHumanTimeToMs } from '../../../common/functions.js'
+import { currentTimeStamp } from '../../../common/shared.js'
+import { SharesQueries } from '../../shares/services/shares-queries.service.js'
+import { SpacesQueries } from '../../spaces/services/spaces-queries.service.js'
+import { USER_PERMISSION } from '../../users/constants/user.js'
+import { FilesQueries } from './files-queries.service.js'
+import { FilesRecents } from './files-recents.service.js'
 import type { Mock } from 'vitest'
-import * as filesUtils from '../utils/files'
+import * as filesUtils from '../utils/files.js'
 
 describe(FilesRecents.name, () => {
   let service: FilesRecents

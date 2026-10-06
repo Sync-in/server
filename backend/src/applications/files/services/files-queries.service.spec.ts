@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common'
-import type { FileDBProps } from '../interfaces/file-db-props.interface'
-import type { FileProps } from '../interfaces/file-props.interface'
-import { FilesQueries } from './files-queries.service'
+import type { FileDBProps } from '../interfaces/file-db-props.interface.js'
+import type { FileProps } from '../interfaces/file-props.interface.js'
+import { FilesQueries } from './files-queries.service.js'
 
 describe(FilesQueries.name, () => {
   const file = { name: 'file.txt', path: 'docs', isDir: false } as FileProps

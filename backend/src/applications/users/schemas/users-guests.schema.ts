@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { bigint, check, datetime, index, mysqlTable, primaryKey } from 'drizzle-orm/mysql-core'
-import { users } from './users.schema'
+import { users } from './users.schema.js'
 
 export const usersGuests = mysqlTable(
   'users_guests',

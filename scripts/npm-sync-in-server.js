@@ -11,15 +11,17 @@
  *  - Displaying help information
  */
 
+import { exec, spawn, spawnSync } from 'node:child_process'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { promisify } from 'node:util'
+
 const [nodeMajorVersion, nodeMinorVersion] = process.versions.node.split('.').map((num) => parseInt(num, 10))
-const { spawn, spawnSync, exec } = require('child_process')
-const { promisify } = require('util')
-const path = require('path')
-const fs = require('fs')
 
 // Paths relative to this script
 const PKILL_GRACEFUL_TIMEOUT = 10000 // 10s timeout
-const ROOT_DIR = path.resolve(__dirname)
+const ROOT_DIR = path.dirname(fileURLToPath(import.meta.url))
 const CREATE_USER_SCRIPT = path.join(ROOT_DIR, 'server', 'infrastructure', 'database', 'scripts', 'create-user.js')
 const SERVER_ENTRY = path.join(ROOT_DIR, 'server', 'main.js')
 const ENV_DIST_FILE = path.join(ROOT_DIR, 'environment', 'environment.dist.yaml')

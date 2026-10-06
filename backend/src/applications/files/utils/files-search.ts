@@ -1,7 +1,7 @@
-import { regexpEscape } from '../../../common/functions'
-import { MIN_CHARS_TO_SEARCH } from '../constants/indexing'
-import { SEARCH_FILES_DEFAULT_LIMIT, SEARCH_FILES_MAX_LIMIT, SEARCH_FILES_MIN_LIMIT } from '../constants/search'
-import type { FilesSearchQuery, FilesSearchTerm } from '../interfaces/files-search-query.interface'
+import { regexpEscape } from '../../../common/functions.js'
+import { MIN_CHARS_TO_SEARCH } from '../constants/indexing.js'
+import { SEARCH_FILES_DEFAULT_LIMIT, SEARCH_FILES_MAX_LIMIT, SEARCH_FILES_MIN_LIMIT } from '../constants/search.js'
+import type { FilesSearchQuery, FilesSearchTerm } from '../interfaces/files-search-query.interface.js'
 
 const SEARCH_TERMS_PATTERN = /([+-]?)(?:"([^"]+)"|(\S+))/g
 const LEADING_BOOLEAN_OPERATORS = new Set(['+', '-', '<', '>', '~', '*'])

@@ -1,8 +1,8 @@
 import { Transform, Type } from 'class-transformer'
 import { IsDefined, IsInt, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator'
-import { sanitizeName, sanitizePath } from '../../files/utils/files'
-import { SPACE_ALIAS, SPACE_REPOSITORY } from '../constants/spaces'
-import type { SpaceRootProps } from '../models/space-root-props.model'
+import { sanitizeName, sanitizePath } from '../../files/utils/files.js'
+import { SPACE_ALIAS, SPACE_REPOSITORY } from '../constants/spaces.js'
+import type { SpaceRootProps } from '../models/space-root-props.model.js'
 
 class SpaceRootOwnerDto {
   @IsNotEmpty()

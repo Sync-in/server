@@ -1,12 +1,12 @@
 import { Transform } from 'class-transformer'
 import { IsBoolean, IsDate, IsDefined, IsEnum, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, MinLength, ValidateIf } from 'class-validator'
-import { AUTH_SCOPE } from '../../../authentication/constants/scope'
-import { currentDate } from '../../../common/shared'
-import { COLLABORA_EDITOR } from '../../files/editors/collabora-online/collabora-online.constants'
-import { EURO_OFFICE_EDITOR, ONLY_OFFICE_EDITOR } from '../../files/editors/only-office/only-office.constants'
-import { USER_PASSWORD_MIN_LENGTH } from '../constants/user'
-import { USER_SIDEBAR_QUICK_ACCESS_POSITION, USER_SIDEBAR_QUICK_ACCESS_VISIBILITY, USER_THEME } from '../constants/user-preferences'
-import type { UserPreferences } from '../interfaces/user-preferences.interface'
+import { AUTH_SCOPE } from '../../../authentication/constants/scope.js'
+import { currentDate } from '../../../common/shared.js'
+import { COLLABORA_EDITOR } from '../../files/editors/collabora-online/collabora-online.constants.js'
+import { EURO_OFFICE_EDITOR, ONLY_OFFICE_EDITOR } from '../../files/editors/only-office/only-office.constants.js'
+import { USER_PASSWORD_MIN_LENGTH } from '../constants/user.js'
+import { USER_SIDEBAR_QUICK_ACCESS_POSITION, USER_SIDEBAR_QUICK_ACCESS_VISIBILITY, USER_THEME } from '../constants/user-preferences.js'
+import type { UserPreferences } from '../interfaces/user-preferences.interface.js'
 
 export class UserLanguageDto {
   @ValidateIf((_, language) => language === null || typeof language === 'string')

@@ -2,7 +2,7 @@ import { ERR_UNSAFE_FILENAME } from '@zip.js/zip.js'
 import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { extractZip } from './unzip-file'
+import { extractZip } from './unzip-file.js'
 
 function createZip(entryName: string, content = Buffer.alloc(0), unixMode?: number): Buffer {
   const encodedEntryName = Buffer.from(entryName)

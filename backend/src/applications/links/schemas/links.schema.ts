@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { bigint, boolean, date, datetime, index, int, mysqlTable, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
-import { users } from '../../users/schemas/users.schema'
+import { users } from '../../users/schemas/users.schema.js'
 
 /*
    userId: must be a user with the role *3* (link)

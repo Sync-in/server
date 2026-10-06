@@ -2,9 +2,9 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { Logger } from 'nestjs-pino'
 import { setTimeout } from 'node:timers/promises'
-import { appBootstrap } from './app.bootstrap'
-import { AppService } from './app.service'
-import { configuration } from './configuration/config.environment'
+import { appBootstrap } from './app.bootstrap.js'
+import { AppService } from './app.service.js'
+import { configuration } from './configuration/config.environment.js'
 
 async function bootstrap(): Promise<void> {
   let logger: Logger | undefined

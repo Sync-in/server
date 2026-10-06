@@ -1,7 +1,7 @@
 import { Transform } from 'class-transformer'
 import { IsArray, IsBoolean, IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
-import { USER_GROUP_ROLE, USER_NOTIFICATION, USER_PASSWORD_MIN_LENGTH, USER_ROLE } from '../constants/user'
-import { IsUserLogin } from './user-login.dto.decorator'
+import { USER_GROUP_ROLE, USER_NOTIFICATION, USER_PASSWORD_MIN_LENGTH, USER_ROLE } from '../constants/user.js'
+import { IsUserLogin } from './user-login.dto.decorator.js'
 
 export class OptionalUserDto {
   @IsOptional()

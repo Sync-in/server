@@ -1,6 +1,6 @@
 import { Config, defineConfig } from 'drizzle-kit'
-import { configLoader } from '../../configuration/config.loader'
-import { getSchemaPath, MIGRATIONS_PATH } from './constants'
+import { configLoader } from '../../configuration/config.loader.js'
+import { getSchemaPath, MIGRATIONS_PATH } from './constants.js'
 
 export default defineConfig({
   schema: getSchemaPath(),

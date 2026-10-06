@@ -1,12 +1,12 @@
 import path from 'node:path'
-import { sortObjByName } from '../../../common/functions'
-import { SHARE_ALL_OPERATIONS } from '../../shares/constants/shares'
-import { SPACE_ALL_OPERATIONS, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
-import { SpaceEnv } from '../../spaces/models/space-env.model'
-import { getEnvPermissions } from '../../spaces/utils/permissions'
-import { FileProps } from '../interfaces/file-props.interface'
-import { FileTree } from '../interfaces/file-tree.interface'
-import { dirHasChildren } from './files'
+import { sortObjByName } from '../../../common/functions.js'
+import { SHARE_ALL_OPERATIONS } from '../../shares/constants/shares.js'
+import { SPACE_ALL_OPERATIONS, SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
+import { SpaceEnv } from '../../spaces/models/space-env.model.js'
+import { getEnvPermissions } from '../../spaces/utils/permissions.js'
+import { FileProps } from '../interfaces/file-props.interface.js'
+import { FileTree } from '../interfaces/file-tree.interface.js'
+import { dirHasChildren } from './files.js'
 
 async function hasChildren(space: SpaceEnv, file: FileProps): Promise<boolean> {
   if (file.root?.alias) {

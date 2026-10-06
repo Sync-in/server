@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker'
-import { SERVER_NAME } from '../../../common/shared'
-import { USER_PERMISSION, USER_ROLE } from '../constants/user'
-import type { UserModel } from '../models/user.model'
+import { SERVER_NAME } from '../../../common/shared.js'
+import { USER_PERMISSION, USER_ROLE } from '../constants/user.js'
+import type { UserModel } from '../models/user.model.js'
 
 export function generateUserTest(withId: boolean = true): Partial<UserModel> {
   return {

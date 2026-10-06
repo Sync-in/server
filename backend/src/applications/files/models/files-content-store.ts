@@ -1,4 +1,4 @@
-import { FileContent, FileContentRecordMetadataMap } from '../schemas/file-content.interface'
+import { FileContent, FileContentRecordMetadataMap } from '../schemas/file-content.interface.js'
 
 export abstract class FilesContentStore {
   abstract indexesCount(): Promise<number>

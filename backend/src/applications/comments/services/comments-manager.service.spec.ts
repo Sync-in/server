@@ -1,19 +1,19 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { Cache } from '../../../infrastructure/cache/cache.service'
-import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
-import type { FileProps } from '../../files/interfaces/file-props.interface'
-import { FilesQueries } from '../../files/services/files-queries.service'
-import { dirName, fileName, getProps, isPathExists } from '../../files/utils/files'
-import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
-import { SharesQueries } from '../../shares/services/shares-queries.service'
-import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
-import { CommentsManager } from './comments-manager.service'
-import { CommentsQueries } from './comments-queries.service'
+import { Cache } from '../../../infrastructure/cache/cache.service.js'
+import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
+import type { FileProps } from '../../files/interfaces/file-props.interface.js'
+import { FilesQueries } from '../../files/services/files-queries.service.js'
+import { dirName, fileName, getProps, isPathExists } from '../../files/utils/files.js'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
+import { SharesQueries } from '../../shares/services/shares-queries.service.js'
+import { SpacesQueries } from '../../spaces/services/spaces-queries.service.js'
+import { CommentsManager } from './comments-manager.service.js'
+import { CommentsQueries } from './comments-queries.service.js'
 import { Mock } from 'vitest'
 
 // Mocks of the file utilities used by the service
-vi.mock('../../files/utils/files', () => ({
+vi.mock('../../files/utils/files.js', () => ({
   isPathExists: vi.fn(),
   getProps: vi.fn(),
   dirName: vi.fn(),

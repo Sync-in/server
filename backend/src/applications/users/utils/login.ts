@@ -1,4 +1,4 @@
-import { USER_LOGIN_VALIDATION } from '../constants/user'
+import { USER_LOGIN_VALIDATION } from '../constants/user.js'
 
 export function isSafePathSegment(value: unknown): value is string {
   return typeof value === 'string' && !!value && value !== '.' && value !== '..' && !value.includes('/') && !value.includes('\\')

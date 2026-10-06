@@ -1,6 +1,6 @@
-import { SyncClient } from '../schemas/sync-client.interface'
-import { SyncPath } from '../schemas/sync-path.interface'
-import { SyncClientInfo } from './sync-client.interface'
+import { SyncClient } from '../schemas/sync-client.interface.js'
+import { SyncPath } from '../schemas/sync-path.interface.js'
+import { SyncClientInfo } from './sync-client.interface.js'
 
 export interface SyncClientPaths extends Partial<SyncClient> {
   id: string

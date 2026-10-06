@@ -1,28 +1,28 @@
 import { HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { currentTimeStamp } from '../../../common/shared'
-import type { FileProps } from '../../files/interfaces/file-props.interface'
-import { FilesQueries } from '../../files/services/files-queries.service'
-import { getProps, isPathExists, isPathIsDir } from '../../files/utils/files'
-import { NotificationsManager } from '../../notifications/services/notifications-manager.service'
-import { SpacesManager } from '../../spaces/services/spaces-manager.service'
-import { getEnvPermissions } from '../../spaces/utils/permissions'
-import { UsersQueries } from '../../users/services/users-queries.service'
-import { SyncPathsManager } from './sync-paths-manager.service'
-import { SyncQueries } from './sync-queries.service'
+import { currentTimeStamp } from '../../../common/shared.js'
+import type { FileProps } from '../../files/interfaces/file-props.interface.js'
+import { FilesQueries } from '../../files/services/files-queries.service.js'
+import { getProps, isPathExists, isPathIsDir } from '../../files/utils/files.js'
+import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
+import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
+import { getEnvPermissions } from '../../spaces/utils/permissions.js'
+import { UsersQueries } from '../../users/services/users-queries.service.js'
+import { SyncPathsManager } from './sync-paths-manager.service.js'
+import { SyncQueries } from './sync-queries.service.js'
 import { Mock } from 'vitest'
 
 // Mock modules used directly inside SyncPathsManager
-vi.mock('../../../common/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../../common/shared')>()
+vi.mock('../../../common/shared.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../common/shared.js')>()
   return {
     ...actual,
     currentTimeStamp: vi.fn(() => 1000)
   }
 })
 
-vi.mock('../../files/utils/files', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../files/utils/files')>()
+vi.mock('../../files/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
   return {
     ...actual,
     isPathExists: vi.fn(),
@@ -32,16 +32,16 @@ vi.mock('../../files/utils/files', async (importOriginal) => {
   }
 })
 
-vi.mock('../../spaces/utils/permissions', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../spaces/utils/permissions')>()
+vi.mock('../../spaces/utils/permissions.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../spaces/utils/permissions.js')>()
   return {
     ...actual,
     getEnvPermissions: vi.fn(() => 'server-perms')
   }
 })
 
-vi.mock('../constants/sync', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../constants/sync')>()
+vi.mock('../constants/sync.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../constants/sync.js')>()
   return {
     ...actual,
     SYNC_PATH_REPOSITORY: {
@@ -52,8 +52,8 @@ vi.mock('../constants/sync', async (importOriginal) => {
   }
 })
 
-vi.mock('../../notifications/constants/notifications', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../notifications/constants/notifications')>()
+vi.mock('../../notifications/constants/notifications.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../notifications/constants/notifications.js')>()
   return {
     ...actual,
     NOTIFICATION_APP: { SYNC: 'SYNC' },

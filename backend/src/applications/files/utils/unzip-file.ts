@@ -3,10 +3,10 @@ import { createWriteStream, openAsBlob } from 'node:fs'
 import path from 'node:path'
 import { Writable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
-import { DEFAULT_HIGH_WATER_MARK } from '../constants/files'
-import type { FileTaskExtractionEntry } from '../interfaces/file-task.interface'
-import { storageQuotaExceededError } from './errors'
-import { createProgressTransform, createSizeLimiter, isPathInside, makeDir } from './files'
+import { DEFAULT_HIGH_WATER_MARK } from '../constants/files.js'
+import type { FileTaskExtractionEntry } from '../interfaces/file-task.interface.js'
+import { storageQuotaExceededError } from './errors.js'
+import { createProgressTransform, createSizeLimiter, isPathInside, makeDir } from './files.js'
 
 const UNIX_FILE_TYPE_MASK = 0o170000
 const UNIX_SYMBOLIC_LINK = 0o120000

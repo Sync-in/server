@@ -1,11 +1,11 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
-import { Cache } from '../../../../infrastructure/cache/cache.service'
-import { SpaceEnv } from '../../../spaces/models/space-env.model'
-import { CACHE_TASK_TTL } from '../../constants/cache'
-import { FileTaskEvent } from '../../events/file-events'
-import { FileTask, FileTaskProps } from '../../models/file-task'
-import { dirName, fileName, fileSize, isPathIsDir } from '../../utils/files'
-import { countDirEntriesAndSize, isActiveTaskStatus } from '../../utils/tasks'
+import { Cache } from '../../../../infrastructure/cache/cache.service.js'
+import { SpaceEnv } from '../../../spaces/models/space-env.model.js'
+import { CACHE_TASK_TTL } from '../../constants/cache.js'
+import { FileTaskEvent } from '../../events/file-events.js'
+import { FileTask, FileTaskProps } from '../../models/file-task.js'
+import { dirName, fileName, fileSize, isPathIsDir } from '../../utils/files.js'
+import { countDirEntriesAndSize, isActiveTaskStatus } from '../../utils/tasks.js'
 
 @Injectable()
 export class FilesTasksWatcher implements OnModuleDestroy {

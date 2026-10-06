@@ -7,7 +7,7 @@ import {
   MAX_COMPRESSED_SYNC_DIFF_BODY_SIZE,
   MAX_DECOMPRESSED_SYNC_DIFF_BODY_SIZE,
   SyncDiffGzipBodyInterceptor
-} from './sync-diff-gzip-body.interceptor'
+} from './sync-diff-gzip-body.interceptor.js'
 
 const EXPECTED_MAX_COMPRESSED_SYNC_DIFF_BODY_SIZE = 25 * 1024 * 1024
 const EXPECTED_MAX_DECOMPRESSED_SYNC_DIFF_BODY_SIZE = 50 * 1024 * 1024

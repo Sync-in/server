@@ -1,6 +1,6 @@
-import type { i18nLocale } from '../../../common/i18n'
-import { commentMail } from './models'
-import { mailAuthor, mailEventOnElement, mailItalicContent } from './templates'
+import type { i18nLocale } from '../../../common/i18n.js'
+import { commentMail } from './models.js'
+import { mailAuthor, mailEventOnElement, mailItalicContent } from './templates.js'
 
 describe('mail templates escaping', () => {
   const language: i18nLocale = 'fr'

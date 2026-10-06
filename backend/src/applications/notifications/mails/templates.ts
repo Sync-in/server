@@ -1,6 +1,6 @@
 import { escapeUTF8 } from 'entities'
-import { capitalizeString } from '../../../common/shared'
-import { UserModel } from '../../users/models/user.model'
+import { capitalizeString } from '../../../common/shared.js'
+import { UserModel } from '../../users/models/user.model.js'
 
 export const defaultFooter = 'If you no longer wish to receive notifications, change your preferences directly from your user space.'
 

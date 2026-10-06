@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common'
-import { WebDAVProtocolGuard } from './guards/webdav-protocol.guard'
-import { WebDAVMethods } from './services/webdav-methods.service'
-import { WebDAVSpaces } from './services/webdav-spaces.service'
-import { WebDAVController } from './webdav.controller'
+import { WebDAVProtocolGuard } from './guards/webdav-protocol.guard.js'
+import { WebDAVMethods } from './services/webdav-methods.service.js'
+import { WebDAVSpaces } from './services/webdav-spaces.service.js'
+import { WebDAVController } from './webdav.controller.js'
 
 @Module({
   controllers: [WebDAVController],

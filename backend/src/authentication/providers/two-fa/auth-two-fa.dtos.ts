@@ -1,5 +1,5 @@
 import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator'
-import { LoginResponseDto } from '../../dto/login-response.dto'
+import { LoginResponseDto } from '../../dto/login-response.dto.js'
 
 export class TwoFaResponseDto extends LoginResponseDto {
   success: boolean

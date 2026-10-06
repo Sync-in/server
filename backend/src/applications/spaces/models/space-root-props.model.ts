@@ -1,6 +1,6 @@
-import type { FileProps } from '../../files/interfaces/file-props.interface'
-import type { Owner } from '../../users/interfaces/owner.interface'
-import type { SpaceRoot } from '../schemas/space-root.interface'
+import type { FileProps } from '../../files/interfaces/file-props.interface.js'
+import type { Owner } from '../../users/interfaces/owner.interface.js'
+import type { SpaceRoot } from '../schemas/space-root.interface.js'
 
 export class SpaceRootProps implements Partial<SpaceRoot> {
   id: number

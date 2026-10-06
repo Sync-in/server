@@ -1,5 +1,5 @@
-import { TOKEN_TYPE } from '../interfaces/token.interface'
-import { API_AUTH_REFRESH, API_AUTH_WS, API_TWO_FA_LOGIN_VERIFY } from './routes'
+import { TOKEN_TYPE } from '../interfaces/token.interface.js'
+import { API_AUTH_REFRESH, API_AUTH_WS, API_TWO_FA_LOGIN_VERIFY } from './routes.js'
 
 export const ACCESS_KEY = 'sync-in-access'
 export const REFRESH_KEY = 'sync-in-refresh'

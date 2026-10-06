@@ -1,10 +1,10 @@
 import { send, SendOptions, SendResult } from '@fastify/send'
 import { HttpStatus, StreamableFile } from '@nestjs/common'
 import { FastifyReply, FastifyRequest } from 'fastify'
-import { DEFAULT_HIGH_WATER_MARK } from '../constants/files'
-import { FileError } from '../models/file-error'
-import { fileName, isPathExists, isPathIsDir, isPathIsReadable } from './files'
-import { SEND_FILE_ERROR_MSG } from '../constants/operations'
+import { DEFAULT_HIGH_WATER_MARK } from '../constants/files.js'
+import { FileError } from '../models/file-error.js'
+import { fileName, isPathExists, isPathIsDir, isPathIsReadable } from './files.js'
+import { SEND_FILE_ERROR_MSG } from '../constants/operations.js'
 
 export function makeContentDispositionAttachment(fileName: string) {
   const downloadName = fileName.normalize('NFD').replace(/[\u0300-\u036f]/g, '')

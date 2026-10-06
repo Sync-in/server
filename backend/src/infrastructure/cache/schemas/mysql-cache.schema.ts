@@ -1,5 +1,5 @@
 import { index, int, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
-import { jsonColumn } from '../../database/columns'
+import { jsonColumn } from '../../database/columns.js'
 
 export const cache = mysqlTable(
   'cache',

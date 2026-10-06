@@ -9,15 +9,15 @@ import {
   WebSocketServer
 } from '@nestjs/websockets'
 import { Server } from 'socket.io'
-import { JwtIdentityPayload } from '../../authentication/interfaces/jwt-payload.interface'
-import { sleep } from '../../common/functions'
-import { GetWsUser } from '../../infrastructure/websocket/decorators/web-socket-user.decorator'
-import { AuthenticatedSocketIO } from '../../infrastructure/websocket/interfaces/auth-socket-io.interface'
-import { getClientAddress } from '../../infrastructure/websocket/utils'
-import { USER_ONLINE_STATUS } from './constants/user'
-import { USER_ROOM_PREFIX, USERS_WS } from './constants/websocket'
-import { EventChangeOnlineStatus, EventUpdateOnlineStatus, UserOnline } from './interfaces/websocket.interface'
-import { UsersManager } from './services/users-manager.service'
+import { JwtIdentityPayload } from '../../authentication/interfaces/jwt-payload.interface.js'
+import { sleep } from '../../common/functions.js'
+import { GetWsUser } from '../../infrastructure/websocket/decorators/web-socket-user.decorator.js'
+import { AuthenticatedSocketIO } from '../../infrastructure/websocket/interfaces/auth-socket-io.interface.js'
+import { getClientAddress } from '../../infrastructure/websocket/utils.js'
+import { USER_ONLINE_STATUS } from './constants/user.js'
+import { USER_ROOM_PREFIX, USERS_WS } from './constants/websocket.js'
+import { type EventChangeOnlineStatus, EventUpdateOnlineStatus, UserOnline } from './interfaces/websocket.interface.js'
+import { UsersManager } from './services/users-manager.service.js'
 
 @WebSocketGateway()
 export class WebSocketUsers implements BeforeApplicationShutdown, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {

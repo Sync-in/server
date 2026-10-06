@@ -1,10 +1,10 @@
 import { Transform, Type } from 'class-transformer'
 import { IsArray, IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator'
-import { FileSpace } from '../../files/interfaces/file-space.interface'
-import { sanitizeName, sanitizePath } from '../../files/utils/files'
-import { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto'
-import { MEMBER_TYPE, MEMBER_TYPE_REVERSE } from '../../users/constants/member'
-import { SHARE_TYPE } from '../constants/shares'
+import { FileSpace } from '../../files/interfaces/file-space.interface.js'
+import { sanitizeName, sanitizePath } from '../../files/utils/files.js'
+import { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto.js'
+import { MEMBER_TYPE, MEMBER_TYPE_REVERSE } from '../../users/constants/member.js'
+import { SHARE_TYPE } from '../constants/shares.js'
 
 export class ShareMemberDto {
   @IsNotEmpty()

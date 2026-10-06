@@ -1,5 +1,5 @@
-import type { DocumentTypes } from '../applications/files/constants/samples'
-import type { FileEditorProviders } from '../applications/files/editors/file-editor-providers.interface'
+import type { DocumentTypes } from '../applications/files/constants/samples.js'
+import type { FileEditorProviders } from '../applications/files/editors/file-editor-providers.interface.js'
 
 export interface ServerFilesConfig {
   editors: FileEditorProviders

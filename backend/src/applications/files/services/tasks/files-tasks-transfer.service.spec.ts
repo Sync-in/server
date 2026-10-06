@@ -1,11 +1,11 @@
 import fs, { access, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import * as filesUtils from '../../utils/files'
-import * as spacesPathUtils from '../../../spaces/utils/paths'
-import { FILE_OPERATION } from '../../constants/operations'
-import { FilesTasksTransfer } from './files-tasks-transfer.service'
-import { SourceCleanupError } from '../../models/file-error'
+import * as filesUtils from '../../utils/files.js'
+import * as spacesPathUtils from '../../../spaces/utils/paths.js'
+import { FILE_OPERATION } from '../../constants/operations.js'
+import { FilesTasksTransfer } from './files-tasks-transfer.service.js'
+import { SourceCleanupError } from '../../models/file-error.js'
 
 describe(FilesTasksTransfer.name, () => {
   const cacheKey = 'ftask-7-task-id'

@@ -11,20 +11,20 @@ import {
   CACHE_INDEXING_RUNNING_KEY,
   CACHE_INDEXING_RUNNING_TTL,
   INDEXABLE_EXTENSIONS
-} from '../constants/indexing'
-import { FileContentIndexContext, FileParseContext } from '../interfaces/file-parse-index'
-import { FilesContentStore } from '../models/files-content-store'
-import { FileContent, FileContentMetadata } from '../schemas/file-content.interface'
-import { docTextify } from '../utils/doc-textify/doc-textify'
-import { OCRManager } from '../utils/doc-textify/utils/ocr'
-import { getExtensionWithoutDot, getMimeType, isInternalTemporaryEntry } from '../utils/files'
-import { FilesContentParser } from './files-content-parser.service'
-import { genIndexingKey, genRunId } from '../utils/indexing'
-import { FILE_REPOSITORY } from '../constants/operations'
-import { Cache } from '../../../infrastructure/cache/cache.service'
-import { IndexingState, IndexingStatus } from '../interfaces/indexing.interface'
-import { escapePath } from '../../../common/functions'
-import { configuration } from '../../../configuration/config.environment'
+} from '../constants/indexing.js'
+import { FileContentIndexContext, FileParseContext } from '../interfaces/file-parse-index.js'
+import { FilesContentStore } from '../models/files-content-store.js'
+import { FileContent, FileContentMetadata } from '../schemas/file-content.interface.js'
+import { docTextify } from '../utils/doc-textify/doc-textify.js'
+import { OCRManager } from '../utils/doc-textify/utils/ocr.js'
+import { getExtensionWithoutDot, getMimeType, isInternalTemporaryEntry } from '../utils/files.js'
+import { FilesContentParser } from './files-content-parser.service.js'
+import { genIndexingKey, genRunId } from '../utils/indexing.js'
+import { FILE_REPOSITORY } from '../constants/operations.js'
+import { Cache } from '../../../infrastructure/cache/cache.service.js'
+import { IndexingState, IndexingStatus } from '../interfaces/indexing.interface.js'
+import { escapePath } from '../../../common/functions.js'
+import { configuration } from '../../../configuration/config.environment.js'
 
 @Injectable()
 export class FilesContentIndexer {

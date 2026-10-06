@@ -1,5 +1,5 @@
-import { FILE_REPOSITORY } from '../constants/operations'
-import type { SpaceEnv } from '../../spaces/models/space-env.model'
+import { FILE_REPOSITORY } from '../constants/operations.js'
+import type { SpaceEnv } from '../../spaces/models/space-env.model.js'
 
 export function SpaceToFileRepository(userId: number, space: SpaceEnv): { id: number; type: FILE_REPOSITORY } | null {
   if (space.inPersonalSpace) {

@@ -1,6 +1,6 @@
-import { SERVER_NAME } from '../../../common/shared'
-import { HTTP_STANDARD_METHOD, HTTP_WEBDAV_METHOD } from '../../applications.constants'
-import { WEBDAV_BASE_PATH } from './routes'
+import { SERVER_NAME } from '../../../common/shared.js'
+import { HTTP_STANDARD_METHOD, HTTP_WEBDAV_METHOD } from '../../applications.constants.js'
+import { WEBDAV_BASE_PATH } from './routes.js'
 
 export const REGEX_BASE_PATH = new RegExp(`^/?${WEBDAV_BASE_PATH}/`)
 export const NS_DAV = 'DAV:'

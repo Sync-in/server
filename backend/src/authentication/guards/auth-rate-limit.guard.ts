@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { ThrottlerGuard } from '@nestjs/throttler'
-import { AUTH_RATE_LIMIT_ERROR_MESSAGE } from '../constants/auth'
+import { AUTH_RATE_LIMIT_ERROR_MESSAGE } from '../constants/auth.js'
 
 @Injectable()
 export class AuthRateLimitGuard extends ThrottlerGuard {

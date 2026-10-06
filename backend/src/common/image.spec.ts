@@ -4,8 +4,8 @@ import path from 'node:path'
 import { Readable } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import sharp from 'sharp'
-import { maxFileSizeExceededError } from '../applications/files/utils/errors'
-import { generateThumbnail, maxThumbnailInputSize } from './image'
+import { maxFileSizeExceededError } from '../applications/files/utils/errors.js'
+import { generateThumbnail, maxThumbnailInputSize } from './image.js'
 
 async function streamToBuffer(stream: Readable): Promise<Buffer> {
   const chunks: Buffer[] = []

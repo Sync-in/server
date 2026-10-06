@@ -1,8 +1,8 @@
 import fs, { mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { FILE_OPERATION } from '../constants/operations'
-import { countDirEntriesAndSize, isTaskCancellable } from './tasks'
+import { FILE_OPERATION } from '../constants/operations.js'
+import { countDirEntriesAndSize, isTaskCancellable } from './tasks.js'
 
 describe('file task utilities', () => {
   let tmpDir: string

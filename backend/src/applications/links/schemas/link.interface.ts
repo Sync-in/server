@@ -1,4 +1,4 @@
-import type { links } from './links.schema'
+import type { links } from './links.schema.js'
 
 type LinkSchema = typeof links.$inferSelect
 

@@ -1,10 +1,14 @@
-import { usersAndGroups } from './usersgroups'
+import { usersAndGroups } from './usersgroups.js'
 
 async function main() {
   await usersAndGroups()
   console.log(`${usersAndGroups.name} Seed done`)
 }
 
-if (require.main === module) {
-  main().then(() => console.log('All seeds done'))
+try {
+  await main()
+  console.log('All seeds done')
+} catch (error) {
+  console.error('Seed failed:', error)
+  process.exitCode = 1
 }

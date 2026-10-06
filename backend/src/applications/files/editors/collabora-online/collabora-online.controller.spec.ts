@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { GUARDS_METADATA } from '@nestjs/common/constants'
-import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor'
-import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
-import { SpaceGuard } from '../../../spaces/guards/space.guard'
-import { SpacesManager } from '../../../spaces/services/spaces-manager.service'
-import { FilesMethods } from '../../services/files-methods.service'
-import { COLLABORA_CONTEXT } from './collabora-online.constants'
-import { CollaboraOnlineManager } from './collabora-online-manager.service'
-import { CollaboraOnlineController } from './collabora-online.controller'
-import { CollaboraOnlineGuard } from './collabora-online.guard'
+import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor.js'
+import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service.js'
+import { SpaceGuard } from '../../../spaces/guards/space.guard.js'
+import { SpacesManager } from '../../../spaces/services/spaces-manager.service.js'
+import { FilesMethods } from '../../services/files-methods.service.js'
+import { COLLABORA_CONTEXT } from './collabora-online.constants.js'
+import { CollaboraOnlineManager } from './collabora-online-manager.service.js'
+import { CollaboraOnlineController } from './collabora-online.controller.js'
+import { CollaboraOnlineGuard } from './collabora-online.guard.js'
 
 describe(CollaboraOnlineController.name, () => {
   let controller: CollaboraOnlineController

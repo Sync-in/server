@@ -1,8 +1,8 @@
 import { SQL, sql } from 'drizzle-orm'
 import { bigint, boolean, datetime, index, mysqlTable, tinyint, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
-import { jsonColumn } from '../../../infrastructure/database/columns'
-import type { UserPreferences } from '../interfaces/user-preferences.interface'
-import { UserSecrets } from '../interfaces/user-secrets.interface'
+import { jsonColumn } from '../../../infrastructure/database/columns.js'
+import type { UserPreferences } from '../interfaces/user-preferences.interface.js'
+import { UserSecrets } from '../interfaces/user-secrets.interface.js'
 
 /*
   role:

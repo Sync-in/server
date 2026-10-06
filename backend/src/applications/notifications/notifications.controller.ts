@@ -1,9 +1,9 @@
 import { Controller, Delete, Get, Param, ParseIntPipe, Patch } from '@nestjs/common'
-import { GetUser } from '../users/decorators/user.decorator'
-import type { UserModel } from '../users/models/user.model'
-import { NOTIFICATIONS_ROUTE } from './constants/routes'
-import type { NotificationFromUser } from './interfaces/notification-properties.interface'
-import { NotificationsManager } from './services/notifications-manager.service'
+import { GetUser } from '../users/decorators/user.decorator.js'
+import type { UserModel } from '../users/models/user.model.js'
+import { NOTIFICATIONS_ROUTE } from './constants/routes.js'
+import type { NotificationFromUser } from './interfaces/notification-properties.interface.js'
+import { NotificationsManager } from './services/notifications-manager.service.js'
 
 @Controller(NOTIFICATIONS_ROUTE.BASE)
 export class NotificationsController {

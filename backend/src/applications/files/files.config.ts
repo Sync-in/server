@@ -14,11 +14,11 @@ import {
   ValidateIf,
   ValidateNested
 } from 'class-validator'
-import type { SampleDocumentGroup } from './constants/samples'
-import { SAMPLE_DOCUMENT_GROUPS } from './constants/samples'
-import { CollaboraOnlineConfig } from './editors/collabora-online/collabora-online.config'
-import { DrawioConfig } from './editors/drawio/drawio.config'
-import { OnlyOfficeConfig } from './editors/only-office/only-office.config'
+import type { SampleDocumentGroup } from './constants/samples.js'
+import { SAMPLE_DOCUMENT_GROUPS } from './constants/samples.js'
+import { CollaboraOnlineConfig } from './editors/collabora-online/collabora-online.config.js'
+import { DrawioConfig } from './editors/drawio/drawio.config.js'
+import { OnlyOfficeConfig } from './editors/only-office/only-office.config.js'
 
 export class FilesContentIndexingOCRConfig {
   @IsBoolean()

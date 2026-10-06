@@ -5,9 +5,9 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
-import { AppService } from './app.service'
-import { ENVIRONMENT_PREFIX } from './configuration/config.constants'
-import { configuration, exportConfiguration } from './configuration/config.environment'
+import { AppService } from './app.service.js'
+import { ENVIRONMENT_PREFIX } from './configuration/config.constants.js'
+import { configuration, exportConfiguration } from './configuration/config.environment.js'
 
 vi.mock('@socket.io/cluster-adapter', () => ({
   setupPrimary: vi.fn()

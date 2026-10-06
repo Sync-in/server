@@ -1,6 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException } from '@nestjs/common'
-import { SERVER_NAME } from '../../../common/shared'
-import { XML_CONTENT_TYPE } from '../constants/webdav'
+import { SERVER_NAME } from '../../../common/shared.js'
+import { XML_CONTENT_TYPE } from '../constants/webdav.js'
 
 @Catch(HttpException)
 export class WebDAVExceptionsFilter implements ExceptionFilter {

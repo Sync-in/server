@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { setTimeout } from 'node:timers/promises'
-import { AdminService } from './admin.service'
+import { AdminService } from './admin.service.js'
 
 @Injectable()
 export class AdminSchedulerService {

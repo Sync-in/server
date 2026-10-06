@@ -2,7 +2,7 @@
   "productName": "Sync-in",
   "name": "sync-in-server",
   "version": "2.5.2",
-  "description": "The secure, open-source platform for file storage, sharing, collaboration, and syncing",
+  "description": "The sovereign platform for file storage, sharing, synchronization, and collaboration",
   "keywords": [
     "self-hosted",
     "self-hosting",
@@ -63,6 +63,7 @@
   },
   "license": "AGPL-3.0-or-later",
   "private": true,
+  "type": "module",
   "os": [
     "!win32"
   ],
@@ -75,7 +76,7 @@
   ],
   "scripts": {
     "build": "npm run build --ws",
-    "release:build": "npm run build && node scripts/build/release.mjs",
+    "release:build": "npm run build && node scripts/build/release.js",
     "release:clean": "rm -rf release",
     "bump:version": "npm run test && commit-and-tag-version",
     "bump:version:patch": "npm run test && commit-and-tag-version --release-as patch",

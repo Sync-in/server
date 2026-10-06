@@ -1,12 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Post, Req, Res, StreamableFile } from '@nestjs/common'
-import { FastifyReply } from 'fastify'
-import { FastifySpaceRequest } from '../spaces/interfaces/space-request.interface'
-import { GetUser } from '../users/decorators/user.decorator'
-import { UserModel } from '../users/models/user.model'
-import { API_FILES_TASKS, FILES_ROUTE } from './constants/routes'
-import type { FileTasksPollResponse } from './interfaces/file-task.interface'
-import { FilesTasksManager } from './services/tasks/files-tasks-manager.service'
-import { FileTasksDeleteDto, FileTasksPollDto } from './dto/file-tasks.dto'
+import { type FastifyReply } from 'fastify'
+import { type FastifySpaceRequest } from '../spaces/interfaces/space-request.interface.js'
+import { GetUser } from '../users/decorators/user.decorator.js'
+import { UserModel } from '../users/models/user.model.js'
+import { API_FILES_TASKS, FILES_ROUTE } from './constants/routes.js'
+import type { FileTasksPollResponse } from './interfaces/file-task.interface.js'
+import { FilesTasksManager } from './services/tasks/files-tasks-manager.service.js'
+import { FileTasksDeleteDto, FileTasksPollDto } from './dto/file-tasks.dto.js'
 
 @Controller(API_FILES_TASKS)
 export class FilesTasksController {

@@ -2,8 +2,8 @@ import { Injectable, type OnModuleInit } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PinoLogger } from 'nestjs-pino'
 import type { SendMailOptions, SMTPTransportOptions, Transporter } from 'nodemailer'
-import type { MailProps } from './interfaces/mail.interface'
-import { MailerConfig } from './mailer.config'
+import type { MailProps } from './interfaces/mail.interface.js'
+import { MailerConfig } from './mailer.config.js'
 
 @Injectable()
 export class Mailer implements OnModuleInit {

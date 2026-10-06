@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { SpaceGuard } from '../spaces/guards/space.guard'
-import { FILE_OPERATION } from './constants/operations'
-import { FilesOperationsController } from './files-operations.controller'
-import { FilesMethods } from './services/files-methods.service'
-import { FilesTasksManager } from './services/tasks/files-tasks-manager.service'
+import { SpaceGuard } from '../spaces/guards/space.guard.js'
+import { FILE_OPERATION } from './constants/operations.js'
+import { FilesOperationsController } from './files-operations.controller.js'
+import { FilesMethods } from './services/files-methods.service.js'
+import { FilesTasksManager } from './services/tasks/files-tasks-manager.service.js'
 
 describe(FilesOperationsController.name, () => {
   let filesOperationsController: FilesOperationsController

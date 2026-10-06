@@ -1,5 +1,5 @@
-import { GROUP_TYPE, GROUP_VISIBILITY } from '../constants/group'
-import type { Group } from '../schemas/group.interface'
+import { GROUP_TYPE, GROUP_VISIBILITY } from '../constants/group.js'
+import type { Group } from '../schemas/group.interface.js'
 
 export interface AdminGroup extends Omit<Group, 'parentId' | 'type'> {
   id: number

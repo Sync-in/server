@@ -2,11 +2,11 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { PinoLogger } from 'nestjs-pino'
 import { ExtractJwt, Strategy } from 'passport-jwt'
-import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
-import { configuration } from '../../../../configuration/config.environment'
-import { UserModel } from '../../../users/models/user.model'
-import { COLLABORA_TOKEN_QUERY_PARAM_NAME } from './collabora-online.constants'
-import type { JwtPayloadCollaboraOnline } from './collabora-online.interface'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface.js'
+import { configuration } from '../../../../configuration/config.environment.js'
+import { UserModel } from '../../../users/models/user.model.js'
+import { COLLABORA_TOKEN_QUERY_PARAM_NAME } from './collabora-online.constants.js'
+import type { JwtPayloadCollaboraOnline } from './collabora-online.interface.js'
 
 @Injectable()
 export class CollaboraOnlineStrategy extends PassportStrategy(Strategy, 'filesCollaboraOnlineToken') implements AbstractStrategy {

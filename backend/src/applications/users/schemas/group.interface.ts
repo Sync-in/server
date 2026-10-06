@@ -1,4 +1,4 @@
-import type { groups } from './groups.schema'
+import type { groups } from './groups.schema.js'
 
 type GroupSchema = typeof groups.$inferSelect
 

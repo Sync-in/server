@@ -1,18 +1,18 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
-import { SharesQueries } from '../../shares/services/shares-queries.service'
-import { SPACE_ALIAS } from '../../spaces/constants/spaces'
-import { SpacesQueries } from '../../spaces/services/spaces-queries.service'
-import { USER_PERMISSION } from '../../users/constants/user'
-import { FILE_REPOSITORY } from '../constants/operations'
-import type { FileProps } from '../interfaces/file-props.interface'
-import { getProps, isPathExists } from '../utils/files'
-import { FilesFavoritesManager } from './files-favorites-manager.service'
-import { FilesFavoritesQueries } from './files-favorites-queries.service'
-import { FilesQueries } from './files-queries.service'
+import { SharesQueries } from '../../shares/services/shares-queries.service.js'
+import { SPACE_ALIAS } from '../../spaces/constants/spaces.js'
+import { SpacesQueries } from '../../spaces/services/spaces-queries.service.js'
+import { USER_PERMISSION } from '../../users/constants/user.js'
+import { FILE_REPOSITORY } from '../constants/operations.js'
+import type { FileProps } from '../interfaces/file-props.interface.js'
+import { getProps, isPathExists } from '../utils/files.js'
+import { FilesFavoritesManager } from './files-favorites-manager.service.js'
+import { FilesFavoritesQueries } from './files-favorites-queries.service.js'
+import { FilesQueries } from './files-queries.service.js'
 import type { Mock } from 'vitest'
 
-vi.mock('../utils/files', () => ({
+vi.mock('../utils/files.js', () => ({
   getProps: vi.fn(),
   isPathExists: vi.fn()
 }))

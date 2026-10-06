@@ -1,13 +1,13 @@
 import { sql } from 'drizzle-orm'
 import { bigint, char, datetime, index, mysqlTable } from 'drizzle-orm/mysql-core'
-import { jsonColumn } from '../../../infrastructure/database/columns'
-import { files } from '../../files/schemas/files.schema'
-import { shares } from '../../shares/schemas/shares.schema'
-import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema'
-import { spaces } from '../../spaces/schemas/spaces.schema'
-import { users } from '../../users/schemas/users.schema'
-import { SyncPathSettings } from '../interfaces/sync-path.interface'
-import { syncClients } from './sync-clients.schema'
+import { jsonColumn } from '../../../infrastructure/database/columns.js'
+import { files } from '../../files/schemas/files.schema.js'
+import { shares } from '../../shares/schemas/shares.schema.js'
+import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema.js'
+import { spaces } from '../../spaces/schemas/spaces.schema.js'
+import { users } from '../../users/schemas/users.schema.js'
+import { SyncPathSettings } from '../interfaces/sync-path.interface.js'
+import { syncClients } from './sync-clients.schema.js'
 
 /*
   ownerId: sync personal space partially (fileId is required)

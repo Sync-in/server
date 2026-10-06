@@ -3,8 +3,8 @@ import { TestingModule } from '@nestjs/testing'
 import { Column, eq, inArray, isNull, SQL, sql } from 'drizzle-orm'
 import { MySqlDatabase, MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { MySqlQueryResult } from 'drizzle-orm/mysql2'
-import { DB_TOKEN_PROVIDER } from './constants'
-import * as schema from './schema'
+import { DB_TOKEN_PROVIDER } from './constants.js'
+import * as schema from './schema.js'
 
 async function dbGetConnection(app: NestFastifyApplication | TestingModule, mode: 'pool' | 'client' = 'pool') {
   const db: MySqlDatabase<any, any> = await app.resolve(DB_TOKEN_PROVIDER)

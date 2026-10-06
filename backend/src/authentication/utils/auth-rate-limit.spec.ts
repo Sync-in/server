@@ -1,6 +1,6 @@
-import type { Cache } from '../../infrastructure/cache/cache.service'
-import { AUTH_PASSWORD_WORK_RATE_LIMIT_OPTIONS, AUTH_WEBDAV_RATE_LIMIT_OPTIONS } from '../constants/auth'
-import { consumePasswordWorkRateLimit, consumeRouteAuthRateLimit, consumeWebDAVRateLimit } from './auth-rate-limit'
+import type { Cache } from '../../infrastructure/cache/cache.service.js'
+import { AUTH_PASSWORD_WORK_RATE_LIMIT_OPTIONS, AUTH_WEBDAV_RATE_LIMIT_OPTIONS } from '../constants/auth.js'
+import { consumePasswordWorkRateLimit, consumeRouteAuthRateLimit, consumeWebDAVRateLimit } from './auth-rate-limit.js'
 
 describe('Authentication rate-limit helpers', () => {
   const rateLimitResult = { totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 }

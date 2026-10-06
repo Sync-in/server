@@ -1,7 +1,7 @@
 import 'reflect-metadata'
 import { Logger } from '@nestjs/common'
-import { CacheDecorator } from './cache.decorator'
-import { Cache } from './cache.service'
+import { CacheDecorator } from './cache.decorator.js'
+import { Cache } from './cache.service.js'
 
 interface CacheMock {
   genSlugKey: ReturnType<typeof vi.fn>

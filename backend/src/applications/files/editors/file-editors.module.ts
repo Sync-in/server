@@ -1,5 +1,5 @@
 import { type DynamicModule, Module, type Type } from '@nestjs/common'
-import { configuration } from '../../../configuration/config.environment'
+import { configuration } from '../../../configuration/config.environment.js'
 
 @Module({})
 export class FileEditorsModule {

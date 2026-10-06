@@ -1,10 +1,10 @@
 import { createMock, type DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext, ServiceUnavailableException } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { INFRASTRUCTURE_DEPENDENCY } from './availability.constants'
-import { AvailabilitySkip } from './availability.decorator'
-import { AvailabilityGuard } from './availability.guard'
-import { Availability } from './availability.service'
+import { INFRASTRUCTURE_DEPENDENCY } from './availability.constants.js'
+import { AvailabilitySkip } from './availability.decorator.js'
+import { AvailabilityGuard } from './availability.guard.js'
+import { Availability } from './availability.service.js'
 
 describe(AvailabilityGuard.name, () => {
   let availability: Availability

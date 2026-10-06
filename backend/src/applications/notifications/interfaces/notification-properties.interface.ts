@@ -1,8 +1,8 @@
-import type { ACTION } from '../../../common/constants'
-import type { Owner } from '../../users/interfaces/owner.interface'
-import type { UserModel } from '../../users/models/user.model'
-import type { NOTIFICATION_APP } from '../constants/notifications'
-import type { Notification } from '../schemas/notification.interface'
+import type { ACTION } from '../../../common/constants.js'
+import type { Owner } from '../../users/interfaces/owner.interface.js'
+import type { UserModel } from '../../users/models/user.model.js'
+import type { NOTIFICATION_APP } from '../constants/notifications.js'
+import type { Notification } from '../schemas/notification.interface.js'
 
 export interface NotificationContent {
   app: NOTIFICATION_APP

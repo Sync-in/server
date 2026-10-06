@@ -1,4 +1,4 @@
-import { APP_STORE_PLATFORM, APP_STORE_REPOSITORY } from '../constants/store'
+import { APP_STORE_PLATFORM, APP_STORE_REPOSITORY } from '../constants/store.js'
 
 interface PackageManifest {
   package: string

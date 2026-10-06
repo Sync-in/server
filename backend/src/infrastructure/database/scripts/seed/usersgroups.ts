@@ -1,13 +1,13 @@
 import { faker } from '@faker-js/faker'
-import { ResultSetHeader } from 'mysql2/promise'
-import { USER_PERMISSION, USER_ROLE } from '../../../../applications/users/constants/user'
-import { Group } from '../../../../applications/users/schemas/group.interface'
-import { groups } from '../../../../applications/users/schemas/groups.schema'
-import { User } from '../../../../applications/users/schemas/user.interface'
-import { usersGroups } from '../../../../applications/users/schemas/users-groups.schema'
-import { users } from '../../../../applications/users/schemas/users.schema'
-import { hashPassword } from '../../../../common/functions'
-import { getDB } from '../db'
+import type { ResultSetHeader } from 'mysql2/promise'
+import { USER_PERMISSION, USER_ROLE } from '../../../../applications/users/constants/user.js'
+import { Group } from '../../../../applications/users/schemas/group.interface.js'
+import { groups } from '../../../../applications/users/schemas/groups.schema.js'
+import { User } from '../../../../applications/users/schemas/user.interface.js'
+import { usersGroups } from '../../../../applications/users/schemas/users-groups.schema.js'
+import { users } from '../../../../applications/users/schemas/users.schema.js'
+import { hashPassword } from '../../../../common/functions.js'
+import { getDB } from '../db.js'
 
 const alreadyUsed = ['sync-in', 'support@sync-in.com']
 
@@ -73,8 +73,4 @@ export const usersAndGroups = async () => {
   } finally {
     await db.$client.end()
   }
-}
-
-if (require.main === module) {
-  usersAndGroups().then(() => console.log('Seed done'))
 }

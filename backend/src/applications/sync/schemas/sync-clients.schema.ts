@@ -1,8 +1,8 @@
 import { sql } from 'drizzle-orm'
 import { bigint, boolean, char, datetime, index, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
-import { jsonColumn } from '../../../infrastructure/database/columns'
-import { users } from '../../users/schemas/users.schema'
-import type { SyncClientInfo } from '../interfaces/sync-client.interface'
+import { jsonColumn } from '../../../infrastructure/database/columns.js'
+import { users } from '../../users/schemas/users.schema.js'
+import type { SyncClientInfo } from '../interfaces/sync-client.interface.js'
 
 export const syncClients = mysqlTable(
   'sync_clients',

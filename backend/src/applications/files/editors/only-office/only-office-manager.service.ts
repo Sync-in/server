@@ -6,28 +6,28 @@ import https from 'https'
 import crypto from 'node:crypto'
 import os from 'node:os'
 import path from 'node:path'
-import { JwtIdentityPayload } from '../../../../authentication/interfaces/jwt-payload.interface'
-import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
-import { convertHumanTimeToSeconds } from '../../../../common/functions'
-import { encodeUrl } from '../../../../common/shared'
-import { configuration } from '../../../../configuration/config.environment'
-import { Cache } from '../../../../infrastructure/cache/cache.service'
-import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
-import { HTTP_METHOD } from '../../../applications.constants'
-import { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface'
-import type { SpaceEnv } from '../../../spaces/models/space-env.model'
-import { canModifySpaceEnv } from '../../../spaces/utils/permissions'
-import { USER_THEME } from '../../../users/constants/user-preferences'
-import type { UserTheme } from '../../../users/interfaces/user-preferences.interface'
-import type { UserModel } from '../../../users/models/user.model'
-import { getAvatarBase64 } from '../../../users/utils/avatar'
-import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
-import { FILE_MODE } from '../../constants/operations'
-import type { FileDBProps } from '../../interfaces/file-db-props.interface'
-import { FileLockOptions } from '../../interfaces/file-lock.interface'
-import { FileLockProps } from '../../interfaces/file-props.interface'
-import { LockConflict } from '../../models/file-lock-error'
-import { FilesLockManager } from '../../services/files-lock-manager.service'
+import { JwtIdentityPayload } from '../../../../authentication/interfaces/jwt-payload.interface.js'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface.js'
+import { convertHumanTimeToSeconds } from '../../../../common/functions.js'
+import { encodeUrl } from '../../../../common/shared.js'
+import { configuration } from '../../../../configuration/config.environment.js'
+import { Cache } from '../../../../infrastructure/cache/cache.service.js'
+import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service.js'
+import { HTTP_METHOD } from '../../../applications.constants.js'
+import { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface.js'
+import type { SpaceEnv } from '../../../spaces/models/space-env.model.js'
+import { canModifySpaceEnv } from '../../../spaces/utils/permissions.js'
+import { USER_THEME } from '../../../users/constants/user-preferences.js'
+import type { UserTheme } from '../../../users/interfaces/user-preferences.interface.js'
+import type { UserModel } from '../../../users/models/user.model.js'
+import { getAvatarBase64 } from '../../../users/utils/avatar.js'
+import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav.js'
+import { FILE_MODE } from '../../constants/operations.js'
+import type { FileDBProps } from '../../interfaces/file-db-props.interface.js'
+import { FileLockOptions } from '../../interfaces/file-lock.interface.js'
+import { FileLockProps } from '../../interfaces/file-props.interface.js'
+import { LockConflict } from '../../models/file-lock-error.js'
+import { FilesLockManager } from '../../services/files-lock-manager.service.js'
 import {
   copyFileContent,
   fileSize,
@@ -37,7 +37,7 @@ import {
   isPathIsDir,
   removeFiles,
   writeUploadFromStream
-} from '../../utils/files'
+} from '../../utils/files.js'
 import {
   EURO_OFFICE_APP_LOCK,
   ONLY_OFFICE_APP_LOCK,
@@ -47,13 +47,13 @@ import {
   ONLY_OFFICE_EXTENSIONS,
   ONLY_OFFICE_INTERNAL_URI,
   ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME
-} from './only-office.constants'
-import { OnlyOfficeReqDto } from './only-office.dtos'
-import { OnlyOfficeCallBack, OnlyOfficeConfig, OnlyOfficeConvertForm } from './only-office.interface'
-import { API_ONLY_OFFICE_CALLBACK, API_ONLY_OFFICE_DOCUMENT } from './only-office.routes'
-import { FileEvent } from '../../events/file-events'
-import { ACTION } from '../../../../common/constants'
-import { createUploadStreamLimiter, parseContentLength } from '../../utils/upload-file'
+} from './only-office.constants.js'
+import { OnlyOfficeReqDto } from './only-office.dtos.js'
+import { OnlyOfficeCallBack, OnlyOfficeConfig, OnlyOfficeConvertForm } from './only-office.interface.js'
+import { API_ONLY_OFFICE_CALLBACK, API_ONLY_OFFICE_DOCUMENT } from './only-office.routes.js'
+import { FileEvent } from '../../events/file-events.js'
+import { ACTION } from '../../../../common/constants.js'
+import { createUploadStreamLimiter, parseContentLength } from '../../utils/upload-file.js'
 
 @Injectable()
 export class OnlyOfficeManager {

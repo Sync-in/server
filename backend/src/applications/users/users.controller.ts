@@ -1,20 +1,20 @@
 import { Body, Controller, Delete, Get, Header, Param, ParseIntPipe, Patch, Post, Put, Req, Search, StreamableFile, UseGuards } from '@nestjs/common'
 import { createReadStream } from 'fs'
-import { LoginResponseDto } from '../../authentication/dto/login-response.dto'
-import { FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface'
+import { LoginResponseDto } from '../../authentication/dto/login-response.dto.js'
+import { type FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface.js'
 import {
   AuthTwoFaVerificationOrPasswordGuard,
   AuthTwoFaVerificationWithoutPasswordGuard
-} from '../../authentication/providers/two-fa/guards/auth-two-fa-verification.guard'
-import { makeContentDispositionAttachment } from '../files/utils/send-file'
-import { USERS_ROUTE } from './constants/routes'
-import { USER_PERMISSION, USER_ROLE } from './constants/user'
-import { UserHavePermission } from './decorators/permissions.decorator'
-import { UserHaveRole } from './decorators/roles.decorator'
-import { GetUser } from './decorators/user.decorator'
-import { UserCreateOrUpdateGroupDto } from './dto/create-or-update-group.dto'
-import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from './dto/create-or-update-user.dto'
-import { SearchMembersDto } from './dto/search-members.dto'
+} from '../../authentication/providers/two-fa/guards/auth-two-fa-verification.guard.js'
+import { makeContentDispositionAttachment } from '../files/utils/send-file.js'
+import { USERS_ROUTE } from './constants/routes.js'
+import { USER_PERMISSION, USER_ROLE } from './constants/user.js'
+import { UserHavePermission } from './decorators/permissions.decorator.js'
+import { UserHaveRole } from './decorators/roles.decorator.js'
+import { GetUser } from './decorators/user.decorator.js'
+import { UserCreateOrUpdateGroupDto } from './dto/create-or-update-group.dto.js'
+import { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from './dto/create-or-update-user.dto.js'
+import { SearchMembersDto } from './dto/search-members.dto.js'
 import {
   UserAppPasswordDto,
   UserLanguageDto,
@@ -22,18 +22,18 @@ import {
   UserPreferencesDto,
   UserStorageIndexingDto,
   UserUpdatePasswordDto
-} from './dto/user-properties.dto'
-import { UserPermissionsGuard } from './guards/permissions.guard'
-import { UserRolesGuard } from './guards/roles.guard'
-import { GroupBrowse } from './interfaces/group-browse.interface'
-import { GroupMember } from './interfaces/group-member'
-import { GuestUser } from './interfaces/guest-user.interface'
-import { Member } from './interfaces/member.interface'
-import type { UserPreferences } from './interfaces/user-preferences.interface'
-import { UserAppPassword } from './interfaces/user-secrets.interface'
-import { UserModel } from './models/user.model'
-import { UsersManager } from './services/users-manager.service'
-import { USER_AVATAR_FILE_NAME } from './utils/avatar'
+} from './dto/user-properties.dto.js'
+import { UserPermissionsGuard } from './guards/permissions.guard.js'
+import { UserRolesGuard } from './guards/roles.guard.js'
+import { GroupBrowse } from './interfaces/group-browse.interface.js'
+import { GroupMember } from './interfaces/group-member.js'
+import { GuestUser } from './interfaces/guest-user.interface.js'
+import { Member } from './interfaces/member.interface.js'
+import type { UserPreferences } from './interfaces/user-preferences.interface.js'
+import { UserAppPassword } from './interfaces/user-secrets.interface.js'
+import { UserModel } from './models/user.model.js'
+import { UsersManager } from './services/users-manager.service.js'
+import { USER_AVATAR_FILE_NAME } from './utils/avatar.js'
 
 @Controller(USERS_ROUTE.BASE)
 @UseGuards(UserRolesGuard)

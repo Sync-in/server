@@ -1,5 +1,5 @@
 import { IoAdapter } from '@nestjs/platform-socket.io'
-import { ClusterAdapter } from './cluster.adapter'
+import { ClusterAdapter } from './cluster.adapter.js'
 
 describe(ClusterAdapter.name, () => {
   afterEach(() => vi.restoreAllMocks())

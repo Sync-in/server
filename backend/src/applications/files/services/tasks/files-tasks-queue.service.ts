@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
-import { Cache } from '../../../../infrastructure/cache/cache.service'
-import { CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../../constants/cache'
-import type { FileTaskQueueEntry, FileTaskQueueItem, FileTaskQueueStarter } from '../../interfaces/file-task-queue.interface'
+import { Cache } from '../../../../infrastructure/cache/cache.service.js'
+import { CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../../constants/cache.js'
+import type { FileTaskQueueEntry, FileTaskQueueItem, FileTaskQueueStarter } from '../../interfaces/file-task-queue.interface.js'
 
 @Injectable()
 export class FilesTasksQueue implements OnModuleDestroy {

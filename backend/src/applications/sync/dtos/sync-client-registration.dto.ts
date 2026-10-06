@@ -1,6 +1,6 @@
 import { Type } from 'class-transformer'
 import { IsDefined, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator'
-import { SyncClientInfoDto } from './sync-client-info.dto'
+import { SyncClientInfoDto } from './sync-client-info.dto.js'
 
 export class SyncClientRegistrationDto {
   @IsNotEmpty()

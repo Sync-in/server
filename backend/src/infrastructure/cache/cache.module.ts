@@ -1,8 +1,8 @@
 import { Global, Module } from '@nestjs/common'
-import { configuration } from '../../configuration/config.environment'
-import { MysqlCacheAdapter } from './adapters/mysql-cache.adapter'
-import { RedisCacheAdapter } from './adapters/redis-cache.adapter'
-import { Cache } from './cache.service'
+import { configuration } from '../../configuration/config.environment.js'
+import { MysqlCacheAdapter } from './adapters/mysql-cache.adapter.js'
+import { RedisCacheAdapter } from './adapters/redis-cache.adapter.js'
+import { Cache } from './cache.service.js'
 
 @Global()
 @Module({

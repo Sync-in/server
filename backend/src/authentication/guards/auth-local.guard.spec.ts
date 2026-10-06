@@ -2,11 +2,11 @@ import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { BadRequestException, ExecutionContext } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
-import { UserModel } from '../../applications/users/models/user.model'
-import { generateUserTest } from '../../applications/users/utils/test'
-import { AuthProvider } from '../providers/auth-providers.models'
-import { AuthLocalGuard } from './auth-local.guard'
-import { AuthLocalStrategy } from './auth-local.strategy'
+import { UserModel } from '../../applications/users/models/user.model.js'
+import { generateUserTest } from '../../applications/users/utils/test.js'
+import { AuthProvider } from '../providers/auth-providers.models.js'
+import { AuthLocalGuard } from './auth-local.guard.js'
+import { AuthLocalStrategy } from './auth-local.strategy.js'
 
 describe(AuthLocalGuard.name, () => {
   let authLocalGuard: AuthLocalGuard

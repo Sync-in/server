@@ -14,10 +14,10 @@ import {
   MaxLength,
   Min
 } from 'class-validator'
-import { RejectIfMatch } from '../../../common/decorators'
-import { regExpInvalidFileName } from '../../../common/shared'
-import { TAR_EXTENSION, ZIP_EXTENSION } from '../constants/compress'
-import { SEARCH_FILES_DEFAULT_LIMIT, SEARCH_FILES_MAX_LIMIT, SEARCH_FILES_MAX_QUERY_LENGTH, SEARCH_FILES_MIN_LIMIT } from '../constants/search'
+import { RejectIfMatch } from '../../../common/decorators.js'
+import { regExpInvalidFileName } from '../../../common/shared.js'
+import { TAR_EXTENSION, ZIP_EXTENSION } from '../constants/compress.js'
+import { SEARCH_FILES_DEFAULT_LIMIT, SEARCH_FILES_MAX_LIMIT, SEARCH_FILES_MAX_QUERY_LENGTH, SEARCH_FILES_MIN_LIMIT } from '../constants/search.js'
 
 export class CopyMoveFileDto {
   @IsNotEmpty()

@@ -1,4 +1,4 @@
-import { loadVersion } from './app.functions'
+import { loadVersion } from './app.functions.js'
 
 export const VERSION = loadVersion()
 export const USER_AGENT = `sync-in-server/${VERSION}`

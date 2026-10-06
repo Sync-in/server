@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { MySqlDialect } from 'drizzle-orm/mysql-core'
-import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
-import { FilesContentStoreMySQL } from './files-content-store-mysql.service'
+import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
+import { FilesContentStoreMySQL } from './files-content-store-mysql.service.js'
 import { Mock } from 'vitest'
 
 describe(FilesContentStoreMySQL.name, () => {

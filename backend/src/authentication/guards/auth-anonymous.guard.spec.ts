@@ -4,10 +4,10 @@ import { ConfigModule } from '@nestjs/config'
 import { PassportModule } from '@nestjs/passport'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
-import { UsersManager } from '../../applications/users/services/users-manager.service'
-import { exportConfiguration } from '../../configuration/config.environment'
-import { AuthAnonymousGuard } from './auth-anonymous.guard'
-import { AuthAnonymousStrategy } from './auth-anonymous.strategy'
+import { UsersManager } from '../../applications/users/services/users-manager.service.js'
+import { exportConfiguration } from '../../configuration/config.environment.js'
+import { AuthAnonymousGuard } from './auth-anonymous.guard.js'
+import { AuthAnonymousStrategy } from './auth-anonymous.strategy.js'
 
 describe(AuthAnonymousGuard.name, () => {
   let authAnonymousGuard: AuthAnonymousGuard

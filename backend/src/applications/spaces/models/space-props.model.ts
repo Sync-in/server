@@ -1,9 +1,9 @@
-import { uniquePermissions } from '../../../common/functions'
-import { MEMBER_TYPE } from '../../users/constants/member'
-import { Member } from '../../users/interfaces/member.interface'
-import { SPACE_ALL_OPERATIONS, SPACE_ROLE } from '../constants/spaces'
-import { Space } from '../schemas/space.interface'
-import { SpaceRootProps } from './space-root-props.model'
+import { uniquePermissions } from '../../../common/functions.js'
+import { MEMBER_TYPE } from '../../users/constants/member.js'
+import { Member } from '../../users/interfaces/member.interface.js'
+import { SPACE_ALL_OPERATIONS, SPACE_ROLE } from '../constants/spaces.js'
+import { Space } from '../schemas/space.interface.js'
+import { SpaceRootProps } from './space-root-props.model.js'
 
 export class SpaceProps implements Space {
   id: number

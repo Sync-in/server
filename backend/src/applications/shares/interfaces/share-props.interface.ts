@@ -1,6 +1,6 @@
-import type { FileSpace } from '../../files/interfaces/file-space.interface'
-import type { Member } from '../../users/interfaces/member.interface'
-import type { Share } from '../schemas/share.interface'
+import type { FileSpace } from '../../files/interfaces/file-space.interface.js'
+import type { Member } from '../../users/interfaces/member.interface.js'
+import type { Share } from '../schemas/share.interface.js'
 
 export class ShareProps implements Pick<
   Share,

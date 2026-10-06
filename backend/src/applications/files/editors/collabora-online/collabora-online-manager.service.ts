@@ -4,21 +4,21 @@ import { FastifyReply } from 'fastify'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
-import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
-import { convertHumanTimeToSeconds } from '../../../../common/functions'
-import { configuration } from '../../../../configuration/config.environment'
-import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
-import type { SpaceEnv } from '../../../spaces/models/space-env.model'
-import { canModifySpaceEnv } from '../../../spaces/utils/permissions'
-import type { UserModel } from '../../../users/models/user.model'
-import { getAvatarBase64 } from '../../../users/utils/avatar'
-import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
-import { FILE_MODE } from '../../constants/operations'
-import { FileLockOptions } from '../../interfaces/file-lock.interface'
-import { FileLockProps } from '../../interfaces/file-props.interface'
-import { FileError } from '../../models/file-error'
-import { LockConflict } from '../../models/file-lock-error'
-import { FilesLockManager } from '../../services/files-lock-manager.service'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface.js'
+import { convertHumanTimeToSeconds } from '../../../../common/functions.js'
+import { configuration } from '../../../../configuration/config.environment.js'
+import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service.js'
+import type { SpaceEnv } from '../../../spaces/models/space-env.model.js'
+import { canModifySpaceEnv } from '../../../spaces/utils/permissions.js'
+import type { UserModel } from '../../../users/models/user.model.js'
+import { getAvatarBase64 } from '../../../users/utils/avatar.js'
+import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav.js'
+import { FILE_MODE } from '../../constants/operations.js'
+import { FileLockOptions } from '../../interfaces/file-lock.interface.js'
+import { FileLockProps } from '../../interfaces/file-props.interface.js'
+import { FileError } from '../../models/file-error.js'
+import { LockConflict } from '../../models/file-lock-error.js'
+import { FilesLockManager } from '../../services/files-lock-manager.service.js'
 import {
   copyFileContent,
   fileName,
@@ -30,7 +30,7 @@ import {
   removeFiles,
   uniqueFilePathFromDir,
   writeUploadFromStream
-} from '../../utils/files'
+} from '../../utils/files.js'
 import {
   COLLABORA_APP_LOCK,
   COLLABORA_HEADERS,
@@ -39,13 +39,13 @@ import {
   COLLABORA_TOKEN_QUERY_PARAM_NAME,
   COLLABORA_URI,
   COLLABORA_WOPI_SRC_QUERY_PARAM_NAME
-} from './collabora-online.constants'
-import { CollaboraOnlineReqDto, CollaboraSaveDocumentDto } from './collabora-online.dtos'
-import type { CollaboraOnlineCheckFileInfo, FastifyCollaboraOnlineSpaceRequest, JwtPayloadCollaboraOnline } from './collabora-online.interface'
-import { API_COLLABORA_ONLINE_FILES } from './collabora-online.routes'
-import { FileEvent } from '../../events/file-events'
-import { ACTION } from '../../../../common/constants'
-import { createUploadStreamLimiter, parseContentLength } from '../../utils/upload-file'
+} from './collabora-online.constants.js'
+import { CollaboraOnlineReqDto, CollaboraSaveDocumentDto } from './collabora-online.dtos.js'
+import type { CollaboraOnlineCheckFileInfo, FastifyCollaboraOnlineSpaceRequest, JwtPayloadCollaboraOnline } from './collabora-online.interface.js'
+import { API_COLLABORA_ONLINE_FILES } from './collabora-online.routes.js'
+import { FileEvent } from '../../events/file-events.js'
+import { ACTION } from '../../../../common/constants.js'
+import { createUploadStreamLimiter, parseContentLength } from '../../utils/upload-file.js'
 
 @Injectable()
 export class CollaboraOnlineManager {

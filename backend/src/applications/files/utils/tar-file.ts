@@ -3,9 +3,9 @@ import { lstat } from 'node:fs/promises'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
 import { create, type Pack, type WriteEntry } from 'tar'
-import { DEFAULT_HIGH_WATER_MARK } from '../constants/files'
-import { storageQuotaExceededError } from './errors'
-import { createProgressTransform, fileName, isInternalTemporaryEntry, isPathInside } from './files'
+import { DEFAULT_HIGH_WATER_MARK } from '../constants/files.js'
+import { storageQuotaExceededError } from './errors.js'
+import { createProgressTransform, fileName, isInternalTemporaryEntry, isPathInside } from './files.js'
 
 export interface TarFileEntry {
   name: string

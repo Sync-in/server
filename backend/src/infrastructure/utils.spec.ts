@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { connectionErrorMessage, isRetryableConnectionError, redactRedisUrl } from './utils'
+import { connectionErrorMessage, isRetryableConnectionError, redactRedisUrl } from './utils.js'
 
 describe(redactRedisUrl.name, () => {
   it.each([

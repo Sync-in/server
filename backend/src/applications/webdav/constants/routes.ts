@@ -1,5 +1,5 @@
-import { SERVER_NAME } from '../../../common/shared'
-import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces'
+import { SERVER_NAME } from '../../../common/shared.js'
+import { SPACE_ALIAS, SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
 
 export const WEBDAV_BASE_PATH = 'webdav'
 

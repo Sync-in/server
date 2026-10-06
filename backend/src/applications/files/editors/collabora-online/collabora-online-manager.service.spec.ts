@@ -4,27 +4,27 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { FastifyReply } from 'fastify'
 import fs from 'node:fs/promises'
 import { Readable } from 'node:stream'
-import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
-import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service'
-import { SPACE_OPERATION } from '../../../spaces/constants/spaces'
-import type { SpaceEnv } from '../../../spaces/models/space-env.model'
-import type { UserModel } from '../../../users/models/user.model'
-import { ACTION } from '../../../../common/constants'
-import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav'
-import { FILE_MODE } from '../../constants/operations'
-import { FileEvent } from '../../events/file-events'
-import { FileLockProps } from '../../interfaces/file-props.interface'
-import { FileError } from '../../models/file-error'
-import { LockConflict } from '../../models/file-lock-error'
-import { FilesLockManager } from '../../services/files-lock-manager.service'
-import * as filesUtils from '../../utils/files'
-import { CollaboraOnlineManager } from './collabora-online-manager.service'
-import { COLLABORA_APP_LOCK, COLLABORA_HEADERS, COLLABORA_LOCK_ACTION } from './collabora-online.constants'
-import type { FastifyCollaboraOnlineSpaceRequest } from './collabora-online.interface'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface.js'
+import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service.js'
+import { SPACE_OPERATION } from '../../../spaces/constants/spaces.js'
+import type { SpaceEnv } from '../../../spaces/models/space-env.model.js'
+import type { UserModel } from '../../../users/models/user.model.js'
+import { ACTION } from '../../../../common/constants.js'
+import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav.js'
+import { FILE_MODE } from '../../constants/operations.js'
+import { FileEvent } from '../../events/file-events.js'
+import { FileLockProps } from '../../interfaces/file-props.interface.js'
+import { FileError } from '../../models/file-error.js'
+import { LockConflict } from '../../models/file-lock-error.js'
+import { FilesLockManager } from '../../services/files-lock-manager.service.js'
+import * as filesUtils from '../../utils/files.js'
+import { CollaboraOnlineManager } from './collabora-online-manager.service.js'
+import { COLLABORA_APP_LOCK, COLLABORA_HEADERS, COLLABORA_LOCK_ACTION } from './collabora-online.constants.js'
+import type { FastifyCollaboraOnlineSpaceRequest } from './collabora-online.interface.js'
 
-vi.mock('../../utils/files')
+vi.mock('../../utils/files.js')
 vi.mock('node:fs/promises')
-vi.mock('../../../users/utils/avatar')
+vi.mock('../../../users/utils/avatar.js')
 
 describe(CollaboraOnlineManager.name, () => {
   let service: CollaboraOnlineManager
@@ -235,7 +235,7 @@ describe(CollaboraOnlineManager.name, () => {
       vi.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
       vi.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
       vi.spyOn(filesUtils, 'genEtag').mockReturnValue('etag-123')
-      const { getAvatarBase64 } = await import('../../../users/utils/avatar')
+      const { getAvatarBase64 } = await import('../../../users/utils/avatar.js')
       vi.mocked(getAvatarBase64).mockResolvedValue('base64-avatar')
 
       const result = await service.checkFileInfo(mockRequest)
@@ -279,7 +279,7 @@ describe(CollaboraOnlineManager.name, () => {
       vi.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
       vi.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
       vi.spyOn(filesUtils, 'genEtag').mockReturnValue('etag-123')
-      const { getAvatarBase64 } = await import('../../../users/utils/avatar')
+      const { getAvatarBase64 } = await import('../../../users/utils/avatar.js')
       vi.mocked(getAvatarBase64).mockResolvedValue('base64-avatar')
 
       const result = await service.checkFileInfo(mockRequest)
@@ -305,7 +305,7 @@ describe(CollaboraOnlineManager.name, () => {
       vi.spyOn(fs, 'stat').mockResolvedValue(mockStats as any)
       vi.spyOn(filesUtils, 'fileName').mockReturnValue('document.docx')
       vi.spyOn(filesUtils, 'genEtag').mockReturnValue('etag-123')
-      const { getAvatarBase64 } = await import('../../../users/utils/avatar')
+      const { getAvatarBase64 } = await import('../../../users/utils/avatar.js')
       vi.mocked(getAvatarBase64).mockResolvedValue('base64-avatar')
 
       const result = await service.checkFileInfo(mockRequest)

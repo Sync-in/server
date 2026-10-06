@@ -1,5 +1,5 @@
 import { OnModuleDestroy, OnModuleInit } from '@nestjs/common'
-import type { CacheRateLimitResult } from './interfaces/cache-rate-limit.interface'
+import type { CacheRateLimitResult } from './interfaces/cache-rate-limit.interface.js'
 
 export abstract class Cache implements OnModuleInit, OnModuleDestroy {
   abstract defaultTTL: number

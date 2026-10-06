@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { UsersManager } from './services/users-manager.service'
-import { WebSocketUsers } from './users.gateway'
+import { UsersManager } from './services/users-manager.service.js'
+import { WebSocketUsers } from './users.gateway.js'
 
 describe(WebSocketUsers.name, () => {
   let gateway: WebSocketUsers

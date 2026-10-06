@@ -1,4 +1,4 @@
-import { createCacheKeySlug, createSlug, InvalidSlugError, stripMatchingQuotes } from './shared'
+import { createCacheKeySlug, createSlug, InvalidSlugError, stripMatchingQuotes } from './shared.js'
 
 describe(createSlug.name, () => {
   it.each([

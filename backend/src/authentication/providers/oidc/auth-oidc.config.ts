@@ -12,9 +12,9 @@ import {
   Matches,
   ValidateNested
 } from 'class-validator'
-import { USER_PERMISSION } from '../../../applications/users/constants/user'
-import { OAuthTokenEndpoint } from './auth-oidc.constants'
-import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants'
+import { USER_PERMISSION } from '../../../applications/users/constants/user.js'
+import { OAuthTokenEndpoint } from './auth-oidc.constants.js'
+import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants.js'
 
 export class AuthProviderOIDCSecurityConfig {
   @IsString()

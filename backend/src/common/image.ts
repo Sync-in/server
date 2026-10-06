@@ -2,11 +2,12 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
+import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import sharp from 'sharp'
 import TextToSVG from 'text-to-svg'
-import { maxFileSizeExceededError } from '../applications/files/utils/errors'
-import { moveFiles } from '../applications/files/utils/files'
+import { maxFileSizeExceededError } from '../applications/files/utils/errors.js'
+import { moveFiles } from '../applications/files/utils/files.js'
 
 // Sharp settings
 sharp.cache(false)
@@ -22,7 +23,7 @@ export const svgMimeType = 'image/svg+xml'
 export const webpMimeType = 'image/webp'
 export const maxThumbnailInputSize = 50 * 1024 * 1024
 const avatarSize = 512
-const fontPath = path.join(__dirname, 'fonts', 'avatar.ttf')
+const fontPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fonts', 'avatar.ttf')
 const loadTextToSVG = promisify(TextToSVG.load.bind(TextToSVG))
 let textToSvgCache: Promise<TextToSVG> | null = null
 

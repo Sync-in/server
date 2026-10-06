@@ -1,9 +1,9 @@
 import crypto from 'node:crypto'
-import { createLightSlug } from '../../common/shared'
-import type { Cache } from '../../infrastructure/cache/cache.service'
-import type { CacheRateLimitResult } from '../../infrastructure/cache/interfaces/cache-rate-limit.interface'
-import { AUTH_PASSWORD_WORK_RATE_LIMIT_OPTIONS, AUTH_WEBDAV_RATE_LIMIT_OPTIONS } from '../constants/auth'
-import { CACHE_AUTH_RATE_LIMIT_PREFIX } from '../constants/cache'
+import { createLightSlug } from '../../common/shared.js'
+import type { Cache } from '../../infrastructure/cache/cache.service.js'
+import type { CacheRateLimitResult } from '../../infrastructure/cache/interfaces/cache-rate-limit.interface.js'
+import { AUTH_PASSWORD_WORK_RATE_LIMIT_OPTIONS, AUTH_WEBDAV_RATE_LIMIT_OPTIONS } from '../constants/auth.js'
+import { CACHE_AUTH_RATE_LIMIT_PREFIX } from '../constants/cache.js'
 
 function hashTracker(value: string): string {
   return crypto.createHash('sha256').update(value).digest('hex')

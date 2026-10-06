@@ -8,7 +8,7 @@ import {
   parseFilesSearchQuery,
   parseSearchTerms,
   requiresLikeSearch
-} from './files-search'
+} from './files-search.js'
 
 describe('files search utilities', () => {
   describe(MaxSortedList.name, () => {

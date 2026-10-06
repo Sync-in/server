@@ -1,11 +1,11 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext, HttpException, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { USER_PERMISSION, USER_ROLE } from '../constants/user'
-import { UserHavePermission } from '../decorators/permissions.decorator'
-import { UserModel } from '../models/user.model'
-import { generateUserTest } from '../utils/test'
-import { UserPermissionsGuard } from './permissions.guard'
+import { USER_PERMISSION, USER_ROLE } from '../constants/user.js'
+import { UserHavePermission } from '../decorators/permissions.decorator.js'
+import { UserModel } from '../models/user.model.js'
+import { generateUserTest } from '../utils/test.js'
+import { UserPermissionsGuard } from './permissions.guard.js'
 
 describe(UserPermissionsGuard.name, () => {
   let reflector: Reflector

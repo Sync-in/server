@@ -1,18 +1,18 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import { Totp } from 'time2fa'
-import { NotificationsManager } from '../../../applications/notifications/services/notifications-manager.service'
-import { UserModel } from '../../../applications/users/models/user.model'
-import { UsersManager } from '../../../applications/users/services/users-manager.service'
-import { Cache } from '../../../infrastructure/cache/cache.service'
-import { FastifyAuthenticatedRequest } from '../../interfaces/auth-request.interface'
-import { decryptSecret, encryptSecret } from '../../utils/crypt-secret'
-import { AuthProvider2FA } from './auth-provider-two-fa.service'
-import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './auth-two-fa.dtos'
+import { NotificationsManager } from '../../../applications/notifications/services/notifications-manager.service.js'
+import { UserModel } from '../../../applications/users/models/user.model.js'
+import { UsersManager } from '../../../applications/users/services/users-manager.service.js'
+import { Cache } from '../../../infrastructure/cache/cache.service.js'
+import { FastifyAuthenticatedRequest } from '../../interfaces/auth-request.interface.js'
+import { decryptSecret, encryptSecret } from '../../utils/crypt-secret.js'
+import { AuthProvider2FA } from './auth-provider-two-fa.service.js'
+import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './auth-two-fa.dtos.js'
 import { Mocked } from 'vitest'
 
-vi.mock('../../utils/crypt-secret')
-vi.mock('../../../common/qrcode')
+vi.mock('../../utils/crypt-secret.js')
+vi.mock('../../../common/qrcode.js')
 
 describe(AuthProvider2FA.name, () => {
   let service: AuthProvider2FA
@@ -76,7 +76,7 @@ describe(AuthProvider2FA.name, () => {
     vi.mocked(encryptSecret).mockImplementation((secret: string) => `encrypted-${secret}`)
     vi.mocked(decryptSecret).mockImplementation((secret: string) => secret.replace('encrypted-', ''))
 
-    const { qrcodeToDataURL } = await import('../../../common/qrcode')
+    const { qrcodeToDataURL } = await import('../../../common/qrcode.js')
     vi.mocked(qrcodeToDataURL).mockReturnValue('data:image/png;base64,mock')
   })
 

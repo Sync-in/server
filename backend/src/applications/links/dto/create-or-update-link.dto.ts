@@ -1,7 +1,7 @@
 import { Transform } from 'class-transformer'
 import { IsBoolean, IsDate, IsOptional, IsString, MinLength } from 'class-validator'
-import { currentDate } from '../../../common/shared'
-import { USER_PASSWORD_MIN_LENGTH } from '../../users/constants/user'
+import { currentDate } from '../../../common/shared.js'
+import { USER_PASSWORD_MIN_LENGTH } from '../../users/constants/user.js'
 
 export class CreateOrUpdateLinkDto {
   @IsOptional()

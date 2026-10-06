@@ -1,4 +1,4 @@
-import type { SpaceEnv } from '../../spaces/models/space-env.model'
+import type { SpaceEnv } from '../../spaces/models/space-env.model.js'
 
 export interface DownloadFileContentInfo {
   contentLength: number | null

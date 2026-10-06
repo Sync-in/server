@@ -1,8 +1,8 @@
 import { sql } from 'drizzle-orm'
 import { DrizzleQueryError } from 'drizzle-orm/errors'
 import { migrate } from 'drizzle-orm/mysql2/migrator'
-import { DB_SESSION_INIT_QUERIES, MIGRATIONS_PATH } from '../constants'
-import { getDB } from './db'
+import { DB_SESSION_INIT_QUERIES, MIGRATIONS_PATH } from '../constants.js'
+import { getDB } from './db.js'
 
 async function applyMigrations(): Promise<void> {
   const db = await getDB()

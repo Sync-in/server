@@ -3,9 +3,9 @@ import { setupPrimary } from '@socket.io/cluster-adapter'
 import cluster, { Worker } from 'node:cluster'
 import { cpus } from 'node:os'
 import process from 'node:process'
-import { configuration } from './configuration/config.environment'
-import { SCHEDULER_ENV, SCHEDULER_STATE } from './infrastructure/scheduler/scheduler.constants'
-import { SERVER_NAME } from './common/shared'
+import { configuration } from './configuration/config.environment.js'
+import { SCHEDULER_ENV, SCHEDULER_STATE } from './infrastructure/scheduler/scheduler.constants.js'
+import { SERVER_NAME } from './common/shared.js'
 
 @Injectable()
 export class AppService {

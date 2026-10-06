@@ -1,5 +1,5 @@
-import type { FileSpace } from '../../files/interfaces/file-space.interface'
-import type { Share } from '../schemas/share.interface'
+import type { FileSpace } from '../../files/interfaces/file-space.interface.js'
+import type { Share } from '../schemas/share.interface.js'
 
 export class ShareFile implements Pick<Share, 'id' | 'name' | 'description' | 'alias' | 'createdAt' | 'modifiedAt'> {
   id: number

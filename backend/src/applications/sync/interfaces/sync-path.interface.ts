@@ -1,5 +1,5 @@
-import type { SYNC_PATH_CONFLICT_MODE, SYNC_PATH_DIFF_MODE, SYNC_PATH_MODE } from '../constants/sync'
-import type { SyncPath } from '../schemas/sync-path.interface'
+import type { SYNC_PATH_CONFLICT_MODE, SYNC_PATH_DIFF_MODE, SYNC_PATH_MODE } from '../constants/sync.js'
+import type { SyncPath } from '../schemas/sync-path.interface.js'
 
 export type SyncDBProps = Partial<Pick<SyncPath, 'ownerId' | 'spaceId' | 'spaceRootId' | 'shareId' | 'fileId'>>
 

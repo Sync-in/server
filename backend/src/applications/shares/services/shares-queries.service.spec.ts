@@ -1,6 +1,6 @@
 import 'reflect-metadata'
-import type { Cache } from '../../../infrastructure/cache/cache.service'
-import { SharesQueries } from './shares-queries.service'
+import type { Cache } from '../../../infrastructure/cache/cache.service.js'
+import { SharesQueries } from './shares-queries.service.js'
 
 interface CacheMock {
   genSlugKey: ReturnType<typeof vi.fn>

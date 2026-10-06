@@ -1,9 +1,9 @@
 import { HttpStatus } from '@nestjs/common'
-import { FileError } from '../models/file-error'
-import type { UploadFileStreamLimiter, UploadQuotaSnapshot } from '../interfaces/upload-file.interface'
-import { maxFileSizeExceededError, storageQuotaExceededError } from './errors'
-import { temporaryFilePath } from './files'
-import { FILE_OPERATION } from '../constants/operations'
+import { FileError } from '../models/file-error.js'
+import type { UploadFileStreamLimiter, UploadQuotaSnapshot } from '../interfaces/upload-file.interface.js'
+import { maxFileSizeExceededError, storageQuotaExceededError } from './errors.js'
+import { temporaryFilePath } from './files.js'
+import { FILE_OPERATION } from '../constants/operations.js'
 
 const FASTIFY_MULTIPART_FILE_TOO_LARGE_CODE = 'FST_REQ_FILE_TOO_LARGE' as const
 

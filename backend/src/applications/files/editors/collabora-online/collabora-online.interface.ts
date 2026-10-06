@@ -1,6 +1,6 @@
-import type { JwtIdentityPayload, JwtPayloadBase } from '../../../../authentication/interfaces/jwt-payload.interface'
-import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
-import type { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface'
+import type { JwtIdentityPayload, JwtPayloadBase } from '../../../../authentication/interfaces/jwt-payload.interface.js'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface.js'
+import type { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface.js'
 
 export interface JwtIdentityCollaboraOnlinePayload extends JwtIdentityPayload {
   spaceUrl: string

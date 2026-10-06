@@ -1,5 +1,5 @@
-import { NotificationContent } from '../interfaces/notification-properties.interface'
-import { notifications } from './notifications.schema'
+import { NotificationContent } from '../interfaces/notification-properties.interface.js'
+import { notifications } from './notifications.schema.js'
 
 type NotificationSchema = typeof notifications.$inferSelect
 

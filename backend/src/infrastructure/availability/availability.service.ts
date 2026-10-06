@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common'
-import type { AvailabilityDependency, AvailabilityListener } from './availability.interfaces'
+import type { AvailabilityDependency, AvailabilityListener } from './availability.interfaces.js'
 
 @Injectable()
 export class Availability {

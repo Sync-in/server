@@ -1,4 +1,4 @@
-import { ADMIN_ROUTE } from '../../admin/constants/routes'
+import { ADMIN_ROUTE } from '../../admin/constants/routes.js'
 
 export const USERS_ROUTE = {
   BASE: '/api/users',

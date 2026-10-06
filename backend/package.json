@@ -1,11 +1,12 @@
 {
   "name": "@sync-in-server/backend",
-  "private": true,
   "license": "AGPL-3.0-or-later",
   "author": {
     "name": "Johan Legrand",
     "email": "johan.legrand@sync-in.com"
   },
+  "private": true,
+  "type": "module",
   "scripts": {
     "build": "nest build",
     "db:check": "drizzle-kit check --config=src/infrastructure/database/configuration.ts",
@@ -14,7 +15,7 @@
     "db:migrate": "drizzle-kit migrate --config=src/infrastructure/database/configuration.ts",
     "db:pull": "drizzle-kit pull --config=src/infrastructure/database/configuration.ts",
     "db:push": "drizzle-kit push --config=src/infrastructure/database/configuration.ts",
-    "db:seed": "ts-node src/infrastructure/database/scripts/seed/main.ts",
+    "db:seed": "ts-node --esm src/infrastructure/database/scripts/seed/main.ts",
     "db:up": "drizzle-kit up --config=src/infrastructure/database/configuration.ts",
     "format": "prettier --write \\\\\\\"src/**/*.ts\\\\\\\" \\\\\\\"test/**/*.ts\\\\\\\"",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",

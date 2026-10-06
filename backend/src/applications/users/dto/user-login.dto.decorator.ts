@@ -1,5 +1,5 @@
 import { registerDecorator, ValidationArguments, ValidationOptions } from 'class-validator'
-import { isValidUserLogin } from '../utils/login'
+import { isValidUserLogin } from '../utils/login.js'
 
 export function IsUserLogin(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {

@@ -1,10 +1,10 @@
 import { Controller, Get, Request, UseGuards, UseInterceptors } from '@nestjs/common'
-import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor'
-import { SpaceGuard } from '../../../spaces/guards/space.guard'
-import type { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface'
-import { DrawioManager } from './drawio-manager.service'
-import type { DrawioSettingsDto } from './drawio.dtos'
-import { DRAWIO_ROUTE } from './drawio.routes'
+import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor.js'
+import { SpaceGuard } from '../../../spaces/guards/space.guard.js'
+import type { FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface.js'
+import { DrawioManager } from './drawio-manager.service.js'
+import type { DrawioSettingsDto } from './drawio.dtos.js'
+import { DRAWIO_ROUTE } from './drawio.routes.js'
 
 @Controller(DRAWIO_ROUTE.BASE)
 @UseGuards(SpaceGuard)

@@ -1,4 +1,4 @@
-import { ACTION } from '../../../common/constants'
+import { ACTION } from '../../../common/constants.js'
 
 export enum NOTIFICATION_APP {
   COMMENTS = 'comments',

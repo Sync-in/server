@@ -1,5 +1,5 @@
-import { PATH_TO_SPACE_SEGMENTS } from '../../spaces/utils/routes'
-import { WEBDAV_BASE_PATH, WEBDAV_SPACES } from '../constants/routes'
+import { PATH_TO_SPACE_SEGMENTS } from '../../spaces/utils/routes.js'
+import { WEBDAV_BASE_PATH, WEBDAV_SPACES } from '../constants/routes.js'
 
 export function WEBDAV_PATH_TO_SPACE_SEGMENTS(path: string): string[] {
   const urlSegments = PATH_TO_SPACE_SEGMENTS(path)

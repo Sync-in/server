@@ -1,5 +1,5 @@
-import { APP_BASE_ROUTE } from '../../applications.constants'
-import { SPACE_REPOSITORY } from './spaces'
+import { APP_BASE_ROUTE } from '../../applications.constants.js'
+import { SPACE_REPOSITORY } from './spaces.js'
 
 export const SPACES_BASE_ROUTE = 'spaces'
 export const SPACES_ROUTE = {

@@ -1,4 +1,4 @@
-import { RETRYABLE_CONNECTION_ERROR_CODES } from './constants'
+import { RETRYABLE_CONNECTION_ERROR_CODES } from './constants.js'
 
 export function redactRedisUrl(url: string): string {
   const parsedUrl = new URL(url)

@@ -2,7 +2,7 @@ import { link, mkdir, mkdtemp, rm, symlink, truncate, writeFile } from 'node:fs/
 import os from 'node:os'
 import path from 'node:path'
 import { list, type ReadEntry } from 'tar'
-import { createTar } from './tar-file'
+import { createTar } from './tar-file.js'
 
 const DEFAULT_TEST_FILE_SIZE = 8 * 1024 * 1024
 

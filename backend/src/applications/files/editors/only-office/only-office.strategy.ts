@@ -2,11 +2,11 @@ import { Injectable, UnauthorizedException } from '@nestjs/common'
 import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { PinoLogger } from 'nestjs-pino'
 import { ExtractJwt, Strategy } from 'passport-jwt'
-import { JwtPayload } from '../../../../authentication/interfaces/jwt-payload.interface'
-import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface'
-import { configuration } from '../../../../configuration/config.environment'
-import { UserModel } from '../../../users/models/user.model'
-import { ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME } from './only-office.constants'
+import { JwtPayload } from '../../../../authentication/interfaces/jwt-payload.interface.js'
+import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface.js'
+import { configuration } from '../../../../configuration/config.environment.js'
+import { UserModel } from '../../../users/models/user.model.js'
+import { ONLY_OFFICE_TOKEN_QUERY_PARAM_NAME } from './only-office.constants.js'
 
 @Injectable()
 export class OnlyOfficeStrategy extends PassportStrategy(Strategy, 'filesOnlyOfficeToken') implements AbstractStrategy {

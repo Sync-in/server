@@ -1,9 +1,9 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
-import { CONNECT_ERROR_CODE } from '../../../app.constants'
-import { UserModel } from '../../../applications/users/models/user.model'
-import { UsersManager } from '../../../applications/users/services/users-manager.service'
-import { AUTH_SCOPE } from '../../constants/scope'
-import { AuthProvider } from '../auth-providers.models'
+import { CONNECT_ERROR_CODE } from '../../../app.constants.js'
+import { UserModel } from '../../../applications/users/models/user.model.js'
+import { UsersManager } from '../../../applications/users/services/users-manager.service.js'
+import { AUTH_SCOPE } from '../../constants/scope.js'
+import { AuthProvider } from '../auth-providers.models.js'
 
 @Injectable()
 export class AuthProviderMySQL implements AuthProvider {

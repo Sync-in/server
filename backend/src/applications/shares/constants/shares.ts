@@ -1,4 +1,4 @@
-import { SPACE_OPERATION, SPACE_PERMS_SEP } from '../../spaces/constants/spaces'
+import { SPACE_OPERATION, SPACE_PERMS_SEP } from '../../spaces/constants/spaces.js'
 
 export enum SHARE_TYPE {
   COMMON = 0,

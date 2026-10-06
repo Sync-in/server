@@ -1,6 +1,6 @@
-import type { UserPreferences } from '../interfaces/user-preferences.interface'
-import type { UserSecrets } from '../interfaces/user-secrets.interface'
-import type { users } from './users.schema'
+import type { UserPreferences } from '../interfaces/user-preferences.interface.js'
+import type { UserSecrets } from '../interfaces/user-secrets.interface.js'
+import type { users } from './users.schema.js'
 
 type UserSchema = typeof users.$inferSelect
 

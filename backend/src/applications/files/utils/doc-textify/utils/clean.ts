@@ -1,4 +1,4 @@
-import { DocTextifyOptions } from '../interfaces/doc-textify.interfaces'
+import { DocTextifyOptions } from '../interfaces/doc-textify.interfaces.js'
 
 const regexAlphanumeric = /[a-zA-Z0-9]/
 const regexpLinesAndTabs = /\r?\n|\r|\t|\u00A0/g

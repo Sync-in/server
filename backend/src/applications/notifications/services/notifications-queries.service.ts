@@ -1,14 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { and, desc, eq, inArray, SelectedFields, SQL } from 'drizzle-orm'
-import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants'
-import { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
-import { dbCheckAffectedRows } from '../../../infrastructure/database/utils'
-import { USER_NOTIFICATION } from '../../users/constants/user'
-import { userFullNameSQL, users } from '../../users/schemas/users.schema'
-import type { NotificationContent, NotificationFromUser } from '../interfaces/notification-properties.interface'
-import type { UserMailNotification } from '../interfaces/user-mail-notification.interface'
-import { Notification } from '../schemas/notification.interface'
-import { notifications } from '../schemas/notifications.schema'
+import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
+import { type DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
+import { dbCheckAffectedRows } from '../../../infrastructure/database/utils.js'
+import { USER_NOTIFICATION } from '../../users/constants/user.js'
+import { userFullNameSQL, users } from '../../users/schemas/users.schema.js'
+import type { NotificationContent, NotificationFromUser } from '../interfaces/notification-properties.interface.js'
+import type { UserMailNotification } from '../interfaces/user-mail-notification.interface.js'
+import { Notification } from '../schemas/notification.interface.js'
+import { notifications } from '../schemas/notifications.schema.js'
 
 @Injectable()
 export class NotificationsQueries {

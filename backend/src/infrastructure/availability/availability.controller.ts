@@ -1,9 +1,9 @@
 import { Controller, Get, Header, ServiceUnavailableException } from '@nestjs/common'
-import { AuthTokenSkip } from '../../authentication/decorators/auth-token-skip.decorator'
-import { AVAILABILITY_ROUTE, AVAILABILITY_STATUS } from './availability.constants'
-import { AvailabilitySkip } from './availability.decorator'
-import { Availability } from './availability.service'
-import { AvailabilityHealthResponse } from './availability.interfaces'
+import { AuthTokenSkip } from '../../authentication/decorators/auth-token-skip.decorator.js'
+import { AVAILABILITY_ROUTE, AVAILABILITY_STATUS } from './availability.constants.js'
+import { AvailabilitySkip } from './availability.decorator.js'
+import { Availability } from './availability.service.js'
+import { type AvailabilityHealthResponse } from './availability.interfaces.js'
 
 @Controller(AVAILABILITY_ROUTE.BASE)
 @AuthTokenSkip()

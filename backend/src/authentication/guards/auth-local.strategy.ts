@@ -3,8 +3,8 @@ import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import type { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
 import { Strategy } from 'passport-local'
-import type { UserModel } from '../../applications/users/models/user.model'
-import { AuthProvider } from '../providers/auth-providers.models'
+import type { UserModel } from '../../applications/users/models/user.model.js'
+import { AuthProvider } from '../providers/auth-providers.models.js'
 
 @Injectable()
 export class AuthLocalStrategy extends PassportStrategy(Strategy, 'local') implements AbstractStrategy {

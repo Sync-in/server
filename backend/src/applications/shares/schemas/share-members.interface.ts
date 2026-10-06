@@ -1,4 +1,4 @@
-import type { sharesMembers } from './shares-members.schema'
+import type { sharesMembers } from './shares-members.schema.js'
 
 type ShareMembersSchema = typeof sharesMembers.$inferSelect
 

@@ -1,11 +1,11 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { configuration } from '../../../configuration/config.environment'
-import { TEMPORARY_PATH } from '../../files/constants/files'
-import { isPathInside } from '../../files/utils/files'
-import { SPACE_REPOSITORY } from '../constants/spaces'
-import { SpaceRoot } from '../schemas/space-root.interface'
-import { Space } from '../schemas/space.interface'
+import { configuration } from '../../../configuration/config.environment.js'
+import { TEMPORARY_PATH } from '../../files/constants/files.js'
+import { isPathInside } from '../../files/utils/files.js'
+import { SPACE_REPOSITORY } from '../constants/spaces.js'
+import { SpaceRoot } from '../schemas/space-root.interface.js'
+import { Space } from '../schemas/space.interface.js'
 
 export class SpaceModel implements Space {
   id: number

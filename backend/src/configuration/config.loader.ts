@@ -2,7 +2,8 @@ import deepmerge from 'deepmerge'
 import * as yaml from 'js-yaml'
 import fs from 'node:fs'
 import path from 'node:path'
-import { stripMatchingQuotes } from '../common/shared'
+import { fileURLToPath } from 'node:url'
+import { stripMatchingQuotes } from '../common/shared.js'
 import {
   DEFAULT_LOG_FILE_PATH,
   ENVIRONMENT_DIST_FILE_NAME,
@@ -10,8 +11,10 @@ import {
   ENVIRONMENT_FILE_NAME,
   ENVIRONMENT_PATH,
   ENVIRONMENT_PREFIX
-} from './config.constants'
-import type { GlobalConfig } from './config.validation'
+} from './config.constants.js'
+import type { GlobalConfig } from './config.validation.js'
+
+const moduleDir = path.dirname(fileURLToPath(import.meta.url))
 
 export function configLoader(): any {
   let config: Partial<GlobalConfig> = loadEnvFile(ENVIRONMENT_PATH, ENVIRONMENT_FILE_NAME)
@@ -40,12 +43,12 @@ export function configLoader(): any {
 }
 
 function buildPathsUp(basePath: string, fileName: string, levels = 4): string[] {
-  // Generates candidate file paths, optionally walking up from __dirname to a given depth.
+  // Generates candidate file paths, optionally walking up from the module directory to a given depth.
   return Array.from({ length: levels + 1 }, (_, i) => path.resolve(basePath, ...Array(i).fill('..'), fileName))
 }
 
 function loadEnvFile(envPath: string, envFileName: string, throwIfMissing = false): any {
-  const candidates = [envPath, envFileName, ...buildPathsUp(__dirname, envPath), ...buildPathsUp(__dirname, envFileName)]
+  const candidates = [envPath, envFileName, ...buildPathsUp(moduleDir, envPath), ...buildPathsUp(moduleDir, envFileName)]
   for (const envFilePath of candidates) {
     if (fs.existsSync(envFilePath) && fs.lstatSync(envFilePath).isFile()) {
       return yaml.load(fs.readFileSync(envFilePath, 'utf8'))

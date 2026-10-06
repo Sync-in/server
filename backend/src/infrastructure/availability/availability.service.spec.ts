@@ -1,5 +1,5 @@
-import { INFRASTRUCTURE_DEPENDENCY } from './availability.constants'
-import { Availability } from './availability.service'
+import { INFRASTRUCTURE_DEPENDENCY } from './availability.constants.js'
+import { Availability } from './availability.service.js'
 
 describe(Availability.name, () => {
   it('notifies listeners only when a dependency state changes', () => {

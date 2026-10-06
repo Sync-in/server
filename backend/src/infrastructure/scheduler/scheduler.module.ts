@@ -1,7 +1,7 @@
 import { Global, Module } from '@nestjs/common'
 import { ScheduleModule as NestScheduleModule } from '@nestjs/schedule'
-import { IS_SCHEDULER_PROCESS } from './scheduler.constants'
-import { SchedulerManager } from './scheduler-manager.service'
+import { IS_SCHEDULER_PROCESS } from './scheduler.constants.js'
+import { SchedulerManager } from './scheduler-manager.service.js'
 
 @Global()
 @Module({

@@ -1,4 +1,4 @@
-import { APP_BASE_ROUTE } from '../../applications.constants'
+import { APP_BASE_ROUTE } from '../../applications.constants.js'
 
 export const SHARES_ROUTE = {
   BASE: `${APP_BASE_ROUTE}/shares`,

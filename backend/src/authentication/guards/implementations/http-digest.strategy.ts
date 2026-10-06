@@ -1,5 +1,5 @@
 import { Strategy as PassportStrategy } from 'passport-strategy'
-import { genHash } from '../../../applications/files/utils/files'
+import { genHash } from '../../../applications/files/utils/files.js'
 
 export interface DigestValidateParams {
   nonce?: string

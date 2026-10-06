@@ -91,6 +91,7 @@ const releasePKG = {
   author: rootPkg.author,
   homepage: rootPkg.homepage,
   repository: rootPkg.repository,
+  type: rootPkg.type,
   bugs: rootPkg.bugs,
   license: rootPkg.license,
   os: rootPkg.os,

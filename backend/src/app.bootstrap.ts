@@ -6,12 +6,12 @@ import { NestFactory, Reflector } from '@nestjs/core'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { FastifyInstance, FastifyRequest } from 'fastify'
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino'
-import { CONTENT_SECURITY_POLICY } from './app.constants'
-import { AppModule } from './app.module'
-import { bootstrapWebDAV } from './applications/webdav/utils/bootstrap'
-import { IS_TEST_ENV, STATIC_PATH } from './configuration/config.constants'
-import { configuration } from './configuration/config.environment'
-import { WebSocketAdapter } from './infrastructure/websocket/adapters/web-socket.adapter'
+import { CONTENT_SECURITY_POLICY } from './app.constants.js'
+import { AppModule } from './app.module.js'
+import { bootstrapWebDAV } from './applications/webdav/utils/bootstrap.js'
+import { IS_TEST_ENV, STATIC_PATH } from './configuration/config.constants.js'
+import { configuration } from './configuration/config.environment.js'
+import { WebSocketAdapter } from './infrastructure/websocket/adapters/web-socket.adapter.js'
 
 export async function appBootstrap(): Promise<NestFastifyApplication> {
   /* APP */

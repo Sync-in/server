@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
-import { SpacesManager } from './spaces-manager.service'
+import { SpacesManager } from './spaces-manager.service.js'
 
 @Injectable()
 export class SpacesScheduler {

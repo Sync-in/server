@@ -1,5 +1,5 @@
-import type { User } from '../schemas/user.interface'
-import type { Member } from './member.interface'
+import type { User } from '../schemas/user.interface.js'
+import type { Member } from './member.interface.js'
 
 export type GuestUser = Partial<User> & {
   fullName: string

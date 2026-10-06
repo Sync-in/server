@@ -1,13 +1,13 @@
 import { escapeUTF8 } from 'entities'
-import { ACTION } from '../../../common/constants'
-import { i18nLocale } from '../../../common/i18n'
-import { capitalizeString, SERVER_NAME } from '../../../common/shared'
-import { fileName } from '../../files/utils/files'
-import { UserModel } from '../../users/models/user.model'
-import { translateObject } from '../i18n'
-import { NotificationContent } from '../interfaces/notification-properties.interface'
-import { defaultFooter, mailAuthor, mailEventOnElement, mailItalicContent, mailTemplate } from './templates'
-import { urlFromLink, urlFromSpace, urlFromSpaceFile, urlFromSync } from './urls'
+import { ACTION } from '../../../common/constants.js'
+import { i18nLocale } from '../../../common/i18n.js'
+import { capitalizeString, SERVER_NAME } from '../../../common/shared.js'
+import { fileName } from '../../files/utils/files.js'
+import { UserModel } from '../../users/models/user.model.js'
+import { translateObject } from '../i18n/index.js'
+import { NotificationContent } from '../interfaces/notification-properties.interface.js'
+import { defaultFooter, mailAuthor, mailEventOnElement, mailItalicContent, mailTemplate } from './templates.js'
+import { urlFromLink, urlFromSpace, urlFromSpaceFile, urlFromSync } from './urls.js'
 
 function mailActionLink(urlText: string, url?: string): string {
   return `<br>${urlText}&nbsp;${url ? `<a href="${escapeUTF8(url)}">${SERVER_NAME}</a>` : SERVER_NAME}`

@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { Cache } from '../../infrastructure/cache/cache.service'
-import { FilesTasksController } from './files-tasks.controller'
-import { FilesMethods } from './services/files-methods.service'
-import { FilesTasksManager } from './services/tasks/files-tasks-manager.service'
+import { Cache } from '../../infrastructure/cache/cache.service.js'
+import { FilesTasksController } from './files-tasks.controller.js'
+import { FilesMethods } from './services/files-methods.service.js'
+import { FilesTasksManager } from './services/tasks/files-tasks-manager.service.js'
 import { Mock } from 'vitest'
 
 describe(FilesTasksController.name, () => {

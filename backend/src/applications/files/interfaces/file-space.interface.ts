@@ -1,4 +1,4 @@
-import type { File } from '../schemas/file.interface'
+import type { File } from '../schemas/file.interface.js'
 
 export class FileSpace implements Pick<File, 'id' | 'ownerId' | 'path' | 'isDir' | 'inTrash' | 'mime'> {
   id: number

@@ -1,8 +1,8 @@
 import { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
-import { FILE_OPERATION } from '../constants/operations'
-import { isInternalTemporaryEntry, walkDir } from './files'
-import { FileTaskProps, FileTaskStatus } from '../models/file-task'
+import { FILE_OPERATION } from '../constants/operations.js'
+import { isInternalTemporaryEntry, walkDir } from './files.js'
+import { FileTaskProps, FileTaskStatus } from '../models/file-task.js'
 
 export function isCrossDeviceError(error: unknown): error is NodeJS.ErrnoException {
   return (error as NodeJS.ErrnoException)?.code === 'EXDEV'

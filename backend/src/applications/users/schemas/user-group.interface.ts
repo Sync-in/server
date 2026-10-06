@@ -1,4 +1,4 @@
-import type { usersGroups } from './users-groups.schema'
+import type { usersGroups } from './users-groups.schema.js'
 
 type UserGroupSchema = typeof usersGroups.$inferSelect
 

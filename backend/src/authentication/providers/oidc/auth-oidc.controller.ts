@@ -1,13 +1,13 @@
 import { Controller, Get, HttpStatus, Query, Req, Res } from '@nestjs/common'
-import { FastifyReply, FastifyRequest } from 'fastify'
-import type { UserModel } from '../../../applications/users/models/user.model'
-import { AuthManager } from '../../auth.service'
-import { AUTH_ROUTE } from '../../constants/routes'
-import { AuthTokenSkip } from '../../decorators/auth-token-skip.decorator'
-import type { LoginResponseDto } from '../../dto/login-response.dto'
-import { AUTH_SESSION } from '../auth-providers.constants'
-import { OAuthDesktopPortParam } from './auth-oidc-desktop.constants'
-import { AuthProviderOIDC } from './auth-provider-oidc.service'
+import { type FastifyReply, type FastifyRequest } from 'fastify'
+import type { UserModel } from '../../../applications/users/models/user.model.js'
+import { AuthManager } from '../../auth.service.js'
+import { AUTH_ROUTE } from '../../constants/routes.js'
+import { AuthTokenSkip } from '../../decorators/auth-token-skip.decorator.js'
+import type { LoginResponseDto } from '../../dto/login-response.dto.js'
+import { AUTH_SESSION } from '../auth-providers.constants.js'
+import { OAuthDesktopPortParam } from './auth-oidc-desktop.constants.js'
+import { AuthProviderOIDC } from './auth-provider-oidc.service.js'
 
 @Controller(AUTH_ROUTE.BASE)
 export class AuthOIDCController {

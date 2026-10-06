@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, mixin, Type } from '@nestjs/common'
-import { configuration } from '../../../../configuration/config.environment'
-import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '../../../constants/auth'
-import { FastifyAuthenticatedRequest } from '../../../interfaces/auth-request.interface'
-import { AuthProvider2FA } from '../auth-provider-two-fa.service'
+import { configuration } from '../../../../configuration/config.environment.js'
+import { TWO_FA_HEADER_CODE, TWO_FA_HEADER_PASSWORD } from '../../../constants/auth.js'
+import { FastifyAuthenticatedRequest } from '../../../interfaces/auth-request.interface.js'
+import { AuthProvider2FA } from '../auth-provider-two-fa.service.js'
 
 export const AuthTwoFaVerificationGuard = AuthTwoFaVerificationGuardFactory()
 export const AuthTwoFaVerificationWithoutPasswordGuard = AuthTwoFaVerificationGuardFactory({ withPassword: false })

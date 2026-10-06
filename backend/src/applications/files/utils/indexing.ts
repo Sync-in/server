@@ -1,7 +1,7 @@
-import { FILE_REPOSITORY } from '../constants/operations'
-import { CACHE_INDEXING_EVENT_PREFIX } from '../constants/indexing'
-import { SpaceEnv } from '../../spaces/models/space-env.model'
-import { SpaceToFileRepository } from '../events/files-events.utils'
+import { FILE_REPOSITORY } from '../constants/operations.js'
+import { CACHE_INDEXING_EVENT_PREFIX } from '../constants/indexing.js'
+import { SpaceEnv } from '../../spaces/models/space-env.model.js'
+import { SpaceToFileRepository } from '../events/files-events.utils.js'
 
 export function genIndexingKey(id: number, type: FILE_REPOSITORY, sep = '_'): string {
   return `${type}${sep}${id}`

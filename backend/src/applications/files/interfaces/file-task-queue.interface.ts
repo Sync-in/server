@@ -1,6 +1,6 @@
-import type { SpaceEnv } from '../../spaces/models/space-env.model'
-import type { UserModel } from '../../users/models/user.model'
-import type { FileTask } from '../models/file-task'
+import type { SpaceEnv } from '../../spaces/models/space-env.model.js'
+import type { UserModel } from '../../users/models/user.model.js'
+import type { FileTask } from '../models/file-task.js'
 
 export interface FileTaskQueueItem {
   cacheKey: string

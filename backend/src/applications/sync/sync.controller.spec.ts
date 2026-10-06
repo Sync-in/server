@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard'
-import { SpacesManager } from '../spaces/services/spaces-manager.service'
-import { SyncClientsManager } from './services/sync-clients-manager.service'
-import { SyncManager } from './services/sync-manager.service'
-import { SyncPathsManager } from './services/sync-paths-manager.service'
-import { SyncController } from './sync.controller'
+import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard.js'
+import { SpacesManager } from '../spaces/services/spaces-manager.service.js'
+import { SyncClientsManager } from './services/sync-clients-manager.service.js'
+import { SyncManager } from './services/sync-manager.service.js'
+import { SyncPathsManager } from './services/sync-paths-manager.service.js'
+import { SyncController } from './sync.controller.js'
 
 describe(SyncController.name, () => {
   let controller: SyncController

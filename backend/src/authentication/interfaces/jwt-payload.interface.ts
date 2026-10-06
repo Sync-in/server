@@ -1,5 +1,5 @@
-import type { AUTH_SESSION } from '../providers/auth-providers.constants'
-import { TOKEN_TYPE } from './token.interface'
+import type { AUTH_SESSION } from '../providers/auth-providers.constants.js'
+import { TOKEN_TYPE } from './token.interface.js'
 
 export class JwtIdentityPayload {
   id: number

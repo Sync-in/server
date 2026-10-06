@@ -3,15 +3,15 @@ import { Test, TestingModule } from '@nestjs/testing'
 // Helpers to access mocked fs/promises
 import fsPromisesModule from 'fs/promises'
 import path from 'node:path'
-import { FILE_OPERATION } from '../../files/constants/operations'
-import { FileError } from '../../files/models/file-error'
-import { LockConflict } from '../../files/models/file-lock-error'
-import { FilesManager } from '../../files/services/files-manager.service'
-import { checksumFile, isPathExists, isPathIsDir, removeFiles, touchFile } from '../../files/utils/files'
-import { SpacesManager } from '../../spaces/services/spaces-manager.service'
-import { F_SPECIAL_STAT, F_STAT, SYNC_CHECKSUM_ALG, SYNC_DIFF_DONE } from '../constants/sync'
-import { SyncManager } from './sync-manager.service'
-import { SyncQueries } from './sync-queries.service'
+import { FILE_OPERATION } from '../../files/constants/operations.js'
+import { FileError } from '../../files/models/file-error.js'
+import { LockConflict } from '../../files/models/file-lock-error.js'
+import { FilesManager } from '../../files/services/files-manager.service.js'
+import { checksumFile, isPathExists, isPathIsDir, removeFiles, touchFile } from '../../files/utils/files.js'
+import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
+import { F_SPECIAL_STAT, F_STAT, SYNC_CHECKSUM_ALG, SYNC_DIFF_DONE } from '../constants/sync.js'
+import { SyncManager } from './sync-manager.service.js'
+import { SyncQueries } from './sync-queries.service.js'
 import { Mock } from 'vitest'
 
 // Mock fs/promises used internally by the service
@@ -24,7 +24,7 @@ vi.mock('fs/promises', () => ({
 }))
 
 // Mock helper functions used in service
-vi.mock('../../files/utils/files', () => ({
+vi.mock('../../files/utils/files.js', () => ({
   __esModule: true,
   checksumFile: vi.fn(),
   isInternalTemporaryEntry: vi.fn((name: string) => name === '.sync-in-tmp' || name.startsWith('.sync-in.')),
@@ -36,27 +36,27 @@ vi.mock('../../files/utils/files', () => ({
 }))
 
 // Mock regExpPathPattern to a simple, predictable behavior
-vi.mock('../../../common/functions', () => ({
+vi.mock('../../../common/functions.js', () => ({
   __esModule: true,
   regExpPathPattern: (base: string) => new RegExp('^' + base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
 }))
 
 // Mock routes helper used by copyMove to bypass repo validation
-vi.mock('../utils/routes', () => ({
+vi.mock('../utils/routes.js', () => ({
   __esModule: true,
   SYNC_PATH_TO_SPACE_SEGMENTS: vi.fn((dst: string) => dst)
 }))
 
 // Mock heavy providers to avoid configuration side-effects on import
-vi.mock('../../files/services/files-manager.service', () => ({
+vi.mock('../../files/services/files-manager.service.js', () => ({
   __esModule: true,
   FilesManager: class FilesManager {}
 }))
-vi.mock('../../spaces/services/spaces-manager.service', () => ({
+vi.mock('../../spaces/services/spaces-manager.service.js', () => ({
   __esModule: true,
   SpacesManager: class SpacesManager {}
 }))
-vi.mock('./sync-queries.service', () => ({
+vi.mock('./sync-queries.service.js', () => ({
   __esModule: true,
   SyncQueries: class SyncQueries {}
 }))

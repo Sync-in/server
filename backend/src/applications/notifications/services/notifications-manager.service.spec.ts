@@ -1,17 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { Mailer } from '../../../infrastructure/mailer/mailer.service'
-import { USER_NOTIFICATION } from '../../users/constants/user'
-import { UsersManager } from '../../users/services/users-manager.service'
-import { getAvatarBase64 } from '../../users/utils/avatar'
-import { NOTIFICATION_APP } from '../constants/notifications'
-import { NOTIFICATIONS_WS } from '../constants/websocket'
-import * as mailModels from '../mails/models'
-import { WebSocketNotifications } from '../notifications.gateway'
-import { NotificationsManager } from './notifications-manager.service'
-import { NotificationsQueries } from './notifications-queries.service'
+import { Mailer } from '../../../infrastructure/mailer/mailer.service.js'
+import { USER_NOTIFICATION } from '../../users/constants/user.js'
+import { UsersManager } from '../../users/services/users-manager.service.js'
+import { getAvatarBase64 } from '../../users/utils/avatar.js'
+import { NOTIFICATION_APP } from '../constants/notifications.js'
+import { NOTIFICATIONS_WS } from '../constants/websocket.js'
+import * as mailModels from '../mails/models.js'
+import { WebSocketNotifications } from '../notifications.gateway.js'
+import { NotificationsManager } from './notifications-manager.service.js'
+import { NotificationsQueries } from './notifications-queries.service.js'
 
 // Compact mock for mail generators
-vi.mock('../mails/models', () => ({
+vi.mock('../mails/models.js', () => ({
   commentMail: vi.fn(() => ['comment title', 'comment html']),
   spaceMail: vi.fn(() => ['space title', 'space html']),
   spaceRootMail: vi.fn(() => ['spaceRoot title', 'spaceRoot html']),
@@ -20,11 +20,11 @@ vi.mock('../mails/models', () => ({
   syncMail: vi.fn(() => ['sync title', 'sync html'])
 }))
 
-vi.mock('../../users/utils/avatar', () => ({
+vi.mock('../../users/utils/avatar.js', () => ({
   getAvatarBase64: vi.fn()
 }))
 
-vi.mock('../../../configuration/config.environment', () => ({
+vi.mock('../../../configuration/config.environment.js', () => ({
   configuration: { server: { publicUrl: 'https://sync-in.example' } }
 }))
 

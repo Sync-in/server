@@ -1,4 +1,4 @@
-import { SpaceEnv } from '../../spaces/models/space-env.model'
+import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 
 export interface ShareEnv extends Partial<SpaceEnv> {
   fileId: number

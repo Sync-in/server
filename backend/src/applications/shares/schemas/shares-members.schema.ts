@@ -1,9 +1,9 @@
 import { sql } from 'drizzle-orm'
 import { bigint, datetime, index, mysqlTable, unique, varchar } from 'drizzle-orm/mysql-core'
-import { links } from '../../links/schemas/links.schema'
-import { groups } from '../../users/schemas/groups.schema'
-import { users } from '../../users/schemas/users.schema'
-import { shares } from './shares.schema'
+import { links } from '../../links/schemas/links.schema.js'
+import { groups } from '../../users/schemas/groups.schema.js'
+import { users } from '../../users/schemas/users.schema.js'
+import { shares } from './shares.schema.js'
 
 /*
   linkId: userId is required

@@ -1,11 +1,11 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { ValidationError } from 'fast-xml-parser'
 import { FastifyReply } from 'fastify'
-import { urlToPath } from '../../../common/functions'
-import { decodeUrl } from '../../../common/shared'
-import { HTTP_METHOD } from '../../applications.constants'
-import { CACHE_LOCK_DEFAULT_TTL } from '../../files/constants/cache'
-import { USER_PERMISSION } from '../../users/constants/user'
+import { urlToPath } from '../../../common/functions.js'
+import { decodeUrl } from '../../../common/shared.js'
+import { HTTP_METHOD } from '../../applications.constants.js'
+import { CACHE_LOCK_DEFAULT_TTL } from '../../files/constants/cache.js'
+import { USER_PERMISSION } from '../../users/constants/user.js'
 import {
   ALLOW_EMPTY_BODY_METHODS,
   DEPTH,
@@ -15,12 +15,12 @@ import {
   PROPPATCH_PROP_UPDATE,
   PROPSTAT,
   REGEX_BASE_PATH
-} from '../constants/webdav'
-import { IfHeader } from '../interfaces/if-header.interface'
-import { FastifyDAVRequest, WebDAVContext } from '../interfaces/webdav.interface'
-import { parseIfHeader } from '../utils/if-header'
-import { PROPFIND_ALL_PROP } from '../utils/webdav'
-import { xmlIsValid, xmlParse } from '../utils/xml'
+} from '../constants/webdav.js'
+import { IfHeader } from '../interfaces/if-header.interface.js'
+import { FastifyDAVRequest, WebDAVContext } from '../interfaces/webdav.interface.js'
+import { parseIfHeader } from '../utils/if-header.js'
+import { PROPFIND_ALL_PROP } from '../utils/webdav.js'
+import { xmlIsValid, xmlParse } from '../utils/xml.js'
 
 @Injectable()
 export class WebDAVProtocolGuard implements CanActivate {

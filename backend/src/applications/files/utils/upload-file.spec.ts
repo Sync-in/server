@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common'
-import { FILE_ERROR } from '../constants/errors'
-import { FileError } from '../models/file-error'
-import { parseContentLength, parseContentRange, UploadStreamLimiter } from './upload-file'
+import { FILE_ERROR } from '../constants/errors.js'
+import { FileError } from '../models/file-error.js'
+import { parseContentLength, parseContentRange, UploadStreamLimiter } from './upload-file.js'
 
 describe(UploadStreamLimiter.name, () => {
   it('short-circuits a known file size above maxUploadSize', () => {

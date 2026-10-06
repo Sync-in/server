@@ -1,5 +1,5 @@
-import { DocTextifyOptions } from '../interfaces/doc-textify.interfaces'
-import { collectElementText, parseZipXmlEntries } from '../utils/zip-xml'
+import { DocTextifyOptions } from '../interfaces/doc-textify.interfaces.js'
+import { collectElementText, parseZipXmlEntries } from '../utils/zip-xml.js'
 
 const SHEET_PATH = /^xl\/worksheets\/sheet\d+\.xml$/
 const SHARED_STRINGS_PATH = 'xl/sharedStrings.xml'

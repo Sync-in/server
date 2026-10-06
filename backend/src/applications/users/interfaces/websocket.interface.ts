@@ -1,4 +1,4 @@
-import type { USER_ONLINE_STATUS } from '../constants/user'
+import type { USER_ONLINE_STATUS } from '../constants/user.js'
 
 export interface UserOnline {
   id: number

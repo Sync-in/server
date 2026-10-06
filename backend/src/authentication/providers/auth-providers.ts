@@ -1,5 +1,5 @@
-import type { AuthProviderDefinition } from '../interfaces/auth-provider-definition.interface'
-import { AUTH_PROVIDER } from './auth-providers.constants'
+import type { AuthProviderDefinition } from '../interfaces/auth-provider-definition.interface.js'
+import { AUTH_PROVIDER } from './auth-providers.constants.js'
 
 export async function loadAuthProviderDefinition(provider: AUTH_PROVIDER): Promise<AuthProviderDefinition> {
   switch (provider) {

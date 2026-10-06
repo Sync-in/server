@@ -1,5 +1,5 @@
-import { urlToPath } from '../../../common/functions'
-import { IfHeader } from '../interfaces/if-header.interface'
+import { urlToPath } from '../../../common/functions.js'
+import { IfHeader } from '../interfaces/if-header.interface.js'
 
 //IF HEADER Before : (<locktoken:a-write-lock-token> ["I am an ETag"]) (["I am another ETag"])
 //IF HEADER After : [{"path":"/webdav/specs/","token":{"mustMatch":true,"value":"urn:uuid:181d4fae-7d8c-11d0-a765-00a0c91e6bf2"},

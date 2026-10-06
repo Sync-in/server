@@ -1,9 +1,9 @@
 import { createReadStream } from 'node:fs'
 import { pipeline } from 'node:stream/promises'
 import { extract, type ReadEntry, type Unpack } from 'tar'
-import type { FileTaskExtractionEntry } from '../interfaces/file-task.interface'
-import { storageQuotaExceededError } from './errors'
-import { createProgressTransform, createSizeLimiter } from './files'
+import type { FileTaskExtractionEntry } from '../interfaces/file-task.interface.js'
+import { storageQuotaExceededError } from './errors.js'
+import { createProgressTransform, createSizeLimiter } from './files.js'
 
 export function checkTarEntry(entry: Pick<ReadEntry, 'type' | 'path'>): void {
   if (entry.type === 'Link') {

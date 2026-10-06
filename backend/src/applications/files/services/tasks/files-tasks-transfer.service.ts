@@ -3,13 +3,13 @@ import { createReadStream, createWriteStream } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
-import { UserModel } from '../../../users/models/user.model'
-import { SpaceEnv } from '../../../spaces/models/space-env.model'
-import { temporaryRootFromSpace } from '../../../spaces/utils/paths'
-import { DEFAULT_HIGH_WATER_MARK } from '../../constants/files'
-import { FILE_OPERATION } from '../../constants/operations'
-import { FileTaskEvent } from '../../events/file-events'
-import type { FileTaskCopyTaskOptions, FileTaskExtractionEntry, FileTaskTransferOptions } from '../../interfaces/file-task.interface'
+import { UserModel } from '../../../users/models/user.model.js'
+import { SpaceEnv } from '../../../spaces/models/space-env.model.js'
+import { temporaryRootFromSpace } from '../../../spaces/utils/paths.js'
+import { DEFAULT_HIGH_WATER_MARK } from '../../constants/files.js'
+import { FILE_OPERATION } from '../../constants/operations.js'
+import { FileTaskEvent } from '../../events/file-events.js'
+import type { FileTaskCopyTaskOptions, FileTaskExtractionEntry, FileTaskTransferOptions } from '../../interfaces/file-task.interface.js'
 import {
   createProgressTransform,
   fileSize,
@@ -19,9 +19,9 @@ import {
   removeFiles,
   temporaryFilePath,
   tryReflink
-} from '../../utils/files'
-import { countDirEntriesAndSize, isCrossDeviceError } from '../../utils/tasks'
-import { SourceCleanupError } from '../../models/file-error'
+} from '../../utils/files.js'
+import { countDirEntriesAndSize, isCrossDeviceError } from '../../utils/tasks.js'
+import { SourceCleanupError } from '../../models/file-error.js'
 
 @Injectable()
 export class FilesTasksTransfer {

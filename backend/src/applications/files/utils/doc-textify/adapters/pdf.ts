@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import sharp from 'sharp'
 import { extractImages, getDocumentProxy } from 'unpdf'
-import type { DocTextifyOCRWorkerLike, DocTextifyOptions } from '../interfaces/doc-textify.interfaces'
+import type { DocTextifyOCRWorkerLike, DocTextifyOptions } from '../interfaces/doc-textify.interfaces.js'
 
 const ignorePdfBadFormat = new Set([0x0000, 0x0001])
 

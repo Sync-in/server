@@ -1,5 +1,5 @@
 import { IsEnum } from 'class-validator'
-import { APP_STORE_REPOSITORY } from './constants/store'
+import { APP_STORE_REPOSITORY } from './constants/store.js'
 
 export class AppStoreConfig {
   @IsEnum(APP_STORE_REPOSITORY)

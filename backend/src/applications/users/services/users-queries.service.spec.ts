@@ -1,6 +1,6 @@
-import type { Cache } from '../../../infrastructure/cache/cache.service'
-import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface'
-import { UsersQueries } from './users-queries.service'
+import type { Cache } from '../../../infrastructure/cache/cache.service.js'
+import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
+import { UsersQueries } from './users-queries.service.js'
 
 describe(`${UsersQueries.name}.from`, () => {
   it('trims the identifier before searching by login or email', async () => {

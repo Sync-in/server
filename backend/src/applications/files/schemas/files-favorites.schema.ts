@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { bigint, datetime, index, mysqlTable, primaryKey } from 'drizzle-orm/mysql-core'
-import { users } from '../../users/schemas/users.schema'
-import { files } from './files.schema'
+import { users } from '../../users/schemas/users.schema.js'
+import { files } from './files.schema.js'
 
 export const filesFavorites = mysqlTable(
   'files_favorites',

@@ -1,4 +1,4 @@
-import type { FILE_REPOSITORY } from '../constants/operations'
+import type { FILE_REPOSITORY } from '../constants/operations.js'
 
 export interface FileParseContext {
   realPath: string

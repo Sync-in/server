@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface'
-import { USER_PERMISSION } from '../constants/user'
-import { UserHavePermission } from '../decorators/permissions.decorator'
+import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface.js'
+import { USER_PERMISSION } from '../constants/user.js'
+import { UserHavePermission } from '../decorators/permissions.decorator.js'
 
 @Injectable()
 export class UserPermissionsGuard implements CanActivate {

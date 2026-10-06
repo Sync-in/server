@@ -1,10 +1,10 @@
-import { Cache } from '../../../../infrastructure/cache/cache.service'
-import { CACHE_TASK_TTL } from '../../constants/cache'
-import { FileTaskEvent } from '../../events/file-events'
-import { FileTaskStatus } from '../../models/file-task'
-import * as filesUtils from '../../utils/files'
-import * as tasksUtils from '../../utils/tasks'
-import { FilesTasksWatcher } from './files-tasks-watcher.service'
+import { Cache } from '../../../../infrastructure/cache/cache.service.js'
+import { CACHE_TASK_TTL } from '../../constants/cache.js'
+import { FileTaskEvent } from '../../events/file-events.js'
+import { FileTaskStatus } from '../../models/file-task.js'
+import * as filesUtils from '../../utils/files.js'
+import * as tasksUtils from '../../utils/tasks.js'
+import { FilesTasksWatcher } from './files-tasks-watcher.service.js'
 import { Mock } from 'vitest'
 
 describe(FilesTasksWatcher.name, () => {

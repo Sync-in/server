@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
-import { configuration } from '../../../configuration/config.environment'
-import type { ContextStore } from '../interfaces/context-store.interface'
-import { ContextManager } from './context-manager.service'
+import { configuration } from '../../../configuration/config.environment.js'
+import type { ContextStore } from '../interfaces/context-store.interface.js'
+import { ContextManager } from './context-manager.service.js'
 
 describe(ContextManager.name, () => {
   let contextManager: ContextManager

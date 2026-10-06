@@ -1,4 +1,4 @@
-import type { UploadFileStreamLimiter } from './upload-file.interface'
+import type { UploadFileStreamLimiter } from './upload-file.interface.js'
 
 export interface WriteFromStreamOptions {
   start?: number

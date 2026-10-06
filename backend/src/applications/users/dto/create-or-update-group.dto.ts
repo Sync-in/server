@@ -1,7 +1,7 @@
 import { Transform } from 'class-transformer'
 import { IsEnum, IsInt, IsOptional, IsString, MinLength } from 'class-validator'
-import { sanitizeName } from '../../files/utils/files'
-import { GROUP_VISIBILITY } from '../constants/group'
+import { sanitizeName } from '../../files/utils/files.js'
+import { GROUP_VISIBILITY } from '../constants/group.js'
 
 export class UserCreateOrUpdateGroupDto {
   @IsOptional()

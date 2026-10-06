@@ -1,9 +1,10 @@
 import type { Logger } from '@nestjs/common'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import Tesseract from 'tesseract.js'
-import { configuration } from '../../../../../configuration/config.environment'
-import { makeDir } from '../../files'
-import type { FilesContentIndexingOCRConfig } from '../../../files.config'
+import { configuration } from '../../../../../configuration/config.environment.js'
+import { makeDir } from '../../files.js'
+import type { FilesContentIndexingOCRConfig } from '../../../files.config.js'
 
 type OCRWorker = Awaited<ReturnType<typeof Tesseract.createWorker>>
 type OCRWorkerOptions = NonNullable<Parameters<typeof Tesseract.createWorker>[2]>
@@ -12,7 +13,8 @@ export class OCRManager {
   private static instance: OCRManager
   public worker: OCRWorker | null
   private readonly ocrConfig: FilesContentIndexingOCRConfig = configuration.applications.files.contentIndexing.ocr
-  private readonly ocrLanguagesPath = this.ocrConfig.languagesPath ?? path.resolve(__dirname, '../../../assets/ocr-languages')
+  private readonly ocrLanguagesPath =
+    this.ocrConfig.languagesPath ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../assets/ocr-languages')
   private readonly ocrUserDefinedDpi = '300'
   private readonly ocrTrainedDataExtension = '.traineddata'
   private readonly ocrTrainedDataGzipExtension = '.traineddata.gz'

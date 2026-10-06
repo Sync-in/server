@@ -1,7 +1,7 @@
-import type { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto'
-import type { SPACE_ROLE } from '../../spaces/constants/spaces'
-import type { MEMBER_TYPE } from '../constants/member'
-import type { USER_GROUP_ROLE } from '../constants/user'
+import type { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto.js'
+import type { SPACE_ROLE } from '../../spaces/constants/spaces.js'
+import type { MEMBER_TYPE } from '../constants/member.js'
+import type { USER_GROUP_ROLE } from '../constants/user.js'
 
 export interface Member {
   id: number

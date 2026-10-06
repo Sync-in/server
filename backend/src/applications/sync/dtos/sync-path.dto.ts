@@ -7,8 +7,8 @@ import {
   SYNC_PATH_DIFF_MODE,
   SYNC_PATH_MODE,
   SYNC_PATH_SCHEDULER_UNIT
-} from '../constants/sync'
-import { SyncPathSettings } from '../interfaces/sync-path.interface'
+} from '../constants/sync.js'
+import { SyncPathSettings } from '../interfaces/sync-path.interface.js'
 
 class SyncPathSchedulerDto {
   @IsInt()
