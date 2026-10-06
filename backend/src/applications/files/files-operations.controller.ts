@@ -21,7 +21,6 @@ import {
   UseGuards
 } from '@nestjs/common'
 import { type FastifyReply } from 'fastify'
-import { webpMimeType } from '../../common/image.js'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator.js'
 import { GetSpace } from '../spaces/decorators/space.decorator.js'
 import { SpaceGuard } from '../spaces/guards/space.guard.js'
@@ -96,15 +95,10 @@ export class FilesOperationsController {
   }
 
   @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.THUMBNAIL}/*`)
-  async genThumbnail(
-    @GetSpace() space: SpaceEnv,
-    @Query('size', new ParseIntPipe({ optional: true })) size = 256,
-    @Res() res: FastifyReply
-  ): Promise<StreamableFile> {
+  async genThumbnail(@GetSpace() space: SpaceEnv, @Query('size', new ParseIntPipe({ optional: true })) size = 256): Promise<StreamableFile> {
     if (size > 1024) size = 1024
-    const thumb = await this.filesMethods.genThumbnail(space, size)
-    res.type(webpMimeType)
-    return res.send(thumb)
+    const thumbnail = await this.filesMethods.genThumbnail(space, size)
+    return new StreamableFile(thumbnail.stream, { length: thumbnail.size, type: thumbnail.mimeType })
   }
 
   @Lock(`${FILES_ROUTE.OPERATION}/*`)

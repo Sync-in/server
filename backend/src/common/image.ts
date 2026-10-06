@@ -1,3 +1,4 @@
+import { createReadStream } from 'node:fs'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -6,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import sharp from 'sharp'
 import TextToSVG from 'text-to-svg'
+import type { FileThumbnail } from '../applications/files/interfaces/file-thumbnail.interface.js'
 import { maxFileSizeExceededError } from '../applications/files/utils/errors.js'
 import { moveFiles } from '../applications/files/utils/files.js'
 
@@ -21,18 +23,29 @@ export const imgMimeTypePrefix = 'image/'
 export const pngMimeType = 'image/png'
 export const svgMimeType = 'image/svg+xml'
 export const webpMimeType = 'image/webp'
-export const maxThumbnailInputSize = 50 * 1024 * 1024
+export const maxThumbnailInputSize = 25 * 1024 * 1024
 const avatarSize = 512
 const fontPath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'fonts', 'avatar.ttf')
 const loadTextToSVG = promisify(TextToSVG.load.bind(TextToSVG))
+const sharpInputFormats = Object.values(sharp.format).filter(({ input }) => input.file || input.buffer)
 let textToSvgCache: Promise<TextToSVG> | null = null
 
-export async function generateThumbnail(filePath: string, size: number): Promise<Readable> {
-  if ((await fs.stat(filePath)).size > maxThumbnailInputSize) {
+export async function generateThumbnail(filePath: string, size: number, sourceMimeType: string): Promise<FileThumbnail> {
+  const sourceSize = (await fs.stat(filePath)).size
+  if (sourceSize > maxThumbnailInputSize) {
     throw maxFileSizeExceededError()
   }
-  const input = path.extname(filePath).toLowerCase() === '.svg' ? await fs.readFile(filePath) : filePath
-  return sharp(input, {
+  const normalizedFilePath = filePath.toLowerCase()
+  const inputFormat = sharpInputFormats.find(({ input }) => input.fileSuffix?.some((suffix) => normalizedFilePath.endsWith(suffix)))
+  if (!inputFormat) {
+    return {
+      mimeType: sourceMimeType.replace('image-', imgMimeTypePrefix),
+      size: sourceSize,
+      stream: createReadStream(filePath)
+    }
+  }
+  const input = inputFormat.id === 'svg' || !inputFormat.input.file ? await fs.readFile(filePath) : filePath
+  const thumbnail = await sharp(input, {
     failOn: 'none',
     sequentialRead: true, // sequential read = more efficient I/O
     limitInputPixels: 268e6 // protects against extremely large images
@@ -47,6 +60,8 @@ export async function generateThumbnail(filePath: string, size: number): Promise
       fastShrinkOnLoad: true // true by default, added for clarity
     })
     .webp({ quality: 80, effort: 0, alphaQuality: 90 })
+    .toBuffer()
+  return { mimeType: webpMimeType, size: thumbnail.length, stream: Readable.from([thumbnail]) }
 }
 
 export async function generateAvatar(initials: string): Promise<NodeJS.ReadableStream> {

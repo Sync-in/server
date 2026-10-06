@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
+import { Readable } from 'node:stream'
 import { SpaceGuard } from '../spaces/guards/space.guard.js'
 import { FILE_OPERATION } from './constants/operations.js'
 import { FilesOperationsController } from './files-operations.controller.js'
@@ -120,40 +121,37 @@ describe(FilesOperationsController.name, () => {
     })
 
     it('genThumbnail() should default size to 256 when not provided', async () => {
-      const stream = {} as any
-      filesMethodsMock.genThumbnail.mockResolvedValue(stream)
+      const stream = Readable.from(['img'])
+      filesMethodsMock.genThumbnail.mockResolvedValue({ mimeType: 'image/webp', size: 3, stream })
 
       // pass undefined to exercise controller default parameter
-      const result = await filesOperationsController.genThumbnail(fakeSpace, undefined as unknown as number, fakeRes)
+      const result = await filesOperationsController.genThumbnail(fakeSpace, undefined as unknown as number)
 
       expect(filesMethodsMock.genThumbnail).toHaveBeenCalledWith(fakeSpace, 256)
-      expect(fakeRes.type).toHaveBeenCalled()
-      expect(fakeRes.send).toHaveBeenCalledWith(stream)
-      expect(result).toBeUndefined()
+      expect(result.getStream()).toBe(stream)
+      expect(result.getHeaders()).toMatchObject({ length: 3, type: 'image/webp' })
     })
 
     it('genThumbnail() should pass provided size', async () => {
-      const stream = {} as any
-      filesMethodsMock.genThumbnail.mockResolvedValue(stream)
+      const stream = Readable.from(['img'])
+      filesMethodsMock.genThumbnail.mockResolvedValue({ mimeType: 'image/webp', size: 3, stream })
 
-      const result = await filesOperationsController.genThumbnail(fakeSpace, 512, fakeRes)
+      const result = await filesOperationsController.genThumbnail(fakeSpace, 512)
 
       expect(filesMethodsMock.genThumbnail).toHaveBeenCalledWith(fakeSpace, 512)
-      expect(fakeRes.type).toHaveBeenCalled()
-      expect(fakeRes.send).toHaveBeenCalledWith(stream)
-      expect(result).toBeUndefined()
+      expect(result.getStream()).toBe(stream)
+      expect(result.getHeaders()).toMatchObject({ length: 3, type: 'image/webp' })
     })
 
     it('genThumbnail() should reduce size larger than 1024', async () => {
-      const stream = {} as any
-      filesMethodsMock.genThumbnail.mockResolvedValue(stream)
+      const stream = Readable.from(['img'])
+      filesMethodsMock.genThumbnail.mockResolvedValue({ mimeType: 'image/webp', size: 3, stream })
 
-      const result = await filesOperationsController.genThumbnail(fakeSpace, 2048, fakeRes)
+      const result = await filesOperationsController.genThumbnail(fakeSpace, 2048)
 
       expect(filesMethodsMock.genThumbnail).toHaveBeenCalledWith(fakeSpace, 1024)
-      expect(fakeRes.type).toHaveBeenCalled()
-      expect(fakeRes.send).toHaveBeenCalledWith(stream)
-      expect(result).toBeUndefined()
+      expect(result.getStream()).toBe(stream)
+      expect(result.getHeaders()).toMatchObject({ length: 3, type: 'image/webp' })
     })
   })
 

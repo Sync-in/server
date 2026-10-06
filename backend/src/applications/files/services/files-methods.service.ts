@@ -1,20 +1,20 @@
 import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import path from 'node:path'
-import { Readable } from 'node:stream'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface.js'
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
 import { UserModel } from '../../users/models/user.model.js'
 import { FILE_OPERATION } from '../constants/operations.js'
 import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto } from '../dto/file-operations.dto.js'
+import type { CopyMoveFileResponse } from '../interfaces/copy-move-file.interface.js'
 import { FileLockProps } from '../interfaces/file-props.interface.js'
+import type { FileThumbnail } from '../interfaces/file-thumbnail.interface.js'
 import { FileError } from '../models/file-error.js'
 import { LockConflict } from '../models/file-lock-error.js'
 import { checkFileName, dirName, fileName, getMimeType, isPathExists, isPathInside, isPathIsDir, sanitizeName } from '../utils/files.js'
 import { SendFile } from '../utils/send-file.js'
 import { FilesManager } from './files-manager.service.js'
-import type { CopyMoveFileResponse } from '../interfaces/copy-move-file.interface.js'
 
 @Injectable()
 export class FilesMethods {
@@ -121,7 +121,7 @@ export class FilesMethods {
     }
   }
 
-  async genThumbnail(space: SpaceEnv, size: number): Promise<Readable> {
+  async genThumbnail(space: SpaceEnv, size: number): Promise<FileThumbnail> {
     try {
       return await this.filesManager.generateThumbnail(space, size)
     } catch (e) {

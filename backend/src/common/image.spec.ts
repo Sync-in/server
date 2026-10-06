@@ -5,7 +5,7 @@ import { Readable } from 'node:stream'
 import { pathToFileURL } from 'node:url'
 import sharp from 'sharp'
 import { maxFileSizeExceededError } from '../applications/files/utils/errors.js'
-import { generateThumbnail, maxThumbnailInputSize } from './image.js'
+import { generateThumbnail, maxThumbnailInputSize, webpMimeType } from './image.js'
 
 async function streamToBuffer(stream: Readable): Promise<Buffer> {
   const chunks: Buffer[] = []
@@ -30,17 +30,36 @@ describe(generateThumbnail.name, () => {
     const svgPath = path.join(tmpDir, 'image.svg')
     await writeFile(svgPath, '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" fill="blue"/></svg>')
 
-    const thumbnail = await streamToBuffer(await generateThumbnail(svgPath, 32))
+    const result = await generateThumbnail(svgPath, 32, 'image-svg+xml')
+    const thumbnail = await streamToBuffer(result.stream)
 
+    expect(result.mimeType).toBe(webpMimeType)
+    expect(result.size).toBe(thumbnail.length)
     await expect(sharp(thumbnail).metadata()).resolves.toMatchObject({ format: 'webp', width: 32, height: 32 })
   })
 
-  it.each(['png', 'svg'])('rejects an oversized %s source before rendering', async (extension) => {
+  it('returns a Sharp-unsupported image unchanged', async () => {
+    const icoPath = path.join(tmpDir, 'image.ico')
+    const ico = Buffer.from([0, 0, 1, 0, 0, 0])
+    await writeFile(icoPath, ico)
+
+    const result = await generateThumbnail(icoPath, 32, 'image-vnd.microsoft.icon')
+
+    await expect(streamToBuffer(result.stream)).resolves.toEqual(ico)
+    expect(result.mimeType).toBe('image/vnd.microsoft.icon')
+    expect(result.size).toBe(ico.length)
+  })
+
+  it.each([
+    ['png', 'image-png'],
+    ['svg', 'image-svg+xml'],
+    ['ico', 'image-vnd.microsoft.icon']
+  ])('rejects an oversized %s source before rendering', async (extension, mimeType) => {
     const imagePath = path.join(tmpDir, `oversized.${extension}`)
     await writeFile(imagePath, '')
     await truncate(imagePath, maxThumbnailInputSize + 1)
 
-    await expect(generateThumbnail(imagePath, 32)).rejects.toEqual(maxFileSizeExceededError())
+    await expect(generateThumbnail(imagePath, 32, mimeType)).rejects.toEqual(maxFileSizeExceededError())
   })
 
   it.each([
@@ -60,7 +79,8 @@ describe(generateThumbnail.name, () => {
       </svg>`
     )
 
-    const thumbnail = await streamToBuffer(await generateThumbnail(svgPath, 32))
+    const result = await generateThumbnail(svgPath, 32, 'image-svg+xml')
+    const thumbnail = await streamToBuffer(result.stream)
     const pixel = await sharp(thumbnail).removeAlpha().extract({ left: 16, top: 16, width: 1, height: 1 }).raw().toBuffer()
 
     expect(pixel[0]).toBeLessThan(50)
@@ -71,6 +91,6 @@ describe(generateThumbnail.name, () => {
     const disguisedSvgPath = path.join(tmpDir, 'image.png')
     await writeFile(disguisedSvgPath, '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32"/></svg>')
 
-    await expect((async () => streamToBuffer(await generateThumbnail(disguisedSvgPath, 32)))()).rejects.toThrow()
+    await expect(generateThumbnail(disguisedSvgPath, 32, 'image-png')).rejects.toThrow()
   })
 })

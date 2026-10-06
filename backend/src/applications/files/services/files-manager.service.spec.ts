@@ -1963,16 +1963,18 @@ describe(FilesManager.name, () => {
   })
 
   describe('generateThumbnail', () => {
-    it('should validate image and return generated stream', async () => {
+    it('should validate image and return the generated thumbnail', async () => {
       const space = makeSpace({ realPath: '/data/users/john/files/image.png' })
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
       vi.mocked(filesUtils.getMimeType).mockReturnValueOnce('image-png')
       const stream = Readable.from(['img'])
-      vi.spyOn(imageUtils, 'generateThumbnail').mockReturnValueOnce(stream as any)
+      const thumbnail = { mimeType: 'image/webp', size: 3, stream }
+      const generateThumbnailSpy = vi.spyOn(imageUtils, 'generateThumbnail').mockResolvedValueOnce(thumbnail)
 
       const result = await service.generateThumbnail(space, 256)
 
-      expect(result).toBe(stream)
+      expect(result).toBe(thumbnail)
+      expect(generateThumbnailSpy).toHaveBeenCalledWith(space.realPath, 256, 'image-png')
     })
 
     it('should pass SVG files to the thumbnail renderer', async () => {
@@ -1980,12 +1982,13 @@ describe(FilesManager.name, () => {
       vi.mocked(filesUtils.isPathExists).mockResolvedValueOnce(true)
       vi.mocked(filesUtils.getMimeType).mockReturnValueOnce('image-svg+xml')
       const stream = Readable.from(['img'])
-      const generateThumbnailSpy = vi.spyOn(imageUtils, 'generateThumbnail').mockReturnValueOnce(stream as any)
+      const thumbnail = { mimeType: 'image/webp', size: 3, stream }
+      const generateThumbnailSpy = vi.spyOn(imageUtils, 'generateThumbnail').mockResolvedValueOnce(thumbnail)
 
       const result = await service.generateThumbnail(space, 256)
 
-      expect(result).toBe(stream)
-      expect(generateThumbnailSpy).toHaveBeenCalledWith(space.realPath, 256)
+      expect(result).toBe(thumbnail)
+      expect(generateThumbnailSpy).toHaveBeenCalledWith(space.realPath, 256, 'image-svg+xml')
     })
   })
 

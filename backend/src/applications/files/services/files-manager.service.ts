@@ -3,7 +3,6 @@ import { HttpStatus, Injectable, Logger } from '@nestjs/common'
 import type { Dirent } from 'node:fs'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import { Readable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface.js'
 import { generateThumbnail } from '../../../common/image.js'
@@ -31,6 +30,7 @@ import type { DeleteFileOptions } from '../interfaces/delete-file.interface.js'
 import { FileDBProps } from '../interfaces/file-db-props.interface.js'
 import { FileLock } from '../interfaces/file-lock.interface.js'
 import { FileLockProps } from '../interfaces/file-props.interface.js'
+import type { FileThumbnail } from '../interfaces/file-thumbnail.interface.js'
 import { SaveStreamOptions } from '../interfaces/save-stream.interface.js'
 import { FileError, SourceCleanupError } from '../models/file-error.js'
 import { LockConflict } from '../models/file-lock-error.js'
@@ -788,7 +788,7 @@ export class FilesManager {
     FileEvent.emit('event', { user, space, action: ACTION.ADD, rPath: dstPath })
   }
 
-  async generateThumbnail(space: SpaceEnv, size: number): Promise<Readable> {
+  async generateThumbnail(space: SpaceEnv, size: number): Promise<FileThumbnail> {
     if (!(await isPathExists(space.realPath))) {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
     }
@@ -797,8 +797,9 @@ export class FilesManager {
       throw new FileError(HttpStatus.BAD_REQUEST, 'File is not an image')
     }
     try {
-      return generateThumbnail(space.realPath, size)
+      return await generateThumbnail(space.realPath, size, mimeType)
     } catch (e) {
+      if (e instanceof FileError) throw e
       this.logger.warn({ tag: this.generateThumbnail.name, msg: e })
       throw new FileError(HttpStatus.BAD_REQUEST, 'File is not an image')
     }
