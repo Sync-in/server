@@ -1,6 +1,5 @@
 import { HttpService } from '@nestjs/axios'
 import { HttpException, HttpStatus } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthManager } from '../../../authentication/auth.service.js'
@@ -87,7 +86,6 @@ describe(LinksManager.name, () => {
         },
         { provide: HttpService, useValue: {} },
         { provide: FilesLockManager, useValue: {} },
-        { provide: ConfigService, useValue: {} },
         { provide: JwtService, useValue: {} },
         { provide: AuthManager, useValue: authManagerMock },
         { provide: UsersManager, useValue: usersManagerMock },

@@ -1,4 +1,3 @@
-import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { Type } from 'class-transformer'
@@ -15,6 +14,7 @@ import { generateUserTest } from '../applications/users/utils/test.js'
 import { XML_CONTENT_TYPE } from '../applications/webdav/constants/webdav.js'
 import { convertHumanTimeToSeconds, transformAndValidate } from '../common/functions.js'
 import { currentTimeStamp, decodeUrl } from '../common/shared.js'
+import { configuration } from '../configuration/config.environment.js'
 import { Cache } from '../infrastructure/cache/cache.service.js'
 import { dbCheckConnection } from '../infrastructure/database/utils.js'
 import { AuthConfig } from './auth.config.js'
@@ -66,7 +66,7 @@ describe('Auth (e2e)', () => {
     app = await appBootstrap()
     await app.init()
     await app.getHttpAdapter().getInstance().ready()
-    authConfig = app.get<ConfigService>(ConfigService).get<AuthConfig>('auth')
+    authConfig = configuration.auth
     jwtService = app.get<JwtService>(JwtService)
     adminUsersManager = app.get<AdminUsersManager>(AdminUsersManager)
     usersManager = app.get<UsersManager>(UsersManager)

@@ -1,6 +1,5 @@
 import fastifyCookie, { sign } from '@fastify/cookie'
 import { ExecutionContext, UnauthorizedException, ValidationPipe } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
 import { APP_GUARD, Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
@@ -15,7 +14,7 @@ import { UsersManager } from '../applications/users/services/users-manager.servi
 import { generateUserTest } from '../applications/users/utils/test.js'
 import { convertHumanTimeToSeconds } from '../common/functions.js'
 import { currentTimeStamp } from '../common/shared.js'
-import { exportConfiguration } from '../configuration/config.environment.js'
+import { configuration } from '../configuration/config.environment.js'
 import { Cache } from '../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../infrastructure/database/constants.js'
 import { AuthConfig } from './auth.config.js'
@@ -45,10 +44,9 @@ describe(AuthController.name, () => {
 
   beforeAll(async () => {
     const testingModuleBuilder = Test.createTestingModule({
-      imports: [await ConfigModule.forRoot({ load: [exportConfiguration], isGlobal: true }), PassportModule],
+      imports: [PassportModule],
       controllers: [AuthController],
       providers: [
-        ConfigService,
         AuthManager,
         JwtService,
         AuthProvider2FA,
@@ -63,7 +61,7 @@ describe(AuthController.name, () => {
     module = await testingModuleBuilder.compile()
 
     module.useLogger(['fatal'])
-    authConfig = module.get<ConfigService>(ConfigService).get<AuthConfig>('auth')
+    authConfig = configuration.auth
     authController = module.get<AuthController>(AuthController)
     authManager = module.get<AuthManager>(AuthManager)
     authProvider2FA = module.get<AuthProvider2FA>(AuthProvider2FA)
@@ -280,10 +278,9 @@ describe(`${AuthController.name} HTTP`, () => {
 
   beforeAll(async () => {
     const testingModuleBuilder = Test.createTestingModule({
-      imports: [await ConfigModule.forRoot({ load: [exportConfiguration], isGlobal: true }), PassportModule],
+      imports: [PassportModule],
       controllers: [AuthController],
       providers: [
-        ConfigService,
         AuthManager,
         JwtService,
         AuthProvider2FA,
@@ -321,7 +318,7 @@ describe(`${AuthController.name} HTTP`, () => {
     const module: TestingModule = await testingModuleBuilder.compile()
 
     module.useLogger(['fatal'])
-    authConfig = module.get<ConfigService>(ConfigService).get<AuthConfig>('auth')
+    authConfig = configuration.auth
     authManager = module.get<AuthManager>(AuthManager)
     authProvider2FA = module.get<AuthProvider2FA>(AuthProvider2FA)
     jwtService = module.get<JwtService>(JwtService)

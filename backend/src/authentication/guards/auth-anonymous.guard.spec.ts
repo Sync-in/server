@@ -1,11 +1,9 @@
 import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
 import { PassportModule } from '@nestjs/passport'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
 import { UsersManager } from '../../applications/users/services/users-manager.service.js'
-import { exportConfiguration } from '../../configuration/config.environment.js'
 import { AuthAnonymousGuard } from './auth-anonymous.guard.js'
 import { AuthAnonymousStrategy } from './auth-anonymous.strategy.js'
 
@@ -16,13 +14,7 @@ describe(AuthAnonymousGuard.name, () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        await ConfigModule.forRoot({
-          load: [exportConfiguration],
-          isGlobal: true
-        }),
-        PassportModule
-      ],
+      imports: [PassportModule],
       providers: [
         AuthAnonymousGuard,
         AuthAnonymousStrategy,

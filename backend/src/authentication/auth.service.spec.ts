@@ -1,4 +1,3 @@
-import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { USER_ROLE } from '../applications/users/constants/user.js'
@@ -16,7 +15,7 @@ describe(AuthManager.name, () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthManager, { provide: JwtService, useValue: jwtService }, { provide: ConfigService, useValue: { get: () => null } }]
+      providers: [AuthManager, { provide: JwtService, useValue: jwtService }]
     }).compile()
 
     module.useLogger(['fatal'])

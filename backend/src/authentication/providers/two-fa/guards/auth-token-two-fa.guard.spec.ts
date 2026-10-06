@@ -1,13 +1,12 @@
 import { sign } from '@fastify/cookie'
 import { createMock, DeepMocked } from '@golevelup/ts-vitest'
 import { ExecutionContext } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule, JwtService } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
 import crypto from 'node:crypto'
-import { exportConfiguration } from '../../../../configuration/config.environment.js'
+import { configuration } from '../../../../configuration/config.environment.js'
 import { AuthConfig } from '../../../auth.config.js'
 import { AuthManager } from '../../../auth.service.js'
 import { CSRF_ERROR } from '../../../constants/auth.js'
@@ -26,7 +25,7 @@ describe(AuthTokenTwoFaGuard.name, () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [await ConfigModule.forRoot({ load: [exportConfiguration], isGlobal: true }), JwtModule.register({ global: true }), PassportModule],
+      imports: [JwtModule.register({ global: true }), PassportModule],
       providers: [
         AuthTokenTwoFaGuard,
         AuthTokenTwoFaStrategy,
@@ -40,7 +39,7 @@ describe(AuthTokenTwoFaGuard.name, () => {
       ]
     }).compile()
 
-    authConfig = module.get<ConfigService>(ConfigService).get<AuthConfig>('auth')
+    authConfig = configuration.auth
     const jwtService = module.get<JwtService>(JwtService)
     authTokenTwoFaGuard = module.get<AuthTokenTwoFaGuard>(AuthTokenTwoFaGuard)
     temporaryTwoFaToken = await jwtService.signAsync(

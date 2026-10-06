@@ -24,9 +24,8 @@ export const serverConfig: ServerConfig = {
     sampleDocuments: getDocumentTypes(configuration.applications.files.sampleDocuments)
   }
 }
-export const exportConfiguration: (reload?: boolean) => GlobalConfig = (reload = false) => (reload ? loadConfiguration() : configuration)
 
-function loadConfiguration(): GlobalConfig {
+export function loadConfiguration(): GlobalConfig {
   deprecatedFilesEditorsEnvConfig()
   const config: GlobalConfig = configLoader()
   // LOGGER

@@ -1,12 +1,11 @@
 import { HttpModule } from '@nestjs/axios'
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
 import { LoggerModule } from 'nestjs-pino'
 import { USER_AGENT } from './app.constants.js'
 import { AppService } from './app.service.js'
 import { ApplicationsModule } from './applications/applications.module.js'
 import { AuthModule } from './authentication/auth.module.js'
-import { configuration, exportConfiguration } from './configuration/config.environment.js'
+import { configuration } from './configuration/config.environment.js'
 import { configLogger } from './configuration/config.logger.js'
 import type { FastifyLoggerRequest } from './configuration/interfaces/logger.interface.js'
 import { AvailabilityModule } from './infrastructure/availability/availability.module.js'
@@ -18,7 +17,6 @@ import { SchedulerModule } from './infrastructure/scheduler/scheduler.module.js'
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ load: [exportConfiguration], validatePredefined: false, ignoreEnvFile: true, isGlobal: true }),
     LoggerModule.forRootAsync<FastifyLoggerRequest>({
       useFactory: async () => ({
         pinoHttp: configLogger(configuration.logger)

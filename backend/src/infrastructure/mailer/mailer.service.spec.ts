@@ -1,7 +1,7 @@
-import { ConfigService } from '@nestjs/config'
 import { Test, TestingModule } from '@nestjs/testing'
 import { PinoLogger } from 'nestjs-pino'
 import nodemailer, { type Transporter } from 'nodemailer'
+import { configuration } from '../../configuration/config.environment.js'
 import { MailerConfig } from './mailer.config.js'
 import { Mailer } from './mailer.service.js'
 
@@ -16,8 +16,8 @@ vi.mocked(nodemailer.createTransport).mockReturnValue(createTransportMock as unk
 describe(Mailer.name, () => {
   let module: TestingModule
   let mailer: Mailer
-  let configService: ConfigService
   let logger: PinoLogger
+  const originalMailerConfig = configuration.mail
 
   const mailerConfig: MailerConfig = {
     host: 'smtp.example.com',
@@ -31,10 +31,10 @@ describe(Mailer.name, () => {
   }
 
   const initModule = async (config: MailerConfig | undefined, loggerLevel: string = 'info') => {
+    configuration.mail = config
     module = await Test.createTestingModule({
       providers: [
         Mailer,
-        { provide: ConfigService, useValue: { get: vi.fn().mockReturnValue(config) } },
         {
           provide: PinoLogger,
           useValue: {
@@ -53,7 +53,6 @@ describe(Mailer.name, () => {
     await module.init()
 
     mailer = module.get<Mailer>(Mailer)
-    configService = module.get<ConfigService>(ConfigService)
     logger = module.get<PinoLogger>(PinoLogger)
   }
 
@@ -61,10 +60,13 @@ describe(Mailer.name, () => {
     await initModule(undefined)
   })
 
+  afterAll(() => {
+    configuration.mail = originalMailerConfig
+  })
+
   it('should be defined', () => {
     expect(module).toBeDefined()
     expect(mailer).toBeDefined()
-    expect(configService).toBeDefined()
     expect(logger).toBeDefined()
   })
 

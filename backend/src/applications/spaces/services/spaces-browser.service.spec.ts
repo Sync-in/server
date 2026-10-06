@@ -1,7 +1,6 @@
-import { ConfigModule } from '@nestjs/config'
 import { Test, TestingModule } from '@nestjs/testing'
 import fs from 'node:fs/promises'
-import { configuration, exportConfiguration } from '../../../configuration/config.environment.js'
+import { configuration } from '../../../configuration/config.environment.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { FilesQuotaManager } from '../../files/services/files-quota-manager.service.js'
@@ -24,7 +23,6 @@ describe(SpacesBrowser.name, () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [await ConfigModule.forRoot({ load: [exportConfiguration], isGlobal: true })],
       providers: [
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
         {

@@ -1,7 +1,7 @@
 import { Injectable, type OnModuleInit } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { PinoLogger } from 'nestjs-pino'
 import type { SendMailOptions, SMTPTransportOptions, Transporter } from 'nodemailer'
+import { configuration } from '../../configuration/config.environment.js'
 import type { MailProps } from './interfaces/mail.interface.js'
 import { MailerConfig } from './mailer.config.js'
 
@@ -11,12 +11,9 @@ export class Mailer implements OnModuleInit {
   private transporter: Transporter
   private readonly configuration: MailerConfig
 
-  constructor(
-    private configService: ConfigService,
-    private readonly logger: PinoLogger
-  ) {
+  constructor(private readonly logger: PinoLogger) {
     this.logger.setContext(Mailer.name.toUpperCase())
-    this.configuration = this.configService.get<MailerConfig>('mail')
+    this.configuration = configuration.mail
   }
 
   async onModuleInit(): Promise<void> {

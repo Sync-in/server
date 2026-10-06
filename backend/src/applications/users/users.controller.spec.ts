@@ -1,9 +1,7 @@
-import { ConfigModule } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { Test, TestingModule } from '@nestjs/testing'
 import { AuthManager } from '../../authentication/auth.service.js'
 import { AuthProvider2FA } from '../../authentication/providers/two-fa/auth-provider-two-fa.service.js'
-import { exportConfiguration } from '../../configuration/config.environment.js'
 import { Cache } from '../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../infrastructure/database/constants.js'
 import { NotificationsManager } from '../notifications/services/notifications-manager.service.js'
@@ -25,7 +23,6 @@ describe(UsersController.name, () => {
 
   beforeAll(async () => {
     module = await Test.createTestingModule({
-      imports: [await ConfigModule.forRoot({ load: [exportConfiguration], isGlobal: true })],
       controllers: [UsersController],
       providers: [
         { provide: DB_TOKEN_PROVIDER, useValue: {} },

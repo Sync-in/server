@@ -7,7 +7,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { AppService } from './app.service.js'
 import { ENVIRONMENT_PREFIX } from './configuration/config.constants.js'
-import { configuration, exportConfiguration } from './configuration/config.environment.js'
+import { configuration, loadConfiguration } from './configuration/config.environment.js'
 
 vi.mock('@socket.io/cluster-adapter', () => ({
   setupPrimary: vi.fn()
@@ -135,7 +135,7 @@ describe(AppService.name, () => {
   })
 
   it(`should use ${ENVIRONMENT_PREFIX} environment variables to override the configuration`, () => {
-    let conf = exportConfiguration()
+    let conf = configuration
     expect(conf.logger.stdout).toBe(true)
     expect(conf.logger.colorize).toBe(true)
     const tmpSecretFile = path.join(os.tmpdir(), 'secret')
@@ -149,7 +149,7 @@ describe(AppService.name, () => {
     process.env[`${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_SAMPLEDOCUMENTS`] = 'microsoft'
     // docker compose secret file
     process.env[`${ENVIRONMENT_PREFIX}AUTH_TOKEN_ACCESS_SECRET_FILE`] = tmpSecretFile
-    conf = exportConfiguration(true)
+    conf = loadConfiguration()
     expect(conf.applications.files.editors.onlyoffice.secret).toBe('fooBAR')
     expect(warnSpy).toHaveBeenCalledWith(
       `Environment variable "${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_ONLYOFFICE_SECRET" is deprecated. Please use "${ENVIRONMENT_PREFIX}APPLICATIONS_FILES_EDITORS_ONLYOFFICE_SECRET" instead.`

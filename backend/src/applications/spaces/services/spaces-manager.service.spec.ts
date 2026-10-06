@@ -1,11 +1,10 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
 import { Test, TestingModule } from '@nestjs/testing'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { transformAndValidate } from '../../../common/functions.js'
-import { exportConfiguration } from '../../../configuration/config.environment.js'
+import { configuration } from '../../../configuration/config.environment.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { FilesConfig } from '../../files/files.config.js'
@@ -40,7 +39,6 @@ describe(SpacesManager.name, () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [await ConfigModule.forRoot({ load: [exportConfiguration], isGlobal: true })],
       providers: [
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
         {
@@ -66,7 +64,7 @@ describe(SpacesManager.name, () => {
     }).compile()
 
     module.useLogger(['fatal'])
-    filesConfig = module.get<ConfigService>(ConfigService).get('applications.files')
+    filesConfig = configuration.applications.files
     spacesManager = module.get<SpacesManager>(SpacesManager)
     spacesQueries = module.get<SpacesQueries>(SpacesQueries)
     userTest = new UserModel(generateUserTest())
