@@ -226,15 +226,15 @@
   app-files-files-new-dialog .btn-default[aria-pressed] {
     &:hover:not(:disabled),
     &:focus-visible:not(:disabled) {
-      color: var(--app-action-state-color) !important;
-      border-color: var(--app-action-state-bg) !important;
-      background-color: var(--app-action-state-bg) !important;
+      color: var(--app-menu-item-hover-color) !important;
+      border-color: var(--app-menu-item-hover-border) !important;
+      background-color: var(--app-menu-item-hover-bg) !important;
     }
 
     &:is(.active, :active, [aria-pressed='true']):not(:disabled) {
-      color: var(--app-action-state-color) !important;
-      border-color: var(--app-action-state-bg) !important;
-      background-color: var(--app-action-state-bg) !important;
+      color: var(--app-menu-item-hover-color) !important;
+      border-color: var(--app-menu-item-hover-border) !important;
+      background-color: var(--app-menu-item-hover-bg) !important;
     }
   }
   app-input-filter {
