@@ -1,6 +1,7 @@
 import { i18nLocaleSupported } from '@sync-in-server/backend/src/common/i18n'
 import {
   defineLocale,
+  caLocale,
   deLocale,
   esLocale,
   frLocale,
@@ -19,6 +20,7 @@ import {
 
 // Remove explicit 'en' locale definition to prevent translation conflicts
 const BOOTSTRAP_LOCALES: Record<Exclude<i18nLocaleSupported, 'en'>, LocaleData> = {
+  ca: caLocale,
   de: deLocale,
   es: esLocale,
   fr: frLocale,
