@@ -88,6 +88,9 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
 
   @HostListener('window:beforeunload', ['$event'])
   onBeforeUnload(event: BeforeUnloadEvent) {
+    const activeViewer = this.activeViewer()
+    if (activeViewer === SHORT_MIME.IMAGE || activeViewer === SHORT_MIME.PDF) return
+
     event.preventDefault()
     event.returnValue = ''
   }
