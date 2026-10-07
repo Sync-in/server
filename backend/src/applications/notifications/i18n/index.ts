@@ -1,4 +1,5 @@
 import { i18nLocale } from '../../../common/i18n.js'
+import { ca } from './ca.js'
 import { de } from './de.js'
 import { es } from './es.js'
 import { fr } from './fr.js'
@@ -15,6 +16,7 @@ import { tr } from './tr.js'
 import { zh } from './zh.js'
 
 export const translations = new Map<i18nLocale, Record<string, string>>([
+  ['ca', ca],
   ['de', de],
   ['es', es],
   ['fr', fr],
