@@ -1,5 +1,8 @@
+@let currentFile = file();
+@let galleryOpen = isGalleryOpen();
 <div #viewer
      class="app-viewer-image"
+     (keydown.escape)="onViewerEscape($event)"
      (pointerenter)="onViewerPointerMove($event)"
      (pointermove)="onViewerPointerMove($event)"
      (pointerleave)="onViewerPointerLeave($event)">
@@ -9,23 +12,65 @@
        (pointermove)="onGesturePointerMove($event)"
        (pointerup)="onGesturePointerUp($event)"
        (pointercancel)="onGesturePointerCancel($event)"
-       [attr.aria-busy]="isImageLoading()">
-    <img #image
-         (error)="onImageError()"
-         (load)="onImageLoad()"
-         [alt]="file().name"
-         [class.is-pannable]="isImagePannable()"
-         [class.is-panning]="isImagePanning()"
-         [src]="file().dataUrl"
-         [style.transform]="imageTransform()"
-         class="app-viewer-image-media"
-         draggable="false" />
-    @if (isImageLoading()) {
-      <div class="app-viewer-image-loader"
-           [attr.aria-label]="'Loading...' | translate:locale.language"
-           role="status">
-        <svg [lucideIcon]="icons.LucideLoader" class="app-viewer-image-loader-icon icon-spin-pulse" aria-hidden="true"></svg>
+       [attr.aria-busy]="galleryOpen ? null : isImageLoading()"
+       [attr.aria-label]="galleryOpen ? ('Gallery' | translate:locale.language) : null"
+       [attr.role]="galleryOpen ? 'region' : null"
+       [attr.tabindex]="galleryOpen ? -1 : null"
+       [class.is-gallery]="galleryOpen">
+    @if (galleryOpen) {
+      @let failedThumbnailIds = galleryFailedThumbnailIds();
+      <div
+        (touchstart)="onGalleryMultiTouch($event)"
+        class="app-viewer-image-gallery">
+        @for (galleryFile of directoryImages(); track galleryFile.id) {
+          @let thumbnailUrl = galleryFile.thumbnailUrl;
+          <button
+            (click)="selectGalleryImage(galleryFile)"
+            [attr.aria-current]="galleryFile.id === currentFile.id ? 'true' : null"
+            [attr.aria-label]="galleryFile.name"
+            [attr.data-gallery-file-id]="galleryFile.id"
+            [class.is-current]="galleryFile.id === currentFile.id"
+            class="app-viewer-image-gallery-item"
+            type="button">
+            @if (failedThumbnailIds.has(galleryFile.id)) {
+              <span class="app-viewer-image-gallery-fallback">{{ galleryFile.name }}</span>
+            } @else {
+              <img
+                (error)="onGalleryThumbnailError(galleryFile.id)"
+                [attr.srcset]="thumbnailUrl + '?size=256 1x, ' + thumbnailUrl + '?size=512 2x'"
+                [src]="thumbnailUrl + '?size=256'"
+                alt=""
+                class="app-viewer-image-gallery-thumbnail"
+                decoding="async"
+                draggable="false"
+                height="200"
+                loading="lazy"
+                width="300" />
+            }
+          </button>
+        }
       </div>
+    } @else {
+      <img #image
+           (error)="onImageError()"
+           (load)="onImageLoad()"
+           (wheel)="onImageWheel($event)"
+           [alt]="currentFile.name"
+           [class.is-pannable]="isImagePannable()"
+           [class.is-panning]="isImagePanning()"
+           [src]="currentFile.dataUrl"
+           [style.transform]="imageTransform()"
+           class="app-viewer-image-media"
+           decoding="async"
+           draggable="false"
+           fetchpriority="high" />
+      @if (isImageLoading()) {
+        <div class="app-viewer-image-loader"
+             [attr.aria-label]="'Loading...' | translate:locale.language"
+             role="status">
+          <svg [lucideIcon]="icons.LucideLoader" class="app-viewer-image-loader-icon icon-spin-pulse" aria-hidden="true"></svg>
+        </div>
+      }
     }
   </div>
   <div class="app-viewer-image-controls"
@@ -61,63 +106,79 @@
         <svg [lucideIcon]="icons.LucideChevronRight" aria-hidden="true"></svg>
       </button>
     </div>
-    <span class="app-viewer-image-controls-separator" aria-hidden="true"></span>
-    <div class="app-viewer-image-controls-group app-viewer-image-controls-transform">
-      <button
-        (click)="zoomOut()"
-        [attr.aria-label]="'Zoom out' | translate:locale.language"
-        [disabled]="!canZoomOut()"
-        [tooltip]="'Zoom out' | translate:locale.language"
-        class="app-viewer-image-control app-viewer-image-control-zoom"
-        type="button">
-        <svg [lucideIcon]="icons.LucideZoomOut" aria-hidden="true"></svg>
-      </button>
-      <button
-        (click)="zoomIn()"
-        [attr.aria-label]="'Zoom in' | translate:locale.language"
-        [disabled]="!canZoomIn()"
-        [tooltip]="'Zoom in' | translate:locale.language"
-        class="app-viewer-image-control app-viewer-image-control-zoom"
-        type="button">
-        <svg [lucideIcon]="icons.LucideZoomIn" aria-hidden="true"></svg>
-      </button>
-      <button
-        (click)="rotateLeft()"
-        [attr.aria-label]="'Rotate left' | translate:locale.language"
-        [tooltip]="'Rotate left' | translate:locale.language"
-        class="app-viewer-image-control"
-        type="button">
-        <svg [lucideIcon]="icons.LucideRotateCcwSquare" aria-hidden="true"></svg>
-      </button>
-      <button
-        (click)="rotateRight()"
-        [attr.aria-label]="'Rotate right' | translate:locale.language"
-        [tooltip]="'Rotate right' | translate:locale.language"
-        class="app-viewer-image-control"
-        type="button">
-        <svg [lucideIcon]="icons.LucideRotateCwSquare" aria-hidden="true"></svg>
-      </button>
-      <button
-        (click)="resetImageTransform()"
-        [attr.aria-label]="'Reset' | translate:locale.language"
-        [tooltip]="'Reset' | translate:locale.language"
-        class="app-viewer-image-control"
-        type="button">
-        <svg [lucideIcon]="icons.LucideFocus" aria-hidden="true"></svg>
-      </button>
-    </div>
+    @if (!galleryOpen) {
+      <span class="app-viewer-image-controls-separator" aria-hidden="true"></span>
+      <div class="app-viewer-image-controls-group app-viewer-image-controls-transform">
+        <button
+          (click)="zoomOut($event)"
+          [attr.aria-label]="'Zoom out' | translate:locale.language"
+          [disabled]="!canZoomOut()"
+          [tooltip]="'Zoom out' | translate:locale.language"
+          class="app-viewer-image-control app-viewer-image-control-zoom"
+          type="button">
+          <svg [lucideIcon]="icons.LucideZoomOut" aria-hidden="true"></svg>
+        </button>
+        <button
+          (click)="zoomIn($event)"
+          [attr.aria-label]="'Zoom in' | translate:locale.language"
+          [disabled]="!canZoomIn()"
+          [tooltip]="'Zoom in' | translate:locale.language"
+          class="app-viewer-image-control app-viewer-image-control-zoom"
+          type="button">
+          <svg [lucideIcon]="icons.LucideZoomIn" aria-hidden="true"></svg>
+        </button>
+        <button
+          (click)="resetImageTransform()"
+          [attr.aria-label]="'Reset' | translate:locale.language"
+          [tooltip]="'Reset' | translate:locale.language"
+          class="app-viewer-image-control"
+          type="button">
+          <svg [lucideIcon]="icons.LucideFocus" aria-hidden="true"></svg>
+        </button>
+        <button
+          (click)="rotateLeft()"
+          [attr.aria-label]="'Rotate left' | translate:locale.language"
+          [tooltip]="'Rotate left' | translate:locale.language"
+          class="app-viewer-image-control"
+          type="button">
+          <svg [lucideIcon]="icons.LucideRotateCcwSquare" aria-hidden="true"></svg>
+        </button>
+        <button
+          (click)="rotateRight()"
+          [attr.aria-label]="'Rotate right' | translate:locale.language"
+          [tooltip]="'Rotate right' | translate:locale.language"
+          class="app-viewer-image-control"
+          type="button">
+          <svg [lucideIcon]="icons.LucideRotateCwSquare" aria-hidden="true"></svg>
+        </button>
+      </div>
+    }
     <span class="app-viewer-image-controls-separator" aria-hidden="true"></span>
     <div class="app-viewer-image-controls-group app-viewer-image-controls-actions">
-      <button
-        (click)="toggleSlideshow()"
-        [attr.aria-label]="slideshowAction().label | translate:locale.language"
-        [attr.aria-pressed]="isSlideshowActive()"
-        [class.is-slideshow-active]="isSlideshowActive()"
-        [tooltip]="slideshowAction().label | translate:locale.language"
-        class="app-viewer-image-control"
-        type="button">
-        <svg [lucideIcon]="slideshowAction().icon" aria-hidden="true"></svg>
-      </button>
+      @if (imageCount() > 1) {
+        <button
+          (click)="toggleGallery()"
+          [attr.aria-label]="'Gallery' | translate:locale.language"
+          [attr.aria-pressed]="galleryOpen"
+          [tooltip]="'Gallery' | translate:locale.language"
+          class="app-viewer-image-control app-viewer-image-control-gallery"
+          type="button">
+          <svg [lucideIcon]="icons.LucideGrid2x2" aria-hidden="true"></svg>
+        </button>
+      }
+      @if (!galleryOpen && imageCount() > 1) {
+        @let slideshow = slideshowAction();
+        <button
+          (click)="toggleSlideshow()"
+          [attr.aria-label]="slideshow.label | translate:locale.language"
+          [attr.aria-pressed]="isSlideshowActive()"
+          [class.is-slideshow-active]="isSlideshowActive()"
+          [tooltip]="slideshow.label | translate:locale.language"
+          class="app-viewer-image-control"
+          type="button">
+          <svg [lucideIcon]="slideshow.icon" aria-hidden="true"></svg>
+        </button>
+      }
       <button
         (click)="fullscreen()"
         [attr.aria-label]="'Fullscreen' | translate:locale.language"
@@ -126,22 +187,24 @@
         type="button">
         <svg [lucideIcon]="icons.LucideExpand" aria-hidden="true"></svg>
       </button>
-      <button
-        btnCheckbox
-        [attr.aria-label]="'Info' | translate:locale.language"
-        [(ngModel)]="isInfoboxOpen"
-        [tooltip]="'Info' | translate:locale.language"
-        class="app-viewer-image-control app-viewer-image-control-info"
-        type="button">
-        <svg [lucideIcon]="icons.LucideInfo" aria-hidden="true"></svg>
-      </button>
+      @if (!galleryOpen) {
+        <button
+          (click)="toggleInfobox()"
+          [attr.aria-label]="'Info' | translate:locale.language"
+          [attr.aria-pressed]="isInfoboxOpen()"
+          [tooltip]="'Info' | translate:locale.language"
+          class="app-viewer-image-control app-viewer-image-control-info"
+          type="button">
+          <svg [lucideIcon]="icons.LucideInfo" aria-hidden="true"></svg>
+        </button>
+      }
     </div>
   </div>
   @if (isInfoboxOpen()) {
     <dl class="info-box">
       <div class="info-box-row">
         <dt>{{ 'Type' | translate:locale.language }}</dt>
-        <dd>{{ file().mime }}</dd>
+        <dd>{{ currentFile.mime }}</dd>
       </div>
       <div class="info-box-row">
         <dt>{{ 'Dimensions' | translate:locale.language }}</dt>
@@ -149,7 +212,7 @@
       </div>
       <div class="info-box-row">
         <dt>{{ 'Size' | translate:locale.language }}</dt>
-        <dd>{{ file().hSize }}</dd>
+        <dd>{{ currentFile.hSize }}</dd>
       </div>
     </dl>
   }
