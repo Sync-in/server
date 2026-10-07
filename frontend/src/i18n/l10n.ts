@@ -23,6 +23,7 @@ export const LANG_DEFAULT: i18nLocaleSupported = 'en'
 
 export const i18nLanguageText: Record<i18nLocaleSupported | typeof USER_LANGUAGE_AUTO, string> = {
   [USER_LANGUAGE_AUTO]: 'Auto',
+  ca: 'Català',
   de: 'Deutsch',
   en: 'English',
   es: 'Español',
