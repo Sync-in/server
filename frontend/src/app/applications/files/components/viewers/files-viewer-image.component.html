@@ -1,80 +1,156 @@
-<div class="app-top-menu app-top-menu-tool-bar d-flex justify-content-between"
-     [attr.aria-label]="'Actions' | translate:locale.language"
-     role="toolbar">
-  <div class="d-flex">
-    <button
-      (click)="previousImage()"
-      [attr.aria-label]="'Previous' | translate:locale.language"
-      [tooltip]="'Previous' | translate:locale.language"
-      [adaptivePosition]="true"
-      class="btn btn-custom"
-      type="button">
-      <svg [lucideIcon]="icons.LucideChevronLeft"></svg>
-    </button>
-    <button
-      (click)="nextImage()"
-      [attr.aria-label]="'Next' | translate:locale.language"
-      [tooltip]="'Next' | translate:locale.language"
-      class="btn btn-custom"
-      type="button">
-      <svg [lucideIcon]="icons.LucideChevronRight"></svg>
-    </button>
-    @if (!isSlideshowActive()) {
-    <button
-      (click)="startSlideshow()"
-      [attr.aria-label]="'Start Slideshow' | translate:locale.language"
-      [tooltip]="'Start Slideshow' | translate:locale.language"
-      class="btn btn-custom"
-      type="button">
-      <svg [lucideIcon]="icons.LucidePlay"></svg>
-     </button>
-    } @else {
-    <button
-      (click)="stopSlideshow()"
-      [attr.aria-label]="'Stop slideshow' | translate:locale.language"
-      [tooltip]="'Stop slideshow' | translate:locale.language"
-      class="btn btn-custom"
-      type="button">
-      <svg [lucideIcon]="icons.LucideSquare"></svg>
-    </button>
+<div #viewer
+     class="app-viewer-image"
+     (pointerenter)="onViewerPointerMove($event)"
+     (pointermove)="onViewerPointerMove($event)"
+     (pointerleave)="onViewerPointerLeave($event)">
+  <div #canvas
+       class="app-viewer-image-canvas"
+       (pointerdown)="onGesturePointerDown($event)"
+       (pointermove)="onGesturePointerMove($event)"
+       (pointerup)="onGesturePointerUp($event)"
+       (pointercancel)="onGesturePointerCancel($event)"
+       [attr.aria-busy]="isImageLoading()">
+    <img #image
+         (error)="onImageError()"
+         (load)="onImageLoad()"
+         [alt]="file().name"
+         [class.is-pannable]="isImagePannable()"
+         [class.is-panning]="isImagePanning()"
+         [src]="file().dataUrl"
+         [style.transform]="imageTransform()"
+         class="app-viewer-image-media"
+         draggable="false" />
+    @if (isImageLoading()) {
+      <div class="app-viewer-image-loader"
+           [attr.aria-label]="'Loading...' | translate:locale.language"
+           role="status">
+        <svg [lucideIcon]="icons.LucideLoader" class="app-viewer-image-loader-icon icon-spin-pulse" aria-hidden="true"></svg>
+      </div>
     }
-    <button
-      (click)="fullscreen()"
-      [attr.aria-label]="'Fullscreen' | translate:locale.language"
-      [tooltip]="'Fullscreen' | translate:locale.language"
-      class="btn btn-custom"
-      type="button">
-      <svg [lucideIcon]="icons.LucideExpand"></svg>
-    </button>
   </div>
-  <div class="px-2">{{ imageIndex() + 1 }}<span class="px-1" l10nTranslate>of</span>{{ imageCount() }}</div>
-  <button
-    btnCheckbox
-    [attr.aria-label]="'Info' | translate:locale.language"
-    [(ngModel)]="isInfoboxOpen"
-    [tooltip]="'Info' | translate:locale.language"
-    class="d-none d-sm-block btn btn-custom"
-    type="button">
-    <svg [lucideIcon]="icons.LucideInfo"></svg>
-  </button>
-</div>
-<div class="app-viewer-image" [style.height.px]="currentHeightWithOffset()">
-  <img #image
-       (load)="onImageLoad()"
-       [src]="file().dataUrl" [style.max-height.px]="currentHeightWithOffset()"
-       alt="" />
-  <div class="info-box p-2 m-2 d-flex flex-column app-small-card rounded opacity-75" [class.d-none]="!isInfoboxOpen()">
-    <div class="d-flex mb-1">
-      <div class="d-flex col-sm text-bold">{{ 'Type' | translate:locale.language }}</div>
-      <div>{{ file().mime }}</div>
+  <div class="app-viewer-image-controls"
+       (pointerdown)="onControlsPointerDown($event)"
+       (pointerenter)="onControlsPointerEnter($event)"
+       (pointerleave)="onControlsPointerLeave($event)"
+       [attr.aria-label]="'Actions' | translate:locale.language"
+       [class.is-controls-hidden]="!isControlsVisible()"
+       role="toolbar">
+    <div class="app-viewer-image-controls-group app-viewer-image-controls-navigation">
+      <button
+        (click)="previousImage()"
+        [attr.aria-label]="'Previous' | translate:locale.language"
+        [tooltip]="'Previous' | translate:locale.language"
+        [adaptivePosition]="true"
+        class="app-viewer-image-control"
+        type="button">
+        <svg [lucideIcon]="icons.LucideChevronLeft" aria-hidden="true"></svg>
+      </button>
+      <span class="app-viewer-image-counter"
+            aria-live="polite">
+        <span>{{ imageIndex() + 1 }}</span>
+        <span class="app-viewer-image-counter-separator">/</span>
+        <span>{{ imageCount() }}</span>
+      </span>
+      <button
+        (click)="nextImage()"
+        [attr.aria-label]="'Next' | translate:locale.language"
+        [tooltip]="'Next' | translate:locale.language"
+        [adaptivePosition]="true"
+        class="app-viewer-image-control"
+        type="button">
+        <svg [lucideIcon]="icons.LucideChevronRight" aria-hidden="true"></svg>
+      </button>
     </div>
-    <div class="d-flex mb-1">
-      <div class="d-flex col-sm text-bold">{{ 'Dimensions' | translate:locale.language }}</div>
-      <div>{{ imageResolution() }}</div>
+    <span class="app-viewer-image-controls-separator" aria-hidden="true"></span>
+    <div class="app-viewer-image-controls-group app-viewer-image-controls-transform">
+      <button
+        (click)="zoomOut()"
+        [attr.aria-label]="'Zoom out' | translate:locale.language"
+        [disabled]="!canZoomOut()"
+        [tooltip]="'Zoom out' | translate:locale.language"
+        class="app-viewer-image-control app-viewer-image-control-zoom"
+        type="button">
+        <svg [lucideIcon]="icons.LucideZoomOut" aria-hidden="true"></svg>
+      </button>
+      <button
+        (click)="zoomIn()"
+        [attr.aria-label]="'Zoom in' | translate:locale.language"
+        [disabled]="!canZoomIn()"
+        [tooltip]="'Zoom in' | translate:locale.language"
+        class="app-viewer-image-control app-viewer-image-control-zoom"
+        type="button">
+        <svg [lucideIcon]="icons.LucideZoomIn" aria-hidden="true"></svg>
+      </button>
+      <button
+        (click)="rotateLeft()"
+        [attr.aria-label]="'Rotate left' | translate:locale.language"
+        [tooltip]="'Rotate left' | translate:locale.language"
+        class="app-viewer-image-control"
+        type="button">
+        <svg [lucideIcon]="icons.LucideRotateCcwSquare" aria-hidden="true"></svg>
+      </button>
+      <button
+        (click)="rotateRight()"
+        [attr.aria-label]="'Rotate right' | translate:locale.language"
+        [tooltip]="'Rotate right' | translate:locale.language"
+        class="app-viewer-image-control"
+        type="button">
+        <svg [lucideIcon]="icons.LucideRotateCwSquare" aria-hidden="true"></svg>
+      </button>
+      <button
+        (click)="resetImageTransform()"
+        [attr.aria-label]="'Reset' | translate:locale.language"
+        [tooltip]="'Reset' | translate:locale.language"
+        class="app-viewer-image-control"
+        type="button">
+        <svg [lucideIcon]="icons.LucideFocus" aria-hidden="true"></svg>
+      </button>
     </div>
-    <div class="d-flex mb-1">
-      <div class="d-flex col-sm text-bold">{{ 'Size' | translate:locale.language }}</div>
-      <div>{{ file().hSize }}</div>
+    <span class="app-viewer-image-controls-separator" aria-hidden="true"></span>
+    <div class="app-viewer-image-controls-group app-viewer-image-controls-actions">
+      <button
+        (click)="toggleSlideshow()"
+        [attr.aria-label]="slideshowAction().label | translate:locale.language"
+        [attr.aria-pressed]="isSlideshowActive()"
+        [class.is-slideshow-active]="isSlideshowActive()"
+        [tooltip]="slideshowAction().label | translate:locale.language"
+        class="app-viewer-image-control"
+        type="button">
+        <svg [lucideIcon]="slideshowAction().icon" aria-hidden="true"></svg>
+      </button>
+      <button
+        (click)="fullscreen()"
+        [attr.aria-label]="'Fullscreen' | translate:locale.language"
+        [tooltip]="'Fullscreen' | translate:locale.language"
+        class="app-viewer-image-control"
+        type="button">
+        <svg [lucideIcon]="icons.LucideExpand" aria-hidden="true"></svg>
+      </button>
+      <button
+        btnCheckbox
+        [attr.aria-label]="'Info' | translate:locale.language"
+        [(ngModel)]="isInfoboxOpen"
+        [tooltip]="'Info' | translate:locale.language"
+        class="app-viewer-image-control app-viewer-image-control-info"
+        type="button">
+        <svg [lucideIcon]="icons.LucideInfo" aria-hidden="true"></svg>
+      </button>
     </div>
   </div>
+  @if (isInfoboxOpen()) {
+    <dl class="info-box">
+      <div class="info-box-row">
+        <dt>{{ 'Type' | translate:locale.language }}</dt>
+        <dd>{{ file().mime }}</dd>
+      </div>
+      <div class="info-box-row">
+        <dt>{{ 'Dimensions' | translate:locale.language }}</dt>
+        <dd>{{ imageResolution() }}</dd>
+      </div>
+      <div class="info-box-row">
+        <dt>{{ 'Size' | translate:locale.language }}</dt>
+        <dd>{{ file().hSize }}</dd>
+      </div>
+    </dl>
+  }
 </div>

@@ -518,24 +518,6 @@ app-input-filter {
   border: none;
 }
 
-.app-viewer-image {
-  display: flex;
-  justify-content: center;
-  background-color: lighten($sidebar-dark-apps-menu-title-bg, 4%);
-
-  img {
-    @extend .img-fluid;
-    align-self: center;
-  }
-
-  .info-box {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: $control-sidebar-width;
-  }
-}
-
 .app-comment {
   textarea {
     padding: .15rem .3rem;
