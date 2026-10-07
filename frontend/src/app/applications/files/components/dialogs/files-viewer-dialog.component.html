@@ -26,7 +26,7 @@
     @switch (activeViewer()) {
       @case (SHORT_MIME.IMAGE) {
         @defer (on immediate) {
-          <app-files-viewer-image [currentHeight]="currentHeight" [(file)]="currentFile" [directoryImages]="directoryImages()"></app-files-viewer-image>
+          <app-files-viewer-image [(file)]="currentFile" [directoryImages]="directoryImages()"></app-files-viewer-image>
         } @loading (after 100ms; minimum 200ms) {
           <ng-container [ngTemplateOutlet]="viewerLoading"></ng-container>
         } @error {

@@ -1,0 +1,389 @@
+.app-viewer-image {
+  position: relative;
+  display: flex;
+  height: calc(100vh - var(--modal-header-height));
+  height: calc(100dvh - var(--modal-header-height));
+  background-color: #28353b;
+  touch-action: pan-y;
+
+  &:fullscreen {
+    width: 100vw;
+    height: 100vh !important;
+  }
+
+  .app-viewer-image-canvas {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    touch-action: none;
+
+    &.is-gallery {
+      display: block;
+      box-sizing: border-box;
+      padding: .25rem .25rem 5rem;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      touch-action: pan-y;
+    }
+  }
+
+  .app-viewer-image-gallery {
+    --gallery-item-width: 14rem;
+    --gallery-item-height: 9.333rem;
+
+    display: grid;
+    grid-template-columns: repeat(auto-fill, var(--gallery-item-width));
+    grid-auto-rows: var(--gallery-item-height);
+    align-content: start;
+    justify-content: center;
+    gap: .375rem;
+    width: 100%;
+    min-height: 100%;
+  }
+
+  .app-viewer-image-gallery-item {
+    position: relative;
+    display: block;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: .375rem;
+    color: rgba(255, 255, 255, .88);
+    background-color: rgba(18, 22, 23, .86);
+    font: inherit;
+    cursor: pointer;
+    appearance: none;
+    scroll-margin: 1rem;
+    contain: layout paint style;
+    contain-intrinsic-size: var(--gallery-item-width) var(--gallery-item-height);
+    content-visibility: auto;
+
+    &.is-current::after {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      content: '';
+      box-shadow: inset 0 0 0 3px #ff8a00;
+      pointer-events: none;
+    }
+
+    &:focus-visible {
+      z-index: 2;
+      outline: 2px solid #fff;
+      outline-offset: -3px;
+    }
+  }
+
+  .app-viewer-image-gallery-thumbnail,
+  .app-viewer-image-gallery-fallback {
+    width: 100%;
+    height: 100%;
+  }
+
+  .app-viewer-image-gallery-thumbnail {
+    display: block;
+    object-fit: cover;
+    transition: transform .16s ease-out, filter .16s ease-out;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+
+  .app-viewer-image-gallery-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: .75rem;
+    overflow: hidden;
+    font-size: .75rem;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+
+  .app-viewer-image-media {
+    display: block;
+    align-self: center;
+    max-width: 100%;
+    max-height: 100%;
+    height: auto;
+    user-select: none;
+    transform-origin: center;
+    will-change: transform;
+    -webkit-user-drag: none;
+
+    &.is-panning {
+      cursor: grabbing;
+    }
+  }
+
+  .app-viewer-image-loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .app-viewer-image-loader-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #fff;
+  }
+
+  .app-viewer-image-controls,
+  .info-box {
+    border: 1px solid rgba(255, 255, 255, .16);
+    color: rgba(255, 255, 255, .88);
+    background-color: rgba(18, 22, 23, .86);
+    box-shadow: 0 .35rem 1.25rem rgba(0, 0, 0, .3);
+    -webkit-backdrop-filter: blur(.5rem);
+    backdrop-filter: blur(.5rem);
+  }
+
+  .app-viewer-image-controls {
+    position: absolute;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    bottom: 1rem;
+    left: 50%;
+    gap: .125rem;
+    max-width: calc(100% - 1rem);
+    padding: .35rem .5rem;
+    border-radius: 999px;
+    opacity: 1;
+    transform: translateX(-50%);
+    transition: opacity .16s ease-out, transform .16s ease-out;
+    will-change: opacity, transform;
+
+    &.is-controls-hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translate(-50%, .5rem);
+      transition-duration: .32s;
+      transition-timing-function: ease-in;
+    }
+
+    &:has(:focus-visible) {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%);
+      transition-duration: .16s;
+      transition-timing-function: ease-out;
+    }
+  }
+
+  .app-viewer-image-controls-group {
+    display: flex;
+    align-items: center;
+    gap: .125rem;
+  }
+
+  .app-viewer-image-controls-navigation {
+    gap: .375rem;
+  }
+
+  .app-viewer-image-control {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 50%;
+    color: inherit;
+    background-color: transparent;
+    font: inherit;
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+    appearance: none;
+
+    > .lucide {
+      font-size: 1.25rem;
+    }
+
+    &:active,
+    &:focus-visible,
+    &[aria-pressed='true'] {
+      color: #fff;
+      background-color: rgba(255, 255, 255, .14);
+    }
+
+    &:focus-visible {
+      outline: 2px solid rgba(255, 255, 255, .8);
+      outline-offset: -2px;
+      box-shadow: none;
+    }
+
+    &:disabled {
+      opacity: .65;
+      pointer-events: none;
+    }
+
+    &.app-viewer-image-control-gallery[aria-pressed='true'] > .lucide,
+    &.is-slideshow-active > .lucide {
+      color: #ff8a00;
+    }
+  }
+
+  .app-viewer-image-counter {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    gap: .25rem;
+    min-width: 3.25rem;
+    font-weight: 400;
+    line-height: 1;
+    text-align: center;
+    user-select: none;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .app-viewer-image-counter-separator {
+    color: rgba(255, 255, 255, .55);
+  }
+
+  .app-viewer-image-controls-separator {
+    display: block;
+    flex-shrink: 0;
+    width: 1px;
+    height: 1.5rem;
+    margin-right: .25rem;
+    margin-left: .25rem;
+    background-color: rgba(255, 255, 255, .22);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .app-viewer-image-control:hover {
+      color: #fff;
+      background-color: rgba(255, 255, 255, .14);
+    }
+
+    .app-viewer-image-gallery-item:hover .app-viewer-image-gallery-thumbnail {
+      filter: brightness(1.08);
+      transform: scale(1.025);
+    }
+
+    .app-viewer-image-media.is-pannable:not(.is-panning) {
+      cursor: grab;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-viewer-image-controls,
+    .app-viewer-image-gallery-thumbnail {
+      transition: none;
+    }
+  }
+
+  .info-box {
+    position: absolute;
+    top: .75rem;
+    right: .75rem;
+    z-index: 1;
+    width: min(19.375rem, calc(100% - 1rem));
+    margin: 0;
+    padding: .5rem;
+    border-radius: .375rem;
+
+    .info-box-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+      align-items: start;
+      gap: 1rem;
+
+      + .info-box-row {
+        margin-top: .25rem;
+      }
+    }
+
+    dt {
+      font-weight: 600;
+    }
+
+    dd {
+      min-width: 0;
+      margin: 0;
+      overflow-wrap: anywhere;
+      text-align: right;
+    }
+  }
+
+  @media (max-width: 575.98px) {
+    .app-viewer-image-gallery {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-rows: auto;
+      justify-content: stretch;
+    }
+
+    .app-viewer-image-gallery-item {
+      aspect-ratio: 3 / 2;
+    }
+
+    .app-viewer-image-controls {
+      display: grid;
+      bottom: .5rem;
+      grid-template-columns: auto auto;
+      gap: .125rem .5rem;
+      border-radius: 1.75rem;
+    }
+
+    .app-viewer-image-control {
+      width: 2.5rem;
+      height: 2.5rem;
+    }
+
+    .app-viewer-image-control-zoom,
+    .app-viewer-image-control-info,
+    .app-viewer-image-controls-separator {
+      display: none;
+    }
+
+    .app-viewer-image-counter {
+      min-width: 3rem;
+    }
+
+    .app-viewer-image-controls-navigation {
+      grid-row: 1;
+      grid-column: 1 / -1;
+      justify-content: center;
+    }
+
+    .app-viewer-image-controls-transform {
+      grid-row: 2;
+      grid-column: 1;
+    }
+
+    .app-viewer-image-controls-actions {
+      grid-row: 2;
+      grid-column: 2;
+    }
+
+    .app-viewer-image-controls:not(:has(.app-viewer-image-controls-transform)) .app-viewer-image-controls-actions {
+      grid-column: 1 / -1;
+      justify-self: center;
+    }
+
+    .info-box {
+      display: none;
+    }
+  }
+}

@@ -60,7 +60,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.canToggleViewer = this.isWriteable && !!this.currentFile?.isEditable && this.hookedShortMime === SHORT_MIME.PDF
     this.activeViewer.set(this.hookedShortMime)
-    this.isReadonly.set(this.hookedShortMime === SHORT_MIME.PDF || this.mode === FILE_MODE.VIEW)
+    this.isReadonly.set(this.hookedShortMime === SHORT_MIME.PDF || this.mode === FILE_MODE.VIEW || !this.currentFile.isEditable)
     this.openedFile = { id: this.currentFile.id, name: this.currentFile.name, mimeUrl: this.currentFile.mimeUrl }
     this.onResize()
   }
@@ -88,6 +88,9 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
 
   @HostListener('window:beforeunload', ['$event'])
   onBeforeUnload(event: BeforeUnloadEvent) {
+    const activeViewer = this.activeViewer()
+    if (activeViewer === SHORT_MIME.IMAGE || activeViewer === SHORT_MIME.PDF) return
+
     event.preventDefault()
     event.returnValue = ''
   }

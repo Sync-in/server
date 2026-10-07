@@ -1,4 +1,6 @@
 .modal {
+  --modal-header-height: #{$modal-header-height};
+
   // backdrop
   background: rgba(0, 0, 0, .6);
 
@@ -7,8 +9,8 @@
   }
 
   .modal-header {
-    max-height: 41.5px;
-    height: 41.5px;
+    max-height: $modal-header-height;
+    height: $modal-header-height;
     line-height: 1;
     @include no-select-utility;
 

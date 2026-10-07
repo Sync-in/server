@@ -1,80 +1,219 @@
-<div class="app-top-menu app-top-menu-tool-bar d-flex justify-content-between"
-     [attr.aria-label]="'Actions' | translate:locale.language"
-     role="toolbar">
-  <div class="d-flex">
-    <button
-      (click)="previousImage()"
-      [attr.aria-label]="'Previous' | translate:locale.language"
-      [tooltip]="'Previous' | translate:locale.language"
-      [adaptivePosition]="true"
-      class="btn btn-custom"
-      type="button">
-      <svg [lucideIcon]="icons.LucideChevronLeft"></svg>
-    </button>
-    <button
-      (click)="nextImage()"
-      [attr.aria-label]="'Next' | translate:locale.language"
-      [tooltip]="'Next' | translate:locale.language"
-      class="btn btn-custom"
-      type="button">
-      <svg [lucideIcon]="icons.LucideChevronRight"></svg>
-    </button>
-    @if (!isSlideshowActive()) {
-    <button
-      (click)="startSlideshow()"
-      [attr.aria-label]="'Start Slideshow' | translate:locale.language"
-      [tooltip]="'Start Slideshow' | translate:locale.language"
-      class="btn btn-custom"
-      type="button">
-      <svg [lucideIcon]="icons.LucidePlay"></svg>
-     </button>
+@let currentFile = file();
+@let galleryOpen = isGalleryOpen();
+<div #viewer
+     class="app-viewer-image"
+     (keydown.escape)="onViewerEscape($event)"
+     (pointerenter)="onViewerPointerMove($event)"
+     (pointermove)="onViewerPointerMove($event)"
+     (pointerleave)="onViewerPointerLeave($event)">
+  <div #canvas
+       class="app-viewer-image-canvas"
+       (pointerdown)="onGesturePointerDown($event)"
+       (pointermove)="onGesturePointerMove($event)"
+       (pointerup)="onGesturePointerUp($event)"
+       (pointercancel)="onGesturePointerCancel($event)"
+       [attr.aria-busy]="galleryOpen ? null : isImageLoading()"
+       [attr.aria-label]="galleryOpen ? ('Gallery' | translate:locale.language) : null"
+       [attr.role]="galleryOpen ? 'region' : null"
+       [attr.tabindex]="galleryOpen ? -1 : null"
+       [class.is-gallery]="galleryOpen">
+    @if (galleryOpen) {
+      @let failedThumbnailIds = galleryFailedThumbnailIds();
+      <div
+        (touchstart)="onGalleryMultiTouch($event)"
+        class="app-viewer-image-gallery">
+        @for (galleryFile of directoryImages(); track galleryFile.id) {
+          @let thumbnailUrl = galleryFile.thumbnailUrl;
+          <button
+            (click)="selectGalleryImage(galleryFile)"
+            [attr.aria-current]="galleryFile.id === currentFile.id ? 'true' : null"
+            [attr.aria-label]="galleryFile.name"
+            [attr.data-gallery-file-id]="galleryFile.id"
+            [class.is-current]="galleryFile.id === currentFile.id"
+            class="app-viewer-image-gallery-item"
+            type="button">
+            @if (failedThumbnailIds.has(galleryFile.id)) {
+              <span class="app-viewer-image-gallery-fallback">{{ galleryFile.name }}</span>
+            } @else {
+              <img
+                (error)="onGalleryThumbnailError(galleryFile.id)"
+                [attr.srcset]="thumbnailUrl + '?size=256 1x, ' + thumbnailUrl + '?size=512 2x'"
+                [src]="thumbnailUrl + '?size=256'"
+                alt=""
+                class="app-viewer-image-gallery-thumbnail"
+                decoding="async"
+                draggable="false"
+                height="200"
+                loading="lazy"
+                width="300" />
+            }
+          </button>
+        }
+      </div>
     } @else {
-    <button
-      (click)="stopSlideshow()"
-      [attr.aria-label]="'Stop slideshow' | translate:locale.language"
-      [tooltip]="'Stop slideshow' | translate:locale.language"
-      class="btn btn-custom"
-      type="button">
-      <svg [lucideIcon]="icons.LucideSquare"></svg>
-    </button>
+      <img #image
+           (error)="onImageError()"
+           (load)="onImageLoad()"
+           (wheel)="onImageWheel($event)"
+           [alt]="currentFile.name"
+           [class.is-pannable]="isImagePannable()"
+           [class.is-panning]="isImagePanning()"
+           [src]="currentFile.dataUrl"
+           [style.transform]="imageTransform()"
+           class="app-viewer-image-media"
+           decoding="async"
+           draggable="false"
+           fetchpriority="high" />
+      @if (isImageLoading()) {
+        <div class="app-viewer-image-loader"
+             [attr.aria-label]="'Loading...' | translate:locale.language"
+             role="status">
+          <svg [lucideIcon]="icons.LucideLoader" class="app-viewer-image-loader-icon icon-spin-pulse" aria-hidden="true"></svg>
+        </div>
+      }
     }
-    <button
-      (click)="fullscreen()"
-      [attr.aria-label]="'Fullscreen' | translate:locale.language"
-      [tooltip]="'Fullscreen' | translate:locale.language"
-      class="btn btn-custom"
-      type="button">
-      <svg [lucideIcon]="icons.LucideExpand"></svg>
-    </button>
   </div>
-  <div class="px-2">{{ imageIndex() + 1 }}<span class="px-1" l10nTranslate>of</span>{{ imageCount() }}</div>
-  <button
-    btnCheckbox
-    [attr.aria-label]="'Info' | translate:locale.language"
-    [(ngModel)]="isInfoboxOpen"
-    [tooltip]="'Info' | translate:locale.language"
-    class="d-none d-sm-block btn btn-custom"
-    type="button">
-    <svg [lucideIcon]="icons.LucideInfo"></svg>
-  </button>
-</div>
-<div class="app-viewer-image" [style.height.px]="currentHeightWithOffset()">
-  <img #image
-       (load)="onImageLoad()"
-       [src]="file().dataUrl" [style.max-height.px]="currentHeightWithOffset()"
-       alt="" />
-  <div class="info-box p-2 m-2 d-flex flex-column app-small-card rounded opacity-75" [class.d-none]="!isInfoboxOpen()">
-    <div class="d-flex mb-1">
-      <div class="d-flex col-sm text-bold">{{ 'Type' | translate:locale.language }}</div>
-      <div>{{ file().mime }}</div>
+  <div class="app-viewer-image-controls"
+       (pointerdown)="onControlsPointerDown($event)"
+       (pointerenter)="onControlsPointerEnter($event)"
+       (pointerleave)="onControlsPointerLeave($event)"
+       [attr.aria-label]="'Actions' | translate:locale.language"
+       [class.is-controls-hidden]="!isControlsVisible()"
+       role="toolbar">
+    <div class="app-viewer-image-controls-group app-viewer-image-controls-navigation">
+      <button
+        (click)="previousImage()"
+        [attr.aria-label]="'Previous' | translate:locale.language"
+        [tooltip]="'Previous' | translate:locale.language"
+        [adaptivePosition]="true"
+        class="app-viewer-image-control"
+        type="button">
+        <svg [lucideIcon]="icons.LucideChevronLeft" aria-hidden="true"></svg>
+      </button>
+      <span class="app-viewer-image-counter"
+            aria-live="polite">
+        <span>{{ imageIndex() + 1 }}</span>
+        <span class="app-viewer-image-counter-separator">/</span>
+        <span>{{ imageCount() }}</span>
+      </span>
+      <button
+        (click)="nextImage()"
+        [attr.aria-label]="'Next' | translate:locale.language"
+        [tooltip]="'Next' | translate:locale.language"
+        [adaptivePosition]="true"
+        class="app-viewer-image-control"
+        type="button">
+        <svg [lucideIcon]="icons.LucideChevronRight" aria-hidden="true"></svg>
+      </button>
     </div>
-    <div class="d-flex mb-1">
-      <div class="d-flex col-sm text-bold">{{ 'Dimensions' | translate:locale.language }}</div>
-      <div>{{ imageResolution() }}</div>
-    </div>
-    <div class="d-flex mb-1">
-      <div class="d-flex col-sm text-bold">{{ 'Size' | translate:locale.language }}</div>
-      <div>{{ file().hSize }}</div>
+    @if (!galleryOpen) {
+      <span class="app-viewer-image-controls-separator" aria-hidden="true"></span>
+      <div class="app-viewer-image-controls-group app-viewer-image-controls-transform">
+        <button
+          (click)="zoomOut($event)"
+          [attr.aria-label]="'Zoom out' | translate:locale.language"
+          [disabled]="!canZoomOut()"
+          [tooltip]="'Zoom out' | translate:locale.language"
+          class="app-viewer-image-control app-viewer-image-control-zoom"
+          type="button">
+          <svg [lucideIcon]="icons.LucideZoomOut" aria-hidden="true"></svg>
+        </button>
+        <button
+          (click)="zoomIn($event)"
+          [attr.aria-label]="'Zoom in' | translate:locale.language"
+          [disabled]="!canZoomIn()"
+          [tooltip]="'Zoom in' | translate:locale.language"
+          class="app-viewer-image-control app-viewer-image-control-zoom"
+          type="button">
+          <svg [lucideIcon]="icons.LucideZoomIn" aria-hidden="true"></svg>
+        </button>
+        <button
+          (click)="resetImageTransform()"
+          [attr.aria-label]="'Reset' | translate:locale.language"
+          [tooltip]="'Reset' | translate:locale.language"
+          class="app-viewer-image-control"
+          type="button">
+          <svg [lucideIcon]="icons.LucideFocus" aria-hidden="true"></svg>
+        </button>
+        <button
+          (click)="rotateLeft()"
+          [attr.aria-label]="'Rotate left' | translate:locale.language"
+          [tooltip]="'Rotate left' | translate:locale.language"
+          class="app-viewer-image-control"
+          type="button">
+          <svg [lucideIcon]="icons.LucideRotateCcwSquare" aria-hidden="true"></svg>
+        </button>
+        <button
+          (click)="rotateRight()"
+          [attr.aria-label]="'Rotate right' | translate:locale.language"
+          [tooltip]="'Rotate right' | translate:locale.language"
+          class="app-viewer-image-control"
+          type="button">
+          <svg [lucideIcon]="icons.LucideRotateCwSquare" aria-hidden="true"></svg>
+        </button>
+      </div>
+    }
+    <span class="app-viewer-image-controls-separator" aria-hidden="true"></span>
+    <div class="app-viewer-image-controls-group app-viewer-image-controls-actions">
+      @if (imageCount() > 1) {
+        <button
+          (click)="toggleGallery()"
+          [attr.aria-label]="'Gallery' | translate:locale.language"
+          [attr.aria-pressed]="galleryOpen"
+          [tooltip]="'Gallery' | translate:locale.language"
+          class="app-viewer-image-control app-viewer-image-control-gallery"
+          type="button">
+          <svg [lucideIcon]="icons.LucideGrid2x2" aria-hidden="true"></svg>
+        </button>
+      }
+      @if (!galleryOpen && imageCount() > 1) {
+        @let slideshow = slideshowAction();
+        <button
+          (click)="toggleSlideshow()"
+          [attr.aria-label]="slideshow.label | translate:locale.language"
+          [attr.aria-pressed]="isSlideshowActive()"
+          [class.is-slideshow-active]="isSlideshowActive()"
+          [tooltip]="slideshow.label | translate:locale.language"
+          class="app-viewer-image-control"
+          type="button">
+          <svg [lucideIcon]="slideshow.icon" aria-hidden="true"></svg>
+        </button>
+      }
+      <button
+        (click)="fullscreen()"
+        [attr.aria-label]="'Fullscreen' | translate:locale.language"
+        [tooltip]="'Fullscreen' | translate:locale.language"
+        class="app-viewer-image-control"
+        type="button">
+        <svg [lucideIcon]="icons.LucideExpand" aria-hidden="true"></svg>
+      </button>
+      @if (!galleryOpen) {
+        <button
+          (click)="toggleInfobox()"
+          [attr.aria-label]="'Info' | translate:locale.language"
+          [attr.aria-pressed]="isInfoboxOpen()"
+          [tooltip]="'Info' | translate:locale.language"
+          class="app-viewer-image-control app-viewer-image-control-info"
+          type="button">
+          <svg [lucideIcon]="icons.LucideInfo" aria-hidden="true"></svg>
+        </button>
+      }
     </div>
   </div>
+  @if (isInfoboxOpen()) {
+    <dl class="info-box">
+      <div class="info-box-row">
+        <dt>{{ 'Type' | translate:locale.language }}</dt>
+        <dd>{{ currentFile.mime }}</dd>
+      </div>
+      <div class="info-box-row">
+        <dt>{{ 'Dimensions' | translate:locale.language }}</dt>
+        <dd>{{ imageResolution() }}</dd>
+      </div>
+      <div class="info-box-row">
+        <dt>{{ 'Size' | translate:locale.language }}</dt>
+        <dd>{{ currentFile.hSize }}</dd>
+      </div>
+    </dl>
+  }
 </div>
