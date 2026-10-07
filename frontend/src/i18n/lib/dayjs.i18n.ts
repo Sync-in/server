@@ -2,6 +2,7 @@ import { i18nLocaleSupported } from '@sync-in-server/backend/src/common/i18n'
 import { dJs } from '../../app/common/utils/time'
 
 const DAYJS_LOADER: Record<i18nLocaleSupported, () => Promise<ILocale>> = {
+  ca: () => import('dayjs/esm/locale/ca'),
   de: () => import('dayjs/esm/locale/de'),
   en: () => import('dayjs/esm/locale/en'),
   es: () => import('dayjs/esm/locale/es'),
