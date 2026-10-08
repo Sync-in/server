@@ -10,6 +10,7 @@ import type { FileModel } from '../../../files/models/file.model'
 import { SyncPathModel } from '../../models/sync-path.model'
 import { SyncService } from '../../services/sync.service'
 import { SYNC_ICON, SYNC_PATH, SYNC_TITLE } from '../../sync.constants'
+import { isSameOrDescendantPath } from '../../sync.utils'
 
 @Component({
   selector: 'app-sync-wizard-client',
@@ -114,7 +115,7 @@ export class SyncWizardClientComponent {
   private checkSelection() {
     const root = this.store
       .clientSyncPaths()
-      .find((sp: SyncPathModel) => new RegExp(`^${sp.settings.localPath}((\\/.*)+|\\/?)$`).test(this.syncService.wizard.localPath.path))
+      .find((sp: SyncPathModel) => isSameOrDescendantPath(sp.settings.localPath, this.syncService.wizard.localPath.path))
     if (root) {
       this.pathIsValid = false
       this.syncService.wizard.localPath.mimeUrl = getAssetsMimeUrl(`${mimeDirectory}_sync`)

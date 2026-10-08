@@ -32,3 +32,18 @@ export function getServerPath(path: string): string {
   }
   return segments.join('/')
 }
+
+function normalizeSyncPath(path: string): string {
+  const normalizedPath = path.replace(/\\/g, '/').replace(/\/+$/, '')
+  return normalizedPath || '/'
+}
+
+export function isSameOrDescendantPath(basePath: string, candidatePath: string): boolean {
+  if (!basePath || !candidatePath) return false
+
+  const normalizedBasePath = normalizeSyncPath(basePath)
+  const normalizedCandidatePath = normalizeSyncPath(candidatePath)
+  const descendantPrefix = normalizedBasePath === '/' ? '/' : `${normalizedBasePath}/`
+
+  return normalizedCandidatePath === normalizedBasePath || normalizedCandidatePath.startsWith(descendantPrefix)
+}

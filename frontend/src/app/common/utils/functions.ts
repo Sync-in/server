@@ -1,6 +1,7 @@
 import { UrlSegment } from '@angular/router'
 import { encodeUrl } from '@sync-in-server/backend/src/common/shared'
 import { themeDark, themeLight } from '../../layout/layout.interfaces'
+import { escapeRegexp } from './regexp'
 
 export const units = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
 export const reservedUrlChars = new Map([
@@ -150,7 +151,7 @@ export function titleCase(input: string) {
 export const originalOrderKeyValue = () => 0
 
 export function filterArray<T>(search: string, collection: T[], field?: string): T[] {
-  const searchRegexp = new RegExp(search, 'i')
+  const searchRegexp = new RegExp(escapeRegexp(search), 'i')
   if (field) {
     return collection.filter((obj) => searchRegexp.test(obj[field].normalize()))
   } else {

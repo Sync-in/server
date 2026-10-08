@@ -16,7 +16,7 @@ import { UserService } from '../../../users/user.service'
 import { SyncWizardPath } from '../../models/sync-wizard-path.model'
 import { SyncService } from '../../services/sync.service'
 import { SYNC_ICON, SYNC_PATH, SYNC_TITLE } from '../../sync.constants'
-import { isSynchronizable } from '../../sync.utils'
+import { isSameOrDescendantPath, isSynchronizable } from '../../sync.utils'
 
 @Component({
   selector: 'app-sync-wizard-server',
@@ -179,9 +179,8 @@ export class SyncWizardServerComponent {
 
   private setCurrentPaths(paths?: SyncWizardPath[]) {
     for (const syncPath of this.store.clientSyncPaths()) {
-      const searchRegexp = new RegExp(`^${syncPath.settings.remotePath}((\\/.*)+|\\/?)$`)
       for (const p of paths) {
-        if (searchRegexp.test(p.serverPath)) {
+        if (isSameOrDescendantPath(syncPath.settings.remotePath, p.serverPath)) {
           p.setAlreadySynced()
         }
       }
