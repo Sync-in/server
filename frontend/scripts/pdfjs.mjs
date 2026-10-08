@@ -2,12 +2,26 @@ import { fileURLToPath } from 'url'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import constants from 'node:constants'
+import { createRequire } from 'node:module'
 import { Uint8ArrayReader, Uint8ArrayWriter, ZipReader } from '@zip.js/zip.js/index-native.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
+const require = createRequire(import.meta.url)
 
-const pdfjsVersion = 'v5.6.205'
+function getPdfjsPackageVersion() {
+  try {
+    return require('pdfjs-dist/package.json').version
+  } catch (error) {
+    if (error?.code === 'MODULE_NOT_FOUND') {
+      throw new Error('pdfjs - missing dependency "pdfjs-dist"; run "npm install" from the repository root before building')
+    }
+    throw error
+  }
+}
+
+const pdfjsPackageVersion = getPdfjsPackageVersion()
+const pdfjsVersion = `v${pdfjsPackageVersion}`
 const pdfjsDownloadAsset = `pdfjs-${pdfjsVersion.slice(1)}-dist.zip`
 const pdfjsReleaseURL = `https://api.github.com/repos/mozilla/pdf.js/releases/tags/${pdfjsVersion}`
 const pdfjsAssetsDirectory = path.join(__dirname, '..', 'src', 'assets', 'pdfjs')

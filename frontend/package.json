@@ -50,6 +50,7 @@
     "ngx-socket-io": "4.10.0",
     "ngx-tiptap": "^14.0.1",
     "ngx-toastr": "^20.0.5",
+    "pdfjs-dist": "6.4.299",
     "plyr": "^3.8.4",
     "rxjs": "^7.8.2",
     "tslib": "^2.7.0",
