@@ -180,7 +180,9 @@ export class AdminUsersManager {
 
   async deleteUserOrGuest(userId: number, userLogin: string, deleteUserDto: DeleteUserDto): Promise<void> {
     try {
-      if (await this.adminQueries.deleteUser(userId, userLogin)) {
+      const deleted = await this.adminQueries.deleteUser(userId, userLogin)
+      await this.adminQueries.usersQueries.clearWebDAVAuthCache(userId)
+      if (deleted) {
         this.logger.log({ tag: this.deleteUserOrGuest.name, msg: `*${userLogin}* (${userId}) was deleted` })
       } else {
         this.logger.error({ tag: this.deleteUserOrGuest.name, msg: `*${userLogin}* (${userId}) was not deleted : not found` })
@@ -270,8 +272,13 @@ export class AdminUsersManager {
     if (updateGroupDto.name) {
       await this.checkGroupNameExists(updateGroupDto.name)
     }
+    const affectedUserIds =
+      updateGroupDto.permissions !== undefined ? await this.adminQueries.usersQueries.allUserIdsFromGroupsAndSubGroups([groupId]) : []
     if (!(await this.adminQueries.updateGroup(groupId, updateGroupDto))) {
       throw new HttpException('Unable to update group', HttpStatus.INTERNAL_SERVER_ERROR)
+    }
+    if (affectedUserIds.length) {
+      await this.adminQueries.usersQueries.clearWebDAVAuthCache(affectedUserIds)
     }
     // Clear whitelist caches when the group’s visibility is changed
     if (updateGroupDto.visibility !== undefined) {
@@ -281,7 +288,11 @@ export class AdminUsersManager {
   }
 
   async deleteGroup(groupId: number): Promise<void> {
+    const affectedUserIds = await this.adminQueries.usersQueries.allUserIdsFromGroupsAndSubGroups([groupId])
     if (await this.adminQueries.deleteGroup(groupId)) {
+      if (affectedUserIds.length) {
+        await this.adminQueries.usersQueries.clearWebDAVAuthCache(affectedUserIds)
+      }
       this.logger.log({ tag: this.deleteGroup.name, msg: `group (${groupId}) was deleted` })
     } else {
       this.logger.warn({ tag: this.deleteGroup.name, msg: `group (${groupId}) does not exist` })

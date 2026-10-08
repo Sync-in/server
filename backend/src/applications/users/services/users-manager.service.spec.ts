@@ -120,7 +120,15 @@ describe(UsersManager.name, () => {
         { provide: AuthManager, useValue: {} },
         { provide: NotificationsManager, useValue: { sendEmailNotification: vi.fn().mockResolvedValue(undefined) } },
         { provide: DB_TOKEN_PROVIDER, useValue: {} },
-        { provide: Cache, useValue: { consumeRateLimit: vi.fn() } }
+        {
+          provide: Cache,
+          useValue: {
+            consumeRateLimit: vi.fn(),
+            keys: vi.fn().mockResolvedValue([]),
+            get: vi.fn(),
+            mdel: vi.fn().mockResolvedValue(false)
+          }
+        }
       ]
     }).compile()
     module.useLogger(['fatal'])
@@ -136,6 +144,9 @@ describe(UsersManager.name, () => {
   beforeEach(() => {
     vi.mocked(cache.consumeRateLimit).mockReset()
     vi.mocked(cache.consumeRateLimit).mockResolvedValue({ totalHits: 1, timeToExpire: 60, isBlocked: false, timeToBlockExpire: 0 })
+    cache.keys = vi.fn().mockResolvedValue([])
+    cache.get = vi.fn()
+    cache.mdel = vi.fn().mockResolvedValue(false)
   })
 
   afterEach(() => vi.restoreAllMocks())
@@ -577,6 +588,7 @@ describe(UsersManager.name, () => {
     await expect(usersManager.consumeRecoveryCode(userTest.id, 'code-1')).resolves.toBe(true)
     await expect(usersManager.consumeRecoveryCode(userTest.id, 'code-1')).resolves.toBe(false)
 
+    expect(cache.keys).toHaveBeenCalledWith(`${CACHE_AUTH_WEBDAV_PREFIX}-*`)
     expect(getCurrentSecrets()).toEqual({
       twoFaSecret: 'new-secret',
       recoveryCodes: ['code-2'],

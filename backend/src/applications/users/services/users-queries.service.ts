@@ -2,6 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common'
 import { and, countDistinct, desc, eq, gte, inArray, isNotNull, isNull, like, lte, ne, notInArray, or, SelectedFields, SQL, sql } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/mysql-core'
 import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
+import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache.js'
 import { anonymizePassword, comparePassword, uniquePermissions } from '../../../common/functions.js'
 import { CacheDecorator } from '../../../infrastructure/cache/cache.decorator.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
@@ -252,6 +253,9 @@ export class UsersQueries {
         1
       )
       this.logger.verbose({ tag: this.updateUserOrGuest.name, msg: `user (${userId}) was updated : ${JSON.stringify(anonymizePassword(set))}` })
+      if (['login', 'email', 'password', 'isActive', 'role', 'permissions'].some((field) => field in set)) {
+        await this.clearWebDAVAuthCache(userId)
+      }
       return true
     } catch (e) {
       this.logger.error({
@@ -831,6 +835,28 @@ export class UsersQueries {
       await this.cache.mdel(keysToDelete)
     } catch (e) {
       this.logger.error({ tag: this.clearWhiteListCaches.name, msg: `${e}` })
+    }
+  }
+
+  async clearWebDAVAuthCache(userIds: number | number[]): Promise<void> {
+    try {
+      const targetUserIds = new Set(Array.isArray(userIds) ? userIds : [userIds])
+      if (!targetUserIds.size) return
+      // Cache keys use a credential HMAC and cannot be rebuilt from the stored password hashes.
+      // Inspect cached values and remove every positive WebDAV authentication entry for the targeted users.
+      const keys = await this.cache.keys(`${CACHE_AUTH_WEBDAV_PREFIX}-*`)
+      const keysToDelete: string[] = []
+      for (const key of keys) {
+        const cachedUser: null | undefined | Partial<UserModel> = await this.cache.get(key)
+        if (cachedUser?.id !== undefined && targetUserIds.has(cachedUser.id)) {
+          keysToDelete.push(key)
+        }
+      }
+      if (keysToDelete.length) {
+        await this.cache.mdel(keysToDelete)
+      }
+    } catch (e) {
+      this.logger.error({ tag: this.clearWebDAVAuthCache.name, msg: `${e}` })
     }
   }
 

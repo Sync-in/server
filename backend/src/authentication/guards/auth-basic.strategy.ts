@@ -5,11 +5,11 @@ import { instanceToPlain, plainToInstance } from 'class-transformer'
 import { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
 import { UserModel } from '../../applications/users/models/user.model.js'
+import { convertHumanTimeToSeconds } from '../../common/functions.js'
 import { SERVER_NAME } from '../../common/shared.js'
 import { configuration } from '../../configuration/config.environment.js'
 import { Cache } from '../../infrastructure/cache/cache.service.js'
 import { AUTH_RATE_LIMIT_ERROR_MESSAGE } from '../constants/auth.js'
-import { CACHE_AUTH_WEBDAV_TTL } from '../constants/cache.js'
 import { AUTH_SCOPE } from '../constants/scope.js'
 import { AuthPasswordWorkLimitException } from '../errors/auth-password-work-limit.exception.js'
 import { AuthProvider } from '../providers/auth-providers.models.js'
@@ -19,6 +19,8 @@ import { HttpBasicStrategy } from './implementations/http-basic.strategy.js'
 
 @Injectable()
 export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basic') implements AbstractStrategy {
+  private static readonly cacheAuthWebDAVTTL = convertHumanTimeToSeconds(configuration.auth.token.access.expiration)
+
   constructor(
     private readonly authProvider: AuthProvider,
     private readonly cache: Cache,
@@ -59,7 +61,7 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
     userFromDB.removePassword()
     const userToCache: Record<string, any> = instanceToPlain(userFromDB, { excludePrefixes: ['_'] })
     this.cache
-      .set(basicAuthCacheKey, userToCache, CACHE_AUTH_WEBDAV_TTL)
+      .set(basicAuthCacheKey, userToCache, AuthBasicStrategy.cacheAuthWebDAVTTL)
       .catch((e: Error) => this.logger.error({ tag: this.validate.name, msg: `${e}` }))
     return userFromDB
   }

@@ -56,6 +56,8 @@ describe(AdminUsersManager.name, () => {
       checkUserExists: Mock
       searchUsersOrGroups: Mock
       clearWhiteListCaches: Mock
+      clearWebDAVAuthCache: Mock
+      allUserIdsFromGroupsAndSubGroups: Mock
     }
     updateUserGroups: Mock
     updateGuestManagers: Mock
@@ -99,7 +101,9 @@ describe(AdminUsersManager.name, () => {
         checkGroupNameExists: vi.fn(),
         checkUserExists: vi.fn(),
         searchUsersOrGroups: vi.fn(),
-        clearWhiteListCaches: vi.fn()
+        clearWhiteListCaches: vi.fn(),
+        clearWebDAVAuthCache: vi.fn(),
+        allUserIdsFromGroupsAndSubGroups: vi.fn().mockResolvedValue([])
       },
       updateUserGroups: vi.fn(),
       updateGuestManagers: vi.fn(),
@@ -367,6 +371,7 @@ describe(AdminUsersManager.name, () => {
       fs.removeFiles.mockResolvedValueOnce(undefined)
       await expect(service.deleteUserOrGuest(10, 'john', { deleteSpace: true })).resolves.toBeUndefined()
       expect(adminQueriesMock.deleteUser).toHaveBeenCalledWith(10, 'john')
+      expect(adminQueriesMock.usersQueries.clearWebDAVAuthCache).toHaveBeenCalledWith(10)
       expect(fs.isPathExists).toHaveBeenCalled()
       expect(fs.removeFiles).toHaveBeenCalled()
 
@@ -465,9 +470,21 @@ describe(AdminUsersManager.name, () => {
       await expectHttp(service.updateGroup(5, {} as any))
     })
 
+    it('clears WebDAV authentication for users affected by a group permission change', async () => {
+      adminQueriesMock.usersQueries.allUserIdsFromGroupsAndSubGroups.mockResolvedValueOnce([10, 11])
+      adminQueriesMock.updateGroup.mockResolvedValueOnce(true)
+      adminQueriesMock.groupFromId.mockResolvedValueOnce({ id: 5, permissions: '' })
+
+      await service.updateGroup(5, { permissions: '' } as any)
+
+      expect(adminQueriesMock.usersQueries.clearWebDAVAuthCache).toHaveBeenCalledWith([10, 11])
+    })
+
     it('deleteGroup success / fail', async () => {
+      adminQueriesMock.usersQueries.allUserIdsFromGroupsAndSubGroups.mockResolvedValueOnce([10, 11])
       adminQueriesMock.deleteGroup.mockResolvedValueOnce(true)
       await expect(service.deleteGroup(5)).resolves.toBeUndefined()
+      expect(adminQueriesMock.usersQueries.clearWebDAVAuthCache).toHaveBeenCalledWith([10, 11])
       adminQueriesMock.deleteGroup.mockResolvedValueOnce(false)
       await expectHttp(service.deleteGroup(6))
     })

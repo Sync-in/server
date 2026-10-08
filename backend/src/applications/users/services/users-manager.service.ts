@@ -5,7 +5,6 @@ import { WriteStream } from 'fs'
 import { createWriteStream } from 'node:fs'
 import path from 'node:path'
 import { pipeline } from 'node:stream/promises'
-import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache.js'
 import { AUTH_SCOPE } from '../../../authentication/constants/scope.js'
 import { LoginResponseDto } from '../../../authentication/dto/login-response.dto.js'
 import { AuthPasswordWorkLimitException } from '../../../authentication/errors/auth-password-work-limit.exception.js'
@@ -308,6 +307,9 @@ export class UsersManager {
         result: undefined,
         secrets: { ...userSecrets, ...secrets }
       }))
+      if ('twoFaSecret' in secrets) {
+        await this.usersQueries.clearWebDAVAuthCache(userId)
+      }
     } catch (e) {
       this.logger.error({ tag: this.updateSecrets.name, msg: `Unable to update secrets for user (${userId}) : ${e}` })
       throw new HttpException('Unable to update secrets', HttpStatus.INTERNAL_SERVER_ERROR)
@@ -438,7 +440,7 @@ export class UsersManager {
     }
     if (appPassword.app === AUTH_SCOPE.WEBDAV) {
       // mutateUserSecrets has committed the revocation; cached Basic-auth results can now be discarded.
-      await this.clearWebDAVAuthCache(user.id).catch((e: Error) => this.logger.error({ tag: this.clearWebDAVAuthCache.name, msg: `${e}` }))
+      await this.usersQueries.clearWebDAVAuthCache(user.id)
     }
   }
 
@@ -728,22 +730,6 @@ export class UsersManager {
 
   searchMembers(user: UserModel, searchMembersDto: SearchMembersDto): Promise<Member[]> {
     return this.usersQueries.searchUsersOrGroups(searchMembersDto, user.id)
-  }
-
-  private async clearWebDAVAuthCache(userId: number): Promise<void> {
-    // Cache keys contain a hash of login + clear password, which cannot be rebuilt from the stored bcrypt hash.
-    // Inspect cached values instead and remove every positive WebDAV authentication entry for this user.
-    const keys = await this.cache.keys(`${CACHE_AUTH_WEBDAV_PREFIX}-*`)
-    const keysToDelete: string[] = []
-    for (const key of keys) {
-      const cachedUser: null | undefined | Partial<UserModel> = await this.cache.get(key)
-      if (cachedUser?.id === userId) {
-        keysToDelete.push(key)
-      }
-    }
-    if (keysToDelete.length) {
-      await this.cache.mdel(keysToDelete)
-    }
   }
 
   private notifyTemporaryAccountLock(user: UserModel, ip: string): void {

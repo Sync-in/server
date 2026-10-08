@@ -133,9 +133,10 @@ WebDAV uses HTTP Basic authentication and cannot complete the interactive Sync-i
 
 The primary password comparison is still executed for scoped-auth timing, but a successful primary-password match is ignored for 2FA-protected WebDAV.
 
-Only successful WebDAV Basic-auth results are cached, for 900 seconds. Failed credentials and refusals caused by account state are never cached, so
-credentials can be checked again immediately after an account is unlocked (subject to rate limits). Revoking a WebDAV app password clears cached
-successful results for that user so the revoked password cannot continue to authenticate from cache.
+Only successful WebDAV Basic-auth results are cached for the configured access-token lifetime (15 minutes by default). Failed credentials and
+refusals caused by account state are never cached, so credentials can be checked again immediately after an account is unlocked (subject to rate
+limits). Cached successful results for a user are cleared after changes to their login, email, password, active state, role, direct or group-derived
+permissions, or TOTP state, after account deletion, and when a WebDAV app password is revoked.
 Cache keys use a domain-separated HMAC-SHA-256 keyed with the access-token secret; the cache therefore does not persist an unkeyed fast digest of the
 submitted password.
 

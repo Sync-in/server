@@ -204,6 +204,7 @@ export class AdminUsersQueries {
         )
         this.logger.log({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.add)} was added` })
         void this.usersQueries.clearWhiteListCaches([userId])
+        await this.usersQueries.clearWebDAVAuthCache(userId)
       } catch (e) {
         this.logger.error({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.add)} was not added: ${e}` })
         throw new Error('User groups was not added')
@@ -217,6 +218,7 @@ export class AdminUsersQueries {
         )
         this.logger.log({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.delete)} was deleted` })
         void this.usersQueries.clearWhiteListCaches([userId])
+        await this.usersQueries.clearWebDAVAuthCache(userId)
       } catch (e) {
         this.logger.error({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.delete)} was not deleted: ${e}` })
         throw new Error('User groups was not deleted')
@@ -273,6 +275,7 @@ export class AdminUsersQueries {
       )
       this.logger.log({ tag: this.addUsersToGroup.name, msg: `users (${userIds}) was added to group (${groupId})` })
       void this.usersQueries.clearWhiteListCaches(userIds)
+      await this.usersQueries.clearWebDAVAuthCache(userIds)
     } catch (e) {
       this.logger.error({ tag: this.addUsersToGroup.name, msg: `unable to add users (${userIds}) to group (${groupId}) : ${e}` })
       throw new Error('Unable to add users to group')
@@ -310,6 +313,7 @@ export class AdminUsersQueries {
       )
       this.logger.log({ tag: this.removeUserFromGroup.name, msg: `user (${userId}) was removed from group (${groupId})` })
       void this.usersQueries.clearWhiteListCaches([userId])
+      await this.usersQueries.clearWebDAVAuthCache(userId)
     } catch (e) {
       this.logger.error({ tag: this.removeUserFromGroup.name, msg: `user (${userId}) or group (${groupId}) does not exist : ${e}` })
       throw new Error('Unable to remove user from group')
