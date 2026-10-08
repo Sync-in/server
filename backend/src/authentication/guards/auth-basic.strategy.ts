@@ -4,15 +4,16 @@ import { ThrottlerException } from '@nestjs/throttler'
 import { instanceToPlain, plainToInstance } from 'class-transformer'
 import { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
-import { genHash } from '../../applications/files/utils/files.js'
 import { UserModel } from '../../applications/users/models/user.model.js'
 import { SERVER_NAME } from '../../common/shared.js'
+import { configuration } from '../../configuration/config.environment.js'
 import { Cache } from '../../infrastructure/cache/cache.service.js'
 import { AUTH_RATE_LIMIT_ERROR_MESSAGE } from '../constants/auth.js'
-import { CACHE_AUTH_WEBDAV_PREFIX, CACHE_AUTH_WEBDAV_TTL } from '../constants/cache.js'
+import { CACHE_AUTH_WEBDAV_TTL } from '../constants/cache.js'
 import { AUTH_SCOPE } from '../constants/scope.js'
 import { AuthPasswordWorkLimitException } from '../errors/auth-password-work-limit.exception.js'
 import { AuthProvider } from '../providers/auth-providers.models.js'
+import { genWebDAVAuthCacheKey } from '../utils/auth-cache.js'
 import { consumeWebDAVRateLimit } from '../utils/auth-rate-limit.js'
 import { HttpBasicStrategy } from './implementations/http-basic.strategy.js'
 
@@ -29,7 +30,7 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
   async validate(req: FastifyRequest, loginOrEmail: string, password: string): Promise<Omit<UserModel, 'password'> | null> {
     loginOrEmail = loginOrEmail.trim()
     this.logger.assign({ user: loginOrEmail })
-    const basicAuthCacheKey = `${CACHE_AUTH_WEBDAV_PREFIX}-${genHash(`${loginOrEmail}\u0000${password}`, 'sha256')}`
+    const basicAuthCacheKey = genWebDAVAuthCacheKey(loginOrEmail, password, configuration.auth.token.access.secret)
     const userFromCache: null | undefined | Partial<UserModel> = await this.cache.get(basicAuthCacheKey)
     if (userFromCache) {
       // Only successful credentials are usable from cache; ignore any stale negative entry.

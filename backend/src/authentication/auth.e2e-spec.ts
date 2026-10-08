@@ -3,7 +3,6 @@ import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { Type } from 'class-transformer'
 import { IsInt, ValidateNested } from 'class-validator'
 import { appBootstrap } from '../app.bootstrap.js'
-import { genHash } from '../applications/files/utils/files.js'
 import { USER_PERMISSION, USER_ROLE } from '../applications/users/constants/user.js'
 import { DeleteUserDto } from '../applications/users/dto/delete-user.dto.js'
 import { UserModel } from '../applications/users/models/user.model.js'
@@ -19,12 +18,12 @@ import { Cache } from '../infrastructure/cache/cache.service.js'
 import { dbCheckConnection } from '../infrastructure/database/utils.js'
 import { AuthConfig } from './auth.config.js'
 import { CSRF_ERROR, TOKEN_PATHS, TOKEN_TYPES } from './constants/auth.js'
-import { CACHE_AUTH_WEBDAV_PREFIX } from './constants/cache.js'
 import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH, API_AUTH_TOKEN, API_AUTH_TOKEN_REFRESH } from './constants/routes.js'
 import { AUTH_SCOPE } from './constants/scope.js'
 import { TokenResponseDto } from './dto/token-response.dto.js'
 import { JwtPayload } from './interfaces/jwt-payload.interface.js'
 import { TOKEN_TYPE } from './interfaces/token.interface.js'
+import { genWebDAVAuthCacheKey } from './utils/auth-cache.js'
 
 class BrowserRefreshUserResponseDto {
   @IsInt()
@@ -474,7 +473,7 @@ describe('Auth (e2e)', () => {
   }
 
   function webDAVAuthCacheKey(password: string): string {
-    return `${CACHE_AUTH_WEBDAV_PREFIX}-${genHash(`${userTest.login}\u0000${password}`, 'sha256')}`
+    return genWebDAVAuthCacheKey(userTest.login, password, authConfig.token.access.secret)
   }
 
   async function deleteAppPasswordIfPresent(passwordName: string): Promise<void> {

@@ -136,6 +136,8 @@ The primary password comparison is still executed for scoped-auth timing, but a 
 Only successful WebDAV Basic-auth results are cached, for 900 seconds. Failed credentials and refusals caused by account state are never cached, so
 credentials can be checked again immediately after an account is unlocked (subject to rate limits). Revoking a WebDAV app password clears cached
 successful results for that user so the revoked password cannot continue to authenticate from cache.
+Cache keys use a domain-separated HMAC-SHA-256 keyed with the access-token secret; the cache therefore does not persist an unkeyed fast digest of the
+submitted password.
 
 ### Client registration
 
