@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../common/errors.js'
 import { Inject, Logger } from '@nestjs/common'
 import { Cache } from './cache.service.js'
 
@@ -6,11 +7,11 @@ export function CacheDecorator(TTL = 120, updateCache: boolean = false) {
   const injector = Inject(Cache)
   const logger = new Logger(CacheDecorator.name)
 
-  return (target: any, _key?: string | symbol, descriptor?: TypedPropertyDescriptor<any>) => {
+  return (target: object, _key: string | symbol, descriptor: PropertyDescriptor): void => {
     injector(target, 'cache')
-    const originalMethod = descriptor.value
+    const originalMethod = descriptor.value as (...args: unknown[]) => Promise<unknown>
 
-    const memoize = async function (...args: any[]): Promise<any> {
+    const memoize = async function (this: { cache: Cache; constructor: { name: string } }, ...args: unknown[]): Promise<unknown> {
       let cacheKey: string | undefined
       try {
         cacheKey = this.cache.genSlugKey(this.constructor.name, originalMethod.name, ...args)
@@ -19,19 +20,19 @@ export function CacheDecorator(TTL = 120, updateCache: boolean = false) {
           if (updateCache) {
             originalMethod
               .apply(this, args)
-              .then((r: any) => {
-                this.cache.set(cacheKey, r, TTL).catch((e: Error) => logger.error({ tag: memoize.name, msg: `${e}` }))
+              .then((r: unknown) => {
+                this.cache.set(cacheKey!, r, TTL).catch((e: Error) => logger.error({ tag: memoize.name, msg: toErrorMessage(e) }))
               })
-              .catch((e: Error) => logger.error({ tag: memoize.name, msg: `${e}` }))
+              .catch((e: Error) => logger.error({ tag: memoize.name, msg: toErrorMessage(e) }))
           }
           return cacheResult
         }
       } catch (e) {
-        logger.error({ tag: memoize.name, msg: `${e}` })
+        logger.error({ tag: memoize.name, msg: toErrorMessage(e) })
       }
-      const r: any = await originalMethod.apply(this, args)
+      const r = await originalMethod.apply(this, args)
       if (cacheKey !== undefined) {
-        this.cache.set(cacheKey, r, TTL).catch((e: Error) => logger.error({ tag: memoize.name, msg: `${e}` }))
+        this.cache.set(cacheKey, r, TTL).catch((e: Error) => logger.error({ tag: memoize.name, msg: toErrorMessage(e) }))
       }
       return r
     }

@@ -10,7 +10,7 @@ export function havePermission(currentPermissions: string, mustHavePermission: S
   return currentPermissions.indexOf(mustHavePermission) > -1
 }
 
-export function haveSpaceEnvPermissions(space: SpaceEnv, permission: SPACE_OPERATION): boolean {
+export function haveSpaceEnvPermissions(space: SpaceEnv, permission: SPACE_OPERATION | null): boolean {
   if (permission) {
     return havePermission(space.envPermissions, permission)
   }
@@ -18,10 +18,10 @@ export function haveSpaceEnvPermissions(space: SpaceEnv, permission: SPACE_OPERA
 }
 
 export function haveSpacePermission(space: Partial<SpaceProps>, permission: SPACE_OPERATION): boolean {
-  return havePermission(space.permissions, permission)
+  return havePermission(space.permissions!, permission)
 }
 
-export function getEnvPermissions(space: SpaceEnv, root: Partial<SpaceRoot>): string {
+export function getEnvPermissions(space: SpaceEnv, root?: Partial<SpaceRoot>): string {
   /* In a root space, we have to intersect the space & the root permissions */
   if (root?.id && typeof root?.permissions === 'string') {
     return intersectPermissions(space.permissions, root.permissions)
@@ -33,7 +33,7 @@ export function getEnvPermissions(space: SpaceEnv, root: Partial<SpaceRoot>): st
 export function removePermissions(permissions: string, rmPermissions: SPACE_OPERATION[]): string {
   return permissions
     .split(SPACE_PERMS_SEP)
-    .filter((p: SPACE_OPERATION) => rmPermissions.indexOf(p) === -1)
+    .filter((p) => rmPermissions.indexOf(p as SPACE_OPERATION) === -1)
     .sort()
     .join(SPACE_PERMS_SEP)
 }

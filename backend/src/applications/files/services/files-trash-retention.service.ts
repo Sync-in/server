@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { type DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
@@ -74,7 +75,7 @@ export class FilesTrashRetention {
 
       if (scannedRecords === 0 && indexedRecords === 0 && deletedRecords === 0 && expiredRecords.deletedRecords === 0) {
         this.dropTable(tableName).catch((e: Error) =>
-          this.logger.error({ tag: this.indexAndCleanTrash.name, msg: `${tableName} - unable to drop table : ${e}` })
+          this.logger.error({ tag: this.indexAndCleanTrash.name, msg: `${tableName} - unable to drop table : ${toErrorMessage(e)}` })
         )
         this.logger.verbose({ tag: this.indexAndCleanTrash.name, msg: `${tableName} - no data: index not stored` })
       } else if (indexedRecords === 0 && totalErrorRecords === 0 && deletedRecords === 0 && expiredRecords.deletedRecords === 0) {
@@ -189,7 +190,7 @@ export class FilesTrashRetention {
         }
       }
     } catch (e) {
-      this.logger.warn({ tag: this.parseFiles.name, msg: `${context.tableName} - unable to parse: ${dir} - ${e}` })
+      this.logger.warn({ tag: this.parseFiles.name, msg: `${context.tableName} - unable to parse: ${dir} - ${toErrorMessage(e)}` })
     }
   }
 
@@ -198,7 +199,7 @@ export class FilesTrashRetention {
     try {
       stats = await fs.lstat(realPath)
     } catch (e) {
-      this.logger.warn({ tag: this.analyzeFile.name, msg: `unable to stats: ${realPath} - ${e}` })
+      this.logger.warn({ tag: this.analyzeFile.name, msg: `unable to stats: ${realPath} - ${toErrorMessage(e)}` })
       return null
     }
     const filePath = realPath.replace(context.regexBasePath, '')
@@ -219,7 +220,7 @@ export class FilesTrashRetention {
       await this.db.execute(createTableFilesTrash(tableName))
       return true
     } catch (e) {
-      this.logger.error({ tag: this.createTable.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.createTable.name, msg: `${tableName} : ${toErrorMessage(e)}` })
       return false
     }
   }
@@ -229,7 +230,7 @@ export class FilesTrashRetention {
       await this.db.execute(sql`DROP TABLE IF EXISTS ${sql.identifier(tableName)} `)
       return true
     } catch (e) {
-      this.logger.error({ tag: this.dropTable.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.dropTable.name, msg: `${tableName} : ${toErrorMessage(e)}` })
       return false
     }
   }
@@ -250,7 +251,7 @@ export class FilesTrashRetention {
       await this.db.execute(sql`UPDATE ${sql.identifier(tableName)} SET seen_run_id = ${runId} WHERE id IN (${idsSqlList(ids)})`)
       return true
     } catch (e) {
-      this.logger.error({ tag: this.markRecordsSeen.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.markRecordsSeen.name, msg: `${tableName} : ${toErrorMessage(e)}` })
     }
     return false
   }
@@ -268,7 +269,7 @@ export class FilesTrashRetention {
       `)
       return true
     } catch (e) {
-      this.logger.error({ tag: this.insertRecord.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.insertRecord.name, msg: `${tableName} : ${toErrorMessage(e)}` })
     }
     return false
   }
@@ -278,7 +279,7 @@ export class FilesTrashRetention {
       const [r] = await this.db.execute(sql`DELETE FROM ${sql.identifier(tableName)} WHERE seen_run_id IS NULL OR seen_run_id <> ${runId}`)
       return r.affectedRows ?? 0
     } catch (e) {
-      this.logger.error({ tag: this.deleteUnseenRecords.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.deleteUnseenRecords.name, msg: `${tableName} : ${toErrorMessage(e)}` })
     }
     return null
   }
@@ -379,7 +380,7 @@ export class FilesTrashRetention {
       }
       return r.affectedRows ?? 0
     } catch (e) {
-      this.logger.error({ tag: this.deleteRecordsByIds.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.deleteRecordsByIds.name, msg: `${tableName} : ${toErrorMessage(e)}` })
     }
     return null
   }
@@ -391,7 +392,7 @@ export class FilesTrashRetention {
       await removeFiles(realPath)
       return true
     } catch (e) {
-      this.logger.error({ tag: this.deleteTrashRecordFile.name, msg: `${realBasePath}/${ft.path} : ${e}` })
+      this.logger.error({ tag: this.deleteTrashRecordFile.name, msg: `${realBasePath}/${ft.path} : ${toErrorMessage(e)}` })
     }
     return false
   }

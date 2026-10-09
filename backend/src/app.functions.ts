@@ -1,3 +1,4 @@
+import { toErrorMessage } from './common/errors.js'
 import { existsSync, readFileSync } from 'fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -17,7 +18,7 @@ export function loadVersion(): string {
       version = candidateVersion
       break
     } catch (e) {
-      console.error(`unable to load version from: ${p} - ${e}`)
+      console.error(`unable to load version from: ${p} - ${toErrorMessage(e)}`)
     }
   }
 

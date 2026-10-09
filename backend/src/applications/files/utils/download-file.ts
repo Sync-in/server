@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { lookup } from 'node:dns/promises'
 import { Agent as HttpAgent } from 'node:http'
 import { Agent as HttpsAgent } from 'node:https'
@@ -5,7 +6,7 @@ import type { LookupAddress } from 'node:dns'
 import type { LookupFunction } from 'node:net'
 import type { HttpService } from '@nestjs/axios'
 import { HttpStatus, Logger } from '@nestjs/common'
-import { AxiosHeaders, type AxiosRequestConfig, type AxiosResponse } from 'axios'
+import { AxiosHeaders, type AxiosRequestConfig, type AxiosResponse, type RawAxiosHeaders } from 'axios'
 import ipaddr from 'ipaddr.js'
 import { HTTP_METHOD } from '../../applications.constants.js'
 import type { SpaceEnv } from '../../spaces/models/space-env.model.js'
@@ -57,7 +58,7 @@ export class DownloadFile {
       currentUrl = url
 
       stage = 'validation'
-      const headers = AxiosHeaders.from(headRes.headers)
+      const headers = AxiosHeaders.from(headRes.headers as RawAxiosHeaders)
       contentLength = this.contentLength(headers)
       if (options?.getContentInfo) {
         return {
@@ -88,7 +89,7 @@ export class DownloadFile {
       )
       stage = 'stream'
       try {
-        const getContentLength = this.contentLength(AxiosHeaders.from(getRes.headers))
+        const getContentLength = this.contentLength(AxiosHeaders.from(getRes.headers as RawAxiosHeaders))
         if (getContentLength !== null) {
           fileLimiter.assertKnownSize(getContentLength)
         }
@@ -112,7 +113,7 @@ export class DownloadFile {
     const host = URL.canParse(url) ? new URL(url).hostname || 'unknown' : 'invalid'
     const sizeContext =
       stage === 'validation' || stage === 'stream' ? ` (contentLength=${contentLength ?? 'missing'}, maxSize=${maxSize ?? 'unset'})` : ''
-    this.logger.warn({ tag: this.download.name, msg: `${stage} failed for host *${host}*${sizeContext}: ${error}` })
+    this.logger.warn({ tag: this.download.name, msg: `${stage} failed for host *${host}*${sizeContext}: ${toErrorMessage(error)}` })
   }
 
   private safeLookup(hostname: string, options: Parameters<LookupFunction>[1], cb: Parameters<LookupFunction>[2]): void {

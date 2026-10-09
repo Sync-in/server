@@ -3,10 +3,12 @@ import { FastifyReply } from 'fastify'
 import fs from 'fs/promises'
 import { Dirent, Stats } from 'node:fs'
 import path from 'node:path'
+import { toErrorMessage } from '../../../common/errors.js'
 import { regExpPathPattern } from '../../../common/functions.js'
 import { FILE_ERROR } from '../../files/constants/errors.js'
 import { FILE_OPERATION } from '../../files/constants/operations.js'
 import { FileError } from '../../files/models/file-error.js'
+import type { SaveStreamTmpFileValidationContext } from '../../files/interfaces/save-stream.interface.js'
 import { LockConflict } from '../../files/models/file-lock-error.js'
 import { FilesManager } from '../../files/services/files-manager.service.js'
 import { checksumFile, isInternalTemporaryEntry, isPathExists, isPathIsDir, touchFile } from '../../files/utils/files.js'
@@ -17,10 +19,9 @@ import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
 import { UserModel } from '../../users/models/user.model.js'
 import { F_SPECIAL_STAT, F_STAT, SYNC_CHECKSUM_ALG, SYNC_DIFF_DONE } from '../constants/sync.js'
-import { SyncCopyMoveDto, SyncDiffDto, SyncMakeDto, SyncPropsDto } from '../dtos/sync-operations.dto.js'
-import { SyncUploadDto } from '../dtos/sync-upload.dto.js'
+import type { SyncCopyMoveDto, SyncDiffDto, SyncMakeDto, SyncPropsDto } from '../dtos/sync-operations.dto.js'
+import type { SyncUploadDto } from '../dtos/sync-upload.dto.js'
 import { SyncFileSpecialStats, SyncFileStats } from '../interfaces/sync-diff.interface.js'
-import { SyncPathSettings } from '../interfaces/sync-path.interface.js'
 import { getSyncTmpFilePath } from '../utils/functions.js'
 import { SYNC_PATH_TO_SPACE_SEGMENTS } from '../utils/routes.js'
 import { SyncQueries } from './sync-queries.service.js'
@@ -52,7 +53,7 @@ export class SyncManager {
         tmpPath: tmpPath,
         expectedUploadSize: syncUploadDto.size,
         ...(syncUploadDto.checksum && { checksumAlg: SYNC_CHECKSUM_ALG }),
-        validateTmpFile: async ({ tmpPath, checksum }) => {
+        validateTmpFile: async ({ tmpPath, checksum }: SaveStreamTmpFileValidationContext) => {
           const tmpStats = await fs.stat(tmpPath)
           if (tmpStats.size !== syncUploadDto.size) {
             throw new FileError(HttpStatus.BAD_REQUEST, `sizes are not identical : ${tmpStats.size} != ${syncUploadDto.size}`)
@@ -105,7 +106,10 @@ export class SyncManager {
   async copyMove(req: FastifySpaceRequest, syncCopyMoveDto: SyncCopyMoveDto, isMove: true): Promise<void>
   async copyMove(req: FastifySpaceRequest, syncCopyMoveDto: SyncCopyMoveDto, isMove: false): Promise<{ ino: number; mtime: number }>
   async copyMove(req: FastifySpaceRequest, syncCopyMoveDto: SyncCopyMoveDto, isMove: boolean): Promise<void | { ino: number; mtime: number }> {
-    const dstSpace: SpaceEnv = await this.spacesManager.spaceEnv(req.user, SYNC_PATH_TO_SPACE_SEGMENTS(syncCopyMoveDto.destination))
+    const dstSpace = await this.spacesManager.spaceEnv(req.user, SYNC_PATH_TO_SPACE_SEGMENTS(syncCopyMoveDto.destination))
+    if (!dstSpace) {
+      throw new HttpException('Destination space not found', HttpStatus.NOT_FOUND)
+    }
     try {
       await this.filesManager.copyMove(req.user, req.space, dstSpace, isMove, true, true)
       if (!isMove) {
@@ -126,15 +130,15 @@ export class SyncManager {
     if (!user.clientId) {
       throw new HttpException('Client id is missing', HttpStatus.BAD_REQUEST)
     }
-    const syncPathSettings: SyncPathSettings = await this.syncQueries.getPathSettings(user.clientId, pathId)
+    const syncPathSettings = await this.syncQueries.getPathSettings(user.clientId, pathId)
     if (!syncPathSettings) {
       throw new HttpException('Path not found', HttpStatus.NOT_FOUND)
     }
-    let space: SpaceEnv
+    let space: SpaceEnv | null
     try {
       space = await this.spacesManager.spaceEnv(user, SYNC_PATH_TO_SPACE_SEGMENTS(syncPathSettings.remotePath))
     } catch (e) {
-      throw new HttpException(e.message, HttpStatus.BAD_REQUEST)
+      throw new HttpException(toErrorMessage(e), HttpStatus.BAD_REQUEST)
     }
     if (!space) {
       throw new HttpException('Space not found', HttpStatus.NOT_FOUND)
@@ -159,8 +163,9 @@ export class SyncManager {
       }
       res.raw.write(SYNC_DIFF_DONE)
     } catch (e) {
-      this.logger.error({ tag: this.diff.name, msg: `${e.message}` })
-      res.raw.write(`${e.message}\n`)
+      const errorMessage = toErrorMessage(e)
+      this.logger.error({ tag: this.diff.name, msg: errorMessage })
+      res.raw.write(`${errorMessage}\n`)
       res.status(HttpStatus.INTERNAL_SERVER_ERROR)
     }
     res.raw.end()
@@ -187,25 +192,25 @@ export class SyncManager {
           continue
         }
         if (entry.isDirectory()) {
-          const dirStats: Record<string, SyncFileStats | SyncFileSpecialStats> = await this.analyzeFile(entry, ctx)
+          const dirStats = await this.analyzeFile(entry, ctx)
           if (dirStats !== null) {
             yield dirStats
           }
           yield* this.parseFiles(realPath, ctx)
         } else {
-          const fileStats: Record<string, SyncFileStats | SyncFileSpecialStats> = await this.analyzeFile(entry, ctx)
+          const fileStats = await this.analyzeFile(entry, ctx)
           if (fileStats !== null) {
             yield fileStats
           }
         }
       }
     } catch (e) {
-      this.logger.error({ tag: this.parseFiles.name, msg: `unable to parse directory : ${dir} : ${e}` })
+      this.logger.error({ tag: this.parseFiles.name, msg: `unable to parse directory : ${dir} : ${toErrorMessage(e)}` })
       throw new Error('Unable to parse path')
     }
   }
 
-  private async analyzeFile(entry: Dirent, ctx: ParseDiffContext): Promise<Record<string, SyncFileStats | SyncFileSpecialStats>> {
+  private async analyzeFile(entry: Dirent, ctx: ParseDiffContext): Promise<Record<string, SyncFileStats | SyncFileSpecialStats> | null> {
     if (ctx.syncDiff.defaultFilters.has(entry.name)) {
       return null
     }
@@ -217,8 +222,8 @@ export class SyncManager {
     try {
       stats = await fs.stat(realPath)
     } catch (e) {
-      this.logger.warn({ tag: this.analyzeFile.name, msg: `unable to get file stats : ${realPath} : ${e}` })
-      return { [filePath]: [F_SPECIAL_STAT.ERROR, e.toString()] }
+      this.logger.warn({ tag: this.analyzeFile.name, msg: `unable to get file stats : ${realPath} : ${toErrorMessage(e)}` })
+      return { [filePath]: [F_SPECIAL_STAT.ERROR, toErrorMessage(e)] }
     }
 
     if (ctx.syncDiff.pathFilters && ctx.syncDiff.pathFilters.test(filePath)) {
@@ -237,16 +242,16 @@ export class SyncManager {
       try {
         await this.checkSumFile(ctx, filePath, realPath, fileStats)
       } catch (e) {
-        this.logger.error({ tag: this.analyzeFile.name, msg: `file error : ${realPath} - ${e}` })
-        return { [filePath]: [F_SPECIAL_STAT.ERROR, e.toString()] }
+        this.logger.error({ tag: this.analyzeFile.name, msg: `file error : ${realPath} - ${toErrorMessage(e)}` })
+        return { [filePath]: [F_SPECIAL_STAT.ERROR, toErrorMessage(e)] }
       }
     }
     return { [filePath]: fileStats }
   }
 
   private async checkSumFile(ctx: ParseDiffContext, filePath: string, realPath: string, fileStats: SyncFileStats): Promise<void> {
-    if (!ctx.syncDiff.firstSync && ctx.syncDiff.snapshot.has(filePath)) {
-      const snapFileStats: SyncFileStats = ctx.syncDiff.snapshot.get(filePath)
+    if (!ctx.syncDiff.firstSync && ctx.syncDiff.snapshot!.has(filePath)) {
+      const snapFileStats = ctx.syncDiff.snapshot!.get(filePath)!
       if (
         snapFileStats[F_STAT.CHECKSUM] &&
         snapFileStats[F_STAT.MTIME] == fileStats[F_STAT.MTIME] &&
@@ -260,10 +265,13 @@ export class SyncManager {
     fileStats[F_STAT.CHECKSUM] = await checksumFile(realPath, SYNC_CHECKSUM_ALG)
   }
 
-  private handleError(space: SpaceEnv, action: string, e: any, dstSpace?: SpaceEnv) {
-    this.logger.error({ tag: this.handleError.name, msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${e}` })
+  private handleError(space: SpaceEnv, action: string, e: unknown, dstSpace?: SpaceEnv): never {
+    this.logger.error({
+      tag: this.handleError.name,
+      msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${toErrorMessage(e)}`
+    })
     // Remove the last part to avoid exposing the path
-    const errorMsg = e.message.split(',')[0]
+    const errorMsg = toErrorMessage(e).split(',')[0]
     if (e instanceof LockConflict) {
       throw new HttpException('The file is locked', HttpStatus.LOCKED)
     } else if (e instanceof FileError) {

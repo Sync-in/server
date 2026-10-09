@@ -9,8 +9,6 @@ import {
   HttpStatus,
   Move,
   Param,
-  ParseArrayPipe,
-  ParseIntPipe,
   Post,
   Proppatch,
   Put,
@@ -25,6 +23,7 @@ import { type FastifyReply, type FastifyRequest } from 'fastify'
 import { AuthTokenSkip } from '../../authentication/decorators/auth-token-skip.decorator.js'
 import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard.js'
 import { type FastifyAuthenticatedRequest } from '../../authentication/interfaces/auth-request.interface.js'
+import { integerFromStringSchema } from '../../configuration/config.schema.js'
 import { SkipSpacePermissionsCheck } from '../spaces/decorators/space-skip-permissions.decorator.js'
 import { type FastifySpaceRequest } from '../spaces/interfaces/space-request.interface.js'
 import { USER_PERMISSION } from '../users/constants/user.js'
@@ -36,19 +35,34 @@ import { CLIENT_AUTH_TYPE } from './constants/auth.js'
 import { SYNC_ROUTE } from './constants/routes.js'
 import { CHECK_SERVER_RESP, SYNC_IN_SERVER_AGENT } from './constants/sync.js'
 import { SyncEnvironment } from './decorators/sync-environment.decorator.js'
-import { SyncClientAuthDto } from './dtos/sync-client-auth.dto.js'
-import { SyncClientAuthRegistrationDto, SyncClientRegistrationDto } from './dtos/sync-client-registration.dto.js'
-import { SyncCopyMoveDto, SyncDiffDto, SyncMakeDto, SyncPropsDto } from './dtos/sync-operations.dto.js'
-import { SyncPathDto, SyncPathUpdateDto } from './dtos/sync-path.dto.js'
-import { SyncUploadDto } from './dtos/sync-upload.dto.js'
+import { type SyncClientAuthDto, syncClientAuthSchema } from './dtos/sync-client-auth.dto.js'
+import {
+  type SyncClientAuthRegistrationDto,
+  syncClientAuthRegistrationSchema,
+  type SyncClientRegistrationDto,
+  syncClientRegistrationSchema
+} from './dtos/sync-client-registration.dto.js'
+import {
+  type SyncCopyMoveDto,
+  syncCopyMoveSchema,
+  type SyncDiffDto,
+  syncDiffSchema,
+  type SyncMakeDto,
+  syncMakeSchema,
+  type SyncPropsDto,
+  syncPropsSchema
+} from './dtos/sync-operations.dto.js'
+import { type SyncPathDto, syncPathSchema, syncPathsSchema, type SyncPathUpdateDto, syncPathUpdateSchema } from './dtos/sync-path.dto.js'
+import { type SyncUploadDto, syncUploadSchema } from './dtos/sync-upload.dto.js'
 import { SyncDiffGzipBodyInterceptor } from './interceptors/sync-diff-gzip-body.interceptor.js'
 import { AppStoreManifest } from './interfaces/store-manifest.interface.js'
 import { SyncClientAuthCookie, SyncClientAuthRegistration, SyncClientAuthToken } from './interfaces/sync-client-auth.interface.js'
 import { SyncClientPaths } from './interfaces/sync-client-paths.interface.js'
-import { SyncPathSettings } from './interfaces/sync-path.interface.js'
+import { ExistingSyncPathDto, SyncPathsDiff, SyncPathSettings } from './interfaces/sync-path.interface.js'
 import { SyncClientsManager } from './services/sync-clients-manager.service.js'
 import { SyncManager } from './services/sync-manager.service.js'
 import { SyncPathsManager } from './services/sync-paths-manager.service.js'
+import { clientAuthTypeParameterSchema, clientIdParameterSchema } from './sync.schema.js'
 
 @Controller(SYNC_ROUTE.BASE)
 export class SyncController {
@@ -63,7 +77,7 @@ export class SyncController {
   @Get(SYNC_ROUTE.HANDSHAKE)
   @AuthTokenSkip()
   handshake(@Req() req: FastifyRequest) {
-    if ('user-agent' in req.headers && req.headers['user-agent'].startsWith(SYNC_IN_SERVER_AGENT)) {
+    if ('user-agent' in req.headers && (req.headers['user-agent'] as string).startsWith(SYNC_IN_SERVER_AGENT)) {
       return CHECK_SERVER_RESP
     }
     throw new HttpException('Server not found', HttpStatus.NOT_FOUND)
@@ -73,7 +87,10 @@ export class SyncController {
   @Header('Cache-Control', 'no-store')
   @AuthTokenSkip()
   @UseGuards(AuthRateLimitGuard)
-  register(@Body() syncClientRegistrationDto: SyncClientRegistrationDto, @Req() req: FastifyRequest): Promise<SyncClientAuthRegistration> {
+  register(
+    @Body({ schema: syncClientRegistrationSchema }) syncClientRegistrationDto: SyncClientRegistrationDto,
+    @Req() req: FastifyRequest
+  ): Promise<SyncClientAuthRegistration> {
     return this.syncClientsManager.register(syncClientRegistrationDto, req.ip)
   }
 
@@ -82,7 +99,7 @@ export class SyncController {
   @UserHavePermission(USER_PERMISSION.DESKTOP_APP)
   @UseGuards(UserPermissionsGuard)
   registerWithAuth(
-    @Body() clientAuthenticatedRegistrationDto: SyncClientAuthRegistrationDto,
+    @Body({ schema: syncClientAuthRegistrationSchema }) clientAuthenticatedRegistrationDto: SyncClientAuthRegistrationDto,
     @Req() req: FastifyAuthenticatedRequest
   ): Promise<SyncClientAuthRegistration> {
     return this.syncClientsManager.registerWithAuth(clientAuthenticatedRegistrationDto, req)
@@ -97,7 +114,7 @@ export class SyncController {
 
   @Get(SYNC_ROUTE.APP_STORE)
   @AuthTokenSkip()
-  checkAppStore(): Promise<AppStoreManifest> {
+  checkAppStore(): Promise<AppStoreManifest | null> {
     // This route must be public to allow clients to receive updates
     return this.syncClientsManager.checkAppStore()
   }
@@ -107,8 +124,8 @@ export class SyncController {
   @AuthTokenSkip()
   @UseGuards(AuthRateLimitGuard)
   authenticate(
-    @Param('type') type: CLIENT_AUTH_TYPE,
-    @Body() clientAuthDto: SyncClientAuthDto,
+    @Param('type', { schema: clientAuthTypeParameterSchema }) type: CLIENT_AUTH_TYPE,
+    @Body({ schema: syncClientAuthSchema }) clientAuthDto: SyncClientAuthDto,
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply
   ): Promise<SyncClientAuthCookie | SyncClientAuthToken> {
@@ -125,7 +142,7 @@ export class SyncController {
   @Delete(`${SYNC_ROUTE.CLIENTS}/:id`)
   @UserHavePermission(USER_PERMISSION.DESKTOP_APP)
   @UseGuards(UserPermissionsGuard)
-  deleteClient(@GetUser() user: UserModel, @Param('id') clientId: string): Promise<void> {
+  deleteClient(@GetUser() user: UserModel, @Param('id', { schema: clientIdParameterSchema }) clientId: string): Promise<void> {
     return this.syncClientsManager.deleteClient(user, clientId)
   }
 
@@ -134,7 +151,11 @@ export class SyncController {
   @Delete(`${SYNC_ROUTE.CLIENTS}/:id/${SYNC_ROUTE.PATHS}/:pathId`)
   @UserHavePermission(USER_PERMISSION.DESKTOP_APP_SYNC)
   @UseGuards(UserPermissionsGuard)
-  deleteClientPath(@GetUser() user: UserModel, @Param('id') clientId: string, @Param('pathId', ParseIntPipe) pathId: number): Promise<void> {
+  deleteClientPath(
+    @GetUser() user: UserModel,
+    @Param('id', { schema: clientIdParameterSchema }) clientId: string,
+    @Param('pathId', { schema: integerFromStringSchema }) pathId: number
+  ): Promise<void> {
     return this.syncPathsManager.deletePath(user, pathId, clientId)
   }
 
@@ -143,9 +164,9 @@ export class SyncController {
   @UseGuards(UserPermissionsGuard)
   updatePath(
     @GetUser() user: UserModel,
-    @Param('id') clientId: string,
-    @Param('pathId', ParseIntPipe) pathId: number,
-    @Body() syncPathUpdateDto: SyncPathUpdateDto
+    @Param('id', { schema: clientIdParameterSchema }) clientId: string,
+    @Param('pathId', { schema: integerFromStringSchema }) pathId: number,
+    @Body({ schema: syncPathUpdateSchema }) syncPathUpdateDto: SyncPathUpdateDto
   ): Promise<SyncPathSettings> {
     return this.syncPathsManager.updatePath(user, clientId, pathId, syncPathUpdateDto)
   }
@@ -155,7 +176,7 @@ export class SyncController {
   @SyncEnvironment()
   createPath(
     @Req() req: FastifySpaceRequest,
-    @Body() syncPathDto: SyncPathDto
+    @Body({ schema: syncPathSchema }) syncPathDto: SyncPathDto
   ): Promise<{
     id: number
     permissions: string
@@ -166,21 +187,14 @@ export class SyncController {
   @Delete(`${SYNC_ROUTE.PATHS}/:id`)
   @UserHavePermission(USER_PERMISSION.DESKTOP_APP_SYNC)
   @UseGuards(UserPermissionsGuard)
-  deletePath(@GetUser() user: UserModel, @Param('id', ParseIntPipe) pathId: number): Promise<void> {
+  deletePath(@GetUser() user: UserModel, @Param('id', { schema: integerFromStringSchema }) pathId: number): Promise<void> {
     return this.syncPathsManager.deletePath(user, pathId)
   }
 
   @Put(SYNC_ROUTE.PATHS)
   @UserHavePermission(USER_PERMISSION.DESKTOP_APP_SYNC)
   @UseGuards(UserPermissionsGuard)
-  updatePaths(
-    @GetUser() user: UserModel,
-    @Body(new ParseArrayPipe({ items: SyncPathDto, whitelist: true })) syncPathsDto: SyncPathDto[]
-  ): Promise<{
-    add: SyncPathSettings[]
-    update: Partial<Record<keyof SyncPathSettings, any>>[]
-    delete: number[]
-  }> {
+  updatePaths(@GetUser() user: UserModel, @Body({ schema: syncPathsSchema }) syncPathsDto: ExistingSyncPathDto[]): Promise<SyncPathsDiff> {
     return this.syncPathsManager.updatePaths(user, syncPathsDto)
   }
 
@@ -192,8 +206,8 @@ export class SyncController {
   @UseInterceptors(SyncDiffGzipBodyInterceptor)
   diff(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) pathId: number,
-    @Body() syncDiffDto: SyncDiffDto,
+    @Param('id', { schema: integerFromStringSchema }) pathId: number,
+    @Body({ schema: syncDiffSchema }) syncDiffDto: SyncDiffDto,
     @Res({ passthrough: true }) res: FastifyReply
   ): Promise<void> {
     return this.syncManager.diff(user, pathId, syncDiffDto, res)
@@ -207,37 +221,40 @@ export class SyncController {
 
   @Post(`${SYNC_ROUTE.OPERATION}/*`)
   @SyncEnvironment()
-  uploadCreate(@Req() req: FastifySpaceRequest, @Query() syncUploadDto: SyncUploadDto): Promise<{ ino: number }> {
+  uploadCreate(@Req() req: FastifySpaceRequest, @Query({ schema: syncUploadSchema }) syncUploadDto: SyncUploadDto): Promise<{ ino: number }> {
     return this.syncManager.upload(req, syncUploadDto)
   }
 
   @Put(`${SYNC_ROUTE.OPERATION}/*`)
   @SyncEnvironment()
-  uploadOverwrite(@Req() req: FastifySpaceRequest, @Query() syncUploadDto: SyncUploadDto): Promise<{ ino: number }> {
+  uploadOverwrite(@Req() req: FastifySpaceRequest, @Query({ schema: syncUploadSchema }) syncUploadDto: SyncUploadDto): Promise<{ ino: number }> {
     return this.syncManager.upload(req, syncUploadDto)
   }
 
   @Post(`${SYNC_ROUTE.OPERATION}/${SYNC_ROUTE.MAKE}/*`)
   @SyncEnvironment()
-  make(@Req() req: FastifySpaceRequest, @Body() syncMakeDto: SyncMakeDto): Promise<{ ino: number }> {
+  make(@Req() req: FastifySpaceRequest, @Body({ schema: syncMakeSchema }) syncMakeDto: SyncMakeDto): Promise<{ ino: number }> {
     return this.syncManager.make(req, syncMakeDto)
   }
 
   @Proppatch(`${SYNC_ROUTE.OPERATION}/*`)
   @SyncEnvironment()
-  props(@Req() req: FastifySpaceRequest, @Body() syncPropsDto: SyncPropsDto): Promise<void> {
+  props(@Req() req: FastifySpaceRequest, @Body({ schema: syncPropsSchema }) syncPropsDto: SyncPropsDto): Promise<void> {
     return this.syncManager.props(req, syncPropsDto)
   }
 
   @Move(`${SYNC_ROUTE.OPERATION}/*`)
   @SyncEnvironment()
-  move(@Req() req: FastifySpaceRequest, @Body() syncCopyMoveDto: SyncCopyMoveDto): Promise<void> {
+  move(@Req() req: FastifySpaceRequest, @Body({ schema: syncCopyMoveSchema }) syncCopyMoveDto: SyncCopyMoveDto): Promise<void> {
     return this.syncManager.copyMove(req, syncCopyMoveDto, true)
   }
 
   @Copy(`${SYNC_ROUTE.OPERATION}/*`)
   @SyncEnvironment()
-  copy(@Req() req: FastifySpaceRequest, @Body() syncCopyMoveDto: SyncCopyMoveDto): Promise<{ ino: number; mtime: number }> {
+  copy(
+    @Req() req: FastifySpaceRequest,
+    @Body({ schema: syncCopyMoveSchema }) syncCopyMoveDto: SyncCopyMoveDto
+  ): Promise<{ ino: number; mtime: number }> {
     return this.syncManager.copyMove(req, syncCopyMoveDto, false)
   }
 

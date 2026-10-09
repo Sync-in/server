@@ -1,14 +1,16 @@
-import { IsIn, IsNotEmpty, IsString, ValidateIf } from 'class-validator'
+import { z } from 'zod'
+import { nonEmptyStringSchema } from '../../configuration/config.schema.js'
 
-export class WebSocketConfig {
-  @IsString()
-  @IsNotEmpty()
-  @IsIn(['redis', 'cluster'])
-  adapter: 'redis' | 'cluster' = 'cluster'
+export type WebSocketConfig = z.output<typeof WebSocketConfigSchema>
 
-  @ValidateIf((o: WebSocketConfig) => o.adapter === 'redis')
-  @IsString()
-  @IsNotEmpty()
-  // requires optional dependency: @socket.io/redis-adapter
-  redis: string = 'redis://127.0.0.1:6379'
-}
+export const WebSocketConfigSchema = z.discriminatedUnion('adapter', [
+  z.looseObject({
+    adapter: z.literal('cluster').default('cluster'),
+    // Preserve the public type without validating an inactive Redis configuration.
+    redis: z.custom<string>().default('redis://127.0.0.1:6379')
+  }),
+  z.looseObject({
+    adapter: z.literal('redis'),
+    redis: nonEmptyStringSchema.default('redis://127.0.0.1:6379')
+  })
+])

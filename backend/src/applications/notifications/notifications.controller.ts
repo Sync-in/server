@@ -1,4 +1,5 @@
-import { Controller, Delete, Get, Param, ParseIntPipe, Patch } from '@nestjs/common'
+import { Controller, Delete, Get, Param, Patch } from '@nestjs/common'
+import { integerFromStringSchema } from '../../configuration/config.schema.js'
 import { GetUser } from '../users/decorators/user.decorator.js'
 import type { UserModel } from '../users/models/user.model.js'
 import { NOTIFICATIONS_ROUTE } from './constants/routes.js'
@@ -20,7 +21,7 @@ export class NotificationsController {
   }
 
   @Patch(':id')
-  wasRead(@GetUser() user: UserModel, @Param('id', ParseIntPipe) notificationId: number): void {
+  wasRead(@GetUser() user: UserModel, @Param('id', { schema: integerFromStringSchema }) notificationId: number): void {
     return this.notificationsManager.wasRead(user, notificationId)
   }
 
@@ -30,7 +31,7 @@ export class NotificationsController {
   }
 
   @Delete(':id')
-  delete(@GetUser() user: UserModel, @Param('id', ParseIntPipe) notificationId: number): Promise<void> {
+  delete(@GetUser() user: UserModel, @Param('id', { schema: integerFromStringSchema }) notificationId: number): Promise<void> {
     return this.notificationsManager.delete(user, notificationId)
   }
 }

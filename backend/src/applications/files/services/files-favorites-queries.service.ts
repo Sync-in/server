@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { and, desc, eq, inArray, isNotNull, isNull, or, SelectedFields, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm'
 import { alias, unionAll } from 'drizzle-orm/mysql-core'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
@@ -63,7 +63,7 @@ export class FilesFavoritesQueries {
         hasComments: sql`${fileHasCommentsSubquerySQL(files.id)}`.mapWith(Boolean),
         repository: sql<FileFavoriteRepository>`IF (${isPersonal}, ${SPACE_ALIAS.PERSONAL}, NULL)`.as('repository'),
         displayRootName: sql<string>`NULL`.as('displayRootName')
-      } satisfies FileFavorite | SelectedFields<any, any>)
+      } satisfies { [K in keyof FileFavorite]: any })
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
       .leftJoin(spacesRoots, and(isPersonal, eq(spacesRoots.fileId, files.id)))
@@ -76,7 +76,7 @@ export class FilesFavoritesQueries {
     return q
       .where(eq(filesFavorites.userId, userId))
       .groupBy(files.id, filesFavorites.createdAt)
-      .orderBy(desc(filesFavorites.createdAt), desc(filesFavorites.fileId))
+      .orderBy(desc(filesFavorites.createdAt), desc(filesFavorites.fileId)) as Promise<FileFavorite[]>
   }
 
   getFavoriteLocationsFromSpaces(userId: number, spaceIds: number[]): Promise<FileFavoriteLocation[]> {
@@ -113,7 +113,7 @@ export class FilesFavoritesQueries {
         displayRootName: sql<string>`${spaces.name}`.as('displayRootName'),
         contextId: sql<number>`${spaces.id}`.as('contextId'),
         rootId: sql<number>`0`.as('rootId')
-      } satisfies FileFavoriteLocation | SelectedFields<any, any>)
+      } satisfies Record<keyof FileFavoriteLocation, any>)
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
       .innerJoin(spaces, and(eq(spaces.id, files.spaceId), inArray(spaces.id, spaceIds), eq(spaces.enabled, true)))
@@ -138,7 +138,7 @@ export class FilesFavoritesQueries {
         displayRootName: sql<string>`${spaces.name}`.as('displayRootName'),
         contextId: sql<number>`${spaces.id}`.as('contextId'),
         rootId: sql<number>`${anchoredSpaceRoot.id}`.as('rootId')
-      } satisfies FileFavoriteLocation | SelectedFields<any, any>)
+      } satisfies Record<keyof FileFavoriteLocation, any>)
       .from(filesFavorites)
       .innerJoin(files, eq(files.id, filesFavorites.fileId))
       .innerJoin(spaceRootFile, fileFromSpaceRoot)
@@ -187,7 +187,7 @@ export class FilesFavoritesQueries {
         displayRootName: sql<string>`${shares.name}`.as('displayRootName'),
         contextId: sql<number>`${shares.id}`.as('contextId'),
         rootId: sql<number>`COALESCE(${spaceRoot.id}, 0)`.as('rootId')
-      }) satisfies FileFavoriteLocation | SelectedFields<any, any>
+      }) satisfies Record<keyof FileFavoriteLocation, any>
     const externalLocationSelect = (spaceRoot: any) =>
       ({
         fileId: sql<number>`${files.id}`.as('fileId'),
@@ -203,7 +203,7 @@ export class FilesFavoritesQueries {
         displayRootName: sql<string>`${shares.name}`.as('displayRootName'),
         contextId: sql<number>`${shares.id}`.as('contextId'),
         rootId: sql<number>`COALESCE(${spaceRoot.id}, 0)`.as('rootId')
-      }) satisfies FileFavoriteLocation | SelectedFields<any, any>
+      }) satisfies Record<keyof FileFavoriteLocation, any>
     const externalShareTargets = this.db
       .select({ id: shares.id, parentId: shares.parentId, externalPath: shares.externalPath })
       .from(shares)

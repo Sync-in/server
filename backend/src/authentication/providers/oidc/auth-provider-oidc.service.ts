@@ -13,7 +13,6 @@ import {
   Configuration,
   discovery,
   fetchUserInfo,
-  IDToken,
   None,
   randomNonce,
   randomPKCECodeVerifier,
@@ -32,7 +31,8 @@ import {
   USER_AVATAR_FILE_NAME,
   USER_AVATAR_MAX_UPLOAD_SIZE
 } from '../../../applications/users/utils/avatar.js'
-import { generateShortUUID, splitFullName, transformAndValidate } from '../../../common/functions.js'
+import { toErrorMessage } from '../../../common/errors.js'
+import { generateShortUUID, splitFullName } from '../../../common/functions.js'
 import { configuration } from '../../../configuration/config.environment.js'
 import { AUTH_ROUTE } from '../../constants/routes.js'
 import type { AUTH_SCOPE } from '../../constants/scope.js'
@@ -44,7 +44,7 @@ import { OAuthDesktopCallBackURI, OAuthDesktopLoopbackPorts, OAuthDesktopPortPar
 import type { AuthProviderOIDCConfig } from './auth-oidc.config.js'
 import { OAuthCookie, OAuthCookieSettings, OAuthTokenEndpoint, OIDC_LOGIN_HASH_LENGTH, OIDC_LOGIN_MAX_LENGTH } from './auth-oidc.constants.js'
 import { HttpService } from '@nestjs/axios'
-import { DownloadFileDto } from '../../../applications/files/dto/file-operations.dto.js'
+import { type DownloadFileDto, downloadFileSchema } from '../../../applications/files/dto/file-operations.dto.js'
 import { DownloadFile } from '../../../applications/files/utils/download-file.js'
 import { convertTempImageToPng, imgMimeTypePrefix } from '../../../common/image.js'
 import { fileSize, temporaryFilePath } from '../../../applications/files/utils/files.js'
@@ -53,8 +53,8 @@ import { fileSize, temporaryFilePath } from '../../../applications/files/utils/f
 export class AuthProviderOIDC implements AuthProvider {
   private readonly logger = new Logger(AuthProviderOIDC.name)
   private readonly oidcConfig: AuthProviderOIDCConfig = configuration.auth.oidc
-  private frontendBaseUrl: string
-  private config: Configuration = null
+  private frontendBaseUrl!: string
+  private config: Configuration | null = null
 
   constructor(
     private readonly http: HttpService,
@@ -62,14 +62,14 @@ export class AuthProviderOIDC implements AuthProvider {
     private readonly adminUsersManager: AdminUsersManager
   ) {}
 
-  async validateUser(login: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
+  async validateUser(login: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel | null> {
     // Non-OIDC fallback: allow local password authentication only for:
     // - guest users
     // - administrators (break-glass access)
     // - scoped application access (app passwords)
     // - regular users when password authentication is enabled
     const canUseLocalPassword = (user: UserModel): boolean =>
-      user.isGuest || user.isAdmin || Boolean(scope) || this.oidcConfig.options.enablePasswordAuth
+      Boolean(user.isGuest || user.isAdmin || Boolean(scope) || this.oidcConfig.options.enablePasswordAuth)
 
     return this.usersManager.validateLocalPasswordByLogin(login, password, ip, scope, canUseLocalPassword)
   }
@@ -117,7 +117,7 @@ export class AuthProviderOIDC implements AuthProvider {
     res.setCookie(OAuthCookie.State, state, OAuthCookieSettings)
     res.setCookie(OAuthCookie.Nonce, nonce, OAuthCookieSettings)
     if (isPKCEEnabled) {
-      res.setCookie(OAuthCookie.CodeVerifier, codeVerifier, OAuthCookieSettings)
+      res.setCookie(OAuthCookie.CodeVerifier, codeVerifier!, OAuthCookieSettings)
     }
     return authUrl.toString()
   }
@@ -159,7 +159,7 @@ export class AuthProviderOIDC implements AuthProvider {
       })
 
       // Get validated ID token claims
-      const claims: IDToken = tokens.claims()
+      const claims = tokens.claims()
       if (!claims) {
         throw new HttpException('No ID token claims found', HttpStatus.BAD_REQUEST)
       }
@@ -181,7 +181,7 @@ export class AuthProviderOIDC implements AuthProvider {
     } catch (error: AuthorizationResponseError | HttpException | any) {
       if (error instanceof AuthorizationResponseError) {
         this.logger.error({ tag: this.handleCallback.name, msg: `OIDC callback error: ${error.code} - ${error.error_description}` })
-        throw new HttpException(error.error_description, HttpStatus.BAD_REQUEST)
+        throw new HttpException(error.error_description as string, HttpStatus.BAD_REQUEST)
       } else {
         const errorMessage = await this.getOIDCErrorMessage(error)
         this.logger.error({ tag: this.handleCallback.name, msg: `OIDC callback error: ${errorMessage}` })
@@ -214,14 +214,14 @@ export class AuthProviderOIDC implements AuthProvider {
     return url.toString()
   }
 
-  getRedirectURI(desktopPort?: number | string): string {
+  getRedirectURI(desktopPort?: number | string | null): string {
     // web / default callback
-    if (!desktopPort) return this.oidcConfig.redirectUri
+    if (desktopPort === undefined || desktopPort === null) return this.oidcConfig.redirectUri
     // desktop app callback
     if (typeof desktopPort === 'string') {
       desktopPort = Number(desktopPort)
     }
-    if (!Number.isInteger(desktopPort) || !OAuthDesktopLoopbackPorts.has(desktopPort)) {
+    if (!Number.isInteger(desktopPort) || !OAuthDesktopLoopbackPorts.has(desktopPort as number)) {
       throw new HttpException('Invalid desktop_port', HttpStatus.BAD_REQUEST)
     }
     // The redirect url must be known from provider
@@ -238,7 +238,7 @@ export class AuthProviderOIDC implements AuthProvider {
           client_secret: this.oidcConfig.clientSecret,
           response_types: ['code'],
           id_token_signed_response_alg: this.oidcConfig.security.tokenSigningAlg,
-          userinfo_signed_response_alg: this.oidcConfig.security.userInfoSigningAlg
+          userinfo_signed_response_alg: this.oidcConfig.security.userInfoSigningAlg ?? undefined
         },
         this.getTokenAuthMethod(this.oidcConfig.security.tokenEndpointAuthMethod, this.oidcConfig.clientSecret),
         {
@@ -277,17 +277,17 @@ export class AuthProviderOIDC implements AuthProvider {
     }
   }
 
-  private async getOIDCErrorMessage(error: any): Promise<string> {
-    const cause = error?.cause
+  private async getOIDCErrorMessage(error: unknown): Promise<string> {
+    const cause = error !== null && typeof error === 'object' && 'cause' in error ? error.cause : undefined
     if (cause instanceof Response) {
       try {
         return await cause.clone().text()
       } catch {
-        return `${cause}`
+        return toErrorMessage(cause)
       }
     }
 
-    return `${cause || error}`
+    return toErrorMessage(cause ?? error)
   }
 
   private getTokenAuthMethod(tokenEndpointAuthMethod: OAuthTokenEndpoint, clientSecret?: string) {
@@ -319,7 +319,7 @@ export class AuthProviderOIDC implements AuthProvider {
     const { login, email } = this.extractLoginAndEmail(userInfo)
 
     // Resolve an already linked external identity first, then fall back to email for existing OIDC users.
-    let user: UserModel = await this.usersManager.findUserByExternalIdOrEmail(externalId, email, false)
+    let user = await this.usersManager.findUserByExternalIdOrEmail(externalId, email, false)
 
     if (user?.externalId && user.externalId !== externalId) {
       this.logger.warn({ tag: this.processUserInfo.name, msg: `OIDC email is already linked to another external identity` })
@@ -357,7 +357,9 @@ export class AuthProviderOIDC implements AuthProvider {
       await this.updatePictureUrl(user, userInfo)
     }
     // Update user access log
-    this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error({ tag: this.processUserInfo.name, msg: `${e}` }))
+    this.usersManager
+      .updateAccesses(user, ip as string | null, true)
+      .catch((e: Error) => this.logger.error({ tag: this.processUserInfo.name, msg: toErrorMessage(e) }))
 
     return user
   }
@@ -397,7 +399,7 @@ export class AuthProviderOIDC implements AuthProvider {
       firstName,
       lastName
     }
-    applyStorageQuotaToIdentity(identity, userInfo as Record<string, unknown>, this.oidcConfig.options.storageQuotaClaim)
+    applyStorageQuotaToIdentity(identity, userInfo as Record<string, unknown>, this.oidcConfig.options.storageQuotaClaim!)
     return identity
   }
 
@@ -412,11 +414,11 @@ export class AuthProviderOIDC implements AuthProvider {
 
     // Check if user information has changed. The local login is initialized once and remains stable.
     const identityHasChanged: UpdateUserDto = Object.fromEntries(
-      Object.keys(identity)
+      (Object.keys(identity) as (keyof typeof identity)[])
         .filter((key) => key !== 'password' && key !== 'login')
-        .map((key: string) => (identity[key] !== user[key] ? [key, identity[key]] : null))
-        .filter(Boolean)
-    )
+        .map((key) => (identity[key] !== user[key as keyof UserModel] ? [key, identity[key]] : null))
+        .filter(Boolean) as Iterable<readonly [PropertyKey, any]>
+    ) as UpdateUserDto
 
     if (Object.keys(identityHasChanged).length > 0) {
       try {
@@ -438,7 +440,7 @@ export class AuthProviderOIDC implements AuthProvider {
           user.setFullName(true)
         }
       } catch (e) {
-        this.logger.warn({ tag: this.updateOrCreateUser.name, msg: `unable to update user *${user.login}* : ${e}` })
+        this.logger.warn({ tag: this.updateOrCreateUser.name, msg: `unable to update user *${user.login}* : ${toErrorMessage(e)}` })
       }
     }
 
@@ -458,9 +460,9 @@ export class AuthProviderOIDC implements AuthProvider {
       login,
       externalId,
       password: generateShortUUID(24),
-      permissions: this.oidcConfig.options.autoCreatePermissions.join(',')
+      permissions: this.oidcConfig.options.autoCreatePermissions!.join(',')
     } as CreateUserDto & { externalId: string }
-    const createdUser = await this.adminUsersManager.createUserOrGuest(userWithPassword, identity.role)
+    const createdUser = await this.adminUsersManager.createUserOrGuest(userWithPassword, identity.role!)
     const freshUser = await this.usersManager.fromUserId(createdUser.id)
     if (!freshUser) {
       this.logger.error({ tag: this.createUser.name, msg: `user was not found : ${createdUser.login} (${createdUser.id})` })
@@ -480,9 +482,9 @@ export class AuthProviderOIDC implements AuthProvider {
     // validate URL
     let downloadDto: DownloadFileDto
     try {
-      downloadDto = transformAndValidate(DownloadFileDto, { url: pictureUrl })
+      downloadDto = downloadFileSchema.parse({ url: pictureUrl })
     } catch (e) {
-      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `unable to validate picture URL *${pictureUrl}* : ${e}` })
+      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `unable to validate picture URL *${pictureUrl}* : ${toErrorMessage(e)}` })
       return
     }
 
@@ -490,7 +492,7 @@ export class AuthProviderOIDC implements AuthProvider {
     let pictureContentLength: number | undefined
     let pictureLastModified: string | undefined
     const downloader = new DownloadFile(this.http)
-    const allowPrivateIP = this.oidcConfig.security.allowPrivateIpAvatarDownload
+    const allowPrivateIP = this.oidcConfig.security.allowPrivateIpAvatarDownload ?? undefined
     const userAvatarTmpPath = temporaryFilePath(user.tmpPath, USER_AVATAR_FILE_NAME, 'avatar')
     try {
       // retrieve headers
@@ -520,14 +522,14 @@ export class AuthProviderOIDC implements AuthProvider {
         return
       }
     } catch (e) {
-      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `checks failed: ${e}` })
+      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `checks failed: ${toErrorMessage(e)}` })
     }
 
     // download avatar
     try {
       await downloader.download(downloadDto, userAvatarTmpPath, { allowPrivateIP, maxSize: USER_AVATAR_MAX_UPLOAD_SIZE })
     } catch (e) {
-      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `download failed: ${e}` })
+      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `download failed: ${toErrorMessage(e)}` })
       return
     }
 
@@ -546,7 +548,7 @@ export class AuthProviderOIDC implements AuthProvider {
       const avatarMetadataSize = pictureContentLength !== undefined && pictureContentLength > 0 ? pictureContentLength : avatarSize
       void saveAvatarMetadata(user.login, pictureUrl, avatarMetadataSize, pictureLastModified)
     } catch (e) {
-      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `convert failed: ${e}` })
+      this.logger.warn({ tag: this.updatePictureUrl.name, msg: `convert failed: ${toErrorMessage(e)}` })
     } finally {
       fs.unlink(userAvatarTmpPath).catch(() => undefined)
     }

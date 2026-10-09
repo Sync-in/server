@@ -1,28 +1,13 @@
-import {
-  Body,
-  Controller,
-  DefaultValuePipe,
-  Delete,
-  Get,
-  HttpException,
-  HttpStatus,
-  Param,
-  ParseArrayPipe,
-  ParseBoolPipe,
-  ParseIntPipe,
-  Post,
-  Put,
-  Query,
-  Search,
-  UseGuards
-} from '@nestjs/common'
+import { Body, Controller, Delete, Get, HttpException, HttpStatus, Param, Post, Put, Query, Search, UseGuards } from '@nestjs/common'
+import { toErrorMessage } from '../../common/errors.js'
+import { integerFromStringSchema } from '../../configuration/config.schema.js'
 import { FileTree } from '../files/interfaces/file-tree.interface.js'
 import { FileError } from '../files/models/file-error.js'
 import { checkExternalPath } from '../files/utils/files.js'
 import { convertToFilesTree, convertToSpacesTree } from '../files/utils/files-tree.js'
-import { CreateOrUpdateShareDto } from '../shares/dto/create-or-update-share.dto.js'
+import { createOrUpdateShareSchema, type ValidatedCreateOrUpdateShareDto } from '../shares/dto/create-or-update-share.dto.js'
 import { ShareLink } from '../shares/interfaces/share-link.interface.js'
-import { ShareProps } from '../shares/interfaces/share-props.interface.js'
+import type { ShareProps } from '../shares/interfaces/share-props.interface.js'
 import { ShareChild } from '../shares/models/share-child.model.js'
 import { USER_PERMISSION, USER_ROLE } from '../users/constants/user.js'
 import { UserHavePermission } from '../users/decorators/permissions.decorator.js'
@@ -33,10 +18,10 @@ import { UserRolesGuard } from '../users/guards/roles.guard.js'
 import { UserModel } from '../users/models/user.model.js'
 import { SPACES_BASE_ROUTE, SPACES_ROUTE } from './constants/routes.js'
 import { GetSpace } from './decorators/space.decorator.js'
-import { CreateOrUpdateSpaceDto } from './dto/create-or-update-space.dto.js'
-import { DeleteSpaceDto } from './dto/delete-space.dto.js'
-import { SearchSpaceDto } from './dto/search-space.dto.js'
-import { CheckRootExternalPathDto, SpaceRootDto } from './dto/space-roots.dto.js'
+import { createOrUpdateSpaceSchema, type ValidatedCreateOrUpdateSpaceDto } from './dto/create-or-update-space.dto.js'
+import type { DeleteSpaceDto } from './dto/delete-space.dto.js'
+import { searchSpaceSchema, type ValidatedSearchSpaceDto } from './dto/search-space.dto.js'
+import { type CheckRootExternalPathDto, checkRootExternalPathSchema, type SpaceRootDto, spaceRootsSchema } from './dto/space-roots.dto.js'
 import { SpaceGuard } from './guards/space.guard.js'
 import { SpaceFiles } from './interfaces/space-files.interface.js'
 import { SpaceTrash } from './interfaces/space-trash.interface.js'
@@ -44,6 +29,7 @@ import { SpaceEnv } from './models/space-env.model.js'
 import { SpaceProps } from './models/space-props.model.js'
 import { SpacesBrowser } from './services/spaces-browser.service.js'
 import { SpacesManager } from './services/spaces-manager.service.js'
+import { optionalDeleteSpaceBodySchema, showFilesQuerySchema } from './spaces.schema.js'
 
 @Controller(SPACES_ROUTE.BASE)
 @UserHaveRole(USER_ROLE.USER)
@@ -77,7 +63,7 @@ export class SpacesController {
   async treeFiles(
     @GetUser() user: UserModel,
     @GetSpace() space: SpaceEnv,
-    @Query('showFiles', new DefaultValuePipe(false), ParseBoolPipe) showFiles?: boolean
+    @Query('showFiles', { schema: showFilesQuerySchema }) showFiles = false
   ): Promise<FileTree[]> {
     const spaceFiles = await this.spacesBrowser.browse(user, space)
     return convertToFilesTree(space, spaceFiles.files, !showFiles)
@@ -104,18 +90,21 @@ export class SpacesController {
   /* MANAGE SPACES */
 
   @Search()
-  searchSpaces(@GetUser() user: UserModel, @Body() searchSpaceDto: SearchSpaceDto): Promise<SpaceProps[]> {
+  searchSpaces(@GetUser() user: UserModel, @Body({ schema: searchSpaceSchema }) searchSpaceDto: ValidatedSearchSpaceDto): Promise<SpaceProps[]> {
     return this.spacesManager.searchSpaces(user.id, searchSpaceDto)
   }
 
   @Get(':id')
-  getSpace(@GetUser() user: UserModel, @Param('id', ParseIntPipe) spaceId: number): Promise<SpaceProps> {
+  getSpace(@GetUser() user: UserModel, @Param('id', { schema: integerFromStringSchema }) spaceId: number): Promise<SpaceProps> {
     return this.spacesManager.getSpace(user, spaceId)
   }
 
   @Post()
   @UserHavePermission(USER_PERMISSION.SPACES_ADMIN)
-  createSpace(@GetUser() user: UserModel, @Body() createOrUpdateSpaceDto: CreateOrUpdateSpaceDto): Promise<SpaceProps> {
+  createSpace(
+    @GetUser() user: UserModel,
+    @Body({ schema: createOrUpdateSpaceSchema }) createOrUpdateSpaceDto: ValidatedCreateOrUpdateSpaceDto
+  ): Promise<SpaceProps> {
     return this.spacesManager.createSpace(user, createOrUpdateSpaceDto)
   }
 
@@ -123,30 +112,34 @@ export class SpacesController {
   // can be used by space managers
   updateSpace(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) spaceId: number,
-    @Body() createOrUpdateSpaceDto: CreateOrUpdateSpaceDto
-  ): Promise<SpaceProps> {
+    @Param('id', { schema: integerFromStringSchema }) spaceId: number,
+    @Body({ schema: createOrUpdateSpaceSchema }) createOrUpdateSpaceDto: ValidatedCreateOrUpdateSpaceDto
+  ): Promise<SpaceProps | null> {
     return this.spacesManager.updateSpace(user, spaceId, createOrUpdateSpaceDto)
   }
 
   @Delete(':id')
   // can be used by space managers
-  deleteSpace(@GetUser() user: UserModel, @Param('id', ParseIntPipe) spaceId: number, @Body() deleteSpaceDto?: DeleteSpaceDto) {
+  deleteSpace(
+    @GetUser() user: UserModel,
+    @Param('id', { schema: integerFromStringSchema }) spaceId: number,
+    @Body({ schema: optionalDeleteSpaceBodySchema }) deleteSpaceDto?: DeleteSpaceDto
+  ) {
     return this.spacesManager.deleteSpace(user, spaceId, deleteSpaceDto)
   }
 
   /* MANAGE SPACE ROOTS */
 
   @Get(`:id/${SPACES_ROUTE.ROOTS}`)
-  getUserRoots(@GetUser() user: UserModel, @Param('id', ParseIntPipe) spaceId: number): Promise<SpaceRootDto[]> {
+  getUserRoots(@GetUser() user: UserModel, @Param('id', { schema: integerFromStringSchema }) spaceId: number): Promise<SpaceRootDto[]> {
     return this.spacesManager.getUserRoots(user, spaceId)
   }
 
   @Post(`:id/${SPACES_ROUTE.ROOTS}`)
   createUserRoots(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) spaceId: number,
-    @Body(new ParseArrayPipe({ items: SpaceRootDto, whitelist: true })) roots: SpaceRootDto[]
+    @Param('id', { schema: integerFromStringSchema }) spaceId: number,
+    @Body({ schema: spaceRootsSchema }) roots: SpaceRootDto[]
   ): Promise<SpaceRootDto[]> {
     return this.spacesManager.updateUserRoots(user, spaceId, roots, true)
   }
@@ -154,8 +147,8 @@ export class SpacesController {
   @Put(`:id/${SPACES_ROUTE.ROOTS}`)
   updateUserRoots(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) spaceId: number,
-    @Body(new ParseArrayPipe({ items: SpaceRootDto, whitelist: true })) roots: SpaceRootDto[]
+    @Param('id', { schema: integerFromStringSchema }) spaceId: number,
+    @Body({ schema: spaceRootsSchema }) roots: SpaceRootDto[]
   ): Promise<SpaceRootDto[]> {
     return this.spacesManager.updateUserRoots(user, spaceId, roots)
   }
@@ -164,31 +157,27 @@ export class SpacesController {
   @Post(SPACES_ROUTE.ROOT_CHECK)
   @UserHavePermission(USER_PERMISSION.SPACES_ADMIN)
   @UserHaveRole(USER_ROLE.ADMINISTRATOR)
-  async checkRootExternalPath(@Body() checkRootExternalPathDto: CheckRootExternalPathDto) {
+  async checkRootExternalPath(@Body({ schema: checkRootExternalPathSchema }) checkRootExternalPathDto: CheckRootExternalPathDto) {
     /* reserved to admins */
     try {
       await checkExternalPath(checkRootExternalPathDto.path)
-    } catch (e: any) {
-      if (e instanceof FileError) {
-        throw new HttpException(e.message, e.httpCode)
-      } else {
-        throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR)
-      }
+    } catch (e) {
+      throw new HttpException(toErrorMessage(e), e instanceof FileError ? e.httpCode : HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
   /* MANAGE SPACE SHARES */
 
   @Get(`:id/${SPACES_ROUTE.SHARES}`)
-  listSpaceShares(@GetUser() user: UserModel, @Param('id', ParseIntPipe) spaceId: number): Promise<ShareChild[]> {
+  listSpaceShares(@GetUser() user: UserModel, @Param('id', { schema: integerFromStringSchema }) spaceId: number): Promise<ShareChild[]> {
     return this.spacesManager.listSpaceShares(user, spaceId)
   }
 
   @Get(`:id/${SPACES_ROUTE.SHARES}/:sid`)
   getSpaceShare(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) spaceId: number,
-    @Param('sid', ParseIntPipe) shareId: number
+    @Param('id', { schema: integerFromStringSchema }) spaceId: number,
+    @Param('sid', { schema: integerFromStringSchema }) shareId: number
   ): Promise<ShareProps> {
     return this.spacesManager.getSpaceShare(user, spaceId, shareId)
   }
@@ -196,9 +185,9 @@ export class SpacesController {
   @Put(`:id/${SPACES_ROUTE.SHARES}/:sid`)
   updateSpaceShare(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) spaceId: number,
-    @Param('sid', ParseIntPipe) shareId: number,
-    @Body() createOrUpdateShareDto: CreateOrUpdateShareDto
+    @Param('id', { schema: integerFromStringSchema }) spaceId: number,
+    @Param('sid', { schema: integerFromStringSchema }) shareId: number,
+    @Body({ schema: createOrUpdateShareSchema }) createOrUpdateShareDto: ValidatedCreateOrUpdateShareDto
   ): Promise<ShareProps> {
     return this.spacesManager.updateSpaceShare(user, spaceId, shareId, createOrUpdateShareDto)
   }
@@ -206,8 +195,8 @@ export class SpacesController {
   @Delete(`:id/${SPACES_ROUTE.SHARES}/:sid`)
   deleteSpaceShare(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) spaceId: number,
-    @Param('sid', ParseIntPipe) shareId: number
+    @Param('id', { schema: integerFromStringSchema }) spaceId: number,
+    @Param('sid', { schema: integerFromStringSchema }) shareId: number
   ): Promise<void> {
     return this.spacesManager.deleteSpaceShare(user, spaceId, shareId)
   }
@@ -215,8 +204,8 @@ export class SpacesController {
   @Get(`:id/${SPACES_ROUTE.LINKS}/:sid`)
   getSpaceShareLink(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) spaceId: number,
-    @Param('sid', ParseIntPipe) shareId: number
+    @Param('id', { schema: integerFromStringSchema }) spaceId: number,
+    @Param('sid', { schema: integerFromStringSchema }) shareId: number
   ): Promise<ShareLink> {
     return this.spacesManager.getSpaceShareLink(user, spaceId, shareId)
   }

@@ -6,7 +6,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt'
 import { UserModel } from '../../applications/users/models/user.model.js'
 import { configuration } from '../../configuration/config.environment.js'
 import { AuthManager } from '../auth.service.js'
-import { JwtPayload } from '../interfaces/jwt-payload.interface.js'
+import type { JwtPayload } from '../interfaces/jwt-payload.interface.js'
 import { TOKEN_TYPE } from '../interfaces/token.interface.js'
 
 @Injectable()
@@ -37,7 +37,7 @@ export class AuthTokenAccessStrategy extends PassportStrategy(Strategy, 'tokenAc
 
   static extractJWTFromCookie(req: FastifyRequest): string | null {
     if (typeof req.cookies === 'object' && req.cookies[AuthTokenAccessStrategy.accessCookieName] !== undefined) {
-      return req.cookies[AuthTokenAccessStrategy.accessCookieName]
+      return req.cookies[AuthTokenAccessStrategy.accessCookieName] as string
     }
     return null
   }

@@ -7,9 +7,9 @@ export function WEBDAV_PATH_TO_SPACE_SEGMENTS(path: string): string[] {
     urlSegments.shift()
   }
   const repository = urlSegments.shift()
-  if (!(repository in WEBDAV_SPACES)) {
+  if (!((repository as string) in WEBDAV_SPACES)) {
     throw new Error(`Repository not found : ${repository}`)
   }
-  urlSegments.unshift(...WEBDAV_SPACES[repository].spaceRepository)
+  urlSegments.unshift(...WEBDAV_SPACES[repository as keyof typeof WEBDAV_SPACES].spaceRepository!)
   return urlSegments
 }

@@ -8,6 +8,6 @@ export function genQuotaCacheKey(id: number, type: FILE_REPOSITORY, isEventUpdat
 }
 
 export function quotaCacheKeyFromSpace(userId: number, space: SpaceEnv, isEventUpdate = false): string | null {
-  const repository: { id: number; type: FILE_REPOSITORY } = SpaceToFileRepository(userId, space)
+  const repository = SpaceToFileRepository(userId, space)
   return repository === null ? null : genQuotaCacheKey(repository.id, repository.type, isEventUpdate)
 }

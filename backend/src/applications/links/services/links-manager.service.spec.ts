@@ -13,7 +13,6 @@ import { SharesManager } from '../../shares/services/shares-manager.service.js'
 import { SharesQueries } from '../../shares/services/shares-queries.service.js'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service.js'
-import { UserModel } from '../../users/models/user.model.js'
 import { AdminUsersManager } from '../../users/services/admin-users-manager.service.js'
 import { AdminUsersQueries } from '../../users/services/admin-users-queries.service.js'
 import { UsersManager } from '../../users/services/users-manager.service.js'
@@ -143,7 +142,7 @@ describe(LinksManager.name, () => {
     })
 
     it('returns error and null link when uuid is not found', async () => {
-      linksQueriesMock.linkFromUUID.mockResolvedValueOnce(null)
+      linksQueriesMock.linkFromUUID.mockResolvedValueOnce(undefined)
 
       const res = await service.linkValidation(identity, 'missing-uuid')
 
@@ -210,10 +209,6 @@ describe(LinksManager.name, () => {
     it('authenticates and returns cookies when link targets a directory and user is different', async () => {
       const link = { ...baseLink, requireAuth: false, user: { id: 7, login: 'john', isActive: true } }
       linksQueriesMock.linkFromUUID.mockResolvedValueOnce(link)
-      const spaceLink = {
-        space: { alias: 'files', name: 'My Space' },
-        share: { isDir: true, name: 'ignored', alias: 'ignored' }
-      } as any
 
       const loginDto: any = { token: 'jwt' }
       authManagerMock.setCookies.mockResolvedValueOnce(loginDto)
@@ -228,10 +223,6 @@ describe(LinksManager.name, () => {
       expect(linksQueriesMock.consumeLinkAccess).toHaveBeenCalledWith(link.uuid)
       expect(usersManagerMock.updateAccesses).toHaveBeenCalledWith(expect.anything(), req.ip, true)
       expect(authManagerMock.setCookies).toHaveBeenCalled()
-      // additionally cover the "space truthy" branch by calling the private helper directly
-      // should call spacesManager.spaceEnv with FILES and space alias when link.space is truthy
-      await (service as any).spaceEnvFromLink(new UserModel(link.user as any), spaceLink as any)
-      expect(spacesManagerMock.spaceEnv).toHaveBeenCalledWith(expect.anything(), ['files', 'files'])
       // should log error when updateAccesses fails
       expect(logErrorSpy).toHaveBeenCalled()
     })

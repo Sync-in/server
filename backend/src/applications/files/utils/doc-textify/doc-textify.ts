@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises'
+import { toErrorMessage } from '../../../../common/errors.js'
 import { parseExcel } from './adapters/excel.js'
 import { parseHtml } from './adapters/html.js'
 import { parseMarkdown } from './adapters/markdown.js'
@@ -15,10 +16,10 @@ import { getExtensionWithoutDot } from '../files.js'
 /** Main: determine parser by extension and dispatch */
 export async function docTextify(
   filePath: string,
-  options: DocTextifyOptions,
+  options: Partial<DocTextifyOptions> = {},
   fileProperties?: { extension?: string; verified?: boolean }
 ): Promise<string> {
-  options = {
+  const resolvedOptions: DocTextifyOptions = {
     newlineDelimiter: '\n',
     minCharsToExtract: 10,
     ...options
@@ -28,7 +29,7 @@ export async function docTextify(
     try {
       await fs.access(filePath)
     } catch (e) {
-      throw new Error(`file does not exist or not accessible : ${filePath} (${e})`)
+      throw new Error(`file does not exist or not accessible : ${filePath} (${toErrorMessage(e)})`, { cause: e })
     }
   }
 
@@ -40,24 +41,24 @@ export async function docTextify(
 
   switch (ext) {
     case 'docx':
-      return cleanContent(await parseWord(filePath, options), options)
+      return cleanContent(await parseWord(filePath, resolvedOptions), resolvedOptions)
     case 'pptx':
-      return cleanContent(await parsePowerPoint(filePath, options), options)
+      return cleanContent(await parsePowerPoint(filePath, resolvedOptions), resolvedOptions)
     case 'xlsx':
-      return cleanContent(await parseExcel(filePath, options), options)
+      return cleanContent(await parseExcel(filePath, resolvedOptions), resolvedOptions)
     case 'odt':
     case 'odp':
     case 'ods':
-      return cleanContent(await parseOpenOffice(filePath, options), options)
+      return cleanContent(await parseOpenOffice(filePath, resolvedOptions), resolvedOptions)
     case 'pdf':
-      return cleanContent(await parsePdf(filePath, options), options)
+      return cleanContent(await parsePdf(filePath, resolvedOptions), resolvedOptions)
     case 'txt':
-      return cleanContent(await parseText(filePath), options)
+      return cleanContent(await parseText(filePath), resolvedOptions)
     case 'md':
-      return cleanContent(await parseMarkdown(filePath), options)
+      return cleanContent(await parseMarkdown(filePath), resolvedOptions)
     case 'html':
     case 'htm':
-      return cleanContent(await parseHtml(filePath), options)
+      return cleanContent(await parseHtml(filePath), resolvedOptions)
     default:
       throw new Error(`no handler found for extension: ${ext}`)
   }

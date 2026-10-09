@@ -12,7 +12,7 @@ export function makeContentDispositionAttachment(fileName: string) {
 }
 
 export class SendFile {
-  private fileName: string
+  private fileName!: string
 
   constructor(
     private readonly filePath: string,
@@ -49,7 +49,7 @@ export class SendFile {
     this.fileName = encodeURIComponent(this.downloadName ? this.downloadName : fileName(this.filePath))
     const sendResult: SendResult = await send(req.raw, encodedFilePath, this.sendOptions)
     // Check if the path was correctly validated
-    if (sendResult.metadata['path'] === undefined) {
+    if ((sendResult as typeof sendResult & { metadata: Record<string, unknown> }).metadata['path'] === undefined) {
       throw new FileError(HttpStatus.BAD_REQUEST, 'Location not found')
     }
     // Force file to be downloaded as an attachment
@@ -58,7 +58,6 @@ export class SendFile {
     res.status(sendResult.statusCode)
     // sendStream.once('stream', () => console.log(`Sending: ${this.fileName}`))
     // sendStream.once('end', () => console.log(`Received: ${this.fileName}`))
-    // sendStream.once('error', (e: Error) => console.error(`Transfer error : ${this.fileName} - ${e}`))
     return new StreamableFile(sendResult.stream)
   }
 }

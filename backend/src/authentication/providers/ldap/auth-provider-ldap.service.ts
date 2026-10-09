@@ -20,6 +20,7 @@ import type { CreateUserDto, UpdateUserDto } from '../../../applications/users/d
 import { UserModel } from '../../../applications/users/models/user.model.js'
 import { AdminUsersManager } from '../../../applications/users/services/admin-users-manager.service.js'
 import { UsersManager } from '../../../applications/users/services/users-manager.service.js'
+import { toErrorMessage } from '../../../common/errors.js'
 import { comparePassword, splitFullName } from '../../../common/functions.js'
 import { configuration } from '../../../configuration/config.environment.js'
 import type { AUTH_SCOPE } from '../../constants/scope.js'
@@ -45,7 +46,7 @@ export class AuthProviderLDAP implements AuthProvider {
     private readonly adminUsersManager: AdminUsersManager
   ) {}
 
-  async validateUser(loginOrEmail: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel> {
+  async validateUser(loginOrEmail: string, password: string, ip?: string, scope?: AUTH_SCOPE): Promise<UserModel | null> {
     if (password.length === 0) {
       return null
     }
@@ -53,18 +54,18 @@ export class AuthProviderLDAP implements AuthProvider {
     // Authenticate user via LDAP and sync local user state.
     // Find user from his login or email
     const localLogin = this.dbLogin(loginOrEmail)
-    let user: UserModel = await this.usersManager.findUser(localLogin, false)
+    let user = await this.usersManager.findUser(localLogin, false)
     if (user && (user.isGuest || scope)) {
       // Allow local password authentication for guest users and application scopes (app passwords)
       return this.usersManager.validateLocalPasswordForUser(user, localLogin, password, ip, scope)
     }
-    let ldapErrorMessage: string
+    let ldapErrorMessage: string | undefined
     let entry: false | LdapUserEntry = false
     try {
       // If a user was found, use the stored login. This allows logging in with an email.
       entry = await this.checkAuth(user?.login || loginOrEmail, password)
     } catch (e) {
-      ldapErrorMessage = e.message
+      ldapErrorMessage = toErrorMessage(e)
     }
 
     // LDAP auth failed or exception raised
@@ -74,7 +75,7 @@ export class AuthProviderLDAP implements AuthProvider {
       // - admin users (break-glass access)
       // - regular users when password authentication fallback is enabled
       const canUseLocalFallback = (candidate: UserModel): boolean =>
-        candidate.isAdmin || (Boolean(ldapErrorMessage) && this.ldapConfig.options.enablePasswordAuthFallback)
+        Boolean(candidate.isAdmin || (Boolean(ldapErrorMessage) && this.ldapConfig.options.enablePasswordAuthFallback))
       // Always pass through the local validator so missing or rejected fallback users take the dummy bcrypt path.
       const localUser = await this.usersManager.validateLocalPasswordForUser(user, localLogin, password, ip, undefined, canUseLocalFallback)
       if (user && canUseLocalFallback(user)) {
@@ -111,7 +112,9 @@ export class AuthProviderLDAP implements AuthProvider {
 
     const identity = this.createIdentity(entry, password)
     user = await this.updateOrCreateUser(identity, user)
-    this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error({ tag: this.validateUser.name, msg: `${e}` }))
+    this.usersManager
+      .updateAccesses(user, ip as string | null, true)
+      .catch((e: Error) => this.logger.error({ tag: this.validateUser.name, msg: toErrorMessage(e) }))
     return user
   }
 
@@ -130,8 +133,8 @@ export class AuthProviderLDAP implements AuthProvider {
       let attemptedBindDN = bindUserDN
       try {
         if (this.hasServiceBind) {
-          attemptedBindDN = this.ldapConfig.serviceBindDN
-          await client.bind(this.ldapConfig.serviceBindDN, this.ldapConfig.serviceBindPassword)
+          attemptedBindDN = this.ldapConfig.serviceBindDN!
+          await client.bind(this.ldapConfig.serviceBindDN!, this.ldapConfig.serviceBindPassword!)
           const result = await this.findUserEntry(ldapLogin, client)
           if (!result) {
             return false
@@ -158,7 +161,7 @@ export class AuthProviderLDAP implements AuthProvider {
       }
     }
     if (error) {
-      this.logger.error({ tag: this.checkAuth.name, msg: `${error}` })
+      this.logger.error({ tag: this.checkAuth.name, msg: toErrorMessage(error) })
       if (CONNECT_ERROR_CODE.has(error.code)) {
         throw new Error('Authentication service error')
       }
@@ -184,7 +187,7 @@ export class AuthProviderLDAP implements AuthProvider {
     }
   }
 
-  private async readTlsCa(ca: LdapCa): Promise<LdapCa> {
+  private async readTlsCa(ca: unknown): Promise<LdapCa> {
     if (Buffer.isBuffer(ca)) {
       return ca
     }
@@ -203,7 +206,7 @@ export class AuthProviderLDAP implements AuthProvider {
     try {
       return await readFile(ca, 'utf8')
     } catch (e) {
-      this.logger.error({ tag: this.readTlsCa.name, msg: `unable to read ca path: ${e}` })
+      this.logger.error({ tag: this.readTlsCa.name, msg: `unable to read ca path: ${toErrorMessage(e)}` })
       return ca
     }
   }
@@ -226,7 +229,7 @@ export class AuthProviderLDAP implements AuthProvider {
 
       this.logger.warn({
         tag: this.checkAccessByDN.name,
-        msg: `exact LDAP entry read unavailable for bind DN, using verified subtree fallback : ${bindUserDN} : ${e}`
+        msg: `exact LDAP entry read unavailable for bind DN, using verified subtree fallback : ${bindUserDN} : ${toErrorMessage(e)}`
       })
       const candidate = await this.findDirectBindFallbackCandidate(ldapLogin, client)
       if (!candidate) {
@@ -251,7 +254,7 @@ export class AuthProviderLDAP implements AuthProvider {
   }
 
   private async findUserEntryByDN(bindUserDN: string, client: Client): Promise<{ entry: LdapUserEntry; userDn?: string } | false> {
-    const searchFilter = this.buildBaseUserFilter(this.ldapConfig.filter)
+    const searchFilter = this.buildBaseUserFilter(this.ldapConfig.filter ?? undefined)
     try {
       const { searchEntries } = await client.search(bindUserDN, {
         scope: LDAP_SEARCH_ATTR.BASE,
@@ -269,13 +272,13 @@ export class AuthProviderLDAP implements AuthProvider {
       return await this.buildUserEntryResult(searchEntries[0], client, bindUserDN)
     } catch (e) {
       this.logger.debug({ tag: this.findUserEntryByDN.name, msg: `search filter : ${searchFilter}` })
-      this.logger.error({ tag: this.findUserEntryByDN.name, msg: `${bindUserDN} : ${e}` })
+      this.logger.error({ tag: this.findUserEntryByDN.name, msg: `${bindUserDN} : ${toErrorMessage(e)}` })
       throw e
     }
   }
 
   private async findDirectBindFallbackCandidate(ldapLogin: string, client: Client): Promise<LdapUserCandidate | false> {
-    const searchFilter = this.buildConfiguredLoginFilter(ldapLogin, this.ldapConfig.filter)
+    const searchFilter = this.buildConfiguredLoginFilter(ldapLogin, this.ldapConfig.filter ?? undefined)
     try {
       const { searchEntries } = await client.search(this.ldapConfig.baseDN, {
         scope: LDAP_SEARCH_ATTR.SUB,
@@ -302,13 +305,13 @@ export class AuthProviderLDAP implements AuthProvider {
       return { rawEntry, userDn }
     } catch (e) {
       this.logger.debug({ tag: this.findDirectBindFallbackCandidate.name, msg: `search filter : ${searchFilter}` })
-      this.logger.error({ tag: this.findDirectBindFallbackCandidate.name, msg: `${ldapLogin} : ${e}` })
+      this.logger.error({ tag: this.findDirectBindFallbackCandidate.name, msg: `${ldapLogin} : ${toErrorMessage(e)}` })
       throw e
     }
   }
 
   private async findUserEntry(login: string, client: Client, bindUserDN?: string): Promise<{ entry: LdapUserEntry; userDn?: string } | false> {
-    const searchFilter = this.buildUserFilter(login, this.ldapConfig.filter)
+    const searchFilter = this.buildUserFilter(login, this.ldapConfig.filter ?? undefined)
     try {
       const { searchEntries } = await client.search(this.ldapConfig.baseDN, {
         scope: LDAP_SEARCH_ATTR.SUB,
@@ -330,7 +333,7 @@ export class AuthProviderLDAP implements AuthProvider {
       return await this.buildUserEntryResult(searchEntries[0], client, bindUserDN)
     } catch (e) {
       this.logger.debug({ tag: this.findUserEntry.name, msg: `search filter : ${searchFilter}` })
-      this.logger.error({ tag: this.findUserEntry.name, msg: `${login} : ${e}` })
+      this.logger.error({ tag: this.findUserEntry.name, msg: `${login} : ${toErrorMessage(e)}` })
       return false
     }
   }
@@ -341,7 +344,7 @@ export class AuthProviderLDAP implements AuthProvider {
 
     if (this.ldapConfig.options.adminGroup && !this.hasAdminGroup(entry, this.ldapConfig.options.adminGroup)) {
       if (userDn && (await this.isMemberOfGroupOfNames(this.ldapConfig.options.adminGroup, userDn, client))) {
-        const existing = Array.isArray(entry[LDAP_COMMON_ATTR.MEMBER_OF]) ? entry[LDAP_COMMON_ATTR.MEMBER_OF] : []
+        const existing = Array.isArray(entry[LDAP_COMMON_ATTR.MEMBER_OF]) ? (entry[LDAP_COMMON_ATTR.MEMBER_OF] as string[]) : []
         entry[LDAP_COMMON_ATTR.MEMBER_OF] = [...new Set([...existing, this.ldapConfig.options.adminGroup])]
       }
     }
@@ -349,12 +352,12 @@ export class AuthProviderLDAP implements AuthProvider {
     return { entry, userDn }
   }
 
-  private async updateOrCreateUser(identity: CreateUserDto, user: UserModel): Promise<UserModel> {
+  private async updateOrCreateUser(identity: CreateUserDto, user: UserModel | null): Promise<UserModel> {
     // Create or update the local user record from LDAP identity.
     if (user === null) {
       // Create
-      identity.permissions = this.ldapConfig.options.autoCreatePermissions.join(',')
-      const createdUser = await this.adminUsersManager.createUserOrGuest(identity, identity.role)
+      identity.permissions = this.ldapConfig.options.autoCreatePermissions!.join(',')
+      const createdUser = await this.adminUsersManager.createUserOrGuest(identity, identity.role!)
       const freshUser = await this.usersManager.fromUserId(createdUser.id)
       if (!freshUser) {
         this.logger.error({ tag: this.updateOrCreateUser.name, msg: `user was not found : ${createdUser.login} (${createdUser.id})` })
@@ -372,16 +375,16 @@ export class AuthProviderLDAP implements AuthProvider {
     const identityHasChanged: UpdateUserDto = Object.fromEntries(
       (
         await Promise.all(
-          Object.keys(identity).map(async (key: string) => {
+          (Object.keys(identity) as (keyof CreateUserDto)[]).map(async (key) => {
             if (key === 'password') {
-              const isSame = await comparePassword(identity[key], user.password)
+              const isSame = await comparePassword(identity[key]!, user.password)
               return isSame ? null : [key, identity[key]]
             }
-            return identity[key] !== user[key] ? [key, identity[key]] : null
+            return identity[key] !== user[key as keyof UserModel] ? [key, identity[key]] : null
           })
         )
-      ).filter(Boolean)
-    )
+      ).filter(Boolean) as Iterable<readonly [PropertyKey, any]>
+    ) as UpdateUserDto
 
     if (Object.keys(identityHasChanged).length > 0) {
       try {
@@ -407,7 +410,7 @@ export class AuthProviderLDAP implements AuthProvider {
           user.setFullName(true)
         }
       } catch (e) {
-        this.logger.warn({ tag: this.updateOrCreateUser.name, msg: `unable to update user *${user.login}* : ${e}` })
+        this.logger.warn({ tag: this.updateOrCreateUser.name, msg: `unable to update user *${user.login}* : ${toErrorMessage(e)}` })
       }
     }
     return user
@@ -433,7 +436,7 @@ export class AuthProviderLDAP implements AuthProvider {
       }
       if (Array.isArray(entry[attr])) {
         // Keep only the first value for all other attributes (e.g., email)
-        entry[attr] = entry[attr].length > 0 ? entry[attr][0] : null
+        entry[attr] = entry[attr].length > 0 ? entry[attr][0] : (null as any)
       }
     }
     return entry as LdapUserEntry
@@ -477,7 +480,7 @@ export class AuthProviderLDAP implements AuthProvider {
   private dbLogin(login: string): string {
     // Normalize domain-qualified logins to the user part.
     if (login.includes('\\')) {
-      return login.split('\\').slice(-1)[0]
+      return login.split('\\').slice(-1)[0]!
     }
     return login
   }
@@ -550,7 +553,7 @@ export class AuthProviderLDAP implements AuthProvider {
 
   private hasAdminGroup(entry: LdapUserEntry, adminGroup: string): boolean {
     // Check for the admin group in the normalized `memberOf` list.
-    return Array.isArray(entry[LDAP_COMMON_ATTR.MEMBER_OF]) && entry[LDAP_COMMON_ATTR.MEMBER_OF].includes(adminGroup)
+    return Array.isArray(entry[LDAP_COMMON_ATTR.MEMBER_OF]) && (entry[LDAP_COMMON_ATTR.MEMBER_OF] as string[]).includes(adminGroup)
   }
 
   private async isMemberOfGroupOfNames(adminGroup: string, userDn: string, client: Client): Promise<boolean> {
@@ -578,7 +581,7 @@ export class AuthProviderLDAP implements AuthProvider {
       // Any matching entry implies membership.
       return searchEntries.length > 0
     } catch (e) {
-      this.logger.warn({ tag: this.isMemberOfGroupOfNames.name, msg: `${e}` })
+      this.logger.warn({ tag: this.isMemberOfGroupOfNames.name, msg: toErrorMessage(e) })
       return false
     }
   }
@@ -601,11 +604,11 @@ export class AuthProviderLDAP implements AuthProvider {
     // Prefer the most specific LDAP error when multiple errors are returned.
     if (error?.errors?.length) {
       for (const err of error.errors) {
-        this.logger.warn({ tag: this.handleBindError.name, msg: `${attemptedBindDN} : ${err}` })
+        this.logger.warn({ tag: this.handleBindError.name, msg: `${attemptedBindDN} : ${toErrorMessage(err)}` })
       }
       return error.errors[error.errors.length - 1]
     }
-    this.logger.warn({ tag: this.handleBindError.name, msg: `${attemptedBindDN} : ${error}` })
+    this.logger.warn({ tag: this.handleBindError.name, msg: `${attemptedBindDN} : ${toErrorMessage(error)}` })
     return error
   }
 }

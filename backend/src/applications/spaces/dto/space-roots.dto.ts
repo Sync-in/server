@@ -1,71 +1,93 @@
-import { Transform, Type } from 'class-transformer'
-import { IsDefined, IsInt, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, ValidateIf, ValidateNested } from 'class-validator'
+import { z } from 'zod'
+import { integerNumberSchema } from '../../../configuration/config.schema.js'
 import { sanitizeName, sanitizePath } from '../../files/utils/files.js'
 import { SPACE_ALIAS, SPACE_REPOSITORY } from '../constants/spaces.js'
 import type { SpaceRootProps } from '../models/space-root-props.model.js'
 
-class SpaceRootOwnerDto {
-  @IsNotEmpty()
-  @IsInt()
-  id: number
+const spaceRootOwnerSchema = z.object({
+  id: integerNumberSchema,
+  login: z.string().min(1)
+})
 
-  @IsNotEmpty()
-  @IsString()
-  login: string
+type SpaceRootOwnerDto = z.infer<typeof spaceRootOwnerSchema>
+
+const conditionalSpaceRootOwnerSchema = z
+  .unknown()
+  .transform((owner, ctx): SpaceRootOwnerDto | null | undefined => {
+    if (owner == null || !(owner as SpaceRootOwnerDto)?.id) return owner as SpaceRootOwnerDto | null | undefined
+    const result = spaceRootOwnerSchema.safeParse(owner)
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        ctx.addIssue({ code: 'custom', input: owner, message: issue.message, path: issue.path })
+      }
+      return z.NEVER
+    }
+    return result.data
+  })
+  .optional()
+
+export const spaceRootFileSchema = z.object({
+  id: integerNumberSchema,
+  path: z
+    .string()
+    .overwrite((value) => sanitizePath(value).replace(`${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}/`, ''))
+    .min(1)
+})
+
+// Conditional validation receives the path already normalized by transformSpaceRootFile.
+const normalizedSpaceRootFileSchema = spaceRootFileSchema.extend({ path: z.string().min(1) })
+
+export type SpaceRootFileDto = z.infer<typeof spaceRootFileSchema>
+
+const sanitizedRootNameSchema = z.string().trim().overwrite(sanitizeName).min(1)
+
+const transformSpaceRootFile = (value: unknown): unknown => {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return value
+  const file = { ...value } as Record<string, unknown>
+  if ('path' in file) {
+    file.path =
+      typeof file.path === 'string' && file.path
+        ? sanitizePath(file.path).replace(`${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}/`, '')
+        : file.path
+          ? file.path
+          : ''
+  }
+  return file
 }
 
-export class SpaceRootFileDto {
-  @IsNotEmpty()
-  @IsInt()
-  id: number
+const spaceRootBaseSchema = z.object({
+  id: integerNumberSchema,
+  alias: sanitizedRootNameSchema,
+  name: sanitizedRootNameSchema,
+  permissions: z.string(),
+  externalPath: z.string().nullish(),
+  owner: conditionalSpaceRootOwnerSchema,
+  // We intentionally defer validation: the legacy ValidateIf only validated a file
+  // when it was internal and its id was visible to the current user.
+  file: z.unknown().transform(transformSpaceRootFile).optional()
+})
 
-  @IsNotEmpty()
-  @IsString()
-  @Transform(({ value }) => (value ? sanitizePath(value).replace(`${SPACE_REPOSITORY.FILES}/${SPACE_ALIAS.PERSONAL}/`, '') : ''))
-  path: string
-}
+export const spaceRootSchema = spaceRootBaseSchema.transform((root, ctx): SpaceRootProps => {
+  const file = root.file as SpaceRootFileDto | null | undefined
+  if (!root.externalPath && file?.id) {
+    const result = normalizedSpaceRootFileSchema.safeParse(file)
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        ctx.addIssue({ code: 'custom', input: file, message: issue.message, path: ['file', ...issue.path] })
+      }
+      return z.NEVER
+    }
+    return { ...root, file: result.data } as SpaceRootProps
+  }
+  return root as SpaceRootProps
+})
 
-export class SpaceRootDto implements SpaceRootProps {
-  @IsNotEmpty()
-  @IsInt()
-  id: number
+export type SpaceRootDto = z.infer<typeof spaceRootSchema>
 
-  @IsNotEmpty()
-  @IsString()
-  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
-  alias: string
+export const spaceRootsSchema = z.array(spaceRootSchema)
 
-  @IsNotEmpty()
-  @IsString()
-  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
-  name: string
+export const checkRootExternalPathSchema = z.object({
+  path: z.string().min(1)
+})
 
-  @IsDefined()
-  @IsString()
-  permissions: string
-
-  @IsOptional()
-  @IsString()
-  externalPath?: string
-
-  @IsOptional()
-  @ValidateIf((_, owner) => !!owner?.id)
-  @IsObject()
-  @ValidateNested()
-  @Type(() => SpaceRootOwnerDto)
-  owner?: SpaceRootOwnerDto
-
-  @ValidateIf((_, file) => !_.externalPath && file?.id)
-  // we hide file.id & file.path if not owned by the current user
-  @IsNotEmptyObject()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => SpaceRootFileDto)
-  file: SpaceRootFileDto
-}
-
-export class CheckRootExternalPathDto {
-  @IsNotEmpty()
-  @IsString()
-  path: string
-}
+export type CheckRootExternalPathDto = z.infer<typeof checkRootExternalPathSchema>

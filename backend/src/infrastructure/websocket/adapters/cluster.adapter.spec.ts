@@ -7,7 +7,7 @@ describe(ClusterAdapter.name, () => {
   it('should allow NestJS to close the Socket.IO server', async () => {
     const close = vi.fn((callback: () => void) => callback())
     const server = { adapter: vi.fn(), close }
-    vi.spyOn(IoAdapter.prototype, 'createIOServer').mockReturnValue(server)
+    vi.spyOn(IoAdapter.prototype, 'createIOServer').mockReturnValue(server as any)
     const clusterAdapter = new ClusterAdapter()
 
     const ioServer = clusterAdapter.createIOServer(0)

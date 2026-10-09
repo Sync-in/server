@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../common/errors.js'
 import deepmerge from 'deepmerge'
 import * as yaml from 'js-yaml'
 import fs from 'node:fs'
@@ -142,7 +143,7 @@ function getEnvOverrides(config: Record<string, any>): Record<string, any> {
       try {
         setObjectPropertyFromString(result, path, fs.readFileSync(rawValue, 'utf-8').trim())
       } catch (e) {
-        console.error(`Unable to store secret from file ${rawValue} : ${e}`)
+        console.error(`Unable to store secret from file ${rawValue} : ${toErrorMessage(e)}`)
       }
     } else {
       setObjectPropertyFromString(result, path, parseEnvValue(rawValue))

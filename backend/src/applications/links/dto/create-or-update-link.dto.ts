@@ -1,60 +1,24 @@
-import { Transform } from 'class-transformer'
-import { IsBoolean, IsDate, IsOptional, IsString, MinLength } from 'class-validator'
+import { z } from 'zod'
 import { currentDate } from '../../../common/shared.js'
 import { USER_PASSWORD_MIN_LENGTH } from '../../users/constants/user.js'
 
-export class CreateOrUpdateLinkDto {
-  @IsOptional()
-  @IsString()
-  uuid?: string
-
-  @IsOptional()
-  @IsString()
-  name?: string
-
-  @IsOptional()
-  @IsString()
-  email?: string
-
-  @IsOptional()
-  @IsString()
-  language?: string
-
-  @IsOptional()
-  @Transform(({ value }) => value || 0)
-  limitAccess?: number
-
-  @IsOptional()
-  @Transform(({ value }) => (value ? currentDate(value) : null))
-  @IsDate()
-  expiresAt?: Date
-
-  @IsOptional()
-  @Transform(({ value }) => !!value)
-  @IsBoolean()
-  requireAuth?: boolean
-
-  @IsOptional()
-  @Transform(({ value }) => !!value)
-  @IsBoolean()
-  isActive?: boolean
-
-  @IsOptional()
-  @IsString()
-  permissions?: string
-
-  @IsOptional()
-  @IsString()
-  @MinLength(USER_PASSWORD_MIN_LENGTH)
-  password?: string
-
+export const createOrUpdateLinkSchema = z.object({
+  uuid: z.string().nullish(),
+  name: z.string().nullish(),
+  email: z.string().nullish(),
+  language: z.string().nullish(),
+  limitAccess: z.coerce.number().optional(),
+  expiresAt: z
+    .preprocess((value) => (typeof value === 'string' ? (value ? currentDate(value) : null) : value ? value : null), z.date().nullable())
+    .optional(),
+  requireAuth: z.coerce.boolean().optional(),
+  isActive: z.coerce.boolean().optional(),
+  permissions: z.string().nullish(),
+  password: z.string().min(USER_PASSWORD_MIN_LENGTH).nullish(),
   // used for update link from links component
-  @IsOptional()
-  @IsString()
-  shareName?: string
-
+  shareName: z.string().nullish(),
   // used for update link from links component
-  @IsOptional()
-  @IsString()
-  shareDescription?: string
-}
+  shareDescription: z.string().nullish()
+})
+
+export type CreateOrUpdateLinkDto = z.infer<typeof createOrUpdateLinkSchema>

@@ -1,7 +1,4 @@
-import { IsEnum } from 'class-validator'
+import { z } from 'zod'
 import { APP_STORE_REPOSITORY } from './constants/store.js'
 
-export class AppStoreConfig {
-  @IsEnum(APP_STORE_REPOSITORY)
-  repository: APP_STORE_REPOSITORY = APP_STORE_REPOSITORY.PUBLIC
-}
+export const AppStoreConfigSchema = z.looseObject({ repository: z.enum(APP_STORE_REPOSITORY).default(APP_STORE_REPOSITORY.PUBLIC) })

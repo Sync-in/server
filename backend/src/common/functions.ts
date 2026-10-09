@@ -1,9 +1,5 @@
 import { parse as parseMs } from '@lukeed/ms'
 import bcrypt from 'bcryptjs'
-import type { ClassTransformOptions } from 'class-transformer'
-import { plainToInstance } from 'class-transformer'
-import type { ValidationError, ValidatorOptions } from 'class-validator'
-import { validateSync } from 'class-validator'
 import crypto from 'node:crypto'
 import { setTimeout } from 'node:timers/promises'
 import { SPACE_PERMS_SEP } from '../applications/spaces/constants/spaces.js'
@@ -26,11 +22,11 @@ export function regExpPathPattern(path: string): RegExp {
 }
 
 export function convertHumanTimeToSeconds(value: string): number {
-  return parseMs(value) / 1000
+  return parseMs(value)! / 1000
 }
 
 export function convertHumanTimeToMs(value: string): number {
-  return parseMs(value)
+  return parseMs(value)!
 }
 
 export function formatDateISOString(date: Date): string {
@@ -83,39 +79,6 @@ export function splitFullName(fullName?: string): { firstName: string; lastName:
   return { firstName, lastName }
 }
 
-function formatValidationErrors(errors: ValidationError[], parentPath = ''): string[] {
-  const messages: string[] = []
-  for (const error of errors) {
-    const propertyPath = [parentPath, error.property].filter(Boolean).join('.')
-    if (error.constraints) {
-      const constraints = Object.values(error.constraints).join(', ')
-      messages.push(propertyPath ? `${propertyPath}: ${constraints}` : constraints)
-    }
-    if (error.children && error.children.length > 0) {
-      messages.push(...formatValidationErrors(error.children, propertyPath))
-    }
-  }
-  return messages
-}
-
-export function transformAndValidate<T extends object>(
-  schema: new () => T,
-  object: any,
-  transformOptions: ClassTransformOptions = {},
-  validatorOptions: ValidatorOptions = {},
-  context?: string
-): T {
-  // warning: plainToInstance do not use constructor to instantiate class
-  const instance: T = plainToInstance(schema, object, transformOptions)
-  const errors: ValidationError[] = validateSync(instance, validatorOptions)
-  if (errors.length > 0) {
-    const messages = formatValidationErrors(errors)
-    const details = messages.length > 0 ? messages : [errors.toString()]
-    throw new Error(context ? `${context}:\n- ${details.join('\n- ')}` : details.join('; '))
-  }
-  return instance
-}
-
 export function uniquePermissions(permissions: string, permissionsSeparator: string = SPACE_PERMS_SEP) {
   /*
     Returns unique permissions : 'c:r:w:c:r' -> 'c:r:w'
@@ -147,7 +110,7 @@ export function sortObjByName(a: { name: string }, b: { name: string }, asc = fa
   }
 }
 
-function diffProperties(a: any, b: any, props: string[]): boolean {
+function diffProperties<T>(a: T, b: T, props: Extract<keyof T, string>[]): boolean {
   for (const p of props) {
     if (a[p] !== b[p]) {
       return false
@@ -156,25 +119,32 @@ function diffProperties(a: any, b: any, props: string[]): boolean {
   return true
 }
 
-export function diffCollection<T>(
+export type DiffChanges<T, K extends keyof T> = {
+  [P in K]?: { old: T[P]; new: T[P] }
+}
+
+export type DiffUpdate<T, K extends keyof T> = DiffChanges<T, K> & { object: T }
+
+export type ConvertedDiffUpdate<T, K extends keyof T> = Partial<Pick<T, K>> & { object: T }
+
+export function diffCollection<T, K extends Exclude<Extract<keyof T, string>, 'object'>>(
   curCollection: T[],
   newCollection: T[],
-  updateProps: string[],
-  compareProps: string[] = ['id']
-): [T[], Record<string | 'object', { old: any; new: any } | T>[], T[]] {
+  updateProps: K[],
+  compareProps: Extract<keyof T, string>[] = ['id' as Extract<keyof T, string>]
+): [T[], DiffUpdate<T, K>[], T[]] {
   const toAdd: T[] = []
-  const toUpdate: Record<string | 'object', { old: any; new: any } | T>[] = []
+  const toUpdate: DiffUpdate<T, K>[] = []
   const toRemove: T[] = curCollection.filter((c: T) => !newCollection.find((n: T) => diffProperties(c, n, compareProps)))
   for (const n of newCollection) {
     const o = curCollection.find((c: T) => diffProperties(c, n, compareProps))
     if (o) {
-      const diff: Record<string | 'object', { old: any; new: any } | T> = {}
-      for (const p of updateProps.filter((p: string) => n[p] !== o[p])) {
+      const diff: DiffChanges<T, K> = {}
+      for (const p of updateProps.filter((p) => n[p] !== o[p])) {
         diff[p] = { old: o[p], new: n[p] }
       }
       if (Object.keys(diff).length) {
-        diff['object'] = n
-        toUpdate.push(diff)
+        toUpdate.push(Object.assign(diff, { object: n }))
       }
     } else {
       toAdd.push(n)
@@ -183,7 +153,12 @@ export function diffCollection<T>(
   return [toAdd, toUpdate, toRemove]
 }
 
-export function convertDiffUpdate(update: Record<string | 'object', { old: any; new: any } | any>[]): Record<string | 'object', any>[] {
+export function convertDiffUpdate<T, K extends keyof T>(update: DiffUpdate<T, K>[]): ConvertedDiffUpdate<T, K>[] {
   // only keep the new values
-  return update.map((o) => Object.fromEntries(Object.entries(o).map(([p, v]) => [p, p === 'object' ? v : v.new])))
+  return update.map(
+    (o) =>
+      Object.fromEntries(
+        Object.entries(o).map(([p, v]) => [p, p === 'object' ? v : (v as unknown as DiffChanges<T, K>[K])!.new])
+      ) as ConvertedDiffUpdate<T, K>
+  )
 }

@@ -1,13 +1,8 @@
-import { Transform } from 'class-transformer'
-import { IsBoolean, IsNotEmpty, IsString } from 'class-validator'
+import { z } from 'zod'
+import { nonEmptyStringSchema } from '../../configuration/config.schema.js'
 import { DB_CHARSET } from './constants.js'
 
-export class MySQLConfig {
-  @IsString()
-  @IsNotEmpty()
-  @Transform(({ value }) => (value.endsWith(`?charset=${DB_CHARSET}`) ? value : `${value}?charset=${DB_CHARSET}`))
-  url: string
-
-  @IsBoolean()
-  logQueries: boolean = false
-}
+export const MySQLConfigSchema = z.looseObject({
+  url: nonEmptyStringSchema.overwrite((value) => (value.endsWith(`?charset=${DB_CHARSET}`) ? value : `${value}?charset=${DB_CHARSET}`)),
+  logQueries: z.boolean().default(false)
+})

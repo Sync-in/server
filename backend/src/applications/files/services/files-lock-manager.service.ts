@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import crypto from 'node:crypto'
 
+import { toErrorMessage } from '../../../common/errors.js'
 import { currentTimeStamp } from '../../../common/shared.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { UserModel } from '../../users/models/user.model.js'
@@ -38,7 +39,7 @@ export class FilesLockManager {
     dbFile: FileDBProps,
     app: LOCK_APP,
     depth: LOCK_DEPTH,
-    options?: FileLockOptions,
+    options?: FileLockOptions | null,
     ttl?: number
   ): Promise<[boolean, FileLock]> {
     try {
@@ -47,7 +48,8 @@ export class FilesLockManager {
       if (e instanceof LockConflict) {
         return [false, e.lock]
       }
-      throw new Error(e)
+      if (e instanceof Error) throw e
+      throw new Error(toErrorMessage(e))
     }
     ttl ??= CACHE_LOCK_DEFAULT_TTL
     const key = `${CACHE_LOCK_PREFIX}|${this.genSuffixKey(dbFile, { depth: depth, token: options?.lockToken })}`
@@ -59,7 +61,7 @@ export class FilesLockManager {
       app: app,
       depth: depth,
       expiration: expiration,
-      options: options
+      options: options ?? undefined
     }
     this.logger.verbose({ tag: this.create.name, msg: `${key}` })
     await this.cache.set(key, lock, ttl)
@@ -77,7 +79,7 @@ export class FilesLockManager {
           // Refresh if more than half of the TTL has passed
           const mustRefresh = lock.expiration - currentTimeStamp() < ttl / 2
           if (mustRefresh) {
-            this.refreshLockTimeout(lock, ttl).catch((e: Error) => this.logger.error({ tag: this.createOrRefresh.name, msg: `${e}` }))
+            this.refreshLockTimeout(lock, ttl).catch((e: Error) => this.logger.error({ tag: this.createOrRefresh.name, msg: toErrorMessage(e) }))
           }
         } else {
           throw new LockConflict(lock, 'Conflicting lock')
@@ -115,7 +117,7 @@ export class FilesLockManager {
     }
   }
 
-  async isLockedWithToken(token: string, dbFilePath: string): Promise<FileLock> {
+  async isLockedWithToken(token: string, dbFilePath: string): Promise<FileLock | null> {
     // check if the url (or any of its parents) is locked by the token
     const lock = await this.getLockByToken(token)
     return lock ? (dbFilePath.startsWith(lock.dbFilePath) ? lock : null) : null
@@ -144,10 +146,10 @@ export class FilesLockManager {
 
   async refreshLockTimeout(lock: FileLock, ttl: number) {
     lock.expiration = currentTimeStamp() + ttl
-    this.cache.set(lock.key, lock, ttl).catch((e: Error) => this.logger.error({ tag: this.refreshLockTimeout.name, msg: `${e}` }))
+    this.cache.set(lock.key, lock, ttl).catch((e: Error) => this.logger.error({ tag: this.refreshLockTimeout.name, msg: toErrorMessage(e) }))
   }
 
-  async getLockByToken(token: string): Promise<FileLock> {
+  async getLockByToken(token: string): Promise<FileLock | null> {
     const key = await this.searchKeyByToken(token)
     return key ? (await this.cache.get(key)) || null : null
   }
@@ -183,7 +185,10 @@ export class FilesLockManager {
         // Only compatible with shared locks (with the same owner and the same application)
         continue
       }
-      if (options?.userId === l.owner.id && (!l.options || (options?.lockTokens?.length && options.lockTokens.indexOf(l.options.lockToken) > -1))) {
+      if (
+        options?.userId === l.owner.id &&
+        (!l.options || (options?.lockTokens?.length && options.lockTokens.indexOf(l.options.lockToken as string) > -1))
+      ) {
         // Owner owns this lock (no davLock if the lock was created from api)
         continue
       }
@@ -193,7 +198,10 @@ export class FilesLockManager {
     }
     if (depth === DEPTH.INFINITY) {
       for await (const l of this.searchChildLocks(dbFile)) {
-        if (options?.userId === l.owner.id && (!l.options || (options?.lockTokens?.length && options.lockTokens.indexOf(l.options.lockToken) > -1))) {
+        if (
+          options?.userId === l.owner.id &&
+          (!l.options || (options?.lockTokens?.length && options.lockTokens.indexOf(l.options.lockToken as string) > -1))
+        ) {
           // Owner owns this lock (no davLock if the lock was created from api)
           continue
         }
@@ -217,7 +225,9 @@ export class FilesLockManager {
     }
   }
 
-  convertLockToFileLockProps(lock: FileLock): FileLockProps {
+  convertLockToFileLockProps(lock: FileLock): FileLockProps
+  convertLockToFileLockProps(lock: null): null
+  convertLockToFileLockProps(lock: FileLock | null): FileLockProps | null {
     if (!lock) return null
     return {
       owner: lock.owner,
@@ -253,7 +263,7 @@ export class FilesLockManager {
     }
   }
 
-  private async searchKeyByToken(token: string): Promise<string> {
+  private async searchKeyByToken(token: string): Promise<string | null> {
     const keys = await this.cache.keys(`${CACHE_LOCK_PREFIX}|token:${token}|*`)
     if (!keys.length) {
       return null
@@ -263,17 +273,15 @@ export class FilesLockManager {
     return keys[0]
   }
 
-  private searchKeysByPath(path: string, props = '*', depth?: LOCK_DEPTH): Promise<string[]> {
+  private searchKeysByPath(path: string, props = '*', depth?: LOCK_DEPTH | null): Promise<string[]> {
     return this.cache.keys(`${CACHE_LOCK_PREFIX}*${depth ? `|depth:${depth}` : ''}|path:${path}|${props}`)
   }
 
-  private genSuffixKey(dbFile: FileDBProps, options: { ignorePath?: boolean; depth?: LOCK_DEPTH; token?: string } = {}): string {
+  private genSuffixKey(dbFile: FileDBProps, options: { ignorePath?: boolean; depth?: LOCK_DEPTH; token?: string | null } = {}): string {
     // return -> `depth:infinity|path:code/sync-in|spaceId:1` | `token:xxx|depth:0|path:code/sync-in.ts|ownerId:1`
     // ignorePath -> `spaceId:1`
     const suffixes = []
-    for (const k of Object.keys(dbFile)
-      .filter((k) => k !== files.inTrash.name && dbFile[k] !== null)
-      .sort()) {
+    for (const k of (Object.keys(dbFile) as (keyof FileDBProps)[]).filter((k) => k !== files.inTrash.name && dbFile[k] !== null).sort()) {
       if (k === files.path.name) {
         if (options.ignorePath) {
           continue

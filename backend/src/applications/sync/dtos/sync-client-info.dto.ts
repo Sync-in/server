@@ -1,23 +1,11 @@
-import { IsEnum, IsString } from 'class-validator'
+import { z } from 'zod'
 import { SYNC_CLIENT_TYPE } from '../constants/sync.js'
-import { SyncClientInfo } from '../interfaces/sync-client.interface.js'
 
-export class SyncClientInfoDto implements SyncClientInfo {
-  @IsString()
-  node: string
-
-  @IsString()
-  os: string
-
-  @IsString()
-  osRelease: string
-
-  @IsString()
-  user: string
-
-  @IsEnum(SYNC_CLIENT_TYPE)
-  type: SYNC_CLIENT_TYPE
-
-  @IsString()
-  version: string
-}
+export const syncClientInfoSchema = z.object({
+  node: z.string(),
+  os: z.string(),
+  osRelease: z.string(),
+  user: z.string(),
+  type: z.enum(SYNC_CLIENT_TYPE),
+  version: z.string()
+})

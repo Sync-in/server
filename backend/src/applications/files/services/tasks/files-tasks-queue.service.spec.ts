@@ -108,7 +108,7 @@ describe(FilesTasksQueue.name, () => {
 
     await queue.enqueue(userId, createTask('task-1'), startTask)
 
-    expect(loggerSpy).toHaveBeenCalledWith({ tag: 'drain', msg: `${error}` })
+    expect(loggerSpy).toHaveBeenCalledWith({ tag: 'drain', msg: 'start failed' })
     expect(counters.get(counterKey)).toBe(0)
   })
 

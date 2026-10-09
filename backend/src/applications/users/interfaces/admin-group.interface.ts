@@ -5,10 +5,10 @@ export interface AdminGroup extends Omit<Group, 'parentId' | 'type'> {
   id: number
   name: string
   type: GROUP_TYPE
-  description: string
+  description: string | null
   permissions: string
   visibility: GROUP_VISIBILITY
   createdAt: Date
-  modifiedAt: Date
-  parent: Pick<Group, 'id' | 'name'> & { description?: Group['description'] }
+  modifiedAt: Date | null
+  parent: (Pick<Group, 'id' | 'name'> & { description?: Group['description'] }) | null
 }

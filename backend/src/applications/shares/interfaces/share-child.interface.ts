@@ -6,10 +6,10 @@ export interface ShareChildQuery extends Pick<Share, 'id' | 'parentId' | 'type' 
   type: number
   alias: string
   name: string
-  ownerLogin: string
-  ownerFullName: string
-  ownerEmail: string
-  fileMime: string
+  ownerLogin: string | null
+  ownerFullName: string | null
+  ownerEmail: string | null
+  fileMime: string | null
 }
 
 export interface ShareChildMember {

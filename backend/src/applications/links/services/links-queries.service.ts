@@ -21,6 +21,7 @@ import type { User } from '../../users/schemas/user.interface.js'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema.js'
 import { CACHE_LINK_UUID_PREFIX, CACHE_LINK_UUID_TTL } from '../constants/cache.js'
 import { LINK_TYPE } from '../constants/links.js'
+import type { CreateOrUpdateLinkDto } from '../dto/create-or-update-link.dto.js'
 import type { LinkAsUser, LinkGuest } from '../interfaces/link-guest.interface.js'
 import type { SpaceLink } from '../interfaces/link-space.interface.js'
 import type { Link } from '../schemas/link.interface.js'
@@ -97,7 +98,12 @@ export class LinksQueries {
     }
   }
 
-  async createLinkToSpaceOrShare(guestId: number, spaceOrShareId: number, type: LINK_TYPE, link: Partial<LinkGuest>): Promise<number> {
+  async createLinkToSpaceOrShare(
+    guestId: number,
+    spaceOrShareId: number,
+    type: LINK_TYPE,
+    link: CreateOrUpdateLinkDto & Pick<Link, 'uuid' | 'userId'>
+  ): Promise<number> {
     const linkId = dbGetInsertedId(await this.db.insert(links).values(link as Link))
     if (type === LINK_TYPE.SPACE) {
       await this.db.insert(spacesMembers).values({
@@ -127,7 +133,7 @@ export class LinksQueries {
       .where(and(eq(type == 'share' ? members.shareId : members.spaceId, spaceOrShareId), isNotNull(members.linkId)))
   }
 
-  async linkFromUUID(uuid: string): Promise<LinkAsUser> {
+  async linkFromUUID(uuid: string): Promise<LinkAsUser | undefined> {
     const { password, ...userColumns } = getTableColumns(users)
     const [r] = await this.db
       .select({
@@ -138,13 +144,13 @@ export class LinksQueries {
       .leftJoin(users, eq(users.id, links.userId))
       .where(eq(links.uuid, uuid))
       .limit(1)
-    return r
+    return r as LinkAsUser | undefined
   }
 
-  async spaceLink(uuid: string): Promise<SpaceLink> {
+  async spaceLink(uuid: string): Promise<SpaceLink | undefined> {
     const shareOwner: any = alias(users, 'shareOwner')
     const shareSpaceRoot: any = alias(spacesRoots, 'shareSpaceRoot')
-    const [r]: SpaceLink[] = await this.db
+    const [r] = await this.db
       .select({
         share: {
           name: shares.name,
@@ -175,11 +181,14 @@ export class LinksQueries {
       )
       .where(eq(links.uuid, uuid))
       .limit(1)
+    if (!r) {
+      return undefined
+    }
     return {
       ...r,
       space: r.space?.name ? r.space : null,
       share: r.share?.name ? r.share : null
-    }
+    } as SpaceLink
   }
 
   async consumeLinkAccess(uuid: string): Promise<boolean> {

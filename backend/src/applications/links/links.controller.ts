@@ -5,11 +5,12 @@ import { AuthTokenOptional } from '../../authentication/decorators/auth-token-op
 import { LoginResponseDto } from '../../authentication/dto/login-response.dto.js'
 import { AuthRateLimitGuard } from '../../authentication/guards/auth-rate-limit.guard.js'
 import { GetUser } from '../users/decorators/user.decorator.js'
-import { UserPasswordDto } from '../users/dto/user-properties.dto.js'
+import { type UserPasswordDto, userPasswordSchema } from '../users/dto/user-properties.dto.js'
 import { UserModel } from '../users/models/user.model.js'
 import { LINK_DOWNLOAD_RATE_LIMIT_OPTIONS } from './constants/links.js'
 import { PUBLIC_LINKS_ROUTE } from './constants/routes.js'
 import { SpaceLink } from './interfaces/link-space.interface.js'
+import { publicLinkUuidParameterSchema } from './links.schema.js'
 import { LinksManager } from './services/links-manager.service.js'
 
 @Controller(PUBLIC_LINKS_ROUTE.BASE)
@@ -21,11 +22,11 @@ export class LinksController {
   @UseGuards(AuthRateLimitGuard)
   linkValidation(
     @GetUser() user: UserModel,
-    @Param('uuid') uuid: string
+    @Param('uuid', { schema: publicLinkUuidParameterSchema }) uuid: string
   ): Promise<{
-    error: string | true
+    error: string | null
     ok: boolean
-    link: SpaceLink
+    link: SpaceLink | null
   }> {
     return this.linksManager.linkValidation(user, uuid)
   }
@@ -35,7 +36,7 @@ export class LinksController {
   @UseGuards(AuthRateLimitGuard)
   linkAccess(
     @GetUser() user: UserModel,
-    @Param('uuid') uuid: string,
+    @Param('uuid', { schema: publicLinkUuidParameterSchema }) uuid: string,
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply
   ): Promise<LoginResponseDto | Omit<LoginResponseDto, 'token'>> {
@@ -47,7 +48,7 @@ export class LinksController {
   @UseGuards(AuthRateLimitGuard)
   linkDownload(
     @GetUser() user: UserModel,
-    @Param('uuid') uuid: string,
+    @Param('uuid', { schema: publicLinkUuidParameterSchema }) uuid: string,
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply
   ): Promise<StreamableFile> {
@@ -59,8 +60,8 @@ export class LinksController {
   @UseGuards(AuthRateLimitGuard)
   linkAuthentication(
     @GetUser() user: UserModel,
-    @Param('uuid') uuid: string,
-    @Body() linkPasswordDto: UserPasswordDto,
+    @Param('uuid', { schema: publicLinkUuidParameterSchema }) uuid: string,
+    @Body({ schema: userPasswordSchema }) linkPasswordDto: UserPasswordDto,
     @Req() req: FastifyRequest,
     @Res({ passthrough: true }) res: FastifyReply
   ): Promise<LoginResponseDto> {

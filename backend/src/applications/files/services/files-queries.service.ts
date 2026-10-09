@@ -1,5 +1,6 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common'
-import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, or, SelectedFields, sql, SQL } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, or, sql, SQL } from 'drizzle-orm'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { type DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
 import { concatDistinctObjectsInArray, convertToWhere, dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils.js'
@@ -14,7 +15,7 @@ import { FILES_RECENTS_MAX_LIMIT } from '../constants/recents.js'
 import { FileDBProps } from '../interfaces/file-db-props.interface.js'
 import { FileProps } from '../interfaces/file-props.interface.js'
 import type { FileRecent, FileRecentLocation, FileRecentUpdate } from '../schemas/file-recent.interface.js'
-import { File } from '../schemas/file.interface.js'
+import type { File } from '../schemas/file.interface.js'
 import { filesFavorites } from '../schemas/files-favorites.schema.js'
 import { filesRecents } from '../schemas/files-recents.schema.js'
 import { childFilesMatch, childFilesReplacePath, childPathMatch, filePathSQL, files } from '../schemas/files.schema.js'
@@ -78,10 +79,10 @@ export class FilesQueries {
     if (details?.favorites) {
       q.leftJoin(filesFavorites, and(eq(filesFavorites.userId, userId), eq(filesFavorites.fileId, files.id)))
     }
-    return q
+    return q as Promise<FileProps[]>
   }
 
-  async getUserFile(userId: number, fileId: number): Promise<Pick<File, 'id' | 'path'>> {
+  async getUserFile(userId: number, fileId: number): Promise<Pick<File, 'id' | 'path'> | null> {
     if (fileId > 0) {
       const [fileInDB] = await this.db
         .select({ id: files.id, path: filePathSQL(files) })
@@ -107,7 +108,8 @@ export class FilesQueries {
         this.logger.warn({ tag: this.getOrCreateUserFile.name, msg: `file mismatch : ${JSON.stringify(searchFileInDB)} !== ${JSON.stringify(file)}` })
       }
     }
-    return dbGetInsertedId(await this.db.insert(files).values({ ...file, id: undefined, ownerId: userId } as File))
+    const fileToInsert = { ...file, id: undefined, ownerId: userId } satisfies typeof files.$inferInsert
+    return dbGetInsertedId(await this.db.insert(files).values(fileToInsert))
   }
 
   async getOrCreateSpaceFile(fileId: number, file: FileProps, dbFile: FileDBProps, options: GetOrCreateSpaceFileOptions = {}): Promise<number> {
@@ -147,7 +149,8 @@ export class FilesQueries {
     }
 
     // `fileInDB` keeps the DB scope and uses the `FileProps` path/name.
-    return dbGetInsertedId(await this.db.insert(files).values({ ...file, ...fileInDB, id: undefined } as File))
+    const fileToInsert = { ...file, ...fileInDB, id: undefined } satisfies typeof files.$inferInsert
+    return dbGetInsertedId(await this.db.insert(files).values(fileToInsert))
   }
 
   async getSpaceFileId(file: FileProps, dbFile: FileDBProps, options: { withDir?: boolean } = {}): Promise<number | undefined> {
@@ -169,7 +172,7 @@ export class FilesQueries {
     try {
       dbCheckAffectedRows(await this.db.update(files).set(file).where(eq(files.id, id)), 1)
     } catch (e) {
-      this.logger.error({ tag: this.updateFile.name, msg: `file (${id}) properties was not updated : ${e}` })
+      this.logger.error({ tag: this.updateFile.name, msg: `file (${id}) properties was not updated : ${toErrorMessage(e)}` })
     }
   }
 
@@ -274,7 +277,7 @@ export class FilesQueries {
       dbFile.mime !== fsFile.mime
     ) {
       this.logger.verbose({ tag: this.compareAndUpdateFileProps.name, msg: `${dbFile.path} (${dbFile.id})` })
-      await this.updateFile(dbFile.id, {
+      await this.updateFile(dbFile.id!, {
         isDir: fsFile.isDir,
         size: fsFile.size,
         ctime: fsFile.ctime,
@@ -305,14 +308,14 @@ export class FilesQueries {
         mime: filesRecents.mime,
         mtime: filesRecents.mtime,
         displayRootName: sql<string>`COALESCE(${spaces.name}, ${shares.name})`.as('displayRootName')
-      } satisfies FileRecent | SelectedFields<any, any>)
+      } satisfies Record<keyof FileRecent, any>)
       .from(filesRecents)
       .leftJoin(spaces, eq(spaces.id, filesRecents.spaceId))
       .leftJoin(shares, eq(shares.id, filesRecents.shareId))
       .where(or(...where))
       .groupBy(filesRecents.id)
       .orderBy(desc(filesRecents.mtime))
-      .limit(recentsLimit)
+      .limit(recentsLimit) as Promise<FileRecent[]>
   }
 
   getRecentsFromLocation(location: FileRecentLocation): Promise<FileRecent[]> {
@@ -320,7 +323,7 @@ export class FilesQueries {
     return this.db
       .select(getTableColumns(filesRecents))
       .from(filesRecents)
-      .where(and(...where))
+      .where(and(...where)) as Promise<FileRecent[]>
   }
 
   async deleteRecents(locations: FileRecentLocation[]): Promise<void> {
@@ -349,7 +352,7 @@ export class FilesQueries {
             .delete(filesRecents)
             .where(and(...where, or(...batch.map((sourcePath) => childPathMatch(filePathSQL(filesRecents), sourcePath)))))
         } catch (e) {
-          this.logger.error({ tag: this.deleteRecents.name, msg: `${e}` })
+          this.logger.error({ tag: this.deleteRecents.name, msg: toErrorMessage(e) })
         }
       }
     }
@@ -379,7 +382,7 @@ export class FilesQueries {
       try {
         await this.db.insert(filesRecents).values(add)
       } catch (e) {
-        this.logger.error({ tag: this.updateRecents.name, msg: `${e}` })
+        this.logger.error({ tag: this.updateRecents.name, msg: toErrorMessage(e) })
       }
     }
     // update
@@ -391,7 +394,7 @@ export class FilesQueries {
             .set(props)
             .where(and(...where, eq(filesRecents.id, id)))
         } catch (e) {
-          this.logger.error({ tag: this.updateRecents.name, msg: `${e}` })
+          this.logger.error({ tag: this.updateRecents.name, msg: toErrorMessage(e) })
         }
       }
     }
@@ -400,7 +403,7 @@ export class FilesQueries {
       try {
         await this.db.delete(filesRecents).where(and(...where, inArray(filesRecents.id, remove)))
       } catch (e) {
-        this.logger.error({ tag: this.updateRecents.name, msg: `${e}` })
+        this.logger.error({ tag: this.updateRecents.name, msg: toErrorMessage(e) })
       }
     }
   }

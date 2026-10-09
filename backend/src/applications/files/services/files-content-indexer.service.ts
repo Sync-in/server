@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { Injectable, Logger } from '@nestjs/common'
 import fs from 'fs/promises'
 import { Stats } from 'node:fs'
@@ -89,7 +90,7 @@ export class FilesContentIndexer {
     try {
       status.indexesCount = await this.filesContentStore.indexesCount()
     } catch (e) {
-      this.logger.error({ tag: this.status.name, msg: `${e}` })
+      this.logger.error({ tag: this.status.name, msg: toErrorMessage(e) })
     }
     return status
   }
@@ -110,7 +111,7 @@ export class FilesContentIndexer {
         try {
           await this.parseAndIndexAllFiles()
         } catch (e) {
-          this.logger.error({ tag: this.processIndexingQueue.name, msg: `${e}` })
+          this.logger.error({ tag: this.processIndexingQueue.name, msg: toErrorMessage(e) })
         }
         return
       }
@@ -140,7 +141,7 @@ export class FilesContentIndexer {
             await this.parseAndIndexAllFiles(userIds, spaceIds, shareIds)
             await this.cache.set(CACHE_INDEXING_EVENT_LAST_RUN_KEY, Date.now(), 0)
           } catch (e) {
-            this.logger.error({ tag: this.processIndexingQueue.name, msg: `${e}` })
+            this.logger.error({ tag: this.processIndexingQueue.name, msg: toErrorMessage(e) })
           }
         }
       }
@@ -148,7 +149,9 @@ export class FilesContentIndexer {
       // Clean up event keys even if incremental indexing fails.
       // Ignore cache deletion errors, the full reindex restores consistency.
       for (const k of cacheKeys) {
-        this.cache.del(k).catch((e) => this.logger.warn({ tag: this.processIndexingQueue.name, msg: `Unable to clean key: ${k} - ${e}` }))
+        this.cache
+          .del(k)
+          .catch((e) => this.logger.warn({ tag: this.processIndexingQueue.name, msg: `Unable to clean key: ${k} - ${toErrorMessage(e)}` }))
       }
     } finally {
       await this.setRunning(false)
@@ -162,7 +165,7 @@ export class FilesContentIndexer {
       try {
         await this.ocrManager.start()
       } catch (e) {
-        this.logger.warn({ tag: this.parseAndIndexAllFiles.name, msg: `unable to initialize OCR worker: ${e}` })
+        this.logger.warn({ tag: this.parseAndIndexAllFiles.name, msg: `unable to initialize OCR worker: ${toErrorMessage(e)}` })
       }
       const indexSuffixes: string[] = []
       let stopped = false
@@ -175,11 +178,13 @@ export class FilesContentIndexer {
         try {
           await this.indexFiles(indexSuffix, paths)
         } catch (e) {
-          this.logger.error({ tag: this.parseAndIndexAllFiles.name, msg: `${e}` })
+          this.logger.error({ tag: this.parseAndIndexAllFiles.name, msg: toErrorMessage(e) })
         }
         indexSuffixes.push(indexSuffix)
         // renew the TTL after each indexed space to prevent expiration during long runs
-        this.renewRunningTTL().catch((e) => this.logger.warn({ tag: this.parseAndIndexAllFiles.name, msg: `unable to refresh running TTL: ${e}` }))
+        this.renewRunningTTL().catch((e) =>
+          this.logger.warn({ tag: this.parseAndIndexAllFiles.name, msg: `unable to refresh running TTL: ${toErrorMessage(e)}` })
+        )
       }
       // clean up old tables only when all indexes have been indexed
       if (!stopped && !userIds?.length && !spaceIds?.length && !shareIds?.length) {
@@ -265,7 +270,7 @@ export class FilesContentIndexer {
       // case when no data
       this.filesContentStore
         .dropIndex(indexName)
-        .catch((e: Error) => this.logger.error({ tag: this.indexFiles.name, msg: `${indexSuffix} - unable to drop index : ${e}` }))
+        .catch((e: Error) => this.logger.error({ tag: this.indexFiles.name, msg: `${indexSuffix} - unable to drop index : ${toErrorMessage(e)}` }))
       this.logger.verbose({ tag: this.indexFiles.name, msg: `${indexSuffix} - no data: index not stored` })
     } else if (indexedRecords === 0 && indexingErrors === 0 && deletedRecords === 0) {
       this.logger.verbose({ tag: this.indexFiles.name, msg: `${indexSuffix} - no changes` })
@@ -333,7 +338,7 @@ export class FilesContentIndexer {
       }
     } catch (e) {
       // skip unreadable directories, their unseen records will be cleaned later
-      this.logger.warn({ tag: this.parseFileMetadata.name, msg: `${context.indexName} - unable to parse: ${dir} - ${e}` })
+      this.logger.warn({ tag: this.parseFileMetadata.name, msg: `${context.indexName} - unable to parse: ${dir} - ${toErrorMessage(e)}` })
     }
   }
 
@@ -350,7 +355,7 @@ export class FilesContentIndexer {
     try {
       stats = await fs.stat(realPath)
     } catch (e) {
-      this.logger.warn({ tag: this.getFileMetadata.name, msg: `unable to stats: ${realPath} - ${e}` })
+      this.logger.warn({ tag: this.getFileMetadata.name, msg: `unable to stats: ${realPath} - ${toErrorMessage(e)}` })
       // unreadable or missing files are treated as unseen records
       return null
     }
@@ -385,7 +390,7 @@ export class FilesContentIndexer {
     }
   }
 
-  private async parseContent(rPath: string, extension: string): Promise<string> {
+  private async parseContent(rPath: string, extension: string): Promise<string | null> {
     try {
       const content = await docTextify(
         rPath,
@@ -401,7 +406,7 @@ export class FilesContentIndexer {
       )
       return content.length ? content : null
     } catch (e) {
-      this.logger.warn({ tag: this.parseContent.name, msg: `unable to index: ${rPath} - ${e}` })
+      this.logger.warn({ tag: this.parseContent.name, msg: `unable to index: ${rPath} - ${toErrorMessage(e)}` })
     }
     return null
   }

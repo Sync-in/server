@@ -17,15 +17,19 @@ import { WebDAVSpaces } from './webdav-spaces.service.js'
 import { Mocked } from 'vitest'
 
 // Mock external dependencies
-vi.mock('../../files/utils/files.js', () => ({
-  isPathExists: vi.fn().mockReturnValue(false),
-  isPathIsDir: vi.fn(),
-  fileName: vi.fn().mockReturnValue('fileName'),
-  dirName: vi.fn(),
-  genEtag: vi.fn().mockReturnValue('W/"etag-123"'),
-  removeFiles: vi.fn(() => Promise.resolve()),
-  temporaryFilePath: vi.fn().mockReturnValue('/space/tmp/users/1/~tmp-upload-id-file.txt')
-}))
+vi.mock('../../files/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+  return {
+    ...actual,
+    isPathExists: vi.fn().mockReturnValue(false),
+    isPathIsDir: vi.fn(),
+    fileName: vi.fn().mockReturnValue('fileName'),
+    dirName: vi.fn(),
+    genEtag: vi.fn().mockReturnValue('W/"etag-123"'),
+    removeFiles: vi.fn(() => Promise.resolve()),
+    temporaryFilePath: vi.fn().mockReturnValue('/space/tmp/users/1/~tmp-upload-id-file.txt')
+  }
+})
 
 vi.mock('../../spaces/utils/permissions.js', () => ({
   haveSpaceEnvPermissions: vi.fn()
@@ -279,10 +283,10 @@ describe('WebDAVMethods', () => {
               owner: { fullName: 'LockOwner', email: 'lock-owner@sync-in.com' },
               dbFilePath: _dbFile?.path,
               options: {
-                lockRoot: options.lockRoot,
-                lockToken: options.lockToken,
-                lockScope: options.lockScope,
-                lockInfo: options.lockInfo
+                lockRoot: options!.lockRoot,
+                lockToken: options!.lockToken,
+                lockScope: options!.lockScope,
+                lockInfo: options!.lockInfo
               }
             } as Partial<FileLock>
           ] as any
@@ -343,10 +347,10 @@ describe('WebDAVMethods', () => {
               owner: { fullName: 'LockOwner', email: 'lock-owner@sync-in.com' },
               dbFilePath: _dbFile?.path,
               options: {
-                lockRoot: options.lockRoot,
-                lockToken: options.lockToken,
-                lockScope: options.lockScope,
-                lockInfo: options.lockInfo
+                lockRoot: options!.lockRoot,
+                lockToken: options!.lockToken,
+                lockScope: options!.lockScope,
+                lockInfo: options!.lockInfo
               }
             }
           ] as any
@@ -1504,7 +1508,7 @@ describe('WebDAVMethods', () => {
           // Expected to throw
         }
 
-        expect(logSpy.mock.calls.some(([payload]: { msg: string }[]) => payload?.msg?.includes(' -> /webdav/test/dest.txt'))).toBe(true)
+        expect(logSpy.mock.calls.some(([payload]) => (payload as { msg?: string })?.msg?.includes(' -> /webdav/test/dest.txt'))).toBe(true)
       })
     })
   })
@@ -2094,8 +2098,8 @@ describe('WebDAVMethods', () => {
           // Expected to throw
         }
 
-        expect(logSpy.mock.calls.some(([payload]: { msg: string }[]) => payload?.msg?.includes('PUT'))).toBe(true)
-        expect(logSpy.mock.calls.some(([payload]: { msg: string }[]) => payload?.msg?.includes('/webdav/test.txt'))).toBe(true)
+        expect(logSpy.mock.calls.some(([payload]) => (payload as { msg?: string })?.msg?.includes('PUT'))).toBe(true)
+        expect(logSpy.mock.calls.some(([payload]) => (payload as { msg?: string })?.msg?.includes('/webdav/test.txt'))).toBe(true)
       })
 
       it('should include destination URL in log when provided', () => {
@@ -2110,7 +2114,7 @@ describe('WebDAVMethods', () => {
           // Expected to throw
         }
 
-        expect(logSpy.mock.calls.some(([payload]: { msg: string }[]) => payload?.msg?.includes(' -> /webdav/destination.txt'))).toBe(true)
+        expect(logSpy.mock.calls.some(([payload]) => (payload as { msg?: string })?.msg?.includes(' -> /webdav/destination.txt'))).toBe(true)
       })
     })
   })

@@ -1,16 +1,3 @@
 import type { links } from './links.schema.js'
 
-type LinkSchema = typeof links.$inferSelect
-
-export class Link implements LinkSchema {
-  id: number
-  uuid: string
-  userId: number
-  name: string
-  email: string
-  requireAuth: boolean
-  nbAccess: number
-  limitAccess: number
-  expiresAt: Date
-  createdAt: Date
-}
+export type Link = typeof links.$inferSelect

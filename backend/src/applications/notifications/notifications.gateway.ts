@@ -5,7 +5,7 @@ import { NOTIFICATIONS_WS } from './constants/websocket.js'
 
 @WebSocketGateway({ namespace: NOTIFICATIONS_WS.NAME_SPACE })
 export class WebSocketNotifications {
-  @WebSocketServer() server: Server
+  @WebSocketServer() server!: Server
 
   sendMessageToUsers(userIds: number[], eventName: string, body: any) {
     if (userIds.length) {

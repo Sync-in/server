@@ -1,7 +1,7 @@
+import { toErrorMessage } from '../../common/errors.js'
 import { Injectable } from '@nestjs/common'
 import { AbstractStrategy, PassportStrategy } from '@nestjs/passport'
 import { ThrottlerException } from '@nestjs/throttler'
-import { instanceToPlain, plainToInstance } from 'class-transformer'
 import { FastifyRequest } from 'fastify'
 import { PinoLogger } from 'nestjs-pino'
 import { UserModel } from '../../applications/users/models/user.model.js'
@@ -36,8 +36,7 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
     const userFromCache: null | undefined | Partial<UserModel> = await this.cache.get(basicAuthCacheKey)
     if (userFromCache) {
       // Only successful credentials are usable from cache; ignore any stale negative entry.
-      // Warning: plainToInstance do not use constructor to instantiate the class
-      return plainToInstance(UserModel, userFromCache)
+      return UserModel.fromSerialized(userFromCache)
     }
 
     // Every WebDAV request is authenticated: only rate limit credentials that still require an actual provider lookup.
@@ -47,7 +46,7 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
       throw new ThrottlerException(AUTH_RATE_LIMIT_ERROR_MESSAGE)
     }
 
-    let userFromDB: UserModel
+    let userFromDB: UserModel | null
     try {
       userFromDB = await this.authProvider.validateUser(loginOrEmail, password, req.ip, AUTH_SCOPE.WEBDAV)
     } catch (e) {
@@ -59,10 +58,10 @@ export class AuthBasicStrategy extends PassportStrategy(HttpBasicStrategy, 'basi
     if (userFromDB === null) return null
 
     userFromDB.removePassword()
-    const userToCache: Record<string, any> = instanceToPlain(userFromDB, { excludePrefixes: ['_'] })
+    const userToCache: Record<string, any> = userFromDB.serialize()
     this.cache
       .set(basicAuthCacheKey, userToCache, AuthBasicStrategy.cacheAuthWebDAVTTL)
-      .catch((e: Error) => this.logger.error({ tag: this.validate.name, msg: `${e}` }))
+      .catch((e: Error) => this.logger.error({ tag: this.validate.name, msg: toErrorMessage(e) }))
     return userFromDB
   }
 }

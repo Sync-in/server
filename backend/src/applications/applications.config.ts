@@ -1,28 +1,10 @@
-import { Type } from 'class-transformer'
-import { IsDefined, IsNotEmptyObject, IsObject, ValidateNested } from 'class-validator'
-import { FilesConfig } from './files/files.config.js'
-import { AppStoreConfig } from './sync/sync.config.js'
-import { UsersConfig } from './users/users.config.js'
+import { z } from 'zod'
+import { FilesConfigSchema } from './files/files.config.js'
+import { AppStoreConfigSchema } from './sync/sync.config.js'
+import { UsersConfigSchema } from './users/users.config.js'
 
-export class ApplicationsConfig {
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => FilesConfig)
-  files: FilesConfig
-
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => UsersConfig)
-  users: UsersConfig = new UsersConfig()
-
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => AppStoreConfig)
-  appStore: AppStoreConfig = new AppStoreConfig()
-}
+export const ApplicationsConfigSchema = z.looseObject({
+  files: FilesConfigSchema,
+  users: UsersConfigSchema.prefault({}),
+  appStore: AppStoreConfigSchema.prefault({})
+})

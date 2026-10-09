@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../../common/errors.js'
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
 import { Cache } from '../../../../infrastructure/cache/cache.service.js'
 import { CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../../constants/cache.js'
@@ -67,7 +68,7 @@ export class FilesTasksQueue implements OnModuleDestroy {
         try {
           if (entry && (await entry.startTask(entry.task))) continue
         } catch (e) {
-          this.logger.error({ tag: this.drain.name, msg: `${e}` })
+          this.logger.error({ tag: this.drain.name, msg: toErrorMessage(e) })
         }
         await this.releaseUserRunningTaskSlot(userId)
       }
@@ -98,7 +99,7 @@ export class FilesTasksQueue implements OnModuleDestroy {
   private startQueueDrainInterval(): void {
     if (this.queuedTasksDrainInterval) return
     this.queuedTasksDrainInterval = setInterval(() => {
-      this.drainAll().catch((e: Error) => this.logger.error({ tag: this.drainAll.name, msg: `${e}` }))
+      this.drainAll().catch((e: Error) => this.logger.error({ tag: this.drainAll.name, msg: toErrorMessage(e) }))
     }, this.drainInterval)
     this.queuedTasksDrainInterval.unref()
   }

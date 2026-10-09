@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../common/errors.js'
 import { Injectable, Logger } from '@nestjs/common'
 import type { AvailabilityDependency, AvailabilityListener } from './availability.interfaces.js'
 
@@ -41,7 +42,7 @@ export class Availability {
       try {
         listener(dependency, isAvailable)
       } catch (e) {
-        this.logger.error({ tag: this.notifyListeners.name, msg: `${e}` })
+        this.logger.error({ tag: this.notifyListeners.name, msg: toErrorMessage(e) })
       }
     }
   }

@@ -65,7 +65,7 @@ export enum DEPTH {
   MEMBERS = '1'
 }
 
-export type LOCK_DEPTH = Omit<DEPTH, DEPTH.MEMBERS>
+export type LOCK_DEPTH = DEPTH.INFINITY | DEPTH.RESOURCE
 
 export enum PROPSTAT {
   ALLPROP = 'allprop',

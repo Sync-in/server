@@ -90,6 +90,6 @@ export function DAV_ERROR_RES(code: number, error: string, res: FastifyReply, hr
 }
 
 function formatLockOwner(lock: FileLock) {
-  const lockInfo = `${lock.options.lockInfo ? `${lock.options.lockInfo}` : ''}${lock.app ? ` ${lock.app}` : ''}`
+  const lockInfo = `${lock.options!.lockInfo ? `${lock.options!.lockInfo}` : ''}${lock.app ? ` ${lock.app}` : ''}`
   return `${lock.owner.fullName} (${lock.owner.email})${lockInfo ? ` - ${lockInfo}` : ''}`
 }

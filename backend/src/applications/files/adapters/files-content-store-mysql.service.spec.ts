@@ -390,7 +390,7 @@ describe(FilesContentStoreMySQL.name, () => {
       mockSingleSearchRecord(`${before} target ${after}.`)
 
       const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'target', 10)
-      const [match] = res[0].matches
+      const [match] = res[0]!.matches!
 
       expect(match).toMatch(/^before2 /)
       expect(match).toContain('<mark>target</mark>')
@@ -427,7 +427,7 @@ describe(FilesContentStoreMySQL.name, () => {
 
       const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], 'खाते', 10)
 
-      expect(res[0].matches[0]).toContain('<mark>खाते</mark>')
+      expect(res[0]!.matches![0]).toContain('<mark>खाते</mark>')
     })
 
     it.each([
@@ -437,7 +437,7 @@ describe(FilesContentStoreMySQL.name, () => {
       mockSingleSearchRecord('A setting followed by a set value.')
 
       const res = await filesIndexerMySQL.searchRecords(['files_content_u_1'], search, 10)
-      const matches = res[0].matches.join(' ')
+      const matches = res[0]!.matches!.join(' ')
 
       expect(matches).toContain(highlightedTerm)
       if (rejectedHighlight) {

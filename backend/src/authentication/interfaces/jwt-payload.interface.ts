@@ -1,12 +1,12 @@
 import type { AUTH_SESSION } from '../providers/auth-providers.constants.js'
 import { TOKEN_TYPE } from './token.interface.js'
 
-export class JwtIdentityPayload {
+export interface JwtIdentityPayload {
   id: number
   login: string
   email: string
   fullName: string
-  language: string
+  language: string | null
   role: number
   applications: string[]
   impersonatedFromId?: number
@@ -16,10 +16,10 @@ export class JwtIdentityPayload {
   twoFaEnabled?: boolean
 }
 
-export class JwtIdentity2FaPayload {
+export interface JwtIdentity2FaPayload {
   id: number
   login: string
-  language: string
+  language: string | null
   role: number
   twoFaEnabled: true
 }

@@ -1,10 +1,12 @@
 #!/usr/bin/env node
+import { toErrorMessage } from './common/errors.js'
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { Logger } from 'nestjs-pino'
 import { setTimeout } from 'node:timers/promises'
 import { appBootstrap } from './app.bootstrap.js'
 import { AppService } from './app.service.js'
 import { configuration } from './configuration/config.environment.js'
+import { connectionErrorMessage } from './infrastructure/utils.js'
 
 async function bootstrap(): Promise<void> {
   let logger: Logger | undefined
@@ -23,15 +25,15 @@ async function bootstrap(): Promise<void> {
           address = url.toString()
         }
         if (error) {
-          logger.error(`Server listening error at ${address} : ${error}`, 'HTTP')
+          logger!.error(`Server listening error at ${address} : ${toErrorMessage(error)}`, 'HTTP')
           process.exit(1)
         } else {
-          logger.log(`Server listening at ${address}`, 'HTTP')
+          logger!.log(`Server listening at ${address}`, 'HTTP')
         }
       }
     )
   } catch (e) {
-    const failureMessage = `Bootstrap failed: ${e?.errors || e}`
+    const failureMessage = `Bootstrap failed: ${connectionErrorMessage(e)}`
     const nextActionMessage = `${configuration.server.restartOnFailure ? 'Retrying' : 'Exiting'} ...`
     if (logger) {
       logger.error(failureMessage, 'BOOTSTRAP')

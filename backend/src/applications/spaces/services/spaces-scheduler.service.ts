@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression } from '@nestjs/schedule'
 import { SpacesManager } from './spaces-manager.service.js'
@@ -15,7 +16,7 @@ export class SpacesScheduler {
     try {
       await this.spacesManager.deleteExpiredSpaces()
     } catch (e) {
-      this.logger.error({ tag: this.deleteExpiredSpaces.name, msg: `${e}` })
+      this.logger.error({ tag: this.deleteExpiredSpaces.name, msg: toErrorMessage(e) })
     }
     this.logger.log({ tag: this.deleteExpiredSpaces.name, msg: `DONE` })
   }

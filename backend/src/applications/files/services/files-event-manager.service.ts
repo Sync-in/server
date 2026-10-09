@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { FileEvent } from '../events/file-events.js'
@@ -60,7 +61,7 @@ export class FilesEventManager implements OnModuleDestroy {
       await this.filesRecents.updateRecentFromEditor(event.user, event.space, event.rPath)
     } catch (e) {
       if ((e as NodeJS.ErrnoException)?.code === 'ENOENT') return
-      this.logger.warn({ tag: this.processRecentEditorUpdate.name, msg: `Could not update recent file ${event.space.url}: ${e}` })
+      this.logger.warn({ tag: this.processRecentEditorUpdate.name, msg: `Could not update recent file ${event.space.url}: ${toErrorMessage(e)}` })
     }
   }
 
@@ -93,7 +94,7 @@ export class FilesEventManager implements OnModuleDestroy {
     try {
       await this.processEvents(events)
     } catch (e) {
-      this.logger.error({ tag: this.flushEvents.name, msg: `Could not process buffered events: ${e}` })
+      this.logger.error({ tag: this.flushEvents.name, msg: `Could not process buffered events: ${toErrorMessage(e)}` })
       this.eventsBuffer.unshift(...events)
     } finally {
       this.isFlushing = false
@@ -117,7 +118,7 @@ export class FilesEventManager implements OnModuleDestroy {
           this.processIndexingEvent(event)
         }
       } catch (e) {
-        this.logger.warn({ tag: this.processEvents.name, msg: `Could not process event: ${JSON.stringify(event)} - ${e}` })
+        this.logger.warn({ tag: this.processEvents.name, msg: `Could not process event: ${JSON.stringify(event)} - ${toErrorMessage(e)}` })
       }
     }
     await Promise.all([this.storeEventsInCache(), this.processRecentEvents(fEvents)])
@@ -157,7 +158,7 @@ export class FilesEventManager implements OnModuleDestroy {
     try {
       await this.filesRecents.deleteRecents(deletions)
     } catch (e) {
-      this.logger.warn({ tag: this.processRecentDeletes.name, msg: `Could not delete recent files: ${e}` })
+      this.logger.warn({ tag: this.processRecentDeletes.name, msg: `Could not delete recent files: ${toErrorMessage(e)}` })
     }
   }
 

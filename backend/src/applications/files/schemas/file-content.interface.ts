@@ -6,7 +6,7 @@ export interface FileContent {
   size: number
   mtime: number
   // used for inserts
-  content?: string
+  content?: string | null
   // used for search
   matches?: string[]
   // used for search

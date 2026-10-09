@@ -456,13 +456,12 @@ describe(FilesContentIndexer.name, () => {
       { parentPath: '/root', name: 'a.txt', isDirectory: () => false }
     ] as any)
     readdirSpy.mockResolvedValueOnce([{ parentPath: '/root/sub', name: 'b.txt', isDirectory: () => false }] as any)
-    vi.spyOn(service as any, 'getFileMetadata').mockImplementation(async (realPath: string) =>
+    vi.spyOn(service as any, 'getFileMetadata').mockImplementation((async (realPath: string) =>
       fileMetadata({
         id: realPath.length,
         name: path.basename(realPath),
         realPath
-      })
-    )
+      })) as never)
     const yielded: any[] = []
 
     for await (const metadata of (service as any).parseFileMetadata('/root', contentContext({ regexBasePath: /^\/?root\/?/ }))) {

@@ -1,13 +1,14 @@
 import { HttpService } from '@nestjs/axios'
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { AxiosResponse } from 'axios'
+import { AxiosResponse, isAxiosError } from 'axios'
 import https from 'https'
 import crypto from 'node:crypto'
 import os from 'node:os'
 import path from 'node:path'
-import { JwtIdentityPayload } from '../../../../authentication/interfaces/jwt-payload.interface.js'
+import type { JwtIdentityPayload } from '../../../../authentication/interfaces/jwt-payload.interface.js'
 import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface.js'
+import { toErrorMessage } from '../../../../common/errors.js'
 import { convertHumanTimeToSeconds } from '../../../../common/functions.js'
 import { encodeUrl } from '../../../../common/shared.js'
 import { configuration } from '../../../../configuration/config.environment.js'
@@ -65,7 +66,9 @@ export class OnlyOfficeManager {
   private readonly officeAppLock = configuration.applications.files.editors.onlyoffice.enabled ? ONLY_OFFICE_APP_LOCK : EURO_OFFICE_APP_LOCK
   private readonly externalOnlyOfficeServer = this.officeConfig.externalServer || null
   private readonly rejectUnauthorized: boolean = this.officeConfig.verifySSL
-  private readonly convertUrl = this.externalOnlyOfficeServer ? `${this.externalOnlyOfficeServer}/ConvertService.ashx` : null
+  private readonly convertUrl: string | null = this.externalOnlyOfficeServer
+    ? `${this.externalOnlyOfficeServer.replace(/\/+$/, '')}/ConvertService.ashx`
+    : null
   private readonly expiration = convertHumanTimeToSeconds(configuration.auth.token.refresh.expiration)
   private readonly mobileRegex: RegExp = /android|webos|iphone|ipad|ipod|blackberry|windows phone|opera mini|iemobile|mobile/i
 
@@ -103,17 +106,18 @@ export class OnlyOfficeManager {
           hasLock = this.filesLockManager.convertLockToFileLockProps(e.lock)
           mode = FILE_MODE.VIEW
         } else {
-          this.logger.error({ tag: this.getSettings.name, msg: `${e}` })
+          this.logger.error({ tag: this.getSettings.name, msg: toErrorMessage(e) })
           throw new HttpException('Unable to check file lock', HttpStatus.INTERNAL_SERVER_ERROR)
         }
       }
     }
-    const isMobile: boolean = this.mobileRegex.test(req.headers['user-agent'])
+    const userAgent = req.headers['user-agent']
+    const isMobile = this.mobileRegex.test(typeof userAgent === 'string' ? userAgent : '')
     const authToken: string = await this.genAuthToken(user)
     const fileUrl = this.buildUrl(API_ONLY_OFFICE_DOCUMENT, encodeUrl(space.url), authToken)
     const callBackUrl = this.buildUrl(API_ONLY_OFFICE_CALLBACK, encodeUrl(space.url), authToken)
     const config: OnlyOfficeReqDto = await this.genConfiguration(user, space, mode, fileUrl, fileExtension, callBackUrl, isMobile, hasLock)
-    config.config.editorConfig.customization.uiTheme = `theme-${theme ?? USER_THEME.LIGHT}`
+    config.config.editorConfig!.customization!.uiTheme = `theme-${theme ?? USER_THEME.LIGHT}`
     config.config.token = await this.genPayloadToken(config.config)
     return config
   }
@@ -134,14 +138,14 @@ export class OnlyOfficeManager {
             this.logger.debug({ tag: this.callBack.name, msg: `document was edited but closed with no changes : ${space.url}` })
           } else {
             this.logger.debug({ tag: this.callBack.name, msg: `document was edited and closed but not saved (let's do it) : ${space.url}` })
-            await this.saveDocument(user, space, callBackData.url)
+            await this.saveDocument(user, space, callBackData.url!)
           }
           await this.removeFileLock(user.id, space)
           await this.removeDocumentKey(space)
           break
         case 3:
           this.logger.error({ tag: this.callBack.name, msg: `document cannot be saved, an error has occurred (try to save it) : ${space.url}` })
-          await this.saveDocument(user, space, callBackData.url)
+          await this.saveDocument(user, space, callBackData.url!)
           break
         case 4:
           // No active users on the document
@@ -151,18 +155,19 @@ export class OnlyOfficeManager {
           break
         case 6:
           this.logger.debug({ tag: this.callBack.name, msg: `document is edited but save was requested : ${space.url}` })
-          await this.saveDocument(user, space, callBackData.url)
+          await this.saveDocument(user, space, callBackData.url!)
           break
         case 7:
           this.logger.error({ tag: this.callBack.name, msg: `document cannot be force saved, an error has occurred (try to save it) : ${space.url}` })
-          await this.saveDocument(user, space, callBackData.url)
+          await this.saveDocument(user, space, callBackData.url!)
           break
         default:
           this.logger.error({ tag: this.callBack.name, msg: 'unhandled case' })
       }
     } catch (e) {
-      this.logger.error({ tag: this.callBack.name, msg: `${e.message} : ${space.url}` })
-      return { error: e.message }
+      const errorMessage = toErrorMessage(e)
+      this.logger.error({ tag: this.callBack.name, msg: `${errorMessage} : ${space.url}` })
+      return { error: errorMessage }
     }
     return { error: 0 }
   }
@@ -265,7 +270,7 @@ export class OnlyOfficeManager {
   }
 
   private async checkFileLock(user: UserModel, space: SpaceEnv, callBackData: OnlyOfficeCallBack) {
-    for (const action of callBackData.actions) {
+    for (const action of callBackData.actions!) {
       if (action.type === 0) {
         // Disconnect
         // Remove the lock if no other users are active on the document
@@ -347,7 +352,7 @@ export class OnlyOfficeManager {
       let finalParsedDownloadUrl = callbackDownloadUrl
       if (localExtension !== remoteExtension && !ONLY_OFFICE_CONVERT_EXTENSIONS.ALLOW_AUTO.has(localExtension)) {
         if (ONLY_OFFICE_CONVERT_EXTENSIONS.FROM.has(remoteExtension) && ONLY_OFFICE_CONVERT_EXTENSIONS.TO.has(localExtension)) {
-          finalDownloadUrl = await this.convertDocument(urlParams.get('shardkey'), url, remoteExtension, localExtension, space.url)
+          finalDownloadUrl = (await this.convertDocument(urlParams.get('shardkey')!, url, remoteExtension, localExtension, space.url))!
           finalParsedDownloadUrl = this.parseDocumentServerDownloadUrl(finalDownloadUrl)
         } else {
           throw new Error(`document cannot be converted from ${remoteExtension} -> ${localExtension} : ${space.url}`)
@@ -376,9 +381,9 @@ export class OnlyOfficeManager {
         downloadStream?.destroy?.()
         this.logger.error({
           tag: this.saveDocument.name,
-          msg: `failed to download document from ${finalParsedDownloadUrl.origin}${finalParsedDownloadUrl.pathname} : ${space.url} - ${e.message}`
+          msg: `failed to download document from ${finalParsedDownloadUrl.origin}${finalParsedDownloadUrl.pathname} : ${space.url} - ${toErrorMessage(e)}`
         })
-        throw new Error(`unable to download document : ${e.message}`)
+        throw new Error(`unable to download document : ${toErrorMessage(e)}`)
       }
 
       // try to verify the downloaded size
@@ -396,13 +401,13 @@ export class OnlyOfficeManager {
         // emit file event
         FileEvent.emit('event', { user: user, space: space, action: ACTION.UPDATE, rPath: space.realPath, source: 'editor' })
       } catch (e) {
-        throw new Error(`unable to save document : ${e.message}`)
+        throw new Error(`unable to save document : ${toErrorMessage(e)}`)
       }
     } finally {
       try {
         await removeFiles(tmpFilePath)
       } catch (e) {
-        this.logger.error({ tag: this.saveDocument.name, msg: `failed to remove temporary document ${tmpFilePath} : ${e.message}` })
+        this.logger.error({ tag: this.saveDocument.name, msg: `failed to remove temporary document ${tmpFilePath} : ${toErrorMessage(e)}` })
       }
     }
   }
@@ -440,7 +445,7 @@ export class OnlyOfficeManager {
     return parsedUrl
   }
 
-  private async convertDocument(id: string, url: string, fileType: string, outputType: string, spaceUrl: string): Promise<string> {
+  private async convertDocument(id: string, url: string, fileType: string, outputType: string, spaceUrl: string): Promise<string | undefined> {
     const key: string = `${id}-${crypto.randomBytes(20).toString('hex')}`.slice(0, 20).replace('-', '_')
     const payload: OnlyOfficeConvertForm = {
       key: key,
@@ -454,13 +459,14 @@ export class OnlyOfficeManager {
     try {
       const res: AxiosResponse = await this.http.axiosRef({
         method: HTTP_METHOD.POST,
-        url: this.convertUrl,
+        url: this.convertUrl as string,
         data: payload,
         httpsAgent: new https.Agent({ rejectUnauthorized: this.rejectUnauthorized })
       })
       result = res.data
     } catch (e) {
-      throw new Error(`convert failed with status : ${e.response.status}`)
+      const reason = isAxiosError(e) && e.response ? `status : ${e.response.status}` : `reason : ${toErrorMessage(e)}`
+      throw new Error(`convert failed with ${reason}`)
     }
     if (result.error) {
       throw new Error(`convert failed with reason : ${ONLY_OFFICE_CONVERT_ERROR.get(result.error)}`)

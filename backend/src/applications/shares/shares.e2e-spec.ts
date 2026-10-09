@@ -24,14 +24,14 @@ describe('Shares (e2e)', () => {
   let module: TestingModule
   let db: DBSchema
   let sharesQueries: SharesQueries
-  let actorId: number | undefined
-  let childActorId: number | undefined
-  let ownerId: number | undefined
-  let externalRootId: number | undefined
-  let childId: number | undefined
-  let grandchildId: number | undefined
-  let internalRootId: number | undefined
-  let externalFileId: number | undefined
+  let actorId: number
+  let childActorId: number
+  let ownerId: number
+  let externalRootId: number
+  let childId: number
+  let grandchildId: number
+  let internalRootId: number
+  let externalFileId: number
 
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12)
   const aliases = {
@@ -168,13 +168,13 @@ describe('Shares (e2e)', () => {
       permissions: 'm',
       root: { externalPath, externalParentShareId: externalRootId }
     })
-    expect(grandchild.root.externalParentShareId).not.toBe(childId)
+    expect(grandchild!.root!.externalParentShareId).not.toBe(childId)
   })
 
   it('uses the same external root scope without replacing each listed share permissions', async () => {
     const roots = await sharesQueries.shareRootFiles({ id: actorId, isAdmin: false } as UserModel, null)
-    const child = roots.find((root) => root.root.alias === aliases.child)
-    const grandchild = roots.find((root) => root.root.alias === aliases.grandchild)
+    const child = roots.find((root) => root.root!.alias === aliases.child)
+    const grandchild = roots.find((root) => root.root!.alias === aliases.grandchild)
 
     expect(child).toMatchObject({ origin: { shareExternalId: externalRootId }, root: { permissions: 'd:m' } })
     expect(grandchild).toMatchObject({ origin: { shareExternalId: externalRootId }, root: { permissions: 'm' } })
@@ -208,6 +208,6 @@ describe('Shares (e2e)', () => {
     await expect(sharesQueries.permissions(actorId, aliases.malformedChild)).resolves.toBeUndefined()
 
     const roots = await sharesQueries.shareRootFiles({ id: actorId, isAdmin: false } as UserModel, null)
-    expect(roots.some((root) => root.root.alias === aliases.malformedChild)).toBe(false)
+    expect(roots.some((root) => root.root!.alias === aliases.malformedChild)).toBe(false)
   })
 })

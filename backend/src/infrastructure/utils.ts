@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../common/errors.js'
 import { RETRYABLE_CONNECTION_ERROR_CODES } from './constants.js'
 
 export function redactRedisUrl(url: string): string {
@@ -24,6 +25,6 @@ function connectionErrors(error: unknown): unknown[] {
 
 function isRetryableError(error: unknown): boolean {
   const code = (error as { code?: string })?.code
-  const message = error instanceof Error ? error.message : String(error)
+  const message = toErrorMessage(error)
   return (!!code && RETRYABLE_CONNECTION_ERROR_CODES.has(code)) || message.includes('Socket closed unexpectedly')
 }

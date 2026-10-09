@@ -54,8 +54,6 @@
     "@socket.io/redis-adapter": "^8.3.0",
     "@zip.js/zip.js": "^2.8.26",
     "bcryptjs": "^3.0.3",
-    "class-transformer": "^0.5.1",
-    "class-validator": "^0.15.1",
     "deepmerge": "^4.3.1",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
@@ -88,7 +86,8 @@
     "tesseract.js": "^7.0.0",
     "text-to-svg": "^3.1.5",
     "time2fa": "^1.4.2",
-    "unpdf": "^1.8.1"
+    "unpdf": "^1.8.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",

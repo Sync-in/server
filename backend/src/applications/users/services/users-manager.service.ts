@@ -1,4 +1,3 @@
-import { MultipartFile } from '@fastify/multipart'
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import bcrypt from 'bcryptjs'
 import { WriteStream } from 'fs'
@@ -9,9 +8,10 @@ import { AUTH_SCOPE } from '../../../authentication/constants/scope.js'
 import { LoginResponseDto } from '../../../authentication/dto/login-response.dto.js'
 import { AuthPasswordWorkLimitException } from '../../../authentication/errors/auth-password-work-limit.exception.js'
 import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/auth-request.interface.js'
-import { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface.js'
+import type { JwtIdentityPayload } from '../../../authentication/interfaces/jwt-payload.interface.js'
 import { AUTH_SESSION } from '../../../authentication/providers/auth-providers.constants.js'
 import { consumePasswordWorkRateLimit } from '../../../authentication/utils/auth-rate-limit.js'
+import { toErrorMessage } from '../../../common/errors.js'
 import { comparePassword, hashPassword } from '../../../common/functions.js'
 import { convertTempImageToPng, generateAvatar, imgMimeTypePrefix, pngMimeType, svgMimeType } from '../../../common/image.js'
 import { createLightSlug, genPassword } from '../../../common/shared.js'
@@ -32,7 +32,7 @@ import {
 } from '../constants/user.js'
 import type { UserCreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto.js'
 import type { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto.js'
-import type { SearchMembersDto } from '../dto/search-members.dto.js'
+import type { ValidatedSearchMembersDto } from '../dto/search-members.dto.js'
 import type {
   UserAppPasswordDto,
   UserLanguageDto,
@@ -49,9 +49,6 @@ import type { UserPreferences } from '../interfaces/user-preferences.interface.j
 import type { UserAppPassword, UserSecrets } from '../interfaces/user-secrets.interface.js'
 import type { UserOnline } from '../interfaces/websocket.interface.js'
 import { UserModel } from '../models/user.model.js'
-import type { Group } from '../schemas/group.interface.js'
-import type { UserGroup } from '../schemas/user-group.interface.js'
-import type { User } from '../schemas/user.interface.js'
 import { saveAvatarMetadata, USER_AVATAR_FILE_NAME, USER_AVATAR_MAX_UPLOAD_SIZE, USER_DEFAULT_AVATAR_FILE_PATH } from '../utils/avatar.js'
 import { AdminUsersManager } from './admin-users-manager.service.js'
 import { UsersQueries } from './users-queries.service.js'
@@ -67,8 +64,8 @@ export class UsersManager {
     private readonly cache: Cache
   ) {}
 
-  async fromUserId(id: number): Promise<UserModel> {
-    const user: User = await this.usersQueries.from(id)
+  async fromUserId(id: number): Promise<UserModel | null> {
+    const user = await this.usersQueries.from(id)
     return user ? new UserModel(user, true) : null
   }
 
@@ -91,17 +88,17 @@ export class UsersManager {
     return user
   }
 
-  async findUser(loginOrEmail: string, removePassword: false): Promise<UserModel>
-  async findUser(loginOrEmail: string, removePassword?: true): Promise<Omit<UserModel, 'password'>>
-  async findUser(loginOrEmail: string, removePassword: boolean = true): Promise<Omit<UserModel, 'password'>> {
-    const user: User = await this.usersQueries.from(null, loginOrEmail)
+  async findUser(loginOrEmail: string, removePassword: false): Promise<UserModel | null>
+  async findUser(loginOrEmail: string, removePassword?: true): Promise<Omit<UserModel, 'password'> | null>
+  async findUser(loginOrEmail: string, removePassword: boolean = true): Promise<Omit<UserModel, 'password'> | null> {
+    const user = await this.usersQueries.from(null, loginOrEmail)
     return user ? new UserModel(user, removePassword) : null
   }
 
-  async findUserByExternalIdOrEmail(externalId: string, email: string, removePassword: false): Promise<UserModel>
-  async findUserByExternalIdOrEmail(externalId: string, email: string, removePassword?: true): Promise<Omit<UserModel, 'password'>>
-  async findUserByExternalIdOrEmail(externalId: string, email: string, removePassword: boolean = true): Promise<Omit<UserModel, 'password'>> {
-    const user: User = await this.usersQueries.fromExternalIdOrEmail(externalId, email)
+  async findUserByExternalIdOrEmail(externalId: string, email: string, removePassword: false): Promise<UserModel | null>
+  async findUserByExternalIdOrEmail(externalId: string, email: string, removePassword?: true): Promise<Omit<UserModel, 'password'> | null>
+  async findUserByExternalIdOrEmail(externalId: string, email: string, removePassword: boolean = true): Promise<Omit<UserModel, 'password'> | null> {
+    const user = await this.usersQueries.fromExternalIdOrEmail(externalId, email)
     return user ? new UserModel(user, removePassword) : null
   }
 
@@ -112,7 +109,7 @@ export class UsersManager {
     scope?: AUTH_SCOPE,
     canAuthenticate?: (user: UserModel) => boolean
   ): Promise<UserModel | null> {
-    const user: UserModel = await this.findUser(loginOrEmail, false)
+    const user = await this.findUser(loginOrEmail, false)
     return this.validateLocalPasswordForUser(user, loginOrEmail, password, ip, scope, canAuthenticate)
   }
 
@@ -145,10 +142,10 @@ export class UsersManager {
       }
       return null
     }
-    return this.logUser(user, password, ip, scope)
+    return this.logUser(user, password, ip as string | null, scope)
   }
 
-  async logUser(user: UserModel, password: string, ip: string, scope?: AUTH_SCOPE): Promise<UserModel | null> {
+  async logUser(user: UserModel, password: string, ip: string | null, scope?: AUTH_SCOPE): Promise<UserModel | null> {
     let accessDenied: HttpException | null = null
     try {
       await this.validateUserAccess(user)
@@ -169,7 +166,7 @@ export class UsersManager {
     if (!authSuccess && scope) {
       authSuccess = await this.validateAppPassword(user, password, ip, scope)
     }
-    this.updateAccesses(user, ip, authSuccess).catch((e: Error) => this.logger.error({ tag: this.logUser.name, msg: `${e}` }))
+    this.updateAccesses(user, ip, authSuccess).catch((e: Error) => this.logger.error({ tag: this.logUser.name, msg: toErrorMessage(e) }))
     if (authSuccess) {
       await user.makePaths()
       return user
@@ -261,7 +258,7 @@ export class UsersManager {
     try {
       return await this.usersQueries.updateUserPreferences(user.id, patch)
     } catch (e) {
-      this.logger.error({ tag: this.updatePreferences.name, msg: `Unable to update preferences for user (${user.id}) : ${e}` })
+      this.logger.error({ tag: this.updatePreferences.name, msg: `Unable to update preferences for user (${user.id}) : ${toErrorMessage(e)}` })
       throw new HttpException('Unable to update preferences', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -273,19 +270,19 @@ export class UsersManager {
   }
 
   async updateAvatar(req: FastifyAuthenticatedRequest) {
-    const part: MultipartFile = await req.file({ limits: { fileSize: USER_AVATAR_MAX_UPLOAD_SIZE } })
-    if (!part.mimetype.startsWith(imgMimeTypePrefix)) {
+    const part = await req.file({ limits: { fileSize: USER_AVATAR_MAX_UPLOAD_SIZE } })
+    if (!part!.mimetype.startsWith(imgMimeTypePrefix)) {
       throw new HttpException('Unsupported file type', HttpStatus.BAD_REQUEST)
     }
     const tmpPath = temporaryFilePath(req.user.tmpPath, USER_AVATAR_FILE_NAME, 'avatar')
     try {
-      await pipeline(part.file, createWriteStream(tmpPath))
+      await pipeline(part!.file, createWriteStream(tmpPath))
     } catch (e) {
       void removeFiles(tmpPath)
-      this.logger.error({ tag: this.updateAvatar.name, msg: `${e}` })
+      this.logger.error({ tag: this.updateAvatar.name, msg: toErrorMessage(e) })
       throw new HttpException('Unable to upload avatar', HttpStatus.INTERNAL_SERVER_ERROR)
     }
-    if (part.file.truncated) {
+    if (part!.file.truncated) {
       void removeFiles(tmpPath)
       this.logger.warn({ tag: this.updateAvatar.name, msg: `image is too large` })
       throw new HttpException('Image is too large', HttpStatus.PAYLOAD_TOO_LARGE)
@@ -296,7 +293,7 @@ export class UsersManager {
       void saveAvatarMetadata(req.user.login, 'user')
     } catch (e) {
       void removeFiles(tmpPath)
-      this.logger.error({ tag: this.updateAvatar.name, msg: `${e}` })
+      this.logger.error({ tag: this.updateAvatar.name, msg: toErrorMessage(e) })
       throw new HttpException('Unable to convert or create avatar', HttpStatus.BAD_REQUEST)
     }
   }
@@ -311,7 +308,7 @@ export class UsersManager {
         await this.usersQueries.clearWebDAVAuthCache(userId)
       }
     } catch (e) {
-      this.logger.error({ tag: this.updateSecrets.name, msg: `Unable to update secrets for user (${userId}) : ${e}` })
+      this.logger.error({ tag: this.updateSecrets.name, msg: `Unable to update secrets for user (${userId}) : ${toErrorMessage(e)}` })
       throw new HttpException('Unable to update secrets', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -331,7 +328,7 @@ export class UsersManager {
     })
   }
 
-  async updateAccesses(user: UserModel, ip: string, success: boolean, isAuthTwoFa = false) {
+  async updateAccesses(user: UserModel, ip: string | null, success: boolean, isAuthTwoFa = false) {
     const preservePasswordAttempts = success && !isAuthTwoFa && configuration.auth.mfa.totp.enabled && user.twoFaEnabled
     const result = await this.usersQueries.updateAccesses(user.id, ip, preservePasswordAttempts ? 'preserve' : success ? 'reset' : 'increment')
     if (!result.success) {
@@ -342,9 +339,9 @@ export class UsersManager {
     }
   }
 
-  async getAvatar(userLogin: string, generate: true, generateIsNotExists?: boolean): Promise<undefined>
+  async getAvatar(userLogin: string, generate: true, generateIsNotExists?: boolean): Promise<void>
   async getAvatar(userLogin: string, generate?: false, generateIsNotExists?: boolean): Promise<[path: string, mime: string]>
-  async getAvatar(userLogin: string, generate: boolean = false, generateIsNotExists?: boolean): Promise<[path: string, mime: string]> {
+  async getAvatar(userLogin: string, generate: boolean = false, generateIsNotExists?: boolean): Promise<[path: string, mime: string] | void> {
     const avatarPath = path.join(UserModel.getHomePath(userLogin), USER_AVATAR_FILE_NAME)
     const avatarExists = await isPathExists(avatarPath)
     if (!avatarExists && generateIsNotExists) {
@@ -356,7 +353,7 @@ export class UsersManager {
     if (!(await isPathExists(UserModel.getHomePath(userLogin)))) {
       throw new HttpException(`Home path for user *${userLogin}* does not exist`, HttpStatus.FORBIDDEN)
     }
-    const user: Partial<UserModel> = await this.findUser(userLogin)
+    const user = await this.findUser(userLogin)
     if (!user) {
       throw new HttpException(`avatar not found`, HttpStatus.NOT_FOUND)
     }
@@ -366,7 +363,7 @@ export class UsersManager {
       await pipeline(avatarStream, avatarFile)
       void saveAvatarMetadata(user.login, 'local')
     } catch (e) {
-      this.logger.error({ tag: this.getAvatar.name, msg: `${e}` })
+      this.logger.error({ tag: this.getAvatar.name, msg: toErrorMessage(e) })
       throw new HttpException('Unable to create avatar', HttpStatus.INTERNAL_SERVER_ERROR)
     }
     if (generateIsNotExists) {
@@ -391,7 +388,7 @@ export class UsersManager {
     const appPassword: UserAppPassword = {
       name: slugName,
       app: userAppPasswordDto.app,
-      expiration: userAppPasswordDto.expiration,
+      expiration: userAppPasswordDto.expiration as Date | null,
       password: await hashPassword(clearPassword),
       createdAt: new Date(),
       currentIp: null,
@@ -412,7 +409,7 @@ export class UsersManager {
       })
     } catch (e) {
       if (e instanceof HttpException) throw e
-      this.logger.error({ tag: this.generateAppPassword.name, msg: `Unable to update app passwords for user (${user.id}) : ${e}` })
+      this.logger.error({ tag: this.generateAppPassword.name, msg: `Unable to update app passwords for user (${user.id}) : ${toErrorMessage(e)}` })
       throw new HttpException('Unable to update app passwords', HttpStatus.INTERNAL_SERVER_ERROR)
     }
     // return clear password only once
@@ -432,7 +429,7 @@ export class UsersManager {
         }
       })
     } catch (e) {
-      this.logger.error({ tag: this.deleteAppPassword.name, msg: `Unable to delete app password for user (${user.id}) : ${e}` })
+      this.logger.error({ tag: this.deleteAppPassword.name, msg: `Unable to delete app password for user (${user.id}) : ${toErrorMessage(e)}` })
       throw new HttpException('Unable to delete app password', HttpStatus.INTERNAL_SERVER_ERROR)
     }
     if (!appPassword) {
@@ -444,7 +441,7 @@ export class UsersManager {
     }
   }
 
-  async validateAppPassword(user: UserModel, password: string, ip: string, scope: AUTH_SCOPE): Promise<boolean> {
+  async validateAppPassword(user: UserModel, password: string, ip: string | null, scope: AUTH_SCOPE): Promise<boolean> {
     if (!scope) return false
     if (!user.haveRole(USER_ROLE.USER)) {
       // Keep scoped auth timing close even when app passwords cannot apply to this role.
@@ -461,7 +458,7 @@ export class UsersManager {
     for (const p of secrets.appPasswords) {
       if (p.app !== scope) continue
       const expMs = p.expiration ? new Date(p.expiration) : null
-      if (p.expiration && new Date() > expMs) continue // expired
+      if (expMs && new Date() > expMs) continue // expired
       hasComparedAppPassword = true
       if (await comparePassword(password, p.password)) {
         // Keep bcrypt outside the transaction, then recheck that the matched credential still exists under the row lock.
@@ -498,7 +495,9 @@ export class UsersManager {
   }
 
   setOnlineStatus(user: JwtIdentityPayload, onlineStatus: USER_ONLINE_STATUS) {
-    this.usersQueries.setOnlineStatus(user.id, onlineStatus).catch((e: Error) => this.logger.error({ tag: this.setOnlineStatus.name, msg: `${e}` }))
+    this.usersQueries
+      .setOnlineStatus(user.id, onlineStatus)
+      .catch((e: Error) => this.logger.error({ tag: this.setOnlineStatus.name, msg: toErrorMessage(e) }))
   }
 
   getOnlineUsers(userIds: number[]): Promise<UserOnline[]> {
@@ -509,9 +508,9 @@ export class UsersManager {
     return this.usersQueries.usersWhitelist(userId)
   }
 
-  async browseGroups(user: UserModel, name: string): Promise<GroupBrowse> {
+  async browseGroups(user: UserModel, name?: string): Promise<GroupBrowse> {
     if (name) {
-      const group: Pick<Group, 'id' | 'name' | 'type'> & { role: UserGroup['role'] } = await this.usersQueries.groupFromName(user.id, name)
+      const group = await this.usersQueries.groupFromName(user.id, name)
       if (!group) {
         throw new HttpException('Group not found', HttpStatus.NOT_FOUND)
       }
@@ -547,7 +546,10 @@ export class UsersManager {
       void this.usersQueries.clearWhiteListCaches([user.id])
       return this.getGroup(user, groupId, false)
     } catch (e) {
-      this.logger.error({ tag: this.createPersonalGroup.name, msg: `group was not created : ${JSON.stringify(userCreateOrUpdateGroupDto)} : ${e}` })
+      this.logger.error({
+        tag: this.createPersonalGroup.name,
+        msg: `group was not created : ${JSON.stringify(userCreateOrUpdateGroupDto)} : ${toErrorMessage(e)}`
+      })
       throw new HttpException('Unable to create group', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -566,7 +568,7 @@ export class UsersManager {
     try {
       await this.usersQueries.updateGroup(groupId, userCreateOrUpdateGroupDto)
     } catch (e) {
-      throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR)
+      throw new HttpException(toErrorMessage(e), HttpStatus.INTERNAL_SERVER_ERROR)
     }
     return this.getGroup(user, groupId, false, user.isAdmin)
   }
@@ -627,7 +629,7 @@ export class UsersManager {
   }
 
   async leavePersonalGroup(user: UserModel, groupId: number): Promise<void> {
-    const currentGroup: GroupWithMembers = await this.usersQueries.getGroupWithMembers(user.id, groupId, true)
+    const currentGroup = await this.usersQueries.getGroupWithMembers(user.id, groupId, true)
     if (!currentGroup || currentGroup.type === MEMBER_TYPE.GROUP) {
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
     }
@@ -644,8 +646,8 @@ export class UsersManager {
       await this.usersQueries.updateGroupMembers(groupId, { remove: [user.id] })
       this.logger.log({ tag: this.leavePersonalGroup.name, msg: `user (${user.id}) has left group (${groupId})` })
     } catch (e) {
-      this.logger.error({ tag: this.leavePersonalGroup.name, msg: `user (${user.id}) has not left group (${groupId}) : ${e}` })
-      throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR)
+      this.logger.error({ tag: this.leavePersonalGroup.name, msg: `user (${user.id}) has not left group (${groupId}) : ${toErrorMessage(e)}` })
+      throw new HttpException(toErrorMessage(e), HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
@@ -666,7 +668,7 @@ export class UsersManager {
   }
 
   async getGuest(user: UserModel, guestId: number): Promise<GuestUser> {
-    const guest: GuestUser = await this.usersQueries.listGuests(guestId, user.id)
+    const guest = await this.usersQueries.listGuests(guestId, user.id)
     this.adminUsersManager.checkUser(guest, true)
     return guest
   }
@@ -674,8 +676,8 @@ export class UsersManager {
   async createGuest(user: UserModel, createGuestDto: CreateUserDto): Promise<GuestUser> {
     // only allow managers visible to the current user
     const userWhiteList = await this.usersQueries.usersWhitelist(user.id, USER_ROLE.USER)
-    createGuestDto.managers = createGuestDto.managers.filter((id) => userWhiteList.indexOf(id) > -1)
-    if (createGuestDto.managers.indexOf(user.id) === -1) {
+    createGuestDto.managers = (createGuestDto.managers ?? []).filter((id) => userWhiteList.includes(id))
+    if (!createGuestDto.managers.includes(user.id)) {
       // force user as manager during creation
       createGuestDto.managers.push(user.id)
     }
@@ -683,7 +685,7 @@ export class UsersManager {
       // only allow personal groups where the current user is a manager
       const groupWhiteList = await this.usersQueries.groupsWhitelist(user.id, GROUP_TYPE.PERSONAL, USER_GROUP_ROLE.MANAGER)
       const nbGroups = createGuestDto.groups.length
-      createGuestDto.groups = createGuestDto.groups.filter((id) => groupWhiteList.indexOf(id) > -1)
+      createGuestDto.groups = createGuestDto.groups.filter((id) => groupWhiteList.includes(id))
       if (nbGroups !== createGuestDto.groups.length) {
         this.logger.warn({ tag: this.createGuest.name, msg: 'Some groups were not allowed' })
       }
@@ -691,7 +693,7 @@ export class UsersManager {
     return this.adminUsersManager.createUserOrGuest(createGuestDto, USER_ROLE.GUEST, true)
   }
 
-  async updateGuest(user: UserModel, guestId: number, updateGuestDto: UpdateUserDto): Promise<GuestUser> {
+  async updateGuest(user: UserModel, guestId: number, updateGuestDto: UpdateUserDto): Promise<GuestUser | null> {
     if (!Object.keys(updateGuestDto).length) {
       throw new HttpException('No changes to update', HttpStatus.BAD_REQUEST)
     }
@@ -716,7 +718,7 @@ export class UsersManager {
       }
     }
     const guest = await this.adminUsersManager.updateUserOrGuest(guestId, updateGuestDto, USER_ROLE.GUEST)
-    return guest.managers.find((m) => m.id === user.id) ? guest : null
+    return guest.managers!.find((m) => m.id === user.id) ? guest : null
   }
 
   async deleteGuest(user: UserModel, guestId: number): Promise<void> {
@@ -728,19 +730,19 @@ export class UsersManager {
     return this.adminUsersManager.deleteUserOrGuest(guest.id, guest.login, { deleteSpace: true })
   }
 
-  searchMembers(user: UserModel, searchMembersDto: SearchMembersDto): Promise<Member[]> {
+  searchMembers(user: UserModel, searchMembersDto: ValidatedSearchMembersDto): Promise<Member[]> {
     return this.usersQueries.searchUsersOrGroups(searchMembersDto, user.id)
   }
 
-  private notifyTemporaryAccountLock(user: UserModel, ip: string): void {
+  private notifyTemporaryAccountLock(user: UserModel, ip: string | null): void {
     const notification = {
       app: NOTIFICATION_APP.AUTH_LOCKED,
       event: NOTIFICATION_APP_EVENT.AUTH_LOCKED,
       element: '',
-      url: ip
+      url: ip as string
     } satisfies NotificationContent
     this.notificationsManager
       .sendEmailNotification([user], notification)
-      .catch((e: Error) => this.logger.error({ tag: this.notifyTemporaryAccountLock.name, msg: `${e}` }))
+      .catch((e: Error) => this.logger.error({ tag: this.notifyTemporaryAccountLock.name, msg: toErrorMessage(e) }))
   }
 }

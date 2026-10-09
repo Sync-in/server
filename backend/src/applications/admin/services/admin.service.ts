@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { HttpService } from '@nestjs/axios'
 import { Injectable, Logger } from '@nestjs/common'
 import type { AxiosResponse } from 'axios'
@@ -37,7 +38,7 @@ export class AdminService {
       })
       lastVersion = res.data?.tag_name || ''
     } catch (e) {
-      this.logger.warn({ tag: this.checkServerUpdateAndNotify.name, msg: `unable to check update: ${e}` })
+      this.logger.warn({ tag: this.checkServerUpdateAndNotify.name, msg: `unable to check update: ${toErrorMessage(e)}` })
       return
     }
     if (!lastVersion.startsWith('v')) {
@@ -73,6 +74,6 @@ export class AdminService {
     this.notificationsManager
       .create(adminsToNotify, notification)
       .then(() => this.cache.set(this.checkServerUpdateAndNotify.name, { version: lastVersion } satisfies ServerReleaseNotification, 0))
-      .catch((e: Error) => this.logger.error({ tag: this.checkServerUpdateAndNotify.name, msg: `${e}` }))
+      .catch((e: Error) => this.logger.error({ tag: this.checkServerUpdateAndNotify.name, msg: toErrorMessage(e) }))
   }
 }

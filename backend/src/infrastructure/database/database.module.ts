@@ -113,7 +113,7 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
       await setTimeout(INFRASTRUCTURE_CONNECTION_RETRY_DELAY, undefined, { signal: this.shutdownController.signal })
       return true
     } catch (error) {
-      if ((error as Error).name === 'AbortError') return false
+      if (error instanceof Error && error.name === 'AbortError') return false
       throw error
     }
   }

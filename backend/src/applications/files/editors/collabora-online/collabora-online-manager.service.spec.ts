@@ -13,6 +13,7 @@ import { ACTION } from '../../../../common/constants.js'
 import { DEPTH, LOCK_SCOPE } from '../../../webdav/constants/webdav.js'
 import { FILE_MODE } from '../../constants/operations.js'
 import { FileEvent } from '../../events/file-events.js'
+import type { FileLock } from '../../interfaces/file-lock.interface.js'
 import { FileLockProps } from '../../interfaces/file-props.interface.js'
 import { FileError } from '../../models/file-error.js'
 import { LockConflict } from '../../models/file-lock-error.js'
@@ -39,7 +40,7 @@ describe(CollaboraOnlineManager.name, () => {
     language: 'en',
     role: 1,
     applications: []
-  } as UserModel
+  } as unknown as UserModel
 
   const mockSpace = {
     realPath: '/path/to/document.docx',
@@ -156,7 +157,10 @@ describe(CollaboraOnlineManager.name, () => {
       }
 
       vi.spyOn(filesLockManager, 'checkConflicts').mockRejectedValue(new LockConflict(mockLock as any, 'conflict'))
-      vi.spyOn(filesLockManager, 'convertLockToFileLockProps').mockReturnValue(mockFileLockProps)
+      vi.spyOn<{ convertLockToFileLockProps: (lock: FileLock) => FileLockProps }, 'convertLockToFileLockProps'>(
+        filesLockManager,
+        'convertLockToFileLockProps'
+      ).mockReturnValue(mockFileLockProps)
 
       const result = await service.getSettings(mockUser, spaceWithPermissions)
 
@@ -541,7 +545,7 @@ describe(CollaboraOnlineManager.name, () => {
 
         const existingLock = { key: 'lock-key', options: { lockToken: 'lock-token-to-remove' } }
         vi.spyOn(filesLockManager, 'isLockedWithToken').mockResolvedValue(existingLock as any)
-        vi.spyOn(filesLockManager, 'removeLock').mockResolvedValue(undefined)
+        vi.spyOn(filesLockManager, 'removeLock').mockResolvedValue(undefined as never)
 
         await service.manageLock(mockRequest, mockReply)
 

@@ -3,6 +3,7 @@ import { FastifyReply } from 'fastify'
 import crypto from 'node:crypto'
 import path from 'node:path'
 import { FastifyAuthenticatedRequest } from '../../../../authentication/interfaces/auth-request.interface.js'
+import { toErrorMessage } from '../../../../common/errors.js'
 import { currentTimeStamp } from '../../../../common/shared.js'
 import { Cache } from '../../../../infrastructure/cache/cache.service.js'
 import { SpaceEnv } from '../../../spaces/models/space-env.model.js'
@@ -11,10 +12,11 @@ import { trashRelativePathFromSpace, trashTargetFromSpace } from '../../../space
 import { UserModel } from '../../../users/models/user.model.js'
 import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL } from '../../constants/cache.js'
 import { FILE_OPERATION } from '../../constants/operations.js'
-import { CopyMoveFileDto } from '../../dto/file-operations.dto.js'
-import type { FileTaskQueueItem } from '../../interfaces/file-task-queue.interface.js'
+import type { ValidatedCopyMoveFileDto } from '../../dto/file-operations.dto.js'
+import type { FileTaskMethod, FileTaskQueueItem } from '../../interfaces/file-task-queue.interface.js'
 import type { FileTasksPollResponse } from '../../interfaces/file-task.interface.js'
 import { FileTask, FileTaskProps, FileTaskStatus } from '../../models/file-task.js'
+import { FileError } from '../../models/file-error.js'
 import { dirName, fileName, removeFiles, temporaryFilePath } from '../../utils/files.js'
 import { SendFile } from '../../utils/send-file.js'
 import { isTaskCancellable } from '../../utils/tasks.js'
@@ -139,7 +141,7 @@ export class FilesTasksManager implements OnModuleDestroy {
     try {
       await sendFile.checks()
     } catch (e) {
-      throw new HttpException(e.message, e.httpCode)
+      throw new HttpException(toErrorMessage(e), e instanceof FileError ? e.httpCode : HttpStatus.INTERNAL_SERVER_ERROR)
     }
     return await sendFile.stream(req, res)
   }
@@ -147,7 +149,9 @@ export class FilesTasksManager implements OnModuleDestroy {
   private async cleanupTask(user: UserModel, cacheKey: string, task: FileTask): Promise<void> {
     this.filesTasksWatcher.stopWatch(cacheKey)
     if (task.props.compressInDirectory === false) {
-      await removeFiles(this.downloadableArchivePath(user, task)).catch((e: Error) => this.logger.error({ tag: this.deleteTasks.name, msg: `${e}` }))
+      await removeFiles(this.downloadableArchivePath(user, task)).catch((e: Error) =>
+        this.logger.error({ tag: this.deleteTasks.name, msg: toErrorMessage(e) })
+      )
     }
   }
 
@@ -161,7 +165,7 @@ export class FilesTasksManager implements OnModuleDestroy {
     try {
       await this.cache.set(cacheKey, task, CACHE_TASK_TTL)
     } catch (e) {
-      this.logger.error({ tag: this.storeTask.name, msg: `${e}` })
+      this.logger.error({ tag: this.storeTask.name, msg: toErrorMessage(e) })
     }
   }
 
@@ -187,7 +191,7 @@ export class FilesTasksManager implements OnModuleDestroy {
       }
       await this.cache
         .del(cacheKey.replace(`${CACHE_TASK_PREFIX}-`, `${CACHE_TASK_CANCEL_PREFIX}-`))
-        .catch((e: Error) => this.logger.error({ tag: this.setTaskDone.name, msg: `${e}` }))
+        .catch((e: Error) => this.logger.error({ tag: this.setTaskDone.name, msg: toErrorMessage(e) }))
     } finally {
       this.filesTasksWatcher.endFinalization(cacheKey)
     }
@@ -208,25 +212,25 @@ export class FilesTasksManager implements OnModuleDestroy {
     // Transfer-capable tasks receive a signal; successful native renames still stay atomic.
     const controller = this.watchCancellation(task.task, task.user.id, task.cacheKey)
     const taskPromise = controller
-      ? this.filesMethods[task.method](task.user, task.space, task.dto, controller.signal)
-      : this.filesMethods[task.method](task.user, task.space, task.dto)
+      ? (this.filesMethods[task.method as keyof FilesMethods] as FileTaskMethod)(task.user, task.space, task.dto, controller.signal)
+      : (this.filesMethods[task.method as keyof FilesMethods] as FileTaskMethod)(task.user, task.space, task.dto)
     taskPromise
       .then(async (data: any) => {
         this.logger.debug({ tag: this.runTask.name, msg: `${task.task.name} : ${task.method} done` })
         const finalProps = await this.getFinalTaskProps(task, data)
         this.completeTask(task.user.id, task.cacheKey, FileTaskStatus.SUCCESS, data, finalProps).catch((e: Error) =>
-          this.logger.warn({ tag: this.runTask.name, msg: `${e}` })
+          this.logger.warn({ tag: this.runTask.name, msg: toErrorMessage(e) })
         )
       })
       .catch((e: HttpException | any) => {
-        this.logger.warn({ tag: this.runTask.name, msg: `${task.task.name} : ${task.method} : ${e}` })
+        this.logger.warn({ tag: this.runTask.name, msg: `${task.task.name} : ${task.method} : ${toErrorMessage(e)}` })
         const isCancellation = this.isCancellationError(e, controller)
         this.completeTask(
           task.user.id,
           task.cacheKey,
           isCancellation ? FileTaskStatus.CANCELLED : FileTaskStatus.ERROR,
           isCancellation ? 'Cancelled' : e.message
-        ).catch((e: Error) => this.logger.error({ tag: this.runTask.name, msg: `${e}` }))
+        ).catch((e: Error) => this.logger.error({ tag: this.runTask.name, msg: toErrorMessage(e) }))
       })
   }
 
@@ -255,10 +259,10 @@ export class FilesTasksManager implements OnModuleDestroy {
     try {
       const publishedUrl = path.join(result.path, result.name)
       const publishedSpace = await this.spacesManager.spaceEnv(task.user, publishedUrl.split('/'))
-      const props = await this.filesTasksWatcher.getPathProps(publishedSpace.realPath)
+      const props = await this.filesTasksWatcher.getPathProps(publishedSpace!.realPath)
       return { ...props, progress: 100 }
     } catch (e) {
-      this.logger.warn({ tag: this.getFinalTaskProps.name, msg: `${e}` })
+      this.logger.warn({ tag: this.getFinalTaskProps.name, msg: toErrorMessage(e) })
     }
   }
 
@@ -273,9 +277,9 @@ export class FilesTasksManager implements OnModuleDestroy {
   private async taskDestinationPath(type: FILE_OPERATION, user: UserModel, space: SpaceEnv, dto: unknown): Promise<string | undefined> {
     try {
       if (type === FILE_OPERATION.MOVE) {
-        const copyMoveDto = dto as CopyMoveFileDto
+        const copyMoveDto = dto as ValidatedCopyMoveFileDto
         const dstUrl = path.join(copyMoveDto.dstDirectory, copyMoveDto.dstName || fileName(space.realPath))
-        return (await this.spacesManager.spaceEnv(user, dstUrl.split('/'))).realPath
+        return (await this.spacesManager.spaceEnv(user, dstUrl.split('/')))!.realPath
       }
       if (type === FILE_OPERATION.DELETE && !space.inTrashRepository) {
         const trashTarget = trashTargetFromSpace(user, space)
@@ -307,7 +311,7 @@ export class FilesTasksManager implements OnModuleDestroy {
       this.stopCancellationWatch(cacheKey)
       await this.cache.del(cancellationCacheKey)
     } catch (e) {
-      this.logger.error({ tag: this.abortTaskIfRequested.name, msg: `${e}` })
+      this.logger.error({ tag: this.abortTaskIfRequested.name, msg: toErrorMessage(e) })
     }
   }
 

@@ -1,109 +1,54 @@
-import { Transform } from 'class-transformer'
-import { IsArray, IsBoolean, IsEmail, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator'
+import { z } from 'zod'
+import { integerNumberSchema } from '../../../configuration/config.schema.js'
 import { USER_GROUP_ROLE, USER_NOTIFICATION, USER_PASSWORD_MIN_LENGTH, USER_ROLE } from '../constants/user.js'
-import { IsUserLogin } from './user-login.dto.decorator.js'
+import { userLoginSchema } from './user-login.schema.js'
 
-export class OptionalUserDto {
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => (value ? value.trim() : ''))
-  @MaxLength(255)
-  lastName?: string
+const trimmedStringSchema = z.string().trim()
 
-  @IsOptional()
-  @IsEnum(USER_ROLE)
-  role?: USER_ROLE
+const loginSchema = trimmedStringSchema.pipe(userLoginSchema.min(2).max(255))
+const emailSchema = trimmedStringSchema.pipe(z.email({ pattern: z.regexes.html5Email }).min(2).max(254))
+const profileNameSchema = trimmedStringSchema
+  .max(255)
+  .nullable()
+  .transform((value) => value ?? '')
 
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean
-
-  @IsOptional()
-  @IsString()
-  language?: string
-
-  @IsOptional()
-  @IsEnum(USER_NOTIFICATION)
-  notification?: USER_NOTIFICATION
-
-  @IsOptional()
-  @IsString()
-  permissions?: string
-
-  @IsOptional()
-  @IsInt()
-  storageQuota?: number
-
+export const optionalUserSchema = z.object({
+  lastName: profileNameSchema.optional(),
+  role: z.enum(USER_ROLE).nullish(),
+  isActive: z.boolean().optional(),
+  language: z.string().nullish(),
+  notification: z.enum(USER_NOTIFICATION).nullish(),
+  permissions: z.string().nullish(),
+  storageQuota: integerNumberSchema.nullish(),
   // for users and guests
-  @IsOptional()
-  @IsArray()
-  @IsInt({ each: true })
-  groups?: number[]
-
+  groups: z.array(integerNumberSchema).nullish(),
   // for guests
-  @IsOptional()
-  @IsArray()
-  @IsInt({ each: true })
-  managers?: number[]
-}
+  managers: z.array(integerNumberSchema).nullish()
+})
 
-export class CreateUserDto extends OptionalUserDto {
-  @IsNotEmpty()
-  @Transform(({ value }) => (value ? value.trim() : ''))
-  @MinLength(2)
-  @MaxLength(255)
-  @IsUserLogin()
-  login: string
+export const createUserSchema = optionalUserSchema.extend({
+  login: loginSchema,
+  email: emailSchema,
+  password: z.string().min(USER_PASSWORD_MIN_LENGTH).max(255),
+  firstName: profileNameSchema
+})
 
-  @IsNotEmpty()
-  @Transform(({ value }) => (value ? value.trim() : ''))
-  @IsEmail()
-  @MinLength(2)
-  @MaxLength(255)
-  email: string
+type CreateUserSchemaOutput = z.output<typeof createUserSchema>
+type CreateUserRequiredKey = 'login' | 'email' | 'firstName'
 
-  @IsString()
-  @MinLength(USER_PASSWORD_MIN_LENGTH)
-  @MaxLength(255)
-  password: string
+export type CreateUserDto = CreateUserSchemaOutput & Required<Pick<CreateUserSchemaOutput, CreateUserRequiredKey>>
 
-  @IsString()
-  @MaxLength(255)
-  @Transform(({ value }) => (value ? value.trim() : ''))
-  firstName: string
-}
+export const updateUserSchema = optionalUserSchema.extend({
+  login: loginSchema.optional(),
+  email: emailSchema.optional(),
+  password: z.string().min(USER_PASSWORD_MIN_LENGTH).max(255).nullish(),
+  firstName: profileNameSchema.optional()
+})
 
-export class UpdateUserDto extends OptionalUserDto {
-  @IsOptional()
-  @Transform(({ value }) => (value ? value.trim() : ''))
-  @MinLength(2)
-  @MaxLength(255)
-  @IsUserLogin()
-  login?: string
+export type UpdateUserDto = z.infer<typeof updateUserSchema>
 
-  @IsOptional()
-  @Transform(({ value }) => (value ? value.trim() : ''))
-  @IsEmail()
-  @MinLength(2)
-  @MaxLength(255)
-  email?: string
+export const updateUserFromGroupSchema = z.object({
+  role: z.enum(USER_GROUP_ROLE)
+})
 
-  @IsOptional()
-  @IsString()
-  @MinLength(USER_PASSWORD_MIN_LENGTH)
-  @MaxLength(255)
-  password?: string
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => (value ? value.trim() : ''))
-  @MaxLength(255)
-  firstName?: string
-}
-
-export class UpdateUserFromGroupDto {
-  @IsInt()
-  @Min(USER_GROUP_ROLE.MEMBER)
-  @Max(USER_GROUP_ROLE.MANAGER)
-  role: USER_GROUP_ROLE
-}
+export type UpdateUserFromGroupDto = z.infer<typeof updateUserFromGroupSchema>

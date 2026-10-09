@@ -5,7 +5,7 @@ import { GROUP_TYPE } from '../constants/group.js'
 import { USER_GROUP_ROLE, USER_ROLE } from '../constants/user.js'
 import type { CreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto.js'
 import type { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto.js'
-import type { SearchMembersDto } from '../dto/search-members.dto.js'
+import { searchMembersSchema, type ValidatedSearchMembersDto } from '../dto/search-members.dto.js'
 import { UserModel } from '../models/user.model.js'
 import { AdminUsersManager } from './admin-users-manager.service.js'
 import { AdminUsersQueries } from './admin-users-queries.service.js'
@@ -14,12 +14,16 @@ import { Mock } from 'vitest'
 import * as _fs from '../../files/utils/files.js'
 
 // mock file utils used by the service (delete/rename user space)
-vi.mock('../../files/utils/files.js', () => ({
-  isPathInside: vi.fn(() => true),
-  isPathExists: vi.fn(),
-  moveFiles: vi.fn(),
-  removeFiles: vi.fn()
-}))
+vi.mock('../../files/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+  return {
+    ...actual,
+    isPathInside: vi.fn(() => true),
+    isPathExists: vi.fn(),
+    moveFiles: vi.fn(),
+    removeFiles: vi.fn()
+  }
+})
 
 // mock hash/anonymize utilities (preserve other module exports)
 vi.mock('../../../common/functions.js', async (importOriginal) => {
@@ -431,14 +435,14 @@ describe(AdminUsersManager.name, () => {
       expect(root.parentGroup).toBeUndefined()
       expect(root.members).toEqual([{ id: 3 }])
 
-      adminQueriesMock.groupFromName.mockResolvedValueOnce(null)
+      adminQueriesMock.groupFromName.mockResolvedValueOnce(undefined)
       await expectHttp(service.browseGroups('unknown'))
     })
 
     it('getGroup OK / NOT_FOUND', async () => {
       adminQueriesMock.groupFromId.mockResolvedValueOnce({ id: 9 })
       expect(await service.getGroup(9)).toEqual({ id: 9 })
-      adminQueriesMock.groupFromId.mockResolvedValueOnce(null)
+      adminQueriesMock.groupFromId.mockResolvedValueOnce(undefined)
       await expectHttp(service.getGroup(999))
     })
 
@@ -490,7 +494,7 @@ describe(AdminUsersManager.name, () => {
     })
 
     it('addUsersToGroup: NOT_FOUND + error', async () => {
-      adminQueriesMock.groupFromId.mockResolvedValueOnce(null)
+      adminQueriesMock.groupFromId.mockResolvedValueOnce(undefined)
       await expectHttp(service.addUsersToGroup(1, [2, 3]))
 
       adminQueriesMock.groupFromId.mockResolvedValueOnce({ id: 1, type: GROUP_TYPE.USER })
@@ -509,7 +513,7 @@ describe(AdminUsersManager.name, () => {
 
   describe('searchMembers', () => {
     it('forwards to usersQueries.searchUsersOrGroups', async () => {
-      const dto = { search: 'jo' } as SearchMembersDto
+      const dto = searchMembersSchema.parse({ search: 'jo' }) as ValidatedSearchMembersDto
       adminQueriesMock.usersQueries.searchUsersOrGroups.mockResolvedValueOnce([{ id: 1 }])
       expect(await service.searchMembers(dto)).toEqual([{ id: 1 }])
       expect(adminQueriesMock.usersQueries.searchUsersOrGroups).toHaveBeenCalledWith(dto)
@@ -554,7 +558,7 @@ describe(AdminUsersManager.name, () => {
       const guests = [{ id: 2 }]
       adminQueriesMock.usersQueries.listGuests.mockResolvedValueOnce(guests as any)
       expect(await service.listGuests()).toEqual(guests)
-      expect(adminQueriesMock.usersQueries.listGuests).toHaveBeenCalledWith(null, null, true)
+      expect(adminQueriesMock.usersQueries.listGuests).toHaveBeenCalledWith(null, null as never, true)
     })
   })
 

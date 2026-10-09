@@ -7,9 +7,9 @@ export enum MEMBER_TYPE {
 }
 
 export const MEMBER_TYPE_REVERSE = {
-  user: 'user',
-  guest: 'guest',
-  link: 'user',
-  group: 'group',
-  ['personal group']: 'personal group'
+  [MEMBER_TYPE.USER]: MEMBER_TYPE.USER,
+  [MEMBER_TYPE.GUEST]: MEMBER_TYPE.GUEST,
+  [MEMBER_TYPE.LINK]: MEMBER_TYPE.USER,
+  [MEMBER_TYPE.GROUP]: MEMBER_TYPE.GROUP,
+  [MEMBER_TYPE.PGROUP]: MEMBER_TYPE.PGROUP
 }

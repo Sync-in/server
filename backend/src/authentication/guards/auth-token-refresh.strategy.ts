@@ -7,7 +7,7 @@ import { UserModel } from '../../applications/users/models/user.model.js'
 import { UsersManager } from '../../applications/users/services/users-manager.service.js'
 import { configuration } from '../../configuration/config.environment.js'
 import { AuthManager } from '../auth.service.js'
-import { JwtPayload } from '../interfaces/jwt-payload.interface.js'
+import type { JwtPayload } from '../interfaces/jwt-payload.interface.js'
 import { TOKEN_TYPE } from '../interfaces/token.interface.js'
 
 @Injectable()
@@ -43,7 +43,7 @@ export class AuthTokenRefreshStrategy extends PassportStrategy(Strategy, 'tokenR
 
   private static extractJWTFromCookie(req: FastifyRequest): string | null {
     if (typeof req.cookies === 'object' && req.cookies[AuthTokenRefreshStrategy.refreshCookieName] !== undefined) {
-      return req.cookies[AuthTokenRefreshStrategy.refreshCookieName]
+      return req.cookies[AuthTokenRefreshStrategy.refreshCookieName] as string
     }
     return null
   }

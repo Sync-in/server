@@ -1,11 +1,12 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { appBootstrap } from '../../app.bootstrap.js'
 import { AuthManager } from '../../authentication/auth.service.js'
-import { TokenResponseDto } from '../../authentication/dto/token-response.dto.js'
+import type { TokenResponseDto } from '../../authentication/dto/token-response.dto.js'
 import { dbCheckConnection } from '../../infrastructure/database/utils.js'
 import { API_USERS_AVATAR, API_USERS_ME } from './constants/routes.js'
 import { USER_ROLE } from './constants/user.js'
-import { DeleteUserDto } from './dto/delete-user.dto.js'
+import type { CreateUserDto } from './dto/create-or-update-user.dto.js'
+import type { DeleteUserDto } from './dto/delete-user.dto.js'
 import { UserModel } from './models/user.model.js'
 import { AdminUsersManager } from './services/admin-users-manager.service.js'
 import { UsersQueries } from './services/users-queries.service.js'
@@ -59,7 +60,7 @@ describe('Users (e2e)', () => {
   })
 
   it(`GET ${API_USERS_ME} => 200`, async () => {
-    userTest = await adminUsersManager.createUserOrGuest(userTest, USER_ROLE.USER)
+    userTest = await adminUsersManager.createUserOrGuest(userTest as CreateUserDto, USER_ROLE.USER)
     expect(userTest.id).toBeDefined()
     tokens = await authManager.getTokens(userTest)
     const res = await app.inject({
@@ -75,26 +76,26 @@ describe('Users (e2e)', () => {
 
   it('should bind and resolve external identities in the database', async () => {
     const externalId = 'SUBJECT-1'
-    legacyUserTest = await adminUsersManager.createUserOrGuest(legacyUserTest, USER_ROLE.USER)
+    legacyUserTest = await adminUsersManager.createUserOrGuest(legacyUserTest as CreateUserDto, USER_ROLE.USER)
 
     expect(await usersQueries.bindExternalId(userTest.id, externalId)).toBe(true)
-    expect((await usersQueries.from(userTest.id)).externalId).toBe(externalId)
+    expect((await usersQueries.from(userTest.id))!.externalId).toBe(externalId)
     expect(await usersQueries.bindExternalId(userTest.id, externalId)).toBe(true)
     expect(await usersQueries.bindExternalId(userTest.id, 'subject-1')).toBe(false)
     expect(await usersQueries.bindExternalId(0, externalId)).toBe(false)
 
     const emailFallback = await usersQueries.fromExternalIdOrEmail('unknown-subject', legacyUserTest.email)
-    expect(emailFallback.id).toBe(legacyUserTest.id)
+    expect(emailFallback!.id).toBe(legacyUserTest.id)
 
     const externalIdPriority = await usersQueries.fromExternalIdOrEmail(externalId, legacyUserTest.email)
-    expect(externalIdPriority.id).toBe(userTest.id)
+    expect(externalIdPriority!.id).toBe(userTest.id)
 
     const concurrentExternalIds = ['CONCURRENT-SUBJECT-1', 'CONCURRENT-SUBJECT-2']
     const concurrentBindings = await Promise.all(
       concurrentExternalIds.map((concurrentExternalId) => usersQueries.bindExternalId(legacyUserTest.id, concurrentExternalId))
     )
     expect(concurrentBindings.filter(Boolean)).toHaveLength(1)
-    expect(concurrentExternalIds).toContain((await usersQueries.from(legacyUserTest.id)).externalId)
+    expect(concurrentExternalIds).toContain((await usersQueries.from(legacyUserTest.id))!.externalId)
   })
 
   it(`GET ${API_USERS_AVATAR} => 200`, async () => {

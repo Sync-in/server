@@ -78,13 +78,13 @@ export class FilesRecents {
     const recents = new Map<number, FileRecent>()
     for (const file of files) {
       if (!this.isRecentFile(file, minMtime)) continue
-      recents.set(file.id, {
-        id: file.id,
+      recents.set(file.id!, {
+        id: file.id!,
         name: file.name,
         mtime: file.mtime,
         mime: file.mime,
         ...location,
-        ...(space.inSharesList && { shareId: file.root.id })
+        ...(space.inSharesList && { shareId: file.root!.id })
       } as FileRecent)
     }
     return [...recents.values()]
@@ -154,7 +154,7 @@ export class FilesRecents {
 
   private getSnapshotLocation(user: UserModel, space: SpaceEnv, logicalPath: string, files: FileProps[]): FileRecentLocation {
     if (space.inSharesList) {
-      return { path: logicalPath, shareId: files.map((file) => file.root.id) }
+      return { path: logicalPath, shareId: files.map((file) => file.root!.id) }
     }
     return { ...this.getRepositoryLocation(user.id, space.id, space.inPersonalSpace, space.inSharesRepository), path: logicalPath }
   }

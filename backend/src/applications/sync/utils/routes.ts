@@ -4,9 +4,9 @@ import { SYNC_PATH_REPOSITORY } from '../constants/sync.js'
 export function SYNC_PATH_TO_SPACE_SEGMENTS(path: string): string[] {
   const urlSegments = PATH_TO_SPACE_SEGMENTS(path)
   const repository = urlSegments.shift()
-  if (!(repository in SYNC_PATH_REPOSITORY)) {
+  if (!((repository as string) in SYNC_PATH_REPOSITORY)) {
     throw new Error(`Repository not found : ${repository}`)
   }
-  urlSegments.unshift(...SYNC_PATH_REPOSITORY[repository])
+  urlSegments.unshift(...SYNC_PATH_REPOSITORY[repository as keyof typeof SYNC_PATH_REPOSITORY])
   return urlSegments
 }

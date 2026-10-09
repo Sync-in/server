@@ -36,7 +36,7 @@ export async function generateThumbnail(filePath: string, size: number, sourceMi
     throw maxFileSizeExceededError()
   }
   const normalizedFilePath = filePath.toLowerCase()
-  const inputFormat = sharpInputFormats.find(({ input }) => input.fileSuffix?.some((suffix) => normalizedFilePath.endsWith(suffix)))
+  const inputFormat = sharpInputFormats.find(({ input }) => input.fileSuffix?.some((suffix: string) => normalizedFilePath.endsWith(suffix)))
   if (!inputFormat) {
     return {
       mimeType: sourceMimeType.replace('image-', imgMimeTypePrefix),

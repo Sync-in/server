@@ -24,16 +24,20 @@ vi.mock('fs/promises', () => ({
 }))
 
 // Mock helper functions used in service
-vi.mock('../../files/utils/files.js', () => ({
-  __esModule: true,
-  checksumFile: vi.fn(),
-  isInternalTemporaryEntry: vi.fn((name: string) => name === '.sync-in-tmp' || name.startsWith('.sync-in.')),
-  isPathExists: vi.fn(),
-  isPathIsDir: vi.fn(),
-  removeFiles: vi.fn(),
-  touchFile: vi.fn(),
-  sanitizePath: vi.fn((p: string) => p)
-}))
+vi.mock('../../files/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+  return {
+    ...actual,
+    __esModule: true,
+    checksumFile: vi.fn(),
+    isInternalTemporaryEntry: vi.fn((name: string) => name === '.sync-in-tmp' || name.startsWith('.sync-in.')),
+    isPathExists: vi.fn(),
+    isPathIsDir: vi.fn(),
+    removeFiles: vi.fn(),
+    touchFile: vi.fn(),
+    sanitizePath: vi.fn((p: string) => p)
+  }
+})
 
 // Mock regExpPathPattern to a simple, predictable behavior
 vi.mock('../../../common/functions.js', () => ({
@@ -141,7 +145,7 @@ describe(SyncManager.name, () => {
     })
 
     it.each([
-      ['LockConflict maps to 423', new LockConflict(null, 'locked'), HttpStatus.LOCKED],
+      ['LockConflict maps to 423', new LockConflict(null as never, 'locked'), HttpStatus.LOCKED],
       ['FileError maps to its http code', new FileError(HttpStatus.BAD_REQUEST, 'bad'), HttpStatus.BAD_REQUEST],
       ['generic Error maps to 500', new Error('oops'), HttpStatus.INTERNAL_SERVER_ERROR]
     ])('should map errors (%s)', async (_title, thrown, expectedStatus) => {
@@ -247,7 +251,7 @@ describe(SyncManager.name, () => {
 
     it('should map errors via handleError', async () => {
       const req = makeReq()
-      filesManager.delete.mockRejectedValue(new LockConflict(null, 'locked'))
+      filesManager.delete.mockRejectedValue(new LockConflict(null as never, 'locked'))
 
       await expect(service.delete(req as any)).rejects.toMatchObject({ status: HttpStatus.LOCKED })
     })
@@ -296,7 +300,7 @@ describe(SyncManager.name, () => {
 
     it('should map errors via handleError', async () => {
       const req = makeReq()
-      filesManager.mkDir.mockRejectedValue(new LockConflict(null, 'locked'))
+      filesManager.mkDir.mockRejectedValue(new LockConflict(null as never, 'locked'))
 
       await expect(service.make(req as any, { type: 'directory', mtime: 0 } as any)).rejects.toMatchObject({ status: HttpStatus.LOCKED })
     })
@@ -354,7 +358,7 @@ describe(SyncManager.name, () => {
       const req = makeReq()
       const dstSpace = { realPath: '/dst/err-move', url: '/space/dst/err-move' }
       spacesManager.spaceEnv.mockResolvedValue(dstSpace)
-      filesManager.copyMove.mockRejectedValue(new LockConflict(null, 'locked'))
+      filesManager.copyMove.mockRejectedValue(new LockConflict(null as never, 'locked'))
 
       const spy = vi.spyOn(service as any, 'handleError')
 

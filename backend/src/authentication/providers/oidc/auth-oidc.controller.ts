@@ -7,6 +7,7 @@ import { AuthTokenSkip } from '../../decorators/auth-token-skip.decorator.js'
 import type { LoginResponseDto } from '../../dto/login-response.dto.js'
 import { AUTH_SESSION } from '../auth-providers.constants.js'
 import { OAuthDesktopPortParam } from './auth-oidc-desktop.constants.js'
+import { oauthDesktopPortSchema, oidcCallbackQuerySchema } from './auth-oidc.schema.js'
 import { AuthProviderOIDC } from './auth-provider-oidc.service.js'
 
 @Controller(AUTH_ROUTE.BASE)
@@ -18,7 +19,10 @@ export class AuthOIDCController {
 
   @Get(AUTH_ROUTE.OIDC_LOGIN)
   @AuthTokenSkip()
-  async oidcLogin(@Query(OAuthDesktopPortParam) desktopPort: number, @Res() res: FastifyReply): Promise<void> {
+  async oidcLogin(
+    @Query(OAuthDesktopPortParam, { schema: oauthDesktopPortSchema }) desktopPort: number | undefined,
+    @Res() res: FastifyReply
+  ): Promise<void> {
     const url = await this.authProviderOIDC.getAuthorizationUrl(res, desktopPort)
     // Redirect to OIDC provider
     return res.redirect(url, HttpStatus.FOUND)
@@ -26,9 +30,13 @@ export class AuthOIDCController {
 
   @Get(AUTH_ROUTE.OIDC_CALLBACK)
   @AuthTokenSkip()
-  async oidcCallback(@Query() query: Record<string, string>, @Req() req: FastifyRequest, @Res() res: FastifyReply): Promise<void> {
+  async oidcCallback(
+    @Query({ schema: oidcCallbackQuerySchema }) query: Record<string, string>,
+    @Req() req: FastifyRequest,
+    @Res() res: FastifyReply
+  ): Promise<void> {
     const user: UserModel = await this.authProviderOIDC.handleCallback(req, res, query)
     const r: LoginResponseDto = await this.authManager.setCookies(user, res, false, AUTH_SESSION.OIDC)
-    return res.redirect(this.authProviderOIDC.getRedirectCallbackUrl(r.token.access_expiration, r.token.refresh_expiration), HttpStatus.FOUND)
+    return res.redirect(this.authProviderOIDC.getRedirectCallbackUrl(r.token.access_expiration!, r.token.refresh_expiration!), HttpStatus.FOUND)
   }
 }

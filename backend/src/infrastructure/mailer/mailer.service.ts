@@ -1,15 +1,16 @@
+import { toErrorMessage } from '../../common/errors.js'
 import { Injectable, type OnModuleInit } from '@nestjs/common'
 import { PinoLogger } from 'nestjs-pino'
 import type { SendMailOptions, SMTPTransportOptions, Transporter } from 'nodemailer'
 import { configuration } from '../../configuration/config.environment.js'
 import type { MailProps } from './interfaces/mail.interface.js'
-import { MailerConfig } from './mailer.config.js'
+import type { MailerConfig } from './mailer.config.js'
 
 @Injectable()
 export class Mailer implements OnModuleInit {
   public available: boolean = false
-  private transporter: Transporter
-  private readonly configuration: MailerConfig
+  private transporter!: Transporter
+  private readonly configuration: MailerConfig | null | undefined
 
   constructor(private readonly logger: PinoLogger) {
     this.logger.setContext(Mailer.name.toUpperCase())
@@ -26,6 +27,7 @@ export class Mailer implements OnModuleInit {
       this.configuration.secure = false
     }
     const smtpLoggerEnabled = this.configuration.logger === true
+    // Keep legacy null values at the Nodemailer boundary; its types omit them.
     this.transporter = nodemailer.createTransport(
       {
         host: this.configuration.host,
@@ -36,8 +38,8 @@ export class Mailer implements OnModuleInit {
         tls: { rejectUnauthorized: this.configuration.rejectUnauthorized },
         debug: smtpLoggerEnabled && this.logger.logger.isLevelEnabled('debug'),
         logger: smtpLoggerEnabled ? (this.logger as SMTPTransportOptions['logger']) : false
-      } satisfies SMTPTransportOptions,
-      { from: this.configuration.sender } satisfies SendMailOptions
+      } as SMTPTransportOptions,
+      { from: this.configuration.sender } as SendMailOptions
     )
     await this.verify()
   }
@@ -53,7 +55,7 @@ export class Mailer implements OnModuleInit {
           await this.transporter.sendMail(m)
           this.logger.info(`Mail sent to '${m.to}' with subject '${m.subject}'`)
         } catch (e) {
-          this.logger.error(`Mail was not sent to '${m.to}' with subject '${m.subject}' : ${e}`)
+          this.logger.error(`Mail was not sent to '${m.to}' with subject '${m.subject}' : ${toErrorMessage(e)}`)
         }
       })
     )
@@ -62,11 +64,11 @@ export class Mailer implements OnModuleInit {
   private async verify(): Promise<void> {
     try {
       await this.transporter.verify()
-      this.logger.info(`Using Mail Server at ${this.configuration.host}:${this.configuration.port} (secure: ${this.configuration.secure})`)
+      this.logger.info(`Using Mail Server at ${this.configuration!.host}:${this.configuration!.port} (secure: ${this.configuration!.secure})`)
       this.available = true
     } catch (e) {
       this.logger.error(
-        `Unable to use Mail Server at ${this.configuration.host}:${this.configuration.port} (secure: ${this.configuration.secure}) : ${e}`
+        `Unable to use Mail Server at ${this.configuration!.host}:${this.configuration!.port} (secure: ${this.configuration!.secure}) : ${toErrorMessage(e)}`
       )
       this.available = false
     }

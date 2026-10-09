@@ -2,21 +2,21 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import { AuthManager } from '../../../authentication/auth.service.js'
 import { LoginResponseDto } from '../../../authentication/dto/login-response.dto.js'
+import { toErrorMessage } from '../../../common/errors.js'
 import { anonymizePassword, hashPassword } from '../../../common/functions.js'
 import { isPathExists, moveFiles, removeFiles } from '../../files/utils/files.js'
 import { GROUP_TYPE } from '../constants/group.js'
-import { USER_ROLE } from '../constants/user.js'
+import { USER_NOTIFICATION, USER_ROLE } from '../constants/user.js'
 import type { CreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto.js'
 import type { CreateUserDto, UpdateUserDto, UpdateUserFromGroupDto } from '../dto/create-or-update-user.dto.js'
 import type { DeleteUserDto } from '../dto/delete-user.dto.js'
-import type { SearchMembersDto } from '../dto/search-members.dto.js'
+import type { ValidatedSearchMembersDto } from '../dto/search-members.dto.js'
 import type { AdminGroup } from '../interfaces/admin-group.interface.js'
 import type { AdminUser } from '../interfaces/admin-user.interface.js'
 import type { GroupBrowse } from '../interfaces/group-browse.interface.js'
 import type { GuestUser } from '../interfaces/guest-user.interface.js'
 import type { Member } from '../interfaces/member.interface.js'
 import { UserModel } from '../models/user.model.js'
-import type { Group } from '../schemas/group.interface.js'
 import type { User } from '../schemas/user.interface.js'
 import { isValidUserLogin } from '../utils/login.js'
 import { AdminUsersQueries } from './admin-users-queries.service.js'
@@ -38,13 +38,13 @@ export class AdminUsersManager {
   }
 
   async getUser(userId: number): Promise<AdminUser> {
-    const user: AdminUser = await this.adminQueries.listUsers(userId)
+    const user = await this.adminQueries.listUsers(userId)
     this.checkUser(user, true)
     return user
   }
 
   async getGuest(guestId: number): Promise<GuestUser> {
-    const user: GuestUser = await this.adminQueries.usersQueries.listGuests(guestId, 0, true)
+    const user = await this.adminQueries.usersQueries.listGuests(guestId, 0, true)
     this.checkUser(user, true)
     return user
   }
@@ -62,7 +62,15 @@ export class AdminUsersManager {
     try {
       createUserDto.password = await hashPassword(createUserDto.password)
       const userId: number = await this.adminQueries.usersQueries.createUserOrGuest(createUserDto, userRole)
-      const user = new UserModel({ ...createUserDto, id: userId, role: userRole })
+      const { groups: _groups, managers: _managers, ...userProperties } = createUserDto
+      const user = new UserModel({
+        ...userProperties,
+        id: userId,
+        role: userRole,
+        isActive: userProperties.isActive ?? true,
+        notification: userProperties.notification ?? USER_NOTIFICATION.APPLICATION_EMAIL,
+        permissions: userProperties.permissions ?? ''
+      })
       this.logger.log({
         tag: this.createUserOrGuest.name,
         msg: `${USER_ROLE[userRole]} (${userId}) was created : ${JSON.stringify(anonymizePassword(createUserDto))}`
@@ -75,7 +83,7 @@ export class AdminUsersManager {
         return asAdmin ? this.getGuest(user.id) : user
       }
     } catch (e) {
-      this.logger.error({ tag: this.createUserOrGuest.name, msg: `unable to create user *${createUserDto.login}* : ${e}` })
+      this.logger.error({ tag: this.createUserOrGuest.name, msg: `unable to create user *${createUserDto.login}* : ${toErrorMessage(e)}` })
       throw new HttpException('Unable to create user', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -92,57 +100,57 @@ export class AdminUsersManager {
     const updateUserGroups: { add: number[]; delete: number[] } = { add: [], delete: [] }
     const updateGuestManagers: { add: number[]; delete: number[] } = { add: [], delete: [] }
 
-    for (const [k, v] of Object.entries(updateUserDto)) {
-      switch (k as keyof UpdateUserDto) {
+    for (const [k, v] of Object.entries(updateUserDto) as { [K in keyof UpdateUserDto]-?: [K, UpdateUserDto[K]] }[keyof UpdateUserDto][]) {
+      switch (k) {
         case 'login':
           if (user.login === v) {
             break
           }
-          this.validateUserLogin(v)
-          if (await this.adminQueries.usersQueries.checkUserExists(v)) {
+          this.validateUserLogin(v as string)
+          if (await this.adminQueries.usersQueries.checkUserExists(v as string)) {
             throw new HttpException('Login already used', HttpStatus.FORBIDDEN)
           }
           if (userRole === USER_ROLE.USER || userRole === USER_ROLE.GUEST) {
-            if (!(await this.renameUserSpace(user.login, v))) {
+            if (!(await this.renameUserSpace(user.login, v as string))) {
               throw new HttpException('Unable to rename user space', HttpStatus.INTERNAL_SERVER_ERROR)
             }
           }
-          updateUser.login = v
+          updateUser.login = v as string
           break
         case 'email':
           if (user.email === v) {
             break
           }
-          if (await this.adminQueries.usersQueries.checkUserExists(null, v)) {
+          if (await this.adminQueries.usersQueries.checkUserExists(null, v as string)) {
             throw new HttpException('Email already used', HttpStatus.FORBIDDEN)
           }
-          updateUser.email = v
+          updateUser.email = v as string
           break
         case 'isActive':
-          updateUser.isActive = v
+          updateUser.isActive = v as boolean
           if (v) {
             updateUser.passwordAttempts = 0
           }
           break
         case 'password':
-          updateUser.password = await hashPassword(updateUserDto.password)
+          updateUser.password = await hashPassword(updateUserDto.password!)
           break
         case 'groups': {
           // allowed for users and guests
           const currentGroups: number[] = user.groups?.length ? user.groups.map((g) => g.id) : []
-          updateUserGroups.add = v.filter((id: number) => currentGroups.indexOf(id) === -1)
-          updateUserGroups.delete = currentGroups.filter((id: number) => v.indexOf(id) === -1)
+          updateUserGroups.add = (v as number[]).filter((id: number) => currentGroups.indexOf(id) === -1)
+          updateUserGroups.delete = currentGroups.filter((id: number) => (v as number[]).indexOf(id) === -1)
           break
         }
         case 'managers':
           if (userRole === USER_ROLE.GUEST) {
             const currentManagers: number[] = user.managers?.length ? user.managers.map((m) => m.id) : []
-            updateGuestManagers.add = v.filter((id: number) => currentManagers.indexOf(id) === -1)
-            updateGuestManagers.delete = currentManagers.filter((id: number) => v.indexOf(id) === -1)
+            updateGuestManagers.add = (v as number[]).filter((id: number) => currentManagers.indexOf(id) === -1)
+            updateGuestManagers.delete = currentManagers.filter((id: number) => (v as number[]).indexOf(id) === -1)
           }
           break
         default:
-          updateUser[k] = v
+          Object.assign(updateUser, { [k]: v })
       }
     }
 
@@ -155,7 +163,7 @@ export class AdminUsersManager {
       }
       // update quota in cache
       if ('storageQuota' in updateUser) {
-        void this.filesQuotaManager.updateStorageQuota(user.id, FILE_REPOSITORY.USER, updateUser.storageQuota)
+        void this.filesQuotaManager.updateStorageQuota(user.id, FILE_REPOSITORY.USER, updateUser.storageQuota as number | null)
       }
     }
 
@@ -191,7 +199,7 @@ export class AdminUsersManager {
         await this.deleteUserSpace(userLogin)
       }
     } catch (e) {
-      this.logger.error({ tag: this.deleteUserOrGuest.name, msg: `unable to delete *${userLogin}* (${userId}) : ${e}` })
+      this.logger.error({ tag: this.deleteUserOrGuest.name, msg: `unable to delete *${userLogin}* (${userId}) : ${toErrorMessage(e)}` })
       throw new HttpException('Unable to delete user', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -212,11 +220,12 @@ export class AdminUsersManager {
     await this.deleteUserOrGuest(guestToDelete.id, guestToDelete.login, { deleteSpace: true })
   }
 
-  listGuests(): Promise<AdminUser[]> {
+  listGuests(): Promise<GuestUser[]> {
     return this.adminQueries.usersQueries.listGuests(null, null, true)
   }
 
   createGuest(user: UserModel, createGuestDto: CreateUserDto): Promise<GuestUser> {
+    createGuestDto.managers ??= []
     if (!createGuestDto.managers.length) {
       createGuestDto.managers.push(user.id)
     }
@@ -235,7 +244,7 @@ export class AdminUsersManager {
 
   async browseGroups(name?: string, type: GROUP_TYPE = GROUP_TYPE.USER): Promise<GroupBrowse> {
     if (name) {
-      const group: Pick<Group, 'id' | 'name' | 'type'> = await this.adminQueries.groupFromName(name)
+      const group = await this.adminQueries.groupFromName(name)
       if (!group) {
         throw new HttpException('Group not found', HttpStatus.NOT_FOUND)
       }
@@ -261,9 +270,9 @@ export class AdminUsersManager {
     try {
       const groupId: number = await this.adminQueries.createGroup(createGroupDto)
       this.logger.log({ tag: this.createGroup.name, msg: `group (${groupId}) was created : ${JSON.stringify(createGroupDto)}` })
-      return this.adminQueries.groupFromId(groupId)
+      return this.getGroup(groupId)
     } catch (e) {
-      this.logger.error({ tag: this.createGroup.name, msg: `group was not created : ${JSON.stringify(createGroupDto)} : ${e}` })
+      this.logger.error({ tag: this.createGroup.name, msg: `group was not created : ${JSON.stringify(createGroupDto)} : ${toErrorMessage(e)}` })
       throw new HttpException('Unable to create group', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -284,7 +293,7 @@ export class AdminUsersManager {
     if (updateGroupDto.visibility !== undefined) {
       void this.adminQueries.usersQueries.clearWhiteListCaches('*')
     }
-    return this.adminQueries.groupFromId(groupId)
+    return this.getGroup(groupId)
   }
 
   async deleteGroup(groupId: number): Promise<void> {
@@ -301,14 +310,14 @@ export class AdminUsersManager {
   }
 
   async addUsersToGroup(groupId: number, userIds: number[]): Promise<void> {
-    const group: AdminGroup = await this.adminQueries.groupFromId(groupId)
+    const group = await this.adminQueries.groupFromId(groupId)
     if (!group) {
       throw new HttpException('Group not found', HttpStatus.NOT_FOUND)
     }
     try {
       await this.adminQueries.addUsersToGroup(groupId, userIds, group.type === GROUP_TYPE.USER ? USER_ROLE.USER : undefined)
     } catch (e) {
-      throw new HttpException(e.message, HttpStatus.BAD_REQUEST)
+      throw new HttpException(toErrorMessage(e), HttpStatus.BAD_REQUEST)
     }
   }
 
@@ -316,7 +325,7 @@ export class AdminUsersManager {
     try {
       await this.adminQueries.updateUserFromGroup(groupId, userId, updateUserFromGroupDto.role)
     } catch (e) {
-      throw new HttpException(e.message, HttpStatus.BAD_REQUEST)
+      throw new HttpException(toErrorMessage(e), HttpStatus.BAD_REQUEST)
     }
   }
 
@@ -324,11 +333,11 @@ export class AdminUsersManager {
     try {
       await this.adminQueries.removeUserFromGroup(groupId, userId)
     } catch (e) {
-      throw new HttpException(e.message, HttpStatus.BAD_REQUEST)
+      throw new HttpException(toErrorMessage(e), HttpStatus.BAD_REQUEST)
     }
   }
 
-  searchMembers(searchMembersDto: SearchMembersDto): Promise<Member[]> {
+  searchMembers(searchMembersDto: ValidatedSearchMembersDto): Promise<Member[]> {
     return this.adminQueries.usersQueries.searchUsersOrGroups(searchMembersDto)
   }
 
@@ -364,14 +373,14 @@ export class AdminUsersManager {
         this.logger.warn({ tag: this.deleteUserSpace.name, msg: `user space *${userLogin}* does not exist : ${userSpace}` })
       }
     } catch (e) {
-      this.logger.warn({ tag: this.deleteUserSpace.name, msg: `user space *${userLogin}* (${userSpace}) was not deleted : ${e}` })
+      this.logger.warn({ tag: this.deleteUserSpace.name, msg: `user space *${userLogin}* (${userSpace}) was not deleted : ${toErrorMessage(e)}` })
       throw new HttpException('Unable to delete user space', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
-  checkUser(user: User | AdminUser | GuestUser, checkOnly: true): void
-  checkUser(user: User | AdminUser | GuestUser, checkOnly?: false): UserModel
-  checkUser(user: User | AdminUser | GuestUser, checkOnly = false): UserModel | void {
+  checkUser(user: User | AdminUser | GuestUser | null | undefined, checkOnly: true): asserts user is User | AdminUser | GuestUser
+  checkUser(user: User | AdminUser | GuestUser | null | undefined, checkOnly?: false): UserModel
+  checkUser(user: User | AdminUser | GuestUser | null | undefined, checkOnly = false): UserModel | void {
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND)
     }
@@ -397,7 +406,10 @@ export class AdminUsersManager {
     } catch (e) {
       // try to restore
       await moveFiles(newUserSpace, currentUserSpace, true)
-      this.logger.error({ tag: this.renameUserSpace.name, msg: `unable to rename user space from *${currentUserSpace}* to *${newUserSpace}* : ${e}` })
+      this.logger.error({
+        tag: this.renameUserSpace.name,
+        msg: `unable to rename user space from *${currentUserSpace}* to *${newUserSpace}* : ${toErrorMessage(e)}`
+      })
       return false
     }
   }

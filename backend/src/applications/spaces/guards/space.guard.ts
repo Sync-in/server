@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
+import { toErrorMessage } from '../../../common/errors.js'
 import { HTTP_METHOD } from '../../applications.constants.js'
 import { FILE_ERROR } from '../../files/constants/errors.js'
 import { COLLABORA_CONTEXT } from '../../files/editors/collabora-online/collabora-online.constants.js'
@@ -29,7 +30,7 @@ export class SpaceGuard implements CanActivate {
   ) {}
 
   static async checkPermissions(req: FastifySpaceRequest, logger: Logger, overrideSpacePermission?: SPACE_OPERATION) {
-    let permission: SPACE_OPERATION
+    let permission: SPACE_OPERATION | null
     if (req.method === HTTP_METHOD.PUT && (await isPathExists(req.space.realPath)) && !(await isPathIsDir(req.space.realPath))) {
       // PUT method may either create a new resource or replace an existing one.
       // Therefore, we must check whether the target resource already exists to apply the appropriate permission rules.
@@ -42,7 +43,7 @@ export class SpaceGuard implements CanActivate {
       logger.warn(`is not allowed to ${req.method} on this space path : *${req.space.alias}* (${req.space.id}) : ${req.space.url}`)
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
     }
-    if ([SPACE_OPERATION.ADD, SPACE_OPERATION.MODIFY].indexOf(permission) > -1) {
+    if ([SPACE_OPERATION.ADD, SPACE_OPERATION.MODIFY].indexOf(permission as SPACE_OPERATION) > -1) {
       if (req.space.inTrashRepository) {
         throw new HttpException('The trash is read-only', HttpStatus.FORBIDDEN)
       }
@@ -65,11 +66,11 @@ export class SpaceGuard implements CanActivate {
 
     const urlSegments = this.urlSegmentsFromContext(req, webDAVContext, syncContext, collaboraOnlineContext)
     this.checkAccessToSpace(req, urlSegments)
-    let space: SpaceEnv
+    let space: SpaceEnv | null
     try {
       space = await this.spacesManager.spaceEnv(req.user, urlSegments)
     } catch (e) {
-      this.logger.warn({ tag: this.canActivate.name, msg: `${e}` })
+      this.logger.warn({ tag: this.canActivate.name, msg: toErrorMessage(e) })
       throw new HttpException('Space path is not valid', HttpStatus.BAD_REQUEST)
     }
     if (!space) {
@@ -100,8 +101,8 @@ export class SpaceGuard implements CanActivate {
       }
       return PATH_TO_SPACE_SEGMENTS(req.params['*'])
     } catch (e) {
-      this.logger.warn({ tag: this.canActivate.name, msg: `${e}` })
-      throw new HttpException(e.message, HttpStatus.NOT_FOUND)
+      this.logger.warn({ tag: this.canActivate.name, msg: toErrorMessage(e) })
+      throw new HttpException(toErrorMessage(e), HttpStatus.NOT_FOUND)
     }
   }
 

@@ -1,4 +1,5 @@
-import type { USER_ONLINE_STATUS } from '../constants/user.js'
+import { z } from 'zod'
+import { USER_ONLINE_STATUS } from '../constants/user.js'
 
 export interface UserOnline {
   id: number
@@ -13,7 +14,9 @@ export interface EventUpdateOnlineStatus {
   status: USER_ONLINE_STATUS
 }
 
-export interface EventChangeOnlineStatus {
-  status: USER_ONLINE_STATUS
-  store: boolean
-}
+export const eventChangeOnlineStatusSchema = z.object({
+  status: z.enum(USER_ONLINE_STATUS),
+  store: z.boolean()
+})
+
+export type EventChangeOnlineStatus = z.infer<typeof eventChangeOnlineStatusSchema>

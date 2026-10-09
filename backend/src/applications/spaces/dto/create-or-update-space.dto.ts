@@ -1,112 +1,65 @@
-import { Transform, Type } from 'class-transformer'
-import { ArrayMinSize, IsArray, IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, ValidateNested } from 'class-validator'
+import { z } from 'zod'
+import { integerNumberSchema } from '../../../configuration/config.schema.js'
 import { sanitizeName } from '../../files/utils/files.js'
-import { CreateOrUpdateLinkDto } from '../../links/dto/create-or-update-link.dto.js'
+import { createOrUpdateLinkSchema } from '../../links/dto/create-or-update-link.dto.js'
 import { MEMBER_TYPE, MEMBER_TYPE_REVERSE } from '../../users/constants/member.js'
+import type { Member } from '../../users/interfaces/member.interface.js'
 import { SPACE_ROLE } from '../constants/spaces.js'
-import { SpaceRootDto } from './space-roots.dto.js'
+import { spaceRootSchema } from './space-roots.dto.js'
 
-export class SpaceMemberDto {
-  @IsNotEmpty()
-  @IsInt()
-  id: number
+const memberTypeSchema = z.enum(MEMBER_TYPE).overwrite((value) => MEMBER_TYPE_REVERSE[value])
 
-  @IsNotEmpty()
-  @IsString()
-  @Transform(({ value }) => MEMBER_TYPE_REVERSE[value])
-  type: MEMBER_TYPE
+export const spaceMemberSchema = z.object({
+  id: integerNumberSchema,
+  type: memberTypeSchema,
+  spaceRole: z
+    .number()
+    .int()
+    .transform((value) => value as SPACE_ROLE)
+    .default(SPACE_ROLE.IS_MEMBER),
+  permissions: z.string().nullish().default(''),
+  linkId: integerNumberSchema.nullish(),
+  linkSettings: createOrUpdateLinkSchema.nullish().default(null)
+})
 
-  @IsNotEmpty()
-  @IsInt()
-  spaceRole?: SPACE_ROLE = SPACE_ROLE.IS_MEMBER
+export type SpaceMemberDto = z.infer<typeof spaceMemberSchema>
 
-  @IsOptional()
-  @IsString()
-  permissions?: string = ''
+export type SpaceMemberInputDto = Pick<Member, 'id' | 'type' | 'spaceRole' | 'permissions' | 'linkId' | 'linkSettings'>
 
-  @IsOptional()
-  @IsInt()
-  linkId?: number
+const sanitizedSpaceNameSchema = z.string().trim().overwrite(sanitizeName)
+const nullableSanitizedSpaceNameSchema = sanitizedSpaceNameSchema.nullable().transform((value) => value ?? '')
 
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => CreateOrUpdateLinkDto)
-  linkSettings?: CreateOrUpdateLinkDto = null
-}
-
-export class CreateOrUpdateSpaceDto {
-  @IsOptional()
-  @IsInt()
-  id?: number
-
-  @IsNotEmpty()
-  @IsString()
-  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
-  name: string
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
-  alias?: string
-
-  @IsOptional()
-  @IsString()
-  description?: string
-
-  @IsOptional()
-  @IsBoolean()
-  enabled?: boolean
-
-  @IsOptional()
-  @IsInt()
-  storageQuota?: number = null
-
-  @IsOptional()
-  @IsBoolean()
-  storageIndexing?: boolean
-
-  @IsOptional()
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => SpaceRootDto)
-  roots?: SpaceRootDto[]
-
-  @IsArray()
-  @ArrayMinSize(1)
-  @Transform(({ value }) =>
-    value.map((m: SpaceMemberDto) => {
-      m.spaceRole = SPACE_ROLE.IS_MANAGER
-      return m
-    })
+const membersWithRoleSchema = (spaceRole: SPACE_ROLE, minimum = 0) =>
+  z.preprocess(
+    (members) =>
+      members == null ? [] : Array.isArray(members) ? members.map((member) => ({ ...(member as Record<string, unknown>), spaceRole })) : members,
+    z.array(spaceMemberSchema).min(minimum)
   )
-  @ValidateNested({ each: true })
-  @Type(() => SpaceMemberDto)
+
+export const createOrUpdateSpaceSchema = z.object({
+  id: integerNumberSchema.nullish(),
+  name: sanitizedSpaceNameSchema.min(1),
+  alias: nullableSanitizedSpaceNameSchema.optional(),
+  description: z.string().nullish(),
+  enabled: z.boolean().nullish(),
+  storageQuota: integerNumberSchema.nullish().default(null),
+  storageIndexing: z.boolean().nullish(),
+  roots: z.array(spaceRootSchema).nullish(),
   // contains managers (users)
-  managers: SpaceMemberDto[]
-
-  @IsOptional()
-  @IsArray()
-  @Transform(({ value }) =>
-    value.map((m: SpaceMemberDto) => {
-      m.spaceRole = SPACE_ROLE.IS_MEMBER
-      return m
-    })
-  )
-  @ValidateNested({ each: true })
-  @Type(() => SpaceMemberDto)
+  managers: membersWithRoleSchema(SPACE_ROLE.IS_MANAGER, 1),
   // contains members (users, guests, groups, personal groups)
-  members?: SpaceMemberDto[]
-
-  @IsOptional()
-  @IsArray()
-  @Transform(({ value }) =>
-    value.map((m: SpaceMemberDto) => {
-      m.spaceRole = SPACE_ROLE.IS_MEMBER
-      return m
-    })
-  )
-  @ValidateNested({ each: true })
-  @Type(() => SpaceMemberDto)
+  members: membersWithRoleSchema(SPACE_ROLE.IS_MEMBER),
   // contains links
-  links?: SpaceMemberDto[]
+  links: membersWithRoleSchema(SPACE_ROLE.IS_MEMBER)
+})
+
+type CreateOrUpdateSpaceSchemaOutput = z.output<typeof createOrUpdateSpaceSchema>
+
+export type CreateOrUpdateSpaceDto = Omit<z.input<typeof createOrUpdateSpaceSchema>, 'alias' | 'managers' | 'members' | 'links'> & {
+  alias?: string
+  managers: SpaceMemberInputDto[]
+  members?: SpaceMemberInputDto[] | null
+  links?: SpaceMemberInputDto[] | null
 }
+
+export type ValidatedCreateOrUpdateSpaceDto = CreateOrUpdateSpaceSchemaOutput & Required<Pick<CreateOrUpdateSpaceSchemaOutput, 'managers'>>

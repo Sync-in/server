@@ -1,123 +1,93 @@
-import { Transform, Type } from 'class-transformer'
-import {
-  IsArray,
-  IsBoolean,
-  IsDefined,
-  IsEnum,
-  IsNotEmpty,
-  IsNotEmptyObject,
-  IsObject,
-  IsOptional,
-  IsString,
-  Matches,
-  ValidateNested
-} from 'class-validator'
+import { z } from 'zod'
 import { USER_PERMISSION } from '../../../applications/users/constants/user.js'
+import { hydrateConfigDefaults, nonEmptyStringSchema } from '../../../configuration/config.schema.js'
 import { OAuthTokenEndpoint } from './auth-oidc.constants.js'
 import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants.js'
 
-export class AuthProviderOIDCSecurityConfig {
-  @IsString()
-  @Matches(/\bopenid\b/, { message: 'OIDC scope must include "openid"' })
-  scope = 'openid email profile'
+type AuthProviderOIDCSecurityConfig = z.output<typeof AuthProviderOIDCSecurityConfigSchema>
+type AuthProviderOIDCOptionsConfig = z.output<typeof AuthProviderOIDCOptionsConfigSchema>
+export type AuthProviderOIDCConfig = z.output<typeof AuthProviderOIDCConfigSchema>
 
-  @IsOptional()
-  @IsBoolean()
-  supportPKCE? = true
+export function hydrateAuthProviderOIDCConfig(value: unknown): AuthProviderOIDCConfig | unknown {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return value
+  }
 
-  @IsOptional()
-  @IsBoolean()
-  allowInsecureRequests? = false
-
-  @Transform(({ value }) => value || OAuthTokenEndpoint.ClientSecretBasic)
-  @IsEnum(OAuthTokenEndpoint)
-  tokenEndpointAuthMethod: OAuthTokenEndpoint = OAuthTokenEndpoint.ClientSecretBasic
-
-  @IsString()
-  @IsNotEmpty()
-  tokenSigningAlg = 'RS256'
-
-  @IsOptional()
-  @IsString()
-  userInfoSigningAlg? = undefined
-
-  @IsOptional()
-  @IsBoolean()
-  skipSubjectCheck? = false
-
-  @IsOptional()
-  @IsBoolean()
-  requireVerifiedEmail? = true
-
-  @IsOptional()
-  @IsBoolean()
-  allowPrivateIpAvatarDownload? = false
+  const input = value as Record<string, unknown>
+  return {
+    ...input,
+    options: hydrateOIDCOptions(input.options),
+    security: hydrateOIDCSecurity(input.security)
+  }
 }
 
-export class AuthProviderOIDCOptionsConfig {
-  @IsOptional()
-  @IsBoolean()
-  autoCreateUser? = true
+const defaultWhenFalsy =
+  <T>(defaultValue: T) =>
+  (value: unknown): unknown =>
+    value || defaultValue
 
-  @IsOptional()
-  @IsArray()
-  @IsEnum(USER_PERMISSION, { each: true })
-  autoCreatePermissions?: USER_PERMISSION[] = []
+export const AuthProviderOIDCSecurityConfigSchema = z.looseObject({
+  scope: z
+    .string()
+    .regex(/\bopenid\b/, 'OIDC scope must include "openid"')
+    .default('openid email profile'),
+  supportPKCE: z.boolean().nullish().default(true),
+  allowInsecureRequests: z.boolean().nullish().default(false),
+  tokenEndpointAuthMethod: z
+    .preprocess(defaultWhenFalsy(OAuthTokenEndpoint.ClientSecretBasic), z.enum(OAuthTokenEndpoint))
+    .default(OAuthTokenEndpoint.ClientSecretBasic),
+  tokenSigningAlg: nonEmptyStringSchema.default('RS256'),
+  userInfoSigningAlg: z.string().nullish(),
+  skipSubjectCheck: z.boolean().nullish().default(false),
+  requireVerifiedEmail: z.boolean().nullish().default(true),
+  allowPrivateIpAvatarDownload: z.boolean().nullish().default(false)
+})
 
-  @IsOptional()
-  @IsBoolean()
-  autoRedirect? = false
+export const AuthProviderOIDCOptionsConfigSchema = z.looseObject({
+  autoCreateUser: z.boolean().nullish().default(true),
+  autoCreatePermissions: z
+    .array(z.enum(USER_PERMISSION))
+    .nullish()
+    .default(() => []),
+  autoRedirect: z.boolean().nullish().default(false),
+  enablePasswordAuth: z.boolean().nullish().default(false),
+  autoSyncAvatar: z.boolean().nullish().default(false),
+  adminRoleOrGroup: z.string().nullish(),
+  storageQuotaClaim: z.preprocess(defaultWhenFalsy(DEFAULT_STORAGE_QUOTA_FIELD), z.string()).default(DEFAULT_STORAGE_QUOTA_FIELD),
+  buttonText: nonEmptyStringSchema.default('Continue with OpenID Connect')
+})
 
-  @IsOptional()
-  @IsBoolean()
-  enablePasswordAuth? = false
+export const AuthProviderOIDCConfigSchema = z.looseObject({
+  issuerUrl: nonEmptyStringSchema,
+  clientId: nonEmptyStringSchema,
+  clientSecret: nonEmptyStringSchema,
+  redirectUri: nonEmptyStringSchema,
+  options: AuthProviderOIDCOptionsConfigSchema.prefault({}),
+  security: AuthProviderOIDCSecurityConfigSchema.prefault({})
+})
 
-  @IsOptional()
-  @IsBoolean()
-  autoSyncAvatar? = false
+function hydrateOIDCOptions(value: unknown): AuthProviderOIDCOptionsConfig | unknown {
+  if (value === undefined) {
+    return AuthProviderOIDCOptionsConfigSchema.parse({})
+  }
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return value
+  }
 
-  @IsOptional()
-  @IsString()
-  adminRoleOrGroup?: string
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value || DEFAULT_STORAGE_QUOTA_FIELD)
-  storageQuotaClaim?: string = DEFAULT_STORAGE_QUOTA_FIELD
-
-  @IsString()
-  @IsNotEmpty()
-  buttonText: string = 'Continue with OpenID Connect'
+  const options = hydrateConfigDefaults(AuthProviderOIDCOptionsConfigSchema.parse({}), value) as AuthProviderOIDCOptionsConfig
+  options.storageQuotaClaim ||= DEFAULT_STORAGE_QUOTA_FIELD
+  return options
 }
 
-export class AuthProviderOIDCConfig {
-  @IsString()
-  @IsNotEmpty()
-  issuerUrl: string
+function hydrateOIDCSecurity(value: unknown): AuthProviderOIDCSecurityConfig | unknown {
+  if (value === undefined) {
+    return AuthProviderOIDCSecurityConfigSchema.parse({})
+  }
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+    return value
+  }
 
-  @IsString()
-  @IsNotEmpty()
-  clientId: string
-
-  @IsString()
-  @IsNotEmpty()
-  clientSecret: string
-
-  @IsString()
-  @IsNotEmpty()
-  redirectUri: string
-
-  @IsDefined()
-  @IsNotEmptyObject()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => AuthProviderOIDCOptionsConfig)
-  options: AuthProviderOIDCOptionsConfig = new AuthProviderOIDCOptionsConfig()
-
-  @IsDefined()
-  @IsNotEmptyObject()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => AuthProviderOIDCSecurityConfig)
-  security: AuthProviderOIDCSecurityConfig = new AuthProviderOIDCSecurityConfig()
+  const security = hydrateConfigDefaults(AuthProviderOIDCSecurityConfigSchema.parse({}), value) as AuthProviderOIDCSecurityConfig
+  security.tokenEndpointAuthMethod ||= OAuthTokenEndpoint.ClientSecretBasic
+  return security
 }

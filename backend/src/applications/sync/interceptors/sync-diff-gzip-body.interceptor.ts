@@ -3,6 +3,7 @@ import { FastifyRequest } from 'fastify'
 import { IncomingMessage } from 'node:http'
 import zlib from 'node:zlib'
 import { Observable } from 'rxjs'
+import { toErrorMessage } from '../../../common/errors.js'
 
 export const MAX_COMPRESSED_SYNC_DIFF_BODY_SIZE = 25 * 1024 * 1024
 export const MAX_DECOMPRESSED_SYNC_DIFF_BODY_SIZE = 50 * 1024 * 1024
@@ -14,7 +15,7 @@ export class SyncDiffGzipBodyInterceptor implements NestInterceptor {
     if (req.headers['content-encoding'] === 'gzip') {
       const body: Buffer<ArrayBufferLike> = await this.readBody(req.raw)
       await new Promise<void>((resolve, reject) => {
-        zlib.gunzip(body, { maxOutputLength: MAX_DECOMPRESSED_SYNC_DIFF_BODY_SIZE }, (err: Error, decoded: Buffer<ArrayBufferLike>) => {
+        zlib.gunzip(body, { maxOutputLength: MAX_DECOMPRESSED_SYNC_DIFF_BODY_SIZE }, (err: Error | null, decoded: Buffer<ArrayBufferLike>) => {
           if (err) {
             return reject(new HttpException('Invalid gzip body', this.gzipErrorStatus(err)))
           }
@@ -22,7 +23,7 @@ export class SyncDiffGzipBodyInterceptor implements NestInterceptor {
             req.body = JSON.parse(decoded.toString())
             resolve()
           } catch (e) {
-            reject(new HttpException(`Invalid JSON : ${e}`, HttpStatus.BAD_REQUEST))
+            reject(new HttpException(`Invalid JSON : ${toErrorMessage(e)}`, HttpStatus.BAD_REQUEST))
           }
         })
       })

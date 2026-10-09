@@ -1,138 +1,83 @@
-import { Transform, Type } from 'class-transformer'
-import {
-  ArrayNotEmpty,
-  ArrayUnique,
-  IsArray,
-  IsBoolean,
-  IsIn,
-  IsInt,
-  IsNotEmpty,
-  IsNotEmptyObject,
-  IsOptional,
-  IsString,
-  Min,
-  ValidateIf,
-  ValidateNested
-} from 'class-validator'
-import type { SampleDocumentGroup } from './constants/samples.js'
+import { z } from 'zod'
+import { hydrateConfigDefaults, integerNumberSchema, nonEmptyStringSchema } from '../../configuration/config.schema.js'
 import { SAMPLE_DOCUMENT_GROUPS } from './constants/samples.js'
-import { CollaboraOnlineConfig } from './editors/collabora-online/collabora-online.config.js'
-import { DrawioConfig } from './editors/drawio/drawio.config.js'
-import { OnlyOfficeConfig } from './editors/only-office/only-office.config.js'
+import { CollaboraOnlineConfigSchema } from './editors/collabora-online/collabora-online.config.js'
+import { DrawioConfigSchema } from './editors/drawio/drawio.config.js'
+import { OnlyOfficeConfigSchema } from './editors/only-office/only-office.config.js'
 
-export class FilesContentIndexingOCRConfig {
-  @IsBoolean()
-  enabled: boolean = true
+export type FilesContentIndexingOCRConfig = z.output<typeof FilesContentIndexingOCRConfigSchema>
+export type FilesTrashRetentionConfig = z.output<typeof FilesTrashRetentionConfigSchema>
+export type FilesConfig = z.output<typeof FilesConfigSchema>
 
-  @ValidateIf((o: FilesContentIndexingOCRConfig) => o.enabled)
-  @ArrayNotEmpty()
-  @IsArray()
-  @IsString({ each: true })
-  languages: string[] = ['eng']
+export const FilesContentIndexingOCRConfigSchema = z.discriminatedUnion('enabled', [
+  z.looseObject({
+    enabled: z.literal(true).default(true),
+    languages: z
+      .array(z.string())
+      .min(1)
+      .default(() => ['eng']),
+    offline: z.boolean().default(false),
+    languagesPath: z.string().nullish()
+  }),
+  z.looseObject({
+    enabled: z.literal(false),
+    // Disabled OCR retains its unchecked language configuration.
+    languages: z.custom<string[]>().default(() => ['eng']),
+    offline: z.boolean().default(false),
+    languagesPath: z.string().nullish()
+  })
+])
 
-  @IsBoolean()
-  offline: boolean = false
+const inactiveOCRConfigSchema = z
+  .custom<FilesContentIndexingOCRConfig>()
+  .transform((value) => hydrateConfigDefaults(FilesContentIndexingOCRConfigSchema.parse({}), value) as FilesContentIndexingOCRConfig)
+  .default(() => FilesContentIndexingOCRConfigSchema.parse({}))
 
-  @IsOptional()
-  @IsString()
-  languagesPath?: string
-}
+export const FilesContentIndexingConfigSchema = z.discriminatedUnion('enabled', [
+  z.looseObject({
+    enabled: z.literal(true).default(true),
+    ocr: FilesContentIndexingOCRConfigSchema.prefault({})
+  }),
+  z.looseObject({
+    enabled: z.literal(false),
+    ocr: inactiveOCRConfigSchema
+  })
+])
 
-export class FilesContentIndexingConfig {
-  @IsBoolean()
-  enabled: boolean = true
+const retentionPeriodSchema = z.preprocess((value) => (value === 0 ? false : value), z.union([z.literal(false), z.number().int().min(1)]))
 
-  @ValidateIf((o: FilesContentIndexingConfig) => o.enabled)
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => FilesContentIndexingOCRConfig)
-  ocr: FilesContentIndexingOCRConfig = new FilesContentIndexingOCRConfig()
-}
+export const FilesTrashRetentionConfigSchema = z.looseObject({
+  users: retentionPeriodSchema.default(false),
+  spaces: retentionPeriodSchema.default(false)
+})
 
-export class FilesTrashRetentionConfig {
-  @Transform(({ value }) => (value === 0 ? false : value))
-  @ValidateIf((o: FilesTrashRetentionConfig) => o.users !== false)
-  @IsInt()
-  @Min(1)
-  users: number | false = false
+export const FilesEditorsConfigSchema = z.looseObject({
+  onlyoffice: OnlyOfficeConfigSchema.default(() => OnlyOfficeConfigSchema.parse({})),
+  eurooffice: OnlyOfficeConfigSchema.default(() => OnlyOfficeConfigSchema.parse({})),
+  collabora: CollaboraOnlineConfigSchema.prefault({}),
+  drawio: DrawioConfigSchema.prefault({})
+})
 
-  @Transform(({ value }) => (value === 0 ? false : value))
-  @ValidateIf((o: FilesTrashRetentionConfig) => o.spaces !== false)
-  @IsInt()
-  @Min(1)
-  spaces: number | false = false
-}
-
-export class FilesEditorsConfig {
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => OnlyOfficeConfig)
-  onlyoffice: OnlyOfficeConfig = new OnlyOfficeConfig()
-
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => OnlyOfficeConfig)
-  eurooffice: OnlyOfficeConfig = new OnlyOfficeConfig()
-
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => CollaboraOnlineConfig)
-  collabora: CollaboraOnlineConfig = new CollaboraOnlineConfig()
-
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => DrawioConfig)
-  drawio: DrawioConfig = new DrawioConfig()
-}
-
-export class FilesConfig {
-  @IsNotEmpty()
-  @IsString()
-  dataPath: string
-
-  @IsNotEmpty()
-  @IsString()
-  usersPath: string
-
-  @IsNotEmpty()
-  @IsString()
-  spacesPath: string
-
-  @IsNotEmpty()
-  @IsString()
-  linksPath: string
-
-  @IsInt()
-  maxUploadSize: number = 5368709120 // 5 GB
-
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => FilesContentIndexingConfig)
-  contentIndexing: FilesContentIndexingConfig = new FilesContentIndexingConfig()
-
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => FilesTrashRetentionConfig)
-  trashRetention: FilesTrashRetentionConfig = new FilesTrashRetentionConfig()
-
-  @IsBoolean()
-  showHiddenFiles: boolean = false
-
-  @Transform(({ value }) =>
+const sampleDocumentsSchema = z.preprocess(
+  (value) =>
     typeof value === 'string'
       ? value
           .split(',')
-          .map((v: string) => v.trim())
+          .map((group) => group.trim())
           .filter(Boolean)
-      : value
-  )
-  @ArrayUnique()
-  @IsArray()
-  @IsIn(SAMPLE_DOCUMENT_GROUPS, { each: true })
-  sampleDocuments: SampleDocumentGroup[] = [...SAMPLE_DOCUMENT_GROUPS]
+      : value,
+  z.array(z.enum(SAMPLE_DOCUMENT_GROUPS)).refine((groups) => new Set(groups).size === groups.length, { message: 'Array elements must be unique' })
+)
 
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => FilesEditorsConfig)
-  editors: FilesEditorsConfig = new FilesEditorsConfig()
-}
+export const FilesConfigSchema = z.looseObject({
+  dataPath: nonEmptyStringSchema,
+  usersPath: nonEmptyStringSchema,
+  spacesPath: nonEmptyStringSchema,
+  linksPath: nonEmptyStringSchema,
+  maxUploadSize: integerNumberSchema.default(5368709120), // 5 GB
+  contentIndexing: FilesContentIndexingConfigSchema.prefault({}),
+  trashRetention: FilesTrashRetentionConfigSchema.prefault({}),
+  showHiddenFiles: z.boolean().default(false),
+  sampleDocuments: sampleDocumentsSchema.default(() => [...SAMPLE_DOCUMENT_GROUPS]),
+  editors: FilesEditorsConfigSchema.prefault({})
+})

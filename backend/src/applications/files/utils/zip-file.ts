@@ -4,6 +4,7 @@ import { lstat, opendir } from 'node:fs/promises'
 import path from 'node:path'
 import { Writable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
+import { toErrorMessage } from '../../../common/errors.js'
 import { DEFAULT_HIGH_WATER_MARK } from '../constants/files.js'
 import { storageQuotaExceededError } from './errors.js'
 import { createProgressTransform, fileName, isInternalTemporaryEntry, isPathInside } from './files.js'
@@ -111,7 +112,7 @@ export async function createZip(
     await outputPromise
     signal?.throwIfAborted()
   } catch (error) {
-    const reason = error instanceof Error ? error : new Error(String(error))
+    const reason = error instanceof Error ? error : new Error(toErrorMessage(error))
     archiveOutput.destroy(reason)
     if (progressTransform) output.destroy(reason)
     await outputPromise?.catch(() => undefined)

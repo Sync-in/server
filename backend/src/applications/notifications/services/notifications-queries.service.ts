@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { and, desc, eq, inArray, SelectedFields, SQL } from 'drizzle-orm'
+import { and, desc, eq, inArray, SQL } from 'drizzle-orm'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { type DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
 import { dbCheckAffectedRows } from '../../../infrastructure/database/utils.js'
@@ -7,7 +7,7 @@ import { USER_NOTIFICATION } from '../../users/constants/user.js'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema.js'
 import type { NotificationContent, NotificationFromUser } from '../interfaces/notification-properties.interface.js'
 import type { UserMailNotification } from '../interfaces/user-mail-notification.interface.js'
-import { Notification } from '../schemas/notification.interface.js'
+import type { Notification } from '../schemas/notification.interface.js'
 import { notifications } from '../schemas/notifications.schema.js'
 
 @Injectable()
@@ -23,14 +23,14 @@ export class NotificationsQueries {
         content: notifications.content,
         wasRead: notifications.wasRead,
         createdAt: notifications.createdAt
-      } satisfies NotificationFromUser | SelectedFields<any, any>)
+      } satisfies Record<keyof NotificationFromUser, any>)
       .from(notifications)
       .leftJoin(users, eq(users.id, notifications.fromUserId))
       .where(and(...where))
       .orderBy(desc(notifications.id))
   }
 
-  async create(fromUserId: number, toUserIds: number[], content: NotificationContent): Promise<void> {
+  async create(fromUserId: number | null, toUserIds: number[], content: NotificationContent): Promise<void> {
     dbCheckAffectedRows(
       await this.db.insert(notifications).values(
         toUserIds.map((toUserId: number) => ({
@@ -62,7 +62,7 @@ export class NotificationsQueries {
         email: users.email,
         language: users.language,
         notification: users.notification
-      } satisfies UserMailNotification | SelectedFields<any, any>)
+      } satisfies Record<keyof UserMailNotification, any>)
       .from(users)
       .where(and(inArray(users.id, userIds), eq(users.notification, USER_NOTIFICATION.APPLICATION_EMAIL)))
   }

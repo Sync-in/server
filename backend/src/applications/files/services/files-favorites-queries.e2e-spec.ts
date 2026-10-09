@@ -40,14 +40,14 @@ describe('Files favorites queries (e2e)', () => {
   let commentsQueries: CommentsQueries
   let spacesQueries: SpacesQueries
   let sharesQueries: SharesQueries
-  let ownerId: number | undefined
-  let memberId: number | undefined
-  let spaceId: number | undefined
-  let shareId: number | undefined
-  let rootFileId: number | undefined
-  let activeFileId: number | undefined
-  let trashedFileId: number | undefined
-  let syncPathId: number | undefined
+  let ownerId: number
+  let memberId: number
+  let spaceId: number
+  let shareId: number
+  let rootFileId: number
+  let activeFileId: number
+  let trashedFileId: number
+  let syncPathId: number
 
   const suffix = randomUUID().replaceAll('-', '').slice(0, 12)
   const rootName = `favorite-root-${suffix}`

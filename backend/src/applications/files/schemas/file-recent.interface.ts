@@ -1,13 +1,9 @@
-import { filesRecents } from './files-recents.schema.js'
-
-type FileRecentSchema = typeof filesRecents.$inferSelect
-
-export class FileRecent implements FileRecentSchema {
+export interface FileRecent {
   // Browser file identity: database id when available, otherwise negative inode.
   id: number
-  ownerId: number
-  spaceId: number
-  shareId: number
+  ownerId?: number | null
+  spaceId?: number | null
+  shareId?: number | null
   path: string
   name: string
   mime: string

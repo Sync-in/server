@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, ne, or, SelectedFields, SQL, sql } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, ne, or, SQL, sql } from 'drizzle-orm'
 import { alias, union } from 'drizzle-orm/mysql-core'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
@@ -18,7 +18,7 @@ import { UserModel } from '../../users/models/user.model.js'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema.js'
 import { COMMENTS_RECENTS_MAX_LIMIT } from '../constants/recents.js'
 import { CommentRecent } from '../interfaces/comment-recent.interface.js'
-import { Comment } from '../schemas/comment.interface.js'
+import type { Comment } from '../schemas/comment.interface.js'
 import { comments } from '../schemas/comments.schema.js'
 
 @Injectable()
@@ -29,27 +29,27 @@ export class CommentsQueries {
     private readonly sharesQueries: SharesQueries
   ) {}
 
-  getComments(userId: number, isFileOwner: boolean, fromFileId?: number, fromCommentId?: number, limit: number = undefined): Promise<Comment[]> {
+  getComments(userId: number, isFileOwner: boolean, fromFileId?: number | null, fromCommentId?: number | null): Promise<Comment[]> {
     let where: SQL
     if (fromFileId) {
       where = eq(comments.fileId, fromFileId)
     } else if (fromCommentId) {
       where = eq(comments.id, fromCommentId)
-      limit = 1
     } else {
       throw Error('fromFileId or fromCommentId must be provided')
     }
-    return this.db
+    const query = this.db
       .select({
         ...getTableColumns(comments),
         author: { login: users.login, fullName: userFullNameSQL(users), email: users.email, isAuthor: eq(users.id, userId).mapWith(Boolean) },
         isFileOwner: sql`${+isFileOwner}`.mapWith(Boolean)
       })
       .from(comments)
-      .leftJoin(users, eq(users.id, comments.userId))
+      .innerJoin(users, eq(users.id, comments.userId))
       .where(where)
       .orderBy(desc(comments.id))
-      .limit(limit)
+
+    return fromCommentId ? query.limit(1) : query
   }
 
   async createComment(userId: number, fileId: number, content: string): Promise<Comment['id']> {
@@ -81,7 +81,7 @@ export class CommentsQueries {
 
   membersToNotify(fromUserId: number, fileId: number): Promise<UserMailNotification[]> {
     /* lists the owner of the file and the users who have commented on it */
-    const select: UserMailNotification | SelectedFields<any, any> = {
+    const select: Record<keyof UserMailNotification, any> = {
       id: users.id,
       email: users.email,
       language: users.language,
@@ -130,7 +130,7 @@ export class CommentsQueries {
           fromShare: sql<number>`1`.as('fromShare'),
           displayRootName: shares.name
         }
-      } satisfies CommentRecent | SelectedFields<any, any>)
+      } satisfies Record<keyof CommentRecent, any>)
       .from(shares)
       .leftJoin(shareFile, eq(shareFile.id, shares.fileId))
       .leftJoin(spaces, eq(spaces.id, shareFile.spaceId))
@@ -185,7 +185,7 @@ export class CommentsQueries {
           fromSpace: sql<number>`0`.as('fromSpace'),
           fromShare: sql<number>`0`.as('fromShare')
         }
-      } satisfies CommentRecent | SelectedFields<any, any>)
+      } satisfies Record<keyof CommentRecent, any>)
       .from(files)
       .innerJoin(comments, and(eq(comments.fileId, files.id), ne(comments.userId, userId)))
       .innerJoin(users, eq(users.id, comments.userId))
@@ -220,7 +220,7 @@ export class CommentsQueries {
           fromShare: sql<number>`0`.as('fromShare'),
           displayRootName: sql<string>`IF (${files.ownerId} = ${userId}, NULL, ${spaces.name})`.as('displayRootName')
         }
-      } satisfies CommentRecent | SelectedFields<any, any>)
+      } satisfies Record<keyof CommentRecent, any>)
       .from(spaces)
       .leftJoin(spacesRoots, eq(spacesRoots.spaceId, spaces.id))
       .leftJoin(spaceRootFile, eq(spaceRootFile.id, spacesRoots.fileId))
@@ -268,7 +268,7 @@ export class CommentsQueries {
       hasSpaces ? this.getRecentsFromSpaces(user.id, spaceIds, sourceLimit) : Promise.resolve([]),
       hasShares ? this.getRecentsFromShares(user.id, shareIds, sourceLimit) : Promise.resolve([])
     ])
-    const recents = sourceRecents.flat().sort((a, b) => b.id - a.id)
+    const recents = sourceRecents.flat().sort((a, b) => b.id - a.id) as CommentRecent[]
     return Array.from(new Map(recents.map((r) => [r.id, r])).values()).slice(0, recentsLimit)
   }
 }

@@ -4,21 +4,21 @@ import { configuration } from '../../../configuration/config.environment.js'
 import { TEMPORARY_PATH } from '../../files/constants/files.js'
 import { isPathInside } from '../../files/utils/files.js'
 import { SPACE_REPOSITORY } from '../constants/spaces.js'
-import { SpaceRoot } from '../schemas/space-root.interface.js'
-import { Space } from '../schemas/space.interface.js'
+import type { SpaceRoot } from '../schemas/space-root.interface.js'
+import type { Space } from '../schemas/space.interface.js'
 
 export class SpaceModel implements Space {
-  id: number
-  alias: string
-  enabled: boolean
-  name: string
-  description: string
-  storageQuota: number
-  storageUsage: number
-  storageIndexing: boolean
-  modifiedAt: Date
-  disabledAt: Date
-  createdAt: Date
+  id!: number
+  alias!: string
+  enabled!: boolean
+  name!: string
+  description!: string
+  storageQuota!: number
+  storageUsage!: number
+  storageIndexing!: boolean
+  modifiedAt!: Date
+  disabledAt!: Date
+  createdAt!: Date
 
   // outside db schema
   root: SpaceRoot[] = []

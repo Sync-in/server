@@ -1,6 +1,6 @@
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
 import { TestingModule } from '@nestjs/testing'
-import { Column, eq, inArray, isNull, SQL, sql } from 'drizzle-orm'
+import { Column, eq, inArray, isNull, SQL, sql, SQLWrapper } from 'drizzle-orm'
 import { MySqlDatabase, MySqlTableWithColumns } from 'drizzle-orm/mysql-core'
 import { MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { DB_TOKEN_PROVIDER } from './constants.js'
@@ -8,7 +8,7 @@ import * as schema from './schema.js'
 
 async function dbGetConnection(app: NestFastifyApplication | TestingModule, mode: 'pool' | 'client' = 'pool') {
   const db: MySqlDatabase<any, any> = await app.resolve(DB_TOKEN_PROVIDER)
-  let connection: any = db['session'].client
+  let connection: any = (db as any)['session'].client
   if (mode === 'pool') {
     connection = connection.pool
   }
@@ -44,8 +44,8 @@ export function dbGetInsertedId(queryResult: MySqlQueryResult): number {
   return insertedId
 }
 
-export function convertToSelect<T>(table: T, fields: Partial<keyof T>[]) {
-  const select = {} as Record<keyof T, any>
+export function convertToSelect<T, K extends keyof T>(table: T, fields: readonly K[]): Pick<T, K> {
+  const select = {} as Pick<T, K>
   for (const f of fields) {
     select[f] = table[f]
   }
@@ -54,10 +54,10 @@ export function convertToSelect<T>(table: T, fields: Partial<keyof T>[]) {
 
 export function convertToWhere<T>(table: T, filters: Partial<Record<keyof T, any>>): SQL[] {
   // only handles AND operator
-  return Object.entries(filters).map(([k, v]) => {
-    if (v === null) return isNull(table[k])
-    if (Array.isArray(v)) return inArray(table[k], v)
-    return eq(table[k], v)
+  return (Object.entries(filters) as [keyof T, unknown][]).map(([k, v]) => {
+    if (v === null) return isNull((table as any)[k])
+    if (Array.isArray(v)) return inArray((table as any)[k], v)
+    return eq((table as any)[k], v)
   })
 }
 
@@ -67,16 +67,16 @@ export function dbParseJson(value: unknown): any {
   return typeof value === 'string' ? JSON.parse(value) : value
 }
 
-export function concatDistinctObjectsInArray(mustBeNotNull: Column, object: Record<string, Column | object>): SQL<any> {
+export function concatDistinctObjectsInArray(mustBeNotNull: SQLWrapper, object: Record<string, SQLWrapper | Record<string, SQLWrapper>>): SQL<any> {
   /* Concat json objects in array (only one nesting level is supported) */
   const expr: SQL<any> = sql`IFNULL(CONCAT('[', GROUP_CONCAT(DISTINCT IF(${mustBeNotNull} IS NULL, NULL, JSON_OBJECT(`
   const keys = Object.keys(object)
   keys.forEach((k, index) => {
-    if (object[k].constructor.name === 'Object') {
+    if ((object[k] as SQLWrapper).constructor.name === 'Object') {
       expr.append(sql`${k},JSON_OBJECT(`)
-      const subKeys = Object.keys(object[k])
+      const subKeys = Object.keys(object[k] as Record<string, SQLWrapper>)
       subKeys.forEach((subK, subIndex) => {
-        expr.append(sql`${subK},${sql`${object[k][subK]}`}${subIndex === subKeys.length - 1 ? sql`)` : sql`,`}`)
+        expr.append(sql`${subK},${sql`${(object[k] as Record<string, SQLWrapper>)[subK]}`}${subIndex === subKeys.length - 1 ? sql`)` : sql`,`}`)
       })
     } else {
       expr.append(sql`${k},${sql`${object[k]}`}`)
