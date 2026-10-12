@@ -55,7 +55,10 @@ export class AppService {
     if (AppService.shutdownHooksRegistered) return
     AppService.shutdownHooksRegistered = true
     for (const signal of ['SIGINT', 'SIGTERM'] satisfies NodeJS.Signals[]) {
-      process.on(signal, () => AppService.shutdown(signal))
+      process.on(signal, () => {
+        AppService.logger.log(`[Master:${process.pid}] received ${signal}`)
+        AppService.shutdown(signal)
+      })
     }
   }
 
