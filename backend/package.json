@@ -81,7 +81,7 @@
     "safe-regex2": "^5.1.1",
     "sax": "^1.6.0",
     "sharp": "^0.35.2",
-    "socket.io": "4.8.3",
+    "socket.io": "4.8.4",
     "tar": "^7.5.16",
     "tesseract.js": "^7.0.0",
     "text-to-svg": "^3.1.5",
