@@ -6,6 +6,7 @@ import { FileTaskStatus } from '@sync-in-server/backend/src/applications/files/m
 import { currentTimeStamp } from '@sync-in-server/backend/src/common/shared'
 import { Observable, Subscription } from 'rxjs'
 import { supportUploadDirectory } from '../../../common/utils/functions'
+import { LayoutService } from '../../../layout/layout.service'
 import type { FileUpload, FileUploadTaskRequest } from '../interfaces/file-upload.interface'
 import { FileModel } from '../models/file.model'
 import { FilesTasksService } from './files-tasks.service'
@@ -17,6 +18,7 @@ export class FilesUploadService {
   private readonly http = inject(HttpClient)
   private readonly filesService = inject(FilesService)
   private readonly filesTasksService = inject(FilesTasksService)
+  private readonly layout = inject(LayoutService)
   private readonly ngZone = inject(NgZone)
   private readonly maxConcurrentUploads = 3
   private readonly progressUpdateInterval = 1000
@@ -33,13 +35,16 @@ export class FilesUploadService {
       const path = `${this.filesService.currentRoute}/${key}`.split('/').slice(0, -1).join('/')
       const name = `${this.filesService.currentRoute}/${key}`.split('/').slice(-1)[0]
       const task: FileTask = this.filesTasksService.createUploadTask(path, name, data.size)
-      const taskReq = this.createUploadTaskRequest(task, this.uploadFiles(`${apiRoute}/${key}`, data.form, overwrite))
+      const taskReq = this.createUploadTaskRequest(task, this.uploadFiles(`${apiRoute}/${key}`, data.form, overwrite), files.length === 1)
       this.filesTasksService.registerUploadCancellation(task.id, () => this.cancelUploadTask(taskReq))
       taskReqs.unshift(taskReq)
     }
     this.queuedUploads.push(...taskReqs)
     this.drainUploadQueue()
     await Promise.all(taskReqs.map((taskReq: FileUploadTaskRequest) => taskReq.completed))
+    if (files.length > 1) {
+      this.ngZone.run(() => this.notifyUploadBatch(taskReqs))
+    }
   }
 
   async addFilesWithConflictResolution(files: FileUpload[], exist: FileModel[]): Promise<void> {
@@ -97,7 +102,39 @@ export class FilesUploadService {
     })
   }
 
-  private createUploadTaskRequest(task: FileTask, req: Observable<any>): FileUploadTaskRequest {
+  private notifyUploadBatch(taskReqs: FileUploadTaskRequest[]) {
+    let succeeded = 0
+    let failed = 0
+    let cancelled = 0
+    // A directory upload can partially succeed, so count task statuses rather than individual files.
+    for (const { task } of taskReqs) {
+      switch (task.status) {
+        case FileTaskStatus.SUCCESS:
+          succeeded++
+          break
+        case FileTaskStatus.ERROR:
+          failed++
+          break
+        case FileTaskStatus.CANCELLED:
+          cancelled++
+          break
+      }
+    }
+    const message = [
+      succeeded ? this.layout.translateString(succeeded === 1 ? 'one_element_uploaded' : 'nb_elements_uploaded', { nb: succeeded }) : null,
+      failed ? this.layout.translateString(failed === 1 ? 'one_element_failed' : 'nb_elements_failed', { nb: failed }) : null,
+      cancelled ? this.layout.translateString(cancelled === 1 ? 'one_element_cancelled' : 'nb_elements_cancelled', { nb: cancelled }) : null
+    ]
+      .filter(Boolean)
+      .join(' · ')
+    this.layout.sendNotification(
+      failed ? 'error' : cancelled ? 'warning' : 'info',
+      failed ? 'Upload failed' : cancelled ? 'Cancelled' : 'Upload done',
+      message
+    )
+  }
+
+  private createUploadTaskRequest(task: FileTask, req: Observable<any>, notifyCompletion: boolean): FileUploadTaskRequest {
     let resolveCompleted: () => void = () => undefined
     const completed = new Promise<void>((resolve) => {
       resolveCompleted = () => resolve()
@@ -106,6 +143,7 @@ export class FilesUploadService {
       completed,
       controller: new AbortController(),
       done: false,
+      notifyCompletion,
       req,
       resolveCompleted,
       started: false,
@@ -155,7 +193,7 @@ export class FilesUploadService {
       taskReq.task.endedAt = currentTimeStamp(null, true)
     }
     this.filesTasksService.unregisterUploadCancellation(taskReq.task.id)
-    this.updateTaskInAngular(taskReq.task)
+    this.updateTaskInAngular(taskReq.task, taskReq.notifyCompletion)
     taskReq.resolveCompleted()
   }
 
@@ -254,8 +292,8 @@ export class FilesUploadService {
     this.progressUpdatedAt.delete(taskId)
   }
 
-  private updateTaskInAngular(task: FileTask) {
-    this.ngZone.run(() => this.filesTasksService.updateTask(task))
+  private updateTaskInAngular(task: FileTask, notifyCompletion = true) {
+    this.ngZone.run(() => this.filesTasksService.updateTask(task, notifyCompletion))
   }
 
   private sortFiles(files: FileUpload[]): Record<string, { nb: number; size: number; form: FormData }> {

@@ -168,14 +168,14 @@ export class FilesTasksService {
     }
   }
 
-  updateTask(task: FileTask) {
+  updateTask(task: FileTask, notifyCompletion = true) {
     if (this.isActiveStatus(task.status)) {
       this.updateActiveTask(task)
     } else {
       this.cancellingTasks.delete(task.id)
       this.deleteTask(task.id, true)
       this.addTask(task)
-      this.taskDone(task)
+      this.taskDone(task, notifyCompletion)
     }
   }
 
@@ -307,7 +307,7 @@ export class FilesTasksService {
     }
   }
 
-  private taskDone(task: FileTask) {
+  private taskDone(task: FileTask, notifyCompletion = true) {
     if (task.status === FileTaskStatus.CANCELLED) return
     if (task.type in this.onDone) {
       if (this.onDone[task.type].fileEvent) {
@@ -328,10 +328,10 @@ export class FilesTasksService {
       if (task.status === FileTaskStatus.SUCCESS) {
         if (task.type === FILE_OPERATION.DELETE) {
           this.removeDeletedChildTasks(task)
-        } else {
+        } else if (notifyCompletion) {
           this.layout.sendNotification('info', this.onDone[task.type].msg.success, task.name)
         }
-      } else {
+      } else if (notifyCompletion) {
         this.layout.sendNotification('error', this.onDone[task.type].msg.failed, task.name, {
           error: { message: task.result }
         } as HttpErrorResponse)
