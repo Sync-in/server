@@ -464,12 +464,14 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   shortcutOpen() {
-    if (this.selection[0].isDir) {
-      this.browse(this.selection[0])
-    } else if (this.selection[0].isViewable || this.selection[0].isEditable) {
+    const file = this.selection[0]
+    if (!file) return
+    if (file.isDir) {
+      this.browse(file)
+    } else if (file.isViewable || file.isEditable) {
       this.openViewerDialog()
     } else {
-      this.downloadFiles()
+      this.notifyPreviewUnavailable(file)
     }
   }
 
@@ -727,6 +729,17 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       f.space = { alias: spaceAlias, name: spaceAlias, root: { alias: rootAlias, name: rootAlias } }
     }
     return f
+  }
+
+  private notifyPreviewUnavailable(file: FileModel) {
+    const message = `
+      <div>${this.layout.translateString('No preview available for this file')}</div>
+      <div class="mt-3 fw-bold">${this.layout.translateString('Click to download')}</div>
+    `
+    const notification = this.layout.sendNotification('info', file.name, message, null, { enableHtml: true }, true)
+    if (notification) {
+      notification.onTap.pipe(take(1)).subscribe(() => this.filesService.download(file))
+    }
   }
 
   private openViewerDialog() {

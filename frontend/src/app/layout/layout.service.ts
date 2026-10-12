@@ -229,9 +229,10 @@ export class LayoutService {
     title: string,
     message: string,
     e?: HttpErrorResponse,
-    override: any = {}
+    override: any = {},
+    forceLocal = false
   ): ActiveToast<any> | void {
-    const useSystemNotifications = this.electron.enabled && (this.store.user.getValue()?.preferences?.useSystemNotifications ?? true)
+    const useSystemNotifications = !forceLocal && this.electron.enabled && (this.store.user.getValue()?.preferences?.useSystemNotifications ?? true)
     if (type === 'error' && e) {
       const errorMessage = e.error
         ? Array.isArray(e.error.message)

@@ -216,6 +216,8 @@
   "Unable to update notification preference": "Impossible de mettre à jour la préférence de notification",
   "Unable to update full-text search preference": "Impossible de mettre à jour la préférence de recherche full-text",
   "Unable to open document": "Impossible d'ouvrir le document",
+  "No preview available for this file": "Aucun aperçu disponible pour ce fichier",
+  "Click to download": "Cliquez pour télécharger",
   "Unable to save document": "Impossible d’enregistrer le document",
   "Home": "Accueil",
   "Recents": "Récents",

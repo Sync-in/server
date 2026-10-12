@@ -216,6 +216,8 @@
   "Unable to update notification preference": "Bildirim tercihi güncellenemedi",
   "Unable to update full-text search preference": "Tam metin arama tercihi güncellenemedi",
   "Unable to open document": "Belge açılamadı",
+  "No preview available for this file": "Bu dosya için önizleme kullanılamıyor",
+  "Click to download": "İndirmek için tıklayın",
   "Unable to save document": "Belge kaydedilemedi",
   "Home": "Ana sayfa",
   "Recents": "Son kullanılanlar",
