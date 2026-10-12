@@ -21,13 +21,6 @@
             <div class="text-muted text-uppercase fs-sm text-bold mb-3" l10nTranslate>Link information</div>
             @if (shareFileContext) {
               <div class="d-flex align-items-start gap-2 min-width-0 mb-3">
-                <img [src]="shareFileContext.mimeUrl"
-                     alt=""
-                     class="flex-shrink-0"
-                     draggable="false"
-                     height="32"
-                     width="32"
-                     (error)="shareFileContext.fallBackMimeUrl()">
                 <app-share-repository id="file"
                                       class="d-block flex-grow-1 min-width-0"
                                       [share]="shareFileContext"
@@ -49,7 +42,7 @@
                         [attr.aria-label]="'Copy link' | translate:locale.language"
                         type="button">
                   <svg [lucideIcon]="linkWasCopied ? icons.LucideClipboardCheck : icons.LucideClipboard" size="1.333em"></svg>
-                  <span class="ms-2" l10nTranslate>Copy link</span>
+                  <span l10nTranslate>Copy link</span>
                 </button>
               </div>
             </div>
@@ -58,12 +51,24 @@
               <div class="row g-3 mt-0">
                 <div class="col-12 col-lg-6">
                   <label class="form-label" for="shareName" l10nTranslate>Link name</label>
-                  <input id="shareName"
-                         formControlName="shareName"
-                         type="text"
-                         class="form-control"
-                         [class.is-invalid]="linkForm.controls.shareName.invalid"
-                         [placeholder]="'Link name' | translate:locale.language">
+                  <div class="input-group">
+                    @if (shareFileContext) {
+                      <span class="input-group-text">
+                        <img [src]="shareFileContext.mimeUrl"
+                             [alt]="shareFileContext.file?.mime || ''"
+                             draggable="false"
+                             height="24"
+                             width="24"
+                             (error)="shareFileContext.fallBackMimeUrl()">
+                      </span>
+                    }
+                    <input id="shareName"
+                           formControlName="shareName"
+                           type="text"
+                           class="form-control"
+                           [class.is-invalid]="linkForm.controls.shareName.invalid"
+                           [placeholder]="'Link name' | translate:locale.language">
+                  </div>
                 </div>
                 <div class="col-12 col-lg-6">
                   <label class="form-label" for="shareDescription" l10nTranslate>Description</label>
@@ -276,6 +281,6 @@
           class="btn {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}"
           type="button"
           l10nTranslate>
-    {{ confirmDeletion ? 'Confirm deletion' : 'Confirm' }}
+    {{ confirmDeletion ? 'Confirm deletion' : (share?.id || link?.id ? 'Confirm' : 'Create link') }}
   </button>
 </div>
