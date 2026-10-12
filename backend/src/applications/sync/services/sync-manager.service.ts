@@ -61,10 +61,10 @@ export class SyncManager {
           if (syncUploadDto.checksum && checksum !== syncUploadDto.checksum) {
             throw new FileError(HttpStatus.BAD_REQUEST, 'checksums are not identical')
           }
+          // Apply mtime before moving the file and publishing its event.
+          await touchFile(tmpPath, syncUploadDto.mtime)
         }
       })
-      // update mtime
-      await touchFile(req.space.realPath, syncUploadDto.mtime)
       // return inode number
       const fileStats = await fs.stat(req.space.realPath)
       return { ino: fileStats.ino }

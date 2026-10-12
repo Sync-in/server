@@ -239,20 +239,31 @@ describe(FilesManager.name, () => {
       )
     })
 
-    it('should write stream, emit event and release lock', async () => {
+    it('should write tmp stream, apply mtime, move, emit event and release lock', async () => {
       const space = makeSpace()
+      const tmpPath = '/data/users/john/tmp/sync-in-file.txt'
       setPathExists({ [space.realPath]: false, [path.dirname(space.realPath)]: true }, false)
       const emitSpy = vi.spyOn(FileEvent, 'emit')
 
-      const result = await service.saveStream(user, space, { method: 'PUT', headers: {}, raw: Readable.from(['hello']) } as any)
+      const result = await service.saveStream(user, space, { method: 'PUT', headers: {}, raw: Readable.from(['hello']) } as any, {
+        tmpPath,
+        validateTmpFile: async () => {
+          await filesUtils.touchFile(tmpPath, 1710000000)
+          expect(filesUtils.moveFiles).not.toHaveBeenCalled()
+          expect(emitSpy).not.toHaveBeenCalled()
+          expect(filesLockManager.removeLock).not.toHaveBeenCalled()
+        }
+      })
 
       expect(result).toBe(false)
       expect(filesLockManager.create).toHaveBeenCalledWith(user, space.dbFile, 'Sync-in', DEPTH.RESOURCE)
       expect(filesUtils.writeUploadFromStream).toHaveBeenCalledWith(
-        space.realPath,
+        tmpPath,
         expect.anything(),
         expect.objectContaining({ limiter: expect.objectContaining({ initialFileSize: 0, consume: expect.any(Function) }) })
       )
+      expect(filesUtils.touchFile).toHaveBeenCalledExactlyOnceWith(tmpPath, 1710000000)
+      expect(filesUtils.moveFiles).toHaveBeenCalledWith(tmpPath, space.realPath, true)
       expect(filesLockManager.removeLock).toHaveBeenCalledWith('lock-1')
       expect(emitSpy).toHaveBeenCalledWith('event', { user, space, action: ACTION.ADD, rPath: space.realPath })
     })

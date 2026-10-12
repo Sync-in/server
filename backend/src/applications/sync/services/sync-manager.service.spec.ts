@@ -163,7 +163,11 @@ describe(SyncManager.name, () => {
     it('should upload with checksum OK and return ino', async () => {
       const req = makeReq({ space: { realPath: '/tmp/up.bin', url: '/space/up.bin' } })
       const dto = { checksum: 'abc', size: 10, mtime: 1710000000 }
-      filesManager.saveStream.mockResolvedValue('abc')
+      filesManager.saveStream.mockImplementation(async (_user, _space, _req, options) => {
+        await options.validateTmpFile({ tmpPath: options.tmpPath, realPath: req.space.realPath, checksum: 'abc' })
+        expect(touchFile).toHaveBeenCalledWith(options.tmpPath, dto.mtime)
+        return 'abc'
+      })
       fsPromises.stat.mockResolvedValue({ size: 10, ino: 123, mtime: new Date(1710000000 * 1000) })
       vi.mocked(touchFile).mockResolvedValue(undefined)
 
@@ -174,7 +178,7 @@ describe(SyncManager.name, () => {
         checksumAlg: SYNC_CHECKSUM_ALG,
         validateTmpFile: expect.any(Function)
       })
-      expect(touchFile).toHaveBeenCalledWith('/tmp/up.bin', 1710000000)
+      expect(touchFile).toHaveBeenCalledExactlyOnceWith(filesManager.saveStream.mock.calls[0][3].tmpPath, dto.mtime)
       expect(r).toEqual({ ino: 123 })
       expect(removeFiles).not.toHaveBeenCalled()
     })
@@ -195,7 +199,9 @@ describe(SyncManager.name, () => {
     it('should upload without checksum', async () => {
       const req = makeReq({ space: { realPath: '/tmp/up2.bin', url: '/space/up2.bin' } })
       const dto = { size: 5, mtime: 1710000100 }
-      filesManager.saveStream.mockResolvedValue(undefined)
+      filesManager.saveStream.mockImplementation(async (_user, _space, _req, options) => {
+        await options.validateTmpFile({ tmpPath: options.tmpPath, realPath: req.space.realPath })
+      })
       fsPromises.stat.mockResolvedValue({ size: 5, ino: 321, mtime: new Date(1710000100 * 1000) })
 
       const r = await service.upload(req as any, dto as any)
@@ -204,7 +210,7 @@ describe(SyncManager.name, () => {
         expectedUploadSize: 5,
         validateTmpFile: expect.any(Function)
       })
-      expect(touchFile).toHaveBeenCalledWith('/tmp/up2.bin', 1710000100)
+      expect(touchFile).toHaveBeenCalledExactlyOnceWith(filesManager.saveStream.mock.calls[0][3].tmpPath, dto.mtime)
       expect(r).toEqual({ ino: 321 })
     })
 
