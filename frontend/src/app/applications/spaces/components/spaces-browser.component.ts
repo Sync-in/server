@@ -747,9 +747,9 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     const fileName = this.openAfterReload
     this.openAfterReload = null
     const file = this.files.find((item) => item.name.toLowerCase() === fileName.toLowerCase())
-    if (!file || (!file.isViewable && !file.isEditable)) return
+    if (!file || (!file.isDir && !file.isViewable && !file.isEditable)) return
     this.setSelection([file], file, file)
-    this.openViewerDialog()
+    this.shortcutOpen()
   }
 
   private focusOn(selectName: string) {

@@ -158,6 +158,7 @@ export class FilesNewDialogComponent implements OnInit, AfterViewInit {
   }
 
   protected canOpenAfterCreation(): boolean {
+    if (this.inputType === 'directory') return true
     const docType = this.currentDocType()
     if (this.inputType !== 'file' || docType === 'Other') return false
     const extension = this.docTypes[docType].toLowerCase()
