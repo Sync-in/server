@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { HttpService } from '@nestjs/axios'
 import { HttpStatus, Injectable, Logger } from '@nestjs/common'
 import type { Dirent } from 'node:fs'
@@ -25,7 +26,7 @@ import { TAR_EXTENSION, TAR_GZ_EXTENSION, ZIP_EXTENSION } from '../constants/com
 import { COMPRESSION_EXTENSION } from '../constants/files.js'
 import { FILE_OPERATION } from '../constants/operations.js'
 import { SAMPLE_DOCUMENT_EXTENSIONS, SAMPLE_PATH_WITHOUT_EXT } from '../constants/samples.js'
-import { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto.js'
+import type { CompressFileDto, DownloadFileDto } from '../dto/file-operations.dto.js'
 import type { DeleteFileOptions } from '../interfaces/delete-file.interface.js'
 import { FileDBProps } from '../interfaces/file-db-props.interface.js'
 import { FileLock } from '../interfaces/file-lock.interface.js'
@@ -172,7 +173,7 @@ export class FilesManager {
     try {
       // todo: check file in db to update
       // todo : versioning here
-      let checksum: string
+      let checksum: string | undefined
       if (options?.checksumAlg) {
         checksum = await writeUploadFromStreamAndChecksum(options?.tmpPath || space.realPath, req.raw, options.checksumAlg, {
           limiter: fileLimiter
@@ -193,14 +194,14 @@ export class FilesManager {
         } catch (e) {
           // cleanup tmp file
           await removeFiles(options.tmpPath)
-          this.logger.error({ tag: this.saveStream.name, msg: `unable to move ${options.tmpPath} -> ${space.realPath} : ${e}` })
+          this.logger.error({ tag: this.saveStream.name, msg: `unable to move ${options.tmpPath} -> ${space.realPath} : ${toErrorMessage(e)}` })
           throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Unable to move tmp file to dst file')
         }
       } else {
         fileWritten = true
       }
       if (options?.checksumAlg) {
-        return checksum
+        return checksum!
       }
       return fExists
     } finally {
@@ -212,7 +213,7 @@ export class FilesManager {
         try {
           await this.filesLockManager.removeLock(fileLock.key)
         } catch (e) {
-          this.logger.warn({ tag: this.saveStream.name, msg: `Failed to remove lock ${fileLock.key}: ${e}` })
+          this.logger.warn({ tag: this.saveStream.name, msg: `Failed to remove lock ${fileLock.key}: ${toErrorMessage(e)}` })
         }
       }
     }
@@ -270,8 +271,8 @@ export class FilesManager {
 
         const dstDir = dirName(dstFile)
         // For overwrite conflicts, defer destructive deletes until the upload stream is fully validated.
-        let dstSpaceToDeleteBeforeMove: SpaceEnv | undefined
-        let dstParentSpaceToDeleteBeforeMove: SpaceEnv | undefined
+        let dstSpaceToDeleteBeforeMove: SpaceEnv | null | undefined
+        let dstParentSpaceToDeleteBeforeMove: SpaceEnv | null | undefined
 
         if (overwrite) {
           // Prevent errors when an uploaded file would replace a directory with the same name
@@ -449,7 +450,10 @@ export class FilesManager {
         try {
           await makeDir(dirName(dstSpace.realPath), true)
         } catch (e) {
-          this.logger.error({ tag: this.copyMove.name, msg: `Cannot create parent directory for destination ${dstSpace.realPath} : ${e}` })
+          this.logger.error({
+            tag: this.copyMove.name,
+            msg: `Cannot create parent directory for destination ${dstSpace.realPath} : ${toErrorMessage(e)}`
+          })
           throw new FileError(HttpStatus.INTERNAL_SERVER_ERROR, 'Cannot create parent directory for destination')
         }
       } else {
@@ -623,10 +627,12 @@ export class FilesManager {
     }
     // remove locks, these locks have already been checked in the `checkConflicts` function
     if (isDir) {
-      this.filesLockManager.removeChildLocks(user, space.dbFile).catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: `${e}` }))
+      this.filesLockManager
+        .removeChildLocks(user, space.dbFile)
+        .catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: toErrorMessage(e) }))
     }
     for (const lock of await this.filesLockManager.getLocksByPath(space.dbFile)) {
-      this.filesLockManager.removeLock(lock.key).catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: `${e}` }))
+      this.filesLockManager.removeLock(lock.key).catch((e: Error) => this.logger.error({ tag: this.delete.name, msg: toErrorMessage(e) }))
     }
     // Keep the database aligned with the completed filesystem operation before reporting a residual source.
     if (trashDbFile) {
@@ -669,7 +675,7 @@ export class FilesManager {
       await moveFiles(tmpPath, dstPath)
     } catch (e) {
       await removeFiles(tmpPath).catch((err: Error) =>
-        this.logger.error({ tag: this.downloadFromUrl.name, msg: `unable to remove ${tmpPath} : ${err}` })
+        this.logger.error({ tag: this.downloadFromUrl.name, msg: `unable to remove ${tmpPath} : ${toErrorMessage(err)}` })
       )
       throw e
     } finally {
@@ -691,8 +697,8 @@ export class FilesManager {
     }
     const srcPath = dirName(space.realPath)
     const outputExtension = dto.extension === TAR_EXTENSION && dto.compression ? TAR_GZ_EXTENSION : dto.extension
-    const archiveExt = dto.name.endsWith(`.${outputExtension}`) ? '' : `.${outputExtension}`
-    const archiveName = `${dto.name}${archiveExt}`
+    const archiveExt = dto.name!.endsWith(`.${outputExtension}`) ? '' : `.${outputExtension}`
+    const archiveName = `${dto.name!}${archiveExt}`
     const dstPath = dto.compressInDirectory ? await uniqueFilePathFromDir(path.join(srcPath, archiveName)) : path.join(user.tmpPath, archiveName)
     const temporaryRoot = dto.compressInDirectory ? temporaryRootFromSpace(user, space) : user.tmpPath
     const tmpPath = temporaryFilePath(temporaryRoot, archiveName, FILE_OPERATION.COMPRESS, space.task?.id)
@@ -727,7 +733,9 @@ export class FilesManager {
         await moveFiles(tmpPath, dstPath)
       }
     } catch (e) {
-      await removeFiles(tmpPath).catch((err: Error) => this.logger.error({ tag: this.compress.name, msg: `unable to remove ${tmpPath} : ${err}` }))
+      await removeFiles(tmpPath).catch((err: Error) =>
+        this.logger.error({ tag: this.compress.name, msg: `unable to remove ${tmpPath} : ${toErrorMessage(err)}` })
+      )
       throw e
     } finally {
       if (fileLock) {
@@ -779,7 +787,9 @@ export class FilesManager {
       }
       await moveFiles(tmpPath, dstPath)
     } catch (e) {
-      await removeFiles(tmpPath).catch((err: Error) => this.logger.error({ tag: this.decompress.name, msg: `unable to remove ${tmpPath} : ${err}` }))
+      await removeFiles(tmpPath).catch((err: Error) =>
+        this.logger.error({ tag: this.decompress.name, msg: `unable to remove ${tmpPath} : ${toErrorMessage(err)}` })
+      )
       throw e
     } finally {
       if (fileLock) await this.filesLockManager.removeLock(fileLock.key)
@@ -850,10 +860,10 @@ export class FilesManager {
           url: dirName(space.url)
         }
         this.notificationsManager
-          .create([lock.owner.id], notification, {
+          .create([lock.owner.id as number], notification, {
             author: user
           })
-          .catch((e: Error) => this.logger.error({ tag: this.unlockRequest.name, msg: `${e}` }))
+          .catch((e: Error) => this.logger.error({ tag: this.unlockRequest.name, msg: toErrorMessage(e) }))
       }
     }
   }
@@ -908,7 +918,7 @@ export class FilesManager {
         if ((e as NodeJS.ErrnoException)?.code === 'ENOENT') continue
         if (!continueOnError) throw e
         failureCount++
-        this.logger.warn({ tag: this.emptyTrash.name, msg: `unable to delete trash entry: ${e}` })
+        this.logger.warn({ tag: this.emptyTrash.name, msg: `unable to delete trash entry: ${toErrorMessage(e)}` })
       }
     }
 

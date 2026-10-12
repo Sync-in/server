@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import type { FileProps } from '../../files/interfaces/file-props.interface.js'
 import { FilesQueries } from '../../files/services/files-queries.service.js'
@@ -8,7 +9,7 @@ import { UserMailNotification } from '../../notifications/interfaces/user-mail-n
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import { UserModel } from '../../users/models/user.model.js'
-import { CreateOrUpdateCommentDto, DeleteCommentDto } from '../dto/comment.dto.js'
+import type { CreateOrUpdateCommentDto, DeleteCommentDto } from '../dto/comment.dto.js'
 import { CommentRecent } from '../interfaces/comment-recent.interface.js'
 import type { Comment } from '../schemas/comment.interface.js'
 import { CommentsQueries } from './comments-queries.service.js'
@@ -40,7 +41,9 @@ export class CommentsManager {
     }
     const fileId = await this.getFileId(space, createCommentDto.fileId)
     const commentId: number = await this.commentQueries.createComment(user.id, fileId, createCommentDto.content)
-    this.notify(user, fileId, space, createCommentDto.content).catch((e: Error) => this.logger.error({ tag: this.createComment.name, msg: `${e}` }))
+    this.notify(user, fileId, space, createCommentDto.content).catch((e: Error) =>
+      this.logger.error({ tag: this.createComment.name, msg: toErrorMessage(e) })
+    )
     return (await this.commentQueries.getComments(user.id, space.dbFile?.ownerId === user.id, null, commentId))[0]
   }
 
@@ -53,7 +56,7 @@ export class CommentsManager {
     if (fileId === undefined || updateCommentDto.fileId !== fileId || comment.fileId !== fileId) {
       throw new HttpException('File id mismatch', HttpStatus.BAD_REQUEST)
     }
-    if (!(await this.commentQueries.updateComment(user.id, updateCommentDto.commentId, updateCommentDto.fileId, updateCommentDto.content))) {
+    if (!(await this.commentQueries.updateComment(user.id, updateCommentDto.commentId!, updateCommentDto.fileId, updateCommentDto.content))) {
       throw new HttpException('Unable to update', HttpStatus.INTERNAL_SERVER_ERROR)
     }
     return (await this.commentQueries.getComments(user.id, space.dbFile?.ownerId === user.id, null, updateCommentDto.commentId))[0]
@@ -105,6 +108,6 @@ export class CommentsManager {
         author: fromUser,
         content: comment
       })
-      .catch((e: Error) => this.logger.error({ tag: this.notify.name, msg: `${e}` }))
+      .catch((e: Error) => this.logger.error({ tag: this.notify.name, msg: toErrorMessage(e) }))
   }
 }

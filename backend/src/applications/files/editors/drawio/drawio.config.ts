@@ -1,12 +1,7 @@
-import { Transform } from 'class-transformer'
-import { IsBoolean, IsOptional, IsUrl } from 'class-validator'
+import { z } from 'zod'
+import { optionalHttpBaseUrlSchema } from '../../../../configuration/config.schema.js'
 
-export class DrawioConfig {
-  @IsBoolean()
-  enabled = false
-
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() || null : value))
-  @IsOptional()
-  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false, disallow_auth: true })
-  externalServer: string = null
-}
+export const DrawioConfigSchema = z.looseObject({
+  enabled: z.boolean().default(false),
+  externalServer: optionalHttpBaseUrlSchema.default(null)
+})

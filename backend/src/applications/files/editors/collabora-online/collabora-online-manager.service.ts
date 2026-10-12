@@ -5,6 +5,7 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { TOKEN_TYPE } from '../../../../authentication/interfaces/token.interface.js'
+import { toErrorMessage } from '../../../../common/errors.js'
 import { convertHumanTimeToSeconds } from '../../../../common/functions.js'
 import { configuration } from '../../../../configuration/config.environment.js'
 import { ContextManager } from '../../../../infrastructure/context/services/context-manager.service.js'
@@ -81,7 +82,7 @@ export class CollaboraOnlineManager {
           hasLock = this.filesLockManager.convertLockToFileLockProps(e.lock)
           mode = FILE_MODE.VIEW
         } else {
-          this.logger.error({ tag: this.getSettings.name, msg: `${e}` })
+          this.logger.error({ tag: this.getSettings.name, msg: toErrorMessage(e) })
           throw new HttpException('Unable to check file lock', HttpStatus.INTERNAL_SERVER_ERROR)
         }
       }
@@ -132,7 +133,7 @@ export class CollaboraOnlineManager {
         if (e instanceof FileError) {
           throw new HttpException(e.message, e.httpCode)
         }
-        throw new Error(`unable to save document : ${e.message}`)
+        throw new Error(`unable to save document : ${toErrorMessage(e)}`)
       }
       // try to verify the downloaded size
       if (contentLength !== undefined && contentLength !== 0) {
@@ -152,14 +153,14 @@ export class CollaboraOnlineManager {
         const fStats = await fs.stat(req.space.realPath)
         return { LastModifiedTime: fStats.mtime.toISOString() } satisfies CollaboraSaveDocumentDto
       } catch (e) {
-        this.logger.error({ tag: this.saveDocument.name, msg: `unable to save document: ${e}` })
+        this.logger.error({ tag: this.saveDocument.name, msg: `unable to save document: ${toErrorMessage(e)}` })
         throw new HttpException('Unable to save document', HttpStatus.INTERNAL_SERVER_ERROR)
       }
     } finally {
       try {
         await removeFiles(tmpFilePath)
       } catch (e) {
-        this.logger.error({ tag: this.saveDocument.name, msg: `failed to remove temporary document ${tmpFilePath}: ${e.message}` })
+        this.logger.error({ tag: this.saveDocument.name, msg: `failed to remove temporary document ${tmpFilePath}: ${toErrorMessage(e)}` })
       }
     }
   }
@@ -187,7 +188,7 @@ export class CollaboraOnlineManager {
           this.expiration
         )
         if (!ok) {
-          this.lockConflict(res, fileLock.options.lockToken)
+          this.lockConflict(res, fileLock.options!.lockToken)
           return
         }
         break
@@ -205,7 +206,7 @@ export class CollaboraOnlineManager {
       case COLLABORA_LOCK_ACTION.GET_LOCK: {
         const lock = await this.filesLockManager.getLocksByPath(req.space.dbFile)
         if (lock.length) {
-          res.header(COLLABORA_HEADERS.LockToken, lock[0].options.lockToken)
+          res.header(COLLABORA_HEADERS.LockToken, lock[0].options!.lockToken)
         }
         break
       }
@@ -275,8 +276,8 @@ export class CollaboraOnlineManager {
     return lockToken
   }
 
-  private lockConflict(res: FastifyReply, currentLockToken: string) {
-    res.header(COLLABORA_HEADERS.LockToken, currentLockToken)
+  private lockConflict(res: FastifyReply, currentLockToken?: string | null) {
+    res.header(COLLABORA_HEADERS.LockToken, currentLockToken as string)
     throw new HttpException('The file is locked', HttpStatus.CONFLICT)
   }
 

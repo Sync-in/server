@@ -12,8 +12,8 @@ export interface FileLockProps {
   isExclusive: boolean
 }
 
-export interface FileProps extends Omit<File, 'ownerId' | 'spaceId' | 'spaceExternalRootId' | 'shareExternalId' | 'inTrash'> {
-  id: number
+export interface FileProps extends Omit<File, 'id' | 'ownerId' | 'spaceId' | 'spaceExternalRootId' | 'shareExternalId' | 'inTrash'> {
+  id?: number
   name: string
   path: string
   isDir: boolean

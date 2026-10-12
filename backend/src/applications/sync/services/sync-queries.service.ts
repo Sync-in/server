@@ -19,9 +19,9 @@ import { SYNC_REPOSITORY } from '../constants/sync.js'
 import { SyncClientPaths } from '../interfaces/sync-client-paths.interface.js'
 import { SyncClientInfo } from '../interfaces/sync-client.interface.js'
 import { SyncDBProps, SyncPathSettings } from '../interfaces/sync-path.interface.js'
-import { SyncClient } from '../schemas/sync-client.interface.js'
+import type { SyncClient } from '../schemas/sync-client.interface.js'
 import { syncClients } from '../schemas/sync-clients.schema.js'
-import { SyncPath } from '../schemas/sync-path.interface.js'
+import type { SyncPath } from '../schemas/sync-path.interface.js'
 import { syncPaths } from '../schemas/sync-paths.schema.js'
 
 @Injectable()
@@ -79,7 +79,7 @@ export class SyncQueries {
     }
   }
 
-  async getClient(clientId: string, ownerId?: number, token?: string): Promise<SyncClient> {
+  async getClient(clientId: string, ownerId?: number, token?: string): Promise<SyncClient | undefined> {
     const where: SQL[] = [
       eq(syncClients.id, clientId),
       ...(ownerId ? [eq(syncClients.ownerId, ownerId)] : []),
@@ -210,7 +210,7 @@ export class SyncQueries {
   }
 
   @CacheDecorator(900)
-  async getPathSettings(clientId: string, pathId: number): Promise<SyncPathSettings> {
+  async getPathSettings(clientId: string, pathId: number): Promise<SyncPathSettings | null> {
     const [path] = await this.db
       .select({
         settings: syncPaths.settings

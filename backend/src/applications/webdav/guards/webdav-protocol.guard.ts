@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
-import { ValidationError } from 'fast-xml-parser'
 import { FastifyReply } from 'fastify'
+import { toErrorMessage } from '../../../common/errors.js'
 import { urlToPath } from '../../../common/functions.js'
 import { decodeUrl } from '../../../common/shared.js'
 import { HTTP_METHOD } from '../../applications.constants.js'
@@ -17,7 +17,7 @@ import {
   REGEX_BASE_PATH
 } from '../constants/webdav.js'
 import { IfHeader } from '../interfaces/if-header.interface.js'
-import { FastifyDAVRequest, WebDAVContext } from '../interfaces/webdav.interface.js'
+import { FastifyDAVPendingRequest, FastifyDAVRequest } from '../interfaces/webdav.interface.js'
 import { parseIfHeader } from '../utils/if-header.js'
 import { PROPFIND_ALL_PROP } from '../utils/webdav.js'
 import { xmlIsValid, xmlParse } from '../utils/xml.js'
@@ -35,7 +35,7 @@ export class WebDAVProtocolGuard implements CanActivate {
       case HTTP_METHOD.OPTIONS:
         // hook to stop propagation and return headers on all webdav routes
         res.headers(OPTIONS_HEADERS)
-        throw new HttpException(null, HttpStatus.OK)
+        throw new HttpException('', HttpStatus.OK)
       case HTTP_METHOD.PROPFIND:
         return this.propfindMethod(req)
       case HTTP_METHOD.LOCK:
@@ -59,27 +59,35 @@ export class WebDAVProtocolGuard implements CanActivate {
     }
   }
 
-  private checkUserPermission(req: FastifyDAVRequest) {
+  private checkUserPermission(req: FastifyDAVPendingRequest) {
     if (req.method !== HTTP_METHOD.OPTIONS && !req.user.havePermission(USER_PERMISSION.WEBDAV)) {
       this.logger.warn({ tag: this.checkUserPermission.name, msg: `does not have permission : ${USER_PERMISSION.WEBDAV}` })
       throw new HttpException('Missing permission', HttpStatus.FORBIDDEN)
     }
   }
 
-  private setDAVContext(req: FastifyDAVRequest) {
+  private setDAVContext(req: FastifyDAVPendingRequest): void {
     req.dav = {
       url: decodeUrl(req.originalUrl),
       depth: DEPTH.RESOURCE
-    } as WebDAVContext
+    }
   }
 
   private parseBody(req: FastifyDAVRequest) {
     let body = null
-    let valid: true | ValidationError
+    let valid: true | { err: { code?: string; msg: string; line: number; col: number } }
     try {
       valid = xmlIsValid(req.body.toString())
     } catch (e) {
-      valid = { err: { code: e.code, msg: `Invalid body content: ${e.message}`, line: 0, col: 0 } }
+      const code = e !== null && typeof e === 'object' && 'code' in e && typeof e.code === 'string' ? e.code : undefined
+      valid = {
+        err: {
+          code,
+          msg: `Invalid body content: ${toErrorMessage(e)}`,
+          line: 0,
+          col: 0
+        }
+      }
     }
     if (valid === true) {
       body = xmlParse(req.body)
@@ -103,7 +111,7 @@ export class WebDAVProtocolGuard implements CanActivate {
   }
 
   private propfindMethod(req: FastifyDAVRequest) {
-    req.dav.depth = (req.headers[HEADER.DEPTH] as string | undefined)?.toLowerCase()
+    req.dav.depth = (req.headers[HEADER.DEPTH] as string | undefined)?.toLowerCase() as DEPTH
     if (!req.dav.depth || (req.dav.depth !== DEPTH.MEMBERS && req.dav.depth !== DEPTH.RESOURCE)) {
       if (!req.dav.depth) {
         this.logger.warn({ tag: this.propfindMethod.name, msg: 'Missing propfind depth, default value 1 was set' })
@@ -137,7 +145,7 @@ export class WebDAVProtocolGuard implements CanActivate {
   }
 
   private proppatchMethod(req: FastifyDAVRequest) {
-    req.dav.depth = ((req.headers[HEADER.DEPTH] as any) || DEPTH.RESOURCE).toLowerCase()
+    req.dav.depth = ((req.headers[HEADER.DEPTH] as any) || DEPTH.RESOURCE).toLowerCase() as DEPTH
     this.parseBody(req)
     if (!req.dav.body || Object.keys(req.dav.body).indexOf(PROPPATCH_PROP_UPDATE) === -1) {
       this.logger.debug({ tag: this.proppatchMethod.name, msg: `'${PROPPATCH_PROP_UPDATE}' is missing : ${JSON.stringify(req.dav.body)}` })
@@ -160,7 +168,7 @@ export class WebDAVProtocolGuard implements CanActivate {
           const seconds = parseInt(timeoutSplit[timeoutSplit.length - 1], 10)
           req.dav.lock.timeout = seconds > CACHE_LOCK_DEFAULT_TTL ? CACHE_LOCK_DEFAULT_TTL : seconds
         } catch (e) {
-          this.logger.warn({ tag: this.lockMethod.name, msg: `unable to set timeout, use the default value : ${e}` })
+          this.logger.warn({ tag: this.lockMethod.name, msg: `unable to set timeout, use the default value : ${toErrorMessage(e)}` })
           req.dav.lock.timeout = CACHE_LOCK_DEFAULT_TTL
         }
       }
@@ -174,7 +182,10 @@ export class WebDAVProtocolGuard implements CanActivate {
       try {
         req.dav.lock.lockscope = Object.keys(req.dav.body.lockinfo.lockscope)[0] as LOCK_SCOPE
       } catch (e) {
-        this.logger.warn({ tag: this.lockMethod.name, msg: `invalid or undefined lockscope : ${JSON.stringify(req.dav.body.lockinfo)} : ${e}` })
+        this.logger.warn({
+          tag: this.lockMethod.name,
+          msg: `invalid or undefined lockscope : ${JSON.stringify(req.dav.body.lockinfo)} : ${toErrorMessage(e)}`
+        })
         throw new HttpException('Invalid or undefined lockscope', HttpStatus.BAD_REQUEST)
       }
       if (Object.values(LOCK_SCOPE).indexOf(req.dav.lock.lockscope) === -1) {
@@ -235,7 +246,7 @@ export class WebDAVProtocolGuard implements CanActivate {
       this.logger.warn({ tag: this.copyMoveMethod.name, msg: `The destination does not match the webdav base path : ${destination}` })
       throw new HttpException('The destination does not match', HttpStatus.BAD_REQUEST)
     }
-    req.dav.depth = ((req.headers[HEADER.DEPTH] as any) || DEPTH.INFINITY).toLowerCase()
+    req.dav.depth = ((req.headers[HEADER.DEPTH] as any) || DEPTH.INFINITY).toLowerCase() as DEPTH
     req.dav.copyMove = {
       overwrite: ((req.headers[HEADER.OVERWRITE] as any) || 't').toLowerCase() === 't',
       destination: destination,

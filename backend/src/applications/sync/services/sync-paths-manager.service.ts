@@ -1,5 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { ACTION } from '../../../common/constants.js'
+import { toErrorMessage } from '../../../common/errors.js'
 import { currentTimeStamp } from '../../../common/shared.js'
 import { FILE_ERROR } from '../../files/constants/errors.js'
 import type { FileProps } from '../../files/interfaces/file-props.interface.js'
@@ -14,9 +15,8 @@ import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
 import { getEnvPermissions } from '../../spaces/utils/permissions.js'
 import { UserModel } from '../../users/models/user.model.js'
 import { SYNC_PATH_REPOSITORY } from '../constants/sync.js'
-import { SyncPathDto, SyncPathUpdateDto } from '../dtos/sync-path.dto.js'
-import { SyncDBProps, SyncPathSettings } from '../interfaces/sync-path.interface.js'
-import { SyncClient } from '../schemas/sync-client.interface.js'
+import type { SyncPathDto, SyncPathUpdateDto } from '../dtos/sync-path.dto.js'
+import { ExistingSyncPathDto, SyncDBProps, SyncPathsDiff, SyncPathSettings } from '../interfaces/sync-path.interface.js'
 import { SYNC_PATH_TO_SPACE_SEGMENTS } from '../utils/routes.js'
 import { SyncQueries } from './sync-queries.service.js'
 
@@ -40,7 +40,7 @@ export class SyncPathsManager {
     }
 
     // Check DB path
-    const syncDBProps: SyncDBProps = await this.getDBProps(req.space)
+    const syncDBProps: SyncDBProps = (await this.getDBProps(req.space))!
 
     if (!(await isPathExists(req.space.realPath))) {
       throw new HttpException(`Remote path not found : ${syncPathDto.remotePath}`, HttpStatus.NOT_FOUND)
@@ -48,7 +48,7 @@ export class SyncPathsManager {
     if (!(await isPathIsDir(req.space.realPath))) {
       throw new HttpException('Remote path must be a directory', HttpStatus.BAD_REQUEST)
     }
-    const client: SyncClient = await this.syncQueries.getClient(req.user.clientId, req.user.id)
+    const client = await this.syncQueries.getClient(req.user.clientId, req.user.id)
     if (!client) {
       throw new HttpException('Client not found', HttpStatus.NOT_FOUND)
     }
@@ -59,7 +59,8 @@ export class SyncPathsManager {
     syncPathDto.permissions = getEnvPermissions(req.space, req.space.root)
     // Backward compatibility: clients predating this setting omit it.
     syncPathDto.ignoreDelete = syncPathDto.ignoreDelete === true
-    const pathId = await this.syncQueries.createPath(client.id, syncDBProps, syncPathDto)
+    const syncPathSettings = { ...syncPathDto, id: syncPathDto.id ?? undefined } satisfies SyncPathSettings
+    const pathId = await this.syncQueries.createPath(client.id, syncDBProps, syncPathSettings)
     return { id: pathId, permissions: syncPathDto.permissions }
   }
 
@@ -74,7 +75,7 @@ export class SyncPathsManager {
     try {
       await this.syncQueries.deletePath(clientId, pathId)
     } catch (e) {
-      this.logger.error({ tag: this.deletePath.name, msg: `${e}` })
+      this.logger.error({ tag: this.deletePath.name, msg: toErrorMessage(e) })
       throw new HttpException('Unable to remove path', HttpStatus.BAD_REQUEST)
     }
   }
@@ -83,7 +84,7 @@ export class SyncPathsManager {
     if (!(await this.syncQueries.clientExistsForOwner(user.id, clientId))) {
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
     }
-    const syncPathSettings: SyncPathSettings = await this.syncQueries.getPathSettings(clientId, pathId)
+    const syncPathSettings = await this.syncQueries.getPathSettings(clientId, pathId)
     if (!syncPathSettings) {
       throw new HttpException('Sync path not found', HttpStatus.NOT_FOUND)
     }
@@ -100,7 +101,7 @@ export class SyncPathsManager {
     try {
       await this.syncQueries.updatePathSettings(clientId, pathId, syncPathSettings)
     } catch (e) {
-      this.logger.error({ tag: this.updatePath.name, msg: `${e}` })
+      this.logger.error({ tag: this.updatePath.name, msg: toErrorMessage(e) })
       throw new HttpException('Unable to update path', HttpStatus.INTERNAL_SERVER_ERROR)
     } finally {
       // clear cache
@@ -109,14 +110,7 @@ export class SyncPathsManager {
     return syncPathSettings
   }
 
-  async updatePaths(
-    user: UserModel,
-    syncPathsDto: SyncPathDto[]
-  ): Promise<{
-    add: SyncPathSettings[]
-    update: Partial<Record<keyof SyncPathSettings, any>>[]
-    delete: number[]
-  }> {
+  async updatePaths(user: UserModel, syncPathsDto: ExistingSyncPathDto[]): Promise<SyncPathsDiff> {
     /* Update the client or server paths */
     if (!user.clientId) {
       throw new HttpException('Client id is missing', HttpStatus.BAD_REQUEST)
@@ -125,9 +119,15 @@ export class SyncPathsManager {
       throw new HttpException('You are not allowed to do this action', HttpStatus.FORBIDDEN)
     }
     const clientPathIds: number[] = syncPathsDto.map((p) => p.id)
-    const serverPathIds: number[] = []
+    const clientPathsById = new Map<number, ExistingSyncPathDto>()
+    for (const clientPath of syncPathsDto) {
+      if (!clientPathsById.has(clientPath.id)) {
+        clientPathsById.set(clientPath.id, clientPath)
+      }
+    }
+    const serverPathIds = new Set<number>()
 
-    const clientDiff: { add: SyncPathSettings[]; update: Partial<Record<keyof SyncPathSettings, any>>[]; delete: number[] } = {
+    const clientDiff: SyncPathsDiff = {
       add: [],
       update: [],
       delete: []
@@ -138,25 +138,25 @@ export class SyncPathsManager {
         // unable to determine path, will be stored as deleted
         continue
       }
-      let space: SpaceEnv
+      let space: SpaceEnv | null
       try {
         space = await this.spacesManager.spaceEnv(user, SYNC_PATH_TO_SPACE_SEGMENTS(serverPath.remotePath), true)
       } catch (e) {
-        throw new HttpException(e.message, HttpStatus.BAD_REQUEST)
+        throw new HttpException(toErrorMessage(e), HttpStatus.BAD_REQUEST)
       }
       if (!space) {
         // removed or inaccessible space, the path will be stored as deleted
         continue
       }
-      serverPathIds.push(serverPath.id)
-      if (clientPathIds.indexOf(serverPath.id) === -1) {
+      serverPathIds.add(serverPath.id)
+      const clientPath = clientPathsById.get(serverPath.id)
+      if (!clientPath) {
         // path exists on server but not on client, add it to client
         clientDiff.add.push({ ...serverPath.settings, id: serverPath.id, remotePath: serverPath.remotePath, permissions: space.envPermissions })
         continue
       }
 
       // path exists on both server and client side
-      const clientPath: SyncPathDto = syncPathsDto.find((p) => p.id === serverPath.id)
       // remotePath and permissions settings are only managed by server
       const updateClientInfo: { remotePath?: string; permissions?: string } = {
         ...(serverPath.remotePath !== clientPath.remotePath && { remotePath: serverPath.remotePath }),
@@ -177,13 +177,13 @@ export class SyncPathsManager {
           ...updateClientInfo
         }
       } else if (serverNewer) {
-        clientDiff.update.push({ id: clientPath.id, ...serverPath.settings, ...updateClientInfo })
+        clientDiff.update.push({ ...serverPath.settings, ...updateClientInfo, id: clientPath.id })
       }
 
       if (clientNewer || hasUpdates || serverPath.settings.lastSync !== clientPath.lastSync) {
         this.syncQueries
           .updatePathSettings(user.clientId, clientPath.id, { ...updatedSettings, lastSync: clientPath.lastSync })
-          .catch((e: Error) => this.logger.error({ tag: this.updatePaths.name, msg: `${e}` }))
+          .catch((e: Error) => this.logger.error({ tag: this.updatePaths.name, msg: toErrorMessage(e) }))
       }
 
       if (!clientNewer && hasUpdates) {
@@ -191,17 +191,21 @@ export class SyncPathsManager {
       }
     }
     // path does not exist on server side
-    clientDiff.delete = clientPathIds.filter((cid) => serverPathIds.indexOf(cid) === -1)
+    clientDiff.delete = clientPathIds.filter((cid) => !serverPathIds.has(cid))
     for (const cPathId of clientDiff.delete) {
-      const cPath: SyncPathDto = syncPathsDto.find((p) => p.id === cPathId)
-      this.notify(user.id, ACTION.DELETE, cPath.remotePath).catch((e: Error) => this.logger.error({ tag: this.updatePaths.name, msg: `${e}` }))
+      const cPath = clientPathsById.get(cPathId)!
+      this.notify(user.id, ACTION.DELETE, cPath.remotePath).catch((e: Error) =>
+        this.logger.error({ tag: this.updatePaths.name, msg: toErrorMessage(e) })
+      )
     }
     // clear cache
-    clientDiff.update.forEach((path) => this.syncQueries.clearCachePathSettings(user.clientId, path.id))
+    for (const path of clientDiff.update) {
+      this.syncQueries.clearCachePathSettings(user.clientId, path.id)
+    }
     return clientDiff
   }
 
-  private async getDBProps(space: SpaceEnv): Promise<SyncDBProps> {
+  private async getDBProps(space: SpaceEnv): Promise<SyncDBProps | undefined> {
     if (space.inSharesList) {
       throw new HttpException('Syncing all shares is not supported. Please select a subdirectory', HttpStatus.BAD_REQUEST)
     } else if (space.inPersonalSpace) {
@@ -231,20 +235,22 @@ export class SyncPathsManager {
 
   private async getOrCreateFileId(space: SpaceEnv): Promise<number> {
     const fileProps: FileProps = await getProps(space.realPath, space.dbFile.path)
-    return this.filesQueries.getOrCreateSpaceFile(fileProps.id, { ...fileProps, id: undefined }, space.dbFile)
+    return this.filesQueries.getOrCreateSpaceFile(fileProps.id!, { ...fileProps, id: undefined }, space.dbFile)
   }
 
-  private async notify(userId: number, action: ACTION, remotePath: string) {
+  private async notify(userId: number, action: ACTION.DELETE, remotePath: string) {
     const notification: NotificationContent = {
       app: NOTIFICATION_APP.SYNC,
       event: NOTIFICATION_APP_EVENT.SYNC[action],
       element: remotePath,
-      url: [...SYNC_PATH_REPOSITORY[remotePath.split('/').at(0)], ...remotePath.split('/').slice(1, -1)].join('/')
+      url: [...SYNC_PATH_REPOSITORY[remotePath.split('/').at(0) as keyof typeof SYNC_PATH_REPOSITORY], ...remotePath.split('/').slice(1, -1)].join(
+        '/'
+      )
     }
     this.notificationsManager
       .create([userId], notification, {
         action: action
       })
-      .catch((e: Error) => this.logger.error({ tag: this.notify.name, msg: `${e}` }))
+      .catch((e: Error) => this.logger.error({ tag: this.notify.name, msg: toErrorMessage(e) }))
   }
 }

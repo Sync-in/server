@@ -1,81 +1,58 @@
-import { Transform } from 'class-transformer'
-import { IsBoolean, IsDate, IsDefined, IsEnum, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, MinLength, ValidateIf } from 'class-validator'
+import { z } from 'zod'
 import { AUTH_SCOPE } from '../../../authentication/constants/scope.js'
 import { currentDate } from '../../../common/shared.js'
 import { COLLABORA_EDITOR } from '../../files/editors/collabora-online/collabora-online.constants.js'
 import { EURO_OFFICE_EDITOR, ONLY_OFFICE_EDITOR } from '../../files/editors/only-office/only-office.constants.js'
 import { USER_PASSWORD_MIN_LENGTH } from '../constants/user.js'
 import { USER_SIDEBAR_QUICK_ACCESS_POSITION, USER_SIDEBAR_QUICK_ACCESS_VISIBILITY, USER_THEME } from '../constants/user-preferences.js'
-import type { UserPreferences } from '../interfaces/user-preferences.interface.js'
 
-export class UserLanguageDto {
-  @ValidateIf((_, language) => language === null || typeof language === 'string')
-  language: string | null
-}
+export const userLanguageSchema = z.object({
+  language: z.string().nullable()
+})
 
-export class UserNotificationDto {
-  @IsNotEmpty()
-  @IsInt()
-  notification: number
-}
+export type UserLanguageDto = z.infer<typeof userLanguageSchema>
 
-export class UserStorageIndexingDto {
-  @IsDefined()
-  @IsBoolean()
-  storageIndexing: boolean
-}
+export const userNotificationSchema = z.object({
+  notification: z.number().int()
+})
 
-export class UserPreferencesDto implements Partial<UserPreferences> {
-  @ValidateIf((_, value) => value !== undefined)
-  @IsEnum(USER_THEME)
-  theme?: UserPreferences['theme']
+export type UserNotificationDto = z.infer<typeof userNotificationSchema>
 
-  @ValidateIf((_, value) => value !== undefined)
-  @IsIn([COLLABORA_EDITOR, ONLY_OFFICE_EDITOR, EURO_OFFICE_EDITOR, null])
-  editor?: UserPreferences['editor']
+export const userStorageIndexingSchema = z.object({
+  storageIndexing: z.boolean()
+})
 
-  @ValidateIf((_, value) => value !== undefined)
-  @IsBoolean()
-  useSystemNotifications?: UserPreferences['useSystemNotifications']
+export type UserStorageIndexingDto = z.infer<typeof userStorageIndexingSchema>
 
-  @ValidateIf((_, value) => value !== undefined)
-  @IsEnum(USER_SIDEBAR_QUICK_ACCESS_VISIBILITY)
-  sidebarQuickAccessVisibility?: UserPreferences['sidebarQuickAccessVisibility']
+export const userPreferencesSchema = z.object({
+  theme: z.enum(USER_THEME).optional(),
+  editor: z.enum([COLLABORA_EDITOR, ONLY_OFFICE_EDITOR, EURO_OFFICE_EDITOR]).nullish(),
+  useSystemNotifications: z.boolean().optional(),
+  sidebarQuickAccessVisibility: z.enum(USER_SIDEBAR_QUICK_ACCESS_VISIBILITY).optional(),
+  sidebarQuickAccessPosition: z.enum(USER_SIDEBAR_QUICK_ACCESS_POSITION).optional()
+})
 
-  @ValidateIf((_, value) => value !== undefined)
-  @IsEnum(USER_SIDEBAR_QUICK_ACCESS_POSITION)
-  sidebarQuickAccessPosition?: UserPreferences['sidebarQuickAccessPosition']
-}
+export type UserPreferencesDto = z.infer<typeof userPreferencesSchema>
 
-export class UserUpdatePasswordDto {
-  @IsNotEmpty()
-  @IsString()
-  oldPassword: string
+export const userUpdatePasswordSchema = z.object({
+  oldPassword: z.string().min(1),
+  newPassword: z.string().min(USER_PASSWORD_MIN_LENGTH)
+})
 
-  @IsNotEmpty()
-  @IsString()
-  @MinLength(USER_PASSWORD_MIN_LENGTH)
-  newPassword: string
-}
+export type UserUpdatePasswordDto = z.infer<typeof userUpdatePasswordSchema>
 
-export class UserPasswordDto {
-  @IsNotEmpty()
-  @IsString()
-  @MinLength(USER_PASSWORD_MIN_LENGTH)
-  password: string
-}
+export const userPasswordSchema = z.object({
+  password: z.string().min(USER_PASSWORD_MIN_LENGTH)
+})
 
-export class UserAppPasswordDto {
-  @IsNotEmpty()
-  @IsString()
-  name: string
+export type UserPasswordDto = z.infer<typeof userPasswordSchema>
 
-  @Transform(({ value }) => value.toLowerCase())
-  @IsEnum(AUTH_SCOPE)
-  app: AUTH_SCOPE
+export const userAppPasswordSchema = z.object({
+  name: z.string().min(1),
+  app: z.string().toLowerCase().pipe(z.enum(AUTH_SCOPE)),
+  expiration: z
+    .preprocess((value) => (typeof value === 'string' ? (value ? currentDate(value) : null) : value ? value : null), z.date().nullable())
+    .optional()
+})
 
-  @IsOptional()
-  @Transform(({ value }) => (value ? currentDate(value) : null))
-  @IsDate()
-  expiration?: Date
-}
+export type UserAppPasswordDto = z.infer<typeof userAppPasswordSchema>

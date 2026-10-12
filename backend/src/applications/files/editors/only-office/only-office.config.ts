@@ -1,20 +1,21 @@
-import { Transform } from 'class-transformer'
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, IsUrl, ValidateIf } from 'class-validator'
+import { z } from 'zod'
+import { nonEmptyStringSchema, optionalHttpBaseUrlSchema } from '../../../../configuration/config.schema.js'
 
-export class OnlyOfficeConfig {
-  @IsBoolean()
-  enabled = false
-
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() || null : value))
-  @IsOptional()
-  @IsUrl({ protocols: ['http', 'https'], require_protocol: true, require_tld: false, disallow_auth: true })
-  externalServer: string = null
-
-  @ValidateIf((o: OnlyOfficeConfig) => o.enabled)
-  @IsString()
-  @IsNotEmpty()
-  secret: string
-
-  @IsBoolean()
-  verifySSL: boolean = false
-}
+export const OnlyOfficeConfigSchema = z.discriminatedUnion('enabled', [
+  z.looseObject({
+    enabled: z.literal(false).default(false),
+    externalServer: optionalHttpBaseUrlSchema.default(null),
+    // Preserve the public type without validating an inactive editor secret.
+    secret: z
+      .custom<string>()
+      .optional()
+      .transform((value) => value as string),
+    verifySSL: z.boolean().default(false)
+  }),
+  z.looseObject({
+    enabled: z.literal(true),
+    externalServer: optionalHttpBaseUrlSchema.default(null),
+    secret: nonEmptyStringSchema,
+    verifySSL: z.boolean().default(false)
+  })
+])

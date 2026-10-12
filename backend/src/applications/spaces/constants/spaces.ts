@@ -32,7 +32,7 @@ export enum SPACE_ROLE {
 
 export const SPACE_ALL_OPERATIONS: string = Object.values(SPACE_OPERATION).sort().join(SPACE_PERMS_SEP)
 
-export const SPACE_HTTP_PERMISSION: Record<string, SPACE_OPERATION> = {
+export const SPACE_HTTP_PERMISSION: Record<string, SPACE_OPERATION | null> = {
   GET: null,
   POST: SPACE_OPERATION.ADD,
   PUT: SPACE_OPERATION.ADD,

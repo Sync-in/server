@@ -1,5 +1,6 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { and, count, countDistinct, eq, inArray, isNotNull, isNull, lte, SelectedFields, SQL, sql } from 'drizzle-orm'
+import { and, count, countDistinct, eq, inArray, isNotNull, isNull, lte, SQL, sql } from 'drizzle-orm'
 import { alias, union } from 'drizzle-orm/mysql-core'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { type DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
@@ -8,13 +9,13 @@ import { UserMailNotification } from '../../notifications/interfaces/user-mail-n
 import { GROUP_TYPE } from '../constants/group.js'
 import { MEMBER_TYPE } from '../constants/member.js'
 import { USER_GROUP_ROLE, USER_ROLE, USER_SECRET } from '../constants/user.js'
-import { CreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto.js'
+import type { CreateOrUpdateGroupDto } from '../dto/create-or-update-group.dto.js'
 import type { AdminGroup } from '../interfaces/admin-group.interface.js'
 import type { AdminUser } from '../interfaces/admin-user.interface.js'
 import { Member } from '../interfaces/member.interface.js'
 import type { Group } from '../schemas/group.interface.js'
 import { groups } from '../schemas/groups.schema.js'
-import { UserGroup } from '../schemas/user-group.interface.js'
+import type { UserGroup } from '../schemas/user-group.interface.js'
 import { usersGroups } from '../schemas/users-groups.schema.js'
 import { usersGuests } from '../schemas/users-guests.schema.js'
 import { userFullNameSQL, users } from '../schemas/users.schema.js'
@@ -30,8 +31,8 @@ export class AdminUsersQueries {
   ) {}
 
   async listUsers(): Promise<AdminUser[]>
-  async listUsers(userId: number): Promise<AdminUser>
-  async listUsers(userId?: number): Promise<AdminUser | AdminUser[]> {
+  async listUsers(userId: number): Promise<AdminUser | null>
+  async listUsers(userId?: number): Promise<AdminUser | AdminUser[] | null> {
     const where: SQL[] = [lte(users.role, USER_ROLE.USER), ...(userId ? [eq(users.id, userId)] : [])]
     const q = this.db
       .select({
@@ -54,7 +55,7 @@ export class AdminUsersQueries {
             type: sql`${MEMBER_TYPE.GROUP}`,
             permissions: groups.permissions,
             createdAt: dateTimeUTC(usersGroups.createdAt)
-          } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'description' | 'type' | 'permissions' | 'createdAt'>, any>)
+          } satisfies { [K in keyof Member]: any })
         }),
         language: users.language,
         passwordAttempts: users.passwordAttempts,
@@ -65,7 +66,7 @@ export class AdminUsersQueries {
         currentAccess: users.currentAccess,
         lastAccess: users.lastAccess,
         createdAt: users.createdAt
-      } satisfies AdminUser | SelectedFields<any, any>)
+      } satisfies { [K in keyof AdminUser]: any })
       .from(users)
     if (userId) {
       q.leftJoin(usersGroups, eq(usersGroups.userId, users.id))
@@ -87,7 +88,7 @@ export class AdminUsersQueries {
       .where(eq(users.role, USER_ROLE.ADMINISTRATOR))
   }
 
-  async groupFromId(groupId: number): Promise<AdminGroup> {
+  async groupFromId(groupId: number): Promise<AdminGroup | undefined> {
     const groupParent = alias(groups, 'groupParent')
     const [group] = await this.db
       .select({
@@ -100,7 +101,7 @@ export class AdminUsersQueries {
         createdAt: groups.createdAt,
         modifiedAt: groups.modifiedAt,
         parent: { id: groupParent.id, name: groupParent.name }
-      } satisfies AdminGroup | SelectedFields<any, any>)
+      } satisfies Record<keyof AdminGroup, any>)
       .from(groups)
       .leftJoin(groupParent, eq(groupParent.id, groups.parentId))
       .where(eq(groups.id, groupId))
@@ -112,13 +113,13 @@ export class AdminUsersQueries {
     return dbCheckAffectedRows(await this.db.delete(users).where(and(eq(users.id, userId), eq(users.login, userLogin))), 1, false)
   }
 
-  async groupFromName(groupName: string): Promise<Pick<Group, 'id' | 'name' | 'type'>> {
+  async groupFromName(groupName: string): Promise<Pick<Group, 'id' | 'name' | 'type'> | undefined> {
     const [group] = await this.db
       .select({
         id: groups.id,
         name: groups.name,
         type: groups.type
-      } satisfies Pick<Group, 'id' | 'name' | 'type'> | SelectedFields<any, any>)
+      } satisfies Partial<Record<keyof Group, any>>)
       .from(groups)
       .where(eq(groups.name, groupName))
       .limit(1)
@@ -136,7 +137,7 @@ export class AdminUsersQueries {
         modifiedAt: groups.modifiedAt,
         type: sql<MEMBER_TYPE>`IF(${groups.type} = ${GROUP_TYPE.USER}, ${MEMBER_TYPE.GROUP}, ${MEMBER_TYPE.PGROUP})`,
         counts: { users: count(usersGroups.userId), groups: countDistinct(childGroups.id) }
-      } satisfies Member | SelectedFields<any, any>)
+      } satisfies { [K in keyof Member]: any })
       .from(groups)
       .leftJoin(usersGroups, eq(usersGroups.groupId, groups.id))
       .leftJoin(childGroups, eq(childGroups.parentId, groups.id))
@@ -159,14 +160,14 @@ export class AdminUsersQueries {
         type: sql<MEMBER_TYPE>`${MEMBER_TYPE.USER}`,
         groupRole: sql<USER_GROUP_ROLE>`${usersGroups.role}`.mapWith(Number),
         counts: { users: sql<number>`0`, groups: sql<number>`0` }
-      } satisfies Member | SelectedFields<any, any>)
+      } satisfies { [K in keyof Member]: any })
       .from(groups)
       .innerJoin(usersGroups, eq(usersGroups.groupId, groups.id))
       .leftJoin(users, eq(users.id, usersGroups.userId))
       .where(and(eq(groups.id, groupId), eq(groups.type, type), isNotNull(users.id)))
       .groupBy(users.id)
     if (type === GROUP_TYPE.PERSONAL) {
-      return userMembers
+      return userMembers as Promise<Member[]>
     }
     const groupMembers: any = this.db
       .select({
@@ -179,7 +180,7 @@ export class AdminUsersQueries {
         type: sql<MEMBER_TYPE>`${MEMBER_TYPE.GROUP}`,
         groupRole: sql<USER_GROUP_ROLE>`null`,
         counts: { users: count(usersGroups.userId), groups: count(subChildGroups.id) }
-      } satisfies Member | SelectedFields<any, any>)
+      } satisfies { [K in keyof Member]: any })
       .from(groups)
       .innerJoin(childGroups, eq(childGroups.parentId, groups.id))
       .leftJoin(usersGroups, eq(usersGroups.groupId, childGroups.id))
@@ -187,7 +188,7 @@ export class AdminUsersQueries {
       .leftJoin(subChildGroups, eq(subChildGroups.parentId, childGroups.id))
       .where(and(eq(groups.id, groupId), eq(groups.type, type), isNotNull(childGroups.id)))
       .groupBy(childGroups.id)
-    return union(userMembers, groupMembers)
+    return union(userMembers, groupMembers) as Promise<Member[]>
   }
 
   async updateUserGroups(userId: number, groups: { add: number[]; delete: number[] }): Promise<void> {
@@ -206,7 +207,10 @@ export class AdminUsersQueries {
         void this.usersQueries.clearWhiteListCaches([userId])
         await this.usersQueries.clearWebDAVAuthCache(userId)
       } catch (e) {
-        this.logger.error({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.add)} was not added: ${e}` })
+        this.logger.error({
+          tag: this.updateUserGroups.name,
+          msg: `user (${userId}) groups ${JSON.stringify(groups.add)} was not added: ${toErrorMessage(e)}`
+        })
         throw new Error('User groups was not added')
       }
     }
@@ -220,7 +224,10 @@ export class AdminUsersQueries {
         void this.usersQueries.clearWhiteListCaches([userId])
         await this.usersQueries.clearWebDAVAuthCache(userId)
       } catch (e) {
-        this.logger.error({ tag: this.updateUserGroups.name, msg: `user (${userId}) groups ${JSON.stringify(groups.delete)} was not deleted: ${e}` })
+        this.logger.error({
+          tag: this.updateUserGroups.name,
+          msg: `user (${userId}) groups ${JSON.stringify(groups.delete)} was not deleted: ${toErrorMessage(e)}`
+        })
         throw new Error('User groups was not deleted')
       }
     }
@@ -236,7 +243,7 @@ export class AdminUsersQueries {
       this.logger.log({ tag: this.updateGroup.name, msg: `group (${groupId}) was updated : ${JSON.stringify(set)}` })
       return true
     } catch (e) {
-      this.logger.error({ tag: this.updateGroup.name, msg: `group (${groupId}) was not updated : ${JSON.stringify(set)} : ${e}` })
+      this.logger.error({ tag: this.updateGroup.name, msg: `group (${groupId}) was not updated : ${JSON.stringify(set)} : ${toErrorMessage(e)}` })
       return false
     }
   }
@@ -277,7 +284,7 @@ export class AdminUsersQueries {
       void this.usersQueries.clearWhiteListCaches(userIds)
       await this.usersQueries.clearWebDAVAuthCache(userIds)
     } catch (e) {
-      this.logger.error({ tag: this.addUsersToGroup.name, msg: `unable to add users (${userIds}) to group (${groupId}) : ${e}` })
+      this.logger.error({ tag: this.addUsersToGroup.name, msg: `unable to add users (${userIds}) to group (${groupId}) : ${toErrorMessage(e)}` })
       throw new Error('Unable to add users to group')
     }
   }
@@ -296,7 +303,7 @@ export class AdminUsersQueries {
     } catch (e) {
       this.logger.error({
         tag: this.updateUserFromGroup.name,
-        msg: `user (${userId}) was not updated on group (${groupId}) as ${USER_GROUP_ROLE[role]} : ${e}`
+        msg: `user (${userId}) was not updated on group (${groupId}) as ${USER_GROUP_ROLE[role]} : ${toErrorMessage(e)}`
       })
       throw new Error('Unable to update user from group')
     }
@@ -315,7 +322,7 @@ export class AdminUsersQueries {
       void this.usersQueries.clearWhiteListCaches([userId])
       await this.usersQueries.clearWebDAVAuthCache(userId)
     } catch (e) {
-      this.logger.error({ tag: this.removeUserFromGroup.name, msg: `user (${userId}) or group (${groupId}) does not exist : ${e}` })
+      this.logger.error({ tag: this.removeUserFromGroup.name, msg: `user (${userId}) or group (${groupId}) does not exist : ${toErrorMessage(e)}` })
       throw new Error('Unable to remove user from group')
     }
   }
@@ -336,7 +343,7 @@ export class AdminUsersQueries {
       } catch (e) {
         this.logger.error({
           tag: this.updateGuestManagers.name,
-          msg: `guest (${guestId}) managers ${JSON.stringify(managers.add)} was not added: ${e}`
+          msg: `guest (${guestId}) managers ${JSON.stringify(managers.add)} was not added: ${toErrorMessage(e)}`
         })
         throw new Error('Guest managers was not added')
       }
@@ -351,7 +358,7 @@ export class AdminUsersQueries {
       } catch (e) {
         this.logger.error({
           tag: this.updateGuestManagers.name,
-          msg: `guest (${guestId}) managers ${JSON.stringify(managers.delete)} was not deleted: ${e}`
+          msg: `guest (${guestId}) managers ${JSON.stringify(managers.delete)} was not deleted: ${toErrorMessage(e)}`
         })
         throw new Error('Guest managers was not deleted')
       }

@@ -1,5 +1,5 @@
 import fastifyCookie, { sign } from '@fastify/cookie'
-import { ExecutionContext, UnauthorizedException, ValidationPipe } from '@nestjs/common'
+import { ExecutionContext, StandardSchemaValidationPipe, UnauthorizedException } from '@nestjs/common'
 import { APP_GUARD, Reflector } from '@nestjs/core'
 import { JwtService } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
@@ -26,13 +26,13 @@ import { AUTH_TOKEN_SKIP } from './decorators/auth-token-skip.decorator.js'
 import { LoginResponseDto, LoginVerify2FaDto } from './dto/login-response.dto.js'
 import { AuthLocalGuard } from './guards/auth-local.guard.js'
 import { AuthRateLimitGuard } from './guards/auth-rate-limit.guard.js'
-import { JwtPayload } from './interfaces/jwt-payload.interface.js'
+import type { JwtPayload } from './interfaces/jwt-payload.interface.js'
 import { TOKEN_TYPE } from './interfaces/token.interface.js'
 import { AuthProvider2FA } from './providers/two-fa/auth-provider-two-fa.service.js'
 import { AuthTokenTwoFaGuard } from './providers/two-fa/guards/auth-token-two-fa.guard.js'
 import { AuthTokenTwoFaStrategy } from './providers/two-fa/guards/auth-token-two-fa.strategy.js'
 import { AuthTwoFaVerificationGuard } from './providers/two-fa/guards/auth-two-fa-verification.guard.js'
-import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './providers/two-fa/auth-two-fa.dtos.js'
+import type { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './providers/two-fa/auth-two-fa.dtos.js'
 
 describe(AuthController.name, () => {
   let module: TestingModule
@@ -124,7 +124,7 @@ describe(AuthController.name, () => {
     const res: any = { clearCookie: vi.fn() }
     await expect(authController.logout(res)).resolves.not.toThrow()
     expect(res.clearCookie).toHaveBeenCalledTimes(Object.keys(TOKEN_PATHS).length)
-    for (const [type, path] of Object.entries(TOKEN_PATHS)) {
+    for (const [type, path] of Object.entries(TOKEN_PATHS) as [keyof typeof TOKEN_PATHS, string][]) {
       expect(res.clearCookie).toHaveBeenCalledWith(authConfig.token[type].name, { path })
     }
   })
@@ -325,7 +325,7 @@ describe(`${AuthController.name} HTTP`, () => {
     userTest = new UserModel({ ...generateUserTest(), id: 888 }, false)
     app = module.createNestApplication<NestFastifyApplication>(new FastifyAdapter())
     await app.register(fastifyCookie, { secret: authConfig.token.csrf.secret })
-    app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
+    app.useGlobalPipes(new StandardSchemaValidationPipe())
     await app.init()
     await app.getHttpAdapter().getInstance().ready()
   })
@@ -390,7 +390,7 @@ describe(`${AuthController.name} HTTP`, () => {
         [TOKEN_TYPE.REFRESH]: expect.any(String)
       })
     )
-    expect(validateTwoFactorCodeSpy).toHaveBeenCalledWith('123456', twoFaUser.secrets.twoFaSecret)
+    expect(validateTwoFactorCodeSpy).toHaveBeenCalledWith('123456', twoFaUser.secrets!.twoFaSecret)
     expect(getTokensSpy).toHaveBeenCalledWith(userTest)
   })
 
@@ -526,7 +526,7 @@ describe(`${AuthController.name} HTTP`, () => {
     expect(response.json()).toEqual(result)
     expect(loadUserSpy).toHaveBeenCalledWith(administrator.id, expect.any(String))
     expect(verifyUserPasswordSpy).toHaveBeenCalledWith(administrator, 'password', expect.any(String))
-    expect(validateTwoFactorCodeSpy).toHaveBeenCalledWith('123456', administrator.secrets.twoFaSecret)
+    expect(validateTwoFactorCodeSpy).toHaveBeenCalledWith('123456', administrator.secrets!.twoFaSecret)
     expect(adminResetUserTwoFaSpy).toHaveBeenCalledWith(42)
   })
 

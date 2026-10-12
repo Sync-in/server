@@ -2,6 +2,8 @@ import type { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import type { UserModel } from '../../users/models/user.model.js'
 import type { FileTask } from '../models/file-task.js'
 
+export type FileTaskMethod = (user: UserModel, space: SpaceEnv, dto: any, signal?: AbortSignal) => Promise<any>
+
 export interface FileTaskQueueItem {
   cacheKey: string
   dto: any

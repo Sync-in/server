@@ -13,12 +13,16 @@ import { CommentsQueries } from './comments-queries.service.js'
 import { Mock } from 'vitest'
 
 // Mocks of the file utilities used by the service
-vi.mock('../../files/utils/files.js', () => ({
-  isPathExists: vi.fn(),
-  getProps: vi.fn(),
-  dirName: vi.fn(),
-  fileName: vi.fn()
-}))
+vi.mock('../../files/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+  return {
+    ...actual,
+    isPathExists: vi.fn(),
+    getProps: vi.fn(),
+    dirName: vi.fn(),
+    fileName: vi.fn()
+  }
+})
 
 describe(CommentsManager.name, () => {
   let commentsManager: CommentsManager

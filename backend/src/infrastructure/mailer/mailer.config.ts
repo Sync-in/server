@@ -1,49 +1,20 @@
-import { Type } from 'class-transformer'
-import { IsBoolean, IsInt, IsNotEmpty, IsObject, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator'
+import { z } from 'zod'
+import { nonEmptyStringSchema } from '../../configuration/config.schema.js'
 
-export class AuthMailConfig {
-  @IsString()
-  @IsNotEmpty()
-  user: string
+export type MailerConfig = z.output<typeof MailerConfigSchema>
 
-  @IsString()
-  @IsNotEmpty()
-  pass: string
-}
+export const AuthMailConfigSchema = z.looseObject({
+  user: nonEmptyStringSchema,
+  pass: nonEmptyStringSchema
+})
 
-export class MailerConfig {
-  @IsString()
-  @IsNotEmpty()
-  host: string
-
-  @IsInt()
-  @Min(0)
-  @Max(65535)
-  port: number = 25
-
-  @IsOptional()
-  @IsBoolean()
-  secure?: boolean = false
-
-  @IsOptional()
-  @IsBoolean()
-  ignoreTLS?: boolean = false
-
-  @IsOptional()
-  @IsBoolean()
-  rejectUnauthorized?: boolean = true
-
-  @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => AuthMailConfig)
-  auth?: AuthMailConfig
-
-  @IsOptional()
-  @IsString()
-  sender?: string = 'Sync-in<notification@sync-in.com>'
-
-  @IsOptional()
-  @IsBoolean()
-  logger?: boolean = false
-}
+export const MailerConfigSchema = z.looseObject({
+  host: nonEmptyStringSchema,
+  port: z.number().int().min(0).max(65535).default(25),
+  secure: z.boolean().nullish().default(false),
+  ignoreTLS: z.boolean().nullish().default(false),
+  rejectUnauthorized: z.boolean().nullish().default(true),
+  auth: AuthMailConfigSchema.nullish(),
+  sender: z.string().nullish().default('Sync-in<notification@sync-in.com>'),
+  logger: z.boolean().nullish().default(false)
+})

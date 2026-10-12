@@ -1,24 +1,17 @@
-import { IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator'
+import { z } from 'zod'
+import { integerNumberSchema } from '../../../configuration/config.schema.js'
 
-export class CreateOrUpdateCommentDto {
-  @IsNotEmpty()
-  @IsInt()
-  fileId: number
+export const createOrUpdateCommentSchema = z.object({
+  fileId: integerNumberSchema,
+  content: z.string().min(1),
+  commentId: integerNumberSchema.nullish()
+})
 
-  @IsNotEmpty()
-  @IsString()
-  content: string
+export type CreateOrUpdateCommentDto = z.infer<typeof createOrUpdateCommentSchema>
 
-  @IsOptional()
-  @IsInt()
-  commentId?: number
-}
+export const deleteCommentSchema = z.object({
+  fileId: integerNumberSchema,
+  commentId: integerNumberSchema
+})
 
-export class DeleteCommentDto {
-  @IsNotEmpty()
-  @IsInt()
-  fileId: number
-
-  @IsInt()
-  commentId: number
-}
+export type DeleteCommentDto = z.infer<typeof deleteCommentSchema>

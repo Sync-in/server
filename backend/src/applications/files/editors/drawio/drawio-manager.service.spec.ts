@@ -11,7 +11,7 @@ vi.mock('../../utils/files.js')
 describe(DrawioManager.name, () => {
   let service: DrawioManager
   let contextManager: ContextManager
-  let previousExternalServer: string
+  let previousExternalServer: string | null
 
   const mockSpace = {
     realPath: '/path/to/diagram.drawio'

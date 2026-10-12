@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 import type { RedisClientOptions, RedisClientType } from 'redis'
+import { toErrorMessage } from '../../../common/errors.js'
 import { createCacheKeySlug } from '../../../common/shared.js'
 import { configuration } from '../../../configuration/config.environment.js'
 import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants.js'
@@ -13,7 +14,7 @@ export class RedisCacheAdapter implements Cache {
   defaultTTL: number = configuration.cache.ttl
   infiniteExpiration = -1
   private readonly logger = new Logger(Cache.name.toUpperCase())
-  private client: RedisClientType
+  private client!: RedisClientType
   private readonly redactedRedisUrl = redactRedisUrl(configuration.cache.redis)
 
   constructor(private readonly availability: Availability) {
@@ -28,7 +29,7 @@ export class RedisCacheAdapter implements Cache {
     } satisfies RedisClientOptions)
     this.client.on('error', (e: Error) => {
       this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.CACHE, this.client.isReady)
-      this.logger.error(e.message || e)
+      this.logger.error(toErrorMessage(e))
     })
     this.client.on('reconnecting', () => this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.CACHE, false))
     this.client.on('ready', () => {
@@ -147,7 +148,7 @@ export class RedisCacheAdapter implements Cache {
     try {
       return (await this.client.set(key, this.serialize(data), options)) === 'OK'
     } catch (e) {
-      this.logger.error({ tag: this.set.name, msg: `${e}` })
+      this.logger.error({ tag: this.set.name, msg: toErrorMessage(e) })
       return false
     }
   }
@@ -179,7 +180,7 @@ export class RedisCacheAdapter implements Cache {
     return INFRASTRUCTURE_CONNECTION_RETRY_DELAY
   }
 
-  private getTTL(ttl: number): number {
+  private getTTL(ttl?: number): number {
     /* ttl (seconds):
         - 0: infinite expiration
         - undefined: default ttl

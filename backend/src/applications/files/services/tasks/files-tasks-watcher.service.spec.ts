@@ -64,7 +64,9 @@ describe(FilesTasksWatcher.name, () => {
   it('starts a download watcher with the published task metadata', async () => {
     const space = makeSpace()
     const updateTask = vi.spyOn(service as any, 'updateTask').mockResolvedValue(undefined)
-    const watchTask = vi.spyOn(service as any, 'watchTask').mockImplementation((_cacheKey: string, update: () => Promise<void>) => void update())
+    const watchTask = vi
+      .spyOn(service as any, 'watchTask')
+      .mockImplementation(((_cacheKey: string, update: () => Promise<void>) => void update()) as never)
 
     FileTaskEvent.emit('startWatch', space, '/files/report.txt')
     await flushPromises()

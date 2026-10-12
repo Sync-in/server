@@ -1,100 +1,53 @@
-import { Transform } from 'class-transformer'
-import {
-  ArrayMinSize,
-  IsArray,
-  IsBoolean,
-  IsDefined,
-  IsIn,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  IsUrl,
-  Max,
-  MaxLength,
-  Min
-} from 'class-validator'
-import { RejectIfMatch } from '../../../common/decorators.js'
+import { z } from 'zod'
 import { regExpInvalidFileName } from '../../../common/shared.js'
+import { httpUrlSchema } from '../../../configuration/config.schema.js'
 import { TAR_EXTENSION, ZIP_EXTENSION } from '../constants/compress.js'
 import { SEARCH_FILES_DEFAULT_LIMIT, SEARCH_FILES_MAX_LIMIT, SEARCH_FILES_MAX_QUERY_LENGTH, SEARCH_FILES_MIN_LIMIT } from '../constants/search.js'
 
-export class CopyMoveFileDto {
-  @IsNotEmpty()
-  @IsString()
-  dstDirectory: string
+const validFileNameSchema = z.string().refine((value) => !regExpInvalidFileName.test(value), { message: 'Forbidden characters' })
 
-  @IsOptional()
-  @IsString()
-  @RejectIfMatch(regExpInvalidFileName, { message: 'Forbidden characters' })
+const compressFileEntrySchema = z
+  .unknown()
+  .refine((value) => value !== '' && value !== null && value !== undefined)
+  .transform((value) => value as { name: string; rootAlias: string; path?: string })
+
+export const copyMoveFileSchema = z.object({
+  dstDirectory: z.string().min(1),
   // Renaming scenario
-  dstName?: string
+  dstName: validFileNameSchema.nullish(),
+  overwrite: z.boolean().nullish().default(false)
+})
 
-  @IsOptional()
-  @IsBoolean()
-  overwrite? = false
-}
+export type CopyMoveFileDto = z.input<typeof copyMoveFileSchema>
+export type ValidatedCopyMoveFileDto = z.output<typeof copyMoveFileSchema>
 
-export class DownloadFileDto {
-  @IsNotEmpty()
-  @IsUrl({
-    // only allow HTTP(S)
-    protocols: ['http', 'https'],
-    require_protocol: true,
-    require_valid_protocol: true,
-    // reject exotic schemes and underscores
-    allow_underscores: false,
-    allow_trailing_dot: false
-  })
-  url: string
-}
+export const downloadFileSchema = z.object({
+  url: httpUrlSchema
+})
 
-export class MakeFileDto {
-  @IsNotEmpty()
-  @IsString()
-  @IsIn(['file', 'directory'])
-  type: 'file' | 'directory'
-}
+export type DownloadFileDto = z.infer<typeof downloadFileSchema>
 
-export class CompressFileDto {
-  @IsOptional()
-  @IsString()
-  @RejectIfMatch(regExpInvalidFileName, { message: 'Forbidden characters' })
-  name?: string // only used on frontend
+export const makeFileSchema = z.object({
+  type: z.enum(['file', 'directory'])
+})
 
-  @IsDefined()
-  @IsBoolean()
-  compressInDirectory: boolean
+export type MakeFileDto = z.infer<typeof makeFileSchema>
 
-  @IsDefined()
-  @IsBoolean()
-  compression: boolean
+export const compressFileSchema = z.object({
+  name: validFileNameSchema.nullish(),
+  compressInDirectory: z.boolean(),
+  compression: z.boolean(),
+  files: z.array(compressFileEntrySchema).min(1),
+  extension: z.enum([TAR_EXTENSION, ZIP_EXTENSION])
+})
 
-  @IsNotEmpty({ each: true })
-  @IsArray()
-  @ArrayMinSize(1)
-  files: { name: string; rootAlias: string; path?: string }[]
+export type CompressFileDto = z.infer<typeof compressFileSchema>
 
-  @IsNotEmpty()
-  @IsString()
-  @IsIn([TAR_EXTENSION, ZIP_EXTENSION])
-  extension: typeof TAR_EXTENSION | typeof ZIP_EXTENSION
-}
+export const searchFilesSchema = z.object({
+  content: z.string().trim().min(1).max(SEARCH_FILES_MAX_QUERY_LENGTH),
+  fullText: z.boolean().nullish().default(false),
+  limit: z.number().int().min(SEARCH_FILES_MIN_LIMIT).max(SEARCH_FILES_MAX_LIMIT).nullish().default(SEARCH_FILES_DEFAULT_LIMIT)
+})
 
-export class SearchFilesDto {
-  @IsNotEmpty()
-  @IsString()
-  @MaxLength(SEARCH_FILES_MAX_QUERY_LENGTH)
-  @Transform(({ value }) => (value ? value.trim() : null))
-  content: string
-
-  @IsOptional()
-  @IsBoolean()
-  fullText?: boolean = false
-
-  @IsOptional()
-  @IsInt()
-  @Min(SEARCH_FILES_MIN_LIMIT)
-  @Max(SEARCH_FILES_MAX_LIMIT)
-  limit?: number = SEARCH_FILES_DEFAULT_LIMIT
-}
+export type SearchFilesDto = z.input<typeof searchFilesSchema>
+export type ValidatedSearchFilesDto = z.output<typeof searchFilesSchema>

@@ -1,13 +1,3 @@
-import { NotificationContent } from '../interfaces/notification-properties.interface.js'
-import { notifications } from './notifications.schema.js'
+import type { notifications } from './notifications.schema.js'
 
-type NotificationSchema = typeof notifications.$inferSelect
-
-export class Notification implements NotificationSchema {
-  id: number
-  toUserId: number
-  fromUserId: number
-  content: NotificationContent
-  wasRead: boolean
-  createdAt: Date
-}
+export type Notification = typeof notifications.$inferSelect

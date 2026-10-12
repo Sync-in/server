@@ -12,11 +12,15 @@ import { WebDAVSpaces } from './webdav-spaces.service.js'
 import { Mocked } from 'vitest'
 
 // mocks for file utils and permissions
-vi.mock('../../files/utils/files.js', () => ({
-  getProps: vi.fn(),
-  isPathExists: vi.fn(),
-  isPathIsDir: vi.fn()
-}))
+vi.mock('../../files/utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../files/utils/files.js')>()
+  return {
+    ...actual,
+    getProps: vi.fn(),
+    isPathExists: vi.fn(),
+    isPathIsDir: vi.fn()
+  }
+})
 vi.mock('../../spaces/utils/permissions.js', () => ({
   canAccessToSpaceUrl: vi.fn()
 }))
@@ -131,7 +135,7 @@ describe(WebDAVSpaces.name, () => {
       vi.mocked(spacesManager.listSpaces).mockResolvedValue([
         { id: 10, name: 'Team A', alias: 'team-a', createdAt: now.toISOString(), modifiedAt: now.toISOString() },
         { id: 11, name: 'Team B', alias: 'team-b', createdAt: now.toISOString(), modifiedAt: now.toISOString() }
-      ])
+      ] as never)
 
       const req = { user, dav: { url: '/webdav/spaces', depth: DEPTH.MEMBERS } } as unknown as FastifyDAVRequest
       const items = await collectGenerator(service.propfind(req, WEBDAV_NS.SPACES as any))
@@ -151,7 +155,7 @@ describe(WebDAVSpaces.name, () => {
       vi.mocked(spacesManager.listTrashes).mockResolvedValue([
         { id: 1, alias: 'personal', nb: 2, mtime: 3, ctime: 4, name: 'Personal files' },
         { id: 2, alias: 'team-a', nb: 5, mtime: 6, ctime: 7, name: 'Team A' }
-      ])
+      ] as never)
       const req = { user, dav: { url: '/webdav/trash', depth: DEPTH.MEMBERS } } as unknown as FastifyDAVRequest
       const items = await collectGenerator(service.propfind(req, WEBDAV_NS.TRASH as any))
       expect(items.map((i: any) => i.name)).toEqual([WEBDAV_NS.TRASH, 'personal (2)', 'team-a (5)'])
@@ -169,7 +173,7 @@ describe(WebDAVSpaces.name, () => {
     it('yields shares root and children when inSharesList=true and depth=1', async () => {
       vi.mocked(spacesBrowser.browse).mockResolvedValue({
         files: [{ id: 1, name: 'doc.txt', isDir: false, size: 12, ctime: 1, mtime: 2, mime: 'text/plain' }]
-      })
+      } as never)
 
       const req = {
         user,
@@ -206,11 +210,11 @@ describe(WebDAVSpaces.name, () => {
         ctime: Date.now(),
         mtime: Date.now(),
         mime: undefined
-      })
+      } as never)
       vi.mocked(isPathIsDir).mockResolvedValue(true)
       vi.mocked(spacesBrowser.browse).mockResolvedValue({
         files: [{ id: 2, name: 'child.txt', isDir: false, size: 1, ctime: 1, mtime: 2, mime: 'text/plain' }]
-      })
+      } as never)
 
       const req = {
         user,
@@ -232,10 +236,9 @@ describe(WebDAVSpaces.name, () => {
         ctime: Date.now(),
         mtime: Date.now(),
         mime: 'text/plain'
-      })
+      } as never)
       vi.mocked(isPathIsDir).mockResolvedValue(false)
-      vi.mocked(spacesBrowser.browse).mockResolvedValue({ files: [] })
-
+      vi.mocked(spacesBrowser.browse).mockResolvedValue({ files: [] } as never)
       const req = {
         user,
         dav: { url: '/webdav/files/personal/current', depth: DEPTH.MEMBERS },
@@ -253,7 +256,7 @@ describe(WebDAVSpaces.name, () => {
       const req = { user, dav: { url: '/webdav/unknown', depth: DEPTH.RESOURCE } } as unknown as FastifyDAVRequest
       try {
         service.propfind(req, 'unknown' as any)
-        fail('Expected HttpException to be thrown')
+        throw new Error('Expected HttpException to be thrown')
       } catch (err) {
         expect(err).toBeInstanceOf(HttpException)
         expect((err as HttpException).getStatus()).toBe(HttpStatus.NOT_FOUND)

@@ -1,16 +1,3 @@
-import type { SyncPathSettings } from '../interfaces/sync-path.interface.js'
-import { syncPaths } from './sync-paths.schema.js'
+import type { syncPaths } from './sync-paths.schema.js'
 
-type SyncPathSchema = typeof syncPaths.$inferSelect
-
-export class SyncPath implements SyncPathSchema {
-  id: number
-  clientId: string
-  ownerId: number
-  spaceId: number
-  spaceRootId: number
-  shareId: number
-  fileId: number
-  settings: SyncPathSettings
-  createdAt: Date
-}
+export type SyncPath = typeof syncPaths.$inferSelect

@@ -2,7 +2,7 @@ import type { spacesRoots } from './spaces-roots.schema.js'
 
 type SpaceRootSchema = typeof spacesRoots.$inferSelect
 
-export class SpaceRoot implements SpaceRootSchema {
+export interface SpaceRoot extends SpaceRootSchema {
   id: number
   alias: string
   name: string

@@ -22,6 +22,7 @@ import { DownloadFile } from '../../../applications/files/utils/download-file.js
 import * as imageUtils from '../../../common/image.js'
 import { AUTH_SCOPE } from '../../constants/scope.js'
 import { DEFAULT_STORAGE_QUOTA_FIELD } from '../auth-providers.constants.js'
+import { OAuthDesktopCallBackURI, OAuthDesktopLoopbackPorts } from './auth-oidc-desktop.constants.js'
 import { OAuthCookie } from './auth-oidc.constants.js'
 import { AuthProviderOIDC } from './auth-provider-oidc.service.js'
 import { Mock } from 'vitest'
@@ -165,6 +166,22 @@ describe(AuthProviderOIDC.name, () => {
     ;(service as any).oidcConfig.options.enablePasswordAuth = false
     vi.spyOn(filesUtils, 'temporaryFilePath').mockReturnValue('/tmp/sync-in/alice/tmp/~tmp-avatar-test-id-avatar.png')
     ;(service as any).oidcConfig.options.autoSyncAvatar = false
+  })
+
+  describe('getRedirectURI', () => {
+    it('uses the configured web callback when the desktop port is absent', () => {
+      expect(service.getRedirectURI()).toBe('https://api.example.test/auth/oidc/callback')
+    })
+
+    it('accepts only an allowlisted desktop port', () => {
+      const desktopPort = OAuthDesktopLoopbackPorts.values().next().value as number
+
+      expect(service.getRedirectURI(desktopPort)).toBe(`http://127.0.0.1:${desktopPort}${OAuthDesktopCallBackURI}`)
+      expect(() => service.getRedirectURI(0)).toThrow('Invalid desktop_port')
+      expect(() => service.getRedirectURI('0')).toThrow('Invalid desktop_port')
+      expect(() => service.getRedirectURI('')).toThrow('Invalid desktop_port')
+      expect(() => service.getRedirectURI(65535)).toThrow('Invalid desktop_port')
+    })
   })
 
   it('returns null when user is not found', async () => {

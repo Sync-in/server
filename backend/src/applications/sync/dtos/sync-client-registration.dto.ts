@@ -1,43 +1,19 @@
-import { Type } from 'class-transformer'
-import { IsDefined, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator'
-import { SyncClientInfoDto } from './sync-client-info.dto.js'
+import { z } from 'zod'
+import { syncClientInfoSchema } from './sync-client-info.dto.js'
 
-export class SyncClientRegistrationDto {
-  @IsNotEmpty()
-  @IsString()
-  login: string
+export const syncClientRegistrationSchema = z.object({
+  login: z.string().min(1),
+  password: z.string().min(1),
+  code: z.string().nullish(),
+  clientId: z.uuid(),
+  info: syncClientInfoSchema
+})
 
-  @IsNotEmpty()
-  @IsString()
-  password: string
+export type SyncClientRegistrationDto = z.infer<typeof syncClientRegistrationSchema>
 
-  @IsOptional()
-  @IsString()
-  code?: string
+export const syncClientAuthRegistrationSchema = z.object({
+  clientId: z.uuid().nullish(),
+  info: syncClientInfoSchema
+})
 
-  @IsNotEmpty()
-  @IsString()
-  @IsUUID()
-  clientId: string
-
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => SyncClientInfoDto)
-  info: SyncClientInfoDto
-}
-
-export class SyncClientAuthRegistrationDto {
-  @IsOptional()
-  @IsString()
-  @IsUUID()
-  clientId?: string
-
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => SyncClientInfoDto)
-  info: SyncClientInfoDto
-}
+export type SyncClientAuthRegistrationDto = z.infer<typeof syncClientAuthRegistrationSchema>

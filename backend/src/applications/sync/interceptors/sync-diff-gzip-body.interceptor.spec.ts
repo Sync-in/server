@@ -144,7 +144,7 @@ describe('SyncDiffGzipBodyInterceptor', () => {
 
   it('should throw Payload Too Large when decompressed gzip body exceeds the limit', async () => {
     vi.spyOn(zlib, 'gunzip').mockImplementationOnce(((_body, _options, callback) => {
-      callback(new Error('maxOutputLength exceeded'), null)
+      callback(new Error('maxOutputLength exceeded'), null as never)
     }) as typeof zlib.gunzip)
     const req: any = {
       headers: { 'content-encoding': 'gzip' },

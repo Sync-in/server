@@ -18,7 +18,7 @@ export class AuthLocalStrategy extends PassportStrategy(Strategy, 'local') imple
   async validate(req: FastifyRequest, loginOrEmail: string, password: string): Promise<UserModel> {
     loginOrEmail = loginOrEmail.trim()
     this.logger.assign({ user: loginOrEmail })
-    const user: UserModel = await this.authProvider.validateUser(loginOrEmail, password, req.ip)
+    const user = await this.authProvider.validateUser(loginOrEmail, password, req.ip)
     if (user) {
       user.removePassword()
       return user

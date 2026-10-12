@@ -34,7 +34,7 @@ describe(OnlyOfficeManager.name, () => {
   let jwtService: Mocked<JwtService>
   let filesLockManager: Mocked<FilesLockManager>
   let onlyOfficeEnabled: boolean
-  let onlyOfficeExternalServer: string
+  let onlyOfficeExternalServer: string | null
 
   const mockUser = {
     id: 1,
@@ -130,6 +130,13 @@ describe(OnlyOfficeManager.name, () => {
     vi.clearAllMocks()
   })
 
+  it('builds the conversion endpoint without a double slash', () => {
+    configuration.applications.files.editors.onlyoffice.externalServer = 'https://office.example.test/subpath/'
+    const configuredService = new OnlyOfficeManager(httpService, {} as ContextManager, cache, jwtService, filesLockManager)
+
+    expect((configuredService as any).convertUrl).toBe('https://office.example.test/subpath/ConvertService.ashx')
+  })
+
   describe('getSettings', () => {
     beforeEach(() => {
       vi.mocked(filesUtils.isPathExists).mockResolvedValue(true)
@@ -137,7 +144,7 @@ describe(OnlyOfficeManager.name, () => {
       filesLockManager.checkConflicts.mockResolvedValue(undefined)
       jwtService.signAsync.mockResolvedValue('mock-token')
       cache.get.mockResolvedValue(null)
-      cache.set.mockResolvedValue(undefined)
+      cache.set.mockResolvedValue(undefined as never)
       vi.mocked(filesUtils.genEtag).mockReturnValue('mock-etag')
     })
 
@@ -146,8 +153,8 @@ describe(OnlyOfficeManager.name, () => {
 
       expect(result).toBeDefined()
       expect(result.config.documentType).toBe('word')
-      expect(result.config.editorConfig.mode).toBe(FILE_MODE.EDIT)
-      expect(result.config.document.permissions.edit).toBe(true)
+      expect(result.config.editorConfig!.mode).toBe(FILE_MODE.EDIT)
+      expect(result.config.document!.permissions!.edit).toBe(true)
       expect(result.hasLock).toBe(false)
       expect(jwtService.signAsync).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -198,8 +205,8 @@ describe(OnlyOfficeManager.name, () => {
 
       const result = await service.getSettings(mockUser, mockSpaceEnv, mockRequest)
 
-      expect(result.config.editorConfig.mode).toBe(FILE_MODE.VIEW)
-      expect(result.config.document.permissions.edit).toBe(false)
+      expect(result.config.editorConfig!.mode).toBe(FILE_MODE.VIEW)
+      expect(result.config.document!.permissions!.edit).toBe(false)
       expect(result.hasLock).toBeDefined()
     })
 
@@ -212,8 +219,8 @@ describe(OnlyOfficeManager.name, () => {
 
       const result = await service.getSettings(mockUser, viewOnlySpaceEnv, mockRequest)
 
-      expect(result.config.editorConfig.mode).toBe(FILE_MODE.VIEW)
-      expect(result.config.document.permissions.edit).toBe(false)
+      expect(result.config.editorConfig!.mode).toBe(FILE_MODE.VIEW)
+      expect(result.config.document!.permissions!.edit).toBe(false)
     })
 
     it('should set mode to VIEW when document is in trash repository', async () => {
@@ -224,8 +231,8 @@ describe(OnlyOfficeManager.name, () => {
 
       const result = await service.getSettings(mockUser, trashSpaceEnv, mockRequest)
 
-      expect(result.config.editorConfig.mode).toBe(FILE_MODE.VIEW)
-      expect(result.config.document.permissions.edit).toBe(false)
+      expect(result.config.editorConfig!.mode).toBe(FILE_MODE.VIEW)
+      expect(result.config.document!.permissions!.edit).toBe(false)
       expect(filesLockManager.checkConflicts).not.toHaveBeenCalled()
     })
 
@@ -246,7 +253,7 @@ describe(OnlyOfficeManager.name, () => {
 
       const result = await service.getSettings(mockUser, mockSpaceEnv, mockRequest)
 
-      expect(result.config.document.key).toBe('cached-doc-key')
+      expect(result.config.document!.key).toBe('cached-doc-key')
       expect(cache.set).not.toHaveBeenCalled()
     })
   })
@@ -256,7 +263,7 @@ describe(OnlyOfficeManager.name, () => {
     const mockDocumentUrl = 'http://localhost:3000/onlyoffice/document.docx?md5=abc123&expires=1739400549&shardkey=-33120641&filename=document.docx'
 
     beforeEach(() => {
-      filesLockManager.removeLock.mockResolvedValue(undefined)
+      filesLockManager.removeLock.mockResolvedValue(undefined as never)
       filesLockManager.getLocksByPath.mockResolvedValue([])
       filesLockManager.isPathLocked.mockResolvedValue(false)
       cache.del.mockResolvedValue(true)
@@ -467,7 +474,7 @@ describe(OnlyOfficeManager.name, () => {
         actions: [{ type: 1, userid: '1' }],
         users: ['1']
       })
-      filesLockManager.create.mockResolvedValue([false, null])
+      filesLockManager.create.mockResolvedValue([false, null as never])
 
       const result = await service.callBack(mockUser, mockSpaceEnv, mockToken)
 

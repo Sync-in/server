@@ -111,7 +111,7 @@ describe(NotificationsManager.name, () => {
       expect(notificationsQueriesMock.create).toHaveBeenCalledWith(null, toUserIds, content)
       expect(webSocketNotificationsMock.sendMessageToUsers).toHaveBeenCalledWith(toUserIds, NOTIFICATIONS_WS.EVENTS.NOTIFICATION, 'check')
       expect(notificationsQueriesMock.usersNotifiedByEmail).toHaveBeenCalledWith(toUserIds)
-      expect(sendEmailSpy).toHaveBeenCalledWith(emailUsers as any, content, undefined)
+      expect(sendEmailSpy).toHaveBeenCalledWith(emailUsers as any, content)
     })
 
     it('does not try email when mailer is unavailable', async () => {
@@ -159,7 +159,7 @@ describe(NotificationsManager.name, () => {
       expect(notificationsQueriesMock.wasRead).toHaveBeenCalledWith(5, 123)
       const loggerSpy = spyLogger()
       notificationsQueriesMock.wasRead.mockRejectedValueOnce(new Error('fail'))
-      service.wasRead({ id: 8 } as any, undefined)
+      service.wasRead({ id: 8 } as any, 456)
       await flushPromises()
       expect(loggerSpy).toHaveBeenCalled()
       expect(loggerSpy.mock.calls[0]?.[0]).toMatchObject({ tag: 'wasRead' })

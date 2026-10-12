@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../../common/errors.js'
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common'
 import { Cache } from '../../../../infrastructure/cache/cache.service.js'
 import { SpaceEnv } from '../../../spaces/models/space-env.model.js'
@@ -29,7 +30,7 @@ export class FilesTasksWatcher implements OnModuleDestroy {
   async beginFinalization(cacheKey: string): Promise<void> {
     this.finalizingTasks.add(cacheKey)
     this.stopWatch(cacheKey)
-    await this.pendingTaskUpdates.get(cacheKey)?.catch((e: Error) => this.logger.error({ tag: this.beginFinalization.name, msg: `${e}` }))
+    await this.pendingTaskUpdates.get(cacheKey)?.catch((e: Error) => this.logger.error({ tag: this.beginFinalization.name, msg: toErrorMessage(e) }))
   }
 
   endFinalization(cacheKey: string): void {
@@ -57,8 +58,8 @@ export class FilesTasksWatcher implements OnModuleDestroy {
     this.updateTask(cacheKey, props, {
       name: fileName(rPath),
       path: dirName(space.url)
-    }).catch((e: Error) => this.logger.error({ tag: this.startWatch.name, msg: `${e}` }))
-    this.watchTask(cacheKey, () => this.updateTask(cacheKey, space.task.props))
+    }).catch((e: Error) => this.logger.error({ tag: this.startWatch.name, msg: toErrorMessage(e) }))
+    this.watchTask(cacheKey, () => this.updateTask(cacheKey, space.task!.props))
   }
 
   private watchTask(cacheKey: string, update: () => Promise<void>): void {
@@ -68,7 +69,7 @@ export class FilesTasksWatcher implements OnModuleDestroy {
       if (updateInProgress) return
       updateInProgress = true
       void update()
-        .catch((e: Error) => this.logger.error({ tag: this.watchTask.name, msg: `${e}` }))
+        .catch((e: Error) => this.logger.error({ tag: this.watchTask.name, msg: toErrorMessage(e) }))
         .finally(() => {
           updateInProgress = false
         })

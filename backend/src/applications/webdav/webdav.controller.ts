@@ -5,8 +5,9 @@ import { SPACE_REPOSITORY } from '../spaces/constants/spaces.js'
 import { SpaceGuard } from '../spaces/guards/space.guard.js'
 import { WEBDAV_BASE_PATH, WEBDAV_NS } from './constants/routes.js'
 import { WebDAVEnvironment } from './decorators/webdav-context.decorator.js'
-import { type FastifyDAVRequest } from './interfaces/webdav.interface.js'
+import { type FastifyDAVRequest, type FastifyDAVSpaceRequest } from './interfaces/webdav.interface.js'
 import { WebDAVMethods } from './services/webdav-methods.service.js'
+import { repositoryParameterSchema } from './webdav.schema.js'
 
 @Controller()
 @WebDAVEnvironment()
@@ -45,14 +46,14 @@ export class WebDAVController {
   async repositoriesPropfind(
     @Req() req: FastifyDAVRequest,
     @Res({ passthrough: true }) res: FastifyReply,
-    @Param('repository') repository: string
+    @Param('repository', { schema: repositoryParameterSchema }) repository: string
   ): Promise<string> {
     return this.webdavMethods.propfind(req, res, repository)
   }
 
   @All(`${WEBDAV_BASE_PATH}/*`)
   @UseGuards(SpaceGuard)
-  async files(@Req() req: FastifyDAVRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<string | StreamableFile> {
+  async files(@Req() req: FastifyDAVSpaceRequest, @Res({ passthrough: true }) res: FastifyReply): Promise<string | StreamableFile | void> {
     // OPTIONS method is handled in the `WebDAVProtocolGuard`
     switch (req.method) {
       case HTTP_METHOD.PROPFIND:

@@ -2,28 +2,28 @@ import { uniquePermissions } from '../../../common/functions.js'
 import { MEMBER_TYPE } from '../../users/constants/member.js'
 import { Member } from '../../users/interfaces/member.interface.js'
 import { SPACE_ALL_OPERATIONS, SPACE_ROLE } from '../constants/spaces.js'
-import { Space } from '../schemas/space.interface.js'
-import { SpaceRootProps } from './space-root-props.model.js'
+import type { Space } from '../schemas/space.interface.js'
+import type { SpaceRootProps } from './space-root-props.model.js'
 
 export class SpaceProps implements Space {
-  id: number
-  alias: string
-  name: string
-  enabled: boolean
-  description: string
-  storageQuota: number
-  storageUsage: number
-  storageIndexing: boolean
-  modifiedAt: Date
-  disabledAt: Date
-  createdAt: Date
+  id!: Space['id']
+  alias!: Space['alias']
+  name!: Space['name']
+  enabled!: Space['enabled']
+  description!: Space['description']
+  storageQuota!: Space['storageQuota']
+  storageUsage!: Space['storageUsage']
+  storageIndexing!: Space['storageIndexing']
+  modifiedAt!: Space['modifiedAt']
+  disabledAt!: Space['disabledAt']
+  createdAt!: Space['createdAt']
 
   // Extra properties
   members: Member[] = []
-  roots?: SpaceRootProps[] = []
-  permissions: string
+  roots: SpaceRootProps[] = []
+  permissions!: string
   role?: number
-  counts?: { users: number; groups: number; links: number; roots: number; shares: number }
+  counts?: { users: number; groups: number; links: number; roots?: number; shares: number }
 
   constructor(props: Partial<SpaceProps>, userId?: number) {
     if (props?.role === SPACE_ROLE.IS_MANAGER) {
@@ -54,7 +54,7 @@ export class SpaceProps implements Space {
     }
     for (const r of this.roots) {
       if (r.owner?.id === userId) {
-        this.counts.roots++
+        this.counts.roots = (this.counts.roots ?? 0) + 1
       }
     }
   }

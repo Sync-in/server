@@ -121,8 +121,8 @@ export function likeSearchTermStartPattern(): string {
   return `(?=${LIKE_SEARCH_CHAR})`
 }
 
-export function normalizeSearchLimit(limit?: number): number {
-  if (!Number.isInteger(limit)) return SEARCH_FILES_DEFAULT_LIMIT
+export function normalizeSearchLimit(limit?: number | null): number {
+  if (typeof limit !== 'number' || !Number.isInteger(limit)) return SEARCH_FILES_DEFAULT_LIMIT
   return Math.min(Math.max(limit, SEARCH_FILES_MIN_LIMIT), SEARCH_FILES_MAX_LIMIT)
 }
 

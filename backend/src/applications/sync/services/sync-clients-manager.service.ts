@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { HttpService } from '@nestjs/axios'
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { AxiosResponse } from 'axios'
@@ -24,12 +25,12 @@ import { CLIENT_AUTH_TYPE, CLIENT_TOKEN_EXPIRATION_TIME, CLIENT_TOKEN_EXPIRED_ER
 import { APP_STORE_DIRNAME, APP_STORE_MANIFEST_FILE, APP_STORE_REPOSITORY } from '../constants/store.js'
 import { SYNC_CLIENT_TYPE } from '../constants/sync.js'
 import type { SyncClientAuthDto } from '../dtos/sync-client-auth.dto.js'
-import { SyncClientAuthRegistrationDto, SyncClientRegistrationDto } from '../dtos/sync-client-registration.dto.js'
+import type { SyncClientAuthRegistrationDto, SyncClientRegistrationDto } from '../dtos/sync-client-registration.dto.js'
 import { AppStoreManifest } from '../interfaces/store-manifest.interface.js'
 import { SyncClientAuthCookie, SyncClientAuthRegistration, SyncClientAuthToken } from '../interfaces/sync-client-auth.interface.js'
 import { SyncClientPaths } from '../interfaces/sync-client-paths.interface.js'
 import { SyncClientInfo } from '../interfaces/sync-client.interface.js'
-import { SyncClient } from '../schemas/sync-client.interface.js'
+import type { SyncClient } from '../schemas/sync-client.interface.js'
 import { SyncQueries } from './sync-queries.service.js'
 
 @Injectable()
@@ -46,7 +47,7 @@ export class SyncClientsManager {
   ) {}
 
   async register(clientRegistrationDto: SyncClientRegistrationDto, ip: string): Promise<SyncClientAuthRegistration> {
-    const user: UserModel = await this.authProvider.validateUser(clientRegistrationDto.login, clientRegistrationDto.password, ip, AUTH_SCOPE.CLIENT)
+    const user = await this.authProvider.validateUser(clientRegistrationDto.login, clientRegistrationDto.password, ip, AUTH_SCOPE.CLIENT)
     if (!user) {
       this.logger.warn({ tag: this.register.name, msg: `auth failed for user *${clientRegistrationDto.login}*` })
       throw new HttpException('Wrong login or password', HttpStatus.UNAUTHORIZED)
@@ -64,10 +65,10 @@ export class SyncClientsManager {
         this.logger.warn({ tag: this.register.name, msg: `missing two-fa code for user *${user.login}* (${user.id})` })
         throw new HttpException('Missing TWO-FA code', HttpStatus.UNAUTHORIZED)
       }
-      const authCode = this.authProvider2FA.validateTwoFactorCode(clientRegistrationDto.code, user.secrets.twoFaSecret)
+      const authCode = this.authProvider2FA.validateTwoFactorCode(clientRegistrationDto.code, user.secrets!.twoFaSecret!)
       if (!authCode.success) {
         this.logger.warn({ tag: this.register.name, msg: `two-fa code for *${user.login}* (${user.id}) - ${authCode.message}` })
-        const authRCode = await this.authProvider2FA.validateRecoveryCode(user.id, clientRegistrationDto.code, user.secrets.recoveryCodes)
+        const authRCode = await this.authProvider2FA.validateRecoveryCode(user.id, clientRegistrationDto.code, user.secrets!.recoveryCodes!)
         if (!authRCode.success) {
           this.logger.warn({ tag: this.register.name, msg: `two-fa recovery code for *${user.login}* (${user.id}) - ${authRCode.message}` })
           await this.usersManager.updateAccesses(user, ip, false)
@@ -88,9 +89,9 @@ export class SyncClientsManager {
 
   async unregister(user: UserModel): Promise<void> {
     try {
-      await this.syncQueries.deleteClient(user.id, user.clientId)
+      await this.syncQueries.deleteClient(user.id, user.clientId!)
     } catch (e) {
-      this.logger.error({ tag: this.unregister.name, msg: `${e}` })
+      this.logger.error({ tag: this.unregister.name, msg: toErrorMessage(e) })
       throw new HttpException('Error during the removing of client registration', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
@@ -101,7 +102,7 @@ export class SyncClientsManager {
     ip: string,
     res: FastifyReply
   ): Promise<SyncClientAuthToken | SyncClientAuthCookie> {
-    const client = await this.syncQueries.getClient(syncClientAuthDto.clientId, null, syncClientAuthDto.token)
+    const client = await this.syncQueries.getClient(syncClientAuthDto.clientId, undefined, syncClientAuthDto.token)
     if (!client) {
       throw new HttpException('Client is unknown', HttpStatus.FORBIDDEN)
     }
@@ -111,8 +112,10 @@ export class SyncClientsManager {
     if (currentTimeStamp() >= client.tokenExpiration) {
       throw new HttpException(CLIENT_TOKEN_EXPIRED_ERROR, HttpStatus.FORBIDDEN)
     }
-    this.syncQueries.updateClientInfo(client, client.info, ip).catch((e: Error) => this.logger.error({ tag: this.authenticate.name, msg: `${e}` }))
-    const user: UserModel = await this.usersManager.fromUserId(client.ownerId)
+    this.syncQueries
+      .updateClientInfo(client, client.info, ip)
+      .catch((e: Error) => this.logger.error({ tag: this.authenticate.name, msg: toErrorMessage(e) }))
+    const user = await this.usersManager.fromUserId(client.ownerId)
     if (!user) {
       throw new HttpException('User does not exist', HttpStatus.FORBIDDEN)
     }
@@ -126,8 +129,8 @@ export class SyncClientsManager {
     // set clientId
     user.clientId = client.id
     // update accesses
-    this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error({ tag: this.authenticate.name, msg: `${e}` }))
-    let r: SyncClientAuthToken | SyncClientAuthCookie
+    this.usersManager.updateAccesses(user, ip, true).catch((e: Error) => this.logger.error({ tag: this.authenticate.name, msg: toErrorMessage(e) }))
+    let r!: SyncClientAuthToken | SyncClientAuthCookie
     if (authType === CLIENT_AUTH_TYPE.COOKIE) {
       // used by the desktop app to perform the login setup using cookies
       r = await this.authManager.setCookies(user, res)
@@ -157,7 +160,7 @@ export class SyncClientsManager {
     } catch (e) {
       this.logger.error({
         tag: this.renewTokenAndExpiration.name,
-        msg: `unable to renew token for user *${owner.login}* and client *${client.id}* : ${e}`
+        msg: `unable to renew token for user *${owner.login}* and client *${client.id}* : ${toErrorMessage(e)}`
       })
       throw new HttpException('Unable to update client token', HttpStatus.BAD_REQUEST)
     }
@@ -168,14 +171,14 @@ export class SyncClientsManager {
     try {
       await this.syncQueries.deleteClient(user.id, clientId)
     } catch (e) {
-      this.logger.error({ tag: this.deleteClient.name, msg: `${e}` })
+      this.logger.error({ tag: this.deleteClient.name, msg: toErrorMessage(e) })
       throw new HttpException('Unable to delete client', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }
 
   @CacheDecorator(3600)
-  async checkAppStore(): Promise<AppStoreManifest> {
-    let manifest: AppStoreManifest = null
+  async checkAppStore(): Promise<AppStoreManifest | null> {
+    let manifest: AppStoreManifest | null = null
     if (configuration.applications.appStore.repository === APP_STORE_REPOSITORY.PUBLIC) {
       const url = `${RELEASES_URL}/${APP_STORE_MANIFEST_FILE}`
       try {
@@ -183,10 +186,10 @@ export class SyncClientsManager {
           method: HTTP_METHOD.GET,
           url: url
         })
-        manifest = res.data
+        manifest = res.data as AppStoreManifest
         manifest.repository = APP_STORE_REPOSITORY.PUBLIC
       } catch (e) {
-        this.logger.warn({ tag: this.checkAppStore.name, msg: `unable to retrieve ${url} : ${e}` })
+        this.logger.warn({ tag: this.checkAppStore.name, msg: `unable to retrieve ${url} : ${toErrorMessage(e)}` })
       }
     } else {
       const latestFile = path.join(STATIC_PATH, APP_STORE_DIRNAME, APP_STORE_MANIFEST_FILE)
@@ -194,7 +197,7 @@ export class SyncClientsManager {
         this.logger.warn({ tag: this.checkAppStore.name, msg: `${latestFile} does not exist` })
       } else {
         try {
-          manifest = JSON.parse(await fs.readFile(latestFile, 'utf8'))
+          manifest = JSON.parse(await fs.readFile(latestFile, 'utf8')) as AppStoreManifest
           manifest.repository = APP_STORE_REPOSITORY.LOCAL
           // rewrite urls to local repository
           for (const [os, packages] of Object.entries(manifest.platform)) {
@@ -207,7 +210,7 @@ export class SyncClientsManager {
             }
           }
         } catch (e) {
-          this.logger.error({ tag: this.checkAppStore.name, msg: `${latestFile} : ${e}` })
+          this.logger.error({ tag: this.checkAppStore.name, msg: `${latestFile} : ${toErrorMessage(e)}` })
         }
       }
     }
@@ -220,7 +223,7 @@ export class SyncClientsManager {
       this.logger.log({ tag: this.getOrCreateClient.name, msg: `client *${clientInfo.type}* was registered for user *${user.login}* (${user.id})` })
       return { clientId: clientId, clientToken: token } satisfies SyncClientAuthRegistration
     } catch (e) {
-      this.logger.error({ tag: this.getOrCreateClient.name, msg: `${e}` })
+      this.logger.error({ tag: this.getOrCreateClient.name, msg: toErrorMessage(e) })
       throw new HttpException('Error during the client registration', HttpStatus.INTERNAL_SERVER_ERROR)
     }
   }

@@ -10,8 +10,8 @@ export type LOCK_APP =
 // Optional lock parameters
 export interface FileLockOptions {
   // Only locktype write is currently implemented in RFC
-  lockRoot: string // Used with webdav (uri)
-  lockToken: string
+  lockRoot: string | null // Used with webdav (uri)
+  lockToken: string | null
   lockScope: LOCK_SCOPE
   lockInfo?: string // Provided by some WebDAV clients to identify the locking application.
 }

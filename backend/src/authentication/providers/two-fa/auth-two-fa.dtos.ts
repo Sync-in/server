@@ -1,23 +1,20 @@
-import { IsBoolean, IsNotEmpty, IsOptional, IsString } from 'class-validator'
-import { LoginResponseDto } from '../../dto/login-response.dto.js'
+import { z } from 'zod'
+import type { LoginResponseDto } from '../../dto/login-response.dto.js'
 
-export class TwoFaResponseDto extends LoginResponseDto {
+export type TwoFaResponseDto = LoginResponseDto & {
   success: boolean
   message: string
 }
 
-export class TwoFaVerifyDto {
-  @IsString()
-  @IsNotEmpty()
-  code!: string
+export const twoFaVerifySchema = z.object({
+  code: z.string().min(1),
+  isRecoveryCode: z.boolean().nullish()
+})
 
-  @IsOptional()
-  @IsBoolean()
-  isRecoveryCode?: boolean
-}
+export type TwoFaVerifyDto = z.infer<typeof twoFaVerifySchema>
 
-export class TwoFaVerifyWithPasswordDto extends TwoFaVerifyDto {
-  @IsString()
-  @IsNotEmpty()
-  password!: string
-}
+export const twoFaVerifyWithPasswordSchema = twoFaVerifySchema.extend({
+  password: z.string().min(1)
+})
+
+export type TwoFaVerifyWithPasswordDto = z.infer<typeof twoFaVerifyWithPasswordSchema>

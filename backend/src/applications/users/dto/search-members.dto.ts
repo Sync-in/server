@@ -1,44 +1,26 @@
-import { Transform } from 'class-transformer'
-import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator'
+import { z } from 'zod'
+import { integerNumberSchema } from '../../../configuration/config.schema.js'
 
-export class SearchMembersDto {
-  @IsString()
-  @Transform(({ value }) => (value ? value.trim().toLowerCase() : ''))
-  search: string
+export const searchMembersSchema = z.object({
+  search: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .nullable()
+    .transform((value) => value ?? ''),
+  ignoreUserIds: z.array(integerNumberSchema).nullish(),
+  ignoreGroupIds: z.array(integerNumberSchema).nullish(),
+  onlyUsers: z.boolean().nullish().default(false),
+  onlyGroups: z.boolean().nullish().default(false),
+  excludePersonalGroups: z.boolean().nullish().default(false),
+  onlyPersonalGroups: z.boolean().nullish().default(false),
+  isGroupManager: z.boolean().nullish().default(false),
+  usersRole: z.number().int().nullish(),
+  withPermissions: z.boolean().nullish().default(false)
+})
 
-  @IsOptional()
-  @IsInt({ each: true })
-  ignoreUserIds?: number[]
+type SearchMembersSchemaInput = z.input<typeof searchMembersSchema>
+type SearchMembersSchemaOutput = z.output<typeof searchMembersSchema>
 
-  @IsOptional()
-  @IsInt({ each: true })
-  ignoreGroupIds?: number[]
-
-  @IsOptional()
-  @IsBoolean()
-  onlyUsers?: boolean = false
-
-  @IsOptional()
-  @IsBoolean()
-  onlyGroups?: boolean = false
-
-  @IsOptional()
-  @IsBoolean()
-  excludePersonalGroups?: boolean = false
-
-  @IsOptional()
-  @IsBoolean()
-  onlyPersonalGroups?: boolean = false
-
-  @IsOptional()
-  @IsBoolean()
-  isGroupManager?: boolean = false
-
-  @IsOptional()
-  @IsInt()
-  usersRole?: number
-
-  @IsOptional()
-  @IsBoolean()
-  withPermissions?: boolean = false
-}
+export type SearchMembersDto = Omit<SearchMembersSchemaInput, 'search'> & { search: string }
+export type ValidatedSearchMembersDto = SearchMembersSchemaOutput & Required<Pick<SearchMembersSchemaOutput, 'search'>>

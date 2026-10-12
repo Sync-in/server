@@ -6,14 +6,14 @@ import type { USER_GROUP_ROLE } from '../constants/user.js'
 export interface Member {
   id: number
   name: string // user full name or group name
-  description: string // user email or group description
+  description: string | null // user email or group description
   type: MEMBER_TYPE
-  login?: string // only for user
-  linkId?: number // only for link
-  linkSettings?: CreateOrUpdateLinkDto // only for link
-  permissions?: string
-  createdAt?: Date
-  modifiedAt?: Date
+  login?: string | null // only for user
+  linkId?: number | null // only for link
+  linkSettings?: CreateOrUpdateLinkDto | null // only for link
+  permissions?: string | null
+  createdAt?: Date | null
+  modifiedAt?: Date | null
   spaceRole?: SPACE_ROLE // only for user
   groupRole?: USER_GROUP_ROLE // only for groups
   counts?: { users?: number; groups?: number } // only for admin group members

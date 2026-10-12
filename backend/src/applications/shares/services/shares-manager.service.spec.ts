@@ -587,7 +587,7 @@ describe(SharesManager.name, () => {
     })
 
     it('updates modified links and returns them along with unmodified ones', async () => {
-      const updateLinkSpy = vi.spyOn(service, 'updateLinkFromSpaceOrShare').mockResolvedValue(void 0)
+      const updateLinkSpy = vi.spyOn(service, 'updateLinkFromSpaceOrShare').mockResolvedValue(void 0 as never)
 
       const members = await service.createOrUpdateLinksAsMembers(user, { id: 1, name: 'S' } as any, LINK_TYPE.SHARE, [
         { id: 2, linkId: 2, permissions: 'p', linkSettings: { name: 'new' } },

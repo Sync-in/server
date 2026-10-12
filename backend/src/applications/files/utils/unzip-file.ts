@@ -3,6 +3,7 @@ import { createWriteStream, openAsBlob } from 'node:fs'
 import path from 'node:path'
 import { Writable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
+import { toErrorMessage } from '../../../common/errors.js'
 import { DEFAULT_HIGH_WATER_MARK } from '../constants/files.js'
 import type { FileTaskExtractionEntry } from '../interfaces/file-task.interface.js'
 import { storageQuotaExceededError } from './errors.js'
@@ -84,7 +85,7 @@ export async function extractZip(
         await fileEntry.getData(Writable.toWeb(entryOutput), { signal })
         await outputPromise
       } catch (error) {
-        const reason = error instanceof Error ? error : new Error(String(error))
+        const reason = error instanceof Error ? error : new Error(toErrorMessage(error))
         entryOutput.destroy(reason)
         if (progressTransform) writeStream.destroy(reason)
         await outputPromise?.catch(() => undefined)

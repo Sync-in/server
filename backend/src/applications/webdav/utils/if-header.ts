@@ -9,7 +9,7 @@ import { IfHeader } from '../interfaces/if-header.interface.js'
 const ifHeaderRegExp = /(?:<([^>]+)>)?\s*\(([^)]+)\)/g
 const ifHeaderInternalRegExp = /((not)|\[([^\]]+)\]|<(DAV:no-lock)>|<([^>]+)>|([^\s]+))/gi
 
-function parseIfHeaderInternal(path: string, group: string) {
+function parseIfHeaderInternal(path: string | undefined, group: string) {
   let match = ifHeaderInternalRegExp.exec(group)
 
   let mustMatch = true
@@ -42,22 +42,22 @@ function parseIfHeaderInternal(path: string, group: string) {
 export function parseIfHeader(ifHeader: string): IfHeader[] {
   const orArray: IfHeader[] = []
   let match = ifHeaderRegExp.exec(ifHeader)
-  let path = undefined
+  let path: string | undefined = undefined
 
   while (match) {
     if (match[1]) {
       path = urlToPath(match[1])
     }
-    orArray.push(parseIfHeaderInternal(path, match[2]))
+    orArray.push(parseIfHeaderInternal(path, match[2]!))
     match = ifHeaderRegExp.exec(ifHeader)
   }
   return orArray
 }
 
-export function extractOneToken(ifHeaders: IfHeader[]): string {
-  return ifHeaders[0].token.value
+export function extractOneToken(ifHeaders?: IfHeader[]): string {
+  return ifHeaders![0].token!.value
 }
 
-export function extractAllTokens(ifHeaders: IfHeader[]): string[] {
-  return ifHeaders ? ifHeaders.map((i: IfHeader) => i.token?.value).filter(Boolean) : []
+export function extractAllTokens(ifHeaders?: IfHeader[]): string[] {
+  return (ifHeaders ? ifHeaders.map((i: IfHeader) => i.token?.value).filter(Boolean) : []) as string[]
 }

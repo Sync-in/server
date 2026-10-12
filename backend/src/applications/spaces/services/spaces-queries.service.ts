@@ -1,8 +1,10 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { Inject, Injectable, Logger } from '@nestjs/common'
-import { and, countDistinct, eq, isNotNull, isNull, max, ne, or, SelectedFields, SQL, sql } from 'drizzle-orm'
-import { alias, union } from 'drizzle-orm/mysql-core'
+import { and, countDistinct, eq, isNotNull, isNull, max, ne, or, SQL, sql } from 'drizzle-orm'
+import { alias, type SelectedFields, union } from 'drizzle-orm/mysql-core'
 import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { ACTION } from '../../../common/constants.js'
+import type { ConvertedDiffUpdate } from '../../../common/functions.js'
 import { popFromObject } from '../../../common/shared.js'
 import { CacheDecorator } from '../../../infrastructure/cache/cache.decorator.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
@@ -21,7 +23,7 @@ import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.sche
 import { FileDBProps } from '../../files/interfaces/file-db-props.interface.js'
 import { FileProps } from '../../files/interfaces/file-props.interface.js'
 import { filesFavorites } from '../../files/schemas/files-favorites.schema.js'
-import { File } from '../../files/schemas/file.interface.js'
+import type { File } from '../../files/schemas/file.interface.js'
 import { filePathSQL, files } from '../../files/schemas/files.schema.js'
 import { FilesQueries } from '../../files/services/files-queries.service.js'
 import { links } from '../../links/schemas/links.schema.js'
@@ -37,14 +39,15 @@ import { groups } from '../../users/schemas/groups.schema.js'
 import { usersGroups } from '../../users/schemas/users-groups.schema.js'
 import { userFullNameSQL, users } from '../../users/schemas/users.schema.js'
 import { SPACE_ROLE } from '../constants/spaces.js'
-import { SpaceMemberDto } from '../dto/create-or-update-space.dto.js'
+import type { SpaceMemberDto } from '../dto/create-or-update-space.dto.js'
+import type { SpaceMemberUpdate } from '../interfaces/space-diff.interface.js'
 import type { GetOrCreateSpaceFileOptions, SpaceBrowseDetails } from '../interfaces/space-files.interface.js'
 import { SpaceEnv } from '../models/space-env.model.js'
 import { SpaceProps } from '../models/space-props.model.js'
-import { SpaceRootProps } from '../models/space-root-props.model.js'
-import { SpaceMembers } from '../schemas/space-members.interface.js'
-import { SpaceRoot } from '../schemas/space-root.interface.js'
-import { Space } from '../schemas/space.interface.js'
+import type { SpaceRootProps } from '../models/space-root-props.model.js'
+import type { SpaceMembers } from '../schemas/space-members.interface.js'
+import type { SpaceRoot } from '../schemas/space-root.interface.js'
+import type { Space } from '../schemas/space.interface.js'
 import { spacesMembers } from '../schemas/spaces-members.schema.js'
 import { spacesRoots } from '../schemas/spaces-roots.schema.js'
 import { spaceGroupConcatPermissions, spaces } from '../schemas/spaces.schema.js'
@@ -52,15 +55,15 @@ import { spaceGroupConcatPermissions, spaces } from '../schemas/spaces.schema.js
 @Injectable()
 export class SpacesQueries {
   private readonly logger = new Logger(SpacesQueries.name)
-  private spacePermissionsQuery: MySql2PreparedQuery<any> = null
-  private spaceAndRootPermissionsQuery: MySql2PreparedQuery<any> = null
-  private spacesWithDetailsQuery: MySql2PreparedQuery<any> = null
-  private spacesQuery: MySql2PreparedQuery<any> = null
-  private spaceIdentitiesQuery: MySql2PreparedQuery<any> = null
-  private spaceQuery: MySql2PreparedQuery<any> = null
-  private spacesWithPermissionsQuery: MySql2PreparedQuery<any> = null
-  private spaceFromIdWithPermissionsQuery: MySql2PreparedQuery<any> = null
-  private spaceRootFilesQuery: MySql2PreparedQuery<any> = null
+  private spacePermissionsQuery: MySql2PreparedQuery<any> | null = null
+  private spaceAndRootPermissionsQuery: MySql2PreparedQuery<any> | null = null
+  private spacesWithDetailsQuery: MySql2PreparedQuery<any> | null = null
+  private spacesQuery: MySql2PreparedQuery<any> | null = null
+  private spaceIdentitiesQuery: MySql2PreparedQuery<any> | null = null
+  private spaceQuery: MySql2PreparedQuery<any> | null = null
+  private spacesWithPermissionsQuery: MySql2PreparedQuery<any> | null = null
+  private spaceFromIdWithPermissionsQuery: MySql2PreparedQuery<any> | null = null
+  private spaceRootFilesQuery: MySql2PreparedQuery<any> | null = null
 
   constructor(
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
@@ -68,14 +71,14 @@ export class SpacesQueries {
     private readonly filesQueries: FilesQueries
   ) {}
 
-  spaceExistsForAlias(alias: string, excludedSpaceId?: number): any | undefined {
+  spaceExistsForAlias(alias: string, excludedSpaceId?: number) {
     return this.db.query.spaces.findFirst({
       columns: { id: true },
       where: excludedSpaceId === undefined ? eq(spaces.alias, alias) : and(eq(spaces.alias, alias), ne(spaces.id, excludedSpaceId))
     })
   }
 
-  spaceRootExistsForAlias(spaceId: number, rootAlias: string, excludedRootId?: number): any | undefined {
+  spaceRootExistsForAlias(spaceId: number, rootAlias: string, excludedRootId?: number) {
     return this.db.query.spacesRoots.findFirst({
       columns: { id: true },
       where:
@@ -85,15 +88,15 @@ export class SpacesQueries {
     })
   }
 
-  selectSpaces(fields: Partial<keyof Space>[] = ['id', 'alias', 'name'], where: SQL[]): Promise<Partial<Space>[]> {
-    const select: Record<keyof Space, any> = convertToSelect(spaces, fields)
+  selectSpaces<K extends keyof Space>(fields: readonly K[], where: SQL[]): Promise<Pick<Space, K>[]> {
+    const select = convertToSelect(spaces, fields)
     return this.db
       .select(select)
       .from(spaces)
-      .where(and(...where))
+      .where(and(...where)) as Promise<Pick<Space, K>[]>
   }
 
-  spacesQuotaPaths(spaceId?: number): Promise<(Partial<Space> & { externalPaths: string[] })[]> {
+  spacesQuotaPaths(spaceId?: number): Promise<(Pick<Space, 'id' | 'alias' | 'storageUsage' | 'storageQuota'> & { externalPaths: string[] })[]> {
     return this.db
       .select({
         id: spaces.id,
@@ -104,7 +107,7 @@ export class SpacesQueries {
       })
       .from(spaces)
       .leftJoin(spacesRoots, and(eq(spacesRoots.spaceId, spaces.id), isNotNull(spacesRoots.externalPath)))
-      .where(and(...[...(spaceId ? [eq(spaces.id, spaceId)] : [])]))
+      .where(spaceId ? eq(spaces.id, spaceId) : undefined)
       .groupBy(spaces.id)
   }
 
@@ -126,7 +129,7 @@ export class SpacesQueries {
     return !!r
   }
 
-  async getSpaceAsAdminOrManager(user: UserModel, spaceId: number): Promise<SpaceProps> {
+  async getSpaceAsAdminOrManager(user: UserModel, spaceId: number): Promise<SpaceProps | null> {
     /* User must be an admin or the manager of the space */
     if (!this.spaceQuery) {
       const otherMembers: any = alias(spacesMembers, 'otherMembers')
@@ -187,7 +190,7 @@ export class SpacesQueries {
             permissions: otherMembers.permissions,
             createdAt: dateTimeUTC(otherMembers.createdAt)
           })
-        } satisfies SpaceProps | SelectedFields<any, any>)
+        } satisfies SelectedFields)
         .from(spaces)
         .leftJoin(
           spacesMembers,
@@ -243,14 +246,14 @@ export class SpacesQueries {
       this.logger.verbose({ tag: this.updateSpace.name, msg: `space (${id}) was updated : ${JSON.stringify(set)}` })
       return true
     } catch (e) {
-      this.logger.error({ tag: this.updateSpace.name, msg: `space (${id}) was not updated : ${JSON.stringify(set)} : ${e}` })
+      this.logger.error({ tag: this.updateSpace.name, msg: `space (${id}) was not updated : ${JSON.stringify(set)} : ${toErrorMessage(e)}` })
       return false
     }
   }
 
   async spaceRootFiles(userId: number, spaceId: number, details: SpaceBrowseDetails): Promise<FileProps[]> {
     if (!this.spaceRootFilesQuery) {
-      const select: FileProps | SelectedFields<any, any> = {
+      const select: any = {
         id: files.id,
         path: filePathSQL(files),
         isDir: files.isDir,
@@ -280,7 +283,7 @@ export class SpacesQueries {
         })}, '[]')`.mapWith(dbParseJson),
         hasComments: sql<boolean>`IF (${sql.placeholder('withDetails')}, ${fileHasCommentsSubquerySQL(files.id)}, 0)`.mapWith(Boolean),
         isFavorite: isNotNull(filesFavorites.fileId).mapWith(Boolean)
-      }
+      } satisfies Partial<Record<keyof FileProps, any>>
       this.spaceRootFilesQuery = this.db
         .select(select)
         .from(spacesRoots)
@@ -349,7 +352,7 @@ export class SpacesQueries {
   }
 
   async getSpaceMemberIds(spaceId: number): Promise<{ groupIds: number[]; userIds: number[] }> {
-    const members = { userIds: [], groupIds: [] }
+    const members: { userIds: number[]; groupIds: number[] } = { userIds: [], groupIds: [] }
     for (const m of await this.db
       .select({
         userId: spacesMembers.userId,
@@ -360,7 +363,7 @@ export class SpacesQueries {
       if (m.userId) {
         members.userIds.push(m.userId)
       } else {
-        members.groupIds.push(m.groupId)
+        members.groupIds.push(m.groupId as number)
       }
     }
     return members
@@ -369,7 +372,7 @@ export class SpacesQueries {
   async updateMembers(
     spaceId: number,
     add: SpaceMemberDto[],
-    update: Record<string | 'object', Partial<SpaceMembers> | SpaceMemberDto>[],
+    update: SpaceMemberUpdate[],
     remove: SpaceMemberDto[]
   ): Promise<Record<Exclude<ACTION, ACTION.DELETE_PERMANENTLY>, { userIds: number[]; groupIds: number[] }>> {
     // store status
@@ -393,7 +396,10 @@ export class SpacesQueries {
         status[ACTION.ADD][`${m.type === MEMBER_TYPE.USER || m.type === MEMBER_TYPE.GUEST ? 'userIds' : 'groupIds'}`].push(m.id)
         this.logger.debug({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) added to the space (${spaceId})` })
       } catch (e) {
-        this.logger.error({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) was not added to the space ${spaceId} ->  : ${e}` })
+        this.logger.error({
+          tag: this.updateMembers.name,
+          msg: `${m.type} (${m.id}) was not added to the space ${spaceId} ->  : ${toErrorMessage(e)}`
+        })
       }
     }
     // update
@@ -422,7 +428,7 @@ export class SpacesQueries {
       } catch (e) {
         this.logger.error({
           tag: this.updateMembers.name,
-          msg: `${m.type} (${m.id}) was not updated on space (${spaceId}) : ${JSON.stringify(props)} : ${e}`
+          msg: `${m.type} (${m.id}) was not updated on space (${spaceId}) : ${JSON.stringify(props)} : ${toErrorMessage(e)}`
         })
       }
     }
@@ -443,7 +449,10 @@ export class SpacesQueries {
         status[ACTION.DELETE][`${m.type === MEMBER_TYPE.USER || m.type === MEMBER_TYPE.GUEST ? 'userIds' : 'groupIds'}`].push(m.id)
         this.logger.debug({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) removed from space (${spaceId})` })
       } catch (e) {
-        this.logger.error({ tag: this.updateMembers.name, msg: `${m.type} (${m.id}) was not removed from space (${spaceId}) : ${e}` })
+        this.logger.error({
+          tag: this.updateMembers.name,
+          msg: `${m.type} (${m.id}) was not removed from space (${spaceId}) : ${toErrorMessage(e)}`
+        })
       }
     }
     return status
@@ -453,7 +462,7 @@ export class SpacesQueries {
     userId: number,
     spaceId: number,
     add: SpaceRootProps[],
-    update: Record<string | 'object', Partial<SpaceRootProps> | SpaceRootProps>[],
+    update: ConvertedDiffUpdate<SpaceRootProps, 'name' | 'alias' | 'permissions'>[],
     remove: SpaceRootProps[]
   ): Promise<Record<Exclude<ACTION, ACTION.DELETE_PERMANENTLY>, SpaceRootProps[]>> {
     // store status
@@ -496,7 +505,7 @@ export class SpacesQueries {
 
   @CacheDecorator()
   async spaces(userId: number, withPermissions = false, fromId?: number): Promise<SpaceProps[]> {
-    let pQuery: MySql2PreparedQuery<any>
+    let pQuery: MySql2PreparedQuery<any> | null
     if (fromId) {
       pQuery = this.spaceFromIdWithPermissionsQuery
     } else if (withPermissions) {
@@ -505,7 +514,7 @@ export class SpacesQueries {
       pQuery = this.spacesQuery
     }
     if (!pQuery) {
-      const selectUnion: SpaceProps | SelectedFields<any, any> = {
+      const selectUnion = {
         id: spaces.id,
         alias: spaces.alias,
         name: spaces.name,
@@ -514,9 +523,9 @@ export class SpacesQueries {
         createdAt: spaces.createdAt,
         modifiedAt: spaces.modifiedAt,
         ...(withPermissions && { permissions: spacesMembers.permissions, role: spacesMembers.role })
-      }
+      } satisfies Partial<Record<keyof SpaceProps, any>>
       const unionAlias = this.fromUserAndGroups(selectUnion)
-      const select: SpaceProps | SelectedFields<any, any> = {
+      const select = {
         id: unionAlias.id,
         alias: unionAlias.alias,
         name: unionAlias.name,
@@ -528,7 +537,7 @@ export class SpacesQueries {
           permissions: spaceGroupConcatPermissions(unionAlias.permissions),
           role: max(unionAlias.role)
         })
-      }
+      } satisfies Partial<Record<keyof SpaceProps, any>>
       if (fromId) {
         pQuery = this.db
           .select(select)
@@ -553,7 +562,7 @@ export class SpacesQueries {
 
   async spacesWithDetails(userId: number): Promise<SpaceProps[]> {
     if (!this.spacesWithDetailsQuery) {
-      const selectUnion: SpaceProps | SelectedFields<any, any> = {
+      const selectUnion = {
         id: spaces.id,
         alias: spaces.alias,
         name: spaces.name,
@@ -564,10 +573,10 @@ export class SpacesQueries {
         createdAt: spaces.createdAt,
         modifiedAt: spaces.modifiedAt,
         disabledAt: spaces.disabledAt
-      }
+      } satisfies Partial<Record<keyof SpaceProps, any>>
       const unionAlias = this.fromUserAndGroups(selectUnion)
       const managers: any = alias(users, 'managers')
-      const select: SpaceProps | SelectedFields<any, any> = {
+      const select = {
         id: unionAlias.id,
         alias: unionAlias.alias,
         name: unionAlias.name,
@@ -587,35 +596,33 @@ export class SpacesQueries {
           spaceRole: spacesMembers.role,
           permissions: sql<string>`''`,
           createdAt: dateTimeUTC(spacesMembers.createdAt)
-        } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'login' | 'description' | 'type' | 'permissions' | 'spaceRole' | 'createdAt'>, any>),
+        } satisfies { [K in keyof Member]: any }),
         counts: {
-          users: sql`COUNT(DISTINCT(CASE WHEN ${spacesMembers.userId} IS NOT NULL AND ${spacesMembers.linkId} IS NULL THEN ${spacesMembers.userId} END))`,
+          users: sql<number>`COUNT(DISTINCT(CASE WHEN ${spacesMembers.userId} IS NOT NULL AND ${spacesMembers.linkId} IS NULL THEN ${spacesMembers.userId} END))`,
           groups: countDistinct(spacesMembers.groupId),
-          links: sql`COUNT(DISTINCT(CASE WHEN ${spacesMembers.linkId} IS NOT NULL THEN ${spacesMembers.linkId} END))`,
+          links: sql<number>`COUNT(DISTINCT(CASE WHEN ${spacesMembers.linkId} IS NOT NULL THEN ${spacesMembers.linkId} END))`,
           roots: countDistinct(files.id),
-          shares: sql`COUNT(DISTINCT(CASE WHEN ${shares.id} IS NOT NULL THEN ${shares.id} END))`
+          shares: sql<number>`COUNT(DISTINCT(CASE WHEN ${shares.id} IS NOT NULL THEN ${shares.id} END))`
         }
-      }
+      } satisfies Partial<Record<keyof SpaceProps, any>>
       this.spacesWithDetailsQuery = this.db
         .select(select)
         .from(unionAlias)
         .leftJoin(spacesMembers, eq(spacesMembers.spaceId, unionAlias.id))
-        .leftJoin(users, eq(users.id, spacesMembers.userId))
-        .leftJoin(groups, eq(groups.id, spacesMembers.groupId))
         .leftJoin(managers, and(eq(spacesMembers.userId, managers.id), eq(spacesMembers.role, SPACE_ROLE.IS_MANAGER)))
         .leftJoin(spacesRoots, eq(spacesRoots.spaceId, unionAlias.id))
         .leftJoin(files, and(eq(files.id, spacesRoots.fileId), eq(files.ownerId, sql.placeholder('userId'))))
-        .leftJoin(shares, and(eq(unionAlias.role, 1), eq(shares.spaceId, unionAlias.id), isNotNull(shares.spaceId)))
+        .leftJoin(shares, and(eq(unionAlias.role, SPACE_ROLE.IS_MANAGER), eq(shares.spaceId, unionAlias.id)))
         .groupBy(unionAlias.id)
         .prepare()
     }
     const r: MySqlQueryResult = await this.spacesWithDetailsQuery.execute({ userId })
-    return r.length ? r.map((s: Partial<SpaceProps>) => new SpaceProps(s)) : []
+    return r.map((s: Partial<SpaceProps>) => new SpaceProps(s))
   }
 
   async spacesAsAdmin(): Promise<SpaceProps[]> {
     const managers: any = alias(users, 'managers')
-    const select: SpaceProps | SelectedFields<any, any> = {
+    const select = {
       id: spaces.id,
       alias: spaces.alias,
       name: spaces.name,
@@ -635,33 +642,27 @@ export class SpacesQueries {
         spaceRole: spacesMembers.role,
         permissions: sql<string>`''`,
         createdAt: dateTimeUTC(spacesMembers.createdAt)
-      } satisfies Record<keyof Pick<Member, 'id' | 'name' | 'login' | 'description' | 'type' | 'permissions' | 'spaceRole' | 'createdAt'>, any>),
+      } satisfies { [K in keyof Member]: any }),
       counts: {
-        users: sql`COUNT(DISTINCT(CASE WHEN ${spacesMembers.userId} IS NOT NULL AND ${spacesMembers.linkId} IS NULL THEN ${spacesMembers.userId} END))`,
+        users: sql<number>`COUNT(DISTINCT(CASE WHEN ${spacesMembers.userId} IS NOT NULL AND ${spacesMembers.linkId} IS NULL THEN ${spacesMembers.userId} END))`,
         groups: countDistinct(spacesMembers.groupId),
-        links: sql`COUNT(DISTINCT(CASE WHEN ${spacesMembers.linkId} IS NOT NULL THEN ${spacesMembers.linkId} END))`,
-        shares: sql`COUNT(DISTINCT(CASE WHEN ${shares.id} IS NOT NULL THEN ${shares.id} END))`
+        links: sql<number>`COUNT(DISTINCT(CASE WHEN ${spacesMembers.linkId} IS NOT NULL THEN ${spacesMembers.linkId} END))`,
+        shares: sql<number>`COUNT(DISTINCT(CASE WHEN ${shares.id} IS NOT NULL THEN ${shares.id} END))`
       }
-    }
+    } satisfies Partial<Record<keyof SpaceProps, any>>
     const r = await this.db
       .select(select)
       .from(spaces)
       .leftJoin(spacesMembers, eq(spacesMembers.spaceId, spaces.id))
-      .leftJoin(users, eq(users.id, spacesMembers.userId))
-      .leftJoin(groups, eq(groups.id, spacesMembers.groupId))
       .leftJoin(managers, and(eq(spacesMembers.userId, managers.id), eq(spacesMembers.role, SPACE_ROLE.IS_MANAGER)))
-      .leftJoin(spacesRoots, eq(spacesRoots.spaceId, spaces.id))
-      .leftJoin(shares, and(eq(shares.spaceId, spaces.id), isNotNull(shares.spaceId)))
+      .leftJoin(shares, eq(shares.spaceId, spaces.id))
       .groupBy(spaces.id)
-    return r.length ? r.map((s: Partial<SpaceProps>) => new SpaceProps(s)) : []
+    return r.map((s) => new SpaceProps(s as Partial<SpaceProps>))
   }
 
   @CacheDecorator()
-  async permissions(userId: number, spaceAlias: string, rootAlias: string): Promise<Partial<SpaceEnv>> {
-    if (rootAlias) {
-      return await this.spaceAndRootPermissions(userId, spaceAlias, rootAlias)
-    }
-    return await this.spacePermissions(userId, spaceAlias)
+  permissions(userId: number, spaceAlias: string, rootAlias: string | null): Promise<Partial<SpaceEnv> | null> {
+    return rootAlias ? this.spaceAndRootPermissions(userId, spaceAlias, rootAlias) : this.spacePermissions(userId, spaceAlias)
   }
 
   async addRoot(userId: number, spaceId: number, root: SpaceRootProps): Promise<boolean> {
@@ -676,7 +677,10 @@ export class SpacesQueries {
       this.logger.debug({ tag: this.addRoot.name, msg: `*${root.alias}* (${root.id}) added` })
       return true
     } catch (e) {
-      this.logger.error({ tag: this.addRoot.name, msg: `*${root.alias}* (${root.id}) was not added : ${JSON.stringify(root)} : ${e}` })
+      this.logger.error({
+        tag: this.addRoot.name,
+        msg: `*${root.alias}* (${root.id}) was not added : ${JSON.stringify(root)} : ${toErrorMessage(e)}`
+      })
       return false
     }
   }
@@ -695,12 +699,15 @@ export class SpacesQueries {
       this.logger.debug({ tag: this.updateRoot.name, msg: `${JSON.stringify(filters)} was updated : ${JSON.stringify(set)}` })
       return true
     } catch (e) {
-      this.logger.error({ tag: this.updateRoot.name, msg: `${JSON.stringify(filters)} was not updated : ${JSON.stringify(set)} : ${e}` })
+      this.logger.error({
+        tag: this.updateRoot.name,
+        msg: `${JSON.stringify(filters)} was not updated : ${JSON.stringify(set)} : ${toErrorMessage(e)}`
+      })
       return false
     }
   }
 
-  getUserFile(userId: number, fileId: number): Promise<Pick<File, 'id' | 'path'>> {
+  getUserFile(userId: number, fileId: number): Promise<Pick<File, 'id' | 'path'> | null> {
     return this.filesQueries.getUserFile(userId, fileId)
   }
 
@@ -724,8 +731,8 @@ export class SpacesQueries {
         // clear cache on accessible space identities
         patterns.push(this.cache.genSlugKey(this.constructor.name, this.spaceIdentities.name, uid))
         // clear cache on spaces list
-        patterns.push(this.cache.genSlugKey(...[this.constructor.name, this.spaces.name, uid]))
-        patterns.push(this.cache.genSlugKey(...[this.constructor.name, this.spaces.name, uid, '*']))
+        patterns.push(this.cache.genSlugKey(this.constructor.name, this.spaces.name, uid))
+        patterns.push(this.cache.genSlugKey(this.constructor.name, this.spaces.name, uid, '*'))
         // clear cache on spaces and roots
         patterns.push(this.cache.genSlugKey(...basePattern), this.cache.genSlugKey(...basePattern, '*'))
       }
@@ -733,7 +740,7 @@ export class SpacesQueries {
         const keys = await this.cache.keys(p)
         if (keys.length) {
           this.logger.verbose({ tag: this.clearCachePermissions.name, msg: `${JSON.stringify(keys)}` })
-          this.cache.mdel(keys).catch((e: Error) => this.logger.error({ tag: this.clearCachePermissions.name, msg: `${e}` }))
+          this.cache.mdel(keys).catch((e: Error) => this.logger.error({ tag: this.clearCachePermissions.name, msg: toErrorMessage(e) }))
         }
       }
     }
@@ -745,31 +752,31 @@ export class SpacesQueries {
       this.logger.debug({ tag: this.removeRoot.name, msg: `root (${id}) removed` })
       return true
     } catch (e) {
-      this.logger.error({ tag: this.removeRoot.name, msg: `root (${id}) was not deleted : ${e}` })
+      this.logger.error({ tag: this.removeRoot.name, msg: `root (${id}) was not deleted : ${toErrorMessage(e)}` })
       return false
     }
   }
 
-  private async spacePermissions(userId: number, spaceAlias: string): Promise<Partial<SpaceEnv>> {
+  private async spacePermissions(userId: number, spaceAlias: string): Promise<Partial<SpaceEnv> | null> {
     if (!this.spacePermissionsQuery) {
-      const selectUnion: SpaceEnv | SelectedFields<any, any> = {
+      const selectUnion = {
         id: spaces.id,
         alias: spaces.alias,
         name: spaces.name,
         enabled: spaces.enabled,
         permissions: spacesMembers.permissions,
         role: spacesMembers.role
-      }
+      } satisfies Partial<Record<keyof SpaceEnv, any>>
       const filters: SQL[] = [eq(spaces.alias, sql.placeholder('spaceAlias'))]
       const unionAlias = this.fromUserAndGroups(selectUnion, filters)
-      const select: SpaceEnv | SelectedFields<any, any> = {
+      const select = {
         id: unionAlias.id,
         alias: unionAlias.alias,
         name: unionAlias.name,
         enabled: unionAlias.enabled,
         permissions: spaceGroupConcatPermissions(unionAlias.permissions),
         role: max(unionAlias.role)
-      }
+      } satisfies Partial<Record<keyof SpaceEnv, any>>
       this.spacePermissionsQuery = this.db.select(select).from(unionAlias).groupBy(unionAlias.id).limit(1).prepare()
     }
     // `userId` is used in `fromUserAndGroups` function
@@ -777,9 +784,9 @@ export class SpacesQueries {
     return r.length ? r.at(0) : null
   }
 
-  private async spaceAndRootPermissions(userId: number, spaceAlias: string, rootAlias: string): Promise<Partial<SpaceEnv>> {
+  private async spaceAndRootPermissions(userId: number, spaceAlias: string, rootAlias: string): Promise<Partial<SpaceEnv> | null> {
     if (!this.spaceAndRootPermissionsQuery) {
-      const selectUnion: SpaceEnv | SelectedFields<any, any> = {
+      const selectUnion = {
         id: spaces.id,
         alias: spaces.alias,
         name: spaces.name,
@@ -796,7 +803,7 @@ export class SpacesQueries {
         rootFilePath: filePathSQL(files).as('rootFilePath'),
         rootFileInTrash: files.inTrash,
         rootExternalPath: spacesRoots.externalPath
-      }
+      } satisfies SelectedFields
       const filters: SQL[] = [eq(spaces.alias, sql.placeholder('spaceAlias'))]
       const fromUser = this.fromUserQuery(selectUnion, filters).$dynamic()
       const fromGroups = this.fromGroupsQuery(selectUnion, filters).$dynamic()
@@ -806,7 +813,7 @@ export class SpacesQueries {
           .leftJoin(users, eq(users.id, files.ownerId))
       }
       const unionAlias = union(fromUser, fromGroups).as('union_alias')
-      const select: SpaceEnv | SelectedFields<any, any> = {
+      const select: any = {
         id: unionAlias.id,
         alias: unionAlias.alias,
         name: unionAlias.name,
@@ -822,7 +829,7 @@ export class SpacesQueries {
           file: { id: unionAlias.rootFileId, path: unionAlias.rootFilePath, inTrash: unionAlias.rootFileInTrash },
           externalPath: unionAlias.rootExternalPath
         }
-      }
+      } satisfies Partial<Record<keyof SpaceEnv, any>>
       this.spaceAndRootPermissionsQuery = this.db.select(select).from(unionAlias).groupBy(unionAlias.id).limit(1).prepare()
     }
     // `userId` is used in `fromUserQuery` and `fromGroupsQuery` function
@@ -830,11 +837,11 @@ export class SpacesQueries {
     return r.length ? r.at(0) : null
   }
 
-  private fromUserAndGroups(select: SelectedFields<any, any>, filters: SQL[] = []) {
+  private fromUserAndGroups(select: Record<string, any>, filters: SQL[] = []) {
     return union(this.fromUserQuery(select, filters), this.fromGroupsQuery(select, filters)).as('union_alias')
   }
 
-  private fromUserQuery(select: SelectedFields<any, any>, filters: SQL[] = []) {
+  private fromUserQuery(select: Record<string, any>, filters: SQL[] = []) {
     const where = [eq(spacesMembers.userId, sql.placeholder('userId')), ...filters]
     return this.db
       .select(select)
@@ -843,7 +850,7 @@ export class SpacesQueries {
       .where(and(...where))
   }
 
-  private fromGroupsQuery(select: SelectedFields<any, any>, filters: SQL[] = []) {
+  private fromGroupsQuery(select: Record<string, any>, filters: SQL[] = []) {
     const where = [eq(spacesMembers.groupId, usersGroups.groupId), ...filters]
     return this.db
       .select(select)

@@ -1,6 +1,3 @@
-import { IsBoolean } from 'class-validator'
+import { z } from 'zod'
 
-export class UsersConfig {
-  @IsBoolean()
-  showUngroupedUsers = true
-}
+export const UsersConfigSchema = z.looseObject({ showUngroupedUsers: z.boolean().default(true) })

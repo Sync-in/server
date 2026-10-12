@@ -43,8 +43,8 @@ describe(SharesQueries.name, () => {
     const result = await service.permissions(7, 'grandchild')
 
     expect(findHighestParentShare).not.toHaveBeenCalled()
-    expect(result.root.externalParentShareId).toBe(10)
-    expect(result.permissions).toBe('d:r')
+    expect(result!.root!.externalParentShareId).toBe(10)
+    expect(result!.permissions).toBe('d:r')
   })
 
   it('returns no permissions when the query rejects an unresolved external hierarchy', async () => {

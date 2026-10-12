@@ -30,7 +30,7 @@ export function isValidFileName(fileName: string) {
   }
 }
 
-export function currentTimeStamp(date?: Date, ms = false): number {
+export function currentTimeStamp(date?: Date | null, ms = false): number {
   return Math.floor((date ? date : new Date()).getTime() / (ms ? 1 : 1000))
 }
 

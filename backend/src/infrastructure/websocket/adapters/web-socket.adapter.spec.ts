@@ -1,5 +1,6 @@
 import 'reflect-metadata'
 import { Socket } from 'socket.io'
+import type { Mock } from 'vitest'
 import { UserModel } from '../../../applications/users/models/user.model.js'
 import { TOKEN_TYPE } from '../../../authentication/interfaces/token.interface.js'
 import { configuration } from '../../../configuration/config.environment.js'
@@ -13,7 +14,7 @@ describe(WebSocketAdapter.name, () => {
   let jwtService: { verify: ReturnType<typeof vi.fn> }
   let usersManager: { fromAuthToken: ReturnType<typeof vi.fn> }
   let socket: Socket
-  let next: ReturnType<typeof vi.fn>
+  let next: Mock<(err?: Error) => void>
 
   beforeEach(() => {
     jwtService = {
@@ -49,7 +50,7 @@ describe(WebSocketAdapter.name, () => {
       },
       id: 'socket-id'
     } as unknown as Socket
-    next = vi.fn()
+    next = vi.fn<(err?: Error) => void>()
   })
 
   it('should authenticate a socket with a WebSocket token', async () => {
@@ -58,7 +59,7 @@ describe(WebSocketAdapter.name, () => {
       identity
     })
 
-    await Reflect.apply(Reflect.get(adapter, 'authenticateSocket'), adapter, [socket, next])
+    await adapter['authenticateSocket'](socket, next)
 
     expect(fastify.parseCookie).toHaveBeenCalledWith(`${configuration.auth.token.ws.name}=${token}`)
     expect(jwtService.verify).toHaveBeenCalledWith(token, {
@@ -75,7 +76,7 @@ describe(WebSocketAdapter.name, () => {
       identity
     })
 
-    await Reflect.apply(Reflect.get(adapter, 'authenticateSocket'), adapter, [socket, next])
+    await adapter['authenticateSocket'](socket, next)
 
     expect(socket).not.toHaveProperty('user')
     expect(next).toHaveBeenCalledOnce()
@@ -91,7 +92,7 @@ describe(WebSocketAdapter.name, () => {
     })
     usersManager.fromAuthToken.mockResolvedValue(null)
 
-    await Reflect.apply(Reflect.get(adapter, 'authenticateSocket'), adapter, [socket, next])
+    await adapter['authenticateSocket'](socket, next)
 
     expect(socket).not.toHaveProperty('user')
     expect(next.mock.calls[0][0]).toMatchObject({

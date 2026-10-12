@@ -1,6 +1,7 @@
-import { IsBoolean } from 'class-validator'
+import { z } from 'zod'
 
-export class DeleteUserDto {
-  @IsBoolean()
-  deleteSpace: boolean
-}
+export const deleteUserSchema = z.object({
+  deleteSpace: z.boolean()
+})
+
+export type DeleteUserDto = z.infer<typeof deleteUserSchema>

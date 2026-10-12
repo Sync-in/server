@@ -4,8 +4,9 @@ import { i18nLocale } from '../../../common/i18n.js'
 import { capitalizeString, SERVER_NAME } from '../../../common/shared.js'
 import { fileName } from '../../files/utils/files.js'
 import { UserModel } from '../../users/models/user.model.js'
+import { NOTIFICATION_APP } from '../constants/notifications.js'
 import { translateObject } from '../i18n/index.js'
-import { NotificationContent } from '../interfaces/notification-properties.interface.js'
+import type { NotificationContentFor } from '../interfaces/notification-properties.interface.js'
 import { defaultFooter, mailAuthor, mailEventOnElement, mailItalicContent, mailTemplate } from './templates.js'
 import { urlFromLink, urlFromSpace, urlFromSpaceFile, urlFromSync } from './urls.js'
 
@@ -15,7 +16,7 @@ function mailActionLink(urlText: string, url?: string): string {
 
 export function commentMail(
   language: i18nLocale,
-  notification: NotificationContent,
+  notification: NotificationContentFor<NOTIFICATION_APP.COMMENTS>,
   options: {
     content: string
     publicUrl?: string
@@ -40,7 +41,7 @@ export function commentMail(
 
 export function spaceMail(
   language: i18nLocale,
-  notification: NotificationContent,
+  notification: NotificationContentFor<NOTIFICATION_APP.SPACES>,
   options: {
     publicUrl?: string
     action: ACTION
@@ -64,7 +65,7 @@ export function spaceMail(
 
 export function spaceRootMail(
   language: i18nLocale,
-  notification: NotificationContent,
+  notification: NotificationContentFor<NOTIFICATION_APP.SPACE_ROOTS>,
   options: {
     publicUrl?: string
     author: UserModel
@@ -95,10 +96,10 @@ export function spaceRootMail(
 
 export function shareMail(
   language: i18nLocale,
-  notification: NotificationContent,
+  notification: NotificationContentFor<NOTIFICATION_APP.SHARES>,
   options: {
     publicUrl?: string
-    author: UserModel
+    author?: UserModel
     action: ACTION
   }
 ): [string, string] {
@@ -119,13 +120,13 @@ export function shareMail(
 
 export function linkMail(
   language: i18nLocale,
-  notification: NotificationContent,
+  notification: NotificationContentFor<NOTIFICATION_APP.LINKS>,
   options: {
     publicUrl?: string
-    author: UserModel
+    author?: UserModel
     action: ACTION
     linkUUID: string
-    linkPassword: string
+    linkPassword?: string
   }
 ): [string, string] {
   const tr = translateObject(language, {
@@ -149,7 +150,7 @@ export function linkMail(
 
 export function syncMail(
   language: i18nLocale,
-  notification: NotificationContent,
+  notification: NotificationContentFor<NOTIFICATION_APP.SYNC>,
   options: {
     publicUrl?: string
     action: ACTION
@@ -171,7 +172,7 @@ export function syncMail(
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
 
-export function auth2FaMail(language: i18nLocale, notification: NotificationContent): [string, string] {
+export function auth2FaMail(language: i18nLocale, notification: NotificationContentFor<NOTIFICATION_APP.AUTH_2FA>): [string, string] {
   const tr = translateObject(language, {
     title: 'Security notification',
     footer:
@@ -188,7 +189,7 @@ export function auth2FaMail(language: i18nLocale, notification: NotificationCont
   return [tr.title, mailTemplate(content, footer)]
 }
 
-export function authLockedMail(language: i18nLocale, notification: NotificationContent): [string, string] {
+export function authLockedMail(language: i18nLocale, notification: NotificationContentFor<NOTIFICATION_APP.AUTH_LOCKED>): [string, string] {
   const tr = translateObject(language, {
     title: 'Security notification',
     footer: 'You can try signing in again after 15 minutes. If you did not make these attempts, please contact your administrator.',
@@ -205,7 +206,7 @@ export function authLockedMail(language: i18nLocale, notification: NotificationC
 
 export function requestUnlockMail(
   language: i18nLocale,
-  notification: NotificationContent,
+  notification: NotificationContentFor<NOTIFICATION_APP.UNLOCK_REQUEST>,
   options: {
     publicUrl?: string
     author: UserModel
@@ -227,7 +228,10 @@ export function requestUnlockMail(
   return [`${tr.title}: ${capitalizeString(notification.element)}`, mailTemplate(content, footer)]
 }
 
-export function serverUpdateAvailableMail(language: i18nLocale, notification: NotificationContent): [string, string] {
+export function serverUpdateAvailableMail(
+  language: i18nLocale,
+  notification: NotificationContentFor<NOTIFICATION_APP.UPDATE_AVAILABLE>
+): [string, string] {
   const tr = translateObject(language, {
     title: 'New Version Available',
     defaultFooter: defaultFooter,

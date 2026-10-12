@@ -1,6 +1,7 @@
 import { createReadStream } from 'node:fs'
 import { pipeline } from 'node:stream/promises'
 import { extract, type ReadEntry, type Unpack } from 'tar'
+import { toErrorMessage } from '../../../common/errors.js'
 import type { FileTaskExtractionEntry } from '../interfaces/file-task.interface.js'
 import { storageQuotaExceededError } from './errors.js'
 import { createProgressTransform, createSizeLimiter } from './files.js'
@@ -64,7 +65,7 @@ export async function extractTar(
         onEntry?.({ path: entry.path, isDirectory: isTarDirectory(entry.type), size: 0 })
         return true
       } catch (e) {
-        return abortExtraction(e as Error)
+        return abortExtraction(e instanceof Error ? e : new Error(toErrorMessage(e)))
       }
     }
   })

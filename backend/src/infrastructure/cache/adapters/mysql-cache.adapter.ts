@@ -1,5 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { and, between, eq, exists, inArray, notBetween, SQL, sql } from 'drizzle-orm'
+import { toErrorMessage } from '../../../common/errors.js'
 import { createCacheKeySlug, currentTimeStamp } from '../../../common/shared.js'
 import { configuration } from '../../../configuration/config.environment.js'
 import { INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants.js'
@@ -9,9 +10,15 @@ import { type DBSchema } from '../../database/interfaces/database.interface.js'
 import { dbCheckAffectedRows, dbParseJson } from '../../database/utils.js'
 import { SchedulerManager } from '../../scheduler/scheduler-manager.service.js'
 import type { CacheRateLimitResult, CacheRateLimitState } from '../interfaces/cache-rate-limit.interface.js'
-import { MysqlCache } from '../schemas/mysql-cache.interface.js'
+import type { MysqlCache } from '../schemas/mysql-cache.interface.js'
 import { cache } from '../schemas/mysql-cache.schema.js'
 import { Cache } from '../cache.service.js'
+
+function getErrorSource(error: unknown): string | undefined {
+  if (error === null || typeof error !== 'object') return undefined
+  if ('sql' in error && typeof error.sql === 'string') return error.sql
+  return 'code' in error && typeof error.code === 'string' ? error.code : undefined
+}
 
 @Injectable()
 export class MysqlCacheAdapter implements Cache {
@@ -122,7 +129,7 @@ export class MysqlCacheAdapter implements Cache {
         })
       return result.affectedRows === 1 && Number(result.insertId) === 0 ? initialValue : Number(result.insertId)
     } catch (e) {
-      this.logger.error({ tag: this.increment.name, msg: `${e}` })
+      this.logger.error({ tag: this.increment.name, msg: toErrorMessage(e) })
       throw e
     }
   }
@@ -186,7 +193,7 @@ export class MysqlCacheAdapter implements Cache {
         })
       return true
     } catch (e) {
-      this.logger.error({ tag: this.set.name, msg: `${e}` })
+      this.logger.error({ tag: this.set.name, msg: toErrorMessage(e) })
       return false
     }
   }
@@ -209,7 +216,7 @@ export class MysqlCacheAdapter implements Cache {
 
   private readonly whereExpired: () => SQL = () => between(cache.expiration, 0, currentTimeStamp())
 
-  private getTTL(ttl: number): number {
+  private getTTL(ttl?: number): number {
     /* ttl (seconds):
         - 0 : infinite expiration
         - undefined : default ttl
@@ -243,9 +250,9 @@ export class MysqlCacheAdapter implements Cache {
       }
       this.logger.log(`Using MySQL scheduler`)
     } catch (e) {
-      const errorSource = e?.sql || e?.code
+      const errorSource = getErrorSource(e)
       this.logger.error(
-        `MariaDB event scheduler configuration failed${errorSource ? ` on '${errorSource}'` : ''}: ${e.message || e}. ` +
+        `MariaDB event scheduler configuration failed${errorSource ? ` on '${errorSource}'` : ''}: ${toErrorMessage(e)}. ` +
           `Enable the scheduler with "SET GLOBAL event_scheduler = ON" as a MariaDB user with SUPER`
       )
       this.useInternalScheduler()
@@ -264,7 +271,7 @@ export class MysqlCacheAdapter implements Cache {
     try {
       await this.db.delete(cache).where(this.whereExpired())
     } catch (e) {
-      this.logger.error({ tag: this.clearExpiredKeys.name, msg: `${e?.code || e}` })
+      this.logger.error({ tag: this.clearExpiredKeys.name, msg: getErrorSource(e) ?? toErrorMessage(e) })
     }
   }
 }

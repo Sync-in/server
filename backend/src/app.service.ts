@@ -1,21 +1,24 @@
-import { Injectable, Logger } from '@nestjs/common'
+import { ConsoleLogger, Injectable } from '@nestjs/common'
 import { setupPrimary } from '@socket.io/cluster-adapter'
 import cluster, { Worker } from 'node:cluster'
 import { cpus } from 'node:os'
 import process from 'node:process'
 import { configuration } from './configuration/config.environment.js'
+import { IS_TEST_ENV } from './configuration/config.constants.js'
 import { SCHEDULER_ENV, SCHEDULER_STATE } from './infrastructure/scheduler/scheduler.constants.js'
 import { SERVER_NAME } from './common/shared.js'
 
 @Injectable()
 export class AppService {
-  static schedulerPID: number
-  private static readonly logger = new Logger('SERVER')
+  static schedulerPID?: number
+  private static readonly logger = new ConsoleLogger('SERVER', {
+    prefix: SERVER_NAME,
+    logLevels: IS_TEST_ENV ? ['fatal'] : undefined
+  })
   private static shuttingDown = false
   private static shutdownHooksRegistered = false
 
   static clusterize(bootstrap: () => Promise<void>) {
-    AppService.logger.localInstance['options']['prefix'] = SERVER_NAME
     if (cluster.isPrimary) {
       if (configuration.websocket.adapter === 'cluster') {
         // setup connections between the workers

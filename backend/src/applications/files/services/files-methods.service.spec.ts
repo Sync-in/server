@@ -2,7 +2,6 @@ import { HttpException, HttpStatus } from '@nestjs/common'
 import { Test, TestingModule } from '@nestjs/testing'
 import path from 'node:path'
 import type { Mock } from 'vitest'
-import { transformAndValidate } from '../../../common/functions.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
@@ -16,7 +15,7 @@ import { UserModel } from '../../users/models/user.model.js'
 import { UsersQueries } from '../../users/services/users-queries.service.js'
 import { generateUserTest } from '../../users/utils/test.js'
 import { TAR_EXTENSION } from '../constants/compress.js'
-import { CompressFileDto, CopyMoveFileDto } from '../dto/file-operations.dto.js'
+import { type CompressFileDto, compressFileSchema, type CopyMoveFileDto, copyMoveFileSchema } from '../dto/file-operations.dto.js'
 import { FilesManager } from './files-manager.service.js'
 import { FilesMethods } from './files-methods.service.js'
 import { FilesQuotaManager } from './files-quota-manager.service.js'
@@ -90,8 +89,8 @@ describe(FilesMethods.name, () => {
   })
 
   it('should avoid path traversal on CopyMove action', async () => {
-    const copyMoveFileDto: CopyMoveFileDto = { dstDirectory: '../../../foo', dstName: '../bar/../' }
-    expect(() => transformAndValidate(CopyMoveFileDto, copyMoveFileDto)).toThrow()
+    const copyMoveFileDto: CopyMoveFileDto = { dstDirectory: '../../../foo', dstName: '../bar/../', overwrite: false }
+    expect(() => copyMoveFileSchema.parse(copyMoveFileDto)).toThrow()
     await expect((filesMethods as any).copyMove(userTest, spaceEnv, copyMoveFileDto, false)).rejects.toThrow(/is not valid/i)
   })
 
@@ -100,10 +99,10 @@ describe(FilesMethods.name, () => {
       name: '../../archive',
       compressInDirectory: false,
       compression: false,
-      files: [{ name: '../../foo', rootAlias: undefined }],
+      files: [{ name: '../../foo', rootAlias: undefined } as any],
       extension: TAR_EXTENSION
     }
-    expect(() => transformAndValidate(CompressFileDto, compressFileDto)).toThrow()
+    expect(() => compressFileSchema.parse(compressFileDto)).toThrow()
     await expect(filesMethods.compress(userTest, spaceEnv, compressFileDto)).rejects.toThrow(/does not exist/i)
     compressFileDto.files[0].path = '../../../bar/../'
     await expect(filesMethods.compress(userTest, spaceEnv, compressFileDto)).rejects.toThrow(/is not valid/i)

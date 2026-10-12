@@ -1,18 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  ParseEnumPipe,
-  Post,
-  Query,
-  Request,
-  Res,
-  StreamableFile,
-  UseGuards,
-  UseInterceptors
-} from '@nestjs/common'
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query, Request, Res, StreamableFile, UseGuards, UseInterceptors } from '@nestjs/common'
 import { type FastifyReply } from 'fastify'
 import { ContextInterceptor } from '../../../../infrastructure/context/interceptors/context.interceptor.js'
 import { SPACE_OPERATION } from '../../../spaces/constants/spaces.js'
@@ -21,7 +7,6 @@ import { GetSpace } from '../../../spaces/decorators/space.decorator.js'
 import { SpaceGuard } from '../../../spaces/guards/space.guard.js'
 import { type FastifySpaceRequest } from '../../../spaces/interfaces/space-request.interface.js'
 import { SpaceEnv } from '../../../spaces/models/space-env.model.js'
-import { USER_THEME } from '../../../users/constants/user-preferences.js'
 import { GetUser } from '../../../users/decorators/user.decorator.js'
 import type { UserTheme } from '../../../users/interfaces/user-preferences.interface.js'
 import { UserModel } from '../../../users/models/user.model.js'
@@ -30,6 +15,7 @@ import { OnlyOfficeEnvironment } from './only-office-environment.decorator.js'
 import { OnlyOfficeManager } from './only-office-manager.service.js'
 import type { OnlyOfficeReqDto } from './only-office.dtos.js'
 import { API_ONLY_OFFICE, ONLY_OFFICE_ROUTE } from './only-office.routes.js'
+import { themeQueryParameterSchema } from './only-office.schema.js'
 
 @Controller(API_ONLY_OFFICE)
 export class OnlyOfficeController {
@@ -43,7 +29,7 @@ export class OnlyOfficeController {
   @UseInterceptors(ContextInterceptor)
   onlyOfficeSettings(
     @Request() req: FastifySpaceRequest,
-    @Query('theme', new ParseEnumPipe({ DARK: USER_THEME.DARK, LIGHT: USER_THEME.LIGHT }, { optional: true })) theme?: UserTheme
+    @Query('theme', { schema: themeQueryParameterSchema }) theme?: UserTheme
   ): Promise<OnlyOfficeReqDto> {
     return this.filesOnlyOfficeManager.getSettings(req.user, req.space, req, theme)
   }

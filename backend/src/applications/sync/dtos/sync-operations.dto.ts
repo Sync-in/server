@@ -1,52 +1,40 @@
-import { Transform } from 'class-transformer'
-import { IsBoolean, IsDefined, IsInt, IsNotEmpty, IsObject, IsOptional, IsString } from 'class-validator'
-import { MakeFileDto } from '../../files/dto/file-operations.dto.js'
-import { SyncFileStats } from '../interfaces/sync-diff.interface.js'
+import { z } from 'zod'
+import { makeFileSchema } from '../../files/dto/file-operations.dto.js'
+import type { SyncFileStats } from '../interfaces/sync-diff.interface.js'
 import { transformPathFilters } from '../utils/functions.js'
 import { NormalizedMap } from '../utils/normalizedMap.js'
 
-export class SyncDiffDto {
-  @IsDefined()
-  @IsBoolean()
-  secureDiff: boolean
+export const syncDiffSchema = z.object({
+  secureDiff: z.boolean(),
+  firstSync: z.boolean(),
+  defaultFilters: z.array(z.string()).transform((value) => new Set(value)),
+  pathFilters: z
+    .unknown()
+    .optional()
+    .transform((value) => transformPathFilters(value)),
+  snapshot: z
+    .record(z.string(), z.unknown())
+    .transform((value) => new NormalizedMap<string, SyncFileStats>(Object.entries(value) as [string, SyncFileStats][]))
+    .optional()
+})
 
-  @IsDefined()
-  @IsBoolean()
-  firstSync: boolean
+export type SyncDiffDto = z.infer<typeof syncDiffSchema>
 
-  @IsDefined()
-  @IsString({ each: true })
-  @Transform(({ value }) => new Set(value))
-  defaultFilters: Set<string>
+export const syncPropsSchema = z.object({
+  mtime: z.number().int()
+})
 
-  @IsOptional()
-  @Transform(({ value }) => transformPathFilters(value))
-  pathFilters?: RegExp = null
+export type SyncPropsDto = z.infer<typeof syncPropsSchema>
 
-  @IsOptional()
-  @IsObject()
-  @Transform(({ value }): NormalizedMap<string, SyncFileStats> => new NormalizedMap(Object.entries(value)))
-  snapshot?: Map<string, SyncFileStats>
-}
+export const syncMakeSchema = makeFileSchema.extend({
+  mtime: z.number().int()
+})
 
-export class SyncPropsDto {
-  @IsDefined()
-  @IsInt()
-  mtime: number
-}
+export type SyncMakeDto = z.infer<typeof syncMakeSchema>
 
-export class SyncMakeDto extends MakeFileDto {
-  @IsDefined()
-  @IsInt()
-  mtime: number
-}
+export const syncCopyMoveSchema = z.object({
+  destination: z.string().min(1),
+  mtime: z.number().int().nullish()
+})
 
-export class SyncCopyMoveDto {
-  @IsString()
-  @IsNotEmpty()
-  destination: string
-
-  @IsOptional()
-  @IsInt()
-  mtime?: number
-}
+export type SyncCopyMoveDto = z.infer<typeof syncCopyMoveSchema>

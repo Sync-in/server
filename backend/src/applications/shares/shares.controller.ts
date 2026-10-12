@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, UseGuards } from '@nestjs/common'
+import { Body, Controller, Delete, Get, Param, Post, Put, UseGuards } from '@nestjs/common'
+import { integerFromStringSchema } from '../../configuration/config.schema.js'
 import { LINK_TYPE } from '../links/constants/links.js'
-import { CreateOrUpdateLinkDto } from '../links/dto/create-or-update-link.dto.js'
+import { type CreateOrUpdateLinkDto, createOrUpdateLinkSchema } from '../links/dto/create-or-update-link.dto.js'
 import { LinkGuest } from '../links/interfaces/link-guest.interface.js'
 import { USER_PERMISSION, USER_ROLE } from '../users/constants/user.js'
 import { UserHavePermission } from '../users/decorators/permissions.decorator.js'
@@ -10,12 +11,13 @@ import { UserPermissionsGuard } from '../users/guards/permissions.guard.js'
 import { UserRolesGuard } from '../users/guards/roles.guard.js'
 import { UserModel } from '../users/models/user.model.js'
 import { SHARES_ROUTE } from './constants/routes.js'
-import { CreateOrUpdateShareDto } from './dto/create-or-update-share.dto.js'
+import { createOrUpdateShareSchema, type ValidatedCreateOrUpdateShareDto } from './dto/create-or-update-share.dto.js'
 import type { ShareFile } from './interfaces/share-file.interface.js'
 import { ShareLink } from './interfaces/share-link.interface.js'
 import type { ShareProps } from './interfaces/share-props.interface.js'
 import { ShareChild } from './models/share-child.model.js'
 import { SharesManager } from './services/shares-manager.service.js'
+import { linkTypeParameterSchema } from './shares.schema.js'
 
 @Controller(SHARES_ROUTE.BASE)
 @UserHaveRole(USER_ROLE.USER)
@@ -32,12 +34,15 @@ export class SharesController {
   }
 
   @Get(':id')
-  getShareWithMembers(@GetUser() user: UserModel, @Param('id', ParseIntPipe) shareId: number): Promise<ShareProps> {
+  getShareWithMembers(@GetUser() user: UserModel, @Param('id', { schema: integerFromStringSchema }) shareId: number): Promise<ShareProps> {
     return this.sharesManager.getShareWithMembers(user, shareId)
   }
 
   @Post()
-  createShare(@GetUser() user: UserModel, @Body() createOrUpdateShareDto: CreateOrUpdateShareDto): Promise<ShareProps> {
+  createShare(
+    @GetUser() user: UserModel,
+    @Body({ schema: createOrUpdateShareSchema }) createOrUpdateShareDto: ValidatedCreateOrUpdateShareDto
+  ): Promise<ShareProps> {
     if (createOrUpdateShareDto.parent?.alias) {
       return this.sharesManager.createChildShare(user, createOrUpdateShareDto)
     }
@@ -47,29 +52,29 @@ export class SharesController {
   @Put(':id')
   updateShare(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) shareId: number,
-    @Body() createOrUpdateShareDto: CreateOrUpdateShareDto
+    @Param('id', { schema: integerFromStringSchema }) shareId: number,
+    @Body({ schema: createOrUpdateShareSchema }) createOrUpdateShareDto: ValidatedCreateOrUpdateShareDto
   ): Promise<ShareProps> {
     return this.sharesManager.updateShare(user, shareId, createOrUpdateShareDto)
   }
 
   @Delete(':id')
-  deleteShare(@GetUser() user: UserModel, @Param('id', ParseIntPipe) shareId: number): Promise<void> {
+  deleteShare(@GetUser() user: UserModel, @Param('id', { schema: integerFromStringSchema }) shareId: number): Promise<void> {
     return this.sharesManager.deleteShare(user, shareId)
   }
 
   /* MANAGE CHILD SHARES */
 
   @Get(`:id/${SHARES_ROUTE.CHILDREN}`)
-  listChildShares(@GetUser() user: UserModel, @Param('id', ParseIntPipe) shareId: number): Promise<ShareChild[]> {
+  listChildShares(@GetUser() user: UserModel, @Param('id', { schema: integerFromStringSchema }) shareId: number): Promise<ShareChild[]> {
     return this.sharesManager.listChildShares(user, shareId)
   }
 
   @Get(`:id/${SHARES_ROUTE.CHILDREN}/:cid`)
   getShareChild(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) shareId: number,
-    @Param('cid', ParseIntPipe) childId: number
+    @Param('id', { schema: integerFromStringSchema }) shareId: number,
+    @Param('cid', { schema: integerFromStringSchema }) childId: number
   ): Promise<ShareProps> {
     return this.sharesManager.getChildShare(user, shareId, childId)
   }
@@ -77,9 +82,9 @@ export class SharesController {
   @Put(`:id/${SHARES_ROUTE.CHILDREN}/:cid`)
   updateShareChild(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) shareId: number,
-    @Param('cid', ParseIntPipe) childId: number,
-    @Body() createOrUpdateShareDto: CreateOrUpdateShareDto
+    @Param('id', { schema: integerFromStringSchema }) shareId: number,
+    @Param('cid', { schema: integerFromStringSchema }) childId: number,
+    @Body({ schema: createOrUpdateShareSchema }) createOrUpdateShareDto: ValidatedCreateOrUpdateShareDto
   ): Promise<ShareProps> {
     return this.sharesManager.updateChildShare(user, shareId, childId, createOrUpdateShareDto)
   }
@@ -87,8 +92,8 @@ export class SharesController {
   @Delete(`:id/${SHARES_ROUTE.CHILDREN}/:cid`)
   deleteShareChild(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) shareId: number,
-    @Param('cid', ParseIntPipe) childId: number
+    @Param('id', { schema: integerFromStringSchema }) shareId: number,
+    @Param('cid', { schema: integerFromStringSchema }) childId: number
   ): Promise<void> {
     return this.sharesManager.deleteChildShare(user, shareId, childId)
   }
@@ -107,15 +112,15 @@ export class SharesController {
   }
 
   @Get(`${SHARES_ROUTE.LINKS}/:id`)
-  getShareLink(@GetUser() user: UserModel, @Param('id', ParseIntPipe) shareId: number): Promise<ShareLink> {
+  getShareLink(@GetUser() user: UserModel, @Param('id', { schema: integerFromStringSchema }) shareId: number): Promise<ShareLink> {
     return this.sharesManager.getShareLink(user, shareId)
   }
 
   @Get(`${SHARES_ROUTE.LINKS}/:id/${SHARES_ROUTE.CHILDREN}/:cid`)
   getChildShareLink(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) shareId: number,
-    @Param('cid', ParseIntPipe) childId: number
+    @Param('id', { schema: integerFromStringSchema }) shareId: number,
+    @Param('cid', { schema: integerFromStringSchema }) childId: number
   ): Promise<ShareLink> {
     return this.sharesManager.getChildShare(user, shareId, childId, true)
   }
@@ -123,9 +128,9 @@ export class SharesController {
   @Get(`${SHARES_ROUTE.LINKS}/:id/:type(space|share)/:typeId`)
   getLinkFromSpaceOrShare(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) linkId: number,
-    @Param('type') type: LINK_TYPE,
-    @Param('typeId', ParseIntPipe) typeId: number
+    @Param('id', { schema: integerFromStringSchema }) linkId: number,
+    @Param('type', { schema: linkTypeParameterSchema }) type: LINK_TYPE,
+    @Param('typeId', { schema: integerFromStringSchema }) typeId: number
   ): Promise<LinkGuest> {
     return this.sharesManager.getLinkFromSpaceOrShare(user, linkId, typeId, type)
   }
@@ -133,10 +138,10 @@ export class SharesController {
   @Put(`${SHARES_ROUTE.LINKS}/:id/:type(space|share)/:typeId`)
   updateLinkFromSpaceOrShare(
     @GetUser() user: UserModel,
-    @Param('id', ParseIntPipe) linkId: number,
-    @Param('type') type: LINK_TYPE,
-    @Param('typeId', ParseIntPipe) typeId: number,
-    @Body() createOrUpdateLinkDto: CreateOrUpdateLinkDto
+    @Param('id', { schema: integerFromStringSchema }) linkId: number,
+    @Param('type', { schema: linkTypeParameterSchema }) type: LINK_TYPE,
+    @Param('typeId', { schema: integerFromStringSchema }) typeId: number,
+    @Body({ schema: createOrUpdateLinkSchema }) createOrUpdateLinkDto: CreateOrUpdateLinkDto
   ): Promise<LinkGuest> {
     return this.sharesManager.updateLinkFromSpaceOrShare(user, linkId, typeId, type, createOrUpdateLinkDto, true)
   }

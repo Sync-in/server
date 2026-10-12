@@ -167,7 +167,7 @@ describe(FilesLockManager.name, () => {
       { path: 'docs/file.txt', ownerId: 10, inTrash: false },
       WEBDAV_APP_LOCK,
       DEPTH.RESOURCE,
-      null,
+      null as never,
       55
     )
     expect(created).toBe(true)

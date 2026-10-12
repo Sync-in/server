@@ -128,6 +128,6 @@ export const configLogger = (loggerConfig: LoggerConfig) => {
         return undefined
       }
     },
-    transport: loggerConfig.jsonOutput ? null : createPrettyTransport(loggerConfig)
+    ...(loggerConfig.jsonOutput ? {} : { transport: createPrettyTransport(loggerConfig) })
   } satisfies Options<FastifyLoggerRequest>
 }

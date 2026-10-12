@@ -13,7 +13,7 @@ export function SpaceToFileRepository(userId: number, space: SpaceEnv): { id: nu
     return { id: space.id, type: FILE_REPOSITORY.SPACE }
   } else if (space.root?.file?.path && space.root.owner?.login) {
     // Space root is linked to a user file
-    return { id: space.root.owner.id, type: FILE_REPOSITORY.USER }
+    return { id: space.root.owner.id as number, type: FILE_REPOSITORY.USER }
   } else if (space.root?.file?.space?.id) {
     return { id: space.root.file.space.id, type: FILE_REPOSITORY.SPACE }
   } else if (space.id) {

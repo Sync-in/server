@@ -1,26 +1,11 @@
-import { Type } from 'class-transformer'
-import { IsBoolean, IsDefined, IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator'
-import { SyncClientInfoDto } from './sync-client-info.dto.js'
+import { z } from 'zod'
+import { syncClientInfoSchema } from './sync-client-info.dto.js'
 
-export class SyncClientAuthDto {
-  @IsNotEmpty()
-  @IsString()
-  @IsUUID()
-  clientId: string
+export const syncClientAuthSchema = z.object({
+  clientId: z.uuid(),
+  token: z.uuid(),
+  info: syncClientInfoSchema,
+  tokenHasExpired: z.boolean().nullish()
+})
 
-  @IsNotEmpty()
-  @IsString()
-  @IsUUID()
-  token: string
-
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => SyncClientInfoDto)
-  info: SyncClientInfoDto
-
-  @IsOptional()
-  @IsBoolean()
-  tokenHasExpired?: boolean
-}
+export type SyncClientAuthDto = z.infer<typeof syncClientAuthSchema>

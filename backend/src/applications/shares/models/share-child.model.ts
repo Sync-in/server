@@ -4,13 +4,13 @@ import type { ShareChildQuery } from '../interfaces/share-child.interface.js'
 import type { Share } from '../schemas/share.interface.js'
 
 export class ShareChild implements Pick<Share, 'id' | 'parentId' | 'type' | 'name' | 'alias'> {
-  id: number
-  parentId: number
-  type: number
-  name: string
-  alias: string
-  owner: Owner
-  file: { mime: string }
+  id!: number
+  parentId!: number
+  type!: number
+  name!: string
+  alias!: string
+  owner: Owner | null
+  file: { mime: string } | null
 
   constructor(props: ShareChildQuery) {
     this.owner = props.ownerLogin

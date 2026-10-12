@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../common/errors.js'
 import { BeforeApplicationShutdown, Logger } from '@nestjs/common'
 import {
   MessageBody,
@@ -9,19 +10,24 @@ import {
   WebSocketServer
 } from '@nestjs/websockets'
 import { Server } from 'socket.io'
-import { JwtIdentityPayload } from '../../authentication/interfaces/jwt-payload.interface.js'
+import type { JwtIdentityPayload } from '../../authentication/interfaces/jwt-payload.interface.js'
 import { sleep } from '../../common/functions.js'
 import { GetWsUser } from '../../infrastructure/websocket/decorators/web-socket-user.decorator.js'
 import { AuthenticatedSocketIO } from '../../infrastructure/websocket/interfaces/auth-socket-io.interface.js'
 import { getClientAddress } from '../../infrastructure/websocket/utils.js'
 import { USER_ONLINE_STATUS } from './constants/user.js'
 import { USER_ROOM_PREFIX, USERS_WS } from './constants/websocket.js'
-import { type EventChangeOnlineStatus, EventUpdateOnlineStatus, UserOnline } from './interfaces/websocket.interface.js'
+import {
+  type EventChangeOnlineStatus,
+  eventChangeOnlineStatusSchema,
+  type EventUpdateOnlineStatus,
+  type UserOnline
+} from './interfaces/websocket.interface.js'
 import { UsersManager } from './services/users-manager.service.js'
 
 @WebSocketGateway()
 export class WebSocketUsers implements BeforeApplicationShutdown, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
-  @WebSocketServer() server: Server
+  @WebSocketServer() server!: Server
   private readonly internalEventOnlineUsers = 'listOnlineUsers'
   private readonly logger = new Logger(WebSocketUsers.name)
   private initialized = false
@@ -44,9 +50,9 @@ export class WebSocketUsers implements BeforeApplicationShutdown, OnGatewayInit,
     if (this.shuttingDown) return
     socket.join(`${USER_ROOM_PREFIX}${socket.user.id}`)
     this.sendOnlineUser(socket.user, parseInt((socket.handshake.query.onlineStatus as string) || '0')).catch((e: Error) =>
-      this.logger.error({ tag: this.handleConnection.name, msg: `${e}` })
+      this.logger.error({ tag: this.handleConnection.name, msg: toErrorMessage(e) })
     )
-    this.sendAllOnlineUsers(socket.user.id).catch((e: Error) => this.logger.error({ tag: this.handleConnection.name, msg: `${e}` }))
+    this.sendAllOnlineUsers(socket.user.id).catch((e: Error) => this.logger.error({ tag: this.handleConnection.name, msg: toErrorMessage(e) }))
     this.logger.log({
       tag: this.handleConnection.name,
       msg: `Connected: *${socket.user.login}* (${socket.user.id}) [${socket.id}] ${getClientAddress(socket)} ${socket.handshake.headers['user-agent']}`
@@ -56,7 +62,7 @@ export class WebSocketUsers implements BeforeApplicationShutdown, OnGatewayInit,
   async handleDisconnect(socket: AuthenticatedSocketIO): Promise<void> {
     if (this.shuttingDown) return
     socket.leave(`${USER_ROOM_PREFIX}${socket.user.id}`)
-    this.sendOfflineUser(socket.user.id).catch((e: Error) => this.logger.error({ tag: this.handleDisconnect.name, msg: `${e}` }))
+    this.sendOfflineUser(socket.user.id).catch((e: Error) => this.logger.error({ tag: this.handleDisconnect.name, msg: toErrorMessage(e) }))
     this.logger.log({
       tag: this.handleDisconnect.name,
       msg: `Disconnected: *${socket.user.login}* (${socket.user.id}) [${socket.id}] ${getClientAddress(socket)} ${socket.handshake.headers['user-agent']}`
@@ -64,12 +70,12 @@ export class WebSocketUsers implements BeforeApplicationShutdown, OnGatewayInit,
   }
 
   @SubscribeMessage(USERS_WS.EVENTS.ONLINE_STATUS)
-  setOnlineStatus(@GetWsUser() user: JwtIdentityPayload, @MessageBody() body: EventChangeOnlineStatus) {
+  setOnlineStatus(@GetWsUser() user: JwtIdentityPayload, @MessageBody({ schema: eventChangeOnlineStatusSchema }) body: EventChangeOnlineStatus) {
     if (body.store) {
       // store in db
       this.usersManager.setOnlineStatus(user, body.status)
     }
-    this.sendOnlineStatus(user.id, body.status).catch((e: Error) => this.logger.error({ tag: this.setOnlineStatus.name, msg: `${e}` }))
+    this.sendOnlineStatus(user.id, body.status).catch((e: Error) => this.logger.error({ tag: this.setOnlineStatus.name, msg: toErrorMessage(e) }))
   }
 
   private sendMessageToUsers(userIds: number[], eventName: string, body: any) {
@@ -106,7 +112,7 @@ export class WebSocketUsers implements BeforeApplicationShutdown, OnGatewayInit,
     // check if user room is empty before send event
     if ((await this.getOnlineUserIds()).indexOf(userId) === -1) {
       this.sendOnlineStatus(userId, USER_ONLINE_STATUS.OFFLINE).catch((e: Error) =>
-        this.logger.error({ tag: this.sendOfflineUser.name, msg: `${e}` })
+        this.logger.error({ tag: this.sendOfflineUser.name, msg: toErrorMessage(e) })
       )
     }
   }
@@ -156,6 +162,6 @@ export class WebSocketUsers implements BeforeApplicationShutdown, OnGatewayInit,
   }
 
   private filterUserRooms(rooms: Iterable<string>): number[] {
-    return [...rooms].filter((r) => r.startsWith(USER_ROOM_PREFIX)).map((ur) => parseInt(ur.split(USER_ROOM_PREFIX).pop()))
+    return [...rooms].filter((r) => r.startsWith(USER_ROOM_PREFIX)).map((ur) => parseInt(ur.split(USER_ROOM_PREFIX).pop()!))
   }
 }

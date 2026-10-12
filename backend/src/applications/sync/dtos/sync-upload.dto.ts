@@ -1,22 +1,10 @@
-import { Transform } from 'class-transformer'
-import { IsDefined, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator'
+import { z } from 'zod'
+import { safeIntegerFromStringSchema } from '../../../configuration/config.schema.js'
 
-export class SyncUploadDto {
-  @IsOptional()
-  @IsNotEmpty()
-  @IsString()
-  checksum?: string
+export const syncUploadSchema = z.object({
+  checksum: z.string().min(1).nullish(),
+  mtime: safeIntegerFromStringSchema,
+  size: safeIntegerFromStringSchema.pipe(z.number().min(0))
+})
 
-  @IsDefined()
-  @IsNotEmpty()
-  @Transform(({ value }) => parseInt(value))
-  @IsInt()
-  mtime: number
-
-  @IsDefined()
-  @IsNotEmpty()
-  @Transform(({ value }) => parseInt(value))
-  @IsInt()
-  @Min(0)
-  size: number
-}
+export type SyncUploadDto = z.infer<typeof syncUploadSchema>

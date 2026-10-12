@@ -1,14 +1,14 @@
 import { join } from 'node:path'
 import { getDocumentTypes } from '../applications/files/constants/samples.js'
-import { FilesContentIndexingConfig } from '../applications/files/files.config.js'
-import { AuthTokenAccessConfig, AuthTokenRefreshConfig } from '../authentication/auth.config.js'
+import { FilesContentIndexingConfigSchema } from '../applications/files/files.config.js'
+import type { AuthTokenAccessConfig, AuthTokenRefreshConfig } from '../authentication/auth.config.js'
 import { ACCESS_KEY, CSRF_KEY, TWO_FA_VERIFY_EXPIRATION, WS_KEY } from '../authentication/constants/auth.js'
 import { TOKEN_TYPE } from '../authentication/interfaces/token.interface.js'
-import { transformAndValidate } from '../common/functions.js'
 import { ServerConfig } from './config.interfaces.js'
 import { ENVIRONMENT_PREFIX } from './config.constants.js'
 import { configLoader } from './config.loader.js'
-import { GlobalConfig } from './config.validation.js'
+import { isConfigRecord } from './config.schema.js'
+import { type GlobalConfig, GlobalConfigSchema } from './config.validation.js'
 
 export const configuration: GlobalConfig = loadConfiguration()
 export const serverConfig: ServerConfig = {
@@ -58,13 +58,15 @@ export function loadConfiguration(): GlobalConfig {
   deprecatedFilesEditorsConfig(config)
   deprecatedFilesContentIndexingConfig(config)
 
-  return transformAndValidate(
-    GlobalConfig,
-    config,
-    { exposeDefaultValues: true },
-    { skipMissingProperties: false },
-    'Invalid configuration in environment.yaml'
-  )
+  const result = GlobalConfigSchema.safeParse(config)
+  if (!result.success) {
+    const details = result.error.issues.map((issue) => {
+      const path = issue.path.map(String).join('.')
+      return path ? `${path}: ${issue.message}` : issue.message
+    })
+    throw new Error(`Invalid configuration in environment.yaml:\n- ${details.join('\n- ')}`)
+  }
+  return result.data
 }
 
 function deprecatedFilesEditorsEnvConfig(): void {
@@ -105,21 +107,23 @@ function deprecatedServerTrustProxyConfig(config: GlobalConfig): void {
 }
 
 function deprecatedFilesEditorsConfig(config: GlobalConfig): void {
-  const files = config.applications.files as unknown as Record<string, any>
+  const files: unknown = config.applications.files
+  if (!isConfigRecord(files)) return
   const legacyEditors = ['onlyoffice', 'collabora'].filter((editor) => Object.prototype.hasOwnProperty.call(files, editor))
 
   if (legacyEditors.length === 0) {
     return
   }
 
-  files.editors ??= {}
+  const configuredEditors = files['editors']
+  const editors = isConfigRecord(configuredEditors) ? configuredEditors : {}
+  files['editors'] = editors
   for (const editor of legacyEditors) {
     const legacyConfig = files[editor]
-    const currentConfig = files.editors[editor]
-    files.editors[editor] =
-      legacyConfig && currentConfig && typeof legacyConfig === 'object' && typeof currentConfig === 'object'
-        ? { ...legacyConfig, ...currentConfig }
-        : (currentConfig ?? legacyConfig)
+    const currentConfig = editors[editor]
+    const editorConfig =
+      isConfigRecord(legacyConfig) && isConfigRecord(currentConfig) ? { ...legacyConfig, ...currentConfig } : (currentConfig ?? legacyConfig)
+    editors[editor] = editorConfig
     delete files[editor]
   }
 
@@ -135,8 +139,7 @@ function deprecatedFilesContentIndexingConfig(config: GlobalConfig): void {
     return
   }
 
-  const filesContentIndexingConfig = new FilesContentIndexingConfig()
-  filesContentIndexingConfig.enabled = config.applications.files.contentIndexing
+  const filesContentIndexingConfig = FilesContentIndexingConfigSchema.parse({ enabled: config.applications.files.contentIndexing })
   config.applications.files.contentIndexing = filesContentIndexingConfig
   console.warn(
     '[DEPRECATED][CONFIGURATION] applications.files.contentIndexing is deprecated and will be removed in a future version. ' +

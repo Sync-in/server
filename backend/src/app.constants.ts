@@ -2,7 +2,7 @@ import { loadVersion } from './app.functions.js'
 
 export const VERSION = loadVersion()
 export const USER_AGENT = `sync-in-server/${VERSION}`
-export const CONTENT_SECURITY_POLICY = (xOfficeServer: string, collaboraServer: string, drawioServer: string) => ({
+export const CONTENT_SECURITY_POLICY = (xOfficeServer: string | null, collaboraServer: string | null, drawioServer: string | null) => ({
   useDefaults: false,
   directives: {
     defaultSrc: ["'self'"],

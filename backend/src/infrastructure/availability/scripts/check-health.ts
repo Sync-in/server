@@ -1,3 +1,5 @@
+import { toErrorMessage } from '../../../common/errors.js'
+
 async function checkHealth(): Promise<void> {
   const url = process.env.SYNC_IN_HEALTHCHECK_URL
 
@@ -13,7 +15,6 @@ async function checkHealth(): Promise<void> {
 }
 
 checkHealth().catch((error: unknown) => {
-  const message = error instanceof Error ? error.message : String(error)
-  console.error(`Health check failed: ${message}`)
+  console.error(`Health check failed: ${toErrorMessage(error)}`)
   process.exitCode = 1
 })

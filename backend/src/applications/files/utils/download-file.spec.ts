@@ -9,9 +9,13 @@ import { DownloadFile } from './download-file.js'
 import type { Mock } from 'vitest'
 import { FILE_ERROR } from '../constants/errors.js'
 
-vi.mock('./files.js', () => ({
-  writeUploadFromStream: vi.fn()
-}))
+vi.mock('./files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./files.js')>()
+  return {
+    ...actual,
+    writeUploadFromStream: vi.fn()
+  }
+})
 vi.mock('node:dns/promises', () => ({
   lookup: vi.fn()
 }))

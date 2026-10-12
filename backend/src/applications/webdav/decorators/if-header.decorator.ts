@@ -2,12 +2,12 @@ import { FastifyReply } from 'fastify'
 import { FastifyDAVRequest } from '../interfaces/webdav.interface.js'
 
 export function IfHeaderDecorator() {
-  return (_target: any, _key?: string | symbol, descriptor?: TypedPropertyDescriptor<any>) => {
-    const originalMethod = descriptor.value
-    descriptor.value = async function (...args: any[]) {
-      const req: FastifyDAVRequest = args[0]
-      const res: FastifyReply = args[1]
-      if (!(await this.evaluateIfHeaders(req, res))) {
+  return (_target: object, _key: string | symbol, descriptor: PropertyDescriptor): void => {
+    const originalMethod = descriptor.value as (...args: unknown[]) => unknown
+    descriptor.value = async function (this: unknown, ...args: unknown[]) {
+      const req = args[0] as FastifyDAVRequest
+      const res = args[1] as FastifyReply
+      if (!(await (this as { evaluateIfHeaders(req: FastifyDAVRequest, res: FastifyReply): Promise<boolean> }).evaluateIfHeaders(req, res))) {
         // if there is an error the response is generated inside the `evaluateIfHeaders` function
         return
       }

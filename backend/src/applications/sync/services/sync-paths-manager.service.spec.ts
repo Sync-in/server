@@ -488,7 +488,7 @@ describe(SyncPathsManager.name, () => {
       await flush()
 
       expect(loggerSpy).toHaveBeenCalled()
-      expect(loggerSpy.mock.calls.some(([payload]: { tag: string }[]) => payload?.tag === 'updatePaths')).toBe(true)
+      expect(loggerSpy.mock.calls.some(([payload]) => (payload as { tag?: string })?.tag === 'updatePaths')).toBe(true)
     })
 
     it('should catch notify failure at updatePaths level when building notification fails', async () => {
@@ -496,7 +496,6 @@ describe(SyncPathsManager.name, () => {
       // No server paths: will mark client path as deleted and call notify
       syncQueries.getPaths.mockResolvedValue([])
       const loggerSpy = vi.spyOn((service as any).logger, 'error').mockImplementation(() => undefined)
-      // BAD first segment to make notify fail while building URL (before notificationsManager.create)
       const client = [{ id: 1, remotePath: 'BAD/a/b', timestamp: 1, lastSync: 1, permissions: 'p' } as any]
 
       const res = await service.updatePaths(userWith('c1') as any, client)
@@ -504,8 +503,7 @@ describe(SyncPathsManager.name, () => {
 
       expect(res.delete).toEqual([1])
       expect(loggerSpy).toHaveBeenCalled()
-      expect(loggerSpy.mock.calls.some(([payload]: { tag: string }[]) => payload?.tag === 'updatePaths')).toBe(true)
-      // create not called because we failed before reaching it
+      expect(loggerSpy.mock.calls.some(([payload]) => (payload as { tag?: string })?.tag === 'updatePaths')).toBe(true)
       expect(notificationsManager.create).not.toHaveBeenCalled()
     })
 
@@ -523,7 +521,7 @@ describe(SyncPathsManager.name, () => {
       expect(res.delete).toEqual([2])
       expect(loggerSpy).toHaveBeenCalled()
       // error comes from notify() catch
-      expect(loggerSpy.mock.calls.some(([payload]: { tag: string }[]) => payload?.tag === 'notify')).toBe(true)
+      expect(loggerSpy.mock.calls.some(([payload]) => (payload as { tag?: string })?.tag === 'notify')).toBe(true)
     })
   })
 

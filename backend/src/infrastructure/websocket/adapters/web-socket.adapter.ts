@@ -11,6 +11,7 @@ import { UserModel } from '../../../applications/users/models/user.model.js'
 import { UsersManager } from '../../../applications/users/services/users-manager.service.js'
 import { type JwtPayload } from '../../../authentication/interfaces/jwt-payload.interface.js'
 import { TOKEN_TYPE } from '../../../authentication/interfaces/token.interface.js'
+import { toErrorMessage } from '../../../common/errors.js'
 import { configuration } from '../../../configuration/config.environment.js'
 import { getClientAddress } from '../utils.js'
 import { ClusterAdapter } from './cluster.adapter.js'
@@ -18,7 +19,7 @@ import { RedisAdapter } from './redis.adapter.js'
 
 @Injectable()
 export class WebSocketAdapter extends IoAdapter {
-  private adapter: RedisAdapter | ClusterAdapter
+  private adapter?: RedisAdapter | ClusterAdapter
   private readonly app: NestFastifyApplication
   private readonly fastify: FastifyInstance
   protected override readonly logger: Logger = new Logger(WebSocketAdapter.name)
@@ -38,10 +39,10 @@ export class WebSocketAdapter extends IoAdapter {
   }
 
   createIOServer(port: number, options?: ServerOptions) {
-    const server = this.adapter.createIOServer(port, {
+    const server = this.adapter!.createIOServer(port, {
       ...options,
       transports: ['websocket']
-    } satisfies ServerOptions)
+    } as ServerOptions)
     // Authentication
     server.use(this.authenticateSocket.bind(this))
     server.on('new_namespace', (namespace: Namespace) => {
@@ -65,7 +66,7 @@ export class WebSocketAdapter extends IoAdapter {
         await redisIoAdapter.connect(configuration.websocket.redis)
         return redisIoAdapter
       } catch (e) {
-        this.logger.error(e.message)
+        this.logger.error(toErrorMessage(e))
         throw e
       }
     } else {
@@ -90,7 +91,7 @@ export class WebSocketAdapter extends IoAdapter {
     try {
       payload = this.jwtService.verify<JwtPayload>(token, { secret: configuration.auth.token.ws.secret })
     } catch (e) {
-      this.onAuthError(e.message, socket, next)
+      this.onAuthError(toErrorMessage(e), socket, next)
       return
     }
     if (!payload) {
@@ -101,11 +102,11 @@ export class WebSocketAdapter extends IoAdapter {
       this.onAuthError('Invalid token type', socket, next)
       return
     }
-    let user: UserModel
+    let user: UserModel | null
     try {
       user = await this.usersManager.fromAuthToken(new UserModel(payload.identity))
     } catch (e) {
-      this.onAuthError(e.message, socket, next)
+      this.onAuthError(toErrorMessage(e), socket, next)
       return
     }
     if (!user) {
@@ -117,7 +118,9 @@ export class WebSocketAdapter extends IoAdapter {
   }
 
   private onAuthError(error: string, socket: Socket, next: (err?: Error) => void) {
-    this.logger.warn(`${error} - ${getClientAddress(socket)} ${socket.id} ${socket.handshake.url} ${socket.handshake.headers['user-agent']}`)
+    this.logger.warn(
+      `${toErrorMessage(error)} - ${getClientAddress(socket)} ${socket.id} ${socket.handshake.url} ${socket.handshake.headers['user-agent']}`
+    )
     next(new WsException('Unauthorized'))
   }
 }

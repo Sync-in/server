@@ -60,7 +60,7 @@ describe(WebDAVProtocolGuard.name, () => {
 
   const expectIfHeadersParsed = (req: FastifyDAVRequest) => {
     expect(Array.isArray(req.dav.ifHeaders)).toBe(true)
-    expect(req.dav.ifHeaders.length).toBeGreaterThan(0)
+    expect(req.dav.ifHeaders!.length).toBeGreaterThan(0)
   }
 
   beforeEach(async () => {
@@ -236,9 +236,9 @@ describe(WebDAVProtocolGuard.name, () => {
       const res = makeRes()
       const ctx = makeCtx(req, res)
       await expect(guard.canActivate(ctx)).resolves.toBe(true)
-      expect(req.dav.lock.timeout).toBe(CACHE_LOCK_DEFAULT_TTL)
-      expect(req.dav.lock.lockscope).toBe(LOCK_SCOPE.EXCLUSIVE)
-      expect(req.dav.lock.owner).toContain('Custom Owner')
+      expect(req.dav.lock!.timeout).toBe(CACHE_LOCK_DEFAULT_TTL)
+      expect(req.dav.lock!.lockscope).toBe(LOCK_SCOPE.EXCLUSIVE)
+      expect(req.dav.lock!.owner).toContain('Custom Owner')
       expect(req.dav.depth).toBe(DEPTH.RESOURCE)
     })
 
@@ -250,9 +250,9 @@ describe(WebDAVProtocolGuard.name, () => {
       const res = makeRes()
       const ctx = makeCtx(req, res)
       await expect(guard.canActivate(ctx)).resolves.toBe(true)
-      expect(req.dav.lock.timeout).toBe(10)
-      expect(req.dav.lock.lockscope).toBe(LOCK_SCOPE.SHARED)
-      expect(req.dav.lock.owner).toMatch(/^me/)
+      expect(req.dav.lock!.timeout).toBe(10)
+      expect(req.dav.lock!.lockscope).toBe(LOCK_SCOPE.SHARED)
+      expect(req.dav.lock!.owner).toMatch(/^me/)
       expect(req.dav.depth).toBe(DEPTH.INFINITY)
     })
 
@@ -265,7 +265,7 @@ describe(WebDAVProtocolGuard.name, () => {
       const res = makeRes()
       const ctx = makeCtx(req, res)
       await expect(guard.canActivate(ctx)).resolves.toBe(true)
-      expect(req.dav.lock.timeout).toBe(CACHE_LOCK_DEFAULT_TTL)
+      expect(req.dav.lock!.timeout).toBe(CACHE_LOCK_DEFAULT_TTL)
     })
 
     it('invalid timeout -> NaN (no fallback), depth=infinity', async () => {
@@ -276,7 +276,7 @@ describe(WebDAVProtocolGuard.name, () => {
       const res = makeRes()
       const ctx = makeCtx(req, res)
       await expect(guard.canActivate(ctx)).resolves.toBe(true)
-      expect(Number.isNaN(req.dav.lock.timeout)).toBe(true)
+      expect(Number.isNaN(req.dav.lock!.timeout)).toBe(true)
       expect(req.dav.depth).toBe(DEPTH.INFINITY)
     })
 
@@ -312,7 +312,7 @@ describe(WebDAVProtocolGuard.name, () => {
 
       try {
         await expect(guard.canActivate(ctx)).resolves.toBe(true)
-        expect(req.dav.lock.timeout).toBe(CACHE_LOCK_DEFAULT_TTL)
+        expect(req.dav.lock!.timeout).toBe(CACHE_LOCK_DEFAULT_TTL)
         expect(req.dav.ifHeaders).toBeUndefined()
       } finally {
         spyIf.mockRestore()
@@ -403,7 +403,7 @@ describe(WebDAVProtocolGuard.name, () => {
       const ctx = makeCtx(req, res)
       await expect(guard.canActivate(ctx)).resolves.toBe(true)
       expect(req.dav.lock).toBeDefined()
-      expect(req.dav.lock.timeout).toBeUndefined()
+      expect(req.dav.lock!.timeout).toBeUndefined()
     })
   })
 
@@ -422,7 +422,7 @@ describe(WebDAVProtocolGuard.name, () => {
       const res = makeRes()
       const ctx = makeCtx(req, res)
       await expect(guard.canActivate(ctx)).resolves.toBe(true)
-      expect(req.dav.lock.token).toBe('abc')
+      expect(req.dav.lock!.token).toBe('abc')
       expectIfHeadersParsed(req)
     })
   })

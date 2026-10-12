@@ -8,8 +8,6 @@ import {
   Lock,
   Logger,
   Move,
-  ParseBoolPipe,
-  ParseIntPipe,
   Patch,
   Post,
   Put,
@@ -30,7 +28,17 @@ import { GetUser } from '../users/decorators/user.decorator.js'
 import { UserModel } from '../users/models/user.model.js'
 import { FILE_OPERATION, FORCE_AS_FILE_OWNER } from './constants/operations.js'
 import { FILES_ROUTE } from './constants/routes.js'
-import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto } from './dto/file-operations.dto.js'
+import {
+  type CompressFileDto,
+  compressFileSchema,
+  copyMoveFileSchema,
+  type DownloadFileDto,
+  downloadFileSchema,
+  type MakeFileDto,
+  makeFileSchema,
+  type ValidatedCopyMoveFileDto
+} from './dto/file-operations.dto.js'
+import { forceAsFileOwnerQuerySchema, thumbnailSizeQuerySchema } from './files.schema.js'
 import type { CopyMoveFileResponse } from './interfaces/copy-move-file.interface.js'
 import { FileLockProps } from './interfaces/file-props.interface.js'
 import { FileTask } from './models/file-task.js'
@@ -60,7 +68,7 @@ export class FilesOperationsController {
   }
 
   @Post(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.MAKE}/*`)
-  async make(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() makeFileDto: MakeFileDto): Promise<void> {
+  async make(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body({ schema: makeFileSchema }) makeFileDto: MakeFileDto): Promise<void> {
     return this.filesMethods.make(user, space, makeFileDto)
   }
 
@@ -80,12 +88,20 @@ export class FilesOperationsController {
   }
 
   @Copy(`${FILES_ROUTE.OPERATION}/*`)
-  async copy(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() copyMoveFileDto: CopyMoveFileDto): Promise<CopyMoveFileResponse> {
+  async copy(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Body({ schema: copyMoveFileSchema }) copyMoveFileDto: ValidatedCopyMoveFileDto
+  ): Promise<CopyMoveFileResponse> {
     return this.filesMethods.copy(user, space, copyMoveFileDto)
   }
 
   @Move(`${FILES_ROUTE.OPERATION}/*`)
-  async move(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() copyMoveFileDto: CopyMoveFileDto): Promise<CopyMoveFileResponse> {
+  async move(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Body({ schema: copyMoveFileSchema }) copyMoveFileDto: ValidatedCopyMoveFileDto
+  ): Promise<CopyMoveFileResponse> {
     return this.filesMethods.move(user, space, copyMoveFileDto)
   }
 
@@ -95,7 +111,7 @@ export class FilesOperationsController {
   }
 
   @Get(`${FILES_ROUTE.OPERATION}/${FILE_OPERATION.THUMBNAIL}/*`)
-  async genThumbnail(@GetSpace() space: SpaceEnv, @Query('size', new ParseIntPipe({ optional: true })) size = 256): Promise<StreamableFile> {
+  async genThumbnail(@GetSpace() space: SpaceEnv, @Query('size', { schema: thumbnailSizeQuerySchema }) size = 256): Promise<StreamableFile> {
     if (size > 1024) size = 1024
     const thumbnail = await this.filesMethods.genThumbnail(space, size)
     return new StreamableFile(thumbnail.stream, { length: thumbnail.size, type: thumbnail.mimeType })
@@ -110,7 +126,7 @@ export class FilesOperationsController {
   async unlock(
     @GetUser() user: UserModel,
     @GetSpace() space: SpaceEnv,
-    @Query(FORCE_AS_FILE_OWNER, new ParseBoolPipe({ optional: true })) forceAsFileOwner?: boolean
+    @Query(FORCE_AS_FILE_OWNER, { schema: forceAsFileOwnerQuerySchema }) forceAsFileOwner?: boolean
   ): Promise<void> {
     return this.filesMethods.unlock(user, space, forceAsFileOwner)
   }
@@ -128,14 +144,18 @@ export class FilesOperationsController {
   // TASKS OPERATIONS
 
   @Post(`${FILES_ROUTE.TASK_OPERATION}/${FILE_OPERATION.DOWNLOAD}/*`)
-  async downloadFromUrlAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() downloadFileDto: DownloadFileDto): Promise<FileTask> {
+  async downloadFromUrlAsTask(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Body({ schema: downloadFileSchema }) downloadFileDto: DownloadFileDto
+  ): Promise<FileTask> {
     return this.filesTasksManager.createTask(FILE_OPERATION.DOWNLOAD, user, space, downloadFileDto, this.filesMethods.downloadFromUrl.name)
   }
 
   @Post(`${FILES_ROUTE.TASK_OPERATION}/${FILE_OPERATION.COMPRESS}/*`)
   @SkipSpacePermissionsCheck()
   // Can be used to create or download an archive of files; permissions are checked later
-  async compressAsTask(@Req() req: FastifySpaceRequest, @Body() compressFileDto: CompressFileDto): Promise<FileTask> {
+  async compressAsTask(@Req() req: FastifySpaceRequest, @Body({ schema: compressFileSchema }) compressFileDto: CompressFileDto): Promise<FileTask> {
     if (compressFileDto.compressInDirectory) {
       await SpaceGuard.checkPermissions(req, this.logger)
     }
@@ -148,12 +168,20 @@ export class FilesOperationsController {
   }
 
   @Copy(`${FILES_ROUTE.TASK_OPERATION}/*`)
-  async copyAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() copyMoveFileDto: CopyMoveFileDto): Promise<FileTask> {
+  async copyAsTask(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Body({ schema: copyMoveFileSchema }) copyMoveFileDto: ValidatedCopyMoveFileDto
+  ): Promise<FileTask> {
     return this.filesTasksManager.createTask(FILE_OPERATION.COPY, user, space, copyMoveFileDto, this.filesMethods.copy.name)
   }
 
   @Move(`${FILES_ROUTE.TASK_OPERATION}/*`)
-  async moveAsTask(@GetUser() user: UserModel, @GetSpace() space: SpaceEnv, @Body() copyMoveFileDto: CopyMoveFileDto): Promise<FileTask> {
+  async moveAsTask(
+    @GetUser() user: UserModel,
+    @GetSpace() space: SpaceEnv,
+    @Body({ schema: copyMoveFileSchema }) copyMoveFileDto: ValidatedCopyMoveFileDto
+  ): Promise<FileTask> {
     return this.filesTasksManager.createTask(FILE_OPERATION.MOVE, user, space, copyMoveFileDto, this.filesMethods.move.name)
   }
 

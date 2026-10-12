@@ -1,8 +1,8 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { Injectable, Logger } from '@nestjs/common'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service.js'
 import { UsersQueries } from '../../users/services/users-queries.service.js'
 import type { StorageQuota } from '../../../common/interfaces.js'
-import type { User } from '../../users/schemas/user.interface.js'
 import { eq, lte } from 'drizzle-orm'
 import { users } from '../../users/schemas/users.schema.js'
 import { USER_ROLE } from '../../users/constants/user.js'
@@ -72,35 +72,35 @@ export class FilesQuotaManager {
           this.logger.warn({ tag: this.updateStorageUsageEntries.name, msg: `Unknown type: ${repository}` })
         }
       } catch (e) {
-        this.logger.error({ tag: this.updateStorageUsageEntries.name, msg: `${e}` })
+        this.logger.error({ tag: this.updateStorageUsageEntries.name, msg: toErrorMessage(e) })
       } finally {
         this.spacesQueries.cache
           .del(k)
-          .catch((e) => this.logger.warn({ tag: this.updateStorageUsageEntries.name, msg: `Unable to clean key: ${k} - ${e}` }))
+          .catch((e) => this.logger.warn({ tag: this.updateStorageUsageEntries.name, msg: `Unable to clean key: ${k} - ${toErrorMessage(e)}` }))
       }
     }
   }
 
-  async updateStorageQuota(id: number, type: FILE_REPOSITORY, quota: number) {
+  async updateStorageQuota(id: number, type: FILE_REPOSITORY, quota: number | null) {
     const cacheKey = genQuotaCacheKey(id, type)
     const entryQuota: StorageQuota = await this.spacesQueries.cache.get(cacheKey)
     if (entryQuota && entryQuota.storageUsage !== undefined) {
       this.spacesQueries.cache
         .set(cacheKey, { storageUsage: entryQuota.storageUsage, storageQuota: quota }, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error({ tag: this.updateStorageQuota.name, msg: `type *${type}* (${id}) - ${e}` }))
+        .catch((e: Error) => this.logger.error({ tag: this.updateStorageQuota.name, msg: `type *${type}* (${id}) - ${toErrorMessage(e)}` }))
     } else {
       // store event update for later propagation
       const updateCacheKey = genQuotaCacheKey(id, type, true)
       this.spacesQueries.cache
         .set(updateCacheKey, true, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error({ tag: this.updateStorageQuota.name, msg: `type *${type}* (${id}) event - ${e}` }))
+        .catch((e: Error) => this.logger.error({ tag: this.updateStorageQuota.name, msg: `type *${type}* (${id}) event - ${toErrorMessage(e)}` }))
     }
   }
 
   async updatePersonalSpacesQuota(): Promise<void>
   async updatePersonalSpacesQuota(userId: number): Promise<StorageQuota>
   async updatePersonalSpacesQuota(userId?: number): Promise<void | StorageQuota> {
-    const props: (keyof User)[] = ['id', 'login', 'storageUsage', 'storageQuota']
+    const props: ('id' | 'login' | 'storageUsage' | 'storageQuota')[] = ['id', 'login', 'storageUsage', 'storageQuota']
     for (const user of await this.usersQueries.selectUsers(props, [lte(users.role, USER_ROLE.USER), ...(userId ? [eq(users.id, userId)] : [])])) {
       const userPath = UserModel.getHomePath(user.login)
       if (!(await isPathExists(userPath))) {
@@ -109,12 +109,17 @@ export class FilesQuotaManager {
       }
       const [size, errors] = await dirSize(userPath)
       for (const [path, error] of Object.entries(errors)) {
-        this.logger.warn({ tag: this.updatePersonalSpacesQuota.name, msg: `unable to get size for *${user.login}* on ${path} : ${error}` })
+        this.logger.warn({
+          tag: this.updatePersonalSpacesQuota.name,
+          msg: `unable to get size for *${user.login}* on ${path} : ${toErrorMessage(error)}`
+        })
       }
       const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: user.storageQuota }
       this.spacesQueries.cache
         .set(genQuotaCacheKey(user.id, FILE_REPOSITORY.USER), spaceQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error({ tag: this.updatePersonalSpacesQuota.name, msg: `user *${user.login}* (${user.id}) : ${e}` }))
+        .catch((e: Error) =>
+          this.logger.error({ tag: this.updatePersonalSpacesQuota.name, msg: `user *${user.login}* (${user.id}) : ${toErrorMessage(e)}` })
+        )
       if (user.storageUsage !== spaceQuota.storageUsage) {
         this.usersQueries.updateUserOrGuest(user.id, { storageUsage: spaceQuota.storageUsage }).then(
           (updated: boolean) =>
@@ -145,13 +150,18 @@ export class FilesQuotaManager {
         const [rPathSize, errors] = await dirSize(rPath)
         size += rPathSize
         for (const [path, error] of Object.entries(errors)) {
-          this.logger.warn({ tag: this.updateSpacesQuota.name, msg: `unable to get size for *${space.alias}* on ${path} : ${error}` })
+          this.logger.warn({
+            tag: this.updateSpacesQuota.name,
+            msg: `unable to get size for *${space.alias}* on ${path} : ${toErrorMessage(error)}`
+          })
         }
       }
       const spaceQuota: StorageQuota = { storageUsage: size, storageQuota: space.storageQuota }
       this.spacesQueries.cache
         .set(genQuotaCacheKey(space.id, FILE_REPOSITORY.SPACE), spaceQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error({ tag: this.updateSpacesQuota.name, msg: `space *${space.alias}* (${space.id}) : ${e}` }))
+        .catch((e: Error) =>
+          this.logger.error({ tag: this.updateSpacesQuota.name, msg: `space *${space.alias}* (${space.id}) : ${toErrorMessage(e)}` })
+        )
       if (space.storageUsage !== spaceQuota.storageUsage) {
         this.spacesQueries.updateSpace(space.id, { storageUsage: spaceQuota.storageUsage }).then(
           (updated: boolean) =>
@@ -178,12 +188,17 @@ export class FilesQuotaManager {
       }
       const [size, errors] = await dirSize(share.externalPath)
       for (const [path, error] of Object.entries(errors)) {
-        this.logger.warn({ tag: this.updateSharesExternalPathQuota.name, msg: `unable to get size for *${share.alias}* on ${path} : ${error}` })
+        this.logger.warn({
+          tag: this.updateSharesExternalPathQuota.name,
+          msg: `unable to get size for *${share.alias}* on ${path} : ${toErrorMessage(error)}`
+        })
       }
       const shareQuota: StorageQuota = { storageUsage: size, storageQuota: share.storageQuota }
       this.sharesQueries.cache
         .set(genQuotaCacheKey(share.id, FILE_REPOSITORY.SHARE), shareQuota, CACHE_QUOTA_TTL)
-        .catch((e: Error) => this.logger.error({ tag: this.updateSharesExternalPathQuota.name, msg: `share *${share.alias}* (${share.id}) : ${e}` }))
+        .catch((e: Error) =>
+          this.logger.error({ tag: this.updateSharesExternalPathQuota.name, msg: `share *${share.alias}* (${share.id}) : ${toErrorMessage(e)}` })
+        )
       if (share.storageUsage !== shareQuota.storageUsage) {
         this.sharesQueries.updateShare(share.id, { storageUsage: shareQuota.storageUsage }).then(
           (updated: boolean) =>

@@ -4,20 +4,20 @@ import { FileTaskProps } from '../../files/models/file-task.js'
 import { FILE_OPERATION } from '../../files/constants/operations.js'
 import { UserModel } from '../../users/models/user.model.js'
 import { SPACE_ALIAS, SPACE_ALL_OPERATIONS, SPACE_OPERATION, SPACE_PERMS_SEP, SPACE_REPOSITORY, SPACE_ROLE } from '../constants/spaces.js'
-import { Space } from '../schemas/space.interface.js'
+import type { Space } from '../schemas/space.interface.js'
 import { dbFileFromSpace, realPathFromSpace } from '../utils/paths.js'
 import { getEnvPermissions, removePermissions } from '../utils/permissions.js'
 
 export class SpaceEnv implements Pick<Space, 'id' | 'alias' | 'name' | 'enabled'> {
   /* the space environment determines the context of access, permissions and the targeted resource */
-  id: number
-  alias: string
-  name: string
+  id!: number
+  alias!: string
+  name!: string
   enabled: boolean = true
   // space or share permissions
-  permissions: string
-  role: SPACE_ROLE
-  repository: SPACE_REPOSITORY
+  permissions!: string
+  role!: SPACE_ROLE
+  repository!: SPACE_REPOSITORY
   // in share case the root is the file of the share
   root?: {
     // if the id equal to 0, the root is located inside the space (not in the user files)
@@ -42,16 +42,16 @@ export class SpaceEnv implements Pick<Space, 'id' | 'alias' | 'name' | 'enabled'
       root?: { id: number; externalPath: string }
     }
   }
-  paths?: string[]
+  paths!: string[]
 
   // computed properties
-  url: string
-  relativeUrl: string
-  realPath: string
-  realBasePath: string
-  dbFile: FileDBProps
+  url!: string
+  relativeUrl!: string
+  realPath!: string
+  realBasePath!: string
+  dbFile!: FileDBProps
   // merged permissions from space and root
-  envPermissions: string
+  envPermissions!: string
   // states
   inFilesRepository = false
   inTrashRepository = false
@@ -59,22 +59,29 @@ export class SpaceEnv implements Pick<Space, 'id' | 'alias' | 'name' | 'enabled'
   inPersonalSpace = false
   inSharesList = false
   // quota
-  storageUsage: number
-  storageQuota: number
+  storageUsage!: number
+  storageQuota!: number | null
   quotaIsExceeded = false
   // event
   task?: { id: string; type: FILE_OPERATION; cacheKey: string; props: FileTaskProps }
 
-  constructor(props: Partial<SpaceEnv>, rootAlias = '', mustHaveRoot = true) {
+  constructor(props: Partial<SpaceEnv>, rootAlias: string | null = '', mustHaveRoot = true) {
     Object.assign(this, props)
     if (mustHaveRoot && (this.root?.id === null || this.root?.id === undefined)) {
       /* The root is a resource located inside the space but not anchored, this is why we set the id to 0 and the permissions are inherited */
-      this.root = { id: 0, alias: rootAlias, name: rootAlias, permissions: this.permissions }
+      this.root = { id: 0, alias: rootAlias as string, name: rootAlias as string, permissions: this.permissions }
     }
     this.quotaIsExceeded = this.storageQuota !== null && this.storageUsage >= this.storageQuota
   }
 
-  setup(user: UserModel, repository: SPACE_REPOSITORY, rootAlias: string, paths: string[], urlSegments: string[], skipEndpointProtection = false) {
+  setup(
+    user: UserModel,
+    repository: SPACE_REPOSITORY,
+    rootAlias: string | null,
+    paths: string[],
+    urlSegments: string[],
+    skipEndpointProtection = false
+  ) {
     // Ordering is important here
     this.setRepository(repository)
     this.setPaths(user, rootAlias, paths)
@@ -113,7 +120,7 @@ export class SpaceEnv implements Pick<Space, 'id' | 'alias' | 'name' | 'enabled'
     }
   }
 
-  setPaths(user: UserModel, rootAlias: string, paths: string[]) {
+  setPaths(user: UserModel, rootAlias: string | null, paths: string[]) {
     this.paths = this.inSharesRepository && rootAlias ? [rootAlias, ...paths] : paths
     if (!this.inSharesList) {
       // realPathFromSpace may throw a FileError exception

@@ -1,8 +1,8 @@
 import fastifyCookie from '@fastify/cookie'
 import fastifyHelmet from '@fastify/helmet'
 import multipart from '@fastify/multipart'
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common'
-import { NestFactory, Reflector } from '@nestjs/core'
+import { StandardSchemaValidationPipe } from '@nestjs/common'
+import { NestFactory } from '@nestjs/core'
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify'
 import { FastifyInstance, FastifyRequest } from 'fastify'
 import { Logger, LoggerErrorInterceptor } from 'nestjs-pino'
@@ -49,15 +49,12 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
   fastifyInstance.addContentTypeParser('*', (_req: FastifyRequest, _payload: FastifyRequest['raw'], done) => done(null))
 
   /* INTERCEPTORS */
-  app.useGlobalInterceptors(
-    new LoggerErrorInterceptor(),
-    new ClassSerializerInterceptor(app.get(Reflector), {
-      excludePrefixes: ['_']
-    })
-  )
+  // UserModel owns its Zod-backed response serialization; its internal caches
+  // use ECMAScript private fields and therefore cannot leak into JSON responses.
+  app.useGlobalInterceptors(new LoggerErrorInterceptor())
 
   /* VALIDATION */
-  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }))
+  app.useGlobalPipes(new StandardSchemaValidationPipe())
 
   /* STATIC */
   app.useStaticAssets({ root: STATIC_PATH, prefixAvoidTrailingSlash: true })

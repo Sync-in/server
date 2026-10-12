@@ -35,7 +35,7 @@ export const translations = new Map<i18nLocale, Record<string, string>>([
 
 export function translateObject(language: i18nLocale, obj: Record<string, string>): Record<string, string> {
   if (!language || !translations.has(language)) return obj
-  const tr: Record<string, string> = translations.get(language)
+  const tr = translations.get(language)
   if (!tr) return obj
   for (const key in obj) {
     const v = obj[key]

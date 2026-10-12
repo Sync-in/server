@@ -57,7 +57,7 @@ describe(UserRolesGuard.name, () => {
   })
 
   it('should not pass with an undefined user role', async () => {
-    userTest.role = undefined
+    ;(userTest as any).role = undefined
     context = createMock<ExecutionContext>()
     UserHaveRole(USER_ROLE.USER)(context.getHandler())
     context.switchToHttp().getRequest.mockReturnValue({

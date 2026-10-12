@@ -28,8 +28,8 @@ import {
   USER_PERMISSION,
   USER_ROLE
 } from '../constants/user.js'
-import { CreateUserDto } from '../dto/create-or-update-user.dto.js'
-import { DeleteUserDto } from '../dto/delete-user.dto.js'
+import type { CreateUserDto } from '../dto/create-or-update-user.dto.js'
+import type { DeleteUserDto } from '../dto/delete-user.dto.js'
 import { UserSecrets } from '../interfaces/user-secrets.interface.js'
 import { UserModel } from '../models/user.model.js'
 import { generateUserTest } from '../utils/test.js'
@@ -168,11 +168,11 @@ describe(UsersManager.name, () => {
     expect(u1.password).toBeUndefined()
     const u2 = await usersManager.findUser(userTest.login, false)
     expect(u2).toBeInstanceOf(UserModel)
-    expect(u2.password).toBeDefined()
-    const externalLookupSpy = vi.spyOn(usersQueriesService, 'fromExternalIdOrEmail').mockResolvedValue(userTest)
+    expect(u2!.password).toBeDefined()
+    const externalLookupSpy = vi.spyOn(usersQueriesService, 'fromExternalIdOrEmail').mockResolvedValue(userTest as any)
     const externalUser = await usersManager.findUserByExternalIdOrEmail('subject-1', userTest.email, false)
     expect(externalUser).toBeInstanceOf(UserModel)
-    expect(externalUser.password).toBeDefined()
+    expect(externalUser!.password).toBeDefined()
     expect(externalLookupSpy).toHaveBeenCalledWith('subject-1', userTest.email)
     const me1: any = await usersManager.me(userTest)
     expect(me1.user.password).toBeUndefined()
@@ -214,11 +214,11 @@ describe(UsersManager.name, () => {
 
     const resolved = await usersManager.fromAuthToken(authUser)
 
-    expect(resolved.role).toBe(USER_ROLE.USER)
-    expect(resolved.applications).toEqual([USER_PERMISSION.SPACES])
-    expect(resolved.clientId).toBe('client-id')
-    expect(resolved.authSession).toBe(AUTH_SESSION.OIDC)
-    expect(resolved.exp).toBe(1234)
+    expect(resolved!.role).toBe(USER_ROLE.USER)
+    expect(resolved!.applications).toEqual([USER_PERMISSION.SPACES])
+    expect(resolved!.clientId).toBe('client-id')
+    expect(resolved!.authSession).toBe(AUTH_SESSION.OIDC)
+    expect(resolved!.exp).toBe(1234)
 
     usersQueriesService.from = vi.fn().mockResolvedValue({ ...currentUser, isActive: false })
     await expect(usersManager.fromAuthToken(authUser)).resolves.toBeNull()
@@ -237,8 +237,8 @@ describe(UsersManager.name, () => {
 
     const resolved = await usersManager.fromAuthToken(authUser)
 
-    expect(resolved.impersonatedFromId).toBe(admin.id)
-    expect(resolved.impersonatedClientId).toBe('admin-client')
+    expect(resolved!.impersonatedFromId).toBe(admin.id)
+    expect(resolved!.impersonatedClientId).toBe('admin-client')
 
     const formerAdmin = { ...generateUserTest(), id: 1, role: USER_ROLE.USER }
     usersQueriesService.from = vi.fn().mockImplementation(async (id: number) => (id === authUser.id ? currentUser : formerAdmin))
@@ -264,7 +264,7 @@ describe(UsersManager.name, () => {
     usersQueriesService.checkUserExists = vi.fn().mockReturnValue(undefined)
     usersQueriesService.createUserOrGuest = vi.fn().mockReturnValue(888)
     usersQueriesService.clearWhiteListCaches = vi.fn()
-    const created = await adminUsersManager.createUserOrGuest(userTest satisfies CreateUserDto, USER_ROLE.USER)
+    const created = await adminUsersManager.createUserOrGuest(userTest as CreateUserDto, USER_ROLE.USER)
     expect(created).toBeInstanceOf(UserModel)
     expect(await isPathExists(created.filesPath)).toBe(true)
 
@@ -273,12 +273,12 @@ describe(UsersManager.name, () => {
       .mockReturnValueOnce({ login: userTest.login, email: '' })
       .mockReturnValueOnce({ login: '', email: userTest.email })
       .mockReturnValueOnce(undefined)
-    await expect(adminUsersManager.createUserOrGuest(userTest satisfies CreateUserDto, USER_ROLE.USER)).rejects.toThrow()
-    await expect(adminUsersManager.createUserOrGuest(userTest satisfies CreateUserDto, USER_ROLE.USER)).rejects.toThrow()
+    await expect(adminUsersManager.createUserOrGuest(userTest as CreateUserDto, USER_ROLE.USER)).rejects.toThrow()
+    await expect(adminUsersManager.createUserOrGuest(userTest as CreateUserDto, USER_ROLE.USER)).rejects.toThrow()
     usersQueriesService.createUserOrGuest = vi.fn().mockImplementation(() => {
       throw new Error('testing')
     })
-    await expect(adminUsersManager.createUserOrGuest(userTest satisfies CreateUserDto, USER_ROLE.USER)).rejects.toThrow()
+    await expect(adminUsersManager.createUserOrGuest(userTest as CreateUserDto, USER_ROLE.USER)).rejects.toThrow()
 
     adminUsersQueries.deleteUser = vi.fn().mockReturnValue(true)
     await expect(adminUsersManager.deleteUserOrGuest(userTest.id, userTest.login, deleteUserDto)).resolves.not.toThrow()
@@ -320,7 +320,7 @@ describe(UsersManager.name, () => {
     const out = await usersManager.logUser(uBad, 'bad', '1.1.1.1')
     expect(out).toBeNull()
     await flush()
-    expect(errSpy.mock.calls.some(([payload]: { msg: string }[]) => payload?.msg?.includes('reject-auth'))).toBe(true)
+    expect(errSpy.mock.calls.some(([payload]) => (payload as { msg?: string } | undefined)?.msg?.includes('reject-auth'))).toBe(true)
     expect(updateAccessesSpy).toHaveBeenCalledWith(uBad, '1.1.1.1', false)
     vi.mocked(comparePassword).mockResolvedValue(true)
     const uGood = new UserModel({ ...generateUserTest(), isActive: true, passwordAttempts: 0 }, false)
@@ -567,7 +567,7 @@ describe(UsersManager.name, () => {
     await expect(usersManager.validateAppPassword(localUser, 'pwd', '192.0.2.10', AUTH_SCOPE.WEBDAV)).resolves.toBe(true)
 
     expect(getCurrentSecrets().twoFaSecret).toBe('two-fa')
-    expect(getCurrentSecrets().appPasswords[0]).toEqual(
+    expect(getCurrentSecrets().appPasswords![0]).toEqual(
       expect.objectContaining({
         name: matchedPassword.name,
         lastAccess: matchedPassword.currentAccess,
@@ -1091,7 +1091,7 @@ describe(UsersManager.name, () => {
     usersQueriesService.listGuests = vi.fn().mockResolvedValue([{ id: 1 }])
     await expect(usersManager.listGuests(userTest)).resolves.toEqual([{ id: 1 }])
 
-    const checkSpy = vi.spyOn(adminUsersManager, 'checkUser').mockImplementation(() => undefined)
+    const checkSpy = vi.spyOn(adminUsersManager, 'checkUser').mockImplementation(() => undefined as never)
     usersQueriesService.listGuests = vi.fn().mockResolvedValue({ id: 9 })
     await expect(usersManager.getGuest(userTest, 9)).resolves.toEqual({ id: 9 })
     expect(checkSpy).toHaveBeenCalled()
@@ -1101,14 +1101,14 @@ describe(UsersManager.name, () => {
     usersQueriesService.usersWhitelist = vi.fn().mockResolvedValue([userTest.id, 100])
     const createSpy = vi.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
 
-    const dto1: CreateUserDto = { ...userTest, managers: [100], password: 'x' }
+    const dto1 = { ...userTest, managers: [100], password: 'x' } as CreateUserDto
     const r = await usersManager.createGuest(userTest, dto1)
     expect(createSpy).toHaveBeenCalled()
     expect(r).toEqual({ id: 55 })
     const args1 = vi.mocked(createSpy).mock.calls[0][0]
     expect(args1.managers).toEqual(expect.arrayContaining([userTest.id]))
     vi.mocked(createSpy).mockClear()
-    const dto2: CreateUserDto = { ...userTest, managers: [userTest.id, 100], password: 'y' }
+    const dto2 = { ...userTest, managers: [userTest.id, 100], password: 'y' } as CreateUserDto
     await usersManager.createGuest(userTest, dto2)
     const args2 = vi.mocked(createSpy).mock.calls[0][0]
     expect((args2.managers as number[]).filter((m: number) => m === userTest.id)).toHaveLength(1)
@@ -1120,7 +1120,7 @@ describe(UsersManager.name, () => {
     usersQueriesService.groupsWhitelist = vi.fn().mockResolvedValue([10])
     const createSpy = vi.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
 
-    const dto: CreateUserDto = { ...userTest, managers: [100], groups: [10, 11], password: 'x' }
+    const dto = { ...userTest, managers: [100], groups: [10, 11], password: 'x' } as CreateUserDto
     await expect(usersManager.createGuest(userTest, dto)).resolves.toEqual({ id: 55 })
     expect(usersQueriesService.groupsWhitelist).toHaveBeenCalledWith(userTest.id, GROUP_TYPE.PERSONAL, USER_GROUP_ROLE.MANAGER)
     const args = vi.mocked(createSpy).mock.calls[0][0]
@@ -1134,7 +1134,7 @@ describe(UsersManager.name, () => {
     usersQueriesService.groupsWhitelist = vi.fn().mockResolvedValue([10, 11])
     const createSpy = vi.spyOn(adminUsersManager, 'createUserOrGuest').mockResolvedValue({ id: 55 } as any)
 
-    const dto: CreateUserDto = { ...userTest, managers: [100], groups: [10, 11], password: 'x' }
+    const dto = { ...userTest, managers: [100], groups: [10, 11], password: 'x' } as CreateUserDto
     await expect(usersManager.createGuest(userTest, dto)).resolves.toEqual({ id: 55 })
     expect(usersQueriesService.groupsWhitelist).toHaveBeenCalledWith(userTest.id, GROUP_TYPE.PERSONAL, USER_GROUP_ROLE.MANAGER)
     const args = vi.mocked(createSpy).mock.calls[0][0]

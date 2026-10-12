@@ -62,7 +62,7 @@ function extractText(items: unknown[], newlineDelimiter: string): string {
 
 async function extractTextFromImages(images: ExtractedImages, options: DocTextifyOptions, pageRotation = 0): Promise<string[]> {
   const contents: string[] = []
-  const worker: DocTextifyOCRWorkerLike | undefined = options.ocrWorker
+  const worker: DocTextifyOCRWorkerLike | null | undefined = options.ocrWorker
 
   if (!worker) return contents
 

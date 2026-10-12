@@ -2,12 +2,14 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import fs from 'fs/promises'
 import { Stats } from 'node:fs'
 import path from 'node:path'
+import { toErrorMessage } from '../../../common/errors.js'
+import { escapePath } from '../../../common/functions.js'
 import { configuration } from '../../../configuration/config.environment.js'
 import { SharesQueries } from '../../shares/services/shares-queries.service.js'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service.js'
 import { UserModel } from '../../users/models/user.model.js'
-import { SearchFilesDto } from '../dto/file-operations.dto.js'
+import type { ValidatedSearchFilesDto } from '../dto/file-operations.dto.js'
 import { FilesContentStore } from '../models/files-content-store.js'
 import { FileContent } from '../schemas/file-content.interface.js'
 import { dirName, fileName, getMimeType, isInternalTemporaryEntry } from '../utils/files.js'
@@ -15,7 +17,6 @@ import { genRegexPositiveAndNegativeTerms, normalizeSearchLimit } from '../utils
 import { FilesContentParser } from './files-content-parser.service.js'
 import { FILE_REPOSITORY } from '../constants/operations.js'
 import { genIndexingKey } from '../utils/indexing.js'
-import { escapePath } from '../../../common/functions.js'
 
 @Injectable()
 export class FilesSearchManager {
@@ -28,7 +29,7 @@ export class FilesSearchManager {
     private readonly sharesQueries: SharesQueries
   ) {}
 
-  async search(user: UserModel, search: SearchFilesDto): Promise<FileContent[]> {
+  async search(user: UserModel, search: ValidatedSearchFilesDto): Promise<FileContent[]> {
     if (search.fullText && !configuration.applications.files.contentIndexing.enabled) {
       throw new HttpException('Full-text search is disabled', HttpStatus.BAD_REQUEST)
     }
@@ -57,7 +58,7 @@ export class FilesSearchManager {
     try {
       return await this.filesIndexer.searchRecords(indexNames, search, limit)
     } catch (e) {
-      const error = e instanceof Error ? e : new Error(`${e}`)
+      const error = e instanceof Error ? e : new Error(toErrorMessage(e))
       this.logger.error({ tag: this.searchFullText.name, msg: `${JSON.stringify(indexNames)} - ${search}`, err: error })
       let msg: string
       if (/Invalid regular expression/.test(error.message)) {
@@ -109,11 +110,11 @@ export class FilesSearchManager {
         }
       }
     } catch (e) {
-      this.logger.warn({ tag: this.parseFileNames.name, msg: `unable to parse: ${dir} (${e})` })
+      this.logger.warn({ tag: this.parseFileNames.name, msg: `unable to parse: ${dir} (${toErrorMessage(e)})` })
     }
   }
 
-  private async analyzeFile(realPath: string, pathPrefix: string, regexBasePath: RegExp, regexpTerms: RegExp): Promise<FileContent> {
+  private async analyzeFile(realPath: string, pathPrefix: string, regexBasePath: RegExp, regexpTerms: RegExp): Promise<FileContent | null> {
     const filePath = realPath.replace(regexBasePath, '')
     if (!regexpTerms.test(filePath)) return null
     const stats: Stats = await fs.stat(realPath)

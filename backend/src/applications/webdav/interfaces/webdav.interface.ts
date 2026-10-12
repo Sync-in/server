@@ -7,15 +7,23 @@ export interface WebDAVContext {
   url: string
   body?: any // xml content
   ifHeaders?: IfHeader[]
-  depth?: DEPTH | string
+  depth: DEPTH | null
   propfindMode?: PROPSTAT
-  lock?: { timeout?: number; lockscope?: LOCK_SCOPE; owner?: any; token?: string }
-  proppatch?: { props: Record<string, string>; errors: any[] }
+  lock?: { timeout?: number; lockscope?: LOCK_SCOPE; owner?: string; token?: string }
+  proppatch?: { props: Record<string, string | null>; errors: any[] }
   copyMove?: { overwrite: boolean; destination: string; isMove: boolean }
 }
 
-export interface FastifyDAVRequest extends FastifyAuthenticatedRequest {
+export interface FastifyDAVPendingRequest extends FastifyAuthenticatedRequest {
   body: any
   dav?: WebDAVContext
   space?: SpaceEnv
+}
+
+export interface FastifyDAVRequest extends FastifyDAVPendingRequest {
+  dav: WebDAVContext
+}
+
+export interface FastifyDAVSpaceRequest extends FastifyDAVRequest {
+  space: SpaceEnv
 }

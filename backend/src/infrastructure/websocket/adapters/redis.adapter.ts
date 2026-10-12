@@ -4,6 +4,7 @@ import { IoAdapter } from '@nestjs/platform-socket.io'
 import type { createAdapter as createRedisAdapter } from '@socket.io/redis-adapter'
 import type { RedisClientType } from 'redis'
 import type { ServerOptions } from 'socket.io'
+import { toErrorMessage } from '../../../common/errors.js'
 import { INFRASTRUCTURE_CONNECTION_RETRY_DELAY, INFRASTRUCTURE_DEPENDENCY } from '../../availability/availability.constants.js'
 import { Availability } from '../../availability/availability.service.js'
 import { connectionErrorMessage, isRetryableConnectionError, redactRedisUrl } from '../../utils.js'
@@ -12,7 +13,7 @@ import type { WebSocketConfig } from '../web-socket.config.js'
 export class RedisAdapter extends IoAdapter {
   protected override readonly logger = new Logger('WebSocketAdapter')
   private readonly availability: Availability
-  private adapterConstructor: ReturnType<typeof createRedisAdapter>
+  private adapterConstructor!: ReturnType<typeof createRedisAdapter>
   private pubClient?: RedisClientType
   private subClient?: RedisClientType
 
@@ -66,7 +67,7 @@ export class RedisAdapter extends IoAdapter {
   private registerClientEvents(client: RedisClientType, name: 'PubClient' | 'SubClient', redactedRedisUrl: string): void {
     client.on('error', (error: Error) => {
       this.updateAvailability()
-      this.logger.error(`${name}: ${error.message || error}`)
+      this.logger.error(`${name}: ${toErrorMessage(error)}`)
     })
     client.on('reconnecting', () => this.updateAvailability())
     client.on('ready', () => {

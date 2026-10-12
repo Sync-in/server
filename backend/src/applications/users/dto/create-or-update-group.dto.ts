@@ -1,30 +1,23 @@
-import { Transform } from 'class-transformer'
-import { IsEnum, IsInt, IsOptional, IsString, MinLength } from 'class-validator'
+import { z } from 'zod'
+import { integerNumberSchema } from '../../../configuration/config.schema.js'
 import { sanitizeName } from '../../files/utils/files.js'
 import { GROUP_VISIBILITY } from '../constants/group.js'
 
-export class UserCreateOrUpdateGroupDto {
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => (value ? sanitizeName(value.trim()) : ''))
-  @MinLength(1)
-  name?: string
+const optionalGroupNameSchema = z.string().trim().overwrite(sanitizeName).min(1).optional()
 
-  @IsOptional()
-  @IsString()
-  description?: string
-}
+export const userCreateOrUpdateGroupSchema = z.object({
+  name: optionalGroupNameSchema,
+  description: z.string().nullish()
+})
 
-export class CreateOrUpdateGroupDto extends UserCreateOrUpdateGroupDto {
-  @IsOptional()
-  @IsEnum(GROUP_VISIBILITY)
-  visibility?: GROUP_VISIBILITY
+export type UserCreateOrUpdateGroupDto = z.infer<typeof userCreateOrUpdateGroupSchema>
 
-  @IsOptional()
-  @IsString()
-  permissions?: string
+export const createOrUpdateGroupSchema = userCreateOrUpdateGroupSchema.extend({
+  visibility: z.enum(GROUP_VISIBILITY).nullish(),
+  permissions: z.string().nullish(),
+  parentId: integerNumberSchema.nullish()
+})
 
-  @IsOptional()
-  @IsInt()
-  parentId?: number
-}
+export type CreateOrUpdateGroupDto = z.infer<typeof createOrUpdateGroupSchema>
+
+export const userIdsSchema = z.array(integerNumberSchema)

@@ -6,6 +6,7 @@ import { NotificationsManager } from '../../../applications/notifications/servic
 import { UserModel } from '../../../applications/users/models/user.model.js'
 import { UsersManager } from '../../../applications/users/services/users-manager.service.js'
 import { ACTION } from '../../../common/constants.js'
+import { toErrorMessage } from '../../../common/errors.js'
 import { generateShortUUID } from '../../../common/functions.js'
 import { qrcodeToDataURL } from '../../../common/qrcode.js'
 import { configuration } from '../../../configuration/config.environment.js'
@@ -13,7 +14,7 @@ import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { TWO_FA_CODE_LENGTH } from '../../constants/auth.js'
 import { FastifyAuthenticatedRequest } from '../../interfaces/auth-request.interface.js'
 import { decryptSecret, encryptSecret } from '../../utils/crypt-secret.js'
-import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './auth-two-fa.dtos.js'
+import type { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './auth-two-fa.dtos.js'
 import { TwoFaEnableResult, TwoFaSetup, TwoFaVerifyResult } from './auth-two-fa.interfaces.js'
 
 @Injectable()
@@ -99,14 +100,14 @@ export class AuthProvider2FA {
       auth.success = true
     } catch (e) {
       auth.success = false
-      auth.message = e.message
-      this.logger.error({ tag: this.adminResetUserTwoFa.name, msg: `${e}` })
+      auth.message = toErrorMessage(e)
+      this.logger.error({ tag: this.adminResetUserTwoFa.name, msg: toErrorMessage(e) })
     }
     return auth
   }
 
   async loadUser(userId: number, ip: string) {
-    const user: UserModel = await this.usersManager.fromUserId(userId)
+    const user = await this.usersManager.fromUserId(userId)
     if (!user) {
       this.logger.warn({ tag: this.loadUser.name, msg: `User ${userId} (${ip}) not found` })
       throw new HttpException(`User not found`, HttpStatus.NOT_FOUND)
@@ -125,13 +126,13 @@ export class AuthProvider2FA {
   }
 
   private async validateVerificationCode(verifyDto: TwoFaVerifyDto, user: UserModel, secret?: string): Promise<TwoFaVerifyResult> {
-    secret = secret || user.secrets.twoFaSecret
+    secret = secret || user.secrets!.twoFaSecret
     return verifyDto.isRecoveryCode
-      ? await this.validateRecoveryCode(user.id, verifyDto.code, user.secrets.recoveryCodes)
+      ? await this.validateRecoveryCode(user.id, verifyDto.code, user.secrets!.recoveryCodes)
       : this.validateTwoFactorCode(verifyDto.code, secret)
   }
 
-  validateTwoFactorCode(code: string, encryptedSecret: string): TwoFaVerifyResult {
+  validateTwoFactorCode(code: string, encryptedSecret?: string): TwoFaVerifyResult {
     const auth: TwoFaVerifyResult = { success: false, message: '' }
     if (!encryptedSecret) {
       auth.message = 'Incorrect code or password'
@@ -141,20 +142,20 @@ export class AuthProvider2FA {
       auth.success = Totp.validate({ passcode: code, secret: this.decryptSecret(encryptedSecret), drift: 1 })
       if (!auth.success) auth.message = 'Incorrect code or password'
     } catch (e) {
-      this.logger.error({ tag: this.validateTwoFactorCode.name, msg: `${e}` })
-      auth.message = e.message
+      this.logger.error({ tag: this.validateTwoFactorCode.name, msg: toErrorMessage(e) })
+      auth.message = toErrorMessage(e)
     }
     return auth
   }
 
-  async validateRecoveryCode(userId: number, code: string, encryptedCodes: string[]): Promise<TwoFaVerifyResult> {
+  async validateRecoveryCode(userId: number, code: string, encryptedCodes?: string[]): Promise<TwoFaVerifyResult> {
     const auth: TwoFaVerifyResult = { success: false, message: '' }
     if (!encryptedCodes || encryptedCodes.length === 0) {
       auth.message = 'Invalid code'
       return auth
     }
     try {
-      let matchedEncryptedCode: string
+      let matchedEncryptedCode: string | undefined
       for (const encCode of encryptedCodes) {
         const decryptedCode = this.decryptSecret(encCode)
         if (code === decryptedCode) {
@@ -169,8 +170,8 @@ export class AuthProvider2FA {
         auth.message = 'Invalid code'
       }
     } catch (e) {
-      this.logger.error({ tag: this.validateRecoveryCode.name, msg: `${e}` })
-      auth.message = e.message || 'Invalid code'
+      this.logger.error({ tag: this.validateRecoveryCode.name, msg: toErrorMessage(e) })
+      auth.message = toErrorMessage(e, 'Invalid code')
     }
     return auth
   }
@@ -205,15 +206,15 @@ export class AuthProvider2FA {
     return Array.from({ length: count }, () => generateShortUUID())
   }
 
-  private sendEmailNotification(req: FastifyAuthenticatedRequest, action: ACTION) {
+  private sendEmailNotification(req: FastifyAuthenticatedRequest, action: ACTION.ADD | ACTION.DELETE) {
     const notification: NotificationContent = {
       app: NOTIFICATION_APP.AUTH_2FA,
       event: NOTIFICATION_APP_EVENT.AUTH_2FA[action],
-      element: req.headers['user-agent'],
+      element: req.headers['user-agent'] as string,
       url: req.ip
     }
     this.notificationsManager
       .sendEmailNotification([req.user], notification)
-      .catch((e: Error) => this.logger.error({ tag: this.sendEmailNotification.name, msg: `${e}` }))
+      .catch((e: Error) => this.logger.error({ tag: this.sendEmailNotification.name, msg: toErrorMessage(e) }))
   }
 }

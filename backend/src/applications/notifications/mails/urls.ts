@@ -1,7 +1,7 @@
 import { PUBLIC_LINKS_ROUTE } from '../../links/constants/routes.js'
 import { SPACES_BASE_ROUTE } from '../../spaces/constants/routes.js'
 import { SYNC_BASE_ROUTE } from '../../sync/constants/routes.js'
-import { NotificationContent } from '../interfaces/notification-properties.interface.js'
+import type { NotificationContentWithUrl } from '../interfaces/notification-properties.interface.js'
 
 function encodePath(path: string): string {
   return path
@@ -14,7 +14,7 @@ export function urlSpaceBase(url: string): string {
   return url ? `${url}/#/${SPACES_BASE_ROUTE}` : ''
 }
 
-export function urlFromSpaceFile(url: string, notification: NotificationContent): string {
+export function urlFromSpaceFile(url: string, notification: NotificationContentWithUrl): string {
   return `${urlSpaceBase(url)}/${encodePath(notification.url)}?select=${encodeURIComponent(notification.element)}`
 }
 

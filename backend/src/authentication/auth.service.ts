@@ -11,8 +11,8 @@ import { configuration, serverConfig } from '../configuration/config.environment
 import { CSRF_ERROR, CSRF_KEY, TOKEN_2FA_TYPES, TOKEN_PATHS, TOKEN_TYPES } from './constants/auth.js'
 import { API_OIDC_LOGIN } from './constants/routes.js'
 import { LoginResponseDto, LoginVerify2FaDto } from './dto/login-response.dto.js'
-import { TokenResponseDto } from './dto/token-response.dto.js'
-import { JwtIdentity2FaPayload, JwtIdentityPayload, JwtPayload } from './interfaces/jwt-payload.interface.js'
+import type { TokenResponseDto } from './dto/token-response.dto.js'
+import type { JwtIdentity2FaPayload, JwtIdentityPayload, JwtPayload } from './interfaces/jwt-payload.interface.js'
 import { TOKEN_TYPE } from './interfaces/token.interface.js'
 import { AUTH_PROVIDER, AUTH_SESSION } from './providers/auth-providers.constants.js'
 import type { AuthOIDCSettings } from './providers/oidc/auth-oidc.interfaces.js'
@@ -25,12 +25,12 @@ export class AuthManager {
 
   async getTokens(user: UserModel, refresh = false): Promise<TokenResponseDto> {
     const currentTime = currentTimeStamp()
-    if (refresh && user.exp < currentTime) {
+    if (refresh && user.exp! < currentTime) {
       this.logger.error({ tag: this.getTokens.name, msg: `token refresh has incorrect expiration : *${user.login}*` })
       throw new HttpException('Token has expired', HttpStatus.FORBIDDEN)
     }
     const accessExpiration = convertHumanTimeToSeconds(configuration.auth.token.access.expiration)
-    const refreshExpiration = refresh ? user.exp - currentTime : convertHumanTimeToSeconds(configuration.auth.token.refresh.expiration)
+    const refreshExpiration = refresh ? user.exp! - currentTime : convertHumanTimeToSeconds(configuration.auth.token.refresh.expiration)
     return {
       [TOKEN_TYPE.ACCESS]: await this.jwtSign(user, TOKEN_TYPE.ACCESS, accessExpiration),
       [TOKEN_TYPE.REFRESH]: await this.jwtSign(user, TOKEN_TYPE.REFRESH, refreshExpiration),
@@ -53,14 +53,14 @@ export class AuthManager {
     const response = verify2Fa ? new LoginVerify2FaDto(serverConfig) : new LoginResponseDto(user, serverConfig)
     const currentTime = currentTimeStamp()
     const csrfToken: string = crypto.randomUUID()
-    const tokenTypes: TOKEN_TYPE[] = verify2Fa ? TOKEN_2FA_TYPES : TOKEN_TYPES
+    const tokenTypes = verify2Fa ? TOKEN_2FA_TYPES : TOKEN_TYPES
     for (const type of tokenTypes) {
       const isCSRFToken = type === TOKEN_TYPE.CSRF || type === TOKEN_TYPE.CSRF_2FA
       const tokenExpiration = convertHumanTimeToSeconds(configuration.auth.token[type].expiration)
       let cookieValue: string
       if (isCSRFToken) {
         cookieValue = csrfToken
-      } else if (verify2Fa) {
+      } else if (type === TOKEN_TYPE.ACCESS_2FA) {
         cookieValue = await this.jwtSign2Fa(user, type, tokenExpiration, csrfToken)
       } else {
         cookieValue = await this.jwtSign(user, type, tokenExpiration, csrfToken)
@@ -109,7 +109,7 @@ export class AuthManager {
   }
 
   async clearCookies(res: FastifyReply) {
-    for (const [type, path] of Object.entries(TOKEN_PATHS)) {
+    for (const [type, path] of Object.entries(TOKEN_PATHS) as [keyof typeof TOKEN_PATHS, string][]) {
       res.clearCookie(configuration.auth.token[type].name, { path: path })
     }
   }
@@ -148,12 +148,17 @@ export class AuthManager {
     }
     return {
       loginUrl: API_OIDC_LOGIN,
-      autoRedirect: configuration.auth.oidc.options.autoRedirect,
+      autoRedirect: configuration.auth.oidc.options.autoRedirect ?? false,
       buttonText: configuration.auth.oidc.options.buttonText
     }
   }
 
-  private jwtSign(user: UserModel, type: TOKEN_TYPE, expiration: number, csrfToken?: string): Promise<string> {
+  private jwtSign(
+    user: UserModel,
+    type: TOKEN_TYPE.ACCESS | TOKEN_TYPE.REFRESH | TOKEN_TYPE.WS,
+    expiration: number,
+    csrfToken?: string
+  ): Promise<string> {
     return this.jwt.signAsync(
       {
         tokenType: type,
@@ -180,7 +185,7 @@ export class AuthManager {
     )
   }
 
-  private jwtSign2Fa(user: UserModel, type: TOKEN_TYPE, expiration: number, csrfToken: string): Promise<string> {
+  private jwtSign2Fa(user: UserModel, type: TOKEN_TYPE.ACCESS_2FA, expiration: number, csrfToken: string): Promise<string> {
     // Restrict the temporary token to the minimum required information
     return this.jwt.signAsync(
       {

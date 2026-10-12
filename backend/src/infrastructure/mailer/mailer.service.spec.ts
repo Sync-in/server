@@ -77,9 +77,9 @@ describe(Mailer.name, () => {
 
   it('should initialize secure transport with no secure port', async () => {
     await initModule({ ...mailerConfig, secure: true })
-    expect(mailer['configuration'].secure).toBe(false)
+    expect(mailer['configuration']!.secure).toBe(false)
     await initModule({ ...mailerConfig, port: 25, secure: true, logger: true })
-    expect(mailer['configuration'].secure).toBe(false)
+    expect(mailer['configuration']!.secure).toBe(false)
     const loggerWarnSpy = vi.spyOn(logger, 'warn')
     expect(loggerWarnSpy).toHaveBeenCalledWith(expect.stringMatching(/has been disabled/i))
     loggerWarnSpy.mockClear()
@@ -111,6 +111,15 @@ describe(Mailer.name, () => {
       expect.objectContaining({
         from: mailerConfig.sender
       })
+    )
+  })
+
+  it('should preserve explicit null settings passed to nodemailer', async () => {
+    await initModule({ ...mailerConfig, auth: null, secure: null, ignoreTLS: null, rejectUnauthorized: null, sender: null })
+
+    expect(nodemailer.createTransport).toHaveBeenLastCalledWith(
+      expect.objectContaining({ auth: null, secure: null, ignoreTLS: null, tls: { rejectUnauthorized: null } }),
+      { from: null }
     )
   })
 

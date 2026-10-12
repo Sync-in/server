@@ -1,20 +1,9 @@
-import { Type } from 'class-transformer'
-import { IsBoolean, IsDefined, IsNotEmptyObject, IsObject, IsString, ValidateNested } from 'class-validator'
+import { z } from 'zod'
 import { SERVER_NAME } from '../../../common/shared.js'
 
-export class AuthMFATotpConfig {
-  @IsBoolean()
-  enabled = true
+export const AuthMFATotpConfigSchema = z.looseObject({
+  enabled: z.boolean().default(true),
+  issuer: z.string().default(SERVER_NAME)
+})
 
-  @IsString()
-  issuer = SERVER_NAME
-}
-
-export class AuthMFAConfig {
-  @IsDefined()
-  @IsNotEmptyObject()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => AuthMFATotpConfig)
-  totp: AuthMFATotpConfig = new AuthMFATotpConfig()
-}
+export const AuthMFAConfigSchema = z.looseObject({ totp: AuthMFATotpConfigSchema.prefault({}) })

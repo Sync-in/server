@@ -12,7 +12,7 @@ export const WEBDAV_NS = {
   TRASH: SPACE_ALIAS.TRASH
 } as const
 
-export const WEBDAV_SPACES: Record<(typeof WEBDAV_NS)[keyof typeof WEBDAV_NS], { route: string; spaceRepository: string[] }> = {
+export const WEBDAV_SPACES: Record<(typeof WEBDAV_NS)[keyof typeof WEBDAV_NS], { route: string; spaceRepository: string[] | null }> = {
   [WEBDAV_NS.SERVER]: { route: '/', spaceRepository: null },
   [WEBDAV_NS.WEBDAV]: { route: `/${WEBDAV_BASE_PATH}`, spaceRepository: null },
   [WEBDAV_NS.PERSONAL]: { route: `/${WEBDAV_BASE_PATH}/${WEBDAV_NS.PERSONAL}`, spaceRepository: [SPACE_REPOSITORY.FILES, SPACE_ALIAS.PERSONAL] },

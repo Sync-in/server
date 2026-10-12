@@ -1,12 +1,13 @@
 import { HttpException, HttpStatus, Injectable, Logger, StreamableFile } from '@nestjs/common'
 import { FastifyReply } from 'fastify'
 import path from 'node:path'
+import { toErrorMessage } from '../../../common/errors.js'
 import { FastifySpaceRequest } from '../../spaces/interfaces/space-request.interface.js'
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import { SpacesManager } from '../../spaces/services/spaces-manager.service.js'
 import { UserModel } from '../../users/models/user.model.js'
 import { FILE_OPERATION } from '../constants/operations.js'
-import { CompressFileDto, CopyMoveFileDto, DownloadFileDto, MakeFileDto } from '../dto/file-operations.dto.js'
+import type { CompressFileDto, DownloadFileDto, MakeFileDto, ValidatedCopyMoveFileDto } from '../dto/file-operations.dto.js'
 import type { CopyMoveFileResponse } from '../interfaces/copy-move-file.interface.js'
 import { FileLockProps } from '../interfaces/file-props.interface.js'
 import type { FileThumbnail } from '../interfaces/file-thumbnail.interface.js'
@@ -55,11 +56,11 @@ export class FilesMethods {
     }
   }
 
-  copy(user: UserModel, space: SpaceEnv, copyMoveFileDto: CopyMoveFileDto, signal?: AbortSignal): Promise<CopyMoveFileResponse> {
+  copy(user: UserModel, space: SpaceEnv, copyMoveFileDto: ValidatedCopyMoveFileDto, signal?: AbortSignal): Promise<CopyMoveFileResponse> {
     return this.copyMove(user, space, copyMoveFileDto, false, signal)
   }
 
-  move(user: UserModel, space: SpaceEnv, copyMoveFileDto: CopyMoveFileDto, signal?: AbortSignal): Promise<CopyMoveFileResponse> {
+  move(user: UserModel, space: SpaceEnv, copyMoveFileDto: ValidatedCopyMoveFileDto, signal?: AbortSignal): Promise<CopyMoveFileResponse> {
     return this.copyMove(user, space, copyMoveFileDto, true, signal)
   }
 
@@ -89,11 +90,11 @@ export class FilesMethods {
         // handles the case where the file is an anchored file
         let baseSpace: SpaceEnv
         if (f.path) {
-          baseSpace = await this.spacesManager.spaceEnv(user, f.path.split('/'))
+          baseSpace = (await this.spacesManager.spaceEnv(user, f.path.split('/')))!
           f.path = baseSpace.realPath
         } else {
           if (f.rootAlias) {
-            baseSpace = await this.spacesManager.spaceEnv(user, path.join(dirName(space.url), f.rootAlias).split('/'))
+            baseSpace = (await this.spacesManager.spaceEnv(user, path.join(dirName(space.url), f.rootAlias).split('/')))!
             f.path = baseSpace.realPath
           } else {
             baseSpace = space
@@ -168,18 +169,21 @@ export class FilesMethods {
   private async copyMove(
     user: UserModel,
     space: SpaceEnv,
-    copyMoveFileDto: CopyMoveFileDto,
+    copyMoveFileDto: ValidatedCopyMoveFileDto,
     isMove: boolean,
     signal?: AbortSignal
   ): Promise<CopyMoveFileResponse> {
     const dstUrl = path.join(copyMoveFileDto.dstDirectory, copyMoveFileDto.dstName || fileName(space.realPath))
-    let dstSpace: SpaceEnv
+    let dstSpace: SpaceEnv | null | undefined
     try {
       dstSpace = await this.spacesManager.spaceEnv(user, dstUrl.split('/'))
-      await this.filesManager.copyMove(user, space, dstSpace, isMove, copyMoveFileDto.overwrite, false, undefined, signal)
+      if (!dstSpace) {
+        throw new Error(`Destination space not found: ${dstUrl}`)
+      }
+      await this.filesManager.copyMove(user, space, dstSpace, isMove, copyMoveFileDto.overwrite ?? false, false, undefined, signal)
       return { path: dirName(dstUrl), name: fileName(dstUrl), mime: getMimeType(dstSpace.realPath, await isPathIsDir(dstSpace.realPath)) }
     } catch (e) {
-      this.handleError(space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, dstSpace, signal)
+      this.handleError(space, isMove ? FILE_OPERATION.MOVE : FILE_OPERATION.COPY, e, dstSpace ?? undefined, signal)
     }
   }
 
@@ -190,15 +194,15 @@ export class FilesMethods {
     dstSpace?: SpaceEnv,
     signal?: AbortSignal,
     res?: FastifyReply
-  ): void {
+  ): never {
     if (signal && this.isCancellationError(error, signal)) {
       throw signal.reason
     }
     this.logger.error({
       tag: this.handleError.name,
-      msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${error}`
+      msg: `unable to ${action} ${space.url}${dstSpace?.url ? ` -> ${dstSpace.url}` : ''} : ${toErrorMessage(error)}`
     })
-    const normalizedError = error instanceof Error ? error : new Error(String(error))
+    const normalizedError = error instanceof Error ? error : new Error(toErrorMessage(error))
     // Remove the last part to avoid exposing the path
     const errorMsg = normalizedError.message.split(',')[0]
     if (normalizedError instanceof LockConflict) {

@@ -12,10 +12,14 @@ import { FilesFavoritesQueries } from './files-favorites-queries.service.js'
 import { FilesQueries } from './files-queries.service.js'
 import type { Mock } from 'vitest'
 
-vi.mock('../utils/files.js', () => ({
-  getProps: vi.fn(),
-  isPathExists: vi.fn()
-}))
+vi.mock('../utils/files.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../utils/files.js')>()
+  return {
+    ...actual,
+    getProps: vi.fn(),
+    isPathExists: vi.fn()
+  }
+})
 
 describe(FilesFavoritesManager.name, () => {
   let service: FilesFavoritesManager

@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../../../common/errors.js'
 import type { Logger } from '@nestjs/common'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -61,7 +62,7 @@ export class OCRManager {
       await this.workerInitializationPromise.catch((e) =>
         this.logger.error({
           tag: this.constructor.name,
-          msg: `Initialization: ${e}`
+          msg: `Initialization: ${toErrorMessage(e)}`
         })
       )
     }
@@ -77,7 +78,7 @@ export class OCRManager {
       .catch((e) =>
         this.logger.error({
           tag: this.constructor.name,
-          msg: `${e}`
+          msg: toErrorMessage(e)
         })
       )
   }
@@ -88,7 +89,7 @@ export class OCRManager {
       errorHandler: (e: unknown) =>
         this.logger.error({
           tag: this.constructor.name,
-          msg: `${e}`
+          msg: toErrorMessage(e)
         }),
       logger: () => {
         // intentionally disabled
@@ -109,7 +110,7 @@ export class OCRManager {
     } catch (e) {
       this.logger.error({
         tag: this.constructor.name,
-        msg: `unable to create languages directory: ${e}`
+        msg: `unable to create languages directory: ${toErrorMessage(e)}`
       })
     }
     if (this.ocrConfig.offline) {
@@ -126,7 +127,7 @@ export class OCRManager {
       } catch (error) {
         this.logger.warn({
           tag: this.constructor.name,
-          msg: `unable to load offline OCR languages as ${this.ocrTrainedDataGzipExtension}, retrying with ${this.ocrTrainedDataExtension}: ${error}`
+          msg: `unable to load offline OCR languages as ${this.ocrTrainedDataGzipExtension}, retrying with ${this.ocrTrainedDataExtension}: ${toErrorMessage(error)}`
         })
         // Fallback for non-gz files: <lang>.traineddata
         return this.createConfiguredWorker(this.ocrConfig.languages, {

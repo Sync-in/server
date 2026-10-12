@@ -4,7 +4,7 @@ import { Strategy } from 'passport-strategy'
 
 @Injectable()
 export class AuthAnonymousStrategy extends PassportStrategy(Strategy, 'anonymous') {
-  validate: undefined
+  declare validate: (...args: unknown[]) => unknown
 
   constructor() {
     super()

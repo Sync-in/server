@@ -8,6 +8,7 @@ import { FileTaskEvent } from '../../events/file-events.js'
 import { SendFile } from '../../utils/send-file.js'
 import { FILE_OPERATION } from '../../constants/operations.js'
 import { CACHE_TASK_CANCEL_PREFIX, CACHE_TASK_PREFIX, CACHE_TASK_TTL, CACHE_TASK_USER_PREFIX } from '../../constants/cache.js'
+import { FileError } from '../../models/file-error.js'
 import { FileTaskStatus } from '../../models/file-task.js'
 import { FilesMethods } from '../files-methods.service.js'
 import { FilesTasksManager } from './files-tasks-manager.service.js'
@@ -141,7 +142,7 @@ describe(FilesTasksManager.name, () => {
   it('should not overlap watcher updates', async () => {
     vi.useFakeTimers()
     try {
-      let finishUpdate: () => void
+      let finishUpdate!: () => void
       const update = vi.fn(
         () =>
           new Promise<void>((resolve) => {
@@ -238,8 +239,8 @@ describe(FilesTasksManager.name, () => {
       status: FileTaskStatus.PENDING,
       props: { size: 10 }
     })
-    let releaseGet: () => void
-    let notifyGetStarted: () => void
+    let releaseGet!: () => void
+    let notifyGetStarted!: () => void
     const getStarted = new Promise<void>((resolve) => {
       notifyGetStarted = resolve
     })
@@ -653,7 +654,7 @@ describe(FilesTasksManager.name, () => {
       status: FileTaskStatus.SUCCESS,
       props: { compressInDirectory: false }
     })
-    vi.spyOn(SendFile.prototype, 'checks').mockRejectedValueOnce({ message: 'Location not found', httpCode: 404 } as any)
+    vi.spyOn(SendFile.prototype, 'checks').mockRejectedValueOnce(new FileError(HttpStatus.NOT_FOUND, 'Location not found'))
 
     const downloadPromise = filesTasksManager.downloadArchive({ id: 50, tmpPath: '/tmp' } as any, 'task-ok', {} as any, {} as any)
     await expect(downloadPromise).rejects.toThrow(HttpException)

@@ -43,7 +43,7 @@ describe(AppService.name, () => {
     const processOnSpy = vi.spyOn(process, 'on')
     const processExitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never)
 
-    configuration.websocket.adapter = null
+    configuration.websocket.adapter = null as never
     configuration.server.restartOnFailure = true
     AppService.clusterize(vi.fn().mockResolvedValue(undefined))
 
@@ -120,7 +120,7 @@ describe(AppService.name, () => {
     expect(vi.mocked(cluster.fork).mock.calls.length).toBe(forkCallsAfterTrue)
 
     // --- MASTER again, adapter != 'cluster' -> covers the FALSE side of the adapter check
-    configuration.websocket.adapter = null
+    configuration.websocket.adapter = null as never
     expect(() => AppService.clusterize(bootstrap)).not.toThrow()
     // setupPrimary should NOT be called again
     expect(setupPrimary).toHaveBeenCalledTimes(1)

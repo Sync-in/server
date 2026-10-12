@@ -1,138 +1,47 @@
-import { Transform, Type } from 'class-transformer'
-import {
-  IsBoolean,
-  IsDefined,
-  IsInt,
-  IsIP,
-  IsNotEmpty,
-  IsNotEmptyObject,
-  IsObject,
-  IsOptional,
-  IsString,
-  IsUrl,
-  Max,
-  Min,
-  ValidateNested
-} from 'class-validator'
 import { cpus } from 'node:os'
-import type { Level } from 'pino'
-import { ApplicationsConfig } from '../applications/applications.config.js'
-import { AuthConfig } from '../authentication/auth.config.js'
-import { CacheConfig } from '../infrastructure/cache/cache.config.js'
-import { MySQLConfig } from '../infrastructure/database/database.config.js'
-import { MailerConfig } from '../infrastructure/mailer/mailer.config.js'
-import { WebSocketConfig } from '../infrastructure/websocket/web-socket.config.js'
+import { z } from 'zod'
+import { ApplicationsConfigSchema } from '../applications/applications.config.js'
+import { AuthConfigSchema } from '../authentication/auth.config.js'
+import { CacheConfigSchema } from '../infrastructure/cache/cache.config.js'
+import { MySQLConfigSchema } from '../infrastructure/database/database.config.js'
+import { MailerConfigSchema } from '../infrastructure/mailer/mailer.config.js'
+import { WebSocketConfigSchema } from '../infrastructure/websocket/web-socket.config.js'
 import { DEFAULT_LOG_FILE_PATH } from './config.constants.js'
+import { httpBaseUrlSchema, nonEmptyStringSchema } from './config.schema.js'
 
-export class ServerConfig {
-  @IsIP()
-  host: string = '0.0.0.0'
+export type LoggerConfig = z.output<typeof LoggerConfigSchema>
+export type GlobalConfig = z.output<typeof GlobalConfigSchema>
 
-  @IsInt()
-  @Min(1024)
-  @Max(65535)
-  port: number = 8080
+export const ServerConfigSchema = z.looseObject({
+  host: z.union([z.ipv4(), z.ipv6()]).default('0.0.0.0'),
+  port: z.number().int().min(1024).max(65535).default(8080),
+  publicUrl: z.preprocess(
+    (value) => (typeof value === 'string' ? value.trim().replace(/\/+$/, '') || undefined : value),
+    httpBaseUrlSchema.nullish()
+  ),
+  workers: z
+    .preprocess((value) => (value === 0 || value === 'auto' ? cpus().length : Math.max(Number(value), 1)), z.number().int().min(1))
+    .default(1),
+  // Preserve permissive proxy settings and deprecated numeric hop counts.
+  trustProxy: z.preprocess((value) => (typeof value === 'number' ? value >= 1 : value), z.custom<boolean | string>()).default(true),
+  restartOnFailure: z.boolean().default(true)
+})
 
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().replace(/\/+$/, '') || undefined : value))
-  @IsOptional()
-  @IsUrl({
-    protocols: ['http', 'https'],
-    require_protocol: true,
-    require_tld: false,
-    disallow_auth: true,
-    allow_query_components: false,
-    allow_fragments: false
-  })
-  publicUrl?: string
+export const LoggerConfigSchema = z.looseObject({
+  level: nonEmptyStringSchema.default('info'),
+  stdout: z.boolean().default(true),
+  colorize: z.boolean().default(true),
+  filePath: z.preprocess((value) => value || DEFAULT_LOG_FILE_PATH, z.string()).default(DEFAULT_LOG_FILE_PATH),
+  jsonOutput: z.boolean().nullish().default(false)
+})
 
-  @Transform(({ value }) => (value === 0 || value === 'auto' ? cpus().length : Math.max(Number(value), 1)))
-  @IsInt()
-  @Min(1)
-  workers: number = 1
-
-  // Temporary compatibility for deprecated numeric hop counts.
-  @Transform(({ value }) => (typeof value === 'number' ? value >= 1 : value))
-  @IsOptional()
-  trustProxy: boolean | string = true
-
-  @IsBoolean()
-  restartOnFailure: boolean = true
-}
-
-export class LoggerConfig {
-  @IsString()
-  @IsNotEmpty()
-  level: Level = 'info'
-
-  @IsBoolean()
-  stdout: boolean = true
-
-  @IsBoolean()
-  colorize: boolean = true
-
-  @IsOptional()
-  @IsString()
-  @Transform(({ value }) => value || DEFAULT_LOG_FILE_PATH)
-  filePath: string = DEFAULT_LOG_FILE_PATH
-
-  @IsOptional()
-  @IsBoolean()
-  jsonOutput: boolean = false
-}
-
-export class GlobalConfig {
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => ServerConfig)
-  server: ServerConfig = new ServerConfig()
-
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => LoggerConfig)
-  logger: LoggerConfig = new LoggerConfig()
-
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => MySQLConfig)
-  mysql: MySQLConfig
-
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => CacheConfig)
-  cache: CacheConfig = new CacheConfig()
-
-  @IsOptional()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => WebSocketConfig)
-  websocket: WebSocketConfig = new WebSocketConfig()
-
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => AuthConfig)
-  auth: AuthConfig
-
-  @IsOptional()
-  @IsObject()
-  @ValidateNested()
-  @Type(() => MailerConfig)
-  mail?: MailerConfig
-
-  @IsDefined()
-  @IsObject()
-  @IsNotEmptyObject()
-  @ValidateNested()
-  @Type(() => ApplicationsConfig)
-  applications: ApplicationsConfig
-}
+export const GlobalConfigSchema = z.looseObject({
+  server: ServerConfigSchema.prefault({}),
+  logger: LoggerConfigSchema.prefault({}),
+  mysql: MySQLConfigSchema,
+  cache: CacheConfigSchema.prefault({}),
+  websocket: WebSocketConfigSchema.prefault({}),
+  auth: AuthConfigSchema,
+  mail: MailerConfigSchema.nullish(),
+  applications: ApplicationsConfigSchema
+})

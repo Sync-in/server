@@ -5,7 +5,6 @@ import { lookup } from 'node:dns/promises'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { Readable } from 'node:stream'
-import { transformAndValidate } from '../../../common/functions.js'
 import * as imageUtils from '../../../common/image.js'
 import { configuration } from '../../../configuration/config.environment.js'
 import { NotificationsManager } from '../../notifications/services/notifications-manager.service.js'
@@ -14,7 +13,7 @@ import * as spacesPathUtils from '../../spaces/utils/paths.js'
 import * as spacesPermsUtils from '../../spaces/utils/permissions.js'
 import { DEPTH } from '../../webdav/constants/webdav.js'
 import { ACTION } from '../../../common/constants.js'
-import { DownloadFileDto } from '../dto/file-operations.dto.js'
+import { downloadFileSchema } from '../dto/file-operations.dto.js'
 import { FileEvent, FileTaskEvent } from '../events/file-events.js'
 import { FileError, SourceCleanupError } from '../models/file-error.js'
 import { LockConflict } from '../models/file-lock-error.js'
@@ -1534,14 +1533,14 @@ describe(FilesManager.name, () => {
   describe('downloadFromUrl', () => {
     describe('dto validation', () => {
       it('should accept http and https schemes', () => {
-        expect(transformAndValidate(DownloadFileDto, { url: 'https://example.org/file.txt' }).url).toBe('https://example.org/file.txt')
-        expect(transformAndValidate(DownloadFileDto, { url: 'http://example.org/file.txt' }).url).toBe('http://example.org/file.txt')
+        expect(downloadFileSchema.parse({ url: 'https://example.org/file.txt' }).url).toBe('https://example.org/file.txt')
+        expect(downloadFileSchema.parse({ url: 'http://example.org/file.txt' }).url).toBe('http://example.org/file.txt')
       })
 
       it('should reject non-http(s) schemes', () => {
         const invalidUrls = ['ftp://example.org/file.txt', 'file:///tmp/file.txt', 'ws://example.org/file.txt']
         for (const url of invalidUrls) {
-          expect(() => transformAndValidate(DownloadFileDto, { url })).toThrow()
+          expect(() => downloadFileSchema.parse({ url })).toThrow()
         }
       })
     })

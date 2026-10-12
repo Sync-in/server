@@ -1,7 +1,12 @@
+import { Logger } from '@nestjs/common'
 import { CACHE_AUTH_WEBDAV_PREFIX } from '../../../authentication/constants/cache.js'
 import type { Cache } from '../../../infrastructure/cache/cache.service.js'
 import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
 import { UsersQueries } from './users-queries.service.js'
+
+beforeAll(() => {
+  Logger.overrideLogger(['fatal'])
+})
 
 describe(`${UsersQueries.name}.from`, () => {
   it('trims the identifier before searching by login or email', async () => {

@@ -2,5 +2,6 @@ import { FastifyAuthenticatedRequest } from '../../../authentication/interfaces/
 import { SpaceEnv } from '../models/space-env.model.js'
 
 export interface FastifySpaceRequest extends FastifyAuthenticatedRequest {
+  params: { '*': string } & Record<string, string | undefined>
   space: SpaceEnv
 }

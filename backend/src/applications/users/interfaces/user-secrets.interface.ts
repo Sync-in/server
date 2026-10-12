@@ -5,11 +5,11 @@ export interface UserAppPassword {
   name: string
   app: AUTH_SCOPE
   password: string
-  expiration: Date
-  currentIp: string
-  lastIp: string
-  currentAccess: Date
-  lastAccess: Date
+  expiration: Date | string | null
+  currentIp: string | null
+  lastIp: string | null
+  currentAccess: Date | string | null
+  lastAccess: Date | string | null
   createdAt: Date
 }
 

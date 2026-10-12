@@ -8,7 +8,7 @@ import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { FastifyAuthenticatedRequest } from '../../interfaces/auth-request.interface.js'
 import { decryptSecret, encryptSecret } from '../../utils/crypt-secret.js'
 import { AuthProvider2FA } from './auth-provider-two-fa.service.js'
-import { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './auth-two-fa.dtos.js'
+import type { TwoFaVerifyDto, TwoFaVerifyWithPasswordDto } from './auth-two-fa.dtos.js'
 import { Mocked } from 'vitest'
 
 vi.mock('../../utils/crypt-secret.js')
@@ -263,7 +263,7 @@ describe(AuthProvider2FA.name, () => {
     it('should fail when recovery codes are empty', async () => {
       const recoveryDto: TwoFaVerifyDto = { code: 'code-1', isRecoveryCode: true }
       const userWithoutCodes = { ...mockUser, secrets: { ...mockUser.secrets, recoveryCodes: [] } }
-      usersManager.fromUserId.mockResolvedValue(userWithoutCodes as UserModel)
+      usersManager.fromUserId.mockResolvedValue(userWithoutCodes as unknown as UserModel)
 
       const result = await service.verify(recoveryDto, mockRequest as FastifyAuthenticatedRequest)
 

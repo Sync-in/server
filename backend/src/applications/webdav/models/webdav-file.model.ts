@@ -6,20 +6,20 @@ import { FileProps } from '../../files/interfaces/file-props.interface.js'
 import { genEtag } from '../../files/utils/files.js'
 import { PROPFIND_COLLECTION, SUPPORTED_LOCKS } from '../utils/webdav.js'
 
-export class WebDAVFile implements Omit<FileProps, 'path'> {
-  id: number
-  name: string
-  isDir: boolean
-  size: number
-  ctime: number
-  mtime: number
-  mime: string
+export class WebDAVFile implements Omit<FileProps, 'path' | 'mime'> {
+  id!: number
+  name!: string
+  isDir!: boolean
+  size!: number
+  ctime!: number
+  mtime!: number
+  mime?: string
 
   // extra props
-  alias: string
+  alias!: string
   href: string
 
-  constructor(props: Omit<FileProps, 'path'> & { alias?: string }, currentUrl: string, isCurrent = false) {
+  constructor(props: Omit<FileProps, 'path' | 'mime'> & { alias?: string; mime?: string }, currentUrl: string, isCurrent = false) {
     Object.assign(this, props)
     if (props?.root?.alias) {
       this.alias = props.root.alias

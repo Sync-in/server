@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import { getProps, isPathExists, isPathIsDir } from '../../files/utils/files.js'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
@@ -15,22 +16,21 @@ import { WEBDAV_PATH_TO_SPACE_SEGMENTS } from '../utils/routes.js'
 @Injectable()
 export class WebDAVSpaces {
   private readonly logger = new Logger(WebDAVSpaces.name)
-  private readonly roots: Record<string, WebDAVFile> = {}
+  private readonly roots = {} as Record<keyof typeof WEBDAV_SPACES, WebDAVFile>
 
   constructor(
     private readonly spacesManager: SpacesManager,
     private readonly spacesBrowser: SpacesBrowser
   ) {
     for (const [name, info] of Object.entries(WEBDAV_SPACES)) {
-      this.roots[name] = new WebDAVFile(
+      this.roots[name as keyof typeof WEBDAV_SPACES] = new WebDAVFile(
         {
           id: 0,
           name: name,
           isDir: true,
           size: 0,
           ctime: new Date().getTime(),
-          mtime: new Date().getTime(),
-          mime: undefined
+          mtime: new Date().getTime()
         },
         info.route,
         true
@@ -38,14 +38,14 @@ export class WebDAVSpaces {
     }
   }
 
-  async spaceEnv(user: UserModel, path: string) {
+  async spaceEnv(user: UserModel, path: string): Promise<SpaceEnv | null> {
     try {
-      const space: SpaceEnv = await this.spacesManager.spaceEnv(user, WEBDAV_PATH_TO_SPACE_SEGMENTS(path))
+      const space = await this.spacesManager.spaceEnv(user, WEBDAV_PATH_TO_SPACE_SEGMENTS(path))
       if (space) {
         return space
       }
     } catch (e) {
-      this.logger.warn({ tag: this.spaceEnv.name, msg: `${e}` })
+      this.logger.warn({ tag: this.spaceEnv.name, msg: toErrorMessage(e) })
       return null
     }
 
@@ -56,7 +56,7 @@ export class WebDAVSpaces {
   propfind(req: FastifyDAVRequest, space: string): AsyncGenerator<WebDAVFile> {
     switch (space) {
       case SPACE_REPOSITORY.FILES:
-        return this.listFiles(req, req.space)
+        return this.listFiles(req, req.space!)
       case WEBDAV_NS.SERVER:
         return this.listServer(req)
       case WEBDAV_NS.WEBDAV:
@@ -86,7 +86,7 @@ export class WebDAVSpaces {
       for (const root of Object.values(this.roots)) {
         if ([WEBDAV_NS.SERVER as string, WEBDAV_NS.WEBDAV as string].indexOf(root.name) === -1) {
           // filter repositories based on user applications
-          if (!canAccessToSpaceUrl(req.user, WEBDAV_SPACES[root.name].spaceRepository)) {
+          if (!canAccessToSpaceUrl(req.user, WEBDAV_SPACES[root.name as keyof typeof WEBDAV_SPACES].spaceRepository!)) {
             continue
           }
           yield root
@@ -107,9 +107,8 @@ export class WebDAVSpaces {
             alias: s.alias,
             isDir: true,
             size: 0,
-            mime: undefined,
-            ctime: new Date(s.createdAt).getTime(),
-            mtime: new Date(s.modifiedAt).getTime()
+            ctime: new Date(s.createdAt!).getTime(),
+            mtime: new Date(s.modifiedAt!).getTime()
           },
           req.dav.url
         )
@@ -129,7 +128,6 @@ export class WebDAVSpaces {
             name: `${f.alias} (${f.nb})`,
             isDir: true,
             size: 0,
-            mime: undefined,
             mtime: f.mtime,
             ctime: f.ctime
           },
@@ -140,7 +138,7 @@ export class WebDAVSpaces {
   }
 
   private async *listFiles(req: FastifyDAVRequest, space: SpaceEnv): AsyncGenerator<WebDAVFile> {
-    let isDir: boolean
+    let isDir!: boolean
 
     if (space.inSharesList) {
       // The shares are defined like a files (direct link)

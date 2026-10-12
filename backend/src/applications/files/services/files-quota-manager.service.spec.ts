@@ -126,9 +126,9 @@ describe(FilesQuotaManager.name, () => {
       'event-update-quota-share-3',
       'event-update-quota-unknown-4'
     ])
-    const userSpy = vi.spyOn(service, 'updatePersonalSpacesQuota').mockResolvedValueOnce(undefined)
-    const spaceSpy = vi.spyOn(service, 'updateSpacesQuota').mockResolvedValueOnce(undefined)
-    const shareSpy = vi.spyOn(service, 'updateSharesExternalPathQuota').mockResolvedValueOnce(undefined)
+    const userSpy = vi.spyOn(service, 'updatePersonalSpacesQuota').mockResolvedValueOnce(undefined as never)
+    const spaceSpy = vi.spyOn(service, 'updateSpacesQuota').mockResolvedValueOnce(undefined as never)
+    const shareSpy = vi.spyOn(service, 'updateSharesExternalPathQuota').mockResolvedValueOnce(undefined as never)
 
     await service.updateStorageUsageEntries()
 

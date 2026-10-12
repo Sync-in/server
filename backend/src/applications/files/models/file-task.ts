@@ -22,13 +22,13 @@ export class FileTask {
   id: string
   type: FILE_OPERATION
   cancellable: boolean
-  status: FileTaskStatus
+  status!: FileTaskStatus
   path: string
   name: string
   props: FileTaskProps = {}
-  result: string
-  startedAt: number
-  endedAt: number
+  result!: string
+  startedAt!: number
+  endedAt!: number
 
   constructor(id: string, type: FILE_OPERATION, path: string, name: string, cancellable = false) {
     this.id = id

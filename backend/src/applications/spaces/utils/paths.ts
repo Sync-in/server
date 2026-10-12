@@ -1,6 +1,7 @@
 import { HttpStatus } from '@nestjs/common'
 import fs from 'fs/promises'
 import path from 'node:path'
+import { toErrorMessage } from '../../../common/errors.js'
 import { FileDBProps } from '../../files/interfaces/file-db-props.interface.js'
 import { FileProps } from '../../files/interfaces/file-props.interface.js'
 import { FileError } from '../../files/models/file-error.js'
@@ -22,10 +23,10 @@ export async function IsRealPathIsDirAndExists(rPath: string) {
     if (e instanceof FileError) {
       throw new FileError(e.httpCode, e.message)
     }
-    if (e.code === 'ENOENT') {
+    if ((e as NodeJS.ErrnoException).code === 'ENOENT') {
       throw new FileError(HttpStatus.NOT_FOUND, 'Location not found')
     }
-    throw new FileError(HttpStatus.BAD_REQUEST, e.message)
+    throw new FileError(HttpStatus.BAD_REQUEST, toErrorMessage(e))
   }
 }
 
@@ -47,11 +48,11 @@ export function realPathFromSpace(user: UserModel, space: SpaceEnv, withBasePath
     } else {
       fPath = space.paths
     }
-  } else if (space.root.file?.path && space.root.owner?.login) {
+  } else if (space.root?.file?.path && space.root.owner?.login) {
     // space root linked to a file in a personal space
     bPath = path.join(UserModel.getRepositoryPath(space.root.owner.login, space.root.file.inTrash), space.root.file.path)
     fPath = space.paths
-  } else if (space.root.file?.space?.id) {
+  } else if (space.root?.file?.space?.id) {
     // share case
     if (space.root.file.root?.id) {
       // share linked to a file in a root space with an external path or directly to the root space
@@ -61,7 +62,7 @@ export function realPathFromSpace(user: UserModel, space: SpaceEnv, withBasePath
       bPath = path.join(SpaceModel.getRepositoryPath(space.root.file.space.alias, space.root.file.inTrash), space.root.file.path || '')
     }
     fPath = space.paths
-  } else if (space.alias) {
+  } else if (space.alias && space.root) {
     // space files (no root)
     bPath = SpaceModel.getRepositoryPath(space.alias, space.inTrashRepository)
     fPath = [space.root.alias, ...space.paths]
@@ -174,15 +175,18 @@ export function temporaryRootFromSpace(user: UserModel, space: SpaceEnv): string
   throw new FileError(HttpStatus.NOT_FOUND, 'Space root not found')
 }
 
-export function realPathFromRootFile(f: FileProps): string {
+export function realPathFromRootFile(f: FileProps): string | undefined {
   // get realpath
+  const root = f.root
+  if (!root) return undefined
+
   if (f.origin) {
     // share case (the order of the tests is important)
     if (f.origin.ownerLogin) {
       return path.join(UserModel.getRepositoryPath(f.origin.ownerLogin, f.inTrash), f.path)
-    } else if (f.root.externalPath) {
+    } else if (root.externalPath) {
       // in case of share child from a share with external path, child share should have an external path and a fileId (file path)
-      return path.join(f.root.externalPath, f.path || '')
+      return path.join(root.externalPath, f.path || '')
     } else if (f.origin.spaceRootExternalPath) {
       return path.join(f.origin.spaceRootExternalPath, f.path)
     } else if (f.origin.spaceAlias) {
@@ -190,17 +194,17 @@ export function realPathFromRootFile(f: FileProps): string {
     }
   } else {
     // space case
-    if (f.root.owner.login) {
-      return path.join(UserModel.getRepositoryPath(f.root.owner.login, f.inTrash), f.path)
-    } else if (f.root.externalPath) {
-      return f.root.externalPath
+    if (root.owner.login) {
+      return path.join(UserModel.getRepositoryPath(root.owner.login, f.inTrash), f.path)
+    } else if (root.externalPath) {
+      return root.externalPath
     }
   }
   return undefined
 }
 
 export function dbFileFromSpace(userId: number, space: SpaceEnv): FileDBProps {
-  const dbFile: FileDBProps = {} as any
+  const dbFile: FileDBProps = {} as FileDBProps
   dbFile.inTrash = space.repository === SPACE_REPOSITORY.TRASH
   if (space.inPersonalSpace) {
     // personal user space (ignore root alias)
@@ -214,7 +218,7 @@ export function dbFileFromSpace(userId: number, space: SpaceEnv): FileDBProps {
     if (space.inSharesRepository) {
       // in this case space.id is the share.id
       // if the `externalParentShareId` property is defined, the external child share must use its highest parent share id
-      dbFile.shareExternalId = space.root?.externalParentShareId ? space.root.externalParentShareId : space.id
+      dbFile.shareExternalId = space.root.externalParentShareId ? space.root.externalParentShareId : space.id
     } else {
       dbFile.shareExternalId = null
     }
@@ -224,12 +228,12 @@ export function dbFileFromSpace(userId: number, space: SpaceEnv): FileDBProps {
     } else {
       dbFile.path = path.join(...space.paths)
     }
-  } else if (space.root.file?.path && space.root.owner?.login) {
+  } else if (space.root?.file?.path && space.root.owner?.login) {
     // space root linked to a file in a personal space
     dbFile.ownerId = space.root.owner.id
     dbFile.inTrash = space.root.file.inTrash
     dbFile.path = path.join(space.root.file.path, ...space.paths)
-  } else if (space.root.file?.space?.id) {
+  } else if (space.root?.file?.space?.id) {
     // share linked to a file in a space file or an external space root
     dbFile.spaceId = space.root.file.space.id
     dbFile.spaceExternalRootId = space.root.file.root?.id || null
@@ -238,7 +242,7 @@ export function dbFileFromSpace(userId: number, space: SpaceEnv): FileDBProps {
       dbFile.inTrash = space.root.file.inTrash
     }
     dbFile.path = path.join(space.root.file.path || '', ...space.paths)
-  } else if (space.id) {
+  } else if (space.id && space.root) {
     // space files (no root)
     dbFile.spaceId = space.id
     dbFile.spaceExternalRootId = null

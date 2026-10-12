@@ -8,6 +8,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
+import { toErrorMessage } from '../../../common/errors.js'
 import { formatDateISOString } from '../../../common/functions.js'
 import { currentTimeStamp, isValidFileName, regExpPreventPathTraversal } from '../../../common/shared.js'
 import { DEFAULT_CHECKSUM_ALGORITHM, DEFAULT_HIGH_WATER_MARK, EXTRA_MIMES_TYPE, TEMPORARY_FILE_PREFIX, TEMPORARY_PATH } from '../constants/files.js'
@@ -50,11 +51,12 @@ export function sanitizeName(name: string): string {
     .replace(/^\s+|[. ]+$/g, '') // trimStart + trimEnd + strip trailing dots
 }
 
-export function assertValidFileReferenceId(fileId: number): void {
-  const isTemporaryInode = Number.isInteger(fileId) && fileId < 0
-  const isDatabaseId = Number.isSafeInteger(fileId) && fileId > 0
+export function isValidFileReferenceId(fileId: unknown): fileId is number {
+  return typeof fileId === 'number' && Number.isInteger(fileId) && (fileId < 0 || (fileId > 0 && Number.isSafeInteger(fileId)))
+}
 
-  if (!isTemporaryInode && !isDatabaseId) {
+export function assertValidFileReferenceId(fileId: number | undefined): asserts fileId is number {
+  if (!isValidFileReferenceId(fileId)) {
     throw new HttpException('Invalid file id', HttpStatus.BAD_REQUEST)
   }
 }
@@ -129,7 +131,7 @@ export function createEmptyFile(rPath: string): Promise<void> {
   return fs.writeFile(rPath, '')
 }
 
-export function makeDir(rPath: string, recursive?: boolean): Promise<string> {
+export function makeDir(rPath: string, recursive?: boolean): Promise<string | undefined> {
   return fs.mkdir(rPath, { recursive: recursive })
 }
 
@@ -192,8 +194,9 @@ export function getMimeType(fPath: string, isDir: boolean): string {
     return 'directory'
   }
   const extName: string = path.extname(fPath)
-  if (EXTRA_MIMES_TYPE.has(extName)) {
-    return EXTRA_MIMES_TYPE.get(extName)
+  const extraMime = EXTRA_MIMES_TYPE.get(extName)
+  if (extraMime !== undefined) {
+    return extraMime
   }
   const m = mime.lookup(extName)
   if (m) {
@@ -206,7 +209,7 @@ export function getExtensionWithoutDot(fPath: string): string {
   return path.extname(fPath).slice(1).toLowerCase()
 }
 
-export function genEtag(file?: Pick<FileProps, 'size' | 'mtime'>, rPath?: string, weakPrefix = true): string {
+export function genEtag(file?: Pick<FileProps, 'size' | 'mtime'> | null, rPath?: string, weakPrefix = true): string {
   if (!file) {
     if (!rPath) throw new Error('File or path are missing')
     const stats = statSync(rPath)
@@ -221,7 +224,7 @@ export function genHash(str: string, algo = 'md5', encoding: crypto.BinaryToText
 }
 
 export function genUniqHashFromFileDBProps(dbFile: FileDBProps) {
-  const dbFileString = `${Object.keys(dbFile)
+  const dbFileString = `${(Object.keys(dbFile) as (keyof FileDBProps)[])
     .sort()
     .map((k) => `${k}=${String(dbFile[k])}`)
     .join('|')}`
@@ -360,7 +363,7 @@ export function createProgressTransform(
         checkSize?.(chunk.length)
         onProgress?.(chunk.length)
       } catch (error) {
-        callback(error as Error)
+        callback(error instanceof Error ? error : new Error(toErrorMessage(error)))
         return
       }
       callback(null, chunk)
@@ -379,7 +382,7 @@ export function writeFromStream(rPath: string, stream: Readable, options: WriteF
       try {
         accountBytes(chunk.length)
       } catch (error) {
-        callback(error as Error)
+        callback(error instanceof Error ? error : new Error(toErrorMessage(error)))
         return
       }
       callback(null, chunk)
@@ -453,9 +456,9 @@ export async function walkDir(
 
   try {
     entries = await fs.readdir(rPath, { withFileTypes: true })
-  } catch (e: any) {
+  } catch (e) {
     if (!errors) throw e
-    errors[rPath] = e.message
+    errors[rPath] = toErrorMessage(e)
     return
   }
 
@@ -479,8 +482,8 @@ export async function dirSize(rPath: string): Promise<[number, any]> {
       if (!entry.isFile()) return
       try {
         size += (await fs.stat(entryPath)).size
-      } catch (e: any) {
-        errors[entryPath] = e.message
+      } catch (e) {
+        errors[entryPath] = toErrorMessage(e)
       }
     },
     errors

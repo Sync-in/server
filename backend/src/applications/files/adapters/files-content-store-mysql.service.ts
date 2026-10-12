@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { SQL, sql } from 'drizzle-orm'
 import { MySqlQueryResult } from 'drizzle-orm/mysql2'
@@ -69,7 +70,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
       await this.ensureRunIdColumn(tableName)
       return true
     } catch (e) {
-      this.logger.error({ tag: this.createIndex.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.createIndex.name, msg: `${tableName} : ${toErrorMessage(e)}` })
       return false
     }
   }
@@ -83,7 +84,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
       await this.db.execute(sql`DROP TABLE IF EXISTS ${sql.identifier(tableName)} `)
       return true
     } catch (e) {
-      this.logger.error({ tag: this.dropIndex.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.dropIndex.name, msg: `${tableName} : ${toErrorMessage(e)}` })
       return false
     }
   }
@@ -103,7 +104,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
       `)
       return true
     } catch (e) {
-      this.logger.error({ tag: this.insertRecord.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.insertRecord.name, msg: `${tableName} : ${toErrorMessage(e)}` })
     }
     return false
   }
@@ -126,7 +127,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
       await this.db.execute(sql`UPDATE ${sql.identifier(tableName)} SET seen_run_id = ${runId} WHERE id IN (${idsSqlList(ids)})`)
       return true
     } catch (e) {
-      this.logger.error({ tag: this.markRecordsSeen.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.markRecordsSeen.name, msg: `${tableName} : ${toErrorMessage(e)}` })
     }
     return false
   }
@@ -138,7 +139,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
         this.logger.warn({ tag: this.deleteRecords.name, msg: `${tableName} - deleted : ${r.affectedRows}/${ids.length}` })
       }
     } catch (e) {
-      this.logger.error({ tag: this.deleteRecords.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.deleteRecords.name, msg: `${tableName} : ${toErrorMessage(e)}` })
     }
   }
 
@@ -147,7 +148,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
       const [r] = await this.db.execute(sql`DELETE FROM ${sql.identifier(tableName)} WHERE seen_run_id IS NULL OR seen_run_id <> ${runId}`)
       return r.affectedRows ?? 0
     } catch (e) {
-      this.logger.error({ tag: this.deleteUnseenRecords.name, msg: `${tableName} : ${e}` })
+      this.logger.error({ tag: this.deleteUnseenRecords.name, msg: `${tableName} : ${toErrorMessage(e)}` })
     }
     return 0
   }
@@ -227,7 +228,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
 
     const termsHighlightRegexp = new RegExp(`(${FilesContentStoreMySQL.genFullTextHighlightPattern(positiveTerms)})`, 'giu')
     for (const r of records) {
-      r.matches = FilesContentStoreMySQL.extractHighlightedMatches(r.content, termsHighlightRegexp)
+      r.matches = FilesContentStoreMySQL.extractHighlightedMatches(r.content!, termsHighlightRegexp)
       // Do not expose the full indexed content in search results.
       r.content = undefined
     }
@@ -421,7 +422,7 @@ export class FilesContentStoreMySQL implements FilesContentStore {
   private async ensureRunIdColumn(tableName: string): Promise<void> {
     // migration for old versions of the application
     const [columns] = (await this.db.execute(sql`SHOW COLUMNS FROM ${sql.identifier(tableName)} LIKE 'seen_run_id'`)) as MySqlQueryResult
-    if ((columns as unknown[]).length) {
+    if (Array.isArray(columns) && columns.length) {
       return
     }
     await this.db.execute(sql`ALTER TABLE ${sql.identifier(tableName)} ADD COLUMN seen_run_id varchar(64), ADD INDEX seen_run_id (seen_run_id)`)

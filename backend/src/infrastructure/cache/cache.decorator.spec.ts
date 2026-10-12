@@ -76,7 +76,7 @@ describe(CacheDecorator.name, () => {
 
     await expect(service.compute(4, 5)).resolves.toBe(9)
 
-    expect(loggerError).toHaveBeenCalledWith({ tag: 'compute', msg: `${cacheError}` })
+    expect(loggerError).toHaveBeenCalledWith({ tag: 'compute', msg: 'cache read failed' })
     expect(service.original).toHaveBeenCalledOnce()
     expect(service.original).toHaveBeenCalledWith(4, 5)
     expect(cache.set).toHaveBeenCalledWith('cache-key', 9, 60)
@@ -106,7 +106,7 @@ describe(CacheDecorator.name, () => {
 
     expect(service.original).toHaveBeenCalledOnce()
     await vi.waitFor(() => {
-      expect(loggerError).toHaveBeenCalledWith({ tag: 'compute', msg: `${cacheError}` })
+      expect(loggerError).toHaveBeenCalledWith({ tag: 'compute', msg: 'cache write failed' })
     })
   })
 
@@ -132,7 +132,7 @@ describe(CacheDecorator.name, () => {
     await expect(service.compute(8)).resolves.toBe(10)
 
     await vi.waitFor(() => {
-      expect(loggerError).toHaveBeenCalledWith({ tag: 'compute', msg: `${refreshError}` })
+      expect(loggerError).toHaveBeenCalledWith({ tag: 'compute', msg: 'refresh failed' })
     })
     expect(cache.set).not.toHaveBeenCalled()
   })

@@ -1,19 +1,21 @@
-import { IsInt, IsOptional, IsString } from 'class-validator'
+import { z } from 'zod'
 
-export class TokenResponseDto {
-  @IsString()
-  access: string
+export const tokenResponseSchema = z.object({
+  access: z.string(),
+  refresh: z.string(),
+  access_expiration: z.number().int(),
+  refresh_expiration: z.number().int(),
+  access_2fa_expiration: z.number().int().nullish()
+})
 
-  @IsString()
-  refresh: string
+export type TokenResponseDto = z.infer<typeof tokenResponseSchema>
 
-  @IsInt()
-  access_expiration: number
+export const tokenExpirationResponseSchema = tokenResponseSchema
+  .pick({
+    access_expiration: true,
+    refresh_expiration: true,
+    access_2fa_expiration: true
+  })
+  .partial()
 
-  @IsInt()
-  refresh_expiration: number
-
-  @IsOptional()
-  @IsInt()
-  access_2fa_expiration?: number
-}
+export type TokenExpirationResponseDto = z.infer<typeof tokenExpirationResponseSchema>

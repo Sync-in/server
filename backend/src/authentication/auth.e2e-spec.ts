@@ -1,17 +1,17 @@
 import { JwtService } from '@nestjs/jwt'
 import { NestFastifyApplication } from '@nestjs/platform-fastify'
-import { Type } from 'class-transformer'
-import { IsInt, ValidateNested } from 'class-validator'
+import { z } from 'zod'
 import { appBootstrap } from '../app.bootstrap.js'
 import { USER_PERMISSION, USER_ROLE } from '../applications/users/constants/user.js'
-import { DeleteUserDto } from '../applications/users/dto/delete-user.dto.js'
+import type { CreateUserDto } from '../applications/users/dto/create-or-update-user.dto.js'
+import type { DeleteUserDto } from '../applications/users/dto/delete-user.dto.js'
 import { UserModel } from '../applications/users/models/user.model.js'
 import { AdminUsersManager } from '../applications/users/services/admin-users-manager.service.js'
 import { UsersManager } from '../applications/users/services/users-manager.service.js'
 import { UsersQueries } from '../applications/users/services/users-queries.service.js'
 import { generateUserTest } from '../applications/users/utils/test.js'
 import { XML_CONTENT_TYPE } from '../applications/webdav/constants/webdav.js'
-import { convertHumanTimeToSeconds, transformAndValidate } from '../common/functions.js'
+import { convertHumanTimeToSeconds } from '../common/functions.js'
 import { currentTimeStamp, decodeUrl } from '../common/shared.js'
 import { configuration } from '../configuration/config.environment.js'
 import { Cache } from '../infrastructure/cache/cache.service.js'
@@ -20,33 +20,22 @@ import { AuthConfig } from './auth.config.js'
 import { CSRF_ERROR, TOKEN_PATHS, TOKEN_TYPES } from './constants/auth.js'
 import { API_AUTH_LOGIN, API_AUTH_LOGOUT, API_AUTH_REFRESH, API_AUTH_TOKEN, API_AUTH_TOKEN_REFRESH } from './constants/routes.js'
 import { AUTH_SCOPE } from './constants/scope.js'
-import { TokenResponseDto } from './dto/token-response.dto.js'
-import { JwtPayload } from './interfaces/jwt-payload.interface.js'
+import { tokenResponseSchema } from './dto/token-response.dto.js'
+import type { JwtPayload } from './interfaces/jwt-payload.interface.js'
 import { TOKEN_TYPE } from './interfaces/token.interface.js'
 import { genWebDAVAuthCacheKey } from './utils/auth-cache.js'
 
-class BrowserRefreshUserResponseDto {
-  @IsInt()
-  id: number
-}
+const browserRefreshResponseSchema = z.object({
+  user: z.object({
+    id: z.number().int()
+  }),
+  token: z.object({
+    access_expiration: z.number().int(),
+    refresh_expiration: z.number().int()
+  })
+})
 
-class BrowserRefreshTokenResponseDto {
-  @IsInt()
-  access_expiration: number
-
-  @IsInt()
-  refresh_expiration: number
-}
-
-class BrowserRefreshResponseDto {
-  @ValidateNested()
-  @Type(() => BrowserRefreshUserResponseDto)
-  user: BrowserRefreshUserResponseDto
-
-  @ValidateNested()
-  @Type(() => BrowserRefreshTokenResponseDto)
-  token: BrowserRefreshTokenResponseDto
-}
+type CookieTokenType = keyof typeof TOKEN_PATHS
 
 describe('Auth (e2e)', () => {
   let app: NestFastifyApplication
@@ -108,7 +97,8 @@ describe('Auth (e2e)', () => {
   })
 
   it(`POST ${API_AUTH_LOGIN} => 201`, async () => {
-    const userId = (await adminUsersManager.createUserOrGuest({ ...userTest, permissions: USER_PERMISSION.WEBDAV }, USER_ROLE.USER)).id
+    const userId = (await adminUsersManager.createUserOrGuest({ ...userTest, permissions: USER_PERMISSION.WEBDAV } as CreateUserDto, USER_ROLE.USER))
+      .id
     expect(userId).toBeDefined()
     userTest.id = userId
     const res = await app.inject({
@@ -120,7 +110,7 @@ describe('Auth (e2e)', () => {
     expect(res.statusCode).toEqual(201)
     expect(Object.keys(res.json())).toEqual(expect.arrayContaining(['user', 'token']))
     expect(res.headers['set-cookie']).toHaveLength(4)
-    const cookies: { type: TOKEN_TYPE; content: string[] }[] = getCookies(res.headers['set-cookie'] as string[])
+    const cookies: { type: CookieTokenType; content: string[] }[] = getCookies(res.headers['set-cookie'] as string[])
     /* Access cookie
         [
         'sync-in-access=value,
@@ -219,7 +209,7 @@ describe('Auth (e2e)', () => {
     const res = await app.inject({
       method: 'POST',
       url: API_AUTH_LOGOUT,
-      body: null
+      body: null as never
     })
     expect(res.statusCode).toEqual(201)
     expect(res.headers['set-cookie']).toHaveLength(5)
@@ -287,11 +277,11 @@ describe('Auth (e2e)', () => {
       cookies: { [authConfig.token.refresh.name]: refreshToken }
     })
     expect(res.statusCode).toEqual(201)
-    const content = transformAndValidate(BrowserRefreshResponseDto, res.json())
+    const content = browserRefreshResponseSchema.parse(res.json())
     expect(content.user.id).toBe(userTest.id)
     const expectedAccessExpiration = currentTimeStamp() + convertHumanTimeToSeconds(authConfig.token.access.expiration)
     expect(content.token.access_expiration).toBeCloseTo(expectedAccessExpiration, -1)
-    const cookies: { type: TOKEN_TYPE; content: string[] }[] = getCookies(res.headers['set-cookie'] as string[])
+    const cookies: { type: CookieTokenType; content: string[] }[] = getCookies(res.headers['set-cookie'] as string[])
     cookiesChecks(cookies)
   })
 
@@ -334,7 +324,7 @@ describe('Auth (e2e)', () => {
     })
     expect(res.statusCode).toEqual(201)
     const content = res.json()
-    expect(() => transformAndValidate(TokenResponseDto, content)).not.toThrow()
+    expect(() => tokenResponseSchema.parse(content)).not.toThrow()
     for (const type of TOKEN_TYPES.filter((p) => p === TOKEN_TYPE.ACCESS || p === TOKEN_TYPE.REFRESH)) {
       expect(content[type]).toBeDefined()
       expect(content[`${type}_expiration`]).toBeCloseTo(currentTimeStamp() + convertHumanTimeToSeconds(authConfig.token[type].expiration), -1)
@@ -357,7 +347,7 @@ describe('Auth (e2e)', () => {
       headers: { authorization: `Bearer ${refreshToken}` }
     })
     expect(res.statusCode).toEqual(201)
-    expect(() => transformAndValidate(TokenResponseDto, res.json())).not.toThrow()
+    expect(() => tokenResponseSchema.parse(res.json())).not.toThrow()
   })
 
   it('should invalidate cached WebDAV app-password authentication after revocation', async () => {
@@ -389,9 +379,9 @@ describe('Auth (e2e)', () => {
     const appPassword = await usersManager.generateAppPassword(userTest, { name: passwordName, app: AUTH_SCOPE.WEBDAV })
     const cacheKey = webDAVAuthCacheKey(appPassword.password)
     const getUserSecrets = usersQueries.getUserSecrets.bind(usersQueries)
-    let secretsRead: () => void
+    let secretsRead!: () => void
     const secretsWereRead = new Promise<void>((resolve) => (secretsRead = resolve))
-    let resumeValidation: () => void
+    let resumeValidation!: () => void
     const revocationCompleted = new Promise<void>((resolve) => (resumeValidation = resolve))
     // Keep the stale read suspended until revocation commits, then let validation enter its bcrypt comparison.
     const getUserSecretsSpy = vi.spyOn(usersQueries, 'getUserSecrets').mockImplementationOnce(async (userId) => {
@@ -417,8 +407,8 @@ describe('Auth (e2e)', () => {
     }
   })
 
-  function getCookies(setCookie: string[]): { type: TOKEN_TYPE; content: string[] }[] {
-    const cookies: { type: TOKEN_TYPE; content: string[] }[] = []
+  function getCookies(setCookie: string[]): { type: CookieTokenType; content: string[] }[] {
+    const cookies: { type: CookieTokenType; content: string[] }[] = []
     for (const c of setCookie) {
       const cookieName = c.split('=')[0]
       const cookieValues = c.split('; ')
@@ -440,7 +430,7 @@ describe('Auth (e2e)', () => {
     return cookies
   }
 
-  function cookiesChecks(cookies: { type: TOKEN_TYPE; content: string[] }[], clear = false) {
+  function cookiesChecks(cookies: { type: CookieTokenType; content: string[] }[], clear = false) {
     for (const cookie of cookies) {
       expect(cookie.content[0].split('=')[0]).toBe(authConfig.token[cookie.type].name)
       expect(cookie.content[2].split('=')[1]).toBe(TOKEN_PATHS[cookie.type])

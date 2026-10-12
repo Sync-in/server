@@ -52,8 +52,8 @@ describe(AuthProviderMySQL.name, () => {
 
   it('should validate the user', async () => {
     userTest.makePaths = vi.fn()
-    usersManager.findUser = vi.fn().mockReturnValue({ ...userTest, password: await hashPassword(userTest.password) })
-    expect(await authProviderMySQL.validateUser(userTest.login, userTest.password)).toBeDefined()
+    usersManager.findUser = vi.fn().mockReturnValue({ ...userTest, password: await hashPassword(userTest.password!) })
+    expect(await authProviderMySQL.validateUser(userTest.login, userTest.password!)).toBeDefined()
     expect(userTest.makePaths).toHaveBeenCalled()
   })
 
@@ -68,9 +68,9 @@ describe(AuthProviderMySQL.name, () => {
           cause: { code: Array.from(CONNECT_ERROR_CODE)[0] }
         })
       )
-    expect(await authProviderMySQL.validateUser(userTest.login, userTest.password)).toBeNull()
-    expect(await authProviderMySQL.validateUser(userTest.login, userTest.password)).toBeNull()
-    await expect(authProviderMySQL.validateUser(userTest.login, userTest.password)).rejects.toThrow(/db error/i)
-    await expect(authProviderMySQL.validateUser(userTest.login, userTest.password)).rejects.toThrow(/authentication service/i)
+    expect(await authProviderMySQL.validateUser(userTest.login, userTest.password!)).toBeNull()
+    expect(await authProviderMySQL.validateUser(userTest.login, userTest.password!)).toBeNull()
+    await expect(authProviderMySQL.validateUser(userTest.login, userTest.password!)).rejects.toThrow(/db error/i)
+    await expect(authProviderMySQL.validateUser(userTest.login, userTest.password!)).rejects.toThrow(/authentication service/i)
   })
 })

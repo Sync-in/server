@@ -1,16 +1,10 @@
-import { Transform } from 'class-transformer'
-import { IsBoolean, IsInt, IsOptional, IsString } from 'class-validator'
+import { z } from 'zod'
 
-export class SearchSpaceDto {
-  @IsString()
-  @Transform(({ value }) => value.trim().toLowerCase())
-  search: string
+export const searchSpaceSchema = z.object({
+  search: z.string().trim().toLowerCase(),
+  limit: z.number().int().nullish().default(6),
+  shareInsidePermission: z.boolean().nullish()
+})
 
-  @IsOptional()
-  @IsInt()
-  limit?: number = 6
-
-  @IsOptional()
-  @IsBoolean()
-  shareInsidePermission?: boolean
-}
+export type SearchSpaceDto = z.input<typeof searchSpaceSchema>
+export type ValidatedSearchSpaceDto = z.output<typeof searchSpaceSchema>

@@ -1,3 +1,4 @@
+import { toErrorMessage } from '../../../common/errors.js'
 import { Inject, Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression, Timeout } from '@nestjs/schedule'
 import { isNotNull, sql } from 'drizzle-orm'
@@ -58,7 +59,7 @@ export class FilesScheduler {
       await this.updateQuotas()
       await this.cleanupTrashFiles()
     } catch (e) {
-      this.logger.error({ tag: this.onStartup.name, msg: `${e}` })
+      this.logger.error({ tag: this.onStartup.name, msg: toErrorMessage(e) })
     }
   }
 
@@ -67,7 +68,7 @@ export class FilesScheduler {
     try {
       await this.indexContentFiles()
     } catch (e) {
-      this.logger.error({ tag: this.afterStartup.name, msg: `${e}` })
+      this.logger.error({ tag: this.afterStartup.name, msg: toErrorMessage(e) })
     }
   }
 
@@ -78,7 +79,7 @@ export class FilesScheduler {
     try {
       await this.filesQuotaManager.updateStorageUsageEntries()
     } catch (e) {
-      this.logger.error({ tag: this.updateStorageAndIndexing.name, msg: `update quota error: ${e}` })
+      this.logger.error({ tag: this.updateStorageAndIndexing.name, msg: `update quota error: ${toErrorMessage(e)}` })
     } finally {
       this.isQuotaUpdateEntriesIsRunning = false
     }
@@ -86,7 +87,7 @@ export class FilesScheduler {
     try {
       await this.filesContentIndexer.processIndexingQueue()
     } catch (e) {
-      this.logger.error({ tag: this.updateStorageAndIndexing.name, msg: `update indexing error: ${e}` })
+      this.logger.error({ tag: this.updateStorageAndIndexing.name, msg: `update indexing error: ${toErrorMessage(e)}` })
     }
   }
 
@@ -97,7 +98,7 @@ export class FilesScheduler {
     try {
       await this.filesTrashRetention.indexAndCleanTrash()
     } catch (e) {
-      this.logger.error({ tag: this.cleanupTrashFiles.name, msg: `${e}` })
+      this.logger.error({ tag: this.cleanupTrashFiles.name, msg: toErrorMessage(e) })
     } finally {
       this.isTrashCleanupRunning = false
     }
@@ -149,7 +150,7 @@ export class FilesScheduler {
         await this.discoverTemporaryUsersRoot(path.join(externalRoot, TEMPORARY_PATH.STORAGE, TEMPORARY_PATH.ACTORS), temporaryDirectories)
       }
     } catch (e) {
-      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `${e}` })
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: toErrorMessage(e) })
     }
     for (const [userId, directories] of temporaryDirectories) {
       await this.cleanupTemporaryDirectories(userId, [...directories.values()], expiration)
@@ -178,7 +179,7 @@ export class FilesScheduler {
         nbCleared += r.affectedRows
       }
     } catch (e) {
-      this.logger.error({ tag: this.clearRecentFiles.name, msg: `${e}` })
+      this.logger.error({ tag: this.clearRecentFiles.name, msg: toErrorMessage(e) })
     }
     this.logger.log({ tag: this.clearRecentFiles.name, msg: `${nbCleared} records cleared` })
   }
@@ -224,7 +225,7 @@ export class FilesScheduler {
         this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `files: ${r.affectedRows}` })
       })
     } catch (e) {
-      this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `${e}` })
+      this.logger.log({ tag: this.deleteOrphanFiles.name, msg: toErrorMessage(e) })
     }
     this.logger.log({ tag: this.deleteOrphanFiles.name, msg: `END` })
   }
@@ -237,21 +238,21 @@ export class FilesScheduler {
     try {
       await this.filesQuotaManager.updatePersonalSpacesQuota()
     } catch (e) {
-      this.logger.error({ tag: this.updateQuotas.name, msg: `Personals - ${e}` })
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Personals - ${toErrorMessage(e)}` })
     }
     this.logger.log({ tag: this.updateQuotas.name, msg: 'Personals - END' })
     this.logger.log({ tag: this.updateQuotas.name, msg: 'Spaces - START' })
     try {
       await this.filesQuotaManager.updateSpacesQuota()
     } catch (e) {
-      this.logger.error({ tag: this.updateQuotas.name, msg: `Spaces - ${e}` })
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Spaces - ${toErrorMessage(e)}` })
     }
     this.logger.log({ tag: this.updateQuotas.name, msg: 'Spaces - END' })
     this.logger.log({ tag: this.updateQuotas.name, msg: 'Share External Paths - START' })
     try {
       await this.filesQuotaManager.updateSharesExternalPathQuota()
     } catch (e) {
-      this.logger.error({ tag: this.updateQuotas.name, msg: `Share External Paths - ${e}` })
+      this.logger.error({ tag: this.updateQuotas.name, msg: `Share External Paths - ${toErrorMessage(e)}` })
     }
     this.logger.log({ tag: this.updateQuotas.name, msg: 'Share External Paths - END' })
     this.isQuotaUpdateIsRunning = false
@@ -284,7 +285,7 @@ export class FilesScheduler {
         this.registerTemporaryDirectory(temporaryDirectories, userId, path.join(usersTmpPath, entry.name))
       }
     } catch (e) {
-      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${usersTmpPath} : ${e}` })
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${usersTmpPath} : ${toErrorMessage(e)}` })
     }
   }
 
@@ -295,7 +296,7 @@ export class FilesScheduler {
       const candidates = directory.includeLegacyEntries ? fileNames : fileNames.filter((fileName) => fileName.startsWith(TEMPORARY_FILE_PREFIX))
       return candidates.length === 0 ? undefined : { fileNames: candidates, path: directory.path }
     } catch (e) {
-      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${directory.path} : ${e}` })
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to browse ${directory.path} : ${toErrorMessage(e)}` })
     }
   }
 
@@ -313,7 +314,7 @@ export class FilesScheduler {
       // snapshots guarantees that concurrent entries are either protected or left for the next pass.
       protectedPrefixes = await this.taskPrefixes(userId)
     } catch (e) {
-      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to resolve temporary files for user ${userId} : ${e}` })
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to resolve temporary files for user ${userId} : ${toErrorMessage(e)}` })
       return
     }
     for (const snapshot of snapshots) {
@@ -336,7 +337,7 @@ export class FilesScheduler {
         await removeFiles(rPath)
       }
     } catch (e) {
-      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to remove ${rPath} : ${e}` })
+      this.logger.error({ tag: this.cleanupUserTmpFiles.name, msg: `unable to remove ${rPath} : ${toErrorMessage(e)}` })
     }
   }
 
@@ -375,7 +376,7 @@ export class FilesScheduler {
         msg: `${nb} tasks cleaned, ${nbCancellationRequests} cancellation requests cleared, ${nbUserTaskCounters} user task counters cleared`
       })
     } catch (e) {
-      this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: `${e}` })
+      this.logger.error({ tag: this.cleanupInterruptedTasks.name, msg: toErrorMessage(e) })
     }
   }
 
