@@ -34,7 +34,7 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
   private readonly logger = new Logger(DatabaseModule.name)
   private readonly pool: Pool
   private readonly shutdownController = new AbortController()
-  private monitorPromise?: Promise<void>
+  private recoveryPromise?: Promise<void>
   private poolClosed = false
 
   constructor(
@@ -47,38 +47,41 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
 
   async onModuleInit(): Promise<void> {
     this.pool.on('connection', (conn: Connection) => {
-      conn.on('error', () => this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, false))
+      conn.once('error', (error: unknown) => this.handleConnectionError(error))
       for (const query of DB_SESSION_INIT_QUERIES) {
         conn.query(query)
       }
     })
 
     await this.waitUntilAvailable()
-    if (!this.shutdownController.signal.aborted) {
-      this.monitorPromise = this.monitorAvailability()
-    }
   }
 
   async beforeApplicationShutdown(): Promise<void> {
     this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, false)
     this.shutdownController.abort()
-    await this.monitorPromise
+    await this.recoveryPromise
     await this.closePool()
   }
 
-  private async waitUntilAvailable(): Promise<void> {
+  private async waitUntilAvailable(isRecovery = false): Promise<void> {
     while (!this.shutdownController.signal.aborted) {
       try {
         await this.pool.promise().query('SELECT 1')
+        if (this.shutdownController.signal.aborted) return
         this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, true)
-        this.logger.log('Connected to MySQL server')
+        this.logger.log(isRecovery ? 'Connection to MySQL server restored' : 'Connected to MySQL server')
         return
       } catch (error) {
         this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, false)
-        const message = `Unable to connect to MySQL server: ${connectionErrorMessage(error)}`
+        const message = `Unable to ${isRecovery ? 'reconnect to' : 'connect to'} MySQL server: ${connectionErrorMessage(error)}`
         if (!isRetryableConnectionError(error)) {
-          await this.closePool()
-          throw new Error(message)
+          if (!isRecovery) {
+            await this.closePool()
+            throw new Error(message)
+          }
+          this.logger.error(message)
+          this.logger.error('MySQL connection cannot be retried without changing the configuration')
+          return
         }
         this.logger.error(message)
         this.logger.warn(`Retrying connection to MySQL server in ${INFRASTRUCTURE_CONNECTION_RETRY_DELAY / 1000}s`)
@@ -87,24 +90,20 @@ export class DatabaseModule implements OnModuleInit, BeforeApplicationShutdown {
     }
   }
 
-  private async monitorAvailability(): Promise<void> {
-    while (await this.waitRetryDelay()) {
-      try {
-        await this.pool.promise().query('SELECT 1')
-        if (!this.availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE)) {
-          this.logger.log('Connection to MySQL server restored')
-        }
-        this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, true)
-      } catch (error) {
-        this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, false)
-        const message = `Connection to MySQL server lost: ${connectionErrorMessage(error)}`
-        this.logger.error(message)
-        if (!isRetryableConnectionError(error)) {
-          this.logger.error('MySQL connection cannot be retried without changing the configuration')
-          return
-        }
-        this.logger.warn(`Retrying connection to MySQL server in ${INFRASTRUCTURE_CONNECTION_RETRY_DELAY / 1000}s`)
-      }
+  private handleConnectionError(error: unknown): void {
+    const wasAvailable = this.availability.isAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE)
+    this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, false)
+    if (!wasAvailable || this.shutdownController.signal.aborted || this.recoveryPromise) return
+
+    this.logger.error(`Connection to MySQL server lost: ${connectionErrorMessage(error)}`)
+    this.recoveryPromise = this.recoverAvailability()
+  }
+
+  private async recoverAvailability(): Promise<void> {
+    try {
+      await this.waitUntilAvailable(true)
+    } finally {
+      this.recoveryPromise = undefined
     }
   }
 

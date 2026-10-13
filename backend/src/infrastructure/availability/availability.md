@@ -11,6 +11,14 @@ this.availability.register(INFRASTRUCTURE_DEPENDENCY.DATABASE)
 this.availability.setAvailable(INFRASTRUCTURE_DEPENDENCY.DATABASE, true)
 ```
 
+The database runs `SELECT 1` until MySQL is available during startup. It does not send periodic health queries after that initial connection. The
+default mysql2 pool configuration retains idle connections, and an error from any established pooled connection marks the database unavailable and
+starts a single `SELECT 1` recovery loop. The loop stops as soon as MySQL accepts queries again.
+
+This event-driven behavior avoids database traffic while the service is healthy. A silent network interruption may remain undetected until the TCP
+socket or the next application query reports it. Any future pool configuration that evicts every idle connection must also account for connection
+acquisition failures, which occur before mysql2 emits the pool's `connection` event.
+
 `AvailabilityGuard` is registered as an application guard. It returns HTTP `503 Service unavailable` while at least one registered dependency is
 unavailable.
 
