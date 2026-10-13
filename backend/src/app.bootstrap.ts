@@ -57,7 +57,7 @@ export async function appBootstrap(): Promise<NestFastifyApplication> {
   app.useGlobalPipes(new StandardSchemaValidationPipe())
 
   /* STATIC */
-  app.useStaticAssets({ root: STATIC_PATH, prefixAvoidTrailingSlash: true })
+  app.useStaticAssets({ root: STATIC_PATH, prefixAvoidTrailingSlash: true, dotfiles: 'ignore' })
 
   /* SECURITY */
   await app.register(fastifyHelmet, {
