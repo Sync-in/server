@@ -1,6 +1,10 @@
 import type { AUTH_SESSION } from '../providers/auth-providers.constants.js'
 import { TOKEN_TYPE } from './token.interface.js'
 
+export interface JwtIdentityPreferences {
+  showHiddenFiles: boolean
+}
+
 export interface JwtIdentityPayload {
   id: number
   login: string
@@ -14,6 +18,7 @@ export interface JwtIdentityPayload {
   authSession?: AUTH_SESSION
   clientId?: string
   twoFaEnabled?: boolean
+  preferences?: JwtIdentityPreferences
 }
 
 export interface JwtIdentity2FaPayload {

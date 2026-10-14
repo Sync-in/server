@@ -81,6 +81,7 @@ export class UsersManager {
       }
       user.impersonatedFromId = authUser.impersonatedFromId
       user.impersonatedClientId = authUser.impersonatedClientId
+      user.impersonated = true
     }
     user.clientId = authUser.clientId
     user.authSession = authUser.authSession
@@ -252,11 +253,16 @@ export class UsersManager {
     const patch: Partial<UserPreferences> = {}
     if (dto.theme !== undefined) patch.theme = dto.theme
     if (dto.editor !== undefined) patch.editor = dto.editor
+    if (dto.showHiddenFiles !== undefined) patch.showHiddenFiles = dto.showHiddenFiles
     if (dto.useSystemNotifications !== undefined) patch.useSystemNotifications = dto.useSystemNotifications
     if (dto.sidebarQuickAccessVisibility !== undefined) patch.sidebarQuickAccessVisibility = dto.sidebarQuickAccessVisibility
     if (dto.sidebarQuickAccessPosition !== undefined) patch.sidebarQuickAccessPosition = dto.sidebarQuickAccessPosition
     try {
-      return await this.usersQueries.updateUserPreferences(user.id, patch)
+      const preferences = await this.usersQueries.updateUserPreferences(user.id, patch)
+      if (dto.showHiddenFiles !== undefined) {
+        await this.usersQueries.clearWebDAVAuthCache(user.id)
+      }
+      return preferences
     } catch (e) {
       this.logger.error({ tag: this.updatePreferences.name, msg: `Unable to update preferences for user (${user.id}) : ${toErrorMessage(e)}` })
       throw new HttpException('Unable to update preferences', HttpStatus.INTERNAL_SERVER_ERROR)

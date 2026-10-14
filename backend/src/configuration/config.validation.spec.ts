@@ -71,7 +71,6 @@ describe('configuration contracts', () => {
           maxUploadSize: 5368709120,
           contentIndexing: { enabled: true, ocr: { enabled: true, languages: ['eng'], offline: false } },
           trashRetention: { users: false, spaces: false },
-          showHiddenFiles: false,
           sampleDocuments: [...SAMPLE_DOCUMENT_GROUPS],
           editors: {
             onlyoffice: { enabled: false, externalServer: null, verifySSL: false },

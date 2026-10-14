@@ -1,6 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import fs from 'node:fs/promises'
-import { configuration } from '../../../configuration/config.environment.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { FilesQuotaManager } from '../../files/services/files-quota-manager.service.js'
@@ -59,7 +58,7 @@ describe(SpacesBrowser.name, () => {
   })
 
   it('should expose the space name while preserving its alias', async () => {
-    const user = { id: 1 } as UserModel
+    const user = { id: 1, preferences: { showHiddenFiles: true } } as UserModel
     const space = {
       alias: 'communication',
       name: 'Communication',
@@ -94,7 +93,8 @@ describe(SpacesBrowser.name, () => {
     const user = {
       id: 1,
       isUser,
-      isLink
+      isLink,
+      preferences: { showHiddenFiles: true }
     } as unknown as UserModel
     const space = {
       alias: 'communication',
@@ -117,8 +117,6 @@ describe(SpacesBrowser.name, () => {
   })
 
   it('always hides internal temporary entries from filesystem browsing', async () => {
-    const showHiddenFiles = configuration.applications.files.showHiddenFiles
-    configuration.applications.files.showHiddenFiles = true
     vi.spyOn(fs, 'readdir').mockResolvedValue([
       { name: '.sync-in-tmp', isDirectory: () => true, isFile: () => false },
       { name: '.sync-in.uploading', isDirectory: () => false, isFile: () => true },
@@ -133,14 +131,56 @@ describe(SpacesBrowser.name, () => {
     } as any)
     const names: string[] = []
 
-    try {
-      for await (const file of (spacesBrowserService as any).parsePath({ realPath: '/storage', relativeUrl: '/space' })) {
-        names.push(file.name)
-      }
-    } finally {
-      configuration.applications.files.showHiddenFiles = showHiddenFiles
+    for await (const file of (spacesBrowserService as any).parsePath({ realPath: '/storage', relativeUrl: '/space' })) {
+      names.push(file.name)
     }
 
     expect(names).toEqual(['.visible'])
+  })
+
+  it('reconciles hidden files before excluding them from the response', async () => {
+    const user = { id: 1, isUser: true, isLink: false, preferences: { showHiddenFiles: false } } as UserModel
+    const space = {
+      alias: 'personal',
+      name: 'Personal',
+      inSharesList: false,
+      inTrashRepository: false,
+      browsePermissions: vi.fn().mockReturnValue('a:m')
+    } as unknown as SpaceEnv
+    const hiddenFSFile = { name: '.hidden', path: '', size: 1 }
+    const hiddenDBFile = { id: 1, name: '.hidden', path: '', size: 1 }
+    vi.spyOn(spacesBrowserService as any, 'parseFS').mockResolvedValue([hiddenFSFile])
+    vi.spyOn(spacesBrowserService as any, 'parseDB').mockResolvedValue([hiddenDBFile])
+    vi.spyOn(spacesBrowserService as any, 'parseRootFiles').mockResolvedValue([])
+    const compareAndUpdate = vi.spyOn((spacesBrowserService as any).filesQueries, 'compareAndUpdateFileProps').mockResolvedValue(undefined)
+    const deleteDBFile = vi.spyOn(spacesBrowserService as any, 'deleteDBFile').mockResolvedValue(undefined)
+    vi.spyOn((spacesBrowserService as any).filesRecents, 'updateRecents').mockResolvedValue(undefined)
+
+    const result = await spacesBrowserService.browse(user, space)
+
+    expect(result.files).toEqual([])
+    expect(compareAndUpdate).toHaveBeenCalledWith(hiddenDBFile, expect.objectContaining({ id: hiddenDBFile.id, name: '.hidden' }))
+    expect(deleteDBFile).not.toHaveBeenCalled()
+  })
+
+  it('removes stale database metadata for a hidden file missing from the filesystem', async () => {
+    const user = { id: 1, isUser: true, isLink: false, preferences: { showHiddenFiles: false } } as UserModel
+    const space = {
+      alias: 'personal',
+      name: 'Personal',
+      inSharesList: false,
+      inTrashRepository: false,
+      browsePermissions: vi.fn().mockReturnValue('a:m')
+    } as unknown as SpaceEnv
+    const hiddenDBFile = { id: 1, name: '.hidden', path: '', size: 1 }
+    vi.spyOn(spacesBrowserService as any, 'parseFS').mockResolvedValue([])
+    vi.spyOn(spacesBrowserService as any, 'parseDB').mockResolvedValue([hiddenDBFile])
+    vi.spyOn(spacesBrowserService as any, 'parseRootFiles').mockResolvedValue([])
+    const deleteDBFile = vi.spyOn(spacesBrowserService as any, 'deleteDBFile').mockResolvedValue(undefined)
+    vi.spyOn((spacesBrowserService as any).filesRecents, 'updateRecents').mockResolvedValue(undefined)
+
+    await spacesBrowserService.browse(user, space)
+
+    expect(deleteDBFile).toHaveBeenCalledWith(user, space, hiddenDBFile)
   })
 })

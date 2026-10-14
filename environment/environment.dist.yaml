@@ -373,9 +373,6 @@ applications:
     trashRetention:
       users: false
       spaces: false
-    # Show files starting with a dot in the file explorer
-    # default: false
-    showHiddenFiles: false
     # Optional document groups shown in the "new document" dialog.
     # options: `microsoft` | `opendocument` | `drawio`
     # use [] to only show Text and Markdown

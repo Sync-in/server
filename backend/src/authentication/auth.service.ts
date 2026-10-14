@@ -174,7 +174,10 @@ export class AuthManager {
           impersonatedClientId: user.impersonatedClientId || undefined,
           authSession: user.authSession || AUTH_SESSION.LOCAL,
           clientId: user.clientId || undefined,
-          twoFaEnabled: user.twoFaEnabled || undefined
+          twoFaEnabled: user.twoFaEnabled || undefined,
+          preferences: {
+            showHiddenFiles: user.preferences.showHiddenFiles
+          }
         } satisfies JwtIdentityPayload,
         ...((type === TOKEN_TYPE.ACCESS || type === TOKEN_TYPE.REFRESH) && { csrf: csrfToken })
       },

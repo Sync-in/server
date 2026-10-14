@@ -239,11 +239,23 @@ describe(UsersManager.name, () => {
 
     expect(resolved!.impersonatedFromId).toBe(admin.id)
     expect(resolved!.impersonatedClientId).toBe('admin-client')
+    expect(resolved!.impersonated).toBe(true)
 
     const formerAdmin = { ...generateUserTest(), id: 1, role: USER_ROLE.USER }
     usersQueriesService.from = vi.fn().mockImplementation(async (id: number) => (id === authUser.id ? currentUser : formerAdmin))
 
     await expect(usersManager.fromAuthToken(authUser)).resolves.toBeNull()
+  })
+
+  it('should clear the WebDAV auth cache when the hidden-files preference changes', async () => {
+    const preferences = { ...userTest.preferences, showHiddenFiles: false }
+    const updatePreferences = vi.spyOn(usersQueriesService, 'updateUserPreferences').mockResolvedValue(preferences)
+    const clearWebDAVAuthCache = vi.spyOn(usersQueriesService, 'clearWebDAVAuthCache').mockResolvedValue()
+
+    await expect(usersManager.updatePreferences(userTest, { showHiddenFiles: false })).resolves.toEqual(preferences)
+
+    expect(updatePreferences).toHaveBeenCalledWith(userTest.id, { showHiddenFiles: false })
+    expect(clearWebDAVAuthCache).toHaveBeenCalledWith(userTest.id)
   })
 
   it('paths + avatars (default/generate) + create/delete user', async () => {

@@ -116,11 +116,12 @@ describe(SpacesManager.name, () => {
 
     try {
       await fs.writeFile(path.join(userTest.trashPath, 'visible.txt'), '')
+      await fs.writeFile(path.join(userTest.trashPath, '.hidden'), '')
       await fs.symlink('visible.txt', path.join(userTest.trashPath, 'file-link'))
       const trashes = await spacesManager.listTrashes(userTest)
 
       expect(trashes).toHaveLength(1)
-      expect(trashes[0]).toMatchObject({ alias: SPACE_ALIAS.PERSONAL, nb: 1 })
+      expect(trashes[0]).toMatchObject({ alias: SPACE_ALIAS.PERSONAL, nb: 2 })
     } finally {
       await removeFiles(userTest.trashPath)
     }

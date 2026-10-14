@@ -39,7 +39,8 @@ describe(AuthManager.name, () => {
       firstName: 'Alice',
       lastName: 'Doe',
       language: 'en',
-      role: USER_ROLE.USER
+      role: USER_ROLE.USER,
+      preferences: { showHiddenFiles: false }
     })
     const res = { setCookie: vi.fn() }
 
@@ -48,7 +49,10 @@ describe(AuthManager.name, () => {
     expect(response.user.authSession).toBe(AUTH_SESSION.OIDC)
     expect(jwtService.signAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        identity: expect.objectContaining({ authSession: AUTH_SESSION.OIDC })
+        identity: expect.objectContaining({
+          authSession: AUTH_SESSION.OIDC,
+          preferences: { showHiddenFiles: false }
+        })
       }),
       expect.any(Object)
     )

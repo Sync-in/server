@@ -286,7 +286,7 @@
             </div>
           </div>
 
-          @if (showEditorPreference || user.isUser) {
+          @if (!user.isLink) {
             <div class="card dialog-tab-card">
               <div class="card-body">
                 <div class="text-muted text-uppercase fs-sm text-bold mb-2" l10nTranslate>Files</div>
@@ -311,6 +311,44 @@
                     Used when both editors support the file type.
                   </div>
                 }
+
+                <div class="row g-0 mb-2">
+                  <div class="col-12">
+                    <div class="card dialog-check-card"
+                         [class.dialog-check-card--interactive]="!updatingShowHiddenFiles"
+                         [class.dialog-check-card--active]="user.preferences.showHiddenFiles"
+                         [class.opacity-50]="updatingShowHiddenFiles"
+                         [class.pe-none]="updatingShowHiddenFiles"
+                         [attr.aria-busy]="updatingShowHiddenFiles"
+                         [attr.aria-disabled]="updatingShowHiddenFiles"
+                         (click)="updateShowHiddenFiles(!user.preferences.showHiddenFiles)">
+                      <div class="card-body p-2">
+                        <div class="d-flex align-items-center cursor-pointer">
+                          <label
+                            for="showHiddenFiles"
+                            class="form-label me-auto text-nowrap"
+                            (click)="$event.stopPropagation()"
+                            l10nTranslate>Show hidden files</label>
+                          <div class="d-flex align-items-center form-check form-switch ps-0 mb-0">
+                            <label class="form-check-label" for="showHiddenFiles" (click)="$event.stopPropagation()"></label>
+                            <input
+                              [ngModel]="user.preferences.showHiddenFiles"
+                              [disabled]="updatingShowHiddenFiles"
+                              (ngModelChange)="updateShowHiddenFiles($event)"
+                              (click)="$event.stopPropagation()"
+                              class="form-check-input ms-2"
+                              id="showHiddenFiles"
+                              type="checkbox"
+                              role="button">
+                          </div>
+                        </div>
+                        <div class="text-muted fs-sm mt-2 px-1" l10nTranslate>
+                          Show files and folders whose names start with a dot.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 @if (user.isUser) {
                   <div class="row g-0">

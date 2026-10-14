@@ -27,6 +27,7 @@ export type UserStorageIndexingDto = z.infer<typeof userStorageIndexingSchema>
 export const userPreferencesSchema = z.object({
   theme: z.enum(USER_THEME).optional(),
   editor: z.enum([COLLABORA_EDITOR, ONLY_OFFICE_EDITOR, EURO_OFFICE_EDITOR]).nullish(),
+  showHiddenFiles: z.boolean().optional(),
   useSystemNotifications: z.boolean().optional(),
   sidebarQuickAccessVisibility: z.enum(USER_SIDEBAR_QUICK_ACCESS_VISIBILITY).optional(),
   sidebarQuickAccessPosition: z.enum(USER_SIDEBAR_QUICK_ACCESS_POSITION).optional()

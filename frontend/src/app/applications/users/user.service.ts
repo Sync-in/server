@@ -254,9 +254,11 @@ export class UserService {
             ? 'Unable to update theme preference'
             : patch.editor !== undefined
               ? 'Unable to update editor preference'
-              : patch.sidebarQuickAccessVisibility !== undefined || patch.sidebarQuickAccessPosition !== undefined
-                ? 'Unable to update sidebar preference'
-                : 'Unable to update notification preference'
+              : patch.showHiddenFiles !== undefined
+                ? 'Unable to update hidden files preference'
+                : patch.sidebarQuickAccessVisibility !== undefined || patch.sidebarQuickAccessPosition !== undefined
+                  ? 'Unable to update sidebar preference'
+                  : 'Unable to update notification preference'
         this.layout.sendNotification('error', 'Configuration', message, e)
         return EMPTY
       }),

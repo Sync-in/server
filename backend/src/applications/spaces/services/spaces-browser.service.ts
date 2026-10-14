@@ -2,7 +2,6 @@ import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { toErrorMessage } from '../../../common/errors.js'
-import { configuration } from '../../../configuration/config.environment.js'
 import { FileDBProps } from '../../files/interfaces/file-db-props.interface.js'
 import { FileLock } from '../../files/interfaces/file-lock.interface.js'
 import { FileProps } from '../../files/interfaces/file-props.interface.js'
@@ -50,14 +49,16 @@ export class SpacesBrowser {
       this.parseDB(user.id, space, details),
       this.parseRootFiles(user, space, details)
     ])
-    const visibleRootFiles = rootFiles.filter((file) => !isInternalTemporaryEntry(file.name))
     this.updateDBFiles(user, space, dbFiles, fsFiles, details)
+    const showHiddenFiles = user.preferences.showHiddenFiles
+    const visibleFSFiles = showHiddenFiles ? fsFiles : fsFiles.filter((file) => !file.name.startsWith('.'))
+    const visibleRootFiles = rootFiles.filter((file) => !isInternalTemporaryEntry(file.name) && (showHiddenFiles || !file.name.startsWith('.')))
     if (space.inSharesList) {
       // the share space includes shares as root files
-      spaceFiles.files = [...visibleRootFiles, ...fsFiles]
+      spaceFiles.files = [...visibleRootFiles, ...visibleFSFiles]
       spaceFiles.hasRoots = true
     } else {
-      await this.mergeSpaceRootFiles(space, visibleRootFiles, fsFiles, spaceFiles)
+      await this.mergeSpaceRootFiles(space, visibleRootFiles, visibleFSFiles, spaceFiles)
     }
     if (details && !space.inTrashRepository) {
       // locks were removed when files were moved to the trash, no need to parse locks
@@ -112,10 +113,6 @@ export class SpacesBrowser {
         }
         if (!isDir && !element.isFile()) {
           this.logger.log({ tag: this.parsePath.name, msg: `ignore special file : ${element.name}` })
-          continue
-        }
-        if (!configuration.applications.files.showHiddenFiles && element.name[0] === '.') {
-          this.logger.verbose({ tag: this.parsePath.name, msg: `ignore filtered file : ${element.name}` })
           continue
         }
         const realPath = path.join(space.realPath, element.name)
