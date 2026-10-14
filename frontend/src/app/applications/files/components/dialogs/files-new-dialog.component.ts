@@ -46,7 +46,7 @@ export class FilesNewDialogComponent implements OnInit, AfterViewInit {
   protected downloadProp = { title: '', url: '', placeholder: 'URL (https://...)' }
   private store = inject(StoreService)
   protected readonly docTypes = this.buildDocumentTypes(this.store.server().files.sampleDocuments)
-  protected openAfterCreate = false
+  protected openAfterCreate = true
   protected submitted = false
   protected error: string
   private filesService = inject(FilesService)
