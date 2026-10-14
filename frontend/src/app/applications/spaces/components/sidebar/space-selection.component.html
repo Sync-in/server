@@ -1,6 +1,6 @@
 @if (space()) {
   <div appAutoResize class="fs-sm" [resizeOffset]=resizeOffset>
-    <div class="card px-1 pt-1">
+    <div class="card selection-panel">
       <div class="card-body align-self-center p-0 my-1">
         <span
           class="circle-primary-icon"
@@ -12,21 +12,21 @@
       </div>
     </div>
     <hr class="my-1" />
-    <div class="p-2">
-      <div class="d-flex mb-1">
+    <div class="selection-panel">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Name</div>
         <div class="word-break-all fs-sm">{{ space().name }}</div>
       </div>
-      <div class="d-flex mb-1">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Created</div>
         <div class="fs-sm">{{ space().createdAt | amDateFormat }}</div>
       </div>
-      <div class="d-flex mb-1">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Modified</div>
         <div class="fs-sm">{{ space().modifiedAt | amDateFormat }}</div>
       </div>
 
-      <div class="d-flex align-items-center mb-1">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Members</div>
         @if (space().counts.users || space().counts.groups) {
           <app-badge-members [members]="space().counts"></app-badge-members>
@@ -34,7 +34,7 @@
           <span class="badge bg-default" l10nTranslate>no</span>
         }
       </div>
-      <div class="d-flex align-items-center mb-1">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Anchored</div>
         @if (space().counts.roots) {
           <span (click)="openSpaceRootsDialog()" class="badge bg-primary cursor-pointer me-1">
@@ -46,7 +46,7 @@
         }
       </div>
       @if (space().role === SPACE_ROLE.IS_MANAGER) {
-        <div class="d-flex align-items-center mb-1">
+        <div class="selection-panel-row">
           <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Child shares</div>
           @if (space().counts.shares) {
             <span (click)="openChildShareDialog(space())" class="badge bg-purple cursor-pointer me-1">
@@ -60,14 +60,14 @@
       }
     </div>
     <hr class="my-1" />
-    <div class="p-2">
-      <div class="d-flex align-items-center mb-1">
+    <div class="selection-panel">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Managers</div>
         @for (m of space().managers; track m.id) {
           <app-user-avatar [user]="m" [isMember]="true" [height]="26" [width]="26" tooltipPlacement="bottom"></app-user-avatar>
         }
       </div>
-      <div class="d-flex align-items-center mb-1">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Permissions</div>
         @if (space().permissions) {
           <app-badge-permissions [permissions]="space().hPerms"></app-badge-permissions>
@@ -78,4 +78,3 @@
     </div>
   </div>
 }
-

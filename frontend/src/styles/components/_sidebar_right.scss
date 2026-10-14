@@ -93,6 +93,21 @@
       }
     }
   }
+
+  .selection-panel {
+    padding: .5rem;
+  }
+
+  .selection-panel-row {
+    display: flex;
+    align-items: center;
+    min-height: calc(#{$font-size-xs + (2 * $badge-padding-y)} + 2px);
+    margin-bottom: .15rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
 }
 
 //Control Sidebar Menu

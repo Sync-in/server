@@ -1,21 +1,21 @@
 @if (link()) {
   <div appAutoResize class="fs-sm" [resizeOffset]=resizeOffset>
-    <div class="card px-1 pt-1">
+    <div class="card selection-panel">
       <div class="card-body align-self-center p-0 my-1">
         <img [src]="link().mimeUrl" alt="" draggable="false" [style.height.px]="cardImageSize" (error)="link().fallBackMimeUrl()">
       </div>
     </div>
     <hr class="my-1" />
-    <div class="p-2">
-      <div class="d-flex mb-1">
+    <div class="selection-panel">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Name</div>
         <div class="word-break-all fs-sm">{{ link().name }}</div>
       </div>
-      <div class="d-flex mb-1">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Created</div>
         <div class="fs-sm">{{ link().link.createdAt | amDateFormat }}</div>
       </div>
-      <div class="d-flex mb-1" (mouseover)="accessHover = true" (mouseleave)="accessHover = false" (focus)="accessHover = true">
+      <div class="selection-panel-row" (mouseover)="accessHover = true" (mouseleave)="accessHover = false" (focus)="accessHover = true">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Accessed</div>
         <div class="fs-sm">
           @if (accessHover) {
@@ -25,7 +25,7 @@
           }
         </div>
       </div>
-      <div class="d-flex mb-1" (mouseover)="lastAccessHover = true" (mouseleave)="lastAccessHover = false" (focus)="accessHover = true">
+      <div class="selection-panel-row" (mouseover)="lastAccessHover = true" (mouseleave)="lastAccessHover = false" (focus)="accessHover = true">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Last access</div>
         <div class="fs-sm">
           @if (lastAccessHover) {
@@ -35,13 +35,13 @@
           }
         </div>
       </div>
-      <div class="d-flex align-items-center mb-1">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Authentication</div>
         <span class="badge {{link().link.requireAuth ? 'bg-success' : 'bg-warning'}}">
           {{ (link().link.requireAuth ? 'yes' : 'no') | translate:locale.language }}
         </span>
       </div>
-      <div class="d-flex align-items-center mb-1">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Expired</div>
         @if (link().link.expiresAt) {
           <span class="badge bg-{{link().hTimeExpirationAgo >= 1 ? 'warning': 'danger'}}">
@@ -51,13 +51,13 @@
           <span class="badge bg-default" l10nTranslate>no</span>
         }
       </div>
-      <div class="d-flex align-items-center mb-1">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Active</div>
         <span class="badge {{link().link.isActive ? 'bg-primary' : 'bg-danger'}}">
           {{ (link().link.isActive ? 'yes' : 'no') | translate:locale.language }}
         </span>
       </div>
-      <div class="d-flex align-items-center mb-1">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Access</div>
         @if (link().link.limitAccess !== 0) {
           <span class="badge {{link().link.nbAccess >= link().link.limitAccess ? 'bg-danger': 'bg-success'}}">
@@ -69,12 +69,12 @@
       </div>
     </div>
     <hr class="my-1" />
-    <div class="p-2">
-      <div class="d-flex align-items-center mb-1">
+    <div class="selection-panel">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Shared from</div>
         <app-share-repository [share]="link()" [showIcon]="false"></app-share-repository>
       </div>
-      <div class="d-flex align-items-center mb-1">
+      <div class="selection-panel-row">
         <div class="d-flex col-5 col-sm-5 text-bold" l10nTranslate>Permissions</div>
         @if (link().link.permissions) {
           <app-badge-permissions [permissions]="link().hPerms"></app-badge-permissions>
@@ -85,7 +85,3 @@
     </div>
   </div>
 }
-
-
-
-
