@@ -37,7 +37,7 @@ Sync-in is designed to stay fast, lightweight, and centered on your data, keepin
 - 🆔 Authentication with local accounts, OIDC, LDAP, MFA, recovery codes, and application passwords
 - 🔑 Spaces, shares, guests, personal groups, roles, and fine-grained permissions for controlled collaboration
 - 🔐 Protected public links with access limits, expiration dates, passwords, and full control over shared content
-- 🤝 Online document editing with Collabora Online, OnlyOffice, and Euro-Office
+- 🤝 Online document editing with Collabora Online, OnlyOffice, Euro-Office, and draw.io
 - 💬 Activity tracking, comments, notifications, file locking, and recent file updates in one workflow
 - 🔎 Full-text search with deep document content indexing across common office and document formats
 - 📂 Storage quotas, trash retention, file protection tools, and folder anchoring without duplication

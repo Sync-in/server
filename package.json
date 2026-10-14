@@ -1,7 +1,7 @@
 {
   "productName": "Sync-in",
   "name": "sync-in-server",
-  "version": "2.5.2",
+  "version": "2.6.0",
   "description": "The sovereign platform for file storage, sharing, synchronization, and collaboration",
   "keywords": [
     "self-hosted",
