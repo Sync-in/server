@@ -7,6 +7,7 @@ import { configuration } from '../../../configuration/config.environment.js'
 import { isPathInside } from '../../files/utils/files.js'
 import { SPACE_REPOSITORY } from '../../spaces/constants/spaces.js'
 import { GUEST_PERMISSION, USER_PERMISSION, USER_PERMS_SEP, USER_ROLE, USER_TMP_DIRECTORY } from '../constants/user.js'
+import type { UserModelProps } from '../interfaces/user-model.interface.js'
 import type { Owner } from '../interfaces/owner.interface.js'
 import type { UserPreferences } from '../interfaces/user-preferences.interface.js'
 import type { UserSecrets } from '../interfaces/user-secrets.interface.js'
@@ -114,7 +115,7 @@ export class UserModel implements Omit<User, 'password' | 'permissions'> {
   // Token-only refresh expiration; never exposed in the public representation.
   exp?: number
 
-  constructor(props: Partial<User> & { exp?: number; twoFaEnabled?: boolean }, removePassword = true) {
+  constructor(props: UserModelProps, removePassword = true) {
     // User model can be instantiated with data from the database or from a token payload
     this.initSecrets(props)
     Object.assign(this, props)
@@ -298,7 +299,7 @@ export class UserModel implements Omit<User, 'password' | 'permissions'> {
     return this.role <= role
   }
 
-  private initSecrets(props: Partial<User> & { exp?: number; twoFaEnabled?: boolean }) {
+  private initSecrets(props: UserModelProps) {
     // Remove the serialized `twoFaEnabled` property before assigning values to the model,
     // because the public value is exposed through a getter.
     if (props && 'twoFaEnabled' in props) {

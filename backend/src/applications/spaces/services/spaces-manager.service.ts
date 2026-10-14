@@ -7,7 +7,6 @@ import { toErrorMessage } from '../../../common/errors.js'
 import { convertDiffUpdate, diffCollection, differencePermissions } from '../../../common/functions.js'
 import type { Entries } from '../../../common/interfaces.js'
 import { createSlug, InvalidSlugError, regExpNumberSuffix } from '../../../common/shared.js'
-import { configuration } from '../../../configuration/config.environment.js'
 import { DEFAULT_DIRECTORY_BUFFER_SIZE } from '../../files/constants/files.js'
 import { FileError } from '../../files/models/file-error.js'
 import { dirListFileNames, getProps, isInternalTemporaryEntry, isPathExists, moveFiles, removeFiles } from '../../files/utils/files.js'
@@ -206,7 +205,7 @@ export class SpacesManager {
           if (
             (entry.isDirectory() || entry.isFile()) &&
             !isInternalTemporaryEntry(entry.name) &&
-            (configuration.applications.files.showHiddenFiles || entry.name[0] !== '.')
+            (user.preferences.showHiddenFiles || entry.name[0] !== '.')
           ) {
             space.nb++
           }

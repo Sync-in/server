@@ -53,7 +53,7 @@ describe(FilesManager.name, () => {
     removeChildLocks: Mock
   }
 
-  const user = { id: 7, login: 'john', tmpPath: '/data/users/john/tmp' } as any
+  const user = { id: 7, login: 'john', tmpPath: '/data/users/john/tmp', preferences: { showHiddenFiles: false } } as any
   const targetTmpRoot = '/data/users/john/.sync-in-tmp/users/7'
   const targetTrashDbScope = { ownerId: 7, spaceId: null, spaceExternalRootId: null, shareExternalId: null, inTrash: true }
   const temporaryPath = (operation: FILE_OPERATION, executionId: string, name: string, parentPath = targetTmpRoot): string =>
@@ -1290,7 +1290,7 @@ describe(FilesManager.name, () => {
   })
 
   describe('delete', () => {
-    it('should empty visible trash-root entries through a task without deleting the root', async () => {
+    it('should empty all trash-root entries through a task without deleting the root', async () => {
       const trashRoot = makeTrashSpace({
         url: 'trash/personal',
         realPath: '/data/users/john/trash',
@@ -1316,22 +1316,17 @@ describe(FilesManager.name, () => {
           paths: [name]
         })
       })
-      const showHiddenFiles = configuration.applications.files.showHiddenFiles
-      configuration.applications.files.showHiddenFiles = false
+      await service.delete(user, trashRoot)
 
-      try {
-        await service.delete(user, trashRoot)
-      } finally {
-        configuration.applications.files.showHiddenFiles = showHiddenFiles
-      }
-
-      expect(spacesManager.spaceEnv).toHaveBeenCalledTimes(2)
+      expect(spacesManager.spaceEnv).toHaveBeenCalledTimes(3)
       expect(spacesManager.spaceEnv).toHaveBeenNthCalledWith(1, user, ['trash', 'personal', 'old.txt'])
       expect(spacesManager.spaceEnv).toHaveBeenNthCalledWith(2, user, ['trash', 'personal', 'archive'])
+      expect(spacesManager.spaceEnv).toHaveBeenNthCalledWith(3, user, ['trash', 'personal', '.hidden'])
       expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/trash/old.txt')
       expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/trash/archive')
+      expect(filesUtils.removeFiles).toHaveBeenCalledWith('/data/users/john/trash/.hidden')
       expect(filesUtils.removeFiles).not.toHaveBeenCalledWith(trashRoot.realPath)
-      expect(filesQueries.deleteFiles).toHaveBeenCalledTimes(2)
+      expect(filesQueries.deleteFiles).toHaveBeenCalledTimes(3)
     })
 
     it('should empty the trash root synchronously and forward WebDAV lock tokens', async () => {

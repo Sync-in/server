@@ -31,7 +31,8 @@ describe(AuthTokenAccessGuard.name, () => {
     fullName: 'Foo Bar',
     language: 'fr',
     role: USER_ROLE.USER,
-    applications: [USER_PERMISSION.DESKTOP_APP, USER_PERMISSION.PERSONAL_SPACE]
+    applications: [USER_PERMISSION.DESKTOP_APP, USER_PERMISSION.PERSONAL_SPACE],
+    preferences: { showHiddenFiles: false }
   }
   let authConfig: AuthConfig
   let jwtService: JwtService
@@ -132,6 +133,7 @@ describe(AuthTokenAccessGuard.name, () => {
 
     expect(await authAccessGuard.canActivate(context)).toBe(true)
     expect(request.user).toMatchObject(accessTokenIdentity)
+    expect(request.user.preferences.showHiddenFiles).toBe(false)
     expect(request.user.haveRole(USER_ROLE.USER)).toBe(true)
     expect(request.user.havePermission(USER_PERMISSION.DESKTOP_APP)).toBe(true)
   })

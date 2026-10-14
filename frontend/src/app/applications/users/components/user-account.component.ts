@@ -29,7 +29,7 @@ import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } fr
 import { BsModalRef } from 'ngx-bootstrap/modal'
 import { ClipboardService } from 'ngx-clipboard'
 import { Subscription } from 'rxjs'
-import { filter, take } from 'rxjs/operators'
+import { filter, finalize, switchMap, take } from 'rxjs/operators'
 import { i18nLanguageText } from '../../../../i18n/l10n'
 import { AuthService } from '../../../auth/auth.service'
 import { InputPasswordComponent } from '../../../common/components/input-password.component'
@@ -84,6 +84,7 @@ export class UserAccountComponent implements OnInit, OnDestroy {
   protected newPassword: string
   protected readonly store = inject(StoreService)
   protected showEditorPreference = false
+  protected updatingShowHiddenFiles = false
   private readonly onlyOfficeEditorEnabled = this.store.server().files.editors.onlyoffice
   protected readonly editors: Record<string, NonNullable<UserPreferences['editor']>> = {
     [COLLABORA_APP_LOCK]: COLLABORA_EDITOR,
@@ -226,6 +227,18 @@ export class UserAccountComponent implements OnInit, OnDestroy {
 
   updateEditorPreference(editor: UserPreferences['editor']) {
     this.userService.changePreferences({ editor }).subscribe()
+  }
+
+  updateShowHiddenFiles(showHiddenFiles: UserPreferences['showHiddenFiles']) {
+    if (this.updatingShowHiddenFiles) return
+    this.updatingShowHiddenFiles = true
+    this.userService
+      .changePreferences({ showHiddenFiles })
+      .pipe(
+        switchMap(() => this.authService.refreshToken()),
+        finalize(() => (this.updatingShowHiddenFiles = false))
+      )
+      .subscribe()
   }
 
   updateSidebarQuickAccessVisibility(sidebarQuickAccessVisibility: UserPreferences['sidebarQuickAccessVisibility']) {

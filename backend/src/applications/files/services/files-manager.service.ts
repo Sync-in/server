@@ -900,11 +900,7 @@ export class FilesManager {
 
     let failureCount = 0
     for (const entry of entries) {
-      if (
-        isInternalTemporaryEntry(entry.name) ||
-        (!configuration.applications.files.showHiddenFiles && entry.name.startsWith('.')) ||
-        (!entry.isDirectory() && !entry.isFile())
-      ) {
+      if (isInternalTemporaryEntry(entry.name) || (!entry.isDirectory() && !entry.isFile())) {
         continue
       }
       try {

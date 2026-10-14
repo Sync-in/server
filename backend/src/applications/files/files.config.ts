@@ -77,7 +77,6 @@ export const FilesConfigSchema = z.looseObject({
   maxUploadSize: integerNumberSchema.default(5368709120), // 5 GB
   contentIndexing: FilesContentIndexingConfigSchema.prefault({}),
   trashRetention: FilesTrashRetentionConfigSchema.prefault({}),
-  showHiddenFiles: z.boolean().default(false),
   sampleDocuments: sampleDocumentsSchema.default(() => [...SAMPLE_DOCUMENT_GROUPS]),
   editors: FilesEditorsConfigSchema.prefault({})
 })

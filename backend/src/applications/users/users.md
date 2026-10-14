@@ -31,8 +31,8 @@ Administrators and regular users have a complete account. They can update their 
 and application passwords.
 
 Guests have a persistent account with a reduced set of self-service settings. They can update their language, notification channel, and user
-preferences, including interface and editor preferences. They cannot update their password or avatar, enable 2FA, manage application passwords, or
-change storage indexing.
+preferences, including interface, editor, and hidden-file visibility preferences. They cannot update their password or avatar, enable 2FA, manage
+application passwords, or change storage indexing.
 
 Link pseudo-users do not have a self-service account. They can read the identity required by their authenticated link session, but the account page
 and all account-setting updates are unavailable to them. When a link identity is materialized, `UserModel` normalizes its preferences from an empty
@@ -52,7 +52,8 @@ value instead of using persisted account preferences.
 
 Language, notification channel, and storage indexing are stored as dedicated user properties. The remaining user preferences are stored together as
 JSON. Preference updates are partial: omitted values remain unchanged, validated values are merged transactionally, and unchanged results do not
-trigger a database write. Guests use the same persistence behavior as regular users.
+trigger a database write. Guests use the same persistence behavior as regular users. `showHiddenFiles` defaults to `true` when it is absent from an
+existing preference document.
 
 ## Account state and password attempts
 
