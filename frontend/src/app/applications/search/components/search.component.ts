@@ -2,22 +2,20 @@ import { HttpErrorResponse } from '@angular/common/http'
 import { Component, effect, inject } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop'
 import { ActivatedRoute, type ParamMap, Router } from '@angular/router'
-import { LucideMapPin } from '@lucide/angular'
 import { MIN_CHARS_TO_SEARCH } from '@sync-in-server/backend/src/applications/files/constants/indexing'
 import type { SearchFilesDto } from '@sync-in-server/backend/src/applications/files/dto/file-operations.dto'
-import { L10N_LOCALE, L10nLocale, L10nTranslateDirective } from 'angular-l10n'
+import { L10nTranslateDirective } from 'angular-l10n'
 import { merge, of } from 'rxjs'
 import { catchError, finalize, map, switchMap, tap } from 'rxjs/operators'
 import { AutoResizeDirective } from '../../../common/directives/auto-resize.directive'
 import { TapDirective } from '../../../common/directives/tap.directive'
 import { SearchFilterPipe } from '../../../common/pipes/search.pipe'
-import { filterArray } from '../../../common/utils/functions'
 import { LayoutService } from '../../../layout/layout.service'
 import { NAVBAR_SEARCH_MODE, type NavbarGlobalSearch } from '../../../layout/navbar/interfaces/navbar-search.interface'
 import { NavbarSearchService } from '../../../layout/navbar/services/navbar-search.service'
 import { StoreService } from '../../../store/store.service'
 import { FileLocationComponent } from '../../files/components/utils/file-location.component'
-import { FileContentModel } from '../../files/models/file-content.model'
+import type { FileContentModel } from '../../files/models/file-content.model'
 import { FilesService } from '../../files/services/files.service'
 import { SPACES_PATH } from '../../spaces/spaces.constants'
 import { SEARCH_ICON, SEARCH_PATH, SEARCH_QUERY_PARAM, SEARCH_TITLE } from '../search.constants'
@@ -25,13 +23,12 @@ import { SEARCH_ICON, SEARCH_PATH, SEARCH_QUERY_PARAM, SEARCH_TITLE } from '../s
 @Component({
   selector: 'app-files-search',
   imports: [AutoResizeDirective, SearchFilterPipe, L10nTranslateDirective, TapDirective, FileLocationComponent],
-  templateUrl: './search.component.html'
+  templateUrl: './search.component.html',
+  styleUrl: './search.component.scss'
 })
 export class SearchComponent {
-  protected readonly locale = inject<L10nLocale>(L10N_LOCALE)
   protected readonly store = inject(StoreService)
   protected readonly navbarSearch = inject(NavbarSearchService)
-  protected readonly icons = { LucideMapPin }
   protected errorMessage: string = null
   protected selectedId: number = null
   private readonly router = inject(Router)
@@ -95,14 +92,7 @@ export class SearchComponent {
       })
   }
 
-  protected goTo(file?: FileContentModel, index?: number) {
-    if (!file) {
-      const files = this.store.filesSearch()
-      const query = this.navbarSearch.viewFilter()
-      const visibleFiles = query ? filterArray(query, files) : files
-      file = visibleFiles.find((_, fileIndex) => fileIndex === index)
-    }
-    if (!file) return
+  protected goTo(file: FileContentModel) {
     this.router.navigate([SPACES_PATH.SPACES, ...file.path.split('/')], { queryParams: { select: file.name } }).catch(console.error)
   }
 

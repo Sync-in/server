@@ -6,8 +6,12 @@
     <article
       (click)="selectedId = $index"
       (appTap)="goTo(file)"
+      (keydown.enter)="goTo(file)"
+      (keydown.space)="$event.preventDefault(); selectedId = $index"
       [class.selected]="$index === selectedId"
-      class="app-div-striped search-result-item">
+      class="search-result-item"
+      role="listitem"
+      tabindex="0">
       <div class="search-result-header d-flex align-items-start">
         <img [src]="file.mimeUrl" (error)="file.fallBackMimeUrl()" alt="" draggable="false" class="search-result-mime">
         <div class="search-result-meta d-flex flex-column">
