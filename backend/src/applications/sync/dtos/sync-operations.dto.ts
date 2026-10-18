@@ -9,8 +9,8 @@ export const syncDiffSchema = z.object({
   firstSync: z.boolean(),
   defaultFilters: z.array(z.string()).transform((value) => new Set(value)),
   pathFilters: z
-    .unknown()
-    .optional()
+    .string()
+    .nullish()
     .transform((value) => transformPathFilters(value)),
   snapshot: z
     .record(z.string(), z.unknown())
