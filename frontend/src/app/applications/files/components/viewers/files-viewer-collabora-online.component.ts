@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http'
-import { Component, ElementRef, inject, input, model, OnDestroy, OnInit, ViewChild } from '@angular/core'
+import { Component, ElementRef, inject, input, model, OnDestroy, OnInit, Renderer2, ViewChild } from '@angular/core'
 import { FILE_MODE } from '@sync-in-server/backend/src/applications/files/constants/operations'
 import { COLLABORA_APP_LOCK } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.constants'
 import type { CollaboraOnlineReqDto } from '@sync-in-server/backend/src/applications/files/editors/collabora-online/collabora-online.dtos'
@@ -15,8 +15,8 @@ import { fileLockPropsToString } from '../utils/file-lock.utils'
   template: `
     @if (documentServerUrl) {
       <div class="app-collabora-online-border" [style.height.px]="currentHeight()">
-        <iframe [attr.name]="frameName" class="app-viewer-iframe collabora-scaling" allow="clipboard-read *; clipboard-write *; fullscreen"></iframe>
-        <form #documentForm [action]="documentServerUrl" method="post" [attr.target]="frameName" hidden>
+        <div #frameContainer class="collabora-scaling"></div>
+        <form #documentForm [action]="documentServerUrl" method="post" hidden>
           <input type="hidden" name="ui_defaults" [value]="collaboraUiDefaults" />
         </form>
       </div>
@@ -43,12 +43,34 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient)
   private readonly filesService = inject(FilesService)
   private readonly layout = inject(LayoutService)
+  private readonly renderer = inject(Renderer2)
   private readonly store = inject(StoreService)
+  private documentFrame: HTMLIFrameElement = null
+  private documentFormElement: HTMLFormElement = null
+  private documentSubmitted = false
   private shouldReconcileMetadata = false
+
+  @ViewChild('frameContainer')
+  private set frameContainer(container: ElementRef<HTMLDivElement> | undefined) {
+    if (!container) {
+      this.documentFrame = null
+      return
+    }
+    const frame = this.renderer.createElement('iframe') as HTMLIFrameElement
+    // Chromium requires the frame name to be set before insertion for form target resolution.
+    this.renderer.setProperty(frame, 'name', this.frameName)
+    this.renderer.addClass(frame, 'app-viewer-iframe')
+    this.renderer.setAttribute(frame, 'allow', 'clipboard-read *; clipboard-write *; fullscreen')
+    this.renderer.setStyle(frame, 'height', '100%')
+    this.renderer.appendChild(container.nativeElement, frame)
+    this.documentFrame = frame
+    this.submitDocument()
+  }
 
   @ViewChild('documentForm')
   private set documentForm(form: ElementRef<HTMLFormElement> | undefined) {
-    form?.nativeElement.submit()
+    this.documentFormElement = form?.nativeElement ?? null
+    this.submitDocument()
   }
 
   ngOnInit() {
@@ -103,5 +125,12 @@ export class FilesViewerCollaboraOnlineComponent implements OnInit, OnDestroy {
       // Remove lock
       this.file().removeLock()
     }
+  }
+
+  private submitDocument() {
+    if (this.documentSubmitted || !this.documentFrame || !this.documentFormElement) return
+    this.renderer.setProperty(this.documentFormElement, 'target', this.documentFrame.name)
+    this.documentSubmitted = true
+    this.documentFormElement.submit()
   }
 }
