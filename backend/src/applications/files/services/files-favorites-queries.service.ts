@@ -15,7 +15,7 @@ import { syncPaths } from '../../sync/schemas/sync-paths.schema.js'
 import { FILE_REPOSITORY } from '../constants/operations.js'
 import type { FileFavorite, FileFavoriteLocation, FileFavoriteRepository } from '../schemas/file-favorite.interface.js'
 import { filesFavorites } from '../schemas/files-favorites.schema.js'
-import { filePathSQL, files } from '../schemas/files.schema.js'
+import { childPathMatch, filePathSQL, files, replacePathPrefix } from '../schemas/files.schema.js'
 
 @Injectable()
 export class FilesFavoritesQueries {
@@ -84,6 +84,7 @@ export class FilesFavoritesQueries {
     const directSpaceRoot: any = alias(spacesRoots, 'favoriteDirectSpaceRoot')
     const anchoredSpaceRoot: any = alias(spacesRoots, 'favoriteAnchoredSpaceRoot')
     const spaceRootFile: any = alias(files, 'favoriteSpaceRootFile')
+    const spaceRootFilePath = filePathSQL(spaceRootFile)
     const fileFromSpaceRoot = or(
       eq(files.id, spaceRootFile.id),
       and(
@@ -94,7 +95,7 @@ export class FilesFavoritesQueries {
         sql`${files.ownerId} <=> ${spaceRootFile.ownerId}`,
         sql`${files.spaceExternalRootId} <=> ${spaceRootFile.spaceExternalRootId}`,
         sql`${files.shareExternalId} <=> ${spaceRootFile.shareExternalId}`,
-        sql`LEFT(CONCAT(${files.path}, '/'), CHAR_LENGTH(${filePathSQL(spaceRootFile)}) + 1) = CONCAT(${filePathSQL(spaceRootFile)}, '/')`
+        childPathMatch(files.path, spaceRootFilePath)
       )
     )
     const directFiles = this.db
@@ -130,7 +131,7 @@ export class FilesFavoritesQueries {
             IF (
               ${files.id} = ${spaceRootFile.id},
               NULL,
-              CONCAT(${anchoredSpaceRoot.alias}, SUBSTRING(${files.path}, CHAR_LENGTH(${filePathSQL(spaceRootFile)}) + 1))
+              ${replacePathPrefix(files.path, spaceRootFilePath, anchoredSpaceRoot.alias)}
             )
           )
         `.as('path'),
@@ -156,8 +157,9 @@ export class FilesFavoritesQueries {
     const spaceShareRoot: any = alias(spacesRoots, 'favoriteSpaceShareRoot')
     const externalShareSpaceRoot: any = alias(spacesRoots, 'favoriteExternalShareSpaceRoot')
     const externalSpaceRoot: any = alias(spacesRoots, 'favoriteExternalSpaceRoot')
-    const fileFromRoot = (rootFile: any) =>
-      or(
+    const fileFromRoot = (rootFile: any) => {
+      const rootFilePath = filePathSQL(rootFile)
+      return or(
         eq(files.id, rootFile.id),
         and(
           eq(rootFile.isDir, true),
@@ -167,11 +169,13 @@ export class FilesFavoritesQueries {
           sql`${files.ownerId} <=> ${rootFile.ownerId}`,
           sql`${files.spaceExternalRootId} <=> ${rootFile.spaceExternalRootId}`,
           sql`${files.shareExternalId} <=> ${rootFile.shareExternalId}`,
-          sql`LEFT(CONCAT(${files.path}, '/'), CHAR_LENGTH(${filePathSQL(rootFile)}) + 1) = CONCAT(${filePathSQL(rootFile)}, '/')`
+          childPathMatch(files.path, rootFilePath)
         )
       )
-    const rootLocationSelect = (rootFile: any, spaceRoot: any) =>
-      ({
+    }
+    const rootLocationSelect = (rootFile: any, spaceRoot: any) => {
+      const rootFilePath = filePathSQL(rootFile)
+      return {
         fileId: sql<number>`${files.id}`.as('fileId'),
         repository: sql<FileFavoriteRepository>`${FILE_REPOSITORY.SHARE}`.as('repository'),
         path: sql<string>`
@@ -179,7 +183,7 @@ export class FilesFavoritesQueries {
             IF (
               ${files.id} = ${rootFile.id},
               NULL,
-              CONCAT(${shares.alias}, SUBSTRING(${files.path}, CHAR_LENGTH(${filePathSQL(rootFile)}) + 1))
+              ${replacePathPrefix(files.path, rootFilePath, shares.alias)}
             )
           )
         `.as('path'),
@@ -187,7 +191,8 @@ export class FilesFavoritesQueries {
         displayRootName: sql<string>`${shares.name}`.as('displayRootName'),
         contextId: sql<number>`${shares.id}`.as('contextId'),
         rootId: sql<number>`COALESCE(${spaceRoot.id}, 0)`.as('rootId')
-      }) satisfies Record<keyof FileFavoriteLocation, any>
+      } satisfies Record<keyof FileFavoriteLocation, any>
+    }
     const externalLocationSelect = (spaceRoot: any) =>
       ({
         fileId: sql<number>`${files.id}`.as('fileId'),

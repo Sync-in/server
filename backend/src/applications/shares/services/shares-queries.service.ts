@@ -22,7 +22,7 @@ import { fileHasCommentsSubquerySQL } from '../../comments/schemas/comments.sche
 import type { FileProps } from '../../files/interfaces/file-props.interface.js'
 import type { FileSpace } from '../../files/interfaces/file-space.interface.js'
 import { filesFavorites } from '../../files/schemas/files-favorites.schema.js'
-import { filePathSQL, files } from '../../files/schemas/files.schema.js'
+import { childPathMatch, filePathSQL, files, replacePathPrefix } from '../../files/schemas/files.schema.js'
 import { links } from '../../links/schemas/links.schema.js'
 import type { SpaceBrowseDetails } from '../../spaces/interfaces/space-files.interface.js'
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
@@ -1024,6 +1024,15 @@ export class SharesQueries {
     const parentShareFile: any = alias(files, 'parentShareFile')
     const childShareFromRoot: any = alias(spacesRoots, 'childShareFromRoot')
     const shareMembers: any = alias(sharesMembers, 'shareMembers')
+    const selectedFilePath = filePathSQL(files)
+    const shareRootFilePath = filePathSQL(shareRootFile)
+    const parentShareFilePath = filePathSQL(parentShareFile)
+    const relativeFilePathFromRoot = (rootFilePath: SQL<string>): SQL<string> =>
+      sql`IF (
+        ${and(childPathMatch(selectedFilePath, rootFilePath), sql`CHAR_LENGTH(${selectedFilePath}) > CHAR_LENGTH(${rootFilePath})`)},
+        ${replacePathPrefix(selectedFilePath, sql`CONCAT(${rootFilePath}, '/')`, '')},
+        ${selectedFilePath}
+      )`
     const selectFile = {
       id: sql`IF (${shares.fileId} IS NULL AND ${shareRootFile.id} IS NOT NULL,
                   ${shareRootFile.id}, ${files.id})`.as('fileId'),
@@ -1034,11 +1043,11 @@ export class SharesQueries {
                     IF(${childShareFromRoot.id} IS NOT NULL
                            OR ${shares.fileId} = ${parentShare.fileId}, ${parentShare.name}, ${files.name}))`.as('fileName'),
       path: sql`IF (${shareRootFile.id} IS NOT NULL AND ${shares.fileId} IS NOT NULL,
-                    REGEXP_REPLACE(${filePathSQL(files)}, CONCAT(${filePathSQL(shareRootFile)}, '/'), ''),
+                    ${relativeFilePathFromRoot(shareRootFilePath)},
                     IF(${parentShareFile.id} IS NOT NULL AND ${shares.fileId} IS NOT NULL,
                        IF(${parentShareFile.id} = ${shares.fileId}, '.',
-                          REGEXP_REPLACE(${filePathSQL(files)}, CONCAT(${filePathSQL(parentShareFile)}, '/'), '')),
-                       IF(${shares.fileId} IS NOT NULL, ${filePathSQL(files)}, '.')))`.as('filePath'),
+                          ${relativeFilePathFromRoot(parentShareFilePath)}),
+                       IF(${shares.fileId} IS NOT NULL, ${selectedFilePath}, '.')))`.as('filePath'),
       isDir: sql`IF (${shares.fileId} IS NULL AND ${shares.spaceRootId} IS NOT NULL,
                      ${shareRootFile.isDir}, ${files.isDir})`.as('fileIsDir'),
       inTrash: sql`IF (${shares.fileId} IS NULL AND ${shares.spaceRootId} IS NOT NULL,
