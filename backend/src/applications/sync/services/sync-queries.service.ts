@@ -9,7 +9,7 @@ import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
 import { concatDistinctObjectsInArray, dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils.js'
-import { filePathSQL, files } from '../../files/schemas/files.schema.js'
+import { childPathMatch, filePathSQL, files, replacePathPrefix } from '../../files/schemas/files.schema.js'
 import { shares } from '../../shares/schemas/shares.schema.js'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema.js'
 import { spaces } from '../../spaces/schemas/spaces.schema.js'
@@ -162,6 +162,18 @@ export class SyncQueries {
   getPaths(clientId: string): Promise<{ id: number; settings: SyncPathSettings; remotePath: string }[]> {
     const shareFile: any = alias(files, 'shareFile')
     const spaceRootFile: any = alias(files, 'spaceRootFile')
+    const shareFilePath = filePathSQL(shareFile)
+    const spaceRootFilePath = filePathSQL(spaceRootFile)
+    const spacePath = sql`IF (
+      ${childPathMatch(files.path, spaceRootFilePath)},
+      ${replacePathPrefix(files.path, spaceRootFilePath, spacesRoots.alias)},
+      ${files.path}
+    )`
+    const sharePath = sql`IF (
+      ${childPathMatch(files.path, shareFilePath)},
+      ${replacePathPrefix(files.path, shareFilePath, shares.alias)},
+      ${files.path}
+    )`
     return this.db
       .select({
         id: syncPaths.id,
@@ -178,7 +190,7 @@ export class SyncQueries {
                             ELSE
                               IF (${spacesRoots.externalPath} IS NOT NULL, 
                                 CONCAT_WS('/', ${spacesRoots.alias}, IF (${files.path} = '.', NULL, ${files.path}), ${files.name}), 
-                                CONCAT_WS('/', REGEXP_REPLACE(${files.path}, ${filePathSQL(spaceRootFile)}, ${spacesRoots.alias}), ${files.name})
+                                CONCAT_WS('/', ${spacePath}, ${files.name})
                               )
                             END
                      END
@@ -188,7 +200,7 @@ export class SyncQueries {
                     CASE WHEN ${syncPaths.fileId} IS NULL THEN ${shares.alias}
                          ELSE 
                          IF (${shareFile.id} IS NOT NULL,
-                              IF (${files.id} = ${shareFile.id}, NULL, REGEXP_REPLACE(${files.path}, ${filePathSQL(shareFile)}, ${shares.alias})),
+                              IF (${files.id} = ${shareFile.id}, NULL, ${sharePath}),
                               CONCAT_WS('/', ${shares.alias}, IF (${files.path} = '.', NULL, ${files.path}))
                          )
                     END,

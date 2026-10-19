@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common'
-import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, ne, or, SQL, sql, type SQLWrapper } from 'drizzle-orm'
+import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, ne, or, SQL, sql } from 'drizzle-orm'
 import { alias, union } from 'drizzle-orm/mysql-core'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
 import { dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils.js'
-import { filePathSQL, files } from '../../files/schemas/files.schema.js'
+import { childPathMatch, filePathSQL, files, replacePathPrefix } from '../../files/schemas/files.schema.js'
 import { UserMailNotification } from '../../notifications/interfaces/user-mail-notification.interface.js'
 import { shares } from '../../shares/schemas/shares.schema.js'
 import { externalShareScopeSQL } from '../../shares/utils/external-share-scope.sql.js'
@@ -20,23 +20,6 @@ import { COMMENTS_RECENTS_MAX_LIMIT } from '../constants/recents.js'
 import { CommentRecent } from '../interfaces/comment-recent.interface.js'
 import type { Comment } from '../schemas/comment.interface.js'
 import { comments } from '../schemas/comments.schema.js'
-
-// Builds a REGEXP source that matches `value` as literal text. Characters with a
-// special meaning in a REGEXP source (`. ^ $ ( ) [ ] * + ? | \`) are escaped so
-// a file name or path is matched literally instead of being read as a pattern,
-// which otherwise makes the query fail with a REGEXP syntax error.
-// The escaping is applied in SQL rather than in a JS string so that no
-// metacharacter is lost to drizzle's parameter binding.
-export const literalRegexpSource = (value: SQLWrapper): SQLWrapper => {
-  // Order matters: the backslash must be escaped first so that the backslashes
-  // introduced by later replacements are not escaped a second time.
-  const METACHARACTERS = ['\\', '.', '^', '$', '(', ')', '[', ']', '*', '+', '|']
-  let escaped: SQLWrapper = value
-  for (const metacharacter of METACHARACTERS) {
-    escaped = sql`REPLACE(${escaped}, ${metacharacter}, ${'\\' + metacharacter})`
-  }
-  return escaped
-}
 
 @Injectable()
 export class CommentsQueries {
@@ -119,6 +102,7 @@ export class CommentsQueries {
 
   getRecentsFromShares(userId: number, shareIds: number[], limit: number) {
     const shareFile: any = alias(files, 'shareFile')
+    const shareFilePath = filePathSQL(shareFile)
     const externalShareTargets = this.db
       .select({ id: shares.id, parentId: shares.parentId, externalPath: shares.externalPath })
       .from(shares)
@@ -137,7 +121,7 @@ export class CommentsQueries {
           path: sql<string>`
           CONCAT_WS('/', ${SPACE_REPOSITORY.SHARES},
             IF (${shareFile.id} IS NOT NULL,
-              IF (${files.id} = ${shareFile.id}, NULL, REGEXP_REPLACE(${files.path}, ${filePathSQL(shareFile)}, ${shares.alias})),
+              IF (${files.id} = ${shareFile.id}, NULL, ${replacePathPrefix(files.path, shareFilePath, shares.alias)}),
               CONCAT_WS('/', ${shares.alias}, IF (${files.path} = '.', NULL, ${files.path}))
             )
           )`.as('path'),
@@ -170,7 +154,7 @@ export class CommentsQueries {
             sql`${files.ownerId} <=> ${shareFile.ownerId}`,
             sql`${files.spaceExternalRootId} <=> ${shareFile.spaceExternalRootId}`,
             sql`${files.shareExternalId} <=> ${shareFile.shareExternalId}`,
-            sql`${files.path} REGEXP CONCAT('^', ${literalRegexpSource(sql`IF(${shareFile.path} = '.', ${shareFile.name}, ${shareFile.path})`)}, '(/.*|)$')`
+            childPathMatch(files.path, shareFilePath)
           )
         )
       )
@@ -214,6 +198,18 @@ export class CommentsQueries {
 
   getRecentsFromSpaces(userId: number, spaceIds: number[], limit: number) {
     const spaceRootFile: any = alias(files, 'spaceRootFile')
+    const spaceRootFilePath = filePathSQL(spaceRootFile)
+    const fileFromSpaceRoot = or(
+      eq(files.id, spaceRootFile.id),
+      and(
+        isNotNull(spaceRootFile.id),
+        eq(spaceRootFile.isDir, true),
+        // A file moved to trash leaves the storage scope of its former anchored root.
+        eq(files.inTrash, spaceRootFile.inTrash),
+        sql`${files.ownerId} <=> ${spaceRootFile.ownerId}`,
+        childPathMatch(files.path, spaceRootFilePath)
+      )
+    )
     return this.db
       .select({
         id: comments.id,
@@ -226,8 +222,8 @@ export class CommentsQueries {
           CONCAT_WS('/', 
             IF (${files.inTrash} = 0, ${SPACE_REPOSITORY.FILES}, ${SPACE_REPOSITORY.TRASH}),
             IF (${files.ownerId} = ${userId}, ${SPACE_ALIAS.PERSONAL}, ${spaces.alias}),
-            IF (${spaceRootFile.id} IS NOT NULL,
-                IF (${files.id} = ${spaceRootFile.id}, NULL, IF (${files.path} = '.', NULL, REGEXP_REPLACE(${files.path}, ${filePathSQL(spaceRootFile)}, ${spacesRoots.alias}))),
+            IF (${fileFromSpaceRoot},
+                IF (${files.id} = ${spaceRootFile.id}, NULL, IF (${files.path} = '.', NULL, ${replacePathPrefix(files.path, spaceRootFilePath, spacesRoots.alias)})),
                 NULLIF(CONCAT_WS('/', IF (${files.spaceExternalRootId} = ${spacesRoots.id}, ${spacesRoots.alias}, NULL), IF (${files.path} = '.', NULL, ${files.path})), '')
             )
           )`.as('path'),
@@ -246,17 +242,8 @@ export class CommentsQueries {
         or(
           // all files from spaces
           eq(files.spaceId, spaces.id),
-          // all files from space roots
-          eq(files.id, spacesRoots.fileId),
-          // all files under the space roots
-          and(
-            isNotNull(spaceRootFile.id),
-            eq(spaceRootFile.isDir, true),
-            // A file moved to trash leaves the storage scope of its former anchored root.
-            eq(files.inTrash, spaceRootFile.inTrash),
-            sql`${files.ownerId} <=> ${spaceRootFile.ownerId}`,
-            sql`${files.path} REGEXP CONCAT('^', ${literalRegexpSource(sql`IF(${spaceRootFile.path} = '.', ${spaceRootFile.name}, ${spaceRootFile.path})`)}, '(/.*|)$')`
-          )
+          // all files from or under the space roots
+          fileFromSpaceRoot
         )
       )
       .innerJoin(comments, and(eq(comments.fileId, files.id), ne(comments.userId, userId)))
