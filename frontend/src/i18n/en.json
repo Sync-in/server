@@ -22,6 +22,7 @@
   "delete_one_file": "Do you want to permanently delete <b>{{arg}}</b> ?",
   "trash_multiple_files": "Would you like to move <b>{{arg}} files</b> to trash ?",
   "delete_multiple_files": "Do you want to permanently delete these <b>{{arg}} files</b> ?",
+  "rename_file_to_existing": "Do you want to rename <b>{{ old }}</b> to <b>{{ new }}</b> ?",
   "scheduler_unit_hour": "hours",
   "scheduler_unit_minute": "minutes",
   "scheduler_unit_day": "days",
