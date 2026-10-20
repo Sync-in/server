@@ -26,6 +26,8 @@ export class TapDirective implements OnDestroy {
   @Input() doubleTapSlop = 24
   /** Enables or disables double-tap detection */
   @Input() enableDoubleTap = true
+  /** Emits a single tap immediately for touch pointers. */
+  @Input() singleTapOnTouch = false
   /**
    * ⚙️ Hammer-like behavior control.
    * false → STRICT Hammer mode: no single tap is emitted if the second tap does not occur (default)
@@ -177,6 +179,11 @@ export class TapDirective implements OnDestroy {
     const now = performance.now()
     const x = ev.clientX
     const y = ev.clientY
+
+    if (this.singleTapOnTouch && ev.pointerType === 'touch') {
+      this.emit('single', x, y, ev)
+      return
+    }
 
     if (!this.enableDoubleTap) {
       this.emit('single', x, y, ev)

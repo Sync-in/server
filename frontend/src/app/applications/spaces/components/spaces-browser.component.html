@@ -291,6 +291,7 @@
           <div (click)="onSelect($event, f)"
                (contextmenu)="onTargetContextMenu($event, f)"
                (appTap)="browse(f)"
+               [singleTapOnTouch]="true"
                [class.disabled]="f.isDisabled"
                [class.deleted]="f.isBeingDeleted"
                [class.selected]="f.isSelected"
@@ -463,6 +464,7 @@
           <tr (click)="onSelect($event, f)"
               (contextmenu)="onTargetContextMenu($event, f)"
               (appTap)="browse(f)"
+              [singleTapOnTouch]="true"
               [class.disabled]="f.isDisabled"
               [class.deleted]="f.isBeingDeleted"
               [class.selected]="f.isSelected">
