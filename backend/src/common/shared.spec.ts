@@ -1,4 +1,4 @@
-import { createCacheKeySlug, createSlug, InvalidSlugError, stripMatchingQuotes } from './shared.js'
+import { createCacheKeySlug, createLightSlug, createSlug, InvalidSlugError, stripMatchingQuotes } from './shared.js'
 
 describe(createSlug.name, () => {
   it.each([
@@ -7,17 +7,87 @@ describe(createSlug.name, () => {
     ['Hello.world', 'hello-world'],
     ['Hello/world', 'hello-world'],
     ['Hello\\world', 'hello-world'],
-    ['Équipe 東京', 'equipe-東京']
+    ['Équipe 東京', 'equipe-東京'],
+    ['foo\ufe0f', 'foo'],
+    ['foo\ufe0fbar', 'foo-bar'],
+    ['ﬃ'.repeat(86), 'ﬃ'.repeat(86)],
+    ['ＦＯＯ １２３', 'ｆｏｏ-１２３'],
+    ['İ I ı', 'i-i-ı'],
+    ['\u0301東京 / \u093f hello', '東京-hello'],
+    ['कि', 'क'],
+    ['قُرْآن', 'ق-ر-ا-ن'],
+    ['Équipe (Paris)', 'equipe-paris'],
+    ['Équipe (Paris) + 東京', 'equipe-paris-東京'],
+    ['Rapport n°42', 'rapport-n-42'],
+    ['Photos 📷', 'photos'],
+    ['  Team__Root--- Folder  ', 'team-root-folder']
   ])('should convert %s to %s', (value, expectedValue) => {
     expect(createSlug(value)).toBe(expectedValue)
+    expect(createSlug(expectedValue)).toBe(expectedValue)
+  })
+
+  it.each([
+    ['cafe\u0301', 'café', 'cafe'],
+    ['か\u3099', 'が', 'か'],
+    ['\u1100\u1161', '가', '\u1100\u1161']
+  ])('should normalize %s and %s to the same alias', (decomposed, composed, expectedValue) => {
+    expect(createSlug(decomposed)).toBe(expectedValue)
+    expect(createSlug(composed)).toBe(expectedValue)
+  })
+
+  it.each([
+    ['\u200chello\u200d', 'hello'],
+    ['hello\u200cworld', 'hello-world'],
+    ['1\u200d2', '1-2'],
+    ['क्\u200d\u200dष', 'क-ष'],
+    ['\ufe0f東京', '東京']
+  ])('should treat join controls and variation selectors as separators in %s', (value, expectedValue) => {
+    expect(createSlug(value)).toBe(expectedValue)
+  })
+
+  it.each([
+    '.',
+    '/',
+    '\\',
+    ':',
+    '*',
+    '?',
+    '"',
+    '<',
+    '>',
+    '|',
+    '#',
+    '%',
+    ';',
+    '(',
+    ')',
+    '+',
+    '\u0000',
+    '\u001f',
+    '\u007f',
+    '\u009f',
+    '\u202e',
+    '\ud800',
+    '\udfff'
+  ])('should separate Unicode words around %j', (character) => {
+    expect(createSlug(`Équipe${character}Paris`)).toBe('equipe-paris')
   })
 
   it('should remove a numeric suffix when requested', () => {
     expect(createSlug('workspace-2', true)).toBe('workspace')
   })
 
-  it.each(['', '.', '..', '---', '___'])('should reject an empty slug generated from %s', (value) => {
-    expect(() => createSlug(value)).toThrow(InvalidSlugError)
+  it.each(['', '.', '..', '---', '___', '📷', '\u0301', '\u093f', '\u180b', '\u{e0100}', '\u200c\u200d'])(
+    'should reject a slug without any letters or numbers generated from %s',
+    (value) => {
+      expect(() => createSlug(value)).toThrow(InvalidSlugError)
+    }
+  )
+})
+
+describe(createLightSlug.name, () => {
+  it('should keep removing accents for authentication and application-password names', () => {
+    expect(createLightSlug(' ÉQUIPE CAFÉ ')).toBe('equipe cafe')
   })
 })
 
