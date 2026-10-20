@@ -4,7 +4,7 @@ import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { escapePath } from '../../../common/functions.js'
-import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
+import { DB_CHARSET, DB_PATH_COLLATION, DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { FILE_REPOSITORY } from '../constants/operations.js'
 import { FileTrash } from '../schemas/file-trash.interface.js'
 import { createTableFilesTrash } from '../schemas/files-trash.schema.js'
@@ -82,6 +82,18 @@ describe(FilesTrashRetention.name, () => {
     expect(schema).toContain('INDEX is_dir_deleted_at (isDir, deletedAt)')
     expect(schema).toContain('seen_run_id varchar(64)')
     expect(schema).toContain('INDEX seen_run_id (seen_run_id)')
+  })
+
+  it('should use the shared NO PAD collation as the default for the whole trash table', () => {
+    const schema = dialect.sqlToQuery(createTableFilesTrash('files_trash_user_1')).sql
+
+    expect(schema).toContain('path    varchar(4096) NOT NULL')
+    expect(schema).not.toContain('path    varchar(4096) CHARACTER SET')
+    expect(schema).toContain('INDEX path_prefix (path(768))')
+    expect(schema).toContain(`CHARACTER SET ${DB_CHARSET}`)
+    expect(schema).toContain(`COLLATE ${DB_PATH_COLLATION};`)
+    expect(schema).not.toContain('utf8mb4_general_ci')
+    expect(schema.split(DB_PATH_COLLATION)).toHaveLength(2)
   })
 
   it('should escape trash table names as identifiers', () => {

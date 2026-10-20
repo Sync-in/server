@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url'
 const moduleDir = path.dirname(fileURLToPath(import.meta.url))
 
 export const DB_CHARSET = 'utf8mb4'
+// Changing this collation after deployment also requires a new database migration.
+export const DB_PATH_COLLATION = 'utf8mb4_uca1400_nopad_as_ci'
 export const DB_TOKEN_PROVIDER = 'DB'
 export const DB_SESSION_INIT_QUERIES = [
   // Use UTC for SQL date/time functions and TIMESTAMP values.
@@ -25,5 +27,5 @@ export function getSchemaPath(): string {
     }
   }
 
-  throw new Error('No schema.ts or schema.js file found !')
+  throw new Error('No schema.[ts|js] file found !')
 }

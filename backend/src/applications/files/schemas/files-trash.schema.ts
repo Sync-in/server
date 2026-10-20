@@ -1,14 +1,14 @@
 import { SQL, sql } from 'drizzle-orm'
+import { DB_CHARSET, DB_PATH_COLLATION } from '../../../infrastructure/database/constants.js'
 
 export const FILES_TRASH_TABLE_PREFIX = 'files_trash_' as const
 
-// The utf8mb4_uca1400_ai_ci COLLATE is better for precision but slower
 export function createTableFilesTrash(tableName: string): SQL {
   return sql`
       CREATE TABLE IF NOT EXISTS ${sql.identifier(tableName)}
       (
           id      bigint unsigned NOT NULL,
-          path    varchar(4096)   NOT NULL,
+          path    varchar(4096) NOT NULL,
           isDir   boolean         NOT NULL,
           deletedAt date          NOT NULL DEFAULT CURRENT_DATE,
           seen_run_id varchar(64),
@@ -16,6 +16,6 @@ export function createTableFilesTrash(tableName: string): SQL {
           INDEX is_dir_deleted_at (isDir, deletedAt),
           INDEX path_prefix (path(768)),
           INDEX seen_run_id (seen_run_id)
-      ) CHARACTER SET utf8mb4
-        COLLATE utf8mb4_general_ci;`
+      ) CHARACTER SET ${sql.raw(DB_CHARSET)}
+        COLLATE ${sql.raw(DB_PATH_COLLATION)};`
 }

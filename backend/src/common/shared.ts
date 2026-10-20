@@ -53,8 +53,14 @@ export function createSlug(input: string, replaceCount = false): string {
 }
 
 export function createCacheKeySlug(args: unknown[]) {
+  // Keep accents distinct while sharing keys across case and canonical Unicode forms.
   // Cache patterns intentionally preserve metacharacters such as `*`.
-  return createLightSlug(args.map((arg) => (arg == null ? 'null' : String(arg))).join(' '))
+  return args
+    .map((arg) => (arg == null ? 'null' : String(arg)))
+    .join(' ')
+    .toLowerCase()
+    .trim()
+    .normalize('NFC')
     .replace(/[\s_-]+/g, '-')
     .replace(/^-+|-+$/g, '')
 }
