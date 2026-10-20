@@ -4,7 +4,7 @@ import { alias, union } from 'drizzle-orm/mysql-core'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import type { DBSchema } from '../../../infrastructure/database/interfaces/database.interface.js'
 import { dbCheckAffectedRows, dbGetInsertedId } from '../../../infrastructure/database/utils.js'
-import { filePathSQL, files } from '../../files/schemas/files.schema.js'
+import { childPathMatch, filePathSQL, files, replacePathPrefix } from '../../files/schemas/files.schema.js'
 import { UserMailNotification } from '../../notifications/interfaces/user-mail-notification.interface.js'
 import { shares } from '../../shares/schemas/shares.schema.js'
 import { externalShareScopeSQL } from '../../shares/utils/external-share-scope.sql.js'
@@ -102,6 +102,7 @@ export class CommentsQueries {
 
   getRecentsFromShares(userId: number, shareIds: number[], limit: number) {
     const shareFile: any = alias(files, 'shareFile')
+    const shareFilePath = filePathSQL(shareFile)
     const externalShareTargets = this.db
       .select({ id: shares.id, parentId: shares.parentId, externalPath: shares.externalPath })
       .from(shares)
@@ -120,7 +121,7 @@ export class CommentsQueries {
           path: sql<string>`
           CONCAT_WS('/', ${SPACE_REPOSITORY.SHARES},
             IF (${shareFile.id} IS NOT NULL,
-              IF (${files.id} = ${shareFile.id}, NULL, REGEXP_REPLACE(${files.path}, ${filePathSQL(shareFile)}, ${shares.alias})),
+              IF (${files.id} = ${shareFile.id}, NULL, ${replacePathPrefix(files.path, shareFilePath, shares.alias)}),
               CONCAT_WS('/', ${shares.alias}, IF (${files.path} = '.', NULL, ${files.path}))
             )
           )`.as('path'),
@@ -153,7 +154,7 @@ export class CommentsQueries {
             sql`${files.ownerId} <=> ${shareFile.ownerId}`,
             sql`${files.spaceExternalRootId} <=> ${shareFile.spaceExternalRootId}`,
             sql`${files.shareExternalId} <=> ${shareFile.shareExternalId}`,
-            sql`${files.path} REGEXP CONCAT('^', IF(${shareFile.path} = '.', CONCAT(${shareFile.name}, '(/.*|)$'), CONCAT(${shareFile.path}, '/')))`
+            childPathMatch(files.path, shareFilePath)
           )
         )
       )
@@ -197,6 +198,18 @@ export class CommentsQueries {
 
   getRecentsFromSpaces(userId: number, spaceIds: number[], limit: number) {
     const spaceRootFile: any = alias(files, 'spaceRootFile')
+    const spaceRootFilePath = filePathSQL(spaceRootFile)
+    const fileFromSpaceRoot = or(
+      eq(files.id, spaceRootFile.id),
+      and(
+        isNotNull(spaceRootFile.id),
+        eq(spaceRootFile.isDir, true),
+        // A file moved to trash leaves the storage scope of its former anchored root.
+        eq(files.inTrash, spaceRootFile.inTrash),
+        sql`${files.ownerId} <=> ${spaceRootFile.ownerId}`,
+        childPathMatch(files.path, spaceRootFilePath)
+      )
+    )
     return this.db
       .select({
         id: comments.id,
@@ -209,8 +222,8 @@ export class CommentsQueries {
           CONCAT_WS('/', 
             IF (${files.inTrash} = 0, ${SPACE_REPOSITORY.FILES}, ${SPACE_REPOSITORY.TRASH}),
             IF (${files.ownerId} = ${userId}, ${SPACE_ALIAS.PERSONAL}, ${spaces.alias}),
-            IF (${spaceRootFile.id} IS NOT NULL,
-                IF (${files.id} = ${spaceRootFile.id}, NULL, IF (${files.path} = '.', NULL, REGEXP_REPLACE(${files.path}, ${filePathSQL(spaceRootFile)}, ${spacesRoots.alias}))),
+            IF (${fileFromSpaceRoot},
+                IF (${files.id} = ${spaceRootFile.id}, NULL, IF (${files.path} = '.', NULL, ${replacePathPrefix(files.path, spaceRootFilePath, spacesRoots.alias)})),
                 NULLIF(CONCAT_WS('/', IF (${files.spaceExternalRootId} = ${spacesRoots.id}, ${spacesRoots.alias}, NULL), IF (${files.path} = '.', NULL, ${files.path})), '')
             )
           )`.as('path'),
@@ -229,17 +242,8 @@ export class CommentsQueries {
         or(
           // all files from spaces
           eq(files.spaceId, spaces.id),
-          // all files from space roots
-          eq(files.id, spacesRoots.fileId),
-          // all files under the space roots
-          and(
-            isNotNull(spaceRootFile.id),
-            eq(spaceRootFile.isDir, true),
-            // A file moved to trash leaves the storage scope of its former anchored root.
-            eq(files.inTrash, spaceRootFile.inTrash),
-            sql`${files.ownerId} <=> ${spaceRootFile.ownerId}`,
-            sql`${files.path} REGEXP CONCAT('^', IF(${spaceRootFile.path} = '.', CONCAT(${spaceRootFile.name}, '(/.*|)$'), CONCAT(${spaceRootFile.path}, '/')))`
-          )
+          // all files from or under the space roots
+          fileFromSpaceRoot
         )
       )
       .innerJoin(comments, and(eq(comments.fileId, files.id), ne(comments.userId, userId)))

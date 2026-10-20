@@ -1,4 +1,4 @@
-import { SQL, sql, SQLWrapper } from 'drizzle-orm'
+import { SQL, sql, type SQLWrapper } from 'drizzle-orm'
 import { AnyMySqlColumn, bigint, boolean, index, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
 import { shares } from '../../shares/schemas/shares.schema.js'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema.js'
@@ -56,13 +56,16 @@ export const filePathSQL = (file: any): SQL<string> => sql`
   )
 `
 
-// Appending '/' handles both an exact path and its descendants while keeping trailing spaces significant with PAD SPACE collations.
-export const childPathMatch = (pathSQL: SQLWrapper, path: string): SQL<string> =>
+// Appending '/' handles both an exact path and its descendants while keeping trailing spaces significant.
+export const childPathMatch = (pathSQL: SQLWrapper, path: string | SQLWrapper): SQL<string> =>
   sql`LEFT(CONCAT(${pathSQL}, '/'), CHAR_LENGTH(${path}) + 1) = CONCAT(${path}, '/')`
 
 // Applies the literal path-boundary match to the path stored on file records.
 export const childFilesMatch = (path: string): SQL<string> => childPathMatch(files.path, path)
 
 // Replaces a previously matched source prefix while preserving the remaining child-path suffix.
-export const childFilesReplacePath = (srcPath: string, dstPath: string): SQL<string> =>
-  sql`CONCAT(${dstPath}, SUBSTRING(${files.path}, CHAR_LENGTH(${srcPath}) + 1))`
+export const replacePathPrefix = (pathSQL: SQLWrapper, srcPath: string | SQLWrapper, dstPath: string | SQLWrapper): SQL<string> =>
+  sql`CONCAT(${dstPath}, SUBSTRING(${pathSQL}, CHAR_LENGTH(${srcPath}) + 1))`
+
+// Applies the literal prefix replacement to the path stored on file records.
+export const childFilesReplacePath = (srcPath: string, dstPath: string): SQL<string> => replacePathPrefix(files.path, srcPath, dstPath)

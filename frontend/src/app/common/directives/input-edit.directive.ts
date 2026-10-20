@@ -16,6 +16,7 @@ export class InputEditDirective implements OnInit {
   @Output() renamingInProgress = new EventEmitter<boolean>(true)
   private readonly elementRef = inject(ElementRef)
   private readonly renderer = inject(Renderer2)
+  private editFinished = false
   private dangerColor = '#dd4b39'
   private primaryColor = '#3c8dbc'
 
@@ -90,6 +91,7 @@ export class InputEditDirective implements OnInit {
   }
 
   private validateInput() {
+    if (this.editFinished) return
     if (!this.elementRef.nativeElement.value) {
       this.setIncorrectForm()
     } else {
@@ -114,6 +116,8 @@ export class InputEditDirective implements OnInit {
   }
 
   private disableEdit() {
+    if (this.editFinished) return
+    this.editFinished = true
     this.setParentDraggable('true')
     this.renamingInProgress.emit(false)
     setTimeout(() => (this.inputObject.isRenamed = false), 100)
