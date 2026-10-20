@@ -1,4 +1,4 @@
-import { Component, inject, OnDestroy } from '@angular/core'
+import { AfterViewChecked, AfterViewInit, Component, ElementRef, inject, OnDestroy, ViewChild } from '@angular/core'
 import { RouterLink, RouterLinkActive } from '@angular/router'
 import type { LucideIcon } from '@lucide/angular'
 import { LucideChevronRight, LucideDynamicIcon } from '@lucide/angular'
@@ -11,12 +11,15 @@ import { BreadCrumbUrl } from './breadcrumb.interfaces'
   templateUrl: 'breadcrumb.component.html',
   imports: [RouterLink, RouterLinkActive, LucideDynamicIcon]
 })
-export class BreadcrumbComponent implements OnDestroy {
+export class BreadcrumbComponent implements AfterViewChecked, AfterViewInit, OnDestroy {
+  @ViewChild('breadcrumbContent') private breadcrumbContent!: ElementRef<HTMLDivElement>
   protected readonly icons = { LucideChevronRight }
   protected breadcrumbIcon: LucideIcon = null
   protected levels: { link: string[] | string; title: string }[] = []
   private readonly layout = inject(LayoutService)
   private subscriptions: Subscription[] = []
+  private scrollToCurrentFolder = false
+  private resizeObserver: ResizeObserver | null = null
 
   constructor() {
     this.subscriptions.push(this.layout.breadcrumbNav.subscribe((url) => this.updateNav(url)))
@@ -25,9 +28,33 @@ export class BreadcrumbComponent implements OnDestroy {
 
   ngOnDestroy() {
     this.subscriptions.forEach((s) => s.unsubscribe())
+    this.resizeObserver?.disconnect()
+  }
+
+  ngAfterViewInit() {
+    const content = this.breadcrumbContent?.nativeElement
+    if (content) {
+      this.resizeObserver = new ResizeObserver(() => this.updateOverflow(content))
+      this.resizeObserver.observe(content)
+      this.updateOverflow(content)
+    }
+  }
+
+  ngAfterViewChecked() {
+    const content = this.breadcrumbContent?.nativeElement
+    if (content) this.updateOverflow(content)
+    if (this.scrollToCurrentFolder) {
+      this.scrollToCurrentFolder = false
+      if (content) content.scrollLeft = content.scrollWidth
+    }
+  }
+
+  private updateOverflow(content: HTMLDivElement) {
+    content.classList.toggle('breadcrumb-content--overflowing', content.scrollWidth > content.clientWidth)
   }
 
   updateNav(url: BreadCrumbUrl) {
+    this.scrollToCurrentFolder = true
     const splicing = url.splicing || 1
     const translating = url.translating || false
     const sameLink = url.sameLink || false

@@ -496,7 +496,16 @@
     justify-content: flex-start;
     width: 100%;
     min-width: 0;
-    @include text-truncate-utility;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
     @include no-select-pointer-utility;
 
     @include media-breakpoint-down(sm) {
@@ -504,17 +513,11 @@
         color: $gray-lightest !important;
       }
 
-      .breadcrumb-mobile-hidden {
-        display: none;
-      }
     }
 
     > li {
-      &:not(:first-child) {
-        @include text-truncate-utility;
-      }
-
       display: inline;
+      flex: 0 0 auto;
       list-style: none;
 
       &.active {
@@ -524,10 +527,21 @@
       }
 
       &:first-child {
+        position: sticky;
+        left: 0;
+        z-index: 1;
+        display: flex;
+        align-items: center;
         overflow: visible;
+        background-color: $app-header-bg;
 
         > a {
           gap: .4rem;
+          margin-right: .3rem;
+        }
+
+        > .breadcrumb-overflow-marker {
+          display: none;
           margin-right: .3rem;
         }
       }
@@ -550,10 +564,14 @@
         }
 
         > span {
-          min-width: 0;
-          @include text-truncate-utility;
+          white-space: nowrap;
         }
       }
+
+    }
+
+    &.breadcrumb-content--overflowing > li:first-child > .breadcrumb-overflow-marker {
+      display: inline;
     }
 
     > .lucide {
