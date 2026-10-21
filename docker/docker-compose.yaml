@@ -39,7 +39,11 @@ services:
     image: mariadb:11
     container_name: mariadb
     restart: always
-    command: --innodb_ft_cache_size=16000000 --max-allowed-packet=1G
+    command:
+      - --innodb_ft_cache_size=16000000
+      - --max-allowed-packet=1G
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_uca1400_ai_ci
     environment:
       MYSQL_ROOT_PASSWORD: MySQLRootPassword
       MYSQL_DATABASE: sync_in
