@@ -105,6 +105,7 @@
       @case (SHORT_MIME.MARKDOWN) {
         @defer (on immediate) {
           <app-files-viewer-markdown
+            [fragment]="markdownFragment()"
             [currentHeight]="currentHeight"
             [file]="currentFile"
             [isWriteable]="isWriteable"
