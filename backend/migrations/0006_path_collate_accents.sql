@@ -10,7 +10,12 @@ ALTER TABLE `files` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_nop
 ALTER TABLE `files_recents` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_nopad_as_ci;
 --> statement-breakpoint
 -- Cache values are JSON and must keep their binary collation.
-ALTER TABLE `cache` MODIFY COLUMN `key` varchar(768) CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_nopad_as_ci NOT NULL;
+-- MariaDB uses its long UNIQUE hash index for full-key uniqueness; the prefix index supports lookups.
+ALTER TABLE `cache`
+  DROP PRIMARY KEY,
+  MODIFY COLUMN `key` varchar(8192) CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_nopad_as_ci NOT NULL,
+  ADD UNIQUE KEY `cache_key_unique` (`key`),
+  ADD KEY `cache_key_prefix_idx` (`key`(768));
 --> statement-breakpoint
 -- Trash tables are created at runtime and are not part of the Drizzle snapshot.
 BEGIN NOT ATOMIC

@@ -9,7 +9,7 @@
       "columns": {
         "key": {
           "name": "key",
-          "type": "varchar(768) CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_nopad_as_ci",
+          "type": "varchar(8192) CHARACTER SET utf8mb4 COLLATE utf8mb4_uca1400_nopad_as_ci",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -31,6 +31,20 @@
         }
       },
       "indexes": {
+        "cache_key_unique": {
+          "name": "cache_key_unique",
+          "columns": [
+            "key"
+          ],
+          "isUnique": true
+        },
+        "cache_key_prefix_idx": {
+          "name": "cache_key_prefix_idx",
+          "columns": [
+            "`key`(768)"
+          ],
+          "isUnique": false
+        },
         "expiration_idx": {
           "name": "expiration_idx",
           "columns": [
@@ -40,14 +54,7 @@
         }
       },
       "foreignKeys": {},
-      "compositePrimaryKeys": {
-        "cache_key": {
-          "name": "cache_key",
-          "columns": [
-            "key"
-          ]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
@@ -2562,6 +2569,14 @@
   },
   "internal": {
     "tables": {},
-    "indexes": {}
+    "indexes": {
+      "cache_key_prefix_idx": {
+        "columns": {
+          "`key`(768)": {
+            "isExpression": true
+          }
+        }
+      }
+    }
   }
 }
