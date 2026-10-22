@@ -5,7 +5,7 @@ import { alias, MySqlSelectDynamic, type SelectedFields, union } from 'drizzle-o
 import { MySql2PreparedQuery, MySqlQueryResult } from 'drizzle-orm/mysql2'
 import { ACTION } from '../../../common/constants.js'
 import { type ConvertedDiffUpdate, uniquePermissions } from '../../../common/functions.js'
-import { createSlug, popFromObject } from '../../../common/shared.js'
+import { popFromObject } from '../../../common/shared.js'
 import { CacheDecorator } from '../../../infrastructure/cache/cache.decorator.js'
 import { Cache } from '../../../infrastructure/cache/cache.service.js'
 import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
@@ -28,7 +28,6 @@ import type { SpaceBrowseDetails } from '../../spaces/interfaces/space-files.int
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import { spacesRoots } from '../../spaces/schemas/spaces-roots.schema.js'
 import { spaceGroupConcatPermissions, spaces } from '../../spaces/schemas/spaces.schema.js'
-import { createUniqueAlias } from '../../spaces/utils/alias.js'
 import { syncClients } from '../../sync/schemas/sync-clients.schema.js'
 import { syncPaths } from '../../sync/schemas/sync-paths.schema.js'
 import { GROUP_TYPE } from '../../users/constants/group.js'
@@ -68,10 +67,6 @@ export class SharesQueries {
     @Inject(DB_TOKEN_PROVIDER) private readonly db: DBSchema,
     public readonly cache: Cache
   ) {}
-
-  async uniqueShareAlias(name: string, excludedShareId?: number): Promise<string> {
-    return createUniqueAlias(createSlug(name, true), (alias: string) => this.shareExistsForAlias(alias, excludedShareId))
-  }
 
   shareExistsForOwner(userId: number, shareId: number) {
     return this.db.query.shares.findFirst({ columns: { id: true }, where: and(eq(shares.id, shareId), eq(shares.ownerId, userId)) })
@@ -984,7 +979,7 @@ export class SharesQueries {
     }
   }
 
-  private shareExistsForAlias(alias: string, excludedShareId?: number) {
+  shareExistsForAlias(alias: string, excludedShareId?: number) {
     return this.db.query.shares.findFirst({
       columns: { id: true },
       where: excludedShareId === undefined ? eq(shares.alias, alias) : and(eq(shares.alias, alias), ne(shares.id, excludedShareId))

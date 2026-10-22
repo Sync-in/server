@@ -242,14 +242,87 @@ describe(SpacesManager.name, () => {
     const currentRootId = 24
     const name = 'Lébà est chez moi'
     const alias = 'leba-est-chez-moi'
-    const uniqueSpaceAlias = (value: string): Promise<string> => (spacesManager as any).uniqueSpaceAlias(value, true, currentSpaceId)
+    const uniqueSpaceAlias = (value: string): Promise<string> => (spacesManager as any).uniqueSpaceAlias(value, currentSpaceId)
 
-    it('should preserve the current space alias when the renamed name produces the same slug', async () => {
+    afterEach(() => {
+      vi.restoreAllMocks()
+    })
+
+    it('should normalize the renamed space name and numeric suffix before checking availability', async () => {
       const spaceExistsSpy = vi.spyOn(spacesQueries, 'spaceExistsForAlias').mockResolvedValueOnce(undefined)
 
-      await expect(uniqueSpaceAlias(name)).resolves.toBe(alias)
+      await expect(uniqueSpaceAlias(`${name}-2`)).resolves.toBe(alias)
       expect(spaceExistsSpy).toHaveBeenCalledWith(alias, currentSpaceId)
       spaceExistsSpy.mockRestore()
+    })
+
+    it('should accept a space alias of exactly 255 UTF-8 bytes', async () => {
+      vi.spyOn(spacesQueries, 'spaceExistsForAlias').mockResolvedValueOnce(undefined)
+      const name = '漢'.repeat(85)
+
+      await expect(uniqueSpaceAlias(name)).resolves.toBe(name)
+    })
+
+    it.each([
+      ['漢'.repeat(86), '漢'.repeat(85)],
+      ['가'.repeat(86), '\u1100\u1161'.repeat(42)],
+      ['a'.repeat(256), 'a'.repeat(255)]
+    ])('should truncate an oversized space alias without splitting graphemes', async (name, expectedAlias) => {
+      const spaceExistsSpy = vi.spyOn(spacesQueries, 'spaceExistsForAlias').mockResolvedValueOnce(undefined)
+
+      await expect(uniqueSpaceAlias(name)).resolves.toBe(expectedAlias)
+      expect(spaceExistsSpy).toHaveBeenCalledExactlyOnceWith(expectedAlias, currentSpaceId)
+    })
+
+    it('should resolve collisions using truncated aliases with suffixes inside the byte limit', async () => {
+      const spaceExistsSpy = vi
+        .spyOn(spacesQueries, 'spaceExistsForAlias')
+        .mockResolvedValueOnce({ id: 1 })
+        .mockResolvedValueOnce({ id: 2 })
+        .mockResolvedValueOnce(undefined)
+      const name = '漢'.repeat(85)
+
+      await expect(uniqueSpaceAlias(name)).resolves.toBe(`${'漢'.repeat(84)}-2`)
+      expect(spaceExistsSpy.mock.calls).toEqual([
+        [name, currentSpaceId],
+        [`${'漢'.repeat(84)}-1`, currentSpaceId],
+        [`${'漢'.repeat(84)}-2`, currentSpaceId]
+      ])
+    })
+
+    it('should reserve additional suffix bytes when collisions reach two digits', async () => {
+      const spaceExistsSpy = vi.spyOn(spacesQueries, 'spaceExistsForAlias').mockResolvedValue(undefined)
+      for (let count = 0; count < 10; count += 1) {
+        spaceExistsSpy.mockResolvedValueOnce({ id: 1 })
+      }
+
+      await expect(uniqueSpaceAlias('a'.repeat(255))).resolves.toBe(`${'a'.repeat(252)}-10`)
+      expect(spaceExistsSpy).toHaveBeenCalledTimes(11)
+      expect(spaceExistsSpy).toHaveBeenNthCalledWith(10, `${'a'.repeat(253)}-9`, currentSpaceId)
+      expect(spaceExistsSpy).toHaveBeenNthCalledWith(11, `${'a'.repeat(252)}-10`, currentSpaceId)
+      for (const [alias] of spaceExistsSpy.mock.calls) {
+        expect(Buffer.byteLength(alias, 'utf8')).toBeLessThanOrEqual(255)
+      }
+    })
+
+    it('should resolve collisions when a single grapheme exceeds the byte limit', async () => {
+      const spaceExistsSpy = vi.spyOn(spacesQueries, 'spaceExistsForAlias').mockResolvedValueOnce({ id: 1 }).mockResolvedValueOnce(undefined)
+
+      await expect(uniqueSpaceAlias('\u1100'.repeat(86))).resolves.toBe('space-1')
+      expect(spaceExistsSpy.mock.calls).toEqual([
+        ['space', currentSpaceId],
+        ['space-1', currentSpaceId]
+      ])
+    })
+
+    it('should ignore symbols when allocating the space alias byte budget', async () => {
+      const spaceExistsSpy = vi.spyOn(spacesQueries, 'spaceExistsForAlias').mockResolvedValueOnce({ id: 1 }).mockResolvedValueOnce(undefined)
+
+      await expect(uniqueSpaceAlias(`${'📷'.repeat(64)}a`)).resolves.toBe('a-1')
+      expect(spaceExistsSpy.mock.calls).toEqual([
+        ['a', currentSpaceId],
+        ['a-1', currentSpaceId]
+      ])
     })
 
     it('should exclude the current root when checking its alias', async () => {
@@ -258,6 +331,90 @@ describe(SpacesManager.name, () => {
       await expect(spacesManager.uniqueRootAlias(1, alias, [], true, currentRootId)).resolves.toBeNull()
       expect(rootExistsSpy).toHaveBeenCalledWith(1, alias, currentRootId)
       rootExistsSpy.mockRestore()
+    })
+
+    it('should remove accents while normalizing case, numeric suffix and extension, excluding the current root', async () => {
+      const rootExistsSpy = vi.spyOn(spacesQueries, 'spaceRootExistsForAlias').mockResolvedValue(undefined)
+
+      await expect(spacesManager.uniqueRootAlias(currentSpaceId, 'Rapport E\u0301TE\u0301-2.PDF', [], true, currentRootId, true)).resolves.toBe(
+        'rapport-ete.pdf'
+      )
+      expect(rootExistsSpy).toHaveBeenCalledExactlyOnceWith(currentSpaceId, 'rapport-ete.pdf', currentRootId)
+    })
+
+    it('should bound a normalized root alias to 255 characters', async () => {
+      const rootExistsSpy = vi.spyOn(spacesQueries, 'spaceRootExistsForAlias').mockResolvedValue(undefined)
+      const expectedAlias = 'a'.repeat(255)
+
+      await expect(spacesManager.uniqueRootAlias(currentSpaceId, 'a'.repeat(256), [], true, currentRootId, true)).resolves.toBe(expectedAlias)
+      expect(rootExistsSpy).toHaveBeenCalledExactlyOnceWith(currentSpaceId, expectedAlias, currentRootId)
+    })
+
+    it.each([
+      ['rapport.---', 'rapport'],
+      ['---.pdf', 'pdf']
+    ])('should normalize the whole root alias %s when its name or extension cannot form a slug', async (requestedAlias, normalizedAlias) => {
+      const rootExistsSpy = vi.spyOn(spacesQueries, 'spaceRootExistsForAlias').mockResolvedValue(undefined)
+
+      await expect(spacesManager.uniqueRootAlias(currentSpaceId, requestedAlias, [], true, undefined, true)).resolves.toBe(normalizedAlias)
+      expect(rootExistsSpy).toHaveBeenCalledExactlyOnceWith(currentSpaceId, normalizedAlias, undefined)
+    })
+
+    it('should remove accents before resolving database collisions with a suffix before the extension', async () => {
+      const rootExistsSpy = vi.spyOn(spacesQueries, 'spaceRootExistsForAlias').mockResolvedValueOnce({ id: 1 }).mockResolvedValueOnce(undefined)
+      const aliasesAndNames = ['Rapport été.PDF', 'rapport-été.pdf']
+
+      await expect(spacesManager.uniqueRootAlias(currentSpaceId, 'Rapport été-2.PDF', aliasesAndNames, true, currentRootId, true)).resolves.toBe(
+        'rapport-ete-1.pdf'
+      )
+      expect(rootExistsSpy.mock.calls).toEqual([
+        [currentSpaceId, 'rapport-ete.pdf', currentRootId],
+        [currentSpaceId, 'rapport-ete-1.pdf', currentRootId]
+      ])
+      expect(aliasesAndNames).toEqual(['Rapport été.PDF', 'rapport-été.pdf'])
+    })
+
+    it.each([
+      ['가.pdf', '\u1100\u1161.PDF', '\u1100\u1161-1.pdf'],
+      ['\u1100\u1161.pdf', '가.PDF', '\u1100\u1161-1.pdf']
+    ])('should avoid equivalent file names after normalizing %s', async (requestedAlias, fileName, expectedAlias) => {
+      const rootExistsSpy = vi.spyOn(spacesQueries, 'spaceRootExistsForAlias').mockResolvedValue(undefined)
+
+      await expect(spacesManager.uniqueRootAlias(currentSpaceId, requestedAlias, [fileName], true, currentRootId, true)).resolves.toBe(expectedAlias)
+      expect(rootExistsSpy).toHaveBeenCalledExactlyOnceWith(currentSpaceId, expectedAlias, currentRootId)
+    })
+
+    it.each([
+      ['café.pdf', 'CAFE\u0301.PDF', 'cafe-1.pdf'],
+      ['cafe\u0301.pdf', 'CAFÉ.PDF', 'cafe-1.pdf']
+    ])('should resolve canonically equivalent file-name collisions when browsing %s', async (requestedAlias, fileName, expectedAlias) => {
+      const rootExistsSpy = vi.spyOn(spacesQueries, 'spaceRootExistsForAlias').mockResolvedValue(undefined)
+
+      await expect(spacesManager.uniqueRootAlias(currentSpaceId, requestedAlias, [fileName], true, currentRootId)).resolves.toBe(expectedAlias)
+      expect(rootExistsSpy).toHaveBeenCalledExactlyOnceWith(currentSpaceId, expectedAlias, currentRootId)
+    })
+
+    it('should reject root aliases without any letters or numbers before querying the database', async () => {
+      const rootExistsSpy = vi.spyOn(spacesQueries, 'spaceRootExistsForAlias').mockResolvedValue(undefined)
+
+      await expect(spacesManager.uniqueRootAlias(currentSpaceId, '---', [], true, undefined, true)).rejects.toEqual(
+        new HttpException('Name must contain at least one letter or number', HttpStatus.BAD_REQUEST)
+      )
+      expect(rootExistsSpy).not.toHaveBeenCalled()
+    })
+
+    it.each(['Rapport été-2.PDF', 'cafe\u0301.pdf'])('should preserve the available Unicode alias %s when browsing', async (alias) => {
+      const rootExistsSpy = vi.spyOn(spacesQueries, 'spaceRootExistsForAlias').mockResolvedValue(undefined)
+
+      await expect(spacesManager.uniqueRootAlias(currentSpaceId, alias, [], true)).resolves.toBeNull()
+      expect(rootExistsSpy).toHaveBeenCalledExactlyOnceWith(currentSpaceId, alias, undefined)
+    })
+
+    it('should keep compatibility-equivalent file names distinct when browsing a legacy alias', async () => {
+      const rootExistsSpy = vi.spyOn(spacesQueries, 'spaceRootExistsForAlias').mockResolvedValue(undefined)
+
+      await expect(spacesManager.uniqueRootAlias(currentSpaceId, 'ﬃ.pdf', ['ffi.pdf'], true)).resolves.toBeNull()
+      expect(rootExistsSpy).toHaveBeenCalledExactlyOnceWith(currentSpaceId, 'ﬃ.pdf', undefined)
     })
   })
 })

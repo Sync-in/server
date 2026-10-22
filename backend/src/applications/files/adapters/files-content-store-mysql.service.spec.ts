@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { MySqlDialect } from 'drizzle-orm/mysql-core'
-import { DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
+import { DB_CHARSET, DB_PATH_COLLATION, DB_TOKEN_PROVIDER } from '../../../infrastructure/database/constants.js'
 import { FilesContentStoreMySQL } from './files-content-store-mysql.service.js'
 import { Mock } from 'vitest'
 
@@ -90,6 +90,22 @@ describe(FilesContentStoreMySQL.name, () => {
       db.execute.mockResolvedValueOnce([[{ Field: 'seen_run_id' }]])
       await expect(filesIndexerMySQL.createIndex('files_content_u_1')).resolves.toBe(true)
       expect(db.execute).toHaveBeenCalledTimes(2)
+    })
+
+    it('should collate file metadata without changing content search', async () => {
+      db.execute.mockResolvedValueOnce([{}])
+      db.execute.mockResolvedValueOnce([[{ Field: 'seen_run_id' }]])
+
+      await filesIndexerMySQL.createIndex('files_content_u_1')
+
+      const query = dialect.sqlToQuery(db.execute.mock.calls[0][0])
+      const statement = query.sql.replace(/\s+/g, ' ').trim()
+      expect(statement).toContain(`path varchar(4096) CHARACTER SET ${DB_CHARSET} COLLATE ${DB_PATH_COLLATION} NOT NULL`)
+      expect(statement).toContain(`name varchar(255) CHARACTER SET ${DB_CHARSET} COLLATE ${DB_PATH_COLLATION} NOT NULL`)
+      expect(statement).toContain('content LONGTEXT,')
+      expect(statement).toContain('FULLTEXT (content)')
+      expect(statement).toContain(`) CHARACTER SET ${DB_CHARSET} COLLATE utf8mb4_general_ci;`)
+      expect(query.params).toEqual([])
     })
 
     it('should add run id column when it is missing', async () => {
