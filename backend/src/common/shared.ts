@@ -40,6 +40,8 @@ export function currentDate(value?: string): Date {
 }
 
 export function createSlug(input: string, replaceCount = false): string {
+  // Collapse runs of characters other than Unicode letters or numbers into one hyphen, then trim edge hyphens.
+  // When replaceCount is true, also remove an existing trailing numeric suffix (e.g. -2).
   let slug = createLightSlug(input)
     .replace(/[^\p{L}\p{N}]+/gu, '-')
     .replace(/^-|-$/g, '')
@@ -55,15 +57,17 @@ export function createSlug(input: string, replaceCount = false): string {
 
 export function createCacheKeySlug(args: unknown[]) {
   // Keep accents distinct while sharing keys across case and canonical Unicode forms.
-  // Cache patterns intentionally preserve metacharacters such as `*`.
+  // Escape reserved characters before joining arguments; only a whole `*` argument is a wildcard.
   return args
-    .map((arg) => (arg == null ? 'null' : String(arg)))
-    .join(' ')
-    .toLowerCase()
-    .trim()
-    .normalize('NFC')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .map((arg) => {
+      if (arg == null) return '~null'
+      if (arg === '*') return '*'
+      return String(arg)
+        .toLowerCase()
+        .normalize('NFC')
+        .replace(/[%:~*"'\x60]/g, (character) => '%' + character.charCodeAt(0).toString(16).toUpperCase())
+    })
+    .join(':')
 }
 
 export function createLightSlug(input: string) {

@@ -93,15 +93,15 @@ describe(createLightSlug.name, () => {
 
 describe(createCacheKeySlug.name, () => {
   it('should preserve cache pattern metacharacters', () => {
-    expect(createCacheKeySlug(['SpacesQueries', 'spaces', 1, '*'])).toBe('spacesqueries-spaces-1-*')
+    expect(createCacheKeySlug(['SpacesQueries', 'spaces', 1, '*'])).toBe('spacesqueries:spaces:1:*')
   })
 
   it('should keep accented permission aliases distinct from unaccented aliases', () => {
     const accentedKey = createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'equipe', 'café'])
     const unaccentedKey = createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'equipe', 'cafe'])
 
-    expect(accentedKey).toBe('spacesqueries-permissions-1-equipe-café')
-    expect(unaccentedKey).toBe('spacesqueries-permissions-1-equipe-cafe')
+    expect(accentedKey).toBe('spacesqueries:permissions:1:equipe:café')
+    expect(unaccentedKey).toBe('spacesqueries:permissions:1:equipe:cafe')
     expect(accentedKey).not.toBe(unaccentedKey)
   })
 
@@ -118,14 +118,49 @@ describe(createCacheKeySlug.name, () => {
   })
 
   it('should preserve accented aliases and wildcards in permission invalidation patterns', () => {
-    expect(createCacheKeySlug(['SpacesQueries', 'permissions', '*', 'ÉQUIPE', 'cafe\u0301'])).toBe('spacesqueries-permissions-*-équipe-café')
-    expect(createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'équipe', '*'])).toBe('spacesqueries-permissions-1-équipe-*')
+    expect(createCacheKeySlug(['SpacesQueries', 'permissions', '*', 'ÉQUIPE', 'cafe\u0301'])).toBe('spacesqueries:permissions:*:équipe:café')
+    expect(createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'équipe', '*'])).toBe('spacesqueries:permissions:1:équipe:*')
   })
 
-  it.each([null, undefined])('should preserve the existing ASCII format for a %s argument', (rootAlias) => {
-    expect(createCacheKeySlug([' SpacesQueries ', 'Permissions', 1, 'Team_Root-- Folder', rootAlias])).toBe(
-      'spacesqueries-permissions-1-team-root-folder-null'
-    )
+  it('should keep argument boundaries distinct from hyphens in aliases', () => {
+    const firstKey = createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'foo-bar', 'baz'])
+    const secondKey = createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'foo', 'bar-baz'])
+
+    expect(firstKey).toBe('spacesqueries:permissions:1:foo-bar:baz')
+    expect(secondKey).toBe('spacesqueries:permissions:1:foo:bar-baz')
+    expect(firstKey).not.toBe(secondKey)
+  })
+
+  it.each([null, undefined])('should distinguish a %s argument from literal null aliases', (rootAlias) => {
+    const key = createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'equipe', rootAlias])
+
+    expect(key).toBe('spacesqueries:permissions:1:equipe:~null')
+    expect(key).not.toBe(createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'equipe', 'null']))
+    expect(key).not.toBe(createCacheKeySlug(['SpacesQueries', 'permissions', 1, 'equipe', '~null']))
+  })
+
+  it.each([
+    { firstArgs: ['foo:bar', 'baz'], secondArgs: ['foo', 'bar:baz'], expectedKey: 'foo%3Abar:baz' },
+    { firstArgs: ['foo:bar'], secondArgs: ['foo%3Abar'], expectedKey: 'foo%3Abar' },
+    { firstArgs: ['*'], secondArgs: ['%2A'], expectedKey: '*' },
+    { firstArgs: ['~null'], secondArgs: ['%7Enull'], expectedKey: '%7Enull' }
+  ])('should keep reserved characters distinct in $firstArgs and $secondArgs', ({ firstArgs, secondArgs, expectedKey }) => {
+    expect(createCacheKeySlug(firstArgs)).toBe(expectedKey)
+    expect(createCacheKeySlug(firstArgs)).not.toBe(createCacheKeySlug(secondArgs))
+  })
+
+  it('should escape literal asterisks while preserving whole-argument wildcards', () => {
+    expect(createCacheKeySlug(['SpacesQueries', 'permissions', '*', 'foo*bar', '*'])).toBe('spacesqueries:permissions:*:foo%2Abar:*')
+  })
+
+  it('should escape quotes and backticks instead of adding them to keys', () => {
+    expect(createCacheKeySlug(['"foo"', "'bar'", '\x60baz\x60'])).toBe('%22foo%22:%27bar%27:%60baz%60')
+  })
+
+  it('should preserve significant spaces, underscores and hyphens inside arguments', () => {
+    expect(createCacheKeySlug([' Team_Root-- Folder '])).toBe(' team_root-- folder ')
+    expect(createCacheKeySlug(['team_root'])).not.toBe(createCacheKeySlug(['team-root']))
+    expect(createCacheKeySlug(['team root'])).not.toBe(createCacheKeySlug(['team-root']))
   })
 })
 

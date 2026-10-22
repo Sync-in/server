@@ -1,4 +1,5 @@
-import { mysqlTable } from 'drizzle-orm/mysql-core'
+import { sql } from 'drizzle-orm'
+import { getTableConfig, MySqlDialect, mysqlTable } from 'drizzle-orm/mysql-core'
 import { filesRecents } from '../../applications/files/schemas/files-recents.schema.js'
 import { files } from '../../applications/files/schemas/files.schema.js'
 import { shares } from '../../applications/shares/schemas/shares.schema.js'
@@ -35,7 +36,7 @@ describe('pathVarchar', () => {
 
 describe('metadata schema collations', () => {
   it.each([
-    { name: 'cache.key', column: cache.key, length: 768 },
+    { name: 'cache.key', column: cache.key, length: 8192 },
     { name: 'files.path', column: files.path, length: 4096 },
     { name: 'files.name', column: files.name, length: 255 },
     { name: 'files_recents.path', column: filesRecents.path, length: 4096 },
@@ -52,9 +53,24 @@ describe('metadata schema collations', () => {
     expect(column.getSQLType()).toBe(`varchar(${length}) CHARACTER SET ${DB_CHARSET} COLLATE ${DB_PATH_COLLATION}`)
   })
 
-  it('preserves the cache primary key and JSON values', () => {
-    expect(cache.key.primary).toBe(true)
+  it('keeps long cache keys non-null without a primary key and preserves JSON values', () => {
+    expect(cache.key.primary).toBe(false)
     expect(cache.key.notNull).toBe(true)
     expect(cache.value.getSQLType()).toBe('json')
+  })
+
+  it('enforces full cache-key uniqueness and uses a non-unique prefix index', () => {
+    const { indexes } = getTableConfig(cache)
+    const uniqueKey = indexes.find((entry) => entry.config.name === 'cache_key_unique')
+    const prefixKey = indexes.find((entry) => entry.config.name === 'cache_key_prefix_idx')
+
+    expect(uniqueKey?.config.unique).toBe(true)
+    expect(uniqueKey?.config.columns).toEqual([cache.key])
+    expect(prefixKey?.config.unique).toBe(false)
+    expect(prefixKey?.config.columns).toHaveLength(1)
+    expect(new MySqlDialect().sqlToQuery(sql`${prefixKey?.config.columns[0]}`, 'indexes')).toMatchObject({
+      sql: '`key`(768)',
+      params: []
+    })
   })
 })
