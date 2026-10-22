@@ -34,8 +34,10 @@ import {
   LucideUnderline,
   LucideUndo
 } from '@lucide/angular'
+import { API_FILES_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/routes'
+import { encodeUrl } from '@sync-in-server/backend/src/common/shared'
 import { Editor, Extension, type Range } from '@tiptap/core'
-import Image, { type SetImageOptions } from '@tiptap/extension-image'
+import type { SetImageOptions } from '@tiptap/extension-image'
 import { TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
 import { TaskList } from '@tiptap/extension-task-list'
@@ -52,6 +54,8 @@ import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-cod
 import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 import { TipTapFileViewerSearchAdapter } from './components/files-viewer-tiptap-search-adapter'
 import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-unsaved-changes.component'
+import { MarkdownImage } from './components/markdown-image.extension'
+import { resolveMarkdownRelativePath } from './components/markdown-relative-path'
 
 type MarkdownHeadingLevel = 1 | 2 | 3 | 4
 type MarkdownInlineMark = 'bold' | 'code' | 'italic' | 'strike' | 'underline'
@@ -114,8 +118,9 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
           resizable: true
         }
       }),
-      Image.configure({
-        allowBase64: true
+      MarkdownImage.configure({
+        allowBase64: true,
+        resolveSource: (source) => this.resolveImageSource(source)
       }),
       Markdown,
       this.visualSearchAdapter.extension
@@ -391,6 +396,26 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
       if (alt === null) return false
       return this.insertImage({ src: src.trim(), alt: alt.trim() || undefined })
     })
+  }
+
+  protected insertImageFromRelativePath() {
+    this.runEditorCommand(() => {
+      const src = window.prompt(this.layout.translateString('Image from relative path'), 'images/')
+      if (src === null || !src.trim()) return false
+      if (!resolveMarkdownRelativePath(this.file().path, src.trim())) {
+        this.layout.sendNotification('error', 'Unable to insert image', 'Invalid relative image path')
+        return false
+      }
+      const alt = window.prompt(this.layout.translateString('Alternative text'), '')
+      if (alt === null) return false
+      return this.insertImage({ src: src.trim(), alt: alt.trim() || undefined })
+    })
+  }
+
+  private resolveImageSource(source: string): string | null {
+    if (/^(?:[a-z][a-z\d+.-]*:|\/)/i.test(source)) return source
+    const path = resolveMarkdownRelativePath(this.file().path, source)
+    return path ? `${API_FILES_OPERATION}/${encodeUrl(path)}` : null
   }
 
   protected insertTable() {
