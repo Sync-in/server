@@ -26,6 +26,8 @@ export class TapDirective implements OnDestroy {
   @Input() doubleTapSlop = 24
   /** Enables or disables double-tap detection */
   @Input() enableDoubleTap = true
+  /** Emits a single tap immediately for touch pointers. */
+  @Input() singleTapOnTouch = false
   /**
    * ⚙️ Hammer-like behavior control.
    * false → STRICT Hammer mode: no single tap is emitted if the second tap does not occur (default)
@@ -97,7 +99,7 @@ export class TapDirective implements OnDestroy {
       ev.pointerType !== 'touch' ||
       !ev.isPrimary ||
       ev.button !== 0 ||
-      this.isEditableTarget(ev.target)
+      this.isIgnoredTarget(ev.target)
     ) {
       return
     }
@@ -140,7 +142,7 @@ export class TapDirective implements OnDestroy {
   }
 
   private onDown = (ev: PointerEvent) => {
-    if (this.disabled || ev.button !== 0 || this.active) return
+    if (this.disabled || ev.button !== 0 || this.active || this.isIgnoredTarget(ev.target)) return
     this.active = true
     this.pointerId = ev.pointerId
     this.startX = ev.clientX
@@ -177,6 +179,11 @@ export class TapDirective implements OnDestroy {
     const now = performance.now()
     const x = ev.clientX
     const y = ev.clientY
+
+    if (this.singleTapOnTouch && ev.pointerType === 'touch') {
+      this.emit('single', x, y, ev)
+      return
+    }
 
     if (!this.enableDoubleTap) {
       this.emit('single', x, y, ev)
@@ -248,8 +255,12 @@ export class TapDirective implements OnDestroy {
     this.longPressPointerId = null
   }
 
-  private isEditableTarget(target: EventTarget | null): boolean {
-    return target instanceof Element && !!target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
+  private isIgnoredTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof Element)) return false
+    const ignoredTarget = target.closest(
+      'button, a, input, textarea, select, [contenteditable]:not([contenteditable="false"]), [data-app-tap-ignore]'
+    )
+    return !!ignoredTarget && ignoredTarget !== this.el && this.el.contains(ignoredTarget)
   }
 
   private isIosTouchDevice(): boolean {

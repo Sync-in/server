@@ -436,6 +436,14 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.layout.openContextMenu(ev, this.fileContextMenu)
   }
 
+  onFileActivate(file: FileModel) {
+    this.layout.closeContextMenu()
+    if (this.selection.length !== 1 || this.selection[0] !== file) {
+      this.setSelection([file], file, file)
+    }
+    this.browse(file)
+  }
+
   browse(file: FileModel) {
     if (file.isDisabled) {
       this.layout.sendNotification('warning', file.name, 'Share is disabled')
@@ -445,7 +453,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
       if (file.isDir) {
         this.router.navigate([file.root?.alias || file.name], { relativeTo: this.activatedRoute }).catch(console.error)
       } else {
-        this.shortcutOpen()
+        this.shortcutOpen(file)
       }
     }
   }
@@ -463,13 +471,12 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-  shortcutOpen() {
-    const file = this.selection[0]
+  shortcutOpen(file: FileModel = this.selection[0]) {
     if (!file) return
     if (file.isDir) {
       this.browse(file)
     } else if (file.isViewable || file.isEditable) {
-      this.openViewerDialog()
+      this.openViewerDialog(file)
     } else {
       this.notifyPreviewUnavailable(file)
     }
@@ -742,8 +749,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-  private openViewerDialog() {
-    const f = this.selection[0]
+  private openViewerDialog(f: FileModel) {
     let permissions: string
     if (this.isTrashRepo) {
       permissions = ''
