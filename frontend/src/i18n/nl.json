@@ -790,6 +790,7 @@
   "Version": "Versie",
   "Filter type": "Filtering",
   "Filter value": "Filterwaarde",
+  "Invalid regular expression": "Ongeldige reguliere expressie",
   "No filter configured": "Geen filter ingesteld",
   "checksums are not identical": "controlesommen komen niet overeen",
   "size has changed since parsing": "grootte is gewijzigd sinds verwerking",

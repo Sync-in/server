@@ -1,5 +1,6 @@
 import { SQL, sql } from 'drizzle-orm'
 import { bigint, boolean, datetime, mysqlTable, uniqueIndex, varchar } from 'drizzle-orm/mysql-core'
+import { pathVarchar } from '../../../infrastructure/database/columns.js'
 import { SPACE_PERMS_SEP } from '../constants/spaces.js'
 
 /*
@@ -15,8 +16,8 @@ export const spaces = mysqlTable(
   'spaces',
   {
     id: bigint('id', { mode: 'number', unsigned: true }).autoincrement().primaryKey(),
-    alias: varchar('alias', { length: 255 }).notNull(),
-    name: varchar('name', { length: 255 }).notNull(),
+    alias: pathVarchar('alias', { length: 255 }).notNull(),
+    name: pathVarchar('name', { length: 255 }).notNull(),
     description: varchar('description', { length: 255 }),
     enabled: boolean('enabled').default(true).notNull(),
     storageUsage: bigint('storageUsage', { mode: 'number', unsigned: true }).default(0).notNull(),

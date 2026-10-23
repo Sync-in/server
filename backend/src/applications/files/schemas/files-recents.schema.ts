@@ -1,4 +1,5 @@
 import { bigint, index, mysqlTable, varchar } from 'drizzle-orm/mysql-core'
+import { pathVarchar } from '../../../infrastructure/database/columns.js'
 import { shares } from '../../shares/schemas/shares.schema.js'
 import { spaces } from '../../spaces/schemas/spaces.schema.js'
 import { users } from '../../users/schemas/users.schema.js'
@@ -10,8 +11,8 @@ export const filesRecents = mysqlTable(
     ownerId: bigint('ownerId', { mode: 'number', unsigned: true }).references(() => users.id, { onDelete: 'cascade' }),
     spaceId: bigint('spaceId', { mode: 'number', unsigned: true }).references(() => spaces.id, { onDelete: 'cascade' }),
     shareId: bigint('shareId', { mode: 'number', unsigned: true }).references(() => shares.id, { onDelete: 'cascade' }),
-    path: varchar('path', { length: 4096 }).notNull(),
-    name: varchar('name', { length: 255 }).notNull(),
+    path: pathVarchar('path', { length: 4096 }).notNull(),
+    name: pathVarchar('name', { length: 255 }).notNull(),
     mime: varchar('mime', { length: 255 }),
     mtime: bigint('mtime', { mode: 'number', unsigned: true }).notNull()
   },

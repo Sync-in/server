@@ -790,6 +790,7 @@
   "Version": "संस्करण",
   "Filter type": "फ़िल्टर प्रकार",
   "Filter value": "फ़िल्टर मान",
+  "Invalid regular expression": "अमान्य रेगुलर एक्सप्रेशन",
   "No filter configured": "कोई फ़िल्टर कॉन्फ़िगर नहीं है",
   "checksums are not identical": "चेकसम एक जैसे नहीं हैं",
   "size has changed since parsing": "पार्सिंग के बाद से आकार बदल गया है",

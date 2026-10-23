@@ -33,6 +33,7 @@
     "test:watch": "NODE_ENV=test vitest"
   },
   "dependencies": {
+    "@eslint-community/regexpp": "^4.12.2",
     "@fastify/cookie": "^11.0.2",
     "@fastify/helmet": "^13.0.2",
     "@fastify/multipart": "^10.0.0",
@@ -77,8 +78,8 @@
     "pino-http": "^11.0.0",
     "pino-pretty": "^13.2.0",
     "qrcode-generator": "^2.0.4",
+    "re2js": "^2.9.0",
     "redis": "^6.3.0",
-    "safe-regex2": "^5.1.1",
     "sax": "^1.6.0",
     "sharp": "^0.35.2",
     "socket.io": "4.8.4",

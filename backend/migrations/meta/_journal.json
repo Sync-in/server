@@ -43,6 +43,13 @@
       "when": 1790603209539,
       "tag": "0005_spotty_firebird",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1792446477530,
+      "tag": "0006_path_collate_accents",
+      "breakpoints": true
     }
   ]
 }

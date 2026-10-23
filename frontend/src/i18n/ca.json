@@ -790,6 +790,7 @@
   "Version": "Versió",
   "Filter type": "Tipus de filtre",
   "Filter value": "Valor del filtre",
+  "Invalid regular expression": "Expressió regular no vàlida",
   "No filter configured": "Cap filtre configurat",
   "checksums are not identical": "Les sumes de comprovació no són idèntiques",
   "size has changed since parsing": "La mida ha canviat des que s'ha analitzat",

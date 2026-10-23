@@ -11,7 +11,7 @@ import {
   hashPassword
 } from '../../../common/functions.js'
 import type { Entries } from '../../../common/interfaces.js'
-import { intersectPermissions, InvalidSlugError } from '../../../common/shared.js'
+import { createSlug, intersectPermissions, InvalidSlugError } from '../../../common/shared.js'
 import type { FileProps } from '../../files/interfaces/file-props.interface.js'
 import { FileError } from '../../files/models/file-error.js'
 import { checkExternalPath, getProps, isPathExists, removeFiles } from '../../files/utils/files.js'
@@ -29,6 +29,7 @@ import type { SpaceMemberDto } from '../../spaces/dto/create-or-update-space.dto
 import { SpaceEnv } from '../../spaces/models/space-env.model.js'
 import type { SpaceProps } from '../../spaces/models/space-props.model.js'
 import { SpacesQueries } from '../../spaces/services/spaces-queries.service.js'
+import { createUniqueAlias } from '../../spaces/utils/alias.js'
 import { havePermission, haveSpacePermission, removePermissions } from '../../spaces/utils/permissions.js'
 import { MEMBER_TYPE } from '../../users/constants/member.js'
 import { GUEST_PERMISSION, USER_NOTIFICATION, USER_ROLE } from '../../users/constants/user.js'
@@ -784,7 +785,9 @@ export class SharesManager {
 
   private async uniqueShareAlias(name: string, excludedShareId?: number): Promise<string> {
     try {
-      return await this.sharesQueries.uniqueShareAlias(name, excludedShareId)
+      return await createUniqueAlias(createSlug(name), (alias: string) => this.sharesQueries.shareExistsForAlias(alias, excludedShareId), {
+        replaceCount: true
+      })
     } catch (e) {
       if (e instanceof InvalidSlugError) {
         throw new HttpException(e.message, HttpStatus.BAD_REQUEST)
