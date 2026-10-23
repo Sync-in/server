@@ -436,6 +436,14 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     this.layout.openContextMenu(ev, this.fileContextMenu)
   }
 
+  onFileActivate(file: FileModel) {
+    this.layout.closeContextMenu()
+    if (this.selection.length !== 1 || this.selection[0] !== file) {
+      this.setSelection([file], file, file)
+    }
+    this.browse(file)
+  }
+
   browse(file: FileModel) {
     if (file.isDisabled) {
       this.layout.sendNotification('warning', file.name, 'Share is disabled')
@@ -741,7 +749,7 @@ export class SpacesBrowserComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-  private openViewerDialog(f: FileModel = this.selection[0]) {
+  private openViewerDialog(f: FileModel) {
     let permissions: string
     if (this.isTrashRepo) {
       permissions = ''
