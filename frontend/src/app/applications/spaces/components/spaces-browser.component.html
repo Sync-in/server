@@ -290,7 +290,7 @@
         @for (f of scrollView?.viewPortItems; track f.id) {
           <div (click)="onSelect($event, f)"
                (contextmenu)="onTargetContextMenu($event, f)"
-               (appTap)="onFileActivate(f)"
+               (appTap)="onFileActivate(f, $event.sourceEvent)"
                [singleTapOnTouch]="true"
                [class.disabled]="f.isDisabled"
                [class.deleted]="f.isBeingDeleted"
@@ -463,7 +463,7 @@
         @for (f of scrollView?.viewPortItems; track f.id) {
           <tr (click)="onSelect($event, f)"
               (contextmenu)="onTargetContextMenu($event, f)"
-              (appTap)="onFileActivate(f)"
+              (appTap)="onFileActivate(f, $event.sourceEvent)"
               [singleTapOnTouch]="true"
               [class.disabled]="f.isDisabled"
               [class.deleted]="f.isBeingDeleted"

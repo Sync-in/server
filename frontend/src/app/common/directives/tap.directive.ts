@@ -1,4 +1,5 @@
-import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnDestroy, Output } from '@angular/core'
+import { DOCUMENT, isPlatformBrowser } from '@angular/common'
+import { DestroyRef, Directive, ElementRef, EventEmitter, inject, Injectable, Input, NgZone, OnDestroy, Output, PLATFORM_ID } from '@angular/core'
 
 type TapKind = 'single' | 'double'
 interface TapEvent {
@@ -6,6 +7,41 @@ interface TapEvent {
   y: number
   type: TapKind
   sourceEvent?: PointerEvent
+}
+
+@Injectable({ providedIn: 'root' })
+class TapGhostClickGuard {
+  private readonly document = inject(DOCUMENT)
+  private readonly destroyRef = inject(DestroyRef)
+  private readonly zone = inject(NgZone)
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID))
+  private readonly duration = 400
+  private readonly slop = 24
+  private blockedUntil = 0
+  private x = 0
+  private y = 0
+
+  constructor() {
+    if (!this.isBrowser) return
+    this.zone.runOutsideAngular(() => {
+      this.document.addEventListener('click', this.onClick, { capture: true, passive: false })
+    })
+    this.destroyRef.onDestroy(() => this.document.removeEventListener('click', this.onClick, true))
+  }
+
+  arm(event: PointerEvent) {
+    this.blockedUntil = performance.now() + this.duration
+    this.x = event.clientX
+    this.y = event.clientY
+  }
+
+  private onClick = (event: MouseEvent) => {
+    if (performance.now() >= this.blockedUntil || Math.hypot(event.clientX - this.x, event.clientY - this.y) > this.slop) return
+
+    this.blockedUntil = 0
+    event.preventDefault()
+    event.stopImmediatePropagation()
+  }
 }
 
 @Directive({
@@ -47,6 +83,7 @@ export class TapDirective implements OnDestroy {
 
   private readonly elRef = inject<ElementRef<HTMLElement>>(ElementRef as any)
   private readonly zone = inject(NgZone)
+  private readonly ghostClickGuard = inject(TapGhostClickGuard)
   private el: HTMLElement
   private removeFns: (() => void)[] = []
   private active = false
@@ -233,6 +270,9 @@ export class TapDirective implements OnDestroy {
   }
 
   private emit(type: TapKind, x: number, y: number, sourceEvent?: PointerEvent) {
+    if (this.preventGhostClick && sourceEvent?.pointerType === 'touch') {
+      this.ghostClickGuard.arm(sourceEvent)
+    }
     this.lastEmitTs = performance.now()
     this.zone.run(() => this.appTap.emit({ x, y, type, sourceEvent }))
   }
