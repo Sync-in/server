@@ -790,6 +790,7 @@
   "Version": "Versión",
   "Filter type": "Tipo de filtro",
   "Filter value": "Valor del filtro",
+  "Invalid regular expression": "Expresión regular no válida",
   "No filter configured": "Ningún filtro configurado",
   "checksums are not identical": "Las sumas de comprobación no son idénticas",
   "size has changed since parsing": "El tamaño ha cambiado desde el análisis",
