@@ -1,9 +1,11 @@
 import { HttpErrorResponse } from '@angular/common/http'
 import { Component, EventEmitter, inject, Input, OnInit, Output } from '@angular/core'
 import { FormsModule } from '@angular/forms'
-import { LucideDynamicIcon, LucideRefreshCw, LucideX } from '@lucide/angular'
+import { LucideDynamicIcon, LucideFunnel, LucideRefreshCw, LucideSettings, LucideX } from '@lucide/angular'
 import { L10N_LOCALE, L10nLocale, L10nTranslateDirective, L10nTranslatePipe } from 'angular-l10n'
 import { TabDirective, TabHeadingDirective, TabsetComponent } from 'ngx-bootstrap/tabs'
+import { SYNC_MAX_PATH_FILTERS } from '@sync-in-server/backend/src/applications/sync/utils/path-filters/constants'
+import { validatePathFilterList } from '@sync-in-server/backend/src/applications/sync/utils/path-filters/path-filter-compiler'
 import { ELECTRON_DIALOG } from '../../../../electron/constants/dialogs'
 import { LayoutService } from '../../../../layout/layout.service'
 import { StoreService } from '../../../../store/store.service'
@@ -36,6 +38,7 @@ export class SyncPathSettingsDialogComponent implements OnInit {
   protected readonly layout = inject(LayoutService)
   protected readonly store = inject(StoreService)
   protected readonly ELECTRON_DIALOG = ELECTRON_DIALOG
+  protected readonly SYNC_MAX_PATH_FILTERS = SYNC_MAX_PATH_FILTERS
   protected readonly SYNC_PATH_FILTER_TYPE = SYNC_PATH_FILTER_TYPE
   protected syncPath: SyncPathModel
   protected currentFilter: string
@@ -48,8 +51,12 @@ export class SyncPathSettingsDialogComponent implements OnInit {
     [this.SYNC_PATH_FILTER_TYPE.END]: "with the extension ('.mp3', '.avi', '.mov' ...)",
     [this.SYNC_PATH_FILTER_TYPE.EXPERT]: '[-+]?[0-9]*\\.?[0-9]*'
   }
-  protected readonly icons = { LucideX, LucideRefreshCw }
+  protected readonly icons = { LucideX, LucideRefreshCw, LucideSettings, LucideFunnel }
   protected confirmDeletion = false
+  private invalidFilterIndexes = new Set<number>()
+  private filtersValidationPending = true
+  private lastValidatedFilter: string | undefined
+  private lastValidatedFilterIsInvalid = false
   private readonly syncService = inject(SyncService)
 
   ngOnInit() {
@@ -111,6 +118,12 @@ export class SyncPathSettingsDialogComponent implements OnInit {
 
   onRemoveFilter(index: number) {
     this.syncPath.settings.filters.splice(index, 1)
+    this.filtersValidationPending = true
+  }
+
+  protected onFilterChange(index: number, filter: string) {
+    this.syncPath.settings.filters[index] = filter
+    this.filtersValidationPending = true
   }
 
   onSelect(type: ELECTRON_DIALOG = this.ELECTRON_DIALOG.FILE) {
@@ -124,20 +137,36 @@ export class SyncPathSettingsDialogComponent implements OnInit {
   }
 
   addFilter() {
-    if (
-      this.currentFilterType === this.SYNC_PATH_FILTER_TYPE.FILE ||
-      this.currentFilterType === this.SYNC_PATH_FILTER_TYPE.FOLDER ||
-      this.currentFilterType === this.SYNC_PATH_FILTER_TYPE.EXPERT
-    ) {
-      this.syncPath.settings.filters.unshift(this.currentFilter)
-    } else if (this.currentFilterType === this.SYNC_PATH_FILTER_TYPE.START) {
-      this.syncPath.settings.filters.unshift(`^${this.currentFilter}.*`)
-    } else if (this.currentFilterType === this.SYNC_PATH_FILTER_TYPE.IN) {
-      this.syncPath.settings.filters.unshift(`.*${this.currentFilter}.*`)
-    } else if (this.currentFilterType === this.SYNC_PATH_FILTER_TYPE.END) {
-      this.syncPath.settings.filters.unshift(`.*${this.currentFilter}$`)
+    if (this.syncPath.settings.filters.length >= SYNC_MAX_PATH_FILTERS) {
+      return
     }
+
+    this.syncPath.settings.filters.unshift(this.buildFilter(this.currentFilter))
     this.currentFilter = null
+    this.filtersValidationPending = true
+  }
+
+  protected isInvalidFilter(index: number): boolean {
+    this.validateFilters()
+    return this.invalidFilterIndexes.has(index)
+  }
+
+  protected isCurrentFilterInvalid(): boolean {
+    if (!this.currentFilter) {
+      return false
+    }
+
+    const filter = this.buildFilter(this.currentFilter)
+    if (filter !== this.lastValidatedFilter) {
+      this.lastValidatedFilter = filter
+      this.lastValidatedFilterIsInvalid = validatePathFilterList([filter]).length > 0
+    }
+    return this.lastValidatedFilterIsInvalid
+  }
+
+  protected hasInvalidFilters(): boolean {
+    this.validateFilters()
+    return this.invalidFilterIndexes.size > 0
   }
 
   onCancel() {
@@ -146,5 +175,27 @@ export class SyncPathSettingsDialogComponent implements OnInit {
     } else {
       this.layout.closeDialog()
     }
+  }
+
+  private buildFilter(filter: string): string {
+    if (this.currentFilterType === this.SYNC_PATH_FILTER_TYPE.START) {
+      return `^${filter}.*`
+    }
+    if (this.currentFilterType === this.SYNC_PATH_FILTER_TYPE.IN) {
+      return `.*${filter}.*`
+    }
+    if (this.currentFilterType === this.SYNC_PATH_FILTER_TYPE.END) {
+      return `.*${filter}$`
+    }
+    return filter
+  }
+
+  private validateFilters(): void {
+    if (!this.filtersValidationPending || !this.syncPath) {
+      return
+    }
+
+    this.filtersValidationPending = false
+    this.invalidFilterIndexes = new Set(validatePathFilterList(this.syncPath.settings.filters))
   }
 }

@@ -10,7 +10,8 @@
     <tab customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <span class="app-tab-label">{{ 'Settings' | translate:locale.language }}</span>
+          <svg [lucideIcon]="icons.LucideSettings"></svg>
+          <span class="app-tab-label">{{ 'Settings' | translate: locale.language }}</span>
         </span>
       </ng-template>
       <div class="app-tab-content">
@@ -20,7 +21,17 @@
     <tab customClass="tab-dialog">
       <ng-template tabHeading>
         <span class="app-tab-heading">
-          <span class="app-tab-label">{{ 'Filters' | translate:locale.language }}</span>
+          <svg [lucideIcon]="icons.LucideFunnel"></svg>
+          <span class="app-tab-label">{{ 'Filters' | translate: locale.language }}</span>
+          @if (hasInvalidFilters()) {
+            <span
+              class="text-danger fw-bold"
+              [attr.aria-label]="'Invalid regular expression' | translate: locale.language"
+              [title]="'Invalid regular expression' | translate: locale.language"
+            >
+              !
+            </span>
+          }
         </span>
       </ng-template>
       <div class="app-tab-content sync-filters-tab">
@@ -47,9 +58,11 @@
                   id="sync-filter-value"
                   [(ngModel)]="currentFilter"
                   [disabled]="currentFilterType === SYNC_PATH_FILTER_TYPE.FILE || currentFilterType === SYNC_PATH_FILTER_TYPE.FOLDER"
-                  [placeholder]="filterTypePlaceholder[currentFilterType] | translate:locale.language"
+                  [placeholder]="filterTypePlaceholder[currentFilterType] | translate: locale.language"
+                  [class.is-invalid]="isCurrentFilterInvalid()"
                   class="form-control"
-                  type="text">
+                  type="text"
+                />
                 <div class="sync-filters-actions">
                   @if (currentFilterType === SYNC_PATH_FILTER_TYPE.FILE) {
                     <button (click)="onSelect()" class="btn btn-default" l10nTranslate type="button">Browse</button>
@@ -57,7 +70,15 @@
                   @if (currentFilterType === SYNC_PATH_FILTER_TYPE.FOLDER) {
                     <button (click)="onSelect(ELECTRON_DIALOG.DIRECTORY)" class="btn btn-default" l10nTranslate type="button">Browse</button>
                   }
-                  <button (click)="addFilter()" [disabled]="!currentFilter" class="btn btn-success" l10nTranslate type="button">Add</button>
+                  <button
+                    (click)="addFilter()"
+                    [disabled]="!currentFilter || syncPath.settings.filters.length >= SYNC_MAX_PATH_FILTERS || isCurrentFilterInvalid()"
+                    class="btn btn-success"
+                    l10nTranslate
+                    type="button"
+                  >
+                    Add
+                  </button>
                 </div>
               </div>
             </div>
@@ -69,10 +90,13 @@
             @if (syncPath.settings.filters.length) {
               @for (f of syncPath.settings.filters; track $index; let i = $index) {
                 <div class="sync-filter-item">
-                  <input [ngModel]="f"
-                         (ngModelChange)="syncPath.settings.filters[i] = $event"
-                         class="form-control"
-                         type="text">
+                  <input
+                    [ngModel]="f"
+                    (ngModelChange)="onFilterChange(i, $event)"
+                    [class.is-invalid]="isInvalidFilter(i)"
+                    class="form-control"
+                    type="text"
+                  />
                   <button (click)="onRemoveFilter(i)" class="btn btn-danger" data-dismiss="modal" type="button">
                     <svg [lucideIcon]="icons.LucideX"></svg>
                   </button>
@@ -88,18 +112,20 @@
   </tabset>
 </div>
 <div class="modal-footer">
-  <button (click)="confirmDeletion = true"
-          [disabled]="confirmDeletion"
-          class="btn btn-danger me-2" data-dismiss="modal" type="button" l10nTranslate>
+  <button (click)="confirmDeletion = true" [disabled]="confirmDeletion" class="btn btn-danger me-2" data-dismiss="modal" type="button" l10nTranslate>
     Remove
   </button>
   @if (store.isElectronApp()) {
     <button (click)="onFlush()" class="btn btn-warning" data-dismiss="modal" type="button" l10nTranslate>Reset</button>
   }
   <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
-  <button (click)="onSubmit()"
-          [disabled]="!syncPath.settings.name"
-          class="btn {{confirmDeletion ? 'btn-danger' : 'btn-primary'}}" type="submit" l10nTranslate>
+  <button
+    (click)="onSubmit()"
+    [disabled]="!syncPath.settings.name"
+    class="btn {{ confirmDeletion ? 'btn-danger' : 'btn-primary' }}"
+    type="submit"
+    l10nTranslate
+  >
     {{ confirmDeletion ? 'Confirm deletion' : 'Confirm' }}
   </button>
 </div>

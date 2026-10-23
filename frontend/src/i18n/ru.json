@@ -790,6 +790,7 @@
   "Version": "Версия",
   "Filter type": "Тип фильтра",
   "Filter value": "Значение фильтра",
+  "Invalid regular expression": "Недопустимое регулярное выражение",
   "No filter configured": "Фильтры не настроены",
   "checksums are not identical": "Контрольные суммы не совпадают",
   "size has changed since parsing": "Размер изменился с момента разбора",
