@@ -85,7 +85,7 @@
     "bump:version:dry": "npm run test && commit-and-tag-version --dry-run",
     "lint": "npm --ws run lint",
     "lint:staged": "npm --ws run lint:staged",
-    "test": "npm --ws run lint && npm -w backend test",
+    "test": "npm --ws run lint && npm -w backend test && npm -w frontend test",
     "start": "node dist/server/main.js",
     "reset": "rm -rf frontend/node_modules frontend/.angular backend/node_modules node_modules .angular",
     "reset:hard": "npm run reset && npm cache clean --force",

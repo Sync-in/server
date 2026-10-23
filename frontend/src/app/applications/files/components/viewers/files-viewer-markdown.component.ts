@@ -1,5 +1,5 @@
 import { CodeEditor } from '@acrodata/code-editor'
-import { Component, effect, ElementRef, HostListener, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
+import { Component, effect, ElementRef, HostListener, inject, input, OnDestroy, OnInit, signal, viewChild, ViewEncapsulation } from '@angular/core'
 import { FormsModule } from '@angular/forms'
 import { redo, redoDepth, undo, undoDepth } from '@codemirror/commands'
 import { LanguageDescription } from '@codemirror/language'
@@ -34,8 +34,10 @@ import {
   LucideUnderline,
   LucideUndo
 } from '@lucide/angular'
+import { API_FILES_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/routes'
+import { encodeUrl } from '@sync-in-server/backend/src/common/shared'
 import { Editor, Extension, type Range } from '@tiptap/core'
-import Image, { type SetImageOptions } from '@tiptap/extension-image'
+import type { SetImageOptions } from '@tiptap/extension-image'
 import { TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
 import { TaskList } from '@tiptap/extension-task-list'
@@ -52,6 +54,11 @@ import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-cod
 import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 import { TipTapFileViewerSearchAdapter } from './components/files-viewer-tiptap-search-adapter'
 import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-unsaved-changes.component'
+import { FilesService } from '../../services/files.service'
+import { markdownHeadingSlug, resolveMarkdownLink } from './components/markdown-link'
+import { MarkdownLink } from './components/markdown-link.extension'
+import { MarkdownImage } from './components/markdown-image.extension'
+import { resolveMarkdownRelativePath } from './components/markdown-relative-path'
 
 type MarkdownHeadingLevel = 1 | 2 | 3 | 4
 type MarkdownInlineMark = 'bold' | 'code' | 'italic' | 'strike' | 'underline'
@@ -90,6 +97,10 @@ const ExitInlineCodeOnEnter = Extension.create({
   templateUrl: 'files-viewer-markdown.component.html'
 })
 export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implements OnInit, OnDestroy {
+  fragment = input<{ value: string }>({ value: '' })
+  private readonly linkedFiles = inject(FilesService)
+  private openingLink = false
+  private headingRafId: number | null = null
   protected isSourceMode = signal(false)
   protected lineWrapping = signal(false)
   protected sourceContent = ''
@@ -100,10 +111,9 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   protected readonly editor = new Editor({
     extensions: [
       StarterKit.configure({
-        link: {
-          openOnClick: false
-        }
+        link: false
       }),
+      MarkdownLink.configure({ openOnClick: false }),
       ExitInlineCodeOnEnter,
       TaskList,
       TaskItem.configure({
@@ -114,12 +124,16 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
           resizable: true
         }
       }),
-      Image.configure({
-        allowBase64: true
+      MarkdownImage.configure({
+        allowBase64: true,
+        resolveSource: (source) => this.resolveImageSource(source)
       }),
       Markdown,
       this.visualSearchAdapter.extension
     ],
+    editorProps: {
+      handleDOMEvents: { click: (_view, event) => this.followLink(event) }
+    },
     editable: false,
     content: '',
     contentType: 'markdown',
@@ -166,6 +180,10 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   constructor() {
     super()
+    effect(() => {
+      const fragment = this.fragment().value
+      this.scrollToHeading(fragment)
+    })
     effect(() => {
       const editable = this.canEditContent() && this.isSupported()
       if (!this.editor.isDestroyed) {
@@ -221,6 +239,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     if (this.focusRafId !== null) {
       cancelAnimationFrame(this.focusRafId)
     }
+    if (this.headingRafId !== null) cancelAnimationFrame(this.headingRafId)
     this.editor.destroy()
   }
 
@@ -393,6 +412,26 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     })
   }
 
+  protected insertImageFromRelativePath() {
+    this.runEditorCommand(() => {
+      const src = window.prompt(this.layout.translateString('Image from relative path'), 'images/')
+      if (src === null || !src.trim()) return false
+      if (!resolveMarkdownRelativePath(this.file().path, src.trim())) {
+        this.layout.sendNotification('error', 'Unable to insert image', 'Invalid relative image path')
+        return false
+      }
+      const alt = window.prompt(this.layout.translateString('Alternative text'), '')
+      if (alt === null) return false
+      return this.insertImage({ src: src.trim(), alt: alt.trim() || undefined })
+    })
+  }
+
+  private resolveImageSource(source: string): string | null {
+    if (/^(?:[a-z][a-z\d+.-]*:|\/)/i.test(source)) return source
+    const path = resolveMarkdownRelativePath(this.file().path, source)
+    return path ? `${API_FILES_OPERATION}/${encodeUrl(path)}` : null
+  }
+
   protected insertTable() {
     this.runEditorCommand(() => this.editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run())
   }
@@ -445,6 +484,7 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
     this.setMarkdownContent(content)
     this.isModified.set(false)
     this.scheduleEditorFocus('visual', 'start')
+    this.scrollToHeading(this.fragment().value)
   }
 
   protected override onContentSaved(content: string) {
@@ -453,6 +493,59 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   protected override onSaveFinished(_success: boolean) {
     this.scheduleEditorFocus(this.isSourceMode() ? 'source' : 'visual', undefined, true)
+  }
+
+  private followLink(event: MouseEvent): boolean {
+    const anchor = (event.target as Element)?.closest('a[href]')
+    if (!anchor) return false
+    // A normal click places the caret while editing; Ctrl/Cmd-click follows the link.
+    event.preventDefault()
+    if (this.canEditContent() && !event.ctrlKey && !event.metaKey) return true
+    const href = anchor.getAttribute('href') || ''
+    if (/^(https?:|mailto:)/i.test(href)) {
+      window.open(href, '_blank', 'noopener,noreferrer')
+      return true
+    }
+    const target = resolveMarkdownLink(this.file().path, href)
+    if (!target) {
+      this.layout.sendNotification('warning', 'Unable to open document', href)
+      return true
+    }
+    if (target.path === this.file().path) {
+      this.scrollToHeading(target.fragment)
+    } else if (!this.openingLink) {
+      this.openingLink = true
+      this.linkedFiles
+        .openMarkdownDocument(target.path, target.fragment)
+        .then((opened) => {
+          if (opened && !this.editor.isDestroyed) {
+            // Retain the source editor, including unsaved edits and its lock, for return navigation.
+            const file = this.file()
+            this.layout.minimizeDialog(file.id, { name: file.name, mimeUrl: file.mimeUrl })
+          }
+        })
+        .finally(() => (this.openingLink = false))
+    }
+    return true
+  }
+
+  private scrollToHeading(fragment: string) {
+    if (!fragment || this.editor.isDestroyed) return
+    if (this.headingRafId !== null) cancelAnimationFrame(this.headingRafId)
+    this.headingRafId = requestAnimationFrame(() => {
+      this.headingRafId = null
+      if (this.editor.isDestroyed || !this.editor.view.dom.isConnected) return
+      const counts = new Map<string, number>()
+      const headings = Array.from((this.editor.view.dom as HTMLElement).querySelectorAll('h1,h2,h3,h4,h5,h6'))
+      const heading = headings.find((element) => {
+        const text = element.textContent || ''
+        const slug = markdownHeadingSlug(text)
+        const occurrence = counts.get(slug) || 0
+        counts.set(slug, occurrence + 1)
+        return text.toLowerCase() === fragment.toLowerCase() || `${slug}${occurrence ? `-${occurrence}` : ''}` === fragment.toLowerCase()
+      })
+      heading?.scrollIntoView({ block: 'start' })
+    })
   }
 
   private runEditorCommand(command: () => boolean) {

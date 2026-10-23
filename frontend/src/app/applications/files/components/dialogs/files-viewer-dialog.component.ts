@@ -42,6 +42,7 @@ export class FilesViewerDialogComponent implements OnInit, OnDestroy {
   @Input({ required: true }) isWriteable: boolean
   @Input({ required: true }) hookedShortMime: string
   @Input({ required: true }) editorProvider: FileEditorProviders
+  markdownFragment = signal<{ value: string }>({ value: '' })
   modalClosing = signal<boolean>(false)
   protected activeViewer = signal<string>('')
   protected editableViewerReady = signal(false)

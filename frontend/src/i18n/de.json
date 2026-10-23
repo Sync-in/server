@@ -813,5 +813,7 @@
   "Unable to generate": "Generieren nicht möglich",
   "Unable to get app passwords": "Anwendungskennwörter können nicht abgerufen werden",
   "Unable to verify code": "Code kann nicht überprüft werden",
-  "Task not found": "Aufgabe nicht gefunden"
+  "Task not found": "Aufgabe nicht gefunden",
+  "Image from relative path": "Bild aus relativem Pfad",
+  "Invalid relative image path": "Ungültiger relativer Bildpfad"
 }

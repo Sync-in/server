@@ -813,5 +813,7 @@
   "Unable to generate": "Impossible de générer",
   "Unable to get app passwords": "Impossible de récupérer les mots de passe d'application",
   "Unable to verify code": "Impossible de vérifier le code",
-  "Task not found": "Tâche introuvable"
+  "Task not found": "Tâche introuvable",
+  "Image from relative path": "Image depuis un chemin relatif",
+  "Invalid relative image path": "Chemin relatif de l’image invalide"
 }
