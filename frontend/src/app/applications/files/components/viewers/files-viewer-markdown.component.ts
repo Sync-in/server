@@ -34,9 +34,7 @@ import {
   LucideUnderline,
   LucideUndo
 } from '@lucide/angular'
-import { API_FILES_OPERATION } from '@sync-in-server/backend/src/applications/files/constants/routes'
-import { encodeUrl } from '@sync-in-server/backend/src/common/shared'
-import { Editor, Extension, type Range } from '@tiptap/core'
+import { Editor, Extension, isNodeSelection, type Range } from '@tiptap/core'
 import type { SetImageOptions } from '@tiptap/extension-image'
 import { TaskItem } from '@tiptap/extension-list'
 import { TableKit } from '@tiptap/extension-table'
@@ -54,8 +52,7 @@ import { CodeMirrorFileViewerSearchAdapter } from './components/files-viewer-cod
 import { FilesViewerSearchComponent } from './components/files-viewer-search.component'
 import { TipTapFileViewerSearchAdapter } from './components/files-viewer-tiptap-search-adapter'
 import { FilesViewerUnsavedChangesComponent } from './components/files-viewer-unsaved-changes.component'
-import { MarkdownImage } from './components/markdown-image.extension'
-import { resolveMarkdownRelativePath } from './components/markdown-relative-path'
+import { isAllowedAbsoluteImageSource, MarkdownImage, resolveMarkdownRelativeImageUrl } from './utils/markdown-image.utils'
 
 type MarkdownHeadingLevel = 1 | 2 | 3 | 4
 type MarkdownInlineMark = 'bold' | 'code' | 'italic' | 'strike' | 'underline'
@@ -120,7 +117,11 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
       }),
       MarkdownImage.configure({
         allowBase64: true,
-        resolveSource: (source) => this.resolveImageSource(source)
+        HTMLAttributes: {
+          decoding: 'async',
+          loading: 'lazy'
+        },
+        resolveSource: (source) => (isAllowedAbsoluteImageSource(source) ? source : resolveMarkdownRelativeImageUrl(this.file(), source))
       }),
       Markdown,
       this.visualSearchAdapter.extension
@@ -372,7 +373,6 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
       this.layout.sendNotification('error', 'Unable to insert image', 'Unsupported image file')
       return
     }
-
     const reader = new FileReader()
     reader.onload = () => {
       const src = typeof reader.result === 'string' ? reader.result : ''
@@ -388,34 +388,47 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
 
   protected insertImageFromUrl() {
     this.runEditorCommand(() => {
-      const previousSrc = this.editor.getAttributes('image').src as string | undefined
-      const src = window.prompt('Image URL', previousSrc || 'https://')
-      if (src === null || !src.trim()) return false
-      const previousAlt = this.editor.getAttributes('image').alt as string | undefined
-      const alt = window.prompt('Alternative text', previousAlt || '')
+      const imageAttributes = this.editor.getAttributes('image')
+      const previousSrc = imageAttributes.src as string | undefined
+      const src = window
+        .prompt(
+          this.layout.translateString('Image from URL'),
+          previousSrc && isAllowedAbsoluteImageSource(previousSrc) ? previousSrc : `${window.location.origin}/`
+        )
+        ?.trim()
+      if (!src) return false
+      if (!isAllowedAbsoluteImageSource(src)) {
+        this.layout.sendNotification('error', 'Unable to insert image', 'Invalid image URL')
+        return false
+      }
+      const previousAlt = imageAttributes.alt as string | undefined
+      const alt = window.prompt(this.layout.translateString('Description'), previousAlt || '')
       if (alt === null) return false
-      return this.insertImage({ src: src.trim(), alt: alt.trim() || undefined })
+      return this.insertImage({ src, alt: alt.trim() || undefined })
     })
   }
 
   protected insertImageFromRelativePath() {
     this.runEditorCommand(() => {
-      const src = window.prompt(this.layout.translateString('Image from relative path'), 'images/')
-      if (src === null || !src.trim()) return false
-      if (!resolveMarkdownRelativePath(this.file().path, src.trim())) {
+      const file = this.file()
+      const imageAttributes = this.editor.getAttributes('image')
+      const previousSrc = imageAttributes.src as string | undefined
+      const src = window
+        .prompt(
+          this.layout.translateString('Image from relative path'),
+          previousSrc && resolveMarkdownRelativeImageUrl(file, previousSrc) ? previousSrc : 'images/'
+        )
+        ?.trim()
+      if (!src) return false
+      if (!resolveMarkdownRelativeImageUrl(file, src)) {
         this.layout.sendNotification('error', 'Unable to insert image', 'Invalid relative image path')
         return false
       }
-      const alt = window.prompt(this.layout.translateString('Alternative text'), '')
+      const previousAlt = imageAttributes.alt as string | undefined
+      const alt = window.prompt(this.layout.translateString('Description'), previousAlt || '')
       if (alt === null) return false
-      return this.insertImage({ src: src.trim(), alt: alt.trim() || undefined })
+      return this.insertImage({ src, alt: alt.trim() || undefined })
     })
-  }
-
-  private resolveImageSource(source: string): string | null {
-    if (/^(?:[a-z][a-z\d+.-]*:|\/)/i.test(source)) return source
-    const path = resolveMarkdownRelativePath(this.file().path, source)
-    return path ? `${API_FILES_OPERATION}/${encodeUrl(path)}` : null
   }
 
   protected insertTable() {
@@ -500,7 +513,12 @@ export class FilesViewerMarkdownComponent extends FilesViewerEditableBase implem
   }
 
   private insertImage(options: SetImageOptions): boolean {
-    return this.canEditVisual() && !this.editor.isDestroyed && this.editor.chain().focus().setImage(options).run()
+    if (!this.canEditVisual() || this.editor.isDestroyed) return false
+    const { selection } = this.editor.state
+    const command = this.editor.chain().focus()
+    return isNodeSelection(selection) && selection.node.type.name === 'image'
+      ? command.updateAttributes('image', options).run()
+      : command.setImage(options).run()
   }
 
   private currentWordRange(): Range | null {

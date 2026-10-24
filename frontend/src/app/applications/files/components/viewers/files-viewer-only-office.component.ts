@@ -9,7 +9,7 @@ import { StoreService } from '../../../../store/store.service'
 import { FileModel } from '../../models/file.model'
 import { FilesService } from '../../services/files.service'
 import { fileLockPropsToString } from '../utils/file-lock.utils'
-import { OnlyOfficeComponent } from '../utils/only-office.component'
+import { OnlyOfficeComponent } from './utils/only-office.component'
 
 @Component({
   selector: 'app-files-viewer-only-office',
