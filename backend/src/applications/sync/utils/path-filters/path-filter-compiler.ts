@@ -17,23 +17,28 @@ export function buildPathFilterSource(filters: readonly string[]): string | null
     throw new PathFilterError('Invalid path filters')
   }
 
-  let sourceLength = Math.max(0, filters.length - 1)
+  if (filters.length > SYNC_MAX_PATH_FILTERS) {
+    throw new PathFilterError('Too many path filters')
+  }
+
+  const nonEmptyFilters: string[] = []
+  let sourceLength = 0
   for (const filter of filters) {
     // Array iteration exposes sparse entries as undefined, unlike some().
     if (typeof filter !== 'string') {
       throw new PathFilterError('Invalid path filters')
     }
-    sourceLength += filter.length
-  }
-  if (filters.length > SYNC_MAX_PATH_FILTERS) {
-    throw new PathFilterError('Too many path filters')
+    if (!filter.trim()) {
+      continue
+    }
+    sourceLength += filter.length + (nonEmptyFilters.length ? 1 : 0)
+    nonEmptyFilters.push(filter)
   }
   if (sourceLength > SYNC_MAX_PATH_FILTER_PATTERN_LENGTH) {
     throw new PathFilterError('Path filter pattern is too long')
   }
 
-  // Preserve the original alternatives, including empty filters and whitespace.
-  return filters.length ? filters.join('|') || '(?:)' : null
+  return nonEmptyFilters.length ? nonEmptyFilters.join('|') : null
 }
 
 // Compile only after validation and budget checks; unexpected engine failures must propagate.
@@ -150,12 +155,21 @@ export function validatePathFilterList(filters: readonly string[]): number[] {
   // Discard entries that cannot safely participate in the combined parse while
   // preserving their original indexes for per-field feedback.
   for (const [index, filter] of filters.entries()) {
-    if (index >= SYNC_MAX_PATH_FILTERS || typeof filter !== 'string' || filter.length > SYNC_MAX_PATH_FILTER_LENGTH) {
+    if (index >= SYNC_MAX_PATH_FILTERS || typeof filter !== 'string') {
       invalidIndexes.add(index)
-    } else {
-      candidates.push(filter)
-      candidateIndexes.push(index)
+      continue
     }
+    if (!filter.trim()) {
+      invalidIndexes.add(index)
+      continue
+    }
+    if (filter.length > SYNC_MAX_PATH_FILTER_LENGTH) {
+      invalidIndexes.add(index)
+      continue
+    }
+
+    candidates.push(filter)
+    candidateIndexes.push(index)
   }
 
   if (!candidates.length) {

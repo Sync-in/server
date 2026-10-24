@@ -121,7 +121,7 @@
   <button (click)="onCancel()" class="btn btn-secondary ms-auto" data-dismiss="modal" type="button" l10nTranslate>Cancel</button>
   <button
     (click)="onSubmit()"
-    [disabled]="!syncPath.settings.name"
+    [disabled]="!syncPath.settings.name || (!confirmDeletion && hasInvalidFilters())"
     class="btn {{ confirmDeletion ? 'btn-danger' : 'btn-primary' }}"
     type="submit"
     l10nTranslate

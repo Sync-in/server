@@ -49,7 +49,7 @@ export class SyncPathSettingsDialogComponent implements OnInit {
     [this.SYNC_PATH_FILTER_TYPE.START]: 'with a name or pattern',
     [this.SYNC_PATH_FILTER_TYPE.IN]: 'with a name or pattern',
     [this.SYNC_PATH_FILTER_TYPE.END]: "with the extension ('.mp3', '.avi', '.mov' ...)",
-    [this.SYNC_PATH_FILTER_TYPE.EXPERT]: '[-+]?[0-9]*\\.?[0-9]*'
+    [this.SYNC_PATH_FILTER_TYPE.EXPERT]: '^(temp|cache)/.*\\.(log|tmp)$'
   }
   protected readonly icons = { LucideX, LucideRefreshCw, LucideSettings, LucideFunnel }
   protected confirmDeletion = false
@@ -68,6 +68,8 @@ export class SyncPathSettingsDialogComponent implements OnInit {
       this.onRemove()
       return
     }
+    if (this.hasInvalidFilters()) return
+
     if (this.store.isElectronApp()) {
       this.syncService.updatePath(this.syncPath.export(true)).then(() => {
         this.syncService.refreshPaths().catch(console.error)

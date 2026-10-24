@@ -9,10 +9,11 @@ afterEach(() => vi.restoreAllMocks())
 describe(buildPathFilterSource.name, () => {
   it.each([
     { filters: [], source: null },
-    { filters: [''], source: '(?:)' },
-    { filters: ['', 'a'], source: '|a' },
+    { filters: [''], source: null },
+    { filters: ['   '], source: null },
+    { filters: ['', 'a'], source: 'a' },
     { filters: [' documents/.+\\.pdf$ ', '^資料/報告$', 'a|b'], source: ' documents/.+\\.pdf$ |^資料/報告$|a|b' }
-  ])('preserves the filter source for $filters', ({ filters, source }) => {
+  ])('builds the filter source for $filters', ({ filters, source }) => {
     expect(buildPathFilterSource(filters)).toBe(source)
   })
 
@@ -43,6 +44,10 @@ describe(validatePathFilterList.name, () => {
   it('marks every filter when the combined syntax cannot be parsed', () => {
     expect(validatePathFilterList(['^documents/', '(', '^photos/'])).toEqual([0, 1, 2])
   })
+
+  it('marks empty filters as invalid', () => {
+    expect(validatePathFilterList(['', '   ', '^documents/'])).toEqual([0, 1])
+  })
 })
 
 describe(compilePathFilters.name, () => {
@@ -56,10 +61,10 @@ describe(compilePathFilters.name, () => {
     expect(adversarial?.test(`${'a'.repeat(28)}/`)).toBe(true)
   })
 
-  it('distinguishes absent filters from universal empty alternatives', () => {
+  it('treats empty filter entries as absent while preserving direct regex sources', () => {
     expect(compilePathFilters(null)).toEqual({ matcher: null, rejected: [] })
     expect(compilePathFilters('')).toEqual({ matcher: null, rejected: [] })
-    expect(compilePathFilters(buildPathFilterSource([''])).matcher?.test('documents/report.txt')).toBe(true)
+    expect(compilePathFilters(buildPathFilterSource(['']))).toEqual({ matcher: null, rejected: [] })
     expect(compilePathFilters('|^documents/').matcher?.test('archive/report.txt')).toBe(true)
   })
 
