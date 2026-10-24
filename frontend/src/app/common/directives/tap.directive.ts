@@ -1,13 +1,6 @@
 import { DOCUMENT, isPlatformBrowser } from '@angular/common'
 import { DestroyRef, Directive, ElementRef, EventEmitter, inject, Injectable, Input, NgZone, OnDestroy, Output, PLATFORM_ID } from '@angular/core'
-
-type TapKind = 'single' | 'double'
-interface TapEvent {
-  x: number
-  y: number
-  type: TapKind
-  sourceEvent?: PointerEvent
-}
+import type { TapEvent, TapKind, TapPoint } from '../interfaces/tap.interface'
 
 @Injectable({ providedIn: 'root' })
 class TapGhostClickGuard {
@@ -98,9 +91,9 @@ export class TapDirective implements OnDestroy {
   private longPressTriggered = false
   private longPressStartX = 0
   private longPressStartY = 0
-
-  private pendingSingle: { x: number; y: number; t: number } | null = null
-  private singleTimer: any = null
+  private lastImmediateTouchTap: TapPoint | null = null
+  private pendingTap: TapPoint | null = null
+  private pendingTapTimer: ReturnType<typeof setTimeout> | null = null
 
   constructor() {
     this.el = this.elRef.nativeElement
@@ -122,11 +115,13 @@ export class TapDirective implements OnDestroy {
   ngOnDestroy() {
     for (const off of this.removeFns) off()
     this.removeFns = []
-    clearTimeout(this.singleTimer)
+    this.clearPendingTap()
     this.cancelLongPress()
   }
 
   private onLongPressDown = (ev: PointerEvent) => {
+    // A secondary pointer must not cancel the primary pointer's long press.
+    if (!ev.isPrimary) return
     this.cancelLongPress()
     this.longPressTriggered = false
     if (
@@ -134,7 +129,6 @@ export class TapDirective implements OnDestroy {
       this.disabled ||
       !this.isIosTouchDevice() ||
       ev.pointerType !== 'touch' ||
-      !ev.isPrimary ||
       ev.button !== 0 ||
       this.isIgnoredTarget(ev.target)
     ) {
@@ -179,7 +173,7 @@ export class TapDirective implements OnDestroy {
   }
 
   private onDown = (ev: PointerEvent) => {
-    if (this.disabled || ev.button !== 0 || this.active || this.isIgnoredTarget(ev.target)) return
+    if (this.disabled || !ev.isPrimary || ev.button !== 0 || this.active || this.isIgnoredTarget(ev.target)) return
     this.active = true
     this.pointerId = ev.pointerId
     this.startX = ev.clientX
@@ -213,47 +207,24 @@ export class TapDirective implements OnDestroy {
 
     if (this.preventDefault) ev.preventDefault()
 
-    const now = performance.now()
-    const x = ev.clientX
-    const y = ev.clientY
+    const tap: TapPoint = { x: ev.clientX, y: ev.clientY, timestamp: performance.now() }
 
     if (this.singleTapOnTouch && ev.pointerType === 'touch') {
-      this.emit('single', x, y, ev)
+      this.handleImmediateTouchTap(ev, tap)
       return
     }
 
     if (!this.enableDoubleTap) {
-      this.emit('single', x, y, ev)
+      this.emit('single', tap.x, tap.y, ev)
       return
     }
 
-    // Double tap detection
-    if (this.pendingSingle) {
-      const dt2 = now - this.pendingSingle.t
-      const dist = Math.hypot(x - this.pendingSingle.x, y - this.pendingSingle.y)
-      if (dt2 <= this.doubleTapInterval && dist <= this.doubleTapSlop) {
-        clearTimeout(this.singleTimer)
-        this.singleTimer = null
-        this.pendingSingle = null
-        this.emit('double', x, y, ev)
-        return
-      }
-    }
-
-    // First tap
-    this.pendingSingle = { x, y, t: now }
-    clearTimeout(this.singleTimer)
-    this.singleTimer = setTimeout(() => {
-      if (this.emitSingleWhenNoDouble) {
-        const p = this.pendingSingle!
-        this.emit('single', p.x, p.y)
-      }
-      this.pendingSingle = null
-      this.singleTimer = null
-    }, this.doubleTapInterval)
+    this.handleTapSequence(ev, tap)
   }
 
-  private onCancel = () => this.resetGesture()
+  private onCancel = (ev: PointerEvent) => {
+    if (ev.pointerId === this.pointerId) this.resetGesture()
+  }
 
   private onContextMenu = (ev: MouseEvent) => {
     if (this.preventDefault) ev.preventDefault()
@@ -269,10 +240,56 @@ export class TapDirective implements OnDestroy {
     }
   }
 
-  private emit(type: TapKind, x: number, y: number, sourceEvent?: PointerEvent) {
-    if (this.preventGhostClick && sourceEvent?.pointerType === 'touch') {
-      this.ghostClickGuard.arm(sourceEvent)
+  private handleImmediateTouchTap(event: PointerEvent, tap: TapPoint) {
+    const isRepeatedTap = this.isNearbyTap(this.lastImmediateTouchTap, tap)
+    // Refresh the reference even when suppressing, so a rapid tap sequence stays throttled until it stops.
+    this.lastImmediateTouchTap = tap
+    if (isRepeatedTap) {
+      // A suppressed pointerup may still produce a compatibility click.
+      this.armGhostClickGuard(event)
+      return
     }
+    this.emit('single', tap.x, tap.y, event)
+  }
+
+  private handleTapSequence(event: PointerEvent, tap: TapPoint) {
+    if (this.isNearbyTap(this.pendingTap, tap)) {
+      this.clearPendingTap()
+      this.emit('double', tap.x, tap.y, event)
+      return
+    }
+
+    this.clearPendingTap()
+    this.pendingTap = tap
+    this.pendingTapTimer = setTimeout(() => {
+      if (this.emitSingleWhenNoDouble && this.pendingTap) {
+        this.emit('single', this.pendingTap.x, this.pendingTap.y)
+      }
+      this.pendingTap = null
+      this.pendingTapTimer = null
+    }, this.doubleTapInterval)
+  }
+
+  private isNearbyTap(previous: TapPoint | null, current: TapPoint): boolean {
+    return (
+      previous !== null &&
+      current.timestamp - previous.timestamp <= this.doubleTapInterval &&
+      Math.hypot(current.x - previous.x, current.y - previous.y) <= this.doubleTapSlop
+    )
+  }
+
+  private clearPendingTap() {
+    if (this.pendingTapTimer !== null) clearTimeout(this.pendingTapTimer)
+    this.pendingTapTimer = null
+    this.pendingTap = null
+  }
+
+  private armGhostClickGuard(event: PointerEvent) {
+    if (this.preventGhostClick && event.pointerType === 'touch') this.ghostClickGuard.arm(event)
+  }
+
+  private emit(type: TapKind, x: number, y: number, sourceEvent?: PointerEvent) {
+    if (sourceEvent) this.armGhostClickGuard(sourceEvent)
     this.lastEmitTs = performance.now()
     this.zone.run(() => this.appTap.emit({ x, y, type, sourceEvent }))
   }
