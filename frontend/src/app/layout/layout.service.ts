@@ -218,10 +218,14 @@ export class LayoutService {
   }
 
   openContextMenu(event: any, component: ContextMenuComponent<any>) {
+    this.closeContextMenu()
+    setTimeout(() => this.contextMenu.show(component, event.type === 'contextmenu' ? event : event.srcEvent), 5)
+  }
+
+  closeContextMenu(): void {
     if (this.contextMenu.hasOpenMenu()) {
       this.contextMenu.closeAll()
     }
-    setTimeout(() => this.contextMenu.show(component, event.type === 'contextmenu' ? event : event.srcEvent), 5)
   }
 
   sendNotification(

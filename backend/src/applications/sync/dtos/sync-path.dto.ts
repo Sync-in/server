@@ -1,13 +1,7 @@
 import { z } from 'zod'
 import { integerNumberSchema } from '../../../configuration/config.schema.js'
-import {
-  SYNC_MAX_PATH_FILTER_LENGTH,
-  SYNC_MAX_PATH_FILTERS,
-  SYNC_PATH_CONFLICT_MODE,
-  SYNC_PATH_DIFF_MODE,
-  SYNC_PATH_MODE,
-  SYNC_PATH_SCHEDULER_UNIT
-} from '../constants/sync.js'
+import { SYNC_PATH_CONFLICT_MODE, SYNC_PATH_DIFF_MODE, SYNC_PATH_MODE, SYNC_PATH_SCHEDULER_UNIT } from '../constants/sync.js'
+import { SYNC_MAX_PATH_FILTER_LENGTH, SYNC_MAX_PATH_FILTERS } from '../utils/path-filters/constants.js'
 
 const syncPathSchedulerSchema = z.object({
   value: z.number().int(),

@@ -35,8 +35,8 @@
                       </div>
                     </div>
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle mb-2">
-                      <div class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Last partial run</div>
-                      <div class="col-5 col-sm-6 text-end">
+                      <div class="form-label col-5 col-sm-6 mb-0" l10nTranslate>Last partial run</div>
+                      <div class="col-7 col-sm-6 text-end">
                         @if (indexingStatus.lastPartialRunAt) {
                           <span class="badge bg-purple text-muted">{{ indexingStatus.lastPartialRunAt | amDateFormat }}</span>
                         } @else {
@@ -45,8 +45,8 @@
                       </div>
                     </div>
                     <div class="row g-2 align-items-center py-2 border-bottom border-secondary-subtle mb-2">
-                      <div class="form-label col-7 col-sm-6 mb-0" l10nTranslate>Last full run</div>
-                      <div class="col-5 col-sm-6 text-end">
+                      <div class="form-label col-5 col-sm-6 mb-0" l10nTranslate>Last full run</div>
+                      <div class="col-7 col-sm-6 text-end">
                         @if (indexingStatus.lastFullRunAt) {
                           <span class="badge bg-purple text-muted">{{ indexingStatus.lastFullRunAt | amDateFormat }}</span>
                         } @else {

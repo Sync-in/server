@@ -290,7 +290,8 @@
         @for (f of scrollView?.viewPortItems; track f.id) {
           <div (click)="onSelect($event, f)"
                (contextmenu)="onTargetContextMenu($event, f)"
-               (appTap)="browse(f)"
+               (appTap)="onFileActivate(f, $event.sourceEvent)"
+               [singleTapOnTouch]="true"
                [class.disabled]="f.isDisabled"
                [class.deleted]="f.isBeingDeleted"
                [class.selected]="f.isSelected"
@@ -320,7 +321,7 @@
                      draggable="true"
                      (error)="f.fallBackMimeUrl()">
               }
-              <span class="label-bottom-right">
+              <span class="label-bottom-right" data-app-tap-ignore>
                 @let maxBadges = galleryMode.maxBadges || 0;
                 @let hiddenBadges = f.nbBadges - maxBadges;
                 @for (badge of f.galleryBadges; track badge; let i = $index) {
@@ -462,7 +463,8 @@
         @for (f of scrollView?.viewPortItems; track f.id) {
           <tr (click)="onSelect($event, f)"
               (contextmenu)="onTargetContextMenu($event, f)"
-              (appTap)="browse(f)"
+              (appTap)="onFileActivate(f, $event.sourceEvent)"
+              [singleTapOnTouch]="true"
               [class.disabled]="f.isDisabled"
               [class.deleted]="f.isBeingDeleted"
               [class.selected]="f.isSelected">
@@ -523,25 +525,29 @@
                         <span (click)="openLockDialog(f)"
                               tooltip="{{f.lock | fileLockFormatPipe}}"
                               placement="auto"
-                              class="badge bg-maroon cursor-pointer me-1">
+                              class="badge bg-maroon cursor-pointer me-1"
+                              data-app-tap-ignore>
                           <svg [lucideIcon]="f.lock.isExclusive ? icons.LucideLock : icons.LucideLockOpen"></svg>
                         </span>
                       }
                       @if (f.isFavorite) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge bg-warning cursor-pointer me-1">
+                              class="badge bg-warning cursor-pointer me-1"
+                              data-app-tap-ignore>
                           <svg [lucideIcon]="icons.FAVORITES"></svg>
                         </span>
                       }
                       @if (f.hasComments) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.COMMENTS, true)"
-                              class="badge bg-success cursor-pointer me-1">
+                              class="badge bg-success cursor-pointer me-1"
+                              data-app-tap-ignore>
                           <svg [lucideIcon]="icons.LucideMessageSquareMore"></svg>
                         </span>
                       }
                       @if (f.shares.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge bg-primary cursor-pointer me-1">
+                              class="badge bg-primary cursor-pointer me-1"
+                              data-app-tap-ignore>
                           <svg [lucideIcon]="icons.SHARED"></svg>
                           @if (f.shares.length > 1) {
                             {{ f.shares.length }}
@@ -550,7 +556,8 @@
                       }
                       @if (f.links.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge bg-primary cursor-pointer me-1">
+                              class="badge bg-primary cursor-pointer me-1"
+                              data-app-tap-ignore>
                           <svg [lucideIcon]="icons.LINKS"></svg>
                           @if (f.links.length > 1) {
                             {{ f.links.length }}
@@ -559,7 +566,8 @@
                       }
                       @if (f.spaces.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge bg-primary cursor-pointer me-1">
+                              class="badge bg-primary cursor-pointer me-1"
+                              data-app-tap-ignore>
                           <svg [lucideIcon]="icons.SPACES"></svg>
                           @if (f.spaces.length > 1) {
                             {{ f.spaces.length }}
@@ -568,7 +576,8 @@
                       }
                       @if (f.syncs.length) {
                         <span (click)="layout.showRSideBarTab(TAB_MENU.SELECTION, true)"
-                              class="badge bg-primary cursor-pointer">
+                              class="badge bg-primary cursor-pointer"
+                              data-app-tap-ignore>
                           <svg [lucideIcon]="icons.SYNC"></svg>
                           @if (f.syncs.length > 1) {
                             {{ f.syncs.length }}

@@ -1,31 +1,43 @@
-import { BadRequestException } from '@nestjs/common'
+import { BadRequestException, Logger } from '@nestjs/common'
 import path from 'node:path'
-import safeRegex from 'safe-regex2'
-import { SYNC_MAX_PATH_FILTER_PATTERN_LENGTH, SYNC_MAX_PATH_FILTER_REPETITIONS, SYNC_TEMPORARY_FILE_PREFIX } from '../constants/sync.js'
+import { SYNC_TEMPORARY_FILE_PREFIX } from '../constants/sync.js'
+import { PathFilterError } from './path-filters/errors.js'
+import { compilePathFilters } from './path-filters/path-filter-compiler.js'
+import { SYNC_MAX_PATH_FILTER_LENGTH, SYNC_MAX_PATH_FILTER_WARNINGS } from './path-filters/constants.js'
+import type { SyncPathFilterMatcher } from './path-filters/path-filter-compiler.interface.js'
+
+const pathFilterLogger = new Logger('SyncPathFilters')
 
 export function getSyncTmpFilePath(rPath: string): string {
   return `${path.dirname(rPath)}/${SYNC_TEMPORARY_FILE_PREFIX}${path.basename(rPath)}`
 }
 
-export function transformPathFilters(value: unknown): RegExp | null {
-  if (typeof value !== 'string' || value.length === 0) {
+export function transformPathFilters(value: unknown): SyncPathFilterMatcher | null {
+  if (typeof value !== 'string' || value === '') {
     return null
   }
 
-  if (value.length > SYNC_MAX_PATH_FILTER_PATTERN_LENGTH) {
-    throw new BadRequestException('Path filter pattern is too long')
-  }
-
-  let pathFilter: RegExp
   try {
-    pathFilter = new RegExp(value, 'i')
-  } catch {
-    throw new BadRequestException('Invalid path filter pattern')
+    const result = compilePathFilters(value)
+    for (const rejection of result.rejected.slice(0, SYNC_MAX_PATH_FILTER_WARNINGS)) {
+      pathFilterLogger.warn({
+        msg: 'Ignoring path filter alternative',
+        index: rejection.index,
+        pattern: rejection.pattern.slice(0, SYNC_MAX_PATH_FILTER_LENGTH),
+        reason: rejection.reason
+      })
+    }
+    if (result.rejected.length > SYNC_MAX_PATH_FILTER_WARNINGS) {
+      pathFilterLogger.warn({
+        msg: 'Additional path filter alternatives ignored',
+        count: result.rejected.length - SYNC_MAX_PATH_FILTER_WARNINGS
+      })
+    }
+    return result.matcher
+  } catch (error) {
+    if (error instanceof PathFilterError) {
+      throw new BadRequestException(error.message)
+    }
+    throw error
   }
-
-  if (!safeRegex(pathFilter, { limit: SYNC_MAX_PATH_FILTER_REPETITIONS })) {
-    throw new BadRequestException('Unsafe path filter pattern')
-  }
-
-  return pathFilter
 }

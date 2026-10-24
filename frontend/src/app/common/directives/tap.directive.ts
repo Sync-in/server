@@ -1,4 +1,5 @@
-import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnDestroy, Output } from '@angular/core'
+import { DOCUMENT, isPlatformBrowser } from '@angular/common'
+import { DestroyRef, Directive, ElementRef, EventEmitter, inject, Injectable, Input, NgZone, OnDestroy, Output, PLATFORM_ID } from '@angular/core'
 
 type TapKind = 'single' | 'double'
 interface TapEvent {
@@ -6,6 +7,41 @@ interface TapEvent {
   y: number
   type: TapKind
   sourceEvent?: PointerEvent
+}
+
+@Injectable({ providedIn: 'root' })
+class TapGhostClickGuard {
+  private readonly document = inject(DOCUMENT)
+  private readonly destroyRef = inject(DestroyRef)
+  private readonly zone = inject(NgZone)
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID))
+  private readonly duration = 400
+  private readonly slop = 24
+  private blockedUntil = 0
+  private x = 0
+  private y = 0
+
+  constructor() {
+    if (!this.isBrowser) return
+    this.zone.runOutsideAngular(() => {
+      this.document.addEventListener('click', this.onClick, { capture: true, passive: false })
+    })
+    this.destroyRef.onDestroy(() => this.document.removeEventListener('click', this.onClick, true))
+  }
+
+  arm(event: PointerEvent) {
+    this.blockedUntil = performance.now() + this.duration
+    this.x = event.clientX
+    this.y = event.clientY
+  }
+
+  private onClick = (event: MouseEvent) => {
+    if (performance.now() >= this.blockedUntil || Math.hypot(event.clientX - this.x, event.clientY - this.y) > this.slop) return
+
+    this.blockedUntil = 0
+    event.preventDefault()
+    event.stopImmediatePropagation()
+  }
 }
 
 @Directive({
@@ -26,6 +62,8 @@ export class TapDirective implements OnDestroy {
   @Input() doubleTapSlop = 24
   /** Enables or disables double-tap detection */
   @Input() enableDoubleTap = true
+  /** Emits a single tap immediately for touch pointers. */
+  @Input() singleTapOnTouch = false
   /**
    * ⚙️ Hammer-like behavior control.
    * false → STRICT Hammer mode: no single tap is emitted if the second tap does not occur (default)
@@ -45,6 +83,7 @@ export class TapDirective implements OnDestroy {
 
   private readonly elRef = inject<ElementRef<HTMLElement>>(ElementRef as any)
   private readonly zone = inject(NgZone)
+  private readonly ghostClickGuard = inject(TapGhostClickGuard)
   private el: HTMLElement
   private removeFns: (() => void)[] = []
   private active = false
@@ -97,7 +136,7 @@ export class TapDirective implements OnDestroy {
       ev.pointerType !== 'touch' ||
       !ev.isPrimary ||
       ev.button !== 0 ||
-      this.isEditableTarget(ev.target)
+      this.isIgnoredTarget(ev.target)
     ) {
       return
     }
@@ -140,7 +179,7 @@ export class TapDirective implements OnDestroy {
   }
 
   private onDown = (ev: PointerEvent) => {
-    if (this.disabled || ev.button !== 0 || this.active) return
+    if (this.disabled || ev.button !== 0 || this.active || this.isIgnoredTarget(ev.target)) return
     this.active = true
     this.pointerId = ev.pointerId
     this.startX = ev.clientX
@@ -177,6 +216,11 @@ export class TapDirective implements OnDestroy {
     const now = performance.now()
     const x = ev.clientX
     const y = ev.clientY
+
+    if (this.singleTapOnTouch && ev.pointerType === 'touch') {
+      this.emit('single', x, y, ev)
+      return
+    }
 
     if (!this.enableDoubleTap) {
       this.emit('single', x, y, ev)
@@ -226,6 +270,9 @@ export class TapDirective implements OnDestroy {
   }
 
   private emit(type: TapKind, x: number, y: number, sourceEvent?: PointerEvent) {
+    if (this.preventGhostClick && sourceEvent?.pointerType === 'touch') {
+      this.ghostClickGuard.arm(sourceEvent)
+    }
     this.lastEmitTs = performance.now()
     this.zone.run(() => this.appTap.emit({ x, y, type, sourceEvent }))
   }
@@ -248,8 +295,12 @@ export class TapDirective implements OnDestroy {
     this.longPressPointerId = null
   }
 
-  private isEditableTarget(target: EventTarget | null): boolean {
-    return target instanceof Element && !!target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')
+  private isIgnoredTarget(target: EventTarget | null): boolean {
+    if (!(target instanceof Element)) return false
+    const ignoredTarget = target.closest(
+      'button, a, input, textarea, select, [contenteditable]:not([contenteditable="false"]), [data-app-tap-ignore]'
+    )
+    return !!ignoredTarget && ignoredTarget !== this.el && this.el.contains(ignoredTarget)
   }
 
   private isIosTouchDevice(): boolean {
