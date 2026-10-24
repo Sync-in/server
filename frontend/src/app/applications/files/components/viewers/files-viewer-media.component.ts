@@ -1,46 +1,31 @@
 import {
-  AfterViewInit,
+  afterRenderEffect,
   ChangeDetectionStrategy,
   Component,
   computed,
+  CUSTOM_ELEMENTS_SCHEMA,
   ElementRef,
+  inject,
   input,
-  OnDestroy,
-  viewChild,
-  ViewEncapsulation
+  viewChild
 } from '@angular/core'
-import * as PlyrModule from 'plyr'
+import { toSignal } from '@angular/core/rxjs-interop'
+import { L10nTranslationService } from 'angular-l10n'
+import { map } from 'rxjs'
+import '@videojs/html/audio/neutral-skin'
+import '@videojs/html/audio/player'
+import '@videojs/html/i18n'
+import '@videojs/html/video/neutral-skin'
+import '@videojs/html/video/player'
 import { FileModel } from '../../models/file.model'
-
-interface PlyrInstance {
-  destroy(): void
-}
-interface PlyrOptions {
-  autoplay?: boolean
-  blankVideo?: string
-  controls?: string[]
-  iconUrl?: string
-  keyboard?: {
-    focused?: boolean
-    global?: boolean
-  }
-  settings?: string[]
-  speed?: {
-    selected: number
-    options: number[]
-  }
-}
-type PlyrConstructor = new (target: HTMLElement | string, options?: PlyrOptions) => PlyrInstance
-const plyrModule = PlyrModule as unknown as PlyrConstructor & { default?: PlyrConstructor }
-const PlyrPlayer = plyrModule.default ?? plyrModule
 
 @Component({
   selector: 'app-files-viewer-media',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  encapsulation: ViewEncapsulation.None,
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
   styles: [
     `
-      app-files-viewer-media {
+      :host {
         display: block;
         width: 100%;
       }
@@ -57,90 +42,120 @@ const PlyrPlayer = plyrModule.default ?? plyrModule
         background: transparent;
       }
 
-      .files-viewer-media,
-      .files-viewer-media .plyr,
-      .files-viewer-media .plyr__video-wrapper,
-      .files-viewer-media .files-viewer-media__player {
+      .files-viewer-media video-player,
+      .files-viewer-media video-neutral-skin,
+      .files-viewer-media video.files-viewer-media__player {
         height: 100%;
       }
 
-      .files-viewer-media .plyr {
-        width: 100%;
-        --plyr-color-main: var(--bs-primary);
-      }
-
-      .files-viewer-media--audio .plyr {
-        height: auto;
-        max-width: 720px;
-        border-radius: 6px;
-        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
-        --plyr-audio-controls-background: rgba(17, 24, 28, 0.94);
-        --plyr-audio-control-color: rgba(255, 255, 255, 0.88);
-        --plyr-audio-control-color-hover: #fff;
-        --plyr-audio-control-background-hover: var(--bs-primary);
-        --plyr-audio-range-track-background: rgba(255, 255, 255, 0.24);
-        --plyr-audio-progress-buffered-background: rgba(255, 255, 255, 0.24);
-        --plyr-range-thumb-background: #fff;
-        --plyr-menu-background: #1f2a30;
-        --plyr-menu-color: rgba(255, 255, 255, 0.9);
-        --plyr-menu-arrow-color: rgba(255, 255, 255, 0.72);
-      }
-
-      .files-viewer-media--audio .plyr--audio .plyr__controls {
-        border-radius: inherit;
-      }
-
+      .files-viewer-media video-player,
+      .files-viewer-media audio-player,
+      .files-viewer-media video-neutral-skin,
+      .files-viewer-media audio-neutral-skin,
       .files-viewer-media .files-viewer-media__player {
         width: 100%;
+      }
+
+      .files-viewer-media video-player {
+        display: contents;
+      }
+
+      .files-viewer-media media-i18n {
+        display: contents;
+      }
+
+      .files-viewer-media audio-player {
+        display: block;
+      }
+
+      .files-viewer-media video-neutral-skin,
+      .files-viewer-media audio-neutral-skin {
+        display: block;
+        --media-accent-color: var(--bs-primary);
+        --media-accent-text-color: #fff;
+        --media-border-color: transparent;
+      }
+
+      .files-viewer-media video-neutral-skin {
+        --media-border-radius: 0;
+        --media-object-fit: contain;
+      }
+
+      .files-viewer-media--audio audio-player {
+        max-width: 720px;
+      }
+
+      .files-viewer-media--audio audio-neutral-skin {
+        height: auto;
+        border-radius: 6px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+        color-scheme: dark;
+        --media-border-radius: 6px;
+      }
+
+      .files-viewer-media video.files-viewer-media__player {
         object-fit: contain;
       }
     `
   ],
   template: `
-    <div class="files-viewer-media" [class.files-viewer-media--audio]="isAudio()" [style.height.px]="currentHeight()">
-      @if (isAudio()) {
-        <audio #media class="files-viewer-media__player" preload="none" [autoplay]="!sidebarMode()" controls>
-          <source [src]="file().dataUrl" />
-        </audio>
-      } @else {
-        <video #media class="files-viewer-media__player" preload="none" [autoplay]="!sidebarMode()" playsinline controls>
-          <source [src]="file().dataUrl" />
-        </video>
-      }
+    <div
+      class="files-viewer-media"
+      [class.files-viewer-media--audio]="isAudio()"
+      [style.--media-scale-unit]="sidebarMode() ? '14px' : null"
+      [style.height.px]="currentHeight()"
+    >
+      <media-i18n [attr.lang]="playerLanguage()">
+        @if (isAudio()) {
+          <audio-player>
+            <audio-neutral-skin #audioSkin>
+              <audio class="files-viewer-media__player" preload="none" [autoplay]="!sidebarMode()" [src]="file().dataUrl"></audio>
+            </audio-neutral-skin>
+          </audio-player>
+        } @else {
+          <video-player>
+            <video-neutral-skin>
+              <video class="files-viewer-media__player" preload="none" [autoplay]="!sidebarMode()" [src]="file().dataUrl" playsinline></video>
+            </video-neutral-skin>
+          </video-player>
+        }
+      </media-i18n>
     </div>
   `
 })
-export class FilesViewerMediaComponent implements AfterViewInit, OnDestroy {
+export class FilesViewerMediaComponent {
   file = input.required<FileModel>()
   currentHeight = input<number>()
   sidebarMode = input(false)
+  private readonly audioSkin = viewChild<ElementRef<HTMLElement>>('audioSkin')
+  protected readonly playerLanguage = toSignal(
+    inject(L10nTranslationService)
+      .onChange()
+      .pipe(map((locale) => locale.language)),
+    {
+      requireSync: true
+    }
+  )
   protected readonly isAudio = computed(() => {
     const mime = this.file().mime?.trim().toLowerCase()
     if (!mime) return false
     return (mime.includes('/') ? mime : mime.replace('-', '/')).startsWith('audio/')
   })
-  private readonly media = viewChild.required<ElementRef<HTMLMediaElement>>('media')
-  private player?: PlyrInstance
 
-  ngAfterViewInit() {
-    const sidebarMode = this.sidebarMode()
-    const options: PlyrOptions = {
-      autoplay: !sidebarMode,
-      blankVideo: 'assets/plyr/blank.mp4',
-      controls: sidebarMode
-        ? ['play', 'progress', 'fullscreen']
-        : ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'settings', 'pip', 'airplay', 'fullscreen'],
-      iconUrl: 'assets/plyr/plyr.svg',
-      keyboard: { focused: true, global: true }
-    }
-    if (!sidebarMode) {
-      options.settings = ['speed', 'loop']
-      options.speed = { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 2] }
-    }
-    this.player = new PlyrPlayer(this.media().nativeElement, options)
-  }
-
-  ngOnDestroy() {
-    this.player?.destroy()
+  constructor() {
+    afterRenderEffect(() => {
+      const hideSeekControls = this.sidebarMode()
+      const shadowRoot = this.audioSkin()?.nativeElement.shadowRoot
+      if (!shadowRoot) return
+      // These packaged-skin internals may change between Video.js releases; verify them after each upgrade.
+      // Neutral audio uses separate private values for its controls outline and radius.
+      const audioControls = shadowRoot.querySelector<HTMLElement>('.audio-controls-content')
+      audioControls?.style.setProperty('border-radius', 'var(--media-border-radius)')
+      audioControls?.style.setProperty('box-shadow', 'none')
+      // Packaged Video.js skins expose no option to remove controls, but their shadow root is open.
+      shadowRoot
+        .querySelectorAll<HTMLElement>('media-seek-button, media-seek-button + media-tooltip')
+        .forEach((control) => control.toggleAttribute('hidden', hideSeekControls))
+    })
   }
 }
